@@ -60,9 +60,8 @@ pub type Flown = (usize, usize, bool);
 /// calm, the one the field's last wind favoured -- or, with no wind
 /// reported, the most used runway's first end. Only ends with a heading.
 pub fn runway_in_use(runways: &[Runway]) -> Option<Flown> {
-    let open: Vec<usize> = (0..runways.len())
-        .filter(|&i| !runways[i].closed && runways[i].ends.iter().any(|e| e.heading_true_deg.is_some()))
-        .collect();
+    let open: Vec<usize> =
+        (0..runways.len()).filter(|&i| !runways[i].closed && runways[i].ends.iter().any(|e| e.heading_true_deg.is_some())).collect();
     let mut winded: Vec<usize> = open.iter().copied().filter(|&i| runways[i].wind.is_some()).collect();
     // A stable sort, as JavaScript's: equals keep the data's order.
     winded.sort_by(|&a, &b| {
@@ -91,10 +90,8 @@ pub fn runway_in_use(runways: &[Runway]) -> Option<Flown> {
 pub fn runway_flown(runways: &[Runway], picked: Option<&str>) -> Option<Flown> {
     if let Some(picked) = picked.filter(|p| !p.is_empty()) {
         for (i, runway) in runways.iter().enumerate().filter(|(_, r)| !r.closed) {
-            if let Some(j) = runway
-                .ends
-                .iter()
-                .position(|e| runway_number(&e.ident) == runway_number(picked) && e.heading_true_deg.is_some())
+            if let Some(j) =
+                runway.ends.iter().position(|e| runway_number(&e.ident) == runway_number(picked) && e.heading_true_deg.is_some())
             {
                 let by_wind = runway.wind.as_ref().is_some_and(|w| w.end == runway.ends[j].ident);
                 return Some((i, j, by_wind));
@@ -109,7 +106,8 @@ pub fn runway_flown(runways: &[Runway], picked: Option<&str>) -> Option<Flown> {
 /// off, so a stop typed UES is the planner's KUES.
 pub fn bare_ident(ident: &str) -> String {
     let upper = ident.trim().to_uppercase();
-    let rest = upper.strip_prefix('K').filter(|r| r.chars().count() == 3 && r.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()));
+    let rest =
+        upper.strip_prefix('K').filter(|r| r.chars().count() == 3 && r.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()));
     rest.map_or(upper.clone(), str::to_owned)
 }
 
@@ -132,7 +130,6 @@ pub fn picked_end<'a>(picks: Option<&'a Picks>, ident: &str, takeoff: bool, depa
     let (_, end) = by_field.iter().find(|(field, _)| bare_ident(field) == want)?;
     (end != "NONE").then_some(end.as_str())
 }
-
 
 /// A runway end as both the FAA's and OurAirports' tables can be matched
 /// on (wingtip.pattern end_key): trimmed, in capitals, as painted -- NASR

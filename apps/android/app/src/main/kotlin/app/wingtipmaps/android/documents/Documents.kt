@@ -7,9 +7,6 @@ import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.assistant.DocumentRead
 import app.wingtipmaps.android.api.generated.assistant.ReadAsk
-import java.io.IOException
-import java.time.LocalDate
-import java.util.Base64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
@@ -18,6 +15,9 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
+import java.io.IOException
+import java.time.LocalDate
+import java.util.Base64
 
 /**
  * A photographed page read by the assistant (POST /api/read-document,

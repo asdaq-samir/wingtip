@@ -10,12 +10,12 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import app.wingtipmaps.android.api.Gateway
-import java.io.File
-import java.io.FileOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.CacheControl
 import okhttp3.Request
+import java.io.File
+import java.io.FileOutputStream
 
 /**
  * One archive of a region fetched by WorkManager, so a download of

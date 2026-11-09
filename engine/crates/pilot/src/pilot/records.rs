@@ -89,14 +89,25 @@ pub fn solo_xc_checks(flight_on: i64, held: &[Held]) -> Vec<(&'static str, &'sta
     let solo = latest(held, &SOLO);
     let current = solo.is_some_and(|h| h.on <= flight_on && h.on + 90 >= flight_on);
     vec![
-        ("61.93(d)(4)", "A solo cross-country endorsement for the make and model", xc.is_some(), xc.map_or_else(|| "None on record".to_owned(), given)),
+        (
+            "61.93(d)(4)",
+            "A solo cross-country endorsement for the make and model",
+            xc.is_some(),
+            xc.map_or_else(|| "None on record".to_owned(), given),
+        ),
         (
             "61.93(d)(5)",
             "A solo endorsement current on the day of the flight",
             current,
             solo.map_or_else(
                 || "None on record".to_owned(),
-                |h| format!("{}{}", given(h), if current { String::new() } else { format!(", not within the 90 days before {}", said(flight_on)) }),
+                |h| {
+                    format!(
+                        "{}{}",
+                        given(h),
+                        if current { String::new() } else { format!(", not within the 90 days before {}", said(flight_on)) }
+                    )
+                },
             ),
         ),
     ]
@@ -119,7 +130,11 @@ pub(crate) fn held_of(name: &str, v: &Value) -> Result<Vec<Held>, String> {
         .map(|h| {
             let code = h.get("code").and_then(Value::as_str).ok_or_else(|| format!("{name}: an endorsement has no \"code\""))?;
             let on = h.get("on").and_then(Value::as_str).ok_or_else(|| format!("{name}: an endorsement has no \"on\""))?;
-            Ok(Held { code: code.to_owned(), on: days(name, on)?, make_model: h.get("make_model").and_then(Value::as_str).map(str::to_owned) })
+            Ok(Held {
+                code: code.to_owned(),
+                on: days(name, on)?,
+                make_model: h.get("make_model").and_then(Value::as_str).map(str::to_owned),
+            })
         })
         .collect()
 }
@@ -205,8 +220,13 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
                 None | Some(Value::Null) => out.push_str("null"),
                 Some(c) => {
                     let kind = c.get("kind").and_then(Value::as_str).unwrap_or("");
-                    let limit = vor_limit_deg(kind).ok_or_else(|| format!("{name}: a VOR check's \"kind\" is VOT, REPAIR_STATION, GROUND, AIRBORNE, RADIAL or DUAL, not {kind:?}"))?;
-                    let error = c.get("error_deg").and_then(Value::as_f64).ok_or_else(|| format!("{name}: a VOR check's \"error_deg\" is not a number"))?;
+                    let limit = vor_limit_deg(kind).ok_or_else(|| {
+                        format!("{name}: a VOR check's \"kind\" is VOT, REPAIR_STATION, GROUND, AIRBORNE, RADIAL or DUAL, not {kind:?}")
+                    })?;
+                    let error = c
+                        .get("error_deg")
+                        .and_then(Value::as_f64)
+                        .ok_or_else(|| format!("{name}: a VOR check's \"error_deg\" is not a number"))?;
                     let on = c.get("on").and_then(Value::as_str).ok_or_else(|| format!("{name}: a VOR check has no \"on\""))?;
                     out.push_str("{\"limit_deg\":");
                     json::number(&mut out, limit);
@@ -233,7 +253,8 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         // the pickers that say it beside each kind.
         "vor_check_limit_deg" => {
             let kind = v.get("kind").and_then(Value::as_str).unwrap_or("");
-            let limit = vor_limit_deg(kind).ok_or_else(|| format!("{name}: \"kind\" is VOT, REPAIR_STATION, GROUND, AIRBORNE, RADIAL or DUAL, not {kind:?}"))?;
+            let limit = vor_limit_deg(kind)
+                .ok_or_else(|| format!("{name}: \"kind\" is VOT, REPAIR_STATION, GROUND, AIRBORNE, RADIAL or DUAL, not {kind:?}"))?;
             let mut out = String::new();
             json::number(&mut out, limit);
             Ok(out)
@@ -256,7 +277,8 @@ mod tests {
         assert!(due.contains(r#""annual_until":"2026-10-31""#), "{due}");
         assert!(due.contains(r#""transponder_check_until":"2026-02-28""#), "{due}");
         assert!(due.contains(r#""elt_until":null"#), "{due}");
-        let vor = ask("inspections_due", r#"{"vor_check":{"on":"2026-11-01","kind":"AIRBORNE","error_deg":-5},"hundred_hour_at_hours":1234.5}"#);
+        let vor =
+            ask("inspections_due", r#"{"vor_check":{"on":"2026-11-01","kind":"AIRBORNE","error_deg":-5},"hundred_hour_at_hours":1234.5}"#);
         assert!(vor.contains(r#""vor_check":{"limit_deg":6.0,"within":true,"until":"2026-12-01"}"#), "{vor}");
         assert!(vor.contains(r#""hundred_hour_due_at_hours":1334.5"#), "{vor}");
     }

@@ -65,7 +65,7 @@ interface RadioInput {
 
 const sentEnd = (inUse: InUse | null) => (inUse ? { ident: inUse.end.ident, traffic: inUse.end.traffic ?? null } : null);
 const sentFrequencies = (frequencies: Frequency[]) =>
-  frequencies.map(f => ({ type: f.type ?? null, description: f.description ?? null, frequency_mhz: f.frequency_mhz ?? null }));
+  frequencies.map((f) => ({ type: f.type ?? null, description: f.description ?? null, frequency_mhz: f.frequency_mhz ?? null }));
 
 /** The route's calls, airport by airport: leaving the departure, into
  *  and out of each stop, and into the destination. */
@@ -78,18 +78,19 @@ export function radioScript(input: RadioInput): RadioPhase[] {
   const phases = callEngine("radio_script", {
     call_sign: input.callSign,
     airports: input.airports.map(({ ident, facilities }, i) => ({
-      ident, name: facilities.name ?? null, airspace_class: facilities.airspace_class ?? null,
-      frequencies: sentFrequencies(facilities.frequencies), pattern_altitude_ft: facilities.pattern?.altitude_ft ?? null,
-      takeoff: sentEnd(flown[i]!.takeoff), landing: sentEnd(flown[i]!.landing),
+      ident,
+      name: facilities.name ?? null,
+      airspace_class: facilities.airspace_class ?? null,
+      frequencies: sentFrequencies(facilities.frequencies),
+      pattern_altitude_ft: facilities.pattern?.altitude_ft ?? null,
+      takeoff: sentEnd(flown[i]!.takeoff),
+      landing: sentEnd(flown[i]!.landing),
     })),
-    legs: input.legs.map(l => ({ from: l.from, to: l.to, true_course_deg: l.true_course_deg, altitude_ft: l.altitude_ft })),
+    legs: input.legs.map((l) => ({ from: l.from, to: l.to, true_course_deg: l.true_course_deg, altitude_ft: l.altitude_ft })),
   });
   // The engine's phases come field by field, the arrival before the
   // departure: each one's runway is that field's landing or takeoff.
-  const runways = flown.flatMap((f, i) => [
-    ...(i > 0 ? [f.landing] : []),
-    ...(i < flown.length - 1 ? [f.takeoff] : []),
-  ]);
+  const runways = flown.flatMap((f, i) => [...(i > 0 ? [f.landing] : []), ...(i < flown.length - 1 ? [f.takeoff] : [])]);
   return phases.map((phase, i) => {
     const inUse = runways[i] ?? null;
     return { ...phase, end: inUse?.end ?? null, byWind: inUse?.byWind ?? false };
@@ -100,9 +101,15 @@ export function radioScript(input: RadioInput): RadioPhase[] {
  *  (radioScript), none for a local flight, with no route to call along.
  *  The Brief's airport sections (AirportSections, PatternRadio) read it,
  *  and leave out the frequencies and runways its calls and pattern say. */
-export function fieldPhases(briefing: Briefing, landings: string[], legs: Leg[], callSign: string, at: string,
-  picks?: RunwayPicks | null): RadioPhase[] {
-  const airports = landings.filter(ident => briefing.airports[ident]).map(ident => ({ ident, facilities: briefing.airports[ident]! }));
+export function fieldPhases(
+  briefing: Briefing,
+  landings: string[],
+  legs: Leg[],
+  callSign: string,
+  at: string,
+  picks?: RunwayPicks | null,
+): RadioPhase[] {
+  const airports = landings.filter((ident) => briefing.airports[ident]).map((ident) => ({ ident, facilities: briefing.airports[ident]! }));
   if (airports.length < 2) return [];
-  return radioScript({ callSign, airports, legs, picks }).filter(phase => phase.ident === at);
+  return radioScript({ callSign, airports, legs, picks }).filter((phase) => phase.ident === at);
 }

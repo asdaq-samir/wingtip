@@ -41,7 +41,16 @@ export function nightCurrent(currency: Currency | undefined, atS: number): boole
  *  minimums and currency, when the flight started (for the fuel burnt)
  *  and the category each field was first seen in. Null until there is
  *  enough to ask. */
-export function copilotInput({ fix, flight, around, ahead, minimums, nightCurrent, startedAtMs, firstSeen }: {
+export function copilotInput({
+  fix,
+  flight,
+  around,
+  ahead,
+  minimums,
+  nightCurrent,
+  startedAtMs,
+  firstSeen,
+}: {
   fix: Fix | null;
   flight: CopilotFlight | null;
   around: CopilotAround | undefined;
@@ -67,15 +76,17 @@ export function copilotInput({ fix, flight, around, ahead, minimums, nightCurren
     fuel_gal: fuelGal,
     burn_gph: flight.burnGph,
     minimums: {
-      ceiling_ft: minimums.ceilingFt, visibility_sm: minimums.visibilitySm,
-      crosswind_kt: minimums.crosswindKt, wind_kt: minimums.windKt,
+      ceiling_ft: minimums.ceilingFt,
+      visibility_sm: minimums.visibilitySm,
+      crosswind_kt: minimums.crosswindKt,
+      wind_kt: minimums.windKt,
     },
     passengers: flight.passengers,
     night_current: nightCurrent,
-    fields: around.fields.map(f => ({ ...f, planned_category: firstSeen[f.ident] ?? null })),
-    areas: around.areas.map(a => ({ ...a, kind: a.kind as "tfr" | "sua" | "sigmet" })),
+    fields: around.fields.map((f) => ({ ...f, planned_category: firstSeen[f.ident] ?? null })),
+    areas: around.areas.map((a) => ({ ...a, kind: a.kind as "tfr" | "sua" | "sigmet" })),
     itws: around.itws,
-    ahead: ahead.map(a => ({ id: a.id, kind: a.kind, level: a.level, name: a.name })),
+    ahead: ahead.map((a) => ({ id: a.id, kind: a.kind, level: a.level, name: a.name })),
   };
 }
 
@@ -94,7 +105,7 @@ export function watch(input: CopilotInput): CopilotAnswer | null {
 /** Each field's flight category the first time the copilot saw it, kept
  *  so a worse one later is said as a change ("just went IFR"). */
 export function rememberCategories(seen: Record<string, string | null>, around: CopilotAround): Record<string, string | null> {
-  const fresh = around.fields.filter(f => !(f.ident in seen));
+  const fresh = around.fields.filter((f) => !(f.ident in seen));
   if (!fresh.length) return seen;
   const next = { ...seen };
   for (const f of fresh) next[f.ident] = f.metar?.flight_category ?? null;

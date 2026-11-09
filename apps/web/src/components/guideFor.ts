@@ -24,15 +24,17 @@ interface Guide {
 }
 
 const withNote = (steps: readonly string[]) =>
-  steps.some(step => /last one to connect|takes the input/i.test(step)) ? [...steps] : [...steps, ONE_AT_A_TIME];
+  steps.some((step) => /last one to connect|takes the input/i.test(step)) ? [...steps] : [...steps, ONE_AT_A_TIME];
 
 export function guideFor(label: string | null | undefined): Guide | null {
   const hears = hearing(label);
   if (hears === "radio") return { hears, line: "Hears the radio", steps: [], how: null };
   const gear = gearFor(label);
-  if (hears === "voice") return { hears, line: "Hears your voice, not the radio", steps: withNote(gear?.steps ?? []), how: "How to hear the radio" };
+  if (hears === "voice")
+    return { hears, line: "Hears your voice, not the radio", steps: withNote(gear?.steps ?? []), how: "How to hear the radio" };
   // Documented only to a camera or the maker's own app, or not at all
   // (components/audioGear's "radio-maybe"): never said to hear the radio.
-  if (gear?.gives === "radio-maybe") return { hears: "maybe", line: "May hear the radio: test it on the ground", steps: withNote(gear.steps), how: "How to test it" };
+  if (gear?.gives === "radio-maybe")
+    return { hears: "maybe", line: "May hear the radio: test it on the ground", steps: withNote(gear.steps), how: "How to test it" };
   return null;
 }

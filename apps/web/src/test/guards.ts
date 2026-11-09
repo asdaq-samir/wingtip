@@ -30,10 +30,14 @@ function lingeringTimers() {
   const pending = new Set<ReturnType<typeof setTimeout>>();
   const { setTimeout: set, clearTimeout: clear, setInterval: every, clearInterval: stop } = globalThis;
   globalThis.setTimeout = ((handler: (...a: unknown[]) => void, ms?: number, ...args: unknown[]) => {
-    const id = set((...a: unknown[]) => {
-      pending.delete(id);
-      return typeof handler === "function" ? handler(...a) : undefined;
-    }, ms, ...args);
+    const id = set(
+      (...a: unknown[]) => {
+        pending.delete(id);
+        return typeof handler === "function" ? handler(...a) : undefined;
+      },
+      ms,
+      ...args,
+    );
     pending.add(id);
     return id;
   }) as typeof setTimeout;

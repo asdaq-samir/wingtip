@@ -21,12 +21,8 @@ use crate::json;
 
 /// The figures a student estimates, and how far off is still reasonable:
 /// key, label, unit and allowance.
-pub const ALLOWANCES: [(&str, &str, &str, f64); 4] = [
-    ("mh", "Magnetic heading", "°", 10.0),
-    ("gs", "Ground speed", "kt", 10.0),
-    ("ete", "Time", "min", 3.0),
-    ("fuel", "Fuel", "gal", 1.0),
-];
+pub const ALLOWANCES: [(&str, &str, &str, f64); 4] =
+    [("mh", "Magnetic heading", "°", 10.0), ("gs", "Ground speed", "kt", 10.0), ("ete", "Time", "min", 3.0), ("fuel", "Fuel", "gal", 1.0)];
 
 /// The leg's air the diversion is flown in.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -164,8 +160,16 @@ pub fn diversion_json(air: &Air, tc_deg: f64, distance_nm: f64, to: &str, typed:
     match &solved {
         None => out.push_str("null"),
         Some(d) => {
-            let figures = [("tc", d.tc), ("distance_nm", d.distance_nm), ("wca", d.wca), ("th", d.th), ("mh", d.mh),
-                           ("gs", d.gs), ("ete", d.ete), ("fuel", d.fuel)];
+            let figures = [
+                ("tc", d.tc),
+                ("distance_nm", d.distance_nm),
+                ("wca", d.wca),
+                ("th", d.th),
+                ("mh", d.mh),
+                ("gs", d.gs),
+                ("ete", d.ete),
+                ("fuel", d.fuel),
+            ];
             for (i, (key, v)) in figures.iter().enumerate() {
                 out.push_str(if i == 0 { "{\"" } else { ",\"" });
                 out.push_str(key);

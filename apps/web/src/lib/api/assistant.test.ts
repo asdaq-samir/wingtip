@@ -14,7 +14,7 @@ function streamOf(chunks: string[]): ReadableStream<Uint8Array> {
 
 async function eventsOf(chunks: string[]): Promise<AssistantEvent[]> {
   const events: AssistantEvent[] = [];
-  await readAssistantStream(streamOf(chunks), e => events.push(e));
+  await readAssistantStream(streamOf(chunks), (e) => events.push(e));
   return events;
 }
 
@@ -42,13 +42,13 @@ describe("the assistant's stream", () => {
       '{"type":"text","text":"Rhinelander as a stop."}\n{"type":"action","change":{"stops":["KRHI"]},"words":"A fuel stop halfway."}\n',
       '{"type":"sources","sources":[]}\n{"type":"done"}\n',
     ]);
-    expect(events.map(e => e.type)).toEqual(["text", "action", "sources", "done"]);
+    expect(events.map((e) => e.type)).toEqual(["text", "action", "sources", "done"]);
     expect(events[1]).toEqual({ type: "action", change: { stops: ["KRHI"] }, words: "A fuel stop halfway." });
   });
 
   test("a last line with no newline after it is still read", async () => {
     const events = await eventsOf(['{"type":"text","text":"Yes."}\n{"type":"done"}']);
-    expect(events.map(e => e.type)).toEqual(["text", "done"]);
+    expect(events.map((e) => e.type)).toEqual(["text", "done"]);
   });
 
   test("an error event ends the answer with its words, and nothing after it is read", async () => {

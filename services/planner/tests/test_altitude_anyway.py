@@ -1,12 +1,21 @@
 """A route with no legal altitude flown anyway, with what it breaks said
 (wingtip.planning.altitude_anyway, own_altitude_caution), at the owner's "I
 don't want to put hard limits on anything" (2026-10-23)."""
+
 from wingtip.planning import altitude_anyway, own_altitude_caution, prohibited_caution
 
 # The Rockies on Los Angeles to Hartford's line, eastbound, for an airplane
 # whose ceiling is 10,950 ft.
-ROCKIES = {"floor_ft": 13600.0, "service_ceiling_ft": 10950.0, "course_magnetic_deg": 80.0, "eastbound": True,
-           "hemispheric_rule_from_ft": 9000.0, "airspace_ceiling_ft": None, "cloud_ceiling_ft": None, "candidates_ft": []}
+ROCKIES = {
+    "floor_ft": 13600.0,
+    "service_ceiling_ft": 10950.0,
+    "course_magnetic_deg": 80.0,
+    "eastbound": True,
+    "hemispheric_rule_from_ft": 9000.0,
+    "airspace_ceiling_ft": None,
+    "cloud_ceiling_ft": None,
+    "candidates_ft": [],
+}
 
 
 def test_over_the_high_ground_above_the_ceiling_with_its_warning():

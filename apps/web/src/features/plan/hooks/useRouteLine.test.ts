@@ -2,12 +2,22 @@ import { describe, expect, it } from "vitest";
 import type { RouteChip, RouteOptions } from "../../../lib/api/types";
 import { wayCards, wayWarning } from "./useRouteLine";
 
-const chip = (key: string, stops: string[], crosses: number[] = []) => ({ key, label: key === "none" ? "None" : `Via ${stops.join(" ")}`, stops, fuel: [], crosses }) as unknown as RouteChip;
-const option = (stops: string[], air: number, nm: number, gal: number) => ({ stops, air_min: air, ground_min: stops.length * 30, distance_nm: nm, fuel_gal: gal, path: [] });
+const chip = (key: string, stops: string[], crosses: number[] = []) =>
+  ({ key, label: key === "none" ? "None" : `Via ${stops.join(" ")}`, stops, fuel: [], crosses }) as unknown as RouteChip;
+const option = (stops: string[], air: number, nm: number, gal: number) => ({
+  stops,
+  air_min: air,
+  ground_min: stops.length * 30,
+  distance_nm: nm,
+  fuel_gal: gal,
+  path: [],
+});
 const ways = {
-  chips: [], hazards: [{ kind: "sigmet" }, { kind: "tfr" }, { kind: "fuel" }],
+  chips: [],
+  hazards: [{ kind: "sigmet" }, { kind: "tfr" }, { kind: "fuel" }],
   options: [option(["KJVL"], 60, 140, 14), option(["KMSN"], 74, 152.4, 15)],
-  own: null, current_along: { bands: [{ min: 74 }] },
+  own: null,
+  current_along: { bands: [{ min: 74 }] },
 } as unknown as RouteOptions;
 
 describe("what a way meets", () => {

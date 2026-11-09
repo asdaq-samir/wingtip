@@ -263,10 +263,7 @@ mod tests {
 
     #[test]
     fn reads_quoted_fields_as_papaparse_does() {
-        assert_eq!(
-            rows("a,\"b, c\",\"d \"\"e\"\"\",\r\n\"f\ng\",h"),
-            vec![vec!["a", "b, c", "d \"e\"", ""], vec!["f\ng", "h"]]
-        );
+        assert_eq!(rows("a,\"b, c\",\"d \"\"e\"\"\",\r\n\"f\ng\",h"), vec![vec!["a", "b, c", "d \"e\"", ""], vec!["f\ng", "h"]]);
         assert_eq!(rows("a;b;c\n1;2;3"), vec![vec!["a", "b", "c"], vec!["1", "2", "3"]]);
         assert_eq!(rows(""), Vec::<Vec<String>>::new());
         assert_eq!(rows("a\n"), vec![vec!["a"], vec![""]]);

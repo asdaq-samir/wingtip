@@ -85,8 +85,10 @@ public class Flight {
      *  its level (low, caution, high) and what raised them, one a line.
      *  All null without one. */
     private Integer riskScore;
+
     @Column(length = 8)
     private String riskLevel;
+
     @Column(length = 2000)
     private String riskFactors;
 
@@ -108,8 +110,12 @@ public class Flight {
 
     /** The filed nav log. Replaces any previous one, since re-planning a
      *  flight produces a new log rather than more of the old one. */
-    public Flight fileNavLog(List<FlightCheckpoint> navLog, Integer cruiseAltitudeFt,
-                             Double totalDistanceNm, Double totalEteMin, Double totalFuelGal) {
+    public Flight fileNavLog(
+            List<FlightCheckpoint> navLog,
+            Integer cruiseAltitudeFt,
+            Double totalDistanceNm,
+            Double totalEteMin,
+            Double totalFuelGal) {
         this.checkpoints.clear();
         navLog.forEach(checkpoint -> {
             checkpoint.setFlight(this);

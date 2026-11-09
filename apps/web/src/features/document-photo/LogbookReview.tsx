@@ -14,13 +14,21 @@ function DateRow({ value, onChange, testId }: { value: string; onChange: (value:
   return (
     <ListRow
       title="Date"
-      value={(
+      value={
         <FieldHit htmlFor={id}>
-          <Input id={id} type="date" defaultValue={value} aria-label="Date flown" className="h-8 w-40" data-testid={testId}
-            onBlur={e => { if (e.target.value && e.target.value !== value) onChange(e.target.value); }}
+          <Input
+            id={id}
+            type="date"
+            defaultValue={value}
+            aria-label="Date flown"
+            className="h-8 w-40"
+            data-testid={testId}
+            onBlur={(e) => {
+              if (e.target.value && e.target.value !== value) onChange(e.target.value);
+            }}
           />
         </FieldHit>
-      )}
+      }
     />
   );
 }
@@ -56,15 +64,19 @@ export default function LogbookReview({ photo }: { photo: DocumentPhoto }) {
                 `${landings} landing${landings === 1 ? "" : "s"}`,
                 entry.approaches ? `${entry.approaches} approach${entry.approaches === 1 ? "" : "es"}` : "",
                 entry.remarks ?? "",
-              ].filter(Boolean).join(" · ")}
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             />
-            {(!dated || flags.some(f => f.field === "flownOn")) && (
-              <DateRow value={entry.flownOn ?? ""} onChange={v => photo.correctRow(i, "date", v)} testId={`row-${i}-date`} />
+            {(!dated || flags.some((f) => f.field === "flownOn")) && (
+              <DateRow value={entry.flownOn ?? ""} onChange={(v) => photo.correctRow(i, "date", v)} testId={`row-${i}-date`} />
             )}
             {flags.length > 0 && <ListRow title={<FlagLines flags={flags} testId={`flags-row-${i}`} />} />}
             <ListRow
               title={logged ? "Logged" : "Log This Flight"}
-              checkbox={dated && !logged ? { checked: photo.confirmed.has(`row.${i}`), onChange: () => photo.toggle(`row.${i}`) } : undefined}
+              checkbox={
+                dated && !logged ? { checked: photo.confirmed.has(`row.${i}`), onChange: () => photo.toggle(`row.${i}`) } : undefined
+              }
               muted={!dated || logged}
               data-testid={`keep-row-${i}`}
             />

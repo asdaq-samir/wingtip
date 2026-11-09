@@ -43,30 +43,32 @@ function lapseWords(days: number, on: string): string {
 
 export function studentLines(instructor: Instructor, today: string): { needs: StudentLine[]; everyone: StudentLine[] } {
   const waiting = (s: StudentRow): CrossCountryReview[] =>
-    instructor.reviews.filter(r => r.studentId === s.studentId && !r.answeredAt).sort((a, b) => a.flightOn.localeCompare(b.flightOn));
+    instructor.reviews.filter((r) => r.studentId === s.studentId && !r.answeredAt).sort((a, b) => a.flightOn.localeCompare(b.flightOn));
   const lines = instructor.students.map((s): StudentLine => {
     const reviews = waiting(s);
     const next = reviews[0];
-    const due = reviews.find(r => r.flightOn <= today);
+    const due = reviews.find((r) => r.flightOn <= today);
     const solo = soloStanding(s.soloUntil, today);
     const soloDays = solo.days;
     const needs: StudentLine["needs"] = due
       ? {
-        words: `Solo ${reviewRoute(due)} ${due.flightOn === today ? "today" : said(due.flightOn)} · ${due.flight.risk ? riskLine(due.flight.risk) : "no risk assessment"}`,
-        action: "Sign off",
-      }
+          words: `Solo ${reviewRoute(due)} ${due.flightOn === today ? "today" : said(due.flightOn)} · ${due.flight.risk ? riskLine(due.flight.risk) : "no risk assessment"}`,
+          action: "Sign off",
+        }
       : soloDays != null && solo.standing !== "ok"
         ? { words: `Solo endorsement ${lapseWords(soloDays, s.soloUntil!)}`, action: "Endorse" }
         : null;
     const currency: Finding = solo.standing;
-    const goNoGo: Finding = next?.flight.risk ? RISK_FINDING[next.flight.risk.level] ?? "unknown" : "unknown";
+    const goNoGo: Finding = next?.flight.risk ? (RISK_FINDING[next.flight.risk.level] ?? "unknown") : "unknown";
     const status = [
       next ? `${reviewRoute(next)} ${next.flightOn === today ? "today" : said(next.flightOn)}` : null,
       `${s.experienceMet} of ${s.experienceOf} of 61.109`,
       s.soloUntil ? `solo to ${said(s.soloUntil)}` : null,
       reviews.length ? `${reviews.length} waiting on you` : null,
-    ].filter(Boolean).join(" · ");
+    ]
+      .filter(Boolean)
+      .join(" · ");
     return { row: s, needs, currency, goNoGo, status };
   });
-  return { needs: lines.filter(l => l.needs), everyone: lines };
+  return { needs: lines.filter((l) => l.needs), everyone: lines };
 }

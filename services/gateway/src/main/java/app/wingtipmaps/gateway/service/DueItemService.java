@@ -45,16 +45,22 @@ public class DueItemService {
                 .map(i -> {
                     items.delete(i);
                     return true;
-                }).orElse(false);
+                })
+                .orElse(false);
     }
 
     private static AircraftDueItem fill(AircraftDueItem i, DueItemRequest r) {
-        return i.set(r.kind(), Typed.words(r.title()), Typed.text(r.reference()), Typed.text(r.method()), r.dueOn(),
+        return i.set(
+                r.kind(),
+                Typed.words(r.title()),
+                Typed.text(r.reference()),
+                Typed.text(r.method()),
+                r.dueOn(),
                 r.dueAtHours());
     }
 
     public static DueItemDto toDto(AircraftDueItem i) {
-        return new DueItemDto(i.getId(), i.getKind(), i.getTitle(), i.getReference(), i.getMethod(), i.getDueOn(),
-                i.getDueAtHours());
+        return new DueItemDto(
+                i.getId(), i.getKind(), i.getTitle(), i.getReference(), i.getMethod(), i.getDueOn(), i.getDueAtHours());
     }
 }

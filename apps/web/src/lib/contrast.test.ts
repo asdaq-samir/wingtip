@@ -42,8 +42,16 @@ describe("the night theme's tokens (styles/tokens.css .dark)", () => {
 
   const surfaces = ["--background", "--card", "--popover", "--muted"];
   const words = [
-    "--foreground", "--muted-foreground", "--tint", "--caution", "--go", "--go-ink",
-    "--destructive", "--procedure", "--airspace-blue-text", "--airspace-magenta-text",
+    "--foreground",
+    "--muted-foreground",
+    "--tint",
+    "--caution",
+    "--go",
+    "--go-ink",
+    "--destructive",
+    "--procedure",
+    "--airspace-blue-text",
+    "--airspace-magenta-text",
   ];
   for (const word of words) {
     for (const surface of surfaces) {

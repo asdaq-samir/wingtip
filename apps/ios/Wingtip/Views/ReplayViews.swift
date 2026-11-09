@@ -29,8 +29,8 @@ struct ReplaySection: View {
                     Image(systemName: "stop.fill").frame(width: 32, height: 32)
                         .contentShape(Rectangle().inset(by: -6))
                 }
-                    .disabled(replay.at == nil)
-                    .accessibilityLabel("Stop the replay")
+                .disabled(replay.at == nil)
+                .accessibilityLabel("Stop the replay")
                 Spacer()
                 // A discrete setting, the dry run's own control.
                 SpeedPicker(name: "Replay speed", speed: $replay.speed)

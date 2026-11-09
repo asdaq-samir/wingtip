@@ -26,8 +26,17 @@ export function readAtis(text: string): AtisReading {
 
 /** Whether anything of a broadcast was heard at all. */
 export function heardAny(r: AtisReading): boolean {
-  return r.information != null || r.time_z != null || r.wind != null || r.visibility_sm != null || r.sky.length > 0
-    || r.altimeter_inhg != null || r.approach != null || r.runways.landing.length > 0 || r.runways.departing.length > 0;
+  return (
+    r.information != null ||
+    r.time_z != null ||
+    r.wind != null ||
+    r.visibility_sm != null ||
+    r.sky.length > 0 ||
+    r.altimeter_inhg != null ||
+    r.approach != null ||
+    r.runways.landing.length > 0 ||
+    r.runways.departing.length > 0
+  );
 }
 
 /** The wind as a pilot says it back: "210° at 12 kt, gusts 18". */
@@ -36,13 +45,21 @@ export function windWords(w: AtisWind): string {
   if (callEngine("wind_calm", { speed_kt: w.kt })) return "Calm";
   const speed = w.kt != null ? `${w.kt} kt` : null;
   const gusts = w.gust_kt != null ? `gusts ${w.gust_kt}` : null;
-  const head = w.from_deg != null ? `${reportedDirection(w.from_deg)}°${w.variable ? " variable" : ""}` : w.variable ? (speed ? "Variable" : "Light and variable") : null;
-  return [head && speed ? `${head} at ${speed}` : head ?? speed, gusts].filter(Boolean).join(", ");
+  const head =
+    w.from_deg != null
+      ? `${reportedDirection(w.from_deg)}°${w.variable ? " variable" : ""}`
+      : w.variable
+        ? speed
+          ? "Variable"
+          : "Light and variable"
+        : null;
+  return [head && speed ? `${head} at ${speed}` : (head ?? speed), gusts].filter(Boolean).join(", ");
 }
 
 /** Statute miles as said: "10 sm", "2½ sm", "¾ sm". */
 export function visibilityWords(sm: number): string {
-  const whole = Math.floor(sm), frac = sm - whole;
+  const whole = Math.floor(sm),
+    frac = sm - whole;
   const part = { 0.25: "¼", 0.5: "½", 0.75: "¾" }[frac] ?? (frac ? String(frac).slice(1) : "");
   return `${whole || !part ? whole : ""}${part} sm`;
 }
@@ -59,14 +76,15 @@ const METAR_COVER: Record<string, string> = { clear: "CLR", few: "FEW", scattere
 export function skyWords(sky: AtisLayer[]): string {
   if (!sky.length) return "—";
   const { ceiling_ft } = callEngine("ceiling_visibility", {
-    layers: sky.map(l => ({ cover: METAR_COVER[l.cover] ?? l.cover, base_ft: l.base_ft })),
+    layers: sky.map((l) => ({ cover: METAR_COVER[l.cover] ?? l.cover, base_ft: l.base_ft })),
   });
-  const ceiling = ceiling_ft == null ? undefined
-    : [...sky].reverse().find(l => l.base_ft === ceiling_ft);
-  return sky.map(l => {
-    const cover = l.cover[0]!.toUpperCase() + l.cover.slice(1);
-    return `${cover}${l.base_ft != null ? ` ${altFt(l.base_ft)} ft` : ""}${l === ceiling ? " (ceiling)" : ""}`;
-  }).join(" · ");
+  const ceiling = ceiling_ft == null ? undefined : [...sky].reverse().find((l) => l.base_ft === ceiling_ft);
+  return sky
+    .map((l) => {
+      const cover = l.cover[0]!.toUpperCase() + l.cover.slice(1);
+      return `${cover}${l.base_ft != null ? ` ${altFt(l.base_ft)} ft` : ""}${l === ceiling ? " (ceiling)" : ""}`;
+    })
+    .join(" · ");
 }
 
 /** The runways as said: both ways, or landing and departing apart. */
@@ -83,10 +101,14 @@ function runwayWords(r: AtisReading["runways"]): string | null {
  *  and the altimeter, with the letter. */
 export function glanceWords(r: AtisReading): string {
   const runways = runwayWords(r.runways);
-  return [
-    runways ? `Runway ${runways}` : r.approach ? r.approach : null,
-    r.altimeter_inhg != null ? `${r.altimeter_inhg.toFixed(2)} inHg` : null,
-  ].filter(Boolean).join(" · ") || "Nothing of a broadcast was heard";
+  return (
+    [
+      runways ? `Runway ${runways}` : r.approach ? r.approach : null,
+      r.altimeter_inhg != null ? `${r.altimeter_inhg.toFixed(2)} inHg` : null,
+    ]
+      .filter(Boolean)
+      .join(" · ") || "Nothing of a broadcast was heard"
+  );
 }
 
 /** The table under the line, a row a figure, only the figures heard. */
@@ -97,7 +119,8 @@ export function atisRows(r: AtisReading): { label: string; value: string }[] {
   if (r.wind) rows.push({ label: "Wind", value: windWords(r.wind) });
   if (r.visibility_sm != null) rows.push({ label: "Visibility", value: visibilityWords(r.visibility_sm) });
   if (r.sky.length) rows.push({ label: "Sky", value: skyWords(r.sky) });
-  if (r.temp_c != null) rows.push({ label: "Temperature", value: `${r.temp_c} °C${r.dewpoint_c != null ? `, dew point ${r.dewpoint_c} °C` : ""}` });
+  if (r.temp_c != null)
+    rows.push({ label: "Temperature", value: `${r.temp_c} °C${r.dewpoint_c != null ? `, dew point ${r.dewpoint_c} °C` : ""}` });
   if (r.altimeter_inhg != null) rows.push({ label: "Altimeter", value: `${r.altimeter_inhg.toFixed(2)} inHg` });
   if (r.approach) rows.push({ label: "Approach", value: r.approach });
   const runways = runwayWords(r.runways);
@@ -142,9 +165,10 @@ interface AtisHeard {
 export function hearAtis(onHeard: (text: string) => void): { stop: () => void; done: Promise<AtisHeard> } {
   const radio = useAtcRadio.getState();
   if (radio.listening) {
-    const notice = radio.mode === "radio"
-      ? "Already listening to the radio; stop it in the Radio card first."
-      : "Already listening; tap the microphone to stop it first.";
+    const notice =
+      radio.mode === "radio"
+        ? "Already listening to the radio; stop it in the Radio card first."
+        : "Already listening; tap the microphone to stop it first.";
     return { stop: () => {}, done: Promise.resolve({ text: "", notice }) };
   }
   const said = new Map<number, string>();
@@ -161,40 +185,52 @@ export function hearAtis(onHeard: (text: string) => void): { stop: () => void; d
     stop();
   };
   useAtcRadio.setState({ atisStop: giveWay });
-  const typed = () => [...said.entries()].sort((a, b) => a[0] - b[0]).map(e => e[1]).join(" ");
-  const done = new Promise<AtisHeard>(resolve => {
+  const typed = () =>
+    [...said.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map((e) => e[1])
+      .join(" ");
+  const done = new Promise<AtisHeard>((resolve) => {
     let quiet = window.setTimeout(stop, NOTHING_MS);
     const longest = window.setTimeout(stop, LONGEST_MS);
     // In the tap, before the recognizer: the input held, or the one
     // remembered being opened.
     const input = holdForListening();
-    void listen([], undefined, (id, text) => {
-      if (!text) return;
-      // A finished phrase given again under a new number, or the last
-      // words with more after them, are the last result over again
-      // (lib/atcListening's listenOnce, the same recognizer).
-      const last = [...said.keys()].filter(k => k < id).sort((a, b) => b - a)[0];
-      if (last !== undefined) {
-        const before = said.get(last)!.toLowerCase(), now = text.toLowerCase();
-        if (now === before || now.startsWith(before) || before.startsWith(now)) said.delete(last);
-      }
-      said.set(id, text);
-      onHeard(typed());
-      window.clearTimeout(quiet);
-      quiet = window.setTimeout(stop, PAUSE_MS);
-    }, error => {
-      window.clearTimeout(quiet);
-      window.clearTimeout(longest);
-      if (useAtcRadio.getState().atisStop === giveWay) useAtcRadio.setState({ atisStop: null });
-      // Named while the input is still held.
-      const through = heardThrough(useAtcRadio.getState().input);
-      input.release();
-      resolve({
-        text: typed(), error,
-        ...(interrupted && !error ? { notice: "Stopped for the microphone; tap to listen again." } : {}),
-        ...(through ? { through } : {}),
-      });
-    }, input.track).then(({ stop: s, renew }) => {
+    void listen(
+      [],
+      undefined,
+      (id, text) => {
+        if (!text) return;
+        // A finished phrase given again under a new number, or the last
+        // words with more after them, are the last result over again
+        // (lib/atcListening's listenOnce, the same recognizer).
+        const last = [...said.keys()].filter((k) => k < id).sort((a, b) => b - a)[0];
+        if (last !== undefined) {
+          const before = said.get(last)!.toLowerCase(),
+            now = text.toLowerCase();
+          if (now === before || now.startsWith(before) || before.startsWith(now)) said.delete(last);
+        }
+        said.set(id, text);
+        onHeard(typed());
+        window.clearTimeout(quiet);
+        quiet = window.setTimeout(stop, PAUSE_MS);
+      },
+      (error) => {
+        window.clearTimeout(quiet);
+        window.clearTimeout(longest);
+        if (useAtcRadio.getState().atisStop === giveWay) useAtcRadio.setState({ atisStop: null });
+        // Named while the input is still held.
+        const through = heardThrough(useAtcRadio.getState().input);
+        input.release();
+        resolve({
+          text: typed(),
+          error,
+          ...(interrupted && !error ? { notice: "Stopped for the microphone; tap to listen again." } : {}),
+          ...(through ? { through } : {}),
+        });
+      },
+      input.track,
+    ).then(({ stop: s, renew }) => {
       input.follow(renew);
       stopper = s;
       if (stopped) s();

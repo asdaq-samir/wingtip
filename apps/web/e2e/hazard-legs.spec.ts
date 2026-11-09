@@ -11,19 +11,41 @@ import { drawn, grabberTo, openMapSettings, openSection, openTab, settle, sideDr
 test("a SIGMET says its legs and times, and a tap shows the legs on the map", async ({ page }) => {
   const now = Date.now();
   const iso = (minutes: number) => new Date(now + minutes * 60_000).toISOString();
-  await page.route("**/api/planner/briefing?*", async route => {
+  await page.route("**/api/planner/briefing?*", async (route) => {
     const response = await route.fetch();
     const json = await response.json();
     // The legs' fixes given here, C81 by Madison to Duluth, not read off
     // the answer: a planner from before them gives none.
     Object.assign(json, {
-      leg_fixes: [{ lat: 42.32, lon: -88.07 }, { lat: 43.14, lon: -89.34 }, { lat: 46.84, lon: -92.19 }],
-      gairmets: [], vfr_not_recommended: [], fields_below_vfr: [],
-      hazards: [{
-        hazard: "CONVECTIVE", type: "SIGMET", altitude_low_ft: null, altitude_high_ft: 43000, raw: "CONVECTIVE SIGMET 45C",
-        on_route: { legs: [0, 1], from_nm: 20, to_nm: 60, enter: iso(20), leave: iso(45), valid_from: iso(-10), valid_to: iso(60),
-          when: "during", source: "Convective SIGMET", issued: iso(-15) },
-      }],
+      leg_fixes: [
+        { lat: 42.32, lon: -88.07 },
+        { lat: 43.14, lon: -89.34 },
+        { lat: 46.84, lon: -92.19 },
+      ],
+      gairmets: [],
+      vfr_not_recommended: [],
+      fields_below_vfr: [],
+      hazards: [
+        {
+          hazard: "CONVECTIVE",
+          type: "SIGMET",
+          altitude_low_ft: null,
+          altitude_high_ft: 43000,
+          raw: "CONVECTIVE SIGMET 45C",
+          on_route: {
+            legs: [0, 1],
+            from_nm: 20,
+            to_nm: 60,
+            enter: iso(20),
+            leave: iso(45),
+            valid_from: iso(-10),
+            valid_to: iso(60),
+            when: "during",
+            source: "Convective SIGMET",
+            issued: iso(-15),
+          },
+        },
+      ],
     });
     await route.fulfill({ response, json });
   });
@@ -51,9 +73,10 @@ test("a SIGMET says its legs and times, and a tap shows the legs on the map", as
 
 test("the map's settings say when the METARs and TFRs were fetched", async ({ page }) => {
   // Fetched some minutes before it is asked, worked out as it is asked.
-  await page.route(url => url.pathname.endsWith("/api/planner/map/ages"), route => route.fulfill({ json: {
-    metars_at: new Date(Date.now() - 4.5 * 60_000).toISOString(), tfrs_at: null,
-  } }));
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/map/ages"),
+    (route) => route.fulfill({ json: { metars_at: new Date(Date.now() - 4.5 * 60_000).toISOString(), tfrs_at: null } }),
+  );
   await page.goto("/app/plan");
   await settle(page);
   await openMapSettings(page);

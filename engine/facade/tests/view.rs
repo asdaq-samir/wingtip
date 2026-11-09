@@ -93,10 +93,12 @@ fn points(line: &Value) -> Vec<(f64, f64)> {
 }
 
 fn signed_area(ring: &[(f64, f64)]) -> f64 {
-    (0..ring.len()).map(|k| {
-        let (a, b) = (ring[k], ring[(k + 1) % ring.len()]);
-        a.1 * b.0 - b.1 * a.0
-    }).sum()
+    (0..ring.len())
+        .map(|k| {
+            let (a, b) = (ring[k], ring[(k + 1) % ring.len()]);
+            a.1 * b.0 - b.1 * a.0
+        })
+        .sum()
 }
 
 #[test]
@@ -131,7 +133,11 @@ fn the_airspace_in_view_is_the_planners_volumes_and_lines() {
             // shapely's own point on the pack's rings (SHAPELY_LABELS).
             let label = (num(&got["label_lat"]), num(&got["label_lon"]));
             let (shells, holes): (Vec<Line>, Vec<Line>) = ours_lines.iter().map(points).partition(|l| signed_area(l) > 0.0);
-            assert!(shells.iter().any(|s| holds(s, label)) && !holes.iter().any(|h| holds(h, label)), "{tag}: {} label {label:?} outside", want["id"]);
+            assert!(
+                shells.iter().any(|s| holds(s, label)) && !holes.iter().any(|h| holds(h, label)),
+                "{tag}: {} label {label:?} outside",
+                want["id"]
+            );
             if label != (num(&want["label_lat"]), num(&want["label_lon"])) {
                 println!("{tag}: {} label {label:?} where the planner's is {} {}", want["id"], want["label_lat"], want["label_lon"]);
             }
@@ -143,9 +149,11 @@ fn the_airspace_in_view_is_the_planners_volumes_and_lines() {
             // simplifying; each running the same way round.
             for theirs in their_lines {
                 let theirs = points(theirs);
-                let nearest = ours_lines.iter().map(points).min_by(|x, y| {
-                    off_line(theirs[0], x).partial_cmp(&off_line(theirs[0], y)).unwrap()
-                }).unwrap();
+                let nearest = ours_lines
+                    .iter()
+                    .map(points)
+                    .min_by(|x, y| off_line(theirs[0], x).partial_cmp(&off_line(theirs[0], y)).unwrap())
+                    .unwrap();
                 for &p in &theirs {
                     assert!(off_line(p, &nearest) < 0.00025, "{tag}: {} point {p:?} off the pack's line", want["id"]);
                 }
@@ -153,7 +161,13 @@ fn the_airspace_in_view_is_the_planners_volumes_and_lines() {
                     assert!(off_line(p, &theirs) < 0.00025, "{tag}: {} point {p:?} off the planner's line", want["id"]);
                 }
                 assert_eq!(signed_area(&nearest) > 0.0, signed_area(&theirs) > 0.0, "{tag}: {} runs the other way", want["id"]);
-                assert!(nearest.len() <= theirs.len() + 2, "{tag}: {} has {} points to the planner's {}", want["id"], nearest.len(), theirs.len());
+                assert!(
+                    nearest.len() <= theirs.len() + 2,
+                    "{tag}: {} has {} points to the planner's {}",
+                    want["id"],
+                    nearest.len(),
+                    theirs.len()
+                );
             }
         }
     }
@@ -173,8 +187,13 @@ fn the_airports_in_view_are_the_planners_fields() {
         // NASR's fields OurAirports lists: the same fields but for the odd
         // one filed under another ident on one side.
         let common = a.intersection(&b).count();
-        println!("{tag}: {} fields, the planner {}, {common} alike; only ours {:?}, only the planner's {:?}", a.len(), b.len(),
-                 a.difference(&b).collect::<Vec<_>>(), b.difference(&a).collect::<Vec<_>>());
+        println!(
+            "{tag}: {} fields, the planner {}, {common} alike; only ours {:?}, only the planner's {:?}",
+            a.len(),
+            b.len(),
+            a.difference(&b).collect::<Vec<_>>(),
+            b.difference(&a).collect::<Vec<_>>()
+        );
         assert!(common * 10 >= b.len() * 9 && common * 10 >= a.len() * 9, "{tag}");
         for want in theirs {
             let Some(got) = ours.iter().find(|v| ident(v) == ident(want)) else { continue };
@@ -194,14 +213,19 @@ fn the_airports_in_view_are_the_planners_fields() {
                 }
             }
             assert!(got["flight_category"].is_null());
-            assert!((num(&got["lat"]) - num(&want["lat"])).abs() < 0.01 && (num(&got["lon"]) - num(&want["lon"])).abs() < 0.01, "{tag}: {}", want["ident"]);
+            assert!(
+                (num(&got["lat"]) - num(&want["lat"])).abs() < 0.01 && (num(&got["lon"]) - num(&want["lon"])).abs() < 0.01,
+                "{tag}: {}",
+                want["ident"]
+            );
             assert!(!got["name"].as_str().unwrap().is_empty());
         }
         // The biggest first and then by ident, as the planner orders them
         // with no field reporting.
-        let order: Vec<(usize, String)> = ours.iter().map(|v| {
-            (["large", "medium", "small"].iter().position(|k| *k == v["kind"].as_str().unwrap()).unwrap_or(3), ident(v))
-        }).collect();
+        let order: Vec<(usize, String)> = ours
+            .iter()
+            .map(|v| (["large", "medium", "small"].iter().position(|k| *k == v["kind"].as_str().unwrap()).unwrap_or(3), ident(v)))
+            .collect();
         let mut sorted = order.clone();
         sorted.sort();
         assert_eq!(order, sorted, "{tag}");
@@ -220,7 +244,10 @@ fn the_navaids_in_view_are_the_planners_vors() {
         assert_eq!(ours.len(), theirs.len(), "{tag}");
         for (got, want) in ours.iter().zip(theirs) {
             assert_eq!(keys(got), keys(want), "{tag}: the fields of {}", want["ident"]);
-            for field in ["ident", "name", "kind", "freq", "lat", "lon", "mag_var", "elevation_ft", "channel", "service_volume", "hours", "restricted"] {
+            for field in [
+                "ident", "name", "kind", "freq", "lat", "lon", "mag_var", "elevation_ft", "channel", "service_volume", "hours",
+                "restricted",
+            ] {
                 assert_eq!(got[field], want[field], "{tag}: {} {field}", want["ident"]);
             }
             // NAV_RMK is not in a pack.
@@ -267,8 +294,10 @@ fn a_phone_view_is_answered_quickly() {
         sizes = [airspace.len(), airports.len(), navaids.len()];
         assert!(places > 0);
     }
-    println!("least of 30: airspace {:?} ({} bytes), airports {:?} ({} bytes), navaids {:?} ({} bytes); the tables read {:?}",
-             least[0], sizes[0], least[1], sizes[1], least[2], sizes[2], least[3]);
+    println!(
+        "least of 30: airspace {:?} ({} bytes), airports {:?} ({} bytes), navaids {:?} ({} bytes); the tables read {:?}",
+        least[0], sizes[0], least[1], sizes[1], least[2], sizes[2], least[3]
+    );
     // Loose for a debug build.
     assert!(least[0] + least[1] + least[2] < std::time::Duration::from_millis(500));
 }

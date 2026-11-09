@@ -28,21 +28,21 @@ export default function BriefOverview({ onOpen }: { onOpen: (tab: PanelTab) => v
     <BriefGlance
       onOpen={onOpen}
       before={<AskSection />}
-      afterVerdict={(
+      afterVerdict={
         <>
           {/* When to go, hour by hour, under the verdict and the
               assistant's field, which stay first. */}
           <DepartureWindowStrip />
           <RiskWords open={open} />
         </>
-      )}
-      after={(
+      }
+      after={
         <>
           <NotamRankingSection />
           <WeatherWords open={open} />
           <FlightWatch />
         </>
-      )}
+      }
     />
   );
 }

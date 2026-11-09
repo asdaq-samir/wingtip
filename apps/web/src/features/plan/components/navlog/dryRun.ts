@@ -69,8 +69,14 @@ export function dryRunOf(rows: NavLogRow[], startS: number, line?: [number, numb
   const run = callEngine("dry_run", { rows, start_s: startS, line: line ?? null, missed });
   if (!run.row_t.length) return { points: [], alongNm: [], fuelGal: [], rowT: [], bends: [], landings: [] };
   return {
-    points: run.points, alongNm: run.along_nm, fuelGal: run.fuel_gal, rowT: run.row_t, bends: run.bends, missable: run.missable,
-    final: run.final ?? undefined, landings: run.landings,
+    points: run.points,
+    alongNm: run.along_nm,
+    fuelGal: run.fuel_gal,
+    rowT: run.row_t,
+    bends: run.bends,
+    missable: run.missable,
+    final: run.final ?? undefined,
+    landings: run.landings,
   };
 }
 
@@ -84,7 +90,8 @@ export function runNmAt(run: DryRun, routeNm: number): number {
   if (!bends.length) return routeNm;
   if (routeNm <= bends[0]!.route) return bends[0]!.run;
   for (let i = 1; i < bends.length; i++) {
-    const a = bends[i - 1]!, b = bends[i]!;
+    const a = bends[i - 1]!,
+      b = bends[i]!;
     if (routeNm <= b.route) return b.route > a.route ? a.run + ((b.run - a.run) * (routeNm - a.route)) / (b.route - a.route) : b.run;
   }
   return bends.at(-1)!.run;
@@ -96,7 +103,7 @@ export function runNmAt(run: DryRun, routeNm: number): number {
 export function dryRunRow(run: DryRun, t: number): number {
   const { rowT } = run;
   if (!rowT.length) return 0;
-  const next = rowT.findIndex(at => at >= t);
+  const next = rowT.findIndex((at) => at >= t);
   return next < 0 ? rowT.length - 1 : next;
 }
 
@@ -105,7 +112,8 @@ export function dryRunRow(run: DryRun, t: number): number {
 export function dryRunAt(run: DryRun, t: number): { leftNm: number; leftS: number; burntGal: number } | null {
   const { points, alongNm, fuelGal } = run;
   if (!points.length) return null;
-  const lastT = points.at(-1)!.t, total = alongNm.at(-1)!;
+  const lastT = points.at(-1)!.t,
+    total = alongNm.at(-1)!;
   if (t <= points[0]!.t) return { leftNm: total, leftS: lastT - points[0]!.t, burntGal: 0 };
   if (t >= lastT) return { leftNm: 0, leftS: 0, burntGal: fuelGal.at(-1)! };
   let i = 1;
@@ -117,14 +125,24 @@ export function dryRunAt(run: DryRun, t: number): { leftNm: number; leftS: numbe
 
 /** The distance and time still to fly to a landing, nm and min, and when
  *  the run is in there, s since 1970. */
-export interface LeftTo { nm: number; min: number; at: number }
+export interface LeftTo {
+  nm: number;
+  min: number;
+  at: number;
+}
 
 /** Where the dry run is at `t` against its landings, for the flight's own
  *  figures as it goes (FlightLine's `flown`): the hop it is on (0 the
  *  first, the route's totals' hops in turn), what is left to that hop's
  *  landing and to the last, and the fuel burnt since the hop began. Once
  *  in at a stop, the next hop's. Null with nothing flown yet. */
-export interface Flown { hop: number; now: number; next: LeftTo; last: LeftTo; burntGal: number }
+export interface Flown {
+  hop: number;
+  now: number;
+  next: LeftTo;
+  last: LeftTo;
+  burntGal: number;
+}
 
 export function dryRunFlown(run: DryRun, t: number): Flown | null {
   const { points, landings } = run;
@@ -132,11 +150,14 @@ export function dryRunFlown(run: DryRun, t: number): Flown | null {
   if (!at || !landings.length) return null;
   const now = Math.min(points.at(-1)!.t, Math.max(points[0]!.t, t));
   const along = run.alongNm.at(-1)! - at.leftNm;
-  const ahead = landings.findIndex(l => l.t > now);
+  const ahead = landings.findIndex((l) => l.t > now);
   const hop = ahead < 0 ? landings.length - 1 : ahead;
   const left = (l: (typeof landings)[number]): LeftTo => ({ nm: Math.max(0, l.nm - along), min: Math.max(0, l.t - now) / 60, at: l.t });
   return {
-    hop, now, next: left(landings[hop]!), last: left(landings.at(-1)!),
+    hop,
+    now,
+    next: left(landings[hop]!),
+    last: left(landings.at(-1)!),
     burntGal: Math.max(0, at.burntGal - (hop > 0 ? landings[hop - 1]!.fuel : 0)),
   };
 }

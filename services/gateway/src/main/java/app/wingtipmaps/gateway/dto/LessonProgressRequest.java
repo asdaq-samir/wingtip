@@ -14,14 +14,13 @@ import org.springframework.lang.Nullable;
  *  answers so far, of how many questions). What is said once stays: a
  *  lesson briefed is not unbriefed. */
 public record LessonProgressRequest(
-        boolean briefed,
-        boolean flown,
-        @Nullable @Valid Quiz quiz) {
+        boolean briefed, boolean flown, @Nullable @Valid Quiz quiz) {
 
     /** The latest attempt at the quiz, its answers in the order asked. */
     public record Quiz(
             @NotNull(message = "answers are required") @Size(max = 40, message = "at most 40 answers")
             List<@Valid @NotNull QuizAnswerDto> answers,
-            @Min(value = 1, message = "of is at least 1") @Max(value = 40, message = "of is at most 40") int of) {
-    }
+
+            @Min(value = 1, message = "of is at least 1") @Max(value = 40, message = "of is at most 40")
+            int of) {}
 }

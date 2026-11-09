@@ -43,6 +43,7 @@ public class GlobalExceptionHandler {
      *  writing a JSON body into an NDJSON stream already under way. */
     private static final DisconnectedClientHelper DISCONNECTED =
             new DisconnectedClientHelper("app.wingtipmaps.gateway.disconnected-client");
+
     private static final Logger disconnected = LoggerFactory.getLogger("app.wingtipmaps.gateway.disconnected-client");
 
     /**
@@ -192,7 +193,8 @@ public class GlobalExceptionHandler {
             log.error("Failed after the response was sent", ex);
             return null;
         }
-        if (ex instanceof org.springframework.web.ErrorResponse known && known.getStatusCode().is4xxClientError()) {
+        if (ex instanceof org.springframework.web.ErrorResponse known
+                && known.getStatusCode().is4xxClientError()) {
             String detail = known.getBody().getDetail();
             return ResponseEntity.status(known.getStatusCode())
                     .body(new ErrorResponse(detail != null ? detail : ex.getMessage()));

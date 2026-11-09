@@ -29,5 +29,4 @@ public record FlightDto(
         @Nullable String altitudes,
         /** The other picks it was planned with, as the planner's address
          *  writes them; null for none. */
-        @Nullable String picks) {
-}
+        @Nullable String picks) {}

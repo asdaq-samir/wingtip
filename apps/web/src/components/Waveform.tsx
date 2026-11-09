@@ -30,14 +30,15 @@ export default function Waveform({ live = false, className }: { live?: boolean; 
   useEffect(() => {
     if (!live) return;
     const els = bars.current;
-    const rest = () => els.forEach(el => {
-      if (!el) return;
-      el.style.animation = "";
-      el.style.transform = REST;
-      el.style.opacity = "";
-    });
+    const rest = () =>
+      els.forEach((el) => {
+        if (!el) return;
+        el.style.animation = "";
+        el.style.transform = REST;
+        el.style.opacity = "";
+      });
     let shown = 0;
-    const off = inputLevel.listen(level => {
+    const off = inputLevel.listen((level) => {
       if (level === null) {
         rest();
         return;
@@ -46,7 +47,7 @@ export default function Waveform({ live = false, className }: { live?: boolean; 
         const now = Date.now();
         if (now - shown < 500) return;
         shown = now;
-        els.forEach(el => {
+        els.forEach((el) => {
           if (!el) return;
           el.style.animation = "none";
           el.style.transform = REST;
@@ -70,7 +71,10 @@ export default function Waveform({ live = false, className }: { live?: boolean; 
     <span className={cn("flex h-5 items-center gap-0.5", className)} aria-hidden="true" data-testid="waveform">
       {SHAPE.map((_, i) => (
         <span
-          key={i} ref={el => { bars.current[i] = el; }}
+          key={i}
+          ref={(el) => {
+            bars.current[i] = el;
+          }}
           className="h-full w-1 origin-center rounded-full bg-tint motion-safe:animate-[wave_0.9s_ease-in-out_infinite]"
           style={{ animationDelay: `${i * 0.12}s`, transform: REST }}
         />

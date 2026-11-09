@@ -23,9 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.core.net.toUri
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import androidx.core.net.toUri
 
 /**
  * A card's actions, one name and one glyph each on every card and every

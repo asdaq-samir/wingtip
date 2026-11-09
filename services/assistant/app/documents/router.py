@@ -9,6 +9,7 @@ goes back as the controller's words for the app's own clearance reader
 Nothing is saved here or anywhere on the way: the app shows each item
 with its flags for the pilot to confirm, and saves what was confirmed
 through the gateway (/api/aircraft, /api/logbook)."""
+
 from __future__ import annotations
 
 import base64
@@ -22,8 +23,17 @@ from ..gateway import gateway
 from ..generated import planner_client as planner
 from ..settings import get_settings
 from .reader import ReaderUnavailable, read
-from .schemas import (ClearancePage, DocumentRead, HandbookCheck, HandbookPage, HandbookRead, LogbookCheck, LogbookPage,
-                      LogbookPageRead, ReadAsk)
+from .schemas import (
+    ClearancePage,
+    DocumentRead,
+    HandbookCheck,
+    HandbookPage,
+    HandbookRead,
+    LogbookCheck,
+    LogbookPage,
+    LogbookPageRead,
+    ReadAsk,
+)
 
 log = logging.getLogger(__name__)
 router = APIRouter()

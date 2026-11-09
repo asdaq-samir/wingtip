@@ -6,9 +6,11 @@ import pytest
 
 from wingtip import filed_routes
 
-NS = ('xmlns:ds="urn:us:gov:dot:faa:atm:tfm:tfmdataservice" xmlns:fdm="urn:us:gov:dot:faa:atm:tfm:flightdata" '
-      'xmlns:nxce="urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements" '
-      'xmlns:nxcm="urn:us:gov:dot:faa:atm:tfm:flightdatacommonmessages"')
+NS = (
+    'xmlns:ds="urn:us:gov:dot:faa:atm:tfm:tfmdataservice" xmlns:fdm="urn:us:gov:dot:faa:atm:tfm:flightdata" '
+    'xmlns:nxce="urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements" '
+    'xmlns:nxcm="urn:us:gov:dot:faa:atm:tfm:flightdatacommonmessages"'
+)
 
 
 def message(gufi, dep, dest, route, aircraft="C172", kind="flightPlanAmendmentInformation"):
@@ -58,21 +60,28 @@ def test_a_tfmdata_message_gives_each_flight_with_a_route():
         message("KW1", "KIAD", "KCVG", "KIAD.RNLDI4.OTTTO..COLNS.GAVNN4.KCVG/2348", "E45X"),
         # A track update carries no route: nothing.
         '<fdm:fltdMessage msgType="trackInformation"><fdm:trackInformation><nxcm:qualifiedAircraftId>'
-        '<nxce:gufi>KN2</nxce:gufi></nxcm:qualifiedAircraftId></fdm:trackInformation></fdm:fltdMessage>')
-    assert filed_routes.filings(xml) == [{"gufi": "KW1", "dep": "KIAD", "dest": "KCVG",
-                                          "route": "KIAD.RNLDI4.OTTTO..COLNS.GAVNN4.KCVG/2348", "aircraft": "E45X"}]
+        '<nxce:gufi>KN2</nxce:gufi></nxcm:qualifiedAircraftId></fdm:trackInformation></fdm:fltdMessage>',
+    )
+    assert filed_routes.filings(xml) == [
+        {"gufi": "KW1", "dep": "KIAD", "dest": "KCVG", "route": "KIAD.RNLDI4.OTTTO..COLNS.GAVNN4.KCVG/2348", "aircraft": "E45X"}
+    ]
     assert filed_routes.filings("<x>no routes here</x>") == []
     assert filed_routes.filings("routeOfFlight but not xml <") == []
 
 
 def test_the_most_filed_route_is_the_one_most_flights_last_had(store):
     now = 1_800_000_000.0
-    filed_routes.record(filed_routes.filings(service(
-        message("A", "C81", "LWD", "C81..BAE.V100.OBH..LWD"),
-        message("B", "C81", "KLWD", "C81..BAE.V100.OBH..LWD"),
-        message("C", "C81", "LWD", "C81..JVL..LWD"),
-        message("D", "C81", "LWD", "C81..JVL..LWD"),
-    )), now=now)
+    filed_routes.record(
+        filed_routes.filings(
+            service(
+                message("A", "C81", "LWD", "C81..BAE.V100.OBH..LWD"),
+                message("B", "C81", "KLWD", "C81..BAE.V100.OBH..LWD"),
+                message("C", "C81", "LWD", "C81..JVL..LWD"),
+                message("D", "C81", "LWD", "C81..JVL..LWD"),
+            )
+        ),
+        now=now,
+    )
     # D amended onto the airway: it counts once, by its last route.
     filed_routes.record(filed_routes.filings(service(message("D", "C81", "LWD", "C81..BAE.V100.OBH..LWD"))), now=now)
     assert filed_routes.most_filed("C81", "KLWD", now=now) == [{"stops": ["BAE", "V100", "OBH"], "flights": 3}]

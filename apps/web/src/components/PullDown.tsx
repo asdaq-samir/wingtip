@@ -2,7 +2,12 @@ import { Fragment, useEffect, useRef, useState, type ReactElement, type ReactNod
 import { ChevronsUpDown } from "lucide-react";
 import { cn } from "cn";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { TEXT } from "../lib/text";
 
@@ -30,7 +35,17 @@ export interface PullDownOption<V extends string> {
  * look the app's one menu look (ui/menuLook).
  */
 export default function PullDown<V extends string>({
-  label, value, options, onChange, placeholder, testId, align = "end", trigger, className, contentClassName, top,
+  label,
+  value,
+  options,
+  onChange,
+  placeholder,
+  testId,
+  align = "end",
+  trigger,
+  className,
+  contentClassName,
+  top,
 }: {
   /** What is picked, to a screen reader: "Time aloft", said with the one
    *  picked ("Time aloft: 1 h"). */
@@ -52,8 +67,8 @@ export default function PullDown<V extends string>({
   /** Before the choices, a band under it. */
   top?: ReactNode;
 }) {
-  const picked = options.find(o => o.value === value);
-  const words = picked ? picked.text ?? (typeof picked.label === "string" ? picked.label : picked.value) : placeholder ?? "";
+  const picked = options.find((o) => o.value === value);
+  const words = picked ? (picked.text ?? (typeof picked.label === "string" ? picked.label : picked.value)) : (placeholder ?? "");
   // Open only while its trigger is in sight: the sheet it is on lowered
   // to the pill under an open menu left the menu over the tab bar, its
   // first choice alone above the screen's foot (the owner's screenshot,
@@ -64,7 +79,9 @@ export default function PullDown<V extends string>({
   useEffect(() => {
     const el = button.current;
     if (!open || !el || typeof IntersectionObserver === "undefined") return;
-    const watch = new IntersectionObserver(([seen]) => { if (seen && !seen.isIntersecting) setOpen(false); });
+    const watch = new IntersectionObserver(([seen]) => {
+      if (seen && !seen.isIntersecting) setOpen(false);
+    });
     watch.observe(el);
     return () => watch.disconnect();
   }, [open]);
@@ -75,16 +92,21 @@ export default function PullDown<V extends string>({
           // Its 44-point area a pseudo-element round the words, never a
           // bigger button (index.css's rule for every control).
           <button
-            type="button" aria-label={`${label}: ${words}`} data-testid={testId}
+            type="button"
+            aria-label={`${label}: ${words}`}
+            data-testid={testId}
             className={cn(
               "relative inline-flex min-w-0 items-center gap-1 rounded-sm text-tint outline-none",
               // Eleven over and under the words' 22, 44 in all.
               "after:absolute after:-inset-x-2 after:-inset-y-[11px] after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
               "[&_svg]:shrink-0",
-              TEXT.row, className,
+              TEXT.row,
+              className,
             )}
           >
-            <span className={cn("flex min-w-0 items-center gap-1.5 truncate", !picked && "text-muted-foreground")}>{picked?.label ?? placeholder}</span>
+            <span className={cn("flex min-w-0 items-center gap-1.5 truncate", !picked && "text-muted-foreground")}>
+              {picked?.label ?? placeholder}
+            </span>
             <ChevronsUpDown className="size-4" aria-hidden="true" />
           </button>
         )}
@@ -96,10 +118,12 @@ export default function PullDown<V extends string>({
             <DropdownMenuSeparator />
           </>
         )}
-        <DropdownMenuRadioGroup value={value} onValueChange={v => onChange(v as V)} aria-label={label}>
-          {options.map(o => (
+        <DropdownMenuRadioGroup value={value} onValueChange={(v) => onChange(v as V)} aria-label={label}>
+          {options.map((o) => (
             <Fragment key={o.value}>
-              <DropdownMenuRadioItem value={o.value} data-testid={o.testId} aria-label={o.text}>{o.label}</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value={o.value} data-testid={o.testId} aria-label={o.text}>
+                {o.label}
+              </DropdownMenuRadioItem>
               {o.apart && <DropdownMenuSeparator />}
             </Fragment>
           ))}

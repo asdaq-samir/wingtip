@@ -157,7 +157,7 @@ final class MapExtrasState: NSObject {
     private var classBTask: Task<Void, Never>?
     private var plateTask: Task<Void, Never>?
 
-    nonisolated override init() { super.init() }
+    override nonisolated init() { super.init() }
 
     /// A finger held on the map asks what is there, as Maps drops a pin.
     func attach(to map: MKMapView) {

@@ -31,7 +31,9 @@ export const CARD_BODY = "pl-5";
 /** A chip of the procedures' choices (Chips): a glass capsule 32 high,
  *  its 44-point hit area a pseudo-element six round it. */
 export const CHIP = cn(
-  "relative h-8 min-w-11 justify-center rounded-full px-3 font-normal", GLASS_BUTTON, GLASS_PICKED,
+  "relative h-8 min-w-11 justify-center rounded-full px-3 font-normal",
+  GLASS_BUTTON,
+  GLASS_PICKED,
   "after:absolute after:-inset-1.5 after:content-['']",
   TEXT.detail,
 );

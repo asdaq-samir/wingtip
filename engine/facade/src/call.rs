@@ -35,7 +35,8 @@ fn strings(out: &mut String, items: &[String]) {
 
 /// A checklist's sections, `{"checklist": {"sections": [...]}}`.
 fn checklist_sections(ask: &Ask) -> Result<Vec<checklist::Section>, String> {
-    let bad = || "checklist_write: \"checklist\" is not {\"sections\": [{\"title\", \"items\": [{\"challenge\", \"response\"}]}]}".to_owned();
+    let bad =
+        || "checklist_write: \"checklist\" is not {\"sections\": [{\"title\", \"items\": [{\"challenge\", \"response\"}]}]}".to_owned();
     let sections = ask.v.get("checklist").and_then(|c| c.get("sections")).and_then(Value::as_array).ok_or_else(bad)?;
     sections
         .iter()
@@ -103,7 +104,11 @@ pub fn rule(name: &str, v: &Value) -> Result<String, String> {
                 .iter()
                 .map(|p| {
                     let flag = |k: &str| matches!(p.get(k), Some(Value::Bool(true)));
-                    Ok(strip::TankPoint { departure: flag("departure"), fuel_gal: opt_num_in(name, p, "fuel_gal")?, refuel: flag("refuel") })
+                    Ok(strip::TankPoint {
+                        departure: flag("departure"),
+                        fuel_gal: opt_num_in(name, p, "fuel_gal")?,
+                        refuel: flag("refuel"),
+                    })
                 })
                 .collect::<Result<Vec<_>, String>>()?;
             let mut out = String::from("[");
@@ -124,7 +129,12 @@ pub fn rule(name: &str, v: &Value) -> Result<String, String> {
             Ok(out)
         }
         "fuel_estimate" => {
-            let (minutes, trip, required) = strip::estimate(ask.num("distance_nm")?, ask.opt_num("cruise_tas_kt")?, ask.opt_num("fuel_burn_gph")?, ask.opt_num("taxi_fuel_gal")?);
+            let (minutes, trip, required) = strip::estimate(
+                ask.num("distance_nm")?,
+                ask.opt_num("cruise_tas_kt")?,
+                ask.opt_num("fuel_burn_gph")?,
+                ask.opt_num("taxi_fuel_gal")?,
+            );
             let mut out = String::from("{\"minutes\":");
             json::opt_number(&mut out, minutes);
             out.push_str(",\"trip_gal\":");
@@ -275,7 +285,8 @@ pub fn rule(name: &str, v: &Value) -> Result<String, String> {
                 .list("signed")?
                 .iter()
                 .map(|e| {
-                    let code = e.get("code").and_then(Value::as_str).ok_or("endorsements_in_force: an endorsement's \"code\" is missing")?;
+                    let code =
+                        e.get("code").and_then(Value::as_str).ok_or("endorsements_in_force: an endorsement's \"code\" is missing")?;
                     let voided = matches!(e.get("voided"), Some(Value::Bool(true)));
                     Ok((code.to_owned(), voided))
                 })
@@ -383,9 +394,22 @@ pub fn rule(name: &str, v: &Value) -> Result<String, String> {
         }
         "night_on_the_way" | "night_at_either_end" | "passenger_night" | "passenger_night_on_the_way" => sun_rule(&ask),
         "checkpoints_select" => checkpoints_rule(&ask),
-        "reserve_min" | "isa_temp_c" | "density_ratio" | "density_altitude_ft" | "pressure_altitude_ft" | "is_eastbound"
-        | "lowest_vfr_cruising_altitude" | "distance_nm" | "region_of" | "groundspeed_kt" => flight_rule(&ask),
-        "words_num" | "words_one" | "words_to_fixed" | "words_grouped" | "words_alt_ft" | "words_flight_level"
+        "reserve_min"
+        | "isa_temp_c"
+        | "density_ratio"
+        | "density_altitude_ft"
+        | "pressure_altitude_ft"
+        | "is_eastbound"
+        | "lowest_vfr_cruising_altitude"
+        | "distance_nm"
+        | "region_of"
+        | "groundspeed_kt" => flight_rule(&ask),
+        "words_num"
+        | "words_one"
+        | "words_to_fixed"
+        | "words_grouped"
+        | "words_alt_ft"
+        | "words_flight_level"
         | "words_ceiling_and_visibility" => words_rule(&ask),
         "altitude_limits" | "altitude_allowed" | "vfr_altitudes" | "altitude_said" => limits_rule(&ask),
         "planning_figures" => {
@@ -409,7 +433,8 @@ pub fn rule(name: &str, v: &Value) -> Result<String, String> {
                     let date = ask.str("date")?;
                     let bad = || format!("magnetic_variation: \"date\" is not YYYY-MM-DD: {date:?}");
                     let mut parts = date.splitn(3, '-').map(|p| p.parse::<i64>().map_err(|_| bad()));
-                    let (year, month, day) = (parts.next().ok_or_else(bad)??, parts.next().ok_or_else(bad)??, parts.next().ok_or_else(bad)??);
+                    let (year, month, day) =
+                        (parts.next().ok_or_else(bad)??, parts.next().ok_or_else(bad)??, parts.next().ok_or_else(bad)??);
                     if !(1..=12).contains(&month) || day < 1 || day > crate::time::days_in_month(year, month as u32) as i64 {
                         return Err(bad());
                     }
@@ -425,7 +450,8 @@ pub fn rule(name: &str, v: &Value) -> Result<String, String> {
         }
         "data_cycle" => {
             let kind = ask.str("kind")?;
-            let kind = crate::cycles::Kind::from_name(kind).ok_or_else(|| format!("data_cycle: \"kind\" is not airac, chart or dof: {kind:?}"))?;
+            let kind =
+                crate::cycles::Kind::from_name(kind).ok_or_else(|| format!("data_cycle: \"kind\" is not airac, chart or dof: {kind:?}"))?;
             let on = ask.str("on")?;
             let on = crate::cycles::day_of(on).ok_or_else(|| format!("data_cycle: \"on\" is not YYYY-MM-DD: {on:?}"))?;
             let effective = match ask.opt_str("effective")? {
@@ -781,11 +807,7 @@ fn limits_rule(ask: &Ask) -> Result<String, String> {
         // AIM 4-2-9: feet below 18,000 ft, a flight level from there up.
         "altitude_said" => {
             let ft = ask.num("ft")?;
-            let said = if limits::is_flight_level(ft) {
-                format!("FL{}", (ft / 100.0).round())
-            } else {
-                crate::figures::words::feet(ft)
-            };
+            let said = if limits::is_flight_level(ft) { format!("FL{}", (ft / 100.0).round()) } else { crate::figures::words::feet(ft) };
             json::string(&mut out, &said);
         }
         _ => return Err(format!("the engine has no rule called {:?}", ask.name)),
@@ -807,7 +829,9 @@ fn filing_rule(ask: &Ask) -> Result<String, String> {
             let words = |key: &str| -> Result<Vec<&str>, String> {
                 match ask.v.get(key) {
                     None | Some(Value::Null) => Ok(Vec::new()),
-                    Some(Value::Array(list)) => list.iter().map(|w| w.as_str().ok_or_else(|| format!("filed_route: \"{key}\" is not a list of strings"))).collect(),
+                    Some(Value::Array(list)) => {
+                        list.iter().map(|w| w.as_str().ok_or_else(|| format!("filed_route: \"{key}\" is not a list of strings"))).collect()
+                    }
                     Some(_) => Err(format!("filed_route: \"{key}\" is not a list of strings")),
                 }
             };
@@ -983,7 +1007,11 @@ fn cleared_route_rule(ask: &Ask) -> Result<String, String> {
     let planned = match ask.v.get("planned") {
         Some(p @ Value::Object(_)) => Route {
             dep: str_in(p, "dep").unwrap_or_default(),
-            stops: p.get("stops").and_then(Value::as_array).map(|s| s.iter().filter_map(|v| v.as_str().map(str::to_owned)).collect()).unwrap_or_default(),
+            stops: p
+                .get("stops")
+                .and_then(Value::as_array)
+                .map(|s| s.iter().filter_map(|v| v.as_str().map(str::to_owned)).collect())
+                .unwrap_or_default(),
             dest: str_in(p, "dest").unwrap_or_default(),
         },
         _ => return Err(format!("{name}: \"planned\" is missing or not an object")),
@@ -1066,10 +1094,9 @@ fn diversion_rule(ask: &Ask) -> Result<String, String> {
     // No wind forecast is calm, as the planner flies the leg in.
     let (wind_from_deg, wind_kt) = match ask.v.get("wind") {
         None | Some(Value::Null) => (0.0, 0.0),
-        Some(w @ Value::Object(_)) => (
-            opt_num_in("diversion", w, "wind_dir_true_deg")?.unwrap_or(0.0),
-            opt_num_in("diversion", w, "wind_speed_kt")?.unwrap_or(0.0),
-        ),
+        Some(w @ Value::Object(_)) => {
+            (opt_num_in("diversion", w, "wind_dir_true_deg")?.unwrap_or(0.0), opt_num_in("diversion", w, "wind_speed_kt")?.unwrap_or(0.0))
+        }
         Some(_) => return Err("diversion: \"wind\" is not an object".to_owned()),
     };
     let air = diversion::Air {

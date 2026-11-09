@@ -13,7 +13,15 @@ import { useLoad } from "./useLoad";
  * runway's fit is worked from; and the traffic patterns the map draws at
  * them for the runways picked.
  */
-export function useFieldPatterns({ planned, briefing, course, nav, fuelGal, pickedPatterns, pickedTakeoffs }: {
+export function useFieldPatterns({
+  planned,
+  briefing,
+  course,
+  nav,
+  fuelGal,
+  pickedPatterns,
+  pickedTakeoffs,
+}: {
   planned: PlannedRoute;
   briefing: PlanAnswer["briefing"];
   course: PlanCourse | null;
@@ -37,48 +45,64 @@ export function useFieldPatterns({ planned, briefing, course, nav, fuelGal, pick
     // landed at as its Destination, a step each in FPL's list (the audit's
     // finding: it was listed once, as "Arrive", with no departure). A stop
     // that is the departure or the destination again is listed once.
-    const fields = route.map((ident, i) => ({
-      ident, role: (i === 0 ? "Departure" : i === route.length - 1 ? "Destination" : "Stop") as ProcedureAirport["role"],
-    })).filter((f): f is { ident: string; role: ProcedureAirport["role"] } => !!f.ident && !f.ident.includes(",") && !f.ident.startsWith("@"));
-    const once = fields.filter((f, i) => fields.findIndex(g => g.ident === f.ident
-      && (g.role === f.role || g.role === "Stop" || f.role === "Stop")) === i);
+    const fields = route
+      .map((ident, i) => ({
+        ident,
+        role: (i === 0 ? "Departure" : i === route.length - 1 ? "Destination" : "Stop") as ProcedureAirport["role"],
+      }))
+      .filter(
+        (f): f is { ident: string; role: ProcedureAirport["role"] } => !!f.ident && !f.ident.includes(",") && !f.ident.startsWith("@"),
+      );
+    const once = fields.filter(
+      (f, i) => fields.findIndex((g) => g.ident === f.ident && (g.role === f.role || g.role === "Stop" || f.role === "Stop")) === i,
+    );
     const fieldsOfCourse = course ? [course.departure, ...(course.stops ?? []), course.destination] : [];
     return once.map(({ ident, role }) => ({
-      ident, role,
-      runways: briefed ? briefed[ident]?.runways ?? [] : null,
+      ident,
+      role,
+      runways: briefed ? (briefed[ident]?.runways ?? []) : null,
       patternAltitudeFt: briefed?.[ident]?.pattern?.altitude_ft ?? null,
-      elevationFt: fieldsOfCourse.find(f => sameField(f.ident, ident))?.elevation_ft ?? null,
+      elevationFt: fieldsOfCourse.find((f) => sameField(f.ident, ident))?.elevation_ft ?? null,
     }));
   }, [planned.dep, planned.dest, planned.stops, briefed, course]);
   // The airplane's figures and weights each runway's fit is worked from
   // (features/plan/components/procedures/runwayFit), the Brief's own load (useLoad).
   const fitAircraft = nav?.aircraft ?? null;
   const { result: fitLoad } = useLoad(fitAircraft, fuelGal);
-  const takeoffLb = fitLoad?.takeoff.weightLb ?? null, landingLb = fitLoad?.landing.weightLb ?? null;
-  const runwayFitInputs = useMemo<FitInputs | null>(() => (fitAircraft ? { aircraft: fitAircraft, takeoffLb, landingLb } : null),
-    [fitAircraft, takeoffLb, landingLb]);
+  const takeoffLb = fitLoad?.takeoff.weightLb ?? null,
+    landingLb = fitLoad?.landing.weightLb ?? null;
+  const runwayFitInputs = useMemo<FitInputs | null>(
+    () => (fitAircraft ? { aircraft: fitAircraft, takeoffLb, landingLb } : null),
+    [fitAircraft, takeoffLb, landingLb],
+  );
   // Their patterns as the map draws them: round the runway landed on, and
   // at the field left from, off its runway and out of the pattern toward
   // the next field (departurePattern) -- a round trip's both.
-  const nextField = course ? course.stops?.find(f => f.kind !== "fix") ?? course.destination : null;
-  const towardLat = nextField?.lat ?? null, towardLon = nextField?.lon ?? null;
+  const nextField = course ? (course.stops?.find((f) => f.kind !== "fix") ?? course.destination) : null;
+  const towardLat = nextField?.lat ?? null,
+    towardLon = nextField?.lon ?? null;
   const patterns = useMemo<TrafficPattern[]>(() => {
     const toward = towardLat != null && towardLon != null ? { lat: towardLat, lon: towardLon } : null;
     const draw = (a: ProcedureAirport, end: string | undefined, leaving: boolean) => {
-      const runway = end ? a.runways?.find(r => (r.runway_ends ?? []).some(e => runwayNumber(e.ident) === end)) : undefined;
-      const ident = runway?.runway_ends?.find(e => runwayNumber(e.ident) === end)?.ident;
-      const drawn = runway && ident
-        ? leaving ? departurePattern(a.ident, runway, ident, a.patternAltitudeFt, toward) : trafficPattern(a.ident, runway, ident, a.patternAltitudeFt)
-        : null;
+      const runway = end ? a.runways?.find((r) => (r.runway_ends ?? []).some((e) => runwayNumber(e.ident) === end)) : undefined;
+      const ident = runway?.runway_ends?.find((e) => runwayNumber(e.ident) === end)?.ident;
+      const drawn =
+        runway && ident
+          ? leaving
+            ? departurePattern(a.ident, runway, ident, a.patternAltitudeFt, toward)
+            : trafficPattern(a.ident, runway, ident, a.patternAltitudeFt)
+          : null;
       return drawn ? [drawn] : [];
     };
-    return procedureAirports.filter((a, i, all) => all.findIndex(b => b.ident === a.ident) === i).flatMap(a => {
-      if (a.role !== "Departure") return draw(a, pickedPatterns.get(a.ident), false);
-      const roundTrip = procedureAirports.some(b => b !== a && b.role === "Destination" && b.ident === a.ident);
-      return roundTrip
-        ? [...draw(a, pickedTakeoffs.get(a.ident), true), ...draw(a, pickedPatterns.get(a.ident), false)]
-        : draw(a, pickedPatterns.get(a.ident), true);
-    });
+    return procedureAirports
+      .filter((a, i, all) => all.findIndex((b) => b.ident === a.ident) === i)
+      .flatMap((a) => {
+        if (a.role !== "Departure") return draw(a, pickedPatterns.get(a.ident), false);
+        const roundTrip = procedureAirports.some((b) => b !== a && b.role === "Destination" && b.ident === a.ident);
+        return roundTrip
+          ? [...draw(a, pickedTakeoffs.get(a.ident), true), ...draw(a, pickedPatterns.get(a.ident), false)]
+          : draw(a, pickedPatterns.get(a.ident), true);
+      });
   }, [procedureAirports, pickedPatterns, pickedTakeoffs, towardLat, towardLon]);
   return { procedureAirports, fitAircraft, runwayFitInputs, patterns };
 }

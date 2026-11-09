@@ -6,6 +6,7 @@ calls. The checkpoints and the notes kept for them are the planner's
 /api/checkpoint-notes/pending) and keeps each note written here as the
 shared one (/seed). A pilot's own edit is saved at the planner too, through
 the gateway, and never comes here."""
+
 import logging
 
 import anthropic
@@ -62,9 +63,7 @@ class GenerateNotesRequest(BaseModel):
     stops: list[str] = []
 
 
-def _describe_checkpoint(
-    checkpoint: NoteToWrite, dep_ident: str, prev_name: str | None, next_name: str | None,
-) -> str:
+def _describe_checkpoint(checkpoint: NoteToWrite, dep_ident: str, prev_name: str | None, next_name: str | None) -> str:
     """One Claude call, one checkpoint. The prompt is deliberately
     told not to invent geographic specifics it cannot know: the
     checkpoint data reaching this service is a lat/lon point plus a
@@ -114,11 +113,13 @@ def _name(cp: NoteToWrite | None) -> str | None:
     return (cp.name or cp.category) if cp else None
 
 
-@router.post("/api/checkpoint-notes/generate", responses={200: {"content": {"application/x-ndjson": {}}}},
-             openapi_extra=gateway("signed-in", paid="CHECKPOINT_NOTES", pilot=True))
+@router.post(
+    "/api/checkpoint-notes/generate",
+    responses={200: {"content": {"application/x-ndjson": {}}}},
+    openapi_extra=gateway("signed-in", paid="CHECKPOINT_NOTES", pilot=True),
+)
 def describe_checkpoints(
-    request: GenerateNotesRequest,
-    x_pilot_id: str | None = Header(default=None, alias=PILOT_HEADER),
+    request: GenerateNotesRequest, x_pilot_id: str | None = Header(default=None, alias=PILOT_HEADER)
 ) -> StreamingResponse:
     """One "how to spot it" line per checkpoint, as newline-delimited
     JSON (each line one CheckpointNoteMessage), so a slow LLM call on
@@ -154,8 +155,7 @@ def describe_checkpoints(
     dep_ident = pending.departure_ident or request.departure_ident
 
     def checkpoint_line(cp: NoteToWrite, description: str | None, source: str, detail: str | None = None) -> str:
-        return _line(NoteCheckpoint(lat=cp.lat, lon=cp.lon, id=cp.id, description=description, source=source,
-                                    detail=detail))
+        return _line(NoteCheckpoint(lat=cp.lat, lon=cp.lon, id=cp.id, description=description, source=source, detail=detail))
 
     def lines():
         yield _line(NoteStart(count=len(selected)))
@@ -168,10 +168,10 @@ def describe_checkpoints(
                 yield checkpoint_line(cp, None, "error", global_error)
                 continue
             try:
-                description = _describe_checkpoint(cp, dep_ident, _name(selected[i - 1] if i > 0 else None),
-                                                   _name(selected[i + 1] if i + 1 < len(selected) else None))
-                held = planner.seed_note(body={"hop_key": cp.hop_key, "lat": cp.lat, "lon": cp.lon,
-                                               "description": description})
+                description = _describe_checkpoint(
+                    cp, dep_ident, _name(selected[i - 1] if i > 0 else None), _name(selected[i + 1] if i + 1 < len(selected) else None)
+                )
+                held = planner.seed_note(body={"hop_key": cp.hop_key, "lat": cp.lat, "lon": cp.lon, "description": description})
             except GLOBAL_ANTHROPIC_ERRORS as err:
                 global_error = str(err)
                 yield _line(NoteError(detail=global_error))
@@ -188,5 +188,4 @@ def describe_checkpoints(
             yield checkpoint_line(cp, description, "generated")
         yield _line(NoteDone())
 
-    return StreamingResponse(lines(), media_type="application/x-ndjson",
-                             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+    return StreamingResponse(lines(), media_type="application/x-ndjson", headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})

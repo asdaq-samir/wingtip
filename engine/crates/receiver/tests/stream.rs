@@ -36,15 +36,14 @@ fn stream() -> Vec<Vec<u8>> {
     let geo = [0x0B, (640u16 >> 8) as u8, 640u16 as u8, 0x00, 0x0A];
     // The specification's Traffic Report (3.5.4): N825V.
     let traffic = [
-        0x14, 0x00, 0xAB, 0x45, 0x49, 0x1F, 0xEF, 0x15, 0xA8, 0x89, 0x78, 0x0F, 0x09, 0xA9, 0x07, 0xB0, 0x01, 0x20, 0x01, 0x4E,
-        0x38, 0x32, 0x35, 0x56, 0x20, 0x20, 0x20, 0x00,
+        0x14, 0x00, 0xAB, 0x45, 0x49, 0x1F, 0xEF, 0x15, 0xA8, 0x89, 0x78, 0x0F, 0x09, 0xA9, 0x07, 0xB0, 0x01, 0x20, 0x01, 0x4E, 0x38, 0x32,
+        0x35, 0x56, 0x20, 0x20, 0x20, 0x00,
     ];
     // An uplink from a station at 41.9 N 87.9 W: O'Hare's METAR and TAF
     // (generic text, 413), a TFR's text (NOTAM, 8) and one regional
     // NEXRAD block over the field (63), levels 3 and 5 in its north row.
-    let text = dlac::encode(
-        "METAR KORD 091453Z 27012KT 10SM FEW050 08/M02 A3012\u{1e}TAF KORD 091120Z 0912/1018 27012KT P6SM SCT050\u{1e}",
-    );
+    let text =
+        dlac::encode("METAR KORD 091453Z 27012KT 10SM FEW050 08/M02 A3012\u{1e}TAF KORD 091120Z 0912/1018 27012KT P6SM SCT050\u{1e}");
     let tfr = fisb::twgo_built("KZAU", 4321, true, "TFR 6/1234 CHICAGO IL SFC-3000FT");
     let mut bins = vec![0u8; nexrad::BINS];
     bins[0..4].copy_from_slice(&[3, 3, 5, 5]);

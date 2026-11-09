@@ -26,7 +26,8 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
     void countUse(@Param("pilot") Long pilotId, @Param("month") LocalDate month, @Param("feature") String feature);
 
     /** This month's uses so far, a [feature, uses] row each. */
-    @Query(value = "SELECT feature, uses FROM paid_feature_uses WHERE pilot_id = :pilot AND month = :month",
+    @Query(
+            value = "SELECT feature, uses FROM paid_feature_uses WHERE pilot_id = :pilot AND month = :month",
             nativeQuery = true)
     List<Object[]> usesIn(@Param("pilot") Long pilotId, @Param("month") LocalDate month);
 }

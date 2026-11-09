@@ -18,7 +18,7 @@ export function planProfile(rows: NavLogRow[]): PlanProfile {
 
 /** The ceilings of the airspace the side views draw (B, C and D), ft MSL. */
 export function ceilings(airspace: { class: string; ceiling_ft?: number | null }[]): number[] {
-  return airspace.filter(a => ["B", "C", "D"].includes(a.class) && a.ceiling_ft != null).map(a => a.ceiling_ft!);
+  return airspace.filter((a) => ["B", "C", "D"].includes(a.class) && a.ceiling_ft != null).map((a) => a.ceiling_ft!);
 }
 
 /** The sectional's airspace colours: Class B solid blue, C magenta, D

@@ -38,7 +38,12 @@ fn options(case: &str) -> (Value, Value) {
 }
 
 fn names(answer: &Value, key: &str) -> Vec<String> {
-    answer[key].as_array().unwrap().iter().map(|i| answer["hazards"][i.as_u64().unwrap() as usize]["name"].as_str().unwrap().to_owned()).collect()
+    answer[key]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| answer["hazards"][i.as_u64().unwrap() as usize]["name"].as_str().unwrap().to_owned())
+        .collect()
 }
 
 fn kinds_of(answer: &Value, list: &Value) -> Vec<String> {
@@ -193,9 +198,17 @@ fn a_source_not_read_is_said() {
 fn a_long_route_is_worked_out_in_good_time() {
     let mut input = fixture()["fuelStops"]["input"].clone();
     input["dest"]["lon"] = Value::from(15.0);
-    input["tafs"] = Value::Array((0..6).map(|k| serde_json::json!({"ident": format!("S{k}"), "lat": -1.5 + k as f64 * 0.6, "lon": 7.0, "wx": ["TSRA"]})).collect());
-    input["fixes"] = Value::Array((0..10_000).map(|k| serde_json::json!({"ident": format!("FX{:03}", k % 1000), "lat": -3.0 + (k / 100) as f64 * 0.06,
-        "lon": -3.0 + (k % 100) as f64 * 0.21, "navaid": k % 50 == 0, "vfr": false, "kind": "fix"})).collect());
+    input["tafs"] = Value::Array(
+        (0..6).map(|k| serde_json::json!({"ident": format!("S{k}"), "lat": -1.5 + k as f64 * 0.6, "lon": 7.0, "wx": ["TSRA"]})).collect(),
+    );
+    input["fixes"] = Value::Array(
+        (0..10_000)
+            .map(|k| {
+                serde_json::json!({"ident": format!("FX{:03}", k % 1000), "lat": -3.0 + (k / 100) as f64 * 0.06,
+        "lon": -3.0 + (k % 100) as f64 * 0.21, "navaid": k % 50 == 0, "vfr": false, "kind": "fix"})
+            })
+            .collect(),
+    );
     let input = flat_ground(input).to_string();
     let started = Instant::now();
     let answer: Value = serde_json::from_str(&call("route_options", &input).unwrap()).unwrap();

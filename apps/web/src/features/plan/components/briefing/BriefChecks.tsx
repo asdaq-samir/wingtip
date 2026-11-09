@@ -42,7 +42,12 @@ const ELSEWHERE: Elsewhere[] = [
  * opened is a check looked at, counted over them for this flight
  * (features/plan/components/briefing/preflight's ticks: another route or time starts again).
  */
-export default function BriefChecks({ items, flight, here, onOpen }: {
+export default function BriefChecks({
+  items,
+  flight,
+  here,
+  onOpen,
+}: {
   items: VerdictItem[];
   /** The flight the looks are for: its route and time. */
   flight: string;
@@ -53,10 +58,10 @@ export default function BriefChecks({ items, flight, here, onOpen }: {
 }) {
   const go = useContext(GoToTab);
   const looked = useTicked(flight);
-  const tick = usePreflight(s => s.tick);
+  const tick = usePreflight((s) => s.tick);
   const line = verdictLine(items);
-  const keys = [...items.map(i => i.key), ...ELSEWHERE.map(e => e.key)];
-  const seen = keys.filter(key => looked[key]).length;
+  const keys = [...items.map((i) => i.key), ...ELSEWHERE.map((e) => e.key)];
+  const seen = keys.filter((key) => looked[key]).length;
   const open = (key: string, at: Where | undefined) => {
     tick(flight, key, true);
     if (!at) return;
@@ -65,15 +70,21 @@ export default function BriefChecks({ items, flight, here, onOpen }: {
   };
   // NOTAMs and ATC delays first after the airspace, where a pilot reads
   // them with it; the alternates last, after the risk.
-  const tiles: { key: string; label: string; detail: string; finding: Finding | "elsewhere"; href?: string; at?: Where; testId: string }[] = [
-    ...items.slice(0, 2).map(i => ({ ...i, at: i as Where, testId: `verdict-${i.key}` })),
-    ...ELSEWHERE.slice(0, 2).map(e => ({ ...e, finding: "elsewhere" as const, testId: `check-${e.key}` })),
-    ...items.slice(2).map(i => ({ ...i, at: i as Where, testId: `verdict-${i.key}` })),
-    ...ELSEWHERE.slice(2).map(e => ({ ...e, finding: "elsewhere" as const, testId: `check-${e.key}` })),
-  ];
+  const tiles: { key: string; label: string; detail: string; finding: Finding | "elsewhere"; href?: string; at?: Where; testId: string }[] =
+    [
+      ...items.slice(0, 2).map((i) => ({ ...i, at: i as Where, testId: `verdict-${i.key}` })),
+      ...ELSEWHERE.slice(0, 2).map((e) => ({ ...e, finding: "elsewhere" as const, testId: `check-${e.key}` })),
+      ...items.slice(2).map((i) => ({ ...i, at: i as Where, testId: `verdict-${i.key}` })),
+      ...ELSEWHERE.slice(2).map((e) => ({ ...e, finding: "elsewhere" as const, testId: `check-${e.key}` })),
+    ];
   return (
     <section aria-label="Checks" className="py-3" data-testid="verdict" data-title="Go / No-Go">
-      <p className={cn("flex items-start gap-2 font-semibold", FINDING_TONE[line.finding], TEXT.row)} data-testid="verdict-line" data-finding={line.finding} data-tip="verdict">
+      <p
+        className={cn("flex items-start gap-2 font-semibold", FINDING_TONE[line.finding], TEXT.row)}
+        data-testid="verdict-line"
+        data-finding={line.finding}
+        data-tip="verdict"
+      >
         <FindingIcon finding={line.finding} className="mt-0.5" />
         <span>{line.words}</span>
       </p>
@@ -81,16 +92,20 @@ export default function BriefChecks({ items, flight, here, onOpen }: {
         {seen === keys.length ? "All looked at" : `${seen} of ${keys.length} looked at`}
       </p>
       <ul className="grid grid-cols-2 gap-2">
-        {tiles.map(tile => {
+        {tiles.map((tile) => {
           const inner = (
             <>
               <span className={cn("flex items-start gap-1.5 pr-4 font-semibold text-foreground", TEXT.prose)}>
-                {tile.finding === "elsewhere"
-                  ? <Info className="mt-px size-5 shrink-0 text-muted-foreground" aria-hidden />
-                  : <FindingIcon finding={tile.finding} className="mt-px" />}
+                {tile.finding === "elsewhere" ? (
+                  <Info className="mt-px size-5 shrink-0 text-muted-foreground" aria-hidden />
+                ) : (
+                  <FindingIcon finding={tile.finding} className="mt-px" />
+                )}
                 <span className="min-w-0">{tile.label}</span>
               </span>
-              <span className={cn("mt-1 block line-clamp-3", TEXT.note, tile.finding === "stop" ? FINDING_TONE.stop : "text-muted-foreground")}>
+              <span
+                className={cn("mt-1 block line-clamp-3", TEXT.note, tile.finding === "stop" ? FINDING_TONE.stop : "text-muted-foreground")}
+              >
                 {tile.detail}
               </span>
               {tile.href && <ExternalLink className="absolute top-3 right-2.5 size-4 text-tint" aria-hidden />}
@@ -106,15 +121,24 @@ export default function BriefChecks({ items, flight, here, onOpen }: {
             <li key={tile.key}>
               {tile.href ? (
                 <a
-                  href={tile.href} target="_blank" rel="noreferrer" className={look} onClick={() => tick(flight, tile.key, true)}
-                  data-testid={tile.testId} data-looked={looked[tile.key] || undefined}
+                  href={tile.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={look}
+                  onClick={() => tick(flight, tile.key, true)}
+                  data-testid={tile.testId}
+                  data-looked={looked[tile.key] || undefined}
                 >
                   {inner}
                 </a>
               ) : (
                 <button
-                  type="button" className={look} onClick={() => open(tile.key, tile.at)}
-                  data-testid={tile.testId} data-finding={tile.finding === "elsewhere" ? undefined : tile.finding} data-looked={looked[tile.key] || undefined}
+                  type="button"
+                  className={look}
+                  onClick={() => open(tile.key, tile.at)}
+                  data-testid={tile.testId}
+                  data-finding={tile.finding === "elsewhere" ? undefined : tile.finding}
+                  data-looked={looked[tile.key] || undefined}
                 >
                   {inner}
                 </button>

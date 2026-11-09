@@ -42,7 +42,11 @@ fn the_fixture_pilots_plans() {
         assert_eq!(json!(sessions), want["sessions"], "{name}: sessions");
         // Every id a session cites is one the plan gives, so words citing
         // them can be checked against it.
-        let ids: Vec<String> = got["evidence"].as_array().unwrap().iter().map(|e| e["id"].as_str().unwrap().to_owned())
+        let ids: Vec<String> = got["evidence"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| e["id"].as_str().unwrap().to_owned())
             .chain(due.iter().map(|d| d["id"].as_str().unwrap().to_owned()))
             .collect();
         for s in got["sessions"].as_array().unwrap() {
@@ -81,8 +85,10 @@ fn a_session_says_wings_may_count_and_never_that_it_does() {
 
 #[test]
 fn an_instrument_pilot_lapsed_flies_the_tasks_and_past_the_grace_needs_a_check() {
-    let ask = |on: &str| json!({ "today": "2026-11-09", "ratings": ["instrument"], "entries": [
-        { "flownOn": on, "approaches": 6, "holding": true, "tracking": true }] });
+    let ask = |on: &str| {
+        json!({ "today": "2026-11-09", "ratings": ["instrument"], "entries": [
+        { "flownOn": on, "approaches": 6, "holding": true, "tracking": true }] })
+    };
     let instrument = |got: &Value| got["due"].as_array().unwrap().iter().find(|d| d["key"] == "instrument").unwrap().clone();
     // Flown in January 2026: current February to July (61.57(c)(1)), then
     // six calendar months in which the tasks alone restore it.
@@ -103,5 +109,7 @@ fn an_instrument_pilot_lapsed_flies_the_tasks_and_past_the_grace_needs_a_check()
 #[test]
 fn a_bad_day_is_refused() {
     assert!(call("proficiency_plan", r#"{"today":"2026-13-01","entries":[]}"#).is_err());
-    assert!(call("proficiency_plan", r#"{"today":"2026-11-09","entries":[],"debriefs":[{"kind":"loop","flown_on":"2026-11-01"}]}"#).is_err());
+    assert!(
+        call("proficiency_plan", r#"{"today":"2026-11-09","entries":[],"debriefs":[{"kind":"loop","flown_on":"2026-11-01"}]}"#).is_err()
+    );
 }

@@ -59,7 +59,7 @@ struct TrafficFindView: View {
                                 Text(record.nNumber).font(.headline)
                                 Text([[record.manufacturer, record.model].compactMap { $0 }.joined(separator: " ").nonEmpty,
                                       found?.checked == false ? "not yet known whether it is flying" : "not in the air now"]
-                                    .compactMap { $0 }.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary)
+                                        .compactMap { $0 }.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary)
                             }
                         }
                         .foregroundStyle(.primary)

@@ -27,7 +27,16 @@ interface CardTabSpec<T extends string> {
   label: ReactNode;
 }
 
-export function CardTabBar<T extends string>({ tabs, value, onPick, testIdPrefix, disabled, raise, barRef, className }: {
+export function CardTabBar<T extends string>({
+  tabs,
+  value,
+  onPick,
+  testIdPrefix,
+  disabled,
+  raise,
+  barRef,
+  className,
+}: {
   tabs: readonly CardTabSpec<T>[];
   value: T;
   /** A tab picked, by a tap or the keyboard. */
@@ -49,11 +58,25 @@ export function CardTabBar<T extends string>({ tabs, value, onPick, testIdPrefix
   const isUp = () => barRef?.current?.closest("[data-panel]")?.getAttribute("data-panel") === "full";
   return (
     <TabsList ref={barRef} className={cn(SEGMENTED, className)}>
-      {tabs.map(t => (
+      {tabs.map((t) => (
         <TabsTrigger
-          key={t.value} value={t.value} className="pointer-coarse:text-[0.9375rem]" disabled={disabled} data-testid={`${testIdPrefix}-${t.value}`}
-          onPointerDown={() => { openWhenPressed.current = value; }} onKeyDown={() => { openWhenPressed.current = value; }}
-          onPointerCancel={() => { openWhenPressed.current = null; }} onBlur={() => { openWhenPressed.current = null; }}
+          key={t.value}
+          value={t.value}
+          className="pointer-coarse:text-[0.9375rem]"
+          disabled={disabled}
+          data-testid={`${testIdPrefix}-${t.value}`}
+          onPointerDown={() => {
+            openWhenPressed.current = value;
+          }}
+          onKeyDown={() => {
+            openWhenPressed.current = value;
+          }}
+          onPointerCancel={() => {
+            openWhenPressed.current = null;
+          }}
+          onBlur={() => {
+            openWhenPressed.current = null;
+          }}
           onClick={() => {
             // Read once and cleared: a click with no press before it
             // (VoiceOver's activate, a switch) must not find an earlier
@@ -77,5 +100,9 @@ export function CardTabBar<T extends string>({ tabs, value, onPick, testIdPrefix
 /** A tab's content in a card: the space under the bar, and between its
  *  groups, every card's. */
 export function CardTabPanel({ value, className, children }: { value: string; className?: string; children: ReactNode }) {
-  return <TabsContent value={value} className={cn("space-y-5 pt-4", className)}>{children}</TabsContent>;
+  return (
+    <TabsContent value={value} className={cn("space-y-5 pt-4", className)}>
+      {children}
+    </TabsContent>
+  );
 }

@@ -234,7 +234,9 @@ Python wants `pip install -r requirements-dev.txt` (the app's suite) or
 
 A pre-push hook runs the quick ones for what a push changes against
 origin/main: `tsc` and ESLint for `apps/web/`, ruff for Python, `cargo check`
-for `engine/` (each skipped with a note where its tool is missing). Install
+for `engine/`, and `scripts/dev/format.sh --check` for each language changed
+(each skipped with a note where its tool is missing). Format with
+`scripts/dev/format.sh` (one pinned formatter a language). Install
 it once per clone with `scripts/dev/install-hooks.sh`; skip it with `git push
 --no-verify` or `SKIP_HOOKS=1`. It runs outside the lock and is no
 substitute for the table above.

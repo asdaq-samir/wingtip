@@ -25,6 +25,7 @@ name outright; a sound-alike is offered unsure, for the pilot to check
 before the route is entered: nothing heard is ever put in a route
 unconfirmed (the card's Enter Route).
 """
+
 from __future__ import annotations
 
 import re
@@ -35,9 +36,20 @@ from difflib import SequenceMatcher
 #: type is known, the clearance should contain type"), and the kind of
 #: place each one asks for.
 KIND_WORDS = {
-    "airport": "airport", "field": "airport", "international": "airport", "regional": "airport", "municipal": "airport",
-    "vor": "navaid", "vortac": "navaid", "tacan": "navaid", "dme": "navaid", "ndb": "navaid", "beacon": "navaid",
-    "intersection": "fix", "waypoint": "fix", "fix": "fix",
+    "airport": "airport",
+    "field": "airport",
+    "international": "airport",
+    "regional": "airport",
+    "municipal": "airport",
+    "vor": "navaid",
+    "vortac": "navaid",
+    "tacan": "navaid",
+    "dme": "navaid",
+    "ndb": "navaid",
+    "beacon": "navaid",
+    "intersection": "fix",
+    "waypoint": "fix",
+    "fix": "fix",
 }
 
 #: Words with nothing of the place in them.
@@ -54,8 +66,20 @@ def sound(word: str) -> str:
     s = re.sub(r"[^A-Z]", "", word.upper())
     if not s:
         return ""
-    for spelled, said in (("PH", "F"), ("CK", "K"), ("GH", "G"), ("SCH", "SK"), ("TH", "T"), ("WR", "R"), ("KN", "N"),
-                          ("X", "KS"), ("Q", "K"), ("Z", "S"), ("C", "K"), ("DG", "J")):
+    for spelled, said in (
+        ("PH", "F"),
+        ("CK", "K"),
+        ("GH", "G"),
+        ("SCH", "SK"),
+        ("TH", "T"),
+        ("WR", "R"),
+        ("KN", "N"),
+        ("X", "KS"),
+        ("Q", "K"),
+        ("Z", "S"),
+        ("C", "K"),
+        ("DG", "J"),
+    ):
         s = s.replace(spelled, said)
     first = "A" if s[0] in "AEIOUY" else s[0]
     out = first
@@ -102,8 +126,13 @@ def name_words(name: str) -> str:
 
 def _row(said: str, place: dict, sure: bool) -> dict:
     return {
-        "said": said, "ident": place["ident"], "name": place.get("name"), "kind": place["what"],
-        "lat": place.get("lat"), "lon": place.get("lon"), "sure": sure,
+        "said": said,
+        "ident": place["ident"],
+        "name": place.get("name"),
+        "kind": place["what"],
+        "lat": place.get("lat"),
+        "lon": place.get("lon"),
+        "sure": sure,
     }
 
 
@@ -139,8 +168,11 @@ def point(said: str, places: list[dict], airport: dict | None = None) -> dict | 
     if len(words) != 1:
         return None
     scored = sorted(
-        ((max(_alike(joined, p["ident"]), _alike(joined, p.get("name") or "")), _closer(joined, p["ident"]), p)
-         for p in wanted if p["what"] != "airport"),
+        (
+            (max(_alike(joined, p["ident"]), _alike(joined, p.get("name") or "")), _closer(joined, p["ident"]), p)
+            for p in wanted
+            if p["what"] != "airport"
+        ),
         key=lambda hit: (-hit[0], -hit[1]),
     )
     if not scored or scored[0][0] < ALIKE:

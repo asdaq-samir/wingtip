@@ -43,7 +43,12 @@ fn check(section: &str, name: &str, input: impl Fn(&Value) -> Value, answer: &st
 
 #[test]
 fn the_airspace_over_a_point() {
-    check("airspaceColumn", "airspace_column", |c| json!({ "ground_ft": c["ground_ft"], "volumes": c["volumes"], "in_veil": c["in_veil"] }), "bands");
+    check(
+        "airspaceColumn",
+        "airspace_column",
+        |c| json!({ "ground_ft": c["ground_ft"], "volumes": c["volumes"], "in_veil": c["in_veil"] }),
+        "bands",
+    );
     check("modeCVeil", "mode_c_veil", |c| json!({ "lat": c["lat"], "lon": c["lon"], "airports": c["airports"] }), "veil");
 }
 
@@ -76,7 +81,10 @@ fn a_reports_ceiling_and_category() {
 fn a_ceiling_sent_with_no_height() {
     assert_eq!(ask("ceiling_ft", json!({ "layers": [{ "cover": "BKN", "base_ft": null }] })), Value::Null);
     // Under a measured layer, a layer with no height is above it.
-    assert_eq!(ask("ceiling_ft", json!({ "layers": [{ "cover": "BKN", "base_ft": 1200 }, { "cover": "OVC", "base_ft": null }] })), json!(1200.0));
+    assert_eq!(
+        ask("ceiling_ft", json!({ "layers": [{ "cover": "BKN", "base_ft": 1200 }, { "cover": "OVC", "base_ft": null }] })),
+        json!(1200.0)
+    );
     // A vertical visibility is the obscuration from the surface, under all.
     assert_eq!(ask("ceiling_ft", json!({ "layers": [{ "cover": "OVX", "base_ft": null }], "vert_vis_ft": 200 })), json!(200.0));
     // A missing visibility settles only a ceiling under 500 ft (AIM 7-1-7).
@@ -128,7 +136,12 @@ fn a_flights_fuel_stop_figures() {
     // and 91.151(a)(2)'s night reserve where the trip runs into the dark.
     let all = fixture();
     for c in all["worstBurnPerNm"].as_array().unwrap() {
-        let legs = c["legs"].as_array().unwrap().iter().map(|l| (l["distance_nm"].as_f64().unwrap_or(0.0), l["fuel_gal"].as_f64())).collect::<Vec<_>>();
+        let legs = c["legs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|l| (l["distance_nm"].as_f64().unwrap_or(0.0), l["fuel_gal"].as_f64()))
+            .collect::<Vec<_>>();
         let got = wingtip_engine::navlog::fuel_stop::worst_burn_per_nm(&legs, c["over_nm"].as_f64().unwrap());
         let want = c["worst"].as_f64();
         assert!(got.zip(want).map_or(got.is_none() && want.is_none(), |(g, w)| (g - w).abs() < 1e-12), "{c}: got {got:?}");

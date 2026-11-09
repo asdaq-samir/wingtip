@@ -4,18 +4,20 @@ pin its behaviour before its inner loop was vectorised: the elevation
 lookup is replaced with flat ground, and the obstacles are a real DOF
 file of a few lines. Every point is over a town unless a test says
 otherwise (`towns`), as where the towns cannot be read."""
+
 import numpy as np
 import pytest
 
 from wingtip import congested, elevation, faa_data, geo, ground_grid, terrain
 
-START, END = (45.0, -90.0), (45.0, -89.0)   # due east, about 42.4 nm
-GROUND_M = 300.0                             # 984.25 ft: terrain floor 2,000 ft
+START, END = (45.0, -90.0), (45.0, -89.0)  # due east, about 42.4 nm
+GROUND_M = 300.0  # 984.25 ft: terrain floor 2,000 ft
 TOTAL_NM = geo.distance_nm(*START, *END)
 
 
 def _dof_line(lat: float, lon: float, amsl_ft: int, agl_ft: int = 400) -> str:
     """One fixed-column DOF.DAT record at (lat, lon)."""
+
     def dms(value: float) -> tuple[str, str, str]:
         value = abs(value)
         deg, rem = int(value), (abs(value) - int(value)) * 60
@@ -26,9 +28,18 @@ def _dof_line(lat: float, lon: float, amsl_ft: int, agl_ft: int = 400) -> str:
     line = [" "] * 130
     fields = {
         "city": "SOMEWHERE",
-        "lat_deg": lat_d.rjust(2, "0"), "lat_min": lat_m, "lat_sec": lat_s, "lat_hem": "N",
-        "lon_deg": lon_d.rjust(3, "0"), "lon_min": lon_m, "lon_sec": lon_s, "lon_hem": "W",
-        "type": "TOWER", "agl": f"{agl_ft:05d}", "amsl": f"{amsl_ft:05d}", "lt": "R",
+        "lat_deg": lat_d.rjust(2, "0"),
+        "lat_min": lat_m,
+        "lat_sec": lat_s,
+        "lat_hem": "N",
+        "lon_deg": lon_d.rjust(3, "0"),
+        "lon_min": lon_m,
+        "lon_sec": lon_s,
+        "lon_hem": "W",
+        "type": "TOWER",
+        "agl": f"{agl_ft:05d}",
+        "amsl": f"{amsl_ft:05d}",
+        "lt": "R",
     }
     for name, text in fields.items():
         start, end = faa_data._DOF_COLUMNS[name]
@@ -104,15 +115,19 @@ def test_an_obstacle_just_behind_the_start_counts_for_the_first_leg(ground, tmp_
 def towns(monkeypatch):
     """Over a town (14 CFR 91.119(b)) wherever `town(lat, lon)` says so,
     elsewhere not (91.119(c))."""
+
     def set_towns(town):
-        monkeypatch.setattr(congested, "congested", lambda lats, lons: np.array(
-            [bool(town(la, lo)) for la, lo in zip(lats, lons)], dtype=bool))
+        monkeypatch.setattr(
+            congested, "congested", lambda lats, lons: np.array([bool(town(la, lo)) for la, lo in zip(lats, lons)], dtype=bool)
+        )
+
     return set_towns
 
 
 # 14 CFR 91.119(c): "An altitude of 500 feet above the surface" away from
 # congested areas; (b): "1,000 feet above the highest obstacle within a
 # horizontal radius of 2,000 feet" over one.
+
 
 def test_flat_ground_away_from_towns_keeps_the_planners_1000_over_91_119s_500(ground, towns, tmp_path):
     ground()

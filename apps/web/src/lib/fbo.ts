@@ -35,7 +35,14 @@ export interface AircraftFilter {
 }
 
 export const NO_FILTER: AircraftFilter = {
-  place: "map", airport: "", relation: "around", nearNm: 25, kind: "any", band: "any", operator: "", emergency: false,
+  place: "map",
+  airport: "",
+  relation: "around",
+  nearNm: 25,
+  kind: "any",
+  band: "any",
+  operator: "",
+  emergency: false,
 };
 
 /** Whether anything is asked for: with nothing, there is no list, at the
@@ -78,7 +85,13 @@ interface FilterField extends LatLon {
  */
 export function relationTo(plane: TrafficAircraft, field: FilterField): { around: boolean; inbound: boolean; departing: boolean } {
   return callEngine("field_relation", {
-    plane: { lat: plane.lat, lon: plane.lon, altitude_ft: plane.altitude_ft ?? null, track_deg: plane.track_deg ?? null, vertical_fpm: plane.vertical_fpm ?? null },
+    plane: {
+      lat: plane.lat,
+      lon: plane.lon,
+      altitude_ft: plane.altitude_ft ?? null,
+      track_deg: plane.track_deg ?? null,
+      vertical_fpm: plane.vertical_fpm ?? null,
+    },
     field: { lat: field.lat, lon: field.lon, elevation_ft: field.elevationFt },
   });
 }
@@ -92,7 +105,13 @@ export { sameField } from "./procedures";
  *  pilot), what it is here. */
 export function matches(plane: TrafficAircraft, f: AircraftFilter): boolean {
   return callEngine("traffic_matches", {
-    plane: { category: plane.category ?? null, altitude_ft: plane.altitude_ft ?? null, callsign: plane.callsign ?? null, squawk: plane.squawk ?? null, emergency: plane.emergency ?? null },
+    plane: {
+      category: plane.category ?? null,
+      altitude_ft: plane.altitude_ft ?? null,
+      callsign: plane.callsign ?? null,
+      squawk: plane.squawk ?? null,
+      emergency: plane.emergency ?? null,
+    },
     filter: { kind: f.kind, band: f.band, operator: f.operator, emergency: f.emergency },
   });
 }

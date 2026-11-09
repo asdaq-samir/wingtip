@@ -3,18 +3,18 @@ package app.wingtipmaps.gateway.service;
 import app.wingtipmaps.gateway.domain.Aircraft;
 import app.wingtipmaps.gateway.domain.Flight;
 import app.wingtipmaps.gateway.domain.FlightCheckpoint;
+import app.wingtipmaps.gateway.domain.FlightTrack;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.SaveFlightCheckpointRequest;
 import app.wingtipmaps.gateway.dto.SaveFlightRequest;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import app.wingtipmaps.gateway.domain.FlightTrack;
 import app.wingtipmaps.gateway.dto.TrackDto;
 import app.wingtipmaps.gateway.dto.TrackPointDto;
 import app.wingtipmaps.gateway.repository.AircraftRepository;
 import app.wingtipmaps.gateway.repository.FlightRepository;
 import app.wingtipmaps.gateway.repository.FlightTrackRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
@@ -27,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class FlightService {
 
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final TypeReference<List<TrackPointDto>> POINTS = new TypeReference<>() { };
+    private static final TypeReference<List<TrackPointDto>> POINTS = new TypeReference<>() {};
 
     private final FlightRepository flights;
     private final AircraftRepository aircraft;
@@ -61,24 +61,43 @@ public class FlightService {
                         .orElseThrow(() -> new NoSuchAircraftException(request.aircraftId()));
 
         Flight flight = new Flight(pilot, flownIn, request.departureIdent(), request.destinationIdent())
-                .withStops(request.stops() == null ? null : request.stops().stream().map(String::toUpperCase).toList())
-                .withOwnAltitudes(request.altitudes() == null ? null : request.altitudes().toUpperCase())
+                .withStops(
+                        request.stops() == null
+                                ? null
+                                : request.stops().stream()
+                                        .map(String::toUpperCase)
+                                        .toList())
+                .withOwnAltitudes(
+                        request.altitudes() == null ? null : request.altitudes().toUpperCase())
                 .withPicks(request.picks());
         List<SaveFlightCheckpointRequest> requestedCheckpoints =
                 request.checkpoints() == null ? List.of() : request.checkpoints();
         List<FlightCheckpoint> navLog = requestedCheckpoints.stream()
-                .map(c -> new FlightCheckpoint(c.sequenceNo(), c.name(), c.category(), c.lat(), c.lon(), c.alongTrackNm())
-                        .withLeg(c.legDistanceNm(), c.trueCourseDeg(), c.magneticHeadingDeg(),
-                                c.groundspeedKt(), c.eteMin(), c.fuelGal())
+                .map(c -> new FlightCheckpoint(
+                                c.sequenceNo(), c.name(), c.category(), c.lat(), c.lon(), c.alongTrackNm())
+                        .withLeg(
+                                c.legDistanceNm(),
+                                c.trueCourseDeg(),
+                                c.magneticHeadingDeg(),
+                                c.groundspeedKt(),
+                                c.eteMin(),
+                                c.fuelGal())
                         .atAltitude(c.altitudeFt()))
                 .toList();
-        flight.fileNavLog(navLog, request.cruiseAltitudeFt(), request.totalDistanceNm(),
-                request.totalEteMin(), request.totalFuelGal());
+        flight.fileNavLog(
+                navLog,
+                request.cruiseAltitudeFt(),
+                request.totalDistanceNm(),
+                request.totalEteMin(),
+                request.totalFuelGal());
         if (request.plannedFor() != null) {
             flight.plannedFor(request.plannedFor());
         }
         if (request.risk() != null) {
-            flight.assessed(request.risk().score(), request.risk().level(), request.risk().factors());
+            flight.assessed(
+                    request.risk().score(),
+                    request.risk().level(),
+                    request.risk().factors());
         }
         return flights.save(flight);
     }
@@ -111,34 +130,48 @@ public class FlightService {
      *  false where the flight is not theirs. */
     @Transactional
     public boolean saveTrack(Pilot pilot, Long id, TrackDto track) {
-        return get(pilot, id).map(f -> {
-            String points;
-            try {
-                points = JSON.writeValueAsString(track.points());
-            } catch (JsonProcessingException e) {
-                throw new IllegalStateException("A track's points would not write as JSON", e);
-            }
-            tracks.findById(f.getId()).ifPresentOrElse(
-                    saved -> saved.replace(track.source(), points, track.points().size()),
-                    () -> tracks.save(new FlightTrack(f.getId(), track.source(), points, track.points().size())));
-            return true;
-        }).orElse(false);
+        return get(pilot, id)
+                .map(f -> {
+                    String points;
+                    try {
+                        points = JSON.writeValueAsString(track.points());
+                    } catch (JsonProcessingException e) {
+                        throw new IllegalStateException("A track's points would not write as JSON", e);
+                    }
+                    tracks.findById(f.getId())
+                            .ifPresentOrElse(
+                                    saved -> saved.replace(
+                                            track.source(),
+                                            points,
+                                            track.points().size()),
+                                    () -> tracks.save(new FlightTrack(
+                                            f.getId(),
+                                            track.source(),
+                                            points,
+                                            track.points().size())));
+                    return true;
+                })
+                .orElse(false);
     }
 
     /** Takes a flight's saved track out of the account; false where the
      *  flight is not theirs. */
     @Transactional
     public boolean deleteTrack(Pilot pilot, Long id) {
-        return get(pilot, id).map(f -> {
-            tracks.deleteById(f.getId());
-            return true;
-        }).orElse(false);
+        return get(pilot, id)
+                .map(f -> {
+                    tracks.deleteById(f.getId());
+                    return true;
+                })
+                .orElse(false);
     }
 
     public boolean delete(Pilot pilot, Long id) {
-        return get(pilot, id).map(f -> {
-            flights.delete(f);
-            return true;
-        }).orElse(false);
+        return get(pilot, id)
+                .map(f -> {
+                    flights.delete(f);
+                    return true;
+                })
+                .orElse(false);
     }
 }

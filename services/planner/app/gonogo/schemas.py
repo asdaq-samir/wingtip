@@ -3,6 +3,7 @@ asked it, what only the pilot knows -- their minimums, the loading, the
 risk assessment's ticks, their logbook's currency and their own airplane's
 records -- and the Go / No-Go the planner works out of them with its own
 plan and briefing."""
+
 from datetime import datetime
 from typing import Literal
 

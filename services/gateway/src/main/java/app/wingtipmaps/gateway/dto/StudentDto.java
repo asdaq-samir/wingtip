@@ -17,5 +17,4 @@ public record StudentDto(
         int experienceMet,
         int experienceOf,
         @Nullable LocalDate soloUntil,
-        int reviewsWaiting) {
-}
+        int reviewsWaiting) {}

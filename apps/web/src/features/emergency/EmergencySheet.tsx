@@ -20,8 +20,12 @@ export default function EmergencySheet() {
   const vm = useEmergency();
   return (
     <SheetDialog
-      open={!!vm.open} onOpenChange={open => { if (!open) vm.close(); }}
-      title={<span className="text-destructive">Emergency</span>} testId="emergency-sheet"
+      open={!!vm.open}
+      onOpenChange={(open) => {
+        if (!open) vm.close();
+      }}
+      title={<span className="text-destructive">Emergency</span>}
+      testId="emergency-sheet"
     >
       <FieldsList vm={vm} />
       <EmergencyChecklist vm={vm} />

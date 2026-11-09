@@ -3,8 +3,8 @@ import { aircraftKey, N_NUMBER, profileOfRegistered } from "./aircraftChoice";
 
 describe("an airplane picked by its N-number", () => {
   it("is told from other words by its shape (14 CFR 47.15)", () => {
-    expect(["N3429J", "N1", "N12345", "N172SP"].every(n => N_NUMBER.test(n))).toBe(true);
-    expect(["N0123", "N123456", "C172", "KDLH"].some(n => N_NUMBER.test(n))).toBe(false);
+    expect(["N3429J", "N1", "N12345", "N172SP"].every((n) => N_NUMBER.test(n))).toBe(true);
+    expect(["N0123", "N123456", "C172", "KDLH"].some((n) => N_NUMBER.test(n))).toBe(false);
   });
 
   it("flies on its type's stock profile where there is one, and none for another type", () => {
@@ -24,7 +24,15 @@ describe("an airplane picked by its N-number", () => {
     expect(profileOfRegistered({ manufacturer: "Piper", model: "PA-28R-201" })).toBe("pa28r201");
     expect(profileOfRegistered({ manufacturer: "Mooney", model: "M20J" })).toBe("m20j");
     // A model sharing the name but not the figures: none.
-    for (const [manufacturer, model] of [["Cessna", "R182"], ["Cessna", "T182T"], ["Piper", "PA-28-180"], ["Cirrus Design Corp", "SR22T"], ["Diamond Aircraft IND Inc", "DA 40"], ["Piper", "PA-28R-201T"], ["Beech", "A36"]]) {
+    for (const [manufacturer, model] of [
+      ["Cessna", "R182"],
+      ["Cessna", "T182T"],
+      ["Piper", "PA-28-180"],
+      ["Cirrus Design Corp", "SR22T"],
+      ["Diamond Aircraft IND Inc", "DA 40"],
+      ["Piper", "PA-28R-201T"],
+      ["Beech", "A36"],
+    ]) {
       expect(profileOfRegistered({ manufacturer, model })).toBeNull();
     }
   });

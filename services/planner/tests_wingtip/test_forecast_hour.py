@@ -1,4 +1,5 @@
 """Which winds-aloft forecast period a departure gets."""
+
 from wingtip.weather import forecast_hour
 
 

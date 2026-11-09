@@ -16,12 +16,8 @@ interface FlownTrack {
   line: { lat: number; lon: number; off: boolean }[];
 }
 
-export const useFlownTrack = create<{
-  track: FlownTrack | null;
-  show: (track: FlownTrack) => void;
-  hide: () => void;
-}>(set => ({
+export const useFlownTrack = create<{ track: FlownTrack | null; show: (track: FlownTrack) => void; hide: () => void }>((set) => ({
   track: null,
-  show: track => set({ track }),
+  show: (track) => set({ track }),
   hide: () => set({ track: null }),
 }));

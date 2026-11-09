@@ -26,6 +26,7 @@ time, the cruising altitudes the winds are asked at):
 A source not to be had is sent as nothing, and the engine says it was not
 checked. It only suggests: a way picked is planned as any route is.
 """
+
 from __future__ import annotations
 
 import logging
@@ -76,45 +77,77 @@ def _tafs(frame: dict) -> list[dict]:
         if not periods:
             continue
         worst = weather._worst_in_window(station["fcsts"], start, end) or {}
-        out.append({"ident": station["icaoId"], "lat": station["lat"], "lon": station["lon"],
-                    "wx": [p.get("wx") or "" for p in periods], "ceiling_ft": worst.get("ceiling_ft"),
-                    "visibility_sm": worst.get("visibility_sm"), "ceiling_unknown": bool(worst.get("ceiling_unknown"))})
+        out.append(
+            {
+                "ident": station["icaoId"],
+                "lat": station["lat"],
+                "lon": station["lon"],
+                "wx": [p.get("wx") or "" for p in periods],
+                "ceiling_ft": worst.get("ceiling_ft"),
+                "visibility_sm": worst.get("visibility_sm"),
+                "ceiling_unknown": bool(worst.get("ceiling_unknown")),
+            }
+        )
     return out
 
 
 def _metars(frame: dict) -> list[dict]:
     if not frame["metars"]:
         return []
-    return [{"ident": ident, "lat": r.get("lat"), "lon": r.get("lon"), "wx": r.get("wx") or "",
-             "ceiling_ft": r.get("ceiling_ft"), "visibility_sm": r.get("visibility_sm"),
-             "ceiling_unknown": bool(r.get("ceiling_unknown"))}
-            for ident, r in weather._dataset("metars").items() if _in(frame["bbox"], r.get("lat"), r.get("lon"))]
+    return [
+        {
+            "ident": ident,
+            "lat": r.get("lat"),
+            "lon": r.get("lon"),
+            "wx": r.get("wx") or "",
+            "ceiling_ft": r.get("ceiling_ft"),
+            "visibility_sm": r.get("visibility_sm"),
+            "ceiling_unknown": bool(r.get("ceiling_unknown")),
+        }
+        for ident, r in weather._dataset("metars").items()
+        if _in(frame["bbox"], r.get("lat"), r.get("lon"))
+    ]
 
 
 def _advisories(name: str) -> list[dict]:
-    return [{"hazard": a.get("hazard") or "", "coords": [[float(lat), float(lon)] for lat, lon in a.get("coords") or []],
-             "altitude_low_ft": a.get("altitude_low_ft"), "valid_from": a.get("valid_from"), "valid_to": a.get("valid_to"),
-             "valid": a.get("valid"), "raw": a.get("raw") or ""}
-            for a in weather._dataset(name)]
+    return [
+        {
+            "hazard": a.get("hazard") or "",
+            "coords": [[float(lat), float(lon)] for lat, lon in a.get("coords") or []],
+            "altitude_low_ft": a.get("altitude_low_ft"),
+            "valid_from": a.get("valid_from"),
+            "valid_to": a.get("valid_to"),
+            "valid": a.get("valid"),
+            "raw": a.get("raw") or "",
+        }
+        for a in weather._dataset(name)
+    ]
 
 
 def _special_use(frame: dict) -> list[dict]:
     from . import sua
+
     s, w, n, e = frame["bbox"]
-    return [{"type": area.get("type") or "", "name": str(area.get("name") or ""), "rings": _rings(geometry)}
-            for area, geometry in sua.areas_in((s, w, n, e))]
+    return [
+        {"type": area.get("type") or "", "name": str(area.get("name") or ""), "rings": _rings(geometry)}
+        for area, geometry in sua.areas_in((s, w, n, e))
+    ]
 
 
 def _tfrs(frame: dict) -> list[dict]:
     from shapely.geometry import shape
 
     from . import tfr
+
     # Which TFRs are in force over the flight is still the planner's
     # (tfr.in_force; the engine's gonogo_tfr_when is #482 phase 0's).
     start = datetime.fromtimestamp(frame["window"][0], timezone.utc)
     end = datetime.fromtimestamp(frame["window"][1], timezone.utc)
-    return [{"notam_id": one.get("notam_id") or "", "title": one.get("title") or "", "rings": _rings(shape(one["geometry"]))}
-            for one in tfr.all_tfrs() if tfr.in_force(one, start, end)]
+    return [
+        {"notam_id": one.get("notam_id") or "", "title": one.get("title") or "", "rings": _rings(shape(one["geometry"]))}
+        for one in tfr.all_tfrs()
+        if tfr.in_force(one, start, end)
+    ]
 
 
 def _winds(frame: dict, fcst_hr: str) -> list[dict]:
@@ -144,16 +177,37 @@ def _fields(frame: dict, table, food) -> list[dict]:
 
 def _fixes(box) -> list[dict]:
     s, w, n, e = box
-    return [{"ident": f["ident"], "lat": f["lat"], "lon": f["lon"], "navaid": bool(f.get("navaid")), "vfr": bool(f.get("vfr")),
-             "kind": f.get("kind") or "", "mag_var": f.get("mag_var")}
-            for f in fixes.within(s, w, n, e)]
+    return [
+        {
+            "ident": f["ident"],
+            "lat": f["lat"],
+            "lon": f["lon"],
+            "navaid": bool(f.get("navaid")),
+            "vfr": bool(f.get("vfr")),
+            "kind": f.get("kind") or "",
+            "mag_var": f.get("mag_var"),
+        }
+        for f in fixes.within(s, w, n, e)
+    ]
 
 
-def options(dep: dict, dest: dict, profile: dict | None, *, depart: datetime | None = None, fcst_hr: str = "06",
-            min_ceiling_ft: float | None = None, min_visibility_sm: float | None = None,
-            current: list[tuple] | None = None, current_idents: list[str] | None = None,
-            current_landed: list[bool] | None = None, fields=None,
-            filed: tuple[list[tuple], list[str]] | None = None, food=None, night: bool | None = None) -> dict:
+def options(
+    dep: dict,
+    dest: dict,
+    profile: dict | None,
+    *,
+    depart: datetime | None = None,
+    fcst_hr: str = "06",
+    min_ceiling_ft: float | None = None,
+    min_visibility_sm: float | None = None,
+    current: list[tuple] | None = None,
+    current_idents: list[str] | None = None,
+    current_landed: list[bool] | None = None,
+    fields=None,
+    filed: tuple[list[tuple], list[str]] | None = None,
+    food=None,
+    night: bool | None = None,
+) -> dict:
     """The ways to fly from `dep` to `dest` ({"ident", "lat", "lon"}) in an
     airplane of `profile` (wingtip.aircraft's; None for no airplane picked,
     the ways then with no minutes, fuel or fuel stops), the engine's route_options
@@ -172,12 +226,15 @@ def options(dep: dict, dest: dict, profile: dict | None, *, depart: datetime | N
     asked = {
         "dep": {"ident": dep.get("ident") or "", "lat": dep["lat"], "lon": dep["lon"]},
         "dest": {"ident": dest.get("ident") or "", "lat": dest["lat"], "lon": dest["lon"]},
-        "profile": profile and {k: profile.get(k) for k in ("cruise_tas_kt", "fuel_burn_gph", "usable_fuel_gal",
-                                                            "taxi_fuel_gal", "service_ceiling_ft")},
-        "depart_s": leave, "now_s": now,
-        "min_ceiling_ft": min_ceiling_ft, "min_visibility_sm": min_visibility_sm,
+        "profile": profile
+        and {k: profile.get(k) for k in ("cruise_tas_kt", "fuel_burn_gph", "usable_fuel_gal", "taxi_fuel_gal", "service_ceiling_ft")},
+        "depart_s": leave,
+        "now_s": now,
+        "min_ceiling_ft": min_ceiling_ft,
+        "min_visibility_sm": min_visibility_sm,
         "current": [[lat, lon] for lat, lon in current] if current else None,
-        "current_idents": list(current_idents or []), "current_landed": [bool(b) for b in current_landed or []],
+        "current_idents": list(current_idents or []),
+        "current_landed": [bool(b) for b in current_landed or []],
         "filed": {"points": [[lat, lon] for lat, lon in filed[0]], "idents": list(filed[1])} if filed else None,
     }
     frame = engine("route_options_frame", **asked)
@@ -189,14 +246,25 @@ def options(dep: dict, dest: dict, profile: dict | None, *, depart: datetime | N
         # the ways offered over level ground, and the pilot told.
         logger.warning("route options: terrain not read (%s)", error)
     try:
-        far = water.out_of_glide_samples(frame["lat0"], frame["lon0"], frame["rows"], frame["cols"], frame["cell_deg"],
-                                         height_ft=frame["lowest_cruise_ft"], speed_kt=max(float(frame["tas_kt"]), 1.0),
-                                         glide_ratio=((profile or {}).get("glide") or {}).get("ratio"))
+        far = water.out_of_glide_samples(
+            frame["lat0"],
+            frame["lon0"],
+            frame["rows"],
+            frame["cols"],
+            frame["cell_deg"],
+            height_ft=frame["lowest_cruise_ft"],
+            speed_kt=max(float(frame["tas_kt"]), 1.0),
+            glide_ratio=((profile or {}).get("glide") or {}).get("ratio"),
+        )
         asked["water_far"] = (np.asarray(far, dtype=np.uint8).ravel() + ord("0")).tobytes().decode()
     except (water.WaterUnavailable, OSError, ValueError) as error:
         logger.warning("route options: water not read (%s)", error)
-    for key, read in (("tafs", lambda: _tafs(frame)), ("metars", lambda: _metars(frame)),
-                      ("sigmets", lambda: _advisories("airsigmets")), ("gairmets", lambda: _advisories("gairmets"))):
+    for key, read in (
+        ("tafs", lambda: _tafs(frame)),
+        ("metars", lambda: _metars(frame)),
+        ("sigmets", lambda: _advisories("airsigmets")),
+        ("gairmets", lambda: _advisories("gairmets")),
+    ):
         try:
             asked[key] = read()
         except weather.WeatherServiceError:

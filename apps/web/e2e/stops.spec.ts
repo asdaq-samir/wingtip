@@ -1,6 +1,21 @@
 import { readFileSync } from "node:fs";
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { clearTheRoute, closeNavLog, controlsInSight, grabberTo, inSheet, navLogSheet, openNavLog, openPanel, settle, showTabs, sideDrawer, slow, waypointMarks, mapStill } from "./helpers";
+import {
+  clearTheRoute,
+  closeNavLog,
+  controlsInSight,
+  grabberTo,
+  inSheet,
+  navLogSheet,
+  openNavLog,
+  openPanel,
+  settle,
+  showTabs,
+  sideDrawer,
+  slow,
+  waypointMarks,
+  mapStill,
+} from "./helpers";
 
 /**
  * A route that lands on the way, as Maps' Add Stop: a stop added in the
@@ -26,17 +41,24 @@ test.afterEach(async ({ page }) => {
 
 async function recordedStops(page: Page) {
   const course = JSON.parse(fixture("stops-course.json"));
-  await page.route(url => url.pathname.endsWith("/course") && url.searchParams.get("stops") === "KMSN", async route => {
-    const live = new URL(route.request().url());
-    live.searchParams.delete("stops");
-    const chart = await (await route.fetch({ url: live.toString() })).json();
-    const { departure, destination, stops, distance_nm, bearing_deg, course_line } = course;
-    await route.fulfill({ json: { ...chart, departure, destination, stops, distance_nm, bearing_deg, course_line } });
-  });
-  await page.route(url => url.pathname.endsWith("/checkpoints") && url.searchParams.get("stops") === "KMSN", route =>
-    route.fulfill({ contentType: "application/json", body: fixture("stops-checkpoints.json") }));
-  await page.route(url => url.pathname.endsWith("/navlog") && url.searchParams.get("stops") === "KMSN", route =>
-    route.fulfill({ contentType: "application/x-ndjson", body: fixture("stops-navlog.ndjson") }));
+  await page.route(
+    (url) => url.pathname.endsWith("/course") && url.searchParams.get("stops") === "KMSN",
+    async (route) => {
+      const live = new URL(route.request().url());
+      live.searchParams.delete("stops");
+      const chart = await (await route.fetch({ url: live.toString() })).json();
+      const { departure, destination, stops, distance_nm, bearing_deg, course_line } = course;
+      await route.fulfill({ json: { ...chart, departure, destination, stops, distance_nm, bearing_deg, course_line } });
+    },
+  );
+  await page.route(
+    (url) => url.pathname.endsWith("/checkpoints") && url.searchParams.get("stops") === "KMSN",
+    (route) => route.fulfill({ contentType: "application/json", body: fixture("stops-checkpoints.json") }),
+  );
+  await page.route(
+    (url) => url.pathname.endsWith("/navlog") && url.searchParams.get("stops") === "KMSN",
+    (route) => route.fulfill({ contentType: "application/x-ndjson", body: fixture("stops-navlog.ndjson") }),
+  );
 }
 
 test("a stop added in the panel lands the route there: the capsule, the nav log and a fuel check for each flight", async ({ page }) => {
@@ -78,7 +100,11 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   const folded = leave.locator("[data-folded]");
   await expect(async () => {
     if (await folded.count()) await folded.click();
-    await takeoff.getByTestId("procedure-pattern").filter({ hasText: new RegExp(`^${name}$`) }).first().click({ timeout: 2000 });
+    await takeoff
+      .getByTestId("procedure-pattern")
+      .filter({ hasText: new RegExp(`^${name}$`) })
+      .first()
+      .click({ timeout: 2000 });
     await expect(page).toHaveURL(new RegExp(`[?&]takeoff=[^&]*KMSN(%3A|:)${name}(%2C|,|&|$)`), { timeout: 2000 });
   }).toPass({ timeout: slow(20000) });
   // The figures to the next landing, KMSN, its fuel the tanks' for that
@@ -102,15 +128,23 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   await expect(sideDrawer(page).getByTestId("stop")).toHaveCount(0);
 });
 
-test("the route's box reads its points with an arrow between each two, a tap on one a stop typed there, what is typed after the last the new destination with the old a stop; any point comes out from a hold, a right-click or Delete", async ({ page }) => {
-  await page.route(url => /\/(checkpoints|navlog|briefing)$/.test(url.pathname), route => route.abort());
+test("the route's box reads its points with an arrow between each two, a tap on one a stop typed there, what is typed after the last the new destination with the old a stop; any point comes out from a hold, a right-click or Delete", async ({
+  page,
+}) => {
+  await page.route(
+    (url) => /\/(checkpoints|navlog|briefing)$/.test(url.pathname),
+    (route) => route.abort(),
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KRYV,KMSN");
   await settle(page);
   await openPanel(page);
   const lines = sideDrawer(page).getByTestId("route-slide");
   // In that order, and no cross on any pill.
-  const order = await lines.evaluate(el => [...el.querySelectorAll("[role=group], [data-testid=route-type], [data-testid=route-arrow]")]
-    .map(n => n.getAttribute("data-testid") ?? ""));
+  const order = await lines.evaluate((el) =>
+    [...el.querySelectorAll("[role=group], [data-testid=route-type], [data-testid=route-arrow]")].map(
+      (n) => n.getAttribute("data-testid") ?? "",
+    ),
+  );
   expect(order).toEqual(["route-dep", "route-arrow", "stop", "route-arrow", "stop", "route-arrow", "route-dest", "route-type"]);
   expect(await lines.getByRole("button", { name: /^Remove/ }).count()).toBe(0);
 
@@ -174,12 +208,17 @@ async function touchHold(page: Page, from: Locator, to: Locator) {
     type Box = { x: number; y: number; width: number; height: number };
     let box: Box | null = null;
     let last: Box | null = null;
-    await expect.poll(async () => {
-      box = await pill.boundingBox();
-      const still = !!box && !!last && box.x === last.x && box.y === last.y && box.width === last.width;
-      last = box;
-      return still;
-    }, { intervals: [100] }).toBe(true);
+    await expect
+      .poll(
+        async () => {
+          box = await pill.boundingBox();
+          const still = !!box && !!last && box.x === last.x && box.y === last.y && box.width === last.width;
+          last = box;
+          return still;
+        },
+        { intervals: [100] },
+      )
+      .toBe(true);
     const { x, y, width, height } = box!;
     return { x: x + width / 2, y: y + height / 2 };
   };
@@ -191,7 +230,7 @@ async function touchHold(page: Page, from: Locator, to: Locator) {
   return async function moveOn() {
     // A frame apart, as a finger's moves come.
     for (let i = 1; i <= 20; i++) {
-      await touch("touchMove", { x: start.x + (end.x - start.x) * i / 20, y: start.y + (end.y - start.y) * i / 20 });
+      await touch("touchMove", { x: start.x + ((end.x - start.x) * i) / 20, y: start.y + ((end.y - start.y) * i) / 20 });
       await page.waitForTimeout(16);
     }
     await page.waitForTimeout(300);
@@ -210,8 +249,13 @@ async function touchDrag(page: Page, from: Locator, to: Locator) {
 test.describe("on a touch screen", () => {
   test.use({ hasTouch: true });
 
-  test("any point dragged anywhere, the ends too: before the departure it is the departure, after the destination the destination; held, its menu, which a move puts away for the drag", async ({ page }) => {
-    await page.route(url => /\/(checkpoints|navlog|briefing)$/.test(url.pathname), route => route.abort());
+  test("any point dragged anywhere, the ends too: before the departure it is the departure, after the destination the destination; held, its menu, which a move puts away for the drag", async ({
+    page,
+  }) => {
+    await page.route(
+      (url) => /\/(checkpoints|navlog|briefing)$/.test(url.pathname),
+      (route) => route.abort(),
+    );
     await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KRYV,KMSN");
     await settle(page);
     await openPanel(page);
@@ -231,7 +275,11 @@ test.describe("on a touch screen", () => {
     // Held past the menu's half second, then moved: the menu goes, and the
     // stop goes where it was taken.
     const menu = page.getByRole("menuitem", { name: "Remove", exact: true });
-    const moveOn = await touchHold(page, lines.getByRole("group", { name: "Stop 1 KRYV" }), lines.getByRole("group", { name: "Stop 2 KMSN" }));
+    const moveOn = await touchHold(
+      page,
+      lines.getByRole("group", { name: "Stop 1 KRYV" }),
+      lines.getByRole("group", { name: "Stop 2 KMSN" }),
+    );
     await expect(menu).toBeVisible();
     await moveOn();
     await expect(menu).toHaveCount(0);
@@ -303,7 +351,10 @@ test("a stop is left again at the time picked on its Depart step, 30 minutes aft
   await expect(leaves).toBeVisible({ timeout: slow(30_000) });
   await expect(sideDrawer(page).getByTestId("ground-menu")).toHaveCount(0);
   const at = async () => {
-    const [h, m] = (await leaves.innerText()).match(/(\d\d):(\d\d)/)!.slice(1).map(Number);
+    const [h, m] = (await leaves.innerText())
+      .match(/(\d\d):(\d\d)/)!
+      .slice(1)
+      .map(Number);
     return h! * 60 + m!;
   };
   const hhmm = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
@@ -331,7 +382,9 @@ test("a stop is left again at the time picked on its Depart step, 30 minutes aft
   await expect(page).toHaveURL(/ground=KMSN%3A0|ground=KMSN:0/);
 });
 
-test("every point's row ends in its time over its altitude and a menu: an airport's elevation until set, Direct to skipping the route before it, and Cancel giving it back", async ({ page }) => {
+test("every point's row ends in its time over its altitude and a menu: an airport's elevation until set, Direct to skipping the route before it, and Cancel giving it back", async ({
+  page,
+}) => {
   // The owner's asks (2026-10-20): "All the other fixes and stops can have
   // a direct to and altitude. Where airports default to field elevation
   // but changeable"; "direct to skips all the route before"; then row A,
@@ -410,10 +463,15 @@ test("on a phone a point's altitude is asked in the floating sheet from the bott
 
   const sheet = page.getByRole("alertdialog", { name: "Altitude at KMSN" });
   await expect(sheet).toHaveAttribute("data-slot", "sheet-content");
-  await sheet.evaluate(el => Promise.all(el.getAnimations().map(a => a.finished)));
-  const look = await sheet.evaluate(el => {
+  await sheet.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
+  const look = await sheet.evaluate((el) => {
     const box = el.getBoundingClientRect();
-    return { left: box.left, right: innerWidth - box.right, foot: innerHeight - box.bottom, radius: parseFloat(getComputedStyle(el).borderTopLeftRadius) };
+    return {
+      left: box.left,
+      right: innerWidth - box.right,
+      foot: innerHeight - box.bottom,
+      radius: parseFloat(getComputedStyle(el).borderTopLeftRadius),
+    };
   });
   expect(look.left).toBeCloseTo(8, 0);
   expect(look.right).toBeCloseTo(8, 0);
@@ -424,10 +482,14 @@ test("on a phone a point's altitude is asked in the floating sheet from the bott
   const row = sheet.locator("[data-slot=sheet-header]");
   const cancel = row.getByRole("button", { name: "Cancel", exact: true });
   const set = row.getByTestId("point-altitude-set");
-  const [c, t, s] = [(await cancel.boundingBox())!, (await row.locator("[data-slot=sheet-title]").boundingBox())!, (await set.boundingBox())!];
+  const [c, t, s] = [
+    (await cancel.boundingBox())!,
+    (await row.locator("[data-slot=sheet-title]").boundingBox())!,
+    (await set.boundingBox())!,
+  ];
   expect(c.x + c.width).toBeLessThanOrEqual(t.x + 1);
   expect(t.x + t.width).toBeLessThanOrEqual(s.x + 1);
-  for (const b of [c, s]) expect(Math.abs((b.y + b.height / 2) - (t.y + t.height / 2))).toBeLessThanOrEqual(4);
+  for (const b of [c, s]) expect(Math.abs(b.y + b.height / 2 - (t.y + t.height / 2))).toBeLessThanOrEqual(4);
   const field = sheet.getByTestId("point-altitude-input");
   expect((await field.boundingBox())!.y).toBeGreaterThan(t.y + t.height);
   await expect(field).toBeFocused();
@@ -448,14 +510,18 @@ test("on a phone a point's altitude is asked in the floating sheet from the bott
   await expect(page).toHaveURL(/[?&]altitudes=KMSN(%3A|:)2600(&|$)/);
 });
 
-test("the pilot's own point off a fix is made from a point's menu or typed as a flight plan writes it, flown over after it", async ({ page }) => {
+test("the pilot's own point off a fix is made from a point's menu or typed as a flight plan writes it, flown over after it", async ({
+  page,
+}) => {
   // The owner's asks (2026-10-20): "can a user also create their own point?
   // for example 30 miles 090 radial of vpbng", and "a fix should get its
   // own row". The routes after are the planner's to answer; this asks
   // only what goes into the address.
   await recordedStops(page);
-  await page.route(url => /\/(course|checkpoints|navlog|briefing)$/.test(url.pathname) && (url.searchParams.get("stops") ?? "").includes("/"),
-    route => route.abort());
+  await page.route(
+    (url) => /\/(course|checkpoints|navlog|briefing)$/.test(url.pathname) && (url.searchParams.get("stops") ?? "").includes("/"),
+    (route) => route.abort(),
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KMSN");
   await openPanel(page);
   const route = sideDrawer(page).getByTestId("procedures");
@@ -482,7 +548,9 @@ test("the pilot's own point off a fix is made from a point's menu or typed as a 
   await expect(page).toHaveURL(/[?&]stops=VPBNG(%2F|\/)090(%2F|\/)30(&|$)/);
 });
 
-test("a hold is set from a point's menu, course, turns, legs and how long, and is a row of its own after the point; a tap changes or removes it", async ({ page }) => {
+test("a hold is set from a point's menu, course, turns, legs and how long, and is a row of its own after the point; a tap changes or removes it", async ({
+  page,
+}) => {
   // The owner's asks (2026-10-20): "create a left/right hold", as Garmin
   // and ForeFlight do it, and "hold should get its own row". What the
   // planner makes of it (its entry, its minutes) is the planner's test's.
@@ -519,11 +587,11 @@ test("a hold is set from a point's menu, course, turns, legs and how long, and i
 test("a flight saved with a stop is filed with it and the altitude set there, and its nav log lands there", async ({ page }) => {
   await recordedStops(page);
   const filed: { stops?: string[]; altitudes?: string | null; checkpoints: { category: string; name: string }[] }[] = [];
-  await page.route("**/api/me", route => route.fulfill({
-    json: { id: 1, email: "pilot@example.com", displayName: "A Pilot", developer: false },
-  }));
-  await page.route("**/api/aircraft", route => route.fulfill({ json: [] }));
-  await page.route("**/api/flights", async route => {
+  await page.route("**/api/me", (route) =>
+    route.fulfill({ json: { id: 1, email: "pilot@example.com", displayName: "A Pilot", developer: false } }),
+  );
+  await page.route("**/api/aircraft", (route) => route.fulfill({ json: [] }));
+  await page.route("**/api/flights", async (route) => {
     if (route.request().method() !== "POST") return route.fulfill({ json: [] });
     filed.push(route.request().postDataJSON());
     return route.fulfill({ status: 201, json: { id: 1 } });
@@ -540,10 +608,12 @@ test("a flight saved with a stop is filed with it and the altitude set there, an
   expect(filed[0]!.stops).toEqual(["KMSN"]);
   // With the altitude the pilot set there, to be planned at again.
   expect(filed[0]!.altitudes).toBe("KMSN:2400");
-  expect(filed[0]!.checkpoints.filter(c => c.category === "stop").map(c => c.name)).toEqual(["KMSN"]);
+  expect(filed[0]!.checkpoints.filter((c) => c.category === "stop").map((c) => c.name)).toEqual(["KMSN"]);
 });
 
-test("the route's box is round, one line tall for a short route and the panel's width, the Nav log and Share inside it under its line, no words after its destination, a tap on its empty room the field at its end, and Enter takes the first airport offered for what is typed", async ({ page }) => {
+test("the route's box is round, one line tall for a short route and the panel's width, the Nav log and Share inside it under its line, no words after its destination, a tap on its empty room the field at its end, and Enter takes the first airport offered for what is typed", async ({
+  page,
+}) => {
   await recordedStops(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -557,12 +627,13 @@ test("the route's box is round, one line tall for a short route and the panel's 
   // itself, at the pilot's ask; the Nav log and Share in the box under
   // its line, at the row's end, as a message box has its buttons (the
   // owner, 2026-10-21).
-  const shape = await box.evaluate(el => ({ radius: parseFloat(getComputedStyle(el).borderTopLeftRadius) }));
+  const shape = await box.evaluate((el) => ({ radius: parseFloat(getComputedStyle(el).borderTopLeftRadius) }));
   expect(shape.radius).toBeGreaterThanOrEqual(20);
   const lines = (await sideDrawer(page).getByTestId("route-slide").boundingBox())!;
   expect(lines.height).toBeGreaterThanOrEqual(36);
   expect(lines.height).toBeLessThanOrEqual(48);
-  const boxAt = (await box.boundingBox())!, panelAt = (await sideDrawer(page).boundingBox())!;
+  const boxAt = (await box.boundingBox())!,
+    panelAt = (await sideDrawer(page).boundingBox())!;
   expect(panelAt.x + panelAt.width - (boxAt.x + boxAt.width)).toBeLessThanOrEqual(16);
   const procedures = (await sideDrawer(page).getByTestId("route-brief").boundingBox())!;
   const share = (await sideDrawer(page).getByTestId("share-route").boundingBox())!;
@@ -593,7 +664,7 @@ test("the route's box is round, one line tall for a short route and the panel's 
   // answer (with the waypoints) a debounce and a request later; Enter
   // before it keeps what was typed (useAirportSearch `answered`), so on a
   // slow CI stack the first row showing was not yet the one Enter takes.
-  const answer = page.waitForResponse(r => /\/airports\/search\?/i.test(r.url()) && /madison/i.test(r.url()), { timeout: slow(15000) });
+  const answer = page.waitForResponse((r) => /\/airports\/search\?/i.test(r.url()) && /madison/i.test(r.url()), { timeout: slow(15000) });
   await field.fill("madison");
   const first = page.getByTestId("route-suggestions").getByRole("option").first();
   await expect(first).toContainText("KMSN", { timeout: slow(10000) });
@@ -604,13 +675,18 @@ test("the route's box is round, one line tall for a short route and the panel's 
   await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
 });
 
-test("a town's name typed with the airports shown takes the first of them at Enter, before the planner's waypoints answer", async ({ page }) => {
+test("a town's name typed with the airports shown takes the first of them at Enter, before the planner's waypoints answer", async ({
+  page,
+}) => {
   // The planner's search held back: what is shown is the airports' copy
   // alone (lib/airportIndex). "madison" is no point's ident, so Enter
   // takes the first airport shown -- it was put in as typed, which is
   // nothing, and the box emptied (a CI run, 2026-10-10).
   await recordedStops(page);
-  await page.route(url => url.pathname.includes("/airports/search"), () => new Promise(() => undefined));
+  await page.route(
+    (url) => url.pathname.includes("/airports/search"),
+    () => new Promise(() => undefined),
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
@@ -626,7 +702,10 @@ test("a short town's name (four letters) takes the first airport shown at Enter,
   // "reno" is two to five letters and digits, which stopOf takes for an
   // ident; it is no row's ident, so Enter takes the first row all the same.
   await recordedStops(page);
-  await page.route(url => url.pathname.includes("/airports/search"), () => new Promise(() => undefined));
+  await page.route(
+    (url) => url.pathname.includes("/airports/search"),
+    () => new Promise(() => undefined),
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
@@ -644,16 +723,22 @@ test("a long route's box is one row that slides sideways to the rest, faded wher
   // The owner (2026-11-04): "FPL can be fixed as one row, in which ids can
   // slide etc. even when routes have more fixes than the space in the row".
   // Nothing past the course asked of the planner: the box is the claim.
-  await page.route(url => /\/(checkpoints|navlog|briefing)$/.test(url.pathname), route => route.abort());
+  await page.route(
+    (url) => /\/(checkpoints|navlog|briefing)$/.test(url.pathname),
+    (route) => route.abort(),
+  );
   // The most stops a route takes (MAX_STOPS): ten points.
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KRYV,KMSN,KEAU,KOSH,KCWA,KSTE,KATW,KGRB");
   await settle(page);
   await openPanel(page);
   const lines = sideDrawer(page).getByTestId("route-slide");
   await expect(lines.locator("[role=group]")).toHaveCount(10);
-  const box = await lines.evaluate(el => ({
-    clientHeight: el.clientHeight, scrollHeight: el.scrollHeight, clientWidth: el.clientWidth, scrollWidth: el.scrollWidth,
-    tops: [...new Set([...el.querySelectorAll("[role=group]")].map(g => Math.round(g.getBoundingClientRect().top)))].length,
+  const box = await lines.evaluate((el) => ({
+    clientHeight: el.clientHeight,
+    scrollHeight: el.scrollHeight,
+    clientWidth: el.clientWidth,
+    scrollWidth: el.scrollWidth,
+    tops: [...new Set([...el.querySelectorAll("[role=group]")].map((g) => Math.round(g.getBoundingClientRect().top)))].length,
     mask: getComputedStyle(el).maskImage || getComputedStyle(el).webkitMaskImage,
   }));
   // One line, its height a line's, the rest past its end.
@@ -664,15 +749,17 @@ test("a long route's box is one row that slides sideways to the rest, faded wher
   expect(box.mask).toContain("gradient");
   // Slid to its end: the destination whole in sight.
   const destination = sideDrawer(page).getByTestId("route-dest");
-  await lines.evaluate(el => el.scrollTo(el.scrollWidth, 0));
+  await lines.evaluate((el) => el.scrollTo(el.scrollWidth, 0));
   await expect(destination).toBeInViewport({ ratio: 1 });
 });
 
 test("a stop may be a VFR waypoint, offered after the airports as it is typed and flown through", async ({ page }) => {
   // Nothing of the route through it is asked of the planner past its
   // course: its two hops' chart would be read on CI's runner.
-  await page.route(url => /\/(checkpoints|navlog|briefing)$/.test(url.pathname) && url.searchParams.get("stops") === "VPBNG",
-    route => route.abort());
+  await page.route(
+    (url) => /\/(checkpoints|navlog|briefing)$/.test(url.pathname) && url.searchParams.get("stops") === "VPBNG",
+    (route) => route.abort(),
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
@@ -688,11 +775,15 @@ test("a stop may be a VFR waypoint, offered after the airports as it is typed an
   await expect(page.locator(".maplibregl-marker", { hasText: "VPBNG" }).first()).toBeVisible({ timeout: slow(15000) });
 });
 
-test("a point's menu has its altitude before Remove: an airport's pattern in feet, a waypoint's cruise as a flight level, each the pilot's to set and give back", async ({ page }) => {
+test("a point's menu has its altitude before Remove: an airport's pattern in feet, a waypoint's cruise as a flight level, each the pilot's to set and give back", async ({
+  page,
+}) => {
   // The route through the waypoint asks no more of the planner than its
   // course: its two hops' chart would be read on CI's runner.
-  await page.route(url => /\/(checkpoints|navlog|briefing)$/.test(url.pathname) && url.searchParams.get("stops") === "VPBNG",
-    route => route.abort());
+  await page.route(
+    (url) => /\/(checkpoints|navlog|briefing)$/.test(url.pathname) && url.searchParams.get("stops") === "VPBNG",
+    (route) => route.abort(),
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=VPBNG");
   await settle(page);
   await openPanel(page);
@@ -785,13 +876,16 @@ test("a VFR waypoint on the chart is a magenta triangle with its ident, and its 
   await mapStill(page);
   // A level at a time until it is drawn, from 10 as the GPS waypoints
   // are, and on the screen: further in, 4 nm off C81 is off the map.
-  const inSight = async () => (await waypointMarks(page)).filter(w => w.x > map.x + 20 && w.x < map.x + map.width - 20 && w.y > map.y + 20 && w.y < map.y + map.height - 20);
+  const inSight = async () =>
+    (await waypointMarks(page)).filter(
+      (w) => w.x > map.x + 20 && w.x < map.x + map.width - 20 && w.y > map.y + 20 && w.y < map.y + map.height - 20,
+    );
   for (let i = 0; i < 8 && !(await inSight()).length; i++) {
     await page.mouse.wheel(0, -60);
     await page.waitForTimeout(600);
   }
   // The waypoint drawn, its magenta triangle and ident (WaypointsLayer).
-  await expect.poll(async () => (await inSight()).map(w => w.ident), { timeout: slow(20000) }).toContain("VPBNG");
+  await expect.poll(async () => (await inSight()).map((w) => w.ident), { timeout: slow(20000) }).toContain("VPBNG");
   // Once the map has stopped: a tap as the zoom eases in landed where the
   // mark had been.
   let was = "";
@@ -830,7 +924,10 @@ test("a VFR waypoint on the chart is a magenta triangle with its ident, and its 
 });
 
 test("the route's airports are marked by their airspace's ring and their weather's dot", async ({ page }) => {
-  await page.route(url => /\/(checkpoints|navlog)$/.test(url.pathname), route => route.abort());
+  await page.route(
+    (url) => /\/(checkpoints|navlog)$/.test(url.pathname),
+    (route) => route.abort(),
+  );
   // Each point of the route's title led by its field's chart mark (the
   // polish pass, 2026-10-26): Duluth's Class D ring.
   const mark = () => sideDrawer(page).getByRole("group", { name: "Destination KDLH" }).locator("[data-airport-mark]");

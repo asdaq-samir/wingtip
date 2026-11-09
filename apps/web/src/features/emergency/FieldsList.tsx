@@ -22,8 +22,12 @@ type Field = NonNullable<EmergencyModel["ranked"]>["fields"][number];
  *  degrees magnetic, twelve point four nautical miles"; a true heading
  *  said so (AIM 4-2-10) where the variation is not known. */
 function wayThere(f: Field): string {
-  const heading = f.heading_mag_deg != null ? spokenHeadingMagnetic(f.heading_mag_deg)
-    : f.heading_true_deg != null ? spokenHeadingTrue(f.heading_true_deg) : null;
+  const heading =
+    f.heading_mag_deg != null
+      ? spokenHeadingMagnetic(f.heading_mag_deg)
+      : f.heading_true_deg != null
+        ? spokenHeadingTrue(f.heading_true_deg)
+        : null;
   return [heading, spokenDistance(f.distance_nm)].filter(Boolean).join(", ");
 }
 
@@ -45,30 +49,47 @@ export default function FieldsList({ vm }: { vm: EmergencyModel }) {
   if (!fix) {
     return (
       <ListGroup title="Best fields">
-        <ListRow title="Show my position" description="The fields within a glide are worked out from it" onClick={showPosition} data-testid="emergency-show-position" />
+        <ListRow
+          title="Show my position"
+          description="The fields within a glide are worked out from it"
+          onClick={showPosition}
+          data-testid="emergency-show-position"
+        />
       </ListGroup>
     );
   }
-  const title = ranked?.glide
-    ? `Best fields · glide about ${Math.round(ranked.glide.still_air_nm)} nm in still air`
-    : "Best fields";
+  const title = ranked?.glide ? `Best fields · glide about ${Math.round(ranked.glide.still_air_nm)} nm in still air` : "Best fields";
   return (
     <ListGroup title={title}>
       {ranked?.needs_airplane && (
-        <ListRow muted title="Glide needs an airplane" description="Choose one with its best-glide figures; nearest first meanwhile" data-testid="emergency-needs-airplane" />
+        <ListRow
+          muted
+          title="Glide needs an airplane"
+          description="Choose one with its best-glide figures; nearest first meanwhile"
+          data-testid="emergency-needs-airplane"
+        />
       )}
       {ranked && (
         <ListChoices value={picked?.ident ?? ""} onChange={pick} label="Field to land at">
-          {ranked.fields.map(f => {
+          {ranked.fields.map((f) => {
             const heading = f.heading_mag_deg ?? f.heading_true_deg;
             return (
               <ListRow
-                key={f.ident} radio={f.ident} data-testid="emergency-field"
-                title={<span><span className="font-semibold">{f.ident}</span> {f.name}</span>}
+                key={f.ident}
+                radio={f.ident}
+                data-testid="emergency-field"
+                title={
+                  <span>
+                    <span className="font-semibold">{f.ident}</span> {f.name}
+                  </span>
+                }
                 value={
                   <span className="flex items-center gap-1 tabular-nums">
                     <Navigation2 className="size-4 text-tint" style={{ transform: `rotate(${f.course_deg}deg)` }} aria-hidden />
-                    <span aria-hidden>{heading != null ? `${threeFigures(heading)}°${f.heading_mag_deg == null ? " T" : ""} · ` : ""}{f.distance_nm.toFixed(1)} nm</span>
+                    <span aria-hidden>
+                      {heading != null ? `${threeFigures(heading)}°${f.heading_mag_deg == null ? " T" : ""} · ` : ""}
+                      {f.distance_nm.toFixed(1)} nm
+                    </span>
                     <span className="sr-only">{wayThere(f)}</span>
                   </span>
                 }
@@ -79,7 +100,10 @@ export default function FieldsList({ vm }: { vm: EmergencyModel }) {
                     {f.reasons.map((r, i) => {
                       const lead = i === 0 && f.reach !== "unknown";
                       return (
-                        <span key={r.text} className={cn("block", (lead || r.tone !== "ok") && FINDING_TONE[r.tone], lead && "font-semibold")}>
+                        <span
+                          key={r.text}
+                          className={cn("block", (lead || r.tone !== "ok") && FINDING_TONE[r.tone], lead && "font-semibold")}
+                        >
                           {r.text}
                         </span>
                       );
@@ -91,7 +115,9 @@ export default function FieldsList({ vm }: { vm: EmergencyModel }) {
           })}
         </ListChoices>
       )}
-      {!ranked && <QueryState row query={asked} fetching="Fetching the fields round you…" failed="The fields could not be had. Try again." />}
+      {!ranked && (
+        <QueryState row query={asked} fetching="Fetching the fields round you…" failed="The fields could not be had. Try again." />
+      )}
     </ListGroup>
   );
 }

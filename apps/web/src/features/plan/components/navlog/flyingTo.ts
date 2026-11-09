@@ -51,13 +51,13 @@ export function forgetPassed(): void {
 /** The key of the row being flown to while flying mode is on (the dry
  *  run's, else own ship's), or null on the ground. */
 export function useFlyingTo(run: DryRun | null, rows: NavLogRow[]): string | null {
-  const flying = useFlying(s => s.flying);
-  const dry = usePastFlight(s => {
+  const flying = useFlying((s) => s.flying);
+  const dry = usePastFlight((s) => {
     if (!flying || !run || s.hex !== DRY_RUN || s.at === null) return null;
     const index = dryRunNext(run, rows, s.at);
     return index === null ? null : rows[index]!.key;
   });
-  const gps = useOwnShip(s => {
+  const gps = useOwnShip((s) => {
     if (!flying || run || !s.enabled || !s.fix) return null;
     const index = gpsNext(rows, s.fix);
     return index === null ? null : rows[index]!.key;

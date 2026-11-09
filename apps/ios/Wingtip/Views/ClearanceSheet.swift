@@ -114,7 +114,7 @@ struct ClearanceSheet: View {
             default:
                 let picked = item.kind == "departure" ? found?.departure : found?.arrival
                 parts.append(Text(picked.map { $0.id + ($0.transition.map { ".\($0)" } ?? "") }
-                    ?? "\((item.name ?? "").capitalized) \(item.number ?? "") \(item.kind)"))
+                        ?? "\((item.name ?? "").capitalized) \(item.number ?? "") \(item.kind)"))
             }
         }
         if clearance.asFiled { parts.append(Text("as filed")) }
@@ -206,7 +206,7 @@ struct ClearanceSheet: View {
                     Section(title: "Your Read Back") {
                         if readback.isEmpty {
                             Text(readingBack ? "Listening for your read back…"
-                                 : "Read it back to ATC with Read back again, and it is checked here line by line.")
+                                : "Read it back to ATC with Read back again, and it is checked here line by line.")
                                 .foregroundStyle(.secondary)
                         } else {
                             Text("“\(readback)”").foregroundStyle(.secondary)

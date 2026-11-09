@@ -321,8 +321,8 @@ struct FlownTrackView: View {
                 } else if loaded {
                     ContentUnavailableView("No track kept", systemImage: "point.topleft.down.to.point.bottomright.curvepath",
                                            description: Text(OwnTrail.shared.points.count > 1
-                                                             ? "Keep the path this iPhone flew, or put in a GPX file."
-                                                             : "Put in the flight's track from a GPX file."))
+                                               ? "Keep the path this iPhone flew, or put in a GPX file."
+                                               : "Put in the flight's track from a GPX file."))
                 }
                 Section {
                     // The path the phone flew (OwnTrail), kept as the flight's
@@ -482,7 +482,7 @@ enum RouteShare {
         for leg in plan.legs {
             // No heading without an airplane: the planner sends none.
             let heading = leg.magneticHeadingDeg.map { "MH \(Format.heading($0))" }
-            lines.append([("\(leg.from) → \(leg.to)"), Format.altitude(leg.altitudeFt), heading, Format.distance(leg.distanceNm),
+            lines.append(["\(leg.from) → \(leg.to)", Format.altitude(leg.altitudeFt), heading, Format.distance(leg.distanceNm),
                           leg.groundspeedKt.map { "GS \(Format.speed($0))" }, leg.eteMin.map(Format.navLogTime)].compactMap { $0 }.joined(separator: "  "))
         }
         return lines.joined(separator: "\n")

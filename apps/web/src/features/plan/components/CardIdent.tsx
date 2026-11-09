@@ -20,7 +20,19 @@ const NO_ROWS: AirportSearchRow[] = [];
  * (ProceduresRoute), there being no route box there ("I want to
  * completely get rid of the route box for in the plan").
  */
-export default function CardIdent({ value, label, onCommit, testId, bold = true, placeholder, focused = false, wide = false, onEmpty, suggest = true, fixes = false }: {
+export default function CardIdent({
+  value,
+  label,
+  onCommit,
+  testId,
+  bold = true,
+  placeholder,
+  focused = false,
+  wide = false,
+  onEmpty,
+  suggest = true,
+  fixes = false,
+}: {
   value: string;
   label: string;
   onCommit: (ident: string) => void;
@@ -45,8 +57,13 @@ export default function CardIdent({ value, label, onCommit, testId, bold = true,
 }) {
   const [draft, setDraft] = useState(value);
   const input = useRef<HTMLInputElement | null>(null);
-  const focusIn = useCallback((el: HTMLInputElement | null) => { input.current = el; el?.focus(); }, []);
-  const keep = useCallback((el: HTMLInputElement | null) => { input.current = el; }, []);
+  const focusIn = useCallback((el: HTMLInputElement | null) => {
+    input.current = el;
+    el?.focus();
+  }, []);
+  const keep = useCallback((el: HTMLInputElement | null) => {
+    input.current = el;
+  }, []);
   // The airports and waypoints that answer what is typed, under the field,
   // as the route box offers them (the owner, 2026-11-06: "route cards are
   // not showing ... airport suggestion with the search as you type"): the
@@ -94,13 +111,28 @@ export default function CardIdent({ value, label, onCommit, testId, bold = true,
   // screenshot, 2026-11-05).
   const box = (
     <input
-      value={draft} aria-label={label} data-testid={testId} placeholder={placeholder} ref={focused ? focusIn : keep}
-      autoCapitalize="characters" autoCorrect="off" autoComplete="off" spellCheck={false} enterKeyHint="done"
+      value={draft}
+      aria-label={label}
+      data-testid={testId}
+      placeholder={placeholder}
+      ref={focused ? focusIn : keep}
+      autoCapitalize="characters"
+      autoCorrect="off"
+      autoComplete="off"
+      spellCheck={false}
+      enterKeyHint="done"
       size={1}
-      onChange={e => { picked.current = false; arrowed.current = false; setDraft(e.target.value.toUpperCase()); setTyping(true); }}
-      onFocus={() => { picked.current = false; }}
+      onChange={(e) => {
+        picked.current = false;
+        arrowed.current = false;
+        setDraft(e.target.value.toUpperCase());
+        setTyping(true);
+      }}
+      onFocus={() => {
+        picked.current = false;
+      }}
       onBlur={commit}
-      onKeyDown={e => {
+      onKeyDown={(e) => {
         if (e.key === "ArrowDown" || e.key === "ArrowUp") arrowed.current = true;
         // Return takes a suggestion only once an arrow has chosen it (cmdk's
         // own Enter on the root, after this); else the typing, and cmdk is
@@ -110,17 +142,32 @@ export default function CardIdent({ value, label, onCommit, testId, bold = true,
           e.stopPropagation();
           e.currentTarget.blur();
         }
-        if (e.key === "Escape") { setDraft(value); setTyping(false); e.currentTarget.blur(); }
+        if (e.key === "Escape") {
+          setDraft(value);
+          setTyping(false);
+          e.currentTarget.blur();
+        }
       }}
       className={cn(
         "relative z-10 -my-0.5 min-w-0 rounded-md bg-foreground/8 px-1.5 py-0.5 uppercase outline-none placeholder:font-normal placeholder:normal-case placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring",
-        bold ? "font-semibold" : "font-normal", wide ? "w-full flex-1 py-1.5" : "col-start-1 row-start-1 w-full", TEXT.row,
+        bold ? "font-semibold" : "font-normal",
+        wide ? "w-full flex-1 py-1.5" : "col-start-1 row-start-1 w-full",
+        TEXT.row,
       )}
     />
   );
-  const field = wide ? box : (
+  const field = wide ? (
+    box
+  ) : (
     <span className="inline-grid min-w-0">
-      <span aria-hidden="true" className={cn("invisible col-start-1 row-start-1 -my-0.5 px-1.5 py-0.5 whitespace-pre", draft || !placeholder ? cn("uppercase", bold ? "font-semibold" : "font-normal") : "font-normal", TEXT.row)}>
+      <span
+        aria-hidden="true"
+        className={cn(
+          "invisible col-start-1 row-start-1 -my-0.5 px-1.5 py-0.5 whitespace-pre",
+          draft || !placeholder ? cn("uppercase", bold ? "font-semibold" : "font-normal") : "font-normal",
+          TEXT.row,
+        )}
+      >
         {(draft || placeholder || "WWW") + " "}
       </span>
       {box}
@@ -128,19 +175,29 @@ export default function CardIdent({ value, label, onCommit, testId, bold = true,
   );
   return (
     <CommandPrimitive shouldFilter={false} loop className={wide ? "flex min-w-0 flex-1" : "contents"}>
-      <Popover open={open} onOpenChange={next => { if (!next) setDismissed(draft); }}>
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          if (!next) setDismissed(draft);
+        }}
+      >
         <PopoverAnchor asChild>{field}</PopoverAnchor>
         <PopoverContent
-          align="start" sideOffset={6} className="w-72 max-w-[calc(100vw-16px)] gap-0 p-2"
+          align="start"
+          sideOffset={6}
+          className="w-72 max-w-[calc(100vw-16px)] gap-0 p-2"
           // The typing stays in the field: a press on a row would take the
           // focus first, and the field's blur put in the half typed.
-          onOpenAutoFocus={e => e.preventDefault()}
-          onPointerDown={e => e.preventDefault()} onMouseDown={e => e.preventDefault()}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onPointerDown={(e) => e.preventDefault()}
+          onMouseDown={(e) => e.preventDefault()}
           data-testid={`${testId}-suggestions`}
         >
           <AirportResults
-            rows={open ? rows : NO_ROWS} answered={answered}
-            onAirport={airport => pick(airport.ident, airport)} onWaypoint={ident => pick(ident)}
+            rows={open ? rows : NO_ROWS}
+            answered={answered}
+            onAirport={(airport) => pick(airport.ident, airport)}
+            onWaypoint={(ident) => pick(ident)}
           />
         </PopoverContent>
       </Popover>

@@ -7,11 +7,11 @@ import app.wingtipmaps.gateway.domain.Aircraft;
 import app.wingtipmaps.gateway.domain.Flight;
 import app.wingtipmaps.gateway.domain.FlightCheckpoint;
 import app.wingtipmaps.gateway.domain.Pilot;
+import app.wingtipmaps.gateway.dto.TrackDto;
+import app.wingtipmaps.gateway.dto.TrackPointDto;
 import app.wingtipmaps.gateway.repository.AircraftRepository;
 import app.wingtipmaps.gateway.repository.FlightRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
-import app.wingtipmaps.gateway.dto.TrackDto;
-import app.wingtipmaps.gateway.dto.TrackPointDto;
 import app.wingtipmaps.gateway.service.FlightService;
 import java.util.List;
 import java.util.UUID;
@@ -72,12 +72,13 @@ class FlightPersistenceTest {
     @Test
     void aFiledNavLogRoundTripsInOrder() {
         Pilot pilot = newPilot();
-        Flight saved = flights.save(new Flight(pilot, null, "C81", "KDLH")
-                .fileNavLog(navLog(), 2500, 323.6, 171.0, 24.2));
+        Flight saved =
+                flights.save(new Flight(pilot, null, "C81", "KDLH").fileNavLog(navLog(), 2500, 323.6, 171.0, 24.2));
 
         Flight found = flights.findById(saved.getId()).orElseThrow();
 
-        assertThat(found.getCheckpoints()).extracting(FlightCheckpoint::getName)
+        assertThat(found.getCheckpoints())
+                .extracting(FlightCheckpoint::getName)
                 .containsExactly("C81", "Long Lake", "KDLH");
         assertThat(found.getCruiseAltitudeFt()).isEqualTo(2500);
         assertThat(found.getTotalFuelGal()).isEqualTo(24.2);
@@ -88,7 +89,8 @@ class FlightPersistenceTest {
         // The longest position the planner takes: 23 characters (V17).
         Flight saved = flights.save(new Flight(newPilot(), null, "@-42.123456,-142.123456", "KDLH"));
 
-        assertThat(flights.findById(saved.getId()).orElseThrow().getDepartureIdent()).isEqualTo("@-42.123456,-142.123456");
+        assertThat(flights.findById(saved.getId()).orElseThrow().getDepartureIdent())
+                .isEqualTo("@-42.123456,-142.123456");
     }
 
     @Test
@@ -99,17 +101,22 @@ class FlightPersistenceTest {
         Flight found = flights.findById(saved.getId()).orElseThrow();
 
         assertThat(found.getStops()).containsExactly("KMSN", "KEAU");
-        assertThat(flights.save(new Flight(pilot, null, "C81", "KDLH")).getStops()).isEmpty();
+        assertThat(flights.save(new Flight(pilot, null, "C81", "KDLH")).getStops())
+                .isEmpty();
     }
 
     @Test
     void theAltitudesThePilotSetRoundTrip() {
         Pilot pilot = newPilot();
         Flight saved = flights.save(new Flight(pilot, null, "C81", "KDLH")
-                .withStops(List.of("VPBNG")).withOwnAltitudes("VPBNG:4500,KDLH:2400"));
+                .withStops(List.of("VPBNG"))
+                .withOwnAltitudes("VPBNG:4500,KDLH:2400"));
 
-        assertThat(flights.findById(saved.getId()).orElseThrow().getOwnAltitudes()).isEqualTo("VPBNG:4500,KDLH:2400");
-        assertThat(flights.save(new Flight(pilot, null, "C81", "KDLH").withOwnAltitudes("")).getOwnAltitudes()).isNull();
+        assertThat(flights.findById(saved.getId()).orElseThrow().getOwnAltitudes())
+                .isEqualTo("VPBNG:4500,KDLH:2400");
+        assertThat(flights.save(new Flight(pilot, null, "C81", "KDLH").withOwnAltitudes(""))
+                        .getOwnAltitudes())
+                .isNull();
     }
 
     @Test
@@ -120,16 +127,19 @@ class FlightPersistenceTest {
                 new TrackPointDto(1_790_000_000_000L, 42.3172, -88.0905, 912.0),
                 new TrackPointDto(1_790_000_005_000L, 42.3190, -88.0901, null));
 
-        assertThat(flightService.saveTrack(pilot, flight.getId(), new TrackDto("flight.gpx", points))).isTrue();
+        assertThat(flightService.saveTrack(pilot, flight.getId(), new TrackDto("flight.gpx", points)))
+                .isTrue();
         assertThat(flightService.track(pilot, flight.getId())).hasValueSatisfying(t -> {
             assertThat(t.source()).isEqualTo("flight.gpx");
             assertThat(t.points()).containsExactlyElementsOf(points);
         });
         flightService.saveTrack(pilot, flight.getId(), new TrackDto("again.kml", points.reversed()));
-        assertThat(flightService.track(pilot, flight.getId()).orElseThrow().source()).isEqualTo("again.kml");
+        assertThat(flightService.track(pilot, flight.getId()).orElseThrow().source())
+                .isEqualTo("again.kml");
         // Another pilot's flight is not theirs to read or write.
         assertThat(flightService.track(newPilot(), flight.getId())).isEmpty();
-        assertThat(flightService.saveTrack(newPilot(), flight.getId(), new TrackDto("x.gpx", points))).isFalse();
+        assertThat(flightService.saveTrack(newPilot(), flight.getId(), new TrackDto("x.gpx", points)))
+                .isFalse();
 
         flights.delete(flights.findById(flight.getId()).orElseThrow());
         assertThat(flightService.track(pilot, flight.getId())).isEmpty();
@@ -159,10 +169,11 @@ class FlightPersistenceTest {
     @Test
     void theDestinationKeepsNullLegNumbers() {
         Pilot pilot = newPilot();
-        Flight saved = flights.save(new Flight(pilot, null, "C81", "KDLH")
-                .fileNavLog(navLog(), 2500, 323.6, 171.0, 24.2));
+        Flight saved =
+                flights.save(new Flight(pilot, null, "C81", "KDLH").fileNavLog(navLog(), 2500, 323.6, 171.0, 24.2));
 
-        FlightCheckpoint last = flights.findById(saved.getId()).orElseThrow().getCheckpoints().get(2);
+        FlightCheckpoint last =
+                flights.findById(saved.getId()).orElseThrow().getCheckpoints().get(2);
 
         assertThat(last.getLegDistanceNm()).isNull();
         assertThat(last.getEteMin()).isNull();
@@ -172,17 +183,22 @@ class FlightPersistenceTest {
     @Test
     void refilingANavLogReplacesItRatherThanAppending() {
         Pilot pilot = newPilot();
-        Flight saved = flights.save(new Flight(pilot, null, "C81", "KDLH")
-                .fileNavLog(navLog(), 2500, 323.6, 171.0, 24.2));
+        Flight saved =
+                flights.save(new Flight(pilot, null, "C81", "KDLH").fileNavLog(navLog(), 2500, 323.6, 171.0, 24.2));
 
         Flight refiled = flights.findById(saved.getId()).orElseThrow();
-        refiled.fileNavLog(List.of(
-                new FlightCheckpoint(0, "C81", "departure", 42.3172, -88.0905, 0.0),
-                new FlightCheckpoint(1, "KDLH", "destination", 46.8421, -92.1936, 323.4)),
-                4500, 323.4, 168.0, 23.8);
+        refiled.fileNavLog(
+                List.of(
+                        new FlightCheckpoint(0, "C81", "departure", 42.3172, -88.0905, 0.0),
+                        new FlightCheckpoint(1, "KDLH", "destination", 46.8421, -92.1936, 323.4)),
+                4500,
+                323.4,
+                168.0,
+                23.8);
         flights.saveAndFlush(refiled);
 
-        assertThat(flights.findById(saved.getId()).orElseThrow().getCheckpoints()).hasSize(2);
+        assertThat(flights.findById(saved.getId()).orElseThrow().getCheckpoints())
+                .hasSize(2);
     }
 
     /** Enforced by the database, so only a real one proves it. */
@@ -191,7 +207,8 @@ class FlightPersistenceTest {
         Pilot pilot = newPilot();
         aircraft.saveAndFlush(new Aircraft(pilot, "N12345", "C172", 110.0, 8.5, null, null, null, null));
 
-        assertThatThrownBy(() -> aircraft.saveAndFlush(new Aircraft(pilot, "N12345", "C172", 110.0, 8.5, null, null, null, null)))
+        assertThatThrownBy(() -> aircraft.saveAndFlush(
+                        new Aircraft(pilot, "N12345", "C172", 110.0, 8.5, null, null, null, null)))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
@@ -200,7 +217,8 @@ class FlightPersistenceTest {
     void differentPilotsMayHoldTheSameTailNumber() {
         aircraft.saveAndFlush(new Aircraft(newPilot(), "N12345", "C172", 110.0, 8.5, null, null, null, null));
 
-        assertThat(aircraft.saveAndFlush(new Aircraft(newPilot(), "N12345", "C172", 110.0, 8.5, null, null, null, null)).getId())
+        assertThat(aircraft.saveAndFlush(new Aircraft(newPilot(), "N12345", "C172", 110.0, 8.5, null, null, null, null))
+                        .getId())
                 .isNotNull();
     }
 
@@ -211,7 +229,8 @@ class FlightPersistenceTest {
     @Test
     void deletingAnAircraftKeepsTheFlightsFlownInIt() {
         Pilot pilot = newPilot();
-        Aircraft plane = aircraft.saveAndFlush(new Aircraft(pilot, "N54321", "C172", 110.0, 8.5, null, null, null, 40.0));
+        Aircraft plane =
+                aircraft.saveAndFlush(new Aircraft(pilot, "N54321", "C172", 110.0, 8.5, null, null, null, 40.0));
         Flight saved = flights.saveAndFlush(new Flight(pilot, plane, "C81", "KDLH"));
 
         aircraft.deleteById(plane.getId());

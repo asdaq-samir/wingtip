@@ -93,9 +93,19 @@ pub fn itws(f: &Flight) -> Vec<Message> {
         .filter(|i| ours(&i.airport))
         .map(|i| {
             let alert = i.alert.to_ascii_lowercase();
-            let level = if alert.contains("microburst") || alert.contains("wind shear") || alert.contains("tornado") { Level::Warning } else { Level::Caution };
+            let level = if alert.contains("microburst") || alert.contains("wind shear") || alert.contains("tornado") {
+                Level::Warning
+            } else {
+                Level::Caution
+            };
             let place = if same_field(&i.airport, &f.dest.ident) { f.dest.said().to_owned() } else { i.airport.clone() };
-            let mut m = Message::new(format!("itws:{}:{}", i.airport, i.words), "itws", level, format!("{}: {}", i.airport, i.words), format!("{place}: {}", i.words));
+            let mut m = Message::new(
+                format!("itws:{}:{}", i.airport, i.words),
+                "itws",
+                level,
+                format!("{}: {}", i.airport, i.words),
+                format!("{place}: {}", i.words),
+            );
             m.sources.push("FAA ITWS, now (AIM 4-3-7)".to_owned());
             m
         })
@@ -110,10 +120,20 @@ pub fn fuel(f: &Flight) -> Vec<Message> {
     let a = &f.ask;
     let rule = if a.ifr { "14 CFR 91.167(a)" } else { "14 CFR 91.151(a)" };
     let title = format!("Fuel: {} left at {}, under the {} min reserve", minutes_words(left), l.at.ident, js_num(l.reserve_min));
-    let mut say = format!("Fuel. You would land at {} with {}, under the {} minute reserve.", l.at.said(), minutes_words(left), js_num(l.reserve_min));
+    let mut say = format!(
+        "Fuel. You would land at {} with {}, under the {} minute reserve.",
+        l.at.said(),
+        minutes_words(left),
+        js_num(l.reserve_min)
+    );
     let stop = fields::alternative(a, &f.fields, &f.candidates, true, &[]);
     let mut m = Message::new(format!("fuel:{}", l.at.ident), "fuel", Level::Warning, title, String::new());
-    m.detail.push(format!("At {} kt and {} gal/h, from {} gal on board", js_num(a.own.gs_kt.round()), js_num(a.burn_gph.unwrap_or(0.0)), js_num(a.fuel_gal.unwrap_or(0.0))));
+    m.detail.push(format!(
+        "At {} kt and {} gal/h, from {} gal on board",
+        js_num(a.own.gs_kt.round()),
+        js_num(a.burn_gph.unwrap_or(0.0)),
+        js_num(a.fuel_gal.unwrap_or(0.0))
+    ));
     if let Some(p) = &stop {
         say.push_str(&format!(" {} has fuel, {}.", p.field.said(), where_words(p)));
         m.detail.push(format!("Nearest fuel: {}", alternative_detail(p)));
@@ -144,7 +164,13 @@ fn weather_message(f: &Flight, field: &Field, alternate: bool) -> Option<Message
     let who = if alternate { format!("Alternate {}", field.ident) } else { field.ident.clone() };
     let mut title = format!("{who} {state} ({figures})");
     let mut say = format!("{}{} {state}.", if alternate { "Your alternate, " } else { "" }, field.said());
-    let mut m = Message::new(format!("weather:{}:{}", field.ident, category.unwrap_or("under")), "weather", Level::Caution, String::new(), String::new());
+    let mut m = Message::new(
+        format!("weather:{}:{}", field.ident, category.unwrap_or("under")),
+        "weather",
+        Level::Caution,
+        String::new(),
+        String::new(),
+    );
     m.detail.extend(why);
     if !alternate {
         if let Some(p) = fields::alternative(a, &f.fields, &f.candidates, false, &[field.ident.as_str()]) {

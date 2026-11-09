@@ -11,6 +11,7 @@ Standard library only (the Mac's python3 and CI's both run it), so the file
 is read by a small parser for its own layout: two-space indents, `key: value`,
 `key:` then a nested block or `- item` lines, full-line comments.
 """
+
 import re
 import sys
 from pathlib import Path
@@ -109,8 +110,7 @@ def block_text(data):
 
 
 def replace_block(ci_text, block):
-    pattern = re.compile(
-        rf"^{INDENT}{re.escape(BEGIN)}\n.*?^{INDENT}{re.escape(END)}\n", re.S | re.M)
+    pattern = re.compile(rf"^{INDENT}{re.escape(BEGIN)}\n.*?^{INDENT}{re.escape(END)}\n", re.S | re.M)
     if pattern.search(ci_text):
         return pattern.sub(lambda _: block, ci_text)
     # First time: the hand-written filters, from `filters: |` to the next step.

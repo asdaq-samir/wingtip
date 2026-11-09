@@ -68,12 +68,16 @@ public class MagicLinkController {
      *  caller's to set, and a link built from them sends the victim's
      *  token to whichever host the caller named. */
     private final String publicBaseUrl;
+
     private final int perAddressPerHour;
     private final int perClientPerHour;
     private final SlidingWindowLimiter recentRequests = new SlidingWindowLimiter(THROTTLE_WINDOW);
     private final SecureRandom random = new SecureRandom();
 
-    public MagicLinkController(MagicLinkRepository magicLinks, PilotService pilots, Mailer mailer,
+    public MagicLinkController(
+            MagicLinkRepository magicLinks,
+            PilotService pilots,
+            Mailer mailer,
             @Value("${spring.mail.host:}") String mailHost,
             @Value("${app.public-base-url:}") String publicBaseUrl,
             @Value("${app.magic-link.per-address-per-hour:5}") int perAddressPerHour,
@@ -93,7 +97,8 @@ public class MagicLinkController {
         }
     }
 
-    @Operation(summary = "Start a magic-link sign-in",
+    @Operation(
+            summary = "Start a magic-link sign-in",
             description = "Always 202 -- the response never reveals whether the address has signed in before.")
     @PostMapping
     public ResponseEntity<Void> request(@Valid @RequestBody MagicLinkRequest body, HttpServletRequest request) {
@@ -112,16 +117,19 @@ public class MagicLinkController {
         // email it's about to go out in.
         magicLinks.save(new MagicLink(body.email(), hash(rawToken), now.plus(TOKEN_LIFETIME)));
         String verifyUrl = (publicBaseUrl.isBlank()
-                ? ServletUriComponentsBuilder.fromRequestUri(request).replacePath("").replaceQuery(null).build().toUriString()
-                : publicBaseUrl)
+                        ? ServletUriComponentsBuilder.fromRequestUri(request)
+                                .replacePath("")
+                                .replaceQuery(null)
+                                .build()
+                                .toUriString()
+                        : publicBaseUrl)
                 + "/api/auth/magic-link/verify?token=" + rawToken;
         sendEmail(body.email(), verifyUrl);
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 
-
-
-    @Operation(summary = "Where a magic link opens",
+    @Operation(
+            summary = "Where a magic link opens",
             description = "Sends the browser to the planner, which asks the pilot to confirm with its own sign-in "
                     + "dialog and then POSTs the token. Opening the link uses nothing up, so a mail scanner that "
                     + "fetches it before the pilot does cannot spend their token.")
@@ -133,12 +141,16 @@ public class MagicLinkController {
         // only when the pilot presses Sign in -- the button a scanner
         // never presses.
         String fragment = "signin=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
-        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create("/app/plan#" + fragment)).build();
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create("/app/plan#" + fragment))
+                .build();
     }
 
-    @Operation(summary = "Sign in from a magic link",
-            description = "302 into the app, now signed in -- a developer to dev mode, anyone else to the planner -- on success; "
-                    + "400 for an expired, already-used or unrecognized token.")
+    @Operation(
+            summary = "Sign in from a magic link",
+            description =
+                    "302 into the app, now signed in -- a developer to dev mode, anyone else to the planner -- on success; "
+                            + "400 for an expired, already-used or unrecognized token.")
     @PostMapping(value = "/verify", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public ResponseEntity<String> verify(
             @RequestParam String token, HttpServletRequest request, HttpServletResponse response) {
@@ -191,8 +203,7 @@ public class MagicLinkController {
 
     private static String hash(String token) {
         try {
-            byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest(token.getBytes(StandardCharsets.UTF_8));
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(digest);
         } catch (NoSuchAlgorithmException e) {
             // SHA-256 is a JDK-guaranteed algorithm (JCA baseline); this

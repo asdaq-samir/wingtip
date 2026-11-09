@@ -118,7 +118,7 @@ describe("gearFor", () => {
     "iPhone Microphone",
     "Bluetooth headset",
     "",
-  ])("names nothing for %j", label => {
+  ])("names nothing for %j", (label) => {
     expect(gearFor(label)).toBeNull();
   });
 
@@ -128,7 +128,7 @@ describe("gearFor", () => {
   });
 
   it("knows every name a maker documents", () => {
-    for (const g of GEAR.filter(g => g.shows)) {
+    for (const g of GEAR.filter((g) => g.shows)) {
       for (const shown of g.shows!.split(" or ")) {
         expect(gearFor(shown.replace(/#/g, "7")), `${g.id}: ${shown}`).not.toBeNull();
       }
@@ -178,7 +178,7 @@ describe("hearing", () => {
 
 describe("the catalogue", () => {
   it("has a unique id for each entry", () => {
-    expect(new Set(GEAR.map(g => g.id)).size).toBe(GEAR.length);
+    expect(new Set(GEAR.map((g) => g.id)).size).toBe(GEAR.length);
   });
 
   it("gives every entry steps, a line and a source", () => {
@@ -195,7 +195,7 @@ describe("the catalogue", () => {
     for (const g of GEAR) {
       expect(/the radio comes in/.test(g.says), g.id).toBe(g.gives === "radio");
     }
-    for (const g of GEAR.filter(g => g.gives === "voice")) {
+    for (const g of GEAR.filter((g) => g.gives === "voice")) {
       expect(g.says, g.id).toMatch(/not the radio/);
       expect(g.steps.join(" "), g.id).not.toMatch(/the radio comes in/);
     }
@@ -210,14 +210,14 @@ describe("the catalogue", () => {
   });
 
   it("documents every entry that claims the radio", () => {
-    for (const g of GEAR.filter(g => g.kind !== "cable" && g.gives === "radio")) {
+    for (const g of GEAR.filter((g) => g.kind !== "cable" && g.gives === "radio")) {
       expect(g.confidence, g.id).toBe("documented");
     }
   });
 
   it("has the phone's cellular radio off in the air, and no phone call", () => {
-    const steps = GEAR.find(g => g.id === "garmin-gma-350c")!.steps;
+    const steps = GEAR.find((g) => g.id === "garmin-gma-350c")!.steps;
     expect(steps).toContain("Turn on airplane mode, then turn Bluetooth back on: the phone's cellular radio must stay off in the air.");
-    expect(steps.some(s => /phone call/.test(s))).toBe(true);
+    expect(steps.some((s) => /phone call/.test(s))).toBe(true);
   });
 });

@@ -18,10 +18,51 @@ const AssignedLesson = lazy(() => import("../AssignedLesson"));
  *  approach, the tips and the first flight's. */
 export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
   const {
-    closeLeg, closeLesson, course, crossings, directTo, dryRunning, fitAircraft, flownPatterns, flying, fuelStopPins, heldPoint, holdPoint,
-    lessonOpen, lineKey, mapDirects, mapLegs, mapProcedures, nearOpen, openLeg, nearestPoints, openFix, openNavLogCard, panelOpen, patternFocus, pickPoint,
-    pickStopField, pickWay, placePin, procedureCover, procedureFocus, routeRows, routed, s, selectCandidate, selectPlaceOnChart, selected,
-    selectedPoint, setCrossing, setLegAt, setOpenFixAt, setRoute, showFix, startPin, stopFieldPins, wayLines,
+    closeLeg,
+    closeLesson,
+    course,
+    crossings,
+    directTo,
+    dryRunning,
+    fitAircraft,
+    flownPatterns,
+    flying,
+    fuelStopPins,
+    heldPoint,
+    holdPoint,
+    lessonOpen,
+    lineKey,
+    mapDirects,
+    mapLegs,
+    mapProcedures,
+    nearOpen,
+    openLeg,
+    nearestPoints,
+    openFix,
+    openNavLogCard,
+    panelOpen,
+    patternFocus,
+    pickPoint,
+    pickStopField,
+    pickWay,
+    placePin,
+    procedureCover,
+    procedureFocus,
+    routeRows,
+    routed,
+    s,
+    selectCandidate,
+    selectPlaceOnChart,
+    selected,
+    selectedPoint,
+    setCrossing,
+    setLegAt,
+    setOpenFixAt,
+    setRoute,
+    showFix,
+    startPin,
+    stopFieldPins,
+    wayLines,
   } = vm;
   return (
     <div className={cn("h-full w-full", panelOpen && "print:hidden")}>
@@ -29,37 +70,47 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
           panel's first script, and without one the page's (MapPage)
           held the panel back, blank, until it had. */}
       <Suspense fallback={null}>
-      <RouteMap
-        course={course}
-        candidates={s.candidates}
-        selected={selected}
-        focus={selectedPoint}
-        onSelectCandidate={selectCandidate}
-        onSelectPoint={pickPoint}
-        airportWeather={s.briefing}
-        patterns={flownPatterns}
-        patternFocus={patternFocus}
-        procedures={mapProcedures}
-        procedureFocus={procedureFocus}
-        procedureCover={procedureCover}
-        place={placePin}
-        start={startPin}
-        nearest={nearOpen ? nearestPoints : null}
-        onSelectPlace={selectPlaceOnChart}
-        legs={s.legs}
-        heldPoint={heldPoint}
-        onHoldPoint={holdPoint}
-        crossings={crossings}
-        directs={mapDirects}
-        onProcedureFix={showFix}
-        fuelStops={fuelStopPins} stopFields={stopFieldPins} onPickStopField={pickStopField}
-        ways={wayLines} wayShown={lineKey === "none" ? "own" : lineKey} onPickWay={pickWay}
-        routeLegs={mapLegs} onSelectLeg={setLegAt} selectedLeg={openLeg?.key ?? null}
-        routeRows={routeRows}
-      />
+        <RouteMap
+          course={course}
+          candidates={s.candidates}
+          selected={selected}
+          focus={selectedPoint}
+          onSelectCandidate={selectCandidate}
+          onSelectPoint={pickPoint}
+          airportWeather={s.briefing}
+          patterns={flownPatterns}
+          patternFocus={patternFocus}
+          procedures={mapProcedures}
+          procedureFocus={procedureFocus}
+          procedureCover={procedureCover}
+          place={placePin}
+          start={startPin}
+          nearest={nearOpen ? nearestPoints : null}
+          onSelectPlace={selectPlaceOnChart}
+          legs={s.legs}
+          heldPoint={heldPoint}
+          onHoldPoint={holdPoint}
+          crossings={crossings}
+          directs={mapDirects}
+          onProcedureFix={showFix}
+          fuelStops={fuelStopPins}
+          stopFields={stopFieldPins}
+          onPickStopField={pickStopField}
+          ways={wayLines}
+          wayShown={lineKey === "none" ? "own" : lineKey}
+          onPickWay={pickWay}
+          routeLegs={mapLegs}
+          onSelectLeg={setLegAt}
+          selectedLeg={openLeg?.key ?? null}
+          routeRows={routeRows}
+        />
       </Suspense>
       {/* The next checkpoint over the map in flight (FlyingHead). */}
-      {flying && <Suspense fallback={null}><FlyingHead run={dryRunning} rows={routeRows} /></Suspense>}
+      {flying && (
+        <Suspense fallback={null}>
+          <FlyingHead run={dryRunning} rows={routeRows} />
+        </Suspense>
+      )}
       <FixCard open={openFix} onClose={() => setOpenFixAt(null)} onDirect={directTo} onCross={setCrossing} />
       {/* A leg of the course tapped (RouteGl): its Route Leg sheet. */}
       <RouteLegCard open={openLeg} onClose={closeLeg} />

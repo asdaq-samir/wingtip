@@ -51,17 +51,24 @@ const pascal = (s) =>
 function camel(key) {
   const words = key.split(/[^A-Za-z0-9]+/).filter(Boolean);
   if (words.length === 0) return "value";
-  let name = words[0] + words.slice(1).map((w) => w[0].toUpperCase() + w.slice(1)).join("");
+  let name =
+    words[0] +
+    words
+      .slice(1)
+      .map((w) => w[0].toUpperCase() + w.slice(1))
+      .join("");
   if (/^[A-Z]+$/.test(words[0])) name = words[0].toLowerCase() + name.slice(words[0].length);
   else name = name[0].toLowerCase() + name.slice(1);
   return /^[0-9]/.test(name) ? `n${name}` : name;
 }
 
 const SWIFT_KEYWORDS = new Set(
-  ("associatedtype class deinit enum extension fileprivate func import init inout internal let open operator private " +
+  (
+    "associatedtype class deinit enum extension fileprivate func import init inout internal let open operator private " +
     "protocol public rethrows static struct subscript typealias var break case continue default defer do else " +
     "fallthrough for guard if in repeat return switch where while as Any catch false is nil super self Self throw " +
-    "throws true try Type").split(" "),
+    "throws true try Type"
+  ).split(" "),
 );
 const KOTLIN_KEYWORDS = new Set(
   "as break class continue do else false for fun if in interface is null object package return super this throw true try typealias typeof val var when while".split(
@@ -178,7 +185,15 @@ function taggedUnion(shapes, name) {
   const entry = {
     name,
     description: shapes.description,
-    fields: [{ key: tag, name: camel(tag), type: { kind: "prim", ...PRIMS.string }, required: true, description: `One of: ${objects.map((o) => o.properties[tag].const).join(", ")}.` }],
+    fields: [
+      {
+        key: tag,
+        name: camel(tag),
+        type: { kind: "prim", ...PRIMS.string },
+        required: true,
+        description: `One of: ${objects.map((o) => o.properties[tag].const).join(", ")}.`,
+      },
+    ],
   };
   structs.set(name, entry);
   for (const o of objects) {
@@ -187,7 +202,8 @@ function taggedUnion(shapes, name) {
       const type = typeOf(p, name + pascal(key));
       const known = entry.fields.find((f) => f.key === key);
       if (!known) entry.fields.push({ key, name: camel(key), type, required: false, description: p.description });
-      else if (JSON.stringify({ ...known.type, optional: undefined }) !== JSON.stringify({ ...type, optional: undefined })) known.type = { kind: "any" };
+      else if (JSON.stringify({ ...known.type, optional: undefined }) !== JSON.stringify({ ...type, optional: undefined }))
+        known.type = { kind: "any" };
     }
   }
   return name;
@@ -226,11 +242,21 @@ for (const [rule, entry] of Object.entries(schema.properties)) {
 function swiftType(t) {
   let base;
   switch (t.kind) {
-    case "prim": base = t.swift; break;
-    case "any": base = "JSONValue"; break;
-    case "list": base = `[${swiftType(t.of)}]`; break;
-    case "map": base = `[String: ${swiftType(t.of)}]`; break;
-    case "struct": base = aliases.has(t.name) ? swiftType(aliases.get(t.name)) : `EngineContract.${t.name}`; break;
+    case "prim":
+      base = t.swift;
+      break;
+    case "any":
+      base = "JSONValue";
+      break;
+    case "list":
+      base = `[${swiftType(t.of)}]`;
+      break;
+    case "map":
+      base = `[String: ${swiftType(t.of)}]`;
+      break;
+    case "struct":
+      base = aliases.has(t.name) ? swiftType(aliases.get(t.name)) : `EngineContract.${t.name}`;
+      break;
   }
   return t.optional ? `${base}?` : base;
 }
@@ -239,11 +265,13 @@ const swiftField = (f) => (f.required ? swiftType(f.type) : swiftType({ ...f.typ
 
 function swiftDoc(text, indent) {
   if (!text) return "";
-  return text
-    .trim()
-    .split("\n")
-    .map((l) => `${indent}/// ${l}`.trimEnd())
-    .join("\n") + "\n";
+  return (
+    text
+      .trim()
+      .split("\n")
+      .map((l) => `${indent}/// ${l}`.trimEnd())
+      .join("\n") + "\n"
+  );
 }
 
 function writeSwift() {
@@ -264,7 +292,10 @@ function writeSwift() {
     if (s.fields.some((f) => f.name !== f.key)) {
       out.push("");
       out.push("        enum CodingKeys: String, CodingKey {");
-      for (const f of s.fields) out.push(f.name === f.key ? `            case ${swiftId(f.name)}` : `            case ${swiftId(f.name)} = ${JSON.stringify(f.key)}`);
+      for (const f of s.fields)
+        out.push(
+          f.name === f.key ? `            case ${swiftId(f.name)}` : `            case ${swiftId(f.name)} = ${JSON.stringify(f.key)}`,
+        );
       out.push("        }");
     }
     out.push("    }");
@@ -300,11 +331,21 @@ function writeSwift() {
 function kotlinType(t) {
   let base;
   switch (t.kind) {
-    case "prim": base = t.kotlin; break;
-    case "any": base = "JsonElement"; break;
-    case "list": base = `List<${kotlinType(t.of)}>`; break;
-    case "map": base = `Map<String, ${kotlinType(t.of)}>`; break;
-    case "struct": base = aliases.has(t.name) ? kotlinType(aliases.get(t.name)) : `EngineContract.${t.name}`; break;
+    case "prim":
+      base = t.kotlin;
+      break;
+    case "any":
+      base = "JsonElement";
+      break;
+    case "list":
+      base = `List<${kotlinType(t.of)}>`;
+      break;
+    case "map":
+      base = `Map<String, ${kotlinType(t.of)}>`;
+      break;
+    case "struct":
+      base = aliases.has(t.name) ? kotlinType(aliases.get(t.name)) : `EngineContract.${t.name}`;
+      break;
   }
   return t.optional ? `${base}?` : base;
 }
@@ -320,7 +361,15 @@ function kdoc(text, indent) {
 
 function writeKotlin() {
   const pkg = "app.wingtipmaps.android.engine.generated";
-  const out = [header("//"), `package ${pkg}`, "", "import kotlinx.serialization.SerialName", "import kotlinx.serialization.Serializable", "import kotlinx.serialization.json.JsonElement", ""];
+  const out = [
+    header("//"),
+    `package ${pkg}`,
+    "",
+    "import kotlinx.serialization.SerialName",
+    "import kotlinx.serialization.Serializable",
+    "import kotlinx.serialization.json.JsonElement",
+    "",
+  ];
   out.push("/** The engine's inputs and answers by rule, as engine/contract/engine.schema.json types them. */");
   out.push("object EngineContract {");
   for (const s of [...structs.values()].sort((a, b) => a.name.localeCompare(b.name))) {
@@ -345,7 +394,14 @@ function writeKotlin() {
   out.push("}", "");
   fs.writeFileSync(path.join(kotlinDir, "EngineContract.kt"), out.join("\n"));
 
-  const calls = [header("//"), `package ${pkg}`, "", "import app.wingtipmaps.android.engine.Engine", "import kotlinx.serialization.json.JsonElement", ""];
+  const calls = [
+    header("//"),
+    `package ${pkg}`,
+    "",
+    "import app.wingtipmaps.android.engine.Engine",
+    "import kotlinx.serialization.json.JsonElement",
+    "",
+  ];
   calls.push(
     "// Every rule of the engine by name, typed: its input's members as",
     "// parameters and its answer as the contract's type, in a Result that",

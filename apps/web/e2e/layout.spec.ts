@@ -1,5 +1,18 @@
 import { test, expect } from "@playwright/test";
-import { PAGES, grabberTo, settle, slow, expectDrawerClosed, openBrief, openSidebar, sideDrawer, openSetup, openPanel, closeSidebarWithTheStockKey, showTabs } from "./helpers";
+import {
+  PAGES,
+  grabberTo,
+  settle,
+  slow,
+  expectDrawerClosed,
+  openBrief,
+  openSidebar,
+  sideDrawer,
+  openSetup,
+  openPanel,
+  closeSidebarWithTheStockKey,
+  showTabs,
+} from "./helpers";
 
 /**
  * The regressions this file exists to catch (see playwright.config.ts
@@ -161,10 +174,7 @@ test.describe("/app/dev", () => {
   });
 });
 
-const TITLES: Record<string, string> = {
-  "/app/plan": "Plan a route — Wingtip Maps",
-  "/app/dev": "Dev — Wingtip Maps",
-};
+const TITLES: Record<string, string> = { "/app/plan": "Plan a route — Wingtip Maps", "/app/dev": "Dev — Wingtip Maps" };
 
 for (const path of PAGES) {
   test.describe(path, () => {
@@ -181,9 +191,7 @@ for (const path of PAGES) {
     test("no page-level horizontal overflow", async ({ page }) => {
       await page.goto(path);
       await settle(page);
-      const overflowing = await page.evaluate(
-        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-      );
+      const overflowing = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
       expect(overflowing).toBe(false);
     });
 
@@ -202,7 +210,9 @@ test.describe("/app/plan", () => {
   // One bar, the panel's head, the same shape as Dev's: no tabs in it
   // (the briefing is the flight planning panel, not a second view), the
   // route leading it, and the panel's grabber on its far edge.
-  test("the panel's head is the page's one bar, with no tabs: at the bottom of a phone and the top from md up, the route leading it, and the panel's grabber opens the nav log", async ({ page }) => {
+  test("the panel's head is the page's one bar, with no tabs: at the bottom of a phone and the top from md up, the route leading it, and the panel's grabber opens the nav log", async ({
+    page,
+  }) => {
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
     // Out half way, where the head is the route form (at rest, the capsule).
@@ -244,7 +254,9 @@ test.describe("/app/plan", () => {
 });
 
 for (const path of PAGES) {
-  test(`${path}: the map's buttons sit at the map's right edge, away from the panel, and the console's button is on the panel's capsule: the planner's search bar, the training page's route`, async ({ page }) => {
+  test(`${path}: the map's buttons sit at the map's right edge, away from the panel, and the console's button is on the panel's capsule: the planner's search bar, the training page's route`, async ({
+    page,
+  }) => {
     await page.goto(`${path}?dep=C81&dest=KDLH`);
     await settle(page);
     const viewport = page.viewportSize();

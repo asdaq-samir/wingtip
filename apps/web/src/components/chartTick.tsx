@@ -6,8 +6,19 @@
  * (measured at a quarter of a laptop's speed). In the text's colour, at
  * the chart's 12, set off the axis as recharts sets its own.
  */
-export default function ChartTick({ x, y, payload, textAnchor, orientation, format = String }: {
-  x?: number | string; y?: number | string; payload?: { value: number }; textAnchor?: string; orientation?: string;
+export default function ChartTick({
+  x,
+  y,
+  payload,
+  textAnchor,
+  orientation,
+  format = String,
+}: {
+  x?: number | string;
+  y?: number | string;
+  payload?: { value: number };
+  textAnchor?: string;
+  orientation?: string;
   format?: (value: number) => string;
 }) {
   if (payload === undefined) return null;
@@ -16,7 +27,13 @@ export default function ChartTick({ x, y, payload, textAnchor, orientation, form
   // purpose): a chart's labels, not text to read, and drawn at its size.
   const dy = orientation === "bottom" ? "0.71em" : orientation === "top" ? "-0.2em" : "0.355em";
   return (
-    <text x={x} y={y} dy={dy} textAnchor={textAnchor as "start" | "middle" | "end" | undefined} className="fill-foreground text-xs text-foreground">
+    <text
+      x={x}
+      y={y}
+      dy={dy}
+      textAnchor={textAnchor as "start" | "middle" | "end" | undefined}
+      className="fill-foreground text-xs text-foreground"
+    >
       {format(payload.value)}
     </text>
   );

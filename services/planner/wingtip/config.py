@@ -17,6 +17,7 @@ with a message naming the variable, and the list of knobs is one class
 to read rather than a grep. pydantic-settings is the one import that
 costs anything here, and pydantic is in every image that imports wingtip.
 """
+
 import functools
 from pathlib import Path
 
@@ -77,6 +78,7 @@ FAA_VISUAL_ZIP_URL = "https://aeronav.faa.gov/visual/{cycle}/{folder}/{name}.zip
 FAA_ENROUTE_ZIP_URL = "https://aeronav.faa.gov/enroute/{cycle}/{name}.zip"
 
 # --- The environment ---
+
 
 def _switch(value):
     """A switch as the code has always read one: on unless it is "0"
@@ -193,9 +195,17 @@ class Settings(BaseSettings):
     gateway_url: str = "http://gateway:8080"
 
     read_switches = field_validator(
-        "charts_fetch_for_tiles", "adsbfi_open_data", "registry_refresh", "cycle_pack", "landmarks_build",
-        "charts_auto_refresh", "faa_data_auto_refresh", "chart_reads_in_process", "charts_cycle_auto",
-        mode="before")(_switch)
+        "charts_fetch_for_tiles",
+        "adsbfi_open_data",
+        "registry_refresh",
+        "cycle_pack",
+        "landmarks_build",
+        "charts_auto_refresh",
+        "faa_data_auto_refresh",
+        "chart_reads_in_process",
+        "charts_cycle_auto",
+        mode="before",
+    )(_switch)
 
     @field_validator("chart_tiles_url", "dev_services_url", "feed_alert_webhook", "weather_url", mode="before")
     @classmethod
@@ -228,8 +238,7 @@ def get_settings() -> Settings:
     try:
         return Settings()
     except ValidationError as err:
-        bad = "; ".join(
-            f"{'_'.join(str(part) for part in e['loc']).upper()}={e.get('input')!r}: {e['msg']}" for e in err.errors())
+        bad = "; ".join(f"{'_'.join(str(part) for part in e['loc']).upper()}={e.get('input')!r}: {e['msg']}" for e in err.errors())
         raise SettingsError(f"The environment has a malformed setting: {bad}") from None
 
 

@@ -1,4 +1,5 @@
 """The shapes app.routers.chart sends and takes, as Pydantic models."""
+
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator

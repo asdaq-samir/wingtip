@@ -47,8 +47,12 @@ public class TrainingController {
     private final LogbookService logbook;
     private final PilotService pilots;
 
-    public TrainingController(TrainingService training, InstructorService instructors, LessonService lessons, LogbookService logbook,
-                              PilotService pilots) {
+    public TrainingController(
+            TrainingService training,
+            InstructorService instructors,
+            LessonService lessons,
+            LogbookService logbook,
+            PilotService pilots) {
         this.training = training;
         this.instructors = instructors;
         this.lessons = lessons;
@@ -62,9 +66,12 @@ public class TrainingController {
     }
 
     @PutMapping("/knowledge-test")
-    public ResponseEntity<TrainingDto> setKnowledgeTest(Authentication authentication, @Valid @RequestBody KnowledgeTestRequest request) {
-        return PilotResponses.withPilot(pilots, authentication, pilot ->
-                ResponseEntity.ok(trainingOf(training.setKnowledgeTestCodes(pilot, request.codes()))));
+    public ResponseEntity<TrainingDto> setKnowledgeTest(
+            Authentication authentication, @Valid @RequestBody KnowledgeTestRequest request) {
+        return PilotResponses.withPilot(
+                pilots,
+                authentication,
+                pilot -> ResponseEntity.ok(trainingOf(training.setKnowledgeTestCodes(pilot, request.codes()))));
     }
 
     @PutMapping("/endorsements/{code}")
@@ -83,15 +90,19 @@ public class TrainingController {
 
     @DeleteMapping("/endorsements/{code}")
     public ResponseEntity<TrainingDto> withdraw(Authentication authentication, @PathVariable String code) {
-        return PilotResponses.withPilot(pilots, authentication, pilot -> training.withdraw(pilot, code)
-                ? ResponseEntity.ok(trainingOf(pilot))
-                : ResponseEntity.notFound().build());
+        return PilotResponses.withPilot(
+                pilots,
+                authentication,
+                pilot -> training.withdraw(pilot, code)
+                        ? ResponseEntity.ok(trainingOf(pilot))
+                        : ResponseEntity.notFound().build());
     }
 
     /** Their name as their certificate gives it, which endorsements name
      *  them by. */
     @PutMapping("/name")
-    public ResponseEntity<TrainingDto> setName(Authentication authentication, @Valid @RequestBody FullNameRequest request) {
+    public ResponseEntity<TrainingDto> setName(
+            Authentication authentication, @Valid @RequestBody FullNameRequest request) {
         return PilotResponses.withPilot(pilots, authentication, pilot -> {
             instructors.setFullName(pilot, request.fullName());
             return ResponseEntity.ok(trainingOf(pilot));
@@ -101,7 +112,8 @@ public class TrainingController {
     /** An instructor asked in by address, and emailed: 400 for their own,
      *  409 asked already, 429 past the day's asks. */
     @PostMapping("/instructors")
-    public ResponseEntity<TrainingDto> askInstructor(Authentication authentication, @Valid @RequestBody AskInstructorRequest request) {
+    public ResponseEntity<TrainingDto> askInstructor(
+            Authentication authentication, @Valid @RequestBody AskInstructorRequest request) {
         return PilotResponses.withPilot(pilots, authentication, pilot -> {
             instructors.ask(pilot, request.email(), Instant.now());
             return ResponseEntity.ok(trainingOf(pilot));
@@ -111,16 +123,20 @@ public class TrainingController {
     /** An instructor, asked or taken, let go. */
     @DeleteMapping("/instructors/{id}")
     public ResponseEntity<TrainingDto> dropInstructor(Authentication authentication, @PathVariable Long id) {
-        return PilotResponses.withPilot(pilots, authentication, pilot -> instructors.drop(pilot, id)
-                ? ResponseEntity.ok(trainingOf(pilot))
-                : ResponseEntity.notFound().build());
+        return PilotResponses.withPilot(
+                pilots,
+                authentication,
+                pilot -> instructors.drop(pilot, id)
+                        ? ResponseEntity.ok(trainingOf(pilot))
+                        : ResponseEntity.notFound().build());
     }
 
     /** A saved flight put to an instructor for its solo cross-country
      *  review (14 CFR 61.93(c)(3)), who is emailed: 404 for a flight or an
      *  instructor not theirs, 409 already with them. */
     @PostMapping("/reviews")
-    public ResponseEntity<TrainingDto> askReview(Authentication authentication, @Valid @RequestBody AskReviewRequest request) {
+    public ResponseEntity<TrainingDto> askReview(
+            Authentication authentication, @Valid @RequestBody AskReviewRequest request) {
         return PilotResponses.withPilot(pilots, authentication, pilot -> {
             instructors.askReview(pilot, request, Instant.now());
             return ResponseEntity.ok(trainingOf(pilot));
@@ -130,20 +146,26 @@ public class TrainingController {
     /** A review still waiting, taken back. */
     @DeleteMapping("/reviews/{id}")
     public ResponseEntity<TrainingDto> withdrawReview(Authentication authentication, @PathVariable Long id) {
-        return PilotResponses.withPilot(pilots, authentication, pilot -> instructors.withdrawReview(pilot, id)
-                ? ResponseEntity.ok(trainingOf(pilot))
-                : ResponseEntity.notFound().build());
+        return PilotResponses.withPilot(
+                pilots,
+                authentication,
+                pilot -> instructors.withdrawReview(pilot, id)
+                        ? ResponseEntity.ok(trainingOf(pilot))
+                        : ResponseEntity.notFound().build());
     }
 
     /** How far they have come with an approach set them: its brief
      *  finished, flown to its end, its quiz as far as answered. 404 for a
      *  lesson not theirs. */
     @PostMapping("/lessons/{id}/progress")
-    public ResponseEntity<TrainingDto> lessonProgress(Authentication authentication, @PathVariable Long id,
-                                                      @Valid @RequestBody LessonProgressRequest request) {
-        return PilotResponses.withPilot(pilots, authentication, pilot -> lessons.progress(pilot, id, request, Instant.now())
-                ? ResponseEntity.ok(trainingOf(pilot))
-                : ResponseEntity.notFound().build());
+    public ResponseEntity<TrainingDto> lessonProgress(
+            Authentication authentication, @PathVariable Long id, @Valid @RequestBody LessonProgressRequest request) {
+        return PilotResponses.withPilot(
+                pilots,
+                authentication,
+                pilot -> lessons.progress(pilot, id, request, Instant.now())
+                        ? ResponseEntity.ok(trainingOf(pilot))
+                        : ResponseEntity.notFound().build());
     }
 
     private TrainingDto trainingOf(Pilot pilot) {

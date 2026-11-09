@@ -11,5 +11,4 @@ public record InstructorLinkDto(
         @Nullable String name,
         @Nullable String certificate,
         boolean accepted,
-        Instant askedAt) {
-}
+        Instant askedAt) {}

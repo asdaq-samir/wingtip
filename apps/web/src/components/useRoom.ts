@@ -26,7 +26,7 @@ export function useRoom<T extends HTMLElement>(): [(el: T | null) => void, { wid
         width: el.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight),
         font: `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`,
       };
-      setRoom(was => (was && was.width === next.width && was.font === next.font ? was : next));
+      setRoom((was) => (was && was.width === next.width && was.font === next.font ? was : next));
     };
     const observer = new ResizeObserver(() => flushSync(measure));
     observer.observe(el);
@@ -35,9 +35,14 @@ export function useRoom<T extends HTMLElement>(): [(el: T | null) => void, { wid
     // the fonts long in, this ran just after the commit all the same and
     // laid the page out there.
     if (document.fonts?.status === "loading") {
-      void document.fonts.ready.then(() => { if (live) setRoom(was => was && { ...was }); });
+      void document.fonts.ready.then(() => {
+        if (live) setRoom((was) => was && { ...was });
+      });
     }
-    return () => { live = false; observer.disconnect(); };
+    return () => {
+      live = false;
+      observer.disconnect();
+    };
   }, []);
   return [watch, room];
 }

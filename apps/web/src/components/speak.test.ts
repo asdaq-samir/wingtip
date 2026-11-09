@@ -2,10 +2,22 @@ import { describe, expect, it } from "vitest";
 import type { AheadAlert } from "../lib/api/types";
 import { spokenAlert, toSay } from "./speak";
 
-const alert = (over: Partial<AheadAlert>): AheadAlert => ({
-  id: "x", kind: "airspace", level: "caution", name: "ROCKFORD CLASS C", class: "C", need: "", inside: false,
-  seconds: 130, distance_nm: 4.21, lat: 42, lon: -88, clearance_ft: null, ...over,
-} as AheadAlert);
+const alert = (over: Partial<AheadAlert>): AheadAlert =>
+  ({
+    id: "x",
+    kind: "airspace",
+    level: "caution",
+    name: "ROCKFORD CLASS C",
+    class: "C",
+    need: "",
+    inside: false,
+    seconds: 130,
+    distance_nm: 4.21,
+    lat: 42,
+    lon: -88,
+    clearance_ft: null,
+    ...over,
+  }) as AheadAlert;
 
 const classC = alert({ id: "c" });
 const tower = alert({ id: "t", kind: "obstacle", name: "TOWER", class: null, top_ft: 2700, clearance_ft: 300, seconds: 40 });

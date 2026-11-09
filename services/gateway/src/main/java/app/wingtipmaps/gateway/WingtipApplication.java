@@ -14,11 +14,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * title/description (served at /v3/api-docs).
  */
 @SpringBootApplication
-@OpenAPIDefinition(info = @Info(
-        title = "Wingtip Maps API",
-        version = "0.1.0",
-        description = "Scores candidate checkpoints and dead-reckoning nav-log data for a VFR route. "
-                + "See /swagger-ui/index.html for the interactive docs."))
+@OpenAPIDefinition(
+        info =
+                @Info(
+                        title = "Wingtip Maps API",
+                        version = "0.1.0",
+                        description = "Scores candidate checkpoints and dead-reckoning nav-log data for a VFR route. "
+                                + "See /swagger-ui/index.html for the interactive docs."))
 public class WingtipApplication {
     public static void main(String[] args) {
         SpringApplication.run(WingtipApplication.class, args);

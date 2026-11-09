@@ -118,7 +118,7 @@ struct ProfileCard: View {
                 Button {
                     if let course = plan.course { dryRun.start(course: course, checkpoints: plan.checkpoints, legs: plan.legs) }
                 } label: { Label("Dry run", systemImage: "play.fill") }
-                .disabled(plan.legs.isEmpty || plan.course == nil)
+                    .disabled(plan.legs.isEmpty || plan.course == nil)
             }
         }
         .onChange(of: plan.altitudeFt) { _, _ in picked = nil }
@@ -210,8 +210,7 @@ private enum PreviewData {
         terrain: [
             ProfileGround(alongNm: 0, groundFt: 5), ProfileGround(alongNm: 20, groundFt: 1800),
             ProfileGround(alongNm: 40, groundFt: 2600), ProfileGround(alongNm: 62, groundFt: 95),
-        ]
-    )
+        ])
     static let legs = [
         Leg.preview(from: "KPAO", to: "KLVK", distanceNm: 28, altitudeFt: 4500, trueCourseDeg: 62, magneticHeadingDeg: 51, groundspeedKt: 108, eteMin: 16, fuelGal: 2.3, tasKt: 112),
         Leg.preview(from: "KLVK", to: "KMOD", distanceNm: 34, altitudeFt: 4500, trueCourseDeg: 105, magneticHeadingDeg: 94, groundspeedKt: 118, eteMin: 17, fuelGal: 2.4, tasKt: 112),

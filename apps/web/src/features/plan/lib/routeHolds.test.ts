@@ -14,7 +14,7 @@ describe("the pilot's holds in the address", () => {
 
   test("several at once", () => {
     const holds = holdsOf("KMSN:090:L:4N:10M,VPBNG/090/30:180:R:1M:1T,not one");
-    expect(holds.map(h => h.fix)).toEqual(["KMSN", "VPBNG/090/30"]);
+    expect(holds.map((h) => h.fix)).toEqual(["KMSN", "VPBNG/090/30"]);
     expect(holdsParam(holds)).toBe("KMSN:090:L:4N:10M,VPBNG/090/30:180:R:1M:1T");
   });
 });
@@ -43,11 +43,16 @@ describe("a hold's course and length", () => {
 // against too (WingtipTests/SharedFixturesTests.swift): a copy that reads
 // or writes a hold otherwise fails CI (docs/NATIVE.md).
 describe("the shared holds fixture", () => {
-  const flat = (h: ReturnType<typeof holdOf>) => h && {
-    fix: h.fix, inbound: h.inbound, right: h.right,
-    legMin: "min" in h.leg ? h.leg.min : null, legNm: "nm" in h.leg ? h.leg.nm : null,
-    turns: "turns" in h.length ? h.length.turns : null, minutes: "minutes" in h.length ? h.length.minutes : null,
-  };
+  const flat = (h: ReturnType<typeof holdOf>) =>
+    h && {
+      fix: h.fix,
+      inbound: h.inbound,
+      right: h.right,
+      legMin: "min" in h.leg ? h.leg.min : null,
+      legNm: "nm" in h.leg ? h.leg.nm : null,
+      turns: "turns" in h.length ? h.length.turns : null,
+      minutes: "minutes" in h.length ? h.length.minutes : null,
+    };
 
   test.each(holdsFixture.parse)("$text", ({ text, hold, written, words }) => {
     const read = holdOf(text);

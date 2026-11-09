@@ -1,7 +1,9 @@
 """A runway end's true heading, and the wind a field last reported."""
+
 import pytest
 
 from wingtip import runway_wind
+
 
 def test_an_end_with_no_heading_takes_its_number_turned_true():
     # Runway 18 at 3 degrees west: 177 true.
@@ -15,8 +17,12 @@ def test_a_fields_last_wind_is_the_one_the_weather_service_kept():
 
     from wingtip import weather, weather_store
 
-    weather_store.write("recent-winds", {"KDLH": {"wind_dir_true_deg": 270.0, "wind_speed_kt": 8.0, "observed": time.time() - 600}},
-                        fetched_at=time.time(), until=None)
+    weather_store.write(
+        "recent-winds",
+        {"KDLH": {"wind_dir_true_deg": 270.0, "wind_speed_kt": 8.0, "observed": time.time() - 600}},
+        fetched_at=time.time(),
+        until=None,
+    )
     assert weather.recent_wind("KDLH") == {"wind_dir_true_deg": 270.0, "wind_speed_kt": 8.0}
 
 

@@ -18,5 +18,4 @@ public record InstructorDto(
         List<StudentDto> asking,
         List<CrossCountryReviewDto> reviews,
         List<SignedEndorsementDto> signed,
-        List<EndorsementKindDto> kinds) {
-}
+        List<EndorsementKindDto> kinds) {}

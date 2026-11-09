@@ -45,12 +45,18 @@ class SubscriptionControllerTest {
         given(subscriptions.sold()).willReturn(true);
     }
 
-
     private static final Pilot PILOT = new Pilot("pilot@example.com", "A. Pilot", "sub-1");
 
     private static SubscriptionDto trial() {
-        return new SubscriptionDto(SubscriptionDto.State.TRIAL, true, Instant.parse("2026-11-10T12:00:00Z"), false, 30,
-                null, null, List.of(new SubscriptionDto.FeatureUse(PaidFeature.NARRATIVE, 3, 60)));
+        return new SubscriptionDto(
+                SubscriptionDto.State.TRIAL,
+                true,
+                Instant.parse("2026-11-10T12:00:00Z"),
+                false,
+                30,
+                null,
+                null,
+                List.of(new SubscriptionDto.FeatureUse(PaidFeature.NARRATIVE, 3, 60)));
     }
 
     @Test
@@ -74,7 +80,9 @@ class SubscriptionControllerTest {
     @Test
     void theFreeMonthStartsOnceAndIsA409After() throws Exception {
         given(pilots.current(any())).willReturn(Optional.of(PILOT));
-        given(subscriptions.startTrial(any())).willReturn(trial()).willThrow(new SubscriptionService.TrialUsedException());
+        given(subscriptions.startTrial(any()))
+                .willReturn(trial())
+                .willThrow(new SubscriptionService.TrialUsedException());
         mockMvc.perform(post("/api/subscription/trial").with(oidcLogin()).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.until").value("2026-11-10T12:00:00Z"));
@@ -87,6 +95,7 @@ class SubscriptionControllerTest {
     void a_deployment_that_sells_none_says_nothing_of_one() throws Exception {
         given(subscriptions.sold()).willReturn(false);
         mockMvc.perform(get("/api/subscription").with(oidcLogin())).andExpect(status().isNotFound());
-        mockMvc.perform(post("/api/subscription/trial").with(oidcLogin()).with(csrf())).andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/subscription/trial").with(oidcLogin()).with(csrf()))
+                .andExpect(status().isNotFound());
     }
 }

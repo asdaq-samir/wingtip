@@ -49,8 +49,8 @@ use crate::time::parse_iso;
 pub const TOP: usize = 3;
 
 const KEYWORDS: [&str; 18] = [
-    "RWY", "TWY", "APRON", "AD", "OBST", "NAV", "COM", "SVC", "AIRSPACE", "ODP", "SID", "STAR", "CHART", "DATA", "IAP", "VFP",
-    "ROUTE", "SPECIAL",
+    "RWY", "TWY", "APRON", "AD", "OBST", "NAV", "COM", "SVC", "AIRSPACE", "ODP", "SID", "STAR", "CHART", "DATA", "IAP", "VFP", "ROUTE",
+    "SPECIAL",
 ];
 
 /// A NOTAM read for the ranking.
@@ -127,7 +127,11 @@ pub fn read(text: &str) -> Read {
 fn same_field(a: &str, b: &str) -> bool {
     let bare = |s: &str| {
         let s = s.trim().to_ascii_uppercase();
-        if s.len() == 4 && s.starts_with('K') && s.chars().all(|c| c.is_ascii_alphabetic()) { s[1..].to_owned() } else { s }
+        if s.len() == 4 && s.starts_with('K') && s.chars().all(|c| c.is_ascii_alphabetic()) {
+            s[1..].to_owned()
+        } else {
+            s
+        }
     };
     !a.trim().is_empty() && bare(a) == bare(b)
 }
@@ -140,7 +144,11 @@ fn feet(ft: f64) -> String {
     }
     let n = ft.round() as i64;
     let (th, rest) = (n / 1000, n % 1000);
-    if th > 0 { format!("{th},{rest:03} ft") } else { format!("{n} ft") }
+    if th > 0 {
+        format!("{th},{rest:03} ft")
+    } else {
+        format!("{n} ft")
+    }
 }
 
 fn span(low: Option<f64>, high: Option<f64>) -> String {
@@ -197,8 +205,14 @@ fn rank_one(n: &Value, v: &Value) -> Ranked {
     };
     let at = ident.as_deref().map_or(String::new(), |i| format!(" at {i}"));
     match force {
-        Some(true) => add(30, "time", if ident.is_some() { format!("In force while you are{at}") } else { "In force during the flight".into() }),
-        Some(false) => add(-100, "time", if ident.is_some() { format!("Not in force while you are{at}") } else { "Not in force during the flight".into() }),
+        Some(true) => {
+            add(30, "time", if ident.is_some() { format!("In force while you are{at}") } else { "In force during the flight".into() })
+        }
+        Some(false) => add(
+            -100,
+            "time",
+            if ident.is_some() { format!("Not in force while you are{at}") } else { "Not in force during the flight".into() },
+        ),
         None => add(0, "time", "Its times could not be read".into()),
     }
     if let Some(schedule) = n.get("schedule").and_then(Value::as_str).filter(|s| !s.trim().is_empty()) {
@@ -210,8 +224,14 @@ fn rank_one(n: &Value, v: &Value) -> Ranked {
         Some(_) => add(15, "field", format!("At {}, a stop", ident.as_deref().unwrap_or(""))),
         None => {}
     }
-    let in_use: Vec<String> = field.and_then(|f| f.get("runways")).and_then(Value::as_array).unwrap_or(&[]).iter()
-        .filter_map(Value::as_str).filter_map(runway_end).collect();
+    let in_use: Vec<String> = field
+        .and_then(|f| f.get("runways"))
+        .and_then(Value::as_array)
+        .unwrap_or(&[])
+        .iter()
+        .filter_map(Value::as_str)
+        .filter_map(runway_end)
+        .collect();
     if field.is_some() && !read.runways.is_empty() {
         let named = read.runways.join("/");
         if read.runways.iter().any(|r| in_use.contains(r)) {

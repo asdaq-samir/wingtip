@@ -1,4 +1,5 @@
 """wingtip.plates: an approach's plate placed on the map by its own georeference."""
+
 import pytest
 
 from wingtip import plates
@@ -70,7 +71,6 @@ def test_the_plan_views_bottom_line_may_run_along_part_of_it():
     across = [(452.0, 17, 370), (221.0, 17, 258), (106.0, 18, 257)]
     down = [(257.0, 38, 236)]
     assert plates.plan_view_box(across, down, (329, 319), (387, 594)) == (17, 221.0, 370, 452.0)
-
 
 
 def test_a_divider_ending_at_the_airports_height_is_not_a_side():

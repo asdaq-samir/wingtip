@@ -47,7 +47,9 @@ let loading: Promise<void> | null = null;
 let ready!: () => void;
 
 /** Settles once the engine is loaded (by `loadEngine`). */
-export const engineReady: Promise<void> = new Promise(resolve => { ready = resolve; });
+export const engineReady: Promise<void> = new Promise((resolve) => {
+  ready = resolve;
+});
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -98,7 +100,10 @@ export function callEngine<N extends EngineName>(name: N, input: EngineInput<N>)
   const e = engine;
   // Asked before it is there: a part drawn outside its engine gate
   // (lib/engine/engineGate). Said plainly, so the stack names the caller.
-  if (!e) throw new Error(`The engine is not loaded yet, so ${name} cannot be worked out: draw the part that asks it inside an EngineGate (lib/engine/engineGate).`);
+  if (!e)
+    throw new Error(
+      `The engine is not loaded yet, so ${name} cannot be worked out: draw the part that asks it inside an EngineGate (lib/engine/engineGate).`,
+    );
   const nameBytes = encoder.encode(name);
   const inputBytes = encoder.encode(JSON.stringify(input));
   const namePtr = e.wt_alloc(nameBytes.length);
@@ -111,7 +116,8 @@ export function callEngine<N extends EngineName>(name: N, input: EngineInput<N>)
     new Uint8Array(e.memory.buffer, inputPtr, inputBytes.length).set(inputBytes);
     out = e.wt_call(namePtr, nameBytes.length, inputPtr, inputBytes.length);
     const head = new DataView(e.memory.buffer, out, 8);
-    const status = head.getUint32(0, true), len = head.getUint32(4, true);
+    const status = head.getUint32(0, true),
+      len = head.getUint32(4, true);
     const text = decoder.decode(new Uint8Array(e.memory.buffer, out + 8, len));
     if (status !== 0) throw new Error(`The engine's ${name}: ${text}`);
     return JSON.parse(text) as EngineAnswer<N>;

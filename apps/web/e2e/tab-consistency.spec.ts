@@ -17,50 +17,72 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     const key = "wingtip.preferences";
     const kept = JSON.parse(localStorage.getItem(key) ?? '{"state":{},"version":1}');
-    kept.state.recentAirports = [{ ident: "KDLH", name: "Duluth International" }, { ident: "C81", name: "Campbell" }];
+    kept.state.recentAirports = [
+      { ident: "KDLH", name: "Duluth International" },
+      { ident: "C81", name: "Campbell" },
+    ];
     kept.state.recentAircraft = [{ hex: "a0b1c2", name: "N123AB", type: "C172" }];
     localStorage.setItem(key, JSON.stringify(kept));
   });
 });
 
-interface Section { heading: string | null; font: string | null; top: number; bottom: number; left: number; right: number }
+interface Section {
+  heading: string | null;
+  font: string | null;
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
 
 /** The tab page in sight and its sections, the outermost in it, in
  *  points from the panel's edges; and where the tab bar ends. */
 async function layout(page: Page) {
   const panel = sideDrawer(page);
   await settled(panel);
-  return panel.evaluate(el => {
+  return panel.evaluate((el) => {
     const box = el.getBoundingClientRect();
     const shown = (e: Element) => e.getBoundingClientRect().height > 0;
     const tabPage = [...el.querySelectorAll("[data-panel-body] [data-tab-page]")].find(shown);
     const bar = el.querySelector('[data-testid="tab-bar"]')!.getBoundingClientRect();
     if (!tabPage) return null;
-    const sections = [...tabPage.querySelectorAll("section")].filter(s => {
-      for (let up = s.parentElement; up && up !== tabPage; up = up.parentElement) if (up.tagName === "SECTION") return false;
-      return shown(s);
-    }).map((s): Section => {
-      const b = s.getBoundingClientRect();
-      // A labelled section's heading: its title, or the menu that is its
-      // title (PillSection). A list's own small heading counts too; an
-      // untitled list's first row is no heading (Setup's Pilot details).
-      const heading = s.querySelector(":scope > div:first-child:not([role=group]) :is(h3, button)");
-      const css = heading && getComputedStyle(heading);
-      return {
-        heading: heading?.textContent?.trim() || null,
-        font: css && `${css.fontSize} ${css.fontWeight} ${css.textTransform}`,
-        top: b.top - bar.bottom, bottom: b.bottom - bar.bottom, left: b.left - box.left, right: box.right - b.right,
-      };
-    });
+    const sections = [...tabPage.querySelectorAll("section")]
+      .filter((s) => {
+        for (let up = s.parentElement; up && up !== tabPage; up = up.parentElement) if (up.tagName === "SECTION") return false;
+        return shown(s);
+      })
+      .map((s): Section => {
+        const b = s.getBoundingClientRect();
+        // A labelled section's heading: its title, or the menu that is its
+        // title (PillSection). A list's own small heading counts too; an
+        // untitled list's first row is no heading (Setup's Pilot details).
+        const heading = s.querySelector(":scope > div:first-child:not([role=group]) :is(h3, button)");
+        const css = heading && getComputedStyle(heading);
+        return {
+          heading: heading?.textContent?.trim() || null,
+          font: css && `${css.fontSize} ${css.fontWeight} ${css.textTransform}`,
+          top: b.top - bar.bottom,
+          bottom: b.bottom - bar.bottom,
+          left: b.left - box.left,
+          right: box.right - b.right,
+        };
+      });
     return { sections };
   });
 }
 
-test("every tab's page is laid out as one: its sections' sides, headings and the room between them, and where the first starts", async ({ page }) => {
+test("every tab's page is laid out as one: its sections' sides, headings and the room between them, and where the first starts", async ({
+  page,
+}) => {
   await page.goto("/app/plan");
   await settle(page);
   const pages: Record<string, Section[]> = {};
-  for (const [name, tab] of [["FPL", "tab-fpl"], ["Airport", "tab-airport"], ["Airplane", "tab-aircraft"], ["Setup", "setup-button"]] as const) {
+  for (const [name, tab] of [
+    ["FPL", "tab-fpl"],
+    ["Airport", "tab-airport"],
+    ["Airplane", "tab-aircraft"],
+    ["Setup", "setup-button"],
+  ] as const) {
     for (const size of ["half", "full"] as const) {
       // FPL with no route shows its Saved strip half way only.
       if (name === "FPL" && size === "full") continue;
@@ -82,7 +104,7 @@ test("every tab's page is laid out as one: its sections' sides, headings and the
     }
   }
   // One heading, the Favorites' (PillSection), on every tab.
-  const fonts = new Set(all.flatMap(([, sections]) => sections.filter(s => s.font).map(s => s.font)));
+  const fonts = new Set(all.flatMap(([, sections]) => sections.filter((s) => s.font).map((s) => s.font)));
   expect([...fonts]).toHaveLength(1);
   // One room between sections, on every tab.
   const gaps = all.flatMap(([where, sections]) => sections.slice(1).map((s, i) => ({ where, gap: s.top - sections[i]!.bottom })));

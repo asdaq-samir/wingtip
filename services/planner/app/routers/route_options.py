@@ -2,6 +2,7 @@
 fastest, the best weather's and the fewest stops', each clear of
 thunderstorms, weather under the pilot's minimums, prohibited areas, TFRs
 and high ground."""
+
 import threading
 from datetime import datetime
 from typing import Annotated
@@ -38,6 +39,8 @@ CHIP_WORDS = {"weather": "Avoid Weather", "fastest": "Fastest", "land": "Over La
 #: (wingtip.filed_routes; the owner, 2026-10-27: "Most filed is how you get
 #: most flown").
 FILED_WORDS = "Most Filed"
+
+
 def _same(ident: str) -> str:
     """An ident as the route's box may spell it: KUES and UES alike."""
     s = ident.strip().upper()
@@ -53,8 +56,15 @@ def _chips(found: dict, typed: list[str]) -> list[dict]:
     One chip a set of stops; none at all where only the route itself is
     left."""
     # "As typed", the owner's word for what was "None" (2026-11-08).
-    chips = [{"key": "none", "label": "As typed", "stops": typed, "fuel": [],
-              "crosses": found.get("current", []) if typed else found.get("direct", [])}]
+    chips = [
+        {
+            "key": "none",
+            "label": "As typed",
+            "stops": typed,
+            "fuel": [],
+            "crosses": found.get("current", []) if typed else found.get("direct", []),
+        }
+    ]
     seen = [[_same(t) for t in typed]]
 
     def add(key: str, words: str, way: dict) -> None:
@@ -62,8 +72,7 @@ def _chips(found: dict, typed: list[str]) -> list[dict]:
         if same in seen:
             return
         seen.append(same)
-        chips.append({"key": key, "label": words,
-                      "stops": way["stops"], "fuel": way["fuel"], "crosses": way.get("crosses", [])})
+        chips.append({"key": key, "label": words, "stops": way["stops"], "fuel": way["fuel"], "crosses": way.get("crosses", [])})
 
     own = found.get("own")
     if own and own.get("landings"):
@@ -96,7 +105,8 @@ def _most_filed(dep: str, dest: str) -> tuple[tuple[list[tuple], list[str]] | No
 
 @router.get("/api/route-options", openapi_extra=PUBLIC)
 def route_options(
-    dep: str, dest: str,
+    dep: str,
+    dest: str,
     #: The pilot's own route's stops, "KDSM,VPBNG": what it meets is said.
     stops: str = "",
     #: A stock profile's name; none for no airplane picked: the ways are
@@ -119,16 +129,35 @@ def route_options(
     order for the address's `stops`, its fuel stops, and its distance,
     minutes and fuel, from a coarse read the plan then checks leg by leg.
     It only suggests."""
-    key = (dep.upper(), dest.upper(), stops.upper(), aircraft, cruise_tas_kt, fuel_burn_gph, usable_fuel_gal, service_ceiling_ft,
-           depart.isoformat() if depart else None, min_ceiling_ft, min_visibility_sm)
+    key = (
+        dep.upper(),
+        dest.upper(),
+        stops.upper(),
+        aircraft,
+        cruise_tas_kt,
+        fuel_burn_gph,
+        usable_fuel_gal,
+        service_ceiling_ft,
+        depart.isoformat() if depart else None,
+        min_ceiling_ft,
+        min_visibility_sm,
+    )
     with _LOCK:
         kept = _KEPT.get(key) or _KEPT_SHORT.get(key)
     if kept is not None:
         return kept
     start, end = resolve(dep, dest)
-    profile = None if aircraft is None else aircraft_profile(
-        aircraft, cruise_tas_kt=cruise_tas_kt, fuel_burn_gph=fuel_burn_gph, usable_fuel_gal=usable_fuel_gal,
-        service_ceiling_ft=service_ceiling_ft)
+    profile = (
+        None
+        if aircraft is None
+        else aircraft_profile(
+            aircraft,
+            cruise_tas_kt=cruise_tas_kt,
+            fuel_burn_gph=fuel_burn_gph,
+            usable_fuel_gal=usable_fuel_gal,
+            service_ceiling_ft=service_ceiling_ft,
+        )
+    )
     # The pilot's own route, its points by ident: what it meets, and it with
     # the fuel stops it needs put in (`own`).
     # A route the plan refuses (too many stops, a stop twice over) still
@@ -150,9 +179,16 @@ def route_options(
     found = wingtip_route_options.options(
         {"ident": dep.upper(), "lat": start["lat"], "lon": start["lon"]},
         {"ident": dest.upper(), "lat": end["lat"], "lon": end["lon"]},
-        profile, depart=depart, fcst_hr=forecast_hour_for(depart),
-        min_ceiling_ft=min_ceiling_ft, min_visibility_sm=min_visibility_sm, current=current if stops.strip() else None,
-        current_idents=current_idents, current_landed=current_landed, filed=filed, food=nearby.food_at,
+        profile,
+        depart=depart,
+        fcst_hr=forecast_hour_for(depart),
+        min_ceiling_ft=min_ceiling_ft,
+        min_visibility_sm=min_visibility_sm,
+        current=current if stops.strip() else None,
+        current_idents=current_idents,
+        current_landed=current_landed,
+        filed=filed,
+        food=nearby.food_at,
     )
     unread = found.pop("food_unread", None) or []
     for field in unread:

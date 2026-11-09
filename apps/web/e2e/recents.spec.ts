@@ -25,18 +25,21 @@ const AIRCRAFT = [
 ];
 
 async function seed(page: Page, recentAirports = AIRPORTS, recentRoutes: unknown[] = []) {
-  await page.addInitScript(({ recentAirports, recentAircraft, recentRoutes }) => {
-    // Once: a reload keeps what the test took off.
-    if (sessionStorage.getItem("recents-seeded")) return;
-    sessionStorage.setItem("recents-seeded", "1");
-    localStorage.setItem("wingtip.preferences", JSON.stringify({ state: { recentAirports, recentAircraft, recentRoutes }, version: 0 }));
-  }, { recentAirports, recentAircraft: AIRCRAFT, recentRoutes });
+  await page.addInitScript(
+    ({ recentAirports, recentAircraft, recentRoutes }) => {
+      // Once: a reload keeps what the test took off.
+      if (sessionStorage.getItem("recents-seeded")) return;
+      sessionStorage.setItem("recents-seeded", "1");
+      localStorage.setItem("wingtip.preferences", JSON.stringify({ state: { recentAirports, recentAircraft, recentRoutes }, version: 0 }));
+    },
+    { recentAirports, recentAircraft: AIRCRAFT, recentRoutes },
+  );
 }
 
 /** A swipe to the left, as the browser's own scrolling takes it: the row's scroller to its end. */
 async function swipeLeft(row: Locator) {
-  await row.evaluate(el => el.scrollTo({ left: el.scrollWidth }));
-  await expect.poll(() => row.evaluate(el => el.scrollLeft)).toBeGreaterThan(40);
+  await row.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
+  await expect.poll(() => row.evaluate((el) => el.scrollLeft)).toBeGreaterThan(40);
 }
 
 /** Airport's Recents in full, all the way up: the list their title
@@ -69,10 +72,12 @@ test("a swipe to the left uncovers a Delete that takes an airport off the Recent
   // for: scroll-snap settles it over a few frames, and the row narrows
   // when the sheet's list grows a scroll bar.
   const del = first.getByTestId("swipe-delete");
-  await expect.poll(async () => {
-    const [d, r] = [(await del.boundingBox())!, (await first.boundingBox())!];
-    return d.x + d.width - (r.x + r.width);
-  }).toBeLessThanOrEqual(1);
+  await expect
+    .poll(async () => {
+      const [d, r] = [(await del.boundingBox())!, (await first.boundingBox())!];
+      return d.x + d.width - (r.x + r.width);
+    })
+    .toBeLessThanOrEqual(1);
   const shown = (await del.boundingBox())!;
   // As high as the row, so the 44 points are the row's.
   expect(shown.height).toBeGreaterThanOrEqual(44);
@@ -93,7 +98,7 @@ test("a swipe to the left uncovers a Delete that takes an airport off the Recent
   // would scroll it whole into sight first, covering it itself.
   const at = (await row.boundingBox())!;
   await page.mouse.click(at.x + 24, at.y + at.height / 2);
-  await expect.poll(() => row.evaluate(el => el.scrollLeft)).toBe(0);
+  await expect.poll(() => row.evaluate((el) => el.scrollLeft)).toBe(0);
   await expect(page).not.toHaveURL(/[?&]place=/);
 
   // The keyboard's way: the Delete is in the tab order, named.
@@ -113,14 +118,17 @@ test("a swipe to the left uncovers a Delete that takes an airport off the Recent
   await expect(out).toBeFocused();
   if (onPhone) {
     await expect(ask).toHaveAttribute("data-slot", "sheet-content");
-    await ask.evaluate(el => Promise.all(el.getAnimations().map(a => a.finished)));
-    const foot = await ask.evaluate(el => innerHeight - el.getBoundingClientRect().bottom);
+    await ask.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
+    const foot = await ask.evaluate((el) => innerHeight - el.getBoundingClientRect().bottom);
     expect(foot).toBeCloseTo(8, 0);
     // In the title row, at its end, level with the title.
     const row = ask.locator("[data-slot=sheet-header]");
-    const [title, close] = [(await row.locator("[data-slot=sheet-title]").boundingBox())!, (await row.getByRole("button", { name: "Close" }).boundingBox())!];
+    const [title, close] = [
+      (await row.locator("[data-slot=sheet-title]").boundingBox())!,
+      (await row.getByRole("button", { name: "Close" }).boundingBox())!,
+    ];
     expect(close.x).toBeGreaterThanOrEqual(title.x + title.width - 1);
-    expect(Math.abs((close.y + close.height / 2) - (title.y + title.height / 2))).toBeLessThanOrEqual(4);
+    expect(Math.abs(close.y + close.height / 2 - (title.y + title.height / 2))).toBeLessThanOrEqual(4);
     // No Cancel beside it: the close is the way out.
     await expect(ask.getByRole("button", { name: "Cancel" })).toHaveCount(0);
   }
@@ -132,7 +140,9 @@ test("a swipe to the left uncovers a Delete that takes an airport off the Recent
   await expect(recents).toHaveCount(0);
 });
 
-test("the airports' Recents are tiles with their chart's symbols, newest first, and their title lists them, Back to the search", async ({ page }) => {
+test("the airports' Recents are tiles with their chart's symbols, newest first, and their title lists them, Back to the search", async ({
+  page,
+}) => {
   await seed(page, [
     ...AIRPORTS,
     { ident: "KMSN", name: "Dane County Regional Airport", municipality: "Madison" },
@@ -201,7 +211,9 @@ test("the airplanes' Recents: a long press or a right click offers the Delete to
   await expect(recents).toHaveCount(0);
 });
 
-test("FPL's strip shows Saved or, from its filter, the latest routes planned as tiles, their title the rest, a tap plans one again and it comes first", async ({ page }) => {
+test("FPL's strip shows Saved or, from its filter, the latest routes planned as tiles, their title the rest, a tap plans one again and it comes first", async ({
+  page,
+}) => {
   const day = (d: number) => Date.UTC(2026, 9, d, 15);
   await seed(page, AIRPORTS, [
     { dep: "C81", dest: "KDLH", stops: [], at: day(15) },
@@ -234,7 +246,10 @@ test("FPL's strip shows Saved or, from its filter, the latest routes planned as 
   await all.last().click();
   await expect(page).toHaveURL(/[?&]dep=C81&dest=KMSN/);
   // Kept first once the planner has answered it.
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("wingtip.preferences")!).state.recentRoutes[0]?.dest), { timeout: 30_000 })
+  await expect
+    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("wingtip.preferences")!).state.recentRoutes[0]?.dest), {
+      timeout: 30_000,
+    })
     .toBe("KMSN");
   // Cleared from the route's box, the sheet out where the box is.
   await clearTheRoute(page);

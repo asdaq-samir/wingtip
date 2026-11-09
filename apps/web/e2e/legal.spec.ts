@@ -8,7 +8,9 @@ import { noTips, openConsole, openSetup, showTabs, consolePage } from "./helpers
  * and linked from Settings and from the sign-in dialog (Apple's Review
  * Guidelines 1.5 and 5.1.1(i)).
  */
-test.beforeEach(async ({ page }) => { await page.addInitScript(noTips); });
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(noTips);
+});
 
 const PAGES = [
   { path: "/app/privacy.html", heading: "Privacy policy", text: /Anthropic/ },
@@ -35,7 +37,11 @@ test("the console's About links the three pages", async ({ page }) => {
   // With the app's build and its sources, since About took them from
   // under Settings.
   await consolePage(page.getByTestId("console-sheet"), "About");
-  for (const [key, p] of [["privacy", PAGES[0]!], ["terms", PAGES[1]!], ["support", PAGES[2]!]] as const) {
+  for (const [key, p] of [
+    ["privacy", PAGES[0]!],
+    ["terms", PAGES[1]!],
+    ["support", PAGES[2]!],
+  ] as const) {
     await expect(page.getByTestId(`legal-${key}`)).toHaveAttribute("href", p.path);
   }
 });

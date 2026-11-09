@@ -32,7 +32,8 @@ async function photoForReading(file: Blob): Promise<string> {
   context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
   const jpeg = await new Promise<Blob>((resolve, reject) =>
-    canvas.toBlob(b => (b ? resolve(b) : reject(new Error("This browser cannot prepare the photo."))), "image/jpeg", JPEG_QUALITY));
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("This browser cannot prepare the photo."))), "image/jpeg", JPEG_QUALITY),
+  );
   return base64(jpeg);
 }
 

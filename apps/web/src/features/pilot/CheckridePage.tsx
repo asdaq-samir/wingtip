@@ -37,17 +37,25 @@ export function KnowledgeCodes({ codes }: { codes: string[] }) {
     <ListGroup title="Knowledge test">
       {codes.length === 0 ? (
         <ListRow muted title="No codes yet" />
-      ) : codes.map(code => {
-        const found = table ? lookUp(table, code) : null;
-        return (
-          <ListRow
-            key={code}
-            title={<span className="font-mono">{code}</span>}
-            description={table ? (found ? `${found.task}${found.element ? `: ${found.element}` : ""}` : `Not in ${table.editions.join(" or ")}`) : "…"}
-            data-testid="acs-code"
-          />
-        );
-      })}
+      ) : (
+        codes.map((code) => {
+          const found = table ? lookUp(table, code) : null;
+          return (
+            <ListRow
+              key={code}
+              title={<span className="font-mono">{code}</span>}
+              description={
+                table
+                  ? found
+                    ? `${found.task}${found.element ? `: ${found.element}` : ""}`
+                    : `Not in ${table.editions.join(" or ")}`
+                  : "…"
+              }
+              data-testid="acs-code"
+            />
+          );
+        })
+      )}
     </ListGroup>
   );
 }
@@ -59,19 +67,39 @@ function KnowledgeTest({ codes, onSave, saving }: { codes: string[]; onSave: (co
   return (
     <div className="space-y-3">
       <KnowledgeCodes codes={codes} />
-      <form className="space-y-2" onSubmit={e => { e.preventDefault(); onSave([...new Set([...codes, ...typed])]); setText(""); }}>
-        <label htmlFor={id} className={cn("text-muted-foreground", TEXT.note)}>Paste or type the report's codes</label>
+      <form
+        className="space-y-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSave([...new Set([...codes, ...typed])]);
+          setText("");
+        }}
+      >
+        <label htmlFor={id} className={cn("text-muted-foreground", TEXT.note)}>
+          Paste or type the report's codes
+        </label>
         <Textarea
-          id={id} value={text} onChange={e => setText(e.target.value)} placeholder="PA.I.E.K1 PA.I.D.K2"
-          className="font-mono" rows={2} data-testid="acs-codes-input"
+          id={id}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="PA.I.E.K1 PA.I.D.K2"
+          className="font-mono"
+          rows={2}
+          data-testid="acs-codes-input"
         />
         <div className="flex items-center justify-between gap-2">
-          <span className={cn("text-muted-foreground", TEXT.note)}>{typed.length ? `${typed.length} code${typed.length === 1 ? "" : "s"} found` : ""}</span>
+          <span className={cn("text-muted-foreground", TEXT.note)}>
+            {typed.length ? `${typed.length} code${typed.length === 1 ? "" : "s"} found` : ""}
+          </span>
           <span className="flex gap-2">
             {codes.length > 0 && (
-              <Button type="button" variant="ghost" size="sm" disabled={saving} onClick={() => onSave([])} data-testid="acs-codes-clear">Clear</Button>
+              <Button type="button" variant="ghost" size="sm" disabled={saving} onClick={() => onSave([])} data-testid="acs-codes-clear">
+                Clear
+              </Button>
             )}
-            <Button type="submit" size="sm" disabled={saving || typed.length === 0} data-testid="acs-codes-save">Add</Button>
+            <Button type="submit" size="sm" disabled={saving || typed.length === 0} data-testid="acs-codes-save">
+              Add
+            </Button>
           </span>
         </div>
       </form>
@@ -87,12 +115,16 @@ export function ExperienceGroup({ training }: { training: Training }) {
     // logbook's columns: dual and cross-country counted as the smaller of
     // the two on each flight.
     <ListGroup title="Private pilot experience">
-      {training.experience.map(item => (
+      {training.experience.map((item) => (
         <ListRow
           key={item.key}
-          media={item.met
-            ? <Check className={cn("size-5", FINDING_TONE.ok)} aria-label="Met" />
-            : <Circle className="size-5 text-muted-foreground" aria-label="Not yet" />}
+          media={
+            item.met ? (
+              <Check className={cn("size-5", FINDING_TONE.ok)} aria-label="Met" />
+            ) : (
+              <Circle className="size-5 text-muted-foreground" aria-label="Not yet" />
+            )
+          }
           title={item.label}
           description={item.rule}
           value={amount(item)}
@@ -120,7 +152,10 @@ function Instructors({ training }: { training: Training }) {
       if (name.trim() && name.trim() !== training.fullName) await api.training.setName(name.trim());
       return api.training.askInstructor(email.trim());
     },
-    onSuccess: next => { keep(next); setEmail(""); },
+    onSuccess: (next) => {
+      keep(next);
+      setEmail("");
+    },
   });
   const drop = useMutation({ mutationFn: api.training.dropInstructor, onSuccess: keep });
   const withdraw = useMutation({ mutationFn: api.training.withdrawReview, onSuccess: keep });
@@ -133,42 +168,70 @@ function Instructors({ training }: { training: Training }) {
           61.93(c)(3)) and signs the endorsements; either can end it. */}
       <ListGroup title="Your instructor">
         <ListRow id={nameId} title="Your name" description="As on your student pilot certificate">
-          <FieldHit htmlFor={nameId}><Input
-            id={nameId} value={name} placeholder="Avery B. Student" maxLength={120} className="h-8 w-44 sm:w-56" autoComplete="name"
-            onChange={e => setName(e.target.value)} data-testid="student-name"
-            onBlur={() => { if (name.trim() && name.trim() !== training.fullName) saveName.mutate(name.trim()); }}
-          /></FieldHit>
+          <FieldHit htmlFor={nameId}>
+            <Input
+              id={nameId}
+              value={name}
+              placeholder="Avery B. Student"
+              maxLength={120}
+              className="h-8 w-44 sm:w-56"
+              autoComplete="name"
+              onChange={(e) => setName(e.target.value)}
+              data-testid="student-name"
+              onBlur={() => {
+                if (name.trim() && name.trim() !== training.fullName) saveName.mutate(name.trim());
+              }}
+            />
+          </FieldHit>
         </ListRow>
-        {training.instructors.map(l => (
+        {training.instructors.map((l) => (
           <ListRow
-            key={l.id} title={l.name ?? l.email}
+            key={l.id}
+            title={l.name ?? l.email}
             description={l.accepted ? [l.certificate, l.email].filter(Boolean).join(" · ") : "Asked, not answered yet"}
             data-testid="instructor-link"
           >
-            <Button type="button" variant="ghost" size="sm" className="text-destructive" disabled={drop.isPending}
-              onClick={() => drop.mutate(l.id)} data-testid="instructor-remove">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-destructive"
+              disabled={drop.isPending}
+              onClick={() => drop.mutate(l.id)}
+              data-testid="instructor-remove"
+            >
               Remove
             </Button>
           </ListRow>
         ))}
         <ListRow id={emailId} title="Ask an instructor">
-          <FieldHit htmlFor={emailId}><Input
-            id={emailId} type="email" value={email} placeholder="cfi@example.com" className="h-8 w-44 sm:w-56" autoComplete="off"
-            onChange={e => setEmail(e.target.value)} data-testid="instructor-email"
-          /></FieldHit>
+          <FieldHit htmlFor={emailId}>
+            <Input
+              id={emailId}
+              type="email"
+              value={email}
+              placeholder="cfi@example.com"
+              className="h-8 w-44 sm:w-56"
+              autoComplete="off"
+              onChange={(e) => setEmail(e.target.value)}
+              data-testid="instructor-email"
+            />
+          </FieldHit>
         </ListRow>
         <ListRow
           title={<span className="font-medium text-tint">Ask</span>}
           description={named ? undefined : "Give your name first: your endorsements name you by it"}
           disabled={!named || !/^\S+@\S+\.\S+$/.test(email.trim()) || ask.isPending}
-          onClick={() => ask.mutate()} data-testid="instructor-ask"
+          onClick={() => ask.mutate()}
+          data-testid="instructor-ask"
         />
       </ListGroup>
       {training.reviews.length > 0 && (
         <ListGroup title="Solo cross-countries">
-          {training.reviews.map(r => (
+          {training.reviews.map((r) => (
             <ListRow
-              key={r.id} title={<span className="font-mono">{reviewRoute(r)}</span>}
+              key={r.id}
+              title={<span className="font-mono">{reviewRoute(r)}</span>}
               description={`${said(r.flightOn)} · ${r.makeModel} · ${reviewState(r)}`}
               data-testid="review-row"
             >
@@ -181,7 +244,11 @@ function Instructors({ training }: { training: Training }) {
           ))}
         </ListGroup>
       )}
-      {problem && <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="instructor-problem">{problem}</p>}
+      {problem && (
+        <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="instructor-problem">
+          {problem}
+        </p>
+      )}
     </>
   );
 }
@@ -194,12 +261,13 @@ function Lessons({ training }: { training: Training }) {
   const today = localDay();
   return (
     <ListGroup title="Approach lessons">
-      {training.lessons.map(l => (
+      {training.lessons.map((l) => (
         <ConsoleClose key={l.id}>
           <ListRow
             title={`${l.procedureName} · ${l.airportIdent}`}
             description={[`From ${l.instructorName}`, dueWords(l, today), lessonStatus(l)].filter(Boolean).join(" · ")}
-            to={lessonHref(l.id)} data-testid="lesson-row"
+            to={lessonHref(l.id)}
+            data-testid="lesson-row"
           />
         </ConsoleClose>
       ))}
@@ -231,41 +299,55 @@ export default function CheckridePage() {
     onSuccess: keep,
   });
   if (!training) return <QueryState query={asked} fetching="Fetching your record…" failed="Your record could not be fetched." />;
-  const recorded = new Map(training.endorsements.map(e => [e.code, e]));
+  const recorded = new Map(training.endorsements.map((e) => [e.code, e]));
   const signed = inForce(training.signed);
-  const voided = training.signed.filter(e => e.voided);
+  const voided = training.signed.filter((e) => e.voided);
   return (
     <div className="space-y-5">
       <ExperienceGroup training={training} />
 
-      <KnowledgeTest codes={training.knowledgeTestCodes} saving={codes.isPending} onSave={next => codes.mutate(next)} />
+      <KnowledgeTest codes={training.knowledgeTestCodes} saving={codes.isPending} onSave={(next) => codes.mutate(next)} />
 
       {/* AC 61-65K's student endorsements: signed here by the instructor, or
           the day one was signed in the paper logbook. */}
       <ListGroup title="Endorsements">
-        {training.kinds.map(kind => {
+        {training.kinds.map((kind) => {
           const e = signed.get(kind.code);
           if (e) return <SignedRow key={kind.code} kind={kind} e={e} />;
           const on = recorded.get(kind.code);
           return (
             <ListRow
-              key={kind.code} id={`endorsement-day-${kind.code}`}
+              key={kind.code}
+              id={`endorsement-day-${kind.code}`}
               title={kind.label}
-              description={<><span className="block">{kind.rule}</span><GoodTo until={on?.until} /></>}
+              description={
+                <>
+                  <span className="block">{kind.rule}</span>
+                  <GoodTo until={on?.until} />
+                </>
+              }
               data-testid="endorsement"
             >
-              <FieldHit htmlFor={`endorsement-day-${kind.code}`}><Input
-                id={`endorsement-day-${kind.code}`} type="date" aria-label={`${kind.label}, the day endorsed`} className="h-8 w-40"
-                value={on?.endorsedOn ?? ""} data-testid={`endorsement-${kind.code}`}
-                onChange={e => endorse.mutate({ code: kind.code, on: e.target.value || null })}
-              /></FieldHit>
+              <FieldHit htmlFor={`endorsement-day-${kind.code}`}>
+                <Input
+                  id={`endorsement-day-${kind.code}`}
+                  type="date"
+                  aria-label={`${kind.label}, the day endorsed`}
+                  className="h-8 w-40"
+                  value={on?.endorsedOn ?? ""}
+                  data-testid={`endorsement-${kind.code}`}
+                  onChange={(e) => endorse.mutate({ code: kind.code, on: e.target.value || null })}
+                />
+              </FieldHit>
             </ListRow>
           );
         })}
       </ListGroup>
       {voided.length > 0 && (
         <ListGroup title="Voided">
-          {voided.map(e => <SignedRow key={e.id} kind={training.kinds.find(k => k.code === e.code)} e={e} />)}
+          {voided.map((e) => (
+            <SignedRow key={e.id} kind={training.kinds.find((k) => k.code === e.code)} e={e} />
+          ))}
         </ListGroup>
       )}
 

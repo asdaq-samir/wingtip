@@ -12,5 +12,4 @@ public record SquawkDto(
         boolean inoperative,
         @Nullable DeferredFor deferredFor,
         @Nullable LocalDate fixedOn,
-        @Nullable String fixNote) {
-}
+        @Nullable String fixNote) {}

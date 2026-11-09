@@ -192,7 +192,11 @@ fn alternate(ident: &str, procs: &Approaches, forecast: Option<&Forecast>) -> Va
         ("precision", Value::Bool(procs.precision)),
         (
             "minimums",
-            if procs.any { obj(vec![("ceiling_ft", Value::Number(minimums.0)), ("visibility_sm", Value::Number(minimums.1))]) } else { Value::Null },
+            if procs.any {
+                obj(vec![("ceiling_ft", Value::Number(minimums.0)), ("visibility_sm", Value::Number(minimums.1))])
+            } else {
+                Value::Null
+            },
         ),
         ("alternate_minimums_url", procs.alternate_minimums_url.clone().map_or(Value::Null, Value::String)),
         ("ceiling_ft", opt(forecast.and_then(|f| f.ceiling_ft))),

@@ -56,21 +56,27 @@ import DueItemsGroup from "./DueItemsGroup";
 // -- the numeric conversion happens once, building the request body in
 // onSubmit below, rather than fighting react-hook-form's generics over
 // a coerced form-value type.
-const positiveNumber = (label: string) => z.string().trim().refine(
-  value => Number.isFinite(Number(value)) && Number(value) > 0,
-  `${label} must be a positive number`,
-);
+const positiveNumber = (label: string) =>
+  z
+    .string()
+    .trim()
+    .refine((value) => Number.isFinite(Number(value)) && Number(value) > 0, `${label} must be a positive number`);
 /** Blank, or a positive number: a figure the owner may leave unsaid. */
-const optionalPositiveNumber = (label: string) => z.string().trim().refine(
-  value => value === "" || (Number.isFinite(Number(value)) && Number(value) > 0),
-  `${label} must be a positive number`,
-);
+const optionalPositiveNumber = (label: string) =>
+  z
+    .string()
+    .trim()
+    .refine((value) => value === "" || (Number.isFinite(Number(value)) && Number(value) > 0), `${label} must be a positive number`);
 /** Blank, or a power a cruise table has: 40 to 100 percent, the
  *  server's limits and the planner's. */
-const optionalPercent = (label: string) => z.string().trim().refine(
-  value => value === "" || (Number.isFinite(Number(value)) && Number(value) >= 40 && Number(value) <= 100),
-  `${label} must be between 40 and 100%`,
-);
+const optionalPercent = (label: string) =>
+  z
+    .string()
+    .trim()
+    .refine(
+      (value) => value === "" || (Number.isFinite(Number(value)) && Number(value) >= 40 && Number(value) <= 100),
+      `${label} must be between 40 and 100%`,
+    );
 /** A form field as the request carries it: blank is null. */
 const orNull = (value: string) => (value.trim() ? Number(value) : null);
 
@@ -93,14 +99,29 @@ const aircraftSchema = z.object({
   // equipment and 10b's surveillance are letters and figures (TBL 4-2's
   // E1 and J1 among them), at most 40 and 20 (TBL 4-3); item 19's colour
   // and markings plain words.
-  equipment: z.string().trim().regex(/^[A-Za-z0-9]{0,40}$/, "Letters and figures, as SDFGRY"),
-  surveillance: z.string().trim().regex(/^[A-Za-z0-9]{0,20}$/, "Letters and figures, as B1"),
+  equipment: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z0-9]{0,40}$/, "Letters and figures, as SDFGRY"),
+  surveillance: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z0-9]{0,20}$/, "Letters and figures, as B1"),
   colour: z.string().trim().max(40, "At most 40 characters"),
 });
 type AircraftFormValues = z.infer<typeof aircraftSchema>;
 const EMPTY_AIRCRAFT_FORM: AircraftFormValues = {
-  tailNumber: "", typeDesignator: "", cruiseTasKt: "", fuelBurnGph: "", cruisePowerPct: "", climbTasKt: "",
-  climbFuelBurnGph: "", usableFuelGal: "", equipment: "", surveillance: "", colour: "",
+  tailNumber: "",
+  typeDesignator: "",
+  cruiseTasKt: "",
+  fuelBurnGph: "",
+  cruisePowerPct: "",
+  climbTasKt: "",
+  climbFuelBurnGph: "",
+  usableFuelGal: "",
+  equipment: "",
+  surveillance: "",
+  colour: "",
 };
 
 /** A signed-in pilot's own airplanes -- the one the nav log flies
@@ -128,8 +149,11 @@ const vorCheckSchema = z.object({
   checkedOn: requiredPastDay("The day is required"),
   kind: z.enum(["VOT", "REPAIR_STATION", "GROUND", "AIRBORNE", "RADIAL", "DUAL"]),
   place: z.string().trim().max(80, "At most 80 characters"),
-  errorDeg: z.string().trim().min(1, "The error is required")
-    .refine(value => Number.isFinite(Number(value)) && Math.abs(Number(value)) <= 30, "Within 30° either way"),
+  errorDeg: z
+    .string()
+    .trim()
+    .min(1, "The error is required")
+    .refine((value) => Number.isFinite(Number(value)) && Math.abs(Number(value)) <= 30, "Within 30° either way"),
 });
 type VorCheckValues = z.infer<typeof vorCheckSchema>;
 
@@ -144,20 +168,33 @@ type VorCheckValues = z.infer<typeof vorCheckSchema>;
 function VorCheckGroup({ aircraft }: { aircraft: Aircraft }) {
   const queryClient = useQueryClient();
   const id = useId();
-  const { register, control, handleSubmit, formState: { errors } } = useForm<VorCheckValues>({
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<VorCheckValues>({
     resolver: zodResolver(vorCheckSchema),
     defaultValues: { checkedOn: localDay(), kind: "VOT", place: "", errorDeg: "0" },
   });
   const record = useMutation({
     mutationFn: (request: VorCheckRequest) => api.aircraft.vorCheck(aircraft.id, request),
-    onSuccess: () => { done("VOR Check Saved"); void queryClient.invalidateQueries({ queryKey: ["aircraft"] }); },
+    onSuccess: () => {
+      done("VOR Check Saved");
+      void queryClient.invalidateQueries({ queryKey: ["aircraft"] });
+    },
   });
   // Inside the airplane's own form, so its Record is a button, not a
   // second <form>: handleSubmit checks the fields, then sends them, or
   // focuses the first one wrong.
-  const onRecord = handleSubmit(values => record.mutate({
-    checkedOn: values.checkedOn, kind: values.kind, place: values.place.trim() || null, errorDeg: Number(values.errorDeg),
-  }));
+  const onRecord = handleSubmit((values) =>
+    record.mutate({
+      checkedOn: values.checkedOn,
+      kind: values.kind,
+      place: values.place.trim() || null,
+      errorDeg: Number(values.errorDeg),
+    }),
+  );
   const last = aircraft.vorCheck;
   const today = localDay();
   const good = !!last && last.withinLimit && last.goodThrough >= today;
@@ -168,50 +205,101 @@ function VorCheckGroup({ aircraft }: { aircraft: Aircraft }) {
     <ListGroup title="VOR check">
       <ListRow
         title="Last check"
-        description={last ? `${last.checkedOn} · ${VOR_CHECKS.find(k => k.value === last.kind)?.label ?? last.kind}${last.place ? ` · ${last.place}` : ""} · ${last.errorDeg}°` : "None recorded"}
-        value={!last ? undefined : (
-          <span className={cn(good ? FINDING_TONE.ok : FINDING_TONE.stop)} data-testid="vor-check-standing">
-            {!last.withinLimit ? `Over ${last.limitDeg}°` : good ? `To ${last.goodThrough}` : `Ended ${last.goodThrough}`}
-          </span>
-        )}
+        description={
+          last
+            ? `${last.checkedOn} · ${VOR_CHECKS.find((k) => k.value === last.kind)?.label ?? last.kind}${last.place ? ` · ${last.place}` : ""} · ${last.errorDeg}°`
+            : "None recorded"
+        }
+        value={
+          !last ? undefined : (
+            <span className={cn(good ? FINDING_TONE.ok : FINDING_TONE.stop)} data-testid="vor-check-standing">
+              {!last.withinLimit ? `Over ${last.limitDeg}°` : good ? `To ${last.goodThrough}` : `Ended ${last.goodThrough}`}
+            </span>
+          )
+        }
       />
       <ListRow id={`${id}-on`} title="Checked on">
         <RowField id={`${id}-on`} error={errors.checkedOn?.message}>
-          <FieldHit htmlFor={`${id}-on`}><Input id={`${id}-on`} type="date" className="h-8 w-40" max={today} {...register("checkedOn")}
-            {...invalidProps(`${id}-on`, errors.checkedOn?.message)} aria-label="VOR check date" data-testid="vor-check-date" /></FieldHit>
+          <FieldHit htmlFor={`${id}-on`}>
+            <Input
+              id={`${id}-on`}
+              type="date"
+              className="h-8 w-40"
+              max={today}
+              {...register("checkedOn")}
+              {...invalidProps(`${id}-on`, errors.checkedOn?.message)}
+              aria-label="VOR check date"
+              data-testid="vor-check-date"
+            />
+          </FieldHit>
         </RowField>
       </ListRow>
       <ListRow title="How">
-        <Controller control={control} name="kind" render={({ field }) => (
-          <PullDown
-            label="How the VOR was checked" value={field.value} testId="vor-check-kind"
-            options={VOR_CHECKS.map(k => ({ value: k.value, label: `${k.label} (±${callEngine("vor_check_limit_deg", { kind: k.value })}°)` }))}
-            onChange={field.onChange}
-          />
-        )} />
+        <Controller
+          control={control}
+          name="kind"
+          render={({ field }) => (
+            <PullDown
+              label="How the VOR was checked"
+              value={field.value}
+              testId="vor-check-kind"
+              options={VOR_CHECKS.map((k) => ({
+                value: k.value,
+                label: `${k.label} (±${callEngine("vor_check_limit_deg", { kind: k.value })}°)`,
+              }))}
+              onChange={field.onChange}
+            />
+          )}
+        />
       </ListRow>
       <ListRow id={`${id}-place`} title="Where">
         <RowField id={`${id}-place`} error={errors.place?.message}>
-          <FieldHit htmlFor={`${id}-place`}><Input id={`${id}-place`} className="h-8 w-40 text-right" placeholder="KDLH VOT" {...register("place")}
-            {...invalidProps(`${id}-place`, errors.place?.message)} aria-label="Where the VOR was checked" /></FieldHit>
+          <FieldHit htmlFor={`${id}-place`}>
+            <Input
+              id={`${id}-place`}
+              className="h-8 w-40 text-right"
+              placeholder="KDLH VOT"
+              {...register("place")}
+              {...invalidProps(`${id}-place`, errors.place?.message)}
+              aria-label="Where the VOR was checked"
+            />
+          </FieldHit>
         </RowField>
       </ListRow>
       <ListRow id={`${id}-error`} title="Bearing error">
         <RowField id={`${id}-error`} error={errors.errorDeg?.message}>
-          <FieldHit htmlFor={`${id}-error`}><Input id={`${id}-error`} type="number" inputMode="decimal" step="any" className="h-8 w-24 text-right" {...register("errorDeg")}
-            {...invalidProps(`${id}-error`, errors.errorDeg?.message)} aria-label="Bearing error in degrees" data-testid="vor-check-error" /></FieldHit>
+          <FieldHit htmlFor={`${id}-error`}>
+            <Input
+              id={`${id}-error`}
+              type="number"
+              inputMode="decimal"
+              step="any"
+              className="h-8 w-24 text-right"
+              {...register("errorDeg")}
+              {...invalidProps(`${id}-error`, errors.errorDeg?.message)}
+              aria-label="Bearing error in degrees"
+              data-testid="vor-check-error"
+            />
+          </FieldHit>
         </RowField>
       </ListRow>
       <ListRow
         title={<span className="font-medium text-tint">Record check</span>}
-        onClick={() => void onRecord()} disabled={record.isPending} data-testid="vor-check-record"
+        onClick={() => void onRecord()}
+        disabled={record.isPending}
+        data-testid="vor-check-record"
       />
     </ListGroup>
   );
 }
 
 /** The inspections' dates, each with the rule that asks for it. */
-const DATED: { key: "annualOn" | "staticCheckOn" | "transponderCheckOn" | "eltInspectedOn"; through: "annualGoodThrough" | "staticCheckGoodThrough" | "transponderCheckGoodThrough" | "eltInspectionGoodThrough"; title: string; rule: string }[] = [
+const DATED: {
+  key: "annualOn" | "staticCheckOn" | "transponderCheckOn" | "eltInspectedOn";
+  through: "annualGoodThrough" | "staticCheckGoodThrough" | "transponderCheckGoodThrough" | "eltInspectionGoodThrough";
+  title: string;
+  rule: string;
+}[] = [
   { key: "annualOn", through: "annualGoodThrough", title: "Annual", rule: "12 calendar months, 14 CFR 91.409(a)" },
   { key: "staticCheckOn", through: "staticCheckGoodThrough", title: "Altimeter and static", rule: "24 calendar months, for IFR, 91.411" },
   { key: "transponderCheckOn", through: "transponderCheckGoodThrough", title: "Transponder", rule: "24 calendar months, 91.413" },
@@ -222,9 +310,13 @@ const DATED: { key: "annualOn" | "staticCheckOn" | "transponderCheckOn" | "eltIn
 // blank; the days done not ahead of today, and the hours not negative.
 // The ELT battery's day is the one marked on it (91.207(c)), so may be.
 const inspectionsSchema = z.object({
-  annualOn: pastDay, staticCheckOn: pastDay, transponderCheckOn: pastDay, eltInspectedOn: pastDay,
+  annualOn: pastDay,
+  staticCheckOn: pastDay,
+  transponderCheckOn: pastDay,
+  eltInspectedOn: pastDay,
   eltBatteryDueOn: z.string(),
-  hundredHourAtHours: optionalHours, hoursNow: optionalHours,
+  hundredHourAtHours: optionalHours,
+  hoursNow: optionalHours,
   forHire: z.boolean(),
 });
 type InspectionsValues = z.infer<typeof inspectionsSchema>;
@@ -241,7 +333,12 @@ function Standing({ through, testId }: { through: string | null | undefined; tes
       <span className={cn(good ? FINDING_TONE.ok : FINDING_TONE.stop)} data-testid={testId}>
         {good ? `To ${through}` : `Past due since ${through}`}
       </span>
-      {good && <span className={FINDING_TONE[dueTone({ daysLeft: days, hoursLeft: null })]} data-testid={`${testId}-days`}> · {daysWords(days)}</span>}
+      {good && (
+        <span className={FINDING_TONE[dueTone({ daysLeft: days, hoursLeft: null })]} data-testid={`${testId}-days`}>
+          {" "}
+          · {daysWords(days)}
+        </span>
+      )}
     </>
   );
 }
@@ -256,11 +353,18 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
   const queryClient = useQueryClient();
   const id = useId();
   const recorded = aircraft.inspections;
-  const { register, control, handleSubmit, formState: { errors } } = useForm<InspectionsValues>({
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<InspectionsValues>({
     resolver: zodResolver(inspectionsSchema),
     defaultValues: {
-      annualOn: recorded?.annualOn ?? "", staticCheckOn: recorded?.staticCheckOn ?? "",
-      transponderCheckOn: recorded?.transponderCheckOn ?? "", eltInspectedOn: recorded?.eltInspectedOn ?? "",
+      annualOn: recorded?.annualOn ?? "",
+      staticCheckOn: recorded?.staticCheckOn ?? "",
+      transponderCheckOn: recorded?.transponderCheckOn ?? "",
+      eltInspectedOn: recorded?.eltInspectedOn ?? "",
       eltBatteryDueOn: recorded?.eltBatteryDueOn ?? "",
       hundredHourAtHours: recorded?.hundredHourAtHours == null ? "" : String(recorded.hundredHourAtHours),
       hoursNow: recorded?.hoursNow == null ? "" : String(recorded.hoursNow),
@@ -277,13 +381,18 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
     },
   });
   // A button inside the airplane's form, as the VOR check's Record is.
-  const onSave = handleSubmit(values => save.mutate({
-    annualOn: textOrNull(values.annualOn), staticCheckOn: textOrNull(values.staticCheckOn),
-    transponderCheckOn: textOrNull(values.transponderCheckOn), eltInspectedOn: textOrNull(values.eltInspectedOn),
-    eltBatteryDueOn: textOrNull(values.eltBatteryDueOn),
-    hundredHourAtHours: numberOrNull(values.hundredHourAtHours), hoursNow: numberOrNull(values.hoursNow),
-    forHire: values.forHire,
-  }));
+  const onSave = handleSubmit((values) =>
+    save.mutate({
+      annualOn: textOrNull(values.annualOn),
+      staticCheckOn: textOrNull(values.staticCheckOn),
+      transponderCheckOn: textOrNull(values.transponderCheckOn),
+      eltInspectedOn: textOrNull(values.eltInspectedOn),
+      eltBatteryDueOn: textOrNull(values.eltBatteryDueOn),
+      hundredHourAtHours: numberOrNull(values.hundredHourAtHours),
+      hoursNow: numberOrNull(values.hoursNow),
+      forHire: values.forHire,
+    }),
+  );
   const today = localDay();
   const due = recorded?.hundredHourDueAtHours;
   return (
@@ -292,67 +401,144 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
     // it (91.409(b)); the ELT's are not owed on a training flight within 50
     // nm of its departure (91.207(f)).
     <ListGroup title="Inspections">
-      {DATED.map(d => (
+      {DATED.map((d) => (
         <ListRow
-          key={d.key} id={`${id}-${d.key}`} title={d.title}
-          description={<>{d.rule}{recorded?.[d.through] && <> · <Standing through={recorded[d.through]} testId={`inspection-${d.key}`} /></>}</>}
+          key={d.key}
+          id={`${id}-${d.key}`}
+          title={d.title}
+          description={
+            <>
+              {d.rule}
+              {recorded?.[d.through] && (
+                <>
+                  {" "}
+                  · <Standing through={recorded[d.through]} testId={`inspection-${d.key}`} />
+                </>
+              )}
+            </>
+          }
         >
           <RowField id={`${id}-${d.key}`} error={errors[d.key]?.message}>
-            <FieldHit htmlFor={`${id}-${d.key}`}><Input
-              id={`${id}-${d.key}`} type="date" className="h-8 w-40" max={today} {...register(d.key)}
-              {...invalidProps(`${id}-${d.key}`, errors[d.key]?.message)} data-testid={`inspection-${d.key}-date`}
-            /></FieldHit>
+            <FieldHit htmlFor={`${id}-${d.key}`}>
+              <Input
+                id={`${id}-${d.key}`}
+                type="date"
+                className="h-8 w-40"
+                max={today}
+                {...register(d.key)}
+                {...invalidProps(`${id}-${d.key}`, errors[d.key]?.message)}
+                data-testid={`inspection-${d.key}-date`}
+              />
+            </FieldHit>
           </RowField>
         </ListRow>
       ))}
       <ListRow
-        id={`${id}-battery`} title="ELT battery replace by"
-        description={<>As marked on the transmitter, 91.207(c){recorded?.eltBatteryDueOn && (
-          <> · <span className={cn(recorded.eltBatteryDueOn > today ? FINDING_TONE.ok : FINDING_TONE.stop)} data-testid="inspection-eltBattery">
-            {recorded.eltBatteryDueOn > today ? `By ${recorded.eltBatteryDueOn}` : `Due since ${recorded.eltBatteryDueOn}`}
-          </span></>
-        )}</>}
+        id={`${id}-battery`}
+        title="ELT battery replace by"
+        description={
+          <>
+            As marked on the transmitter, 91.207(c)
+            {recorded?.eltBatteryDueOn && (
+              <>
+                {" "}
+                ·{" "}
+                <span
+                  className={cn(recorded.eltBatteryDueOn > today ? FINDING_TONE.ok : FINDING_TONE.stop)}
+                  data-testid="inspection-eltBattery"
+                >
+                  {recorded.eltBatteryDueOn > today ? `By ${recorded.eltBatteryDueOn}` : `Due since ${recorded.eltBatteryDueOn}`}
+                </span>
+              </>
+            )}
+          </>
+        }
       >
-        <FieldHit htmlFor={`${id}-battery`}><Input
-          id={`${id}-battery`} type="date" className="h-8 w-40" {...register("eltBatteryDueOn")} data-testid="inspection-eltBattery-date"
-        /></FieldHit>
+        <FieldHit htmlFor={`${id}-battery`}>
+          <Input
+            id={`${id}-battery`}
+            type="date"
+            className="h-8 w-40"
+            {...register("eltBatteryDueOn")}
+            data-testid="inspection-eltBattery-date"
+          />
+        </FieldHit>
       </ListRow>
       {/* Whether the 100-hour is owed at all: carrying anyone for hire, or
           flight instruction for hire in an airplane the instructor
           provides (91.409(b)). Only then is it listed and reminded of. */}
       <ListRow title="Flown for hire" description="Hire or instruction for hire: the 100-hour, 91.409(b)">
-        <Controller control={control} name="forHire" render={({ field }) => (
-          <TogglePill pressed={field.value} onPressedChange={field.onChange} label={field.value ? "Yes" : "No"} testId="inspection-forHire" />
-        )} />
+        <Controller
+          control={control}
+          name="forHire"
+          render={({ field }) => (
+            <TogglePill
+              pressed={field.value}
+              onPressedChange={field.onChange}
+              label={field.value ? "Yes" : "No"}
+              testId="inspection-forHire"
+            />
+          )}
+        />
       </ListRow>
       <ListRow
-        id={`${id}-at`} title="Hours at last 100-hour"
-        description={!forHire ? "Time in service, at the last annual or 100-hour" : due != null ? <>Due at {due.toFixed(1)} h{recorded?.hoursNow != null && (
-          <span className={cn(recorded.hoursNow < due ? FINDING_TONE.ok : FINDING_TONE.stop)} data-testid="inspection-hundredHour">
-            {recorded.hoursNow < due ? `, ${(due - recorded.hoursNow).toFixed(1)} h to go` : ", due now"}
-          </span>
-        )}</> : "Time in service, at the last annual or 100-hour"}
+        id={`${id}-at`}
+        title="Hours at last 100-hour"
+        description={
+          !forHire ? (
+            "Time in service, at the last annual or 100-hour"
+          ) : due != null ? (
+            <>
+              Due at {due.toFixed(1)} h
+              {recorded?.hoursNow != null && (
+                <span className={cn(recorded.hoursNow < due ? FINDING_TONE.ok : FINDING_TONE.stop)} data-testid="inspection-hundredHour">
+                  {recorded.hoursNow < due ? `, ${(due - recorded.hoursNow).toFixed(1)} h to go` : ", due now"}
+                </span>
+              )}
+            </>
+          ) : (
+            "Time in service, at the last annual or 100-hour"
+          )
+        }
       >
         <RowField id={`${id}-at`} error={errors.hundredHourAtHours?.message}>
-          <FieldHit htmlFor={`${id}-at`}><Input
-            id={`${id}-at`} type="number" inputMode="decimal" step="any" min={0} className="h-8 w-28 text-right"
-            {...register("hundredHourAtHours")} {...invalidProps(`${id}-at`, errors.hundredHourAtHours?.message)}
-            data-testid="inspection-hundredHourAt"
-          /></FieldHit>
+          <FieldHit htmlFor={`${id}-at`}>
+            <Input
+              id={`${id}-at`}
+              type="number"
+              inputMode="decimal"
+              step="any"
+              min={0}
+              className="h-8 w-28 text-right"
+              {...register("hundredHourAtHours")}
+              {...invalidProps(`${id}-at`, errors.hundredHourAtHours?.message)}
+              data-testid="inspection-hundredHourAt"
+            />
+          </FieldHit>
         </RowField>
       </ListRow>
       <ListRow id={`${id}-now`} title="Hours now">
         <RowField id={`${id}-now`} error={errors.hoursNow?.message}>
-          <FieldHit htmlFor={`${id}-now`}><Input
-            id={`${id}-now`} type="number" inputMode="decimal" step="any" min={0} className="h-8 w-28 text-right"
-            {...register("hoursNow")} {...invalidProps(`${id}-now`, errors.hoursNow?.message)}
-            data-testid="inspection-hoursNow"
-          /></FieldHit>
+          <FieldHit htmlFor={`${id}-now`}>
+            <Input
+              id={`${id}-now`}
+              type="number"
+              inputMode="decimal"
+              step="any"
+              min={0}
+              className="h-8 w-28 text-right"
+              {...register("hoursNow")}
+              {...invalidProps(`${id}-now`, errors.hoursNow?.message)}
+              data-testid="inspection-hoursNow"
+            />
+          </FieldHit>
         </RowField>
       </ListRow>
       <ListRow
         title={<span className="font-medium text-tint">Save inspections</span>}
-        onClick={() => void onSave()} disabled={save.isPending} data-testid="inspections-save"
+        onClick={() => void onSave()}
+        disabled={save.isPending}
+        data-testid="inspections-save"
       />
     </ListGroup>
   );
@@ -363,8 +549,8 @@ export function AircraftPanel() {
   const { data: list, isLoading } = useQuery(aircraftListQuery);
   // Which the nav log flies, remembered per browser, and the stock
   // profiles a pilot's own rides on (PlanWorkspace asks the same).
-  const flying = usePreferences(s => s.aircraft);
-  const fly = usePreferences(s => s.setAircraft);
+  const flying = usePreferences((s) => s.aircraft);
+  const fly = usePreferences((s) => s.setAircraft);
   const { data: profiles } = useQuery(aircraftProfilesQuery);
   const [editingId, setEditingId] = useState<number | null>(null);
   // The form is behind the list's New aircraft row: open for a new
@@ -374,11 +560,12 @@ export function AircraftPanel() {
   const formOpen = adding || editingId !== null;
   const formId = useId();
   const {
-    register, handleSubmit, reset, setValue, formState: { errors },
-  } = useForm<AircraftFormValues>({
-    resolver: zodResolver(aircraftSchema),
-    defaultValues: EMPTY_AIRCRAFT_FORM,
-  });
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<AircraftFormValues>({ resolver: zodResolver(aircraftSchema), defaultValues: EMPTY_AIRCRAFT_FORM });
 
   // Handbook figures confirmed from a photo (features/document-photo),
   // kept with the airplane when the pilot saves it, never before.
@@ -426,13 +613,17 @@ export function AircraftPanel() {
     setEditingId(a.id);
     setHandbook(null);
     reset({
-      tailNumber: a.tailNumber, typeDesignator: a.typeDesignator,
-      cruiseTasKt: String(a.cruiseTasKt), fuelBurnGph: String(a.fuelBurnGph),
+      tailNumber: a.tailNumber,
+      typeDesignator: a.typeDesignator,
+      cruiseTasKt: String(a.cruiseTasKt),
+      fuelBurnGph: String(a.fuelBurnGph),
       cruisePowerPct: a.cruisePowerPct == null ? "" : String(a.cruisePowerPct),
       climbTasKt: a.climbTasKt == null ? "" : String(a.climbTasKt),
       climbFuelBurnGph: a.climbFuelBurnGph == null ? "" : String(a.climbFuelBurnGph),
       usableFuelGal: a.usableFuelGal == null ? "" : String(a.usableFuelGal),
-      equipment: a.equipment ?? "", surveillance: a.surveillance ?? "", colour: a.colour ?? "",
+      equipment: a.equipment ?? "",
+      surveillance: a.surveillance ?? "",
+      colour: a.colour ?? "",
     });
   };
 
@@ -447,28 +638,39 @@ export function AircraftPanel() {
     fill("cruisePowerPct", profile.cruise_power_pct);
     fill("climbFuelBurnGph", profile.climb_fuel_burn_gph);
     fill("usableFuelGal", profile.usable_fuel_gal);
-    setHandbook(now => mergeHandbook(now ?? list?.find(a => a.id === editingId)?.handbook, figures));
+    setHandbook((now) => mergeHandbook(now ?? list?.find((a) => a.id === editingId)?.handbook, figures));
   };
 
-  const onSubmit = (values: AircraftFormValues) => save.mutate({ id: editingId, figures: handbook, request: {
-    tailNumber: values.tailNumber.trim(), typeDesignator: values.typeDesignator.trim(),
-    cruiseTasKt: Number(values.cruiseTasKt), fuelBurnGph: Number(values.fuelBurnGph),
-    cruisePowerPct: orNull(values.cruisePowerPct),
-    climbTasKt: orNull(values.climbTasKt), climbFuelBurnGph: orNull(values.climbFuelBurnGph),
-    usableFuelGal: orNull(values.usableFuelGal),
-    equipment: values.equipment.trim() || null, surveillance: values.surveillance.trim() || null,
-    colour: values.colour.trim() || null,
-  } });
+  const onSubmit = (values: AircraftFormValues) =>
+    save.mutate({
+      id: editingId,
+      figures: handbook,
+      request: {
+        tailNumber: values.tailNumber.trim(),
+        typeDesignator: values.typeDesignator.trim(),
+        cruiseTasKt: Number(values.cruiseTasKt),
+        fuelBurnGph: Number(values.fuelBurnGph),
+        cruisePowerPct: orNull(values.cruisePowerPct),
+        climbTasKt: orNull(values.climbTasKt),
+        climbFuelBurnGph: orNull(values.climbFuelBurnGph),
+        usableFuelGal: orNull(values.usableFuelGal),
+        equipment: values.equipment.trim() || null,
+        surveillance: values.surveillance.trim() || null,
+        colour: values.colour.trim() || null,
+      },
+    });
 
   // Delete is in the airplane's own form, asked first: it was a red
   // word on every row, beside Edit.
-  const editing = list?.find(a => a.id === editingId) ?? null;
+  const editing = list?.find((a) => a.id === editingId) ?? null;
   const [askDelete, deleteDialog] = useConfirm({
     title: `Delete ${editing?.tailNumber ?? "this airplane"}?`,
     description: "It goes from your airplanes and from the nav log's picker. This can't be undone.",
     confirmLabel: "Delete airplane",
     destructive: true,
-    onConfirm: () => { if (editingId !== null) remove.mutate(editingId); },
+    onConfirm: () => {
+      if (editingId !== null) remove.mutate(editingId);
+    },
   });
   const formElementId = `${formId}-form`;
   const problem = (message?: string) => (message ? <span className="text-destructive">{message}</span> : undefined);
@@ -476,220 +678,333 @@ export function AircraftPanel() {
   // The airplane's checklist, a page of the form's (ChecklistPage).
   const checklistPages = editing
     ? {
-      [`checklist-${editing.id}`]: { title: `${editing.tailNumber} checklists`, content: <ChecklistPage airplane={`mine:${editing.id}`} name={editing.tailNumber} /> },
-      [`squawks-${editing.id}`]: { title: `${editing.tailNumber} squawks`, content: <SquawksPage aircraft={editing} /> },
-    }
+        [`checklist-${editing.id}`]: {
+          title: `${editing.tailNumber} checklists`,
+          content: <ChecklistPage airplane={`mine:${editing.id}`} name={editing.tailNumber} />,
+        },
+        [`squawks-${editing.id}`]: { title: `${editing.tailNumber} squawks`, content: <SquawksPage aircraft={editing} /> },
+      }
     : {};
 
   // The tab says what this is: no heading over the list, only the
   // group's own, as an iOS page under a segmented control has.
   return (
     <ConsolePages back="Airplanes" pages={checklistPages}>
-    <section aria-label="Airplanes">
-      {isLoading ? (
-        <p role="status" className={cn("px-1 text-muted-foreground", TEXT.note)}>Fetching your airplanes…</p>
-      ) : (
-        // A grouped list at every width, as iOS lists things: a row per
-        // airplane, and New aircraft as the last row. It was a card per
-        // airplane with an Edit and a Delete on each on a phone, a table
-        // from md up, and a small plus beside the heading as the only way
-        // to add one; then a row that opened the form, and which one the
-        // nav log flew was said only under the route.
-        <ResponsivePopover open={formOpen} onOpenChange={open => (open ? setAdding(true) : cancelEdit())}>
-          {/* The one flown a radio group's choice (ListChoices): arrow keys
+      <section aria-label="Airplanes">
+        {isLoading ? (
+          <p role="status" className={cn("px-1 text-muted-foreground", TEXT.note)}>
+            Fetching your airplanes…
+          </p>
+        ) : (
+          // A grouped list at every width, as iOS lists things: a row per
+          // airplane, and New aircraft as the last row. It was a card per
+          // airplane with an Edit and a Delete on each on a phone, a table
+          // from md up, and a small plus beside the heading as the only way
+          // to add one; then a row that opened the form, and which one the
+          // nav log flew was said only under the route.
+          <ResponsivePopover open={formOpen} onOpenChange={(open) => (open ? setAdding(true) : cancelEdit())}>
+            {/* The one flown a radio group's choice (ListChoices): arrow keys
               between the airplanes, VoiceOver's "selected", and iOS's tick. */}
-          <ListChoices
-            label="Your airplanes" value={aircraftKey(flying)}
-            onChange={key => {
-              const a = list?.find(x => `mine:${x.id}` === key);
-              if (a) fly(choiceOf(a, profiles ?? []));
-            }}
-          >
-          <ListGroup title="Your airplanes">
-            {/* Which the nav log flies where it is none of these, said in its
+            <ListChoices
+              label="Your airplanes"
+              value={aircraftKey(flying)}
+              onChange={(key) => {
+                const a = list?.find((x) => `mine:${x.id}` === key);
+                if (a) fly(choiceOf(a, profiles ?? []));
+              }}
+            >
+              <ListGroup title="Your airplanes">
+                {/* Which the nav log flies where it is none of these, said in its
                 place as a row: the one ticked otherwise. */}
-            {!!list?.length && flying.aircraftId == null && (
-              <ListRow muted title={<>Flying the stock {flying.label}</>} data-testid="aircraft-stock" />
-            )}
-            {(list ?? []).map(a => {
-              return (
-                <div key={a.id} className="flex items-center" data-aircraft-row>
-                  {/* The tick before the name, its place kept when it is
+                {!!list?.length && flying.aircraftId == null && (
+                  <ListRow muted title={<>Flying the stock {flying.label}</>} data-testid="aircraft-stock" />
+                )}
+                {(list ?? []).map((a) => {
+                  return (
+                    <div key={a.id} className="flex items-center" data-aircraft-row>
+                      {/* The tick before the name, its place kept when it is
                       elsewhere so the names line up, as Wi-Fi's are. */}
+                      <ListRow
+                        className="min-w-0 flex-1"
+                        radio={`mine:${a.id}`}
+                        title={
+                          <>
+                            <span className="font-mono font-semibold">{a.tailNumber}</span>{" "}
+                            <span className="text-muted-foreground">{a.typeDesignator}</span>
+                          </>
+                        }
+                        description={`Cruise ${a.cruiseTasKt} kt, ${a.fuelBurnGph} gph${a.cruisePowerPct != null ? ` at ${a.cruisePowerPct}%` : ""}${
+                          a.usableFuelGal != null ? ` · ${a.usableFuelGal} gal usable` : ""
+                        }`}
+                      />
+                      <IconButton
+                        label={`Edit ${a.tailNumber}`}
+                        onClick={() => edit(a)}
+                        className="mr-1.5 shrink-0 text-tint"
+                        // Not "outside" the open form: tapped with it open, the
+                        // form switches to this airplane (see onInteractOutside).
+                        data-aircraft-edit
+                      >
+                        <Info className="size-5" />
+                      </IconButton>
+                    </div>
+                  );
+                })}
+                <ResponsivePopoverTrigger asChild>
                   <ListRow
-                    className="min-w-0 flex-1" radio={`mine:${a.id}`}
-                    title={<><span className="font-mono font-semibold">{a.tailNumber}</span> <span className="text-muted-foreground">{a.typeDesignator}</span></>}
-                    description={`Cruise ${a.cruiseTasKt} kt, ${a.fuelBurnGph} gph${a.cruisePowerPct != null ? ` at ${a.cruisePowerPct}%` : ""}${
-                      a.usableFuelGal != null ? ` · ${a.usableFuelGal} gal usable` : ""}`}
+                    title={
+                      <span className="flex items-center gap-2 font-medium">
+                        <Plus className="size-4" />
+                        New airplane
+                      </span>
+                    }
+                    data-testid="new-aircraft-button"
                   />
-                  <IconButton
-                    label={`Edit ${a.tailNumber}`} onClick={() => edit(a)} className="mr-1.5 shrink-0 text-tint"
-                    // Not "outside" the open form: tapped with it open, the
-                    // form switches to this airplane (see onInteractOutside).
-                    data-aircraft-edit
-                  >
-                    <Info className="size-5" />
-                  </IconButton>
-                </div>
-              );
-            })}
-            <ResponsivePopoverTrigger asChild>
-              <ListRow
-                title={<span className="flex items-center gap-2 font-medium"><Plus className="size-4" />New airplane</span>}
-                data-testid="new-aircraft-button"
-              />
-            </ResponsivePopoverTrigger>
-          </ListGroup>
-          </ListChoices>
-          {/* On a phone a sheet from the navigation bar's edge, over the
+                </ResponsivePopoverTrigger>
+              </ListGroup>
+            </ListChoices>
+            {/* On a phone a sheet from the navigation bar's edge, over the
               console's own; from md up a popover by the rows. Cancel and
               Add (or Save) in its title row, as an iOS form sheet has
               them; each field a row, its label at the start and the
               field at the end, units inside. */}
-          <ResponsivePopoverContent
-            title={editingId ? "Edit airplane" : "New airplane"}
-            align="start" className="w-80"
-            leading={<Button type="button" variant="ghost" size="sm" className="-ml-2" onClick={cancelEdit}>Cancel</Button>}
-            action={(
-              // A spinner while it saves: disabled alone looked like
-              // nothing was happening. The name stays the words.
-              <Button
-                type="submit" form={formElementId} size="sm" className="-mr-1"
-                disabled={save.isPending} aria-busy={save.isPending}
-                aria-label={editingId ? "Save changes" : "Add airplane"}
-              >
-                {save.isPending && <Spinner role="presentation" aria-label={undefined} aria-hidden />}
-                {editingId ? "Save" : "Add"}
-              </Button>
-            )}
-            // A row, tapped while the form is open, is not "outside": it
-            // switches the form to that airplane, where the stock
-            // dismissal would have closed it on the press and reopened it
-            // empty on the click.
-            onInteractOutside={e => { if ((e.target as Element | null)?.closest?.("[data-aircraft-edit]")) e.preventDefault(); }}
-          >
-            <form id={formElementId} className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
-              {/* What the airplane is, then its speeds and fuel burns --
+            <ResponsivePopoverContent
+              title={editingId ? "Edit airplane" : "New airplane"}
+              align="start"
+              className="w-80"
+              leading={
+                <Button type="button" variant="ghost" size="sm" className="-ml-2" onClick={cancelEdit}>
+                  Cancel
+                </Button>
+              }
+              action={
+                // A spinner while it saves: disabled alone looked like
+                // nothing was happening. The name stays the words.
+                <Button
+                  type="submit"
+                  form={formElementId}
+                  size="sm"
+                  className="-mr-1"
+                  disabled={save.isPending}
+                  aria-busy={save.isPending}
+                  aria-label={editingId ? "Save changes" : "Add airplane"}
+                >
+                  {save.isPending && <Spinner role="presentation" aria-label={undefined} aria-hidden />}
+                  {editingId ? "Save" : "Add"}
+                </Button>
+              }
+              // A row, tapped while the form is open, is not "outside": it
+              // switches the form to that airplane, where the stock
+              // dismissal would have closed it on the press and reopened it
+              // empty on the click.
+              onInteractOutside={(e) => {
+                if ((e.target as Element | null)?.closest?.("[data-aircraft-edit]")) e.preventDefault();
+              }}
+            >
+              <form id={formElementId} className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
+                {/* What the airplane is, then its speeds and fuel burns --
                   climb and cruise, a row each under the group's heading
                   -- and the power the cruise is at, then its tanks. Each
                   field keeps its label and unit while it is typed in; the
                   placeholders are examples. The accessible names say the
                   phase and the units in full. The identifiers are
                   capitals and never autocorrected. */}
-              <ListGroup>
-                <ListRow id={`${formId}-tail`} title="Tail number" description={problem(errors.tailNumber?.message)}>
-                  <FieldHit htmlFor={`${formId}-tail`}><Input
-                    id={`${formId}-tail`} {...register("tailNumber")} placeholder="N12345" className="h-8 w-32 text-right"
-                    aria-label="Tail number" aria-invalid={!!errors.tailNumber}
-                    autoCapitalize="characters" autoCorrect="off" autoComplete="off" spellCheck={false}
-                  /></FieldHit>
-                </ListRow>
-                <ListRow id={`${formId}-type`} title="Type" description={problem(errors.typeDesignator?.message)}>
-                  <FieldHit htmlFor={`${formId}-type`}><Input
-                    id={`${formId}-type`} {...register("typeDesignator")} placeholder="C172" className="h-8 w-32 text-right"
-                    aria-label="Type designator" aria-invalid={!!errors.typeDesignator}
-                    autoCapitalize="characters" autoCorrect="off" autoComplete="off" spellCheck={false}
-                  /></FieldHit>
-                </ListRow>
-              </ListGroup>
-              <ListGroup><HandbookPhotoRow onConfirmed={fromPhoto} pending={!!handbook} /></ListGroup>
-              <ListGroup title="True airspeed">
-                <NumberRow
-                  id={`${formId}-climb-tas`} title="Climb" unit="kt" placeholder="74" name="Climb TAS in knots"
-                  field={register("climbTasKt")} error={errors.climbTasKt?.message}
-                />
-                <NumberRow
-                  id={`${formId}-tas`} title="Cruise" unit="kt" placeholder="110" name="Cruise TAS in knots"
-                  field={register("cruiseTasKt")} error={errors.cruiseTasKt?.message}
-                />
-              </ListGroup>
-              {/* Climb is optional: left blank, the nav log climbs at the type's book figures. */}
-              <ListGroup title="Fuel burn">
-                <NumberRow
-                  id={`${formId}-climb-burn`} title="Climb" unit="gph" placeholder="11" name="Climb fuel burn in gallons per hour"
-                  field={register("climbFuelBurnGph")} error={errors.climbFuelBurnGph?.message}
-                />
-                <NumberRow
-                  id={`${formId}-burn`} title="Cruise" unit="gph" placeholder="8.5" name="Cruise fuel burn in gallons per hour"
-                  field={register("fuelBurnGph")} error={errors.fuelBurnGph?.message}
-                />
-              </ListGroup>
-              {/* What the cruise figures mean to the planner, said where
+                <ListGroup>
+                  <ListRow id={`${formId}-tail`} title="Tail number" description={problem(errors.tailNumber?.message)}>
+                    <FieldHit htmlFor={`${formId}-tail`}>
+                      <Input
+                        id={`${formId}-tail`}
+                        {...register("tailNumber")}
+                        placeholder="N12345"
+                        className="h-8 w-32 text-right"
+                        aria-label="Tail number"
+                        aria-invalid={!!errors.tailNumber}
+                        autoCapitalize="characters"
+                        autoCorrect="off"
+                        autoComplete="off"
+                        spellCheck={false}
+                      />
+                    </FieldHit>
+                  </ListRow>
+                  <ListRow id={`${formId}-type`} title="Type" description={problem(errors.typeDesignator?.message)}>
+                    <FieldHit htmlFor={`${formId}-type`}>
+                      <Input
+                        id={`${formId}-type`}
+                        {...register("typeDesignator")}
+                        placeholder="C172"
+                        className="h-8 w-32 text-right"
+                        aria-label="Type designator"
+                        aria-invalid={!!errors.typeDesignator}
+                        autoCapitalize="characters"
+                        autoCorrect="off"
+                        autoComplete="off"
+                        spellCheck={false}
+                      />
+                    </FieldHit>
+                  </ListRow>
+                </ListGroup>
+                <ListGroup>
+                  <HandbookPhotoRow onConfirmed={fromPhoto} pending={!!handbook} />
+                </ListGroup>
+                <ListGroup title="True airspeed">
+                  <NumberRow
+                    id={`${formId}-climb-tas`}
+                    title="Climb"
+                    unit="kt"
+                    placeholder="74"
+                    name="Climb TAS in knots"
+                    field={register("climbTasKt")}
+                    error={errors.climbTasKt?.message}
+                  />
+                  <NumberRow
+                    id={`${formId}-tas`}
+                    title="Cruise"
+                    unit="kt"
+                    placeholder="110"
+                    name="Cruise TAS in knots"
+                    field={register("cruiseTasKt")}
+                    error={errors.cruiseTasKt?.message}
+                  />
+                </ListGroup>
+                {/* Climb is optional: left blank, the nav log climbs at the type's book figures. */}
+                <ListGroup title="Fuel burn">
+                  <NumberRow
+                    id={`${formId}-climb-burn`}
+                    title="Climb"
+                    unit="gph"
+                    placeholder="11"
+                    name="Climb fuel burn in gallons per hour"
+                    field={register("climbFuelBurnGph")}
+                    error={errors.climbFuelBurnGph?.message}
+                  />
+                  <NumberRow
+                    id={`${formId}-burn`}
+                    title="Cruise"
+                    unit="gph"
+                    placeholder="8.5"
+                    name="Cruise fuel burn in gallons per hour"
+                    field={register("fuelBurnGph")}
+                    error={errors.fuelBurnGph?.message}
+                  />
+                </ListGroup>
+                {/* What the cruise figures mean to the planner, said where
                   they are typed: they are the airplane's at this power at
                   the reference altitude, and each leg flies them in its own
                   air (wingtip.performance): the handbook cruise table's at this
                   power at the reference altitude on a standard day, which
                   the group's title says. */}
-              <ListGroup title={`Cruise figures at ${altFt(cruiseReferenceFt())} ft, standard day`}>
-                <NumberRow
-                  id={`${formId}-power`} title="Cruise power" unit="%" placeholder="65" name="Cruise power in percent"
-                  field={register("cruisePowerPct")} error={errors.cruisePowerPct?.message}
-                />
-              </ListGroup>
-              {/* Usable fuel is optional; without it the nav log makes no fuel check. */}
-              <ListGroup>
-                <NumberRow
-                  id={`${formId}-usable`} title="Usable fuel" unit="gal" placeholder="40" name="Usable fuel in gallons"
-                  field={register("usableFuelGal")} error={errors.usableFuelGal?.message}
-                />
-              </ListGroup>
-              {/* What its flight plan says of it, which the Brief's form
+                <ListGroup title={`Cruise figures at ${altFt(cruiseReferenceFt())} ft, standard day`}>
+                  <NumberRow
+                    id={`${formId}-power`}
+                    title="Cruise power"
+                    unit="%"
+                    placeholder="65"
+                    name="Cruise power in percent"
+                    field={register("cruisePowerPct")}
+                    error={errors.cruisePowerPct?.message}
+                  />
+                </ListGroup>
+                {/* Usable fuel is optional; without it the nav log makes no fuel check. */}
+                <ListGroup>
+                  <NumberRow
+                    id={`${formId}-usable`}
+                    title="Usable fuel"
+                    unit="gal"
+                    placeholder="40"
+                    name="Usable fuel in gallons"
+                    field={register("usableFuelGal")}
+                    error={errors.usableFuelGal?.message}
+                  />
+                </ListGroup>
+                {/* What its flight plan says of it, which the Brief's form
                   fills in (FAA Form 7233-4, AIM Appendix 4): item 10a, S for
                   VHF radio, VOR and ILS and a letter for each of the rest (G
                   for GNSS); 10b, C for a transponder with Mode C, B1 or U1
                   for ADS-B Out; item 19's colour and markings. Codes are
                   capitals, never autocorrected. */}
-              <ListGroup title="Flight plan">
-                <ListRow id={`${formId}-equipment`} title="Equipment" description={problem(errors.equipment?.message)}>
-                  <FieldHit htmlFor={`${formId}-equipment`}><Input
-                    id={`${formId}-equipment`} {...register("equipment")} placeholder="SDFGRY" maxLength={40}
-                    className="h-8 w-32 text-right font-mono uppercase"
-                    aria-label="Equipment, flight plan item 10a" aria-invalid={!!errors.equipment}
-                    autoCapitalize="characters" autoCorrect="off" autoComplete="off" spellCheck={false}
-                  /></FieldHit>
-                </ListRow>
-                <ListRow id={`${formId}-surveillance`} title="Surveillance" description={problem(errors.surveillance?.message)}>
-                  <FieldHit htmlFor={`${formId}-surveillance`}><Input
-                    id={`${formId}-surveillance`} {...register("surveillance")} placeholder="B1" maxLength={20}
-                    className="h-8 w-32 text-right font-mono uppercase"
-                    aria-label="Surveillance, flight plan item 10b" aria-invalid={!!errors.surveillance}
-                    autoCapitalize="characters" autoCorrect="off" autoComplete="off" spellCheck={false}
-                  /></FieldHit>
-                </ListRow>
-                <ListRow id={`${formId}-colour`} title="Color" description={problem(errors.colour?.message)}>
-                  <FieldHit htmlFor={`${formId}-colour`}><Input
-                    id={`${formId}-colour`} {...register("colour")} placeholder="White, blue stripe" maxLength={40}
-                    className="h-8 w-40 text-right"
-                    aria-label="Color and markings, flight plan item 19" aria-invalid={!!errors.colour}
-                  /></FieldHit>
-                </ListRow>
-              </ListGroup>
-              {editing && (
-                <ListGroup>
-                  <PageRow page={`checklist-${editing.id}`} title="Checklists" description="Normal and emergency, yours from its handbook, kept on this device" />
-                  <PageRow
-                    page={`squawks-${editing.id}`} title="Squawks" description="What was found, and its fix"
-                    value={editing.openSquawks?.length ? `${editing.openSquawks.length} open` : undefined}
-                  />
+                <ListGroup title="Flight plan">
+                  <ListRow id={`${formId}-equipment`} title="Equipment" description={problem(errors.equipment?.message)}>
+                    <FieldHit htmlFor={`${formId}-equipment`}>
+                      <Input
+                        id={`${formId}-equipment`}
+                        {...register("equipment")}
+                        placeholder="SDFGRY"
+                        maxLength={40}
+                        className="h-8 w-32 text-right font-mono uppercase"
+                        aria-label="Equipment, flight plan item 10a"
+                        aria-invalid={!!errors.equipment}
+                        autoCapitalize="characters"
+                        autoCorrect="off"
+                        autoComplete="off"
+                        spellCheck={false}
+                      />
+                    </FieldHit>
+                  </ListRow>
+                  <ListRow id={`${formId}-surveillance`} title="Surveillance" description={problem(errors.surveillance?.message)}>
+                    <FieldHit htmlFor={`${formId}-surveillance`}>
+                      <Input
+                        id={`${formId}-surveillance`}
+                        {...register("surveillance")}
+                        placeholder="B1"
+                        maxLength={20}
+                        className="h-8 w-32 text-right font-mono uppercase"
+                        aria-label="Surveillance, flight plan item 10b"
+                        aria-invalid={!!errors.surveillance}
+                        autoCapitalize="characters"
+                        autoCorrect="off"
+                        autoComplete="off"
+                        spellCheck={false}
+                      />
+                    </FieldHit>
+                  </ListRow>
+                  <ListRow id={`${formId}-colour`} title="Color" description={problem(errors.colour?.message)}>
+                    <FieldHit htmlFor={`${formId}-colour`}>
+                      <Input
+                        id={`${formId}-colour`}
+                        {...register("colour")}
+                        placeholder="White, blue stripe"
+                        maxLength={40}
+                        className="h-8 w-40 text-right"
+                        aria-label="Color and markings, flight plan item 19"
+                        aria-invalid={!!errors.colour}
+                      />
+                    </FieldHit>
+                  </ListRow>
                 </ListGroup>
-              )}
-              {editing && <InspectionsGroup key={editing.id} aircraft={editing} />}
-              {editing && <DueItemsGroup aircraft={editing} />}
-              {editing && <VorCheckGroup aircraft={editing} />}
-              {editingId !== null && (
-                <ListGroup>
-                  <ListRow
-                    title={<span className="font-medium text-destructive">Delete airplane</span>}
-                    onClick={askDelete} disabled={remove.isPending} data-testid="delete-aircraft-button"
-                  />
-                </ListGroup>
-              )}
-            </form>
-          </ResponsivePopoverContent>
-          {deleteDialog}
-        </ResponsivePopover>
-      )}
-    </section>
+                {editing && (
+                  <ListGroup>
+                    <PageRow
+                      page={`checklist-${editing.id}`}
+                      title="Checklists"
+                      description="Normal and emergency, yours from its handbook, kept on this device"
+                    />
+                    <PageRow
+                      page={`squawks-${editing.id}`}
+                      title="Squawks"
+                      description="What was found, and its fix"
+                      value={editing.openSquawks?.length ? `${editing.openSquawks.length} open` : undefined}
+                    />
+                  </ListGroup>
+                )}
+                {editing && <InspectionsGroup key={editing.id} aircraft={editing} />}
+                {editing && <DueItemsGroup aircraft={editing} />}
+                {editing && <VorCheckGroup aircraft={editing} />}
+                {editingId !== null && (
+                  <ListGroup>
+                    <ListRow
+                      title={<span className="font-medium text-destructive">Delete airplane</span>}
+                      onClick={askDelete}
+                      disabled={remove.isPending}
+                      data-testid="delete-aircraft-button"
+                    />
+                  </ListGroup>
+                )}
+              </form>
+            </ResponsivePopoverContent>
+            {deleteDialog}
+          </ResponsivePopover>
+        )}
+      </section>
     </ConsolePages>
   );
 }
@@ -703,7 +1018,9 @@ export function AircraftPanel() {
  *  the app's own sheet. It was an Open and a Delete at every row's
  *  end, and before that a card a flight on a phone and a six-column
  *  table from md up. */
-export function FlightsPanel({ onBack }: {
+export function FlightsPanel({
+  onBack,
+}: {
   /** Shown as FPL's Saved in full (SavedStrip's title): headed as its
    *  Recents' page is, Back at its left and Edit at its right, at the
    *  owner's notice ("When clicking on See All for Saved it's not giving
@@ -725,26 +1042,38 @@ export function FlightsPanel({ onBack }: {
     },
   });
   const [askDelete, deleteDialog] = useConfirm({
-    title: flightToDelete ? `Delete ${routeName(flightToDelete.departureIdent, flightToDelete.destinationIdent, flightToDelete.stops)}?` : "Delete this flight?",
+    title: flightToDelete
+      ? `Delete ${routeName(flightToDelete.departureIdent, flightToDelete.destinationIdent, flightToDelete.stops)}?`
+      : "Delete this flight?",
     description: "The filed flight goes from your flights. This can't be undone.",
     confirmLabel: "Delete flight",
     destructive: true,
-    onConfirm: () => { if (flightToDelete) remove.mutate(flightToDelete.id); },
+    onConfirm: () => {
+      if (flightToDelete) remove.mutate(flightToDelete.id);
+    },
   });
 
   // A page a flight (FlightPage), opened from its row.
-  const pages = Object.fromEntries((list ?? []).map(f => [`flight-${f.id}`, {
-    title: routeName(f.departureIdent, f.destinationIdent, f.stops),
-    content: <FlightPage summary={f} planHref={planHrefOf(f)} />,
-  }]));
+  const pages = Object.fromEntries(
+    (list ?? []).map((f) => [
+      `flight-${f.id}`,
+      { title: routeName(f.departureIdent, f.destinationIdent, f.stops), content: <FlightPage summary={f} planHref={planHrefOf(f)} /> },
+    ]),
+  );
 
   // Every list's Edit (EditToggle), where this was a copy of it.
-  const edit = <EditToggle editing={editing} onToggle={() => setEditing(e => !e)} testId="flights-edit" />;
+  const edit = <EditToggle editing={editing} onToggle={() => setEditing((e) => !e)} testId="flights-edit" />;
   return (
     <ConsolePages back="Flights" pages={pages}>
       <section aria-label="Flights" className={onBack ? "space-y-3" : undefined}>
         {onBack && (
-          <ListPageHead title="Saved" backLabel="Back to FPL" onBack={onBack} action={list?.length ? edit : undefined} testId="saved-page" />
+          <ListPageHead
+            title="Saved"
+            backLabel="Back to FPL"
+            onBack={onBack}
+            action={list?.length ? edit : undefined}
+            testId="saved-page"
+          />
         )}
         {!list ? (
           // Where they could not be fetched, said here with Try again, where
@@ -755,28 +1084,42 @@ export function FlightsPanel({ onBack }: {
             Plan a route and Save it from Share; it is kept here.
           </EmptyState>
         ) : (
-          <ListGroup
-            title={onBack ? undefined : "Saved flights"}
-            action={onBack ? undefined : edit}
-          >
-            {(list ?? []).map(f => {
+          <ListGroup title={onBack ? undefined : "Saved flights"} action={onBack ? undefined : edit}>
+            {(list ?? []).map((f) => {
               const name = routeName(f.departureIdent, f.destinationIdent, f.stops);
               const row = {
-                title: <>
-                  <span className="font-mono font-semibold">{name}</span>
-                  {f.aircraftTailNumber && <span className="text-muted-foreground"> {f.aircraftTailNumber}</span>}
-                </>,
-                description: <span className="tabular-nums">
-                  {feet(f.cruiseAltitudeFt)}{f.totalDistanceNm != null && ` · ${nm(f.totalDistanceNm)}`} · filed {new Date(f.createdAt).toLocaleDateString()}
-                  {/* The risk assessment it was saved with (lib/frat). */}
-                  {f.risk && <span className={cn("block", LEVEL_TONE[f.risk.level as RiskLevel])} data-testid="flight-risk">Risk {riskLine(f.risk).toLowerCase()}</span>}
-                </span>,
+                title: (
+                  <>
+                    <span className="font-mono font-semibold">{name}</span>
+                    {f.aircraftTailNumber && <span className="text-muted-foreground"> {f.aircraftTailNumber}</span>}
+                  </>
+                ),
+                description: (
+                  <span className="tabular-nums">
+                    {feet(f.cruiseAltitudeFt)}
+                    {f.totalDistanceNm != null && ` · ${nm(f.totalDistanceNm)}`} · filed {new Date(f.createdAt).toLocaleDateString()}
+                    {/* The risk assessment it was saved with (lib/frat). */}
+                    {f.risk && (
+                      <span className={cn("block", LEVEL_TONE[f.risk.level as RiskLevel])} data-testid="flight-risk">
+                        Risk {riskLine(f.risk).toLowerCase()}
+                      </span>
+                    )}
+                  </span>
+                ),
               };
               // Taken off as every kept list's rows are -- a swipe to the
               // left, or Edit's minus bringing out the Delete -- asked first,
               // the flight being the server's (SwipeToDelete, useConfirm).
               return (
-                <SwipeToDelete key={f.id} label={`Delete ${name}`} onDelete={() => { setFlightToDelete(f); askDelete(); }} share={{ title: name, url: new URL(`/app${planHrefOf(f)}`, location.origin).toString() }}>
+                <SwipeToDelete
+                  key={f.id}
+                  label={`Delete ${name}`}
+                  onDelete={() => {
+                    setFlightToDelete(f);
+                    askDelete();
+                  }}
+                  share={{ title: name, url: new URL(`/app${planHrefOf(f)}`, location.origin).toString() }}
+                >
                   {editing ? (
                     <ListRow {...row} media={<RemoveMinus label={`Delete ${name}…`} />} />
                   ) : (
@@ -785,16 +1128,33 @@ export function FlightsPanel({ onBack }: {
                     // set a row (the owner, 2026-10-28), ••• or a long
                     // press with Share and Remove alone, as every list's (the
                     // owner, 2026-10-28).
-                    <RowMenu label={`More for ${name}`} testId="saved-flight-more" actions={[
-                      {
-                        label: "Share", icon: <Share />, testId: "saved-flight-share",
-                        onSelect: () => {
-                          shareOrCopy({ title: name, url: new URL(`/app${planHrefOf(f)}`, location.origin).toString() })
-                            .catch(err => { if (!cancelled(err)) showError("Not shared", describeError(err)); });
+                    <RowMenu
+                      label={`More for ${name}`}
+                      testId="saved-flight-more"
+                      actions={[
+                        {
+                          label: "Share",
+                          icon: <Share />,
+                          testId: "saved-flight-share",
+                          onSelect: () => {
+                            shareOrCopy({ title: name, url: new URL(`/app${planHrefOf(f)}`, location.origin).toString() }).catch((err) => {
+                              if (!cancelled(err)) showError("Not shared", describeError(err));
+                            });
+                          },
                         },
-                      },
-                      { label: "Remove", icon: <Trash2 />, destructive: true, asks: true, onSelect: () => { setFlightToDelete(f); askDelete(); }, testId: "saved-flight-delete" },
-                    ]}>
+                        {
+                          label: "Remove",
+                          icon: <Trash2 />,
+                          destructive: true,
+                          asks: true,
+                          onSelect: () => {
+                            setFlightToDelete(f);
+                            askDelete();
+                          },
+                          testId: "saved-flight-delete",
+                        },
+                      ]}
+                    >
                       <PageRow page={`flight-${f.id}`} {...row} />
                     </RowMenu>
                   )}

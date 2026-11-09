@@ -40,18 +40,26 @@ export function changeOf(leg: TripLeg): AssistantChange {
 /** One line of the stream folded into the state. */
 export function step(state: TripState, event: TripMessage): TripState {
   switch (event.type) {
-    case "tool": return { ...state, status: event.label };
-    case "text": return { ...state, status: null, words: state.words + event.text };
-    case "plan": return { ...state, proposal: event.proposal };
-    case "sources": return { ...state, sources: event.sources };
-    case "error": return { ...state, status: null, error: event.words, busy: false };
-    default: return { ...state, status: null, busy: false };
+    case "tool":
+      return { ...state, status: event.label };
+    case "text":
+      return { ...state, status: null, words: state.words + event.text };
+    case "plan":
+      return { ...state, proposal: event.proposal };
+    case "sources":
+      return { ...state, sources: event.sources };
+    case "error":
+      return { ...state, status: null, error: event.words, busy: false };
+    default:
+      return { ...state, status: null, busy: false };
   }
 }
 
 async function planTrip(body: TripAsk, onEvent: (event: TripMessage) => void, signal: AbortSignal): Promise<void> {
   const res = await fetch("/api/planner/trip-plan", {
-    method: "POST", signal, body: JSON.stringify(body),
+    method: "POST",
+    signal,
+    body: JSON.stringify(body),
     headers: { "Content-Type": "application/json", Accept: "application/x-ndjson", ...csrfHeaders("POST"), ...requestIdHeaders() },
   });
   if (res.status === 401) throw new ApiError("Sign in to plan a trip", 401);
@@ -65,7 +73,7 @@ async function planTrip(body: TripAsk, onEvent: (event: TripMessage) => void, si
 export function useTripPlanner() {
   const [state, setState] = useState<TripState>(START);
   const inFlight = useRef<AbortController | null>(null);
-  const canUse = useAsk(s => s.applyChange !== null);
+  const canUse = useAsk((s) => s.applyChange !== null);
   const plan = async (text: string) => {
     const asked = text.trim();
     if (!asked) return;
@@ -78,20 +86,26 @@ export function useTripPlanner() {
     const now = contextNow();
     const context = { ...now, aircraft: now.aircraft ?? "", rules: "vfr" as const, pilot: now.pilot ? { ...now.pilot } : null };
     try {
-      await planTrip({ text: asked, context, time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone },
-        event => setState(s => step(s, event)), controller.signal);
+      await planTrip(
+        { text: asked, context, time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+        (event) => setState((s) => step(s, event)),
+        controller.signal,
+      );
     } catch (err) {
       if (!(err instanceof DOMException && err.name === "AbortError")) {
-        setState(s => ({ ...s, status: null, error: describeError(err, "The trip planner cannot be reached") }));
+        setState((s) => ({ ...s, status: null, error: describeError(err, "The trip planner cannot be reached") }));
       }
     }
-    setState(s => ({ ...s, busy: false, status: null }));
+    setState((s) => ({ ...s, busy: false, status: null }));
   };
   const use = (leg: TripLeg) => {
     useAsk.getState().applyChange?.(changeOf(leg));
-    setState(s => ({ ...s, used: [...s.used, leg.kind] }));
+    setState((s) => ({ ...s, used: [...s.used, leg.kind] }));
   };
   const stop = () => inFlight.current?.abort();
-  const clear = () => { stop(); setState(START); };
+  const clear = () => {
+    stop();
+    setState(START);
+  };
   return { state, canUse, plan, use, stop, clear };
 }

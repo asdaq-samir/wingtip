@@ -20,9 +20,7 @@ const WORDED = "lg:pointer-fine:w-auto lg:pointer-fine:gap-1 lg:pointer-fine:px-
 const WORD = cn("hidden font-medium lg:pointer-fine:inline", TEXT.detail);
 
 export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWorkspaceModel; flightInputs: ReactNode; share: ReactNode }) {
-  const {
-    altitudeMark, briefMark, changeLocalMin, localMin, openBrief, openProfile, profileReady, routed, s,
-  } = vm;
+  const { altitudeMark, briefMark, changeLocalMin, localMin, openBrief, openProfile, profileReady, routed, s } = vm;
   return (
     <div className="flex w-full min-w-0 flex-wrap items-center gap-x-1 gap-y-4">
       {/* On the narrowest panels (iPhone SE, the iPad slide-over) the row
@@ -33,9 +31,7 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
           (the iOS audit's P1, 24 Oct: twelve left them 2 points over each
           other). */}
       {/* The chips' room while their code comes (routePanel). */}
-      <Suspense fallback={<span className="h-9 w-48" aria-hidden="true" />}>
-      {flightInputs}
-      </Suspense>
+      <Suspense fallback={<span className="h-9 w-48" aria-hidden="true" />}>{flightInputs}</Suspense>
       {s.local && (
         <Suspense fallback={<span className="h-8 w-20 shrink-0" aria-hidden="true" />}>
           <LocalDuration minutes={localMin} options={LOCAL_MINUTES} onChange={changeLocalMin} />
@@ -78,14 +74,23 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
             to the more button"). */}
         {profileReady && (
           <RoundButton
-            label={altitudeMark === "caution" ? "Profile, your altitude has a caution" : altitudeMark === "tight" ? "Profile, your altitude is tight" : "Profile"}
-            onClick={openProfile} className={cn("size-[32px]", WORDED)} data-testid="route-profile"
+            label={
+              altitudeMark === "caution"
+                ? "Profile, your altitude has a caution"
+                : altitudeMark === "tight"
+                  ? "Profile, your altitude is tight"
+                  : "Profile"
+            }
+            onClick={openProfile}
+            className={cn("size-[32px]", WORDED)}
+            data-testid="route-profile"
           >
             <span className="relative">
               <ICON.profile className="size-[18px]" strokeWidth={2} />
               {altitudeMark && (
                 <span
-                  aria-hidden="true" data-testid={altitudeMark === "caution" ? "own-altitude-flag" : "tight-altitude-flag"}
+                  aria-hidden="true"
+                  data-testid={altitudeMark === "caution" ? "own-altitude-flag" : "tight-altitude-flag"}
                   className="absolute -top-0.5 -right-1 size-2 rounded-full bg-caution"
                 />
               )}
@@ -101,14 +106,19 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
             both the same thing", 2026-11-04). */}
         {routed && (
           <RoundButton
-            label={briefMark ? `AI brief, ${briefMark === "stop" ? "warning" : "caution"}` : "AI brief"} onClick={openBrief} className={cn("size-[32px]", WORDED)}
-            data-testid="route-brief" data-finding={briefMark ?? undefined} data-tip="brief"
+            label={briefMark ? `AI brief, ${briefMark === "stop" ? "warning" : "caution"}` : "AI brief"}
+            onClick={openBrief}
+            className={cn("size-[32px]", WORDED)}
+            data-testid="route-brief"
+            data-finding={briefMark ?? undefined}
+            data-tip="brief"
           >
             <span className="relative">
               <ICON.brief className="size-[18px]" strokeWidth={2} />
               {briefMark && (
                 <span
-                  aria-hidden="true" data-testid="route-brief-mark"
+                  aria-hidden="true"
+                  data-testid="route-brief-mark"
                   className={cn("absolute -top-0.5 -right-1 size-2 rounded-full", briefMark === "stop" ? "bg-destructive" : "bg-caution")}
                 />
               )}

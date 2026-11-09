@@ -1,5 +1,22 @@
 import { test, expect } from "@playwright/test";
-import { slow, settle, mapStill, drawn, sideDrawer, openBrief, briefPage, openBriefing, openTab, grabberTo, panelTabs, openNavLog, closeNavLog, navLogScroller, navLogSheet, settled } from "./helpers";
+import {
+  slow,
+  settle,
+  mapStill,
+  drawn,
+  sideDrawer,
+  openBrief,
+  briefPage,
+  openBriefing,
+  openTab,
+  grabberTo,
+  panelTabs,
+  openNavLog,
+  closeNavLog,
+  navLogScroller,
+  navLogSheet,
+  settled,
+} from "./helpers";
 
 /**
  * The nav log's checkpoints: selected by a click, by Enter or by a pick
@@ -26,8 +43,9 @@ test("plan page: a click or Enter selects a nav log checkpoint, with the briefin
   // Each row led by its point's mark as the map draws it: the fields'
   // symbols at the ends, the checkpoints' dots numbered as the map's are,
   // from 1 in the order flown, and a top of climb's tag.
-  const marks = await table.locator('[role="row"][tabindex="0"] [data-mark]')
-    .evaluateAll(els => els.map(e => [e.getAttribute("data-mark") ?? "", (e.textContent ?? "").trim()] as const));
+  const marks = await table
+    .locator('[role="row"][tabindex="0"] [data-mark]')
+    .evaluateAll((els) => els.map((e) => [e.getAttribute("data-mark") ?? "", (e.textContent ?? "").trim()] as const));
   expect(marks[0]![0]).toBe("airport");
   expect(marks.at(-1)![0]).toBe("airport");
   const numbered = marks.filter(([kind]) => kind === "checkpoint").map(([, n]) => Number(n));
@@ -65,106 +83,110 @@ test("plan page: a click or Enter selects a nav log checkpoint, with the briefin
   await expect(tabs.filter({ hasText: "Arrive" })).toBeFocused();
 });
 
-test("plan page: a checkpoint picked on the map is brought to the middle of the nav log, and a row clicked in view stays put", { tag: "@smoke" }, async ({ page }) => {
-  // The runways the pilot's own (auto=-), so none is picked into the wind:
-  // that pick plans the route again a moment after its log first shows,
-  // and the log written anew moved the rows under the test -- the row
-  // clicked 52 px down, and the row above the selected one another
-  // checkpoint (CI, 2026-10-28). Which rows stay put is the claim here,
-  // not the wind's runway.
-  await page.goto("/app/plan?dep=C81&dest=KDLH&pattern=C81:9,KDLH:27&auto=-");
-  await settle(page);
-  const marker = page.locator(".maplibregl-marker", { hasText: /^1[01]$/ }).first();
-  await expect(marker).toBeVisible({ timeout: slow(15000) });
-  // A DOM click, not a pointer one: the legs are still streaming in
-  // and each re-draws the markers, so Playwright's wait for the marker
-  // to hold still ran the test out of time.
-  await marker.dispatchEvent("click");
-  // On a phone its card comes up in the map's sheet over the route
-  // (MapPopup): put away, the pick kept, for the route's box under it.
-  if (page.viewportSize()!.width < 768) {
-    const card = page.locator("[data-sheet-card]");
-    await expect(card).toBeVisible();
-    // The tab bar's close, the card drawing none of its own under it.
-    await expect(card.getByTestId("sheet-card-close")).toHaveCount(0);
-    await page.getByTestId("tab-close").click();
-    await expect(card).toHaveCount(0);
-  }
+test(
+  "plan page: a checkpoint picked on the map is brought to the middle of the nav log, and a row clicked in view stays put",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    // The runways the pilot's own (auto=-), so none is picked into the wind:
+    // that pick plans the route again a moment after its log first shows,
+    // and the log written anew moved the rows under the test -- the row
+    // clicked 52 px down, and the row above the selected one another
+    // checkpoint (CI, 2026-10-28). Which rows stay put is the claim here,
+    // not the wind's runway.
+    await page.goto("/app/plan?dep=C81&dest=KDLH&pattern=C81:9,KDLH:27&auto=-");
+    await settle(page);
+    const marker = page.locator(".maplibregl-marker", { hasText: /^1[01]$/ }).first();
+    await expect(marker).toBeVisible({ timeout: slow(15000) });
+    // A DOM click, not a pointer one: the legs are still streaming in
+    // and each re-draws the markers, so Playwright's wait for the marker
+    // to hold still ran the test out of time.
+    await marker.dispatchEvent("click");
+    // On a phone its card comes up in the map's sheet over the route
+    // (MapPopup): put away, the pick kept, for the route's box under it.
+    if (page.viewportSize()!.width < 768) {
+      const card = page.locator("[data-sheet-card]");
+      await expect(card).toBeVisible();
+      // The tab bar's close, the card drawing none of its own under it.
+      await expect(card.getByTestId("sheet-card-close")).toHaveCount(0);
+      await page.getByTestId("tab-close").click();
+      await expect(card).toHaveCount(0);
+    }
 
-  // Then a short window, so the nav log has to scroll: the row used to
-  // come to rest at the bottom edge (scrollIntoView "nearest"), the
-  // last visible line when the drawer was opened after the pick. (The
-  // pick first, at full height: at 420px a phone's map is too short
-  // for a marker along the route to be clicked.)
-  const viewport = page.viewportSize()!;
-  // 462, not the 420 this was written at: there a scroller left under the
-  // route's head and the table's sticky heading was too short for a row
-  // to stay put.
-  await page.setViewportSize({ width: viewport.width, height: 462 });
-  // A resize starts no animation for settled() to wait on, so the drawer
-  // is waited on until it fits the new height.
-  await expect
-    .poll(async () => (await sideDrawer(page).boundingBox())?.height ?? Infinity)
-    .toBeLessThanOrEqual(462);
-  await settled(sideDrawer(page));
-  await grabberTo(page, "full");
-  // The nav log opened from the route's box shows the pick, brought in.
-  await openNavLog(page);
-  const table = page.getByRole("table", { name: /Navigation log from/i });
-  await expect(table).toBeVisible();
-  const selectedRow = table.locator('[role="row"][data-selected]');
-  await expect(selectedRow).toHaveCount(1);
-  const scroller = navLogScroller(page);
-  const middle = async () => {
-    const row = (await selectedRow.boundingBox())!;
-    const view = (await scroller.boundingBox())!;
-    return Math.abs((row.y + row.height / 2) - (view.y + view.height / 2)) / view.height;
-  };
-  // Within a quarter of the scroller's height of its middle.
-  // Once the drawer has come all the way up and stood still, which on a
-  // busy phone is more than a few seconds.
-  await expect.poll(middle, { timeout: slow(10000) }).toBeLessThan(0.25);
+    // Then a short window, so the nav log has to scroll: the row used to
+    // come to rest at the bottom edge (scrollIntoView "nearest"), the
+    // last visible line when the drawer was opened after the pick. (The
+    // pick first, at full height: at 420px a phone's map is too short
+    // for a marker along the route to be clicked.)
+    const viewport = page.viewportSize()!;
+    // 462, not the 420 this was written at: there a scroller left under the
+    // route's head and the table's sticky heading was too short for a row
+    // to stay put.
+    await page.setViewportSize({ width: viewport.width, height: 462 });
+    // A resize starts no animation for settled() to wait on, so the drawer
+    // is waited on until it fits the new height.
+    await expect.poll(async () => (await sideDrawer(page).boundingBox())?.height ?? Infinity).toBeLessThanOrEqual(462);
+    await settled(sideDrawer(page));
+    await grabberTo(page, "full");
+    // The nav log opened from the route's box shows the pick, brought in.
+    await openNavLog(page);
+    const table = page.getByRole("table", { name: /Navigation log from/i });
+    await expect(table).toBeVisible();
+    const selectedRow = table.locator('[role="row"][data-selected]');
+    await expect(selectedRow).toHaveCount(1);
+    const scroller = navLogScroller(page);
+    const middle = async () => {
+      const row = (await selectedRow.boundingBox())!;
+      const view = (await scroller.boundingBox())!;
+      return Math.abs(row.y + row.height / 2 - (view.y + view.height / 2)) / view.height;
+    };
+    // Within a quarter of the scroller's height of its middle.
+    // Once the drawer has come all the way up and stood still, which on a
+    // busy phone is more than a few seconds.
+    await expect.poll(middle, { timeout: slow(10000) }).toBeLessThan(0.25);
 
-  // The row above it, in view beside it, clicked: selected, and
-  // nothing moves. Clicked on its name, where a finger would.
-  const rows = table.locator('[role="row"][tabindex="0"]');
-  const index = await selectedRow.evaluate(row => Array.from(row.closest('[role="table"]')!.querySelectorAll('[role="row"][tabindex="0"]')).indexOf(row));
-  const neighbour = rows.nth(index - 1);
-  // In view whole first, as the claim is about: centred to within a
-  // quarter of the middle, the row above can sit half under the top
-  // edge on a phone -- or under the table's sticky heading, below the
-  // tabs -- and a row half out of view is rightly brought in.
-  await neighbour.evaluate(row => row.scrollIntoView({ block: "center" }));
-  await page.waitForTimeout(200);
-  // Where the row is on the screen, which is the claim: not the
-  // scroller's offset, which the browser moves itself to keep what is
-  // on screen still (scroll anchoring) while the legs still streaming
-  // in give a row above a second line -- 22 px, on a CI phone.
-  const onScreen = async () => (await neighbour.boundingBox())!.y;
-  const before = await onScreen();
-  // Its name before the click: `neighbour` is a place in the list, read
-  // again at each use.
-  const name = (await neighbour.getByRole("rowheader").textContent()) ?? "";
-  await neighbour.getByRole("rowheader").click();
-  // By its name.
-  await expect(selectedRow.first().getByRole("rowheader")).toHaveText(name);
-  await page.waitForTimeout(400);
-  expect(Math.abs((await onScreen()) - before)).toBeLessThan(2);
+    // The row above it, in view beside it, clicked: selected, and
+    // nothing moves. Clicked on its name, where a finger would.
+    const rows = table.locator('[role="row"][tabindex="0"]');
+    const index = await selectedRow.evaluate((row) =>
+      Array.from(row.closest('[role="table"]')!.querySelectorAll('[role="row"][tabindex="0"]')).indexOf(row),
+    );
+    const neighbour = rows.nth(index - 1);
+    // In view whole first, as the claim is about: centred to within a
+    // quarter of the middle, the row above can sit half under the top
+    // edge on a phone -- or under the table's sticky heading, below the
+    // tabs -- and a row half out of view is rightly brought in.
+    await neighbour.evaluate((row) => row.scrollIntoView({ block: "center" }));
+    await page.waitForTimeout(200);
+    // Where the row is on the screen, which is the claim: not the
+    // scroller's offset, which the browser moves itself to keep what is
+    // on screen still (scroll anchoring) while the legs still streaming
+    // in give a row above a second line -- 22 px, on a CI phone.
+    const onScreen = async () => (await neighbour.boundingBox())!.y;
+    const before = await onScreen();
+    // Its name before the click: `neighbour` is a place in the list, read
+    // again at each use.
+    const name = (await neighbour.getByRole("rowheader").textContent()) ?? "";
+    await neighbour.getByRole("rowheader").click();
+    // By its name.
+    await expect(selectedRow.first().getByRole("rowheader")).toHaveText(name);
+    await page.waitForTimeout(400);
+    expect(Math.abs((await onScreen()) - before)).toBeLessThan(2);
 
-  // Another tab and back: the selection kept, its row brought into view.
-  await closeNavLog(page);
-  await openTab(page, "Weather");
-  await expect(sideDrawer(page).getByRole("heading", { name: "Adverse Conditions" })).toBeVisible();
-  await openNavLog(page);
-  await expect(selectedRow).toBeInViewport();
-  await neighbour.scrollIntoViewIfNeeded();
+    // Another tab and back: the selection kept, its row brought into view.
+    await closeNavLog(page);
+    await openTab(page, "Weather");
+    await expect(sideDrawer(page).getByRole("heading", { name: "Adverse Conditions" })).toBeVisible();
+    await openNavLog(page);
+    await expect(selectedRow).toBeInViewport();
+    await neighbour.scrollIntoViewIfNeeded();
 
-  // The selected row clicked again: deselected, and its note closed.
-  await expect(selectedRow).toHaveAttribute("data-expanded", "true");
-  await neighbour.getByRole("rowheader").click();
-  await expect(selectedRow).toHaveCount(0);
-  await expect(table.locator('[role="row"][data-expanded="true"]')).toHaveCount(0);
-});
+    // The selected row clicked again: deselected, and its note closed.
+    await expect(selectedRow).toHaveAttribute("data-expanded", "true");
+    await neighbour.getByRole("rowheader").click();
+    await expect(selectedRow).toHaveCount(0);
+    await expect(table.locator('[role="row"][data-expanded="true"]')).toHaveCount(0);
+  },
+);
 
 test("plan page: the briefing's nav log scrolls inside the drawer, not the page", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -175,12 +197,10 @@ test("plan page: the briefing's nav log scrolls inside the drawer, not the page"
   await expect(scroller).toBeVisible();
   await settled(page.locator("body"));
 
-  const pageOverflowing = await page.evaluate(
-    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-  );
+  const pageOverflowing = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(pageOverflowing).toBe(false);
 
-  const info = await scroller.evaluate(el => ({ scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }));
+  const info = await scroller.evaluate((el) => ({ scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }));
   // The log a line a point, as wide as the drawer: nothing past its
   // side, the scroller scrolling down alone.
   expect(info.scrollWidth).toBeLessThanOrEqual(info.clientWidth + 1);
@@ -197,7 +217,7 @@ test("plan page: iOS never zooms the page in on a phone's field: every field but
   // itself, over every field the page can show: the route form, and
   // the nav log's altitude box and description boxes.
   const viewport = page.viewportSize();
-  if (!viewport || viewport.width >= 768) return;   // `md` and up keep the small type
+  if (!viewport || viewport.width >= 768) return; // `md` and up keep the small type
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await page.getByTestId("sidebar-trigger-button").click();
@@ -211,20 +231,23 @@ test("plan page: iOS never zooms the page in on a phone's field: every field but
   await expect.poll(() => page.locator("textarea").count(), { timeout: slow(15000) }).toBeGreaterThan(0);
   const small = await page.evaluate(() =>
     [...document.querySelectorAll<HTMLElement>("input, textarea, select")]
-      .filter(el => !el.closest('[data-testid="navlog-list"]'))
+      .filter((el) => !el.closest('[data-testid="navlog-list"]'))
       // Only a field in sight can take the focus: one kept out of sight
       // under another tab or a card (TabKept, MapPanel's kept route box)
       // is inert, and laid out at no width, its type its narrowest's.
-      .filter(el => el.checkVisibility())
-      .map(el => ({
+      .filter((el) => el.checkVisibility())
+      .map((el) => ({
         field: el.getAttribute("aria-label") ?? el.getAttribute("placeholder") ?? el.tagName,
         px: parseFloat(getComputedStyle(el).fontSize),
       }))
-      .filter(f => f.px < 16));
+      .filter((f) => f.px < 16),
+  );
   expect(small).toEqual([]);
 });
 
-test("plan page: the checkpoints are their numbers at the route's zoom, named in sentence case beside their dots once closer in, none over another and none off the screen", async ({ page }) => {
+test("plan page: the checkpoints are their numbers at the route's zoom, named in sentence case beside their dots once closer in, none over another and none off the screen", async ({
+  page,
+}) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   // The names are the chart's own text (RouteGl's checkpoint-names layer),
@@ -268,10 +291,17 @@ test("plan page: the checkpoints are their numbers at the route's zoom, named in
     expect(y).toBeLessThanOrEqual(viewport.height + DOT_RADIUS);
   }
   // Nor at the route's own airports' marks, nor their idents beside them.
-  const chips = await page.locator(".maplibregl-marker", { hasText: /^(C81|KDLH)$/ }).evaluateAll(els => els.map(el => {
-    const [mark, ident] = [...el.children].map(c => c.getBoundingClientRect());
-    return { left: mark!.left, right: Math.max(mark!.right, ident!.right), top: Math.min(mark!.top, ident!.top), bottom: Math.max(mark!.bottom, ident!.bottom) };
-  }));
+  const chips = await page.locator(".maplibregl-marker", { hasText: /^(C81|KDLH)$/ }).evaluateAll((els) =>
+    els.map((el) => {
+      const [mark, ident] = [...el.children].map((c) => c.getBoundingClientRect());
+      return {
+        left: mark!.left,
+        right: Math.max(mark!.right, ident!.right),
+        top: Math.min(mark!.top, ident!.top),
+        bottom: Math.max(mark!.bottom, ident!.bottom),
+      };
+    }),
+  );
   for (const { x, y, name } of shown as { x: number; y: number; name: string }[]) {
     for (const c of chips) {
       const inside = x > c.left && x < c.right && y > c.top && y < c.bottom;

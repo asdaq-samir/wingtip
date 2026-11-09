@@ -23,7 +23,8 @@ export const LEG_RANK = TAP.rank.line - 0.5;
 
 /** The distance from `p` to the segment a-b, px. */
 function toSegment(p: Px, a: Px, b: Px): number {
-  const dx = b.x - a.x, dy = b.y - a.y;
+  const dx = b.x - a.x,
+    dy = b.y - a.y;
   const length2 = dx * dx + dy * dy;
   const t = length2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / length2));
   return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
@@ -32,10 +33,14 @@ function toSegment(p: Px, a: Px, b: Px): number {
 /** The leg nearest a tap on the screen: the legs' ends projected as the
  *  map is now, each leg the straight line between them. */
 export function nearestLeg(legs: GlLeg[], tap: Px, project: (p: { lat: number; lon: number }) => Px): GlLeg | null {
-  let best: GlLeg | null = null, bestPx = Infinity;
+  let best: GlLeg | null = null,
+    bestPx = Infinity;
   for (const leg of legs) {
     const px = toSegment(tap, project(leg.from), project(leg.to));
-    if (px < bestPx) { best = leg; bestPx = px; }
+    if (px < bestPx) {
+      best = leg;
+      bestPx = px;
+    }
   }
   return best;
 }

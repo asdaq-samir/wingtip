@@ -57,8 +57,13 @@ public class ExportController {
     private final TrainingController training;
     private final InstructorController instructing;
 
-    public ExportController(PilotService pilots, PilotController account, AircraftController airplanes,
-            FlightController flights, LogbookController logbook, TrainingController training,
+    public ExportController(
+            PilotService pilots,
+            PilotController account,
+            AircraftController airplanes,
+            FlightController flights,
+            LogbookController logbook,
+            TrainingController training,
             InstructorController instructing) {
         this.pilots = pilots;
         this.account = account;
@@ -76,11 +81,19 @@ public class ExportController {
     public record ExportedFlight(FlightDto flight, TrackDto track) {}
 
     /** The whole of it. */
-    public record AccountExport(String format, Instant exportedAt, PilotDto account, List<ExportedAirplane> airplanes,
-            List<ExportedFlight> flights, List<LogbookEntryDto> logbook, CurrencyDto currency, TrainingDto training,
+    public record AccountExport(
+            String format,
+            Instant exportedAt,
+            PilotDto account,
+            List<ExportedAirplane> airplanes,
+            List<ExportedFlight> flights,
+            List<LogbookEntryDto> logbook,
+            CurrencyDto currency,
+            TrainingDto training,
             InstructorDto instructing) {}
 
-    @Operation(summary = "Everything kept for the signed-in pilot, as one JSON file",
+    @Operation(
+            summary = "Everything kept for the signed-in pilot, as one JSON file",
             description = "The account, airplanes and squawks, flights with nav logs and tracks, logbook, currency, "
                     + "training and instructing, each as its own endpoint answers it; sent as a download.")
     @ApiResponses({
@@ -98,8 +111,13 @@ public class ExportController {
                     .filter(Objects::nonNull)
                     .map(f -> new ExportedFlight(f, body(flights.track(authentication, f.id()), null)))
                     .toList();
-            AccountExport file = new AccountExport(FORMAT, Instant.now(), body(account.me(authentication), null),
-                    planes, saved, body(logbook.list(authentication), List.of()),
+            AccountExport file = new AccountExport(
+                    FORMAT,
+                    Instant.now(),
+                    body(account.me(authentication), null),
+                    planes,
+                    saved,
+                    body(logbook.list(authentication), List.of()),
                     worked(() -> body(logbook.currency(authentication), null)),
                     worked(() -> body(training.get(authentication), null)),
                     worked(() -> body(instructing.get(authentication), null)));

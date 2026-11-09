@@ -49,7 +49,7 @@ struct AtcModePicker: View {
                 askingMicrophone = false
                 Task { if await ClearanceListener.allowed() { AtcCopilot.shared.mode = .flying } }
             }, notNow: { askingMicrophone = false })
-            .presentationDetents([.medium])
+                .presentationDetents([.medium])
         }
     }
 

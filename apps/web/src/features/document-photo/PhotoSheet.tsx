@@ -15,7 +15,11 @@ export function FlagLines({ flags, testId }: { flags: { level: FlagLevel; says: 
   if (!flags.length) return null;
   return (
     <span className="flex flex-col gap-0.5" data-testid={testId}>
-      {flags.map(f => <span key={f.says} className={FINDING_TONE[FLAG_FINDING[f.level]]}>{f.says}</span>)}
+      {flags.map((f) => (
+        <span key={f.says} className={FINDING_TONE[FLAG_FINDING[f.level]]}>
+          {f.says}
+        </span>
+      ))}
     </span>
   );
 }
@@ -26,7 +30,16 @@ export function FlagLines({ flags, testId }: { flags: { level: FlagLevel; says: 
  * and then the review the screen gives (`children`). Errors are said
  * here, where they happen.
  */
-export default function PhotoSheet({ photo, open, onOpenChange, title, choose, action, children, testId }: {
+export default function PhotoSheet({
+  photo,
+  open,
+  onOpenChange,
+  title,
+  choose,
+  action,
+  children,
+  testId,
+}: {
   photo: DocumentPhoto;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -40,25 +53,52 @@ export default function PhotoSheet({ photo, open, onOpenChange, title, choose, a
   const input = useRef<HTMLInputElement>(null);
   const answer = photo.answer;
   return (
-    <SheetDialog open={open} onOpenChange={onOpenChange} cancel={!!action} title={title} action={action} testId={testId}
+    <SheetDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      cancel={!!action}
+      title={title}
+      action={action}
+      testId={testId}
       description="Every figure is checked, and only what you confirm is kept."
     >
       {choose}
       <input
-        ref={input} type="file" accept="image/*" capture="environment" className="hidden" data-testid={`${testId}-file`}
-        onChange={e => { const f = e.target.files?.[0]; if (f) photo.read(f); e.target.value = ""; }}
+        ref={input}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        data-testid={`${testId}-file`}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) photo.read(f);
+          e.target.value = "";
+        }}
       />
       <Button variant="outline" onClick={() => input.current?.click()} disabled={photo.reading} data-testid={`${testId}-take`}>
         <Camera aria-hidden="true" /> {answer ? "Another Photo" : "Take or Choose a Photo"}
       </Button>
-      {photo.reading && <p role="status" className={cn("flex items-center gap-2", TEXT.prose)}><Spinner /> Reading the page…</p>}
-      {photo.readError && (
-        <p role="alert" className={cn(FINDING_TONE.stop, TEXT.prose)}>The page could not be read: {photo.readError.message}</p>
+      {photo.reading && (
+        <p role="status" className={cn("flex items-center gap-2", TEXT.prose)}>
+          <Spinner /> Reading the page…
+        </p>
       )}
-      {answer?.unreadable && <p role="alert" className={cn(FINDING_TONE.caution, TEXT.prose)}>{answer.unreadable}</p>}
+      {photo.readError && (
+        <p role="alert" className={cn(FINDING_TONE.stop, TEXT.prose)}>
+          The page could not be read: {photo.readError.message}
+        </p>
+      )}
+      {answer?.unreadable && (
+        <p role="alert" className={cn(FINDING_TONE.caution, TEXT.prose)}>
+          {answer.unreadable}
+        </p>
+      )}
       {!!answer?.notes.length && (
         <ul className={cn("list-disc pl-5 text-muted-foreground", TEXT.detail)} aria-label="Not read">
-          {answer.notes.map(n => <li key={n}>{n}</li>)}
+          {answer.notes.map((n) => (
+            <li key={n}>{n}</li>
+          ))}
         </ul>
       )}
       {children}

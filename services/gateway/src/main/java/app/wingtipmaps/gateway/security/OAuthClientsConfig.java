@@ -94,8 +94,10 @@ public class OAuthClientsConfig {
         if (StringUtils.hasText(googleClientId) && StringUtils.hasText(googleClientSecret)) {
             registrations.add(google());
         }
-        if (StringUtils.hasText(appleTeamId) && StringUtils.hasText(appleKeyId)
-                && StringUtils.hasText(appleServicesId) && StringUtils.hasText(applePrivateKeyPem)) {
+        if (StringUtils.hasText(appleTeamId)
+                && StringUtils.hasText(appleKeyId)
+                && StringUtils.hasText(appleServicesId)
+                && StringUtils.hasText(applePrivateKeyPem)) {
             registrations.add(apple());
         }
         // An InMemoryClientRegistrationRepository with zero entries
@@ -172,8 +174,7 @@ public class OAuthClientsConfig {
                     .expirationTime(Date.from(now.plus(150, ChronoUnit.DAYS)))
                     .build();
             SignedJWT jwt = new SignedJWT(
-                    new JWSHeader.Builder(JWSAlgorithm.ES256).keyID(appleKeyId).build(),
-                    claims);
+                    new JWSHeader.Builder(JWSAlgorithm.ES256).keyID(appleKeyId).build(), claims);
             jwt.sign(new ECDSASigner(parseApplePrivateKey()));
             return jwt.serialize();
         } catch (Exception e) {

@@ -57,10 +57,7 @@ PILOT_HEADER = "X-Pilot-Id"
 
 
 @router.post("/api/checkpoint-notes/pending")
-def notes_to_write(
-    request: GenerateNotesRequest,
-    x_pilot_id: str | None = Header(default=None, alias=PILOT_HEADER),
-) -> NotesToWrite:
+def notes_to_write(request: GenerateNotesRequest, x_pilot_id: str | None = Header(default=None, alias=PILOT_HEADER)) -> NotesToWrite:
     """A route's selected checkpoints in along-track order, each with the
     note already kept for it (the pilot's own edit, else the shared one)
     or None, and the hop its note is kept under: what the assistant
@@ -72,16 +69,29 @@ def notes_to_write(
     # Notes are matched by place, so the same corridor flown the other
     # way reads the same ones; a route with stops keeps each hop's as
     # that hop's.
-    existing = [note for hop in r.hops for note in (
-        checkpoint_notes.load_notes(_hop_key(hop))
-        + checkpoint_notes.load_notes(checkpoint_notes.route_key(hop.dest_ident, hop.dep_ident)))]
+    existing = [
+        note
+        for hop in r.hops
+        for note in (
+            checkpoint_notes.load_notes(_hop_key(hop))
+            + checkpoint_notes.load_notes(checkpoint_notes.route_key(hop.dest_ident, hop.dep_ident))
+        )
+    ]
     checkpoints = []
     for cp in selected:
         saved = checkpoint_notes.find_note(existing, cp["lat"], cp["lon"], x_pilot_id)
-        checkpoints.append(NoteToWrite(
-            lat=cp["lat"], lon=cp["lon"], id=cp["id"], name=cp.get("name"), category=cp["category"],
-            along_track_nm=cp["along_track_nm"], hop_key=_hop_key(r.hops[cp.get("hop", 0)]),
-            saved=saved["description"] if saved is not None else None))
+        checkpoints.append(
+            NoteToWrite(
+                lat=cp["lat"],
+                lon=cp["lon"],
+                id=cp["id"],
+                name=cp.get("name"),
+                category=cp["category"],
+                along_track_nm=cp["along_track_nm"],
+                hop_key=_hop_key(r.hops[cp.get("hop", 0)]),
+                saved=saved["description"] if saved is not None else None,
+            )
+        )
     return NotesToWrite(departure_ident=r.dep_ident, checkpoints=checkpoints)
 
 
@@ -105,8 +115,7 @@ def seed_note(note: SeedNoteRequest) -> NoteSeeded:
 
 @router.post("/api/checkpoint-notes", openapi_extra=gateway("signed-in", pilot=True))
 def save_checkpoint_note(
-    note: CheckpointNoteRequest,
-    x_pilot_id: str | None = Header(default=None, alias=PILOT_HEADER),
+    note: CheckpointNoteRequest, x_pilot_id: str | None = Header(default=None, alias=PILOT_HEADER)
 ) -> CheckpointNoteSaved:
     """A pilot's own edit to a checkpoint's identification note: what
     they see at that place from now on. Other pilots keep the shared
@@ -120,9 +129,7 @@ def save_checkpoint_note(
 
 
 @router.delete("/api/checkpoint-notes/mine")
-def forget_pilots_notes(
-    x_pilot_id: str | None = Header(default=None, alias=PILOT_HEADER),
-) -> PilotNotesForgotten:
+def forget_pilots_notes(x_pilot_id: str | None = Header(default=None, alias=PILOT_HEADER)) -> PilotNotesForgotten:
     """A pilot's own notes, every one, taken out as their account is
     deleted (the gateway's DELETE /api/me). Asked by the gateway alone:
     its proxy does not forward this path, and the pilot is named by the
@@ -130,4 +137,3 @@ def forget_pilots_notes(
     if not x_pilot_id:
         raise HTTPException(422, f"{PILOT_HEADER} names the pilot whose notes go")
     return PilotNotesForgotten(removed=checkpoint_notes.forget_pilot(x_pilot_id))
-

@@ -65,8 +65,14 @@ public class CrossCountryReview {
         // JPA
     }
 
-    public CrossCountryReview(Pilot student, Pilot instructor, Flight flight, String makeModel, LocalDate flightOn, String note,
-                              Instant askedAt) {
+    public CrossCountryReview(
+            Pilot student,
+            Pilot instructor,
+            Flight flight,
+            String makeModel,
+            LocalDate flightOn,
+            String note,
+            Instant askedAt) {
         this.student = student;
         this.instructor = instructor;
         this.flight = flight;

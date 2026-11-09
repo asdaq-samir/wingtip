@@ -9,6 +9,7 @@ length -- the runway lengths and takeoff and landing distances 14 CFR
 The rules are the engine's (wingtip_engine::gonogo::runways), asked by
 name through wingtip_native.call, as the web app asks them; the runways and
 fields it answers by index are put back here as the dicts they were."""
+
 from . import ask
 
 
@@ -26,8 +27,14 @@ def runway_in_use(runways: list[dict]) -> dict | None:
     return _flown(runways, ask("gonogo_runway_in_use", runways=runways))
 
 
-def runway_checks(aircraft: dict | None, briefing: dict | None, fields: list[dict] | None,
-                  takeoff_lb: float | None, landing_lb: float | None, picks: dict | None = None) -> list[dict]:
+def runway_checks(
+    aircraft: dict | None,
+    briefing: dict | None,
+    fields: list[dict] | None,
+    takeoff_lb: float | None,
+    landing_lb: float | None,
+    picks: dict | None = None,
+) -> list[dict]:
     """Every airport the flight takes off from or lands at, the distances
     it needs there: the takeoff from the departure, the landing at the
     destination, both at a stop. `fields` are the route's airports in
@@ -40,11 +47,16 @@ def runway_checks(aircraft: dict | None, briefing: dict | None, fields: list[dic
         return []
     idents = {f["ident"] for f in fields}
     airports = briefing.get("airports") or {}
-    checks = ask("gonogo_runway_checks", aircraft={k: aircraft.get(k) for k in ("takeoff", "landing", "crosswind")},
-                 fields=[{"ident": f["ident"], "elevation_ft": f.get("elevation_ft")} for f in fields],
-                 metars={i: m for i, m in (briefing.get("metars") or {}).items() if i in idents},
-                 airports={i: a for i, a in airports.items() if i in idents}, takeoff_lb=takeoff_lb, landing_lb=landing_lb,
-                 picks=picks or None)
+    checks = ask(
+        "gonogo_runway_checks",
+        aircraft={k: aircraft.get(k) for k in ("takeoff", "landing", "crosswind")},
+        fields=[{"ident": f["ident"], "elevation_ft": f.get("elevation_ft")} for f in fields],
+        metars={i: m for i, m in (briefing.get("metars") or {}).items() if i in idents},
+        airports={i: a for i, a in airports.items() if i in idents},
+        takeoff_lb=takeoff_lb,
+        landing_lb=landing_lb,
+        picks=picks or None,
+    )
     for c in checks:
         field = fields[c["field"]]
         runways = (airports.get(field["ident"]) or {}).get("runways") or []

@@ -64,8 +64,10 @@ class SpeedControllerTest {
 
     @Test
     void aBrowsersReportIsKeptWithNoSessionOrToken() throws Exception {
-        mockMvc.perform(post("/api/speed/field").header("X-Forwarded-For", "203.0.113.10")
-                        .contentType(MediaType.APPLICATION_JSON).content(FIELD))
+        mockMvc.perform(post("/api/speed/field")
+                        .header("X-Forwarded-For", "203.0.113.10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(FIELD))
                 .andExpect(status().isNoContent());
 
         verify(speed).record("field", "plan", "phone", "4855639", Map.of("LCP", 1840.5, "INP", 96.0, "CLS", 0.02));
@@ -73,11 +75,13 @@ class SpeedControllerTest {
 
     @Test
     void aMetricThatIsNotAWebVitalIsRefused() throws Exception {
-        mockMvc.perform(post("/api/speed/field").header("X-Forwarded-For", "203.0.113.11")
+        mockMvc.perform(post("/api/speed/field")
+                        .header("X-Forwarded-For", "203.0.113.11")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(FIELD.replace("\"CLS\"", "\"position\"")))
                 .andExpect(status().isBadRequest());
-        mockMvc.perform(post("/api/speed/field").header("X-Forwarded-For", "203.0.113.11")
+        mockMvc.perform(post("/api/speed/field")
+                        .header("X-Forwarded-For", "203.0.113.11")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(FIELD.replace("1840.5", "-1")))
                 .andExpect(status().isBadRequest());
@@ -88,27 +92,37 @@ class SpeedControllerTest {
     @Test
     void pastTheHoursAllowanceReportsAreDroppedQuietly() throws Exception {
         for (int i = 0; i < SpeedController.PER_HOUR + 5; i++) {
-            mockMvc.perform(post("/api/speed/field").header("X-Forwarded-For", "203.0.113.12")
-                            .contentType(MediaType.APPLICATION_JSON).content(FIELD))
+            mockMvc.perform(post("/api/speed/field")
+                            .header("X-Forwarded-For", "203.0.113.12")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(FIELD))
                     .andExpect(status().isNoContent());
         }
 
-        verify(speed, times(SpeedController.PER_HOUR)).record(eq("field"), anyString(), anyString(), anyString(), anyMap());
+        verify(speed, times(SpeedController.PER_HOUR))
+                .record(eq("field"), anyString(), anyString(), anyString(), anyMap());
     }
 
     @Test
     void theLabRunNeedsTheDeploymentsToken() throws Exception {
-        mockMvc.perform(post("/api/speed/lab").contentType(MediaType.APPLICATION_JSON).content(LAB))
+        mockMvc.perform(post("/api/speed/lab")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(LAB))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(post("/api/speed/lab").header("X-Speed-Token", "guess")
-                        .contentType(MediaType.APPLICATION_JSON).content(LAB))
+        mockMvc.perform(post("/api/speed/lab")
+                        .header("X-Speed-Token", "guess")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(LAB))
                 .andExpect(status().isForbidden());
         verify(speed, never()).record(anyString(), anyString(), anyString(), anyString(), anyMap());
 
-        mockMvc.perform(post("/api/speed/lab").header("X-Speed-Token", "lab-secret")
-                        .contentType(MediaType.APPLICATION_JSON).content(LAB))
+        mockMvc.perform(post("/api/speed/lab")
+                        .header("X-Speed-Token", "lab-secret")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(LAB))
                 .andExpect(status().isNoContent());
-        verify(speed).record("lab", "plan", "phone", "2cafd50", Map.of("open_app", 1060.0, "lighthouse_performance", 92.0));
+        verify(speed)
+                .record("lab", "plan", "phone", "2cafd50", Map.of("open_app", 1060.0, "lighthouse_performance", 92.0));
     }
 
     @Test
@@ -136,14 +150,37 @@ class SpeedControllerTest {
 
     private static SpeedSampleRepository.Day day() {
         return new SpeedSampleRepository.Day() {
-            public String getDay() { return "2026-10-11"; }
-            public String getSource() { return "field"; }
-            public String getMetric() { return "LCP"; }
-            public String getDevice() { return "phone"; }
-            public double getP50() { return 1700; }
-            public double getP75() { return 2100; }
-            public long getCount() { return 12; }
-            public String getVersion() { return "4855639"; }
+            public String getDay() {
+                return "2026-10-11";
+            }
+
+            public String getSource() {
+                return "field";
+            }
+
+            public String getMetric() {
+                return "LCP";
+            }
+
+            public String getDevice() {
+                return "phone";
+            }
+
+            public double getP50() {
+                return 1700;
+            }
+
+            public double getP75() {
+                return 2100;
+            }
+
+            public long getCount() {
+                return 12;
+            }
+
+            public String getVersion() {
+                return "4855639";
+            }
         };
     }
 }

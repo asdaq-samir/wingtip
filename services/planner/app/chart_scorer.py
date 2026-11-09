@@ -13,6 +13,7 @@ nothing for them at start.
 
 `score_detections` is the seam: app.chart_model calls it, and a test
 replaces it."""
+
 import json
 import threading
 from pathlib import Path
@@ -75,9 +76,7 @@ def _chart_model() -> dict | None:
     import joblib
 
     files = _chart_files()
-    return _fresh(("model", "chart"), files, lambda: {
-        "model": joblib.load(files[0]), "metrics": json.loads(files[1].read_text()),
-    })
+    return _fresh(("model", "chart"), files, lambda: {"model": joblib.load(files[0]), "metrics": json.loads(files[1].read_text())})
 
 
 def score_detections(rows: list[dict]) -> list | None:

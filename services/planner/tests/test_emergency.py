@@ -1,6 +1,7 @@
 """GET /api/emergency/fields: the fields round the airplane in the shape
 the engine's best_fields reads, the wind aloft and the stock profile's
 glide figures, with the tables the planner reads stood in for."""
+
 from fastapi.testclient import TestClient
 from wingtip import emergency, engine
 
@@ -8,26 +9,66 @@ from app.main import app
 
 client = TestClient(app)
 
-C02 = {"ident": "C02", "source_ident": "KC02", "name": "Grand Geneva Resort", "lat": 42.6149, "lon": -88.3896,
-       "elevation_ft": 835, "distance_nm": 2.4, "bearing_deg": 54, "kind": "small"}
-WI89 = {"ident": "WI89", "source_ident": "WI89", "name": "Lake Geneva Aire Estates", "lat": 42.572, "lon": -88.3672,
-        "elevation_ft": 880, "distance_nm": 3.2, "bearing_deg": 112, "kind": "small"}
+C02 = {
+    "ident": "C02",
+    "source_ident": "KC02",
+    "name": "Grand Geneva Resort",
+    "lat": 42.6149,
+    "lon": -88.3896,
+    "elevation_ft": 835,
+    "distance_nm": 2.4,
+    "bearing_deg": 54,
+    "kind": "small",
+}
+WI89 = {
+    "ident": "WI89",
+    "source_ident": "WI89",
+    "name": "Lake Geneva Aire Estates",
+    "lat": 42.572,
+    "lon": -88.3672,
+    "elevation_ft": 880,
+    "distance_nm": 3.2,
+    "bearing_deg": 112,
+    "kind": "small",
+}
 
 
 def stand_in(monkeypatch, wind=None):
     monkeypatch.setattr(emergency.airports, "nearest", lambda lat, lon, limit: [C02, WI89][:limit])
     runways = {
         "KC02": [{"end_headings": [("05", 53.1), ("23", 233.1)], "length_ft": 4100, "surface": "ASP", "closed": False}],
-        "WI89": [{"end_headings": [("04", None), ("22", None)], "length_ft": 2300, "surface": "ASPH", "closed": False},
-                 {"end_headings": [("18", None), ("36", None)], "length_ft": 1500, "surface": "TURF", "closed": True}],
+        "WI89": [
+            {"end_headings": [("04", None), ("22", None)], "length_ft": 2300, "surface": "ASPH", "closed": False},
+            {"end_headings": [("18", None), ("36", None)], "length_ft": 1500, "surface": "TURF", "closed": True},
+        ],
     }
     monkeypatch.setattr(emergency.airports, "get_runways", lambda source: runways[source])
-    monkeypatch.setattr(emergency.weather, "metar_for_idents", lambda idents: {"KC02": {
-        "raw": "KC02 091250Z AUTO 25010KT 10SM CLR 08/M02 A3001", "flight_category": "VFR", "wind_dir_true_deg": 250,
-        "wind_speed_kt": 10, "wind_gust_kt": None, "altimeter_in_hg": 30.01, "temp_c": 8}, "WI89": None})
-    monkeypatch.setattr(emergency.airports, "get_frequencies_for", lambda idents: {"KC02": [
-        {"type": "CTAF", "description": None, "frequency_mhz": 122.7},
-        {"type": "AWOS", "description": None, "frequency_mhz": 118.375}]})
+    monkeypatch.setattr(
+        emergency.weather,
+        "metar_for_idents",
+        lambda idents: {
+            "KC02": {
+                "raw": "KC02 091250Z AUTO 25010KT 10SM CLR 08/M02 A3001",
+                "flight_category": "VFR",
+                "wind_dir_true_deg": 250,
+                "wind_speed_kt": 10,
+                "wind_gust_kt": None,
+                "altimeter_in_hg": 30.01,
+                "temp_c": 8,
+            },
+            "WI89": None,
+        },
+    )
+    monkeypatch.setattr(
+        emergency.airports,
+        "get_frequencies_for",
+        lambda idents: {
+            "KC02": [
+                {"type": "CTAF", "description": None, "frequency_mhz": 122.7},
+                {"type": "AWOS", "description": None, "frequency_mhz": 118.375},
+            ]
+        },
+    )
     monkeypatch.setattr(emergency.faa_data, "military_fields", lambda cache: {})
     monkeypatch.setattr(emergency.faa_data, "private_fields", lambda cache: {"WI89"})
     monkeypatch.setattr(emergency.faa_data, "airport_contact", lambda ident, cache: {"phone": "262-555-0100" if ident == "C02" else None})
@@ -50,8 +91,15 @@ def test_the_fields_come_as_the_engine_reads_them(monkeypatch):
     assert body["airplane"]["glide"]["best_glide_kias"] == 68 and body["airplane"]["landing"]["tables"]
 
     # And the engine ranks them as the app asks it.
-    ranked = engine.ask("best_fields", mode="glide", at={"lat": 42.5917, "lon": -88.4334}, altitude_ft=4500,
-                        wind=body["wind"], airplane=body["airplane"], fields=body["fields"])
+    ranked = engine.ask(
+        "best_fields",
+        mode="glide",
+        at={"lat": 42.5917, "lon": -88.4334},
+        altitude_ft=4500,
+        wind=body["wind"],
+        airplane=body["airplane"],
+        fields=body["fields"],
+    )
     assert [f["ident"] for f in ranked["fields"]] == ["C02", "WI89"]
     assert ranked["fields"][0]["reach"] == "within" and ranked["fields"][0]["runway"]["end"] == "23"
 

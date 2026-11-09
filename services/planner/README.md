@@ -69,6 +69,7 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
+
 @app.get("/api/course")
 def course(dep: str, dest: str) -> dict:
     return {"departure": dep, "destination": dest, "distance_nm": 0.0}

@@ -104,10 +104,8 @@ fn hour_at(t: &Taf, at: i64) -> Option<Hour> {
     let prevailing = t.periods.iter().filter(|p| prevails(p) && p.from <= at && at < p.to).last()?;
     let mut figs = figures(prevailing, None);
     let becoming = prevailing.change == "BECMG" && prevailing.by.is_some_and(|by| at < by);
-    let before = becoming
-        .then(|| t.periods.iter().filter(|p| prevails(p) && p.from < prevailing.from).last())
-        .flatten()
-        .map(|p| figures(p, None));
+    let before =
+        becoming.then(|| t.periods.iter().filter(|p| prevails(p) && p.from < prevailing.from).last()).flatten().map(|p| figures(p, None));
     let supplemental: Vec<Group> = t
         .periods
         .iter()
@@ -135,7 +133,10 @@ fn hour_at(t: &Taf, at: i64) -> Option<Hour> {
 /// receiver) read them, its sky and weather from its text.
 fn now_of(m: &Value, now_ms: f64) -> Hour {
     let num = |k: &str| m.get(k).and_then(Value::as_f64);
-    let read = m.get("raw").and_then(Value::as_str).and_then(|raw| metar::parse(&raw.split_whitespace().collect::<Vec<_>>().join(" ").trim_end_matches('=')));
+    let read = m
+        .get("raw")
+        .and_then(Value::as_str)
+        .and_then(|raw| metar::parse(&raw.split_whitespace().collect::<Vec<_>>().join(" ").trim_end_matches('=')));
     let (sky, precip) = match &read {
         Some(r) => (Some(sky_of(&r.layers)), precip_of(&r.weather)),
         None => (num("ceiling_ft").map(|_| "cloudy"), None),
@@ -234,7 +235,9 @@ mod tests {
 
     #[test]
     fn a_tempo_is_weather_at_times_and_a_becmg_the_worse_while_under_way() {
-        let t = read_taf("TAF KDLH 021120Z 0212/0312 27012KT P6SM BKN040 BECMG 0214/0216 OVC008 TEMPO 0218/0220 2SM -TSRA BKN015", at(2, 12)).unwrap();
+        let t =
+            read_taf("TAF KDLH 021120Z 0212/0312 27012KT P6SM BKN040 BECMG 0214/0216 OVC008 TEMPO 0218/0220 2SM -TSRA BKN015", at(2, 12))
+                .unwrap();
         let h = hour_at(&t, at(2, 13)).unwrap();
         assert_eq!(h.category.as_deref(), Some("VFR"));
         // The BECMG to 800 ft is under way at 15Z: the worse of before and
@@ -263,7 +266,8 @@ mod tests {
     #[test]
     fn now_from_the_metar_then_the_tafs_hours() {
         let m = json::parse(r#"{"raw":"KDLH 021253Z 27012KT 10SM FEW040 05/01 A3001","observed_at":"2026-11-02T12:53:00Z","flight_category":"VFR","ceiling_ft":null,"visibility_sm":10,"wind_dir_true_deg":270,"wind_speed_kt":12}"#).unwrap();
-        let out = json::parse(&field_hours(Some(&m), Some("TAF KDLH 021120Z 0212/0312 27012KT P6SM BKN040"), at(2, 13) as f64 * 1000.0, 3)).unwrap();
+        let out = json::parse(&field_hours(Some(&m), Some("TAF KDLH 021120Z 0212/0312 27012KT P6SM BKN040"), at(2, 13) as f64 * 1000.0, 3))
+            .unwrap();
         let hours = out.as_array().unwrap();
         assert_eq!(hours.len(), 4);
         assert_eq!(hours[0].get("sky").and_then(Value::as_str), Some("partly"));

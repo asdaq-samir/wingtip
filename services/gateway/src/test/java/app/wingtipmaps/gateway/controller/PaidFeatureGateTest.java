@@ -38,12 +38,13 @@ import org.springframework.test.web.servlet.ResultActions;
 @WebMvcTest(PlannerProxyController.class)
 @Import(StreamingProxy.class)
 @AutoConfigureMockMvc(addFilters = false)
-@TestPropertySource(properties = {
-        // A deployment that sells the subscription, whose gate these are.
-        "app.subscription.enabled=true",
-        "planner-service.base-url=http://127.0.0.1:9",
-        "assistant-service.base-url=http://127.0.0.1:9",
-})
+@TestPropertySource(
+        properties = {
+            // A deployment that sells the subscription, whose gate these are.
+            "app.subscription.enabled=true",
+            "planner-service.base-url=http://127.0.0.1:9",
+            "assistant-service.base-url=http://127.0.0.1:9",
+        })
 class PaidFeatureGateTest {
 
     @Autowired
@@ -67,7 +68,8 @@ class PaidFeatureGateTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"departure_ident\":\"C81\"}"))
                 .andExpect(status().isPaymentRequired())
-                .andExpect(jsonPath("$.detail").value("The written briefing comes with the subscription, its first month free."));
+                .andExpect(jsonPath("$.detail")
+                        .value("The written briefing comes with the subscription, its first month free."));
     }
 
     @Test
@@ -95,7 +97,9 @@ class PaidFeatureGateTest {
     @Test
     void theAssistantIsGatedLikeTheOtherClaudeFeatures() throws Exception {
         refuse(PaidFeature.ASSISTANT, 404, "The assistant comes later; it is not offered yet.");
-        finish(post("/api/planner/assistant").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        finish(post("/api/planner/assistant")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("The assistant comes later; it is not offered yet."));
     }
@@ -106,7 +110,9 @@ class PaidFeatureGateTest {
     void everyKindOfReadingInWordsIsGated() throws Exception {
         refuse(PaidFeature.WORDS, 402, "The readings in words come with the subscription.");
         for (String kind : new String[] {"notams", "weather", "risk", "debrief", "changes"}) {
-            finish(post("/api/planner/words/" + kind).contentType(MediaType.APPLICATION_JSON).content("{}"))
+            finish(post("/api/planner/words/" + kind)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{}"))
                     .andExpect(status().isPaymentRequired())
                     .andExpect(jsonPath("$.detail").value("The readings in words come with the subscription."));
         }
@@ -119,25 +125,32 @@ class PaidFeatureGateTest {
         org.assertj.core.api.Assertions.assertThat(paidFeatureOf("/api/assistant"))
                 .isEqualTo(PaidFeature.ASSISTANT);
         org.assertj.core.api.Assertions.assertThat(paidFeatureOf("/api/words")).isNull();
-        org.assertj.core.api.Assertions.assertThat(paidFeatureOf("/api/go-no-go")).isNull();
+        org.assertj.core.api.Assertions.assertThat(paidFeatureOf("/api/go-no-go"))
+                .isNull();
     }
 
     @Test
     void aPilotsOwnNoteIsFreeAndNeverChecked() throws Exception {
         refuse(PaidFeature.CHECKPOINT_NOTES, 402, "Checkpoint descriptions come with the subscription.");
-        finish(post("/api/planner/checkpoint-notes").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        finish(post("/api/planner/checkpoint-notes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
                 .andExpect(status().isBadGateway());
         verify(subscriptions, never()).refusal(any(), any());
     }
 
     /** The paid feature a POST is, as its service's document marks it. */
     private static PaidFeature paidFeatureOf(String path) {
-        return UpstreamRoutes.shipped().find("POST", path).map(UpstreamRoutes.Route::paid).orElse(null);
+        return UpstreamRoutes.shipped()
+                .find("POST", path)
+                .map(UpstreamRoutes.Route::paid)
+                .orElse(null);
     }
 
     /** See PaidCallAllowanceTest: the answer is written on another thread. */
     private ResultActions finish(RequestBuilder call) throws Exception {
-        MvcResult started = mockMvc.perform(call).andExpect(request().asyncStarted()).andReturn();
+        MvcResult started =
+                mockMvc.perform(call).andExpect(request().asyncStarted()).andReturn();
         return mockMvc.perform(asyncDispatch(started));
     }
 }

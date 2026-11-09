@@ -7,6 +7,7 @@ paragraph it rests on) and its input schema from the contract
 /api/engine/{name}, which asks the engine. A rule tagged in the contract
 is a tool here with no code added, and the figure the model states is the
 app's own rule's, never the model's arithmetic."""
+
 from __future__ import annotations
 
 import hashlib
@@ -43,13 +44,17 @@ def _runner(box: Sourced, name: str) -> Callable[..., str]:
         # pilot sees the figures the sentence rests on.
         asked = json.dumps(given, sort_keys=True, default=str)
         key = hashlib.sha256(asked.encode()).hexdigest()[:8]
-        box.source(f"rule:{name}:{key}", label(name)[len("Working out the "):].capitalize(),
-                   as_json({"asked": given, "answered": answer})[:1500])
+        box.source(
+            f"rule:{name}:{key}", label(name)[len("Working out the ") :].capitalize(), as_json({"asked": given, "answered": answer})[:1500]
+        )
         return as_json(answer)
+
     return run
 
 
 def rule_tools(box: Sourced) -> list:
     """Each rule tool of one answer, its sources kept on `box`."""
-    return [beta_tool(_runner(box, tool["name"]), name=tool["name"], description=tool["description"],
-                      input_schema=tool["input_schema"]) for tool in TOOLS]
+    return [
+        beta_tool(_runner(box, tool["name"]), name=tool["name"], description=tool["description"], input_schema=tool["input_schema"])
+        for tool in TOOLS
+    ]

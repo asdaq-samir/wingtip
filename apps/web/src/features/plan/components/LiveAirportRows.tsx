@@ -23,7 +23,7 @@ export function DigitalAtisRows({ ident }: { ident: string }) {
   if (!data?.broadcasts.length) return null;
   return (
     <div className="pt-5" data-testid="place-datis">
-      {data.broadcasts.map(b => {
+      {data.broadcasts.map((b) => {
         // The engine's read_datis answer, read_atis's shape (the planner
         // passes it on as a plain object).
         const reading = b.reading as unknown as AtisReading;
@@ -32,19 +32,36 @@ export function DigitalAtisRows({ ident }: { ident: string }) {
           <ListGroup key={`${b.which ?? "both"}`} title={`${which}${b.letter ? `, information ${b.letter}` : ""}`}>
             {heardAny(reading) && (
               <ListRow
-                media={<RowBadge colour={BADGE.weather}><Radio /></RowBadge>}
-                title={<span className="font-semibold text-foreground">{glanceWords(reading)}</span>} data-testid="place-datis-glance"
+                media={
+                  <RowBadge colour={BADGE.weather}>
+                    <Radio />
+                  </RowBadge>
+                }
+                title={<span className="font-semibold text-foreground">{glanceWords(reading)}</span>}
+                data-testid="place-datis-glance"
               />
             )}
-            {heardAny(reading) && atisRows(reading).map((row, k) => (
-              <ListRow key={`${row.label}-${k}`} title={row.label} value={<span className="text-foreground">{row.value}</span>} data-testid="place-datis-row" />
-            ))}
+            {heardAny(reading) &&
+              atisRows(reading).map((row, k) => (
+                <ListRow
+                  key={`${row.label}-${k}`}
+                  title={row.label}
+                  value={<span className="text-foreground">{row.value}</span>}
+                  data-testid="place-datis-row"
+                />
+              ))}
             <Collapsible>
               <CollapsibleTrigger asChild>
                 <ListRow title="As sent" chevron data-testid="place-datis-sent" />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <ListRow title={<span className={cn("font-mono break-words text-muted-foreground", TEXT.detail)} data-testid="place-datis-raw">{b.text}</span>} />
+                <ListRow
+                  title={
+                    <span className={cn("font-mono break-words text-muted-foreground", TEXT.detail)} data-testid="place-datis-raw">
+                      {b.text}
+                    </span>
+                  }
+                />
               </CollapsibleContent>
             </Collapsible>
             <ListRow muted title={<span className={TEXT.note}>FAA D-ATIS</span>} />
@@ -64,19 +81,32 @@ export function DigitalAtisRows({ ident }: { ident: string }) {
  */
 export function RvrRows({ ident }: { ident: string }) {
   const { data } = useQuery(rvrQuery(ident));
-  const minimumSm = usePreferences(s => s.minimums.visibilitySm);
+  const minimumSm = usePreferences((s) => s.minimums.visibilitySm);
   if (!data?.runways.length) return null;
   const rows = rvrRows(data.runways, minimumSm);
   return (
     <div className="pt-5" data-testid="place-rvr">
       <ListGroup title="Runway visual range, ft">
-        {rows.map(r => (
+        {rows.map((r) => (
           <ListRow
             key={r.runway}
-            media={<RowBadge colour={BADGE.runway}><Eye /></RowBadge>}
+            media={
+              <RowBadge colour={BADGE.runway}>
+                <Eye />
+              </RowBadge>
+            }
             title={`RVR ${r.runway}`}
-            description={r.under ? <span className="text-destructive" data-testid="place-rvr-under">{r.under}</span> : "Touchdown · midpoint · rollout"}
-            value={<span className="font-semibold text-foreground tabular-nums">{r.readings}</span>} data-testid="place-rvr-row"
+            description={
+              r.under ? (
+                <span className="text-destructive" data-testid="place-rvr-under">
+                  {r.under}
+                </span>
+              ) : (
+                "Touchdown · midpoint · rollout"
+              )
+            }
+            value={<span className="font-semibold text-foreground tabular-nums">{r.readings}</span>}
+            data-testid="place-rvr-row"
           />
         ))}
         <ListRow muted title={<span className={TEXT.note}>FAA RVR, through SWIM</span>} />

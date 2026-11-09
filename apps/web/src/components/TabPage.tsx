@@ -19,7 +19,12 @@ export const TAB_PAGE_GAP = "gap-6";
  * whose heading is the same on every tab. There at once as its tab is
  * picked: a card that comes in over a tab is PanelCard.
  */
-export default function TabPage({ testId, headless = false, scroll = true, children }: {
+export default function TabPage({
+  testId,
+  headless = false,
+  scroll = true,
+  children,
+}: {
   testId?: string;
   /** No head's row over it (Setup's): it starts where the head would. */
   headless?: boolean;
@@ -30,9 +35,11 @@ export default function TabPage({ testId, headless = false, scroll = true, child
 }) {
   return (
     <div
-      data-tab-page="" data-testid={testId}
+      data-tab-page=""
+      data-testid={testId}
       className={cn(
-        "flex flex-col px-4 pb-4 [scrollbar-width:none]", TAB_PAGE_GAP,
+        "flex flex-col px-4 pb-4 [scrollbar-width:none]",
+        TAB_PAGE_GAP,
         // Scrolling, it runs on up under the panel's head (under-head).
         scroll ? "under-head min-h-0 flex-1 overflow-y-auto" : headless ? "pt-1" : "pt-2",
         headless ? "[--under-pad:0.25rem]" : "[--under-pad:0.5rem]",

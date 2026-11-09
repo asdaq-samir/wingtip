@@ -17,8 +17,8 @@ struct OptionalDayRow: View {
                         // The 44-point hit area round the glyph, which does not grow.
                         .contentShape(Rectangle().inset(by: -12))
                 }
-                    .buttonStyle(.borderless)
-                    .accessibilityLabel("Clear \(title.lowercased())")
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Clear \(title.lowercased())")
             }
         } else {
             LabeledContent(title) {

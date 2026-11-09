@@ -34,6 +34,7 @@ a dropped connection is made again after a pause, growing to a few
 minutes. Nothing here states a figure: a NOTAM's reading is the engine's
 (wingtip.notams calls notams_fns), and a track is passed on as sent.
 """
+
 import logging
 import math
 import re
@@ -135,24 +136,30 @@ def tracks(xml: str) -> list[tuple[dict, float]]:
         ident = (plan.findtext("acid") or "").strip() if plan is not None else ""
         kind = (plan.findtext("acType") or "").strip() if plan is not None else ""
         squawk = (track.findtext("reportedBeaconCode") or "").strip()
-        out.append(({
-            "hex": address,
-            "callsign": ident or None,
-            "registration": ident if ident.startswith("N") else None,
-            "type": kind or None,
-            "lat": round(lat, 5), "lon": round(lon, 5),
-            "altitude_ft": _number(track, "reportedAltitude"),
-            "pressure_altitude": True,
-            "track_deg": round(math.degrees(math.atan2(vx, vy)) % 360, 1) if vx is not None and vy is not None else None,
-            "speed_kt": round(math.hypot(vx, vy), 1) if vx is not None and vy is not None else None,
-            "vertical_fpm": _number(track, "vVert"),
-            "seen_s": None,
-            "squawk": squawk or None,
-            # 7500 unlawful interference (AIM 6-3-4), 7600 radio failure
-            # (AIM 6-4-2), 7700 emergency (AIM 6-2-2).
-            "emergency": {"7500": "unlawful", "7600": "nordo", "7700": "general"}.get(squawk),
-            "category": None,
-        }, at))
+        out.append(
+            (
+                {
+                    "hex": address,
+                    "callsign": ident or None,
+                    "registration": ident if ident.startswith("N") else None,
+                    "type": kind or None,
+                    "lat": round(lat, 5),
+                    "lon": round(lon, 5),
+                    "altitude_ft": _number(track, "reportedAltitude"),
+                    "pressure_altitude": True,
+                    "track_deg": round(math.degrees(math.atan2(vx, vy)) % 360, 1) if vx is not None and vy is not None else None,
+                    "speed_kt": round(math.hypot(vx, vy), 1) if vx is not None and vy is not None else None,
+                    "vertical_fpm": _number(track, "vVert"),
+                    "seen_s": None,
+                    "squawk": squawk or None,
+                    # 7500 unlawful interference (AIM 6-3-4), 7600 radio failure
+                    # (AIM 6-4-2), 7700 emergency (AIM 6-2-2).
+                    "emergency": {"7500": "unlawful", "7600": "nordo", "7700": "general"}.get(squawk),
+                    "category": None,
+                },
+                at,
+            )
+        )
     return out
 
 
@@ -196,7 +203,6 @@ def raw(message) -> bytes | str:
     return payload if payload else body(message)
 
 
-
 def _names_one(data: bytes | str, followed) -> bool:
     """Whether a radar message has a track of a followed airplane: its
     addresses read in one pass. A search of the whole message for each
@@ -224,7 +230,8 @@ def select(data: bytes | str, views, followed) -> list[tuple[dict, float]]:
     if not near and not _names_one(data, followed):
         return []
     return [
-        (plane, at) for plane, at in tracks(data.decode("utf-8", "replace"))
+        (plane, at)
+        for plane, at in tracks(data.decode("utf-8", "replace"))
         if plane["hex"] in followed or _in_view(plane["lat"], plane["lon"], views, VIEW_MARGIN_NM)
     ]
 
@@ -266,8 +273,10 @@ def _radar(data: bytes | str) -> int:
 
 def text(handler):
     """A handler that reads text, handed a message's bytes decoded."""
+
     def handle_text(payload: bytes | str) -> int:
         return handler(payload.decode("utf-8", "replace") if isinstance(payload, (bytes, bytearray)) else payload)
+
     handle_text.reads = handler
     return handle_text
 
@@ -288,10 +297,14 @@ HANDLERS: dict[str, dict] = {
     "FNS": {"*": text(notams.heard)},
     # TFMS's flight data, by its topic's kind or, where a message comes
     # with no topic, its root element.
-    "TFMS": {"flightData": filed_routes.heard, "tfmDataService": filed_routes.heard,
-             # Its flow information's programs and restrictions, not its
-             # flight lists or flow constrained areas (wingtip.flow).
-             "flow GADV": flow.heard, "flow RSTR": flow.heard},
+    "TFMS": {
+        "flightData": filed_routes.heard,
+        "tfmDataService": filed_routes.heard,
+        # Its flow information's programs and restrictions, not its
+        # flight lists or flow constrained areas (wingtip.flow).
+        "flow GADV": flow.heard,
+        "flow RSTR": flow.heard,
+    },
     # ITWS's alert products for an airport, not its maps (wingtip.itws.KEPT),
     # by the product number its topic gives, or its root with no topic.
     "ITWS": {**{f"product {number}": itws.heard for number in itws.KEPT}, "itws_msg": itws.heard},
@@ -408,18 +421,27 @@ def _run(feed: str, stop: threading.Event) -> None:
     while not stop.is_set():
         service = receiver = None
         try:
-            service = (MessagingService.builder().from_properties({
-                "solace.messaging.transport.host": _host(feed),
-                "solace.messaging.service.vpn-name": _feed(feed, "vpn"),
-                "solace.messaging.authentication.scheme.basic.username": settings.swim_username,
-                "solace.messaging.authentication.scheme.basic.password": settings.swim_password,
-            }).with_transport_security_strategy(
-                # The FAA's certificate checked against the image's own CAs.
-                TLS.create().with_certificate_validation(True, validate_server_name=True, trust_store_file_path=settings.swim_trust_store))
-                .with_reconnection_retry_strategy(RetryStrategy.parametrized_retry(5, 3000)).build())
+            service = (
+                MessagingService.builder()
+                .from_properties(
+                    {
+                        "solace.messaging.transport.host": _host(feed),
+                        "solace.messaging.service.vpn-name": _feed(feed, "vpn"),
+                        "solace.messaging.authentication.scheme.basic.username": settings.swim_username,
+                        "solace.messaging.authentication.scheme.basic.password": settings.swim_password,
+                    }
+                )
+                .with_transport_security_strategy(
+                    # The FAA's certificate checked against the image's own CAs.
+                    TLS.create().with_certificate_validation(
+                        True, validate_server_name=True, trust_store_file_path=settings.swim_trust_store
+                    )
+                )
+                .with_reconnection_retry_strategy(RetryStrategy.parametrized_retry(5, 3000))
+                .build()
+            )
             service.connect()
-            receiver = service.create_persistent_message_receiver_builder().build(
-                Queue.durable_exclusive_queue(_feed(feed, "queue")))
+            receiver = service.create_persistent_message_receiver_builder().build(Queue.durable_exclusive_queue(_feed(feed, "queue")))
             receiver.start()
             state.update(connected=True, error=None)
             log.info("SWIM %s connected", feed)

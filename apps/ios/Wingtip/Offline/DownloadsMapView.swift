@@ -82,7 +82,8 @@ struct DownloadsMapView: View {
         func area(_ b: [Double]) -> Double { (b[2] - b[0]) * (b[3] - b[1]) }
         let holding = sheets.compactMap { sheet -> (APIOfflineRegion, Double)? in
             guard let box = sheet.boxes.first(where: { $0.count == 4 && point.longitude >= $0[0] && point.longitude <= $0[2]
-                && point.latitude >= $0[1] && point.latitude <= $0[3] }) else { return nil }
+                    && point.latitude >= $0[1] && point.latitude <= $0[3]
+            }) else { return nil }
             return (sheet, area(box))
         }
         return holding.min { $0.1 < $1.1 }?.0

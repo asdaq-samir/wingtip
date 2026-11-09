@@ -10,6 +10,7 @@ knowledge test report codes are looked up in (the Logbook's Checkride page).
 
 Run again when the FAA publishes a new edition.
 """
+
 import json
 import re
 import sys
@@ -21,8 +22,10 @@ TASK = re.compile(r"^Task ([A-Z])\.\s+(.+?)\s*$")
 ELEMENT = re.compile(r"^((PA|IR)\.([IVX]+)\.([A-Z])\.([KRS]\d+[a-z]?))\s+(.+)$")
 # Lines that end an element's text: the next heading, a section's label,
 # a page's running header or footer, or its number.
-STOP = re.compile(r"^(Area of Operation|Task [A-Z]\.|Knowledge:|Risk\s*$|Management:|Skills:|References:|Objective:|eferences:|bjective:|Note:|"
-                  r"Private Pilot for Airplane|Instrument Rating . Airplane|Instrument Rating – Airplane|\d+\s*$|[A-Z]-\d+\s*$)")
+STOP = re.compile(
+    r"^(Area of Operation|Task [A-Z]\.|Knowledge:|Risk\s*$|Management:|Skills:|References:|Objective:|eferences:|bjective:|Note:|"
+    r"Private Pilot for Airplane|Instrument Rating . Airplane|Instrument Rating – Airplane|\d+\s*$|[A-Z]-\d+\s*$)"
+)
 
 
 def parse(path: str, out: dict) -> str:

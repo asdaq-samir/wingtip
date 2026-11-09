@@ -56,10 +56,25 @@ public class DiagnosticsService {
         for (Fault fault : reported) {
             String signature = DiagnosticText.oneLine(fault.signature(), 200);
             String detail = DiagnosticText.scrub(fault.detail(), DETAIL_MAX);
-            faults.save(new Diagnostic(now, fault.at(), origin.platform(), origin.version(), os, origin.device(),
-                    fault.kind(), signature, detail));
-            log.warn("{} {} [{}] {} ({}, {})\n{}", origin.platform(), origin.version(), fault.kind(), signature,
-                    os == null ? "" : os, origin.device(), DiagnosticText.indented(detail));
+            faults.save(new Diagnostic(
+                    now,
+                    fault.at(),
+                    origin.platform(),
+                    origin.version(),
+                    os,
+                    origin.device(),
+                    fault.kind(),
+                    signature,
+                    detail));
+            log.warn(
+                    "{} {} [{}] {} ({}, {})\n{}",
+                    origin.platform(),
+                    origin.version(),
+                    fault.kind(),
+                    signature,
+                    os == null ? "" : os,
+                    origin.device(),
+                    DiagnosticText.indented(detail));
         }
         if (!metrics.isEmpty()) {
             speed.record(origin.platform(), page, origin.device(), origin.version(), metrics);
@@ -74,6 +89,7 @@ public class DiagnosticsService {
     /** The newest faults of the last {@code days}, at most 200. */
     @Transactional(readOnly = true)
     public List<Diagnostic> recent(int days) {
-        return faults.findTop200ByReceivedAtAfterOrderByReceivedAtDesc(Instant.now().minus(Duration.ofDays(days)));
+        return faults.findTop200ByReceivedAtAfterOrderByReceivedAtDesc(
+                Instant.now().minus(Duration.ofDays(days)));
     }
 }

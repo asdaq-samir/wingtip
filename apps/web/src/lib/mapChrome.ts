@@ -81,9 +81,9 @@ export const useTabsShown = create<{ shown: boolean }>(() => ({ shown: false }))
  *  title over it (TabBar). */
 export const useCardTitle = create<{ title: string | null }>(() => ({ title: null }));
 
-export const useConsoleOpen = create<{ open: boolean; setOpen: (open: boolean) => void }>(set => ({
+export const useConsoleOpen = create<{ open: boolean; setOpen: (open: boolean) => void }>((set) => ({
   open: false,
-  setOpen: open => set({ open }),
+  setOpen: (open) => set({ open }),
 }));
 
 /**
@@ -91,7 +91,8 @@ export const useConsoleOpen = create<{ open: boolean; setOpen: (open: boolean) =
  * blurred, as iOS's materials are -- the panel, the map's buttons. On
  * the popover's grey in the dark theme, so it stands off a dark chart.
  */
-export const MATERIAL = "bg-background/85 backdrop-blur-xl backdrop-saturate-150 dark:bg-popover/90 solid:bg-background solid:backdrop-blur-none solid:backdrop-saturate-100 dark:solid:bg-popover";
+export const MATERIAL =
+  "bg-background/85 backdrop-blur-xl backdrop-saturate-150 dark:bg-popover/90 solid:bg-background solid:backdrop-blur-none solid:backdrop-saturate-100 dark:solid:bg-popover";
 
 /**
  * iOS 26's Liquid Glass, for what floats over the chart at rest: the
@@ -168,8 +169,7 @@ export const GLASS_BUTTON =
   // Maps on the web draws its secondary buttons -- no sheen, rim or shade.
   // The app's one neutral fill, the text's colour at 8% -- the same grey
   // as its tiles, chips and selected rows (bg-foreground/8), in either theme.
-  "border-0 bg-foreground/8 text-foreground shadow-none " +
-  "hover:bg-foreground/12 hover:text-foreground aria-expanded:bg-foreground/12";
+  "border-0 bg-foreground/8 text-foreground shadow-none " + "hover:bg-foreground/12 hover:text-foreground aria-expanded:bg-foreground/12";
 
 /** The same glass tinted the blue on a toggle's chip once it is picked
  *  (data-state "on") -- a field's runway (ProceduresRoute) -- as iOS 26's

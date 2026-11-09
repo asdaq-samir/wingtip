@@ -9,5 +9,10 @@ package app.wingtipmaps.gateway.domain;
  * are the engine's (inspections_due, asked through PlannerClient).
  */
 public enum VorCheck {
-    VOT, REPAIR_STATION, GROUND, AIRBORNE, RADIAL, DUAL
+    VOT,
+    REPAIR_STATION,
+    GROUND,
+    AIRBORNE,
+    RADIAL,
+    DUAL
 }

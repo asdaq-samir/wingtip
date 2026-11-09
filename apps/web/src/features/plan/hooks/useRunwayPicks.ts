@@ -10,10 +10,7 @@ import { NO_AUTO, autoOf } from "./planAddress";
  * ("KDLH:27,C81:24", `pattern`), the runways left from (`takeoff`), and
  * which of them were picked into the wind (`auto`).
  */
-export function useRunwayPicks({ searchParams, setSearchParams }: {
-  searchParams: URLSearchParams;
-  setSearchParams: SetURLSearchParams;
-}) {
+export function useRunwayPicks({ searchParams, setSearchParams }: { searchParams: URLSearchParams; setSearchParams: SetURLSearchParams }) {
   // The traffic patterns the pilot picked for the route's fields (the
   // route's Procedures), kept in the address as the rest of the plan is:
   // "KDLH:27,C81:24".
@@ -35,29 +32,40 @@ export function useRunwayPicks({ searchParams, setSearchParams }: {
   const autoParam = searchParams.get("auto");
   const takeoffNow = searchParams.get("takeoff");
   const autoPicked = useMemo(() => autoOf(autoParam, patternParam, takeoffNow), [autoParam, patternParam, takeoffNow]);
-  const pickRunway = useCallback((which: "pattern" | "takeoff", ident: string, end: string | null, byWind: boolean) => {
-    setSearchParams(prev => {
-      const picked = patternsOf(prev.get(which));
-      const auto = autoOf(prev.get("auto"), prev.get("pattern"), prev.get("takeoff"));
-      const key = `${which === "pattern" ? "land" : "takeoff"}:${ident}`;
-      // A pick into the wind worked out before the pilot's own landed is
-      // dropped: the pilot's stands. KMSN's takeoff runway 36, picked as the
-      // wind came in, was turned to 18 a moment later and marked as the
-      // wind's (stops.spec, 2 runs of 7 on desktop, 2026-10-28).
-      if (byWind && picked.has(ident) && !auto.has(key)) return prev;
-      if (end) picked.set(ident, end); else picked.delete(ident);
-      if (byWind && end) auto.add(key); else auto.delete(key);
-      return patched(prev, { [which]: picked.size ? patternsParam(picked) : null, auto: auto.size ? [...auto].join(",") : NO_AUTO });
-    }, { replace: true });
-  }, [setSearchParams]);
+  const pickRunway = useCallback(
+    (which: "pattern" | "takeoff", ident: string, end: string | null, byWind: boolean) => {
+      setSearchParams(
+        (prev) => {
+          const picked = patternsOf(prev.get(which));
+          const auto = autoOf(prev.get("auto"), prev.get("pattern"), prev.get("takeoff"));
+          const key = `${which === "pattern" ? "land" : "takeoff"}:${ident}`;
+          // A pick into the wind worked out before the pilot's own landed is
+          // dropped: the pilot's stands. KMSN's takeoff runway 36, picked as the
+          // wind came in, was turned to 18 a moment later and marked as the
+          // wind's (stops.spec, 2 runs of 7 on desktop, 2026-10-28).
+          if (byWind && picked.has(ident) && !auto.has(key)) return prev;
+          if (end) picked.set(ident, end);
+          else picked.delete(ident);
+          if (byWind && end) auto.add(key);
+          else auto.delete(key);
+          return patched(prev, { [which]: picked.size ? patternsParam(picked) : null, auto: auto.size ? [...auto].join(",") : NO_AUTO });
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
   const setPattern = useCallback((ident: string, end: string | null) => pickRunway("pattern", ident, end, false), [pickRunway]);
   const preselectPattern = useCallback((ident: string, end: string) => pickRunway("pattern", ident, end, true), [pickRunway]);
   // Picked by the pilot, the map goes to it; picked for them into the wind
   // as the route comes in (ProceduresRoute), the map stays on the route.
-  const pickPattern = useCallback((ident: string, end: string | null) => {
-    if (end) setPatternFocus(`${ident}:${end}:${Date.now()}`);
-    setPattern(ident, end);
-  }, [setPattern]);
+  const pickPattern = useCallback(
+    (ident: string, end: string | null) => {
+      if (end) setPatternFocus(`${ident}:${end}:${Date.now()}`);
+      setPattern(ident, end);
+    },
+    [setPattern],
+  );
   // The runway a stop is left from, which may not be the one landed on,
   // at the owner's ask ("arrival first with a runway and a separate
   // departure with a runway"): "KMSN:36", as the patterns are written.

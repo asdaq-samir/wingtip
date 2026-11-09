@@ -12,6 +12,7 @@ and the engine's own reasons stand in for it. Where the model cannot be
 reached every line is the engine's, and `unavailable` says why: the
 ranking never waits on the words.
 """
+
 from __future__ import annotations
 
 import html
@@ -135,8 +136,10 @@ def _material(ranked: list[RankedNotam], coverage_since: str | None) -> str:
     for n in ranked:
         reasons = "\n".join(f"- {html.escape(r.words or '')}" for r in n.reasons or [])
         group = f' tie_group="{n.score}"' if n.tied else ""
-        blocks.append(f'<notam id="{html.escape(n.id)}"{group}>\n<text>{html.escape((n.raw or "")[:1500])}</text>\n'
-                      f"<reasons>\n{reasons}\n</reasons>\n</notam>")
+        blocks.append(
+            f'<notam id="{html.escape(n.id)}"{group}>\n<text>{html.escape((n.raw or "")[:1500])}</text>\n'
+            f"<reasons>\n{reasons}\n</reasons>\n</notam>"
+        )
     coverage = f"\n<coverage>NOTAMs heard from the FAA feed since {html.escape(coverage_since)}.</coverage>" if coverage_since else ""
     return f"<material>\n{chr(10).join(blocks)}{coverage}\n</material>\n\nA line for each NOTAM, by its id."
 
@@ -145,9 +148,12 @@ def _lines(ranked: list[RankedNotam], coverage_since: str | None) -> NotamLines:
     try:
         with tracing.claude_call("notam-rank", WORDS_MODEL) as used:
             response = anthropic.Anthropic().messages.parse(
-                model=WORDS_MODEL, max_tokens=WORDS_MAX_TOKENS, system=SYSTEM,
+                model=WORDS_MODEL,
+                max_tokens=WORDS_MAX_TOKENS,
+                system=SYSTEM,
                 messages=[{"role": "user", "content": _material(ranked, coverage_since)}],
-                output_format=NotamLines, output_config={"effort": WORDS_EFFORT},
+                output_format=NotamLines,
+                output_config={"effort": WORDS_EFFORT},
             )
             used.add(response)
     except anthropic.AnthropicError as err:
@@ -177,13 +183,34 @@ def ranked_lines(found: NotamsRanked) -> RankedNotams:
             elif n:
                 log.info("Dropped a NOTAM line for %s: %r", line.id, line.why[:120])
         ranked = reordered(ranked, said.order)
-    out = [RankedLine(id=n.id, kind=n.kind or "notam", label=f"{'TFR' if n.kind == 'tfr' else 'NOTAM'} {n.id}",
-                      why=lines.get(n.id) or engine_line(n), worded=n.id in lines, top=bool(n.top), rank=k + 1,
-                      score=n.score or 0, tied=bool(n.tied), field=n.field, in_force=n.in_force,
-                      reasons=[r.words or "" for r in n.reasons or []], raw=n.raw or "", starts=n.starts, ends=n.ends)
-           for k, n in enumerate(ranked)]
-    return RankedNotams(notams=out, top=found.top or 0, coverage_since=found.coverage_since, unchecked=found.unchecked or [],
-                        model=WORDS_MODEL, unavailable=unavailable)
+    out = [
+        RankedLine(
+            id=n.id,
+            kind=n.kind or "notam",
+            label=f"{'TFR' if n.kind == 'tfr' else 'NOTAM'} {n.id}",
+            why=lines.get(n.id) or engine_line(n),
+            worded=n.id in lines,
+            top=bool(n.top),
+            rank=k + 1,
+            score=n.score or 0,
+            tied=bool(n.tied),
+            field=n.field,
+            in_force=n.in_force,
+            reasons=[r.words or "" for r in n.reasons or []],
+            raw=n.raw or "",
+            starts=n.starts,
+            ends=n.ends,
+        )
+        for k, n in enumerate(ranked)
+    ]
+    return RankedNotams(
+        notams=out,
+        top=found.top or 0,
+        coverage_since=found.coverage_since,
+        unchecked=found.unchecked or [],
+        model=WORDS_MODEL,
+        unavailable=unavailable,
+    )
 
 
 router = APIRouter()

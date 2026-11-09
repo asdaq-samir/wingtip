@@ -11,6 +11,7 @@ The FAA leaves out of it the names and addresses of owners who asked it
 to withhold them (49 U.S.C. 44114(b)); of the rest, the owner's name and
 town are given here, not the street.
 """
+
 from __future__ import annotations
 
 import csv
@@ -45,45 +46,122 @@ DB_NAME = "registry.sqlite"
 MAX_AGE_S = 24 * 3600
 
 # The FAA's codes (ardata.pdf), in words.
-_REGISTRANT = {"1": "Individual", "2": "Partnership", "3": "Corporation", "4": "Co-owned", "5": "Government",
-               "7": "LLC", "8": "Non-citizen corporation", "9": "Non-citizen co-owned"}
-_AIRCRAFT = {"1": "Glider", "2": "Balloon", "3": "Blimp or dirigible", "4": "Fixed wing single engine",
-             "5": "Fixed wing multi engine", "6": "Rotorcraft", "7": "Weight-shift-control", "8": "Powered parachute",
-             "9": "Gyroplane", "H": "Hybrid lift", "O": "Other"}
-_ENGINE = {"0": "None", "1": "Reciprocating", "2": "Turbo-prop", "3": "Turbo-shaft", "4": "Turbo-jet", "5": "Turbo-fan",
-           "6": "Ramjet", "7": "2 cycle", "8": "4 cycle", "9": "Unknown", "10": "Electric", "11": "Rotary"}
+_REGISTRANT = {
+    "1": "Individual",
+    "2": "Partnership",
+    "3": "Corporation",
+    "4": "Co-owned",
+    "5": "Government",
+    "7": "LLC",
+    "8": "Non-citizen corporation",
+    "9": "Non-citizen co-owned",
+}
+_AIRCRAFT = {
+    "1": "Glider",
+    "2": "Balloon",
+    "3": "Blimp or dirigible",
+    "4": "Fixed wing single engine",
+    "5": "Fixed wing multi engine",
+    "6": "Rotorcraft",
+    "7": "Weight-shift-control",
+    "8": "Powered parachute",
+    "9": "Gyroplane",
+    "H": "Hybrid lift",
+    "O": "Other",
+}
+_ENGINE = {
+    "0": "None",
+    "1": "Reciprocating",
+    "2": "Turbo-prop",
+    "3": "Turbo-shaft",
+    "4": "Turbo-jet",
+    "5": "Turbo-fan",
+    "6": "Ramjet",
+    "7": "2 cycle",
+    "8": "4 cycle",
+    "9": "Unknown",
+    "10": "Electric",
+    "11": "Rotary",
+}
 #: The airworthiness certificate's class (the certification field's first
 #: position), and for the commonest the operation it is approved for.
-_CLASS = {"1": "Standard", "2": "Limited", "3": "Restricted", "4": "Experimental", "5": "Provisional",
-          "6": "Multiple", "7": "Primary", "8": "Special flight permit", "9": "Light sport"}
-_STANDARD = {"N": "normal", "U": "utility", "A": "acrobatic", "T": "transport", "G": "glider", "B": "balloon",
-             "C": "commuter", "O": "other"}
-_EXPERIMENTAL = {"0": "to show compliance with the FARs", "1": "research and development", "2": "amateur built",
-                 "3": "exhibition", "4": "racing", "5": "crew training", "6": "market survey",
-                 "7": "operating kit built aircraft", "8A": "registered before 01/31/08",
-                 "8B": "operating light-sport kit-built", "8C": "operating light-sport previously certificated under 21.190"}
+_CLASS = {
+    "1": "Standard",
+    "2": "Limited",
+    "3": "Restricted",
+    "4": "Experimental",
+    "5": "Provisional",
+    "6": "Multiple",
+    "7": "Primary",
+    "8": "Special flight permit",
+    "9": "Light sport",
+}
+_STANDARD = {
+    "N": "normal",
+    "U": "utility",
+    "A": "acrobatic",
+    "T": "transport",
+    "G": "glider",
+    "B": "balloon",
+    "C": "commuter",
+    "O": "other",
+}
+_EXPERIMENTAL = {
+    "0": "to show compliance with the FARs",
+    "1": "research and development",
+    "2": "amateur built",
+    "3": "exhibition",
+    "4": "racing",
+    "5": "crew training",
+    "6": "market survey",
+    "7": "operating kit built aircraft",
+    "8A": "registered before 01/31/08",
+    "8B": "operating light-sport kit-built",
+    "8C": "operating light-sport previously certificated under 21.190",
+}
 _LIGHT_SPORT = {"A": "airplane", "G": "glider", "L": "lighter than air", "P": "powered parachute", "W": "weight-shift-control"}
 #: The registration's status (ardata.pdf, Status Code), in the FAA's words.
 _STATUS = {
-    "A": "Triennial registration form mailed, not returned", "D": "Expired dealer",
+    "A": "Triennial registration form mailed, not returned",
+    "D": "Expired dealer",
     "E": "Certificate of registration revoked by enforcement action",
     "M": "Valid: assigned to the manufacturer under its dealer certificate",
-    "N": "Non-citizen corporation that has not returned its flight hour reports", "R": "Registration pending",
-    "S": "Second triennial registration form mailed, not returned", "T": "Valid: a trainee's registration",
-    "V": "Valid", "W": "Certificate of registration deemed ineffective or invalid", "X": "Enforcement letter",
-    "Z": "Permanently reserved", "1": "Triennial registration form returned as undeliverable",
-    "2": "N-number assigned, not yet registered", "3": "N-number assigned to a non-type-certificated aircraft, not yet registered",
-    "4": "N-number assigned to an import, not yet registered", "5": "Reserved N-number", "6": "Administratively canceled",
-    "7": "Sale reported", "8": "Second triennial registration form mailed, no response", "9": "Certificate of registration revoked",
+    "N": "Non-citizen corporation that has not returned its flight hour reports",
+    "R": "Registration pending",
+    "S": "Second triennial registration form mailed, not returned",
+    "T": "Valid: a trainee's registration",
+    "V": "Valid",
+    "W": "Certificate of registration deemed ineffective or invalid",
+    "X": "Enforcement letter",
+    "Z": "Permanently reserved",
+    "1": "Triennial registration form returned as undeliverable",
+    "2": "N-number assigned, not yet registered",
+    "3": "N-number assigned to a non-type-certificated aircraft, not yet registered",
+    "4": "N-number assigned to an import, not yet registered",
+    "5": "Reserved N-number",
+    "6": "Administratively canceled",
+    "7": "Sale reported",
+    "8": "Second triennial registration form mailed, no response",
+    "9": "Certificate of registration revoked",
     "10": "N-number assigned, not registered, pending cancellation",
     "11": "N-number assigned to a non-type-certificated (amateur) aircraft, not registered, pending cancellation",
-    "12": "N-number assigned to an import, not registered, pending cancellation", "13": "Registration expired",
-    "14": "First notice for re-registration or renewal", "15": "Second notice for re-registration or renewal",
-    "16": "Registration expired, pending cancellation", "17": "Sale reported, pending cancellation",
-    "18": "Sale reported, canceled", "19": "Registration pending, pending cancellation", "20": "Registration pending, canceled",
-    "21": "Revoked, pending cancellation", "22": "Revoked, canceled", "23": "Expired dealer, pending cancellation",
-    "24": "Third notice for re-registration or renewal", "25": "First notice for registration renewal",
-    "26": "Second notice for registration renewal", "27": "Registration expired", "28": "Third notice for registration renewal",
+    "12": "N-number assigned to an import, not registered, pending cancellation",
+    "13": "Registration expired",
+    "14": "First notice for re-registration or renewal",
+    "15": "Second notice for re-registration or renewal",
+    "16": "Registration expired, pending cancellation",
+    "17": "Sale reported, pending cancellation",
+    "18": "Sale reported, canceled",
+    "19": "Registration pending, pending cancellation",
+    "20": "Registration pending, canceled",
+    "21": "Revoked, pending cancellation",
+    "22": "Revoked, canceled",
+    "23": "Expired dealer, pending cancellation",
+    "24": "Third notice for re-registration or renewal",
+    "25": "First notice for registration renewal",
+    "26": "Second notice for registration renewal",
+    "27": "Registration expired",
+    "28": "Third notice for registration renewal",
     "29": "Registration expired, pending cancellation",
 }
 #: The codes the FAA calls valid, and those of a registration not in
@@ -91,8 +169,9 @@ _STATUS = {
 #: registered; the rest (a form not returned, a sale reported, a renewal
 #: notice) are said as they are.
 _VALID = frozenset("VMT")
-_LAPSED = frozenset({"D", "E", "W", "Z", "2", "3", "4", "5", "6", "9", "10", "11", "12", "13", "16", "18", "20", "21",
-                     "22", "23", "27", "29"})
+_LAPSED = frozenset(
+    {"D", "E", "W", "Z", "2", "3", "4", "5", "6", "9", "10", "11", "12", "13", "16", "18", "20", "21", "22", "23", "27", "29"}
+)
 
 _LOCK = threading.Lock()
 _BUILDING = threading.Event()
@@ -111,11 +190,13 @@ def _name_case(text: str, maker: bool = False) -> str:
     "UNITED AIRLINES INC" as "United Airlines Inc"; a company's form and a
     word with figures kept, and in a maker's name (`maker`) its initials
     too ("IAE", "CFM"), which in a person's ("JOE") are a name."""
+
     def word(w: str) -> str:
         bare = w.strip(".,&")
         if bare in _KEPT or any(c.isdigit() for c in w) or (maker and len(bare) <= 3 and bare.isalpha() and bare not in _WORDS):
             return w
         return w.capitalize()
+
     return " ".join(word(w) for w in text.split())
 
 
@@ -185,20 +266,36 @@ def build(zip_path: Path, db_path: Path) -> int:
                 engine_maker, engine_model, horsepower, thrust = engines.get(r.get("ENG MFR MDL", ""), ("", "", "", ""))
                 kit = " ".join(p for p in (r.get("KIT MFR", ""), r.get("KIT MODEL", "")) if p)
                 engine_name = " ".join(p for p in (engine_maker, engine_model) if p and p != "NONE")
-                batch.append((
-                    "N" + n, (r.get("MODE S CODE HEX") or "").lower() or None, r.get("SERIAL NUMBER") or None,
-                    _name_case(maker, maker=True) if maker else None, model or None,
-                    _number(r.get("YEAR MFR", "")), _AIRCRAFT.get(r.get("TYPE AIRCRAFT", "")),
-                    _number(engine_count), _number(seats),
-                    _name_case(engine_name, maker=True) if engine_name else None, _ENGINE.get(r.get("TYPE ENGINE", "")),
-                    _number(horsepower) or None, _number(thrust) or None,
-                    _name_case(r["NAME"]) if r.get("NAME") else None, _REGISTRANT.get(r.get("TYPE REGISTRANT", "")),
-                    sum(1 for i in range(1, 6) if r.get(f"OTHER NAMES({i})")),
-                    _name_case(r["CITY"]) if r.get("CITY") else None, r.get("STATE") or None, r.get("COUNTRY") or None,
-                    r.get("STATUS CODE") or None, _date(r.get("CERT ISSUE DATE", "")), _date(r.get("EXPIRATION DATE", "")),
-                    _airworthiness(r.get("CERTIFICATION", "")), _date(r.get("AIR WORTH DATE", "")),
-                    _name_case(kit, maker=True) if kit else None, 1 if r.get("FRACT OWNER") == "Y" else 0,
-                ))
+                batch.append(
+                    (
+                        "N" + n,
+                        (r.get("MODE S CODE HEX") or "").lower() or None,
+                        r.get("SERIAL NUMBER") or None,
+                        _name_case(maker, maker=True) if maker else None,
+                        model or None,
+                        _number(r.get("YEAR MFR", "")),
+                        _AIRCRAFT.get(r.get("TYPE AIRCRAFT", "")),
+                        _number(engine_count),
+                        _number(seats),
+                        _name_case(engine_name, maker=True) if engine_name else None,
+                        _ENGINE.get(r.get("TYPE ENGINE", "")),
+                        _number(horsepower) or None,
+                        _number(thrust) or None,
+                        _name_case(r["NAME"]) if r.get("NAME") else None,
+                        _REGISTRANT.get(r.get("TYPE REGISTRANT", "")),
+                        sum(1 for i in range(1, 6) if r.get(f"OTHER NAMES({i})")),
+                        _name_case(r["CITY"]) if r.get("CITY") else None,
+                        r.get("STATE") or None,
+                        r.get("COUNTRY") or None,
+                        r.get("STATUS CODE") or None,
+                        _date(r.get("CERT ISSUE DATE", "")),
+                        _date(r.get("EXPIRATION DATE", "")),
+                        _airworthiness(r.get("CERTIFICATION", "")),
+                        _date(r.get("AIR WORTH DATE", "")),
+                        _name_case(kit, maker=True) if kit else None,
+                        1 if r.get("FRACT OWNER") == "Y" else 0,
+                    )
+                )
                 if len(batch) >= 5000:
                     db.executemany(f"INSERT OR REPLACE INTO aircraft VALUES ({','.join('?' * 26)})", batch)
                     count += len(batch)

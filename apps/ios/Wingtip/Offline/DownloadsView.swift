@@ -50,8 +50,8 @@ struct DownloadsView: View {
         Section(title: "On This iPhone") {
             ForEach(model.kept) { kept in
                 OfflineKeptRow(kept: kept, written: progress.written(kept), updatable: model.updatable(kept),
-                        newest: model.newestCycle, update: { Task { await model.update(kept) } },
-                        retry: { Task { await model.keep(kept, cycle: kept.cycle) } })
+                               newest: model.newestCycle, update: { Task { await model.update(kept) } },
+                               retry: { Task { await model.keep(kept, cycle: kept.cycle) } })
                     .swipeActions { Button("Delete", role: .destructive) { model.delete(kept) } }
             }
             LabeledContent("Storage Used", value: ByteCountFormatter.string(fromByteCount: model.storageUsed, countStyle: .file))

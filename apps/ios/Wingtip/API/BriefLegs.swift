@@ -62,8 +62,7 @@ enum BriefLegs {
         return Query(
             fixes: points.map { AirportWords.point($0.0, $0.1) }.joined(separator: ";"),
             legMin: legs.map { String(format: "%.1f", $0.eteMin ?? 0) }.joined(separator: ","),
-            groundMin: legs.map { String(format: "%.0f", $0.groundMin ?? 0) }.joined(separator: ",")
-        )
+            groundMin: legs.map { String(format: "%.0f", $0.groundMin ?? 0) }.joined(separator: ","))
     }
 
     /// Legs said 1-based as the nav log numbers its rows: "Leg 2",

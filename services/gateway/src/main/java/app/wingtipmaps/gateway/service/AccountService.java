@@ -59,12 +59,16 @@ public class AccountService {
     private final TransactionTemplate transaction;
     private final AppleRevocation apple;
     private final String plannerBaseUrl;
-    private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+    private final HttpClient http =
+            HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     /** The trace's and the page's headers on the planner's request (TraceHeaders). */
     private TraceHeaders traceHeaders = TraceHeaders.NONE;
 
-    public AccountService(PilotRepository pilots, MagicLinkRepository magicLinks,
-            FindByIndexNameSessionRepository<? extends Session> sessions, TransactionTemplate transaction,
+    public AccountService(
+            PilotRepository pilots,
+            MagicLinkRepository magicLinks,
+            FindByIndexNameSessionRepository<? extends Session> sessions,
+            TransactionTemplate transaction,
             AppleRevocation apple,
             @Value("${planner-service.base-url:http://planner:8000}") String plannerBaseUrl) {
         this.pilots = pilots;
@@ -117,7 +121,8 @@ public class AccountService {
                 .timeout(Duration.ofSeconds(15))
                 .build();
         try {
-            HttpResponse<Void> response = http.send(traceHeaders.traced(request), HttpResponse.BodyHandlers.discarding());
+            HttpResponse<Void> response =
+                    http.send(traceHeaders.traced(request), HttpResponse.BodyHandlers.discarding());
             if (response.statusCode() != 200) {
                 throw new AccountNotDeletedException("the planner answered " + response.statusCode());
             }

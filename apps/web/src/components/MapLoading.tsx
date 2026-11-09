@@ -20,17 +20,27 @@ export default function MapLoading({ shown, insets }: { shown: boolean; insets: 
       data-testid="map-loading"
       className={`pointer-events-none absolute flex items-center justify-center transition-opacity duration-150 ease-out ${shown ? "opacity-100" : "opacity-0"}`}
       style={{ top: insets.top, bottom: insets.bottom, left: insets.left, right: 0 }}
-      onTransitionEnd={() => { if (!shown) setGone(true); }}
+      onTransitionEnd={() => {
+        if (!shown) setGone(true);
+      }}
     >
       <svg viewBox="0 0 32 32" className="size-14" aria-hidden="true">
         <g className="origin-center [transform-box:view-box] motion-safe:animate-[spin_1.6s_linear_infinite]">
           <circle
-            cx="16" cy="16" r="13" fill="none" strokeWidth="2" strokeDasharray="7 3.2"
-            transform="rotate(-112.5 16 16)" className="stroke-[#A3266F] dark:stroke-[#E37BB5]"
+            cx="16"
+            cy="16"
+            r="13"
+            fill="none"
+            strokeWidth="2"
+            strokeDasharray="7 3.2"
+            transform="rotate(-112.5 16 16)"
+            className="stroke-[#A3266F] dark:stroke-[#E37BB5]"
           />
         </g>
         <g
-          transform="translate(16 16.3) scale(0.36) translate(-32 -31.5)" strokeWidth="3.5" strokeLinejoin="round"
+          transform="translate(16 16.3) scale(0.36) translate(-32 -31.5)"
+          strokeWidth="3.5"
+          strokeLinejoin="round"
           className="fill-[#14284B] stroke-[#14284B] dark:fill-white dark:stroke-white"
         >
           <path d="M32 12 C34.2 12 35 14.5 35 18 L34.2 44 L33 51 L31 51 L29.8 44 L29 18 C29 14.5 29.8 12 32 12 Z" />

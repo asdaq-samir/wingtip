@@ -45,7 +45,9 @@ public class TraceHeaders {
     /** {@code request} with the current trace's headers and the request
      *  id, or as it is where there are neither. */
     public HttpRequest traced(HttpRequest request) {
-        TraceContext context = tracer == null || propagator == null ? null : tracer.currentTraceContext().context();
+        TraceContext context = tracer == null || propagator == null
+                ? null
+                : tracer.currentTraceContext().context();
         String requestId = MDC.get(RequestIdFilter.MDC_KEY);
         if (context == null && requestId == null) {
             return request;

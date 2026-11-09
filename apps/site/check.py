@@ -12,6 +12,7 @@ pages, the API), not files of this site, so they are not looked for.
 Images under /assets/ are written by scripts/build/app-icons.sh and the
 store framer; one missing is reported, and fails with --strict.
 """
+
 from __future__ import annotations
 
 import sys

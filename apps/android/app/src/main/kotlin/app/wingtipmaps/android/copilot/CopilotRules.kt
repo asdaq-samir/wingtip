@@ -8,10 +8,10 @@ import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.copilotWatch
 import app.wingtipmaps.android.engine.generated.routePosition
-import java.util.Locale
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
+import java.util.Locale
 
 /** The flight as planned, as the copilot reads it (the web's
  *  lib/copilot/flight): null with no route. */

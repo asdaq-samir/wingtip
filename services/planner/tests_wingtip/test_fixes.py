@@ -1,5 +1,6 @@
 """wingtip.fixes reads NASR's FIX_BASE.csv: which fixes are VFR waypoints a
 pilot has on a chart, and what the rest are."""
+
 import os
 
 import pytest
@@ -37,8 +38,10 @@ NAV_HEADER = '"NAV_ID","NAV_TYPE","NAME","STATE_CODE","NAV_STATUS","LAT_DECIMAL"
 
 def _navaids(tmp_path, *rows):
     path = tmp_path / "NAV_BASE.csv"
-    path.write_text(NAV_HEADER + "".join(
-        f'"{i}","{kind}","{name}","IL","{status}",{lat},{lon},"{freq}"\n' for i, kind, name, status, lat, lon, freq in rows))
+    path.write_text(
+        NAV_HEADER
+        + "".join(f'"{i}","{kind}","{name}","IL","{status}",{lat},{lon},"{freq}"\n' for i, kind, name, status, lat, lon, freq in rows)
+    )
     return fixes._read_navaids(path)
 
 
@@ -69,14 +72,18 @@ def test_one_facility_filed_as_two_kinds_is_one_and_two_places_are_two(tmp_path)
 
 @pytest.fixture
 def two_abs(monkeypatch, tmp_path):
-    """"AB", a VORTAC in Iowa and a beacon in Georgia; VPBNG and VPBNH."""
+    """ "AB", a VORTAC in Iowa and a beacon in Georgia; VPBNG and VPBNH."""
     navaids = _navaids(
         tmp_path,
         ("AB", "VORTAC", "ABLE", "OPERATIONAL IFR", 41.0, -91.0, "112.1"),
         ("AB", "NDB", "BEACON", "OPERATIONAL IFR", 33.5, -82.6, "350"),
     )
-    found = _table(tmp_path, ("VPBNG", 42.27, -88.13, "VFR  ", "SECTIONAL"), ("VPBNH", 42.3, -88.2, "VFR  ", "SECTIONAL"),
-                   ("BEPKE", 41.8, -88.04, "WP   ", "IAP"))
+    found = _table(
+        tmp_path,
+        ("VPBNG", 42.27, -88.13, "VFR  ", "SECTIONAL"),
+        ("VPBNH", 42.3, -88.2, "VFR  ", "SECTIONAL"),
+        ("BEPKE", 41.8, -88.04, "WP   ", "IAP"),
+    )
     monkeypatch.setattr(fixes, "_TABLE", fixes._Table(found, navaids))
 
 
@@ -180,18 +187,27 @@ def test_a_vors_card_has_its_channel_service_volume_and_unusable_sectors(monkeyp
     (tmp_path / "NAV_BASE.csv").write_text(
         '"NAV_ID","NAV_TYPE","NAME","STATE_CODE","NAV_STATUS","LAT_DECIMAL","LONG_DECIMAL","FREQ","ELEV","MAG_VARN",'
         '"MAG_VARN_HEMIS","CHAN","ALT_CODE","OPER_HOURS"\n'
-        '"JOT","VOR/DME","JOLIET","IL","OPERATIONAL RESTRICTED",41.54641852,-88.31841055,"112.3","590.9","2","E","70X","VH","24"\n')
+        '"JOT","VOR/DME","JOLIET","IL","OPERATIONAL RESTRICTED",41.54641852,-88.31841055,"112.3","590.9","2","E","70X","VH","24"\n'
+    )
     jot = fixes._read_navaids(tmp_path / "NAV_BASE.csv")["JOT"][0]
     assert {k: jot[k] for k in ("mag_var", "elevation_ft", "channel", "service_volume", "hours", "restricted")} == {
-        "mag_var": 2.0, "elevation_ft": 590.9, "channel": "70X", "service_volume": "VH", "hours": "24", "restricted": True}
+        "mag_var": 2.0,
+        "elevation_ft": 590.9,
+        "channel": "70X",
+        "service_volume": "VH",
+        "hours": "24",
+        "restricted": True,
+    }
 
     (tmp_path / "NAV_RMK.csv").write_text(
         '"EFF_DATE","NAV_ID","NAV_TYPE","STATE_CODE","CITY","COUNTRY_CODE","TAB_NAME","REF_COL_NAME","REF_COL_SEQ_NO","REMARK"\n'
         '"2026/10/29","JOT","VOR/DME","IL","JOLIET","US","NAVIGATION_AID","GENERAL_REMARK",2,'
         '"VOR UNUSBL 072-090 BYD 34 NM BLW 3000 FT; 130-175 BYD 40 NM."\n'
-        '"2026/10/29","JOT","VOR/DME","IL","JOLIET","US","VOR_RECEIVER_CHKPT","AIR_GND_CODE",1,"A CHECKPOINT."\n')
+        '"2026/10/29","JOT","VOR/DME","IL","JOLIET","US","VOR_RECEIVER_CHKPT","AIR_GND_CODE",1,"A CHECKPOINT."\n'
+    )
     # Put back afterwards: the remarks read here are this test's, not NASR's.
     monkeypatch.setattr(fixes, "_REMARKS", None)
     assert fixes.navaid_remarks("JOT", "VOR/DME", cache_dir=tmp_path) == [
-        "VOR unusable 072-090 beyond 34 nm below 3000 ft; 130-175 beyond 40 nm."]
+        "VOR unusable 072-090 beyond 34 nm below 3000 ft; 130-175 beyond 40 nm."
+    ]
     assert fixes.navaid_remarks("OBK", "VOR/DME", cache_dir=tmp_path) == []

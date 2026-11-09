@@ -15,9 +15,26 @@
  *  its fields (features/plan/lib/fieldLists), its altitude and its Class B choice. Not
  *  the page's own (the card open, the panel, the departure time). */
 const PLAN_KEYS = [
-  "dep", "dest", "stops", "direct", "was", "fuel", "alternate",
-  "altitude_ft", "altitude_nearest", "altitude_choice", "class_b", "class_b_via",
-  "pattern", "takeoff", "auto", "procs", "altitudes", "cross", "ground", "holds",
+  "dep",
+  "dest",
+  "stops",
+  "direct",
+  "was",
+  "fuel",
+  "alternate",
+  "altitude_ft",
+  "altitude_nearest",
+  "altitude_choice",
+  "class_b",
+  "class_b_via",
+  "pattern",
+  "takeoff",
+  "auto",
+  "procs",
+  "altitudes",
+  "cross",
+  "ground",
+  "holds",
 ] as const;
 
 /** The plan as the address has it: only the keys set. */
@@ -33,7 +50,7 @@ export function planStateOf(params: URLSearchParams): PlanState {
 }
 
 function sameState(a: PlanState, b: PlanState): boolean {
-  return PLAN_KEYS.every(key => (a[key] ?? "") === (b[key] ?? ""));
+  return PLAN_KEYS.every((key) => (a[key] ?? "") === (b[key] ?? ""));
 }
 
 /** The address with the plan put back as it was, the page's own keys
@@ -75,10 +92,7 @@ export const started = (now: PlanState, at: number): PlanHistory => ({ past: [],
 export function observed(h: PlanHistory, next: PlanState, at: number): { history: PlanHistory; note: string | null } {
   if (sameState(h.now, next)) return { history: h, note: null };
   if (at - h.at < SETTLE_MS) return { history: { ...h, now: next }, note: null };
-  return {
-    history: { past: [...h.past, h.now].slice(-LIMIT), now: next, future: [], at },
-    note: describeEdit(h.now, next),
-  };
+  return { history: { past: [...h.past, h.now].slice(-LIMIT), now: next, future: [], at }, note: describeEdit(h.now, next) };
 }
 
 /** One step back: the plan to put in the address, or null with none. */
@@ -105,7 +119,7 @@ export function describeEdit(before: PlanState, after: PlanState): string | null
   if (hadRoute && !after.dep && !after.dest) return "Route Cleared";
   if (after.direct && after.direct !== before.direct) return `Direct to ${after.direct}`;
   if (before.dep && before.dest && (after.dep !== before.dep || after.dest !== before.dest)) return "Route Replaced";
-  const gone = listOf(before.stops).filter(stop => !listOf(after.stops).includes(stop));
+  const gone = listOf(before.stops).filter((stop) => !listOf(after.stops).includes(stop));
   if (gone.length === 1) return `${gone[0]} Removed`;
   if (gone.length > 1) return "Stops Removed";
   if (listOf(after.procs).length < listOf(before.procs).length) return "Procedure Removed";

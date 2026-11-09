@@ -1,5 +1,6 @@
 """An airplane's flight today, and its past flights: the last days' from adsb.lol's archive and
 the ones recorded here, and one replayed."""
+
 from __future__ import annotations
 
 import math
@@ -58,10 +59,10 @@ def flight(hex_id: str) -> dict:
     # flew, to its landing, not the parked tail.
     last_air = max((i for i, p in enumerate(points) if p[3] != "ground"), default=-1)
     start = 0
-    for i, point in enumerate(points[:last_air + 1]):
+    for i, point in enumerate(points[: last_air + 1]):
         if point[3] == "ground" or (isinstance(point[6], int) and point[6] & _NEW_LEG):
             start = i
-    leg = points[start:last_air + 2] if last_air >= 0 else []
+    leg = points[start : last_air + 2] if last_air >= 0 else []
     departed = None
     if leg and leg[0][3] == "ground":
         nearest = airports.nearest(leg[0][1], leg[0][2], limit=1)
@@ -71,10 +72,7 @@ def flight(hex_id: str) -> dict:
             departed = {"ident": nearest[0]["ident"], "name": nearest[0].get("name"), "at": round(base + off[0])}
     step = max(1, math.ceil(len(leg) / TRAIL_POINTS))
     kept = leg[::step] + ([leg[-1]] if leg and (len(leg) - 1) % step else [])
-    trail = [
-        {"t": round(base + p[0], 1), "lat": round(p[1], 5), "lon": round(p[2], 5), "alt_ft": _altitude_ft(p)}
-        for p in kept
-    ]
+    trail = [{"t": round(base + p[0], 1), "lat": round(p[1], 5), "lon": round(p[2], 5), "alt_ft": _altitude_ft(p)} for p in kept]
     if not trail:
         # No trace to be had (adsb.lol's globe turns the planner away, or no
         # feeder heard it): its card open, it is watched -- asked for and its
@@ -202,12 +200,18 @@ def _points(trace: dict | None) -> list[dict]:
     for p in trace.get("trace") or []:
         if not isinstance(p, list) or len(p) < 7 or _number(p[1]) is None or _number(p[2]) is None:
             continue
-        out.append({
-            "t": round(base + float(p[0]), 1), "lat": round(float(p[1]), 5), "lon": round(float(p[2]), 5),
-            "alt_ft": _altitude_ft(p), "gs_kt": _number(p[4]), "track_deg": _number(p[5]),
-            "vrate_fpm": _number(p[7]) if len(p) > 7 else None,
-            "new_leg": isinstance(p[6], int) and bool(p[6] & _NEW_LEG),
-        })
+        out.append(
+            {
+                "t": round(base + float(p[0]), 1),
+                "lat": round(float(p[1]), 5),
+                "lon": round(float(p[2]), 5),
+                "alt_ft": _altitude_ft(p),
+                "gs_kt": _number(p[4]),
+                "track_deg": _number(p[5]),
+                "vrate_fpm": _number(p[7]) if len(p) > 7 else None,
+                "new_leg": isinstance(p[6], int) and bool(p[6] & _NEW_LEG),
+            }
+        )
     return out
 
 
@@ -235,8 +239,7 @@ def _field_at(point: dict, landing: bool) -> dict | None:
         toward = (field["bearing_deg"] if landing else field["bearing_deg"] + 180) % 360
         headed = track is not None and geo.angle_between(track, toward) <= FIELD_APPROACH_DEG
         if close or ((sloping or headed) and above is not None and above <= FIELD_APPROACH_FT):
-            return {"ident": field["ident"], "name": field.get("name"), "city": field.get("municipality"),
-                    "region": field.get("region")}
+            return {"ident": field["ident"], "name": field.get("name"), "city": field.get("municipality"), "region": field.get("region")}
     return None
 
 
@@ -273,11 +276,18 @@ def _summaries(points: list[dict]) -> list[dict]:
         air = [p for p in leg if p["alt_ft"] is not None]
         start, end = _field_at(leg[0], landing=False), _field_at(leg[-1], landing=True)
         in_air = now - leg[-1]["t"] < 5 * 60 and leg[-1]["alt_ft"] is not None
-        flights.append({
-            "id": int(air[0]["t"]), "origin": start, "destination": None if in_air else end,
-            "off": air[0]["t"], "on": air[-1]["t"], "landed": not in_air and end is not None, "in_air": in_air,
-            "max_alt_ft": max(p["alt_ft"] for p in air),
-        })
+        flights.append(
+            {
+                "id": int(air[0]["t"]),
+                "origin": start,
+                "destination": None if in_air else end,
+                "off": air[0]["t"],
+                "on": air[-1]["t"],
+                "landed": not in_air and end is not None,
+                "in_air": in_air,
+                "max_alt_ft": max(p["alt_ft"] for p in air),
+            }
+        )
     return flights
 
 
@@ -324,9 +334,11 @@ def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float
     day = until - dt.timedelta(days=1) if until == today else until
     unread = 0
     flights: list[dict] = []
+
     def found() -> list[dict]:
         listed = _summaries(_merged(traces))
         return [f for f in listed if f["id"] < before] if before is not None else listed
+
     with ThreadPoolExecutor(max_workers=HISTORY_BATCH) as pool:
         while True:
             # The flights of the days read so far, the oldest day's first
@@ -347,8 +359,9 @@ def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float
     # airplane rebroadcast by ADS-R) no adsb.lol feeder hears.
     recorded = [f for f in _recorded_flights(hex_id) if before is None or f["id"] < before]
     taken = [(f["off"], f["on"]) for f in flights]
-    flights = sorted(flights + [f for f in recorded if not any(off <= f["on"] and f["off"] <= on for off, on in taken)],
-                     key=lambda f: f["id"])
+    flights = sorted(
+        flights + [f for f in recorded if not any(off <= f["on"] and f["off"] <= on for off, on in taken)], key=lambda f: f["id"]
+    )
     flights.reverse()
     shown = flights[:limit]
     # Where the next ask starts: the last shown's day where more were found
@@ -358,8 +371,14 @@ def history(hex_id: str, limit: int = HISTORY_FLIGHTS, until=None, before: float
         next_until = dt.datetime.fromtimestamp(shown[-1]["id"], dt.timezone.utc).date().isoformat()
     else:
         next_until = day.isoformat() if day >= oldest else None
-    return {"hex": hex_id, "registration": named.get("r") or None, "type": named.get("t") or None, "flights": shown,
-            "next_until": next_until, "unread_days": unread}
+    return {
+        "hex": hex_id,
+        "registration": named.get("r") or None,
+        "type": named.get("t") or None,
+        "flights": shown,
+        "next_until": next_until,
+        "unread_days": unread,
+    }
 
 
 def past_flight(hex_id: str, flight_id: int, today=None) -> dict | None:
@@ -386,15 +405,19 @@ def past_flight(hex_id: str, flight_id: int, today=None) -> dict | None:
             continue
         step = max(1, math.ceil(len(leg) / PAST_POINTS))
         kept = leg[::step] + ([leg[-1]] if (len(leg) - 1) % step else [])
-        return {"id": flight_id, "points": [{k: p[k] for k in ("t", "lat", "lon", "alt_ft", "gs_kt", "track_deg", "vrate_fpm")}
-                                           for p in kept]}
+        return {
+            "id": flight_id,
+            "points": [{k: p[k] for k in ("t", "lat", "lon", "alt_ft", "gs_kt", "track_deg", "vrate_fpm")} for p in kept],
+        }
     # One watched here (`history` lists those too).
     for leg in _legs(_recorded(hex_id)):
         if int(leg[0]["t"]) == flight_id:
             step = max(1, math.ceil(len(leg) / PAST_POINTS))
             kept = leg[::step] + ([leg[-1]] if (len(leg) - 1) % step else [])
-            return {"id": flight_id, "points": [{k: p.get(k) for k in ("t", "lat", "lon", "alt_ft", "gs_kt", "track_deg", "vrate_fpm")}
-                                               for p in kept]}
+            return {
+                "id": flight_id,
+                "points": [{k: p.get(k) for k in ("t", "lat", "lon", "alt_ft", "gs_kt", "track_deg", "vrate_fpm")} for p in kept],
+            }
     return None
 
 

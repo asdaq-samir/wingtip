@@ -28,6 +28,6 @@ pub mod runway;
 
 // The modules below this crate by the names they had when the engine was
 // one crate, so the code reads them as crate::json and so on.
-use wingtip_procedures::figures;
 use wingtip_core::{geo, json};
 use wingtip_flight::flight;
+use wingtip_procedures::figures;

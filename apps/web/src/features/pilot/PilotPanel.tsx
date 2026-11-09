@@ -46,21 +46,31 @@ export interface DevPages {
   guide: ReactNode;
 }
 
-function Personal({ pilot, dev }: {
+function Personal({
+  pilot,
+  dev,
+}: {
   pilot: PilotState;
   /** The developer's Setup (DevPanel): its Status and its own Guide. */
   dev?: DevPages;
 }) {
   // The airplane picked for planning, for a logbook entry's, and said on
   // its row.
-  const aircraft = usePreferences(s => s.aircraft);
-  const minimums = usePreferences(s => s.minimums);
+  const aircraft = usePreferences((s) => s.aircraft);
+  const minimums = usePreferences((s) => s.minimums);
   const signedIn = pilot !== "loading" && pilot !== "error" && pilot !== null;
   // While the sign-in is checked, or where it could not be, said under
   // the controls (signed out, its way in is the account's own card).
-  const account = pilot === "loading" ? <p role="status" className={cn("px-1 text-muted-foreground", TEXT.note)}>Checking your sign-in…</p>
-    : pilot === "error" ? <EmptyState icon={<UserRound />} title="Sign-in Unknown">Your sign-in status could not be checked.</EmptyState>
-      : null;
+  const account =
+    pilot === "loading" ? (
+      <p role="status" className={cn("px-1 text-muted-foreground", TEXT.note)}>
+        Checking your sign-in…
+      </p>
+    ) : pilot === "error" ? (
+      <EmptyState icon={<UserRound />} title="Sign-in Unknown">
+        Your sign-in status could not be checked.
+      </EmptyState>
+    ) : null;
   const sold = useSold();
   // Each of the pilot's things with where it stands at its row's end, at
   // the owner's pick (T3): asked for only signed in, as the rows open to
@@ -73,7 +83,17 @@ function Personal({ pilot, dev }: {
     // How old the plan's data is, and what is kept through a dropped
     // connection, for every pilot (the owner, 2026-11-04); a developer's
     // has the stack's own status under it.
-    status: { title: "Status", content: dev ? <div className="space-y-5"><StatusPanel />{dev.status}</div> : <StatusPanel /> },
+    status: {
+      title: "Status",
+      content: dev ? (
+        <div className="space-y-5">
+          <StatusPanel />
+          {dev.status}
+        </div>
+      ) : (
+        <StatusPanel />
+      ),
+    },
     // When the map's layers showed at this device's loads (lib/loadLog),
     // beside Status, at the owner's ask (2026-11-05).
     log: { title: "Log", content: <LoadLogPanel /> },
@@ -105,39 +125,78 @@ function Personal({ pilot, dev }: {
           {/* A section as the page's others are, so the room between them
               is the one room every tab's sections keep (tab-consistency). */}
           <AccountCard pilot={signedIn ? pilot : null}>
-          {/* The pilot's things, a row each with where it stands, as iOS's
+            {/* The pilot's things, a row each with where it stands, as iOS's
               Settings lists its parts: the account's three greyed until
               there is one; the minimums are this device's. */}
-          <div data-testid="library-section">
-          <ListGroup>
-              <PageRow
-                page="aircraft" title="Airplanes" disabled={!signedIn} value={!signedIn ? SIGNED_OUT : aircraft.label ? shortName(aircraft.label) : undefined}
-                media={<RowBadge colour={SETTING_BADGE.aircraft}><Plane /></RowBadge>}
-              />
-              <PageRow
-                page="flights" title="Flights" disabled={!signedIn} value={!signedIn ? SIGNED_OUT : flights ? `${flights.length} saved` : undefined}
-                media={<RowBadge colour={SETTING_BADGE.flights}><Route /></RowBadge>}
-              />
-              <PageRow
-                page="logbook" title="Logbook" disabled={!signedIn} value={!signedIn ? SIGNED_OUT : hours !== undefined && entries?.length ? `${hours.toFixed(1)} h` : undefined}
-                media={<RowBadge colour={SETTING_BADGE.logbook}><BookOpen /></RowBadge>}
-              />
-              <PageRow
-                page="minimums" title="Minimums" value={settings ?? undefined}
-                media={<RowBadge colour={SETTING_BADGE.minimums}><ShieldCheck /></RowBadge>}
-              />
-          </ListGroup>
-          </div>
+            <div data-testid="library-section">
+              <ListGroup>
+                <PageRow
+                  page="aircraft"
+                  title="Airplanes"
+                  disabled={!signedIn}
+                  value={!signedIn ? SIGNED_OUT : aircraft.label ? shortName(aircraft.label) : undefined}
+                  media={
+                    <RowBadge colour={SETTING_BADGE.aircraft}>
+                      <Plane />
+                    </RowBadge>
+                  }
+                />
+                <PageRow
+                  page="flights"
+                  title="Flights"
+                  disabled={!signedIn}
+                  value={!signedIn ? SIGNED_OUT : flights ? `${flights.length} saved` : undefined}
+                  media={
+                    <RowBadge colour={SETTING_BADGE.flights}>
+                      <Route />
+                    </RowBadge>
+                  }
+                />
+                <PageRow
+                  page="logbook"
+                  title="Logbook"
+                  disabled={!signedIn}
+                  value={!signedIn ? SIGNED_OUT : hours !== undefined && entries?.length ? `${hours.toFixed(1)} h` : undefined}
+                  media={
+                    <RowBadge colour={SETTING_BADGE.logbook}>
+                      <BookOpen />
+                    </RowBadge>
+                  }
+                />
+                <PageRow
+                  page="minimums"
+                  title="Minimums"
+                  value={settings ?? undefined}
+                  media={
+                    <RowBadge colour={SETTING_BADGE.minimums}>
+                      <ShieldCheck />
+                    </RowBadge>
+                  }
+                />
+              </ListGroup>
+            </div>
           </AccountCard>
-          {signedIn && sold && <ListGroup><SubscriptionRow /></ListGroup>}
+          {signedIn && sold && (
+            <ListGroup>
+              <SubscriptionRow />
+            </ListGroup>
+          )}
           {/* Status, the guide (its tips with it) and about, links at the
               foot, at the owner's picks: Status every pilot's since
               2026-11-04 ("a Status sheet next to About and Guide"). */}
           <nav aria-label="More" className="flex justify-center gap-6 pb-2">
-            <PageLink page="status" testId="status-link">Status</PageLink>
-            <PageLink page="log" testId="log-link">Log</PageLink>
-            <PageLink page="guide" testId="guide-link">Guide</PageLink>
-            <PageLink page="about" testId="about-link">About</PageLink>
+            <PageLink page="status" testId="status-link">
+              Status
+            </PageLink>
+            <PageLink page="log" testId="log-link">
+              Log
+            </PageLink>
+            <PageLink page="guide" testId="guide-link">
+              Guide
+            </PageLink>
+            <PageLink page="about" testId="about-link">
+              About
+            </PageLink>
           </nav>
         </div>
       </ConsolePages>
@@ -152,10 +211,7 @@ const SIGNED_OUT = "Sign In to Use";
 /** The personal minimums in a few words, the ceiling and visibility
  *  first; none set, nothing. */
 function minimumsWords(m: Minimums): string | null {
-  const parts = [
-    m.visibilitySm !== null ? `${m.visibilitySm} mi` : null,
-    m.ceilingFt !== null ? feet(m.ceilingFt) : null,
-  ].filter(Boolean);
+  const parts = [m.visibilitySm !== null ? `${m.visibilitySm} mi` : null, m.ceilingFt !== null ? feet(m.ceilingFt) : null].filter(Boolean);
   return parts.length ? parts.join(" · ") : null;
 }
 
@@ -172,30 +228,57 @@ function AccountCard({ pilot, children }: { pilot: Pilot | null; children: React
   if (!pilot) {
     return (
       <PillSection
-        title="Account" testId="setup-pill-account"
-        right={<><Suspense fallback={null}><SignInModal plain /></Suspense><AccountMenu /></>}
+        title="Account"
+        testId="setup-pill-account"
+        right={
+          <>
+            <Suspense fallback={null}>
+              <SignInModal plain />
+            </Suspense>
+            <AccountMenu />
+          </>
+        }
       >
         {children}
       </PillSection>
     );
   }
   const name = pilot.fullName || pilot.displayName;
-  const initials = name.split(/\s+/).filter(Boolean).map(w => w[0]!).slice(0, 2).join("").toUpperCase();
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0]!)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
   return (
     <PillSection title="Account">
-    <div role="group" aria-label="Account" className="flex items-center gap-3 rounded-lg border border-border bg-card pr-3" data-testid="setup-pill-account">
-      <PageButton page="pilot" testId="pilot-row" label={`${name}: pilot details`}>
-        <span aria-hidden="true" className={cn("grid size-10 shrink-0 place-items-center rounded-full bg-primary font-semibold text-primary-foreground", TEXT.row)}>{initials}</span>
-        <span className="flex min-w-0 flex-col text-left">
-          <span className={cn("truncate font-semibold", TEXT.row)}>{name}</span>
-          {/* The address under the name, where the name is not the address
+      <div
+        role="group"
+        aria-label="Account"
+        className="flex items-center gap-3 rounded-lg border border-border bg-card pr-3"
+        data-testid="setup-pill-account"
+      >
+        <PageButton page="pilot" testId="pilot-row" label={`${name}: pilot details`}>
+          <span
+            aria-hidden="true"
+            className={cn(
+              "grid size-10 shrink-0 place-items-center rounded-full bg-primary font-semibold text-primary-foreground",
+              TEXT.row,
+            )}
+          >
+            {initials}
+          </span>
+          <span className="flex min-w-0 flex-col text-left">
+            <span className={cn("truncate font-semibold", TEXT.row)}>{name}</span>
+            {/* The address under the name, where the name is not the address
               itself (a sign-in by email alone names the pilot by it). */}
-          <span className={cn("truncate text-muted-foreground", TEXT.note)}>{name === pilot.email ? "Pilot details" : pilot.email}</span>
-        </span>
-      </PageButton>
-      <AccountMenu />
-    </div>
-    {children}
+            <span className={cn("truncate text-muted-foreground", TEXT.note)}>{name === pilot.email ? "Pilot details" : pilot.email}</span>
+          </span>
+        </PageButton>
+        <AccountMenu />
+      </div>
+      {children}
     </PillSection>
   );
 }
@@ -205,8 +288,14 @@ function SubscriptionRow() {
   const { data: subscription } = useQuery(subscriptionQuery);
   return (
     <PageRow
-      page="subscription" title="Subscription" value={subscription ? standing(subscription) : undefined}
-      media={<RowBadge colour={SETTING_BADGE.subscription}><Sparkles /></RowBadge>}
+      page="subscription"
+      title="Subscription"
+      value={subscription ? standing(subscription) : undefined}
+      media={
+        <RowBadge colour={SETTING_BADGE.subscription}>
+          <Sparkles />
+        </RowBadge>
+      }
     />
   );
 }
@@ -219,7 +308,9 @@ function SubscriptionRow() {
  * developer's console. Not the nav log or the briefing: those are the
  * panel over the map.
  */
-export function PilotPanel({ dev }: {
+export function PilotPanel({
+  dev,
+}: {
   /** The developer's Setup, at the owner's pick of the dev page's
    *  redesign: the pilot's, its Status and Guide the developer's, where
    *  it was a console of tabs of its own (Guide, Status, Account). */

@@ -29,6 +29,7 @@ share -- resolving a route, scoring it, the nav-log arithmetic, the
 corridor read -- is in the modules next to this one, and every shape
 they send is a model in app.schemas.
 """
+
 import csv
 import logging
 import threading
@@ -40,7 +41,20 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from pydantic import TypeAdapter
 from wingtip import (
-    airspace, altitude, charts, faa_data, fixes, geocode, nearby, places, publications, registry, remarks, sua, water, weather,
+    airspace,
+    altitude,
+    charts,
+    faa_data,
+    fixes,
+    geocode,
+    nearby,
+    places,
+    publications,
+    registry,
+    remarks,
+    sua,
+    water,
+    weather,
 )
 from wingtip import airspace_at, congested, data_cycles
 from wingtip import cycle_pack
@@ -125,8 +139,7 @@ def _prepare_corridor_charts() -> None:
             # the daily refresh fetching the rest -- and a stack started
             # from nothing with that refresh off, CI's, had no IFR chart
             # for the tests that switch to one.
-            charts.prepare_for_bbox((min(lons), min(lats), max(lons), max(lats)),
-                                    kinds=("sec", "tac", "ifr_low", "ifr_area"))
+            charts.prepare_for_bbox((min(lons), min(lats), max(lons), max(lats)), kinds=("sec", "tac", "ifr_low", "ifr_area"))
 
 
 def check_faa_editions(last_check: float) -> float:
@@ -200,8 +213,12 @@ def _warm_reference_data() -> None:
         # profile, 2026-10-23).
         ("patterns", lambda: faa_data.pattern_agl_ft("KJFK", altitude.DEFAULT_FAA_CACHE_DIR)),
         # And its charted, open fields, a route's checkpoint candidates.
-        ("route airports", lambda: faa_data.load_route_airports(
-            faa_data.ensure_nasr_file("APT_BASE.csv", altitude.DEFAULT_FAA_CACHE_DIR), (0.0, 0.0, 0.0, 0.0))),
+        (
+            "route airports",
+            lambda: faa_data.load_route_airports(
+                faa_data.ensure_nasr_file("APT_BASE.csv", altitude.DEFAULT_FAA_CACHE_DIR), (0.0, 0.0, 0.0, 0.0)
+            ),
+        ),
         ("charts", _prepare_corridor_charts),
     ):
         try:
@@ -286,6 +303,7 @@ def _warm_reference_data() -> None:
     # off (LANDMARKS_BUILD=0, infra/docker-compose.ci.yml) never loads the reader.
     def _build_landmarks() -> None:
         from . import landmarks
+
         try:
             built = landmarks.build_on_disk()
             if built:
@@ -394,18 +412,45 @@ def index() -> Index:
     return Index(service="planner", ui="served by the gateway at /app", warm=WARM.is_set())
 
 
-for module in (plan, chart, briefing, notes, devml, system, classb, devservices, airports, airspace_router, traffic, basemaps,
-               route_options, gonogo, figures, clearance, packs, words, weather_map, pilot, live, feeds, terrain, window, emergency,
-               copilot, engine_router, logbook_draft, notam_rank, offline, coach):
+for module in (
+    plan,
+    chart,
+    briefing,
+    notes,
+    devml,
+    system,
+    classb,
+    devservices,
+    airports,
+    airspace_router,
+    traffic,
+    basemaps,
+    route_options,
+    gonogo,
+    figures,
+    clearance,
+    packs,
+    words,
+    weather_map,
+    pilot,
+    live,
+    feeds,
+    terrain,
+    window,
+    emergency,
+    copilot,
+    engine_router,
+    logbook_draft,
+    notam_rank,
+    offline,
+    coach,
+):
     app.include_router(module.router)
 
 
 # The unions no route returns, published into the OpenAPI components by
 # _openapi so apps/web/ gets a TypeScript type for each stream.
-STREAM_MESSAGES = {
-    "NavLogMessage": NavLogMessage,
-    "DetectMessage": DetectMessage,
-}
+STREAM_MESSAGES = {"NavLogMessage": NavLogMessage, "DetectMessage": DetectMessage}
 
 
 def _openapi() -> dict:
@@ -417,9 +462,7 @@ def _openapi() -> dict:
     document = get_openapi(title=app.title, version=app.version, routes=app.routes)
     components = document.setdefault("components", {}).setdefault("schemas", {})
     for name, union in STREAM_MESSAGES.items():
-        piece = TypeAdapter(union).json_schema(
-            mode="serialization", ref_template="#/components/schemas/{model}",
-        )
+        piece = TypeAdapter(union).json_schema(mode="serialization", ref_template="#/components/schemas/{model}")
         components.update(piece.pop("$defs", {}))
         components[name] = piece
     app.openapi_schema = document

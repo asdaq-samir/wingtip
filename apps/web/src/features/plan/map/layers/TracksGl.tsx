@@ -24,11 +24,11 @@ const CASING = { colour: "#ffffff", width: 6, opacity: 0.85 };
 /** Where own ship has flown, at the pilot's ask: blue on
  *  a white casing, joined to the position now. */
 export function OwnTrailGl() {
-  const path = useOwnTrail(s => s.path);
+  const path = useOwnTrail((s) => s.path);
   const fix = useOwnFix();
   const runs = useMemo<GlRun[] | null>(() => {
     if (path.length < 2) return null;
-    const line = path.map(p => [p.lat, p.lon] as [number, number]);
+    const line = path.map((p) => [p.lat, p.lon] as [number, number]);
     if (fix) line.push([fix.lat, fix.lon]);
     return [{ points: line, colour: "#2563eb", width: 3 }];
   }, [path, fix]);
@@ -39,7 +39,7 @@ export function OwnTrailGl() {
 /** A saved flight's flown track over its route, from its debrief:
  *  black where it kept to the course, red where off. */
 export function FlownTrackGl({ course }: { course: Course }) {
-  const track = useFlownTrack(s => s.track);
+  const track = useFlownTrack((s) => s.track);
   const runs = useMemo<GlRun[] | null>(() => {
     if (!track || track.departure !== course.departure.ident || track.destination !== course.destination.ident) return null;
     const out: GlRun[] = [];
@@ -48,7 +48,18 @@ export function FlownTrackGl({ course }: { course: Course }) {
       const off = pt.off;
       const colour = off ? "#d70015" : "#1d1d1f";
       if (last && last.colour === colour) last.points.push([pt.lat, pt.lon]);
-      else out.push({ colour, width: off ? 3.5 : 2.5, points: i > 0 ? [[track.line[i - 1]!.lat, track.line[i - 1]!.lon], [pt.lat, pt.lon]] : [[pt.lat, pt.lon]] });
+      else
+        out.push({
+          colour,
+          width: off ? 3.5 : 2.5,
+          points:
+            i > 0
+              ? [
+                  [track.line[i - 1]!.lat, track.line[i - 1]!.lon],
+                  [pt.lat, pt.lon],
+                ]
+              : [[pt.lat, pt.lon]],
+        });
     });
     return out;
   }, [track, course]);
@@ -59,13 +70,22 @@ export function FlownTrackGl({ course }: { course: Course }) {
 /** The legs a hazard in the Brief is on, at the pilot's tap:
  *  a wide orange band under the course, fitted. */
 export function LegHighlightGl({ course }: { course: Course }) {
-  const shown = useLegHighlight(s => s.shown);
-  const clear = useLegHighlight(s => s.clear);
-  const route = `${course.departure.ident}-${(course.stops ?? []).map(s => s.ident).join("-")}-${course.destination.ident}`;
+  const shown = useLegHighlight((s) => s.shown);
+  const clear = useLegHighlight((s) => s.clear);
+  const route = `${course.departure.ident}-${(course.stops ?? []).map((s) => s.ident).join("-")}-${course.destination.ident}`;
   useEffect(() => clear, [route, clear]);
-  const runs = useMemo<GlRun[] | null>(() => (shown
-    ? shown.lines.map(line => ({ points: line.map(p => [p.lat, p.lon] as [number, number]), colour: "#ff9500", width: 12, opacity: 0.55 }))
-    : null), [shown]);
+  const runs = useMemo<GlRun[] | null>(
+    () =>
+      shown
+        ? shown.lines.map((line) => ({
+            points: line.map((p) => [p.lat, p.lon] as [number, number]),
+            colour: "#ff9500",
+            width: 12,
+            opacity: 0.55,
+          }))
+        : null,
+    [shown],
+  );
   useGlLines("leg-highlight", "lines", runs, null);
   const points = useMemo(() => shown?.lines.flat() ?? [], [shown]);
   useGlFit(points, shown?.key ?? null, 11);
@@ -78,7 +98,10 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
   const { map } = useGlMap();
   const marker = useRef<Marker | null>(null);
   useEffect(() => {
-    let frame = 0, last = performance.now(), reported = -Infinity, reportedAt: number | null = null;
+    let frame = 0,
+      last = performance.now(),
+      reported = -Infinity,
+      reportedAt: number | null = null;
     const step = (now: number) => {
       frame = requestAnimationFrame(step);
       stepPastFlight(now - last);
@@ -128,10 +151,19 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
  *  heights' colours, fitted, and its replay. */
 export function PastFlightGl({ hex, id }: { hex: string; id: number }) {
   const { data } = useQuery(pastFlightQuery(hex, id));
-  useEffect(() => { if (data) usePastFlight.setState({ points: data.points }); }, [data]);
+  useEffect(() => {
+    if (data) usePastFlight.setState({ points: data.points });
+  }, [data]);
   const points = useMemo(() => data?.points ?? [], [data]);
-  const runs = useMemo<GlRun[]>(() => colourRuns(points.map(p => ({ lat: p.lat, lon: p.lon, altFt: p.alt_ft ?? null })))
-    .map(r => ({ points: r.points, colour: r.colour, width: 3 })), [points]);
+  const runs = useMemo<GlRun[]>(
+    () =>
+      colourRuns(points.map((p) => ({ lat: p.lat, lon: p.lon, altFt: p.alt_ft ?? null }))).map((r) => ({
+        points: r.points,
+        colour: r.colour,
+        width: 3,
+      })),
+    [points],
+  );
   useGlLines("past-flight", "route", runs, CASING);
   useGlFit(points, points.length > 1 ? `${hex}-${id}` : null, 13);
   return <ReplayGl />;
@@ -141,11 +173,11 @@ export function PastFlightGl({ hex, id }: { hex: string; id: number }) {
  *  heights' colours. */
 export function TrackedPathGl({ hex }: { hex: string }) {
   const { data } = useQuery(flightQuery(hex));
-  const since = useTracking(s => s.path);
+  const since = useTracking((s) => s.path);
   const runs = useMemo<GlRun[]>(() => {
-    const trail = (data?.trail ?? []).map(p => ({ t: p.t * 1000, lat: p.lat, lon: p.lon, altFt: p.alt_ft ?? null }));
+    const trail = (data?.trail ?? []).map((p) => ({ t: p.t * 1000, lat: p.lat, lon: p.lon, altFt: p.alt_ft ?? null }));
     const last = trail.at(-1)?.t ?? 0;
-    return colourRuns([...trail, ...since.filter(p => p.t > last)]).map(r => ({ points: r.points, colour: r.colour, width: 3 }));
+    return colourRuns([...trail, ...since.filter((p) => p.t > last)]).map((r) => ({ points: r.points, colour: r.colour, width: 3 }));
   }, [data, since]);
   useGlLines("tracked-path", "route", runs, CASING);
   return null;

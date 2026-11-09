@@ -36,6 +36,8 @@ It is fast because nothing starts cold after the first run on the Mac, in any wo
 
 `scripts/build/build-engine-wasm.sh` stays apart: a clean build in its pinned image, so the committed `.wasm` is reproducible. Run it after an engine change, as before. Removing any image or volume above costs one cold run, nothing more.
 
+**Formatting is `scripts/dev/format.sh`** (all six languages, or `web python rust swift kotlin java`; `--check` to only report). It pins each tool and fetches what the Mac lacks (Prettier through Docker's node, ruff through uvx, SwiftFormat and ktlint as checksummed release binaries); CI runs each language's `--check` in that language's job, and the pre-push hook those a push changes. A `--check` failure is fixed by running it without `--check` and committing what it wrote, never by hand.
+
 The commands below are what it runs, for reading a failure or running one by hand.
 
 **Web.** These are CI's steps; node 26 matches `apps/web/.nvmrc`.

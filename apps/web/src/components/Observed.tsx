@@ -14,11 +14,14 @@ export default function Observed({ at, className }: { at: string; className?: st
   const observed = new Date(at);
   if (Number.isNaN(observed.getTime())) return null;
   const old = !callEngine("weather_in_force", {
-    product: "metar", now: Math.floor(now / 1000), observed: Math.floor(observed.getTime() / 1000),
+    product: "metar",
+    now: Math.floor(now / 1000),
+    observed: Math.floor(observed.getTime() / 1000),
   });
   return (
     <span className={cn(old ? "font-semibold text-caution-ink" : "text-muted-foreground", className)} data-testid="observed">
-      Observed {zuluTime(observed)}, {ago(now - observed.getTime())}{old ? " — an old report" : ""}
+      Observed {zuluTime(observed)}, {ago(now - observed.getTime())}
+      {old ? " — an old report" : ""}
     </span>
   );
 }

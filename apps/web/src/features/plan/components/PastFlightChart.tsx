@@ -25,7 +25,13 @@ const chartConfig = {
  *  traces said over it instead; room over the traces at the top; and
  *  across, the distance flown, not the time ("x axis can be just
  *  distance"), its mark where the moment is along the course. */
-const FlightChart = memo(function FlightChart({ points, fromStart = false, alongNm, airspace = null, laid }: {
+const FlightChart = memo(function FlightChart({
+  points,
+  fromStart = false,
+  alongNm,
+  airspace = null,
+  laid,
+}: {
   points: PastFlightPoint[];
   /** The mark at the first point before the run is played (the dry
    *  run's), where a replay's has none till then. */
@@ -38,7 +44,10 @@ const FlightChart = memo(function FlightChart({ points, fromStart = false, along
    *  run longer than the route near its end (runNmAt), else evenly. */
   laid?: (fraction: number) => number;
 }) {
-  const data = useMemo(() => points.map((p, i) => ({ t: p.t, nm: alongNm?.[i] ?? null, alt: p.alt_ft ?? 0, kt: p.gs_kt ?? null })), [points, alongNm]);
+  const data = useMemo(
+    () => points.map((p, i) => ({ t: p.t, nm: alongNm?.[i] ?? null, alt: p.alt_ft ?? 0, kt: p.gs_kt ?? null })),
+    [points, alongNm],
+  );
   const plain = !!alongNm;
   // The white space on top, a quarter again over the highest height; the
   // speed held to the chart's lower half, so the two traces read apart
@@ -52,15 +61,16 @@ const FlightChart = memo(function FlightChart({ points, fromStart = false, along
   // the profile's distances, along the straight route, laid onto the
   // run's, as the side view lays the plan's onto the route's; the chart
   // tall enough for their ceilings, as the side view's is.
-  const start = alongNm?.[0] ?? 0, runNm = (alongNm?.at(-1) ?? 0) - start;
+  const start = alongNm?.[0] ?? 0,
+    runNm = (alongNm?.at(-1) ?? 0) - start;
   const nmTicks = useMemo(() => distanceTicks(start, start + runNm), [start, runNm]);
   const route = plain && airspace && airspace.length_nm > 0 ? airspace : null;
-  const pieces = route ? route.airspace.filter(a => AIRSPACE[a.class]) : [];
+  const pieces = route ? route.airspace.filter((a) => AIRSPACE[a.class]) : [];
   const runAt = (nm: number) => {
     const fraction = route ? nm / route.length_nm : 0;
     return laid ? laid(fraction) : start + fraction * runNm;
   };
-  const named = new Set([...namedPieces(pieces).values()].filter(a => nameFits(a, route?.length_nm ?? 0)));
+  const named = new Set([...namedPieces(pieces).values()].filter((a) => nameFits(a, route?.length_nm ?? 0)));
   const tops = ceilings(pieces);
   const airspaceTop = tops.length ? Math.ceil((Math.max(...tops) + 300) / 500) * 500 : 0;
   // A name at the run's ends kept inside the chart: set from the box's
@@ -73,35 +83,98 @@ const FlightChart = memo(function FlightChart({ points, fromStart = false, along
     <ChartContainer config={chartConfig} className="aspect-auto h-full w-full">
       <ComposedChart data={data} margin={{ left: plain ? 12 : 0, right: plain ? 12 : 0, top: 4, bottom: 0 }}>
         {plain ? (
-          <XAxis dataKey="nm" type="number" domain={["dataMin", "dataMax"]} tickLine={false} axisLine={false} ticks={nmTicks} interval={0}
-            tickFormatter={(nm: number) => `${Math.round(nm)} nm`} />
+          <XAxis
+            dataKey="nm"
+            type="number"
+            domain={["dataMin", "dataMax"]}
+            tickLine={false}
+            axisLine={false}
+            ticks={nmTicks}
+            interval={0}
+            tickFormatter={(nm: number) => `${Math.round(nm)} nm`}
+          />
         ) : (
-          <XAxis dataKey="t" type="number" domain={["dataMin", "dataMax"]} tickLine={false} axisLine={false} minTickGap={32}
-            tickFormatter={(t: number) => clockTime(when(t))} />
+          <XAxis
+            dataKey="t"
+            type="number"
+            domain={["dataMin", "dataMax"]}
+            tickLine={false}
+            axisLine={false}
+            minTickGap={32}
+            tickFormatter={(t: number) => clockTime(when(t))}
+          />
         )}
         <YAxis
-          yAxisId="alt" hide={plain} domain={plain ? [0, (max: number) => Math.max(headroom(max), airspaceTop)] : undefined}
-          tickLine={false} axisLine={false} width={44} tickFormatter={(v: number) => `${grouped(v)}`}
+          yAxisId="alt"
+          hide={plain}
+          domain={plain ? [0, (max: number) => Math.max(headroom(max), airspaceTop)] : undefined}
+          tickLine={false}
+          axisLine={false}
+          width={44}
+          tickFormatter={(v: number) => `${grouped(v)}`}
         />
-        <YAxis yAxisId="kt" hide={plain} domain={plain ? [0, lowerHalf] : undefined} orientation="right" tickLine={false} axisLine={false} width={32} />
+        <YAxis
+          yAxisId="kt"
+          hide={plain}
+          domain={plain ? [0, lowerHalf] : undefined}
+          orientation="right"
+          tickLine={false}
+          axisLine={false}
+          width={32}
+        />
         {/* Under the traces, each name once, over its widest piece, as the
             side view's: its airport's ident with its ceiling over its floor. */}
         {pieces.map((a, i) => {
           const look = AIRSPACE[a.class]!;
           return (
             <ReferenceArea
-              key={i} yAxisId="alt" x1={runAt(a.from_nm)} x2={runAt(a.to_nm)} y1={a.floor_ft} y2={a.ceiling_ft ?? undefined}
-              stroke={look.stroke} strokeDasharray={look.dashed ? "5 4" : undefined} strokeOpacity={0.8} fill={look.stroke} fillOpacity={0.08}
+              key={i}
+              yAxisId="alt"
+              x1={runAt(a.from_nm)}
+              x2={runAt(a.to_nm)}
+              y1={a.floor_ft}
+              y2={a.ceiling_ft ?? undefined}
+              stroke={look.stroke}
+              strokeDasharray={look.dashed ? "5 4" : undefined}
+              strokeOpacity={0.8}
+              fill={look.stroke}
+              fillOpacity={0.08}
               ifOverflow="hidden"
-              label={named.has(a) ? {
-                value: `${a.ident || `Class ${a.class}`} ${ceilingOverFloor(a)}`.trim(), position: placed(a), fontSize: 11, fontWeight: 600, fill: look.text,
-              } : undefined}
+              label={
+                named.has(a)
+                  ? {
+                      value: `${a.ident || `Class ${a.class}`} ${ceilingOverFloor(a)}`.trim(),
+                      position: placed(a),
+                      fontSize: 11,
+                      fontWeight: 600,
+                      fill: look.text,
+                    }
+                  : undefined
+              }
             />
           );
         })}
-        <Area yAxisId="alt" dataKey="alt" type="monotone" stroke="var(--color-alt)" fill="var(--color-alt)" fillOpacity={0.15}
-          strokeWidth={2} isAnimationActive={false} dot={false} />
-        <Line yAxisId="kt" dataKey="kt" type="monotone" stroke="var(--color-kt)" strokeWidth={1.5} dot={false} isAnimationActive={false} connectNulls />
+        <Area
+          yAxisId="alt"
+          dataKey="alt"
+          type="monotone"
+          stroke="var(--color-alt)"
+          fill="var(--color-alt)"
+          fillOpacity={0.15}
+          strokeWidth={2}
+          isAnimationActive={false}
+          dot={false}
+        />
+        <Line
+          yAxisId="kt"
+          dataKey="kt"
+          type="monotone"
+          stroke="var(--color-kt)"
+          strokeWidth={1.5}
+          dot={false}
+          isAnimationActive={false}
+          connectNulls
+        />
         <Now points={points} alongNm={alongNm} fromStart={fromStart} />
       </ComposedChart>
     </ChartContainer>
@@ -117,17 +190,28 @@ const FlightChart = memo(function FlightChart({ points, fromStart = false, along
  * sheet's bar went unanswered in CI (tracking.spec, 2026-10-28).
  */
 function Now({ points, alongNm, fromStart }: { points: PastFlightPoint[]; alongNm?: number[]; fromStart: boolean }) {
-  const second = usePastFlight(s => (s.at === null ? null : Math.floor(s.at)));
-  const at = second ?? (fromStart ? points[0]?.t ?? null : null);
-  const x = useXAxisScale(), area = usePlotArea();
+  const second = usePastFlight((s) => (s.at === null ? null : Math.floor(s.at)));
+  const at = second ?? (fromStart ? (points[0]?.t ?? null) : null);
+  const x = useXAxisScale(),
+    area = usePlotArea();
   if (at === null || !points.length || !x || !area) return null;
   // The moment's distance along the course, between the points either side.
-  const i = Math.max(1, Math.min(points.length - 1, points.findIndex(p => p.t >= at) < 0 ? points.length - 1 : points.findIndex(p => p.t >= at)));
-  const a = points[i - 1] ?? points[0]!, b = points[i] ?? a;
+  const i = Math.max(
+    1,
+    Math.min(points.length - 1, points.findIndex((p) => p.t >= at) < 0 ? points.length - 1 : points.findIndex((p) => p.t >= at)),
+  );
+  const a = points[i - 1] ?? points[0]!,
+    b = points[i] ?? a;
   const f = b.t > a.t ? Math.min(1, Math.max(0, (at - a.t) / (b.t - a.t))) : 0;
-  const mix = (p: number | null | undefined, q: number | null | undefined) => (p == null || q == null ? p ?? q ?? null : p + (q - p) * f);
-  const atNm = alongNm ? (at <= points[0]!.t ? alongNm[0] ?? null : at >= points.at(-1)!.t ? alongNm.at(-1) ?? null : mix(alongNm[i - 1], alongNm[i])) : null;
-  const cx = x(alongNm ? atNm ?? undefined : at);
+  const mix = (p: number | null | undefined, q: number | null | undefined) => (p == null || q == null ? (p ?? q ?? null) : p + (q - p) * f);
+  const atNm = alongNm
+    ? at <= points[0]!.t
+      ? (alongNm[0] ?? null)
+      : at >= points.at(-1)!.t
+        ? (alongNm.at(-1) ?? null)
+        : mix(alongNm[i - 1], alongNm[i])
+    : null;
+  const cx = x(alongNm ? (atNm ?? undefined) : at);
   if (cx === undefined || !Number.isFinite(cx)) return null;
   return (
     <>
@@ -160,16 +244,19 @@ const CONTROLS_PX = { width: 150, height: 44 };
  * airspace's names.
  */
 function NowMarks({ nm, alt, kt }: { nm: number; alt: number; kt: number | null }) {
-  const x = useXAxisScale(), yAlt = useYAxisScale("alt"), yKt = useYAxisScale("kt"), area = usePlotArea();
+  const x = useXAxisScale(),
+    yAlt = useYAxisScale("alt"),
+    yKt = useYAxisScale("kt"),
+    area = usePlotArea();
   const cx = x?.(nm);
   if (cx === undefined || !yAlt || !area) return null;
   const marks = [
     { key: "alt", dot: yAlt(alt), words: `${altFt(alt)} ft`, colour: "var(--color-alt)" },
     { key: "kt", dot: kt == null ? undefined : yKt?.(kt), words: `${Math.round(kt ?? 0)} kt`, colour: "var(--color-kt)" },
-  ].flatMap(m => (m.dot === undefined ? [] : [{ ...m, dot: m.dot }]));
+  ].flatMap((m) => (m.dot === undefined ? [] : [{ ...m, dot: m.dot }]));
   const before = cx > area.x + area.width * 0.6;
-  const top = Math.min(...marks.map(m => m.dot));
-  const placed = marks.map(m => {
+  const top = Math.min(...marks.map((m) => m.dot));
+  const placed = marks.map((m) => {
     const width = m.words.length * MARK_CHAR_PX + 8;
     const left = before ? cx - 6 - width : cx + 6;
     const over = m.dot === top && marks.length > 1 ? true : marks.length === 1;
@@ -187,13 +274,27 @@ function NowMarks({ nm, alt, kt }: { nm: number; alt: number; kt: number | null 
   }
   return (
     <g data-testid="dry-run-now" aria-hidden>
-      {placed.map(m => (
+      {placed.map((m) => (
         <g key={m.key} data-mark={m.key}>
           <circle cx={cx} cy={m.dot} r={3.5} fill={m.colour} stroke="var(--background)" strokeWidth={1.5} />
-          <rect x={m.left} y={m.middle - MARK_LINE_PX / 2} width={m.width} height={MARK_LINE_PX} rx={5} fill="var(--background)" fillOpacity={0.85} />
+          <rect
+            x={m.left}
+            y={m.middle - MARK_LINE_PX / 2}
+            width={m.width}
+            height={MARK_LINE_PX}
+            rx={5}
+            fill="var(--background)"
+            fillOpacity={0.85}
+          />
           <text
-            x={m.left + m.width / 2} y={m.middle} textAnchor="middle" dominantBaseline="central" fill={m.colour}
-            fontSize={13} fontWeight={600} style={{ fontVariantNumeric: "tabular-nums" }}
+            x={m.left + m.width / 2}
+            y={m.middle}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fill={m.colour}
+            fontSize={13}
+            fontWeight={600}
+            style={{ fontVariantNumeric: "tabular-nums" }}
           >
             {m.words}
           </text>

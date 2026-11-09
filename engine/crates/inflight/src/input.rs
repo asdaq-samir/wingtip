@@ -143,7 +143,11 @@ pub fn ifr(name: &str, v: &Value) -> R<bool> {
 pub fn same_field(a: &str, b: &str) -> bool {
     let bare = |s: &str| {
         let s = s.trim().to_ascii_uppercase();
-        if s.len() == 4 && s.starts_with('K') { s[1..].to_owned() } else { s }
+        if s.len() == 4 && s.starts_with('K') {
+            s[1..].to_owned()
+        } else {
+            s
+        }
     };
     bare(a) == bare(b)
 }

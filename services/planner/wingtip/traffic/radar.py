@@ -2,6 +2,7 @@
 (services/ingest) reads -- and which of the radar is worth reading now. Both through the live
 store (wingtip.traffic.store): ingest writes what the radar hears and reads what is wanted, the
 planner writes where the map looks and reads what the radar heard."""
+
 from __future__ import annotations
 
 import math

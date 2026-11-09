@@ -18,29 +18,40 @@ export function planningWords(stage: string): string {
 }
 
 export function progressWords(
-  navStage: string | null, stage: string | null, briefingLoading: boolean, described: { done: number; total: number } | null,
+  navStage: string | null,
+  stage: string | null,
+  briefingLoading: boolean,
+  described: { done: number; total: number } | null,
 ): string | null {
-  return (navStage ? planningWords(navStage) : null)
-    ?? (stage === "navlog" ? "Planning…" : null)
-    ?? (stage === "course" ? "Drawing Route…" : null)
-    ?? (stage === "checkpoints" ? "Finding Checkpoints…" : null)
-    ?? (briefingLoading ? "Fetching Weather…" : null)
-    ?? (described ? `Describing Checkpoints ${described.done} of ${described.total}` : null);
+  return (
+    (navStage ? planningWords(navStage) : null) ??
+    (stage === "navlog" ? "Planning…" : null) ??
+    (stage === "course" ? "Drawing Route…" : null) ??
+    (stage === "checkpoints" ? "Finding Checkpoints…" : null) ??
+    (briefingLoading ? "Fetching Weather…" : null) ??
+    (described ? `Describing Checkpoints ${described.done} of ${described.total}` : null)
+  );
 }
 
 /** A leg where no 500 ft step fits and the planner flies the highest
  *  whole hundred under its ceiling (wingtip.altitude's tight altitude):
  *  where, at what, and how little room there is either side. */
 export function tightLegWords(segments: AltitudeSegment[] | null | undefined): string | null {
-  const tight = segments?.find(seg => seg.tight);
+  const tight = segments?.find((seg) => seg.tight);
   if (!tight || tight.candidates_ft[0] === undefined || tight.band_ceiling_ft == null) return null;
   const altitude = tight.candidates_ft[0];
-  const under = tight.band_ceiling_ft === tight.airspace_ceiling_ft ? "the Class B"
-    : tight.band_ceiling_ft === tight.cloud_ceiling_ft ? "the cloud clearance" : "the service ceiling";
+  const under =
+    tight.band_ceiling_ft === tight.airspace_ceiling_ft
+      ? "the Class B"
+      : tight.band_ceiling_ft === tight.cloud_ceiling_ft
+        ? "the cloud clearance"
+        : "the service ceiling";
   const over = Math.round(altitude - tight.floor_ft);
-  return `Tight ${Math.round(tight.from_nm)}–${Math.round(tight.to_nm)} nm along: ${grouped(altitude)} ft, `
-    + `${Math.round(tight.band_ceiling_ft - altitude)} ft under ${under} and `
-    + `${over > 0 ? `${over} ft over` : "right at"} the obstacle minimum.`;
+  return (
+    `Tight ${Math.round(tight.from_nm)}–${Math.round(tight.to_nm)} nm along: ${grouped(altitude)} ft, ` +
+    `${Math.round(tight.band_ceiling_ft - altitude)} ft under ${under} and ` +
+    `${over > 0 ? `${over} ft over` : "right at"} the obstacle minimum.`
+  );
 }
 
 type Mark = "stop" | "caution";

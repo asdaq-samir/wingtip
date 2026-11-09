@@ -17,8 +17,8 @@ import { lazy, useState, type ComponentType } from "react";
  */
 export function fromChunk<M, P extends object>(load: () => Promise<M>, pick: (module: M) => ComponentType<P>) {
   let loaded: M | null = null;
-  const fetch = () => load().then(module => (loaded = module));
-  const Waited = lazy(() => fetch().then(module => ({ default: pick(module) })));
+  const fetch = () => load().then((module) => (loaded = module));
+  const Waited = lazy(() => fetch().then((module) => ({ default: pick(module) })));
   function Part(props: P) {
     // Not compiled, as the route panel's parts are not (PlanWorkspace's
     // fromRoutePanel): the compiler lost the factory's own `Waited`.

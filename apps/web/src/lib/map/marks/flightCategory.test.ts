@@ -10,13 +10,25 @@ import { inkOn } from "../../scoreScale";
 // than 5 miles".
 describe("a forecast's flight category, as AIM 7-1-7 bounds it", () => {
   it("takes the ceiling's bounds, the visibility clear", () => {
-    expect([499, 500, 999, 1000, 3000, 3001].map(ceiling => categoryOf(ceiling, 10)))
-      .toEqual(["LIFR", "IFR", "IFR", "MVFR", "MVFR", "VFR"]);
+    expect([499, 500, 999, 1000, 3000, 3001].map((ceiling) => categoryOf(ceiling, 10))).toEqual([
+      "LIFR",
+      "IFR",
+      "IFR",
+      "MVFR",
+      "MVFR",
+      "VFR",
+    ]);
   });
 
   it("takes the visibility's bounds, no ceiling", () => {
-    expect([0.75, 1, 2.75, 3, 5, 6].map(visibility => categoryOf(null, visibility)))
-      .toEqual(["LIFR", "IFR", "IFR", "MVFR", "MVFR", "VFR"]);
+    expect([0.75, 1, 2.75, 3, 5, 6].map((visibility) => categoryOf(null, visibility))).toEqual([
+      "LIFR",
+      "IFR",
+      "IFR",
+      "MVFR",
+      "MVFR",
+      "VFR",
+    ]);
   });
 
   it("takes the worse of the two, and nothing known as no category", () => {

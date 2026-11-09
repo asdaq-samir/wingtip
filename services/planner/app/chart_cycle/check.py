@@ -11,6 +11,7 @@ swap, to delete the cycles before it. Its own switch, CHARTS_CYCLE_AUTO
 cycle's check and this are separate decisions. It waits while the current
 cycle is still due: that one first.
 """
+
 import logging
 
 from wingtip import chart_next, charts
@@ -43,15 +44,15 @@ def maybe_stage_next() -> str | None:
                 log.info("next chart cycle %s waits for the current one's render", plan.next_name)
                 return None
             if not chart_refresh.in_window():
-                log.info("next chart cycle %s is due for staging; it starts in the %s window",
-                         plan.next_name, CHARTS_REFRESH_WINDOW)
+                log.info("next chart cycle %s is due for staging; it starts in the %s window", plan.next_name, CHARTS_REFRESH_WINDOW)
                 return None
         last = chart_next.read_status() or {}
         if last.get("state") == chart_next.FAILED and last.get("cycle") == plan.next_name:
             log.warning("next chart cycle %s failed last time (%s); trying again", plan.next_name, last.get("detail"))
         if dev_services.start(SERVICE):
-            log.info("next chart cycle %s: the charts job's next run started (%s, takes effect %s)",
-                     plan.next_name, what, plan.next.isoformat())
+            log.info(
+                "next chart cycle %s: the charts job's next run started (%s, takes effect %s)", plan.next_name, what, plan.next.isoformat()
+            )
             return what
     except Exception:  # noqa: BLE001 -- the next hourly check tries again; the map keeps serving what it has
         log.warning("next chart cycle check failed", exc_info=True)
@@ -64,9 +65,10 @@ def status() -> dict | None:
     try:
         report = chart_next.report(AUTO, LEAD_DAYS)
         cycle = report["cycle"]
-        report["progress"] = {key: {**record, "complete": charts.pyramid_complete(cycle, (key,)),
-                                    "missing": charts.pyramid_missing(cycle, key)}
-                              for key, record in charts.pyramid_status(cycle).items()}
+        report["progress"] = {
+            key: {**record, "complete": charts.pyramid_complete(cycle, (key,)), "missing": charts.pyramid_missing(cycle, key)}
+            for key, record in charts.pyramid_status(cycle).items()
+        }
         return report
     except Exception:  # noqa: BLE001 -- the rest of the snapshot is still worth having
         log.warning("next chart cycle not read", exc_info=True)

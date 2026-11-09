@@ -54,5 +54,7 @@ export function followDynamicType(): void {
   };
   apply();
   window.addEventListener("resize", apply);
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") apply(); });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") apply();
+  });
 }

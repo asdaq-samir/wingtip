@@ -8,6 +8,7 @@ The local checks run only what a branch touched; an area missed here is a
 check that passes on the Mac and fails in CI, and an area added for nothing
 is minutes in a turn another session waits for.
 """
+
 import shutil
 import subprocess
 from pathlib import Path
@@ -21,10 +22,7 @@ pytestmark = pytest.mark.skipif(shutil.which("bash") is None, reason="needs bash
 
 
 def areas(*paths: str) -> list[str]:
-    result = subprocess.run(
-        ["bash", str(SCRIPT), "--areas"], input="\n".join(paths) + "\n",
-        capture_output=True, text=True, check=True,
-    )
+    result = subprocess.run(["bash", str(SCRIPT), "--areas"], input="\n".join(paths) + "\n", capture_output=True, text=True, check=True)
     return result.stdout.split()
 
 
@@ -52,13 +50,11 @@ def test_a_job_is_its_own_area():
 
 
 def test_an_engine_rule_reaches_every_shell_of_it():
-    assert areas("engine/facade/src/call.rs") == [
-        "py", "planner", "ingest", "weather", "jobs", "engine", "ios", "android", "arch"]
+    assert areas("engine/facade/src/call.rs") == ["py", "planner", "ingest", "weather", "jobs", "engine", "ios", "android", "arch"]
 
 
 def test_the_shared_fixtures_reach_wingtips_tests_the_engine_and_the_phones():
-    assert areas("apps/web/src/lib/fixtures/winds.json") == [
-        "web", "py", "engine", "ios", "android"]
+    assert areas("apps/web/src/lib/fixtures/winds.json") == ["web", "py", "engine", "ios", "android"]
 
 
 def test_each_app_is_its_own_area():
@@ -80,18 +76,24 @@ def test_words_alone_check_nothing():
 
 def test_each_area_once_in_one_order():
     assert areas("services/planner/tests_wingtip/test_geo.py", "services/planner/wingtip/geo.py", "apps/web/src/App.tsx") == [
-        "web", "py", "planner", "ingest", "weather", "jobs", "arch"]
+        "web",
+        "py",
+        "planner",
+        "ingest",
+        "weather",
+        "jobs",
+        "arch",
+    ]
 
 
 def test_ci_yml_has_the_filters_the_areas_file_makes():
-    result = subprocess.run(
-        ["python3", str(ROOT / "scripts" / "areas.py"), "check"], capture_output=True, text=True)
+    result = subprocess.run(["python3", str(ROOT / "scripts" / "areas.py"), "check"], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
 
 
 def test_check_sh_lists_the_areas_the_file_names():
     names = subprocess.run(
-        ["python3", str(ROOT / "scripts" / "areas.py"), "names"], capture_output=True, text=True, check=True,
+        ["python3", str(ROOT / "scripts" / "areas.py"), "names"], capture_output=True, text=True, check=True
     ).stdout.split()
     assert names == "web py planner ingest assistant weather jobs engine java ios android site arch".split()
     for name in names:

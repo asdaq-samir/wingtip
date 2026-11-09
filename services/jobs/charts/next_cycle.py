@@ -5,6 +5,7 @@ FAA whether the cycle's files are up, taking a turn among the machine's
 heavy work (charts.turn), and charts.build_cycle -- with each step written
 to chart_next's status file for the planner and the console.
 """
+
 from __future__ import annotations
 
 import contextlib
@@ -14,8 +15,20 @@ from datetime import datetime
 import requests
 
 from wingtip import charts
-from wingtip.chart_next import (FAILED, NO_TURN, NOT_PUBLISHED, RETRY_AFTER_S, STAGED, STAGING, SWAPPED, WAITING,
-                                older_cycles, plan, read_status, write_status)
+from wingtip.chart_next import (
+    FAILED,
+    NO_TURN,
+    NOT_PUBLISHED,
+    RETRY_AFTER_S,
+    STAGED,
+    STAGING,
+    SWAPPED,
+    WAITING,
+    older_cycles,
+    plan,
+    read_status,
+    write_status,
+)
 from wingtip.config import REQUEST_HEADERS
 
 log = logging.getLogger(__name__)
@@ -34,8 +47,7 @@ def published(cycle: str, get=requests.head) -> bool:
     return resp.status_code == 200
 
 
-def run(workers: int | None = None, now: datetime | None = None, lead_days: int = 7, turn=None,
-        is_published=published) -> str:
+def run(workers: int | None = None, now: datetime | None = None, lead_days: int = 7, turn=None, is_published=published) -> str:
     """The `next` command: the cycle in force's predecessors deleted
     once it is complete (after the swap), then the next cycle staged if
     its lead has begun. `turn()` is a context manager that yields whether
@@ -50,8 +62,7 @@ def run(workers: int | None = None, now: datetime | None = None, lead_days: int 
             log.info("cycle %s is in force and complete; removed %s", p.in_force_name, removed)
             last = read_status()
             if last and last.get("cycle") == p.in_force_name:
-                write_status(p.in_force_name, SWAPPED, f"in force since {p.in_force.isoformat()} 0901Z; removed "
-                             + ", ".join(old))
+                write_status(p.in_force_name, SWAPPED, f"in force since {p.in_force.isoformat()} 0901Z; removed " + ", ".join(old))
     name = p.next_name
     if not p.staging:
         detail = f"staging starts {p.stage_from.isoformat()}, {p.lead_days} days before it takes effect"
@@ -64,11 +75,10 @@ def run(workers: int | None = None, now: datetime | None = None, lead_days: int 
         write_status(name, STAGED, f"complete; the map takes it at 0901Z on {p.next.isoformat()}")
         return STAGED
     if not is_published(name):
-        write_status(name, NOT_PUBLISHED, f"the FAA has not put up the {name} charts yet; asking again in "
-                     f"{RETRY_AFTER_S // 3600} h")
+        write_status(name, NOT_PUBLISHED, f"the FAA has not put up the {name} charts yet; asking again in {RETRY_AFTER_S // 3600} h")
         log.info("cycle %s is not on aeronav.faa.gov yet", name)
         return NOT_PUBLISHED
-    with (turn() if turn else contextlib.nullcontext(True)) as got:
+    with turn() if turn else contextlib.nullcontext(True) as got:
         if not got:
             write_status(name, NO_TURN, "the machine's heavy work had every turn; asking again later")
             return NO_TURN

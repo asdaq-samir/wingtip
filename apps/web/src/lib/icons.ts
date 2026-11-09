@@ -1,6 +1,22 @@
 import {
-  ChartArea, ClipboardCopy, Ellipsis, ListOrdered, LocateFixed, Map as MapLayers, MapPin, MapPinPlus, MoveUpRight,
-  Navigation, Phone, Repeat2, Route, Send, Share, Sparkles, X, type LucideIcon,
+  ChartArea,
+  ClipboardCopy,
+  Ellipsis,
+  ListOrdered,
+  LocateFixed,
+  Map as MapLayers,
+  MapPin,
+  MapPinPlus,
+  MoveUpRight,
+  Navigation,
+  Phone,
+  Repeat2,
+  Route,
+  Send,
+  Share,
+  Sparkles,
+  X,
+  type LucideIcon,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 import DirectToIcon from "./glyphs/DirectToIcon";
@@ -59,9 +75,7 @@ export const ICON = {
 } satisfies Record<string, Glyph>;
 
 /** The panel's tabs' glyphs, by tab. */
-export const TAB_ICON = {
-  fpl: RouteGlyph,
-  airport: AirportGlyph,
-  airplane: AirplaneGlyph,
-  setup: GearGlyph,
-} satisfies Record<string, TabGlyph>;
+export const TAB_ICON = { fpl: RouteGlyph, airport: AirportGlyph, airplane: AirplaneGlyph, setup: GearGlyph } satisfies Record<
+  string,
+  TabGlyph
+>;

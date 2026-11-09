@@ -76,10 +76,9 @@ def test_the_holdout_both_models_answered_decides_not_their_own_cv_scores(tmp_pa
     that comparison wins over the two runs' cross-validation scores, which
     came from different labels."""
     candidate_dir, current_dir = tmp_path / "candidate", tmp_path / "current"
-    _write_metrics(current_dir, mae=0.1)                 # its own CV looked great
+    _write_metrics(current_dir, mae=0.1)  # its own CV looked great
     candidate_dir.mkdir()
-    (candidate_dir / "metrics.json").write_text(json.dumps(
-        {PROMOTION_METRIC: 0.9, "held_out_mae": 0.6, "current_held_out_mae": 0.8}))
+    (candidate_dir / "metrics.json").write_text(json.dumps({PROMOTION_METRIC: 0.9, "held_out_mae": 0.6, "current_held_out_mae": 0.8}))
     (candidate_dir / "model.joblib").write_text("placeholder")
 
     assert evaluate(candidate_dir, current_dir) is True

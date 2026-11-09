@@ -14,7 +14,14 @@ import { TEXT } from "../../../lib/text";
  * Share menu, as the Brief's and the nav log's are, at the owner's ask
  * ("Profile needs the share instead of the back button like brief").
  */
-export default function ProfileCard({ name, line, corner, cautions = [], onClose, children }: {
+export default function ProfileCard({
+  name,
+  line,
+  corner,
+  cautions = [],
+  onClose,
+  children,
+}: {
   /** Its head, as the Brief's is: the route's name, and under it where
    *  from and to, the airplane, the altitude and when -- the tab bar over
    *  it says "Profile" already (the owner's "titles appear twice"). */
@@ -41,11 +48,19 @@ export default function ProfileCard({ name, line, corner, cautions = [], onClose
     // Half way no taller than half's body (MapPanel's --half-body): the
     // sheet is laid out at its full height and cut off at its edge, so the
     // graph's max-h-full is the room in sight only with the card held to it.
-    <div className="flex min-h-0 flex-1 flex-col px-4 pt-[var(--corner-inset,0.75rem)] in-data-[panel=half]:max-h-(--half-body) print:hidden" data-testid="profile-card">
-      <CardHead name={name} line={line} nameTestId="profile-name" onClose={onClose} onShare="profile" closeTestId="profile-close">{corner}</CardHead>
+    <div
+      className="flex min-h-0 flex-1 flex-col px-4 pt-[var(--corner-inset,0.75rem)] in-data-[panel=half]:max-h-(--half-body) print:hidden"
+      data-testid="profile-card"
+    >
+      <CardHead name={name} line={line} nameTestId="profile-name" onClose={onClose} onShare="profile" closeTestId="profile-close">
+        {corner}
+      </CardHead>
       {cautions.length > 0 && (
-        <ul className={cn("mt-2 shrink-0 space-y-1 rounded-lg bg-caution-wash px-2.5 py-2 text-caution-ink", TEXT.detail)} data-testid="profile-cautions">
-          {cautions.map(reason => (
+        <ul
+          className={cn("mt-2 shrink-0 space-y-1 rounded-lg bg-caution-wash px-2.5 py-2 text-caution-ink", TEXT.detail)}
+          data-testid="profile-cautions"
+        >
+          {cautions.map((reason) => (
             <li key={reason} className="flex gap-1.5">
               <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
               <span>{reason}</span>
@@ -58,7 +73,9 @@ export default function ProfileCard({ name, line, corner, cautions = [], onClose
           lines at the owner's larger text, the graph's foot behind the
           figures (the owner's screenshot); what it holds scrolls. Its
           skeleton as tall while the ground is fetched (MiniProfile). */}
-      <div className="mt-3 flex min-h-0 flex-1 flex-col [&_[data-testid=mini-profile-skeleton]]:h-full [&_[data-testid=mini-profile]]:h-full">{children}</div>
+      <div className="mt-3 flex min-h-0 flex-1 flex-col [&_[data-testid=mini-profile-skeleton]]:h-full [&_[data-testid=mini-profile]]:h-full">
+        {children}
+      </div>
     </div>
   );
 }

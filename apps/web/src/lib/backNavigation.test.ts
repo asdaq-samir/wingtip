@@ -13,15 +13,19 @@ describe("closeTopmost", () => {
     listeners.push(() => target.removeEventListener("keydown", listener));
   };
   afterEach(() => {
-    listeners.splice(0).forEach(off => off());
+    listeners.splice(0).forEach((off) => off());
     document.body.innerHTML = "";
   });
 
   it("closes what takes Escape, a card or a menu, and goes no further", () => {
     document.body.innerHTML = '<div data-slot="map-panel" data-panel="full"></div>';
     let lowered = false;
-    on(document.querySelector("[data-slot=map-panel]")!, () => { lowered = true; });
-    on(document, event => { if (event.key === "Escape") event.preventDefault(); });
+    on(document.querySelector("[data-slot=map-panel]")!, () => {
+      lowered = true;
+    });
+    on(document, (event) => {
+      if (event.key === "Escape") event.preventDefault();
+    });
     expect(closeTopmost()).toBe(true);
     expect(lowered).toBe(false);
   });
@@ -30,7 +34,9 @@ describe("closeTopmost", () => {
     document.body.innerHTML = '<div data-slot="map-panel" data-panel="full"></div>';
     const closed: string[] = [];
     let lowered = false;
-    on(document.querySelector("[data-slot=map-panel]")!, () => { lowered = true; });
+    on(document.querySelector("[data-slot=map-panel]")!, () => {
+      lowered = true;
+    });
     const nearest = holdOpenCard({ close: () => closed.push("nearest") });
     const airport = holdOpenCard({ close: () => closed.push("airport") });
     expect(closeTopmost()).toBe(true);
@@ -54,7 +60,9 @@ describe("closeTopmost", () => {
   it("lowers the panel when nothing else is open", () => {
     document.body.innerHTML = '<div data-slot="map-panel" data-panel="full"></div>';
     let lowered = 0;
-    on(document.querySelector("[data-slot=map-panel]")!, event => { if (event.key === "Escape") lowered += 1; });
+    on(document.querySelector("[data-slot=map-panel]")!, (event) => {
+      if (event.key === "Escape") lowered += 1;
+    });
     expect(closeTopmost()).toBe(true);
     expect(lowered).toBe(1);
   });

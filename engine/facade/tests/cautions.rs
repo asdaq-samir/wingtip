@@ -68,7 +68,8 @@ fn the_destination_needs_an_alternate_unless_1_2_3() {
 fn an_alternate_by_its_minimums() {
     let f = fixture();
     for case in cases(&f, "alternate_check") {
-        let got = ask("ifr_alternate_check", json!({ "ident": case["ident"], "approaches": case["approaches"], "forecast": case["forecast"] }));
+        let got =
+            ask("ifr_alternate_check", json!({ "ident": case["ident"], "approaches": case["approaches"], "forecast": case["forecast"] }));
         assert_same(&got, &case["answer"], case);
     }
 }

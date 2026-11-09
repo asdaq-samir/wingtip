@@ -19,11 +19,19 @@ import lombok.Getter;
 @Getter
 public class Subscription {
 
-    public enum Plan { MONTHLY, YEARLY }
+    public enum Plan {
+        MONTHLY,
+        YEARLY
+    }
 
     /** Where it was bought: Apple's or Google's store, the website, or
      *  given (an instructor's, a tester's). */
-    public enum Store { APP_STORE, PLAY, WEB, GRANT }
+    public enum Store {
+        APP_STORE,
+        PLAY,
+        WEB,
+        GRANT
+    }
 
     @Id
     private Long pilotId;

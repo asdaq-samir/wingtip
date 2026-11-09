@@ -1,8 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { ProcedureDrawing } from "../lib/api/types";
-import {
-  attemptsAt, debriefApproach, findApproaches, withMinimums, withTransition,
-} from "./approachDebriefModel";
+import { attemptsAt, debriefApproach, findApproaches, withMinimums, withTransition } from "./approachDebriefModel";
 import { bearingDeg, destination, distanceNm, FT_PER_NM, rad } from "../lib/geo";
 import { callEngine } from "../lib/engine/engine";
 import type { TrackPoint } from "../lib/track";
@@ -36,13 +34,16 @@ const ll = (p: number[]): Ll => ({ lat: p[0]!, lon: p[1]! });
  * nmToGo the distance left to the line's end; then `after` seconds
  * beyond it on the same course, at `afterAlt(s)` and `afterKt(s)`.
  */
-function fly(line: Ll[], opts: {
-  off?: (toGo: number) => number;
-  alt?: (toGo: number) => number | null;
-  after?: number;
-  afterAlt?: (s: number) => number | null;
-  afterKt?: (s: number) => number;
-} = {}): TrackPoint[] {
+function fly(
+  line: Ll[],
+  opts: {
+    off?: (toGo: number) => number;
+    alt?: (toGo: number) => number | null;
+    after?: number;
+    afterAlt?: (s: number) => number | null;
+    afterKt?: (s: number) => number;
+  } = {},
+): TrackPoint[] {
   const legs = line.slice(1).map((b, i) => ({ a: line[i]!, b, nm: distanceNm(line[i]!, b) }));
   const total = legs.reduce((s, l) => s + l.nm, 0);
   const t0 = Date.parse("2026-10-30T15:00:00Z");
@@ -50,8 +51,12 @@ function fly(line: Ll[], opts: {
   const kt = 120;
   let s = 0;
   for (let along = 0; along <= total; along = (s * kt) / 3600) {
-    let rest = along, k = 0;
-    while (k < legs.length - 1 && rest > legs[k]!.nm) { rest -= legs[k]!.nm; k++; }
+    let rest = along,
+      k = 0;
+    while (k < legs.length - 1 && rest > legs[k]!.nm) {
+      rest -= legs[k]!.nm;
+      k++;
+    }
     const leg = legs[k]!;
     const course = bearingDeg(leg.a, leg.b);
     const on = destination(leg.a, course, Math.min(rest, leg.nm));
@@ -61,7 +66,8 @@ function fly(line: Ll[], opts: {
     points.push({ t: t0 + s * 1000, lat: p.lat, lon: p.lon, altFt: opts.alt ? opts.alt(toGo) : null });
     s++;
   }
-  const end = line[line.length - 1]!, course = bearingDeg(line[line.length - 2]!, end);
+  const end = line[line.length - 1]!,
+    course = bearingDeg(line[line.length - 2]!, end);
   let past = 0;
   for (let k = 1; k <= (opts.after ?? 0); k++) {
     past += (opts.afterKt?.(k) ?? kt) / 3600;
@@ -82,7 +88,7 @@ function wayIn(d: ProcedureDrawing): Ll[] {
   return [destination(line[0]!, bearingDeg(line[1]!, line[0]!), 2), ...line];
 }
 const lengthOf = (line: Ll[]) => line.slice(1).reduce((s, p, i) => s + distanceNm(line[i]!, p), 0);
-const finalOf = (d: ProcedureDrawing) => wayIn({ ...d, lines: d.lines.filter(l => l.role !== "transition") });
+const finalOf = (d: ProcedureDrawing) => wayIn({ ...d, lines: d.lines.filter((l) => l.role !== "transition") });
 const gp = ILS.runway_path!;
 /** The ILS flown as charted: 3,700 to SILEX, 3,000 to the glide slope,
  *  then down it to the runway. */
@@ -115,10 +121,10 @@ describe("an ILS flown as charted", () => {
     const d = debriefApproach(ILS, track)!;
     expect(d).not.toBeNull();
     expect(d.fitNm).toBeLessThan(0.01);
-    expect(d.findings.filter(f => f.tone === "stop" || f.tone === "caution")).toEqual([]);
-    expect(d.findings.some(f => f.text.startsWith("Within full scale all the way"))).toBe(true);
-    expect(d.crossings.map(c => c.ident)).toEqual(["SILEX", "BUDDE", "RW08"]);
-    expect(d.plan.track.some(p => p.off)).toBe(false);
+    expect(d.findings.filter((f) => f.tone === "stop" || f.tone === "caution")).toEqual([]);
+    expect(d.findings.some((f) => f.text.startsWith("Within full scale all the way"))).toBe(true);
+    expect(d.crossings.map((c) => c.ident)).toEqual(["SILEX", "BUDDE", "RW08"]);
+    expect(d.plan.track.some((p) => p.off)).toBe(false);
   });
 
   test("the missed approach's start is timed from the MAP", () => {
@@ -126,16 +132,14 @@ describe("an ILS flown as charted", () => {
     expect(d.outcome.kind).toBe("missed");
     expect(d.outcome.secondsAfterMap!).toBeGreaterThanOrEqual(10);
     expect(d.outcome.secondsAfterMap!).toBeLessThanOrEqual(14);
-    expect(d.findings.some(f => /^Missed approach started 1[0-4] s after the MAP$/.test(f.text))).toBe(true);
+    expect(d.findings.some((f) => /^Missed approach started 1[0-4] s after the MAP$/.test(f.text))).toBe(true);
   });
 
   test("a landing is said as one", () => {
-    const landing = fly(finalOf(ILS), {
-      alt: onIls, after: 120, afterAlt: () => 727, afterKt: s => Math.max(5, 120 - s * 3),
-    });
+    const landing = fly(finalOf(ILS), { alt: onIls, after: 120, afterAlt: () => 727, afterKt: (s) => Math.max(5, 120 - s * 3) });
     const d = debriefApproach(ILS, landing)!;
     expect(d.outcome.kind).toBe("landed");
-    expect(d.findings.some(f => f.text.startsWith("Landed"))).toBe(true);
+    expect(d.findings.some((f) => f.text.startsWith("Landed"))).toBe(true);
   });
 
   test("is found among the field's approaches, the RNAV down the same final named with it", () => {
@@ -158,13 +162,13 @@ describe("what it flags", () => {
     // A mile left from 4.5 to 2.5 nm out, back on by the runway.
     const off = (toGo: number) => (toGo < 4.5 && toGo > 2.5 ? -1 : toGo <= 2.5 && toGo > 2 ? -(toGo - 2) * 2 : 0);
     const d = debriefApproach(ILS, fly(finalOf(ILS), { alt: onIls, off, after: 60, afterAlt: missedAfter(5) }))!;
-    const lateral = d.findings.find(f => f.text.startsWith("Full scale left of the course"))!;
+    const lateral = d.findings.find((f) => f.text.startsWith("Full scale left of the course"))!;
     expect(lateral.tone).toBe("stop");
     expect(lateral.text).toMatch(/on final, 1\.0 nm off at most$/);
     const nm = Number(/for (\d+\.\d) nm/.exec(lateral.text)![1]);
     expect(nm).toBeGreaterThan(1.8);
     expect(nm).toBeLessThan(3.1);
-    expect(d.plan.track.some(p => p.off)).toBe(true);
+    expect(d.plan.track.some((p) => p.off)).toBe(true);
   });
 
   test("a track that never came near the final approach fix is no approach of it", () => {
@@ -179,8 +183,8 @@ describe("what it flags", () => {
     const mikeiToGo = lengthOf(line.slice(1));
     const alt = (toGo: number) => (toGo > mikeiToGo - 2 ? 7000 : toGo > 6 ? 4100 : toGo > 5.2 ? 3000 : 1200);
     const half = (toGo: number) => (toGo > 7 && toGo < 9 ? 0.6 : toGo > 1.5 && toGo < 3 ? 0.6 : 0);
-    const d = debriefApproach(RNAV_MIKEI, fly(line, { alt, off: half, after: 90, afterAlt: s => 1200 + s * 15 }))!;
-    const full = d.findings.filter(f => f.text.startsWith("Full scale"));
+    const d = debriefApproach(RNAV_MIKEI, fly(line, { alt, off: half, after: 90, afterAlt: (s) => 1200 + s * 15 }))!;
+    const full = d.findings.filter((f) => f.text.startsWith("Full scale"));
     // ±1 nm before the ramp (AIM 1-1-17), ±0.3 nm down the final.
     expect(full).toHaveLength(1);
     expect(full[0]!.text).toMatch(/right of the course .* on final/);
@@ -192,49 +196,60 @@ describe("what it flags", () => {
     const line = wayIn(RNAV_MIKEI);
     const silexToGo = lengthOf(line.slice(2));
     const alt = (toGo: number) => (toGo > silexToGo + 1.5 ? 7000 : toGo > 5.5 ? 3500 : 1200);
-    const d = debriefApproach(RNAV_MIKEI, fly(line, { alt, after: 60, afterAlt: s => 1200 + s * 15 }))!;
-    const silex = d.findings.find(f => f.text.includes("SILEX"))!;
+    const d = debriefApproach(RNAV_MIKEI, fly(line, { alt, after: 60, afterAlt: (s) => 1200 + s * 15 }))!;
+    const silex = d.findings.find((f) => f.text.includes("SILEX"))!;
     expect(silex).toEqual({ tone: "stop", text: "At SILEX: 600 ft below 4,100" });
-    expect(d.crossings.find(c => c.ident === "SILEX")!.underFt).toBeCloseTo(600, 0);
+    expect(d.crossings.find((c) => c.ident === "SILEX")!.underFt).toBeCloseTo(600, 0);
   });
 
   test("under a step-down inside the final is marked for an MDA's minimums", () => {
     // RNAV Z 08 with a step-down fix halfway down its final at 1,800.
-    const final = RNAV.lines.find(l => l.role === "final")!;
+    const final = RNAV.lines.find((l) => l.role === "final")!;
     const [bubne, himen] = [final.points[1]!, final.points[2]!];
     const mid: [number, number] = [(bubne[0] + himen[0]) / 2, (bubne[1] + himen[1]) / 2];
     const stepped: ProcedureDrawing = {
       ...RNAV,
-      lines: RNAV.lines.map(l => (l.role === "final" ? { ...l, points: [l.points[0]!, bubne, mid, himen] } : l)),
-      fixes: [...RNAV.fixes.slice(0, 2), { ident: "STEPP", lat: mid[0], lon: mid[1], roles: [], min_ft: 1800, max_ft: null, missed: false }, ...RNAV.fixes.slice(2)],
+      lines: RNAV.lines.map((l) => (l.role === "final" ? { ...l, points: [l.points[0]!, bubne, mid, himen] } : l)),
+      fixes: [
+        ...RNAV.fixes.slice(0, 2),
+        { ident: "STEPP", lat: mid[0], lon: mid[1], roles: [], min_ft: 1800, max_ft: null, missed: false },
+        ...RNAV.fixes.slice(2),
+      ],
     } as ProcedureDrawing;
     const midToGo = distanceNm(ll(mid), ll(himen));
     const alt = (toGo: number) => (toGo > 5.4 ? 4100 : toGo > midToGo + 1 ? 2400 : 1500);
-    const d = debriefApproach(stepped, fly(finalOf(stepped), { alt, after: 60, afterAlt: s => 1500 + s * 15 }))!;
-    expect(d.findings.find(f => f.text.includes("STEPP"))).toEqual({
-      tone: "caution", text: "At STEPP: 300 ft below 1,800 (an MDA's step-down, not a glidepath's)",
+    const d = debriefApproach(stepped, fly(finalOf(stepped), { alt, after: 60, afterAlt: (s) => 1500 + s * 15 }))!;
+    expect(d.findings.find((f) => f.text.includes("STEPP"))).toEqual({
+      tone: "caution",
+      text: "At STEPP: 300 ft below 1,800 (an MDA's step-down, not a glidepath's)",
     });
   });
 
   test("under the pilot's minimums before a missed approach is flagged", () => {
     const d = debriefApproach(ILS, fly(finalOf(ILS), { alt: onIls, after: 60, afterAlt: missedAfter(3) }), { minimumsFt: 1000 })!;
-    expect(d.findings.find(f => f.text.startsWith("Down to"))?.tone).toBe("stop");
+    expect(d.findings.find((f) => f.text.startsWith("Down to"))?.tone).toBe("stop");
     // Typed again: at or above lower minimums, and the old finding gone.
     const lower = withMinimums(d, 700);
-    expect(lower.findings.filter(f => f.minimums)).toEqual([{ tone: "ok", text: "Lowest before the MAP: 787 ft, at or above 700", minimums: true }]);
+    expect(lower.findings.filter((f) => f.minimums)).toEqual([
+      { tone: "ok", text: "Lowest before the MAP: 787 ft, at or above 700", minimums: true },
+    ]);
   });
 
   test("under the minimums to land is what 91.175(c) allows with the runway in sight, not a fault", () => {
-    const landing = fly(finalOf(ILS), { alt: onIls, after: 120, afterAlt: () => 727, afterKt: s => Math.max(5, 120 - s * 3) });
+    const landing = fly(finalOf(ILS), { alt: onIls, after: 120, afterAlt: () => 727, afterKt: (s) => Math.max(5, 120 - s * 3) });
     const d = debriefApproach(ILS, landing, { minimumsFt: 1000 })!;
-    expect(d.findings.find(f => f.minimums)).toEqual({ tone: "info", text: "Below 1,000 to land: 91.175(c) asks for the runway in sight there", minimums: true });
+    expect(d.findings.find((f) => f.minimums)).toEqual({
+      tone: "info",
+      text: "Below 1,000 to land: 91.175(c) asks for the runway in sight there",
+      minimums: true,
+    });
   });
 
   test("below the glide slope's full scale is flagged, its height under the path said", () => {
     const low = (toGo: number) => (toGo < 4 && toGo > 2 ? onIls(toGo) - 400 : onIls(toGo));
     const d = debriefApproach(ILS, fly(finalOf(ILS), { alt: low, after: 60, afterAlt: missedAfter(5) }))!;
-    expect(d.findings.some(f => f.tone === "stop" && f.text.startsWith("Below the glide slope's full scale"))).toBe(true);
-    expect(d.findings.find(f => f.text.startsWith("Glidepath"))!.text).toMatch(/to 400 ft below it$/);
+    expect(d.findings.some((f) => f.tone === "stop" && f.text.startsWith("Below the glide slope's full scale"))).toBe(true);
+    expect(d.findings.find((f) => f.text.startsWith("Glidepath"))!.text).toMatch(/to 400 ft below it$/);
   });
 });
 
@@ -242,16 +257,14 @@ describe("what it has to go on", () => {
   test("a track with no altitudes is debriefed on its course alone", () => {
     const d = debriefApproach(ILS, fly(finalOf(ILS), { after: 60 }))!;
     expect(d.hasAltitude).toBe(false);
-    expect(d.findings.some(f => f.text === "The track has no altitudes: the course alone is debriefed")).toBe(true);
-    expect(d.crossings.every(c => c.altFt == null && c.underFt == null)).toBe(true);
+    expect(d.findings.some((f) => f.text === "The track has no altitudes: the course alone is debriefed")).toBe(true);
+    expect(d.crossings.every((c) => c.altFt == null && c.underFt == null)).toBe(true);
     expect(d.outcome.kind).toBe("unknown");
     expect(d.profile.track).toEqual([]);
   });
 
   test("the transition flown is found among its transitions, and the vectors where none was", () => {
-    const viaLax = fly(wayIn(ILS_LAX), {
-      alt: toGo => (toGo > 11 ? 4600 : onIls(toGo)), after: 60, afterAlt: missedAfter(5),
-    });
+    const viaLax = fly(wayIn(ILS_LAX), { alt: (toGo) => (toGo > 11 ? 4600 : onIls(toGo)), after: 60, afterAlt: missedAfter(5) });
     const vectors = findApproaches([ILS], viaLax)[0]!;
     expect(vectors.transition).toBeNull();
     expect(withTransition(vectors, [ILS_LAX], viaLax).transition).toBe("LAX");
@@ -262,9 +275,14 @@ describe("what it has to go on", () => {
 
   test("two attempts are two approaches", () => {
     const once = fly(finalOf(ILS), { alt: onIls, after: 60, afterAlt: missedAfter(5) });
-    const again = once.map(p => ({ ...p, t: p.t + 20 * 60_000 }));
+    const again = once.map((p) => ({ ...p, t: p.t + 20 * 60_000 }));
     // The way back round, far off the final, between them.
-    const between = Array.from({ length: 30 }, (_, k) => ({ t: once[once.length - 1]!.t + (k + 1) * 30_000, lat: 34.4, lon: -118.5 + k * 0.001, altFt: 3000 }));
+    const between = Array.from({ length: 30 }, (_, k) => ({
+      t: once[once.length - 1]!.t + (k + 1) * 30_000,
+      lat: 34.4,
+      lon: -118.5 + k * 0.001,
+      altFt: 3000,
+    }));
     const found = findApproaches([ILS], [...once, ...between, ...again]);
     expect(found).toHaveLength(2);
   });

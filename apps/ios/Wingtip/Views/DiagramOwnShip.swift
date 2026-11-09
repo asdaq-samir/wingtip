@@ -115,8 +115,7 @@ struct DiagramOwnShipView: View {
                     .onEnded { _ in settledScale = scale }
                     .simultaneously(with: DragGesture()
                         .onChanged { offset = CGSize(width: settledOffset.width + $0.translation.width, height: settledOffset.height + $0.translation.height) }
-                        .onEnded { _ in settledOffset = offset })
-            )
+                        .onEnded { _ in settledOffset = offset }))
             .onTapGesture(count: 2) {
                 scale = 1; settledScale = 1; offset = .zero; settledOffset = .zero
             }

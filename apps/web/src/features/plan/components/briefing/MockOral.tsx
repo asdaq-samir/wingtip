@@ -27,9 +27,15 @@ function Citations({ citations, title }: { citations: OralCitation[]; title: str
     <ListGroup title={title}>
       {citations.map((c, i) => (
         <ListRow
-          key={i} href={c.url}
+          key={i}
+          href={c.url}
           title={c.title}
-          description={<><span className="block text-foreground">“{c.quote}”</span><span className="block">{c.source}</span></>}
+          description={
+            <>
+              <span className="block text-foreground">“{c.quote}”</span>
+              <span className="block">{c.source}</span>
+            </>
+          }
           data-testid="oral-citation"
         />
       ))}
@@ -57,16 +63,15 @@ export default function MockOral({ plan }: { plan: string }) {
       const focus = nextFocus(table!, training?.knowledgeTestCodes ?? [], asked.codes);
       return api.oral.question({ plan, focus, asked: asked.questions });
     },
-    onSuccess: q => {
-      setAsked(a => ({ codes: [...a.codes, q.acs_code], questions: [...a.questions, q.question].slice(-20) }));
+    onSuccess: (q) => {
+      setAsked((a) => ({ codes: [...a.codes, q.acs_code], questions: [...a.questions, q.question].slice(-20) }));
       setAnswer("");
       grade.reset();
     },
   });
   const grade = useMutation({
-    mutationFn: (q: OralQuestion) => api.oral.grade({
-      question: q.question, model_answer: q.model_answer, key_points: q.key_points, source_ids: q.source_ids, answer,
-    }),
+    mutationFn: (q: OralQuestion) =>
+      api.oral.grade({ question: q.question, model_answer: q.model_answer, key_points: q.key_points, source_ids: q.source_ids, answer }),
   });
   const q = question.data;
   const g = grade.data;
@@ -75,16 +80,20 @@ export default function MockOral({ plan }: { plan: string }) {
   return (
     <div className="space-y-4" data-testid="mock-oral">
       <p className={TEXT.prose}>
-        An examiner’s questions about this flight, from the ACS{training?.knowledgeTestCodes.length ? ", your knowledge test’s codes first" : ""},
-        and your answers checked against 14 CFR and the AIM, quoted word for word. A study aid in preview: its answers
-        have not yet been reviewed by an instructor.
+        An examiner’s questions about this flight, from the ACS
+        {training?.knowledgeTestCodes.length ? ", your knowledge test’s codes first" : ""}, and your answers checked against 14 CFR and the
+        AIM, quoted word for word. A study aid in preview: its answers have not yet been reviewed by an instructor.
       </p>
 
       {q && (
         <div className="space-y-3">
           <ListGroup title={`Question ${asked.questions.length}`}>
             <ListRow
-              title={<span className={cn("block font-medium", TEXT.prose)} data-testid="oral-question">{q.question}</span>}
+              title={
+                <span className={cn("block font-medium", TEXT.prose)} data-testid="oral-question">
+                  {q.question}
+                </span>
+              }
               description={q.acs_code}
             />
           </ListGroup>
@@ -95,11 +104,25 @@ export default function MockOral({ plan }: { plan: string }) {
             </p>
           )}
           {!g && (
-            <form className="space-y-2" onSubmit={e => { e.preventDefault(); grade.mutate(q); }}>
-              <label htmlFor={answerId} className={cn("text-muted-foreground", TEXT.note)}>Your answer, as you would give it</label>
-              <Textarea id={answerId} rows={4} value={answer} onChange={e => setAnswer(e.target.value)} data-testid="oral-answer" />
+            <form
+              className="space-y-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                grade.mutate(q);
+              }}
+            >
+              <label htmlFor={answerId} className={cn("text-muted-foreground", TEXT.note)}>
+                Your answer, as you would give it
+              </label>
+              <Textarea id={answerId} rows={4} value={answer} onChange={(e) => setAnswer(e.target.value)} data-testid="oral-answer" />
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="ghost" size="sm" disabled={question.isPending || grade.isPending} onClick={() => question.mutate()}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={question.isPending || grade.isPending}
+                  onClick={() => question.mutate()}
+                >
                   Another question
                 </Button>
                 <Button type="submit" size="sm" disabled={!answer.trim() || grade.isPending} data-testid="oral-check">
@@ -117,13 +140,18 @@ export default function MockOral({ plan }: { plan: string }) {
               <p className={TEXT.prose}>{g.feedback}</p>
               {g.missed.length > 0 && (
                 <ListGroup title="What it missed">
-                  {g.missed.map(m => <ListRow key={m} title={m} />)}
+                  {g.missed.map((m) => (
+                    <ListRow key={m} title={m} />
+                  ))}
                 </ListGroup>
               )}
               <ListGroup title="An answer">
                 <ListRow title={<span className={cn("block font-normal", TEXT.prose)}>{q.model_answer}</span>} />
               </ListGroup>
-              <Citations title="From the sources" citations={[...g.citations, ...q.citations.filter(c => !g.citations.some(d => d.quote === c.quote))]} />
+              <Citations
+                title="From the sources"
+                citations={[...g.citations, ...q.citations.filter((c) => !g.citations.some((d) => d.quote === c.quote))]}
+              />
             </div>
           )}
         </div>
@@ -131,7 +159,10 @@ export default function MockOral({ plan }: { plan: string }) {
 
       {(!q || g) && (
         <Button
-          type="button" className="w-full" disabled={!table || question.isPending} onClick={() => question.mutate()}
+          type="button"
+          className="w-full"
+          disabled={!table || question.isPending}
+          onClick={() => question.mutate()}
           data-testid="oral-ask"
         >
           {question.isPending && <Spinner aria-hidden />}
@@ -139,9 +170,11 @@ export default function MockOral({ plan }: { plan: string }) {
         </Button>
       )}
 
-      {problem && <p className={cn(FINDING_TONE.stop, TEXT.prose)} role="alert">{problem.message}</p>}
-
-
+      {problem && (
+        <p className={cn(FINDING_TONE.stop, TEXT.prose)} role="alert">
+          {problem.message}
+        </p>
+      )}
     </div>
   );
 }

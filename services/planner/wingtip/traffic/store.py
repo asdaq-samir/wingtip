@@ -21,6 +21,7 @@ The tables:
   RECORD_KEEP_S (wingtip.traffic.recorded).
 - beats: what ingest last said of each feed and of itself (its health).
 """
+
 from __future__ import annotations
 
 import json
@@ -83,14 +84,19 @@ def _write(sql: str, args: tuple = ()) -> int:
 
 # The radar's airplanes.
 
+
 def radar_heard(plane: dict, at: float) -> bool:
     """An airplane's report kept as its latest; False where the one kept
     is as new or newer (the radar's messages may come out of order)."""
-    return _write(
-        "INSERT INTO radar (hex, lat, lon, at, plane) VALUES (?, ?, ?, ?, ?) "
-        "ON CONFLICT (hex) DO UPDATE SET lat = excluded.lat, lon = excluded.lon, at = excluded.at, plane = excluded.plane "
-        "WHERE excluded.at > radar.at",
-        (plane["hex"], plane["lat"], plane["lon"], at, json.dumps(plane))) > 0
+    return (
+        _write(
+            "INSERT INTO radar (hex, lat, lon, at, plane) VALUES (?, ?, ?, ?, ?) "
+            "ON CONFLICT (hex) DO UPDATE SET lat = excluded.lat, lon = excluded.lon, at = excluded.at, plane = excluded.plane "
+            "WHERE excluded.at > radar.at",
+            (plane["hex"], plane["lat"], plane["lon"], at, json.dumps(plane)),
+        )
+        > 0
+    )
 
 
 def radar_one(hex_id: str, since: float) -> tuple[dict, float] | None:
@@ -101,8 +107,9 @@ def radar_one(hex_id: str, since: float) -> tuple[dict, float] | None:
 
 def radar_within(south: float, north: float, west: float, east: float, since: float) -> list[tuple[dict, float]]:
     """The reports heard since `since` inside a box of latitude and longitude."""
-    rows = _query("SELECT plane, at FROM radar WHERE at >= ? AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?",
-                  (since, south, north, west, east))
+    rows = _query(
+        "SELECT plane, at FROM radar WHERE at >= ? AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?", (since, south, north, west, east)
+    )
     return [(json.loads(plane), at) for plane, at in rows]
 
 
@@ -113,11 +120,14 @@ def radar_forget(before: float) -> int:
 
 # Where the map looks.
 
+
 def look(place: str, lat: float, lon: float, radius_nm: float, at: float) -> None:
     """The map's view round a place (one row a place, its latest view)."""
-    _write("INSERT INTO looked (place, lat, lon, radius, at) VALUES (?, ?, ?, ?, ?) "
-           "ON CONFLICT (place) DO UPDATE SET lat = excluded.lat, lon = excluded.lon, radius = excluded.radius, at = excluded.at",
-           (place, lat, lon, radius_nm, at))
+    _write(
+        "INSERT INTO looked (place, lat, lon, radius, at) VALUES (?, ?, ?, ?, ?) "
+        "ON CONFLICT (place) DO UPDATE SET lat = excluded.lat, lon = excluded.lon, radius = excluded.radius, at = excluded.at",
+        (place, lat, lon, radius_nm, at),
+    )
 
 
 def looked(since: float) -> list[tuple[float, float, float]]:
@@ -128,6 +138,7 @@ def looked(since: float) -> list[tuple[float, float, float]]:
 
 
 # The followed airplanes and their recorded tracks.
+
 
 def follow(hex_id: str, at: float) -> bool:
     """An airplane followed from now on; False where it already was."""
@@ -152,10 +163,13 @@ def record(hex_id: str, point: dict, oldest: float) -> bool:
         db = _connection()
         db.execute("BEGIN IMMEDIATE")
         try:
-            added = db.execute(
-                "INSERT INTO points (hex, t, point) SELECT ?, ?, ? "
-                "WHERE NOT EXISTS (SELECT 1 FROM points WHERE hex = ? AND t >= ?)",
-                (hex_id, point["t"], json.dumps(point), hex_id, point["t"])).rowcount > 0
+            added = (
+                db.execute(
+                    "INSERT INTO points (hex, t, point) SELECT ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM points WHERE hex = ? AND t >= ?)",
+                    (hex_id, point["t"], json.dumps(point), hex_id, point["t"]),
+                ).rowcount
+                > 0
+            )
             db.execute("DELETE FROM points WHERE hex = ? AND t < ?", (hex_id, oldest))
             db.execute("COMMIT")
         except BaseException:
@@ -176,11 +190,13 @@ def last_point(hex_id: str) -> dict | None:
 
 # ingest's health.
 
+
 def beat(name: str, at: float, state: dict | None = None) -> None:
     """What ingest says of a feed, or of itself (`name` "ingest"), and when."""
-    _write("INSERT INTO beats (name, at, state) VALUES (?, ?, ?) "
-           "ON CONFLICT (name) DO UPDATE SET at = excluded.at, state = excluded.state",
-           (name, at, json.dumps(state or {})))
+    _write(
+        "INSERT INTO beats (name, at, state) VALUES (?, ?, ?) ON CONFLICT (name) DO UPDATE SET at = excluded.at, state = excluded.state",
+        (name, at, json.dumps(state or {})),
+    )
 
 
 def beats() -> dict[str, dict]:

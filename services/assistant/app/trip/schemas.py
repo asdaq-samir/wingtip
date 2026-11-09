@@ -1,6 +1,7 @@
 """The trip planner's shapes (app.trip): the ask, the proposal it builds and
 the lines of its stream, published in openapi.json (STREAM_MESSAGES) so the
 web's types and the phones' models are generated from them."""
+
 from __future__ import annotations
 
 from typing import Annotated, Literal

@@ -21,36 +21,16 @@ use crate::json;
 /// their own airplane's handbook. The web's lib/checklists, the iPhone's
 /// Checklists.swift and Android's Checklists.kt each kept a copy (#482).
 pub const NORMAL_PHASES: [&str; 13] = [
-    "Preflight inspection",
-    "Before starting engine",
-    "Starting engine",
-    "Before takeoff",
-    "Takeoff",
-    "Climb",
-    "Cruise",
-    "Descent",
-    "Before landing",
-    "Landing",
-    "After landing",
-    "Shutdown",
-    "Securing the airplane",
+    "Preflight inspection", "Before starting engine", "Starting engine", "Before takeoff", "Takeoff", "Climb", "Cruise", "Descent",
+    "Before landing", "Landing", "After landing", "Shutdown", "Securing the airplane",
 ];
 
 /// The emergencies a handbook's Emergency Procedures cover (GAMA
 /// Specification No. 1, Section 3), in its order.
 pub const EMERGENCY_PHASES: [&str; 12] = [
-    "Engine failure on the takeoff roll",
-    "Engine failure right after takeoff",
-    "Engine failure in flight",
-    "Emergency landing without engine power",
-    "Precautionary landing with engine power",
-    "Ditching",
-    "Engine fire during start",
-    "Engine fire in flight",
-    "Electrical fire in flight",
-    "Cabin fire",
-    "Electrical power failure",
-    "Inadvertent icing",
+    "Engine failure on the takeoff roll", "Engine failure right after takeoff", "Engine failure in flight",
+    "Emergency landing without engine power", "Precautionary landing with engine power", "Ditching", "Engine fire during start",
+    "Engine fire in flight", "Electrical fire in flight", "Cabin fire", "Electrical power failure", "Inadvertent icing",
 ];
 
 pub struct Item {
@@ -240,4 +220,3 @@ pub fn section_for(titles: &[String], want: &str) -> Option<usize> {
     }
     best.map(|(index, _)| index)
 }
-

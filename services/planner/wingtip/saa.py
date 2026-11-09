@@ -30,6 +30,7 @@ Kept in wingtip.live_reports (kind "saa"), one report an area by its
 designator with its punctuation left off ("R-4401A" and "R4401A" are
 one), until its last activation ends.
 """
+
 from __future__ import annotations
 
 import re
@@ -108,18 +109,26 @@ def areas(xml: str) -> list[dict]:
             if not status:
                 continue
             a_starts, a_ends = _period(activation)
-            activations.append({
-                "status": status,
-                "active": True if status in ACTIVE else False if status in COLD else None,
-                "starts": a_starts if a_starts is not None else starts,
-                "ends": a_ends if a_ends is not None else ends,
-            })
+            activations.append(
+                {
+                    "status": status,
+                    "active": True if status in ACTIVE else False if status in COLD else None,
+                    "starts": a_starts if a_starts is not None else starts,
+                    "ends": a_ends if a_ends is not None else ends,
+                }
+            )
         if activations:
-            found.append({"designator": designator, "name": _text(airspace, "name") or None,
-                          "type": _text(airspace, "type") or None, "activations": activations,
-                          # SFDPS's extension, as sent: its units are unstated.
-                          "upper_as_sent": _text(airspace, "saaManualHighAltitude") or None,
-                          "lower_as_sent": _text(airspace, "saaManualLowAltitude") or None})
+            found.append(
+                {
+                    "designator": designator,
+                    "name": _text(airspace, "name") or None,
+                    "type": _text(airspace, "type") or None,
+                    "activations": activations,
+                    # SFDPS's extension, as sent: its units are unstated.
+                    "upper_as_sent": _text(airspace, "saaManualHighAltitude") or None,
+                    "lower_as_sent": _text(airspace, "saaManualLowAltitude") or None,
+                }
+            )
     return found
 
 
@@ -148,13 +157,11 @@ def status(designators: list[str], now: float) -> dict[str, dict]:
     asked = {key(d): d for d in designators if key(d)}
     out: dict[str, dict] = {}
     for area in live_reports.at(KIND, list(asked), now=now):
-        now_in = [a for a in area["activations"]
-                  if (a["starts"] is None or a["starts"] <= now) and (a["ends"] is None or a["ends"] > now)]
+        now_in = [a for a in area["activations"] if (a["starts"] is None or a["starts"] <= now) and (a["ends"] is None or a["ends"] > now)]
         # Active wins where two slices overlap: the safer word (an area
         # said active is avoided or asked about).
         current = next((a for a in now_in if a["active"]), now_in[0] if now_in else None)
-        upcoming = sorted(a["starts"] for a in area["activations"]
-                          if a["active"] and a["starts"] is not None and a["starts"] > now)
+        upcoming = sorted(a["starts"] for a in area["activations"] if a["active"] and a["starts"] is not None and a["starts"] > now)
         out[asked[key(area["designator"])]] = {
             "designator": area["designator"],
             "active": current["active"] if current else None,

@@ -105,7 +105,6 @@ extension NavLogError {
     }
 }
 
-
 enum NavLog {
     /// One line of the stream, or nil for a line of a kind the app has no
     /// use for yet.

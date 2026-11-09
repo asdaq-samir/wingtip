@@ -27,6 +27,7 @@ corridor's edge or the block's, which the cells know from where each of
 their tiles' blobs runs into the next tile. Where it is not so -- a lake
 across the corridor's edge, a cell not built -- the block reads that
 kind as before."""
+
 import argparse
 import logging
 import os
@@ -89,6 +90,7 @@ def cell_of(tile: tuple) -> tuple:
 # Reading the chart a cell at a time
 # ---------------------------------------------------------------------------
 
+
 def _read_block(bx: int, by: int) -> tuple[list, dict]:
     """One block of a cell, its middle 8 by 8 tiles from (bx, by): the
     blobs whose point is in the middle and are not cut off, as rows
@@ -98,8 +100,11 @@ def _read_block(bx: int, by: int) -> tuple[list, dict]:
     know where each runs."""
     from scipy import ndimage
 
-    block = [(x, y) for x in range(bx - APRON_TILES, bx + CORE_TILES + APRON_TILES)
-             for y in range(by - APRON_TILES, by + CORE_TILES + APRON_TILES)]
+    block = [
+        (x, y)
+        for x in range(bx - APRON_TILES, bx + CORE_TILES + APRON_TILES)
+        for y in range(by - APRON_TILES, by + CORE_TILES + APRON_TILES)
+    ]
     if not chartvision._has_chart(block, ZOOM):
         return [], {}
     mosaic = chartvision.build_mosaic(block, ZOOM)
@@ -170,9 +175,14 @@ def build_cell(cell: tuple, root: Path) -> Path:
     part = path.with_name(f"{path.name}.{os.getpid()}.part")
     with part.open("wb") as handle:
         np.savez_compressed(
-            handle, kind=blobs[:, 0].astype(np.int8), lat=blobs[:, 1], lon=blobs[:, 2],
-            pixels=blobs[:, 3].astype(np.int64), first_y=blobs[:, 4].astype(np.int64),
-            first_x=blobs[:, 5].astype(np.int64), tiles=tiles,
+            handle,
+            kind=blobs[:, 0].astype(np.int8),
+            lat=blobs[:, 1],
+            lon=blobs[:, 2],
+            pixels=blobs[:, 3].astype(np.int64),
+            first_y=blobs[:, 4].astype(np.int64),
+            first_x=blobs[:, 5].astype(np.int64),
+            tiles=tiles,
         )
     part.replace(path)
     return path
@@ -186,8 +196,7 @@ def sheet_cells(names: list | None = None) -> list:
             continue
         x0, y0 = (int(v) // TILE_PX for v in chartvision.latlon_to_global_px(north, west, ZOOM))
         x1, y1 = (int(v) // TILE_PX for v in chartvision.latlon_to_global_px(south, east, ZOOM))
-        cells |= {(x, y) for x in range(x0 // CELL_TILES, x1 // CELL_TILES + 1)
-                  for y in range(y0 // CELL_TILES, y1 // CELL_TILES + 1)}
+        cells |= {(x, y) for x in range(x0 // CELL_TILES, x1 // CELL_TILES + 1) for y in range(y0 // CELL_TILES, y1 // CELL_TILES + 1)}
     return sorted(cells)
 
 
@@ -228,8 +237,12 @@ def _cell(root: Path, cell: tuple) -> dict | None:
     with np.load(path) as data:
         by_tile: dict = {}
         for kind, lat, lon, pixels, first_y, first_x in zip(
-            data["kind"].tolist(), data["lat"].tolist(), data["lon"].tolist(),
-            data["pixels"].tolist(), data["first_y"].tolist(), data["first_x"].tolist(),
+            data["kind"].tolist(),
+            data["lat"].tolist(),
+            data["lon"].tolist(),
+            data["pixels"].tolist(),
+            data["first_y"].tolist(),
+            data["first_x"].tolist(),
         ):
             gx, gy = (round(v) for v in chartvision.latlon_to_global_px(lat, lon, ZOOM))
             by_tile.setdefault((gx // TILE_PX, gy // TILE_PX), []).append((kind, first_y, first_x, lat, lon, pixels))
@@ -260,8 +273,7 @@ def _tiles_to_read(kind: int, block: list, cells: dict) -> set | None:
     def bits(tile):
         return cells[cell_of(tile)]["bits"].get(tile, 0) >> shift
 
-    todo = [tile for tile in block
-            if bits(tile) & CUT or any(bits(tile) & side and n not in have for side, n in _sides(tile))]
+    todo = [tile for tile in block if bits(tile) & CUT or any(bits(tile) & side and n not in have for side, n in _sides(tile))]
     read: set = set()
     while todo:
         tile = todo.pop()
@@ -289,10 +301,15 @@ def _read_tiles(mosaic, tiles: set, spec) -> list:
     covered = np.zeros_like(block_covered)
     for x, y in tiles:
         r, c = (y - ty0) * TILE_PX, (x - tx0) * TILE_PX
-        covered[r:r + TILE_PX, c:c + TILE_PX] = block_covered[r:r + TILE_PX, c:c + TILE_PX]
+        covered[r : r + TILE_PX, c : c + TILE_PX] = block_covered[r : r + TILE_PX, c : c + TILE_PX]
     mosaic.colour(spec.test)  # the block's classes, read once, shared with the cut-down one
-    part = chartvision.Mosaic(pixels=mosaic.pixels[rows, cols], origin_px=(tx0 * TILE_PX, ty0 * TILE_PX),
-                              zoom=mosaic.zoom, covered=covered, _classes=mosaic._classes[rows, cols])
+    part = chartvision.Mosaic(
+        pixels=mosaic.pixels[rows, cols],
+        origin_px=(tx0 * TILE_PX, ty0 * TILE_PX),
+        zoom=mosaic.zoom,
+        covered=covered,
+        _classes=mosaic._classes[rows, cols],
+    )
     found = chartvision.detect_landmarks(part, palette=(spec,))
     labelled, _ = ndimage.label(part.on_chart(part.colour(spec.test)))
     boxes = ndimage.find_objects(labelled)
@@ -322,13 +339,13 @@ def _block_blobs(block: list, mosaic, cells: dict) -> list:
         if to_read is None:
             found += chartvision.detect_landmarks(mosaic, palette=(spec,))
             continue
-        rows = [row[1:] for tile in block if tile not in to_read
-                for row in cells[cell_of(tile)]["blobs"].get(tile, ()) if row[0] == kind]
+        rows = [row[1:] for tile in block if tile not in to_read for row in cells[cell_of(tile)]["blobs"].get(tile, ()) if row[0] == kind]
         if to_read:
             rows += _read_tiles(mosaic, to_read, spec)
         found += [
-            chartvision.Landmark(category=spec.name, lat=lat, lon=lon, area_m2=float(pixels) * m_per_px ** 2,
-                                 score=spec.base_score, pixels=int(pixels))
+            chartvision.Landmark(
+                category=spec.name, lat=lat, lon=lon, area_m2=float(pixels) * m_per_px**2, score=spec.base_score, pixels=int(pixels)
+            )
             for _, _, lat, lon, pixels in sorted(rows)
         ]
     return found
@@ -360,7 +377,7 @@ def read_blocks(start: tuple, end: tuple, half_width_nm: float, margin_nm: float
             return True
         offset = max(1.0, abs(cross_nm) / chartvision.ON_COURSE_NM)
         m_per_px = chartvision.metres_per_pixel(landmark.lat, ZOOM)
-        return landmark.area_m2 >= spec.min_area_px * m_per_px ** 2 * offset ** 2
+        return landmark.area_m2 >= spec.min_area_px * m_per_px**2 * offset**2
 
     def block_along_track(block) -> float:
         xs = [x for x, _ in block]
@@ -370,8 +387,7 @@ def read_blocks(start: tuple, end: tuple, half_width_nm: float, margin_nm: float
         lat, lon = chartvision.global_px_to_latlon(centre_x, centre_y, ZOOM)
         return along_track_distance_nm(lat, lon, start, end)
 
-    blocks = [b for b in sorted(chartvision.tile_blocks(tiles), key=block_along_track)
-              if chartvision._has_chart(b, ZOOM)]
+    blocks = [b for b in sorted(chartvision.tile_blocks(tiles), key=block_along_track) if chartvision._has_chart(b, ZOOM)]
 
     def read(block):
         mosaic = chartvision.build_mosaic(block, ZOOM)
@@ -394,14 +410,15 @@ def read_blocks(start: tuple, end: tuple, half_width_nm: float, margin_nm: float
                 kept.append(landmark)
             fresh = []
             for landmark in chartvision._dedupe(kept):
-                if any(other.category == landmark.category
-                       and distance_nm(other.lat, other.lon, landmark.lat, landmark.lon) < chartvision.DEDUPE_NM
-                       for other in emitted):
+                if any(
+                    other.category == landmark.category
+                    and distance_nm(other.lat, other.lon, landmark.lat, landmark.lon) < chartvision.DEDUPE_NM
+                    for other in emitted
+                ):
                     continue
                 emitted.append(landmark)
                 fresh.append(landmark)
-            kept_blocks.append({"block": index, "blocks": len(blocks), "tiles": len(tiles),
-                                "missing": missing, "landmarks": fresh})
+            kept_blocks.append({"block": index, "blocks": len(blocks), "tiles": len(tiles), "missing": missing, "landmarks": fresh})
     return kept_blocks
 
 
@@ -420,8 +437,7 @@ def build_on_disk(cycle: str | None = None) -> int:
     low priority. A sectional not prepared here is not fetched for it:
     the whole set is 7 GB, the daily refresh's to bring (app.chart_refresh),
     and its cells are read the next start after. Returns the cells built."""
-    names = [name for name, _ in charts.sheets(charts.SECTIONAL)
-             if charts._latest_on_disk(charts.SECTIONAL, name) is not None]
+    names = [name for name, _ in charts.sheets(charts.SECTIONAL) if charts._latest_on_disk(charts.SECTIONAL, name) is not None]
     if not names:
         return 0
     return build(names, workers=1, cycle=cycle, initializer=_low_priority)

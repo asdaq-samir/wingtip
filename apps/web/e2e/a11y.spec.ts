@@ -22,9 +22,7 @@ async function atRest(page: Page) {
 
 async function violations(page: Page, within?: string) {
   await atRest(page);
-  let axe = new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-    .exclude(".maplibregl-canvas-container");
+  let axe = new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).exclude(".maplibregl-canvas-container");
   // The viewport no longer forbids zoom (#265, 2026-11-08), so
   // meta-viewport stays on. The sheet's thin grabber is exempt from
   // target-size (WCAG 2.2, not in these tags) as Apple Maps' is.
@@ -32,8 +30,14 @@ async function violations(page: Page, within?: string) {
   if (within) axe = axe.include(within);
   const results = await axe.analyze();
   return results.violations
-    .filter(v => v.impact === "serious" || v.impact === "critical")
-    .map(v => `${v.id} (${v.impact}): ${v.nodes.slice(0, 3).map(n => n.target.join(" ")).join(" | ")}`);
+    .filter((v) => v.impact === "serious" || v.impact === "critical")
+    .map(
+      (v) =>
+        `${v.id} (${v.impact}): ${v.nodes
+          .slice(0, 3)
+          .map((n) => n.target.join(" "))
+          .join(" | ")}`,
+    );
 }
 
 test("the search bar, with no route", async ({ page }) => {
@@ -61,8 +65,14 @@ test("the console's Guide", async ({ page }) => {
   await consolePage(page.getByTestId("console-sheet"), "Guide");
   // Come to rest: sliding in, its glass is over the moving map, and its
   // words were read against that.
-  await page.getByTestId("console-sheet").evaluate(el => Promise.all(el.getAnimations({ subtree: true })
-    .filter(a => a.effect?.getTiming().iterations !== Infinity).map(a => a.finished)));
+  await page.getByTestId("console-sheet").evaluate((el) =>
+    Promise.all(
+      el
+        .getAnimations({ subtree: true })
+        .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+        .map((a) => a.finished),
+    ),
+  );
   await mapStill(page);
   expect(await violations(page, '[data-testid="console-sheet"]')).toEqual([]);
 });
@@ -80,9 +90,10 @@ async function inLook(page: Page, look: { brand: "wingtip" | "cockpit" | "ink"; 
   await page.emulateMedia({ colorScheme: look.dark ? "dark" : "light" });
   await page.addInitScript(({ brand, sunlight }) => {
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? "null") ?? { state: {}, version: 7 };
-    localStorage.setItem("wingtip.preferences", JSON.stringify({
-      ...kept, version: 7, state: { ...kept.state, brand, chartLight: sunlight ? "on" : "off" },
-    }));
+    localStorage.setItem(
+      "wingtip.preferences",
+      JSON.stringify({ ...kept, version: 7, state: { ...kept.state, brand, chartLight: sunlight ? "on" : "off" } }),
+    );
   }, look);
 }
 
@@ -99,7 +110,9 @@ for (const look of [
   { brand: "ink", dark: false, sunlight: false },
   { brand: "ink", dark: true, sunlight: false },
 ] as const) {
-  test(`a route's panel in the ${look.brand} look${look.dark ? " at night" : ""}${look.sunlight ? " in sunlight" : ""}`, async ({ page }) => {
+  test(`a route's panel in the ${look.brand} look${look.dark ? " at night" : ""}${look.sunlight ? " in sunlight" : ""}`, async ({
+    page,
+  }) => {
     await inLook(page, look);
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
@@ -116,10 +129,14 @@ test("asked for more contrast, the glass is solid", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
-  const glass = await page.locator(".liquid-glass").evaluateAll(els => els.filter(el => (el as HTMLElement).offsetParent).map(el => {
-    const style = getComputedStyle(el);
-    return { fill: style.backgroundColor, blur: style.backdropFilter };
-  }));
+  const glass = await page.locator(".liquid-glass").evaluateAll((els) =>
+    els
+      .filter((el) => (el as HTMLElement).offsetParent)
+      .map((el) => {
+        const style = getComputedStyle(el);
+        return { fill: style.backgroundColor, blur: style.backdropFilter };
+      }),
+  );
   expect(glass.length).toBeGreaterThan(0);
   for (const { fill, blur } of glass) {
     // Solid: no alpha under 1 in the fill, no blur behind it.
@@ -135,13 +152,15 @@ test("at twice the text size the route's panel reflows: nothing sideways, the fi
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   // Every rem twice the size, as a browser's text zoom or the iPhone's
   // largest Larger Text sets the root (features/shell/dynamicType).
-  await page.evaluate(() => { document.documentElement.style.fontSize = "32px"; });
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = "32px";
+  });
   await atRest(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   // The flight's figures shrink to fit rather than cut (useFigureFit): the
   // fuel's whole figure is still in its box.
   const fuel = page.getByTestId("navlog-fuel");
-  expect(await fuel.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+  expect(await fuel.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
 });
 
 test("by keyboard: a visible focus ring, and the chart's airports reached and opened", async ({ page }) => {

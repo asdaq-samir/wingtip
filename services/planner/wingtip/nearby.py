@@ -15,6 +15,7 @@ Each field's answer is kept on disk for its release, which Overture
 publishes monthly: a card opened again, or a stop suggested again,
 reads the file and asks nothing.
 """
+
 from __future__ import annotations
 
 import json
@@ -149,9 +150,13 @@ def _outline(lat: float, lon: float, release: str):
     import shapely
 
     half = 0.04
-    box = ((ds.field("bbox", "xmin") >= lon - half) & (ds.field("bbox", "xmin") <= lon + half)
-           & (ds.field("bbox", "ymin") >= lat - half) & (ds.field("bbox", "ymin") <= lat + half)
-           & (ds.field("subtype") == "airport"))
+    box = (
+        (ds.field("bbox", "xmin") >= lon - half)
+        & (ds.field("bbox", "xmin") <= lon + half)
+        & (ds.field("bbox", "ymin") >= lat - half)
+        & (ds.field("bbox", "ymin") <= lat + half)
+        & (ds.field("subtype") == "airport")
+    )
     rows = _infrastructure(release).to_table(columns=["class", "geometry"], filter=box).to_pylist()
     shapes = [shapely.from_wkb(r["geometry"]) for r in rows if r.get("class") not in _NOT_OUTLINE and r.get("geometry")]
     shapes = [g for g in shapes if g.geom_type in ("Polygon", "MultiPolygon")]
@@ -175,7 +180,7 @@ def _dataset(release: str):
 
 
 def _kind_of(taxonomy: dict | None, basic: str | None) -> str | None:
-    """"food", "lodging", "cars" or "training", or None for a place of
+    """ "food", "lodging", "cars" or "training", or None for a place of
     none of them, by the places theme's taxonomy (its hierarchy, then its
     own category)."""
     hierarchy = (taxonomy or {}).get("hierarchy") or []
@@ -214,8 +219,12 @@ def _read(lat: float, lon: float, release: str) -> dict:
 
     dlat = REACH_M / 111_320.0
     dlon = dlat / max(0.2, math.cos(math.radians(lat)))
-    box = ((ds.field("bbox", "xmin") >= lon - dlon) & (ds.field("bbox", "xmin") <= lon + dlon)
-           & (ds.field("bbox", "ymin") >= lat - dlat) & (ds.field("bbox", "ymin") <= lat + dlat))
+    box = (
+        (ds.field("bbox", "xmin") >= lon - dlon)
+        & (ds.field("bbox", "xmin") <= lon + dlon)
+        & (ds.field("bbox", "ymin") >= lat - dlat)
+        & (ds.field("bbox", "ymin") <= lat + dlat)
+    )
     rows = _dataset(release).to_table(columns=_COLUMNS, filter=box).to_pylist()
     try:
         outline = _outline(lat, lon, release)
@@ -235,15 +244,21 @@ def _read(lat: float, lon: float, release: str) -> dict:
         metres = float(distance_nm(lat, lon, plat, plon)) * M_PER_NM
         if metres > REACH_M:
             continue
-        found[kind].append({
-            "name": name, "kind": _words((row.get("taxonomy") or {}).get("primary") or row.get("basic_category")),
-            "distance_m": round(metres), "walk_min": math.ceil(metres / WALK_M_PER_MIN) if metres <= WALK_M else None,
-            "phone": (row.get("phones") or [None])[0], "website": (row.get("websites") or [None])[0],
-            "lat": round(plat, 6), "lon": round(plon, 6),
-            # On the field for food and schools alike: a school is the
-            # field's own as its restaurant is (the Stops' Training).
-            "on_field": _on_field(outline, plat, plon, metres) if kind in ("food", "training") else False,
-        })
+        found[kind].append(
+            {
+                "name": name,
+                "kind": _words((row.get("taxonomy") or {}).get("primary") or row.get("basic_category")),
+                "distance_m": round(metres),
+                "walk_min": math.ceil(metres / WALK_M_PER_MIN) if metres <= WALK_M else None,
+                "phone": (row.get("phones") or [None])[0],
+                "website": (row.get("websites") or [None])[0],
+                "lat": round(plat, 6),
+                "lon": round(plon, 6),
+                # On the field for food and schools alike: a school is the
+                # field's own as its restaurant is (the Stops' Training).
+                "on_field": _on_field(outline, plat, plon, metres) if kind in ("food", "training") else False,
+            }
+        )
     out = {}
     for kind, places in found.items():
         # One of a chain listed twice (two Hertz desks) kept once, the nearer.
@@ -253,7 +268,7 @@ def _read(lat: float, lon: float, release: str) -> dict:
                 continue
             seen.add(place["name"].lower())
             kept.append(place)
-        out[kind] = kept[:MOST[kind]]
+        out[kind] = kept[: MOST[kind]]
     return out
 
 

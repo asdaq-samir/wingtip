@@ -30,7 +30,7 @@ const feet = (v: string) => (v.trim() === "" || !Number.isFinite(Number(v)) ? nu
 export default function LostCommsPage() {
   const id = useId();
   const [route, setRoute] = useState<RouteKey>("assigned");
-  const [segments, setSegments] = useState(EXAMPLE.map(s => ({ name: s.name, minimum: String(s.minimumFt) })));
+  const [segments, setSegments] = useState(EXAMPLE.map((s) => ({ name: s.name, minimum: String(s.minimumFt) })));
   const [assigned, setAssigned] = useState("4000");
   const [expected, setExpected] = useState("6000");
   const [expectedFrom, setExpectedFrom] = useState(1);
@@ -39,11 +39,11 @@ export default function LostCommsPage() {
   const [eta, setEta] = useState("1435Z");
   const { routes, vfr } = lostCommsWords();
   const flown = segmentAltitudes(
-    segments.map(s => ({ name: s.name || "Segment", minimumFt: feet(s.minimum) })),
+    segments.map((s) => ({ name: s.name || "Segment", minimumFt: feet(s.minimum) })),
     { assignedFt: feet(assigned), expectedFt: feet(expected), expectedFrom },
   );
   const edit = (i: number, patch: Partial<{ name: string; minimum: string }>) =>
-    setSegments(list => list.map((s, j) => (j === i ? { ...s, ...patch } : s)));
+    setSegments((list) => list.map((s, j) => (j === i ? { ...s, ...patch } : s)));
 
   return (
     <div className="space-y-4">
@@ -51,22 +51,41 @@ export default function LostCommsPage() {
 
       <ListGroup title="Route">
         <ListRow title="Which applies first">
-          <Segmented label="Route" value={route} onChange={v => setRoute(v as RouteKey)} testId="lost-route"
-            options={routes.map(r => ({ value: r.key, label: r.label }))} />
+          <Segmented
+            label="Route"
+            value={route}
+            onChange={(v) => setRoute(v as RouteKey)}
+            testId="lost-route"
+            options={routes.map((r) => ({ value: r.key, label: r.label }))}
+          />
         </ListRow>
         {/* The rule for the route picked, a row of its own: it was a footnote. */}
-        <ListRow title={<span className={TEXT.detail}>{routes.find(r => r.key === route)!.rule}</span>} data-testid="lost-route-rule" />
+        <ListRow title={<span className={TEXT.detail}>{routes.find((r) => r.key === route)!.rule}</span>} data-testid="lost-route-rule" />
       </ListGroup>
 
       <ListGroup title="The clearance">
         <ListRow id={`${id}-assigned`} title="Assigned">
           <FieldHit htmlFor={`${id}-assigned`}>
-            <Input id={`${id}-assigned`} inputMode="numeric" className="h-8 w-24 text-right tabular-nums" value={assigned} onChange={e => setAssigned(e.target.value)} data-testid="lost-assigned" />
+            <Input
+              id={`${id}-assigned`}
+              inputMode="numeric"
+              className="h-8 w-24 text-right tabular-nums"
+              value={assigned}
+              onChange={(e) => setAssigned(e.target.value)}
+              data-testid="lost-assigned"
+            />
           </FieldHit>
         </ListRow>
         <ListRow id={`${id}-expected`} title="Expect" description={`From ${segments[expectedFrom]?.name || "the segment chosen below"} on`}>
           <FieldHit htmlFor={`${id}-expected`}>
-            <Input id={`${id}-expected`} inputMode="numeric" className="h-8 w-24 text-right tabular-nums" value={expected} onChange={e => setExpected(e.target.value)} data-testid="lost-expected" />
+            <Input
+              id={`${id}-expected`}
+              inputMode="numeric"
+              className="h-8 w-24 text-right tabular-nums"
+              value={expected}
+              onChange={(e) => setExpected(e.target.value)}
+              data-testid="lost-expected"
+            />
           </FieldHit>
         </ListRow>
       </ListGroup>
@@ -86,45 +105,90 @@ export default function LostCommsPage() {
               // The app's one minus (RemoveMinus), where this was a hollow one of
               // its own; a segment of a form, taken away at its tap. The last
               // segment keeps no minus: a route has one at least.
-              media={segments.length > 1 ? (
-                <RemoveMinus
-                  label={`Remove ${s.name || "this segment"}`}
-                  onClick={() => { setSegments(list => list.filter((_, j) => j !== i)); setExpectedFrom(e => Math.max(0, Math.min(e, segments.length - 2))); }}
-                />
-              ) : undefined}
-              title={<FieldHit htmlFor={`${id}-seg${i}`}><Input id={`${id}-seg${i}`} aria-label="Segment" className="h-8" value={s.name} onChange={e => edit(i, { name: e.target.value })} /></FieldHit>}
+              media={
+                segments.length > 1 ? (
+                  <RemoveMinus
+                    label={`Remove ${s.name || "this segment"}`}
+                    onClick={() => {
+                      setSegments((list) => list.filter((_, j) => j !== i));
+                      setExpectedFrom((e) => Math.max(0, Math.min(e, segments.length - 2)));
+                    }}
+                  />
+                ) : undefined
+              }
+              title={
+                <FieldHit htmlFor={`${id}-seg${i}`}>
+                  <Input
+                    id={`${id}-seg${i}`}
+                    aria-label="Segment"
+                    className="h-8"
+                    value={s.name}
+                    onChange={(e) => edit(i, { name: e.target.value })}
+                  />
+                </FieldHit>
+              }
               data-testid="lost-segment"
             >
               <FieldHit htmlFor={`${id}-min${i}`}>
-                <Input id={`${id}-min${i}`} aria-label={`${s.name || "Segment"}'s minimum altitude`} inputMode="numeric" className="h-8 w-20 text-right tabular-nums"
-                  value={s.minimum} onChange={e => edit(i, { minimum: e.target.value })} />
+                <Input
+                  id={`${id}-min${i}`}
+                  aria-label={`${s.name || "Segment"}'s minimum altitude`}
+                  inputMode="numeric"
+                  className="h-8 w-20 text-right tabular-nums"
+                  value={s.minimum}
+                  onChange={(e) => edit(i, { minimum: e.target.value })}
+                />
               </FieldHit>
             </ListRow>,
             <ListRow
               key={`fly-${i}`}
               title={<span className={i >= expectedFrom ? "text-foreground" : "text-tint"}>{f.words}</span>}
-              onClick={() => setExpectedFrom(i)} data-testid="lost-segment-fly"
+              onClick={() => setExpectedFrom(i)}
+              data-testid="lost-segment-fly"
             />,
           ];
         })}
-        <ListRow title="Add a segment" media={<Plus className="size-5" aria-hidden />} onClick={() => setSegments(list => [...list, { name: "", minimum: "" }])} data-testid="lost-add" />
+        <ListRow
+          title="Add a segment"
+          media={<Plus className="size-5" aria-hidden />}
+          onClick={() => setSegments((list) => [...list, { name: "", minimum: "" }])}
+          data-testid="lost-add"
+        />
       </ListGroup>
 
       <ListGroup title="Leaving the clearance limit">
         <ListRow title="The limit is a fix an approach begins from">
-          <TogglePill pressed={approachFix} onPressedChange={setApproachFix} label={approachFix ? "Yes" : "No"} testId="lost-approach-fix" />
+          <TogglePill
+            pressed={approachFix}
+            onPressedChange={setApproachFix}
+            label={approachFix ? "Yes" : "No"}
+            testId="lost-approach-fix"
+          />
         </ListRow>
         <ListRow id={`${id}-efc`} title="Expect further clearance" description="Blank where none was given">
           <FieldHit htmlFor={`${id}-efc`}>
-            <Input id={`${id}-efc`} className="h-8 w-24 text-right tabular-nums" placeholder="—" value={efc} onChange={e => setEfc(e.target.value)} data-testid="lost-efc" />
+            <Input
+              id={`${id}-efc`}
+              className="h-8 w-24 text-right tabular-nums"
+              placeholder="—"
+              value={efc}
+              onChange={(e) => setEfc(e.target.value)}
+              data-testid="lost-efc"
+            />
           </FieldHit>
         </ListRow>
         <ListRow id={`${id}-eta`} title="Your ETA" description="From the filed or amended time en route">
           <FieldHit htmlFor={`${id}-eta`}>
-            <Input id={`${id}-eta`} className="h-8 w-24 text-right tabular-nums" value={eta} onChange={e => setEta(e.target.value)} />
+            <Input id={`${id}-eta`} className="h-8 w-24 text-right tabular-nums" value={eta} onChange={(e) => setEta(e.target.value)} />
           </FieldHit>
         </ListRow>
-        <ListRow title={<span className="font-normal" data-testid="lost-leave">{leaveLimit(approachFix, efc.trim(), eta.trim())}</span>} />
+        <ListRow
+          title={
+            <span className="font-normal" data-testid="lost-leave">
+              {leaveLimit(approachFix, efc.trim(), eta.trim())}
+            </span>
+          }
+        />
       </ListGroup>
       {/* 14 CFR 91.185(c): the route by the first of assigned, vectored,
           expected and filed; on each segment, the highest of the altitude

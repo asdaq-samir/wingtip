@@ -7,6 +7,7 @@ ranked or judged here: the engine's best_fields does that in the app
 app last fetched. One request where the web's Nearest makes one and each
 field's card another, as a phone in an emergency should not wait on ten.
 """
+
 import logging
 
 from . import airports, altitude, faa_data, weather
@@ -29,11 +30,17 @@ def _runways(source: str, variation_deg: float) -> list[dict]:
     for r in airports.get_runways(source):
         if r["closed"]:
             continue
-        out.append({
-            "surface": r["surface"], "length_ft": r["length_ft"], "closed": False,
-            "runway_ends": [{"ident": ident, "heading_true_deg": end_heading_true_deg(ident, heading, variation_deg)}
-                            for ident, heading in r["end_headings"]],
-        })
+        out.append(
+            {
+                "surface": r["surface"],
+                "length_ft": r["length_ft"],
+                "closed": False,
+                "runway_ends": [
+                    {"ident": ident, "heading_true_deg": end_heading_true_deg(ident, heading, variation_deg)}
+                    for ident, heading in r["end_headings"]
+                ],
+            }
+        )
     return out
 
 
@@ -42,15 +49,22 @@ def _metar(report: dict | None) -> dict | None:
     if not report:
         return None
     return {
-        "dir_true_deg": report.get("wind_dir_true_deg"), "speed_kt": report.get("wind_speed_kt"),
-        "gust_kt": report.get("wind_gust_kt"), "altimeter_in_hg": report.get("altimeter_in_hg"),
-        "temp_c": report.get("temp_c"), "flight_category": report.get("flight_category"), "raw": report.get("raw"),
+        "dir_true_deg": report.get("wind_dir_true_deg"),
+        "speed_kt": report.get("wind_speed_kt"),
+        "gust_kt": report.get("wind_gust_kt"),
+        "altimeter_in_hg": report.get("altimeter_in_hg"),
+        "temp_c": report.get("temp_c"),
+        "flight_category": report.get("flight_category"),
+        "raw": report.get("raw"),
     }
 
 
 def _frequencies(listed: list[dict]) -> list[dict]:
-    return [{"kind": (f["type"] or "").upper(), "mhz": f["frequency_mhz"], "description": f.get("description")}
-            for f in listed if (f["type"] or "").upper() in CALLED and f["frequency_mhz"]]
+    return [
+        {"kind": (f["type"] or "").upper(), "mhz": f["frequency_mhz"], "description": f.get("description")}
+        for f in listed
+        if (f["type"] or "").upper() in CALLED and f["frequency_mhz"]
+    ]
 
 
 def fields_near(lat: float, lon: float, limit: int = 12) -> list[dict]:
@@ -75,19 +89,26 @@ def fields_near(lat: float, lon: float, limit: int = 12) -> list[dict]:
     for p in found:
         source, ident = p["source_ident"].upper(), p["ident"].upper()
         listed = frequencies.get(source, [])
-        out.append({
-            "ident": p["ident"], "name": p["name"], "lat": p["lat"], "lon": p["lon"],
-            "elevation_ft": p.get("elevation_ft"), "distance_nm": p["distance_nm"], "bearing_deg": p["bearing_deg"],
-            "runways": _runways(p["source_ident"], variation),
-            "metar": _metar(metars.get(p["source_ident"])),
-            "towered": any((f["type"] or "").upper() == "TWR" for f in listed),
-            "private": ident in private or source in private,
-            "military": bool(military.get(ident) or military.get(source)),
-            "frequencies": _frequencies(listed),
-            # The FAA's listed phone for the field (NASR APT_CON), for a
-            # call once down; none invented where it lists none.
-            "phone": faa_data.airport_contact(p["ident"], altitude.DEFAULT_FAA_CACHE_DIR).get("phone"),
-        })
+        out.append(
+            {
+                "ident": p["ident"],
+                "name": p["name"],
+                "lat": p["lat"],
+                "lon": p["lon"],
+                "elevation_ft": p.get("elevation_ft"),
+                "distance_nm": p["distance_nm"],
+                "bearing_deg": p["bearing_deg"],
+                "runways": _runways(p["source_ident"], variation),
+                "metar": _metar(metars.get(p["source_ident"])),
+                "towered": any((f["type"] or "").upper() == "TWR" for f in listed),
+                "private": ident in private or source in private,
+                "military": bool(military.get(ident) or military.get(source)),
+                "frequencies": _frequencies(listed),
+                # The FAA's listed phone for the field (NASR APT_CON), for a
+                # call once down; none invented where it lists none.
+                "phone": faa_data.airport_contact(p["ident"], altitude.DEFAULT_FAA_CACHE_DIR).get("phone"),
+            }
+        )
     return out
 
 

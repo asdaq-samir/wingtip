@@ -27,13 +27,11 @@ function ReadbackResult({ check }: { check: NonNullable<Card["readback"]>["check
   const items = [...check.items].sort((a, b) => Number(b.required) - Number(a.required));
   return (
     <ul className={cn("flex flex-col gap-0.5 text-caution-ink", TEXT.note)} role="status" data-testid="atc-readback">
-      {items.map(i => (
+      {items.map((i) => (
         <li key={i.item + i.cleared} className="flex items-start gap-1.5" data-required={i.required || undefined}>
           <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <span>
-            {i.said !== null
-              ? `${capital(i.item)}: ${i.said} said, ${i.cleared} given`
-              : `${capital(i.item)} ${i.cleared} not read back`}
+            {i.said !== null ? `${capital(i.item)}: ${i.said} said, ${i.cleared} given` : `${capital(i.item)} ${i.cleared} not read back`}
           </span>
         </li>
       ))}
@@ -51,7 +49,14 @@ const capital = (words: string) => words.charAt(0).toUpperCase() + words.slice(1
  * chip is tapped; ✕ puts the card away, its line kept in the copilot's
  * banner.
  */
-export default function AtcCard({ card, can, problem, onAct, onReadBack, onClose }: {
+export default function AtcCard({
+  card,
+  can,
+  problem,
+  onAct,
+  onReadBack,
+  onClose,
+}: {
   card: Card;
   can: (item: AtcItem) => ItemAction | null;
   problem: string | null;
@@ -63,10 +68,17 @@ export default function AtcCard({ card, can, problem, onAct, onReadBack, onClose
   // role="alert" arriving whole is not read by every reader.
   useAnnounce(`ATC: ${card.text}`, "assertive");
   return (
-    <div className={cn(GLASS, "pointer-events-auto w-full max-w-md rounded-[22px] py-2 pr-1 pl-3")} role="region" aria-label="Call from ATC" data-testid="atc-card">
+    <div
+      className={cn(GLASS, "pointer-events-auto w-full max-w-md rounded-[22px] py-2 pr-1 pl-3")}
+      role="region"
+      aria-label="Call from ATC"
+      data-testid="atc-card"
+    >
       <div className="flex items-start gap-2">
         <Radio className="mt-1 size-5 shrink-0 text-tint" aria-hidden="true" />
-        <p className={cn("min-w-0 flex-1 text-muted-foreground line-clamp-2", TEXT.note)} data-testid="atc-card-heard">{card.text}</p>
+        <p className={cn("min-w-0 flex-1 text-muted-foreground line-clamp-2", TEXT.note)} data-testid="atc-card-heard">
+          {card.text}
+        </p>
         <CloseButton label="Put away" onClick={onClose} data-testid="atc-card-close" />
       </div>
       {card.items.length > 0 && (
@@ -77,9 +89,13 @@ export default function AtcCard({ card, can, problem, onAct, onReadBack, onClose
             return (
               <li key={`${item.kind}-${index}`} className="flex min-h-8 items-center gap-2" data-atc-item={item.kind}>
                 <span className={cn("min-w-0 flex-1 font-semibold tabular-nums", TEXT.detail)}>{itemWords(item)}</span>
-                {action && (done
-                  ? <span className={cn("flex shrink-0 items-center gap-1 text-muted-foreground", TEXT.note)} data-testid="atc-item-done"><Check className="size-4" aria-hidden="true" />Set</span>
-                  : (
+                {action &&
+                  (done ? (
+                    <span className={cn("flex shrink-0 items-center gap-1 text-muted-foreground", TEXT.note)} data-testid="atc-item-done">
+                      <Check className="size-4" aria-hidden="true" />
+                      Set
+                    </span>
+                  ) : (
                     <Button size="sm" variant="secondary" className={CHIP} data-testid={`atc-set-${action}`} onClick={() => onAct(index)}>
                       {ACTION_LABEL[action]}
                     </Button>
@@ -91,8 +107,16 @@ export default function AtcCard({ card, can, problem, onAct, onReadBack, onClose
       )}
       <div className="flex flex-col gap-1 pr-2">
         {card.readback && <ReadbackResult check={card.readback.check} />}
-        {card.awaiting && <p className={cn("text-muted-foreground", TEXT.note)} role="status">Read it back…</p>}
-        {problem && <p className={cn("text-destructive-ink", TEXT.note)} role="status">{problem}</p>}
+        {card.awaiting && (
+          <p className={cn("text-muted-foreground", TEXT.note)} role="status">
+            Read it back…
+          </p>
+        )}
+        {problem && (
+          <p className={cn("text-destructive-ink", TEXT.note)} role="status">
+            {problem}
+          </p>
+        )}
       </div>
       {!card.awaiting && (
         <div className="flex flex-wrap gap-2 pt-1 pr-2">

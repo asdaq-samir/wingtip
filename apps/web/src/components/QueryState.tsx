@@ -22,7 +22,12 @@ interface Asked {
  * commonality audit's N-12). A row of a list (`row`), else a line of its
  * own; nothing once the answer is in.
  */
-export default function QueryState({ query, fetching, failed, row = false }: {
+export default function QueryState({
+  query,
+  fetching,
+  failed,
+  row = false,
+}: {
   query: Asked;
   /** While it is asked for: "Fetching the squawks…". */
   fetching: string;
@@ -35,16 +40,28 @@ export default function QueryState({ query, fetching, failed, row = false }: {
       <>
         {failed}{" "}
         <button
-          type="button" onClick={() => void query.refetch()} data-testid="query-retry"
+          type="button"
+          onClick={() => void query.refetch()}
+          data-testid="query-retry"
           className="relative text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           Try again
         </button>
       </>
     );
-    return row
-      ? <ListRow title={<span role="alert" className={cn(FINDING_TONE.stop, TEXT.detail)}>{words}</span>} />
-      : <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.note)}>{words}</p>;
+    return row ? (
+      <ListRow
+        title={
+          <span role="alert" className={cn(FINDING_TONE.stop, TEXT.detail)}>
+            {words}
+          </span>
+        }
+      />
+    ) : (
+      <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.note)}>
+        {words}
+      </p>
+    );
   }
   // While it comes: the shape of what is coming, its words for a screen
   // reader, where a grey line of "Fetching…" read as unfinished (the style

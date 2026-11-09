@@ -49,7 +49,9 @@ public class RequestIdFilter extends OncePerRequestFilter {
 
     /** The id the page sent where it is a token, else a new one. */
     static String idOf(String sent) {
-        return sent != null && TOKEN.matcher(sent).matches() ? sent : UUID.randomUUID().toString();
+        return sent != null && TOKEN.matcher(sent).matches()
+                ? sent
+                : UUID.randomUUID().toString();
     }
 
     @Override

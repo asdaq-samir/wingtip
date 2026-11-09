@@ -5,11 +5,13 @@ import { forgetThisDevice } from "./useDeleteAccount";
 function fakeStorage(entries: Record<string, string>): Storage {
   const map = new Map(Object.entries(entries));
   return {
-    get length() { return map.size; },
-    key: i => Array.from(map.keys())[i] ?? null,
-    getItem: key => map.get(key) ?? null,
+    get length() {
+      return map.size;
+    },
+    key: (i) => Array.from(map.keys())[i] ?? null,
+    getItem: (key) => map.get(key) ?? null,
     setItem: (key, value) => void map.set(key, value),
-    removeItem: key => void map.delete(key),
+    removeItem: (key) => void map.delete(key),
     clear: () => map.clear(),
   };
 }

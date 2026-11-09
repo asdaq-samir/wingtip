@@ -1,5 +1,17 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { airportMark, closeSidebarWithTheStockKey, expectDrawerClosed, grabberTo, mapStill, openPanel, settle, settled, sideDrawer, slow, airportSearch } from "./helpers";
+import {
+  airportMark,
+  closeSidebarWithTheStockKey,
+  expectDrawerClosed,
+  grabberTo,
+  mapStill,
+  openPanel,
+  settle,
+  settled,
+  sideDrawer,
+  slow,
+  airportSearch,
+} from "./helpers";
 
 /**
  * The map and the sheet move together, as in Maps: opened fresh, the map
@@ -37,9 +49,12 @@ async function fittedClearOf(page: Page, panel: Locator) {
     // What the panel leaves: above a phone's sheet; beside a desktop's
     // card out, under it at rest.
     const out = (await panel.getAttribute("data-panel")) !== "peek";
-    const free = viewport.width < 768
-      ? { w: viewport.width, h: viewport.height - sheet.height }
-      : out ? { w: viewport.width - sheet.x - sheet.width, h: viewport.height } : { w: viewport.width, h: viewport.height - sheet.y - sheet.height };
+    const free =
+      viewport.width < 768
+        ? { w: viewport.width, h: viewport.height - sheet.height }
+        : out
+          ? { w: viewport.width - sheet.x - sheet.width, h: viewport.height }
+          : { w: viewport.width, h: viewport.height - sheet.y - sheet.height };
     // Fitted, not lost in the room: at the capsule the route keeps the
     // size it had above the half sheet, a little under half the screen.
     expect(Math.max(line.width / free.w, line.height / free.h)).toBeGreaterThan(0.35);
@@ -49,7 +64,11 @@ async function fittedClearOf(page: Page, panel: Locator) {
 
 /** Own ship's marker, on screen. */
 const shipAt = async (page: Page) => {
-  const box = (await page.locator(".maplibregl-marker").filter({ has: page.locator("[data-own-ship]") }).last().boundingBox())!;
+  const box = (await page
+    .locator(".maplibregl-marker")
+    .filter({ has: page.locator("[data-own-ship]") })
+    .last()
+    .boundingBox())!;
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 };
 
@@ -68,7 +87,8 @@ async function middleOfMap(page: Page) {
  *  marker's own size. */
 async function shipInTheMiddle(page: Page) {
   await expect(async () => {
-    const at = await shipAt(page), middle = await middleOfMap(page);
+    const at = await shipAt(page),
+      middle = await middleOfMap(page);
     expect(Math.abs(at.x - middle.x)).toBeLessThan(40);
     expect(Math.abs(at.y - middle.y)).toBeLessThan(40);
   }).toPass({ timeout: slow(15_000) });
@@ -78,10 +98,11 @@ async function shipInTheMiddle(page: Page) {
  *  only then. */
 /** Where the map's pane and the sheet's top are, for a turn of the sheet
  *  to be checked against (slidWithSheet). */
-const paneAndSheet = (page: Page) => page.evaluate(() => ({
-  pane: Number(document.querySelector<HTMLElement>("[data-testid=gl-map]")!.dataset.offset!.split(",")[1]),
-  top: document.querySelector('[data-slot="map-panel"]')!.getBoundingClientRect().top,
-}));
+const paneAndSheet = (page: Page) =>
+  page.evaluate(() => ({
+    pane: Number(document.querySelector<HTMLElement>("[data-testid=gl-map]")!.dataset.offset!.split(",")[1]),
+    top: document.querySelector('[data-slot="map-panel"]')!.getBoundingClientRect().top,
+  }));
 
 /** On a phone the map slid with the sheet, what was in the middle of the
  *  room above it still in the middle (half the sheet's move, within the
@@ -92,7 +113,7 @@ async function slidWithSheet(page: Page, before: { pane: number; top: number }) 
   await mapStill(page);
   const after = await paneAndSheet(page);
   if (page.viewportSize()!.width >= 768) expect(after.pane).toBeCloseTo(before.pane, 0);
-  else expect(Math.abs((after.pane - before.pane) - (after.top - before.top) / 2)).toBeLessThan(20);
+  else expect(Math.abs(after.pane - before.pane - (after.top - before.top) / 2)).toBeLessThan(20);
 }
 
 const mapAt = (page: Page) => page.getByTestId("gl-map").getAttribute("data-offset");
@@ -117,7 +138,10 @@ async function drag(page: Page, dx: number, dy: number) {
   }).toPass({ timeout: 5_000 });
 }
 
-test("opened fresh, the map is on the pilot's position in the middle of what the half sheet leaves, kept there as the sheet goes down, and left alone once panned off it", async ({ page, context }) => {
+test("opened fresh, the map is on the pilot's position in the middle of what the half sheet leaves, kept there as the sheet goes down, and left alone once panned off it", async ({
+  page,
+  context,
+}) => {
   await context.grantPermissions(["geolocation"], { origin });
   await context.setGeolocation({ latitude: 42.3247, longitude: -88.0742 });
   await page.goto("/app/plan");
@@ -154,15 +178,22 @@ test("opened fresh, the map is on the pilot's position in the middle of what the
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(0);
 });
 
-test("reloaded where it was, the map opens on the position in the middle of what the pill leaves, and does not slide there as the first fix comes", async ({ page, context }) => {
+test("reloaded where it was, the map opens on the position in the middle of what the pill leaves, and does not slide there as the first fix comes", async ({
+  page,
+  context,
+}) => {
   // The owner's notice: "On a reload why is there animation in the maps
   // and the pill? It seems they are settling to their desired position".
   await context.grantPermissions(["geolocation"], { origin });
   await context.setGeolocation({ latitude: 42.3247, longitude: -88.0742 });
   // Where the position last was, as an earlier visit keeps it (ownShip's
   // lastFix): the page opens on it.
-  await page.addInitScript(() => localStorage.setItem("wingtip.ownship",
-    JSON.stringify({ state: { enabled: true, follow: true, lastFix: { lat: 42.325, lon: -88.074 } }, version: 0 })));
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      "wingtip.ownship",
+      JSON.stringify({ state: { enabled: true, follow: true, lastFix: { lat: 42.325, lon: -88.074 } }, version: 0 }),
+    ),
+  );
   // Every place the map's pane is put, from the page's first frame: it
   // moves when the map does, and only then.
   await page.addInitScript(() => {
@@ -215,13 +246,19 @@ test("opened on the whole country, land and water lie under the charts where the
   // The design review, 2026-10-28: grey bands over and under the
   // sectionals on a phone. The USGS's tiles answered here, a pixel each.
   const asked: string[] = [];
-  await page.route(url => url.hostname === "basemap.nationalmap.gov", route => {
-    asked.push(route.request().url());
-    return route.fulfill({ body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==", "base64"), contentType: "image/png" });
-  });
+  await page.route(
+    (url) => url.hostname === "basemap.nationalmap.gov",
+    (route) => {
+      asked.push(route.request().url());
+      return route.fulfill({
+        body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==", "base64"),
+        contentType: "image/png",
+      });
+    },
+  );
   await page.goto("/app/plan");
   await settle(page);
-  await expect.poll(() => asked.filter(u => u.includes("/USGSHydroCached/")).length, { timeout: slow(10_000) }).toBeGreaterThan(0);
+  await expect.poll(() => asked.filter((u) => u.includes("/USGSHydroCached/")).length, { timeout: slow(10_000) }).toBeGreaterThan(0);
   // Under every chart layer, the sectional's included.
   // The map's layers bottom to top (GlMapShell's data-layers).
   await expect.poll(async () => (await page.getByTestId("gl-map").getAttribute("data-layers")) ?? "").toContain("land-water");
@@ -232,8 +269,12 @@ test("opened on the whole country, land and water lie under the charts where the
 test("opened fresh where the position was given before, it is asked for again as the page opens", async ({ page }) => {
   // A fix kept from an earlier visit, as Safari, which asks again on a
   // later day, leaves the permission at "prompt".
-  await page.addInitScript(() => localStorage.setItem("wingtip.ownship",
-    JSON.stringify({ state: { enabled: false, follow: true, lastFix: { lat: 42.325, lon: -88.074 } }, version: 0 })));
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      "wingtip.ownship",
+      JSON.stringify({ state: { enabled: false, follow: true, lastFix: { lat: 42.325, lon: -88.074 } }, version: 0 }),
+    ),
+  );
   const asks = await countAsks(page);
   await page.goto("/app/plan");
   await settle(page);
@@ -270,7 +311,9 @@ test("a route entered is fitted above the half sheet, to the whole screen at the
   await fittedClearOf(page, sideDrawer(page));
 });
 
-test("a route the pilot has moved is slid with a phone's sheet as it goes up and down, fitted again beside a wider screen's card while any of it is in sight, and left alone once it is not", async ({ page }) => {
+test("a route the pilot has moved is slid with a phone's sheet as it goes up and down, fitted again beside a wider screen's card while any of it is in sight, and left alone once it is not", async ({
+  page,
+}) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await fittedClearOf(page, sideDrawer(page));
@@ -352,13 +395,18 @@ async function fieldClearOfCard(page: Page, ident: string) {
     const drawn = await airportMark(page, ident);
     expect(drawn, `${ident} drawn`).not.toBeNull();
     const mark = { x: drawn!.x - 6, y: drawn!.y - 6, width: 12, height: 12 };
-    expect(mark.x >= 0 && mark.y >= 0 && mark.x + 12 <= viewport.width && mark.y + 12 <= viewport.height, `${ident} on the screen`).toBe(true);
+    expect(mark.x >= 0 && mark.y >= 0 && mark.x + 12 <= viewport.width && mark.y + 12 <= viewport.height, `${ident} on the screen`).toBe(
+      true,
+    );
     const sheet = (await sideDrawer(page).boundingBox())!;
     expect(apart(mark, sheet), `field ${JSON.stringify(mark)} under the card ${JSON.stringify(sheet)}`).toBe(true);
   }).toPass({ timeout: slow(10_000) });
 }
 
-test("an airport's card keeps its field in sight: the next position the GPS gives does not take the map back to own ship", async ({ page, context }) => {
+test("an airport's card keeps its field in sight: the next position the GPS gives does not take the map back to own ship", async ({
+  page,
+  context,
+}) => {
   await context.grantPermissions(["geolocation"], { origin });
   await context.setGeolocation({ latitude: 42.3247, longitude: -88.0742 });
   await page.goto("/app/plan");

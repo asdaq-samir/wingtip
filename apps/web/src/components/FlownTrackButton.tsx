@@ -10,8 +10,8 @@ import { useFlownTrack } from "../lib/map/position/flownTrack";
  * flight's debrief put it there): what the lines are, and Hide.
  */
 export default function FlownTrackButton() {
-  const track = useFlownTrack(s => s.track);
-  const hide = useFlownTrack(s => s.hide);
+  const track = useFlownTrack((s) => s.track);
+  const hide = useFlownTrack((s) => s.hide);
   const [open, setOpen] = useState(false);
   if (!track) return null;
   return (
@@ -30,10 +30,18 @@ export default function FlownTrackButton() {
           />
           {/* The ACS's (PA.VI.A): over 3 nm off the route, or 200 ft off the altitude in the cruise. */}
           <ListRow
-            media={<span className="inline-block h-1 w-5 rounded-full bg-[#d70015] ring-2 ring-white" />} title="Outside them"
+            media={<span className="inline-block h-1 w-5 rounded-full bg-[#d70015] ring-2 ring-white" />}
+            title="Outside them"
             description="Over 3 nm off the route or 200 ft off the cruise altitude"
           />
-          <ListRow title="Hide the track" onClick={() => { setOpen(false); hide(); }} data-testid="flown-track-hide" />
+          <ListRow
+            title="Hide the track"
+            onClick={() => {
+              setOpen(false);
+              hide();
+            }}
+            data-testid="flown-track-hide"
+          />
         </ListGroup>
       </ResponsivePopoverContent>
     </ResponsivePopover>

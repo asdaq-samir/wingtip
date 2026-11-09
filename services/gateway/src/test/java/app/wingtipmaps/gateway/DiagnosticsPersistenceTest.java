@@ -47,10 +47,15 @@ class DiagnosticsPersistenceTest {
 
     @Test
     void aFaultIsKeptScrubbedAndAPhonesFiguresJoinTheTrend() {
-        diagnostics.record(new Origin("android", "1.0 (7)", "Android 16", "phone"),
-                List.of(new Fault("crash", "IllegalStateException: no pilot pilot@example.com",
-                        "at app.wingtipmaps.android.Plan.load(Plan.kt:42)", Instant.parse("2026-11-09T10:00:00Z"))),
-                "app", Map.of("launch_ms", 640.0));
+        diagnostics.record(
+                new Origin("android", "1.0 (7)", "Android 16", "phone"),
+                List.of(new Fault(
+                        "crash",
+                        "IllegalStateException: no pilot pilot@example.com",
+                        "at app.wingtipmaps.android.Plan.load(Plan.kt:42)",
+                        Instant.parse("2026-11-09T10:00:00Z"))),
+                "app",
+                Map.of("launch_ms", 640.0));
 
         var kept = diagnostics.recent(1);
         assertThat(kept).singleElement().satisfies(d -> {

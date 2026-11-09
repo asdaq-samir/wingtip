@@ -10,7 +10,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-vi.mock("./api/client", async importOriginal => ({
+vi.mock("./api/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./api/client")>()),
   api: { airportIndex: vi.fn(), airportSearch: vi.fn(), warmAirportIndex: vi.fn() },
 }));
@@ -41,9 +41,7 @@ beforeEach(async () => {
   ({ useAirportSearch } = await import("./useAirportSearch"));
   vi.clearAllMocks();
   vi.mocked(api.warmAirportIndex).mockResolvedValue(true);
-  vi.mocked(api.airportIndex).mockResolvedValue({
-    airports: [["KOSH", "Wittman Regional", "Oshkosh", "WI", 1]],
-  } as never);
+  vi.mocked(api.airportIndex).mockResolvedValue({ airports: [["KOSH", "Wittman Regional", "Oshkosh", "WI", 1]] } as never);
 });
 
 describe("the phone's own copy", () => {
@@ -72,7 +70,7 @@ describe("the phone's own copy, where the search is off or only typed into", () 
     try {
       renderHook(() => useAirportSearch("osh", false), { wrapper: wrapper() });
       field.focus();
-      await new Promise(r => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 50));
       expect(api.warmAirportIndex).not.toHaveBeenCalled();
       expect(api.airportIndex).not.toHaveBeenCalled();
     } finally {

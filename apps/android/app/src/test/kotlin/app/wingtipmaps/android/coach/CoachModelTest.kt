@@ -9,8 +9,6 @@ import app.wingtipmaps.android.api.generated.gateway.CurrencyDto
 import app.wingtipmaps.android.api.generated.gateway.EndorsementDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.api.generated.gateway.TrainingDto
-import java.io.IOException
-import java.time.LocalDate
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -18,6 +16,8 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import java.io.IOException
+import java.time.LocalDate
 
 /** The Coach over fakes of the servers: the ask built from what the
  *  gateway keeps, by the certificate picked; the engine's plan shown

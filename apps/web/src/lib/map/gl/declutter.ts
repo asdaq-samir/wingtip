@@ -30,11 +30,20 @@ interface Decluttered {
 /** The route's marks' priorities, higher staying. */
 export const ROUTE_PRIORITY = { destination: 5, field: 4, checkpoint: 3, legPoint: 1 } as const;
 
-const NUDGES: [number, number][] = [[0, 0], [0, -20], [0, 20], [-30, 0], [30, 0]];
+const NUDGES: [number, number][] = [
+  [0, 0],
+  [0, -20],
+  [0, 20],
+  [-30, 0],
+  [30, 0],
+];
 /** Points of a mark's edge another may overlap: a halo's, not a word's. */
 const SLACK = 2;
 
-interface Registry { marks: Set<Decluttered>; frame: number }
+interface Registry {
+  marks: Set<Decluttered>;
+  frame: number;
+}
 const registries = new WeakMap<GlMap, Registry>();
 
 /** Into the map's set, laid out again at the next frame and at each rest;
@@ -64,11 +73,15 @@ export function declutterSoon(map: GlMap) {
 
 function soon(map: GlMap, registry: Registry) {
   if (registry.frame) return;
-  registry.frame = requestAnimationFrame(() => { registry.frame = 0; layOut(map, registry); });
+  registry.frame = requestAnimationFrame(() => {
+    registry.frame = 0;
+    layOut(map, registry);
+  });
 }
 
 type Box = { left: number; top: number; right: number; bottom: number };
-const overlaps = (a: Box, b: Box) => a.left < b.right - SLACK && b.left < a.right - SLACK && a.top < b.bottom - SLACK && b.top < a.bottom - SLACK;
+const overlaps = (a: Box, b: Box) =>
+  a.left < b.right - SLACK && b.left < a.right - SLACK && a.top < b.bottom - SLACK && b.top < a.bottom - SLACK;
 
 /** The mark's box on the screen, its drawing's children included (a
  *  pill's words run past the marker's own box). */
@@ -78,8 +91,10 @@ function boxOf(el: HTMLElement): Box {
   for (const child of el.children) {
     const r = child.getBoundingClientRect();
     if (r.width === 0 && r.height === 0) continue;
-    box.left = Math.min(box.left, r.left); box.top = Math.min(box.top, r.top);
-    box.right = Math.max(box.right, r.right); box.bottom = Math.max(box.bottom, r.bottom);
+    box.left = Math.min(box.left, r.left);
+    box.top = Math.min(box.top, r.top);
+    box.right = Math.max(box.right, r.right);
+    box.bottom = Math.max(box.bottom, r.bottom);
   }
   return box;
 }
@@ -109,11 +124,18 @@ function layOut(map: GlMap, registry: Registry) {
   for (const mark of marks) {
     const at = boxOf(mark.marker.getElement());
     // Off the screen it takes no room and needs none.
-    if (at.right < 0 || at.bottom < 0 || at.left > width + 400 || at.top > height + 400) { show(mark, [0, 0]); continue; }
+    if (at.right < 0 || at.bottom < 0 || at.left > width + 400 || at.top > height + 400) {
+      show(mark, [0, 0]);
+      continue;
+    }
     let placed: [number, number] | null = null;
     for (const [dx, dy] of mark.nudge ? NUDGES : NUDGES.slice(0, 1)) {
       const box = { left: at.left + dx, top: at.top + dy, right: at.right + dx, bottom: at.bottom + dy };
-      if (!kept.some(k => overlaps(k, box))) { placed = [dx, dy]; kept.push(box); break; }
+      if (!kept.some((k) => overlaps(k, box))) {
+        placed = [dx, dy];
+        kept.push(box);
+        break;
+      }
     }
     show(mark, placed);
   }

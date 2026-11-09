@@ -1,6 +1,15 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { GripVertical } from "lucide-react";
-import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DraggableAttributes, type DraggableSyntheticListeners } from "@dnd-kit/core";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DraggableAttributes,
+  type DraggableSyntheticListeners,
+} from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "cn";
@@ -16,31 +25,38 @@ import IconButton from "./IconButton";
  *  stops are, RouteBox), round the ListGroup that draws them, each row a
  *  `SortableRow` -- a drag by the handle, the list making room under it,
  *  VoiceOver told where it is, and the move made once, at the drop. */
-export function SortableRows({ ids, onMove, children }: {
+export function SortableRows({
+  ids,
+  onMove,
+  children,
+}: {
   ids: string[];
   onMove: (from: number, to: number) => void;
   children: ReactNode;
 }) {
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
+  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
   return (
     <DndContext
-      sensors={sensors} collisionDetection={closestCenter}
+      sensors={sensors}
+      collisionDetection={closestCenter}
       onDragEnd={({ active, over }) => {
         if (!over || active.id === over.id) return;
-        const from = ids.indexOf(`${active.id}`), to = ids.indexOf(`${over.id}`);
+        const from = ids.indexOf(`${active.id}`),
+          to = ids.indexOf(`${over.id}`);
         if (from >= 0 && to >= 0) onMove(from, to);
       }}
     >
-      <SortableContext items={ids} strategy={verticalListSortingStrategy}>{children}</SortableContext>
+      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+        {children}
+      </SortableContext>
     </DndContext>
   );
 }
 
 const SortHandle = createContext<{
-  ref: (node: HTMLElement | null) => void; attributes: DraggableAttributes; listeners: DraggableSyntheticListeners;
+  ref: (node: HTMLElement | null) => void;
+  attributes: DraggableAttributes;
+  listeners: DraggableSyntheticListeners;
 } | null>(null);
 
 /** One of a `SortableRows`' rows, lifted over the others while dragged. */
@@ -51,10 +67,14 @@ export function SortableRow({ id, children }: { id: string; children: ReactNode 
   // and lost the reach over the group's gaps that a list's rows have, a
   // band above and below every Favorite that a tap did nothing on (the
   // owner's screenshot, 2026-10-28).
-  const item = useMemo(() => ({
-    ref: setNodeRef, style: { transform: CSS.Translate.toString(transform), transition },
-    className: cn(isDragging && "relative z-10 bg-card shadow-lg"),
-  }), [setNodeRef, transform, transition, isDragging]);
+  const item = useMemo(
+    () => ({
+      ref: setNodeRef,
+      style: { transform: CSS.Translate.toString(transform), transition },
+      className: cn(isDragging && "relative z-10 bg-card shadow-lg"),
+    }),
+    [setNodeRef, transform, transition, isDragging],
+  );
   return (
     <SortItem.Provider value={item}>
       <SortHandle.Provider value={{ ref: setActivatorNodeRef, attributes, listeners }}>{children}</SortHandle.Provider>
@@ -65,7 +85,12 @@ export function SortableRow({ id, children }: { id: string; children: ReactNode 
 /** The handle after a row being edited, in a `SortableRow`: dragged, its
  *  row goes with it (dnd-kit); and the arrow keys a place at a time, as
  *  they did, besides dnd-kit's own Space to lift and drop. */
-export function MoveHandle({ label, index, count, onMove }: {
+export function MoveHandle({
+  label,
+  index,
+  count,
+  onMove,
+}: {
   label: string;
   index: number;
   count: number;
@@ -74,11 +99,22 @@ export function MoveHandle({ label, index, count, onMove }: {
   const sort = useContext(SortHandle);
   return (
     <IconButton
-      label={label} className="touch-none"
-      {...sort?.attributes} {...sort?.listeners} ref={sort?.ref}
-      onKeyDown={e => {
-        if (e.key === "ArrowUp" && index > 0) { e.preventDefault(); onMove(index, index - 1); return; }
-        if (e.key === "ArrowDown" && index < count - 1) { e.preventDefault(); onMove(index, index + 1); return; }
+      label={label}
+      className="touch-none"
+      {...sort?.attributes}
+      {...sort?.listeners}
+      ref={sort?.ref}
+      onKeyDown={(e) => {
+        if (e.key === "ArrowUp" && index > 0) {
+          e.preventDefault();
+          onMove(index, index - 1);
+          return;
+        }
+        if (e.key === "ArrowDown" && index < count - 1) {
+          e.preventDefault();
+          onMove(index, index + 1);
+          return;
+        }
         sort?.listeners?.onKeyDown?.(e);
       }}
     >

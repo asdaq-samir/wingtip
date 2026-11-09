@@ -48,8 +48,10 @@ export function useGlMarks(marks: GlMark[], fade = false) {
       was?.free?.();
       was?.marker.remove();
       const marker = iconMarker(mark.icon, { interactive: !!mark.onTap }).setLngLat([mark.lon, mark.lat]).addTo(map);
-      const free = mark.priority === undefined ? undefined
-        : declutter(map, { marker, priority: mark.priority, offset: [marker.getOffset().x, marker.getOffset().y], nudge: mark.nudge });
+      const free =
+        mark.priority === undefined
+          ? undefined
+          : declutter(map, { marker, priority: mark.priority, offset: [marker.getOffset().x, marker.getOffset().y], nudge: mark.nudge });
       // A new mark of what changes (the weather's) faded in, not snapped on.
       if (fade && !was) fadeInMarker(marker);
       const el = marker.getElement();
@@ -57,7 +59,10 @@ export function useGlMarks(marks: GlMark[], fade = false) {
       const entry = { marker, icon: mark.icon, mark, free };
       if (mark.onTap) {
         el.style.cursor = "pointer";
-        el.addEventListener("click", e => { e.stopPropagation(); entry.mark.onTap?.(); });
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          entry.mark.onTap?.();
+        });
       }
       el.addEventListener("mouseenter", () => entry.mark.onHover?.(true));
       el.addEventListener("mouseleave", () => entry.mark.onHover?.(false));
@@ -74,6 +79,12 @@ export function useGlMarks(marks: GlMark[], fade = false) {
   }, [map, marks, fade]);
   useEffect(() => {
     const all = kept.current;
-    return () => { for (const { marker, free } of all.values()) { free?.(); marker.remove(); } all.clear(); };
+    return () => {
+      for (const { marker, free } of all.values()) {
+        free?.();
+        marker.remove();
+      }
+      all.clear();
+    };
   }, [map]);
 }

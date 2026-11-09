@@ -23,11 +23,11 @@ export const usePreflight = create<{
   flight: string;
   ticked: Record<string, boolean>;
   tick: (flight: string, key: string, on: boolean) => void;
-}>(set => ({
+}>((set) => ({
   flight: "",
   ticked: NONE,
-  tick: (flight, key, on) => set(s => ({ flight, ticked: { ...(s.flight === flight ? s.ticked : NONE), [key]: on } })),
+  tick: (flight, key, on) => set((s) => ({ flight, ticked: { ...(s.flight === flight ? s.ticked : NONE), [key]: on } })),
 }));
 
 /** The ticks for `flight`: none when another flight's are kept. */
-export const useTicked = (flight: string) => usePreflight(s => (s.flight === flight ? s.ticked : NONE));
+export const useTicked = (flight: string) => usePreflight((s) => (s.flight === flight ? s.ticked : NONE));

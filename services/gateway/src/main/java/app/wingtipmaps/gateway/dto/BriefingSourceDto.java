@@ -7,5 +7,4 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  *  sent. The shape the planner's /api/words/changes writes a source in,
  *  carried as it is. */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record BriefingSourceDto(String id, String label, String text) {
-}
+public record BriefingSourceDto(String id, String label, String text) {}

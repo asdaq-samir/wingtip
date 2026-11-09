@@ -23,8 +23,10 @@ const GRID_DEG = 2;
 export function weatherBoxOf(b: Bounds) {
   const out = (v: number, up: boolean) => (up ? Math.ceil(v / GRID_DEG) : Math.floor(v / GRID_DEG)) * GRID_DEG;
   return {
-    south: Math.max(-90, out(b.getSouth(), false)), north: Math.min(90, out(b.getNorth(), true)),
-    west: Math.max(-180, out(b.getWest(), false)), east: Math.min(180, out(b.getEast(), true)),
+    south: Math.max(-90, out(b.getSouth(), false)),
+    north: Math.min(90, out(b.getNorth(), true)),
+    west: Math.max(-180, out(b.getWest(), false)),
+    east: Math.min(180, out(b.getEast(), true)),
   };
 }
 
@@ -39,7 +41,8 @@ export function pirepIcon(p: MapPirep): IconLike {
     icon = divIcon({
       className: "",
       html: `<span style="display:flex;height:44px;align-items:center;justify-content:center"><span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;background:#fff;border:2px solid ${colour};border-radius:10px;padding:0 5px;font:700 12px/18px -apple-system,system-ui,sans-serif;color:${colour}">${glyph} ${level}</span></span>`,
-      iconSize: [56, 44], iconAnchor: [28, 22],
+      iconSize: [56, 44],
+      iconAnchor: [28, 22],
     });
     pirepIcons.set(key, icon);
   }

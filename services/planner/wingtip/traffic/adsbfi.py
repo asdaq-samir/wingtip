@@ -1,4 +1,5 @@
 """adsb.fi, the free one asked for a watched airplane."""
+
 from __future__ import annotations
 
 import math

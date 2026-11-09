@@ -1,5 +1,6 @@
 """The map's traffic round a point: adsb.lol's region, ADS-B Exchange where it turns us away, the
 watched airplanes and the FAA's radar merged, set on the nearest altimeter setting."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -99,5 +100,9 @@ def on_altimeter(planes: list[dict], lat: float, lon: float) -> list[dict]:
     # under 29.92 (the engine's pressure_altitude_ft): at a field at sea
     # level it is the setting's own shift, the other way.
     shift = -engine("pressure_altitude_ft", elevation_ft=0.0, altimeter_inhg=setting)
-    return [{**p, "altitude_ft": round(p["altitude_ft"] + shift), "pressure_altitude": False}
-            if p.get("pressure_altitude") and p.get("altitude_ft") is not None else p for p in planes]
+    return [
+        {**p, "altitude_ft": round(p["altitude_ft"] + shift), "pressure_altitude": False}
+        if p.get("pressure_altitude") and p.get("altitude_ft") is not None
+        else p
+        for p in planes
+    ]

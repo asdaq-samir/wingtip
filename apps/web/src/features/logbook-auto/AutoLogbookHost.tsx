@@ -11,5 +11,9 @@ const FlightLoggedSheet = lazy(() => import("./FlightLoggedSheet"));
 export default function AutoLogbookHost() {
   const log = useAutoLogbook();
   if (!log.open) return null;
-  return <Suspense fallback={null}><FlightLoggedSheet log={log} /></Suspense>;
+  return (
+    <Suspense fallback={null}>
+      <FlightLoggedSheet log={log} />
+    </Suspense>
+  );
 }

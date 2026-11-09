@@ -19,7 +19,10 @@ const FOUND: IcingForecast = {
   line: "Forecast icing, light, at 8,000 ft on leg 1",
   issued: "2026-11-08T14:00:00Z",
 };
-const LEGS = [{ from: "KORD", to: "KMSN" }, { from: "KMSN", to: "KMSP" }] as Leg[];
+const LEGS = [
+  { from: "KORD", to: "KMSN" },
+  { from: "KMSN", to: "KMSP" },
+] as Leg[];
 
 const vm = (ifr: boolean, icingForecast: Partial<FlightBriefing["icingForecast"]>) =>
   ({ ifr, icingForecast: { data: undefined, isError: false, isFetching: false, ...icingForecast } }) as unknown as FlightBriefing;

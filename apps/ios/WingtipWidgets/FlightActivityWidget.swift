@@ -161,6 +161,6 @@ private struct Glyph: View {
     var body: some View {
         Image(systemName: lines.glyph)
             .foregroundStyle(lines.state.copilot == nil ? Color(WingtipColor.Chart.mapBlue)
-                             : lines.state.copilotWarns ? WingtipInk.problem : WingtipInk.caution)
+                : lines.state.copilotWarns ? WingtipInk.problem : WingtipInk.caution)
     }
 }

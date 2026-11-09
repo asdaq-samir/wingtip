@@ -10,12 +10,12 @@
 //! with FPL's runway chips and the traffic pattern; they are named here
 //! too, as the check has always offered them.
 
+use super::minimums::{runway_crosswind_kt, steady_or_gust_kt};
+use crate::json;
 pub use crate::runway::performance::{
     density_altitude_ft, end_distance, field_air, pressure_altitude_ft, short_field, soft_surface, Distances, ShortField,
 };
 pub use crate::runway::pick::{bare_ident, picked_end, runway_flown, runway_in_use, runway_number, End, Flown, Picks, Runway};
-use super::minimums::{runway_crosswind_kt, steady_or_gust_kt};
-use crate::json;
 
 /// A field's current report, as much as the check reads of it.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -111,8 +111,9 @@ struct OnRunway {
 /// needs there: the takeoff from the departure, the landing at the
 /// destination, both at a stop. Empty without the POH's tables or the
 /// briefing (`briefed` false).
-pub fn runway_checks(airplane: &Airplane, briefed: bool, fields: &[Field], takeoff_lb: Option<f64>, landing_lb: Option<f64>,
-                     picks: Option<&Picks>) -> Vec<Check> {
+pub fn runway_checks(
+    airplane: &Airplane, briefed: bool, fields: &[Field], takeoff_lb: Option<f64>, landing_lb: Option<f64>, picks: Option<&Picks>,
+) -> Vec<Check> {
     let (Some(takeoff_table), Some(landing_table)) = (&airplane.takeoff, &airplane.landing) else { return vec![] };
     if !briefed || fields.is_empty() {
         return vec![];
@@ -125,7 +126,9 @@ pub fn runway_checks(airplane: &Airplane, briefed: bool, fields: &[Field], takeo
         let mut open: Vec<usize> = (0..runways.len()).filter(|&r| !runways[r].closed).collect();
         let headwind_of = |r: usize| runways[r].wind.as_ref().map_or(-99.0, |w| w.headwind_kt);
         open.sort_by(|&a, &b| {
-            headwind_of(b).total_cmp(&headwind_of(a)).then_with(|| runways[b].length_ft.unwrap_or(0.0).total_cmp(&runways[a].length_ft.unwrap_or(0.0)))
+            headwind_of(b)
+                .total_cmp(&headwind_of(a))
+                .then_with(|| runways[b].length_ft.unwrap_or(0.0).total_cmp(&runways[a].length_ft.unwrap_or(0.0)))
         });
         let windward = open.first().copied();
         // The runway flown for a takeoff or a landing: the pilot's pick
@@ -169,7 +172,13 @@ pub fn runway_checks(airplane: &Airplane, briefed: bool, fields: &[Field], takeo
             .filter(|e| e.is_finite())
             .map(|e| field_air(e, metar.and_then(|m| m.altimeter_in_hg), metar.and_then(|m| m.temp_c)));
         let last = i == fields.len() - 1;
-        let kinds: &[bool] = if i == 0 { &[true] } else if last { &[false] } else { &[false, true] };
+        let kinds: &[bool] = if i == 0 {
+            &[true]
+        } else if last {
+            &[false]
+        } else {
+            &[false, true]
+        };
         let first = flown_for(kinds[0]);
         let distances = match air {
             None => vec![],
@@ -182,13 +191,27 @@ pub fn runway_checks(airplane: &Airplane, briefed: bool, fields: &[Field], takeo
                     let (d, over) = end_distance(table, runway, air, weight, on.headwind);
                     let unknown = runway.and_then(|r| r.length_ft).is_none();
                     let beyond = d.beyond();
-                    EndCheck { kind: if takeoff { "takeoff" } else { "landing" }, distances: d, over, runway: on.runway, end: on.end, unknown, beyond }
+                    EndCheck {
+                        kind: if takeoff { "takeoff" } else { "landing" },
+                        distances: d,
+                        over,
+                        runway: on.runway,
+                        end: on.end,
+                        unknown,
+                        beyond,
+                    }
                 })
                 .collect(),
         };
         checks.push(Check {
             field: i,
-            role: if i == 0 { "Departure" } else if last { "Destination" } else { "Stop" },
+            role: if i == 0 {
+                "Departure"
+            } else if last {
+                "Destination"
+            } else {
+                "Stop"
+            },
             runway: first.runway,
             end: first.end.clone(),
             picked: first.picked,

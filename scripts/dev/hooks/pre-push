@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # The quick checks, before a push, for the parts of the repo the push
 # changes against origin/main: TypeScript and ESLint for apps/web/, ruff for
-# the Python, `cargo check` for engine/. A type error or a lint failure
+# the Python, `cargo check` for engine/, and each changed language's
+# formatter (scripts/dev/format.sh --check). A type error or a lint failure
 # then stops on the Mac in seconds rather than in CI minutes later (the
 # owner, 2026-11-06: development faster). The full checks -- the tests --
 # stay with scripts/dev/one-at-a-time.sh and CI; this runs outside the lock,
@@ -192,6 +193,28 @@ if has_area engine; then
   else
     note "engine: skipped, no Rust toolchain here (CI checks it)"
   fi
+fi
+
+# --- the formatters, for the languages the push changes ----------------------
+# scripts/dev/format.sh --check, each language's tool at its pinned version,
+# over that language's whole tree (seconds each). Nothing here runs in
+# Docker: Prettier without node on this machine, and the Java without mvn,
+# are left to CI, as the web's tsc is.
+fmt=()
+grep -qE '^(apps/web/.*\.(ts|tsx|js|jsx|mjs|cjs|css|json|jsonc|md)|scripts/build/.*\.mjs|\.prettierrc\.yaml)$' <<<"$changed" && fmt+=(web)
+grep -qE '(\.py$|^\.ruff\.toml$)' <<<"$changed" && fmt+=(python)
+grep -qE '^engine/.*(\.rs|rustfmt\.toml)$' <<<"$changed" && fmt+=(rust)
+grep -qE '^apps/ios/(.*\.swift|\.swiftformat)$' <<<"$changed" && fmt+=(swift)
+grep -qE '(^apps/android/.*\.kts?$|^\.editorconfig$)' <<<"$changed" && fmt+=(kotlin)
+grep -qE '^services/gateway/(.*\.java|pom\.xml)$' <<<"$changed" && fmt+=(java)
+if [ ${#fmt[@]} -gt 0 ]; then
+  note "format: ${fmt[*]}"
+  "$here/scripts/dev/format.sh" --check --no-docker "${fmt[@]}"
+  case $? in
+    0) ;;
+    2) note "format: a language above was skipped (its tool is not here; CI checks it)" ;;
+    *) fail "format (scripts/dev/format.sh ${fmt[*]} formats them)" ;;
+  esac
 fi
 
 # --- the layering and the file budget: seconds, the standard library ---------

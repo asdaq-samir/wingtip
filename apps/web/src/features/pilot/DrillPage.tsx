@@ -22,12 +22,12 @@ function Lamp({ light }: { light: NonNullable<Card["light"]> }) {
           backgroundColor: LIGHT[a!],
           ...(alternating
             ? { ["--light-a" as string]: LIGHT[a!], ["--light-b" as string]: LIGHT[b], animation: "light-alternate 1.2s infinite" }
-            : light.flashing ? { animation: "light-flash 1s infinite" } : {}),
+            : light.flashing
+              ? { animation: "light-flash 1s infinite" }
+              : {}),
         }}
       />
-      <span className={cn("text-muted-foreground", TEXT.note)}>
-        {alternating ? "Alternating" : light.flashing ? "Flashing" : "Steady"}
-      </span>
+      <span className={cn("text-muted-foreground", TEXT.note)}>{alternating ? "Alternating" : light.flashing ? "Flashing" : "Steady"}</span>
     </span>
   );
 }
@@ -42,14 +42,14 @@ function Lamp({ light }: { light: NonNullable<Card["light"]> }) {
 export default function DrillPage({ deck: key }: { deck: DeckKey }) {
   const deck = deckOf(key);
   const [progress, setProgress] = useState(() => keptProgress(key));
-  const [queue, setQueue] = useState<string[]>(() => dueCards(deck, keptProgress(key), Date.now()).map(c => c.id));
+  const [queue, setQueue] = useState<string[]>(() => dueCards(deck, keptProgress(key), Date.now()).map((c) => c.id));
   const [practice, setPractice] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [done, setDone] = useState(0);
   // When the page opened or the last card was answered: what "the next
   // one is due in" is reckoned from.
   const [now, setNow] = useState(() => Date.now());
-  const card = deck.cards.find(c => c.id === queue[0]);
+  const card = deck.cards.find((c) => c.id === queue[0]);
 
   const answer = (knew: boolean) => {
     if (!card) return;
@@ -60,8 +60,8 @@ export default function DrillPage({ deck: key }: { deck: DeckKey }) {
       setProgress(next);
       keepProgress(key, next);
     }
-    setQueue(q => (knew ? q.slice(1) : [...q.slice(1), q[0]!]));
-    if (knew) setDone(d => d + 1);
+    setQueue((q) => (knew ? q.slice(1) : [...q.slice(1), q[0]!]));
+    if (knew) setDone((d) => d + 1);
     setRevealed(false);
   };
 
@@ -73,9 +73,19 @@ export default function DrillPage({ deck: key }: { deck: DeckKey }) {
         <ListGroup>
           <ListRow
             title={done ? `${done} card${done === 1 ? "" : "s"} done` : "Nothing due"}
-            description={next ? `The next one is due in ${formatDistanceStrict(next, now)}.` : "Every card is new: start whenever you like."}
+            description={
+              next ? `The next one is due in ${formatDistanceStrict(next, now)}.` : "Every card is new: start whenever you like."
+            }
           />
-          <ListRow title="Practice them all" onClick={() => { setPractice(true); setQueue(deck.cards.map(c => c.id)); setDone(0); }} data-testid="drill-practice" />
+          <ListRow
+            title="Practice them all"
+            onClick={() => {
+              setPractice(true);
+              setQueue(deck.cards.map((c) => c.id));
+              setDone(0);
+            }}
+            data-testid="drill-practice"
+          />
         </ListGroup>
       </div>
     );
@@ -84,11 +94,14 @@ export default function DrillPage({ deck: key }: { deck: DeckKey }) {
   return (
     <div className="space-y-4" data-testid="drill">
       <p className={cn("text-muted-foreground tabular-nums", TEXT.note)}>
-        {practice ? "Practice: no score kept" : `${queue.length} to go`}{done ? ` · ${done} done` : ""}
+        {practice ? "Practice: no score kept" : `${queue.length} to go`}
+        {done ? ` · ${done} done` : ""}
       </p>
       <div className="space-y-4 rounded-lg border border-border bg-card p-4">
         {card.light && <Lamp light={card.light} />}
-        <p className={cn("font-semibold", TEXT.title)} data-testid="drill-prompt">{card.prompt}</p>
+        <p className={cn("font-semibold", TEXT.title)} data-testid="drill-prompt">
+          {card.prompt}
+        </p>
         {revealed ? (
           <div className="space-y-1" data-testid="drill-answer">
             <p className={cn("font-medium", TEXT.prose)}>{card.answer}</p>
@@ -102,8 +115,12 @@ export default function DrillPage({ deck: key }: { deck: DeckKey }) {
       </div>
       {revealed && (
         <div className="grid grid-cols-2 gap-2">
-          <Button type="button" variant="outline" onClick={() => answer(false)} data-testid="drill-missed">Missed it</Button>
-          <Button type="button" onClick={() => answer(true)} data-testid="drill-knew">Knew it</Button>
+          <Button type="button" variant="outline" onClick={() => answer(false)} data-testid="drill-missed">
+            Missed it
+          </Button>
+          <Button type="button" onClick={() => answer(true)} data-testid="drill-knew">
+            Knew it
+          </Button>
         </div>
       )}
       <ListGroup>

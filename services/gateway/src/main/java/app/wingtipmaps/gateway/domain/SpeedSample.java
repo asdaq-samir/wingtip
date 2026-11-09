@@ -51,7 +51,14 @@ public class SpeedSample {
         // JPA
     }
 
-    public SpeedSample(Instant recordedAt, String source, String metric, double value, String page, String device, String version) {
+    public SpeedSample(
+            Instant recordedAt,
+            String source,
+            String metric,
+            double value,
+            String page,
+            String device,
+            String version) {
         this.recordedAt = recordedAt;
         this.source = source;
         this.metric = metric;

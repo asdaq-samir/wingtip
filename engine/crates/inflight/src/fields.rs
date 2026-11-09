@@ -47,10 +47,20 @@ pub fn weather_of(f: &Field, ifr: bool, m: &Minimums) -> Weather {
     let ceiling = metar.ceiling_ft();
     if !ifr {
         if let Some(c) = ceiling.filter(|c| *c < vfr::SURFACE_AREA_CEILING_FT) {
-            why.push(format!("{} ceiling {} ft, under VFR's {} ft (14 CFR 91.155(c))", f.ident, alt_ft(Some(c)), alt_ft(Some(vfr::SURFACE_AREA_CEILING_FT))));
+            why.push(format!(
+                "{} ceiling {} ft, under VFR's {} ft (14 CFR 91.155(c))",
+                f.ident,
+                alt_ft(Some(c)),
+                alt_ft(Some(vfr::SURFACE_AREA_CEILING_FT))
+            ));
         }
         if let Some(v) = metar.visibility_sm.filter(|v| *v < vfr::SURFACE_AREA_VISIBILITY_SM) {
-            why.push(format!("{} visibility {} sm, under VFR's {} sm (14 CFR 91.155(d))", f.ident, js_num(v), js_num(vfr::SURFACE_AREA_VISIBILITY_SM)));
+            why.push(format!(
+                "{} visibility {} sm, under VFR's {} sm (14 CFR 91.155(d))",
+                f.ident,
+                js_num(v),
+                js_num(vfr::SURFACE_AREA_VISIBILITY_SM)
+            ));
         }
     }
     let report = Report {
@@ -103,7 +113,11 @@ pub fn ask(name: &str, v: &Value) -> R<Ask> {
 /// The ground speed minutes are worked at: own ship's once flying, else
 /// the airplane's cruise.
 pub fn speed_kt(own: &Own, tas_kt: Option<f64>) -> Option<f64> {
-    if own.gs_kt >= AIRBORNE_KT { Some(own.gs_kt) } else { tas_kt.filter(|t| *t > 0.0) }
+    if own.gs_kt >= AIRBORNE_KT {
+        Some(own.gs_kt)
+    } else {
+        tas_kt.filter(|t| *t > 0.0)
+    }
 }
 
 /// The reserve at a place and time: 91.151(a)'s by day or night there,

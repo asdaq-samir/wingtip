@@ -76,7 +76,9 @@ fn field(i: In, f: &Value) -> R<Field> {
         lon: i.num(f, "lon")?,
         elevation_ft: i.opt_num(f, "elevation_ft")?,
         runways: runway_list(i, f, "runways")?,
-        wind: metar.map(|_| -> R<FitWind> { Ok(FitWind { dir_true_deg: m("dir_true_deg")?, speed_kt: m("speed_kt")?, gust_kt: m("gust_kt")? }) }).transpose()?,
+        wind: metar
+            .map(|_| -> R<FitWind> { Ok(FitWind { dir_true_deg: m("dir_true_deg")?, speed_kt: m("speed_kt")?, gust_kt: m("gust_kt")? }) })
+            .transpose()?,
         report: FieldReport { elevation_ft: i.opt_num(f, "elevation_ft")?, altimeter_in_hg: m("altimeter_in_hg")?, temp_c: m("temp_c")? },
         flight_category: metar.map_or(Ok(None), |m| i.opt_str(m, "flight_category"))?,
         towered: truth(f, "towered"),
@@ -86,7 +88,11 @@ fn field(i: In, f: &Value) -> R<Field> {
 }
 
 fn answer_json(a: &Answer) -> String {
-    let mut out = format!("{{\"mode\":\"{}\",\"needs_airplane\":{},\"glide\":", if a.mode == Mode::Glide { "glide" } else { "diversion" }, a.needs_airplane);
+    let mut out = format!(
+        "{{\"mode\":\"{}\",\"needs_airplane\":{},\"glide\":",
+        if a.mode == Mode::Glide { "glide" } else { "diversion" },
+        a.needs_airplane
+    );
     match &a.ring {
         None => out.push_str("null"),
         Some(r) => {
@@ -146,8 +152,13 @@ fn ranked_json(out: &mut String, r: &Ranked) {
         out.push_str(&format!(",\"{key}\":"));
         json::opt_number(out, n);
     }
-    out.push_str(&format!(",\"reach\":\"{}\",\"towered\":{},\"private\":{},\"military\":{},\"flight_category\":",
-        r.reach.word(), r.field.towered, r.field.private, r.field.military));
+    out.push_str(&format!(
+        ",\"reach\":\"{}\",\"towered\":{},\"private\":{},\"military\":{},\"flight_category\":",
+        r.reach.word(),
+        r.field.towered,
+        r.field.private,
+        r.field.military
+    ));
     json::opt_string(out, r.field.flight_category.as_deref());
     out.push_str(",\"runway\":");
     match &r.end {

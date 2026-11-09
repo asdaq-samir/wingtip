@@ -81,12 +81,12 @@ pub struct Costs<'a> {
 
 impl<'a> Costs<'a> {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(rows: usize, cols: usize, closed: &'a dyn Values<i64>, marginal: &'a dyn Values<i64>,
-               dear: &'a dyn Values<f64>, offshore: &'a dyn Values<f64>, gs: &'a dyn Values<f64>,
-               ends: &'a HashSet<Cell>) -> Result<Costs<'a>, &'static str> {
+    pub fn new(
+        rows: usize, cols: usize, closed: &'a dyn Values<i64>, marginal: &'a dyn Values<i64>, dear: &'a dyn Values<f64>,
+        offshore: &'a dyn Values<f64>, gs: &'a dyn Values<f64>, ends: &'a HashSet<Cell>,
+    ) -> Result<Costs<'a>, &'static str> {
         let n = rows * cols;
-        if [closed.count(), marginal.count(), dear.count(), offshore.count()].iter().any(|&l| l != n)
-            || gs.count() != n * 8 {
+        if [closed.count(), marginal.count(), dear.count(), offshore.count()].iter().any(|&l| l != n) || gs.count() != n * 8 {
             return Err("the grid's arrays, each its size, groundspeeds eight ways");
         }
         Ok(Costs { cols, closed, marginal, dear, offshore, gs, ends })
@@ -151,9 +151,9 @@ pub enum StraightError<E> {
 /// cost) crosses no more marginal cells. `nm_from(i)` is the distance from
 /// point i to every point, asked for only where needed: the planner's are
 /// PROJ's own, so the miles are the same wherever the engine runs.
-pub fn straightened<E>(g: Geom, costs: &Costs, points: &[Point], leg_nm: &[f64],
-                       mut nm_from: impl FnMut(usize) -> Result<Vec<f64>, E>, how: &Straighten)
-    -> Result<Vec<usize>, StraightError<E>> {
+pub fn straightened<E>(
+    g: Geom, costs: &Costs, points: &[Point], leg_nm: &[f64], mut nm_from: impl FnMut(usize) -> Result<Vec<f64>, E>, how: &Straighten,
+) -> Result<Vec<usize>, StraightError<E>> {
     let n = points.len();
     if leg_nm.len() + 1 != n {
         return Err(StraightError::Legs);

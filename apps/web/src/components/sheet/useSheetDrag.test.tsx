@@ -11,15 +11,33 @@ const detents: Detents = { peek: 100, half: 300, full: 600 };
  *  nothing placed in a document with no layout. */
 function useDrag(shown: number, onRelease: (d: string) => void, setDragged: (h: number | null) => void) {
   return useSheetDrag({
-    detents, fromBottom: true, height: () => shown, began: () => {},
-    place: h => setDragged(h),
-    release: (h, speed) => { setDragged(null); onRelease(restingAt(detents, h, speed)); },
+    detents,
+    fromBottom: true,
+    height: () => shown,
+    began: () => {},
+    place: (h) => setDragged(h),
+    release: (h, speed) => {
+      setDragged(null);
+      onRelease(restingAt(detents, h, speed));
+    },
   });
 }
 
-function Sheet({ onRelease, setDragged, shown = 300 }: { onRelease: (d: string) => void; setDragged: (h: number | null) => void; shown?: number }) {
+function Sheet({
+  onRelease,
+  setDragged,
+  shown = 300,
+}: {
+  onRelease: (d: string) => void;
+  setDragged: (h: number | null) => void;
+  shown?: number;
+}) {
   const { body } = useDrag(shown, onRelease, setDragged);
-  return <div ref={body} data-testid="body"><p>text</p></div>;
+  return (
+    <div ref={body} data-testid="body">
+      <p>text</p>
+    </div>
+  );
 }
 
 const touch = (target: Element, y: number, x = 0) => ({ target, clientX: x, clientY: y, identifier: 0 });
@@ -27,14 +45,17 @@ function fire(el: Element, type: string, touches: ReturnType<typeof touch>[], at
   const event = new Event(type, { bubbles: true, cancelable: true });
   Object.defineProperty(event, "touches", { value: touches });
   if (at !== undefined) Object.defineProperty(event, "timeStamp", { value: at });
-  act(() => { el.dispatchEvent(event); });
+  act(() => {
+    el.dispatchEvent(event);
+  });
 }
 
 afterEach(cleanup);
 
 describe("useSheetDrag body drag", () => {
   it("lets the sheet go to a detent when a second finger lands mid-drag", () => {
-    const onRelease = vi.fn(), setDragged = vi.fn();
+    const onRelease = vi.fn(),
+      setDragged = vi.fn();
     const { getByTestId } = render(<Sheet onRelease={onRelease} setDragged={setDragged} />);
     const el = getByTestId("body");
     fire(el, "touchstart", [touch(el, 400)]);
@@ -62,7 +83,13 @@ describe("useSheetDrag body drag", () => {
 describe("useSheetDrag scroll-first box", () => {
   function Boxed({ onRelease }: { onRelease: (d: string) => void }) {
     const { body } = useDrag(300, onRelease, vi.fn());
-    return <div ref={body}><div data-scroll-first="" data-testid="box"><p data-testid="line">KDLH</p></div></div>;
+    return (
+      <div ref={body}>
+        <div data-scroll-first="" data-testid="box">
+          <p data-testid="line">KDLH</p>
+        </div>
+      </div>
+    );
   }
   const lines = (el: HTMLElement, scrollTop: number, scrollHeight = 96) => {
     Object.defineProperty(el, "scrollHeight", { value: scrollHeight, configurable: true });
@@ -74,7 +101,8 @@ describe("useSheetDrag scroll-first box", () => {
     // The owner's ask: the route box scrolls while it can, then the card.
     const onRelease = vi.fn();
     const { getByTestId } = render(<Boxed onRelease={onRelease} />);
-    const box = getByTestId("box"), line = getByTestId("line");
+    const box = getByTestId("box"),
+      line = getByTestId("line");
     lines(box, 0);
     fire(line, "touchstart", [touch(line, 400)]);
     fire(line, "touchmove", [touch(line, 380)]);
@@ -95,7 +123,8 @@ describe("useSheetDrag scroll-first box", () => {
     // text size held 2 px more than the box.
     const onRelease = vi.fn();
     const { getByTestId } = render(<Boxed onRelease={onRelease} />);
-    const box = getByTestId("box"), line = getByTestId("line");
+    const box = getByTestId("box"),
+      line = getByTestId("line");
     lines(box, 0, 66);
     fire(line, "touchstart", [touch(line, 400)]);
     fire(line, "touchmove", [touch(line, 380)]);
@@ -138,9 +167,14 @@ describe("useSheetDrag release speed", () => {
     const pointer = (type: string, y: number, at: number) => {
       const event = new MouseEvent(type, { bubbles: true, button: 0, clientY: y });
       Object.defineProperty(event, "timeStamp", { value: at });
-      act(() => { (type === "pointerdown" ? getByTestId("head") : window).dispatchEvent(event); });
+      act(() => {
+        (type === "pointerdown" ? getByTestId("head") : window).dispatchEvent(event);
+      });
     };
-    for (const [releaseAt, rest] of [[100, "peek"], [96 + 700, "half"]] as const) {
+    for (const [releaseAt, rest] of [
+      [100, "peek"],
+      [96 + 700, "half"],
+    ] as const) {
       pointer("pointerdown", 400, 0);
       for (let i = 1; i <= 6; i++) pointer("pointermove", 400 + 15 * i, 16 * i);
       pointer("pointerup", 490, releaseAt);

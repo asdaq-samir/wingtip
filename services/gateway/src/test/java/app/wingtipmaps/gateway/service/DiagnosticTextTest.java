@@ -15,14 +15,16 @@ class DiagnosticTextTest {
 
     @Test
     void anEmailAddressIsTakenOut() {
-        assertThat(DiagnosticText.scrub("no pilot jane.doe+fly@example.com", 500)).isEqualTo("no pilot <email>");
+        assertThat(DiagnosticText.scrub("no pilot jane.doe+fly@example.com", 500))
+                .isEqualTo("no pilot <email>");
     }
 
     @Test
     void aHomeFolderLosesItsOwnersNameAndAnInstallItsId() {
         assertThat(DiagnosticText.scrub(
-                "/Users/jane/Library/x /var/mobile/Containers/Data/Application/0F1E2D3C-4B5A-6978-8796-A5B4C3D2E1F0/tmp",
-                500)).isEqualTo("/Users/~/Library/x /var/mobile/Containers/Data/Application/<id>/tmp");
+                        "/Users/jane/Library/x /var/mobile/Containers/Data/Application/0F1E2D3C-4B5A-6978-8796-A5B4C3D2E1F0/tmp",
+                        500))
+                .isEqualTo("/Users/~/Library/x /var/mobile/Containers/Data/Application/<id>/tmp");
     }
 
     @Test

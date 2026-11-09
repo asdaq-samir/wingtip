@@ -45,13 +45,13 @@ export function record(fix: Fix): boolean {
   if (last && fix.at - last.t < EVERY_MS) return true;
   if (points.length >= MOST_POINTS) return true;
   const point: RecordedPoint = { t: fix.at, lat: fix.lat, lon: fix.lon, alt_ft: fix.altitudeFt };
-  recorded.setState(s => ({ value: { ...s.value, points: [...s.value.points, point] } }));
+  recorded.setState((s) => ({ value: { ...s.value, points: [...s.value.points, point] } }));
   return wasKept(KEY);
 }
 
 /** The flight ending at `to` offered: not again until a later one. */
 export function asked(to: number) {
-  recorded.setState(s => ({ value: { ...s.value, askedTo: to } }));
+  recorded.setState((s) => ({ value: { ...s.value, askedTo: to } }));
 }
 
 /** The track let go: logged, or the pilot does not want it. */

@@ -17,7 +17,13 @@ const SketchViewer = lazy(() => import("./SketchViewer"));
  * sketch of its runways full screen (`sketch`), where it said there was
  * none; nothing where there is no sketch either.
  */
-export function PublicationRows({ ident, diagram, diagramCycle, supplement, sketch }: {
+export function PublicationRows({
+  ident,
+  diagram,
+  diagramCycle,
+  supplement,
+  sketch,
+}: {
   ident: string;
   diagram?: string | null;
   /** The cycle the planner draws the diagram's picture from. */
@@ -36,11 +42,17 @@ export function PublicationRows({ ident, diagram, diagramCycle, supplement, sket
         <DiagramRow media={<ChartBadge />} ident={ident} cycle={diagramCycle} url={diagram} testId="airport-diagram" />
       ) : diagram ? (
         <ChartRow media={<ChartBadge />} title="Airport diagram" url={diagram} airport={ident} testId="airport-diagram" />
-      ) : sketched && (
-        <ListRow
-          media={<ChartBadge />} title="Airport diagram" description="A sketch of the runways: the FAA publishes none"
-          onClick={() => setSketchOpen(true)} chevron data-testid="airport-diagram-sketch"
-        />
+      ) : (
+        sketched && (
+          <ListRow
+            media={<ChartBadge />}
+            title="Airport diagram"
+            description="A sketch of the runways: the FAA publishes none"
+            onClick={() => setSketchOpen(true)}
+            chevron
+            data-testid="airport-diagram-sketch"
+          />
+        )
       )}
       {supplement && (published || sketched) && <ItemSeparator className="my-0" />}
       {supplement && (

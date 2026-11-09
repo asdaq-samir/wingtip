@@ -13,6 +13,7 @@ from the web's own Inter (@fontsource-variable/inter, OFL) at weight
     apps/web/node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2 \\
     700 Inter-Bold apps/android/app/src/main/assets/glyphs
 """
+
 import math
 import os
 import sys
@@ -81,8 +82,7 @@ def glyph(cp):
     sdf = np.clip(np.round(255 - 255 * (d / RADIUS + CUTOFF)), 0, 255).astype(np.uint8)
     # top: the glyph's top over the baseline less 26, so a line of 24 px
     # glyphs sits where a glyph server's would (fontnik's ascender offset).
-    return (u32(1, cp) + blob(2, sdf.tobytes()) + u32(3, width) + u32(4, height)
-            + s32(5, left) + s32(6, above - 26) + u32(7, advance))
+    return u32(1, cp) + blob(2, sdf.tobytes()) + u32(3, width) + u32(4, height) + s32(5, left) + s32(6, above - 26) + u32(7, advance)
 
 
 def write_range(start, cps):

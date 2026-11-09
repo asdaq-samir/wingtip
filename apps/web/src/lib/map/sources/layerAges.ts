@@ -13,7 +13,7 @@ export function ageWords(at: number | null, now: number): string | null {
 /** The newest traffic answer the map holds: when its airplanes were
  *  where it gives them (its time, less its own `age_s`). */
 export function trafficAt(answers: { data: Traffic | undefined; updatedAt: number }[]): number | null {
-  const newest = answers.filter(a => a.data && a.updatedAt > 0).sort((a, b) => b.updatedAt - a.updatedAt)[0];
+  const newest = answers.filter((a) => a.data && a.updatedAt > 0).sort((a, b) => b.updatedAt - a.updatedAt)[0];
   return newest ? newest.updatedAt - (newest.data!.age_s ?? 0) * 1000 : null;
 }
 
@@ -21,7 +21,11 @@ export function trafficAt(answers: { data: Traffic | undefined; updatedAt: numbe
  *  (/api/map/ages), asked again each minute while something shows them:
  *  one query for the map's settings, the Status page and the Brief. */
 export const mapAgesQuery = {
-  queryKey: ["mapAges"], queryFn: () => api.mapAges(), refetchInterval: 60_000, staleTime: 30_000, meta: { silent: true },
+  queryKey: ["mapAges"],
+  queryFn: () => api.mapAges(),
+  refetchInterval: 60_000,
+  staleTime: 30_000,
+  meta: { silent: true },
 } as const;
 
 /** Each FAA data set the planner uses and whether its edition is in its
@@ -41,8 +45,12 @@ export function useLayerAges(): { metars: string | null; tfrs: string | null; tr
   const now = useMinuteClock();
   const { data } = useQuery(mapAgesQuery);
   const client = useQueryClient();
-  const traffic = trafficAt(client.getQueryCache().findAll({ queryKey: ["traffic"] })
-    .map(q => ({ data: q.state.data as Traffic | undefined, updatedAt: q.state.dataUpdatedAt })));
+  const traffic = trafficAt(
+    client
+      .getQueryCache()
+      .findAll({ queryKey: ["traffic"] })
+      .map((q) => ({ data: q.state.data as Traffic | undefined, updatedAt: q.state.dataUpdatedAt })),
+  );
   const ms = (iso: string | null | undefined) => (iso ? new Date(iso).getTime() : null);
   return { metars: ageWords(ms(data?.metars_at), now), tfrs: ageWords(ms(data?.tfrs_at), now), traffic: ageWords(traffic, now) };
 }

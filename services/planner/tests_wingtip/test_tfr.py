@@ -2,13 +2,14 @@
 (services/weather/app/tfr.py, whose tests read the site's own shapes and
 XNOTAM files): which are near a route, in force during it, or over a
 point, and a list kept through an outage."""
+
 from datetime import datetime, timedelta, timezone
 
 import pytest
 
 from wingtip import tfr, weather_store
 
-T0 = 1791126000.0   # 2026-10-04T14:20:00Z
+T0 = 1791126000.0  # 2026-10-04T14:20:00Z
 
 
 def _square(lat, lon, half=0.05):
@@ -17,18 +18,26 @@ def _square(lat, lon, half=0.05):
 
 
 def _tfr(notam_id: str, title: str, kind: str, square: list, **detail) -> dict:
-    return {"notam_id": notam_id, "title": title, "kind": kind, "state": None,
-            "geometry": {"type": "MultiPolygon", "coordinates": [square]}, **detail}
+    return {
+        "notam_id": notam_id,
+        "title": title,
+        "kind": kind,
+        "state": None,
+        "geometry": {"type": "MultiPolygon", "coordinates": [square]},
+        **detail,
+    }
 
 
 @pytest.fixture
 def two_tfrs():
     """One on a route from (42, -88) north to (43, -88), one 60 nm off it."""
     times = {"effective": "2026-10-06T23:00:00Z", "expires": "2026-10-07T01:00:00Z"}
-    weather_store.write("tfrs", [
-        _tfr("6/1", "ON IT", "Security", _square(42.5, -88.0), **times),
-        _tfr("6/2", "FAR OFF", "Hazards", _square(42.5, -86.6), **times),
-    ], fetched_at=datetime.now(timezone.utc).timestamp(), until=None)
+    weather_store.write(
+        "tfrs",
+        [_tfr("6/1", "ON IT", "Security", _square(42.5, -88.0), **times), _tfr("6/2", "FAR OFF", "Hazards", _square(42.5, -86.6), **times)],
+        fetched_at=datetime.now(timezone.utc).timestamp(),
+        until=None,
+    )
 
 
 def test_a_tfr_the_route_goes_through_during_the_flight_is_told(two_tfrs):

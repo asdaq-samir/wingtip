@@ -84,13 +84,7 @@ fn status_of(until: Option<i64>, today: i64, remind_days: i64) -> (Status, Optio
 /// Each currency due, in the order a pilot reads them, and the engine's
 /// pilot_currency answer they were read from.
 pub fn due(
-    name: &str,
-    entries: &[Entry],
-    dates: &Dates,
-    standing: &Standing,
-    held: &[Held],
-    today: i64,
-    remind_days: i64,
+    name: &str, entries: &[Entry], dates: &Dates, standing: &Standing, held: &[Held], today: i64, remind_days: i64,
 ) -> Result<(Vec<Due>, Value), String> {
     let currency = json::parse(&currency_json(name, entries, dates)?)?;
     let at = |key: &str| date_of(name, &currency, key);
@@ -110,19 +104,23 @@ pub fn due(
             _ => "Good for 90 days from the instructor's endorsement (61.87(n), (p))".to_owned(),
         });
     } else {
-        push("flight_review", "Flight review", "14 CFR 61.56(c)", at("flightReviewUntil")?, None, &|s| match s {
+        push("flight_review", "Flight review", "14 CFR 61.56(c)", at("flightReviewUntil")?, None, &|s| {
+            match s {
             Status::Unknown => "No flight review on record: one is needed to act as pilot in command (61.56(c))".to_owned(),
             Status::Lapsed => "Lapsed: no acting as pilot in command until a flight review, at least an hour of ground and an hour of flight training (61.56(a))".to_owned(),
             _ => "Good to the end of the 24th calendar month after the review (61.56(c))".to_owned(),
+        }
         });
     }
     push("day_passengers", "Passengers by day", "14 CFR 61.57(a)", at("dayPassengersUntil")?, None, &|s| match s {
         Status::Current | Status::DueSoon => "90 days from the third most recent landing (61.57(a))".to_owned(),
         _ => "Three takeoffs and three landings, as sole manipulator of the controls, before carrying passengers (61.57(a))".to_owned(),
     });
-    push("night_passengers", "Passengers at night", "14 CFR 61.57(b)", at("nightPassengersUntil")?, None, &|s| match s {
+    push("night_passengers", "Passengers at night", "14 CFR 61.57(b)", at("nightPassengersUntil")?, None, &|s| {
+        match s {
         Status::Current | Status::DueSoon => "90 days from the third most recent night full-stop landing (61.57(b))".to_owned(),
         _ => "Three takeoffs and three landings to a full stop, from 1 hour after sunset to 1 hour before sunrise, before carrying passengers then (61.57(b))".to_owned(),
+    }
     });
     if let Some(medical) = at("medicalExpiresOn")? {
         push("medical", "Medical certificate", "14 CFR 61.23", Some(medical), None, &|s| match s {
@@ -136,7 +134,8 @@ pub fn due(
         let ipc_after = at("ipcNeededAfter")?;
         let past_grace = ipc_after.is_none_or(|a| today > a);
         let from = at("instrumentCurrentFrom")?;
-        push("instrument", "Instrument currency", "14 CFR 61.57(c)", at("instrumentCurrentUntil")?, from, &|s| match s {
+        push("instrument", "Instrument currency", "14 CFR 61.57(c)", at("instrumentCurrentUntil")?, from, &|s| {
+            match s {
             Status::Pending => format!("Current from {}: tasks flown this month count from the first of next (61.57(c)(1))", from.map(said).unwrap_or_default()),
             Status::Lapsed | Status::Unknown if past_grace => "Only an instrument proficiency check restores it now (61.57(d))".to_owned(),
             Status::Lapsed => format!(
@@ -144,6 +143,7 @@ pub fn due(
                 ipc_after.map(said).unwrap_or_default()
             ),
             _ => format!("{} of the six approaches flown in the 6 calendar months before this one (61.57(c)(1)(i))", approaches as i64),
+        }
         });
         if let Some(d) = out.last_mut() {
             d.check = past_grace && matches!(d.status, Status::Lapsed | Status::Unknown);

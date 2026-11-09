@@ -2,6 +2,7 @@
 and SFDPS's special activity airspace (wingtip.saa), each read from
 messages the owner's queues carried on 2026-11-09 (fixtures/swim), with
 an alert switched on where the night had none."""
+
 import pathlib
 
 import pytest
@@ -49,9 +50,11 @@ def test_a_quiet_itws_product_keeps_nothing_and_ends_what_its_airport_had():
     assert itws.heard(quiet, now=NOW) == 0
     # The first region, 27L's arrivals, given a microburst alert.
     loud = quiet
-    for was, now_is in (("<ca_ra_type></ca_ra_type>", "<ca_ra_type>MBA</ca_ra_type>"),
-                        ('<ca_ra_value unit="knots">0<', '<ca_ra_value unit="knots">40<'),
-                        ("<ca_ra_first_loc>RWY<", "<ca_ra_first_loc>3MF<")):
+    for was, now_is in (
+        ("<ca_ra_type></ca_ra_type>", "<ca_ra_type>MBA</ca_ra_type>"),
+        ('<ca_ra_value unit="knots">0<', '<ca_ra_value unit="knots">40<'),
+        ("<ca_ra_first_loc>RWY<", "<ca_ra_first_loc>3MF<"),
+    ):
         assert was in loud
         loud = loud.replace(was, now_is, 1)
     assert loud.index("27LA") < loud.index("MBA") < loud.index("27LD")
@@ -75,15 +78,19 @@ def test_an_itws_alert_lasts_until_its_product_expires():
 
 
 def test_each_itws_product_says_its_alert_in_a_pilots_words():
-    gust = fixture("itws_gust_front.xml").replace("<gf_eti_near>0", "<gf_eti_near>1").replace(
-        '<gf_eti_minutes unit="minutes">-1', '<gf_eti_minutes unit="minutes">12')
+    gust = (
+        fixture("itws_gust_front.xml")
+        .replace("<gf_eti_near>0", "<gf_eti_near>1")
+        .replace('<gf_eti_minutes unit="minutes">-1', '<gf_eti_minutes unit="minutes">12')
+    )
     assert itws.alerts(gust)[3][0]["words"] == "Gust front expected in 12 min"
     tornado = fixture("itws_tornado_alert.xml").replace("<trnal_exists_flag>0", "<trnal_exists_flag>1")
     assert itws.alerts(tornado)[3][0]["words"] == "Tornado detected within 10 nm"
     cell = fixture("itws_hazard_text_5nm.xml").replace(
         "<ht_num_cells>0</ht_num_cells>",
         '<ht_num_cells>1</ht_num_cells><ht_cell count="1"><htc_latitude unit="degrees">36.1</htc_latitude>'
-        '<htc_longitude unit="degrees">-86.7</htc_longitude><htc_msg_text>ECHOTOP: 170 </htc_msg_text></ht_cell>')
+        '<htc_longitude unit="degrees">-86.7</htc_longitude><htc_msg_text>ECHOTOP: 170 </htc_msg_text></ht_cell>',
+    )
     assert itws.alerts(cell)[3][0]["words"] == "Storm within 5 nm: ECHOTOP: 170"
     # The quiet ones, as sent, alert nothing.
     for name in ("itws_gust_front.xml", "itws_tornado_alert.xml", "itws_hazard_text_5nm.xml", "itws_microburst_atis.xml"):
@@ -111,11 +118,16 @@ def test_sfdps_says_a_warning_area_is_active_and_the_chart_name_finds_it():
 
 
 def test_an_area_released_cold_says_so_with_its_times():
-    cold = fixture("sfdps_saa_status.xml").replace("<ns3:status>ACTIVE", "<ns3:status>INACTIVE").replace(
-        '<ns3:AirspaceActivation ns1:id="SU_airspaceActivation">',
-        '<ns3:AirspaceActivation ns1:id="SU_airspaceActivation"><ns1:validTime><ns1:TimePeriod>'
-        '<ns1:beginPosition>2026-11-09T05:00:00Z</ns1:beginPosition>'
-        '<ns1:endPosition>2026-11-09T07:00:00Z</ns1:endPosition></ns1:TimePeriod></ns1:validTime>')
+    cold = (
+        fixture("sfdps_saa_status.xml")
+        .replace("<ns3:status>ACTIVE", "<ns3:status>INACTIVE")
+        .replace(
+            '<ns3:AirspaceActivation ns1:id="SU_airspaceActivation">',
+            '<ns3:AirspaceActivation ns1:id="SU_airspaceActivation"><ns1:validTime><ns1:TimePeriod>'
+            '<ns1:beginPosition>2026-11-09T05:00:00Z</ns1:beginPosition>'
+            '<ns1:endPosition>2026-11-09T07:00:00Z</ns1:endPosition></ns1:TimePeriod></ns1:validTime>',
+        )
+    )
     saa.heard(cold, now=NOW)
     found = saa.status(["W136C"], now=NOW)["W136C"]
     assert (found["active"], found["status"], found["until"]) == (False, "INACTIVE", 1794207600.0)
@@ -166,8 +178,8 @@ def test_a_departure_event_is_kept_under_its_ident_with_the_times_it_gives():
 def test_a_ground_delay_program_is_kept_until_its_cancellation():
     cancelled = fixture("tfms_flow_gdp_cancelled.xml")
     issued = cancelled.replace(" CDM GROUND DELAY PROGRAM CNX", " CDM GROUND DELAY PROGRAM").replace(
-        "GDP CNX PERIOD: 09/0038Z - 09/0428Z", "AVERAGE DELAY: 45 MINUTES\nMAXIMUM DELAY: 120 MINUTES\n"
-        "IMPACTING CONDITION: LOW CEILINGS")
+        "GDP CNX PERIOD: 09/0038Z - 09/0428Z", "AVERAGE DELAY: 45 MINUTES\nMAXIMUM DELAY: 120 MINUTES\nIMPACTING CONDITION: LOW CEILINGS"
+    )
     assert flow.heard(issued, now=1794190000.0) == 1
     [program] = flow.at_airports(["KAUS"], now=1794190000.0)
     assert (program["program"], program["airport"], program["cancelled"]) == ("ground delay program", "AUS", False)
@@ -184,7 +196,12 @@ def test_a_restriction_is_kept_at_its_airport_until_its_stop_time():
     restriction = fixture("tfms_flow_restriction.xml")
     [found] = flow.restriction(flow.ET.fromstring(restriction))
     assert (found["airport"], found["kind"], found["category"], found["value"], found["reason"]) == (
-        "IAD", "ARRIVAL", "MIT", "15", "RWY:Construction")
+        "IAD",
+        "ARRIVAL",
+        "MIT",
+        "15",
+        "RWY:Construction",
+    )
     # 2026-11-08 20:30Z to 21:12Z.
     flow.heard(restriction, now=1794172000.0)
     assert [r["category"] for r in flow.at_airports(["KIAD"], now=1794172000.0)] == ["MIT"]

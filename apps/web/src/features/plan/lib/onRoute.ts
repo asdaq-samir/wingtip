@@ -47,7 +47,8 @@ function validWords(on: OnRoute): string | null {
  *  airplane is there (one time where it passes a point), and the
  *  hazard's own time against it. */
 export function onRouteLine(on: OnRoute): string {
-  const enter = at(on.enter), leave = at(on.leave);
+  const enter = at(on.enter),
+    leave = at(on.leave);
   const when = enter && leave && enter !== leave ? `${enter}–${leave}` : enter;
   const valid = validWords(on);
   return [legWords(on.legs), [when, valid].filter(Boolean).join(", ")].filter(Boolean).join(" · ");
@@ -58,7 +59,7 @@ export type LatLon = { lat: number; lon: number };
 /** The stretches of the route the legs make, each a line of fixes: legs
  *  next to each other are one line. Legs past the fixes are left out. */
 export function legLines(legs: number[], fixes: LatLon[]): LatLon[][] {
-  const sorted = [...new Set(legs)].filter(i => i >= 0 && i + 1 < fixes.length).sort((a, b) => a - b);
+  const sorted = [...new Set(legs)].filter((i) => i >= 0 && i + 1 < fixes.length).sort((a, b) => a - b);
   const lines: LatLon[][] = [];
   let last = -2;
   for (const leg of sorted) {

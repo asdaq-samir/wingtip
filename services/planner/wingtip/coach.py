@@ -15,6 +15,7 @@ never fetches: the fields near home, each with
   GLS: a glidepath the coded name says it has; an RNAV's LPV line is on
   the plate, not in the name, so an RNAV approach is not counted as one).
 """
+
 from __future__ import annotations
 
 import logging
@@ -49,8 +50,11 @@ def _approaches(ident: str) -> list[dict]:
     except RuntimeError:
         log.warning("No CIFP for the practice approaches at %s", ident, exc_info=True)
         return []
-    return [{"name": p["name"], "precision": p["name"].upper().startswith(PRECISION)}
-            for p in (listed or {}).get("procedures", []) if p["kind"] == "approach"]
+    return [
+        {"name": p["name"], "precision": p["name"].upper().startswith(PRECISION)}
+        for p in (listed or {}).get("procedures", [])
+        if p["kind"] == "approach"
+    ]
 
 
 def practice_places(home: str | None) -> list[dict]:
@@ -63,8 +67,15 @@ def practice_places(home: str | None) -> list[dict]:
     for f in airports.nearest(place["lat"], place["lon"], limit=NEAREST_FIELDS):
         if f["distance_nm"] > WITHIN_NM:
             continue
-        found.append({"ident": f["ident"], "name": f["name"], "distance_nm": f["distance_nm"],
-                      "lighted": _lighted(f), "approaches": _approaches(f["ident"])})
+        found.append(
+            {
+                "ident": f["ident"],
+                "name": f["name"],
+                "distance_nm": f["distance_nm"],
+                "lighted": _lighted(f),
+                "approaches": _approaches(f["ident"]),
+            }
+        )
     return found
 
 

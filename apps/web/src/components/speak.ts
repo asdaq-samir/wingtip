@@ -28,9 +28,7 @@ export function spokenAlert(a: AheadAlert): string {
     .replace(/^In 1 min$/, "in 1 minute")
     .replace(/^In (\d+) min$/, "in $1 minutes")
     .toLowerCase();
-  const below = a.clearance_ft != null
-    ? `${grouped(Math.abs(a.clearance_ft))} feet ${a.clearance_ft >= 0 ? "below" : "above"} you`
-    : null;
+  const below = a.clearance_ft != null ? `${grouped(Math.abs(a.clearance_ft))} feet ${a.clearance_ft >= 0 ? "below" : "above"} you` : null;
   return [title, below, when].filter(Boolean).join(", ");
 }
 
@@ -38,9 +36,9 @@ export function spokenAlert(a: AheadAlert): string {
  *  said before, the first in full and the rest as a count, and those
  *  gone from ahead forgotten, so met again they are said again. */
 export function toSay(alerts: AheadAlert[], said: ReadonlySet<string>): { words: string | null; said: Set<string> } {
-  const fresh = alerts.filter(a => !said.has(a.id));
-  const kept = new Set([...said].filter(id => alerts.some(a => a.id === id)));
-  fresh.forEach(a => kept.add(a.id));
+  const fresh = alerts.filter((a) => !said.has(a.id));
+  const kept = new Set([...said].filter((id) => alerts.some((a) => a.id === id)));
+  fresh.forEach((a) => kept.add(a.id));
   if (!fresh.length) return { words: null, said: kept };
   const more = fresh.length - 1;
   return { words: `${spokenAlert(fresh[0]!)}${more ? `, and ${more} more` : ""}.`, said: kept };
@@ -55,9 +53,9 @@ let announced = new Set<string>();
  *  banner's countdown is not a live region that would be read again at
  *  every change. */
 export function useSpokenAlerts(ahead: Ahead | null) {
-  const on = usePreferences(s => s.speakAlerts);
+  const on = usePreferences((s) => s.speakAlerts);
   const alerts = ahead?.alerts;
-  const key = alerts?.map(a => a.id).join("|") ?? "";
+  const key = alerts?.map((a) => a.id).join("|") ?? "";
   useEffect(() => {
     // On the ground, or looking at nothing: the next flight starts afresh.
     if (!alerts) {
@@ -69,7 +67,7 @@ export function useSpokenAlerts(ahead: Ahead | null) {
     if (!on) {
       const next = toSay(alerts, announced);
       announced = next.said;
-      if (next.words) announce(next.words, alerts.some(a => a.level === "warning") ? "assertive" : "polite");
+      if (next.words) announce(next.words, alerts.some((a) => a.level === "warning") ? "assertive" : "polite");
       return;
     }
     // Turned on in the air, what is ahead then is said at once.

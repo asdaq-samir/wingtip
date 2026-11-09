@@ -1,5 +1,6 @@
 """The service itself: its health answer, its settings, its committed
 OpenAPI document (what apps/web/ builds its assistant types from)."""
+
 import pytest
 from fastapi.testclient import TestClient
 

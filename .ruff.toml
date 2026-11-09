@@ -11,3 +11,17 @@ extend-exclude = ["*.ipynb"]
 # real bugs (unused imports, undefined names, syntax issues) without also
 # relitigating this codebase's existing style choices on day one of CI.
 select = ["E", "F"]
+
+[format]
+# `ruff format` (scripts/dev/format.sh python, the version it pins) over
+# every Python file here, at the line length above. Matched to how the
+# files were written before the formatter came in (2026-11-09), so it
+# reflowed as little as it could: each string keeps the quotes it was
+# written with, and a trailing comma alone does not hold a call or a
+# literal open over several lines when it fits on one.
+quote-style = "preserve"
+skip-magic-trailing-comma = true
+# Left as they are: services/planner/app/detection.py, as a kept read is
+# hashed against it (CLAUDE.md); and generated code, each in a generated/
+# folder, which its generator's --check compares byte for byte.
+exclude = ["services/planner/app/detection.py", "**/generated/**"]

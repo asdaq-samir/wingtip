@@ -29,24 +29,32 @@ function obstacleBox(map: MlMap): Box | null {
 export default function ObstaclesGl() {
   const { map } = useGlMap();
   useExtrusion(map, "obstacles-3d", {
-    type: "fill-extrusion", minzoom: glZoom(9),
+    type: "fill-extrusion",
+    minzoom: glZoom(9),
     paint: {
       "fill-extrusion-color": ["case", [">=", ["get", "agl"], 1000], "#d70015", "#7a1f1f"],
-      "fill-extrusion-opacity": 0.95, "fill-extrusion-height": ["get", "height"],
+      "fill-extrusion-opacity": 0.95,
+      "fill-extrusion-height": ["get", "height"],
     },
   });
   const [box, setBox] = useState(() => obstacleBox(map));
   useEffect(() => {
     const moved = () => {
       const next = obstacleBox(map);
-      setBox(was => (JSON.stringify(was) === JSON.stringify(next) ? was : next));
+      setBox((was) => (JSON.stringify(was) === JSON.stringify(next) ? was : next));
     };
     map.on("moveend", moved);
-    return () => { map.off("moveend", moved); };
+    return () => {
+      map.off("moveend", moved);
+    };
   }, [map]);
   const { data } = useQuery({
-    queryKey: ["obstacles", box], queryFn: () => api.obstacles(box!), enabled: !!box, staleTime: 60 * 60 * 1000,
-    placeholderData: was => was, meta: { silent: true },
+    queryKey: ["obstacles", box],
+    queryFn: () => api.obstacles(box!),
+    enabled: !!box,
+    staleTime: 60 * 60 * 1000,
+    placeholderData: (was) => was,
+    meta: { silent: true },
   });
   useEffect(() => {
     // 60 m across: a post a few points wide close in.

@@ -1,4 +1,5 @@
 """The shapes app.routers.clearance sends and takes, as Pydantic models."""
+
 from typing import Literal
 
 from pydantic import BaseModel

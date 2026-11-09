@@ -9,6 +9,7 @@ package's imports (pandas, scipy, pyproj) took 2.3 s of processor a check
 across several threads, and compose ran the check every 5 s, which was
 most of what ingest was seen to use (240% in `docker stats` while one
 ran, 2026-11-09); this takes a few hundredths of a second."""
+
 import sqlite3
 import sys
 import time

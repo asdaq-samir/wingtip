@@ -56,8 +56,19 @@ interface Props {
  * is, where it was a popover the keyboard covered half of.
  */
 export default function AirportPicker({
-  value, onChange, placeholder, ariaLabel, invalid, className, look = "field", testId, fixes = false,
-  open: shown, onOpenChange, onTap, children,
+  value,
+  onChange,
+  placeholder,
+  ariaLabel,
+  invalid,
+  className,
+  look = "field",
+  testId,
+  fixes = false,
+  open: shown,
+  onOpenChange,
+  onTap,
+  children,
 }: Props) {
   const [ownOpen, setOwnOpen] = useState(false);
   const open = shown ?? ownOpen;
@@ -80,9 +91,9 @@ export default function AirportPicker({
 
   // Before anything is typed, what the search bar offers too: Home and
   // the favorites as tiles, and the airports picked last.
-  const home = usePreferences(p => p.homeAirport);
-  const favorites = usePreferences(p => p.favoriteAirports);
-  const recents = usePreferences(p => p.recentAirports);
+  const home = usePreferences((p) => p.homeAirport);
+  const favorites = usePreferences((p) => p.favoriteAirports);
+  const recents = usePreferences((p) => p.recentAirports);
   const choose = (airport: RecentAirport) => {
     usePreferences.getState().addRecentAirport(airport);
     pick(airport.ident);
@@ -91,7 +102,14 @@ export default function AirportPicker({
   return (
     // From the top of a phone's screen, where the keyboard cannot come up
     // over the field: from the bottom it came up over it, field and all.
-    <ResponsivePopover open={open} onOpenChange={next => { setOpen(next); if (!next) setQuery(""); }} phoneEdge="top">
+    <ResponsivePopover
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setQuery("");
+      }}
+      phoneEdge="top"
+    >
       <ResponsivePopoverTrigger asChild>
         <Button
           type="button"
@@ -106,15 +124,24 @@ export default function AirportPicker({
           data-testid={testId}
           // A tap the caller's (`onTap`), not the trigger's opening:
           // Radix's own toggle runs only where nothing prevented it.
-          onClick={onTap ? e => { e.preventDefault(); onTap(); } : undefined}
+          onClick={
+            onTap
+              ? (e) => {
+                  e.preventDefault();
+                  onTap();
+                }
+              : undefined
+          }
           // A field, as a search box is: its ident in the text's colour
           // (not a button's tint) at a row's size (TEXT). A route's pill
           // in the system face, semibold, at a line under a row's (15):
           // in the monospaced face at 17 two took a phone's line, the pilot
           // asked for three.
-          className={look === "pill"
-            ? cn("font-semibold uppercase text-foreground", TEXT.detail, className)
-            : cn("font-mono uppercase text-foreground", TEXT.row, !value && "text-muted-foreground", className)}
+          className={
+            look === "pill"
+              ? cn("font-semibold uppercase text-foreground", TEXT.detail, className)
+              : cn("font-mono uppercase text-foreground", TEXT.row, !value && "text-muted-foreground", className)
+          }
         >
           {children ?? (
             <>
@@ -128,7 +155,10 @@ export default function AirportPicker({
           phone a sheet from the top, the field a capsule at its top,
           Favorites and Recents under it until something is typed. */}
       <ResponsivePopoverContent
-        title={`${ariaLabel} airport`} titleHidden className="w-96 p-3" align="start"
+        title={`${ariaLabel} airport`}
+        titleHidden
+        className="w-96 p-3"
+        align="start"
         // As tall as what it holds, at the owner's pick ("a tall, mostly
         // empty glass pane" before anything was typed): the field and
         // Favorites and Recents, growing as rows come in, to the screen's
@@ -139,13 +169,17 @@ export default function AirportPicker({
         style={onPhone ? { maxHeight: "calc(100dvh - 1rem - env(safe-area-inset-top))" } : undefined}
         // The field focused as it opens, as the search bar is on its tap:
         // the sheet's own first focus went to the sheet itself.
-        onOpenAutoFocus={e => { e.preventDefault(); input.current?.focus(); }}
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          input.current?.focus();
+        }}
       >
         {/* The server already filters (an ident, a word of a name or a
             town), so cmdk's own filter is off: it would drop a row whose
             name matched but whose ident, the `value`, did not. */}
         <Command
-          shouldFilter={false} className="gap-4 overflow-visible bg-transparent"
+          shouldFilter={false}
+          className="gap-4 overflow-visible bg-transparent"
           // Room under the last row for the keyboard, so it scrolls above it.
           style={onPhone && keyboard > 0 ? { paddingBottom: keyboard } : undefined}
         >
@@ -155,7 +189,12 @@ export default function AirportPicker({
               the search field of Maps' sheet is, its whole box the place
               to type. */}
           <div className="flex shrink-0 items-center gap-2">
-            <div className={cn("flex h-11 min-w-0 flex-1 items-center gap-2 rounded-full bg-foreground/8 px-4 text-muted-foreground", TEXT.row)}>
+            <div
+              className={cn(
+                "flex h-11 min-w-0 flex-1 items-center gap-2 rounded-full bg-foreground/8 px-4 text-muted-foreground",
+                TEXT.row,
+              )}
+            >
               <Search className="size-5 shrink-0" aria-hidden="true" />
               <CommandPrimitive.Input
                 ref={input}
@@ -167,7 +206,7 @@ export default function AirportPicker({
                 value={query}
                 onValueChange={setQuery}
                 className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
-                onKeyDown={e => {
+                onKeyDown={(e) => {
                   // What was typed goes through when the rows are not the
                   // answer to it yet, and when the lookup has nothing for it
                   // (a private strip, say).
@@ -177,9 +216,23 @@ export default function AirportPicker({
                   }
                 }}
               />
-              {query && <ClearButton label="Clear the search" onClear={() => { setQuery(""); input.current?.focus(); }} />}
+              {query && (
+                <ClearButton
+                  label="Clear the search"
+                  onClear={() => {
+                    setQuery("");
+                    input.current?.focus();
+                  }}
+                />
+              )}
             </div>
-            <CloseButton onClick={() => { setOpen(false); setQuery(""); }} data-testid="picker-close" />
+            <CloseButton
+              onClick={() => {
+                setOpen(false);
+                setQuery("");
+              }}
+              data-testid="picker-close"
+            />
           </div>
           {/* Its own height, not shrunk: with the keyboard up the sheet is
               short, and the tiles were squeezed to a sliver of their tops. */}
@@ -190,12 +243,19 @@ export default function AirportPicker({
           )}
           {/* Dimmed while they answer something older than the box. */}
           <AirportResults
-            rows={rows} answered={!typed || answered} onAirport={choose} onWaypoint={pick}
-            empty={typed && <CommandEmpty>No {fixes ? "airport or waypoint" : "airport"} matches; Enter keeps what you typed.</CommandEmpty>}
+            rows={rows}
+            answered={!typed || answered}
+            onAirport={choose}
+            onWaypoint={pick}
+            empty={
+              typed && <CommandEmpty>No {fixes ? "airport or waypoint" : "airport"} matches; Enter keeps what you typed.</CommandEmpty>
+            }
           >
             {!typed && recents.length > 0 && (
               <PickerGroup heading="Recents">
-                {recents.map(a => <AirportRow key={a.ident} airport={a} recent onSelect={() => choose(a)} />)}
+                {recents.map((a) => (
+                  <AirportRow key={a.ident} airport={a} recent onSelect={() => choose(a)} />
+                ))}
               </PickerGroup>
             )}
             {!typed && recents.length === 0 && !home && favorites.length === 0 && (

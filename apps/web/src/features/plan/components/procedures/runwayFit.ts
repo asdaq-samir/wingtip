@@ -40,7 +40,17 @@ export interface EndFit {
   beyond: boolean;
 }
 
-export function endFit({ aircraft, runway, end, wind, elevationFt, altimeterInHg, tempC, weightLb, kind }: {
+export function endFit({
+  aircraft,
+  runway,
+  end,
+  wind,
+  elevationFt,
+  altimeterInHg,
+  tempC,
+  weightLb,
+  kind,
+}: {
   aircraft: AircraftProfile | null | undefined;
   runway: Runway;
   end: RunwayEnd;
@@ -53,13 +63,26 @@ export function endFit({ aircraft, runway, end, wind, elevationFt, altimeterInHg
   kind: "takeoff" | "landing";
 }): EndFit {
   const fit = callEngine("runway_end_fit", {
-    aircraft: aircraft ? { takeoff: aircraft.takeoff ?? null, landing: aircraft.landing ?? null, crosswind: aircraft.crosswind ?? null } : null,
-    runway, end: { heading_true_deg: end.heading_true_deg ?? null },
+    aircraft: aircraft
+      ? { takeoff: aircraft.takeoff ?? null, landing: aircraft.landing ?? null, crosswind: aircraft.crosswind ?? null }
+      : null,
+    runway,
+    end: { heading_true_deg: end.heading_true_deg ?? null },
     wind: wind ? { dir_true_deg: wind.dirTrueDeg ?? null, speed_kt: wind.speedKt ?? null, gust_kt: wind.gustKt ?? null } : null,
-    elevation_ft: elevationFt, altimeter_in_hg: altimeterInHg ?? null, temp_c: tempC ?? null, weight_lb: weightLb, kind,
+    elevation_ft: elevationFt,
+    altimeter_in_hg: altimeterInHg ?? null,
+    temp_c: tempC ?? null,
+    weight_lb: weightLb,
+    kind,
   });
   return {
-    crosswindKt: fit.crosswind_kt, crosswindOver: fit.crosswind_over, neededFt: fit.needed_ft, lengthFt: fit.length_ft, short: fit.short,
-    close: fit.close, unknown: fit.unknown, beyond: fit.beyond,
+    crosswindKt: fit.crosswind_kt,
+    crosswindOver: fit.crosswind_over,
+    neededFt: fit.needed_ft,
+    lengthFt: fit.length_ft,
+    short: fit.short,
+    close: fit.close,
+    unknown: fit.unknown,
+    beyond: fit.beyond,
   };
 }

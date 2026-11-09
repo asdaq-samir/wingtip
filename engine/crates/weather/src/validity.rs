@@ -55,8 +55,9 @@ pub fn expires_at(product: Product, observed: Option<i64>, last_routine: Option<
 /// Whether a report still counts at `now`: before it expires, and, for
 /// a forecast, from when its valid time starts (`valid_from`) -- a TAF's
 /// later hours are not today's weather.
-pub fn in_force(product: Product, now: i64, observed: Option<i64>, last_routine: Option<i64>,
-                valid_from: Option<i64>, valid_to: Option<i64>) -> bool {
+pub fn in_force(
+    product: Product, now: i64, observed: Option<i64>, last_routine: Option<i64>, valid_from: Option<i64>, valid_to: Option<i64>,
+) -> bool {
     let Some(end) = expires_at(product, observed, last_routine, valid_to) else { return false };
     let started = match product {
         Product::Metar | Product::Speci => true,

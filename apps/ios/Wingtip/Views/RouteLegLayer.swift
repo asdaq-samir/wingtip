@@ -25,7 +25,7 @@ final class RouteLegLayer: NSObject, UIGestureRecognizerDelegate {
     private var drawn: RouteLegs.MapLeg?
     private var night = false
 
-    nonisolated override init() { super.init() }
+    override nonisolated init() { super.init() }
 
     func attach(_ map: MKMapView) {
         let tap = UITapGestureRecognizer(target: self, action: #selector(tapped(_:)))

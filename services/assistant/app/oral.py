@@ -19,6 +19,7 @@ model as material to examine, never as instructions. It is a study aid:
 not an examiner's judgement, and the page says so. Until a CFI has
 reviewed its answers (the roadmap's release gate) it is the developer's.
 """
+
 from __future__ import annotations
 
 import json
@@ -41,11 +42,7 @@ VERDICTS = ("satisfactory", "partial", "unsatisfactory")
 _CITATIONS = {
     "type": "array",
     "description": "The passages the answer rests on: each source's id exactly as given, and a short quote copied word for word from it.",
-    "items": {
-        "type": "object",
-        "properties": {"source": {"type": "string"}, "quote": {"type": "string"}},
-        "required": ["source", "quote"],
-    },
+    "items": {"type": "object", "properties": {"source": {"type": "string"}, "quote": {"type": "string"}}, "required": ["source", "quote"]},
 }
 
 ASK = {
@@ -58,7 +55,8 @@ ASK = {
             "acs_code": {"type": "string", "description": "The ACS element code it examines, one of those given."},
             "model_answer": {"type": "string", "description": "A complete, correct answer, from the sources only."},
             "key_points": {
-                "type": "array", "items": {"type": "string"},
+                "type": "array",
+                "items": {"type": "string"},
                 "description": "What a satisfactory answer must include, each a few words.",
             },
             "citations": _CITATIONS,
@@ -105,9 +103,7 @@ class OralUnavailable(Exception):
 
 
 def _sources_block(found: list[references.Source], limit: int) -> str:
-    return "\n".join(
-        f'<source id="{s.id}" title="{s.title}">\n{s.text[:limit]}\n</source>' for s in found
-    )
+    return "\n".join(f'<source id="{s.id}" title="{s.title}">\n{s.text[:limit]}\n</source>' for s in found)
 
 
 def _forced(tool: dict, content: str, max_tokens: int) -> dict:
@@ -117,8 +113,11 @@ def _forced(tool: dict, content: str, max_tokens: int) -> dict:
     try:
         with tracing.claude_call("oral", ORAL_MODEL) as used:
             resp = anthropic.Anthropic().messages.create(
-                model=ORAL_MODEL, max_tokens=max_tokens, system=SYSTEM,
-                tools=[tool], tool_choice={"type": "auto"},
+                model=ORAL_MODEL,
+                max_tokens=max_tokens,
+                system=SYSTEM,
+                tools=[tool],
+                tool_choice={"type": "auto"},
                 messages=[{"role": "user", "content": f"{content}\n\nAnswer by calling the {tool['name']} tool."}],
             )
             used.add(resp)

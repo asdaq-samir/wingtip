@@ -22,7 +22,14 @@ import SectionTitle from "./SectionTitle";
  * for the list, as iOS puts one in the bar over it; `badge` beside the
  * heading, what the whole group's state is.
  */
-export function ListGroup({ title, badge, action, footer, children, className }: {
+export function ListGroup({
+  title,
+  badge,
+  action,
+  footer,
+  children,
+  className,
+}: {
   title?: string;
   badge?: ReactNode;
   action?: ReactNode;
@@ -48,7 +55,11 @@ export function ListGroup({ title, badge, action, footer, children, className }:
           band above and below every row that a tap did nothing on (the
           owner's screenshot, 2026-10-28). The rows' own padding is the
           room between them instead (ListRow, 13 a side in a group). */}
-      <ItemGroup role="group" aria-labelledby={title ? id : undefined} className="gap-0 rounded-lg border border-border bg-card has-data-[size=sm]:gap-0 has-data-[size=xs]:gap-0">
+      <ItemGroup
+        role="group"
+        aria-labelledby={title ? id : undefined}
+        className="gap-0 rounded-lg border border-border bg-card has-data-[size=sm]:gap-0 has-data-[size=xs]:gap-0"
+      >
         {rows.map((row, i) => (
           <Fragment key={i}>
             {i > 0 && <ItemSeparator className="my-0" />}
@@ -87,7 +98,22 @@ const LABEL = cn("font-normal", TEXT.row);
 const DESCRIPTION = cn("line-clamp-none", TEXT.detail);
 const VALUE = cn("text-muted-foreground tabular-nums", TEXT.row);
 
-export function ListRow({ id, media, title, description, value, href, to, chevron, checkbox, radio, wide, muted, children, ...buttonProps }: {
+export function ListRow({
+  id,
+  media,
+  title,
+  description,
+  value,
+  href,
+  to,
+  chevron,
+  checkbox,
+  radio,
+  wide,
+  muted,
+  children,
+  ...buttonProps
+}: {
   id?: string;
   /** A note in place of a row -- none yet, could not be had -- its words in
    *  the secondary grey, where 32 rows wrote that grey round their title. */
@@ -116,7 +142,8 @@ export function ListRow({ id, media, title, description, value, href, to, chevro
 } & Omit<ComponentProps<"button">, "title" | "value" | "children">) {
   const choice = !!checkbox || radio !== undefined || buttonProps["aria-pressed"] !== undefined;
   // A radio's mark, iOS's checkmark, shown by the item's own state.
-  const mark = radio !== undefined ? <Check className="size-4 text-tint invisible group-data-[state=checked]:visible" aria-hidden /> : media;
+  const mark =
+    radio !== undefined ? <Check className="size-4 text-tint invisible group-data-[state=checked]:visible" aria-hidden /> : media;
   const opens = chevron || to !== undefined;
   const action = href !== undefined || (!!buttonProps.onClick && !opens && !choice);
   // The words wrap, where the stock Item cuts its title at one line and
@@ -127,14 +154,25 @@ export function ListRow({ id, media, title, description, value, href, to, chevro
       {checkbox ? (
         <ItemMedia>
           <Checkbox
-            checked={checkbox.checked} onCheckedChange={on => checkbox.onChange(on === true)}
+            checked={checkbox.checked}
+            onCheckedChange={(on) => checkbox.onChange(on === true)}
             data-testid={(buttonProps as { "data-testid"?: string })["data-testid"]}
           />
         </ItemMedia>
-      ) : mark && <ItemMedia className={cn(action && "text-tint")}>{mark}</ItemMedia>}
+      ) : (
+        mark && <ItemMedia className={cn(action && "text-tint")}>{mark}</ItemMedia>
+      )}
       <ItemContent className="min-w-0 gap-0.5">
         <ItemTitle className={cn(action ? TITLE_ACTION : TITLE, wide && "w-full")}>
-          {id ? <Label htmlFor={id} className={LABEL}>{title}</Label> : muted ? <span className="text-muted-foreground">{title}</span> : title}
+          {id ? (
+            <Label htmlFor={id} className={LABEL}>
+              {title}
+            </Label>
+          ) : muted ? (
+            <span className="text-muted-foreground">{title}</span>
+          ) : (
+            title
+          )}
         </ItemTitle>
         {description && <ItemDescription className={DESCRIPTION}>{description}</ItemDescription>}
       </ItemContent>
@@ -152,11 +190,17 @@ export function ListRow({ id, media, title, description, value, href, to, chevro
   // is the control, so its own height is its hit area.
   if (to !== undefined) {
     return (
-      <Item asChild size="sm" className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-[13px] no-underline! hover:bg-muted/50 pointer-coarse:active:bg-muted">
+      <Item
+        asChild
+        size="sm"
+        className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-[13px] no-underline! hover:bg-muted/50 pointer-coarse:active:bg-muted"
+      >
         {/* What a wrapper hands a row (a sheet's Close, its click) goes
             on the link; a button's own attributes do not. */}
         <Link
-          to={to} className={buttonProps.className} aria-label={buttonProps["aria-label"]}
+          to={to}
+          className={buttonProps.className}
+          aria-label={buttonProps["aria-label"]}
           onClick={buttonProps.onClick as ComponentProps<typeof Link>["onClick"]}
           data-testid={(buttonProps as { "data-testid"?: string })["data-testid"]}
         >
@@ -174,34 +218,54 @@ export function ListRow({ id, media, title, description, value, href, to, chevro
             row that copies what the site it opens is to be given (the
             Brief's Open in 1800wxbrief), in the tap's own gesture. */}
         <a
-          href={href} target="_blank" rel="noreferrer"
+          href={href}
+          target="_blank"
+          rel="noreferrer"
           onClick={buttonProps.onClick as ComponentProps<"a">["onClick"]}
           data-testid={(buttonProps as { "data-testid"?: string })["data-testid"]}
-        >{body}</a>
+        >
+          {body}
+        </a>
       </Item>
     );
   }
   if (checkbox) {
     // A label round the row, so a tap anywhere on it is a tap on the box.
     return (
-      <Item asChild size="sm" className="min-h-11 cursor-pointer rounded-none border-0 py-2 in-data-[slot=item-group]:py-[13px] hover:bg-muted/50 pointer-coarse:active:bg-muted">
+      <Item
+        asChild
+        size="sm"
+        className="min-h-11 cursor-pointer rounded-none border-0 py-2 in-data-[slot=item-group]:py-[13px] hover:bg-muted/50 pointer-coarse:active:bg-muted"
+      >
         <label className={buttonProps.className}>{body}</label>
       </Item>
     );
   }
   if (radio !== undefined) {
     return (
-      <Item asChild size="sm" className="group min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-[13px] text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted">
+      <Item
+        asChild
+        size="sm"
+        className="group min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-[13px] text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted"
+      >
         <RadioGroupPrimitive.Item value={radio} asChild disabled={buttonProps.disabled}>
-          <button type="button" {...buttonProps}>{body}</button>
+          <button type="button" {...buttonProps}>
+            {body}
+          </button>
         </RadioGroupPrimitive.Item>
       </Item>
     );
   }
   if (buttonProps.onClick) {
     return (
-      <Item asChild size="sm" className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-[13px] text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted">
-        <button type="button" {...buttonProps}>{body}</button>
+      <Item
+        asChild
+        size="sm"
+        className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-[13px] text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted"
+      >
+        <button type="button" {...buttonProps}>
+          {body}
+        </button>
       </Item>
     );
   }
@@ -209,7 +273,9 @@ export function ListRow({ id, media, title, description, value, href, to, chevro
   // picked (aria-current), the attributes of a button's it has a use for.
   return (
     <Item
-      size="sm" className={cn("min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-[13px]", buttonProps.className)} aria-current={buttonProps["aria-current"]}
+      size="sm"
+      className={cn("min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-[13px]", buttonProps.className)}
+      aria-current={buttonProps["aria-current"]}
       data-testid={(buttonProps as { "data-testid"?: string })["data-testid"]}
     >
       {body}
@@ -222,7 +288,12 @@ export function ListRow({ id, media, title, description, value, href, to, chevro
  * a Radix radio group -- arrow keys between them, one checked, the
  * group named -- around the grouped list.
  */
-export function ListChoices({ value, onChange, label, children }: {
+export function ListChoices({
+  value,
+  onChange,
+  label,
+  children,
+}: {
   value: string;
   onChange: (value: string) => void;
   label?: string;

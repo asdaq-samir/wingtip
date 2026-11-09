@@ -3,6 +3,7 @@ and read back as the planner reads them (wingtip.weather): the store is the
 contract between the two, so the planner's readers are tested here over
 what this service writes. Moved from the planner's tests of wingtip.weather
 (#535); the network is stubbed with files in the real files' schema."""
+
 import gzip
 import time
 from datetime import datetime, timezone
@@ -95,6 +96,7 @@ def _serve(name: str, answer: Mock, at: float = T0200Z) -> None:
 
 # --- fetched from the cache files, stored, read by the planner ---------------
 
+
 def test_the_metars_are_the_newest_report_per_station_from_the_cache_file():
     with patch("app.fetch.requests.get", return_value=METARS) as mock_get:
         aviationweather.fetch_source("metars")
@@ -102,15 +104,26 @@ def test_the_metars_are_the_newest_report_per_station_from_the_cache_file():
     # wingtip's own User-Agent on every ask (wingtip.config.REQUEST_HEADERS).
     assert mock_get.call_args.kwargs["headers"]["User-Agent"].startswith("wingtip-maps/")
     result = metar_for_idents(["KDLH", "KORD", "C81"])
-    assert result["KDLH"]["flight_category"] == "VFR"        # the 0153Z SPECI, not the 0053Z METAR
-    assert result["KDLH"]["ceiling_ft"] is None              # CLR
-    assert result["KDLH"]["wind_dir_true_deg"] is None       # VRB
+    assert result["KDLH"]["flight_category"] == "VFR"  # the 0153Z SPECI, not the 0053Z METAR
+    assert result["KDLH"]["ceiling_ft"] is None  # CLR
+    assert result["KDLH"]["wind_dir_true_deg"] is None  # VRB
     assert result["KDLH"]["wind_speed_kt"] == 3.0
     assert result["KORD"] == {
-        "raw": "KORD 200151Z 09008KT 2SM BR OVC006 14/13 A2998", "observed_at": "2026-09-20T01:51:00.000Z",
-        "flight_category": "IFR", "wx": "", "ceiling_ft": 600, "ceiling_unknown": False, "visibility_sm": 2.0, "wind_dir_true_deg": None,
-        "wind_speed_kt": None, "wind_gust_kt": None, "altimeter_in_hg": None, "temp_c": None, "dewpoint_c": None,
-        "lat": None, "lon": None,
+        "raw": "KORD 200151Z 09008KT 2SM BR OVC006 14/13 A2998",
+        "observed_at": "2026-09-20T01:51:00.000Z",
+        "flight_category": "IFR",
+        "wx": "",
+        "ceiling_ft": 600,
+        "ceiling_unknown": False,
+        "visibility_sm": 2.0,
+        "wind_dir_true_deg": None,
+        "wind_speed_kt": None,
+        "wind_gust_kt": None,
+        "altimeter_in_hg": None,
+        "temp_c": None,
+        "dewpoint_c": None,
+        "lat": None,
+        "lon": None,
     }
     assert result["C81"] is None
 
@@ -122,8 +135,11 @@ def test_metars_are_kept_however_long_an_outage_with_their_own_times():
     of their own run out: the TAF and SIGMET tests below."""
     _serve("metars", METARS)
     assert weather_store.read("metars").until is None
-    with patch("app.fetch.requests.get", side_effect=requests.ConnectionError("no route to host")), \
-            patch("wingtip.retry.time.sleep"), pytest.raises(fetch.FetchFailed):
+    with (
+        patch("app.fetch.requests.get", side_effect=requests.ConnectionError("no route to host")),
+        patch("wingtip.retry.time.sleep"),
+        pytest.raises(fetch.FetchFailed),
+    ):
         aviationweather.fetch_source("metars")
     with patch("wingtip.weather_store.time.time", return_value=T0200Z + 6 * 3600):
         report = metar_for_idents(["KORD"])["KORD"]
@@ -133,17 +149,19 @@ def test_metars_are_kept_however_long_an_outage_with_their_own_times():
 
 def test_a_taf_set_is_served_to_the_end_of_its_latest_period_and_no_further():
     _serve("tafs", TAFS)
-    ends = datetime(2026, 9, 20, 12, 0, tzinfo=timezone.utc).timestamp()   # the latest period above
+    ends = datetime(2026, 9, 20, 12, 0, tzinfo=timezone.utc).timestamp()  # the latest period above
     with patch("wingtip.weather_store.time.time", return_value=ends - 60):
         assert weather._dataset("tafs")[0]["icaoId"] == "KDLH"
-    with patch("wingtip.weather_store.time.time", return_value=ends + 120), \
-            pytest.raises(weather.WeatherServiceError, match="TAFs unavailable"):
+    with (
+        patch("wingtip.weather_store.time.time", return_value=ends + 120),
+        pytest.raises(weather.WeatherServiceError, match="TAFs unavailable"),
+    ):
         weather._dataset("tafs")
 
 
 def test_sigmets_are_served_until_the_last_of_them_ends():
     _serve("airsigmets", AIRSIGMETS)
-    ends = datetime(2026, 9, 20, 2, 55, tzinfo=timezone.utc).timestamp()   # the latest valid_to above
+    ends = datetime(2026, 9, 20, 2, 55, tzinfo=timezone.utc).timestamp()  # the latest valid_to above
     with patch("wingtip.weather_store.time.time", return_value=ends - 60):
         assert len(weather._dataset("airsigmets")) == 3
     with patch("wingtip.weather_store.time.time", return_value=ends + 120), pytest.raises(weather.WeatherServiceError):
@@ -156,10 +174,17 @@ def test_the_forecast_along_the_route_reads_each_nearby_stations_current_period(
         forecast = ceiling_visibility_along_route(C81, KDLH)
     # Where each station is and how high its field: a ceiling is above
     # the field, and wingtip.altitude keeps a leg under the clouds in MSL.
-    assert forecast["stations"] == [{
-        "icaoId": "KDLH", "lat": 46.8421, "lon": -92.1936, "elevation_ft": 1424, "ceiling_ft": 1500, "ceiling_unknown": False,
-        "visibility_sm": 3.0,
-    }]
+    assert forecast["stations"] == [
+        {
+            "icaoId": "KDLH",
+            "lat": 46.8421,
+            "lon": -92.1936,
+            "elevation_ft": 1424,
+            "ceiling_ft": 1500,
+            "ceiling_unknown": False,
+            "visibility_sm": 3.0,
+        }
+    ]
     assert forecast["min_ceiling_ft"] == 1500 and forecast["min_visibility_sm"] == 3.0
 
 
@@ -167,10 +192,9 @@ def test_hazards_along_the_route_are_the_current_sigmets_the_line_crosses():
     _serve("airsigmets", AIRSIGMETS)
     with patch("wingtip.weather.time.time", return_value=T0200Z):
         hazards = hazards_along_route(C81, KDLH)
-    assert [{k: h[k] for k in ("hazard", "type", "altitude_low_ft", "altitude_high_ft", "raw")} for h in hazards] == [{
-        "hazard": "CONVECTIVE", "type": "SIGMET", "altitude_low_ft": None, "altitude_high_ft": 43000.0,
-        "raw": "CONVECTIVE SIGMET 1C",
-    }]
+    assert [{k: h[k] for k in ("hazard", "type", "altitude_low_ft", "altitude_high_ft", "raw")} for h in hazards] == [
+        {"hazard": "CONVECTIVE", "type": "SIGMET", "altitude_low_ft": None, "altitude_high_ft": 43000.0, "raw": "CONVECTIVE SIGMET 1C"}
+    ]
     # With its valid times and its area, for the briefing to say where
     # and when the flight meets it; no WMO heading here, so no issue time.
     start = datetime(2026, 9, 20, 0, 55, tzinfo=timezone.utc).timestamp()
@@ -182,9 +206,11 @@ def test_a_sigmets_issue_time_is_its_wmo_headings_day_hour_and_minute():
     """WSUS32 KKCI 261655: issued the 26th at 1655Z (WMO-No. 386's
     abbreviated heading), in the month of its valid time -- the month
     before for the 31st read on the 1st."""
+
     def issued(raw, valid):
-        xml = (f"<response><data><AIRSIGMET><raw_text>{raw}</raw_text><valid_time_from>{valid}</valid_time_from>"
-               "</AIRSIGMET></data></response>").encode()
+        xml = (
+            f"<response><data><AIRSIGMET><raw_text>{raw}</raw_text><valid_time_from>{valid}</valid_time_from></AIRSIGMET></data></response>"
+        ).encode()
         return aviationweather.SOURCES["airsigmets"][1](xml)[0]["issued"]
 
     assert issued("WSUS32 KKCI 261655\nSIGC\nCONVECTIVE SIGMET 45C", "2026-10-26T16:55:00Z") == "2026-10-26T16:55:00Z"
@@ -194,11 +220,14 @@ def test_a_sigmets_issue_time_is_its_wmo_headings_day_hour_and_minute():
 
 # --- failures --------------------------------------------------------------
 
+
 def test_a_certificate_failure_is_not_retried():
     """An expired or untrusted certificate fails the same way every time;
     the back-off would only delay the same answer by six seconds."""
-    with patch("app.fetch.requests.get", side_effect=requests.exceptions.SSLError("certificate has expired")) as mock_get, \
-            patch("wingtip.retry.time.sleep") as mock_sleep:
+    with (
+        patch("app.fetch.requests.get", side_effect=requests.exceptions.SSLError("certificate has expired")) as mock_get,
+        patch("wingtip.retry.time.sleep") as mock_sleep,
+    ):
         with pytest.raises(fetch.FetchFailed, match="certificate has expired"):
             aviationweather.fetch_source("metars")
     assert mock_get.call_count == 1
@@ -230,8 +259,9 @@ def test_a_request_refused_as_asked_is_not_retried_and_one_too_many_is():
 def test_an_unchanged_product_is_not_downloaded_or_parsed_again(monkeypatch):
     """The stored copy's ETag asks whether it has changed: a 304 keeps it,
     stored again as fetched now."""
-    first = MagicMock(status_code=200, content=gzip.compress(b"<response/>"),
-                      headers={"ETag": '"abc"', "Last-Modified": "Wed, 07 Oct 2026 16:11:35 GMT"})
+    first = MagicMock(
+        status_code=200, content=gzip.compress(b"<response/>"), headers={"ETag": '"abc"', "Last-Modified": "Wed, 07 Oct 2026 16:11:35 GMT"}
+    )
     unchanged = MagicMock(status_code=304, content=b"", headers={"ETag": '"abc"'})
     asked = []
 
@@ -255,6 +285,7 @@ def test_an_unchanged_product_is_not_downloaded_or_parsed_again(monkeypatch):
 
 
 # --- reading a TAF over the flight's own hours ------------------------------
+
 
 def _taf(periods: str) -> Mock:
     return _cache_file(
@@ -310,8 +341,13 @@ def test_a_forecast_that_does_not_cover_the_flight_says_nothing_about_it():
 def test_a_becmg_change_lasts_past_its_own_window():
     """BECMG 0203 ... 2SM BKN008 still holds at 0600: the feed carries no
     base period after it, so taking only what overlaps 0600 read VFR."""
-    _serve("tafs", _taf(_fcst("00", "12", vis="6+")
-                        + _fcst("02", "03", change="BECMG", vis="2", sky='<sky_condition sky_cover="BKN" cloud_base_ft_agl="800"/>')))
+    _serve(
+        "tafs",
+        _taf(
+            _fcst("00", "12", vis="6+")
+            + _fcst("02", "03", change="BECMG", vis="2", sky='<sky_condition sky_cover="BKN" cloud_base_ft_agl="800"/>')
+        ),
+    )
     later = ceiling_visibility_along_route(C81, KDLH, window=(_at(6), _at(7)))
     assert later["min_ceiling_ft"] == 800 and later["min_visibility_sm"] == 2.0
 
@@ -322,7 +358,8 @@ def test_a_station_is_read_for_when_the_flight_is_there():
     told, and not one arriving at 01Z: each place over its own hour."""
     _serve("tafs", FOG_IN_A_TEMPO)
     assert weather.tafs_over({"KDLH": (_at(4), _at(6))}) == {
-        "KDLH": {"ceiling_ft": 200, "ceiling_unknown": False, "visibility_sm": 0.5, "raw": "TAF KDLH ..."}}
+        "KDLH": {"ceiling_ft": 200, "ceiling_unknown": False, "visibility_sm": 0.5, "raw": "TAF KDLH ..."}
+    }
     assert weather.tafs_over({"KDLH": (_at(0), _at(2))})["KDLH"]["visibility_sm"] == 6.0
     # One with no TAF held is left out; asked for none, nothing is read.
     assert weather.tafs_over({"KXXX": (_at(0), _at(2))}) == {}
@@ -360,12 +397,7 @@ def test_a_ceiling_reported_with_no_height_is_not_known():
     _serve("metars", UNMEASURED)
     found = metar_for_idents(["KAAA", "KBBB", "KCCC", "KDDD"])
     sky = {i: (m["ceiling_ft"], m["ceiling_unknown"], m["flight_category"]) for i, m in found.items()}
-    assert sky == {
-        "KAAA": (None, True, None),
-        "KBBB": (1200, False, "MVFR"),
-        "KCCC": (None, True, None),
-        "KDDD": (None, True, "LIFR"),
-    }
+    assert sky == {"KAAA": (None, True, None), "KBBB": (1200, False, "MVFR"), "KCCC": (None, True, None), "KDDD": (None, True, "LIFR")}
 
 
 def test_vfr_not_recommended_says_a_ceiling_of_unknown_height():
@@ -382,8 +414,13 @@ def test_vfr_not_recommended_says_a_ceiling_of_unknown_height():
 def test_a_forecast_ceiling_with_no_height_is_not_known():
     """TEMPO OVC/// under a BKN040 forecast: the worst ceiling the forecast
     allows is not known, so 4,000 ft is not the whole of it."""
-    _serve("tafs", _taf(_fcst("00", "12", vis="6+", sky='<sky_condition sky_cover="BKN" cloud_base_ft_agl="4000"/>')
-                        + _fcst("04", "06", change="TEMPO", vis="6+", sky='<sky_condition sky_cover="OVC"/>')))
+    _serve(
+        "tafs",
+        _taf(
+            _fcst("00", "12", vis="6+", sky='<sky_condition sky_cover="BKN" cloud_base_ft_agl="4000"/>')
+            + _fcst("04", "06", change="TEMPO", vis="6+", sky='<sky_condition sky_cover="OVC"/>')
+        ),
+    )
     during = ceiling_visibility_along_route(C81, KDLH, window=(_at(3), _at(5)))
     assert (during["min_ceiling_ft"], during["ceiling_unknown_at"]) == (4000, ["KDLH"])
     assert during["stations"][0]["ceiling_unknown"] is True
@@ -454,10 +491,13 @@ PIREP_XML = b"""<response><data>
 
 def test_the_pilot_reports_are_the_pireps_not_the_airliners_position_reports():
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z").encode()
-    _serve("pireps", Mock(status_code=200, headers={}, content=gzip.compress(PIREP_XML.replace(b"{now}", now)),
-                          raise_for_status=Mock()), at=time.time())
+    _serve(
+        "pireps",
+        Mock(status_code=200, headers={}, content=gzip.compress(PIREP_XML.replace(b"{now}", now)), raise_for_status=Mock()),
+        at=time.time(),
+    )
     reports = weather._dataset("pireps")
-    assert [r["aircraft"] for r in reports] == ["C172", "B738", None]   # the AIREP left out
+    assert [r["aircraft"] for r in reports] == ["C172", "B738", None]  # the AIREP left out
     assert reports[2]["urgent"] is True
     near = weather.pireps_along_route([(42.0, -88.0), (43.0, -88.0)])
     assert [(r["aircraft"], r["turbulence"], r["icing"]) for r in near] == [("C172", "MOD", "NEG")]
@@ -480,10 +520,16 @@ GAIRMET_XML = b"""<response><data>
 
 def test_the_g_airmets_are_the_area_hazards_a_vfr_flight_is_told_of():
     advisories = aviationweather.SOURCES["gairmets"][1](GAIRMET_XML)
-    assert len(advisories) == 2                                 # high-level turbulence left out
+    assert len(advisories) == 2  # high-level turbulence left out
     assert {k: v for k, v in advisories[0].items() if k not in ("valid", "coords")} == {
-        "hazard": "Icing", "severity": "MOD", "due_to": "ICE", "valid_at": "2026-10-04T15:00:00.000Z", "issued": None,
-        "altitude_low_ft": None, "from_freezing_level": True, "altitude_high_ft": 16000.0,
+        "hazard": "Icing",
+        "severity": "MOD",
+        "due_to": "ICE",
+        "valid_at": "2026-10-04T15:00:00.000Z",
+        "issued": None,
+        "altitude_low_ft": None,
+        "from_freezing_level": True,
+        "altitude_high_ft": 16000.0,
     }
     # Stored until its last snapshot is past GAIRMET_SNAPSHOT_S.
     last = datetime(2026, 10, 4, 18, tzinfo=timezone.utc).timestamp()
@@ -492,17 +538,20 @@ def test_the_g_airmets_are_the_area_hazards_a_vfr_flight_is_told_of():
 
 # --- each station's last wind, for the calm-wind runway ---
 
+
 def test_each_stations_last_windy_report_is_kept_three_hours():
     """The METAR file holds a station's latest report only: the last one
     with a direction and some speed is kept as they come, for the runway it
     favoured once the wind has gone calm (wingtip.weather.recent_wind)."""
     windy = {"KDLH": {"wind_dir_true_deg": 270.0, "wind_speed_kt": 8.0, "observed_at": "2026-09-20T01:00:00Z"}}
-    calm = {"KDLH": {"wind_dir_true_deg": 0.0, "wind_speed_kt": 0.0, "observed_at": "2026-09-20T02:00:00Z"},
-            "KORD": {"wind_dir_true_deg": None, "wind_speed_kt": 3.0, "observed_at": "2026-09-20T02:00:00Z"}}
+    calm = {
+        "KDLH": {"wind_dir_true_deg": 0.0, "wind_speed_kt": 0.0, "observed_at": "2026-09-20T02:00:00Z"},
+        "KORD": {"wind_dir_true_deg": None, "wind_speed_kt": 3.0, "observed_at": "2026-09-20T02:00:00Z"},
+    }
     aviationweather.keep_recent_winds(windy, T0200Z - 3600)
     aviationweather.keep_recent_winds(calm, T0200Z)
     with patch("wingtip.weather.time.time", return_value=T0200Z):
         assert weather.recent_wind("KDLH") == {"wind_dir_true_deg": 270.0, "wind_speed_kt": 8.0}
-        assert weather.recent_wind("KORD") is None                # variable: no direction
+        assert weather.recent_wind("KORD") is None  # variable: no direction
     aviationweather.keep_recent_winds({}, T0200Z + 3 * 3600)
-    assert weather_store.read("recent-winds").data == {}         # older than three hours: dropped
+    assert weather_store.read("recent-winds").data == {}  # older than three hours: dropped

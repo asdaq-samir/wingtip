@@ -27,10 +27,12 @@ test("a clearance read is shown in its items and entered as the route", async ({
   await page.getByTestId("radio-button").click();
   await expect(page.getByTestId("clearance-text")).toBeVisible();
   await expect(page.getByTestId("clearance-toggle")).toHaveCount(0);
-  await page.getByTestId("clearance-text").fill(
-    "Cessna one two three alpha bravo cleared to the Duluth airport via Gopher then as filed, climb and maintain three thousand, "
-    + "expect seven thousand one zero minutes after departure, departure frequency one two five point three five, squawk four five two one",
-  );
+  await page
+    .getByTestId("clearance-text")
+    .fill(
+      "Cessna one two three alpha bravo cleared to the Duluth airport via Gopher then as filed, climb and maintain three thousand, " +
+        "expect seven thousand one zero minutes after departure, departure frequency one two five point three five, squawk four five two one",
+    );
   const body = page.getByTestId("clearance-body");
   const hear = body.getByTestId("clearance-detail-hear");
   await expect(hear.getByText("GEP", { exact: true })).toBeVisible({ timeout: slow(20_000) });
@@ -64,18 +66,30 @@ test("a clearance read is shown in its items and entered as the route", async ({
 test("the microphone listens once into a pill, and its chip flies the altitude said", async ({ page }) => {
   await page.addInitScript(() => {
     class Heard {
-      lang = ""; continuous = false; interimResults = false;
-      onresult: ((e: unknown) => void) | null = null; onerror: ((e: unknown) => void) | null = null; onend: (() => void) | null = null;
+      lang = "";
+      continuous = false;
+      interimResults = false;
+      onresult: ((e: unknown) => void) | null = null;
+      onerror: ((e: unknown) => void) | null = null;
+      onend: (() => void) | null = null;
       start() {
         const said = "November one two three alpha bravo climb and maintain five thousand";
-        setTimeout(() => this.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript: said.slice(0, 30) }], { isFinal: false })] }), 200);
+        setTimeout(
+          () => this.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript: said.slice(0, 30) }], { isFinal: false })] }),
+          200,
+        );
         setTimeout(() => this.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript: said }], { isFinal: true })] }), 500);
       }
-      stop() { setTimeout(() => this.onend?.(), 50); }
+      stop() {
+        setTimeout(() => this.onend?.(), 50);
+      }
     }
     // Both names: this Chromium has the unprefixed one as well.
     // `available`, Chrome's on-device ask (lib/speechLocal): voice is offered only where speech stays on the device.
-    Object.assign(window, { SpeechRecognition: Object.assign(Heard, { available: async () => "available" }), webkitSpeechRecognition: Heard });
+    Object.assign(window, {
+      SpeechRecognition: Object.assign(Heard, { available: async () => "available" }),
+      webkitSpeechRecognition: Heard,
+    });
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -99,14 +113,30 @@ test("the microphone listens once into a pill, and its chip flies the altitude s
 test("the pilot's own words are chips: the nearest airports and a timer", { tag: "@smoke" }, async ({ page }) => {
   await page.addInitScript(() => {
     class Heard {
-      lang = ""; continuous = false; interimResults = false;
-      onresult: ((e: unknown) => void) | null = null; onerror: ((e: unknown) => void) | null = null; onend: (() => void) | null = null;
+      lang = "";
+      continuous = false;
+      interimResults = false;
+      onresult: ((e: unknown) => void) | null = null;
+      onerror: ((e: unknown) => void) | null = null;
+      onend: (() => void) | null = null;
       start() {
-        setTimeout(() => this.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript: "nearest airport and start the timer" }], { isFinal: true })] }), 300);
+        setTimeout(
+          () =>
+            this.onresult?.({
+              resultIndex: 0,
+              results: [Object.assign([{ transcript: "nearest airport and start the timer" }], { isFinal: true })],
+            }),
+          300,
+        );
       }
-      stop() { setTimeout(() => this.onend?.(), 50); }
+      stop() {
+        setTimeout(() => this.onend?.(), 50);
+      }
     }
-    Object.assign(window, { SpeechRecognition: Object.assign(Heard, { available: async () => "available" }), webkitSpeechRecognition: Heard });
+    Object.assign(window, {
+      SpeechRecognition: Object.assign(Heard, { available: async () => "available" }),
+      webkitSpeechRecognition: Heard,
+    });
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -130,11 +160,23 @@ test("with nothing heard the pill stays and says so until put away", async ({ pa
   // cockpit.
   await page.addInitScript(() => {
     class Quiet {
-      onresult = null; onerror: ((e: unknown) => void) | null = null; onend: (() => void) | null = null;
-      start() { setTimeout(() => { this.onerror?.({ error: "audio-capture" }); this.onend?.(); }, 300); }
-      stop() { setTimeout(() => this.onend?.(), 50); }
+      onresult = null;
+      onerror: ((e: unknown) => void) | null = null;
+      onend: (() => void) | null = null;
+      start() {
+        setTimeout(() => {
+          this.onerror?.({ error: "audio-capture" });
+          this.onend?.();
+        }, 300);
+      }
+      stop() {
+        setTimeout(() => this.onend?.(), 50);
+      }
     }
-    Object.assign(window, { SpeechRecognition: Object.assign(Quiet, { available: async () => "available" }), webkitSpeechRecognition: Quiet });
+    Object.assign(window, {
+      SpeechRecognition: Object.assign(Quiet, { available: async () => "available" }),
+      webkitSpeechRecognition: Quiet,
+    });
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);

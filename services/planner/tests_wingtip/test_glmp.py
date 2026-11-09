@@ -3,6 +3,7 @@
 National Blend of Models' Lambert conformal grid (R 6,371,200 m, 2,539.703
 m cells) cut to four points by three from 42.30 N 88.10 W, round Campbell
 Airport (C81), valid 2026-10-10 21:00Z, the values written here."""
+
 from datetime import datetime, timezone
 
 import numpy as np
@@ -35,11 +36,19 @@ def _store(ceiling_m, visibility_m=16128.0) -> None:
         array = np.broadcast_to(np.asarray(values, dtype=np.float32), (3, 4)).copy()
         name = f"glmp-{field}-2026101021"
         weather_store.write_array(name, array)
-        grids[field] = {"x0": x0, "dx": DX, "y0": y0, "dy": DX, "nx": 4, "ny": 3, "proj": PROJ,
-                        "valid": "2026-10-10T21:00:00Z", "array": name}
+        grids[field] = {
+            "x0": x0,
+            "dx": DX,
+            "y0": y0,
+            "dy": DX,
+            "nx": 4,
+            "ny": 3,
+            "proj": PROJ,
+            "valid": "2026-10-10T21:00:00Z",
+            "array": name,
+        }
     # Served while it is one of the last three issues posted.
-    weather_store.write("glmp", grids, fetched_at=ISSUED + 300, until=ISSUED + 3 * 3600 + 300,
-                        meta={"issued": "2026-10-10T21:30:00Z"})
+    weather_store.write("glmp", grids, fetched_at=ISSUED + 300, until=ISSUED + 3 * 3600 + 300, meta={"issued": "2026-10-10T21:30:00Z"})
 
 
 @pytest.fixture(autouse=True)
@@ -81,11 +90,20 @@ def test_with_no_issue_stored_or_one_too_old_it_says_so():
         glmp.at(*_point(1, 1), now=datetime(2026, 10, 11, 1, 40, tzinfo=timezone.utc))
 
 
-@pytest.mark.parametrize("ceiling, visibility, category", [
-    (None, 10, "VFR"), (3100, 6, "VFR"),
-    (3000, 10, "MVFR"), (None, 5, "MVFR"), (1000, 10, "MVFR"),
-    (999, 10, "IFR"), (None, 2.9, "IFR"), (500, 10, "IFR"),
-    (499, 10, "LIFR"), (None, 0.9, "LIFR"),
-])
+@pytest.mark.parametrize(
+    "ceiling, visibility, category",
+    [
+        (None, 10, "VFR"),
+        (3100, 6, "VFR"),
+        (3000, 10, "MVFR"),
+        (None, 5, "MVFR"),
+        (1000, 10, "MVFR"),
+        (999, 10, "IFR"),
+        (None, 2.9, "IFR"),
+        (500, 10, "IFR"),
+        (499, 10, "LIFR"),
+        (None, 0.9, "LIFR"),
+    ],
+)
 def test_flight_categories_are_the_aims(ceiling, visibility, category):
     assert glmp.flight_category(ceiling, visibility) == category

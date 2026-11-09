@@ -24,7 +24,11 @@ const Pages = createContext<{ open: (page: string) => void; from: string | null 
  * page. Focus goes as a push and a pop take it: to the page's title,
  * and back to the row that opened it.
  */
-export function ConsolePages({ back, pages, children }: {
+export function ConsolePages({
+  back,
+  pages,
+  children,
+}: {
   /** The tab's name: where the page's close goes back to, said to a
    *  screen reader. */
   back: string;
@@ -47,7 +51,13 @@ export function ConsolePages({ back, pages, children }: {
   // device's Back take away, one at a time: a page of a page first.
   useEffect(() => {
     if (!open) return;
-    return holdOpenCard({ close: () => { setPopped(true); setOpen(null); }, inBar: false });
+    return holdOpenCard({
+      close: () => {
+        setPopped(true);
+        setOpen(null);
+      },
+      inBar: false,
+    });
   }, [open]);
   useEffect(() => {
     if (!open) return;
@@ -61,7 +71,7 @@ export function ConsolePages({ back, pages, children }: {
   // tab's put-away is (below) -- and the ask's key then let go of for
   // the pages inside it, in an effect, as an outside store is set. By
   // the keys alone: the pages are made anew each render.
-  const wanted = useWantedPage(s => s.path[0] ?? null);
+  const wanted = useWantedPage((s) => s.path[0] ?? null);
   const known = Object.keys(pages).join(" ");
   const [seen, setSeen] = useState<{ wanted: string | null; known: string }>({ wanted: null, known: "" });
   if (seen.wanted !== wanted || seen.known !== known) {
@@ -95,18 +105,40 @@ export function ConsolePages({ back, pages, children }: {
         // back to the page under it, as iOS's navigation does one level
         // at a time: this page's head steps aside while one is open in it.
         <div
-          key={open} data-slot="console-page" data-testid="console-page"
+          key={open}
+          data-slot="console-page"
+          data-testid="console-page"
           className="space-y-4 [animation-duration:var(--motion-page)] animate-in fade-in slide-in-from-right-4 [&:has([data-slot=console-page])>[data-slot=page-head]]:hidden"
         >
           <div className="flex items-center gap-2" data-slot="page-head">
-            <h3 ref={title} tabIndex={-1} className={cn("flex-1 font-bold tracking-tight outline-none", TEXT.card)}>{page.title}</h3>
-            <CloseButton label={`Back to ${back}`} className="-mr-1" onClick={() => { setPopped(true); setOpen(null); }} data-testid="console-page-close" />
+            <h3 ref={title} tabIndex={-1} className={cn("flex-1 font-bold tracking-tight outline-none", TEXT.card)}>
+              {page.title}
+            </h3>
+            <CloseButton
+              label={`Back to ${back}`}
+              className="-mr-1"
+              onClick={() => {
+                setPopped(true);
+                setOpen(null);
+              }}
+              data-testid="console-page-close"
+            />
           </div>
           {page.content}
         </div>
       ) : (
         <div className={cn(popped && "[animation-duration:var(--motion-page)] animate-in fade-in")}>
-          <Pages.Provider value={{ open: p => { setFrom(p); setOpen(p); }, from }}>{children}</Pages.Provider>
+          <Pages.Provider
+            value={{
+              open: (p) => {
+                setFrom(p);
+                setOpen(p);
+              },
+              from,
+            }}
+          >
+            {children}
+          </Pages.Provider>
         </div>
       )}
     </div>
@@ -115,7 +147,15 @@ export function ConsolePages({ back, pages, children }: {
 
 /** A row that opens one of the tab's pages: its name, what it holds at
  *  its end as a value, and the chevron. */
-export function PageRow({ page, title, description, value, media, testId, disabled }: {
+export function PageRow({
+  page,
+  title,
+  description,
+  value,
+  media,
+  testId,
+  disabled,
+}: {
   page: string;
   title: ReactNode;
   description?: ReactNode;
@@ -128,8 +168,22 @@ export function PageRow({ page, title, description, value, media, testId, disabl
   const pages = useContext(Pages);
   const row = useRef<HTMLButtonElement>(null);
   const back = pages?.from === page;
-  useEffect(() => { if (back) row.current?.focus(); }, [back]);
-  return <ListRow ref={row} title={title} description={description} value={value} media={media} chevron disabled={disabled} onClick={() => pages?.open(page)} data-testid={testId} />;
+  useEffect(() => {
+    if (back) row.current?.focus();
+  }, [back]);
+  return (
+    <ListRow
+      ref={row}
+      title={title}
+      description={description}
+      value={value}
+      media={media}
+      chevron
+      disabled={disabled}
+      onClick={() => pages?.open(page)}
+      data-testid={testId}
+    />
+  );
 }
 
 /** A page opened by a tap anywhere on a block of the caller's own -- the
@@ -138,7 +192,10 @@ export function PageButton({ page, label, testId, children }: { page: string; la
   const pages = useContext(Pages);
   return (
     <button
-      type="button" onClick={() => pages?.open(page)} aria-label={label} data-testid={testId}
+      type="button"
+      onClick={() => pages?.open(page)}
+      aria-label={label}
+      data-testid={testId}
       className="flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring"
     >
       {children}
@@ -153,8 +210,13 @@ export function PageLink({ page, children, testId }: { page: string; children: R
   const pages = useContext(Pages);
   return (
     <button
-      type="button" onClick={() => pages?.open(page)} data-testid={testId}
-      className={cn("relative rounded-sm text-tint outline-none after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring", TEXT.detail)}
+      type="button"
+      onClick={() => pages?.open(page)}
+      data-testid={testId}
+      className={cn(
+        "relative rounded-sm text-tint outline-none after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+        TEXT.detail,
+      )}
     >
       {children}
     </button>
@@ -168,11 +230,15 @@ export function StepRow({ n, title, description }: { n: number; title: ReactNode
     <ListRow
       title={<span className="font-semibold">{title}</span>}
       description={description}
-      media={(
-        <span className={cn("flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-[0.8125rem] font-semibold text-primary-foreground")}>
+      media={
+        <span
+          className={cn(
+            "flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-[0.8125rem] font-semibold text-primary-foreground",
+          )}
+        >
           {n}
         </span>
-      )}
+      }
     />
   );
 }

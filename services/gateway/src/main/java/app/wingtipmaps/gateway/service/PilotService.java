@@ -54,7 +54,8 @@ public class PilotService {
      *  their address. Asked on every resolution, not only the first, so
      *  an address listed later takes effect on that pilot's next request. */
     private Pilot withListedRole(Pilot pilot) {
-        if (pilot.getRole().isDeveloper() || !developerEmails.contains(pilot.getEmail().toLowerCase(Locale.ROOT))) {
+        if (pilot.getRole().isDeveloper()
+                || !developerEmails.contains(pilot.getEmail().toLowerCase(Locale.ROOT))) {
             return pilot;
         }
         pilot.grantDeveloper();
@@ -96,7 +97,9 @@ public class PilotService {
             // make a second pilot, and the account showed the old one --
             // unless another pilot already holds it.
             Pilot pilot = bySubject.get();
-            if (!email.equalsIgnoreCase(pilot.getEmail()) && emailVerified(user) && pilots.findByEmail(email).isEmpty()) {
+            if (!email.equalsIgnoreCase(pilot.getEmail())
+                    && emailVerified(user)
+                    && pilots.findByEmail(email).isEmpty()) {
                 pilot.changeEmail(email);
                 return pilots.save(pilot);
             }
@@ -164,8 +167,7 @@ public class PilotService {
      *  base in capitals, for a flight plan's item 19 C/; blank is none. */
     @Transactional
     public Pilot setContact(Pilot pilot, String phone, String homeBase) {
-        pilot.setContact(
-                Typed.words(phone), Typed.code(homeBase));
+        pilot.setContact(Typed.words(phone), Typed.code(homeBase));
         return pilots.save(pilot);
     }
 

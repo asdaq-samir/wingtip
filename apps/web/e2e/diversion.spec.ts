@@ -8,13 +8,49 @@ import { settle, slow, openNavLog, navLogSheet } from "./helpers";
  * so the field and its course are known.
  */
 test("a diversion over a checkpoint: the clock, a field picked, and the estimates marked", async ({ page }) => {
-  await page.route("**/api/planner/airports/nearest?*", route => route.fulfill({
-    status: 200, contentType: "application/json", body: JSON.stringify({ airports: [
-      { ident: "HERE", name: "Under Us", lat: 0, lon: 0, kind: "small", distance_nm: 0.4, bearing_deg: 0, longest_runway_ft: 2000, flight_category: "VFR" },
-      { ident: "KAAA", name: "Near Field", lat: 0, lon: 0, kind: "small", distance_nm: 9, bearing_deg: 90, longest_runway_ft: 4000, flight_category: "VFR" },
-      { ident: "KBBB", name: "Far Field", lat: 0, lon: 0, kind: "medium", distance_nm: 18, bearing_deg: 180, longest_runway_ft: 6000, flight_category: null },
-    ] }),
-  }));
+  await page.route("**/api/planner/airports/nearest?*", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        airports: [
+          {
+            ident: "HERE",
+            name: "Under Us",
+            lat: 0,
+            lon: 0,
+            kind: "small",
+            distance_nm: 0.4,
+            bearing_deg: 0,
+            longest_runway_ft: 2000,
+            flight_category: "VFR",
+          },
+          {
+            ident: "KAAA",
+            name: "Near Field",
+            lat: 0,
+            lon: 0,
+            kind: "small",
+            distance_nm: 9,
+            bearing_deg: 90,
+            longest_runway_ft: 4000,
+            flight_category: "VFR",
+          },
+          {
+            ident: "KBBB",
+            name: "Far Field",
+            lat: 0,
+            lon: 0,
+            kind: "medium",
+            distance_nm: 18,
+            bearing_deg: 180,
+            longest_runway_ft: 6000,
+            flight_category: null,
+          },
+        ],
+      }),
+    }),
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await page.getByTestId("sidebar-trigger-button").click();

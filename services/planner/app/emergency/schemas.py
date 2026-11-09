@@ -1,5 +1,6 @@
 """GET /api/emergency/fields' answer: each field as the engine's
 best_fields reads a candidate, with what the screen shows beside it."""
+
 from pydantic import BaseModel
 
 from ..schemas.plan import DemonstratedCrosswind, ShortField

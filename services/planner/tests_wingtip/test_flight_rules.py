@@ -5,6 +5,7 @@ validity), one copy for the planner and the phones. Held here to the
 shared fixture the web and the iOS app are held to too
 (apps/web/src/lib/fixtures/flightRules.json), and the variation to pygeomag,
 the model's Python, at points round the world."""
+
 import json
 import random
 from datetime import date
@@ -70,11 +71,19 @@ def test_variation_is_pygeomags_round_the_world():
         assert engine("magnetic_variation", lat=lat, lon=lon, year=year) == pytest.approx(want, abs=1e-9)
     # And wingtip.magnetic's day is the model's decimal year.
     assert magnetic_variation_deg(46.8421, -92.1936, date(2026, 11, 2)) == pytest.approx(
-        model.calculate(glat=46.8421, glon=-92.1936, alt=0, time=2026 + 305 / 365).d, abs=1e-9)
+        model.calculate(glat=46.8421, glon=-92.1936, alt=0, time=2026 + 305 / 365).d, abs=1e-9
+    )
 
 
 @pytest.mark.parametrize("case", FIXTURE["weatherInForce"], ids=lambda c: c["why"])
 def test_offline_weather_counts_only_until_it_expires(case):
-    got = engine("weather_in_force", product=case["product"], now=case["now"], observed=case.get("observed"),
-                 last_routine=case.get("lastRoutine"), valid_from=case.get("validFrom"), valid_to=case.get("validTo"))
+    got = engine(
+        "weather_in_force",
+        product=case["product"],
+        now=case["now"],
+        observed=case.get("observed"),
+        last_routine=case.get("lastRoutine"),
+        valid_from=case.get("validFrom"),
+        valid_to=case.get("validTo"),
+    )
     assert got == case["inForce"]

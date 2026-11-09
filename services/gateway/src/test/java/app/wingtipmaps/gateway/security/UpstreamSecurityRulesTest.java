@@ -47,7 +47,8 @@ class UpstreamSecurityRulesTest {
      * (a corridor's chart-vision job, the classifier, the model
      * comparison): it is now refused as the GET is. The one change.
      */
-    static final Set<String> HEAD_NOW_THE_DEVELOPERS = Set.of("/api/detect/stream", "/api/classify", "/api/model-comparison");
+    static final Set<String> HEAD_NOW_THE_DEVELOPERS =
+            Set.of("/api/detect/stream", "/api/classify", "/api/model-comparison");
 
     /** The old routes wider than any upstream answered (UpstreamRoutesTest's
      *  NARROWED), probed at an address the upstream does answer: the rest
@@ -92,7 +93,8 @@ class UpstreamSecurityRulesTest {
         given(pilotService.current(any())).willReturn(Optional.of(pilot));
         List<String> differences = new ArrayList<>();
         for (RoutesBefore route : RoutesBefore.all()) {
-            String path = "/api/planner" + ANSWERED.getOrDefault(route.pattern(), route.sample()).substring("/api".length());
+            String path = "/api/planner"
+                    + ANSWERED.getOrDefault(route.pattern(), route.sample()).substring("/api".length());
             String name = route.method() + " " + route.pattern();
             String access = access(route.method(), path);
             if (!access.equals(route.access())) {
@@ -114,7 +116,9 @@ class UpstreamSecurityRulesTest {
         assertThat(differences).isEmpty();
         // And each of the three was signed-in before, so the list above
         // names a real change and nothing else.
-        assertThat(RoutesBefore.all()).filteredOn(route -> HEAD_NOW_THE_DEVELOPERS.contains(route.pattern()))
-                .hasSize(3).allSatisfy(route -> assertThat(route.headAccess()).isEqualTo("signed-in"));
+        assertThat(RoutesBefore.all())
+                .filteredOn(route -> HEAD_NOW_THE_DEVELOPERS.contains(route.pattern()))
+                .hasSize(3)
+                .allSatisfy(route -> assertThat(route.headAccess()).isEqualTo("signed-in"));
     }
 }

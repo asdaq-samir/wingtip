@@ -9,6 +9,7 @@ The radar and the satellite picture are tiles the browser draws itself
 says when the radar was made, as the weather service last read it
 (services/weather/app/radar.py).
 """
+
 from __future__ import annotations
 
 import math
@@ -45,13 +46,23 @@ def advisories_in(box: tuple, at: float) -> list[dict]:
         if (a["valid_from"] is not None and a["valid_from"] > at) or (a["valid_to"] is not None and a["valid_to"] <= at):
             continue
         kind = (a["type"] or "SIGMET").upper()
-        out.append({
-            "id": f"sigmet-{i}", "kind": "convective" if "CONVECTIVE" in (a["hazard"] or "") or "CONVECTIVE" in kind else (
-                "airmet" if "AIRMET" in kind else "sigmet"),
-            "hazard": a["hazard"], "severity": None, "low_ft": a["altitude_low_ft"], "high_ft": a["altitude_high_ft"],
-            "from_freezing_level": False, "valid_from": a["valid_from"], "valid_to": a["valid_to"], "raw": a["raw"],
-            "coords": [list(c) for c in a["coords"]],
-        })
+        out.append(
+            {
+                "id": f"sigmet-{i}",
+                "kind": "convective"
+                if "CONVECTIVE" in (a["hazard"] or "") or "CONVECTIVE" in kind
+                else ("airmet" if "AIRMET" in kind else "sigmet"),
+                "hazard": a["hazard"],
+                "severity": None,
+                "low_ft": a["altitude_low_ft"],
+                "high_ft": a["altitude_high_ft"],
+                "from_freezing_level": False,
+                "valid_from": a["valid_from"],
+                "valid_to": a["valid_to"],
+                "raw": a["raw"],
+                "coords": [list(c) for c in a["coords"]],
+            }
+        )
     try:
         gairmets = weather._dataset("gairmets")
     except weather.WeatherServiceError:
@@ -65,11 +76,21 @@ def advisories_in(box: tuple, at: float) -> list[dict]:
             continue
         if len(a["coords"]) < 3 or not _in_box(a["coords"], box):
             continue
-        out.append({
-            "id": f"gairmet-{i}", "kind": "gairmet", "hazard": a["hazard"], "severity": a["severity"],
-            "low_ft": a["altitude_low_ft"], "high_ft": a["altitude_high_ft"], "from_freezing_level": a["from_freezing_level"],
-            "valid_from": a["valid"], "valid_to": None, "raw": a["due_to"], "coords": [list(c) for c in a["coords"]],
-        })
+        out.append(
+            {
+                "id": f"gairmet-{i}",
+                "kind": "gairmet",
+                "hazard": a["hazard"],
+                "severity": a["severity"],
+                "low_ft": a["altitude_low_ft"],
+                "high_ft": a["altitude_high_ft"],
+                "from_freezing_level": a["from_freezing_level"],
+                "valid_from": a["valid"],
+                "valid_to": None,
+                "raw": a["due_to"],
+                "coords": [list(c) for c in a["coords"]],
+            }
+        )
     return out
 
 
@@ -106,11 +127,16 @@ def winds_in(box: tuple, altitude_ft: float, fcst_hr: str) -> dict | None:
         if wind is None:
             continue
         temp = weather.temperature_at(weather.temperatures_aloft(lat, lon, fcst_hr), altitude_ft)
-        out.append({
-            "ident": str(code), "lat": round(lat, 4), "lon": round(lon, 4),
-            "dir_true_deg": round(wind["wind_dir_true_deg"]), "speed_kt": round(wind["wind_speed_kt"]),
-            "temp_c": None if temp is None else round(temp),
-        })
+        out.append(
+            {
+                "ident": str(code),
+                "lat": round(lat, 4),
+                "lon": round(lon, 4),
+                "dir_true_deg": round(wind["wind_dir_true_deg"]),
+                "speed_kt": round(wind["wind_speed_kt"]),
+                "temp_c": None if temp is None else round(temp),
+            }
+        )
     return {"altitude_ft": altitude_ft, "period": getattr(stations, "period", None), "stations": out}
 
 

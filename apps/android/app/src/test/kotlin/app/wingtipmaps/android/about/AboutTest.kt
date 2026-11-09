@@ -1,11 +1,11 @@
 package app.wingtipmaps.android.about
 
 import app.wingtipmaps.android.api.exportFileName
-import java.io.File
-import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
+import java.time.LocalDate
 
 /** About's fixed parts: the demo flight every app plans, the credits as
  *  docs/legal/credits.md words them, and the export's file name. */

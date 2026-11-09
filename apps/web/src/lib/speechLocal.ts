@@ -30,7 +30,10 @@ export const SPEECH_LANG = "en-US";
  *  where there is a recognizer that cannot be kept on the device. */
 type SpeechHere = "checking" | "available" | "downloadable" | "downloading" | "browser" | "unavailable";
 
-interface LocalOptions { langs: string[]; processLocally: boolean }
+interface LocalOptions {
+  langs: string[];
+  processLocally: boolean;
+}
 
 /** The recognizer's class as the browser has it: the constructor, and the
  *  two statics that make on-device recognition possible to ask for. */
@@ -77,8 +80,10 @@ export function checkSpeech(): Promise<SpeechHere> {
  *  microphone once the browser has answered: false until then, and where
  *  there is no recognizer. */
 export function useCanListen(): boolean {
-  useEffect(() => { void checkSpeech(); }, []);
-  return useSpeechHere(s => s.state !== "checking" && s.state !== "unavailable");
+  useEffect(() => {
+    void checkSpeech();
+  }, []);
+  return useSpeechHere((s) => s.state !== "checking" && s.state !== "unavailable");
 }
 
 /** Whether the recognizer is to be told to stay on the device. */

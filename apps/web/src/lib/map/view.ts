@@ -11,11 +11,14 @@ export type Box = { box: { south: number; west: number; north: number; east: num
  *  for once, a pan or a zoom in that stays inside it is answered already,
  *  the marks there as the map stops. */
 export function aheadOf(bounds: Bounds): Box {
-  const dLat = bounds.getNorth() - bounds.getSouth(), dLon = bounds.getEast() - bounds.getWest();
+  const dLat = bounds.getNorth() - bounds.getSouth(),
+    dLon = bounds.getEast() - bounds.getWest();
   const out = (v: number, up: boolean) => (up ? Math.ceil(v * 2) : Math.floor(v * 2)) / 2;
   const box = {
-    south: Math.max(-90, out(bounds.getSouth() - dLat, false)), west: Math.max(-180, out(bounds.getWest() - dLon, false)),
-    north: Math.min(90, out(bounds.getNorth() + dLat, true)), east: Math.min(180, out(bounds.getEast() + dLon, true)),
+    south: Math.max(-90, out(bounds.getSouth() - dLat, false)),
+    west: Math.max(-180, out(bounds.getWest() - dLon, false)),
+    north: Math.min(90, out(bounds.getNorth() + dLat, true)),
+    east: Math.min(180, out(bounds.getEast() + dLon, true)),
   };
   return { box, key: `${box.south},${box.west},${box.north},${box.east}` };
 }
@@ -25,7 +28,8 @@ export function aheadOf(bounds: Bounds): Box {
  *  zoomed in from a whole state, the state's thousand fields were kept,
  *  and drawn. */
 export function within(bounds: Bounds, { box }: Box): boolean {
-  const inside = bounds.getSouth() >= box.south && bounds.getWest() >= box.west && bounds.getNorth() <= box.north && bounds.getEast() <= box.east;
+  const inside =
+    bounds.getSouth() >= box.south && bounds.getWest() >= box.west && bounds.getNorth() <= box.north && bounds.getEast() <= box.east;
   const wanted = aheadOf(bounds).box;
   return inside && box.north - box.south <= 3 * (wanted.north - wanted.south);
 }

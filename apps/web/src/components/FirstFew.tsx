@@ -15,7 +15,13 @@ const FIRST_ROWS = 3;
  * rest can be seen by clicking on it. Can we do similar to other
  * sections?"). Opened, it stays open while the card is.
  */
-export function FirstFew({ title, rows, after, open = false, testId }: {
+export function FirstFew({
+  title,
+  rows,
+  after,
+  open = false,
+  testId,
+}: {
   title: string;
   rows: ReactNode[];
   /** Rows always shown after them: a field's radio remarks under its
@@ -30,7 +36,8 @@ export function FirstFew({ title, rows, after, open = false, testId }: {
   const more = !all && rows.length > FIRST_ROWS;
   return (
     <PillSection
-      title={title} testId={testId}
+      title={title}
+      testId={testId}
       onMore={more ? () => setAll(true) : undefined}
       right={more ? <span className={cn("text-muted-foreground", TEXT.note)}>{`${FIRST_ROWS} of ${rows.length}`}</span> : undefined}
     >

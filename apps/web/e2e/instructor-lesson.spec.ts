@@ -15,21 +15,70 @@ import { library, noTips, openConsole, slow } from "./helpers";
 test.use({ storageState: { cookies: [], origins: [] } });
 
 const LIST = {
-  airport: "KDLH", cycle: "261029", stale: false,
+  airport: "KDLH",
+  cycle: "261029",
+  stale: false,
   procedures: [{ kind: "approach", id: "I09", name: "ILS RWY 09", runway: "09", transitions: ["DLH"], runway_transitions: [] }],
 };
 const DRAWN = {
-  airport: "KDLH", kind: "approach", id: "I09", name: "ILS RWY 09", transition: null, cycle: "261029", stale: false,
-  glidepath_deg: 3, final_course_deg: 93,
+  airport: "KDLH",
+  kind: "approach",
+  id: "I09",
+  name: "ILS RWY 09",
+  transition: null,
+  cycle: "261029",
+  stale: false,
+  glidepath_deg: 3,
+  final_course_deg: 93,
   lines: [
-    { role: "final", name: null, points: [[46.84, -92.36], [46.84, -92.33], [46.84, -92.30], [46.842, -92.21]] },
-    { role: "missed", name: null, points: [[46.842, -92.21], [46.843, -92.17], [47.0, -92.1]] },
+    {
+      role: "final",
+      name: null,
+      points: [
+        [46.84, -92.36],
+        [46.84, -92.33],
+        [46.84, -92.3],
+        [46.842, -92.21],
+      ],
+    },
+    {
+      role: "missed",
+      name: null,
+      points: [
+        [46.842, -92.21],
+        [46.843, -92.17],
+        [47.0, -92.1],
+      ],
+    },
   ],
-  holds: [{ fix: "CHERL", turn: "R", inbound_deg: 196, missed: true, kind: "hold", points: [[47.0, -92.1], [47.02, -92.12], [47.0, -92.1]] }],
+  holds: [
+    {
+      fix: "CHERL",
+      turn: "R",
+      inbound_deg: 196,
+      missed: true,
+      kind: "hold",
+      points: [
+        [47.0, -92.1],
+        [47.02, -92.12],
+        [47.0, -92.1],
+      ],
+    },
+  ],
   fixes: [
     { ident: "DL", lat: 46.84, lon: -92.36, roles: ["IAF"], min_ft: 3300, max_ft: null, speed_kt: null, missed: false },
     { ident: "CFBSJ", lat: 46.84, lon: -92.33, roles: ["FACF"], min_ft: 3300, max_ft: null, speed_kt: null, missed: false },
-    { ident: "PYKLA", lat: 46.84, lon: -92.30, roles: ["FAF"], min_ft: 3300, max_ft: null, speed_kt: null, missed: false, vertical_angle_deg: 3 },
+    {
+      ident: "PYKLA",
+      lat: 46.84,
+      lon: -92.3,
+      roles: ["FAF"],
+      min_ft: 3300,
+      max_ft: null,
+      speed_kt: null,
+      missed: false,
+      vertical_angle_deg: 3,
+    },
     { ident: "RW09", lat: 46.842, lon: -92.21, roles: ["MAP"], min_ft: null, max_ft: null, speed_kt: null, missed: false },
     { ident: "CHERL", lat: 47.0, lon: -92.1, roles: ["hold"], min_ft: 4500, max_ft: null, speed_kt: null, missed: true },
   ],
@@ -42,13 +91,16 @@ const DRAWN = {
 };
 
 async function stubProcedures(page: Page) {
-  await page.route(url => /\/airport\/[^/]+\/procedures/.test(url.pathname), route => {
-    const url = new URL(route.request().url());
-    if (url.pathname.endsWith("/plate")) return route.fulfill({ status: 404, json: { detail: "none" } });
-    if (/\/KDLH\/procedures$/.test(url.pathname)) return route.fulfill({ json: LIST });
-    if (url.pathname.endsWith("/KDLH/procedures/I09")) return route.fulfill({ json: DRAWN });
-    return route.fulfill({ json: { airport: "C81", cycle: "261029", stale: false, procedures: [] } });
-  });
+  await page.route(
+    (url) => /\/airport\/[^/]+\/procedures/.test(url.pathname),
+    (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname.endsWith("/plate")) return route.fulfill({ status: 404, json: { detail: "none" } });
+      if (/\/KDLH\/procedures$/.test(url.pathname)) return route.fulfill({ json: LIST });
+      if (url.pathname.endsWith("/KDLH/procedures/I09")) return route.fulfill({ json: DRAWN });
+      return route.fulfill({ json: { airport: "C81", cycle: "261029", stale: false, procedures: [] } });
+    },
+  );
 }
 
 async function signedInAs(page: Page, address: string) {
@@ -68,7 +120,10 @@ async function logbook(page: Page) {
   return console;
 }
 
-test("an instructor sets an approach as a lesson, the student answers its quiz, and the instructor sees the score", async ({ page, browser }) => {
+test("an instructor sets an approach as a lesson, the student answers its quiz, and the instructor sees the score", async ({
+  page,
+  browser,
+}) => {
   test.setTimeout(240_000);
   const stamp = Date.now();
   const student = `lesson-student-${stamp}@example.com`;
@@ -123,7 +178,7 @@ test("an instructor sets an approach as a lesson, the student answers its quiz, 
   await lesson.getByTestId("approach-lesson-steps").getByRole("radio", { name: "Quiz" }).click();
   const quiz = lesson.getByTestId("approach-quiz");
   await expect(quiz.getByTestId("approach-quiz-question")).toHaveText("What's the minimum altitude at DL?");
-  const sent = page.waitForResponse(r => /\/api\/training\/lessons\/\d+\/progress$/.test(new URL(r.url()).pathname) && r.ok());
+  const sent = page.waitForResponse((r) => /\/api\/training\/lessons\/\d+\/progress$/.test(new URL(r.url()).pathname) && r.ok());
   await quiz.getByTestId("approach-quiz-choice").filter({ hasText: "3,300 ft" }).click();
   await expect(quiz.getByTestId("approach-quiz-result")).toContainText("Right");
   await sent;

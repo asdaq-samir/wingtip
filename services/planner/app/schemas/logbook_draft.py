@@ -3,6 +3,7 @@ logbook entry the engine draws from it out (logbook_from_track, its
 shapes in engine/contract/engine.schema.json). The entry's columns are
 the gateway's LogbookEntryRequest, camelCase, so the app sends them on
 to POST /api/logbook as they come once the pilot confirms."""
+
 from typing import Literal
 
 from pydantic import BaseModel, Field

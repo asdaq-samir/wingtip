@@ -168,7 +168,9 @@ pub struct InFlight {
 }
 
 /// The instruments: None where there is no line to fly.
-pub fn in_flight(fix: Fix, line: &[(f64, f64)], points: &[Point], legs: &[Leg], fuel_start_gal: Option<f64>, now_s: Option<f64>) -> Option<InFlight> {
+pub fn in_flight(
+    fix: Fix, line: &[(f64, f64)], points: &[Point], legs: &[Leg], fuel_start_gal: Option<f64>, now_s: Option<f64>,
+) -> Option<InFlight> {
     let lens = lengths(line);
     let here = along(line, &lens, fix.lat, fix.lon, 0)?;
     let total: f64 = lens.iter().sum();
@@ -179,7 +181,8 @@ pub fn in_flight(fix: Fix, line: &[(f64, f64)], points: &[Point], legs: &[Leg], 
     // The leg's course where the airplane is: the great circle from the
     // nearest point on to the segment's end.
     let at = destination(a.0, a.1, bearing_deg(a.0, a.1, b.0, b.1), here.along_nm - lens[..here.segment].iter().sum::<f64>());
-    let desired = if distance_nm(at.0, at.1, b.0, b.1) > 1e-6 { bearing_deg(at.0, at.1, b.0, b.1) } else { bearing_deg(a.0, a.1, b.0, b.1) };
+    let desired =
+        if distance_nm(at.0, at.1, b.0, b.1) > 1e-6 { bearing_deg(at.0, at.1, b.0, b.1) } else { bearing_deg(a.0, a.1, b.0, b.1) };
     let track_error_deg = fix.track_deg.filter(|_| moving).map(|t| py_mod(t - desired + 180.0, 360.0) - 180.0);
     // Each point's own place along the line, in order, so a route that
     // doubles back finds each on its own leg.
@@ -197,7 +200,8 @@ pub fn in_flight(fix: Fix, line: &[(f64, f64)], points: &[Point], legs: &[Leg], 
         let ete = gs.map(|g| nm / g * 60.0);
         (ete, ete.zip(now_s).map(|(m, t)| t + m * 60.0))
     };
-    let next_index = (1..points.len()).find(|&k| places[k].is_some_and(|p| p > here.along_nm)).or(points.len().checked_sub(1).filter(|&k| k > 0));
+    let next_index =
+        (1..points.len()).find(|&k| places[k].is_some_and(|p| p > here.along_nm)).or(points.len().checked_sub(1).filter(|&k| k > 0));
     let next = next_index.map(|k| {
         let p = &points[k];
         let nm = distance_nm(fix.lat, fix.lon, p.lat, p.lon);
@@ -279,7 +283,10 @@ pub fn vertical_speed(samples: &[(f64, f64)]) -> Option<f64> {
 /// elevation, and its outline on the sphere for a map that draws polygons.
 /// None on the ground, slower than flying speed, with no height to go by
 /// or with no glide ratio (no airplane, or none in its profile).
-pub fn glide_ring(lat: f64, lon: f64, altitude_ft: Option<f64>, speed_kt: Option<f64>, terrain_ft: Option<f64>, field_ft: Option<f64>, glide_ratio: Option<f64>) -> Option<(f64, f64, Vec<(f64, f64)>)> {
+pub fn glide_ring(
+    lat: f64, lon: f64, altitude_ft: Option<f64>, speed_kt: Option<f64>, terrain_ft: Option<f64>, field_ft: Option<f64>,
+    glide_ratio: Option<f64>,
+) -> Option<(f64, f64, Vec<(f64, f64)>)> {
     // The higher ground of the two: the ring is how far the airplane
     // glides before it meets it, so the lower would draw it too wide.
     let ground = match (terrain_ft, field_ft) {
@@ -295,7 +302,10 @@ pub fn glide_ring(lat: f64, lon: f64, altitude_ft: Option<f64>, speed_kt: Option
 
 fn pair(n: &str, v: &Value) -> Result<(f64, f64), String> {
     match v.as_array() {
-        Some([a, b]) => Ok((a.as_f64().ok_or_else(|| format!("{n}: a point is not [lat, lon]"))?, b.as_f64().ok_or_else(|| format!("{n}: a point is not [lat, lon]"))?)),
+        Some([a, b]) => Ok((
+            a.as_f64().ok_or_else(|| format!("{n}: a point is not [lat, lon]"))?,
+            b.as_f64().ok_or_else(|| format!("{n}: a point is not [lat, lon]"))?,
+        )),
         _ => Err(format!("{n}: a point is not [lat, lon]")),
     }
 }
@@ -340,7 +350,13 @@ pub(super) fn in_flight_rule(v: &Value) -> Result<String, String> {
     let line = list(n, v, "line")?.iter().map(|p| pair(n, p)).collect::<Result<Vec<_>, _>>()?;
     let points = list(n, v, "points")?
         .iter()
-        .map(|p| Ok(Point { name: p.get("name").and_then(Value::as_str).unwrap_or("").to_owned(), lat: num(n, p, "lat")?, lon: num(n, p, "lon")? }))
+        .map(|p| {
+            Ok(Point {
+                name: p.get("name").and_then(Value::as_str).unwrap_or("").to_owned(),
+                lat: num(n, p, "lat")?,
+                lon: num(n, p, "lon")?,
+            })
+        })
         .collect::<Result<Vec<_>, String>>()?;
     let legs = list(n, v, "legs")?
         .iter()
@@ -350,13 +366,21 @@ pub(super) fn in_flight_rule(v: &Value) -> Result<String, String> {
         return Ok("null".to_owned());
     };
     let mut out = format!("{{\"on_route\":{}", i.on_route);
-    for (key, x) in [("along_nm", i.along_nm), ("total_nm", i.total_nm), ("left_nm", (i.total_nm - i.along_nm).max(0.0)), ("off_nm", i.off_nm)] {
+    for (key, x) in
+        [("along_nm", i.along_nm), ("total_nm", i.total_nm), ("left_nm", (i.total_nm - i.along_nm).max(0.0)), ("off_nm", i.off_nm)]
+    {
         out.push_str(&format!(",\"{key}\":"));
         json::number(&mut out, x);
     }
     out.push_str(",\"off_side\":");
     // No side to a position on the line, to a tenth of a mile.
-    out.push_str(if i.off_nm < 0.05 { "null" } else if i.left_of_line { "\"left\"" } else { "\"right\"" });
+    out.push_str(if i.off_nm < 0.05 {
+        "null"
+    } else if i.left_of_line {
+        "\"left\""
+    } else {
+        "\"right\""
+    });
     for (key, x) in [
         ("desired_track_deg", Some(i.desired_track_deg)),
         ("desired_track_mag_deg", i.desired_track_mag_deg),

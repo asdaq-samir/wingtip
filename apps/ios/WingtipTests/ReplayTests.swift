@@ -49,18 +49,18 @@ struct ReplayTests {
         #expect(replay.at == nil && replay.fix == nil)
         replay.play()
         #expect(replay.at == 1000 && replay.playing)
-        replay.step(5)                              // 5 s at 10 times: 50 s of the flight
+        replay.step(5) // 5 s at 10 times: 50 s of the flight
         #expect(replay.at == 1050)
         #expect(replay.fix?.altitudeFt == 2000 && replay.fix?.groundspeedKt == 90)
         replay.pause()
         replay.step(5)
         #expect(replay.at == 1050)
         replay.play()
-        #expect(replay.at == 1050)                  // from where it was left
+        #expect(replay.at == 1050) // from where it was left
         replay.step(60)
         #expect(replay.at == 1100 && !replay.playing)
         replay.play()
-        #expect(replay.at == 1000)                  // ended: from the start
+        #expect(replay.at == 1000) // ended: from the start
         replay.stop()
         #expect(replay.at == nil && !replay.playing && replay.fix == nil)
     }
@@ -75,7 +75,7 @@ struct ReplayTests {
         replay.scrub(to: 1040)
         replay.load(Self.points, key: "a")
         #expect(replay.at == 1040)
-        replay.clear("b")                           // another card's: left alone
+        replay.clear("b") // another card's: left alone
         #expect(replay.at == 1040)
         replay.clear("a")
         #expect(replay.at == nil && replay.points.isEmpty)
@@ -111,10 +111,10 @@ struct ReplayTests {
 @MainActor
 struct RootLayoutTests {
     @Test func theIPadAtFullWidthSplitsEverythingElseKeepsTheSheet() throws {
-        #expect(RootLayout.of(.regular, .regular) == .split)        // an iPad, or iPhone Duo open
-        #expect(RootLayout.of(.compact, .regular) == .sheet)        // an iPhone, iPhone Duo closed, an iPad in a narrow Split View
-        #expect(RootLayout.of(.regular, .compact) == .sheet)        // an iPhone Max held sideways
-        #expect(RootLayout.of(.compact, .compact) == .sheet)        // an iPhone held sideways
+        #expect(RootLayout.of(.regular, .regular) == .split) // an iPad, or iPhone Duo open
+        #expect(RootLayout.of(.compact, .regular) == .sheet) // an iPhone, iPhone Duo closed, an iPad in a narrow Split View
+        #expect(RootLayout.of(.regular, .compact) == .sheet) // an iPhone Max held sideways
+        #expect(RootLayout.of(.compact, .compact) == .sheet) // an iPhone held sideways
         #expect(RootLayout.of(nil, .regular) == .sheet)
     }
 

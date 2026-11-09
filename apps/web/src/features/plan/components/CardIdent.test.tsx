@@ -15,7 +15,11 @@ const { default: CardIdent } = await import("./CardIdent");
 
 beforeAll(() => {
   // cmdk and Radix want these of a browser.
-  globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} };
+  globalThis.ResizeObserver ??= class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
   Element.prototype.scrollIntoView ??= () => {};
 });
 afterEach(cleanup);

@@ -1,6 +1,7 @@
 """wingtip.spoken finds the places a clearance said aloud: navaids by name,
 fixes by their five letters said as a word, airports by name, SIDs and
 STARs by name and number."""
+
 from wingtip import spoken
 
 # Round KMSP and KDLH, as NASR and the CIFP name them.
@@ -25,7 +26,13 @@ def test_a_sound_is_its_consonants_so_a_fix_said_as_a_word_is_its_letters():
 def test_an_ident_or_a_name_said_is_found_outright():
     assert spoken.point("GEP", PLACES)["ident"] == "GEP"
     assert spoken.point("the Gopher VOR", PLACES) == {
-        "said": "the Gopher VOR", "ident": "GEP", "name": "Gopher", "kind": "navaid", "lat": 45.15, "lon": -93.37, "sure": True,
+        "said": "the Gopher VOR",
+        "ident": "GEP",
+        "name": "Gopher",
+        "kind": "navaid",
+        "lat": 45.15,
+        "lon": -93.37,
+        "sure": True,
     }
     assert spoken.point("Sioux Falls", PLACES)["ident"] == "FSD"
 

@@ -3,6 +3,7 @@ scripts/dev/one-at-a-time.sh's lock directories, says "container" where
 the script writes a pid, gives it back however the block ends, waits
 behind a run in the script's line, and gives up after its wait; and the
 `next` command runs wingtip.chart_next under the refresh lock."""
+
 import subprocess
 from pathlib import Path
 
@@ -76,8 +77,14 @@ def test_the_script_keeps_a_touched_container_turn_and_takes_back_a_stale_one(tm
     lock = tmp_path / "heavy.lock"
     lock.mkdir()
     (lock / "owner").write_text("container charts job (since 01:00)\n")
-    env = {"ONE_AT_A_TIME_LOCK": str(lock), "ONE_AT_A_TIME_SLOTS": "1", "ONE_AT_A_TIME_WAIT": "0",
-           "ONE_AT_A_TIME_FREE_MIN": "0", "ONE_AT_A_TIME_SWAP_MAX_MB": "0", "PATH": "/usr/bin:/bin"}
+    env = {
+        "ONE_AT_A_TIME_LOCK": str(lock),
+        "ONE_AT_A_TIME_SLOTS": "1",
+        "ONE_AT_A_TIME_WAIT": "0",
+        "ONE_AT_A_TIME_FREE_MIN": "0",
+        "ONE_AT_A_TIME_SWAP_MAX_MB": "0",
+        "PATH": "/usr/bin:/bin",
+    }
     held = subprocess.run(["bash", str(SCRIPT), "a suite", "true"], env=env, capture_output=True, text=True)
     assert held.returncode == 75 and lock.exists()
     subprocess.run(["touch", "-t", "202001010000", str(lock / "owner")], check=True)

@@ -5,6 +5,7 @@ NOAA's own calculator gave -- the values this project had cached from it
 before the model was evaluated locally -- and the sign convention the
 nav log's true-to-magnetic conversion depends on.
 """
+
 from datetime import date
 
 import pytest
@@ -13,12 +14,7 @@ from wingtip.magnetic import magnetic_variation_deg
 
 # Real rows from the CSV this project cached NOAA's calculator into:
 # (lat, lon, declination NOAA returned).
-NOAA_CACHED = [
-    (44.58, -90.14, -2.55629),
-    (42.33, -88.08, -3.89582),
-    (42.36, -88.10, -3.88521),
-    (43.02, -89.00, -3.27400),
-]
+NOAA_CACHED = [(44.58, -90.14, -2.55629), (42.33, -88.08, -3.89582), (42.36, -88.10, -3.88521), (43.02, -89.00, -3.27400)]
 
 
 @pytest.mark.parametrize("lat,lon,noaa", NOAA_CACHED)

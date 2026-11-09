@@ -13,7 +13,11 @@ import { TEXT } from "../lib/text";
  * is, at the pilot's ask; no scroll bar, as iOS shows none, to move that
  * in from the side.
  */
-export function PanelCard({ testId, flush = false, children }: {
+export function PanelCard({
+  testId,
+  flush = false,
+  children,
+}: {
   testId: string;
   /** Its head a picture from the sheet's very top (PhotoHead), with no
    *  room over it. */
@@ -61,7 +65,17 @@ export function PanelCard({ testId, flush = false, children }: {
  * what goes beside them (an airport's weather and its star), and the
  * close, out to the head's row's inset (px-3) as the route's close is.
  */
-export function CardHead({ name, line, nameTestId, lineClassName, lineTestId, onClose, onShare, closeTestId, children }: {
+export function CardHead({
+  name,
+  line,
+  nameTestId,
+  lineClassName,
+  lineTestId,
+  onClose,
+  onShare,
+  closeTestId,
+  children,
+}: {
   name: ReactNode;
   /** Under the name; none where the caller sets it out itself (an
    *  airport's card, beside its diagram's thumbnail). */
@@ -79,8 +93,14 @@ export function CardHead({ name, line, nameTestId, lineClassName, lineTestId, on
   return (
     <div className="flex items-start gap-2">
       <div className="min-w-0 flex-1">
-        <h2 tabIndex={-1} className={cn("font-bold tracking-tight text-foreground outline-none", TEXT.card)} data-testid={nameTestId}>{name}</h2>
-        {line != null && <p className={cn("text-muted-foreground", TEXT.note, lineClassName)} data-testid={lineTestId}>{line}</p>}
+        <h2 tabIndex={-1} className={cn("font-bold tracking-tight text-foreground outline-none", TEXT.card)} data-testid={nameTestId}>
+          {name}
+        </h2>
+        {line != null && (
+          <p className={cn("text-muted-foreground", TEXT.note, lineClassName)} data-testid={lineTestId}>
+            {line}
+          </p>
+        )}
       </div>
       {children}
       <CardClose onClose={onClose} onShare={onShare} testId={closeTestId} className="-mr-1" />
@@ -99,7 +119,11 @@ export function CardHead({ name, line, nameTestId, lineClassName, lineTestId, on
  * airspace's, with no other, a stop in its scrolling region). With the
  * tabs shown, the tab up tapped again puts the card away.
  */
-export function CardClose({ onClose, onShare, testId }: {
+export function CardClose({
+  onClose,
+  onShare,
+  testId,
+}: {
   onClose: () => void;
   /** The card's share (an airport's, an airplane's, or the route's menu
    *  for the Brief, the nav log and the profile, each its own): the
@@ -113,8 +137,12 @@ export function CardClose({ onClose, onShare, testId }: {
     <span className="sr-only focus-within:not-sr-only">
       {/* Back one: a page opened in the card first (the Brief's), else the
           card (lib/openCards), as the bar's close goes. */}
-      <CloseButton onClick={() => { if (!closeTopCard()) onClose(); }} data-testid={testId} />
+      <CloseButton
+        onClick={() => {
+          if (!closeTopCard()) onClose();
+        }}
+        data-testid={testId}
+      />
     </span>
   );
 }
-

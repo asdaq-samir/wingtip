@@ -18,14 +18,20 @@ const PAGES = [
  * figures to the form (`onConfirmed`), which the pilot then saves with
  * the airplane. Nothing is saved from here.
  */
-export function HandbookPhotoRow({ onConfirmed, pending }: {
+export function HandbookPhotoRow({
+  onConfirmed,
+  pending,
+}: {
   onConfirmed: (figures: Confirmed) => void;
   /** Confirmed figures are waiting for the form's Save. */
   pending: boolean;
 }) {
   const photo = useDocumentPhoto("poh-performance");
   const [open, setOpen] = useState(false);
-  const close = (next: boolean) => { setOpen(next); if (!next) photo.reset(); };
+  const close = (next: boolean) => {
+    setOpen(next);
+    if (!next) photo.reset();
+  };
   const use = () => {
     const figures = photo.confirmedHandbook();
     if (figures) onConfirmed(figures);
@@ -34,16 +40,34 @@ export function HandbookPhotoRow({ onConfirmed, pending }: {
   return (
     <>
       <ListRow
-        title={<span className="flex items-center gap-2 font-medium text-tint"><Camera className="size-4" aria-hidden="true" />Add from a Photo</span>}
+        title={
+          <span className="flex items-center gap-2 font-medium text-tint">
+            <Camera className="size-4" aria-hidden="true" />
+            Add from a Photo
+          </span>
+        }
         description={pending ? "Confirmed figures are kept when you save" : "The handbook's performance or weight and balance page"}
-        onClick={() => setOpen(true)} data-testid="aircraft-photo"
+        onClick={() => setOpen(true)}
+        data-testid="aircraft-photo"
       />
       <PhotoSheet
-        photo={photo} open={open} onOpenChange={close} title="Add from a Photo" testId="handbook-photo"
-        choose={!photo.answer && (
-          <Segmented label="Which page" value={photo.kind} onChange={v => photo.setKind(v as typeof photo.kind)} options={PAGES}
-            className="w-full [&>*]:flex-1" testId="handbook-photo-page" />
-        )}
+        photo={photo}
+        open={open}
+        onOpenChange={close}
+        title="Add from a Photo"
+        testId="handbook-photo"
+        choose={
+          !photo.answer && (
+            <Segmented
+              label="Which page"
+              value={photo.kind}
+              onChange={(v) => photo.setKind(v as typeof photo.kind)}
+              options={PAGES}
+              className="w-full [&>*]:flex-1"
+              testId="handbook-photo-page"
+            />
+          )
+        }
         action={{ label: "Use Confirmed Figures", onClick: use, disabled: !photo.confirmed.size, testId: "handbook-photo-use" }}
       >
         <HandbookReview photo={photo} />

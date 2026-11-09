@@ -11,6 +11,7 @@ elevation downloads -- before it had a checkpoint, and the planner
 offered "Collect this route" for every new one. The chart is read in
 seconds for any route it covers, and it is what the pilot will be
 looking at."""
+
 import threading
 
 from cachetools import LRUCache
@@ -77,8 +78,7 @@ def score(dep: str, dest: str) -> list:
     # neighbours either side; only then cut to the planner's corridor.
     predicted = chart_model.predicted_scores(landmarks)
     checkpoints = sorted(
-        (_checkpoint(landmark, p) for landmark, p in zip(landmarks, predicted)
-         if abs(landmark.extras["cross_track_nm"]) <= HALF_WIDTH_NM),
+        (_checkpoint(landmark, p) for landmark, p in zip(landmarks, predicted) if abs(landmark.extras["cross_track_nm"]) <= HALF_WIDTH_NM),
         key=lambda c: c["along_track_nm"],
     )
     with _SCORE_CACHE_LOCK:
@@ -157,8 +157,7 @@ def route_checkpoints(r) -> tuple[list, list, list]:
         chosen = {c["id"] for c in mine}
 
         def along(c, offset=offset, index=index, chosen=chosen):
-            return {**c, "along_track_nm": round(c["along_track_nm"] + offset, 3), "hop": index,
-                    "selected": c["id"] in chosen}
+            return {**c, "along_track_nm": round(c["along_track_nm"] + offset, 3), "hop": index, "selected": c["id"] in chosen}
 
         kept = [c for c in scored if on_hop(c)]
         seen |= {c["id"] for c in kept}

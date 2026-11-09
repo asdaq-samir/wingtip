@@ -1,5 +1,6 @@
 """app.tracing: off without an endpoint, and on, the page's request id
 (as the gateway sends it on) is the request span's wingtip.request_id."""
+
 from opentelemetry.sdk.trace import TracerProvider
 
 from app import tracing

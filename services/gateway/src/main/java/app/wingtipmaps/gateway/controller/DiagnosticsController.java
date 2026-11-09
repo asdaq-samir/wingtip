@@ -76,7 +76,9 @@ public class DiagnosticsController {
      *  and message, the exit's reason), its detail (a stack, MetricKit's
      *  call tree) and when, where the device knows. */
     public record FaultReport(
-            @NotNull @Pattern(regexp = "crash|hang|exit|error|exception|cpu|disk") String kind,
+            @NotNull @Pattern(regexp = "crash|hang|exit|error|exception|cpu|disk")
+            String kind,
+
             @NotBlank @Size(max = 2000) String signature,
             @Size(max = 64000) String detail,
             Instant at) {}
@@ -87,17 +89,33 @@ public class DiagnosticsController {
             @NotNull @Pattern(regexp = "web|ios|android") String platform,
             @NotNull @Pattern(regexp = VERSION) String version,
             @Size(max = 40) String os,
-            @NotNull @Pattern(regexp = "phone|tablet|desktop") String device,
+
+            @NotNull @Pattern(regexp = "phone|tablet|desktop")
+            String device,
+
             @Pattern(regexp = NAME) String page,
             @Size(max = 20) List<@Valid @NotNull FaultReport> faults,
-            @Size(max = 30) Map<@Pattern(regexp = "[a-z][a-z0-9_]{0,39}") String,
-                    @NotNull @DecimalMin("0") @DecimalMax("100000000") Double> metrics) {}
+
+            @Size(max = 30)
+            Map<
+                            @Pattern(regexp = "[a-z][a-z0-9_]{0,39}") String,
+                            @NotNull @DecimalMin("0") @DecimalMax("100000000") Double>
+                    metrics) {}
 
     /** A kept fault, as the developer reads it. */
-    public record DiagnosticDto(Instant receivedAt, Instant occurredAt, String platform, String version, String os,
-            String device, String kind, String signature, String detail) {}
+    public record DiagnosticDto(
+            Instant receivedAt,
+            Instant occurredAt,
+            String platform,
+            String version,
+            String os,
+            String device,
+            String kind,
+            String signature,
+            String detail) {}
 
-    @Operation(summary = "Report faults and speed from a pilot's device",
+    @Operation(
+            summary = "Report faults and speed from a pilot's device",
             description = "Kept without the pilot's session, address or anything they typed; 30 an hour per caller, "
                     + "the rest dropped.")
     @ApiResponses({
@@ -107,22 +125,36 @@ public class DiagnosticsController {
     @PostMapping
     public ResponseEntity<Void> report(@Valid @RequestBody DiagnosticsReport report, HttpServletRequest request) {
         if (recent.allow("diagnostics:" + SlidingWindowLimiter.clientOf(request), PER_HOUR, Instant.now())) {
-            List<Fault> faults = report.faults() == null ? List.of() : report.faults().stream()
-                    .map(f -> new Fault(f.kind(), f.signature(), f.detail(), f.at()))
-                    .toList();
-            diagnostics.record(new Origin(report.platform(), report.version(), report.os(), report.device()), faults,
-                    report.page() == null ? "app" : report.page(), report.metrics() == null ? Map.of() : report.metrics());
+            List<Fault> faults = report.faults() == null
+                    ? List.of()
+                    : report.faults().stream()
+                            .map(f -> new Fault(f.kind(), f.signature(), f.detail(), f.at()))
+                            .toList();
+            diagnostics.record(
+                    new Origin(report.platform(), report.version(), report.os(), report.device()),
+                    faults,
+                    report.page() == null ? "app" : report.page(),
+                    report.metrics() == null ? Map.of() : report.metrics());
         }
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "The newest faults from pilots' devices",
+    @Operation(
+            summary = "The newest faults from pilots' devices",
             description = "At most 200, newest first, from the last few days; the developer's.")
     @GetMapping
     public List<DiagnosticDto> recent(@RequestParam(defaultValue = "7") int days) {
         return diagnostics.recent(Math.max(1, Math.min(90, days))).stream()
-                .map(d -> new DiagnosticDto(d.getReceivedAt(), d.getOccurredAt(), d.getPlatform(), d.getVersion(),
-                        d.getOs(), d.getDevice(), d.getKind(), d.getSignature(), d.getDetail()))
+                .map(d -> new DiagnosticDto(
+                        d.getReceivedAt(),
+                        d.getOccurredAt(),
+                        d.getPlatform(),
+                        d.getVersion(),
+                        d.getOs(),
+                        d.getDevice(),
+                        d.getKind(),
+                        d.getSignature(),
+                        d.getDetail()))
                 .toList();
     }
 }

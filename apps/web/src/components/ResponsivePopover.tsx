@@ -29,7 +29,12 @@ type OnPhoneCard = {
 /** The card's open state on a phone; from `md` up, none (Radix's). */
 const OnPhone = createContext<OnPhoneCard | null>(null);
 
-export function ResponsivePopover({ children, open, onOpenChange, phoneEdge }: {
+export function ResponsivePopover({
+  children,
+  open,
+  onOpenChange,
+  phoneEdge,
+}: {
   children: ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -42,10 +47,18 @@ export function ResponsivePopover({ children, open, onOpenChange, phoneEdge }: {
   // Radix's are.
   const [own, setOwn] = useState(false);
   const [trigger, setTrigger] = useState<HTMLElement | null>(null);
-  if (!isMobile) return <Popover open={open} onOpenChange={onOpenChange}>{children}</Popover>;
+  if (!isMobile)
+    return (
+      <Popover open={open} onOpenChange={onOpenChange}>
+        {children}
+      </Popover>
+    );
   const phone: OnPhoneCard = {
     open: open ?? own,
-    setOpen: next => { setOwn(next); onOpenChange?.(next); },
+    setOpen: (next) => {
+      setOwn(next);
+      onOpenChange?.(next);
+    },
     setTrigger,
     trigger: () => trigger,
     search: phoneEdge === "top",
@@ -60,12 +73,14 @@ export function ResponsivePopoverTrigger({ asChild, onClick, ...props }: Compone
   const { open, setOpen, setTrigger } = phone;
   return (
     <Comp
-      type={asChild ? undefined : "button"} aria-expanded={open} data-state={open ? "open" : "closed"}
+      type={asChild ? undefined : "button"}
+      aria-expanded={open}
+      data-state={open ? "open" : "closed"}
       {...props}
       ref={setTrigger}
       // The caller's first, which can keep it shut (preventDefault), as
       // Radix's trigger lets it.
-      onClick={event => {
+      onClick={(event) => {
         onClick?.(event);
         if (!event.defaultPrevented) setOpen(!open);
       }}
@@ -104,8 +119,20 @@ type ContentProps = ComponentProps<typeof PopoverContent> & {
 };
 
 export function ResponsivePopoverContent({
-  title, description, titleHidden, action, leading, className, closeButton, children, align, side, sideOffset,
-  alignOffset, collisionPadding, ...props
+  title,
+  description,
+  titleHidden,
+  action,
+  leading,
+  className,
+  closeButton,
+  children,
+  align,
+  side,
+  sideOffset,
+  alignOffset,
+  collisionPadding,
+  ...props
 }: ContentProps) {
   const phone = useContext(OnPhone);
   if (!phone) {
@@ -113,15 +140,23 @@ export function ResponsivePopoverContent({
       <PopoverContent
         // Eight off its trigger, past the trigger's hit area (index.css),
         // where the stock four laid the popover over it.
-        aria-label={title} className={className} align={align} side={side} sideOffset={sideOffset ?? 8} alignOffset={alignOffset}
-        collisionPadding={collisionPadding} {...props}
+        aria-label={title}
+        className={className}
+        align={align}
+        side={side}
+        sideOffset={sideOffset ?? 8}
+        alignOffset={alignOffset}
+        collisionPadding={collisionPadding}
+        {...props}
       >
         {action !== undefined && (
           <div className="flex min-h-8 items-center justify-between gap-2">
             {leading}
             {/* A heading, as the phone's card's name is, so a page pushed
                 in the popover (the Procedures') is named alike on both. */}
-            <div role="heading" aria-level={2} className={cn("font-semibold", TEXT.row, leading && "flex-1 text-center")}>{title}</div>
+            <div role="heading" aria-level={2} className={cn("font-semibold", TEXT.row, leading && "flex-1 text-center")}>
+              {title}
+            </div>
             {action}
           </div>
         )}
@@ -136,9 +171,19 @@ export function ResponsivePopoverContent({
   const { onOpenAutoFocus, onCloseAutoFocus, onEscapeKeyDown, "data-testid": testId } = props as typeof props & { "data-testid"?: string };
   return (
     <SheetCard
-      title={title} titleHidden={titleHidden} description={description} leading={leading} action={action} closeButton={closeButton}
-      onClose={() => phone.setOpen(false)} raise={phone.search ? "full" : "half"} testId={testId} returnFocus={phone.trigger}
-      onOpenAutoFocus={onOpenAutoFocus} onCloseAutoFocus={onCloseAutoFocus} onEscapeKeyDown={onEscapeKeyDown}
+      title={title}
+      titleHidden={titleHidden}
+      description={description}
+      leading={leading}
+      action={action}
+      closeButton={closeButton}
+      onClose={() => phone.setOpen(false)}
+      raise={phone.search ? "full" : "half"}
+      testId={testId}
+      returnFocus={phone.trigger}
+      onOpenAutoFocus={onOpenAutoFocus}
+      onCloseAutoFocus={onCloseAutoFocus}
+      onEscapeKeyDown={onEscapeKeyDown}
     >
       {children}
     </SheetCard>

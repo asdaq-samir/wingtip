@@ -24,7 +24,15 @@ struct Signal {
 }
 
 const SIGNALS: [Signal; 6] = [
-    Signal { id: "steady-green", name: "Steady green", colours: &["green"], flashing: false, surface: "Cleared for takeoff", flight: "Cleared to land", flight_detail: None },
+    Signal {
+        id: "steady-green",
+        name: "Steady green",
+        colours: &["green"],
+        flashing: false,
+        surface: "Cleared for takeoff",
+        flight: "Cleared to land",
+        flight_detail: None,
+    },
     Signal {
         id: "flashing-green",
         name: "Flashing green",
@@ -34,8 +42,24 @@ const SIGNALS: [Signal; 6] = [
         flight: "Return for landing",
         flight_detail: Some("To be followed by steady green at the proper time."),
     },
-    Signal { id: "steady-red", name: "Steady red", colours: &["red"], flashing: false, surface: "Stop", flight: "Give way to other aircraft and continue circling", flight_detail: None },
-    Signal { id: "flashing-red", name: "Flashing red", colours: &["red"], flashing: true, surface: "Taxi clear of the runway in use", flight: "Airport unsafe: do not land", flight_detail: None },
+    Signal {
+        id: "steady-red",
+        name: "Steady red",
+        colours: &["red"],
+        flashing: false,
+        surface: "Stop",
+        flight: "Give way to other aircraft and continue circling",
+        flight_detail: None,
+    },
+    Signal {
+        id: "flashing-red",
+        name: "Flashing red",
+        colours: &["red"],
+        flashing: true,
+        surface: "Taxi clear of the runway in use",
+        flight: "Airport unsafe: do not land",
+        flight_detail: None,
+    },
     Signal {
         id: "flashing-white",
         name: "Flashing white",
@@ -250,7 +274,9 @@ mod tests {
     #[test]
     fn the_cards_say_91_155s_rows() {
         let decks = decks_json();
-        assert!(decks.contains("\"Class E, at or above 10,000 ft MSL\",\"answer\":\"5 sm; 1,000 ft below, 1,000 ft above, 1 sm horizontal\""));
+        assert!(
+            decks.contains("\"Class E, at or above 10,000 ft MSL\",\"answer\":\"5 sm; 1,000 ft below, 1,000 ft above, 1 sm horizontal\"")
+        );
         assert!(decks.contains("\"Class B\",\"answer\":\"3 sm; clear of clouds\""));
         assert!(decks.contains("by day\",\"answer\":\"1 sm; clear of clouds\""));
     }

@@ -36,6 +36,10 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
+      # The Kotlin as ktlint writes it (.editorconfig's [*.{kt,kts}]), at
+      # the version scripts/dev/format.sh pins and fetches, seconds.
+      - name: The Kotlin's layout
+        run: scripts/dev/format.sh --check kotlin
       # The runner's Android SDK; what the build lacks (its platform,
       # build tools, CMake and NDK) the Gradle plugin fetches once the
       # licences are taken.

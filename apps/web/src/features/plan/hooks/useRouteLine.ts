@@ -17,20 +17,31 @@ const WAY_CHIP_SHARES = [0.2, 0.4, 0.6, 0.8];
 
 /** A card of FPL's route line: a way, its time, miles and fuel, and what
  *  it meets. */
-interface WayCard { key: string; label: string; warning: string | null; time: string | null; nm: number | null; gal: number | null }
+interface WayCard {
+  key: string;
+  label: string;
+  warning: string | null;
+  time: string | null;
+  nm: number | null;
+  gal: number | null;
+}
 
 /** What a chip's way meets, said on it in amber: the worst it meets
  *  first -- airspace a pilot may not enter, then storms and high ground,
  *  then weather -- each by its own name (a TFR was "Crosses weather"),
  *  or no field with fuel in reach (the planner's "fuel" hazard). */
 export function wayWarning(hazards: RouteOptions["hazards"], crosses: number[]): string | null {
-  const met = crosses.map(i => hazards[i]).filter((h): h is NonNullable<typeof h> => !!h);
+  const met = crosses.map((i) => hazards[i]).filter((h): h is NonNullable<typeof h> => !!h);
   const rank = (kind: string) => ["prohibited", "tfr", "storm", "terrain", "sigmet", "fuel"].indexOf(kind) >>> 0;
   const h = [...met].sort((a, b) => rank(a.kind) - rank(b.kind))[0];
   if (!h) return null;
   const words: Record<string, string> = {
-    fuel: "No fuel stop in reach", prohibited: "Crosses a prohibited area", tfr: "Crosses a TFR", storm: "Crosses storms",
-    terrain: "Crosses high ground", sigmet: "Crosses a SIGMET",
+    fuel: "No fuel stop in reach",
+    prohibited: "Crosses a prohibited area",
+    tfr: "Crosses a TFR",
+    storm: "Crosses storms",
+    terrain: "Crosses high ground",
+    sigmet: "Crosses a SIGMET",
   };
   return words[h.kind] ?? "Crosses weather";
 }
@@ -47,7 +58,15 @@ export function wayWarning(hazards: RouteOptions["hazards"], crosses: number[]):
  * and "Over Land" at 1h 14m each told a pilot nothing apart (the FPL
  * audit's A15). Null where there are not two cards to pick between.
  */
-export function wayCards({ chips, routeWays, lineKey, minutes, ground, typedNm, typedGal }: {
+export function wayCards({
+  chips,
+  routeWays,
+  lineKey,
+  minutes,
+  ground,
+  typedNm,
+  typedGal,
+}: {
   chips: RouteChip[];
   routeWays: RouteOptions | undefined;
   /** The chip picked. */
@@ -59,7 +78,8 @@ export function wayCards({ chips, routeWays, lineKey, minutes, ground, typedNm, 
 }): WayCard[] | null {
   const hazards = routeWays?.hazards ?? [];
   const scale = gridScale(routeWays, minutes);
-  const wayOf = (chip: RouteChip) => (chip.key === "fuel" ? routeWays?.own : routeWays?.options.find(o => sameStops(o.stops, chip.stops)));
+  const wayOf = (chip: RouteChip) =>
+    chip.key === "fuel" ? routeWays?.own : routeWays?.options.find((o) => sameStops(o.stops, chip.stops));
   const timeOf = (chip: RouteChip): string | null => {
     if (chip.key === "none") return minutes === null ? null : duration(minutes + ground);
     const way = wayOf(chip);
@@ -70,12 +90,25 @@ export function wayCards({ chips, routeWays, lineKey, minutes, ground, typedNm, 
     const way = wayOf(chip);
     return { nm: way?.distance_nm ?? null, gal: way?.fuel_gal ?? null };
   };
-  const typed = chips.find(c => c.key === "none");
-  const cards = chips.map(c => ({ key: c.key, label: c.key === "none" ? "As typed" : c.label, warning: wayWarning(hazards, c.crosses ?? []), time: timeOf(c), ...figuresOf(c) }))
+  const typed = chips.find((c) => c.key === "none");
+  const cards = chips
+    .map((c) => ({
+      key: c.key,
+      label: c.key === "none" ? "As typed" : c.label,
+      warning: wayWarning(hazards, c.crosses ?? []),
+      time: timeOf(c),
+      ...figuresOf(c),
+    }))
     // A way no different from the route as typed -- its time, and its
     // miles within one -- is not offered beside it (the owner's word on
     // A15), unless it is the one picked.
-    .filter(card => card.key === "none" || card.key === lineKey || !typed || !(card.time === timeOf(typed) && card.nm != null && typedNm != null && Math.abs(card.nm - typedNm) < 1));
+    .filter(
+      (card) =>
+        card.key === "none" ||
+        card.key === lineKey ||
+        !typed ||
+        !(card.time === timeOf(typed) && card.nm != null && typedNm != null && Math.abs(card.nm - typedNm) < 1),
+    );
   return cards.length < 2 ? null : cards;
 }
 
@@ -90,7 +123,20 @@ export function wayCards({ chips, routeWays, lineKey, minutes, ground, typedNm, 
  * ways drawn on the chart while the line is open.
  */
 export function useRouteLine({
-  routeWays, browsing, setBrowsing, chosenKey, vfrRoute, stops, fuelParam, ownWithFuel, ownMinutes, ownGround, ownNm, ownGal, setStops, flightRules,
+  routeWays,
+  browsing,
+  setBrowsing,
+  chosenKey,
+  vfrRoute,
+  stops,
+  fuelParam,
+  ownWithFuel,
+  ownMinutes,
+  ownGround,
+  ownNm,
+  ownGal,
+  setStops,
+  flightRules,
 }: {
   routeWays: RouteOptions | undefined;
   browsing: Browsing | null;
@@ -111,28 +157,38 @@ export function useRouteLine({
   flightRules: string;
 }) {
   const chips = routeWays?.chips ?? NO_CHIPS;
-  const lineKey = browsing ? (chips.find(c => c.key !== "none" && sameStops(c.stops, stops))?.key ?? "none") : "none";
-  const applyChip = useCallback((key: string) => {
-    if (key === "none") {
-      if (browsing) {
-        setBrowsing(null);
-        // The typed route's own picks kept (keepLists): its stops' runways,
-        // approaches, holds and altitudes, which a way that skipped a stop
-        // would otherwise have pruned.
-        setStops(browsing.stops, browsing.fuel, true);
+  const lineKey = browsing ? (chips.find((c) => c.key !== "none" && sameStops(c.stops, stops))?.key ?? "none") : "none";
+  const applyChip = useCallback(
+    (key: string) => {
+      if (key === "none") {
+        if (browsing) {
+          setBrowsing(null);
+          // The typed route's own picks kept (keepLists): its stops' runways,
+          // approaches, holds and altitudes, which a way that skipped a stop
+          // would otherwise have pruned.
+          setStops(browsing.stops, browsing.fuel, true);
+        }
+        return;
       }
-      return;
-    }
-    const chip = chips.find(c => c.key === key);
-    if (!chip) return;
-    if (!browsing) {
-      setBrowsing({
-        key: chosenKey, stops, fuel: (fuelParam ?? "").split(",").filter(Boolean),
-        withFuel: ownWithFuel, ownMinutes, ownGround, ownNm, ownGal, ways: chips.map(c => c.stops),
-      });
-    }
-    setStops(chip.stops, chip.fuel, true);
-  }, [browsing, chips, chosenKey, stops, fuelParam, ownWithFuel, ownMinutes, ownGround, ownNm, ownGal, setStops, setBrowsing]);
+      const chip = chips.find((c) => c.key === key);
+      if (!chip) return;
+      if (!browsing) {
+        setBrowsing({
+          key: chosenKey,
+          stops,
+          fuel: (fuelParam ?? "").split(",").filter(Boolean),
+          withFuel: ownWithFuel,
+          ownMinutes,
+          ownGround,
+          ownNm,
+          ownGal,
+          ways: chips.map((c) => c.stops),
+        });
+      }
+      setStops(chip.stops, chip.fuel, true);
+    },
+    [browsing, chips, chosenKey, stops, fuelParam, ownWithFuel, ownMinutes, ownGround, ownNm, ownGal, setStops, setBrowsing],
+  );
   // The rules turned to IFR on a chip: the route as typed is the route
   // (the planner's ways are VFR's).
   useEffect(() => {
@@ -144,9 +200,13 @@ export function useRouteLine({
   const routeLine = useMemo(() => {
     if (!vfrRoute || chips.length < 2) return null;
     const cards = wayCards({
-      chips, routeWays, lineKey,
-      minutes: browsing ? browsing.ownMinutes : ownMinutes, ground: browsing ? browsing.ownGround : ownGround,
-      typedNm: browsing ? browsing.ownNm : ownNm, typedGal: browsing ? browsing.ownGal : ownGal,
+      chips,
+      routeWays,
+      lineKey,
+      minutes: browsing ? browsing.ownMinutes : ownMinutes,
+      ground: browsing ? browsing.ownGround : ownGround,
+      typedNm: browsing ? browsing.ownNm : ownNm,
+      typedGal: browsing ? browsing.ownGal : ownGal,
     });
     return cards ? { chips: cards, picked: lineKey, onPick: applyChip } : null;
   }, [vfrRoute, chips, routeWays, lineKey, applyChip, browsing, ownMinutes, ownGround, ownNm, ownGal]);
@@ -154,7 +214,7 @@ export function useRouteLine({
   // The chips' ways on the chart beside the course while the line is open,
   // each its time on its chip, the one picked solid (the owner's "I want
   // all routes drawn including mine", 2026-10-25); folded, the course alone.
-  const lineOpen = useRouteLineOpen(st => st.open);
+  const lineOpen = useRouteLineOpen((st) => st.open);
   const wayLines = useMemo((): RouteWay[] => {
     if (!lineOpen || !routeLine || !routeWays) return NO_WAYS;
     const minutes = browsing ? browsing.ownMinutes : ownMinutes;
@@ -164,13 +224,18 @@ export function useRouteLine({
     for (const chip of chips) {
       if (chip.key === "none") {
         if (routeWays.current_path?.length) {
-          lines.push({ key: "own", path: routeWays.current_path as [number, number][], name: chip.label, label: minutes === null ? "" : duration(minutes + ground) });
+          lines.push({
+            key: "own",
+            path: routeWays.current_path as [number, number][],
+            name: chip.label,
+            label: minutes === null ? "" : duration(minutes + ground),
+          });
         }
         continue;
       }
       // By its stops, as the planner made the chip: a way is the best of
       // several kinds, its own `kind` only the first of them.
-      const way = chip.key === "fuel" ? routeWays.own : routeWays.options.find(o => sameStops(o.stops, chip.stops));
+      const way = chip.key === "fuel" ? routeWays.own : routeWays.options.find((o) => sameStops(o.stops, chip.stops));
       if (way) lines.push({ key: chip.key, path: way.path as [number, number][], label: wayTime(way, scale) ?? "", name: chip.label });
     }
     // Each chip where it is whichever others are drawn, by its place among

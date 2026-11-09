@@ -40,8 +40,9 @@ export function placesOf(course: Course): Place[] {
  *  else the nearest within its reach where `at` is given. */
 const fieldTaf = (stations: Station[], ident: string, at: { lat: number; lon: number } | null) =>
   callEngine("field_taf", {
-    ident, at: at ? { lat: at.lat, lon: at.lon } : null,
-    stations: stations.map(s => ({ icao_id: s.icaoId, lat: s.lat ?? null, lon: s.lon ?? null })),
+    ident,
+    at: at ? { lat: at.lat, lon: at.lon } : null,
+    stations: stations.map((s) => ({ icao_id: s.icaoId, lat: s.lat ?? null, lon: s.lon ?? null })),
   });
 
 /** How far a TAF is taken to speak for a field without its own, nm. */
@@ -68,7 +69,7 @@ export function nearestStation(stations: Station[], place: Place): { s: Station;
  *  METAR's; null where none says. The Brief's glance (features/plan/lib/glance). */
 export function fieldCategory(briefing: Briefing, course: Course, ident: string): string | null {
   const stations = briefing.forecast.stations;
-  const place = placesOf(course).find(p => p.ident === ident);
+  const place = placesOf(course).find((p) => p.ident === ident);
   const station = ownStation(stations, ident) ?? (place ? nearestStation(stations, place)?.s : undefined);
   return (station ? categoryAt(station) : null) ?? briefing.metars[ident]?.flight_category ?? null;
 }

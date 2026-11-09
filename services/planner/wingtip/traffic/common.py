@@ -1,5 +1,6 @@
 """What every source of traffic shares: the request's headers and time limit, the clocks and the
 lock the whole package keeps, and an airplane read from a readsb answer as the map draws it."""
+
 from __future__ import annotations
 
 import threading
@@ -51,7 +52,8 @@ def _aircraft(entry: dict) -> dict | None:
         "callsign": (entry.get("flight") or "").strip() or None,
         "registration": entry.get("r") or None,
         "type": entry.get("t") or None,
-        "lat": round(lat, 5), "lon": round(lon, 5),
+        "lat": round(lat, 5),
+        "lon": round(lon, 5),
         "altitude_ft": geometric if geometric is not None else pressure,
         "pressure_altitude": geometric is None and pressure is not None,
         "track_deg": _number(entry.get("track")),

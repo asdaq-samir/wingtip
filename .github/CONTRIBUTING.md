@@ -66,6 +66,15 @@ services/planner, `WRITE_OPENAPI=1 mvn -B test` in services/gateway), and then
 `npm run types` in `apps/web`. The browser tests in `apps/web/e2e` need the whole stack
 and run in CI.
 
+Format before you push: `scripts/dev/format.sh` (every language, or name
+some: `web python rust swift kotlin java`; `--check` changes nothing). One
+formatter a language, each pinned there with its settings in the repo:
+Prettier (`.prettierrc.yaml`), ruff format (`.ruff.toml`), rustfmt
+(`engine/rustfmt.toml`), SwiftFormat (`apps/ios/.swiftformat`), ktlint
+(`.editorconfig`) and palantir-java-format (the gateway's pom). CI and the
+pre-push hook check each, and `git config blame.ignoreRevsFile
+.git-blame-ignore-revs` keeps the reformat out of `git blame`.
+
 ## Send it
 
 1. Branch from `main` as `claude/<topic>` (or your own name), and open a pull

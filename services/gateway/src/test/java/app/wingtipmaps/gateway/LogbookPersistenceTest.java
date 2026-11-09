@@ -47,13 +47,15 @@ class LogbookPersistenceTest {
     void aPilotsEntriesComeBackNewestFirstAndToThemAlone() {
         Pilot pilot = newPilot();
         Pilot other = newPilot();
-        logbook.save(new LogbookEntry(pilot).set(LocalDate.of(2026, 9, 1), "N12345", "C172", "C81 KDLH", 3.4, 0, 3.4, 1, 0, null));
+        logbook.save(new LogbookEntry(pilot)
+                .set(LocalDate.of(2026, 9, 1), "N12345", "C172", "C81 KDLH", 3.4, 0, 3.4, 1, 0, null));
         LogbookEntry newer = logbook.save(new LogbookEntry(pilot)
                 .set(LocalDate.of(2026, 9, 20), "N12345", "C172", "C81 local", 1.2, 1.0, 0, 0, 3, "night landings"));
         logbook.save(new LogbookEntry(other).set(LocalDate.of(2026, 9, 25), null, null, null, 1.0, 0, 0, 1, 0, null));
 
         assertThat(logbook.findByPilotIdOrderByFlownOnDescIdDesc(pilot.getId()))
-                .extracting(LogbookEntry::getRoute).containsExactly("C81 local", "C81 KDLH");
+                .extracting(LogbookEntry::getRoute)
+                .containsExactly("C81 local", "C81 KDLH");
         assertThat(logbook.findByIdAndPilotId(newer.getId(), other.getId())).isEmpty();
     }
 
@@ -83,7 +85,8 @@ class LogbookPersistenceTest {
         assertThat(found.getLongestLegNm()).isEqualTo(62);
 
         endorsements.saveAndFlush(new Endorsement(pilot.getId(), "solo-90", LocalDate.of(2026, 9, 1)));
-        assertThat(endorsements.findByKeyPilotIdOrderByKeyCode(pilot.getId())).extracting(e -> e.getKey().code())
+        assertThat(endorsements.findByKeyPilotIdOrderByKeyCode(pilot.getId()))
+                .extracting(e -> e.getKey().code())
                 .containsExactly("solo-90");
         pilots.deleteById(pilot.getId());
         pilots.flush();

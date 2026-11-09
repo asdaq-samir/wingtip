@@ -1,6 +1,7 @@
 """/api/offline-charts: what a phone can keep for flying with no signal,
 a region's files with their sizes, and a region's archive cut on the
 first ask and fetched whole or in ranges."""
+
 import pytest
 from fastapi.testclient import TestClient
 from wingtip import charts, cycle_pack, offline_charts, tile_archive, vector_tiles
@@ -18,8 +19,11 @@ def held(tmp_path, monkeypatch):
     monkeypatch.setattr(charts, "serving_cycle", lambda: CYCLE)
     monkeypatch.setattr(offline_charts, "warm", lambda cycle, regions: None)
     monkeypatch.setattr(vector_tiles, "tiles_index", lambda: {"name": "2026-10-29-v4-0badf00d", "bytes": 1234})
-    monkeypatch.setattr(cycle_pack, "phone_index", lambda: {"cycle": "2026-10-29", "regions": [
-        {"name": "n40w092", "west": -92, "south": 40, "east": -88, "north": 44, "bytes": 99}]})
+    monkeypatch.setattr(
+        cycle_pack,
+        "phone_index",
+        lambda: {"cycle": "2026-10-29", "regions": [{"name": "n40w092", "west": -92, "south": 40, "east": -88, "north": 44, "bytes": 99}]},
+    )
     x, y = tile_xy(41.98, -87.90, 10)
     tile_archive.write(tmp_path / CYCLE / "sec@2x.pmtiles", [(10, int(x), int(y), 4, lambda: b"tile")], {})
     return tmp_path
@@ -36,7 +40,7 @@ def test_the_catalog(held):
     assert answer.status_code == 200
     body = answer.json()
     assert body["cycle"] == CYCLE and body["archives"] == ["sec@2x"] and body["next_cycle"] is None
-    assert body["expires"] == "2026-12-24"   # 56 days on (the engine's data_cycle)
+    assert body["expires"] == "2026-12-24"  # 56 days on (the engine's data_cycle)
     assert body["overlay"] == {"name": "2026-10-29-v4-0badf00d", "bytes": 1234}
     chicago = next(r for r in body["regions"] if r["id"] == "Chicago")
     assert chicago["group"] == "sheet" and chicago["sizes"] == {}

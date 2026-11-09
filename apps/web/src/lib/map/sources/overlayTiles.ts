@@ -82,7 +82,11 @@ function archiveOf(tiles: Pick<OverlayTiles, "name">, origin?: string): PMTiles 
  *  request -- asked for now, as the page loads (main.tsx), so the map's
  *  first tile goes straight to its bytes rather than waiting on them. */
 export function warmOverlayArchive(tiles: Pick<OverlayTiles, "name">, origin?: string): void {
-  void archiveOf(tiles, origin).getHeader().catch(() => { /* the map asks again, and draws without it */ });
+  void archiveOf(tiles, origin)
+    .getHeader()
+    .catch(() => {
+      /* the map asks again, and draws without it */
+    });
 }
 
 /** A MapLibre vector source of the cycle's archive: its tiles' address
@@ -132,7 +136,12 @@ export function ringAround([x0, y0, x1, y1]: [number, number, number, number], z
  * frame has them. Each is kept until the map asks for it (`tile`), and a
  * tile already fetched or being fetched is not asked for twice.
  */
-export function prefetchRing(tiles: OverlayTiles, box: { west: number; south: number; east: number; north: number }, mapZoom: number, origin?: string): void {
+export function prefetchRing(
+  tiles: OverlayTiles,
+  box: { west: number; south: number; east: number; north: number },
+  mapZoom: number,
+  origin?: string,
+): void {
   const z = Math.max(tiles.min_zoom, Math.min(tiles.max_zoom, Math.floor(mapZoom)));
   const archive = archiveOf(tiles, origin);
   const base = `pmtiles://${overlayArchiveUrl(tiles, origin)}`;
@@ -141,7 +150,13 @@ export function prefetchRing(tiles: OverlayTiles, box: { west: number; south: nu
     if (asked.has(url)) continue;
     if (asked.size > ASKED_KEPT) asked.clear();
     asked.add(url);
-    ahead.set(url, archive.getZxy(z, x, y).then(r => (r ? new Uint8Array(r.data) : new Uint8Array())).catch(() => null));
+    ahead.set(
+      url,
+      archive
+        .getZxy(z, x, y)
+        .then((r) => (r ? new Uint8Array(r.data) : new Uint8Array()))
+        .catch(() => null),
+    );
     while (ahead.size > PREFETCH_KEPT) ahead.delete(ahead.keys().next().value!);
   }
 }

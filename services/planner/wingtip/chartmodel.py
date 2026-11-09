@@ -22,6 +22,7 @@ wingtip.model_registry evaluates and promotes into data/models/chart/
 current, which the planner loads and scores with (planner's
 app.chart_scorer).
 """
+
 from __future__ import annotations
 
 import json
@@ -76,8 +77,7 @@ def labeled_rows(route: str, detections: list, picks: list) -> pd.DataFrame:
     return rows.reset_index(drop=True)
 
 
-def readiness(usable: int, rated: int, off_detection: int, reading: list,
-              needed: int = MIN_LABELED_ROWS) -> dict:
+def readiness(usable: int, rated: int, off_detection: int, reading: list, needed: int = MIN_LABELED_ROWS) -> dict:
     """Whether the ratings are enough to train on, and in a sentence what
     to do if not: `usable` of them on a detection, of the `rated`, with
     `off_detection` on none, and the routes whose chart is still being
@@ -91,8 +91,13 @@ def readiness(usable: int, rated: int, off_detection: int, reading: list,
     elif not ready:
         message += f" Rate {needed - usable} more."
     return {
-        "usable": usable, "needed": needed, "ready": ready, "rated": rated,
-        "off_detection": off_detection, "reading": list(reading), "message": message,
+        "usable": usable,
+        "needed": needed,
+        "ready": ready,
+        "rated": rated,
+        "off_detection": off_detection,
+        "reading": list(reading),
+        "message": message,
     }
 
 
@@ -123,8 +128,7 @@ def _score_current(X_test, y_test) -> float | None:
         return None
 
 
-def retrain(table_path: Path = TRAINING_TABLE_PATH, out_dir: Path = CHART_CANDIDATE_DIR,
-            min_rated: int = MIN_LABELED_ROWS) -> dict:
+def retrain(table_path: Path = TRAINING_TABLE_PATH, out_dir: Path = CHART_CANDIDATE_DIR, min_rated: int = MIN_LABELED_ROWS) -> dict:
     """The model, chosen as the landmark model is (pipeline.select_model),
     scored on the held-out ratings against the palette's constants and a
     predict-the-mean baseline on the same ones, and written as the
@@ -149,14 +153,17 @@ def retrain(table_path: Path = TRAINING_TABLE_PATH, out_dir: Path = CHART_CANDID
     # palette's constant for each detection's kind, which is what the
     # training page shows today, and the training ratings' mean.
     metrics = metrics_record(
-        best_name, held_out_scores(y_test, _clipped(best_model.predict(X_test))),
+        best_name,
+        held_out_scores(y_test, _clipped(best_model.predict(X_test))),
         palette_held_out_mae=float(mean_absolute_error(y_test, test["palette_score"])),
         dummy_held_out_mae=float(mean_absolute_error(y_test, [y_train.mean()] * len(y_test))),
         current_held_out_mae=_score_current(X_test, y_test),
         cv_mae=cv_mae[best_name],
         cv_mae_by_model={**cv_mae, "Dummy": dummy_mae},
         dummy_cv_mae=dummy_mae,
-        n_labeled=len(rows), n_train=len(train), n_test=len(test),
+        n_labeled=len(rows),
+        n_train=len(train),
+        n_test=len(test),
         feature_cols=FEATURE_COLS,
         rating_range=list(RATING_RANGE),
         routes=sorted(rows["route"].unique()),

@@ -74,8 +74,12 @@ export function airborneNow(before: boolean | null, now: FlightStatus): boolean 
  *  from you": the banner's and the voice's words for one alert, or null
  *  where it has not gone off. `me` is own ship's fix, where it has one. */
 export function fired(
-  alert: AircraftAlert, before: Watched, airborne: boolean | null, now: FlightStatus,
-  me: { lat: number; lon: number } | null, at: number,
+  alert: AircraftAlert,
+  before: Watched,
+  airborne: boolean | null,
+  now: FlightStatus,
+  me: { lat: number; lon: number } | null,
+  at: number,
 ): { alert: FiredAlert | null; inside?: boolean } {
   const id = `${alertKey(alert)}:${at}`;
   const base = { id, hex: alert.hex, name: alert.name, at };
@@ -83,14 +87,18 @@ export function fired(
   const nearMe = alert.kind === "near-me";
   // Near something: where it is now, against own ship or the airport.
   const plane = now.aircraft;
-  const to = nearMe ? me : alert.airport ?? null;
+  const to = nearMe ? me : (alert.airport ?? null);
   // When it goes off is the shared engine's (alert_fires); the words are
   // the page's.
   const go = callEngine("alert_fires", {
     kind: alert.kind === "takeoff" || alert.kind === "land" ? alert.kind : "near",
-    before_airborne: before.airborne, was_inside: !!before.inside[alertKey(alert)], airborne, arrived: !!now.arrived,
-    plane: plane ? { lat: plane.lat, lon: plane.lon } : null, to: to ? { lat: to.lat, lon: to.lon } : null,
-    limit_nm: nearMe ? alert.nm ?? NEAR_ME_DEFAULT_NM : NEAR_AIRPORT_NM,
+    before_airborne: before.airborne,
+    was_inside: !!before.inside[alertKey(alert)],
+    airborne,
+    arrived: !!now.arrived,
+    plane: plane ? { lat: plane.lat, lon: plane.lon } : null,
+    to: to ? { lat: to.lat, lon: to.lon } : null,
+    limit_nm: nearMe ? (alert.nm ?? NEAR_ME_DEFAULT_NM) : NEAR_AIRPORT_NM,
   });
   if (alert.kind === "takeoff") {
     if (!go.fires) return { alert: null };
@@ -138,15 +146,20 @@ export function fired(
 /** The alerts gone off and not yet put away, newest last (AircraftAlerts). */
 export const useFiredAlerts = create<{ fired: FiredAlert[] }>(() => ({ fired: [] }));
 
-export const dismissFired = (id: string) => useFiredAlerts.setState(s => ({ fired: s.fired.filter(f => f.id !== id) }));
+export const dismissFired = (id: string) => useFiredAlerts.setState((s) => ({ fired: s.fired.filter((f) => f.id !== id) }));
 
 /** "When it lands", "When it takes off or comes within 10 nm of you": the
  *  line under the card's name while alerts wait, as the mockup set one. */
 export function alertsLine(alerts: AircraftAlert[]): string | null {
-  const words = alerts.map(a => (a.kind === "takeoff" ? "takes off"
-    : a.kind === "land" ? "lands"
-      : a.kind === "near-me" ? `comes within ${a.nm ?? NEAR_ME_DEFAULT_NM} nm of you`
-        : `comes within ${NEAR_AIRPORT_NM} nm of ${a.airport?.ident ?? "an airport"}`));
+  const words = alerts.map((a) =>
+    a.kind === "takeoff"
+      ? "takes off"
+      : a.kind === "land"
+        ? "lands"
+        : a.kind === "near-me"
+          ? `comes within ${a.nm ?? NEAR_ME_DEFAULT_NM} nm of you`
+          : `comes within ${NEAR_AIRPORT_NM} nm of ${a.airport?.ident ?? "an airport"}`,
+  );
   if (!words.length) return null;
   const listed = words.length === 1 ? words[0] : `${words.slice(0, -1).join(", ")} or ${words.at(-1)}`;
   return `When it ${listed}`;

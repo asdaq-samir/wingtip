@@ -11,8 +11,11 @@ export function FuelGauge({ gal, usable, tone }: { gal: number; usable: number |
   const share = usable ? Math.max(0, Math.min(1, gal / usable)) : null;
   return (
     <span
-      className={cn("inline-flex shrink-0 items-center gap-1 font-semibold tabular-nums", TEXT.note,
-        tone === "low" ? "text-destructive-ink" : tone === "fuel" ? "text-caution-ink" : "text-muted-foreground")}
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1 font-semibold tabular-nums",
+        TEXT.note,
+        tone === "low" ? "text-destructive-ink" : tone === "fuel" ? "text-caution-ink" : "text-muted-foreground",
+      )}
       data-testid="fuel-gauge"
     >
       {share !== null && (
@@ -24,7 +27,10 @@ export function FuelGauge({ gal, usable, tone }: { gal: number; usable: number |
           <span className="h-full rounded-[1.5px] bg-current" style={{ width: `${Math.max(10, share * 100)}%` }} />
         </span>
       )}
-      <span><span className="sr-only">Fuel in the tanks </span>{Math.floor(gal)} gal</span>
+      <span>
+        <span className="sr-only">Fuel in the tanks </span>
+        {Math.floor(gal)} gal
+      </span>
     </span>
   );
 }

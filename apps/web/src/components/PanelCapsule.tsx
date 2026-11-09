@@ -20,8 +20,18 @@ import { PANEL_FIELD } from "./panelField";
  * airport that answers, or the ident typed.
  */
 export function SearchField({
-  value, onChange, onFocus, onCancel, onSubmit, placeholder = "Search airports", inputRef, label, testId = "search-airports",
-  icon = Search, capitals = false, onClear,
+  value,
+  onChange,
+  onFocus,
+  onCancel,
+  onSubmit,
+  placeholder = "Search airports",
+  inputRef,
+  label,
+  testId = "search-airports",
+  icon = Search,
+  capitals = false,
+  onClear,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -49,8 +59,12 @@ export function SearchField({
   const Icon = icon;
   return (
     <form
-      role="search" className="flex w-full items-center gap-2"
-      onSubmit={e => { e.preventDefault(); onSubmit(); }}
+      role="search"
+      className="flex w-full items-center gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit();
+      }}
     >
       {/* 41 tall, as Maps' field is: on the sheet the grey of iOS's
           search field, on the glass capsule a lighter pane of the glass,
@@ -58,27 +72,49 @@ export function SearchField({
       {/* Its 44-point hit area its own, a point and a half past its 41
           above and below (CLAUDE.md: nothing grows to it), strips that
           leave the words to the field, where a tap places the caret. */}
-      <label className={cn(
-        "relative flex h-[2.5625rem] min-w-0 flex-1 items-center gap-2 rounded-full px-3.5 text-muted-foreground", PANEL_FIELD,
-        "before:absolute before:inset-x-0 before:-top-0.5 before:h-0.5 before:content-[''] after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:content-['']",
-        TEXT.row,
-      )}>
+      <label
+        className={cn(
+          "relative flex h-[2.5625rem] min-w-0 flex-1 items-center gap-2 rounded-full px-3.5 text-muted-foreground",
+          PANEL_FIELD,
+          "before:absolute before:inset-x-0 before:-top-0.5 before:h-0.5 before:content-[''] after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:content-['']",
+          TEXT.row,
+        )}
+      >
         <Icon className="size-5 shrink-0 text-foreground" strokeWidth={1.75} aria-hidden="true" />
         <input
-          ref={input} type="search" enterKeyHint="search" autoComplete="off" autoCorrect="off" spellCheck={false}
+          ref={input}
+          type="search"
+          enterKeyHint="search"
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
           autoCapitalize={capitals ? "characters" : undefined}
-          value={value} onChange={e => onChange(e.target.value)} onFocus={onFocus}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={onFocus}
           // Escape puts the search away, as the close beside it did.
-          onKeyDown={e => { if (e.key === "Escape") { input.current?.blur(); onCancel(); } }}
-          placeholder={placeholder} aria-label={label ?? placeholder} data-testid={testId}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              input.current?.blur();
+              onCancel();
+            }
+          }}
+          placeholder={placeholder}
+          aria-label={label ?? placeholder}
+          data-testid={testId}
           className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
         />
         {/* What is typed cleared inside the field, as iOS's search field
             clears it. */}
         {value && (
           <ClearButton
-            label="Clear the search" testId="search-clear"
-            onClear={() => { if (onClear) onClear(); else onChange(""); input.current?.focus(); }}
+            label="Clear the search"
+            testId="search-clear"
+            onClear={() => {
+              if (onClear) onClear();
+              else onChange("");
+              input.current?.focus();
+            }}
           />
         )}
       </label>
@@ -92,7 +128,12 @@ export function SearchField({
  * nearest fields (AirportPill); then the airports that answer what is
  * typed -- ident, name and town, a tap opening the field's card.
  */
-export function SearchResults({ query, onPick, places, onAllRecents }: {
+export function SearchResults({
+  query,
+  onPick,
+  places,
+  onAllRecents,
+}: {
   query: string;
   onPick: (airport: RecentAirport) => void;
   /** Before anything is typed: the tab's strip. */
@@ -101,7 +142,7 @@ export function SearchResults({ query, onPick, places, onAllRecents }: {
   onAllRecents?: () => void;
 }) {
   const { typed, rows, answered } = useAirportSearch(query);
-  const recents = usePreferences(s => s.recentAirports);
+  const recents = usePreferences((s) => s.recentAirports);
   if (!typed) {
     // Asked for an airport to keep -- Home, a Favorite -- with no strip:
     // the airports opened last to pick it from, as the Aircraft search
@@ -119,10 +160,15 @@ export function SearchResults({ query, onPick, places, onAllRecents }: {
     <PillSection title="Airports" testId="airport-results">
       <ListGroup className={cn(!answered && "opacity-60")}>
         {rows.length === 0 && answered && <ListRow muted title="No airport matches; Enter keeps what you typed." />}
-        {rows.map(a => (
+        {rows.map((a) => (
           <ListRow
-            key={a.ident} media={<Search className="size-5 text-muted-foreground" />}
-            title={<><span className="font-mono font-semibold">{a.ident}</span> · {a.name}</>}
+            key={a.ident}
+            media={<Search className="size-5 text-muted-foreground" />}
+            title={
+              <>
+                <span className="font-mono font-semibold">{a.ident}</span> · {a.name}
+              </>
+            }
             description={a.municipality ?? undefined}
             onClick={() => onPick({ ident: a.ident, name: a.name, municipality: a.municipality })}
             data-testid="search-result"
@@ -138,10 +184,12 @@ export function SearchResults({ query, onPick, places, onAllRecents }: {
  *  symbols instead of a list"); a word of what is kept while there are
  *  none. */
 export function RecentAirportTiles({ onPick }: { onPick: (airport: RecentAirport) => void }) {
-  const recents = usePreferences(s => s.recentAirports);
-  return recents.length > 0
-    ? <RecentAirportStrip recents={recents} onPick={onPick} />
-    : <StripNote>None yet: the airports opened are kept here.</StripNote>;
+  const recents = usePreferences((s) => s.recentAirports);
+  return recents.length > 0 ? (
+    <RecentAirportStrip recents={recents} onPick={onPick} />
+  ) : (
+    <StripNote>None yet: the airports opened are kept here.</StripNote>
+  );
 }
 
 /** The airports picked last as tiles, newest first: each its chart symbol,
@@ -150,7 +198,7 @@ function RecentAirportStrip({ recents, onPick }: { recents: RecentAirport[]; onP
   const away = useAway();
   return (
     <PillStrip testId="pill-airport-recents">
-      {recents.map(a => (
+      {recents.map((a) => (
         <SmallAirportTile key={a.ident} airport={a} detail={away(a)} onClick={() => onPick(a)} testId="airport-recent" />
       ))}
     </PillStrip>
@@ -160,16 +208,21 @@ function RecentAirportStrip({ recents, onPick }: { recents: RecentAirport[]; onP
 /** The airports picked last, each taken off by a swipe to the left (or a
  *  long press), at the pilot's ask, as Maps' Recents are. */
 function RecentAirportRows({ recents, onPick }: { recents: RecentAirport[]; onPick: (airport: RecentAirport) => void }) {
-  const remove = usePreferences(s => s.removeRecentAirport);
+  const remove = usePreferences((s) => s.removeRecentAirport);
   return (
     <ListGroup>
-      {recents.map(a => (
+      {recents.map((a) => (
         <SwipeToDelete key={a.ident} label={`Remove ${a.ident} from Recents`} onDelete={() => remove(a.ident)} share={placeLink(a)}>
           <ListRow
             media={<KeptMark airport={a} />}
-            title={<><span className="font-mono font-semibold">{a.ident}</span> · {a.name}</>}
+            title={
+              <>
+                <span className="font-mono font-semibold">{a.ident}</span> · {a.name}
+              </>
+            }
             description={a.municipality ?? undefined}
-            onClick={() => onPick(a)} data-testid="airport-recent"
+            onClick={() => onPick(a)}
+            data-testid="airport-recent"
           />
         </SwipeToDelete>
       ))}
@@ -180,17 +233,31 @@ function RecentAirportRows({ recents, onPick }: { recents: RecentAirport[]; onPi
 /** The airports' Recents in full, from their section's title: every one,
  *  and Clear for all of them, asked first. */
 export function AirportRecentsPage({ onBack, onPick }: { onBack: () => void; onPick: (airport: RecentAirport) => void }) {
-  const recents = usePreferences(s => s.recentAirports);
-  const clear = usePreferences(s => s.clearRecentAirports);
+  const recents = usePreferences((s) => s.recentAirports);
+  const clear = usePreferences((s) => s.clearRecentAirports);
   return (
     <>
       <ListPageHead
-        title="Recents" backLabel="Back to the search" onBack={onBack} testId="airport-recents-page"
-        action={recents.length > 0 && <ClearList title="Clear the Recents?" description="The airports opened last are forgotten in this browser. Favorites stay." onClear={clear} testId="recents-clear" />}
+        title="Recents"
+        backLabel="Back to the search"
+        onBack={onBack}
+        testId="airport-recents-page"
+        action={
+          recents.length > 0 && (
+            <ClearList
+              title="Clear the Recents?"
+              description="The airports opened last are forgotten in this browser. Favorites stay."
+              onClear={clear}
+              testId="recents-clear"
+            />
+          )
+        }
       />
-      {recents.length > 0
-        ? <RecentAirportRows recents={recents} onPick={onPick} />
-        : <p className={cn("px-1 text-muted-foreground", TEXT.note)}>None yet: the airports opened are kept here.</p>}
+      {recents.length > 0 ? (
+        <RecentAirportRows recents={recents} onPick={onPick} />
+      ) : (
+        <p className={cn("px-1 text-muted-foreground", TEXT.note)}>None yet: the airports opened are kept here.</p>
+      )}
     </>
   );
 }

@@ -15,6 +15,7 @@ words: plain word matching, which is what a question about "Class C
 two-way communication" needs to find 91.130, and nothing to train or
 host.
 """
+
 from __future__ import annotations
 
 import html
@@ -84,8 +85,14 @@ def cfr_sources(xml_text: str, part: str) -> list[Source]:
                 body.append(_clean("".join(child.itertext())))
         text = "\n".join(line for line in body if line)
         if text and "[Reserved]" not in title:
-            sources.append(Source(f"14 CFR {number}", title.replace("§ ", "§ "), text,
-                                  f"https://www.ecfr.gov/current/title-14/part-{part}/section-{number}"))
+            sources.append(
+                Source(
+                    f"14 CFR {number}",
+                    title.replace("§ ", "§ "),
+                    text,
+                    f"https://www.ecfr.gov/current/title-14/part-{part}/section-{number}",
+                )
+            )
     return sources
 
 
@@ -100,7 +107,7 @@ def aim_sources(page: str, url: str) -> list[Source]:
     heads = list(_PARAGRAPH.finditer(page))
     for i, match in enumerate(heads):
         end = heads[i + 1].start() if i + 1 < len(heads) else len(page)
-        body = page[match.end():end]
+        body = page[match.end() : end]
         # Each list item and paragraph its own line, then no markup.
         body = re.sub(r"</(p|li|h\d|tr|aside)>", "\n", body)
         text = "\n".join(line for line in (_clean(_TAG.sub(" ", part)) for part in body.split("\n")) if line)
@@ -176,7 +183,8 @@ def sources(cache_dir=CACHE_DIR) -> tuple[list[Source], dict]:
 _WORD = re.compile(r"[a-z0-9]+(?:\.[0-9]+)?")
 _STOP = frozenset(
     "a an and are as at be by for from has have in is it its may must no not of on or that the this to under was "
-    "which with what when where who will your you any each other than such shall if".split())
+    "which with what when where who will your you any each other than such shall if".split()
+)
 
 
 def words(text: str) -> list[str]:

@@ -1,4 +1,5 @@
 """app.gonogo.minimums, with apps/web/src/lib/minimums.test.ts's cases."""
+
 from app.gonogo.minimums import NO_MINIMUMS, under_minimums
 
 
@@ -6,10 +7,12 @@ BRIEFING = {
     "metars": {"C81": {"ceiling_ft": 2500, "visibility_sm": 10, "wind_speed_kt": 12, "wind_gust_kt": 22}, "KDLH": None},
     "forecast": {"min_ceiling_ft": 1800, "min_visibility_sm": 6, "stations": [{"icaoId": "KDLH", "ceiling_ft": 4000, "visibility_sm": 4}]},
     "airports": {
-        "C81": {"runways": [
-            {"ends": "6/24", "wind": {"end": "24", "headwind_kt": 10, "crosswind_kt": 9, "gust_crosswind_kt": 14}},
-            {"ends": "18/36", "wind": {"end": "36", "headwind_kt": 5, "crosswind_kt": -11, "gust_crosswind_kt": -13}},
-        ]},
+        "C81": {
+            "runways": [
+                {"ends": "6/24", "wind": {"end": "24", "headwind_kt": 10, "crosswind_kt": 9, "gust_crosswind_kt": 14}},
+                {"ends": "18/36", "wind": {"end": "36", "headwind_kt": 5, "crosswind_kt": -11, "gust_crosswind_kt": -13}},
+            ]
+        },
         "KDLH": {"runways": []},
     },
 }
@@ -23,7 +26,7 @@ def test_takes_a_variable_wind_which_favours_no_runway_as_all_crosswind_gusts_in
     runways = [{"ends": "18/36", "closed": False, "wind": None}]
     vrb = {**BRIEFING, "metars": {"C81": {"wind_speed_kt": 15, "wind_gust_kt": 25}}, "airports": {"C81": {"runways": runways}}}
     assert under_minimums({**NO_MINIMUMS, "crosswind_kt": 15}, vrb, ["C81"], "KDLH") == [
-        "C81 variable wind 25 kt, which may all be crosswind, over your 15 kt",
+        "C81 variable wind 25 kt, which may all be crosswind, over your 15 kt"
     ]
 
 
@@ -43,6 +46,7 @@ def test_a_ceiling_of_unknown_height_is_not_checked_and_said_so():
     ceiling is not known (14 CFR 1.1), so no minimum is met or missed
     there, and the verdict lists it as not checked."""
     from app.gonogo.minimums import ceiling_unknown_at
+
     briefing = {
         **BRIEFING,
         "metars": {"C81": {"ceiling_ft": None, "ceiling_unknown": True, "visibility_sm": 10}, "KDLH": None},
@@ -52,5 +56,5 @@ def test_a_ceiling_of_unknown_height_is_not_checked_and_said_so():
     assert ceiling_unknown_at(BRIEFING, ["C81", "KDLH"]) == []
     # Under the minimums only for what is known.
     assert under_minimums({**NO_MINIMUMS, "ceiling_ft": 3000}, briefing, ["C81"], "KDLH") == [
-        "Along the route, forecast ceiling 1,800 ft, under your 3,000 ft",
+        "Along the route, forecast ceiling 1,800 ft, under your 3,000 ft"
     ]

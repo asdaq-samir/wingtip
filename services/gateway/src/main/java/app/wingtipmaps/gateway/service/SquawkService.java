@@ -24,12 +24,16 @@ public class SquawkService {
 
     public Optional<List<SquawkDto>> list(Pilot pilot, Long aircraftId) {
         return aircraft.get(pilot, aircraftId)
-                .map(a -> squawks.findByAircraftIdOrderByReportedOnDescIdDesc(a.getId()).stream().map(SquawkService::toDto).toList());
+                .map(a -> squawks.findByAircraftIdOrderByReportedOnDescIdDesc(a.getId()).stream()
+                        .map(SquawkService::toDto)
+                        .toList());
     }
 
     /** The airplane's open squawks, for its risk on the day. */
     public List<SquawkDto> open(Long aircraftId) {
-        return squawks.findByAircraftIdAndFixedOnIsNullOrderByReportedOnDescIdDesc(aircraftId).stream().map(SquawkService::toDto).toList();
+        return squawks.findByAircraftIdAndFixedOnIsNullOrderByReportedOnDescIdDesc(aircraftId).stream()
+                .map(SquawkService::toDto)
+                .toList();
     }
 
     public Optional<SquawkDto> add(Pilot pilot, Long aircraftId, SquawkRequest r) {
@@ -49,15 +53,28 @@ public class SquawkService {
                 .map(s -> {
                     squawks.delete(s);
                     return true;
-                }).orElse(false);
+                })
+                .orElse(false);
     }
 
     private static Squawk fill(Squawk s, SquawkRequest r) {
-        return s.set(r.reportedOn(), r.text().strip(), r.inoperative(), r.deferredFor(), r.fixedOn(), Typed.text(r.fixNote()));
+        return s.set(
+                r.reportedOn(),
+                r.text().strip(),
+                r.inoperative(),
+                r.deferredFor(),
+                r.fixedOn(),
+                Typed.text(r.fixNote()));
     }
 
     static SquawkDto toDto(Squawk s) {
-        return new SquawkDto(s.getId(), s.getReportedOn(), s.getText(), s.isInoperative(), s.getDeferredFor(), s.getFixedOn(),
+        return new SquawkDto(
+                s.getId(),
+                s.getReportedOn(),
+                s.getText(),
+                s.isInoperative(),
+                s.getDeferredFor(),
+                s.getFixedOn(),
                 s.getFixNote());
     }
 }

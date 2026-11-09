@@ -62,11 +62,24 @@ public final class UpstreamRoutes {
     }
 
     /** The service a route is answered by. */
-    public enum Upstream { PLANNER, ASSISTANT }
+    public enum Upstream {
+        PLANNER,
+        ASSISTANT
+    }
 
     /** One operation a browser may call, as its service declared it. */
-    public record Route(String method, PathPattern pattern, Upstream upstream, Access access, PaidFeature paid,
-                        Integer bodyLimit, boolean csrf, boolean cache, boolean range, List<String> headers, boolean pilot) {
+    public record Route(
+            String method,
+            PathPattern pattern,
+            Upstream upstream,
+            Access access,
+            PaidFeature paid,
+            Integer bodyLimit,
+            boolean csrf,
+            boolean cache,
+            boolean range,
+            List<String> headers,
+            boolean pilot) {
 
         boolean matches(String method, PathContainer path) {
             return this.method.equals(method) && pattern.matches(path);
@@ -80,7 +93,8 @@ public final class UpstreamRoutes {
 
     /** The keys x-gateway may have: one this does not know is a typo, and
      *  refused at start rather than read as off. */
-    private static final Set<String> KEYS = Set.of("access", "cache", "headers", "range", "csrf", "pilot", "paid", "bodyLimit");
+    private static final Set<String> KEYS =
+            Set.of("access", "cache", "headers", "range", "csrf", "pilot", "paid", "bodyLimit");
 
     /** Where the apps reach both services: /api/planner/course is the
      *  planner's /api/course. */
@@ -123,9 +137,13 @@ public final class UpstreamRoutes {
     static UpstreamRoutes of(Map<Upstream, JsonNode> documents) {
         List<Route> routes = new ArrayList<>();
         documents.forEach((upstream, document) -> {
-            for (Iterator<Map.Entry<String, JsonNode>> paths = document.path("paths").fields(); paths.hasNext(); ) {
+            for (Iterator<Map.Entry<String, JsonNode>> paths =
+                            document.path("paths").fields();
+                    paths.hasNext(); ) {
                 Map.Entry<String, JsonNode> path = paths.next();
-                for (Iterator<Map.Entry<String, JsonNode>> operations = path.getValue().fields(); operations.hasNext(); ) {
+                for (Iterator<Map.Entry<String, JsonNode>> operations =
+                                path.getValue().fields();
+                        operations.hasNext(); ) {
                     Map.Entry<String, JsonNode> operation = operations.next();
                     JsonNode spec = operation.getValue().get("x-gateway");
                     if (spec != null) {
@@ -136,10 +154,15 @@ public final class UpstreamRoutes {
         });
         for (Route route : routes) {
             for (Route other : routes) {
-                if (route != other && route.upstream() != other.upstream() && route.method().equals(other.method())
-                        && route.pattern().getPatternString().equals(other.pattern().getPatternString())) {
-                    throw new IllegalStateException(route.method() + " " + route.pattern().getPatternString()
-                            + " is declared by both the planner and the assistant");
+                if (route != other
+                        && route.upstream() != other.upstream()
+                        && route.method().equals(other.method())
+                        && route.pattern()
+                                .getPatternString()
+                                .equals(other.pattern().getPatternString())) {
+                    throw new IllegalStateException(
+                            route.method() + " " + route.pattern().getPatternString()
+                                    + " is declared by both the planner and the assistant");
                 }
             }
         }
@@ -162,15 +185,23 @@ public final class UpstreamRoutes {
             case "public" -> Access.PUBLIC;
             case "signed-in" -> Access.SIGNED_IN;
             case "developer" -> Access.DEVELOPER;
-            default -> throw new IllegalStateException(where + ": x-gateway's access is public, signed-in or developer");
+            default ->
+                throw new IllegalStateException(where + ": x-gateway's access is public, signed-in or developer");
         };
         List<String> headers = new ArrayList<>();
         spec.path("headers").forEach(header -> headers.add(header.asText()));
-        return new Route(method, PathPatternParser.defaultInstance.parse(path), upstream, access,
+        return new Route(
+                method,
+                PathPatternParser.defaultInstance.parse(path),
+                upstream,
+                access,
                 spec.hasNonNull("paid") ? PaidFeature.valueOf(spec.get("paid").asText()) : null,
                 spec.hasNonNull("bodyLimit") ? spec.get("bodyLimit").asInt() : null,
-                spec.path("csrf").asBoolean(true), spec.path("cache").asBoolean(false), spec.path("range").asBoolean(false),
-                List.copyOf(headers), spec.path("pilot").asBoolean(false));
+                spec.path("csrf").asBoolean(true),
+                spec.path("cache").asBoolean(false),
+                spec.path("range").asBoolean(false),
+                List.copyOf(headers),
+                spec.path("pilot").asBoolean(false));
     }
 
     /** Every route, the most specific first. */
@@ -203,7 +234,10 @@ public final class UpstreamRoutes {
                 method = "GET";
             }
             String upstreamPath = upstreamPath(request);
-            return upstreamPath != null && find(method, upstreamPath).filter(route -> route.access() == access).isPresent();
+            return upstreamPath != null
+                    && find(method, upstreamPath)
+                            .filter(route -> route.access() == access)
+                            .isPresent();
         };
     }
 
@@ -212,7 +246,10 @@ public final class UpstreamRoutes {
     public RequestMatcher csrfExempt() {
         return request -> {
             String upstreamPath = upstreamPath(request);
-            return upstreamPath != null && find(request.getMethod(), upstreamPath).filter(route -> !route.csrf()).isPresent();
+            return upstreamPath != null
+                    && find(request.getMethod(), upstreamPath)
+                            .filter(route -> !route.csrf())
+                            .isPresent();
         };
     }
 
@@ -239,7 +276,11 @@ public final class UpstreamRoutes {
             return false;
         }
         String lower = upstreamPath.toLowerCase(Locale.ROOT);
-        if (lower.contains("//") || lower.contains("\\") || lower.contains("%2f") || lower.contains("%5c") || lower.contains("%2e")) {
+        if (lower.contains("//")
+                || lower.contains("\\")
+                || lower.contains("%2f")
+                || lower.contains("%5c")
+                || lower.contains("%2e")) {
             return false;
         }
         for (String segment : upstreamPath.split("/", -1)) {

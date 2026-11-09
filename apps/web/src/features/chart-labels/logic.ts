@@ -20,8 +20,12 @@ export { compassPoint, DEFAULT_FILTERS, type FilterKey, type Filters };
 /** 0 is a rejection (grey); 1-5 are lib/scoreScale's steps, the same
  *  colours the planner draws its scores in. */
 export const COLORS: Record<Rating, string> = {
-  0: "#8a8f94", 1: SCORE_STEPS[0], 2: SCORE_STEPS[1],
-  3: SCORE_STEPS[2], 4: SCORE_STEPS[3], 5: SCORE_STEPS[4],
+  0: "#8a8f94",
+  1: SCORE_STEPS[0],
+  2: SCORE_STEPS[1],
+  3: SCORE_STEPS[2],
+  4: SCORE_STEPS[3],
+  5: SCORE_STEPS[4],
 };
 
 /** The scale, in the order the buttons show it. */
@@ -29,7 +33,6 @@ export const RATINGS: readonly Rating[] = [0, 1, 2, 3, 4, 5];
 
 /** Beyond this far off course you are looking at it, not flying over it. */
 const DR_CORRIDOR_NM = 0.5;
-
 
 /**
  * The categories a point has actually been seen carrying, from
@@ -42,9 +45,20 @@ const DR_CORRIDOR_NM = 0.5;
  * a value outside this list is shown too, never dropped.
  */
 export const CATEGORIES = [
-  "airport", "intersection", "lake_or_pond", "railroad", "reservoir", "river",
-  "road_or_rail", "stadium", "tower", "town", "vor", "water",
-  "wind_farm", "other",
+  "airport",
+  "intersection",
+  "lake_or_pond",
+  "railroad",
+  "reservoir",
+  "river",
+  "road_or_rail",
+  "stadium",
+  "tower",
+  "town",
+  "vor",
+  "water",
+  "wind_farm",
+  "other",
 ] as const;
 
 /**
@@ -118,18 +132,15 @@ export interface WalkEntry {
  * the walk runs departure to destination; filtered points are not, so
  * stepping never lands on something that is not drawn.
  */
-export function orderedPoints(
-  parts: { endpoints: Point[]; detections: Point[]; added: Point[] },
-  filters: Filters,
-): WalkEntry[] {
+export function orderedPoints(parts: { endpoints: Point[]; detections: Point[]; added: Point[] }, filters: Filters): WalkEntry[] {
   const entries: WalkEntry[] = [
-    ...parts.endpoints.map(point => ({ point, kind: "endpoint" as const })),
-    ...parts.detections.map(point => ({ point, kind: "detected" as const })),
-    ...parts.added.map(point => ({ point, kind: "added" as const })),
+    ...parts.endpoints.map((point) => ({ point, kind: "endpoint" as const })),
+    ...parts.detections.map((point) => ({ point, kind: "detected" as const })),
+    ...parts.added.map((point) => ({ point, kind: "added" as const })),
   ];
   return entries
-    .filter(e => isEndpoint(e.point) || isVisible(e.point, filters))
-    .filter(e => e.point.along_track_nm !== null && e.point.along_track_nm !== undefined)
+    .filter((e) => isEndpoint(e.point) || isVisible(e.point, filters))
+    .filter((e) => e.point.along_track_nm !== null && e.point.along_track_nm !== undefined)
     .sort((a, b) => a.point.along_track_nm - b.point.along_track_nm);
 }
 
@@ -149,11 +160,11 @@ export function forwardIsLeft(bearingDeg: number): boolean {
  */
 export function filterCounts(candidates: Point[]): Record<FilterKey, number> {
   return {
-    dr: candidates.filter(p => roleOf(p) === "dr").length,
-    visual: candidates.filter(p => roleOf(p) === "visual").length,
-    detected: candidates.filter(p => sourceOf(p) === "detected").length,
-    added: candidates.filter(p => sourceOf(p) === "added").length,
+    dr: candidates.filter((p) => roleOf(p) === "dr").length,
+    visual: candidates.filter((p) => roleOf(p) === "visual").length,
+    detected: candidates.filter((p) => sourceOf(p) === "detected").length,
+    added: candidates.filter((p) => sourceOf(p) === "added").length,
     rated: candidates.filter(hasRating).length,
-    unrated: candidates.filter(p => !hasRating(p)).length,
+    unrated: candidates.filter((p) => !hasRating(p)).length,
   };
 }

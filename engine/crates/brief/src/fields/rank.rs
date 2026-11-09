@@ -33,10 +33,8 @@ pub fn best_fields(mode: Mode, own: &Own, airplane: Option<&Airplane>, fields: V
         Mode::Glide => glide.zip(own.altitude_ft).map(|(g, alt)| g.tas_kt(alt)),
         Mode::Diversion => airplane.and_then(|a| a.cruise_tas_kt),
     };
-    let mut ranked: Vec<Ranked> = fields
-        .into_iter()
-        .map(|field| one(mode, own, airplane, glide.filter(|_| ring.is_some()), tas, field))
-        .collect();
+    let mut ranked: Vec<Ranked> =
+        fields.into_iter().map(|field| one(mode, own, airplane, glide.filter(|_| ring.is_some()), tas, field)).collect();
     ranked.sort_by(|a, b| order(mode, glide.is_some(), a, b));
     ranked.truncate(limit);
     Answer { mode, ring, needs_airplane: mode == Mode::Glide && glide.is_none(), fields: ranked }
@@ -130,8 +128,13 @@ fn best_end(airplane: Option<&Airplane>, field: &Field, course_deg: f64) -> Opti
     for (index, runway) in field.runways.iter().enumerate().filter(|(_, r)| !r.closed) {
         for end in &runway.ends {
             let fit = end_fit(
-                airplane.and_then(|a| a.landing.as_ref()), airplane.and_then(|a| a.demonstrated_crosswind_kt), runway,
-                end.heading_true_deg, field.wind.as_ref(), &field.report, None,
+                airplane.and_then(|a| a.landing.as_ref()),
+                airplane.and_then(|a| a.demonstrated_crosswind_kt),
+                runway,
+                end.heading_true_deg,
+                field.wind.as_ref(),
+                &field.report,
+                None,
             );
             let headwind = match (field.wind.and_then(|w| w.dir_true_deg), field.wind.and_then(|w| w.speed_kt), end.heading_true_deg) {
                 (Some(d), Some(kt), Some(h)) => Some(headwind_kt(d, kt, h)),
@@ -155,7 +158,9 @@ fn best_end(airplane: Option<&Airplane>, field: &Field, course_deg: f64) -> Opti
 
 fn better_end(a: &EndPick, b: &EndPick, course_deg: f64) -> Ordering {
     let straight_in = |e: &EndPick| e.heading_true_deg.map_or(180.0, |h| angle_between(h, course_deg));
-    a.fit.short.cmp(&b.fit.short)
+    a.fit
+        .short
+        .cmp(&b.fit.short)
         .then(a.fit.crosswind_over.cmp(&b.fit.crosswind_over))
         .then(b.headwind_kt.unwrap_or(0.0).round().total_cmp(&a.headwind_kt.unwrap_or(0.0).round()))
         .then(straight_in(a).total_cmp(&straight_in(b)))

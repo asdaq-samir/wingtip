@@ -20,10 +20,22 @@ function answer() {
   first.setUTCHours(first.getUTCHours() + 1);
   const at = (k: number) => new Date(first.getTime() + k * 3_600_000).toISOString();
   const weather = (finding: string, detail: string) => ({
-    key: "weather", label: "Weather", tab: "enroute", section: "Adverse Conditions", finding, detail,
+    key: "weather",
+    label: "Weather",
+    tab: "enroute",
+    section: "Adverse Conditions",
+    finding,
+    detail,
   });
   const hour = (k: number, verdict: string, reasons: object[]) => ({
-    depart: at(k), verdict, reasons, ete_min: 92, fuel_gal: 14.2, night: false, night_passengers: false, margin: 1.5,
+    depart: at(k),
+    verdict,
+    reasons,
+    ete_min: 92,
+    fuel_gal: 14.2,
+    night: false,
+    night_passengers: false,
+    margin: 1.5,
   });
   return {
     hours: [
@@ -40,9 +52,11 @@ function answer() {
 }
 
 async function signedInWithAnswer(page: Page) {
-  await page.route("**/api/me", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(A_PILOT) }));
-  await page.route(url => url.pathname.endsWith("/api/planner/departure-window"), route =>
-    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(answer()) }));
+  await page.route("**/api/me", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(A_PILOT) }));
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/departure-window"),
+    (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(answer()) }),
+  );
 }
 
 test("the Brief says when to go: an hour strip under the verdict and Ask, the best window over it, a tap saying why", async ({ page }) => {
@@ -86,11 +100,14 @@ test("the Brief says when to go: an hour strip under the verdict and Ask, the be
 
 test("signed out, the strip asks the pilot to sign in and the planner is not asked", async ({ page }) => {
   let asked = false;
-  await page.route("**/api/me", route => route.fulfill({ status: 401, body: "" }));
-  await page.route(url => url.pathname.endsWith("/api/planner/departure-window"), route => {
-    asked = true;
-    return route.fulfill({ status: 401, body: "" });
-  });
+  await page.route("**/api/me", (route) => route.fulfill({ status: 401, body: "" }));
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/departure-window"),
+    (route) => {
+      asked = true;
+      return route.fulfill({ status: 401, body: "" });
+    },
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });

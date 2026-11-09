@@ -72,7 +72,8 @@ fn ground(name: &str, v: &Value) -> R<Ground> {
         Some(Value::Array(items)) => Some(items.iter().map(|c| matches!(c, Value::Bool(true))).collect()),
         Some(_) => return Err(format!("{name}: the ground's \"congested\" is not a list")),
     };
-    let ground = Ground { along_nm: nums(name, g, "along_nm")?, high_ft: nums(name, g, "high_ft")?, low_ft: nums(name, g, "low_ft")?, congested };
+    let ground =
+        Ground { along_nm: nums(name, g, "along_nm")?, high_ft: nums(name, g, "high_ft")?, low_ft: nums(name, g, "low_ft")?, congested };
     if ground.high_ft.len() != ground.along_nm.len() || ground.low_ft.len() != ground.along_nm.len() {
         return Err(format!("{name}: the ground's lists are not of one length"));
     }
@@ -87,7 +88,8 @@ fn obstacle_at(name: &str, o: &Value) -> R<((f64, f64), f64)> {
 pub fn call(name: &str, v: &Value) -> R<String> {
     match name {
         "legal_cruising_altitudes" => {
-            let (floor, ceiling, course) = (num(name, v, "floor_ft")?, opt_num(name, v, "ceiling_ft")?, num(name, v, "magnetic_course_deg")?);
+            let (floor, ceiling, course) =
+                (num(name, v, "floor_ft")?, opt_num(name, v, "ceiling_ft")?, num(name, v, "magnetic_course_deg")?);
             Ok(numbers(&if v.get("rules").and_then(Value::as_str) == Some("ifr") {
                 cruising::legal_ifr(floor, ceiling, course)
             } else {
@@ -113,8 +115,14 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                     })
                 })
                 .collect::<R<_>>()?;
-            let floors = floor::vfr(point(name, v.get("start"))?, point(name, v.get("end"))?, &nums(name, v, "breaks_nm")?, &ground(name, v)?, &obstacles)
-                .map_err(|e| format!("{name}: {e}"))?;
+            let floors = floor::vfr(
+                point(name, v.get("start"))?,
+                point(name, v.get("end"))?,
+                &nums(name, v, "breaks_nm")?,
+                &ground(name, v)?,
+                &obstacles,
+            )
+            .map_err(|e| format!("{name}: {e}"))?;
             Ok(written(&Value::Array(
                 floors
                     .into_iter()
@@ -222,11 +230,18 @@ fn congested_points(name: &str, v: &Value) -> R<String> {
     let areas: Vec<congested::Area> = list(name, v, "areas")?
         .iter()
         .map(|a| {
-            a.as_array().ok_or_else(bad)?.iter()
+            a.as_array()
+                .ok_or_else(bad)?
+                .iter()
                 .map(|rings| {
-                    rings.as_array().ok_or_else(bad)?.iter()
+                    rings
+                        .as_array()
+                        .ok_or_else(bad)?
+                        .iter()
                         .map(|ring| {
-                            ring.as_array().ok_or_else(bad)?.iter()
+                            ring.as_array()
+                                .ok_or_else(bad)?
+                                .iter()
                                 .map(|p| match p.as_array() {
                                     Some([x, y]) => Ok((x.as_f64().ok_or_else(bad)?, y.as_f64().ok_or_else(bad)?)),
                                     _ => Err(bad()),
@@ -254,7 +269,9 @@ fn congested_points(name: &str, v: &Value) -> R<String> {
                 .and_then(Value::as_array)
                 .ok_or_else(|| format!("{name}: \"candidates\" has no list for point {i}"))?
                 .iter()
-                .map(|j| j.as_f64().and_then(|j| areas.get(j as usize)).ok_or_else(|| format!("{name}: a candidate is not an area's index")))
+                .map(|j| {
+                    j.as_f64().and_then(|j| areas.get(j as usize)).ok_or_else(|| format!("{name}: a candidate is not an area's index"))
+                })
                 .collect::<R<_>>()?,
         };
         if i > 0 {

@@ -20,18 +20,28 @@ class Recognizer {
   static here = "available";
   static installs = 0;
   static available = vi.fn(async () => Recognizer.here);
-  static install = vi.fn(async () => { Recognizer.installs++; return true; });
-  lang = ""; continuous = false; interimResults = false; processLocally = false;
+  static install = vi.fn(async () => {
+    Recognizer.installs++;
+    return true;
+  });
+  lang = "";
+  continuous = false;
+  interimResults = false;
+  processLocally = false;
   onresult: ((e: unknown) => void) | null = null;
   onerror: ((e: { error: string }) => void) | null = null;
   onend: (() => void) | null = null;
   starts: unknown[][] = [];
   stop = vi.fn();
-  constructor() { Recognizer.made.push(this); }
+  constructor() {
+    Recognizer.made.push(this);
+  }
   start(...args: unknown[]) {
     this.starts.push(args);
     if (args.length && Recognizer.refuseTracks) {
-      throw Object.assign(new Error("The MediaStreamTrack is not of kind 'audio' or is not of state 'live'."), { name: "InvalidStateError" });
+      throw Object.assign(new Error("The MediaStreamTrack is not of kind 'audio' or is not of state 'live'."), {
+        name: "InvalidStateError",
+      });
     }
   }
 }
@@ -55,34 +65,75 @@ afterEach(() => {
 describe("the recognizer's input", () => {
   test("a live track is handed to start()", async () => {
     const live = track();
-    await listen([], undefined, () => {}, () => {}, () => live);
+    await listen(
+      [],
+      undefined,
+      () => {},
+      () => {},
+      () => live,
+    );
     expect(Recognizer.made[0]!.starts).toEqual([[live]]);
   });
 
   test("a track refused with InvalidStateError: start() again, on the default input", async () => {
     Recognizer.refuseTracks = true;
     const live = track();
-    await listen([], undefined, () => {}, () => {}, () => live);
+    await listen(
+      [],
+      undefined,
+      () => {},
+      () => {},
+      () => live,
+    );
     expect(Recognizer.made[0]!.starts).toEqual([[live], []]);
   });
 
   test("an ended track, or none held: start() on the default input", async () => {
-    await listen([], undefined, () => {}, () => {}, () => track("ended"));
-    await listen([], undefined, () => {}, () => {});
-    await listen([], undefined, () => {}, () => {}, () => null);
-    expect(Recognizer.made.map(r => r.starts)).toEqual([[[]], [[]], [[]]]);
+    await listen(
+      [],
+      undefined,
+      () => {},
+      () => {},
+      () => track("ended"),
+    );
+    await listen(
+      [],
+      undefined,
+      () => {},
+      () => {},
+    );
+    await listen(
+      [],
+      undefined,
+      () => {},
+      () => {},
+      () => null,
+    );
+    expect(Recognizer.made.map((r) => r.starts)).toEqual([[[]], [[]], [[]]]);
   });
 
   test("each restart reads the track afresh: a new choice is heard from the next", async () => {
     let held: MediaStreamTrack | null = null;
-    await listen([], undefined, () => {}, () => {}, () => held);
+    await listen(
+      [],
+      undefined,
+      () => {},
+      () => {},
+      () => held,
+    );
     held = track();
     Recognizer.made[0]!.onend!();
     expect(Recognizer.made[1]!.starts).toEqual([[held]]);
   });
 
   test("started within listen(), before it is awaited: still in the tap", () => {
-    void listen([], undefined, () => {}, () => {}, () => track());
+    void listen(
+      [],
+      undefined,
+      () => {},
+      () => {},
+      () => track(),
+    );
     expect(Recognizer.made).toHaveLength(1);
     expect(Recognizer.made[0]!.starts).toHaveLength(1);
   });
@@ -90,7 +141,13 @@ describe("the recognizer's input", () => {
   test("renew starts afresh on the input now held, and what the old one says as it stops is no failure", async () => {
     const ended = vi.fn();
     let held = track();
-    const { renew } = await listen([], undefined, () => {}, ended, () => held);
+    const { renew } = await listen(
+      [],
+      undefined,
+      () => {},
+      ended,
+      () => held,
+    );
     const first = Recognizer.made[0]!;
     held = track();
     renew();
@@ -104,10 +161,18 @@ describe("the recognizer's input", () => {
 
 describe("on the device where it can be", () => {
   test("every recognizer is told to process locally, English asked for on the device", async () => {
-    const { renew } = await listen([], undefined, () => {}, () => {});
+    const { renew } = await listen(
+      [],
+      undefined,
+      () => {},
+      () => {},
+    );
     renew();
     Recognizer.made[0]!.onend!();
-    expect(Recognizer.made.map(r => [r.processLocally, r.lang])).toEqual([[true, "en-US"], [true, "en-US"]]);
+    expect(Recognizer.made.map((r) => [r.processLocally, r.lang])).toEqual([
+      [true, "en-US"],
+      [true, "en-US"],
+    ]);
     expect(Recognizer.available).toHaveBeenCalledWith({ langs: ["en-US"], processLocally: true });
   });
 
@@ -115,7 +180,12 @@ describe("on the device where it can be", () => {
     Recognizer.here = "downloadable";
     forgetSpeechCheck();
     await checkSpeech();
-    await listen([], undefined, () => {}, () => {});
+    await listen(
+      [],
+      undefined,
+      () => {},
+      () => {},
+    );
     expect(Recognizer.installs).toBe(1);
     expect(Recognizer.made).toHaveLength(1);
     expect(Recognizer.made[0]!.processLocally).toBe(true);
@@ -123,7 +193,13 @@ describe("on the device where it can be", () => {
 
   test("a recognizer that cannot promise the device (Safari, an older Chrome): the browser's own, not told to stay local", async () => {
     const made: Record<string, unknown>[] = [];
-    class BrowserOnly { start = vi.fn(); stop() {} constructor() { made.push(this as unknown as Record<string, unknown>); } }
+    class BrowserOnly {
+      start = vi.fn();
+      stop() {}
+      constructor() {
+        made.push(this as unknown as Record<string, unknown>);
+      }
+    }
     vi.stubGlobal("SpeechRecognition", undefined);
     vi.stubGlobal("webkitSpeechRecognition", BrowserOnly);
     forgetSpeechCheck();
@@ -138,7 +214,12 @@ describe("on the device where it can be", () => {
   test("on-device recognition unavailable: the browser's recognizer, not told to stay local", async () => {
     Recognizer.here = "unavailable";
     forgetSpeechCheck();
-    await listen([], undefined, () => {}, () => {});
+    await listen(
+      [],
+      undefined,
+      () => {},
+      () => {},
+    );
     expect(Recognizer.made).toHaveLength(1);
     expect(Recognizer.made[0]!.processLocally).toBe(false);
   });
@@ -155,20 +236,31 @@ describe("on the device where it can be", () => {
 
 describe("its failures", () => {
   test("no microphone on an iPhone: what to check, and Safari opened again (WebKit bug 319706)", async () => {
-    vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 26_1 like Mac OS X) AppleWebKit/605.1.15 Version/26.1 Mobile/15E148 Safari/604.1" });
+    vi.stubGlobal("navigator", {
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 26_1 like Mac OS X) AppleWebKit/605.1.15 Version/26.1 Mobile/15E148 Safari/604.1",
+    });
     const ended = vi.fn();
     await listen([], undefined, () => {}, ended);
     Recognizer.made[0]!.onerror!({ error: "audio-capture" });
     Recognizer.made[0]!.onend!();
     // clearance.spec's prefix kept.
-    expect(ended).toHaveBeenCalledWith("No microphone could be used. If a Bluetooth audio panel or headset was the input, check it is still connected; if it is, close Safari and open it again.");
-    vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 26_1 like Mac OS X) AppleWebKit/605.1.15 CriOS/142.0 Mobile/15E148 Safari/604.1" });
+    expect(ended).toHaveBeenCalledWith(
+      "No microphone could be used. If a Bluetooth audio panel or headset was the input, check it is still connected; if it is, close Safari and open it again.",
+    );
+    vi.stubGlobal("navigator", {
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 26_1 like Mac OS X) AppleWebKit/605.1.15 CriOS/142.0 Mobile/15E148 Safari/604.1",
+    });
     expect(noMicrophone()).toMatch(/; if it is, close the browser and open it again\.$/);
   });
 
   test("no microphone elsewhere: the page reloaded, not Safari", () => {
-    vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/142.0 Safari/537.36", maxTouchPoints: 0 });
-    expect(noMicrophone()).toBe("No microphone could be used. If a Bluetooth audio panel or headset was the input, check it is still connected; if it is, reload the page.");
+    vi.stubGlobal("navigator", {
+      userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/142.0 Safari/537.36",
+      maxTouchPoints: 0,
+    });
+    expect(noMicrophone()).toBe(
+      "No microphone could be used. If a Bluetooth audio panel or headset was the input, check it is still connected; if it is, reload the page.",
+    );
   });
 });
 

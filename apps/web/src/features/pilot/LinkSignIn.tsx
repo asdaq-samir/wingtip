@@ -35,7 +35,7 @@ export default function LinkSignIn() {
   const [open, setOpen] = useState(token !== null);
   const finish = useMutation({
     mutationFn: (value: string) => api.finishMagicLink(value),
-    onSuccess: landing => window.location.assign(landing),
+    onSuccess: (landing) => window.location.assign(landing),
     meta: { silent: true },
   });
   if (token === null) return null;
@@ -48,8 +48,12 @@ export default function LinkSignIn() {
 
   return (
     <SheetDialog
-      open={open} onOpenChange={next => { if (!next) close(); }}
-      title="Sign in" description="Finish signing in with the link from your email."
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) close();
+      }}
+      title="Sign in"
+      description="Finish signing in with the link from your email."
       action={{ label: "Sign in", onClick: () => finish.mutate(token), disabled: finish.isPending || spent }}
     >
       {finish.isError && (

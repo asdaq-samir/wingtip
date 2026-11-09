@@ -1,4 +1,5 @@
 """The shapes app.routers.airports sends and takes, as Pydantic models."""
+
 from typing import Literal
 
 from pydantic import BaseModel

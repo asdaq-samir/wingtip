@@ -14,7 +14,8 @@ import org.springframework.lang.Nullable;
 public record PilotContactRequest(
         @Size(max = 24, message = "phone must be at most 24 characters")
         @Pattern(regexp = "[0-9+()\\-. ]*", message = "phone must be figures, spaces and + ( ) - .")
-        @Nullable String phone,
-        @Pattern(regexp = "\\s*([A-Za-z0-9]{2,11})?\\s*", message = "homeBase must be an airport identifier")
-        @Nullable String homeBase) {
-}
+        @Nullable
+        String phone,
+
+        @Pattern(regexp = "\\s*([A-Za-z0-9]{2,11})?\\s*", message = "homeBase must be an airport identifier") @Nullable
+        String homeBase) {}

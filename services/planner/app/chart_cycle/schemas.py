@@ -1,4 +1,5 @@
 """The next chart cycle's line in /api/status (charts.next)."""
+
 from pydantic import BaseModel
 
 from ..schemas.system import PyramidProgress

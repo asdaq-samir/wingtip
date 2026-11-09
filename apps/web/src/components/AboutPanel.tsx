@@ -16,7 +16,9 @@ import { versionOf } from "../lib/speed";
 import { TEXT } from "../lib/text";
 
 const LEGAL_GLYPHS: Record<(typeof LEGAL_PAGES)[number]["key"], ReactNode> = {
-  privacy: <Hand />, terms: <FileText />, support: <LifeBuoy />,
+  privacy: <Hand />,
+  terms: <FileText />,
+  support: <LifeBuoy />,
 };
 
 /**
@@ -37,7 +39,7 @@ export default function AboutPanel() {
   // The web's build is the entry chunk's hash, as the speed reports name
   // it (lib/speed): one build, one name, and "dev" under vite's server.
   const build = versionOf(document);
-  const setAircraft = usePreferences(s => s.setAircraft);
+  const setAircraft = usePreferences((s) => s.setAircraft);
   return (
     <div className="space-y-5 pb-1" data-testid="about-panel">
       <header className="flex flex-col items-center gap-2 pt-2 text-center">
@@ -53,29 +55,38 @@ export default function AboutPanel() {
 
       {/* What the planner is not, in full: it was the nav log's footer. */}
       <ListGroup title="A planning aid">
-        <ListRow title={<span className={TEXT.detail} data-testid="about-planning-aid">{PLANNING_AID}</span>} />
+        <ListRow
+          title={
+            <span className={TEXT.detail} data-testid="about-planning-aid">
+              {PLANNING_AID}
+            </span>
+          }
+        />
       </ListGroup>
 
       {/* Checkpoints are found on the FAA sectional itself and ranked by the
           planner's own chart model; the FAA's, NOAA's and the USGS's data
           are works of the US government, which carry no copyright. */}
       <ListGroup title="Data sources">
-        {DATA_SOURCES.map(s => (
+        {DATA_SOURCES.map((s) => (
           <ListRow key={s.name} title={s.name} value={s.licence} href={s.href} data-testid="about-source" />
         ))}
       </ListGroup>
 
       <ListGroup title="Maps and software">
-        {SOFTWARE.map(s => (
+        {SOFTWARE.map((s) => (
           <ListRow key={s.name} title={s.name} value={s.licence} href={s.href} data-testid="about-source" />
         ))}
       </ListGroup>
 
       <ListGroup title="Legal">
-        {LEGAL_PAGES.map(p => (
+        {LEGAL_PAGES.map((p) => (
           <ListRow
-            key={p.key} media={<RowBadge colour={SETTING_BADGE.about}>{LEGAL_GLYPHS[p.key]}</RowBadge>}
-            title={p.title} href={p.href} data-testid={`legal-${p.key}`}
+            key={p.key}
+            media={<RowBadge colour={SETTING_BADGE.about}>{LEGAL_GLYPHS[p.key]}</RowBadge>}
+            title={p.title}
+            href={p.href}
+            data-testid={`legal-${p.key}`}
           />
         ))}
       </ListGroup>
@@ -85,9 +96,16 @@ export default function AboutPanel() {
           pick them, so no airplane is assumed (decision 0011). */}
       <ListGroup>
         <ListRow
-          media={<RowBadge colour={SETTING_BADGE.about}><PlaneTakeoff /></RowBadge>}
-          title="Demo Flight" value={`${DEMO_FLIGHT.dep} to ${DEMO_FLIGHT.dest}`} to={DEMO_HREF}
-          onClick={() => setAircraft(DEMO_AIRPLANE)} data-testid="about-demo-flight"
+          media={
+            <RowBadge colour={SETTING_BADGE.about}>
+              <PlaneTakeoff />
+            </RowBadge>
+          }
+          title="Demo Flight"
+          value={`${DEMO_FLIGHT.dep} to ${DEMO_FLIGHT.dest}`}
+          to={DEMO_HREF}
+          onClick={() => setAircraft(DEMO_AIRPLANE)}
+          data-testid="about-demo-flight"
         />
       </ListGroup>
     </div>

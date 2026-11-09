@@ -21,6 +21,7 @@ list shrinks as #482 does.
   python3 scripts/ci/rules_boundary.py         check
   python3 scripts/ci/rules_boundary.py --list  print every hit
 """
+
 import re
 import sys
 from pathlib import Path
@@ -32,8 +33,10 @@ ALLOW = ROOT / "scripts/ci/rules_boundary_allow.txt"
 # the rule could hide in (generated types, tests, fixtures).
 AREAS = ["apps/web/src", "apps/ios/Wingtip", "apps/android/app/src/main", "services/gateway/src/main", "services/planner/app"]
 SUFFIXES = {".ts", ".tsx", ".swift", ".kt", ".java", ".py"}
-SKIP = re.compile(r"(\.test\.|\.spec\.|/fixtures/|/Generated/|/generated/|lib/engine/contract\.ts|lib/api/types\.ts|"
-                  r"EngineContract\.(swift|kt)|/tests?/|services/planner/app/detection\.py)")
+SKIP = re.compile(
+    r"(\.test\.|\.spec\.|/fixtures/|/Generated/|/generated/|lib/engine/contract\.ts|lib/api/types\.ts|"
+    r"EngineContract\.(swift|kt)|/tests?/|services/planner/app/detection\.py)"
+)
 
 # A source of an aviation figure, as this repo's comments cite one.
 CITATION = re.compile(r"14 CFR|\bCFR\b|§|\bAIM\b|\bAC \d{2,3}-\d|\bACS\b|FAA Order|\b(61|91|71|73|95|97|135)\.\d{2,3}\b")
@@ -42,12 +45,15 @@ CITATION = re.compile(r"14 CFR|\bCFR\b|§|\bAIM\b|\bAC \d{2,3}-\d|\bACS\b|FAA Or
 CONSTANT = re.compile(
     r"^\s*(?:export\s+)?(?:(?:private|internal|public|static|const|final|let|var|val|override)\s+)*"
     r"(?:const|let|var|val|final\s+\w+|static\s+final\s+\w+)\s+[A-Za-z_]\w*\s*(?::\s*[\w.<>?]+\s*)?=\s*-?\(?\s*[\d][\d_.]*\b"
-    r"|^[A-Z][A-Z0-9_]+\s*(?::\s*[\w\[\], ]+)?=\s*-?[\d][\d_.]*\b")
+    r"|^[A-Z][A-Z0-9_]+\s*(?::\s*[\w\[\], ]+)?=\s*-?[\d][\d_.]*\b"
+)
 COMMENT = re.compile(r"^\s*(//|/\*|\*|#|///)")
 # The engine's rules by name, defined again outside it.
-RULE_NAMES = re.compile(r"\b(?:function|func|fun|def)\s+(flightLevel|flight_level|isNight|is_night|cruisingAltitudes|"
-                        r"cruising_altitudes|reserveMinutes|reserve_min|vfrMinimums|vfr_minimums|holdEntry|hold_entry|"
-                        r"windTriangle|wind_triangle|descentFtPerNm|descent_ft_per_nm)\s*[(<]")
+RULE_NAMES = re.compile(
+    r"\b(?:function|func|fun|def)\s+(flightLevel|flight_level|isNight|is_night|cruisingAltitudes|"
+    r"cruising_altitudes|reserveMinutes|reserve_min|vfrMinimums|vfr_minimums|holdEntry|hold_entry|"
+    r"windTriangle|wind_triangle|descentFtPerNm|descent_ft_per_nm)\s*[(<]"
+)
 
 
 def hits(path: Path) -> list[tuple[int, str]]:
@@ -104,9 +110,11 @@ def main() -> int:
     for rel, items in found.items():
         if len(items) > allow.get(rel, 0):
             failed = True
-            print(f"::error file={rel}::{len(items)} aviation figure(s) or rule(s) here, {allow.get(rel, 0)} allowed "
-                  "(scripts/ci/rules_boundary_allow.txt). Move the rule into the engine and ask it by name (engine/README.md), "
-                  "or, where it is not a rule, list the file with why.")
+            print(
+                f"::error file={rel}::{len(items)} aviation figure(s) or rule(s) here, {allow.get(rel, 0)} allowed "
+                "(scripts/ci/rules_boundary_allow.txt). Move the rule into the engine and ask it by name (engine/README.md), "
+                "or, where it is not a rule, list the file with why."
+            )
             for n, text in items:
                 print(f"  {rel}:{n}: {text}")
     for rel, count in allow.items():

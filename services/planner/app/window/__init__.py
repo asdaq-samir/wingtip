@@ -1,4 +1,4 @@
-""""When should I go?": the Go / No-Go for each departure hour the
+""" "When should I go?": the Go / No-Go for each departure hour the
 forecasts reach, and the best windows to leave in (POST
 /api/departure-window, app.routers.window).
 

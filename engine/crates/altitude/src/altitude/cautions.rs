@@ -62,7 +62,9 @@ fn obstacle_words(kind: &str) -> String {
 pub fn floor(segment: &Value, altitude: f64) -> Option<String> {
     let floor = num(segment, "floor_ft");
     let (Some(highest), Some(clearance)) = (num(segment, "highest_ft"), num(segment, "obstacle_clearance_ft")) else {
-        return floor.filter(|f| altitude < *f).map(|f| format!("Under the {} ft the terrain and obstacles need (14 CFR 91.119)", grouped(f)));
+        return floor
+            .filter(|f| altitude < *f)
+            .map(|f| format!("Under the {} ft the terrain and obstacles need (14 CFR 91.119)", grouped(f)));
     };
     let need = highest + clearance;
     if altitude >= need {
@@ -224,11 +226,8 @@ pub fn own_altitude(selection: &Value, legs: &[Value], profile: Option<&Value>) 
                     let floor_ft = num(segment, "floor_ft").unwrap_or(0.0);
                     // A VFR cruise under Class A (71.33: 18,000 ft MSL),
                     // and not under the ground's own floor (91.119).
-                    let legal: Vec<String> = [below, below + 2000.0]
-                        .into_iter()
-                        .filter(|ft| *ft >= floor_ft && *ft < CLASS_A_FLOOR_FT)
-                        .map(grouped)
-                        .collect();
+                    let legal: Vec<String> =
+                        [below, below + 2000.0].into_iter().filter(|ft| *ft >= floor_ft && *ft < CLASS_A_FLOOR_FT).map(grouped).collect();
                     let fly = if legal.is_empty() { String::new() } else { format!(": fly {} ft", legal.join(" or ")) };
                     found.push(format!(
                         "{} more than 3,000 ft above the ground flies {} thousands plus 500{fly} (14 CFR 91.159)",
@@ -279,7 +278,9 @@ mod tests {
 
     #[test]
     fn the_article_goes_with_the_figure_said() {
-        let seg = v(r#"{"floor_ft": 1800, "highest_ft": 800, "highest_is_obstacle": true, "obstacle_type": "ANTENNA", "obstacle_clearance_ft": 1000, "congested": null}"#);
+        let seg = v(
+            r#"{"floor_ft": 1800, "highest_ft": 800, "highest_is_obstacle": true, "obstacle_type": "ANTENNA", "obstacle_clearance_ft": 1000, "congested": null}"#,
+        );
         assert_eq!(
             floor(&seg, 1500.0).unwrap(),
             "300 ft under the 1,800 ft 14 CFR 91.119(b) asks where a congested area could not be ruled out: 1,000 ft over the highest obstacle within 2,000 ft, here an 800 ft antenna"
@@ -294,12 +295,18 @@ mod tests {
     #[test]
     fn the_hemispheric_rule_is_one_line_naming_the_legal_altitudes() {
         let selection = |east: bool| {
-            let segs: Vec<String> = [3670, 3662, 3817].iter().map(|from| format!(r#"{{"floor_ft": 2600, "eastbound": {east}, "hemispheric_rule_from_ft": {from}}}"#)).collect();
+            let segs: Vec<String> = [3670, 3662, 3817]
+                .iter()
+                .map(|from| format!(r#"{{"floor_ft": 2600, "eastbound": {east}, "hemispheric_rule_from_ft": {from}}}"#))
+                .collect();
             v(&format!(r#"{{"segments": [{}]}}"#, segs.join(",")))
         };
         let legs = vec![v(r#"{"altitude_ft": 5500}"#); 3];
         let west = own_altitude(&selection(false), &legs, None).unwrap();
-        assert_eq!(west.reasons, vec!["Westbound more than 3,000 ft above the ground flies even thousands plus 500: fly 4,500 or 6,500 ft (14 CFR 91.159)"]);
+        assert_eq!(
+            west.reasons,
+            vec!["Westbound more than 3,000 ft above the ground flies even thousands plus 500: fly 4,500 or 6,500 ft (14 CFR 91.159)"]
+        );
         // 5,500 is (a)(1)'s own eastbound: nothing to say.
         assert!(own_altitude(&selection(true), &legs, None).is_none());
         // Under the rule's height (3,000 ft above the surface), any altitude.

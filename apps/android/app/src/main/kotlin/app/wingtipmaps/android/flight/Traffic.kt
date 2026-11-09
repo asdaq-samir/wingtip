@@ -16,7 +16,6 @@ import app.wingtipmaps.android.engine.generated.trafficMarks
 import app.wingtipmaps.android.notify.Notifications
 import app.wingtipmaps.android.receiver.Receiver
 import app.wingtipmaps.android.settings
-import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +26,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 /**
  * The traffic layer's switch, kept in the app's settings file under

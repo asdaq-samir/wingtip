@@ -7,7 +7,6 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.departureWindow
 import app.wingtipmaps.android.api.generated.DepartureWindow
 import app.wingtipmaps.android.api.generated.DepartureWindowAsk
-import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 /**
  * "When should I go?"'s view model (the web's useDepartureWindow): the

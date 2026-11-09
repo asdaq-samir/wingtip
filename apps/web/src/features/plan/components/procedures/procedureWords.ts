@@ -23,7 +23,7 @@ export function listTitle(ident: string, kind: Kind): string {
 export function patternNote(a: ProcedureAirport, chosen: string | null, landing: Landing | null): string | null {
   if (chosen === null) return null;
   if (landing) return chosen === landing.runway ? "Straight in" : "Circle to land";
-  const end = (a.runways ?? []).flatMap(r => r.runway_ends ?? []).find(e => runwayNumber(e.ident) === chosen);
+  const end = (a.runways ?? []).flatMap((r) => r.runway_ends ?? []).find((e) => runwayNumber(e.ident) === chosen);
   // Left unless the FAA flags it right (14 CFR 91.126(b)(1)).
   const side = end ? `Runway ${chosen}, ${end.traffic === "right" ? "right" : "left"} traffic` : `Runway ${chosen}`;
   return [side, a.patternAltitudeFt != null ? `${altFt(a.patternAltitudeFt)} ft` : null].filter(Boolean).join(" · ");

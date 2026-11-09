@@ -14,14 +14,20 @@ const config = {
  * takes between them, as the loading graph is read. Recharts, as the
  * console's charts are, loaded with the section.
  */
-export default function EnvelopeChart({ envelope, takeoff, landing }: {
-  envelope: [number, number][]; takeoff: Condition; landing: Condition;
+export default function EnvelopeChart({
+  envelope,
+  takeoff,
+  landing,
+}: {
+  envelope: [number, number][];
+  takeoff: Condition;
+  landing: Condition;
 }) {
   const outline = [...envelope, envelope[0]!].map(([arm, weight]) => ({ arm, envelope: weight }));
   // A point with no centre of gravity (zero weight) has nowhere to sit.
   const points = [takeoff, landing].filter((c): c is Condition & { armIn: number } => c.armIn !== null);
-  const arms = [...envelope.map(p => p[0]), ...points.map(c => c.armIn)];
-  const weights = [...envelope.map(p => p[1]), ...points.map(c => c.weightLb)];
+  const arms = [...envelope.map((p) => p[0]), ...points.map((c) => c.armIn)];
+  const weights = [...envelope.map((p) => p[1]), ...points.map((c) => c.weightLb)];
   return (
     <ChartContainer config={config} className="aspect-auto h-56 w-full" data-testid="envelope-chart">
       <ComposedChart margin={{ top: 12, right: 12, left: 0, bottom: 0 }} accessibilityLayer>
@@ -33,28 +39,64 @@ export default function EnvelopeChart({ envelope, takeoff, landing }: {
             Performance, measured at a quarter of a laptop's speed. Six
             ticks fit the width anyway. */}
         <XAxis
-          type="number" dataKey="arm" domain={[Math.floor(Math.min(...arms)) - 1, Math.ceil(Math.max(...arms)) + 1]}
-          tickLine={false} axisLine={false} tickCount={6} interval={0}
-          tick={props => <ChartTick {...props} format={arm => `${arm} in`} />}
+          type="number"
+          dataKey="arm"
+          domain={[Math.floor(Math.min(...arms)) - 1, Math.ceil(Math.max(...arms)) + 1]}
+          tickLine={false}
+          axisLine={false}
+          tickCount={6}
+          interval={0}
+          tick={(props) => <ChartTick {...props} format={(arm) => `${arm} in`} />}
         />
         <YAxis
-          type="number" domain={[Math.floor(Math.min(...weights) / 100) * 100 - 100, Math.ceil(Math.max(...weights) / 100) * 100 + 100]}
-          tickLine={false} axisLine={false} width={48} tickCount={6} interval={0} tick={props => <ChartTick {...props} />}
+          type="number"
+          domain={[Math.floor(Math.min(...weights) / 100) * 100 - 100, Math.ceil(Math.max(...weights) / 100) * 100 + 100]}
+          tickLine={false}
+          axisLine={false}
+          width={48}
+          tickCount={6}
+          interval={0}
+          tick={(props) => <ChartTick {...props} />}
         />
-        <Line data={outline} dataKey="envelope" type="linear" dot={false} isAnimationActive={false} stroke="var(--color-envelope)" strokeWidth={2} />
         <Line
-          data={[landing, takeoff].flatMap(c => c.armIn === null ? [] : [{ arm: c.armIn, loaded: c.weightLb }])}
-          dataKey="loaded" type="linear" dot={false} isAnimationActive={false} stroke="var(--color-loaded)" strokeWidth={2}
+          data={outline}
+          dataKey="envelope"
+          type="linear"
+          dot={false}
+          isAnimationActive={false}
+          stroke="var(--color-envelope)"
+          strokeWidth={2}
+        />
+        <Line
+          data={[landing, takeoff].flatMap((c) => (c.armIn === null ? [] : [{ arm: c.armIn, loaded: c.weightLb }]))}
+          dataKey="loaded"
+          type="linear"
+          dot={false}
+          isAnimationActive={false}
+          stroke="var(--color-loaded)"
+          strokeWidth={2}
         />
         {/* The two points' labels at an axis's 12 (chartTick), as charts
             label things, outside the type scale on purpose. */}
         {takeoff.armIn !== null && (
-          <ReferenceDot x={takeoff.armIn} y={takeoff.weightLb} r={4.5} fill="var(--color-loaded)" stroke="white"
-            label={{ value: "Takeoff", position: "top", className: "text-xs", fill: "currentColor" }} />
+          <ReferenceDot
+            x={takeoff.armIn}
+            y={takeoff.weightLb}
+            r={4.5}
+            fill="var(--color-loaded)"
+            stroke="white"
+            label={{ value: "Takeoff", position: "top", className: "text-xs", fill: "currentColor" }}
+          />
         )}
         {landing.armIn !== null && (
-          <ReferenceDot x={landing.armIn} y={landing.weightLb} r={4.5} fill="var(--color-loaded)" stroke="white"
-            label={{ value: "Landing", position: "bottom", className: "text-xs", fill: "currentColor" }} />
+          <ReferenceDot
+            x={landing.armIn}
+            y={landing.weightLb}
+            r={4.5}
+            fill="var(--color-loaded)"
+            stroke="white"
+            label={{ value: "Landing", position: "bottom", className: "text-xs", fill: "currentColor" }}
+          />
         )}
       </ComposedChart>
     </ChartContainer>

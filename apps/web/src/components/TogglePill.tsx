@@ -12,7 +12,14 @@ import { TEXT } from "../lib/text";
  * and TAC were two segments of a track, and Waypoints Show and Hide,
  * and read as a choice between them.
  */
-export default function TogglePill({ pressed, onPressedChange, icon, label, testId, disabled }: {
+export default function TogglePill({
+  pressed,
+  onPressedChange,
+  icon,
+  label,
+  testId,
+  disabled,
+}: {
   pressed: boolean;
   onPressedChange: (pressed: boolean) => void;
   icon?: ReactNode;
@@ -22,8 +29,15 @@ export default function TogglePill({ pressed, onPressedChange, icon, label, test
 }) {
   return (
     <Toggle
-      pressed={pressed} onPressedChange={onPressedChange} size="sm" data-testid={testId} disabled={disabled}
-      className={cn("h-7 gap-1.5 rounded-full border border-border px-3 text-foreground aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground hover:aria-pressed:bg-primary/90 [&_svg:not([class*='size-'])]:size-3.5", TEXT.note)}
+      pressed={pressed}
+      onPressedChange={onPressedChange}
+      size="sm"
+      data-testid={testId}
+      disabled={disabled}
+      className={cn(
+        "h-7 gap-1.5 rounded-full border border-border px-3 text-foreground aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground hover:aria-pressed:bg-primary/90 [&_svg:not([class*='size-'])]:size-3.5",
+        TEXT.note,
+      )}
     >
       {icon}
       {label}

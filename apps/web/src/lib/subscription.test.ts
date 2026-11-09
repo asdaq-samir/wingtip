@@ -3,8 +3,17 @@ import type { Subscription } from "./api/types";
 import { entitlementOf, mayUse, standing, unsoldEntitlement, usesLeft } from "./subscription";
 
 const sub = (over: Partial<Subscription>): Subscription => ({
-  state: "FREE", entitled: false, until: null, trialAvailable: true, trialDays: 30, plan: null, store: null,
-  uses: [{ feature: "NARRATIVE", used: 3, cap: 60 }, { feature: "ORAL", used: 61, cap: 60 }],
+  state: "FREE",
+  entitled: false,
+  until: null,
+  trialAvailable: true,
+  trialDays: 30,
+  plan: null,
+  store: null,
+  uses: [
+    { feature: "NARRATIVE", used: 3, cap: 60 },
+    { feature: "ORAL", used: 61, cap: 60 },
+  ],
   ...over,
 });
 

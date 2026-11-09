@@ -2,6 +2,7 @@
 the destination's check, the pilot's alternate checked at its own ETA --
 the destination's plus the way there at the cruise speed -- and the
 fields offered."""
+
 from datetime import datetime, timezone
 
 from fastapi.testclient import TestClient
@@ -22,8 +23,14 @@ def test_the_destination_the_pilots_alternate_and_the_fields_offered(monkeypatch
 
     def alternate(ident, eta):
         asked["alternate"] = (ident, eta)
-        return {"ident": ident, "approach": True, "precision": True, "good": True, "reasons": [],
-                "minimums": {"ceiling_ft": 600, "visibility_sm": 2}}
+        return {
+            "ident": ident,
+            "approach": True,
+            "precision": True,
+            "good": True,
+            "reasons": [],
+            "minimums": {"ceiling_ft": 600, "visibility_sm": 2},
+        }
 
     monkeypatch.setattr(alternates, "destination", destination)
     monkeypatch.setattr(alternates, "alternate", alternate)

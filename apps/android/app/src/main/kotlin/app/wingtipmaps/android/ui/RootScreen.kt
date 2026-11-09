@@ -25,6 +25,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Links
@@ -34,21 +35,20 @@ import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.design.SharedAxisContent
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.emergency.EmergencyHost
+import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.logbook.AutoLogbookHost
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.route.RouteLegHost
 import app.wingtipmaps.android.route.RouteLegModel
 import app.wingtipmaps.android.strip.StripLayout
-import app.wingtipmaps.android.welcome.WelcomeHost
 import app.wingtipmaps.android.ui.sheet.DockedSheet
 import app.wingtipmaps.android.ui.sheet.SheetStop
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 import app.wingtipmaps.android.ui.sheet.rememberDockedSheetState
+import app.wingtipmaps.android.welcome.WelcomeHost
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import androidx.compose.ui.unit.dp
 
 /** The sheet's four tabs, as the web app and the iOS app have them
  *  (decision 0013), "Airplane" the FAA's word (decision 0020). */

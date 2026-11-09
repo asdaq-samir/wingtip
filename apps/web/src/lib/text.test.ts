@@ -15,7 +15,7 @@ const FILES = [
 const SOURCES = import.meta.glob("/src/**/*.tsx", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
 
 describe("the type scale", () => {
-  it.each(FILES)("%s sets no raw text size", file => {
+  it.each(FILES)("%s sets no raw text size", (file) => {
     const source = SOURCES[`/src/${file}`];
     expect(source).toBeDefined();
     expect(source).not.toMatch(/\btext-(xs|sm|base|lg|xl|2xl|3xl)\b/);

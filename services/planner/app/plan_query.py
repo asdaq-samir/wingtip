@@ -2,6 +2,7 @@
 before any planning, and the route's named checkpoints: shared by the
 routers that plan a route (plan, gonogo, figures, route_options) and the
 departure window, so no router imports another for them."""
+
 import re
 from dataclasses import dataclass
 from datetime import datetime
@@ -10,6 +11,7 @@ from typing import Annotated
 from fastapi import HTTPException, Query
 from wingtip import airports, fixes, procedures
 from wingtip import flight_plan as fp
+
 # As vfr_holds: PlanQuery's own `holds` is the address's.
 from wingtip import holds as vfr_holds
 from wingtip.engine import ask as engine
@@ -136,8 +138,14 @@ class PlanQuery:
         if self.aircraft is None:
             return None
         return aircraft_profile(
-            self.aircraft, self.cruise_tas_kt, self.fuel_burn_gph, self.usable_fuel_gal,
-            self.climb_tas_kt, self.climb_fuel_burn_gph, self.cruise_power_pct, self.service_ceiling_ft,
+            self.aircraft,
+            self.cruise_tas_kt,
+            self.fuel_burn_gph,
+            self.usable_fuel_gal,
+            self.climb_tas_kt,
+            self.climb_fuel_burn_gph,
+            self.cruise_power_pct,
+            self.service_ceiling_ft,
         )
 
     @property
@@ -163,7 +171,6 @@ class PlanQuery:
                 raise HTTPException(422, f"{part!r} is not a point's altitude: an ident and feet, as VPBNG:4500.")
             out[point_key(ident)] = float(feet)
         return out
-
 
     def procedure_picks(self) -> list[tuple[str, str, str | None, str | None]]:
         """`procedures`, each the field, the procedure, its transition
@@ -197,8 +204,9 @@ class PlanQuery:
         out = []
         for part, hold in vfr_holds.parse_all(self.holds):
             if hold is None:
-                raise HTTPException(422, f"{part!r} is not a hold: a point, its inbound course, R or L, its legs and how long, "
-                                         "as VPBNG:270:R:1M:2T.")
+                raise HTTPException(
+                    422, f"{part!r} is not a hold: a point, its inbound course, R or L, its legs and how long, as VPBNG:270:R:1M:2T."
+                )
             out.append(hold)
         return out
 
@@ -236,8 +244,10 @@ class PlanQuery:
             except RuntimeError:
                 continue
             if drawn:
-                fixes_ = [{**f, "min_ft": own[f["ident"]], "max_ft": own[f["ident"]]}
-                          if f["ident"] in own and not f["missed"] else f for f in drawn.get("fixes", [])]
+                fixes_ = [
+                    {**f, "min_ft": own[f["ident"]], "max_ft": own[f["ident"]]} if f["ident"] in own and not f["missed"] else f
+                    for f in drawn.get("fixes", [])
+                ]
                 drawn = {**drawn, "fixes": fixes_, **({"direct": direct} if direct else {})}
                 out.append((ident, drawn))
         return out
@@ -260,12 +270,22 @@ class PlanQuery:
         one refused now, a 422 (or a 404 for an alternate that is not an
         airport), before any of the planning is done for it."""
         return fp.Asked(
-            profile=self.profile(), aircraft_key=self.aircraft_key, altitude_ft=self.altitude_ft,
-            altitude_nearest=self.altitude_nearest, altitude_choice=self.altitude_choice,
-            class_b_clearance=self.class_b_clearance, rules=self.rules, depart=self.depart,
-            own_altitudes=self.own_altitudes(), drawn=self.drawn_procedures(),
-            leave_runways=self.departure_runways(), land_runways=self.landing_runways(), wind_runways=self.wind_runways,
-            ground=self.own_ground(), holds=self.own_holds(), checkpoints=self.checkpoints,
+            profile=self.profile(),
+            aircraft_key=self.aircraft_key,
+            altitude_ft=self.altitude_ft,
+            altitude_nearest=self.altitude_nearest,
+            altitude_choice=self.altitude_choice,
+            class_b_clearance=self.class_b_clearance,
+            rules=self.rules,
+            depart=self.depart,
+            own_altitudes=self.own_altitudes(),
+            drawn=self.drawn_procedures(),
+            leave_runways=self.departure_runways(),
+            land_runways=self.landing_runways(),
+            wind_runways=self.wind_runways,
+            ground=self.own_ground(),
+            holds=self.own_holds(),
+            checkpoints=self.checkpoints,
             alternate=self.alternate_airport(),
         )
 

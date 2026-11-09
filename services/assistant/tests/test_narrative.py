@@ -2,6 +2,7 @@
 prompt it writes from, and the stream it answers with -- with the model
 stood in for, as test_assistant and test_oral stand in for theirs.
 Ported from the two agents it replaced (nav-log-agent, crewai-agent)."""
+
 import json
 from types import SimpleNamespace
 
@@ -16,12 +17,25 @@ from app.main import app
 
 client = TestClient(app)
 
-LEG = {"from": "C81", "to": "KDLH", "distance_nm": 290.0, "magnetic_heading_deg": 335.0,
-       "groundspeed_kt": 110.0, "ete_min": 158.0, "fuel_gal": 22.4}
+LEG = {
+    "from": "C81",
+    "to": "KDLH",
+    "distance_nm": 290.0,
+    "magnetic_heading_deg": 335.0,
+    "groundspeed_kt": 110.0,
+    "ete_min": 158.0,
+    "fuel_gal": 22.4,
+}
 
 SELECTION = {
-    "floor_ft": 2200.0, "band_ceiling_ft": 3600.0, "icing_possible": False, "freezing_level_ft": None,
-    "low_ceiling_or_visibility": False, "min_ceiling_ft": None, "min_visibility_sm": None, "hazards": [],
+    "floor_ft": 2200.0,
+    "band_ceiling_ft": 3600.0,
+    "icing_possible": False,
+    "freezing_level_ft": None,
+    "low_ceiling_or_visibility": False,
+    "min_ceiling_ft": None,
+    "min_visibility_sm": None,
+    "hazards": [],
     "weather_unavailable": [],
 }
 
@@ -38,8 +52,9 @@ def events(lines) -> list[dict]:
 
 
 def test_the_prompt_carries_every_leg_and_names_an_unflyable_one():
-    unflyable = dict(LEG, **{"from": "KDLH", "to": "C81", "magnetic_heading_deg": None,
-                              "groundspeed_kt": None, "ete_min": None, "fuel_gal": None})
+    unflyable = dict(
+        LEG, **{"from": "KDLH", "to": "C81", "magnetic_heading_deg": None, "groundspeed_kt": None, "ete_min": None, "fuel_gal": None}
+    )
     text = narrative.briefing_prompt("C81", "KDLH", 4500, None, [LEG, unflyable])
     assert "- C81 -> KDLH: 290.0nm, heading 335M, GS 110kt, ETE 158min, fuel 22.4gal" in text
     assert "UNFLYABLE" in text
@@ -98,11 +113,14 @@ def test_no_value_is_printed_as_none():
     assert "no ceiling below Class A" in text
 
 
-@pytest.mark.parametrize("flown, says", [
-    ("custom", "The altitude is the pilot's own"),
-    ("fastest", "The altitudes are the planner's fastest plan."),
-    ("economical", "The altitudes are the planner's economical plan."),
-])
+@pytest.mark.parametrize(
+    "flown, says",
+    [
+        ("custom", "The altitude is the pilot's own"),
+        ("fastest", "The altitudes are the planner's fastest plan."),
+        ("economical", "The altitudes are the planner's economical plan."),
+    ],
+)
 def test_whose_altitude_it_is_comes_from_flown(flown, says):
     text = narrative.briefing_prompt("C81", "KDLH", 4500, SELECTION, [LEG], flown=flown)
     assert says in text
@@ -141,12 +159,15 @@ def test_a_nav_log_longer_than_any_route_is_refused():
         narrative.NarrativeRequest.model_validate(_request(legs=[LEG] * (narrative.MAX_LEGS + 1)))
 
 
-@pytest.mark.parametrize("leg", [
-    {"to": "KDLH", "distance_nm": 290.0},                                     # no "from"
-    dict(LEG, groundspeed_kt=None),                                           # flyable but incomplete
-    dict(LEG, **{"from": "x" * 81}),                                          # a paragraph, not a fix name
-    dict(LEG, distance_nm="far"),
-])
+@pytest.mark.parametrize(
+    "leg",
+    [
+        {"to": "KDLH", "distance_nm": 290.0},  # no "from"
+        dict(LEG, groundspeed_kt=None),  # flyable but incomplete
+        dict(LEG, **{"from": "x" * 81}),  # a paragraph, not a fix name
+        dict(LEG, distance_nm="far"),
+    ],
+)
 def test_a_leg_the_prompt_cannot_read_is_refused_before_claude_is_asked(leg):
     with pytest.raises(ValidationError):
         narrative.NarrativeRequest.model_validate(_request(legs=[leg]))

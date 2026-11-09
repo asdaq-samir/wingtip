@@ -15,7 +15,11 @@ import { procedureKind } from "./useRouteEdits";
  * at fields the route no longer has let go. With whether the destination
  * has any approach, from its card.
  */
-export function useRouteTidy({ planned, searchParams, setSearchParams }: {
+export function useRouteTidy({
+  planned,
+  searchParams,
+  setSearchParams,
+}: {
   planned: PlannedRoute;
   searchParams: URLSearchParams;
   setSearchParams: SetURLSearchParams;
@@ -24,19 +28,23 @@ export function useRouteTidy({ planned, searchParams, setSearchParams }: {
   // handed straight to a function counted, to the React Compiler, as the
   // object handed over and maybe changed, and it gave up every memo after.
   const { data: destCard } = useQuery({ ...airportQuery(`${planned.dest}`), enabled: !!planned.dest });
-  const typedDep = `${planned.dep}`, typedDest = `${planned.dest}`;
+  const typedDep = `${planned.dep}`,
+    typedDest = `${planned.dest}`;
   const { data: depCard } = useQuery({ ...airportQuery(typedDep), enabled: !!identOf(typedDep) });
   // The route's ends by the airport's own ident once its card is in, the
   // ICAO code where it has one: "ORD" typed is KORD in the box, the list
   // and the nav log, at the owner's ask; C81, with none, stays C81. Its
   // stops stay as typed: three letters there may name a VOR.
-  const depNamed = depCard?.ident, destNamed = destCard?.ident;
+  const depNamed = depCard?.ident,
+    destNamed = destCard?.ident;
   useEffect(() => {
     const named = (card: string | undefined, typed: string) => (card && card !== typed && sameField(card, typed) ? card : null);
-    const swaps = [[typedDep, named(depNamed, typedDep)], [typedDest, named(destNamed, typedDest)]]
-      .flatMap(([typed, card]) => (typed && card ? [[typed, card] as const] : []));
+    const swaps = [
+      [typedDep, named(depNamed, typedDep)],
+      [typedDest, named(destNamed, typedDest)],
+    ].flatMap(([typed, card]) => (typed && card ? [[typed, card] as const] : []));
     if (!swaps.length) return;
-    setSearchParams(prev => swaps.reduce((params, [typed, card]) => renamed(params, typed, card), prev), { replace: true });
+    setSearchParams((prev) => swaps.reduce((params, [typed, card]) => renamed(params, typed, card), prev), { replace: true });
   }, [depNamed, destNamed, typedDep, typedDest, setSearchParams]);
   // Whatever changed the route -- a stop added from a card, the Class B
   // detour taken out, a link opened with picks for fields it no longer
@@ -54,11 +62,13 @@ export function useRouteTidy({ planned, searchParams, setSearchParams }: {
     const lists = fieldListsOf(searchParams);
     const now = fieldListParams(lists);
     const kept = fieldListParams(prunedFieldLists(lists, route, procedureKind));
-    if (FIELD_LIST_KEYS.every(key => kept[key] === now[key])) return;
-    setSearchParams(prev => patched(prev, fieldListParams(prunedFieldLists(fieldListsOf(prev), route, procedureKind))), { replace: true });
+    if (FIELD_LIST_KEYS.every((key) => kept[key] === now[key])) return;
+    setSearchParams((prev) => patched(prev, fieldListParams(prunedFieldLists(fieldListsOf(prev), route, procedureKind))), {
+      replace: true,
+    });
   }, [prunedRoute, searchParams, planned.dep, planned.dest, stops, setSearchParams]);
   // Greyed only once its card says it has none; a planner older than the
   // list says nothing, and the button stays.
-  const noApproaches = !!destCard?.procedures && !destCard.procedures.some(c => c.kind === "IAP");
+  const noApproaches = !!destCard?.procedures && !destCard.procedures.some((c) => c.kind === "IAP");
   return { noApproaches };
 }

@@ -3,11 +3,11 @@ package app.wingtipmaps.gateway.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.CurrencyDto;
 import app.wingtipmaps.gateway.dto.ExperienceItemDto;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -62,7 +62,8 @@ class PlannerClientPilotTest {
 
     private static List<LogbookEntry> logbook() {
         Pilot pilot = new Pilot("pilot@example.com", "A. Pilot", "sub-1");
-        return List.of(new LogbookEntry(pilot).set(LocalDate.of(2026, 9, 20), "N12345", "C172", null, 1.5, 0, 0, 3, 1, null)
+        return List.of(new LogbookEntry(pilot)
+                .set(LocalDate.of(2026, 9, 20), "N12345", "C172", null, 1.5, 0, 0, 3, 1, null)
                 .instrument(6, true, false));
     }
 
@@ -77,7 +78,8 @@ class PlannerClientPilotTest {
         assertThat(asked).hasSize(2);
         dropped = 2;
         assertThatThrownBy(() -> client().experience(logbook(), LocalDate.of(2026, 10, 11)))
-                .isInstanceOf(PlannerClient.Unavailable.class).hasMessageContaining("could not be reached");
+                .isInstanceOf(PlannerClient.Unavailable.class)
+                .hasMessageContaining("could not be reached");
     }
 
     @Test
@@ -128,7 +130,8 @@ class PlannerClientPilotTest {
                 [{"key": "total", "rule": "61.109(a)", "label": "Flight time", "need": 40.0, "unit": "h", "met": false}]
                 """;
         assertThatThrownBy(() -> client().experience(logbook(), LocalDate.of(2026, 10, 15)))
-                .isInstanceOf(PlannerClient.Unavailable.class).hasMessageContaining("was not its answer");
+                .isInstanceOf(PlannerClient.Unavailable.class)
+                .hasMessageContaining("was not its answer");
     }
 
     @Test

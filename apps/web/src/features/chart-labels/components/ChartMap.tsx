@@ -44,18 +44,42 @@ const UNRATED = "#8fa3b0";
  * there.
  */
 export default function ChartMap({
-  course, endpoints, detections, added, filters, selected, selectedContent,
-  onSelect, onDeselect, onAddAt, flyTo = null, flyZoom = 12,
+  course,
+  endpoints,
+  detections,
+  added,
+  filters,
+  selected,
+  selectedContent,
+  onSelect,
+  onDeselect,
+  onAddAt,
+  flyTo = null,
+  flyZoom = 12,
 }: Props) {
-  const show = usePreferences(s => s.waypoints);
-  const candidates = useMemo<GlCandidate[]>(() => (!show ? [] : [...detections, ...added].filter(p => isVisible(p, filters)).map(p => ({
-    key: pointKey(p), lat: p.lat, lon: p.lon,
-    colour: hasRating(p) ? COLORS[(p as { rating: Rating }).rating] : UNRATED,
-    select: () => onSelect(p),
-  }))), [show, detections, added, filters, onSelect]);
-  const ends = useMemo<GlEndpoint[]>(() => endpoints.filter(isEndpoint).map(e => ({
-    ident: e.ident, lat: e.lat, lon: e.lon, colour: "#ffffff", space: null, fix: false, select: () => onSelect(e),
-  })), [endpoints, onSelect]);
+  const show = usePreferences((s) => s.waypoints);
+  const candidates = useMemo<GlCandidate[]>(
+    () =>
+      !show
+        ? []
+        : [...detections, ...added]
+            .filter((p) => isVisible(p, filters))
+            .map((p) => ({
+              key: pointKey(p),
+              lat: p.lat,
+              lon: p.lon,
+              colour: hasRating(p) ? COLORS[(p as { rating: Rating }).rating] : UNRATED,
+              select: () => onSelect(p),
+            })),
+    [show, detections, added, filters, onSelect],
+  );
+  const ends = useMemo<GlEndpoint[]>(
+    () =>
+      endpoints
+        .filter(isEndpoint)
+        .map((e) => ({ ident: e.ident, lat: e.lat, lon: e.lon, colour: "#ffffff", space: null, fix: false, select: () => onSelect(e) })),
+    [endpoints, onSelect],
+  );
   return (
     <GlMapShell course={course} focus={flyTo} focusZoom={flyZoom} place={null}>
       <LandWaterGl />

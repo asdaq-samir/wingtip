@@ -64,7 +64,8 @@ export function rulerWords(left: LatLon, right: LatLon, declination: Declination
   const { trueDeg, middle, nm } = middleCourse(left, right);
   const variation = declination ? declination(middle.lat, middle.lon) : 0;
   const ref = declination ? "M" : "T";
-  const there = magneticOf(trueDeg, variation), back = magneticOf(trueDeg + 180, variation);
+  const there = magneticOf(trueDeg, variation),
+    back = magneticOf(trueDeg + 180, variation);
   const minutes = tasKt ? eteMinutes(nm, tasKt) : null;
   const speed = tasKt ? Math.round(tasKt) : null;
   const time = minutes !== null ? ` · ${duration(minutes)} (${speed} kt)` : "";
@@ -74,7 +75,8 @@ export function rulerWords(left: LatLon, right: LatLon, declination: Declination
     toLeft: `← ${reciprocal}${ref}`,
     figures: `${miles(nm)}${time}`,
     spoken: `Ruler: ${one(nm)} nautical miles, ${spokenCourse(course)} ${declination ? "magnetic" : "true"} one way and ${spokenCourse(reciprocal)} the other${
-      minutes !== null ? `, ${spokenTime(minutes)} at ${speed} knots` : ""}.`,
+      minutes !== null ? `, ${spokenTime(minutes)} at ${speed} knots` : ""
+    }.`,
   };
 }
 

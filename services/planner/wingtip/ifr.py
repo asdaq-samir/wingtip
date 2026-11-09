@@ -13,6 +13,7 @@ samples along the line, since a summit 3 nm off course counts as much as
 one under it. The pixels stay here, as arrays; the engine gets each leg's
 highest of them.
 """
+
 from __future__ import annotations
 
 import math
@@ -95,8 +96,9 @@ def _tiles_beside(piece: tuple) -> list[tuple[int, int]]:
     (a, b) = piece
     reach_lat = (OBSTACLE_RADIUS_NM + 1) / 60.0
     reach_lon = reach_lat / max(0.2, math.cos(math.radians(max(abs(a[0]), abs(b[0])))))
-    return _tiles_over((min(a[0], b[0]) - reach_lat, min(a[1], b[1]) - reach_lon,
-                        max(a[0], b[0]) + reach_lat, max(a[1], b[1]) + reach_lon), TILE_ZOOM)
+    return _tiles_over(
+        (min(a[0], b[0]) - reach_lat, min(a[1], b[1]) - reach_lon, max(a[0], b[0]) + reach_lat, max(a[1], b[1]) + reach_lon), TILE_ZOOM
+    )
 
 
 def _highest_ground_ft(pieces: list, heights: dict) -> float:
@@ -170,8 +172,12 @@ def floor_profile(fixes: list, faa_cache_dir=DEFAULT_FAA_CACHE_DIR) -> list[dict
             near |= _from_course_nm(obstacle_lat, obstacle_lon, p, q) <= OBSTACLE_RADIUS_NM + 1
     return engine(
         "ifr_floors",
-        legs=[{"a": list(a), "b": list(b), "ground_ft": _highest_ground_ft(pieces, heights) + TILE_ALLOWANCE_FT}
-              for (a, b), pieces in zip(legs, leg_pieces)],
-        obstacles=[{"lat": float(lat), "lon": float(lon), "amsl_ft": float(ft)}
-                   for lat, lon, ft in zip(obstacle_lat[near], obstacle_lon[near], obstacle_ft[near])],
+        legs=[
+            {"a": list(a), "b": list(b), "ground_ft": _highest_ground_ft(pieces, heights) + TILE_ALLOWANCE_FT}
+            for (a, b), pieces in zip(legs, leg_pieces)
+        ],
+        obstacles=[
+            {"lat": float(lat), "lon": float(lon), "amsl_ft": float(ft)}
+            for lat, lon, ft in zip(obstacle_lat[near], obstacle_lon[near], obstacle_ft[near])
+        ],
     )

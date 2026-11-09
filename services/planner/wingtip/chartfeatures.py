@@ -38,6 +38,7 @@ ratings are that set: a 0 for a detection that is no feature at all (a
 power line read as a road), 1-5 for how findable a real one is, and
 wingtip.chartmodel learns from them.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -50,12 +51,7 @@ from . import geo
 # corridor can score another without its columns shifting underneath it.
 CHART_CATEGORIES = ("water", "town", "river", "road_or_rail", "airport")
 
-FEATURE_COLS = [
-    "log_area",
-    "linework_px",
-    "nn_dist_nm",
-    "same_kind_within_2nm",
-] + [f"is_{c}" for c in CHART_CATEGORIES]
+FEATURE_COLS = ["log_area", "linework_px", "nn_dist_nm", "same_kind_within_2nm"] + [f"is_{c}" for c in CHART_CATEGORIES]
 
 
 def _nearest_neighbour_nm(lats, lons) -> list:
@@ -86,12 +82,8 @@ def build(detections: list) -> pd.DataFrame:
             "category": d["category"] if isinstance(d, dict) else d.category,
             "area_m2": float(d["area_m2"] if isinstance(d, dict) else d.area_m2),
             "pixels": float((d.get("pixels", 0) if isinstance(d, dict) else d.pixels) or 0),
-            "cross_track_nm": float(
-                d["cross_track_nm"] if isinstance(d, dict) else d.extras["cross_track_nm"]
-            ),
-            "along_track_nm": float(
-                d["along_track_nm"] if isinstance(d, dict) else d.extras["along_track_nm"]
-            ),
+            "cross_track_nm": float(d["cross_track_nm"] if isinstance(d, dict) else d.extras["cross_track_nm"]),
+            "along_track_nm": float(d["along_track_nm"] if isinstance(d, dict) else d.extras["along_track_nm"]),
         }
         for d in detections
     ]

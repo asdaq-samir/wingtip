@@ -4,26 +4,35 @@ import { assess, type FratInput } from "./frat";
 
 /** Each recorded, each good on 5 October 2026. */
 const GOOD: Inspections = {
-  annualOn: "2025-10-05", annualGoodThrough: "2026-10-31",
-  hundredHourAtHours: 1200.5, hoursNow: 1250, hundredHourDueAtHours: 1300.5,
-  staticCheckOn: "2025-01-10", staticCheckGoodThrough: "2027-01-31",
-  transponderCheckOn: "2025-01-10", transponderCheckGoodThrough: "2027-01-31",
-  eltInspectedOn: "2026-02-01", eltInspectionGoodThrough: "2027-02-28",
-  eltBatteryDueOn: "2028-06-01", forHire: true,
+  annualOn: "2025-10-05",
+  annualGoodThrough: "2026-10-31",
+  hundredHourAtHours: 1200.5,
+  hoursNow: 1250,
+  hundredHourDueAtHours: 1300.5,
+  staticCheckOn: "2025-01-10",
+  staticCheckGoodThrough: "2027-01-31",
+  transponderCheckOn: "2025-01-10",
+  transponderCheckGoodThrough: "2027-01-31",
+  eltInspectedOn: "2026-02-01",
+  eltInspectionGoodThrough: "2027-02-28",
+  eltBatteryDueOn: "2028-06-01",
+  forHire: true,
 };
 const DAY = "2026-10-05";
 
 // The engine's rules for the inspections (14 CFR 91.207, 91.409, 91.411,
 // 91.413) and the squawks (91.213(d)), through lib/frat's assessment, the
 // one way the web asks them (frat.rs holds the rules).
-const inspectionFactors = (i: Inspections, day: string, ifr: boolean) => assess({ ...QUIET, day, ifr, inspections: i }).factors.filter(f => f.key !== "night");
-const squawkFactors = (open: Squawk[], night: boolean, ifr: boolean) => assess({ ...QUIET, night, ifr, squawks: open }).factors.filter(f => f.key !== "night");
-const keys = (i: Inspections, ifr = false) => inspectionFactors(i, DAY, ifr).map(f => f.key);
+const inspectionFactors = (i: Inspections, day: string, ifr: boolean) =>
+  assess({ ...QUIET, day, ifr, inspections: i }).factors.filter((f) => f.key !== "night");
+const squawkFactors = (open: Squawk[], night: boolean, ifr: boolean) =>
+  assess({ ...QUIET, night, ifr, squawks: open }).factors.filter((f) => f.key !== "night");
+const keys = (i: Inspections, ifr = false) => inspectionFactors(i, DAY, ifr).map((f) => f.key);
 
 describe("the airplane's inspections, on the day", () => {
   test("all good, nothing; none recorded, nothing either way", () => {
     expect(keys(GOOD, true)).toEqual([]);
-    const none = Object.fromEntries(Object.keys(GOOD).map(k => [k, null])) as unknown as Inspections;
+    const none = Object.fromEntries(Object.keys(GOOD).map((k) => [k, null])) as unknown as Inspections;
     expect(keys(none, true)).toEqual([]);
   });
 
@@ -42,7 +51,9 @@ describe("the airplane's inspections, on the day", () => {
     const lapsed = { ...GOOD, staticCheckGoodThrough: "2026-09-30" };
     expect(keys(lapsed)).toEqual([]);
     expect(keys(lapsed, true)).toEqual(["static"]);
-    expect(inspectionFactors({ ...GOOD, transponderCheckGoodThrough: "2026-09-30" }, DAY, false)).toMatchObject([{ key: "transponder", points: 3 }]);
+    expect(inspectionFactors({ ...GOOD, transponderCheckGoodThrough: "2026-09-30" }, DAY, false)).toMatchObject([
+      { key: "transponder", points: 3 },
+    ]);
     expect(keys({ ...GOOD, hoursNow: 1300.5 })).toEqual(["hundredHour"]);
     expect(keys({ ...GOOD, hoursNow: 1300.4 })).toEqual([]);
     // Not flown for hire, the 100-hour is not owed (14 CFR 91.409(b)).
@@ -50,17 +61,27 @@ describe("the airplane's inspections, on the day", () => {
   });
 
   test("an inoperative item not deferred for this kind of flight stops it; other squawks are a caution", () => {
-    const squawk = (over: Partial<Squawk>): Squawk => ({ id: 1, reportedOn: DAY, text: "Landing light out", inoperative: true, deferredFor: null, fixedOn: null, fixNote: null, ...over } as Squawk);
+    const squawk = (over: Partial<Squawk>): Squawk =>
+      ({
+        id: 1,
+        reportedOn: DAY,
+        text: "Landing light out",
+        inoperative: true,
+        deferredFor: null,
+        fixedOn: null,
+        fixNote: null,
+        ...over,
+      }) as Squawk;
     const light = squawk({ deferredFor: "VFR_DAY" });
     // Deferred for VFR by day: by day it is an open squawk to read; at
     // night or under IFR it stops the flight.
-    expect(squawkFactors([light], false, false).map(f => f.key)).toEqual(["squawks"]);
+    expect(squawkFactors([light], false, false).map((f) => f.key)).toEqual(["squawks"]);
     expect(squawkFactors([light], true, false)).toMatchObject([{ key: "inoperative", stop: true, why: "91.213(d)" }]);
     expect(squawkFactors([light], false, true)[0]!.label).toBe("Inoperative and not deferred for this flight: Landing light out");
-    expect(squawkFactors([squawk({ deferredFor: "ALL" })], true, true).map(f => f.key)).toEqual(["squawks"]);
+    expect(squawkFactors([squawk({ deferredFor: "ALL" })], true, true).map((f) => f.key)).toEqual(["squawks"]);
     // Inoperative and not deferred at all, and a paint chip beside it.
     const both = squawkFactors([squawk({}), squawk({ id: 2, text: "Paint chip", inoperative: false })], false, false);
-    expect(both.map(f => f.key)).toEqual(["inoperative", "squawks"]);
+    expect(both.map((f) => f.key)).toEqual(["inoperative", "squawks"]);
     expect(both[1]).toMatchObject({ label: "1 open squawk: read it before flight", points: 1 });
     expect(assess({ ...QUIET, squawks: [squawk({})] }).level).toBe("high");
   });
@@ -72,6 +93,13 @@ describe("the airplane's inspections, on the day", () => {
 });
 
 const QUIET: FratInput = {
-  vfrNotRecommended: false, underMinimums: [], tfrOnRoute: false, hazards: 0, night: false,
-  fuelMarginGal: 10, currency: null, day: DAY, ticked: {},
+  vfrNotRecommended: false,
+  underMinimums: [],
+  tfrOnRoute: false,
+  hazards: 0,
+  night: false,
+  fuelMarginGal: 10,
+  currency: null,
+  day: DAY,
+  ticked: {},
 };

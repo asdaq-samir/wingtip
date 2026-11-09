@@ -3,6 +3,7 @@ engine rule asked inside a traced request is a span named by the rule
 with no payload, a weather product read is one too, nothing is traced
 outside a request, and a log line written inside a span ends with its
 ids. On over an in-memory exporter, never a collector."""
+
 import json
 import logging
 

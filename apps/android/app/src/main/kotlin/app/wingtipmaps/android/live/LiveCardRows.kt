@@ -16,8 +16,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.SectionTitle
 

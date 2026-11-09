@@ -13,12 +13,23 @@ import org.springframework.lang.Nullable;
  *  whether it carries people or is given for instruction for hire, when
  *  91.409(b)'s 100-hour inspection applies; left out, it stays as it was. */
 public record InspectionsRequest(
-        @PastOrPresent(message = "annualOn cannot be in the future") @Nullable LocalDate annualOn,
-        @PositiveOrZero(message = "hundredHourAtHours cannot be negative") @Nullable Double hundredHourAtHours,
-        @PositiveOrZero(message = "hoursNow cannot be negative") @Nullable Double hoursNow,
-        @PastOrPresent(message = "staticCheckOn cannot be in the future") @Nullable LocalDate staticCheckOn,
-        @PastOrPresent(message = "transponderCheckOn cannot be in the future") @Nullable LocalDate transponderCheckOn,
-        @PastOrPresent(message = "eltInspectedOn cannot be in the future") @Nullable LocalDate eltInspectedOn,
+        @PastOrPresent(message = "annualOn cannot be in the future") @Nullable
+        LocalDate annualOn,
+
+        @PositiveOrZero(message = "hundredHourAtHours cannot be negative") @Nullable
+        Double hundredHourAtHours,
+
+        @PositiveOrZero(message = "hoursNow cannot be negative") @Nullable
+        Double hoursNow,
+
+        @PastOrPresent(message = "staticCheckOn cannot be in the future") @Nullable
+        LocalDate staticCheckOn,
+
+        @PastOrPresent(message = "transponderCheckOn cannot be in the future") @Nullable
+        LocalDate transponderCheckOn,
+
+        @PastOrPresent(message = "eltInspectedOn cannot be in the future") @Nullable
+        LocalDate eltInspectedOn,
+
         @Nullable LocalDate eltBatteryDueOn,
-        @Nullable Boolean forHire) {
-}
+        @Nullable Boolean forHire) {}

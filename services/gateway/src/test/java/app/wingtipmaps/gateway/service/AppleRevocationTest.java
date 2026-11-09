@@ -28,8 +28,9 @@ class AppleRevocationTest {
     void startApple() throws IOException {
         apple = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         apple.createContext("/auth/revoke", exchange -> {
-            asked.add(exchange.getRequestMethod() + " " + exchange.getRequestHeaders().getFirst("Content-Type")
-                    + " " + new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            asked.add(exchange.getRequestMethod() + " "
+                    + exchange.getRequestHeaders().getFirst("Content-Type") + " "
+                    + new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             exchange.sendResponseHeaders(answer, -1);
             exchange.close();
         });
@@ -42,18 +43,26 @@ class AppleRevocationTest {
     }
 
     private AppleRevocation revocation(boolean configured) {
-        Optional<InMemoryClientRegistrationRepository> registrations = Optional.of(configured
-                ? new InMemoryClientRegistrationRepository(ClientRegistration.withRegistrationId("apple")
-                        .clientId("com.example.services").clientSecret("signed.jwt.secret")
-                        .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                        .redirectUri("http://localhost/cb").authorizationUri("https://example.com/a")
-                        .tokenUri("https://example.com/t").build())
-                : new InMemoryClientRegistrationRepository(ClientRegistration.withRegistrationId("other")
-                        .clientId("x").clientSecret("y")
-                        .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                        .redirectUri("http://localhost/cb").authorizationUri("https://example.com/a")
-                        .tokenUri("https://example.com/t").build()));
-        return new AppleRevocation(registrations.map(r -> r),
+        Optional<InMemoryClientRegistrationRepository> registrations = Optional.of(
+                configured
+                        ? new InMemoryClientRegistrationRepository(ClientRegistration.withRegistrationId("apple")
+                                .clientId("com.example.services")
+                                .clientSecret("signed.jwt.secret")
+                                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                                .redirectUri("http://localhost/cb")
+                                .authorizationUri("https://example.com/a")
+                                .tokenUri("https://example.com/t")
+                                .build())
+                        : new InMemoryClientRegistrationRepository(ClientRegistration.withRegistrationId("other")
+                                .clientId("x")
+                                .clientSecret("y")
+                                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                                .redirectUri("http://localhost/cb")
+                                .authorizationUri("https://example.com/a")
+                                .tokenUri("https://example.com/t")
+                                .build()));
+        return new AppleRevocation(
+                registrations.map(r -> r),
                 "http://127.0.0.1:" + apple.getAddress().getPort() + "/auth/revoke");
     }
 
@@ -61,9 +70,10 @@ class AppleRevocationTest {
     void sendsTheTokenWithTheServicesIdAndSecretAsAForm() {
         revocation(true).revoke("r.refresh+token");
 
-        assertThat(asked).containsExactly("POST application/x-www-form-urlencoded "
-                + "client_id=com.example.services&client_secret=signed.jwt.secret"
-                + "&token=r.refresh%2Btoken&token_type_hint=refresh_token");
+        assertThat(asked)
+                .containsExactly("POST application/x-www-form-urlencoded "
+                        + "client_id=com.example.services&client_secret=signed.jwt.secret"
+                        + "&token=r.refresh%2Btoken&token_type_hint=refresh_token");
     }
 
     @Test

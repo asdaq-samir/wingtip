@@ -12,7 +12,7 @@ export const COPILOT_MODES: { value: CopilotMode; label: string }[] = [
 ];
 
 export function useCopilotMode(): [CopilotMode, (mode: CopilotMode) => void] {
-  const mode = usePreferences(s => s.copilotMode);
+  const mode = usePreferences((s) => s.copilotMode);
   const set = (next: CopilotMode) => {
     usePreferences.getState().setCopilotMode(next);
     // Said once as it is turned on, from the tap, which on an iPhone is

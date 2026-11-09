@@ -11,8 +11,8 @@
 //! features/pilot/HoldingPage.tsx) with wingtip.holds' entry and leg time:
 //! the web's copy holds the same rules and changes with this.
 
-use super::words::{bearing, js_round, norm360, wind_correction};
 use super::diversion::wind_triangle;
+use super::words::{bearing, js_round, norm360, wind_correction};
 use crate::geo::{angle_between, py_mod};
 use crate::json;
 
@@ -99,15 +99,9 @@ pub fn entry(arrival_deg: f64, inbound_deg: f64, right: bool) -> Entry {
 pub fn holding_entry(inbound_deg: f64, heading_deg: f64, right: bool) -> (Entry, Option<Entry>) {
     let off = norm360(if right { heading_deg - inbound_deg } else { inbound_deg - heading_deg });
     let found = entry(heading_deg, inbound_deg, right);
-    let edges = [
-        (110.0, Entry::Direct, Entry::Teardrop),
-        (180.0, Entry::Teardrop, Entry::Parallel),
-        (290.0, Entry::Parallel, Entry::Direct),
-    ];
-    let either = edges
-        .iter()
-        .find(|e| angle_between(off, e.0) <= 5.0)
-        .map(|&(_, a, b)| if a == found { b } else { a });
+    let edges =
+        [(110.0, Entry::Direct, Entry::Teardrop), (180.0, Entry::Teardrop, Entry::Parallel), (290.0, Entry::Parallel, Entry::Direct)];
+    let either = edges.iter().find(|e| angle_between(off, e.0) <= 5.0).map(|&(_, a, b)| if a == found { b } else { a });
     (found, either)
 }
 
@@ -205,8 +199,9 @@ pub fn wind_words(w: &HoldWind) -> (String, String, String) {
 /// are all given (else `wind` null) -- `wind_problem` where the wind is
 /// stronger than the airplane. No altitude is taken as at or below 14,000
 /// ft MSL, as the web's page does with its field blank: a minute's leg.
-pub fn holding_json(inbound: f64, heading: f64, right: bool, tas_kt: Option<f64>, wind_from: Option<f64>,
-                    wind_kt: Option<f64>, altitude_ft: Option<f64>) -> String {
+pub fn holding_json(
+    inbound: f64, heading: f64, right: bool, tas_kt: Option<f64>, wind_from: Option<f64>, wind_kt: Option<f64>, altitude_ft: Option<f64>,
+) -> String {
     let (found, either) = holding_entry(inbound, heading, right);
     let mut out = String::from("{\"entry\":");
     json::string(&mut out, found.key());

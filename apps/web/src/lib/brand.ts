@@ -23,9 +23,7 @@ export const BRANDS: { value: Brand; label: string }[] = [
 const FONTS: Record<Brand, () => Promise<unknown>> = {
   wingtip: () => Promise.resolve(),
   cockpit: () => Promise.resolve(),
-  ink: () => Promise.all([
-    import("@fontsource/barlow-condensed/latin-600.css"), import("@fontsource/barlow-condensed/latin-700.css"),
-  ]),
+  ink: () => Promise.all([import("@fontsource/barlow-condensed/latin-600.css"), import("@fontsource/barlow-condensed/latin-700.css")]),
 };
 
 /** Whether the Chart ink look is on, for what sets its own type or its
@@ -34,15 +32,17 @@ const FONTS: Record<Brand, () => Promise<unknown>> = {
  *  canvas, which no render reaches, reads it off <html> instead
  *  (chartColors' isInkLook). */
 export function useInkLook(): boolean {
-  return usePreferences(s => s.brand) === INK;
+  return usePreferences((s) => s.brand) === INK;
 }
 
 /** Puts the pilot's look on <html> (data-brand), and its typeface in. */
 export function BrandLook() {
-  const brand = usePreferences(s => s.brand);
+  const brand = usePreferences((s) => s.brand);
   useEffect(() => {
     document.documentElement.dataset.brand = brand;
-    void FONTS[brand]?.()?.catch(() => { /* the system's face meanwhile */ });
+    void FONTS[brand]?.()?.catch(() => {
+      /* the system's face meanwhile */
+    });
   }, [brand]);
   return null;
 }

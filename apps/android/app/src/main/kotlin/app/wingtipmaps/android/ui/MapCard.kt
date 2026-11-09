@@ -1,8 +1,5 @@
 package app.wingtipmaps.android.ui
 
-import app.wingtipmaps.android.live.DepartureLine
-import app.wingtipmaps.android.live.SpecialUseRows
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,14 +21,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.graphics.toColorInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
@@ -42,13 +40,14 @@ import app.wingtipmaps.android.design.RefreshBox
 import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.flight.Tracking
+import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.live.DepartureLine
+import app.wingtipmaps.android.live.SpecialUseRows
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
-import androidx.core.graphics.toColorInt
 import kotlinx.coroutines.launch
 
 /**

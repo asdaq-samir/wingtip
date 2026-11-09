@@ -16,7 +16,21 @@ import { TEXT } from "../lib/text";
  *   two meet, so a tap at the text's end is the field's ("not letting me
  *   clear them").
  */
-export function InlineField({ label, testId, widest, tabular = false, placeholder, placeholderClassName, hint, shrink = false, input, inputClassName, button, endRoom = "w-[1.5625rem]", tip }: {
+export function InlineField({
+  label,
+  testId,
+  widest,
+  tabular = false,
+  placeholder,
+  placeholderClassName,
+  hint,
+  shrink = false,
+  input,
+  inputClassName,
+  button,
+  endRoom = "w-[1.5625rem]",
+  tip,
+}: {
   /** Grey words after a fixed start the field keeps in its text (the
    *  airplane's "N-"), in the example's style, while nothing is typed
    *  after it: the input's own placeholder shows only while it is empty,
@@ -52,27 +66,52 @@ export function InlineField({ label, testId, widest, tabular = false, placeholde
     // line, and the buttons wrapped onto a line of their own (the FPL
     // audit's A3; the owner's route-box-buttons rule, 2026-10-24: one line
     // at their text sizes). The field is 28 tall whatever its text.
-    <div role="group" aria-label={label} className={cn("grid h-7 items-center rounded-full bg-foreground/8", shrink && "shrink-0", TEXT.row, "pointer-coarse:text-[length:min(1.0625rem,19px)]")} data-testid={testId} data-tip={tip}>
+    <div
+      role="group"
+      aria-label={label}
+      className={cn(
+        "grid h-7 items-center rounded-full bg-foreground/8",
+        shrink && "shrink-0",
+        TEXT.row,
+        "pointer-coarse:text-[length:min(1.0625rem,19px)]",
+      )}
+      data-testid={testId}
+      data-tip={tip}
+    >
       <span aria-hidden="true" className="invisible col-start-1 row-start-1 flex h-0 overflow-hidden">
         <span className={cn("whitespace-pre pr-1.5 pl-2.5 font-semibold", tabular && "tabular-nums")}>{widest}</span>
         <span className={cn(endRoom, "shrink-0")} />
       </span>
-      <span aria-hidden="true" className={cn("invisible col-start-1 row-start-1 h-0 overflow-hidden whitespace-pre pr-1.5 pl-2.5 font-normal", placeholderClassName)}>
+      <span
+        aria-hidden="true"
+        className={cn(
+          "invisible col-start-1 row-start-1 h-0 overflow-hidden whitespace-pre pr-1.5 pl-2.5 font-normal",
+          placeholderClassName,
+        )}
+      >
         {placeholder}
       </span>
       {hint && (
         <span aria-hidden="true" className="invisible col-start-1 row-start-1 flex h-0 overflow-hidden whitespace-pre pr-1.5 pl-2.5">
-          <span className="font-semibold">{hint.start}</span><span className={cn("font-normal", placeholderClassName)}>{hint.words}</span>
+          <span className="font-semibold">{hint.start}</span>
+          <span className={cn("font-normal", placeholderClassName)}>{hint.words}</span>
           <span className={cn(endRoom, "shrink-0")} />
         </span>
       )}
       <div className="col-start-1 row-start-1 flex h-full min-w-0 items-center">
         <label className="relative flex h-full min-w-0 flex-1 items-center pr-1 after:absolute after:-inset-y-2 after:-left-0.5 after:right-0 after:content-['']">
           <input
-            type="text" autoComplete="off" enterKeyHint="done" size={1} placeholder={placeholder} {...input}
+            type="text"
+            autoComplete="off"
+            enterKeyHint="done"
+            size={1}
+            placeholder={placeholder}
+            {...input}
             className={cn(
               "relative z-10 h-full w-0 min-w-0 flex-1 bg-transparent pr-0.5 font-semibold outline-none placeholder:font-normal",
-              "pl-2.5", tabular && "tabular-nums", inputClassName,
+              "pl-2.5",
+              tabular && "tabular-nums",
+              inputClassName,
             )}
           />
           {hint && input.value === hint.start && (
@@ -80,7 +119,11 @@ export function InlineField({ label, testId, widest, tabular = false, placeholde
             // never in a tap's way. Grey, but the text's own colour faded
             // rather than the muted grey, which fell to 3.9:1 (and at 60% 4.4:1) on the
             // field's fill in dark (the iOS audit's P15 asks 4.5).
-            <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center overflow-hidden whitespace-pre pl-2.5" data-testid={testId ? `${testId}-hint` : undefined}>
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center overflow-hidden whitespace-pre pl-2.5"
+              data-testid={testId ? `${testId}-hint` : undefined}
+            >
               <span className="invisible font-semibold">{hint.start}</span>
               <span className={cn("font-normal text-foreground/70", placeholderClassName)}>{hint.words}</span>
             </span>

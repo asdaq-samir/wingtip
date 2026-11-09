@@ -25,13 +25,11 @@ export const DRY_RUN = "dry-run";
 /** How many times faster than it was flown a replay goes. */
 export const REPLAY_SPEEDS = [10, 50, 200] as const;
 
-export const usePastFlight = create<PastFlightState>(() => ({
-  hex: null, id: null, points: [], at: null, playing: false, speed: 50,
-}));
+export const usePastFlight = create<PastFlightState>(() => ({ hex: null, id: null, points: [], at: null, playing: false, speed: 50 }));
 
 /** A past flight picked: its path drawn once its points are here. */
 export function choosePastFlight(hex: string, id: number) {
-  usePastFlight.setState(s => (s.hex === hex && s.id === id ? {} : { hex, id, points: [], at: null, playing: false }));
+  usePastFlight.setState((s) => (s.hex === hex && s.id === id ? {} : { hex, id, points: [], at: null, playing: false }));
 }
 
 export function clearPastFlight() {
@@ -40,8 +38,9 @@ export function clearPastFlight() {
 
 /** Played from where it was left, or from the start once it has ended. */
 export function playPastFlight() {
-  usePastFlight.setState(s => {
-    const first = s.points[0]?.t ?? null, last = s.points.at(-1)?.t ?? null;
+  usePastFlight.setState((s) => {
+    const first = s.points[0]?.t ?? null,
+      last = s.points.at(-1)?.t ?? null;
     if (first === null || last === null) return {};
     return { playing: true, at: s.at === null || s.at >= last ? first : s.at };
   });
@@ -58,7 +57,7 @@ export function stopPastFlight() {
 
 /** The replay `ms` of the phone's time on, at its speed; stopped at the end. */
 export function stepPastFlight(ms: number) {
-  usePastFlight.setState(s => {
+  usePastFlight.setState((s) => {
     const last = s.points.at(-1)?.t;
     if (!s.playing || s.at === null || last === undefined) return {};
     const at = Math.min(last, s.at + (ms / 1000) * s.speed);
@@ -73,14 +72,16 @@ export function stepPastFlight(ms: number) {
  */
 export function positionAt(points: PastFlightPoint[], t: number): PastFlightPoint | null {
   if (!points.length || t < points[0]!.t || t > points.at(-1)!.t) return null;
-  let lo = 0, hi = points.length - 1;
+  let lo = 0,
+    hi = points.length - 1;
   while (hi - lo > 1) {
     const mid = (lo + hi) >> 1;
     if (points[mid]!.t <= t) lo = mid;
     else hi = mid;
   }
-  const a = points[lo]!, b = points[hi]!;
+  const a = points[lo]!,
+    b = points[hi]!;
   const f = b.t > a.t ? (t - a.t) / (b.t - a.t) : 0;
-  const alt = a.alt_ft != null && b.alt_ft != null ? a.alt_ft + (b.alt_ft - a.alt_ft) * f : a.alt_ft ?? null;
+  const alt = a.alt_ft != null && b.alt_ft != null ? a.alt_ft + (b.alt_ft - a.alt_ft) * f : (a.alt_ft ?? null);
   return { ...a, t, lat: a.lat + (b.lat - a.lat) * f, lon: a.lon + (b.lon - a.lon) * f, alt_ft: alt };
 }

@@ -2,6 +2,7 @@
 is a span named by its model with the feature and the tokens used, and
 none of the prompt or the answer; a streamed call's span survives being
 stepped in fresh contexts, as Starlette steps a generator."""
+
 import contextvars
 from types import SimpleNamespace
 
@@ -13,7 +14,8 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 from app import tracing
 
 MESSAGE = SimpleNamespace(
-    model="claude-haiku-5-5", stop_reason="end_turn",
+    model="claude-haiku-5-5",
+    stop_reason="end_turn",
     content=[SimpleNamespace(type="text", text="the secret answer")],
     usage=SimpleNamespace(input_tokens=120, output_tokens=40, cache_read_input_tokens=0, cache_creation_input_tokens=None),
 )

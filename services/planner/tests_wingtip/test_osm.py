@@ -2,6 +2,7 @@
 category each element's tags get. Each category's rule is written twice
 (a filter and a predicate), so both are pinned here -- a change to one
 that is not made to the other fails one of these."""
+
 from wingtip import osm
 
 BBOX = (42.0, -93.0, 47.0, -87.5)

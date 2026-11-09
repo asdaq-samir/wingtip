@@ -11,7 +11,8 @@ import type { Aircraft, DocumentRead, HandbookFigures, ReadAsk } from "./types";
 
 async function send<T>(method: "POST" | "PUT", path: string, body: unknown): Promise<T> {
   const res = await fetch(path, {
-    method, body: JSON.stringify(body),
+    method,
+    body: JSON.stringify(body),
     headers: { "Content-Type": "application/json", ...csrfHeaders(method), ...requestIdHeaders() },
   });
   await failIfNotOk(res);

@@ -14,6 +14,7 @@ lines to the two real routes' grids (KMSP-KDEN, KDLH-KSTL) the Python gave
 until the whole of route options moved into the engine (#482 phase 5).
 
 The wheel is built into the planner's image; CI builds it for these."""
+
 import gzip
 import json
 import shutil
@@ -61,7 +62,7 @@ def test_a_shape_holds_what_shapely_says_it_holds(chicago):
     for i, (offset, length) in enumerate(shx):
         shape = reader.shape(i)
         polygon = shapely_shape(shape.__geo_interface__)
-        content = shp[int(offset) * 2 + 8:int(offset) * 2 + 8 + int(length) * 2]
+        content = shp[int(offset) * 2 + 8 : int(offset) * 2 + 8 + int(length) * 2]
         x0, y0, x1, y1 = shape.bbox
         for x, y in zip(rng.uniform(x0, x1, 300), rng.uniform(y0, y1, 300)):
             inside = polygon.contains(Point(x, y))
@@ -77,8 +78,7 @@ def test_a_shape_holds_what_shapely_says_it_holds(chicago):
 @pytest.fixture()
 def chicago_pack(chicago, tmp_path, monkeypatch):
     """A pack of the Chicago cut alone, where wingtip.cycle_pack looks for one."""
-    path = cycle_pack.write(tmp_path, "2026-10-29", shp_path=chicago, sua_held=[], sua_at=0.0, urban=[],
-                            urban_path=None, tables={})
+    path = cycle_pack.write(tmp_path, "2026-10-29", shp_path=chicago, sua_held=[], sua_at=0.0, urban=[], urban_path=None, tables={})
     monkeypatch.setattr(cycle_pack, "PACK_DIR", tmp_path)
     return path
 
@@ -109,7 +109,7 @@ def test_the_packs_rings_hold_what_the_shapefiles_hold(chicago, chicago_pack):
     wkbs, boxes = pack.wkb("airspace"), pack.boxes("airspace")
     shp = chicago.read_bytes()
     shx = np.frombuffer(chicago.with_suffix(".shx").read_bytes(), dtype=">i4", offset=100).reshape(-1, 2)
-    contents = [shp[int(o) * 2 + 8:int(o) * 2 + 8 + int(n) * 2] for o, n in shx]
+    contents = [shp[int(o) * 2 + 8 : int(o) * 2 + 8 + int(n) * 2] for o, n in shx]
     assert len(wkbs) == len(contents)
     for wkb, content, (x0, y0, x1, y1) in zip(wkbs, contents, boxes):
         for x, y in zip(rng.uniform(x0, x1, 200), rng.uniform(y0, y1, 200)):
@@ -121,10 +121,23 @@ def test_one_way_in_answers_a_rule_by_name_as_its_own_function_does():
     WebAssembly and the phones' wt_call share (wingtip_engine::call): a
     rule by name, JSON in and out, the answer the rule's own function
     gives; a name not known or input of the wrong shape a ValueError."""
-    asked = json.loads(wingtip_native.call("diversion", json.dumps({
-        "true_course_deg": 360, "distance_nm": 18, "tas_kt": 110, "fuel_burn_gph": 8.5, "magnetic_variation_deg": -3,
-        "wind": {"wind_dir_true_deg": 270, "wind_speed_kt": 20}, "to": "KDPA", "mh": 350,
-    })))
+    asked = json.loads(
+        wingtip_native.call(
+            "diversion",
+            json.dumps(
+                {
+                    "true_course_deg": 360,
+                    "distance_nm": 18,
+                    "tas_kt": 110,
+                    "fuel_burn_gph": 8.5,
+                    "magnetic_variation_deg": -3,
+                    "wind": {"wind_dir_true_deg": 270, "wind_speed_kt": 20},
+                    "to": "KDPA",
+                    "mh": 350,
+                }
+            ),
+        )
+    )
     # Due north 18 nm in a 20 kt west wind at 110 kt: a correction left
     # of about 10 degrees, 3 W of variation to add (east is least, west
     # is best), so a magnetic heading of about 353; the 350 typed within

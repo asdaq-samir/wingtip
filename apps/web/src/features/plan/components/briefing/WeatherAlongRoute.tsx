@@ -25,7 +25,6 @@ type Pirep = Briefing["pireps"][number];
  *  forecast, and the row says whose it is and how far; past this, none
  *  is offered. The planner's own choice. */
 
-
 /** Each airport the flight takes off from or lands at, how far along the
  *  route: the course's points one after another, as the briefing placed
  *  its stations along them. */
@@ -44,32 +43,34 @@ function metarFigures(metar: NonNullable<Briefing["metars"][string]>): string {
     capitalised(ceilingAndVisibility(metar.ceiling_ft, metar.visibility_sm)),
     metar.temp_c != null && `${degrees(metar.temp_c)} °C${metar.dewpoint_c != null ? `, dew point ${degrees(metar.dewpoint_c)}` : ""}`,
     metar.altimeter_in_hg != null && `${metar.altimeter_in_hg.toFixed(2)} inHg`,
-  ].filter(Boolean).join(" · ");
+  ]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 /** A TAF read for when the flight is there, in words: its ceiling and
  *  visibility then, or that it says nothing about then. */
-const atEta = (station: Station) => (station.eta_ceiling_ft == null && station.eta_visibility_sm == null
-  ? "Nothing forecast for then"
-  : capitalised(ceilingAndVisibility(station.eta_ceiling_ft, station.eta_visibility_sm)));
-
-
-
+const atEta = (station: Station) =>
+  station.eta_ceiling_ft == null && station.eta_visibility_sm == null
+    ? "Nothing forecast for then"
+    : capitalised(ceilingAndVisibility(station.eta_ceiling_ft, station.eta_visibility_sm));
 
 function PirepRow({ p }: { p: Pirep }) {
   return (
     <ListRow
-      title={(
+      title={
         <span className={cn(p.urgent && cn("font-semibold", FINDING_TONE.stop))}>
-          {[p.urgent ? "Urgent PIREP" : "PIREP", p.altitude_ft != null && `${altFt(p.altitude_ft)} ft`, p.aircraft].filter(Boolean).join(" · ")}
+          {[p.urgent ? "Urgent PIREP" : "PIREP", p.altitude_ft != null && `${altFt(p.altitude_ft)} ft`, p.aircraft]
+            .filter(Boolean)
+            .join(" · ")}
         </span>
-      )}
-      description={(
+      }
+      description={
         <>
           {pirepConditions(p) && <span className="block">{pirepConditions(p)}</span>}
           {p.raw && <span className="block font-mono whitespace-pre-wrap">{p.raw}</span>}
         </>
-      )}
+      }
       value={`${Math.round(p.along_track_nm)} nm`}
       data-testid="pirep"
     />
@@ -86,7 +87,8 @@ function runs(items: { along: number; station: Station | null; pirep: Pirep | nu
   for (const item of items) {
     const last = out.at(-1);
     if (item.pirep) out.push({ kind: "pirep", along: item.along, pirep: item.pirep });
-    else if (categoryAt(item.station!) === "VFR" && last?.kind === "tafs" && categoryAt(last.stations[0]!) === "VFR") last.stations.push(item.station!);
+    else if (categoryAt(item.station!) === "VFR" && last?.kind === "tafs" && categoryAt(last.stations[0]!) === "VFR")
+      last.stations.push(item.station!);
     else out.push({ kind: "tafs", along: item.along, stations: [item.station!] });
   }
   return out;
@@ -102,7 +104,14 @@ function runs(items: { along: number; station: Station | null; pirep: Pirep | nu
  * reports), each read against the whole flight; a pilot reads a route
  * from one end to the other.
  */
-export default function WeatherAlongRoute({ briefing, course, legs, departIso, unchecked, phase }: {
+export default function WeatherAlongRoute({
+  briefing,
+  course,
+  legs,
+  departIso,
+  unchecked,
+  phase,
+}: {
   briefing: Briefing;
   /** Only this part of the flight's (its tab's): the departure's weather,
    *  the stretches and stops between, or the destination's. */
@@ -116,18 +125,23 @@ export default function WeatherAlongRoute({ briefing, course, legs, departIso, u
   const printing = usePrinting();
   const places = placesOf(course);
   const stations = briefing.forecast.stations;
-  const own = new Map(places.map(p => [p.ident, ownStation(stations, p.ident)]));
-  const owned = new Set([...own.values()].filter(Boolean).map(s => s!.icaoId));
-  const enRoute = stations.filter(s => !owned.has(s.icaoId) && s.along_track_nm != null);
+  const own = new Map(places.map((p) => [p.ident, ownStation(stations, p.ident)]));
+  const owned = new Set([...own.values()].filter(Boolean).map((s) => s!.icaoId));
+  const enRoute = stations.filter((s) => !owned.has(s.icaoId) && s.along_track_nm != null);
   const pireps = unchecked("pireps") ? [] : briefing.pireps;
   const at = (alongNm: number) => passTime(legs, departIso, alongNm);
   const when = (date: Date | null) => (date ? clockTime(date) : null);
 
   // What lies between one place and the next, in order along the route.
-  const between = (from: number, to: number, last: boolean) => [
-    ...enRoute.filter(s => s.along_track_nm! >= from && (last ? true : s.along_track_nm! < to)).map(s => ({ along: s.along_track_nm!, station: s, pirep: null })),
-    ...pireps.filter(p => p.along_track_nm >= from && (last ? true : p.along_track_nm < to)).map(p => ({ along: p.along_track_nm, station: null, pirep: p })),
-  ].sort((a, b) => a.along - b.along);
+  const between = (from: number, to: number, last: boolean) =>
+    [
+      ...enRoute
+        .filter((s) => s.along_track_nm! >= from && (last ? true : s.along_track_nm! < to))
+        .map((s) => ({ along: s.along_track_nm!, station: s, pirep: null })),
+      ...pireps
+        .filter((p) => p.along_track_nm >= from && (last ? true : p.along_track_nm < to))
+        .map((p) => ({ along: p.along_track_nm, station: null, pirep: p })),
+    ].sort((a, b) => a.along - b.along);
 
   return (
     // A field's weather under its own tab's title, Weather; the way between
@@ -154,97 +168,139 @@ export default function WeatherAlongRoute({ briefing, course, legs, departIso, u
                   category is its report's, on the report's row: beside the
                   ident as well, it was said twice (each fact once, the
                   owner's pick of the redesign). */}
-              {placeShown && <ListGroup title={phase === "depart" || phase === "arrive" ? place.ident : `${place.ident} · ${place.role}`}>
-                {unchecked("metars") ? (
-                  <ListRow title="Now" description={<span className="text-caution-ink">Not checked: aviationweather.gov did not answer</span>} />
-                ) : (
-                  // The report in words first, at the owner's pick of the
-                  // redesign: the wind, then the rest; as sent, a tap away
-                  // (below).
-                  <ListRow
-                    title={metar?.raw ? `Now · wind ${windLine(metar).replace(/^(Calm|Variable|Not)/, w => w.toLowerCase())}` : "Now"}
-                    // When it was observed under the figures, amber past 90
-                    // minutes, as the map's card says it: the planner holds
-                    // a report up to 3 hours when aviationweather.gov does
-                    // not answer, and the go/no-go is made here.
-                    description={metar?.raw ? (
-                      <>
-                        <span className="block">{metarFigures(metar)}</span>
-                        {metar.observed_at && <Observed at={metar.observed_at} className="block" />}
-                      </>
-                    ) : "No current report"}
-                    data-testid="place-metar"
-                  >
-                    <CategoryBadge category={metar?.flight_category} />
-                  </ListRow>
-                )}
-                {unchecked("forecast") ? (
-                  <ListRow title="Forecast" description={<span className="text-caution-ink">Not checked: aviationweather.gov did not answer</span>} />
-                ) : station ?? nearest ? (
-                  // The figures first, a line to themselves, then whose TAF
-                  // it is and the TAF as issued, the whole row's width: with
-                  // the figures at the row's end the TAF's text was ten
-                  // characters a line.
-                  <ListRow
-                    title={`Forecast${when(eta) ? `, ${when(eta)}` : ""}`}
-                    description={(
-                      <>
-                        <span className="block text-foreground">{atEta((station ?? nearest!.s))}</span>
-                        {!station && <span className="block">{`No TAF here: ${nearest!.s.icaoId}'s, ${Math.round(nearest!.nm)} nm away`}</span>}
-                      </>
-                    )}
-                    data-testid="place-taf"
-                  >
-                    <CategoryBadge category={categoryAt(station ?? nearest!.s)} />
-                  </ListRow>
-                ) : (
-                  <ListRow title="Forecast" description={`No TAF here or within ${tafReachNm()} nm`} data-testid="place-taf" />
-                )}
-                {/* The reports as sent, a tap away; on paper, with them. */}
-                {(metar?.raw || station?.raw) && (
-                  <Collapsible open={printing || undefined} data-testid="place-raw">
-                    <CollapsibleTrigger className={cn("group flex w-full items-center justify-between px-4 py-3 text-left text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring print:hidden", TEXT.row)}>
-                      <span>{metar?.raw && station?.raw ? "METAR and TAF" : metar?.raw ? "METAR" : "TAF"}</span>
-                      <ChevronRight className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" aria-hidden />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className={cn("space-y-2 px-4 pb-3 font-mono whitespace-pre-wrap text-muted-foreground", TEXT.note)}>
-                      {metar?.raw && <p>{metar.raw}</p>}
-                      {station?.raw && <p>{station.raw}</p>}
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-              </ListGroup>}
+              {placeShown && (
+                <ListGroup title={phase === "depart" || phase === "arrive" ? place.ident : `${place.ident} · ${place.role}`}>
+                  {unchecked("metars") ? (
+                    <ListRow
+                      title="Now"
+                      description={<span className="text-caution-ink">Not checked: aviationweather.gov did not answer</span>}
+                    />
+                  ) : (
+                    // The report in words first, at the owner's pick of the
+                    // redesign: the wind, then the rest; as sent, a tap away
+                    // (below).
+                    <ListRow
+                      title={metar?.raw ? `Now · wind ${windLine(metar).replace(/^(Calm|Variable|Not)/, (w) => w.toLowerCase())}` : "Now"}
+                      // When it was observed under the figures, amber past 90
+                      // minutes, as the map's card says it: the planner holds
+                      // a report up to 3 hours when aviationweather.gov does
+                      // not answer, and the go/no-go is made here.
+                      description={
+                        metar?.raw ? (
+                          <>
+                            <span className="block">{metarFigures(metar)}</span>
+                            {metar.observed_at && <Observed at={metar.observed_at} className="block" />}
+                          </>
+                        ) : (
+                          "No current report"
+                        )
+                      }
+                      data-testid="place-metar"
+                    >
+                      <CategoryBadge category={metar?.flight_category} />
+                    </ListRow>
+                  )}
+                  {unchecked("forecast") ? (
+                    <ListRow
+                      title="Forecast"
+                      description={<span className="text-caution-ink">Not checked: aviationweather.gov did not answer</span>}
+                    />
+                  ) : (station ?? nearest) ? (
+                    // The figures first, a line to themselves, then whose TAF
+                    // it is and the TAF as issued, the whole row's width: with
+                    // the figures at the row's end the TAF's text was ten
+                    // characters a line.
+                    <ListRow
+                      title={`Forecast${when(eta) ? `, ${when(eta)}` : ""}`}
+                      description={
+                        <>
+                          <span className="block text-foreground">{atEta(station ?? nearest!.s)}</span>
+                          {!station && (
+                            <span className="block">{`No TAF here: ${nearest!.s.icaoId}'s, ${Math.round(nearest!.nm)} nm away`}</span>
+                          )}
+                        </>
+                      }
+                      data-testid="place-taf"
+                    >
+                      <CategoryBadge category={categoryAt(station ?? nearest!.s)} />
+                    </ListRow>
+                  ) : (
+                    <ListRow title="Forecast" description={`No TAF here or within ${tafReachNm()} nm`} data-testid="place-taf" />
+                  )}
+                  {/* The reports as sent, a tap away; on paper, with them. */}
+                  {(metar?.raw || station?.raw) && (
+                    <Collapsible open={printing || undefined} data-testid="place-raw">
+                      <CollapsibleTrigger
+                        className={cn(
+                          "group flex w-full items-center justify-between px-4 py-3 text-left text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring print:hidden",
+                          TEXT.row,
+                        )}
+                      >
+                        <span>{metar?.raw && station?.raw ? "METAR and TAF" : metar?.raw ? "METAR" : "TAF"}</span>
+                        <ChevronRight
+                          className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-90"
+                          aria-hidden
+                        />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent
+                        className={cn("space-y-2 px-4 pb-3 font-mono whitespace-pre-wrap text-muted-foreground", TEXT.note)}
+                      >
+                        {metar?.raw && <p>{metar.raw}</p>}
+                        {station?.raw && <p>{station.raw}</p>}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+                </ListGroup>
+              )}
               {next && stretchShown && (
                 <ListGroup title={places.length > 2 ? `${place.ident} to ${next.ident}` : "En route"}>
                   {stretch.length === 0 ? (
                     <ListRow muted title="No TAFs or pilot reports near this stretch" />
-                  ) : runs(stretch).flatMap(run => run.kind === "pirep" ? [
-                    <PirepRow key={`p${run.along}${run.pirep.raw}`} p={run.pirep} />,
-                    // Which leg it is on and when the airplane is abeam, a tap
-                    // showing that leg on the map.
-                    run.pirep.on_route?.legs.length
-                      ? <OnRouteRow key={`p${run.along}${run.pirep.raw}-on`} on={run.pirep.on_route} briefing={briefing} hazardKey={`pirep-${run.along}-${run.pirep.raw ?? ""}`} />
-                      : null,
-                  ] : run.stations.length > 1 ? (
-                    // A run of TAFs all VFR when the flight passes is one row:
-                    // twenty rows of "no ceiling · 6 sm" hid the one that was not.
-                    <ListRow
-                      key={`v${run.stations[0]!.icaoId}`}
-                      title={`${run.stations.length} TAFs, VFR at each`}
-                      description={`${run.stations.map(st => st.icaoId).join(", ")} · ${Math.round(run.stations[0]!.along_track_nm!)}–${Math.round(run.stations.at(-1)!.along_track_nm!)} nm along`}
-                      data-testid="enroute-vfr"
-                    >
-                      <CategoryBadge category="VFR" />
-                    </ListRow>
                   ) : (
-                    <ListRow
-                      key={`s${run.stations[0]!.icaoId}`} title={run.stations[0]!.icaoId}
-                      description={[atEta(run.stations[0]!), `${Math.round(run.along)} nm along`, run.stations[0]!.eta && `about ${clockTime(new Date(run.stations[0]!.eta))}`].filter(Boolean).join(" · ")}
-                      data-testid="enroute-taf"
-                    >
-                      <CategoryBadge category={categoryAt(run.stations[0]!)} />
-                    </ListRow>
-                  ))}
+                    runs(stretch).flatMap((run) =>
+                      run.kind === "pirep" ? (
+                        [
+                          <PirepRow key={`p${run.along}${run.pirep.raw}`} p={run.pirep} />,
+                          // Which leg it is on and when the airplane is abeam, a tap
+                          // showing that leg on the map.
+                          run.pirep.on_route?.legs.length ? (
+                            <OnRouteRow
+                              key={`p${run.along}${run.pirep.raw}-on`}
+                              on={run.pirep.on_route}
+                              briefing={briefing}
+                              hazardKey={`pirep-${run.along}-${run.pirep.raw ?? ""}`}
+                            />
+                          ) : null,
+                        ]
+                      ) : run.stations.length > 1 ? (
+                        // A run of TAFs all VFR when the flight passes is one row:
+                        // twenty rows of "no ceiling · 6 sm" hid the one that was not.
+                        <ListRow
+                          key={`v${run.stations[0]!.icaoId}`}
+                          title={`${run.stations.length} TAFs, VFR at each`}
+                          description={`${run.stations.map((st) => st.icaoId).join(", ")} · ${Math.round(run.stations[0]!.along_track_nm!)}–${Math.round(run.stations.at(-1)!.along_track_nm!)} nm along`}
+                          data-testid="enroute-vfr"
+                        >
+                          <CategoryBadge category="VFR" />
+                        </ListRow>
+                      ) : (
+                        <ListRow
+                          key={`s${run.stations[0]!.icaoId}`}
+                          title={run.stations[0]!.icaoId}
+                          description={[
+                            atEta(run.stations[0]!),
+                            `${Math.round(run.along)} nm along`,
+                            run.stations[0]!.eta && `about ${clockTime(new Date(run.stations[0]!.eta))}`,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                          data-testid="enroute-taf"
+                        >
+                          <CategoryBadge category={categoryAt(run.stations[0]!)} />
+                        </ListRow>
+                      ),
+                    )
+                  )}
                 </ListGroup>
               )}
             </Fragment>

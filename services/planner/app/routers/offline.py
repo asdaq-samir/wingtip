@@ -3,6 +3,7 @@
 with their sizes before any is fetched, and a region's archive of one
 chart kind and density, cut from the cycle's archives on the first ask
 and kept on disk for the cycle."""
+
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
@@ -11,15 +12,7 @@ from wingtip import cycle_pack, data_cycles, offline_charts, offline_regions, ve
 
 from ..gateway import SHARED, gateway
 from ..router_basics import DIAGRAM_CACHE, SHARED_CACHE
-from ..schemas.offline import (
-    OfflineArchive,
-    OfflineBox,
-    OfflineCatalog,
-    OfflineOverlay,
-    OfflinePack,
-    OfflineRegion,
-    OfflineRegionFiles,
-)
+from ..schemas.offline import OfflineArchive, OfflineBox, OfflineCatalog, OfflineOverlay, OfflinePack, OfflineRegion, OfflineRegionFiles
 
 router = APIRouter()
 
@@ -29,8 +22,13 @@ def _day(value) -> str | None:
 
 
 def _region(cycle: str, region: offline_regions.Region) -> OfflineRegion:
-    return OfflineRegion(id=region.id, name=region.name, group=region.group, boxes=[list(b) for b in region.boxes],
-                         sizes=offline_charts.known_sizes(cycle, region))
+    return OfflineRegion(
+        id=region.id,
+        name=region.name,
+        group=region.group,
+        boxes=[list(b) for b in region.boxes],
+        sizes=offline_charts.known_sizes(cycle, region),
+    )
 
 
 @router.get("/api/offline-charts", response_model=OfflineCatalog, openapi_extra=SHARED)
@@ -46,19 +44,26 @@ def offline_catalog() -> JSONResponse:
     offline_charts.warm(cycle, regions)
     overlay = vector_tiles.tiles_index()
     body = OfflineCatalog(
-        cycle=cycle, expires=_day(offline_charts.expires(cycle)), next_cycle=ahead,
-        next_effective=_day(data_cycles.chart_effective(ahead)), archives=offline_charts.archives_of(cycle),
+        cycle=cycle,
+        expires=_day(offline_charts.expires(cycle)),
+        next_cycle=ahead,
+        next_effective=_day(data_cycles.chart_effective(ahead)),
+        archives=offline_charts.archives_of(cycle),
         overlay=OfflineOverlay(name=overlay["name"], bytes=overlay["bytes"]) if overlay else None,
-        regions=[_region(cycle, r) for r in regions])
+        regions=[_region(cycle, r) for r in regions],
+    )
     return JSONResponse(body.model_dump(), headers={"Cache-Control": SHARED_CACHE})
 
 
 def _found(cycle: str, region_id: str) -> offline_regions.Region:
     region = offline_regions.find(region_id)
     if region is None:
-        raise HTTPException(404, f"no region {region_id}: a sheet, state-XX, or a box of at most "
-                                 f"{offline_regions.BOX_MOST_DEG2:g} square degrees on the "
-                                 f"{offline_regions.BOX_GRID:g}-degree grid")
+        raise HTTPException(
+            404,
+            f"no region {region_id}: a sheet, state-XX, or a box of at most "
+            f"{offline_regions.BOX_MOST_DEG2:g} square degrees on the "
+            f"{offline_regions.BOX_GRID:g}-degree grid",
+        )
     if not offline_charts.archives_of(cycle):
         raise HTTPException(404, f"no chart archives of {cycle} here")
     return region
@@ -74,30 +79,40 @@ def offline_region(cycle: str, region: str) -> JSONResponse:
     base = f"/api/offline-charts/{cycle}/{found.id}"
     index = cycle_pack.phone_index()
     body = OfflineRegionFiles(
-        cycle=cycle, expires=_day(offline_charts.expires(cycle)), region=_region(cycle, found),
-        archives=[OfflineArchive(**a, url=f"{base}/{a['archive']}.pmtiles")
-                  for a in offline_charts.region_archives(cycle, found)],
-        packs=[OfflinePack(name=p["name"], bytes=p["bytes"], url=f"/api/cycle-pack/{index['cycle']}/{p['name']}.pack")
-               for p in offline_charts.packs_for(found, index)])
+        cycle=cycle,
+        expires=_day(offline_charts.expires(cycle)),
+        region=_region(cycle, found),
+        archives=[OfflineArchive(**a, url=f"{base}/{a['archive']}.pmtiles") for a in offline_charts.region_archives(cycle, found)],
+        packs=[
+            OfflinePack(name=p["name"], bytes=p["bytes"], url=f"/api/cycle-pack/{index['cycle']}/{p['name']}.pack")
+            for p in offline_charts.packs_for(found, index)
+        ],
+    )
     return JSONResponse(body.model_dump(), headers={"Cache-Control": SHARED_CACHE})
 
 
 @router.get("/api/offline-box", response_model=OfflineBox, openapi_extra=SHARED)
-def offline_box(west: Annotated[float, Query(ge=-180, le=180)], south: Annotated[float, Query(ge=-85, le=85)],
-                east: Annotated[float, Query(ge=-180, le=180)], north: Annotated[float, Query(ge=-85, le=85)]) -> OfflineBox:
+def offline_box(
+    west: Annotated[float, Query(ge=-180, le=180)],
+    south: Annotated[float, Query(ge=-85, le=85)],
+    east: Annotated[float, Query(ge=-180, le=180)],
+    north: Annotated[float, Query(ge=-85, le=85)],
+) -> OfflineBox:
     """The id of a box drawn on the map, snapped outward to the half
     degree, for /api/offline-charts/{cycle}/{region}."""
     return OfflineBox(id=offline_regions.box_id(west, south, east, north))
 
 
-@router.get("/api/offline-charts/{cycle}/{region}/{archive}.pmtiles",
-            responses={200: {"content": {"application/octet-stream": {}}},
-                       206: {"description": "The byte range asked for (Range: bytes=a-b)",
-                             "content": {"application/octet-stream": {}}}},
-            # Fetched whole by a phone's background download, which resumes
-            # from a range; its length is its progress.
-            openapi_extra=gateway("public", cache=True, range=True,
-                                  headers=("Content-Length", "Content-Range", "Accept-Ranges", "ETag")))
+@router.get(
+    "/api/offline-charts/{cycle}/{region}/{archive}.pmtiles",
+    responses={
+        200: {"content": {"application/octet-stream": {}}},
+        206: {"description": "The byte range asked for (Range: bytes=a-b)", "content": {"application/octet-stream": {}}},
+    },
+    # Fetched whole by a phone's background download, which resumes
+    # from a range; its length is its progress.
+    openapi_extra=gateway("public", cache=True, range=True, headers=("Content-Length", "Content-Range", "Accept-Ranges", "ETag")),
+)
 def offline_archive(cycle: str, region: str, archive: str) -> FileResponse:
     """The region's archive of one chart kind and density ("sec",
     "sec@2x", "tac", "ifr_low" ...), a PMTiles file of the same tiles the

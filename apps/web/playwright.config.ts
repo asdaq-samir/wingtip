@@ -36,7 +36,9 @@ const ci = !!process.env.CI;
 // (with --project=webkit-iphone on two workers, --workers=2: WebKit ran
 // slow alongside six others). The other projects leave the folder alone.
 const iosDevice = (name: string, width: number, height: number, deviceScaleFactor: number) => ({
-  name, testDir: "./e2e/ios", dependencies: ["setup"],
+  name,
+  testDir: "./e2e/ios",
+  dependencies: ["setup"],
   use: { viewport: { width, height }, deviceScaleFactor, isMobile: true, hasTouch: true, storageState: DEVELOPER_STATE },
 });
 const iosDevices = [
@@ -54,11 +56,15 @@ const iosDevices = [
   iosDevice("iphone-duo-open", 626, 890, 3),
   iosDevice("iphone-duo-open-landscape", 890, 626, 3),
   // The same specs in WebKit, for Safari's engine (not its chrome).
-  { name: "webkit-iphone", testDir: "./e2e/ios", dependencies: ["setup"],
-    use: { ...devices["iPhone 15 Pro"], storageState: DEVELOPER_STATE } },
+  {
+    name: "webkit-iphone",
+    testDir: "./e2e/ios",
+    dependencies: ["setup"],
+    use: { ...devices["iPhone 15 Pro"], storageState: DEVELOPER_STATE },
+  },
 ];
 const iosEveryRun = ["iphone-16-pro", "iphone-landscape", "ipad-pro-13"];
-const iosAudit = process.env.IOS_AUDIT ? iosDevices : iosDevices.filter(d => iosEveryRun.includes(d.name));
+const iosAudit = process.env.IOS_AUDIT ? iosDevices : iosDevices.filter((d) => iosEveryRun.includes(d.name));
 
 export default defineConfig({
   testDir: "./e2e",
@@ -133,11 +139,15 @@ export default defineConfig({
   projects: [
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
-      name: "mobile", dependencies: ["setup"], testIgnore: "**/ios/**",
+      name: "mobile",
+      dependencies: ["setup"],
+      testIgnore: "**/ios/**",
       use: { viewport: { width: 390, height: 844 }, storageState: DEVELOPER_STATE },
     },
     {
-      name: "desktop", dependencies: ["setup"], testIgnore: "**/ios/**",
+      name: "desktop",
+      dependencies: ["setup"],
+      testIgnore: "**/ios/**",
       use: { viewport: { width: 1280, height: 800 }, storageState: DEVELOPER_STATE },
     },
     ...iosAudit,

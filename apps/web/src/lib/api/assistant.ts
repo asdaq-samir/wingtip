@@ -41,7 +41,12 @@ export interface AssistantOwnShip {
 /** The pilot's own minimums (lib/minimums) and currency, in words
  *  (useAsk's currencyWords); null where the app knows neither. */
 export interface AssistantPilot {
-  personal_minimums: { ceiling_ft: number | null; visibility_sm: number | null; wind_kt: number | null; crosswind_kt: number | null } | null;
+  personal_minimums: {
+    ceiling_ft: number | null;
+    visibility_sm: number | null;
+    wind_kt: number | null;
+    crosswind_kt: number | null;
+  } | null;
   currency: string[];
 }
 
@@ -114,7 +119,9 @@ export async function askAssistant(body: AssistantRequest, onEvent: (event: Assi
   // (above), and the planner's client would refuse one it does not know.
   // The gateway's prefix is written in as GatewayRequest writes it.
   const res = await fetch("/api/planner/assistant", {
-    method: "POST", signal, body: JSON.stringify(body),
+    method: "POST",
+    signal,
+    body: JSON.stringify(body),
     headers: { "Content-Type": "application/json", Accept: "application/x-ndjson", ...csrfHeaders("POST"), ...requestIdHeaders() },
   });
   if (res.status === 401) throw new ApiError("Sign in to ask about the flight", 401);

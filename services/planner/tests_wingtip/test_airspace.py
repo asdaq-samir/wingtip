@@ -16,10 +16,7 @@ ELSEWHERE = Point(-94.70, 41.40)
 def _airspace(floor_ft, around):
     """A square of airspace centred on `around`, with the given floor."""
     x, y = around.x, around.y
-    return {
-        "floor_ft_msl": floor_ft,
-        "geometry": Polygon([(x - .2, y - .2), (x + .2, y - .2), (x + .2, y + .2), (x - .2, y + .2)]),
-    }
+    return {"floor_ft_msl": floor_ft, "geometry": Polygon([(x - 0.2, y - 0.2), (x + 0.2, y - 0.2), (x + 0.2, y + 0.2), (x - 0.2, y + 0.2)])}
 
 
 def test_surface_area_around_departure_is_the_airports_own():
@@ -104,18 +101,19 @@ from wingtip.engine import ask as engine  # noqa: E402
 def lowest_vfr_cruising_altitude(floor_ft, course):
     return engine("lowest_vfr_cruising_altitude", floor_ft=floor_ft, magnetic_course_deg=course)
 
+
 EAST, WEST = 90.0, 270.0
 
 
 @pytest.mark.parametrize(
     "floor_ft, bearing, expected",
     [
-        (3000, WEST, 4500),   # KDSM->KOMA: the case that used to give 12,500
+        (3000, WEST, 4500),  # KDSM->KOMA: the case that used to give 12,500
         (2200, WEST, 2500),
         (3000, EAST, 3500),
-        (2200, EAST, 3500),   # 2,500 is a westbound altitude, so climb to 3,500
-        (4500, WEST, 4500),   # already legal and eastbound-correct: unchanged
-        (4600, WEST, 6500),   # just above one, so the next in the same band
+        (2200, EAST, 3500),  # 2,500 is a westbound altitude, so climb to 3,500
+        (4500, WEST, 4500),  # already legal and eastbound-correct: unchanged
+        (4600, WEST, 6500),  # just above one, so the next in the same band
     ],
 )
 def test_lowest_legal_altitude_above_the_floor(floor_ft, bearing, expected):
@@ -273,9 +271,17 @@ def test_the_detour_is_the_shortest_way_round_out_of_the_class_b(monkeypatch):
 
 # --- Whether a leg enters Class B at its altitude --------------------------
 
+
 def _piece(name, floor, ceiling, geometry=_CORE):
-    return {"name": name, "class": "B", "floor_ft_msl": floor, "ceiling_ft_msl": ceiling, "geometry": geometry,
-            "ident": "ORD", "bbox": geometry.bounds}
+    return {
+        "name": name,
+        "class": "B",
+        "floor_ft_msl": floor,
+        "ceiling_ft_msl": ceiling,
+        "geometry": geometry,
+        "ident": "ORD",
+        "bbox": geometry.bounds,
+    }
 
 
 def test_a_leg_enters_class_b_only_between_its_floor_and_ceiling(monkeypatch):

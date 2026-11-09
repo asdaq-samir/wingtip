@@ -15,9 +15,12 @@ import org.springframework.lang.Nullable;
 public record VorCheckRequest(
         @NotNull(message = "checkedOn is required") @PastOrPresent(message = "checkedOn cannot be in the future")
         LocalDate checkedOn,
+
         @NotNull(message = "kind is required") VorCheck kind,
-        @Size(max = 80, message = "place must be at most 80 characters") @Nullable String place,
+
+        @Size(max = 80, message = "place must be at most 80 characters") @Nullable
+        String place,
+
         @DecimalMin(value = "-30", message = "errorDeg must be within 30 degrees")
         @DecimalMax(value = "30", message = "errorDeg must be within 30 degrees")
-        double errorDeg) {
-}
+        double errorDeg) {}

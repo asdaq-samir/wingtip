@@ -84,8 +84,7 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
             altitudeFt: last.verticalAccuracy >= 0 ? last.altitude * 3.28084 : nil,
             trackDeg: last.course >= 0 ? last.course : nil,
             groundspeedKt: last.speed >= 0 ? last.speed * 1.943844 : nil,
-            accuracyM: last.horizontalAccuracy, at: last.timestamp
-        )
+            accuracyM: last.horizontalAccuracy, at: last.timestamp)
         Task { @MainActor in self.took(fix) }
     }
 

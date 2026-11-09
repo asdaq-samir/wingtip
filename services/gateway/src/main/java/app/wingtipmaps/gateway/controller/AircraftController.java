@@ -5,17 +5,17 @@ import app.wingtipmaps.gateway.dto.AircraftDto;
 import app.wingtipmaps.gateway.dto.AircraftRequest;
 import app.wingtipmaps.gateway.dto.DueItemDto;
 import app.wingtipmaps.gateway.dto.DueItemRequest;
-import app.wingtipmaps.gateway.service.DueItemService;
 import app.wingtipmaps.gateway.dto.HandbookRequest;
 import app.wingtipmaps.gateway.dto.InspectionsRequest;
-import app.wingtipmaps.gateway.planner.model.PlannerInspections;
-import app.wingtipmaps.gateway.planner.model.PlannerVorCheckOutput;
-import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.dto.SquawkDto;
 import app.wingtipmaps.gateway.dto.SquawkRequest;
 import app.wingtipmaps.gateway.dto.VorCheckRequest;
+import app.wingtipmaps.gateway.planner.model.PlannerInspections;
+import app.wingtipmaps.gateway.planner.model.PlannerVorCheckOutput;
 import app.wingtipmaps.gateway.service.AircraftService;
+import app.wingtipmaps.gateway.service.DueItemService;
 import app.wingtipmaps.gateway.service.PilotService;
+import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.service.SquawkService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -51,8 +51,12 @@ public class AircraftController {
     private final PlannerClient planner;
     private final DueItemService dueItems;
 
-    public AircraftController(AircraftService aircraftService, SquawkService squawks,
-                              PilotService pilots, PlannerClient planner, DueItemService dueItems) {
+    public AircraftController(
+            AircraftService aircraftService,
+            SquawkService squawks,
+            PilotService pilots,
+            PlannerClient planner,
+            DueItemService dueItems) {
         this.aircraftService = aircraftService;
         this.squawks = squawks;
         this.pilots = pilots;
@@ -62,44 +66,78 @@ public class AircraftController {
 
     @GetMapping
     public ResponseEntity<List<AircraftDto>> list(Authentication authentication) {
-        return PilotResponses.withPilot(pilots, authentication, pilot ->
-                ResponseEntity.ok(aircraftService.list(pilot).stream().map(this::toDto).toList()));
+        return PilotResponses.withPilot(
+                pilots,
+                authentication,
+                pilot -> ResponseEntity.ok(
+                        aircraftService.list(pilot).stream().map(this::toDto).toList()));
     }
 
     @PostMapping
     public ResponseEntity<AircraftDto> add(Authentication authentication, @Valid @RequestBody AircraftRequest request) {
-        return PilotResponses.withPilot(pilots, authentication, pilot -> ResponseEntity.ok(toDto(aircraftService.add(
-                pilot, request.tailNumber(), request.typeDesignator(), request.cruiseTasKt(), request.fuelBurnGph(),
-                request.cruisePowerPct(), request.climbTasKt(), request.climbFuelBurnGph(), request.usableFuelGal(),
-                request.equipment(), request.surveillance(), request.colour()))));
+        return PilotResponses.withPilot(
+                pilots,
+                authentication,
+                pilot -> ResponseEntity.ok(toDto(aircraftService.add(
+                        pilot,
+                        request.tailNumber(),
+                        request.typeDesignator(),
+                        request.cruiseTasKt(),
+                        request.fuelBurnGph(),
+                        request.cruisePowerPct(),
+                        request.climbTasKt(),
+                        request.climbFuelBurnGph(),
+                        request.usableFuelGal(),
+                        request.equipment(),
+                        request.surveillance(),
+                        request.colour()))));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<AircraftDto> update(
             Authentication authentication, @PathVariable Long id, @Valid @RequestBody AircraftRequest request) {
-        return PilotResponses.found(pilots, authentication, pilot -> aircraftService
-                .update(pilot, id, request.tailNumber(), request.typeDesignator(), request.cruiseTasKt(), request.fuelBurnGph(),
-                        request.cruisePowerPct(), request.climbTasKt(), request.climbFuelBurnGph(), request.usableFuelGal(),
-                        request.equipment(), request.surveillance(), request.colour())
-                .map(this::toDto));
+        return PilotResponses.found(
+                pilots,
+                authentication,
+                pilot -> aircraftService
+                        .update(
+                                pilot,
+                                id,
+                                request.tailNumber(),
+                                request.typeDesignator(),
+                                request.cruiseTasKt(),
+                                request.fuelBurnGph(),
+                                request.cruisePowerPct(),
+                                request.climbTasKt(),
+                                request.climbFuelBurnGph(),
+                                request.usableFuelGal(),
+                                request.equipment(),
+                                request.surveillance(),
+                                request.colour())
+                        .map(this::toDto));
     }
 
     /** The airplane's VOR check for IFR, recorded (14 CFR 91.171(d)). */
     @PutMapping("/{id}/vor-check")
     public ResponseEntity<AircraftDto> vorCheck(
             Authentication authentication, @PathVariable Long id, @Valid @RequestBody VorCheckRequest request) {
-        return PilotResponses.found(pilots, authentication, pilot -> aircraftService
-                .recordVorCheck(pilot, id, request.checkedOn(), request.kind(), request.place(), request.errorDeg())
-                .map(this::toDto));
+        return PilotResponses.found(
+                pilots,
+                authentication,
+                pilot -> aircraftService
+                        .recordVorCheck(
+                                pilot, id, request.checkedOn(), request.kind(), request.place(), request.errorDeg())
+                        .map(this::toDto));
     }
 
     /** The airplane's inspections and tests, recorded all at once. */
     @PutMapping("/{id}/inspections")
     public ResponseEntity<AircraftDto> inspections(
             Authentication authentication, @PathVariable Long id, @Valid @RequestBody InspectionsRequest request) {
-        return PilotResponses.found(pilots, authentication, pilot -> aircraftService
-                .recordInspections(pilot, id, request)
-                .map(this::toDto));
+        return PilotResponses.found(
+                pilots,
+                authentication,
+                pilot -> aircraftService.recordInspections(pilot, id, request).map(this::toDto));
     }
 
     /** The airplane's handbook figures, as its pilot confirmed them from a
@@ -107,9 +145,12 @@ public class AircraftController {
     @PutMapping("/{id}/handbook")
     public ResponseEntity<AircraftDto> handbook(
             Authentication authentication, @PathVariable Long id, @Valid @RequestBody HandbookRequest request) {
-        return PilotResponses.found(pilots, authentication, pilot -> aircraftService
-                .keepHandbook(pilot, id, request.figures())
-                .map(this::toDto));
+        return PilotResponses.found(
+                pilots,
+                authentication,
+                pilot -> aircraftService
+                        .keepHandbook(pilot, id, request.figures())
+                        .map(this::toDto));
     }
 
     /** The airplane's squawks, newest first. */
@@ -126,13 +167,17 @@ public class AircraftController {
 
     /** A squawk changed, or fixed. */
     @PutMapping("/{id}/squawks/{squawkId}")
-    public ResponseEntity<SquawkDto> updateSquawk(Authentication authentication, @PathVariable Long id,
-                                                  @PathVariable Long squawkId, @Valid @RequestBody SquawkRequest request) {
+    public ResponseEntity<SquawkDto> updateSquawk(
+            Authentication authentication,
+            @PathVariable Long id,
+            @PathVariable Long squawkId,
+            @Valid @RequestBody SquawkRequest request) {
         return PilotResponses.found(pilots, authentication, pilot -> squawks.update(pilot, id, squawkId, request));
     }
 
     @DeleteMapping("/{id}/squawks/{squawkId}")
-    public ResponseEntity<Void> deleteSquawk(Authentication authentication, @PathVariable Long id, @PathVariable Long squawkId) {
+    public ResponseEntity<Void> deleteSquawk(
+            Authentication authentication, @PathVariable Long id, @PathVariable Long squawkId) {
         return PilotResponses.done(pilots, authentication, pilot -> squawks.delete(pilot, id, squawkId));
     }
 
@@ -145,13 +190,17 @@ public class AircraftController {
     }
 
     @PutMapping("/{id}/due-items/{itemId}")
-    public ResponseEntity<DueItemDto> updateDueItem(Authentication authentication, @PathVariable Long id,
-                                                    @PathVariable Long itemId, @Valid @RequestBody DueItemRequest request) {
+    public ResponseEntity<DueItemDto> updateDueItem(
+            Authentication authentication,
+            @PathVariable Long id,
+            @PathVariable Long itemId,
+            @Valid @RequestBody DueItemRequest request) {
         return PilotResponses.found(pilots, authentication, pilot -> dueItems.update(pilot, id, itemId, request));
     }
 
     @DeleteMapping("/{id}/due-items/{itemId}")
-    public ResponseEntity<Void> deleteDueItem(Authentication authentication, @PathVariable Long id, @PathVariable Long itemId) {
+    public ResponseEntity<Void> deleteDueItem(
+            Authentication authentication, @PathVariable Long id, @PathVariable Long itemId) {
         return PilotResponses.done(pilots, authentication, pilot -> dueItems.delete(pilot, id, itemId));
     }
 
@@ -162,11 +211,28 @@ public class AircraftController {
 
     private AircraftDto toDto(Aircraft a) {
         PlannerInspections due = dueOf(a);
-        return new AircraftDto(a.getId(), a.getTailNumber(), a.getTypeDesignator(), a.getCruiseTasKt(),
-                a.getFuelBurnGph(), a.getCruisePowerPct(), a.getClimbTasKt(), a.getClimbFuelBurnGph(), a.getUsableFuelGal(),
-                a.getCreatedAt(), vorCheckOf(a, due), inspectionsOf(a, due), a.getId() == null ? List.of() : squawks.open(a.getId()),
-                a.getEquipment(), a.getSurveillance(), a.getColour(),
-                a.getId() == null ? List.of() : dueItems.of(a.getId()).stream().map(DueItemService::toDto).toList(),
+        return new AircraftDto(
+                a.getId(),
+                a.getTailNumber(),
+                a.getTypeDesignator(),
+                a.getCruiseTasKt(),
+                a.getFuelBurnGph(),
+                a.getCruisePowerPct(),
+                a.getClimbTasKt(),
+                a.getClimbFuelBurnGph(),
+                a.getUsableFuelGal(),
+                a.getCreatedAt(),
+                vorCheckOf(a, due),
+                inspectionsOf(a, due),
+                a.getId() == null ? List.of() : squawks.open(a.getId()),
+                a.getEquipment(),
+                a.getSurveillance(),
+                a.getColour(),
+                a.getId() == null
+                        ? List.of()
+                        : dueItems.of(a.getId()).stream()
+                                .map(DueItemService::toDto)
+                                .toList(),
                 AircraftService.handbookOf(a));
     }
 
@@ -175,27 +241,49 @@ public class AircraftController {
      *  planner: 14 CFR 91.409(a), (b), 91.207(d), 91.411(a), 91.413(a),
      *  91.171). */
     private PlannerInspections dueOf(Aircraft a) {
-        return planner.inspections(a.getAnnualOn(), a.getEltInspectedOn(), a.getStaticCheckOn(), a.getTransponderCheckOn(),
-                a.getHundredHourAtHours(), a.getVorCheckOn(), a.getVorCheckKind() == null ? null : a.getVorCheckKind().name(),
+        return planner.inspections(
+                a.getAnnualOn(),
+                a.getEltInspectedOn(),
+                a.getStaticCheckOn(),
+                a.getTransponderCheckOn(),
+                a.getHundredHourAtHours(),
+                a.getVorCheckOn(),
+                a.getVorCheckKind() == null ? null : a.getVorCheckKind().name(),
                 a.getVorCheckErrorDeg());
     }
 
     static AircraftDto.InspectionsDto inspectionsOf(Aircraft a, PlannerInspections due) {
         return new AircraftDto.InspectionsDto(
-                a.getAnnualOn(), due.getAnnualUntil(),
-                a.getHundredHourAtHours(), a.getHoursNow(), PlannerClient.number(due.getHundredHourDueAtHours()),
-                a.getStaticCheckOn(), due.getStaticCheckUntil(),
-                a.getTransponderCheckOn(), due.getTransponderCheckUntil(),
-                a.getEltInspectedOn(), due.getEltUntil(),
-                a.getEltBatteryDueOn(), a.isForHire());
+                a.getAnnualOn(),
+                due.getAnnualUntil(),
+                a.getHundredHourAtHours(),
+                a.getHoursNow(),
+                PlannerClient.number(due.getHundredHourDueAtHours()),
+                a.getStaticCheckOn(),
+                due.getStaticCheckUntil(),
+                a.getTransponderCheckOn(),
+                due.getTransponderCheckUntil(),
+                a.getEltInspectedOn(),
+                due.getEltUntil(),
+                a.getEltBatteryDueOn(),
+                a.isForHire());
     }
 
     static AircraftDto.VorCheckDto vorCheckOf(Aircraft a, PlannerInspections due) {
         PlannerVorCheckOutput vor = due.getVorCheck();
-        if (vor == null || a.getVorCheckOn() == null || a.getVorCheckKind() == null || a.getVorCheckErrorDeg() == null) {
+        if (vor == null
+                || a.getVorCheckOn() == null
+                || a.getVorCheckKind() == null
+                || a.getVorCheckErrorDeg() == null) {
             return null;
         }
-        return new AircraftDto.VorCheckDto(a.getVorCheckOn(), a.getVorCheckKind(), a.getVorCheckPlace(),
-                a.getVorCheckErrorDeg(), vor.getLimitDeg().doubleValue(), vor.getWithin(), vor.getUntil());
+        return new AircraftDto.VorCheckDto(
+                a.getVorCheckOn(),
+                a.getVorCheckKind(),
+                a.getVorCheckPlace(),
+                a.getVorCheckErrorDeg(),
+                vor.getLimitDeg().doubleValue(),
+                vor.getWithin(),
+                vor.getUntil());
     }
 }

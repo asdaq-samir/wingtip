@@ -6,6 +6,7 @@ temp-and-rename every output is written through, and SageMaker
 script-mode channel resolution -- and run(), the whole training run, with
 its stages stood in for.
 """
+
 import json
 from pathlib import Path
 
@@ -91,10 +92,7 @@ def test_engineer_features_on_the_command_line_defaults_to_the_corridor_named(mo
     monkeypatch.setattr(pipeline, "engineer_features", lambda **kw: calls.append(kw))
     monkeypatch.setattr(sys, "argv", ["pipeline", "engineer-features", "--dep-ident", "KDSM", "--dest-ident", "KOMA"])
     pipeline._cli()
-    assert calls == [{
-        "in_path": PROCESSED_DIR / "candidates_kdsm_koma.csv",
-        "out_path": PROCESSED_DIR / "features_kdsm_koma.parquet",
-    }]
+    assert calls == [{"in_path": PROCESSED_DIR / "candidates_kdsm_koma.csv", "out_path": PROCESSED_DIR / "features_kdsm_koma.parquet"}]
 
 
 def test_a_collected_corridor_is_kept_not_downloaded_again(tmp_path, monkeypatch):
@@ -152,21 +150,23 @@ def test_chart_picks_are_training_labels_and_win_over_older_ratings(tmp_path):
     from wingtip import pipeline
 
     features = tmp_path / "features_c81_kdlh.parquet"
-    pd.DataFrame([
-        {"osm_id": "1", "osm_type": "way", "lat": 45.0, "lon": -90.0, **{c: 0.0 for c in pipeline.FEATURE_COLS_BASE}},
-        {"osm_id": "2", "osm_type": "node", "lat": 45.5, "lon": -90.5, **{c: 0.0 for c in pipeline.FEATURE_COLS_BASE}},
-        {"osm_id": "3", "osm_type": "node", "lat": 46.0, "lon": -91.0, **{c: 0.0 for c in pipeline.FEATURE_COLS_BASE}},
-    ]).to_parquet(features)
+    pd.DataFrame(
+        [
+            {"osm_id": "1", "osm_type": "way", "lat": 45.0, "lon": -90.0, **{c: 0.0 for c in pipeline.FEATURE_COLS_BASE}},
+            {"osm_id": "2", "osm_type": "node", "lat": 45.5, "lon": -90.5, **{c: 0.0 for c in pipeline.FEATURE_COLS_BASE}},
+            {"osm_id": "3", "osm_type": "node", "lat": 46.0, "lon": -91.0, **{c: 0.0 for c in pipeline.FEATURE_COLS_BASE}},
+        ]
+    ).to_parquet(features)
     labels = tmp_path / "ratings.csv"
     labels.write_text("osm_id,osm_type,name,category,rating\n1,way,Lake,lake,2\n2,node,Town,town,3\n")
     picks = tmp_path / "picks.csv"
     picks.write_text(
         "route,source,role,category,lat,lon,along_track_nm,cross_track_nm,rating,area_m2,note,created_at\n"
-        "C81->KDLH,detected,visual,lake_or_pond,45.0005,-90.0005,1,0,5,,,2026-09-20T00:00:00+00:00\n"   # on 1
-        "C81->KDLH,added,dr,town,46.0,-91.0,2,0,4,,,2026-09-20T00:00:00+00:00\n"                        # on 3
-        "C81->KDLH,detected,visual,town,45.5,-90.5,3,0,0,,,2026-09-20T00:00:00+00:00\n"                 # a rejection
-        "C81->KDLH,added,dr,river,47.0,-92.0,4,0,5,,,2026-09-20T00:00:00+00:00\n"                       # on nothing
-        "KDSM->KOMA,added,dr,town,45.5,-90.5,1,0,5,,,2026-09-20T00:00:00+00:00\n"                       # another route
+        "C81->KDLH,detected,visual,lake_or_pond,45.0005,-90.0005,1,0,5,,,2026-09-20T00:00:00+00:00\n"  # on 1
+        "C81->KDLH,added,dr,town,46.0,-91.0,2,0,4,,,2026-09-20T00:00:00+00:00\n"  # on 3
+        "C81->KDLH,detected,visual,town,45.5,-90.5,3,0,0,,,2026-09-20T00:00:00+00:00\n"  # a rejection
+        "C81->KDLH,added,dr,river,47.0,-92.0,4,0,5,,,2026-09-20T00:00:00+00:00\n"  # on nothing
+        "KDSM->KOMA,added,dr,town,45.5,-90.5,1,0,5,,,2026-09-20T00:00:00+00:00\n"  # another route
     )
 
     labeled, _ = pipeline._load_labeled(features, labels, picks_path=picks)
@@ -190,12 +190,20 @@ def _labelled(tmp_path, n: int):
 
     from wingtip import pipeline
 
-    features = tmp_path / "features.parquet"   # no route in the name: no chart picks join
-    pd.DataFrame([
-        {"osm_id": str(i), "osm_type": "node", "lat": 45.0, "lon": -90.0,
-         **{c: 1.0 for c in pipeline.FEATURE_COLS_BASE}, "name_uniqueness": None if i % 3 == 0 else 0.5}
-        for i in range(n)
-    ]).to_parquet(features)
+    features = tmp_path / "features.parquet"  # no route in the name: no chart picks join
+    pd.DataFrame(
+        [
+            {
+                "osm_id": str(i),
+                "osm_type": "node",
+                "lat": 45.0,
+                "lon": -90.0,
+                **{c: 1.0 for c in pipeline.FEATURE_COLS_BASE},
+                "name_uniqueness": None if i % 3 == 0 else 0.5,
+            }
+            for i in range(n)
+        ]
+    ).to_parquet(features)
     labels = tmp_path / "ratings.csv"
     labels.write_text("osm_id,osm_type,name,category,rating\n" + "".join(f"{i},node,x,lake,{i % 6}\n" for i in range(n)))
     return features, labels
@@ -232,21 +240,29 @@ def test_the_readiness_says_what_became_of_each_rating(tmp_path):
     from wingtip import pipeline
 
     features = tmp_path / "features_c81_kdlh.parquet"
-    pd.DataFrame([
-        {"osm_id": "1", "osm_type": "node", "lat": 45.0, "lon": -90.0, **{c: 1.0 for c in pipeline.FEATURE_COLS_BASE}},
-        {"osm_id": "2", "osm_type": "node", "lat": 45.1, "lon": -90.0, **{c: 1.0 for c in pipeline.FEATURE_COLS_BASE}},
-    ]).to_parquet(features)
+    pd.DataFrame(
+        [
+            {"osm_id": "1", "osm_type": "node", "lat": 45.0, "lon": -90.0, **{c: 1.0 for c in pipeline.FEATURE_COLS_BASE}},
+            {"osm_id": "2", "osm_type": "node", "lat": 45.1, "lon": -90.0, **{c: 1.0 for c in pipeline.FEATURE_COLS_BASE}},
+        ]
+    ).to_parquet(features)
     labels = tmp_path / "ratings.csv"
     labels.write_text("osm_id,osm_type,name,category,rating\n")
     picks = tmp_path / "picks.csv"
     head = "route,source,role,category,lat,lon,along_track_nm,cross_track_nm,rating,area_m2,note,created_at\n"
     row = "C81->KDLH,detected,dr,water,{lat},{lon},1,0,{rating},100,,2026-10-01T00:00:00+00:00\n"
-    picks.write_text(head + "".join(row.format(**p) for p in [
-        {"lat": 45.0, "lon": -90.0, "rating": 4},      # on landmark 1
-        {"lat": 45.0005, "lon": -90.0, "rating": 3},   # on landmark 1 again
-        {"lat": 45.1, "lon": -90.0, "rating": 0},      # a 0
-        {"lat": 46.0, "lon": -91.0, "rating": 5},      # nowhere near one
-    ]))
+    picks.write_text(
+        head
+        + "".join(
+            row.format(**p)
+            for p in [
+                {"lat": 45.0, "lon": -90.0, "rating": 4},  # on landmark 1
+                {"lat": 45.0005, "lon": -90.0, "rating": 3},  # on landmark 1 again
+                {"lat": 45.1, "lon": -90.0, "rating": 0},  # a 0
+                {"lat": 46.0, "lon": -91.0, "rating": 5},  # nowhere near one
+            ]
+        )
+    )
 
     ready = pipeline.training_readiness(features, labels, picks, min_labeled_rows=30)
 
@@ -284,10 +300,7 @@ def test_a_stage_with_nothing_to_do_skips_the_rest_of_its_branch_only(tmp_path):
         raise pipeline._Skip("the promoted model stays")
 
     ran = []
-    branches = [
-        [_stage(ran, "retrain"), ("evaluate", evaluate), _stage(ran, "promote")],
-        [_stage(ran, "chart_retrain")],
-    ]
+    branches = [[_stage(ran, "retrain"), ("evaluate", evaluate), _stage(ran, "promote")], [_stage(ran, "chart_retrain")]]
     status = pipeline.run(tmp_path / "run.json", branches)
     assert ran == ["retrain", "chart_retrain"]
     states = {s["name"]: s["state"] for s in status["stages"]}
@@ -314,6 +327,11 @@ def test_the_runs_stages_are_the_dags():
     from wingtip import pipeline
 
     assert [name for name, _ in pipeline._landmark_branch()] == [
-        "landmarks_ready", "collect", "feature_engineer", "retrain", "evaluate", "promote",
+        "landmarks_ready",
+        "collect",
+        "feature_engineer",
+        "retrain",
+        "evaluate",
+        "promote",
     ]
     assert [name for name, _ in pipeline._chart_branch()] == ["chart_retrain", "chart_evaluate", "chart_promote"]

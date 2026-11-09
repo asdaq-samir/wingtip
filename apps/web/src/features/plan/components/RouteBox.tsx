@@ -1,8 +1,27 @@
-import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from "react";
+import {
+  Fragment,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent,
+  type ReactNode,
+} from "react";
 import { Command as CommandPrimitive } from "cmdk";
 import { ArrowRight, Coffee, Fuel, PlaneLanding, PlaneTakeoff, Plus, Route, Trash2, TriangleAlert } from "lucide-react";
 import {
-  DndContext, KeyboardSensor, MouseSensor, TouchSensor, closestCenter, useDndMonitor, useSensor, useSensors, type DragEndEvent,
+  DndContext,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  closestCenter,
+  useDndMonitor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -35,7 +54,11 @@ import type { BranchFix } from "../../../lib/procedures";
 
 /** The route as the box changes it: either end may be missing (half a
  *  route, the other end still to be typed), and neither means none. */
-export interface RouteParts { dep: string; stops: string[]; dest: string }
+export interface RouteParts {
+  dep: string;
+  stops: string[];
+  dest: string;
+}
 
 /** An instrument procedure picked at a point of the route (the route's
  *  Procedures), said in the box after the point's pill: its field, its
@@ -84,9 +107,32 @@ const PROCEDURE_GLYPH = { approach: PlaneLanding, arrival: Route, departure: Pla
 const RUNS_ON_PX = 8;
 
 export default function RouteBox({
-  dep, stops, dest, waypoints, airspaceOf, metarColourOf, altitudeAt, onAltitudeChange, onChange, onTypedProcedures, adding, onAddingChange, via,
-  procedures = NO_PROCEDURES, onProcedures, onOpenAirport, onClear, directTo = null, onDirectTo, fuelStops = NO_FUEL_STOPS, onKeepFuelStops, onHideFuelStop,
-  footer, addAt = null, onDone, unknownPoint = null,
+  dep,
+  stops,
+  dest,
+  waypoints,
+  airspaceOf,
+  metarColourOf,
+  altitudeAt,
+  onAltitudeChange,
+  onChange,
+  onTypedProcedures,
+  adding,
+  onAddingChange,
+  via,
+  procedures = NO_PROCEDURES,
+  onProcedures,
+  onOpenAirport,
+  onClear,
+  directTo = null,
+  onDirectTo,
+  fuelStops = NO_FUEL_STOPS,
+  onKeepFuelStops,
+  onHideFuelStop,
+  footer,
+  addAt = null,
+  onDone,
+  unknownPoint = null,
 }: RouteParts & {
   /** Which points are waypoints, flown through: in the sectional's magenta. */
   waypoints: Set<string>;
@@ -155,14 +201,17 @@ export default function RouteBox({
    *  the planner's answer named none. */
   unknownPoint?: { ident: string | null } | null;
 }) {
-  const hasDep = !!dep, hasDest = !!dest;
+  const hasDep = !!dep,
+    hasDest = !!dest;
   const points = [...(hasDep ? [dep] : []), ...stops, ...(hasDest ? [dest] : [])];
   const roleOf = (i: number) => (i === 0 && hasDep ? "dep" : i === points.length - 1 && hasDest ? "dest" : "stop");
   const [typed, setTyped] = useState("");
   // The field taken, for the arrow on from the destination (below).
   const [focused, setFocused] = useState(false);
   const typedNow = useRef(typed);
-  useEffect(() => { typedNow.current = typed; }, [typed]);
+  useEffect(() => {
+    typedNow.current = typed;
+  }, [typed]);
   const field = useRef<HTMLInputElement>(null);
   const listId = useId();
   // Where the field is: before point `at` (a stop typed in there, or at 0
@@ -178,7 +227,9 @@ export default function RouteBox({
   // "Departure -> KDLH", the departure still to be typed.
   const at = chosen ?? (adding ? asked : !hasDep && points.length ? 0 : null);
   const atNow = useRef(at);
-  useEffect(() => { atNow.current = at; }, [at]);
+  useEffect(() => {
+    atNow.current = at;
+  }, [at]);
   // Each point's key is its place in the order and its ident: the same
   // airport twice is two points.
   const ids = points.map((p, i) => `${i}:${p}`);
@@ -231,14 +282,27 @@ export default function RouteBox({
   // KATW") is the route's procedure, not a point: taken out, with the
   // points typed either side of it, and picked once the route is in.
   const put = (typedIdents: string[]) => {
-    const words = typedIdents.map(t => t.trim().toUpperCase()).filter(Boolean);
+    const words = typedIdents.map((t) => t.trim().toUpperCase()).filter(Boolean);
     const isProcedure = (word: string) => TYPED_PROCEDURE.test(word) && !!onTypedProcedures;
-    const typedProcedures = words.flatMap((word, i) => (isProcedure(word) ? [{
-      name: word,
-      before: words.slice(0, i).reverse().find(w => !isProcedure(w)) ?? null,
-      after: words.slice(i + 1).find(w => !isProcedure(w)) ?? null,
-    }] : []));
-    const fresh = words.filter(w => !isProcedure(w)).map(stopOf).filter(Boolean);
+    const typedProcedures = words.flatMap((word, i) =>
+      isProcedure(word)
+        ? [
+            {
+              name: word,
+              before:
+                words
+                  .slice(0, i)
+                  .reverse()
+                  .find((w) => !isProcedure(w)) ?? null,
+              after: words.slice(i + 1).find((w) => !isProcedure(w)) ?? null,
+            },
+          ]
+        : [],
+    );
+    const fresh = words
+      .filter((w) => !isProcedure(w))
+      .map(stopOf)
+      .filter(Boolean);
     const route = placed(fresh) ?? { dep, dest };
     if (typedProcedures.length) onTypedProcedures?.(typedProcedures, { dep: route.dep, dest: route.dest });
   };
@@ -299,16 +363,23 @@ export default function RouteBox({
       const over = el.scrollWidth - el.clientWidth > RUNS_ON_PX;
       const before = over && el.scrollLeft > RUNS_ON_PX;
       const after = over && el.scrollWidth - el.clientWidth - el.scrollLeft > RUNS_ON_PX;
-      setRunsOn(was => (was.before === before && was.after === after ? was : { before, after }));
+      setRunsOn((was) => (was.before === before && was.after === after ? was : { before, after }));
     };
-    const soon = () => { if (!frame) frame = requestAnimationFrame(read); };
+    const soon = () => {
+      if (!frame) frame = requestAnimationFrame(read);
+    };
     const sized = new ResizeObserver(soon);
     sized.observe(el);
     const changed = new MutationObserver(soon);
     changed.observe(el, { childList: true, subtree: true });
     el.addEventListener("scroll", soon, { passive: true });
     soon();
-    return () => { cancelAnimationFrame(frame); sized.disconnect(); changed.disconnect(); el.removeEventListener("scroll", soon); };
+    return () => {
+      cancelAnimationFrame(frame);
+      sized.disconnect();
+      changed.disconnect();
+      el.removeEventListener("scroll", soon);
+    };
   }, []);
   // The field taken, and each point typed into it: the row slid to its
   // end, where the field and the new point are. Not as it opens -- a
@@ -367,11 +438,15 @@ export default function RouteBox({
   const offering = typed.trim() ? rows.length > 0 || !!ownPoint : adding && !!via?.length;
   const open = offering && dismissed !== typed;
   // Asked for, the field takes the typing.
-  useEffect(() => { if (adding) field.current?.focus(); }, [adding]);
+  useEffect(() => {
+    if (adding) field.current?.focus();
+  }, [adding]);
   // Opened from its folded line, the same: in the tap's own commit, so iOS
   // brings the keyboard up (it does for no focus after the tap).
   const opened = !!onDone;
-  useLayoutEffect(() => { if (opened) field.current?.focus(); }, [opened]);
+  useLayoutEffect(() => {
+    if (opened) field.current?.focus();
+  }, [opened]);
   // Folded again: what is typed put in first, as leaving the box does,
   // and not again as the field's blur comes after the box has gone.
   const done = () => {
@@ -391,7 +466,7 @@ export default function RouteBox({
       // once, before the planner's waypoints answer: it was put in as
       // typed, which is nothing, and the box emptied.
       const word = typed.trim().toUpperCase();
-      const exact = rows.some(r => r.ident === word);
+      const exact = rows.some((r) => r.ident === word);
       if (open && rows.length > 0 && (answered || !exact)) {
         // cmdk takes Enter on its highlighted row, but typed key by key,
         // as a phone's keyboard does, the rows change under it and none
@@ -440,91 +515,139 @@ export default function RouteBox({
   // an arrow, a stop's width.
   const typing = (
     <>
-    <input
-      ref={field} value={typed} onChange={e => setTyped(e.target.value.toUpperCase())} onKeyDown={onKeyDown}
-      role="combobox" aria-expanded={open} aria-controls={listId} aria-autocomplete="list"
-      // Idents, not anything AutoFill knows (the iOS audit's P19).
-      autoComplete="off"
-      // What was typed goes in when the box is left -- unless a suggestion
-      // took the tap, which empties it first -- and an arrow's field is
-      // put away.
-      onFocus={() => setFocused(true)}
-      onBlur={() => window.setTimeout(() => {
-        setFocused(false);
-        if (document.activeElement === field.current) return;
-        if (typedNow.current.trim()) commitTyped();
-        if (atNow.current !== null) { setAt(null); onAddingChange(false); }
-      }, 200)}
-      // Empty, the route, from its departure (put); then each end it lacks.
-      // After a whole route's destination no words, at the pilot's ask
-      // ("Add stop" said it): what is typed there is the new destination,
-      // the old one a stop on the way, as Maps' Add Stop does, and a reader
-      // is told so (its label).
-      placeholder={!points.length ? "Route" : at === null ? (hasDest ? "" : "Destination") : at === 0 && !hasDep ? "Departure" : ""}
-      aria-label={!points.length ? "The route, from its departure" : at === null ? (hasDest ? "Add stop, the new destination" : "The destination") : at === 0 && !hasDep ? "The departure" : "A stop here"}
-      enterKeyHint="done" autoCapitalize="characters" autoCorrect="off" spellCheck={false}
-      // 16 at the least below md, as every field is: under 16 iOS zooms
-      // the page in on it (checkpoints.spec checks every field). Not
-      // TEXT.row, whose 14 with a mouse would be under it on a narrow
-      // window; 17 to a finger, a row's, and 14 from md up.
-      className={cn(
-        "h-7 bg-transparent font-mono text-base uppercase outline-none placeholder:font-sans placeholder:normal-case placeholder:text-muted-foreground md:text-sm pointer-coarse:text-[1.0625rem]",
-        // The departure's field wide enough for its word: at a stop's width
-        // it read "Departu".
-        // After the last point, clear of it, as a field's words are of
-        // its edge: its words ran into the destination's pill. With no
-        // words after a whole route, and not being typed in, as narrow as
-        // the room left on the route's line, none at all where the line is
-        // full: at 48 it took a second line of its own, empty, under four
-        // points, and at 24 still did under a procedure's chip and three
-        // fields (the owner's recording, 2026-10-18). A tap on the box's
-        // room past the last point is still its (below).
-        at === null
-          // The caret a space nearer the arrow before it, at the owner's ask
-          // ("the cursor can be one space less for next entry").
-          ? cn("flex-1 pl-1", hasDest && points.length > 0 && !focused && !typed ? "min-w-0 pl-0" : "min-w-12")
-          : cn("shrink-0 rounded-full bg-background/60 px-2", at === 0 && !hasDep ? "w-28" : "w-20"),
+      <input
+        ref={field}
+        value={typed}
+        onChange={(e) => setTyped(e.target.value.toUpperCase())}
+        onKeyDown={onKeyDown}
+        role="combobox"
+        aria-expanded={open}
+        aria-controls={listId}
+        aria-autocomplete="list"
+        // Idents, not anything AutoFill knows (the iOS audit's P19).
+        autoComplete="off"
+        // What was typed goes in when the box is left -- unless a suggestion
+        // took the tap, which empties it first -- and an arrow's field is
+        // put away.
+        onFocus={() => setFocused(true)}
+        onBlur={() =>
+          window.setTimeout(() => {
+            setFocused(false);
+            if (document.activeElement === field.current) return;
+            if (typedNow.current.trim()) commitTyped();
+            if (atNow.current !== null) {
+              setAt(null);
+              onAddingChange(false);
+            }
+          }, 200)
+        }
+        // Empty, the route, from its departure (put); then each end it lacks.
+        // After a whole route's destination no words, at the pilot's ask
+        // ("Add stop" said it): what is typed there is the new destination,
+        // the old one a stop on the way, as Maps' Add Stop does, and a reader
+        // is told so (its label).
+        placeholder={!points.length ? "Route" : at === null ? (hasDest ? "" : "Destination") : at === 0 && !hasDep ? "Departure" : ""}
+        aria-label={
+          !points.length
+            ? "The route, from its departure"
+            : at === null
+              ? hasDest
+                ? "Add stop, the new destination"
+                : "The destination"
+              : at === 0 && !hasDep
+                ? "The departure"
+                : "A stop here"
+        }
+        enterKeyHint="done"
+        autoCapitalize="characters"
+        autoCorrect="off"
+        spellCheck={false}
+        // 16 at the least below md, as every field is: under 16 iOS zooms
+        // the page in on it (checkpoints.spec checks every field). Not
+        // TEXT.row, whose 14 with a mouse would be under it on a narrow
+        // window; 17 to a finger, a row's, and 14 from md up.
+        className={cn(
+          "h-7 bg-transparent font-mono text-base uppercase outline-none placeholder:font-sans placeholder:normal-case placeholder:text-muted-foreground md:text-sm pointer-coarse:text-[1.0625rem]",
+          // The departure's field wide enough for its word: at a stop's width
+          // it read "Departu".
+          // After the last point, clear of it, as a field's words are of
+          // its edge: its words ran into the destination's pill. With no
+          // words after a whole route, and not being typed in, as narrow as
+          // the room left on the route's line, none at all where the line is
+          // full: at 48 it took a second line of its own, empty, under four
+          // points, and at 24 still did under a procedure's chip and three
+          // fields (the owner's recording, 2026-10-18). A tap on the box's
+          // room past the last point is still its (below).
+          at === null
+            ? // The caret a space nearer the arrow before it, at the owner's ask
+              // ("the cursor can be one space less for next entry").
+              cn("flex-1 pl-1", hasDest && points.length > 0 && !focused && !typed ? "min-w-0 pl-0" : "min-w-12")
+            : cn("shrink-0 rounded-full bg-background/60 px-2", at === 0 && !hasDep ? "w-28" : "w-20"),
+        )}
+        data-testid="route-type"
+      />
+      {/* What is typed cleared, the field kept, as iOS's fields clear. */}
+      {typed && (
+        <ClearButton
+          label="Clear what is typed"
+          onClear={() => {
+            setTyped("");
+            field.current?.focus();
+          }}
+          className={at === null ? "mr-1" : undefined}
+        />
       )}
-      data-testid="route-type"
-    />
-    {/* What is typed cleared, the field kept, as iOS's fields clear. */}
-    {typed && <ClearButton label="Clear what is typed" onClear={() => { setTyped(""); field.current?.focus(); }} className={at === null ? "mr-1" : undefined} />}
     </>
   );
   // An arrow between two points, a tap on it the field there; a plain
   // arrow on either side of the field once it is open.
-  const arrow = (before: number) => at === before ? (
-    <Fragment key={`at-${before}`}>
-      {before > 0 && <ArrowRight className="size-3 shrink-0 text-muted-foreground" aria-hidden="true" />}
-      {typing}
-      <ArrowRight className="size-3 shrink-0 text-muted-foreground" aria-hidden="true" />
-    </Fragment>
-  ) : (
-    <button
-      key={`arrow-${before}`} type="button" disabled={full && !(before === 0 && !hasDep)}
-      onClick={() => typeAt(before)} data-testid="route-arrow"
-      aria-label={before === 0 ? "Type the departure" : `Type a stop between ${points[before - 1]} and ${points[before]}`}
-      className="grid h-5 w-4 shrink-0 place-items-center rounded-full text-muted-foreground outline-none hover:text-tint focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40"
-    >
-      <ArrowRight className="size-3" />
-    </button>
-  );
+  const arrow = (before: number) =>
+    at === before ? (
+      <Fragment key={`at-${before}`}>
+        {before > 0 && <ArrowRight className="size-3 shrink-0 text-muted-foreground" aria-hidden="true" />}
+        {typing}
+        <ArrowRight className="size-3 shrink-0 text-muted-foreground" aria-hidden="true" />
+      </Fragment>
+    ) : (
+      <button
+        key={`arrow-${before}`}
+        type="button"
+        disabled={full && !(before === 0 && !hasDep)}
+        onClick={() => typeAt(before)}
+        data-testid="route-arrow"
+        aria-label={before === 0 ? "Type the departure" : `Type a stop between ${points[before - 1]} and ${points[before]}`}
+        className="grid h-5 w-4 shrink-0 place-items-center rounded-full text-muted-foreground outline-none hover:text-tint focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40"
+      >
+        <ArrowRight className="size-3" />
+      </button>
+    );
   return (
     // The box's own presses are its pills', not the panel's drag. cmdk's
     // root round the box and its suggestions: the field moves the
     // highlight with the arrows and takes it with Enter.
     <CommandPrimitive
-      shouldFilter={false} loop className="min-w-0" onPointerDown={e => e.stopPropagation()}
+      shouldFilter={false}
+      loop
+      className="min-w-0"
+      onPointerDown={(e) => e.stopPropagation()}
       // Delete (or Backspace) on a focused pill takes it out, as its menu
       // does (Pill).
-      onKeyDown={event => {
+      onKeyDown={(event) => {
         const point = (event.target as HTMLElement).dataset.point;
         if (point === undefined || (event.key !== "Delete" && event.key !== "Backspace")) return;
         event.preventDefault();
         remove(Number(point));
       }}
     >
-      <Popover open={open} onOpenChange={next => { if (!next) { setDismissed(typed); onAddingChange(false); } }}>
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          if (!next) {
+            setDismissed(typed);
+            onAddingChange(false);
+          }
+        }}
+      >
         <PopoverAnchor asChild>
           {/* The search bar's field, as Maps' is with no route: its grey,
               no line round it, its corners round, the pills on it in the
@@ -532,13 +655,21 @@ export default function RouteBox({
               needs it, at the pilot's ask, where it was two however short
               the route and a short one left a line of grey empty under it. */}
           <InputGroup
-            onMouseDown={e => { if (isRoom(e)) e.preventDefault(); }} onClick={toEnd}
+            onMouseDown={(e) => {
+              if (isRoom(e)) e.preventDefault();
+            }}
+            onClick={toEnd}
             // Four over its lines, and four under a line with no buttons
             // under it: the clear's 44-point area, round its 20 in a line
             // now 28 tall, reached past the box's top and foot (the iOS
             // audit's P1 on an approach's page).
-            className={cn("h-auto flex-wrap items-start rounded-[20.5px] border-0 pt-1 pb-0 pr-1.5 pl-1 shadow-none has-[[data-slot=input-group-control]:focus-visible]:ring-0", !footer && "pb-1", PANEL_FIELD)}
-            data-testid="route-box" data-tip="route"
+            className={cn(
+              "h-auto flex-wrap items-start rounded-[20.5px] border-0 pt-1 pb-0 pr-1.5 pl-1 shadow-none has-[[data-slot=input-group-control]:focus-visible]:ring-0",
+              !footer && "pb-1",
+              PANEL_FIELD,
+            )}
+            data-testid="route-box"
+            data-tip="route"
           >
             {/* The pills in one row that slides sideways under a finger
                 when the route is longer than the box (the owner,
@@ -546,18 +677,29 @@ export default function RouteBox({
                 faded where it runs on, so a point past it reads as there.
                 A drag up or down on it is the sheet's (useSheetDrag), across
                 is the row's. */}
-            <div ref={slide} className={cn(
-              "flex min-w-0 flex-1 flex-nowrap items-center gap-x-px overflow-x-auto overflow-y-hidden overscroll-x-contain py-1 pr-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:shrink-0",
-              runsOn.before && runsOn.after ? "[mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)]"
-                : runsOn.after ? "[mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)]"
-                  : runsOn.before && "[mask-image:linear-gradient(to_right,transparent,black_1.5rem)]",
-            )} data-testid="route-slide">
+            <div
+              ref={slide}
+              className={cn(
+                "flex min-w-0 flex-1 flex-nowrap items-center gap-x-px overflow-x-auto overflow-y-hidden overscroll-x-contain py-1 pr-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:shrink-0",
+                runsOn.before && runsOn.after
+                  ? "[mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)]"
+                  : runsOn.after
+                    ? "[mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)]"
+                    : runsOn.before && "[mask-image:linear-gradient(to_right,transparent,black_1.5rem)]",
+              )}
+              data-testid="route-slide"
+            >
               {/* The box does not scroll itself under a drag: the pill dragged
                   is in the box it scrolls, so each step down carried it
                   further, and a pill held over the second line ran the box
                   671 points down to the last point. A line out of sight is
                   scrolled to first. */}
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} autoScroll={{ threshold: { x: 0.15, y: 0 } }}>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={onDragEnd}
+                autoScroll={{ threshold: { x: 0.15, y: 0 } }}
+              >
                 <SortableContext items={ids} strategy={horizontalListSortingStrategy}>
                   {points.map((point, i) => (
                     <Fragment key={ids[i]}>
@@ -570,43 +712,86 @@ export default function RouteBox({
                           pill"); its departure after it (below). A tap opens
                           the Procedures they were picked in. Not points of
                           the route: not dragged, not typed. */}
-                      {(i === points.findIndex(p => p === point)) && procedures
-                        .filter(p => sameField(p.ident, point) && p.kind !== "departure")
-                        .sort((a, b) => (a.kind === "arrival" ? 0 : 1) - (b.kind === "arrival" ? 0 : 1))
-                        .map(p => (
-                          <ProcedureChip key={`${p.kind}-${p.label}`} procedure={p} before onOpen={onProcedures ? () => onProcedures(p) : undefined} />
-                        ))}
+                      {i === points.findIndex((p) => p === point) &&
+                        procedures
+                          .filter((p) => sameField(p.ident, point) && p.kind !== "departure")
+                          .sort((a, b) => (a.kind === "arrival" ? 0 : 1) - (b.kind === "arrival" ? 0 : 1))
+                          .map((p) => (
+                            <ProcedureChip
+                              key={`${p.kind}-${p.label}`}
+                              procedure={p}
+                              before
+                              onOpen={onProcedures ? () => onProcedures(p) : undefined}
+                            />
+                          ))}
                       <Pill
-                        id={ids[i]!} ident={point} waypoint={waypoints.has(point)} index={i} airspaceOf={airspaceOf} metarColourOf={metarColourOf}
-                        role={roleOf(i)} stopNumber={i + (hasDep ? 0 : 1)}
-                        onChange={ident => change(points.map((p, j) => (j === i ? ident : p)))}
+                        id={ids[i]!}
+                        ident={point}
+                        waypoint={waypoints.has(point)}
+                        index={i}
+                        airspaceOf={airspaceOf}
+                        metarColourOf={metarColourOf}
+                        role={roleOf(i)}
+                        stopNumber={i + (hasDep ? 0 : 1)}
+                        onChange={(ident) => change(points.map((p, j) => (j === i ? ident : p)))}
                         altitude={altitudeAt(point, waypoints.has(point))}
-                        onEditAltitude={() => setEditing({ ident: point, waypoint: waypoints.has(point), altitude: altitudeAt(point, waypoints.has(point)) })}
+                        onEditAltitude={() =>
+                          setEditing({ ident: point, waypoint: waypoints.has(point), altitude: altitudeAt(point, waypoints.has(point)) })
+                        }
                         onRemove={() => remove(i)}
                         unknown={unknownPoint?.ident === point}
-                        onOpen={onOpenAirport && !waypoints.has(point) && identOf(point) && unknownPoint?.ident !== point ? () => onOpenAirport(identOf(point)) : undefined}
+                        onOpen={
+                          onOpenAirport && !waypoints.has(point) && identOf(point) && unknownPoint?.ident !== point
+                            ? () => onOpenAirport(identOf(point))
+                            : undefined
+                        }
                         // Flown to: a stop or the destination, not where it starts.
                         direct={directTo !== null && sameField(directTo, point)}
-                        onDirect={onDirectTo && i > 0 && hasDep ? () => onDirectTo(directTo !== null && sameField(directTo, point) ? null : point) : undefined}
+                        onDirect={
+                          onDirectTo && i > 0 && hasDep
+                            ? () => onDirectTo(directTo !== null && sameField(directTo, point) ? null : point)
+                            : undefined
+                        }
                       />
-                      {(i === points.findIndex(p => p === point)) && procedures.filter(p => sameField(p.ident, point) && p.kind === "departure").map(p => (
-                        <ProcedureChip key={`${p.kind}-${p.label}`} procedure={p} onOpen={onProcedures ? () => onProcedures(p) : undefined} />
-                      ))}
+                      {i === points.findIndex((p) => p === point) &&
+                        procedures
+                          .filter((p) => sameField(p.ident, point) && p.kind === "departure")
+                          .map((p) => (
+                            <ProcedureChip
+                              key={`${p.kind}-${p.label}`}
+                              procedure={p}
+                              onOpen={onProcedures ? () => onProcedures(p) : undefined}
+                            />
+                          ))}
                       {/* The fuel stops suggested for the flight that leaves
                           this point, dashed after it as the route goes on
                           to them (FuelStopChip). */}
-                      {i < points.length - 1 && (i === points.findIndex(p => p === point)) && fuelStops
-                        .filter(f => sameField(f.departure, point)).slice(0, 1)
-                        .flatMap(f => f.stops.map(stop => (
-                          <Fragment key={`fuel-${stop.ident}`}>
-                            <ArrowRight className="size-3 shrink-0 text-muted-foreground" aria-hidden="true" />
-                            <FuelStopChip
-                              ident={stop.ident} reason={f.reason}
-                              onAdd={onKeepFuelStops ? () => onKeepFuelStops(point, f.stops.map(s => s.ident)) : undefined}
-                              onHide={onHideFuelStop ? () => onHideFuelStop(stop.ident) : undefined}
-                            />
-                          </Fragment>
-                        )))}
+                      {i < points.length - 1 &&
+                        i === points.findIndex((p) => p === point) &&
+                        fuelStops
+                          .filter((f) => sameField(f.departure, point))
+                          .slice(0, 1)
+                          .flatMap((f) =>
+                            f.stops.map((stop) => (
+                              <Fragment key={`fuel-${stop.ident}`}>
+                                <ArrowRight className="size-3 shrink-0 text-muted-foreground" aria-hidden="true" />
+                                <FuelStopChip
+                                  ident={stop.ident}
+                                  reason={f.reason}
+                                  onAdd={
+                                    onKeepFuelStops
+                                      ? () =>
+                                          onKeepFuelStops(
+                                            point,
+                                            f.stops.map((s) => s.ident),
+                                          )
+                                      : undefined
+                                  }
+                                  onHide={onHideFuelStop ? () => onHideFuelStop(stop.ident) : undefined}
+                                />
+                              </Fragment>
+                            )),
+                          )}
                     </Fragment>
                   ))}
                 </SortableContext>
@@ -635,8 +820,14 @@ export default function RouteBox({
                 at its end. Pressed, the field keeps the focus till it goes. */}
             {onDone && (
               <button
-                type="button" onMouseDown={e => e.preventDefault()} onClick={done} data-testid="route-box-done"
-                className={cn("relative mt-1 ml-1 h-7 shrink-0 rounded-full px-1.5 font-semibold text-tint outline-none after:absolute after:-inset-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring", TEXT.row)}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={done}
+                data-testid="route-box-done"
+                className={cn(
+                  "relative mt-1 ml-1 h-7 shrink-0 rounded-full px-1.5 font-semibold text-tint outline-none after:absolute after:-inset-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+                  TEXT.row,
+                )}
               >
                 Done
               </button>
@@ -645,7 +836,11 @@ export default function RouteBox({
                 route's end; ten under the lines, the clear's 44-point area
                 and the last button's apart (the iOS audit's P1: at eight,
                 the refresh's 32-point button took a point of the clear's). */}
-            {footer && <div className="flex w-full basis-full items-center pt-2.5 pr-0.5 pb-2 pl-1.5" data-testid="route-box-footer">{footer}</div>}
+            {footer && (
+              <div className="flex w-full basis-full items-center pt-2.5 pr-0.5 pb-2 pl-1.5" data-testid="route-box-footer">
+                {footer}
+              </div>
+            )}
           </InputGroup>
         </PopoverAnchor>
         {/* The airport search's own list (AirportResults), its rows and
@@ -654,25 +849,35 @@ export default function RouteBox({
             take the focus to a field of its own. As tall as there is room,
             the sheet's list as long. */}
         <PopoverContent
-          align="start" sideOffset={6}
+          align="start"
+          sideOffset={6}
           className="w-(--radix-popper-anchor-width) max-w-[calc(100vw-16px)] gap-0 p-2"
           style={keyboard > 0 ? { paddingBottom: keyboard } : undefined}
           // The typing stays in the box.
-          onOpenAutoFocus={e => e.preventDefault()}
-          onInteractOutside={e => { if (field.current?.closest("[data-slot=input-group]")?.contains(e.target as Node)) e.preventDefault(); }}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onInteractOutside={(e) => {
+            if (field.current?.closest("[data-slot=input-group]")?.contains(e.target as Node)) e.preventDefault();
+          }}
           data-testid="route-suggestions"
         >
           <AirportResults
-            id={listId} rows={typed.trim() ? rows : NO_ROWS} answered={!typed.trim() || answered}
-            onAirport={airport => pick(airport.ident, airport)} onWaypoint={ident => pick(ident)}
+            id={listId}
+            rows={typed.trim() ? rows : NO_ROWS}
+            answered={!typed.trim() || answered}
+            onAirport={(airport) => pick(airport.ident, airport)}
+            onWaypoint={(ident) => pick(ident)}
           >
             {!typed.trim() && via && via.length > 0 && (
               <PickerGroup heading="Suggested">
-                {via.map(d => (
+                {via.map((d) => (
                   <AirportRow
-                    key={d.ident} waypoint testId="picker-suggestion" onSelect={() => pick(d.ident)}
+                    key={d.ident}
+                    waypoint
+                    testId="picker-suggestion"
+                    onSelect={() => pick(d.ident)}
                     airport={{
-                      ident: d.ident, name: d.kind,
+                      ident: d.ident,
+                      name: d.kind,
                       municipality: [`+${Math.round(d.added_nm)} nm`, d.description].filter(Boolean).join(" · "),
                     }}
                   />
@@ -681,7 +886,12 @@ export default function RouteBox({
             )}
             {ownPoint && (
               <PickerGroup heading="Your point">
-                <AirportRow waypoint airport={{ ident: ownPoint, name: frdWords(ownPoint) }} onSelect={() => pick(ownPoint)} testId="route-own-point" />
+                <AirportRow
+                  waypoint
+                  airport={{ ident: ownPoint, name: frdWords(ownPoint) }}
+                  onSelect={() => pick(ownPoint)}
+                  testId="route-own-point"
+                />
               </PickerGroup>
             )}
           </AirportResults>
@@ -693,12 +903,19 @@ export default function RouteBox({
         <div className="flex items-center gap-2 px-2 pt-1.5" role="alert" data-testid="route-unknown">
           <TriangleAlert className="size-4 shrink-0 text-destructive" aria-hidden="true" />
           <p className={cn("min-w-0 flex-1 text-destructive", TEXT.detail)}>
-            {unknownPoint.ident ? `${unknownPoint.ident} isn't an airport or waypoint we know. Tap it to change it.` : "A point of the route isn't an airport or waypoint we know."}
+            {unknownPoint.ident
+              ? `${unknownPoint.ident} isn't an airport or waypoint we know. Tap it to change it.`
+              : "A point of the route isn't an airport or waypoint we know."}
           </p>
           {unknownPoint.ident && points.includes(unknownPoint.ident) && (
             <button
-              type="button" onClick={() => remove(points.indexOf(unknownPoint.ident!))} data-testid="route-unknown-remove"
-              className={cn("relative shrink-0 rounded-full px-1.5 font-semibold text-tint outline-none after:absolute after:-inset-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring", TEXT.detail)}
+              type="button"
+              onClick={() => remove(points.indexOf(unknownPoint.ident!))}
+              data-testid="route-unknown-remove"
+              className={cn(
+                "relative shrink-0 rounded-full px-1.5 font-semibold text-tint outline-none after:absolute after:-inset-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+                TEXT.detail,
+              )}
             >
               Remove
             </button>
@@ -706,8 +923,12 @@ export default function RouteBox({
         </div>
       )}
       <PointAltitudeDialog
-        point={editing} onClose={() => setEditing(null)}
-        onSet={(ident, feet) => { onAltitudeChange(ident, feet); setEditing(null); }}
+        point={editing}
+        onClose={() => setEditing(null)}
+        onSet={(ident, feet) => {
+          onAltitudeChange(ident, feet);
+          setEditing(null);
+        }}
       />
     </CommandPrimitive>
   );
@@ -729,7 +950,17 @@ function frdWords(ident: string): string {
  *  ("Fuel stops should also have a way to delete them and add them back as
  *  pleased", 2026-10-24). A stop added is the route's own, taken out by its
  *  pill's menu as any stop is, and suggested again if the tanks need it. */
-function FuelStopChip({ ident, reason = "fuel", onAdd, onHide }: { ident: string; reason?: "fuel" | "break"; onAdd?: () => void; onHide?: () => void }) {
+function FuelStopChip({
+  ident,
+  reason = "fuel",
+  onAdd,
+  onHide,
+}: {
+  ident: string;
+  reason?: "fuel" | "break";
+  onAdd?: () => void;
+  onHide?: () => void;
+}) {
   // A break on a long flight the tanks hold wears a cup, not the pump.
   const Glyph = reason === "break" ? Coffee : Fuel;
   // A word of the route's title, as its points are (Pill), in the
@@ -748,8 +979,12 @@ function FuelStopChip({ ident, reason = "fuel", onAdd, onHide }: { ident: string
   if (!onHide) {
     return (
       <button
-        type="button" onClick={onAdd} disabled={!onAdd} data-testid="route-fuel-stop"
-        aria-label={`Suggested ${reason === "break" ? "stop" : "fuel stop"} ${ident}: add it to the route`} className={chip}
+        type="button"
+        onClick={onAdd}
+        disabled={!onAdd}
+        data-testid="route-fuel-stop"
+        aria-label={`Suggested ${reason === "break" ? "stop" : "fuel stop"} ${ident}: add it to the route`}
+        className={chip}
       >
         {face}
       </button>
@@ -758,13 +993,26 @@ function FuelStopChip({ ident, reason = "fuel", onAdd, onHide }: { ident: string
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" data-testid="route-fuel-stop" aria-label={`Suggested ${reason === "break" ? "stop" : "fuel stop"} ${ident}`} className={chip}>
+        <button
+          type="button"
+          data-testid="route-fuel-stop"
+          aria-label={`Suggested ${reason === "break" ? "stop" : "fuel stop"} ${ident}`}
+          className={chip}
+        >
           {face}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        {onAdd && <DropdownMenuItem onSelect={onAdd} data-testid="route-fuel-stop-add"><Plus />Add to Route</DropdownMenuItem>}
-        <DropdownMenuItem variant="destructive" onSelect={onHide} data-testid="route-fuel-stop-remove"><Trash2 />Remove</DropdownMenuItem>
+        {onAdd && (
+          <DropdownMenuItem onSelect={onAdd} data-testid="route-fuel-stop-add">
+            <Plus />
+            Add to Route
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem variant="destructive" onSelect={onHide} data-testid="route-fuel-stop-remove">
+          <Trash2 />
+          Remove
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -773,7 +1021,11 @@ function FuelStopChip({ ident, reason = "fuel", onAdd, onHide }: { ident: string
 /** A procedure picked at a point, after its pill: its kind's glyph and its
  *  short title in the approaches' indigo, as the map draws it
  *  (ProceduresGl). */
-function ProcedureChip({ procedure, before = false, onOpen }: {
+function ProcedureChip({
+  procedure,
+  before = false,
+  onOpen,
+}: {
   procedure: RouteProcedure;
   /** Before its field's pill (an arrival, an approach), not after it. */
   before?: boolean;
@@ -782,10 +1034,13 @@ function ProcedureChip({ procedure, before = false, onOpen }: {
   const Glyph = PROCEDURE_GLYPH[procedure.kind];
   return (
     <button
-      type="button" onClick={onOpen} data-testid="route-procedure"
+      type="button"
+      onClick={onOpen}
+      data-testid="route-procedure"
       aria-label={`${procedure.spoken}: the route's procedures`}
       className={cn(
-        before ? "relative mr-1" : "relative ml-1", "inline-flex h-7 shrink-0 after:absolute after:-inset-y-2 after:inset-x-0 after:content-[''] items-center gap-1 rounded-full px-1 font-semibold whitespace-nowrap text-[#4343b8] outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-[#c3c3fa]",
+        before ? "relative mr-1" : "relative ml-1",
+        "inline-flex h-7 shrink-0 after:absolute after:-inset-y-2 after:inset-x-0 after:content-[''] items-center gap-1 rounded-full px-1 font-semibold whitespace-nowrap text-[#4343b8] outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-[#c3c3fa]",
         TEXT.note,
       )}
     >
@@ -801,14 +1056,38 @@ function ProcedureChip({ procedure, before = false, onOpen }: {
  *  right-click with a mouse -- or Delete with it focused: a cross on every
  *  pill was a row of targets crowded between them, at the pilot's ask. Any
  *  of them, the ends too (RouteBox's `remove`). */
-function Pill({ id, ident, waypoint, index, role, stopNumber, airspaceOf, metarColourOf, altitude, onChange, onEditAltitude, onRemove, onOpen, direct, onDirect, unknown = false }: {
-  id: string; ident: string; waypoint: boolean; index: number; role: "dep" | "stop" | "dest"; stopNumber: number;
+function Pill({
+  id,
+  ident,
+  waypoint,
+  index,
+  role,
+  stopNumber,
+  airspaceOf,
+  metarColourOf,
+  altitude,
+  onChange,
+  onEditAltitude,
+  onRemove,
+  onOpen,
+  direct,
+  onDirect,
+  unknown = false,
+}: {
+  id: string;
+  ident: string;
+  waypoint: boolean;
+  index: number;
+  role: "dep" | "stop" | "dest";
+  stopNumber: number;
   /** Not a place the planner knows: in red, and invalid to a reader. */
   unknown?: boolean;
   airspaceOf: (ident: string) => AirspaceClass | undefined;
   metarColourOf: (ident: string) => string | undefined;
   altitude: PointAltitude;
-  onChange: (ident: string) => void; onEditAltitude: () => void; onRemove: () => void;
+  onChange: (ident: string) => void;
+  onEditAltitude: () => void;
+  onRemove: () => void;
   /** A tap's, where it opens the airport's card (RouteBox's onOpenAirport). */
   onOpen?: () => void;
   direct: boolean;
@@ -835,10 +1114,15 @@ function Pill({ id, ident, waypoint, index, role, stopNumber, airspaceOf, metarC
   const press = (event: PointerEvent<HTMLSpanElement>) => {
     if (event.pointerType === "mouse") return;
     letGo();
-    const pill = event.currentTarget, { clientX, clientY } = event;
+    const pill = event.currentTarget,
+      { clientX, clientY } = event;
     hold.current = {
-      x: clientX, y: clientY,
-      timer: window.setTimeout(() => pill.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX, clientY })), 500),
+      x: clientX,
+      y: clientY,
+      timer: window.setTimeout(
+        () => pill.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX, clientY })),
+        500,
+      ),
     };
   };
   const slide = (event: PointerEvent<HTMLSpanElement>) => {
@@ -868,7 +1152,7 @@ function Pill({ id, ident, waypoint, index, role, stopNumber, airspaceOf, metarC
   // Not for a present position, which has no card to ask for (it was
   // asked for, and the planner answered 404, at every Fly Here).
   const space = useAirspace({ ident, name: ident, airspace: known }, !waypoint && !known && !isPosition(ident));
-  const spaceClass = known ?? (space.name.startsWith("Class ") ? space.name.slice(6) as AirspaceClass : null);
+  const spaceClass = known ?? (space.name.startsWith("Class ") ? (space.name.slice(6) as AirspaceClass) : null);
   // A word of the route's title (the owner's yes to the polish pass,
   // 2026-10-26: "the route box becomes a bold title"), led by the field's
   // own mark as the chart and Nearest draw it -- its airspace's ring, and
@@ -878,8 +1162,11 @@ function Pill({ id, ident, waypoint, index, role, stopNumber, airspaceOf, metarC
     <span aria-hidden="true" className="ml-0.5 size-2 shrink-0 rotate-45 rounded-[1px]" style={{ backgroundColor: WAYPOINT_MAGENTA }} />
   ) : (
     <span
-      aria-hidden="true" className="block size-[14px] shrink-0"
-      dangerouslySetInnerHTML={{ __html: airportMarkSvg(spaceClass, metarColourOf(ident) ?? colourOf(null), null, "block size-full overflow-visible") }}
+      aria-hidden="true"
+      className="block size-[14px] shrink-0"
+      dangerouslySetInnerHTML={{
+        __html: airportMarkSvg(spaceClass, metarColourOf(ident) ?? colourOf(null), null, "block size-full overflow-visible"),
+      }}
     />
   );
   // The fields' own names, as the two fields were: "Departure", "Stop 1".
@@ -890,9 +1177,17 @@ function Pill({ id, ident, waypoint, index, role, stopNumber, airspaceOf, metarC
     // nested-interactive). Still focusable, for the keyboard's reordering
     // (KeyboardSensor) and its Delete.
     <span
-      ref={setNodeRef} {...attributes} {...listeners} role="group" aria-label={`${label} ${ident}`}
-      aria-keyshortcuts="Delete" data-point={index}
-      onPointerDown={press} onPointerMove={slide} onPointerUp={letGo} onPointerCancel={letGo}
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      role="group"
+      aria-label={`${label} ${ident}`}
+      aria-keyshortcuts="Delete"
+      data-point={index}
+      onPointerDown={press}
+      onPointerMove={slide}
+      onPointerUp={letGo}
+      onPointerCancel={letGo}
       // Moved, never scaled: across lines the pills differ in width, and
       // dnd-kit's rect strategy scales one to another's, stretching its
       // ident while it is dragged.
@@ -907,7 +1202,11 @@ function Pill({ id, ident, waypoint, index, role, stopNumber, airspaceOf, metarC
     >
       {mark}
       <AirportPicker
-        value={pointName(ident)} placeholder={label} ariaLabel={waypoint ? `${label}, a waypoint` : label} look="pill" fixes={role === "stop"}
+        value={pointName(ident)}
+        placeholder={label}
+        ariaLabel={waypoint ? `${label}, a waypoint` : label}
+        look="pill"
+        fixes={role === "stop"}
         // 28 tall, as a fuel stop's and a procedure's chips are, at the
         // owner's ask ("make the other airport pills as thin as the fuel
         // airport pills"); a finger's 44 round it (index.css).
@@ -916,14 +1215,21 @@ function Pill({ id, ident, waypoint, index, role, stopNumber, airspaceOf, metarC
         // Five letters wide whatever its ident, the ident centred, so the
         // pills line up (the owner, 2026-11-06: "make the route box a fixed
         // width of 5 letters"); a longer one, a pilot's own point, wider.
-        className={cn("h-7 min-w-[calc(5ch+6px)] rounded-full px-[3px]", TEXT.detail, "font-semibold", unknown && "text-destructive")} onChange={onChange}
+        className={cn("h-7 min-w-[calc(5ch+6px)] rounded-full px-[3px]", TEXT.detail, "font-semibold", unknown && "text-destructive")}
+        onChange={onChange}
         invalid={unknown || undefined}
-        open={changing} onOpenChange={setChanging} onTap={onOpen}
+        open={changing}
+        onOpenChange={setChanging}
+        onTap={onOpen}
       />
     </span>
   );
   return (
-    <ContextMenu onOpenChange={open => { menuOut.current = open; }}>
+    <ContextMenu
+      onOpenChange={(open) => {
+        menuOut.current = open;
+      }}
+    >
       <ContextMenuTrigger asChild>{pill}</ContextMenuTrigger>
       {/* FPL's "⋯"'s items, in its words and order (PointMenuItems), at
           the audit's finding: the altitude there after Set altitude…, a
@@ -931,10 +1237,17 @@ function Pill({ id, ident, waypoint, index, role, stopNumber, airspaceOf, metarC
           the plan's until the pilot sets their own. */}
       <ContextMenuContent onCloseAutoFocus={onCloseAutoFocus}>
         <PointMenuItems
-          kit={CONTEXT_MENU} later={later} testId="pill-menu"
+          kit={CONTEXT_MENU}
+          later={later}
+          testId="pill-menu"
           actions={{
-            ident: pointName(ident), onChange: onOpen ? () => setChanging(true) : undefined,
-            direct, onDirect, onAltitude: onEditAltitude, onInfo: onOpen, onRemove,
+            ident: pointName(ident),
+            onChange: onOpen ? () => setChanging(true) : undefined,
+            direct,
+            onDirect,
+            onAltitude: onEditAltitude,
+            onInfo: onOpen,
+            onRemove,
             altitude: (
               <span className={cn("flex items-center gap-1", altitude.caution?.length && "text-caution-ink")}>
                 {altitude.caution?.length ? <TriangleAlert className="size-3.5" aria-label="With a caution" /> : null}
@@ -947,4 +1260,3 @@ function Pill({ id, ident, waypoint, index, role, stopNumber, airspaceOf, metarC
     </ContextMenu>
   );
 }
-

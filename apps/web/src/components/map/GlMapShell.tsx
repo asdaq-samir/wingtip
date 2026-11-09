@@ -23,7 +23,18 @@ import { FIT_MARGIN } from "../../lib/map/clear";
 import { CardCloseContext } from "../../lib/map/cards/cardClose";
 import { prefetchRing, registerOverlayProtocol } from "../../lib/map/sources/overlayTiles";
 import { COUNTRY_ZOOM, OPEN_ZOOM, useOwnShip } from "../../lib/map/position/ownShip";
-import { GlMapContext, SLOTS, adoptLayers, parkLayers, slotId, sweepLayers, type DrawnImage, type GlMapApi, type GlTap, type Slot } from "../../lib/map/gl/glLayer";
+import {
+  GlMapContext,
+  SLOTS,
+  adoptLayers,
+  parkLayers,
+  slotId,
+  sweepLayers,
+  type DrawnImage,
+  type GlMapApi,
+  type GlTap,
+  type Slot,
+} from "../../lib/map/gl/glLayer";
 import { OVERLAY_SOURCE, addOverlays, applyOverlayFilters, overlayPictures, overlayStyle } from "../../lib/map/gl/glOverlays";
 import { glZoom } from "../../lib/map/gl/glStyle";
 import { RulerGl } from "../../lib/map/gl/layers/RulerGl";
@@ -48,7 +59,7 @@ const FIRST_STYLE_WAIT_MS = 1500;
 const PARK_MS = 10_000;
 /** Sent on the map's element as it is first shown (makeMap's reveal). */
 const REVEAL_EVENT = "mapreveal";
-const flight = () =>(prefersReducedMotion() ? 0 : SHEET_SECONDS * 1000 * 2);
+const flight = () => (prefersReducedMotion() ? 0 : SHEET_SECONDS * 1000 * 2);
 
 // The overlay tiles' protocol, once for the page (lib/map/sources/overlayTiles).
 registerOverlayProtocol(maplibregl);
@@ -56,7 +67,14 @@ registerOverlayProtocol(maplibregl);
 /** The overlays' pictures, once drawn (glOverlays' overlayPictures), for
  *  every map to take as a tile asks for one. */
 let pictures: Map<string, DrawnImage> | null = null;
-const picturesDrawn = overlayPictures().then(p => { pictures = p; }, () => { pictures = new Map(); });
+const picturesDrawn = overlayPictures().then(
+  (p) => {
+    pictures = p;
+  },
+  () => {
+    pictures = new Map();
+  },
+);
 
 /** The overlay tiles each map draws, for its prefetch round the view. */
 const overlaysOf = new WeakMap<maplibregl.Map, OverlayTiles>();
@@ -83,7 +101,9 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
     { id: slotId(s), type: "background" as const, layout: { visibility: "none" as const } },
   ]);
   const style: StyleSpecification = {
-    version: 8, sources: overlays ? { [OVERLAY_SOURCE]: overlays.source } : {}, layers,
+    version: 8,
+    sources: overlays ? { [OVERLAY_SOURCE]: overlays.source } : {},
+    layers,
     // The same variable font under a second name: MapLibre draws a name
     // with "Bold" in it at weight 700 (GL_FONT_BOLD, the chart's labels).
     "font-faces": {
@@ -92,10 +112,16 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
     },
   };
   const m = new maplibregl.Map({
-    container: holder, style, center: [lon, lat], zoom: glZoom(last ? OPEN_ZOOM : COUNTRY_ZOOM),
-    minZoom: glZoom(3), attributionControl: false,
+    container: holder,
+    style,
+    center: [lon, lat],
+    zoom: glZoom(last ? OPEN_ZOOM : COUNTRY_ZOOM),
+    minZoom: glZoom(3),
+    attributionControl: false,
     // A chart is read north up: no turn, no tilt.
-    dragRotate: false, pitchWithRotate: false, touchPitch: false,
+    dragRotate: false,
+    pitchWithRotate: false,
+    touchPitch: false,
     // On a TV (lib/tv) the map takes the remote's arrows while focused.
     keyboard: onTv,
     // Symbols placed at once, not faded in over 0.3 s.
@@ -119,21 +145,33 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
   // Whether it is moving, on its element, for the browser tests to wait
   // on a still map (e2e helpers' mapStill).
   const el = holder;
-  m.on("movestart", () => { el.dataset.moving = ""; });
+  m.on("movestart", () => {
+    el.dataset.moving = "";
+  });
   // And where it is: its middle, and where the point it opened on is on
   // the screen now, and the layers drawn
   // bottom to top.
   const anchor = m.getCenter();
   const say = () => {
-    const c = m.getCenter(), p = m.project(anchor);
+    const c = m.getCenter(),
+      p = m.project(anchor);
     el.dataset.center = `${c.lat.toFixed(5)},${c.lng.toFixed(5)}`;
     el.dataset.offset = `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
     // In the app's levels (MapLibre's zoom plus one, glStyle).
     el.dataset.zoom = (m.getZoom() + 1).toFixed(3);
   };
   say();
-  m.on("moveend", () => { delete el.dataset.moving; say(); });
-  m.on("idle", () => { el.dataset.layers = m.getStyle().layers.map(l => l.id).filter(id => !id.startsWith("slot-")).join(" "); });
+  m.on("moveend", () => {
+    delete el.dataset.moving;
+    say();
+  });
+  m.on("idle", () => {
+    el.dataset.layers = m
+      .getStyle()
+      .layers.map((l) => l.id)
+      .filter((id) => !id.startsWith("slot-"))
+      .join(" ");
+  });
   m.once("load", () => loaded.add(m));
   // Once at rest, the overlay tiles one ring outside the view fetched
   // (overlayTiles' prefetchRing), so a pan's first frame has them; again
@@ -169,7 +207,9 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
     // For the page's loading mark (MapLoading) to fade as the map comes in.
     el.dispatchEvent(new Event(REVEAL_EVENT));
   };
-  const rested = () => { if (chartIn && overlaysIn) reveal(); };
+  const rested = () => {
+    if (chartIn && overlaysIn) reveal();
+  };
   const latest = window.setTimeout(reveal, REVEAL_LATEST_MS);
   m.on("sourcedata", tileIn);
   m.on("idle", rested);
@@ -229,9 +269,14 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   const [waited, setWaited] = useState(false);
   useEffect(() => {
     let live = true;
-    void picturesDrawn.then(() => { if (live) setDrawnPictures(true); });
+    void picturesDrawn.then(() => {
+      if (live) setDrawnPictures(true);
+    });
     const timer = window.setTimeout(() => setWaited(true), FIRST_STYLE_WAIT_MS);
-    return () => { live = false; window.clearTimeout(timer); };
+    return () => {
+      live = false;
+      window.clearTimeout(timer);
+    };
   }, []);
   const ready = known && ((drawnPictures && tilesStatus !== "pending") || waited);
 
@@ -282,10 +327,14 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       // Kept a moment for the next tree to take up, then let go.
       parkLayers(m);
       holder.remove();
-      parked = { map: m, holder, timer: window.setTimeout(() => {
-        if (parked?.map === m) parked = null;
-        m.remove();
-      }, PARK_MS) };
+      parked = {
+        map: m,
+        holder,
+        timer: window.setTimeout(() => {
+          if (parked?.map === m) parked = null;
+          m.remove();
+        }, PARK_MS),
+      };
     };
   }, [ready, onTv]);
 
@@ -299,7 +348,9 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
     map.once("styledata", taken);
     addOverlays(map, tiles);
     overlaysOf.set(map, tiles);
-    return () => { map.off("styledata", taken); };
+    return () => {
+      map.off("styledata", taken);
+    };
   }, [map, overlays, tiles]);
 
   // The settings' filters on the overlay tiles as they change
@@ -326,14 +377,24 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   // The one tap: the nearest thing's, in the taps' rank order.
   // Held in state, not refs: made once, read in the map's own handler.
   const [registry] = useState(() => ({ taps: new Set<GlTap>(), misses: new Set<(event: MapMouseEvent) => void>() }));
-  const addTap = useCallback((tap: GlTap) => {
-    registry.taps.add(tap);
-    return () => { registry.taps.delete(tap); };
-  }, [registry]);
-  const addMiss = useCallback((miss: (event: MapMouseEvent) => void) => {
-    registry.misses.add(miss);
-    return () => { registry.misses.delete(miss); };
-  }, [registry]);
+  const addTap = useCallback(
+    (tap: GlTap) => {
+      registry.taps.add(tap);
+      return () => {
+        registry.taps.delete(tap);
+      };
+    },
+    [registry],
+  );
+  const addMiss = useCallback(
+    (miss: (event: MapMouseEvent) => void) => {
+      registry.misses.add(miss);
+      return () => {
+        registry.misses.delete(miss);
+      };
+    },
+    [registry],
+  );
   const [card, setCard] = useState<ReactNode | null>(null);
   const closeCard = useCallback(() => setCard(null), []);
   useEffect(() => {
@@ -343,10 +404,16 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       // it, as nothing else on the map does (MapPage's engine gate).
       if (!engineLoaded()) return;
       for (const t of [...registry.taps].sort((a, b) => a.rank - b.rank)) {
-        const layers = t.layers.filter(l => map.getLayer(l));
+        const layers = t.layers.filter((l) => map.getLayer(l));
         if (!layers.length) continue;
         const r = t.reach;
-        const hit = map.queryRenderedFeatures([[e.point.x - r, e.point.y - r], [e.point.x + r, e.point.y + r]], { layers })[0];
+        const hit = map.queryRenderedFeatures(
+          [
+            [e.point.x - r, e.point.y - r],
+            [e.point.x + r, e.point.y + r],
+          ],
+          { layers },
+        )[0];
         if (hit) {
           t.onTap(hit, e);
           return;
@@ -357,48 +424,62 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       for (const miss of registry.misses) miss(e);
     };
     map.on("click", tap);
-    return () => { map.off("click", tap); };
+    return () => {
+      map.off("click", tap);
+    };
   }, [map, registry]);
-  const api = useMemo<GlMapApi | null>(() => (map ? { map, addTap, addMiss, openCard: setCard, overlays } : null), [map, addTap, addMiss, overlays]);
+  const api = useMemo<GlMapApi | null>(
+    () => (map ? { map, addTap, addMiss, openCard: setCard, overlays } : null),
+    [map, addTap, addMiss, overlays],
+  );
   // The last tree's layers this one has not drawn again, taken away once
   // its own are in (children's effects run before this one's).
-  useEffect(() => { if (api) sweepLayers(api.map); }, [api]);
+  useEffect(() => {
+    if (api) sweepLayers(api.map);
+  }, [api]);
 
   // Fit to the route: once per route, clear of the panel and the buttons.
   const routeKey = course ? `${course.departure.ident}->${course.destination.ident}` : null;
   const routeBounds = useCallback((): LngLatBoundsLike | null => {
     if (!course) return null;
     const line = course.course_line as [number, number][];
-    const lats = line.map(p => p[0]), lons = line.map(p => p[1]);
+    const lats = line.map((p) => p[0]),
+      lons = line.map((p) => p[1]);
     const pad = MIN_FIT_DEG / 2;
-    return [[Math.min(...lons) - pad, Math.min(...lats) - pad], [Math.max(...lons) + pad, Math.max(...lats) + pad]];
+    return [
+      [Math.min(...lons) - pad, Math.min(...lats) - pad],
+      [Math.max(...lons) + pad, Math.max(...lats) + pad],
+    ];
   }, [course]);
   // The zoom the route was last fitted at: a map still there (or out from
   // it) is the route at its fitted size, which the sheet's settling fits
   // again; one the pilot zoomed in on is only slid (follow, below).
   const fitZoom = useRef<number | null>(null);
-  const fit = useCallback((animate: boolean) => {
-    const bounds = routeBounds();
-    if (!map || !bounds) return;
-    const ownShip = useOwnShip.getState();
-    if (ownShip.enabled && ownShip.follow) ownShip.setFollow(false);
-    // Over the map's own padding, the room the panel leaves (MapLibre adds
-    // the two): a margin, and the map's buttons cleared.
-    fitZoom.current = map.cameraForBounds(bounds, { padding: FIT_MARGIN })?.zoom ?? null;
-    map.fitBounds(bounds, {
-      padding: FIT_MARGIN,
-      duration: animate ? flight() : 0,
-    });
-  }, [map, routeBounds]);
+  const fit = useCallback(
+    (animate: boolean) => {
+      const bounds = routeBounds();
+      if (!map || !bounds) return;
+      const ownShip = useOwnShip.getState();
+      if (ownShip.enabled && ownShip.follow) ownShip.setFollow(false);
+      // Over the map's own padding, the room the panel leaves (MapLibre adds
+      // the two): a margin, and the map's buttons cleared.
+      fitZoom.current = map.cameraForBounds(bounds, { padding: FIT_MARGIN })?.zoom ?? null;
+      map.fitBounds(bounds, { padding: FIT_MARGIN, duration: animate ? flight() : 0 });
+    },
+    [map, routeBounds],
+  );
   const fitted = useRef<string | null>(null);
   useEffect(() => {
-    if (!routeKey) { fitted.current = null; return; }
+    if (!routeKey) {
+      fitted.current = null;
+      return;
+    }
     if (!map || fitted.current === routeKey) return;
     fit(fitted.current !== null);
     fitted.current = routeKey;
   }, [map, routeKey, fit]);
   // The whole route again, from the location arrow (MyPositionButton).
-  const routeAsked = useOwnShip(s => s.routeAsked);
+  const routeAsked = useOwnShip((s) => s.routeAsked);
   const routeAskedWas = useRef(routeAsked);
   useEffect(() => {
     if (routeAsked === routeAskedWas.current) return;
@@ -408,7 +489,9 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   }, [routeAsked, fit]);
   useEffect(() => {
     useOwnShip.setState({ routeDrawn: !!course && !!map });
-    return () => { useOwnShip.setState({ routeDrawn: false, routeOutOfView: false }); };
+    return () => {
+      useOwnShip.setState({ routeDrawn: false, routeOutOfView: false });
+    };
   }, [course, map]);
   // Whether the route is out of sight at each rest, for the location
   // arrow to offer it back.
@@ -426,64 +509,83 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
     };
     check();
     map.on("moveend", check);
-    return () => { map.off("moveend", check); };
+    return () => {
+      map.off("moveend", check);
+    };
   }, [map, course]);
 
   // The map follows the sheet: MapLibre's padding is what the panel
   // covers, eased in the sheet's own time, so what was in the middle of
   // the room left stays in the middle -- from the sheet's turn as it sets
   // off (MapPanel's sheetturn), not only once the page hears it landed.
-  const follow = useCallback((to: MapInsets) => {
-    const was = insetsRef.current;
-    insetsRef.current = to;
-    if (!map || (was.top === to.top && was.bottom === to.bottom && was.left === to.left)) return;
-    // A point still being flown to (a checkpoint tapped, whose card is what
-    // turned the sheet): the flight aimed again with the new padding. A
-    // second camera move stops MapLibre's first where it is, so an ease of
-    // the padding alone left the map near the route's whole view, never
-    // in to the point.
-    const aim = flying.current;
-    if (aim && map.isMoving()) {
-      map.flyTo({ ...aim, padding: padOf(to), duration: prefersReducedMotion() ? 0 : SHEET_SECONDS * 1000 });
-      return;
-    }
-    // Half way to all the way up and back the map stays put.
-    if (to.up !== was.up && to.out === was.out) {
-      map.setPadding(padOf(to));
-      return;
-    }
-    const duration = prefersReducedMotion() ? 0 : SHEET_SECONDS * 1000;
-    // The route in sight at its fitted size (or out from it): fitted again
-    // to the room the sheet leaves at its new size, as the owner's rule
-    // has it (2026-10-06, 2026-10-27: "Route in sight: refit it to what
-    // the panel leaves"); MapLibre's map kept only the slide, and going
-    // up to half put KOSH 94 pt off the top (the FPL audit's A13). A map
-    // the pilot zoomed in on, own ship followed, or no route in sight:
-    // only slid, as before.
-    const bounds = routeBounds();
-    const ownShip = useOwnShip.getState();
-    // Only as the sheet goes out or back (MapInsets' `out`): a later change
-    // of its size -- a notice under the route -- never refits, which took
-    // the map from under the pilot's zoom.
-    if (to.out !== was.out && bounds && course && fitZoom.current !== null && map.getZoom() <= fitZoom.current + 0.05
-      && !(ownShip.enabled && ownShip.follow) && routeInSight(map, course, was)) {
-      // The margin round the route over the room left, as the first fit's
-      // (FIT_MARGIN, which is even each way, so the room's middle is the
-      // camera's with or without it).
-      const room = padOf(to);
-      const camera = map.cameraForBounds(bounds, {
-        padding: { top: to.top + FIT_MARGIN.top, bottom: to.bottom + FIT_MARGIN.bottom, left: to.left + FIT_MARGIN.left, right: FIT_MARGIN.right },
-        absolutePadding: true,
-      });
-      if (camera?.center !== undefined && camera.zoom !== undefined) {
-        fitZoom.current = camera.zoom;
-        map.easeTo({ center: camera.center, zoom: camera.zoom, padding: room, duration, easing: easeOut });
+  const follow = useCallback(
+    (to: MapInsets) => {
+      const was = insetsRef.current;
+      insetsRef.current = to;
+      if (!map || (was.top === to.top && was.bottom === to.bottom && was.left === to.left)) return;
+      // A point still being flown to (a checkpoint tapped, whose card is what
+      // turned the sheet): the flight aimed again with the new padding. A
+      // second camera move stops MapLibre's first where it is, so an ease of
+      // the padding alone left the map near the route's whole view, never
+      // in to the point.
+      const aim = flying.current;
+      if (aim && map.isMoving()) {
+        map.flyTo({ ...aim, padding: padOf(to), duration: prefersReducedMotion() ? 0 : SHEET_SECONDS * 1000 });
         return;
       }
-    }
-    map.easeTo({ padding: padOf(to), duration, easing: easeOut });
-  }, [map, course, routeBounds]);
-  useEffect(() => { follow(insets); }, [insets, follow]);
+      // Half way to all the way up and back the map stays put.
+      if (to.up !== was.up && to.out === was.out) {
+        map.setPadding(padOf(to));
+        return;
+      }
+      const duration = prefersReducedMotion() ? 0 : SHEET_SECONDS * 1000;
+      // The route in sight at its fitted size (or out from it): fitted again
+      // to the room the sheet leaves at its new size, as the owner's rule
+      // has it (2026-10-06, 2026-10-27: "Route in sight: refit it to what
+      // the panel leaves"); MapLibre's map kept only the slide, and going
+      // up to half put KOSH 94 pt off the top (the FPL audit's A13). A map
+      // the pilot zoomed in on, own ship followed, or no route in sight:
+      // only slid, as before.
+      const bounds = routeBounds();
+      const ownShip = useOwnShip.getState();
+      // Only as the sheet goes out or back (MapInsets' `out`): a later change
+      // of its size -- a notice under the route -- never refits, which took
+      // the map from under the pilot's zoom.
+      if (
+        to.out !== was.out &&
+        bounds &&
+        course &&
+        fitZoom.current !== null &&
+        map.getZoom() <= fitZoom.current + 0.05 &&
+        !(ownShip.enabled && ownShip.follow) &&
+        routeInSight(map, course, was)
+      ) {
+        // The margin round the route over the room left, as the first fit's
+        // (FIT_MARGIN, which is even each way, so the room's middle is the
+        // camera's with or without it).
+        const room = padOf(to);
+        const camera = map.cameraForBounds(bounds, {
+          padding: {
+            top: to.top + FIT_MARGIN.top,
+            bottom: to.bottom + FIT_MARGIN.bottom,
+            left: to.left + FIT_MARGIN.left,
+            right: FIT_MARGIN.right,
+          },
+          absolutePadding: true,
+        });
+        if (camera?.center !== undefined && camera.zoom !== undefined) {
+          fitZoom.current = camera.zoom;
+          map.easeTo({ center: camera.center, zoom: camera.zoom, padding: room, duration, easing: easeOut });
+          return;
+        }
+      }
+      map.easeTo({ padding: padOf(to), duration, easing: easeOut });
+    },
+    [map, course, routeBounds],
+  );
+  useEffect(() => {
+    follow(insets);
+  }, [insets, follow]);
   useEffect(() => {
     if (!map) return;
     const doc = map.getContainer().ownerDocument;
@@ -497,31 +599,49 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
 
   // A point picked -- a checkpoint, an airport's card -- flown to, in
   // close enough, as FocusOn; own ship stops pulling the map back.
-  const flyTo = useCallback((point: { lat: number; lon: number } | null, zoom: number) => {
-    if (!map || !point) return;
-    const ownShip = useOwnShip.getState();
-    if (ownShip.enabled && ownShip.follow) ownShip.setFollow(false);
-    flying.current = { center: [point.lon, point.lat], zoom: Math.max(map.getZoom(), glZoom(zoom)) };
-    // On the point picked, not the route's fit: the sheet does not refit it.
-    fitZoom.current = null;
-    map.flyTo({ ...flying.current, duration: flight() });
-  }, [map]);
+  const flyTo = useCallback(
+    (point: { lat: number; lon: number } | null, zoom: number) => {
+      if (!map || !point) return;
+      const ownShip = useOwnShip.getState();
+      if (ownShip.enabled && ownShip.follow) ownShip.setFollow(false);
+      flying.current = { center: [point.lon, point.lat], zoom: Math.max(map.getZoom(), glZoom(zoom)) };
+      // On the point picked, not the route's fit: the sheet does not refit it.
+      fitZoom.current = null;
+      map.flyTo({ ...flying.current, duration: flight() });
+    },
+    [map],
+  );
   // The flight's aim is let go once the map is at rest, or the pilot moves
   // it by hand. Not at the moveend a flight aimed again fires: MapLibre
   // stops the old one and starts the new in the same call, so the map is
   // moving again by the next microtask.
   useEffect(() => {
     if (!map) return;
-    const rested = () => queueMicrotask(() => { if (!map.isMoving()) flying.current = null; });
+    const rested = () =>
+      queueMicrotask(() => {
+        if (!map.isMoving()) flying.current = null;
+      });
     // Moved by hand, the route is the pilot's now: slid with the sheet,
     // not fitted again (follow; the owner, 2026-11-04).
-    const byHand = (e: { originalEvent?: unknown }) => { if (e.originalEvent) { flying.current = null; fitZoom.current = null; } };
+    const byHand = (e: { originalEvent?: unknown }) => {
+      if (e.originalEvent) {
+        flying.current = null;
+        fitZoom.current = null;
+      }
+    };
     map.on("moveend", rested);
     map.on("movestart", byHand);
-    return () => { map.off("moveend", rested); map.off("movestart", byHand); };
+    return () => {
+      map.off("moveend", rested);
+      map.off("movestart", byHand);
+    };
   }, [map]);
-  useEffect(() => { flyTo(focus, focusZoom); }, [flyTo, focus, focusZoom]);
-  useEffect(() => { flyTo(place, PLACE_ZOOM); }, [flyTo, place]);
+  useEffect(() => {
+    flyTo(focus, focusZoom);
+  }, [flyTo, focus, focusZoom]);
+  useEffect(() => {
+    flyTo(place, PLACE_ZOOM);
+  }, [flyTo, place]);
 
   return (
     <div className="relative h-full w-full">

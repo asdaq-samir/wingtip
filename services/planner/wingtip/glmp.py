@@ -18,6 +18,7 @@ nearest-point search finds it (checked at six points across the grid,
 2026-10-10). An issue is served while it is one of the last three posted
 (the record's `until`); NOMADS is never asked from here.
 """
+
 from __future__ import annotations
 
 import json

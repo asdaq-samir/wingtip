@@ -1,5 +1,5 @@
-import XCTest
 @testable import Wingtip
+import XCTest
 
 /// The Live Activity's content: what FlightActivityContent puts together
 /// from the in-flight models, and the words FlightActivityLines writes

@@ -54,7 +54,20 @@ pub fn sound(word: &str) -> String {
     if s.is_empty() {
         return s;
     }
-    for (spelled, said) in [("PH", "F"), ("CK", "K"), ("GH", "G"), ("SCH", "SK"), ("TH", "T"), ("WR", "R"), ("KN", "N"), ("X", "KS"), ("Q", "K"), ("Z", "S"), ("C", "K"), ("DG", "J")] {
+    for (spelled, said) in [
+        ("PH", "F"),
+        ("CK", "K"),
+        ("GH", "G"),
+        ("SCH", "SK"),
+        ("TH", "T"),
+        ("WR", "R"),
+        ("KN", "N"),
+        ("X", "KS"),
+        ("Q", "K"),
+        ("Z", "S"),
+        ("C", "K"),
+        ("DG", "J"),
+    ] {
         s = s.replace(spelled, said);
     }
     let mut chars = s.chars();
@@ -312,8 +325,15 @@ pub fn places_of(pack: &Pack) -> Vec<Place> {
     let table = |name: &str| pack.section(name).and_then(|b| std::str::from_utf8(b).ok()).and_then(json::table);
     let num = |s: &str| s.trim().parse::<f64>().ok();
     if let Some(t) = table("airports") {
-        let (id, icao, site, name, lat, lon, status) =
-            (t.col("ARPT_ID"), t.col("ICAO_ID"), t.col("SITE_TYPE_CODE"), t.col("ARPT_NAME"), t.col("LAT_DECIMAL"), t.col("LONG_DECIMAL"), t.col("ARPT_STATUS"));
+        let (id, icao, site, name, lat, lon, status) = (
+            t.col("ARPT_ID"),
+            t.col("ICAO_ID"),
+            t.col("SITE_TYPE_CODE"),
+            t.col("ARPT_NAME"),
+            t.col("LAT_DECIMAL"),
+            t.col("LONG_DECIMAL"),
+            t.col("ARPT_STATUS"),
+        );
         for r in &t.rows {
             let get = |c: Option<usize>| c.and_then(|c| r.get(c)).map(String::as_str).unwrap_or("");
             if get(site) != "A" || get(status) == "CI" {
@@ -325,7 +345,8 @@ pub fn places_of(pack: &Pack) -> Vec<Place> {
         }
     }
     if let Some(t) = table("navaids") {
-        let (id, kind, name, status, lat, lon) = (t.col("NAV_ID"), t.col("NAV_TYPE"), t.col("NAME"), t.col("NAV_STATUS"), t.col("LAT_DECIMAL"), t.col("LONG_DECIMAL"));
+        let (id, kind, name, status, lat, lon) =
+            (t.col("NAV_ID"), t.col("NAV_TYPE"), t.col("NAME"), t.col("NAV_STATUS"), t.col("LAT_DECIMAL"), t.col("LONG_DECIMAL"));
         for r in &t.rows {
             let get = |c: Option<usize>| c.and_then(|c| r.get(c)).map(String::as_str).unwrap_or("");
             if !NAVAID_KINDS.contains(&get(kind)) || !get(status).starts_with("OPERATIONAL") {

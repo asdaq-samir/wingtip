@@ -57,7 +57,10 @@ export function confirmedHandbook(read: HandbookRead, confirmed: ReadonlySet<str
 
 /** The confirmed items' figures, in the app's units, and the airplane
  *  form's from them: the engine asked again with only those items. */
-export function confirmedFigures(read: HandbookRead, confirmed: ReadonlySet<string>): { handbook: HandbookFigures; profile: HandbookCheck["profile"] } {
+export function confirmedFigures(
+  read: HandbookRead,
+  confirmed: ReadonlySet<string>,
+): { handbook: HandbookFigures; profile: HandbookCheck["profile"] } {
   const { handbook, profile } = checkHandbook(confirmedHandbook(read, confirmed));
   // The contract's HandbookFigures, which the gateway keeps as its own
   // record of the same members.

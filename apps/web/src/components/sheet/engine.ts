@@ -1,4 +1,12 @@
-import { SETTLE_LEAST, SETTLE_MOST, SETTLE_POINTS, SHEET_MARGIN, SHEET_SECONDS, type MapInsets, type PanelState } from "../../lib/mapChrome";
+import {
+  SETTLE_LEAST,
+  SETTLE_MOST,
+  SETTLE_POINTS,
+  SHEET_MARGIN,
+  SHEET_SECONDS,
+  type MapInsets,
+  type PanelState,
+} from "../../lib/mapChrome";
 import { SIZE } from "../../lib/tokens";
 
 /**
@@ -39,7 +47,9 @@ export function insetsOf(s: PanelState, d: Detents, onPhone: boolean, fromBottom
   const up = s === "full";
   if (!onPhone && s !== "peek") return { top: safeTop, bottom: 0, left: 16 + (wide ? CARD_WIDE : CARD), out: true, up };
   const strip = onPhone ? (s === "peek" ? d.peek : d.half) : d.peek + SHEET_MARGIN + (fromBottom ? 0 : FLOAT_PX);
-  return fromBottom ? { top: safeTop, bottom: strip, left: 0, out: s !== "peek", up } : { top: strip, bottom: 0, left: 0, out: s !== "peek", up };
+  return fromBottom
+    ? { top: safeTop, bottom: strip, left: 0, out: s !== "peek", up }
+    : { top: strip, bottom: 0, left: 0, out: s !== "peek", up };
 }
 
 /** How far a finger moves before a press is a drag rather than a tap on
@@ -89,11 +99,11 @@ export function restingAt(detents: Detents, to: number, speed: number): PanelSta
   const names = Object.keys(detents) as PanelState[];
   const nearest = (among: PanelState[], at: number) =>
     among.reduce((best, s) => (Math.abs(detents[s] - at) < Math.abs(detents[best] - at) ? s : best));
-  const under = names.filter(s => detents[s] < to);
-  const over = names.filter(s => detents[s] > to);
+  const under = names.filter((s) => detents[s] < to);
+  const over = names.filter((s) => detents[s] > to);
   const reach = [
     ...(under.length ? [nearest(under, to)] : []),
-    ...names.filter(s => detents[s] === to),
+    ...names.filter((s) => detents[s] === to),
     ...(over.length ? [nearest(over, to)] : []),
   ];
   // A flick, however short, goes on to the next size the way it was
@@ -185,6 +195,6 @@ export function sheetTakes(path: Box[], dy: number, fromBottom: boolean, canOpen
   }
   // All the way out, a pull down a live list refreshes it rather than
   // lowering the sheet; below that the sheet still goes, one size a throw.
-  if (fromBottom && !canOpen && path.some(box => box.pulls)) return false;
+  if (fromBottom && !canOpen && path.some((box) => box.pulls)) return false;
   return true;
 }

@@ -16,8 +16,13 @@ describe("tile URLs", () => {
 
   it("carry each kind's own cycle, as each goes over to a new one when its own pass is finished", () => {
     const turning = {
-      ...course, chart_cycle: "10-29-2026", chart_revision: 0,
-      chart_layers: [{ kind: "sec", cycle: "10-29-2026", revision: 0 }, { kind: "ifr_low", cycle: "09-03-2026", revision: 3 }],
+      ...course,
+      chart_cycle: "10-29-2026",
+      chart_revision: 0,
+      chart_layers: [
+        { kind: "sec", cycle: "10-29-2026", revision: 0 },
+        { kind: "ifr_low", cycle: "09-03-2026", revision: 3 },
+      ],
     } as unknown as Course;
     expect(tileUrl(turning, "sec", 1, 2, 3)).toBe("/api/planner/chart-tile/sec/1/2/3.png?c=10-29-2026&r=0");
     expect(tileUrl(turning, "ifr_low", 1, 2, 3)).toBe("/api/planner/chart-tile/ifr_low/1/2/3.png?c=09-03-2026&r=3");
@@ -33,7 +38,11 @@ describe("tile URLs", () => {
 
 describe("the tiles' density", () => {
   const sharp = {
-    ...course, chart_layers: [{ kind: "sec", cycle: "09-03-2026", revision: 2, scales: [1, 2] }, { kind: "tac", scales: [1] }],
+    ...course,
+    chart_layers: [
+      { kind: "sec", cycle: "09-03-2026", revision: 2, scales: [1, 2] },
+      { kind: "tac", scales: [1] },
+    ],
   } as unknown as Course;
 
   it("is the 512-pixel tile on a 2x or 3x screen, where the kind was drawn at it", () => {
@@ -65,7 +74,9 @@ const layer = (kind: string, base: boolean, over: string[] = [], sheets: ChartLa
 const CHICAGO = { name: "Chicago", label: "Chicago TAC", west: -89.5, south: 41.0, east: -86.8, north: 42.8 };
 const IFR_CHICAGO = { name: "ENR_AREA_CHI", label: "IFR area chart", west: -89.8, south: 40.9, east: -86.5, north: 43.0 };
 const LAYERS = [
-  layer("sec", true), layer("ifr_low", true), layer("tac", false, ["sec"], [CHICAGO]),
+  layer("sec", true),
+  layer("ifr_low", true),
+  layer("tac", false, ["sec"], [CHICAGO]),
   layer("ifr_area", false, ["ifr_low", "ifr_high"], [IFR_CHICAGO]),
 ];
 

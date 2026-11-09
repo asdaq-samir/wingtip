@@ -1,4 +1,5 @@
 """The FAA's airport diagrams and Chart Supplement pages, by edition."""
+
 import ctypes
 import io
 from datetime import date
@@ -32,7 +33,7 @@ AFD = b"""<airports><location><airport><aptid>DLH</aptid><pages><pdf>nc_161_03SE
 def test_the_cycles_are_named_as_the_faa_names_them():
     assert publications.dtpp_cycle(date(2026, 10, 3)) == "2610"
     assert publications.dtpp_cycle(date(2026, 9, 30)) == "2609"
-    assert publications.dtpp_cycle(date(2027, 1, 1)) == "2613"    # a year of thirteen
+    assert publications.dtpp_cycle(date(2027, 1, 1)) == "2613"  # a year of thirteen
     assert publications.dcs_edition(date(2026, 10, 3)) == "03Sep2026"
     assert publications.dcs_edition(date(2026, 10, 29)) == "29Oct2026"
 
@@ -144,7 +145,6 @@ def test_pdfium_draws_one_pdf_at_a_time(monkeypatch):
     assert most == 1
 
 
-
 def _pdf_with(pages: list) -> bytes:
     """A PDF of `pages` d-TPP-sized pages, each with its text set on it:
     a page's text one string at (40, 500), or [(text, x, y), ...]."""
@@ -197,8 +197,12 @@ def test_only_the_faas_charts_in_force_are_read(monkeypatch, tmp_path):
     monkeypatch.setattr(publications, "CACHE_DIR", tmp_path)
     monkeypatch.setattr(publications.requests, "get", lambda url, **kw: pytest.fail(f"asked for {url}"))
     on = date(2026, 10, 3)
-    for url in ("https://example.com/d-tpp/2610/X.PDF", "https://aeronav.faa.gov/d-tpp/2609/X.PDF",
-                "https://aeronav.faa.gov/d-tpp/2610/../secret.PDF", "https://aeronav.faa.gov/d-tpp/2610/X.exe"):
+    for url in (
+        "https://example.com/d-tpp/2610/X.PDF",
+        "https://aeronav.faa.gov/d-tpp/2609/X.PDF",
+        "https://aeronav.faa.gov/d-tpp/2610/../secret.PDF",
+        "https://aeronav.faa.gov/d-tpp/2610/X.exe",
+    ):
         assert publications.chart_pages(url, "KMSN", on) is None
     assert publications.chart_page_png("dtpp", "2609", "X.PDF", 1, on) is None
     assert publications.chart_page_png("elsewhere", "2610", "X.PDF", 1, on) is None
@@ -227,7 +231,6 @@ def test_the_faa_not_answering_is_told_from_a_chart_it_does_not_have(monkeypatch
     assert publications.chart_pages(gone, "KMSN", on) is None
     assert publications.chart_pages(gone, "KMSN", on) is None
     assert asked.count(gone) == 1
-
 
 
 def test_a_diagram_is_cropped_to_its_runways_placed_by_its_own_labels():

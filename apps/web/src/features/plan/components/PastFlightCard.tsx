@@ -38,17 +38,21 @@ export default function PastFlightCard({ hex, id, onClose }: { hex: string; id: 
   // last ten asked for where the card is opened from its address alone.
   const { data } = useInfiniteQuery(pastFlightsQuery(hex, null));
   const queryClient = useQueryClient();
-  const held = queryClient.getQueriesData<InfiniteData<PastFlights>>({ queryKey: ["pastFlights", hex] })
-    .flatMap(([, list]) => list?.pages ?? []).flatMap(page => page.flights ?? []);
-  const flight = [...(data?.pages.flatMap(page => page.flights ?? []) ?? []), ...held].find(f => f.id === id) ?? null;
-  const points = usePastFlight(s => s.points);
+  const held = queryClient
+    .getQueriesData<InfiniteData<PastFlights>>({ queryKey: ["pastFlights", hex] })
+    .flatMap(([, list]) => list?.pages ?? [])
+    .flatMap((page) => page.flights ?? []);
+  const flight = [...(data?.pages.flatMap((page) => page.flights ?? []) ?? []), ...held].find((f) => f.id === id) ?? null;
+  const points = usePastFlight((s) => s.points);
   const off = when(flight?.off ?? id);
   return (
     <PanelCard testId="past-flight-card">
       <CardHead
-        name={flight ? legOf(flight) : "Flight"} nameTestId="past-flight-name"
+        name={flight ? legOf(flight) : "Flight"}
+        nameTestId="past-flight-name"
         line={flight ? `${dayOf(off)} · ${clockTime(off)}–${clockTime(when(flight.on))} · ${statusOf(flight)}` : dayOf(off)}
-        onClose={onClose} closeTestId="past-flight-close"
+        onClose={onClose}
+        closeTestId="past-flight-close"
       />
       {/* The replay with its graph first, so the graph is in sight as it
           plays at the half sheet, at the pilot's ask; the figures and each
@@ -71,21 +75,64 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
   return (
     <ListGroup title="Flight">
       <ListRow
-        media={<RowBadge colour={BADGE.weather}><PlaneTakeoff /></RowBadge>} title={flight.origin?.ident ?? "First heard"}
-        description={flight.origin?.name ?? undefined} value={value(clockTime(when(flight.off)))} data-testid="past-flight-off"
+        media={
+          <RowBadge colour={BADGE.weather}>
+            <PlaneTakeoff />
+          </RowBadge>
+        }
+        title={flight.origin?.ident ?? "First heard"}
+        description={flight.origin?.name ?? undefined}
+        value={value(clockTime(when(flight.off)))}
+        data-testid="past-flight-off"
       />
       <ListRow
-        media={<RowBadge colour={BADGE.weather}><PlaneLanding /></RowBadge>}
-        title={flight.in_air ? "In the air" : flight.destination?.ident ?? "Last heard"}
-        description={flight.destination?.name ?? undefined} value={value(clockTime(when(flight.on)))} data-testid="past-flight-on"
+        media={
+          <RowBadge colour={BADGE.weather}>
+            <PlaneLanding />
+          </RowBadge>
+        }
+        title={flight.in_air ? "In the air" : (flight.destination?.ident ?? "Last heard")}
+        description={flight.destination?.name ?? undefined}
+        value={value(clockTime(when(flight.on)))}
+        data-testid="past-flight-on"
       />
-      <ListRow media={<RowBadge colour={BADGE.rule}><Timer /></RowBadge>} title="Time" value={value(lasted(flight.on - flight.off))} />
-      <ListRow media={<RowBadge colour={BADGE.weather}><MoveVertical /></RowBadge>} title="Highest" value={value(`${altFt(flight.max_alt_ft)} ft`)} />
+      <ListRow
+        media={
+          <RowBadge colour={BADGE.rule}>
+            <Timer />
+          </RowBadge>
+        }
+        title="Time"
+        value={value(lasted(flight.on - flight.off))}
+      />
+      <ListRow
+        media={
+          <RowBadge colour={BADGE.weather}>
+            <MoveVertical />
+          </RowBadge>
+        }
+        title="Highest"
+        value={value(`${altFt(flight.max_alt_ft)} ft`)}
+      />
       {points.length > 1 && (
         <>
-          <ListRow media={<RowBadge colour={BADGE.rule}><Route /></RowBadge>} title="Flown" value={value(`${Math.round(flown)} nm`)} data-testid="past-flight-flown" />
           <ListRow
-            media={<RowBadge colour={BADGE.weather}><Gauge /></RowBadge>} title="Average ground speed"
+            media={
+              <RowBadge colour={BADGE.rule}>
+                <Route />
+              </RowBadge>
+            }
+            title="Flown"
+            value={value(`${Math.round(flown)} nm`)}
+            data-testid="past-flight-flown"
+          />
+          <ListRow
+            media={
+              <RowBadge colour={BADGE.weather}>
+                <Gauge />
+              </RowBadge>
+            }
+            title="Average ground speed"
             value={value(hours > 0 ? `${Math.round(flown / hours)} kt` : "—")}
           />
         </>
@@ -94,14 +141,14 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
   );
 }
 
-const SPEED_OPTIONS = REPLAY_SPEEDS.map(n => ({ value: String(n), label: `${n}×` }));
+const SPEED_OPTIONS = REPLAY_SPEEDS.map((n) => ({ value: String(n), label: `${n}×` }));
 
 /** The replay's controls: play or pause, stop, and how fast. */
 function Replay() {
-  const points = usePastFlight(s => s.points);
-  const playing = usePastFlight(s => s.playing);
-  const speed = usePastFlight(s => s.speed);
-  const started = usePastFlight(s => s.at !== null);
+  const points = usePastFlight((s) => s.points);
+  const playing = usePastFlight((s) => s.playing);
+  const speed = usePastFlight((s) => s.speed);
+  const started = usePastFlight((s) => s.at !== null);
   return (
     // No title over it: the card's name says what is replayed, and the
     // room is the graph's at the half sheet.
@@ -110,8 +157,10 @@ function Replay() {
         title={
           <span className="flex items-center gap-2">
             <RoundButton
-              label={playing ? "Pause" : "Play"} onClick={playing ? pausePastFlight : playPastFlight}
-              disabled={!points.length} data-testid="replay-play"
+              label={playing ? "Pause" : "Play"}
+              onClick={playing ? pausePastFlight : playPastFlight}
+              disabled={!points.length}
+              data-testid="replay-play"
             >
               {playing ? <Pause className="size-5" /> : <Play className="size-5" />}
             </RoundButton>
@@ -122,8 +171,11 @@ function Replay() {
         }
       >
         <Segmented
-          label="Replay speed" value={String(speed)} onChange={v => usePastFlight.setState({ speed: Number(v) })}
-          options={SPEED_OPTIONS} testId="replay-speed"
+          label="Replay speed"
+          value={String(speed)}
+          onChange={(v) => usePastFlight.setState({ speed: Number(v) })}
+          options={SPEED_OPTIONS}
+          testId="replay-speed"
         />
       </ListRow>
       {points.length > 1 && <ReplayChart points={points} />}
@@ -135,7 +187,7 @@ function Replay() {
  *  marked on it and said over it -- with the controls, so the graph is in
  *  sight as it plays at the half sheet, at the pilot's ask. */
 function ReplayChart({ points }: { points: PastFlightPoint[] }) {
-  const second = usePastFlight(s => (s.at === null ? null : Math.floor(s.at)));
+  const second = usePastFlight((s) => (s.at === null ? null : Math.floor(s.at)));
   const here = second === null ? null : positionAt(points, second);
   const box = useRef<HTMLDivElement>(null);
   const height = useHalfFit(box);
@@ -153,7 +205,12 @@ function ReplayChart({ points }: { points: PastFlightPoint[] }) {
       {/* Its own chunk, recharts with it: this card was imported by the
           planner's page, so the chart had come with the first load (350 KB
           of 1.32 MB, measured). The space it takes is kept while it loads. */}
-      <div ref={box} className={height === null ? "h-28" : undefined} style={height === null ? undefined : { height }} data-testid="replay-chart-box">
+      <div
+        ref={box}
+        className={height === null ? "h-28" : undefined}
+        style={height === null ? undefined : { height }}
+        data-testid="replay-chart-box"
+      >
         <Suspense fallback={<div className="h-full" />}>
           <FlightChart points={points} />
         </Suspense>
@@ -161,7 +218,6 @@ function ReplayChart({ points }: { points: PastFlightPoint[] }) {
     </div>
   );
 }
-
 
 const FlightChart = lazy(() => import("./PastFlightChart"));
 // Its own chunk, as the chart's: asked for only when the approach is.
@@ -176,11 +232,15 @@ const ApproachDebriefs = lazy(() => import("../../../components/ApproachDebrief"
 function ApproachRow({ ident, points }: { ident: string; points: PastFlightPoint[] }) {
   const [asked, setAsked] = useState(false);
   // Its reports as a track: seconds to ms, the height on the ground none.
-  const track = useMemo(() => points.map(p => ({ t: p.t * 1000, lat: p.lat, lon: p.lon, altFt: p.alt_ft ?? null })), [points]);
+  const track = useMemo(() => points.map((p) => ({ t: p.t * 1000, lat: p.lat, lon: p.lon, altFt: p.alt_ft ?? null })), [points]);
   if (!asked) {
     return (
       <ListGroup>
-        <ListRow title={<span className="text-[var(--tint)]">Debrief its approach into {ident}</span>} onClick={() => setAsked(true)} data-testid="past-flight-approach" />
+        <ListRow
+          title={<span className="text-[var(--tint)]">Debrief its approach into {ident}</span>}
+          onClick={() => setAsked(true)}
+          data-testid="past-flight-approach"
+        />
       </ListGroup>
     );
   }
@@ -250,13 +310,15 @@ const LogTable = memo(function LogTable({ points }: { points: PastFlightPoint[] 
       <Table containerClassName="px-3 pb-2" className={cn("tabular-nums", TEXT.detail)} data-testid="track-log">
         <TableHeader>
           <TableRow>
-            <TableHead className="text-muted-foreground">Time</TableHead><TableHead className="text-muted-foreground">Course</TableHead>
-            <TableHead className="text-right text-muted-foreground">kt</TableHead><TableHead className="text-right text-muted-foreground">ft</TableHead>
+            <TableHead className="text-muted-foreground">Time</TableHead>
+            <TableHead className="text-muted-foreground">Course</TableHead>
+            <TableHead className="text-right text-muted-foreground">kt</TableHead>
+            <TableHead className="text-right text-muted-foreground">ft</TableHead>
             <TableHead className="text-right text-muted-foreground">ft/min</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map(p => (
+          {rows.map((p) => (
             <TableRow key={p.t}>
               <TableCell>{clockTime(when(p.t))}</TableCell>
               <TableCell>{p.track_deg != null ? `${compassPoint(p.track_deg)} ${bearing(p.track_deg)}` : "—"}</TableCell>
@@ -268,7 +330,11 @@ const LogTable = memo(function LogTable({ points }: { points: PastFlightPoint[] 
         </TableBody>
       </Table>
       {!all && points.length > LOG_ROWS && (
-        <ListRow title={<span className="text-[var(--tint)]">All {grouped(points.length)} reports</span>} onClick={() => setAll(true)} data-testid="track-log-all" />
+        <ListRow
+          title={<span className="text-[var(--tint)]">All {grouped(points.length)} reports</span>}
+          onClick={() => setAll(true)}
+          data-testid="track-log-all"
+        />
       )}
     </>
   );

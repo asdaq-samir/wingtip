@@ -6,10 +6,12 @@ const briefing = {
   metars: { C81: { ceiling_ft: 2500, visibility_sm: 10, wind_speed_kt: 12, wind_gust_kt: 22 }, KDLH: null },
   forecast: { min_ceiling_ft: 1800, min_visibility_sm: 6, stations: [{ icaoId: "KDLH", ceiling_ft: 4000, visibility_sm: 4 }] },
   airports: {
-    C81: { runways: [
-      { ends: "6/24", wind: { end: "24", headwind_kt: 10, crosswind_kt: 9, gust_crosswind_kt: 14 } },
-      { ends: "18/36", wind: { end: "36", headwind_kt: 5, crosswind_kt: -11, gust_crosswind_kt: -13 } },
-    ] },
+    C81: {
+      runways: [
+        { ends: "6/24", wind: { end: "24", headwind_kt: 10, crosswind_kt: 9, gust_crosswind_kt: 14 } },
+        { ends: "18/36", wind: { end: "36", headwind_kt: 5, crosswind_kt: -11, gust_crosswind_kt: -13 } },
+      ],
+    },
     KDLH: { runways: [] },
   },
 } as unknown as Briefing;
@@ -21,9 +23,14 @@ describe("personal minimums", () => {
 
   it("takes a variable wind, which favours no runway, as all crosswind, gusts included", () => {
     const runways = [{ ends: "18/36", closed: false, wind: null }] as unknown as Briefing["airports"][string]["runways"];
-    const vrb = { ...briefing, metars: { C81: { wind_speed_kt: 15, wind_gust_kt: 25 } }, airports: { C81: { runways } } } as unknown as Briefing;
-    expect(underMinimums({ ...NO_MINIMUMS, crosswindKt: 15 }, vrb, ["C81"], "KDLH"))
-      .toEqual(["C81 variable wind 25 kt, which may all be crosswind, over your 15 kt"]);
+    const vrb = {
+      ...briefing,
+      metars: { C81: { wind_speed_kt: 15, wind_gust_kt: 25 } },
+      airports: { C81: { runways } },
+    } as unknown as Briefing;
+    expect(underMinimums({ ...NO_MINIMUMS, crosswindKt: 15 }, vrb, ["C81"], "KDLH")).toEqual([
+      "C81 variable wind 25 kt, which may all be crosswind, over your 15 kt",
+    ]);
   });
 
   it("each airport's report, the destination's forecast and the route's, against each minimum", () => {

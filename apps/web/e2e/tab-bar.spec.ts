@@ -1,5 +1,18 @@
 import { test, expect, type Page } from "@playwright/test";
-import { closeCard, closeConsole, closeProfile, grabberTo, openProfile, openTab, openPanel, settle, settled, showTabs, sideDrawer, slow } from "./helpers";
+import {
+  closeCard,
+  closeConsole,
+  closeProfile,
+  grabberTo,
+  openProfile,
+  openTab,
+  openPanel,
+  settle,
+  settled,
+  showTabs,
+  sideDrawer,
+  slow,
+} from "./helpers";
 
 /**
  * The planner's tab bar, at the pilot's ask in place of the map's buttons
@@ -57,7 +70,9 @@ test("the tabs swap the panel's head and body, FPL's empty box with no route", a
   await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-current", "page");
 });
 
-test("a route rests as its figures in the tabs' place, the pill's own height, and half way another tab keeps the panel's height and the route", async ({ page }) => {
+test("a route rests as its figures in the tabs' place, the pill's own height, and half way another tab keeps the panel's height and the route", async ({
+  page,
+}) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   const panel = sideDrawer(page);
@@ -180,7 +195,9 @@ test("the side view is a card of its own, Profile, opened by the map's Play; FPL
   await expect(log.locator("[data-title]")).toHaveCount(1);
 });
 
-test("the Brief is a card over FPL, from the chips' Brief: Preflight, Depart, En route and Arrive, with Back to the nav log", async ({ page }) => {
+test("the Brief is a card over FPL, from the chips' Brief: Preflight, Depart, En route and Arrive, with Back to the nav log", async ({
+  page,
+}) => {
   // The owner's ask: "we don't need the folder button because we have a
   // saved section with tiles instead. So then we can have a brief button
   // which can open a new brief card to have everything preflight, depart,
@@ -272,7 +289,6 @@ test("all the way up with no route, the empty box stays out", async ({ page }) =
   await grabberTo(page, "full");
   await expect(sideDrawer(page).getByTestId("route-type")).toBeVisible();
 });
-
 
 test("each tab keeps the card open over it: another tab picked and this one again, the airport's card is back", async ({ page }) => {
   // A link's card is over FPL, the tab up (the owner's "tapping the
@@ -371,12 +387,19 @@ test("with a mouse's wheel, down over the panel brings it up a size, up takes it
   // gesture, and one flick was now and then heard as two.
   const flick = async (dx: number, dy: number) => {
     await over();
-    await page.evaluate(([dx, dy]) => {
-      const box = document.querySelector("[data-slot=map-panel]")!.getBoundingClientRect();
-      const x = box.left + box.width / 2, y = Math.max(0, box.top) + 30;
-      const target = document.elementFromPoint(x, y)!;
-      for (let i = 0; i < 4; i++) target.dispatchEvent(new WheelEvent("wheel", { deltaX: dx, deltaY: dy, clientX: x, clientY: y, bubbles: true, cancelable: true }));
-    }, [dx, dy]);
+    await page.evaluate(
+      ([dx, dy]) => {
+        const box = document.querySelector("[data-slot=map-panel]")!.getBoundingClientRect();
+        const x = box.left + box.width / 2,
+          y = Math.max(0, box.top) + 30;
+        const target = document.elementFromPoint(x, y)!;
+        for (let i = 0; i < 4; i++)
+          target.dispatchEvent(
+            new WheelEvent("wheel", { deltaX: dx, deltaY: dy, clientX: x, clientY: y, bubbles: true, cancelable: true }),
+          );
+      },
+      [dx, dy],
+    );
     // The gesture's end, before the next.
     await page.waitForTimeout(400);
     await settled(panel);
@@ -392,7 +415,9 @@ test("with a mouse's wheel, down over the panel brings it up a size, up takes it
   await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-current", "page");
 });
 
-test("a tab's own page is there at once as its tab is picked, as Airport's is: Aircraft's and Setup's neither fade nor slide in", async ({ page }) => {
+test("a tab's own page is there at once as its tab is picked, as Airport's is: Aircraft's and Setup's neither fade nor slide in", async ({
+  page,
+}) => {
   await page.goto("/app/plan");
   await settle(page);
   await grabberTo(page, "half");
@@ -400,11 +425,16 @@ test("a tab's own page is there at once as its tab is picked, as Airport's is: A
   // within the panel: a card's fade and rise (PanelCard), a page's fade
   // (ConsolePages). Asked as soon as it shows, inside the half second
   // either took.
-  const entering = (testId: string) => sideDrawer(page).getByTestId(testId).first().evaluate(el => {
-    const all = el.getAnimations({ subtree: true });
-    for (let up = el.parentElement; up && !up.matches('[data-slot="map-panel"]'); up = up.parentElement) all.push(...up.getAnimations());
-    return all.filter(a => a instanceof CSSAnimation && a.playState === "running").map(a => a.animationName);
-  });
+  const entering = (testId: string) =>
+    sideDrawer(page)
+      .getByTestId(testId)
+      .first()
+      .evaluate((el) => {
+        const all = el.getAnimations({ subtree: true });
+        for (let up = el.parentElement; up && !up.matches('[data-slot="map-panel"]'); up = up.parentElement)
+          all.push(...up.getAnimations());
+        return all.filter((a) => a instanceof CSSAnimation && a.playState === "running").map((a) => a.animationName);
+      });
   for (let round = 0; round < 2; round++) {
     await page.getByTestId("tab-airport").click();
     await expect(sideDrawer(page).getByTestId("search-airports")).toBeVisible();

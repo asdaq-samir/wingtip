@@ -5,7 +5,9 @@ import { consolePage, expandConsole, openConsole, showTabs } from "./helpers";
 // Saved planned ahead at idle ask the planner then -- found the page
 // closed and failed the test (navlog-fit.spec, CI, 2026-10-28): the
 // handlers taken off, their errors let go, as each test ends.
-test.afterEach(async ({ page }) => { await page.unrouteAll({ behavior: "ignoreErrors" }); });
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
 
 /**
  * The Dev console's System tab, for the answers that are not "up": a
@@ -27,12 +29,14 @@ async function openSystemTab(page: Page) {
 
 /** The Services page, from its row on the System tab. */
 async function openServices(page: Page) {
-  await consoleSheet(page).getByRole("button", { name: /^Services/ }).click();
+  await consoleSheet(page)
+    .getByRole("button", { name: /^Services/ })
+    .click();
   await expect(consoleSheet(page).getByRole("heading", { name: "Services" })).toBeVisible();
 }
 
 test("a service this deployment does not report on reads not configured", async ({ page }) => {
-  await page.route("**/api/planner/status", async route => {
+  await page.route("**/api/planner/status", async (route) => {
     const response = await route.fetch();
     const json = await response.json();
     // A snapshot with no word on the database, as one from a planner
@@ -50,8 +54,9 @@ test("a service this deployment does not report on reads not configured", async 
 });
 
 test("a snapshot that failed reads no answer, and nothing waits for it for ever", { tag: "@smoke" }, async ({ page }) => {
-  await page.route("**/api/planner/status", route =>
-    route.fulfill({ status: 502, contentType: "application/json", body: JSON.stringify({ detail: "planner down" }) }));
+  await page.route("**/api/planner/status", (route) =>
+    route.fulfill({ status: 502, contentType: "application/json", body: JSON.stringify({ detail: "planner down" }) }),
+  );
   await openSystemTab(page);
   // Said at the Services row's end, then service by service on its page.
   await expect(consoleSheet(page).getByRole("button", { name: /^Services/ })).toContainText("3 down");
@@ -62,17 +67,21 @@ test("a snapshot that failed reads no answer, and nothing waits for it for ever"
   // The reference data's page says so too, once its row is tapped: back
   // to the tab, a row each that opens its own page.
   await consoleSheet(page).getByRole("button", { name: "Back to Status", exact: true }).click();
-  await consoleSheet(page).getByRole("button", { name: /^Reference data/ }).click();
+  await consoleSheet(page)
+    .getByRole("button", { name: /^Reference data/ })
+    .click();
   await expect(consoleSheet(page).getByRole("heading", { name: "Reference data" })).toBeVisible();
   await expect(consoleSheet(page).getByText("The planner did not answer.")).toBeVisible();
   await expect(consoleSheet(page).getByText("Asking the planner for its status…")).toHaveCount(0);
 });
 
-test("a snapshot from long ago -- the service worker's, with the planner out of reach -- says so, and is not read as up", async ({ page }) => {
+test("a snapshot from long ago -- the service worker's, with the planner out of reach -- says so, and is not read as up", async ({
+  page,
+}) => {
   // What a phone off the Wi-Fi gets: the last snapshot the service
   // worker holds, arriving as a 200 with every service "up" as of
   // forty minutes ago.
-  await page.route("**/api/planner/status", async route => {
+  await page.route("**/api/planner/status", async (route) => {
     const response = await route.fetch();
     const json = await response.json();
     json.checked_at = new Date(Date.now() - 40 * 60_000).toISOString();

@@ -27,7 +27,7 @@ export function runwaysOfPicks(picks: string | undefined): Record<string, string
  *  the rest folded under them. */
 export function splitRanking(answer: RankedNotams | undefined): { top: RankedNotam[]; rest: RankedNotam[] } {
   const notams = answer?.notams ?? [];
-  return { top: notams.filter(n => n.top), rest: notams.filter(n => !n.top) };
+  return { top: notams.filter((n) => n.top), rest: notams.filter((n) => !n.top) };
 }
 
 export function useNotamRanking() {
@@ -35,11 +35,23 @@ export function useNotamRanking() {
   const runways = runwaysOfPicks(plan.flight?.picks);
   const query = useQuery({
     queryKey: ["notams", "ranked", routeKeyOf(plan), plan.eteMin, plan.altitudeFt, runways],
-    queryFn: ({ signal }) => postJson<RankedNotams>("/api/planner/words/notams/ranked", {
-      dep: plan.dep, dest: plan.dest, stops: plan.stops, depart: plan.depart || null,
-      ete_min: plan.eteMin, altitude_ft: plan.altitudeFt, runways,
-    }, signal),
-    enabled: plan.routed && !!plan.dep && !!plan.dest, staleTime: KEPT_MS, meta: { silent: true },
+    queryFn: ({ signal }) =>
+      postJson<RankedNotams>(
+        "/api/planner/words/notams/ranked",
+        {
+          dep: plan.dep,
+          dest: plan.dest,
+          stops: plan.stops,
+          depart: plan.depart || null,
+          ete_min: plan.eteMin,
+          altitude_ft: plan.altitudeFt,
+          runways,
+        },
+        signal,
+      ),
+    enabled: plan.routed && !!plan.dep && !!plan.dest,
+    staleTime: KEPT_MS,
+    meta: { silent: true },
   });
   return { shown: plan.routed, ...splitRanking(query.data), answer: query.data, error: query.error, pending: !query.data && !query.error };
 }

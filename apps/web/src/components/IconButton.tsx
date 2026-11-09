@@ -35,25 +35,47 @@ interface Props extends ComponentProps<typeof Button> {
  * nothing to a sighted pilot on a phone.
  */
 export default function IconButton({
-  label, variant = "ghost", size = "icon", className, children, onFocus,
-  onPointerDown, onPointerUp, onPointerCancel, onPointerLeave, onClick, ...props
+  label,
+  variant = "ghost",
+  size = "icon",
+  className,
+  children,
+  onFocus,
+  onPointerDown,
+  onPointerUp,
+  onPointerCancel,
+  onPointerLeave,
+  onClick,
+  ...props
 }: Props) {
   const [open, setOpen] = useState(false);
   const pressTimer = useRef<number | undefined>(undefined);
   const hideTimer = useRef<number | undefined>(undefined);
   const labelShown = useRef(false);
-  useEffect(() => () => { window.clearTimeout(pressTimer.current); window.clearTimeout(hideTimer.current); }, []);
+  useEffect(
+    () => () => {
+      window.clearTimeout(pressTimer.current);
+      window.clearTimeout(hideTimer.current);
+    },
+    [],
+  );
   const endPress = () => window.clearTimeout(pressTimer.current);
   return (
     <Tooltip open={open} onOpenChange={setOpen}>
       <TooltipTrigger asChild>
         <Button
-          variant={variant} size={size} aria-label={label} className={cn(EXPANDED_BUTTON, className)}
+          variant={variant}
+          size={size}
+          aria-label={label}
+          className={cn(EXPANDED_BUTTON, className)}
           // The tooltip opens on a pointer, never on focus: a sheet
           // opening focuses its first control, and the tooltip that
           // popped up over it took the Escape meant for the sheet. The
           // accessible name is the label either way.
-          onFocus={e => { onFocus?.(e); e.preventDefault(); }}
+          onFocus={(e) => {
+            onFocus?.(e);
+            e.preventDefault();
+          }}
           onPointerDown={(e: PointerEvent<HTMLButtonElement>) => {
             onPointerDown?.(e);
             if (e.pointerType !== "touch") return;
@@ -66,12 +88,25 @@ export default function IconButton({
               hideTimer.current = window.setTimeout(() => setOpen(false), 1500);
             }, 500);
           }}
-          onPointerUp={(e: PointerEvent<HTMLButtonElement>) => { onPointerUp?.(e); endPress(); }}
-          onPointerCancel={(e: PointerEvent<HTMLButtonElement>) => { onPointerCancel?.(e); endPress(); }}
-          onPointerLeave={(e: PointerEvent<HTMLButtonElement>) => { onPointerLeave?.(e); endPress(); }}
+          onPointerUp={(e: PointerEvent<HTMLButtonElement>) => {
+            onPointerUp?.(e);
+            endPress();
+          }}
+          onPointerCancel={(e: PointerEvent<HTMLButtonElement>) => {
+            onPointerCancel?.(e);
+            endPress();
+          }}
+          onPointerLeave={(e: PointerEvent<HTMLButtonElement>) => {
+            onPointerLeave?.(e);
+            endPress();
+          }}
           onClick={(e: MouseEvent<HTMLButtonElement>) => {
             // The release of a long press read the label; it is not a tap.
-            if (labelShown.current) { labelShown.current = false; e.preventDefault(); return; }
+            if (labelShown.current) {
+              labelShown.current = false;
+              e.preventDefault();
+              return;
+            }
             onClick?.(e);
           }}
           {...props}

@@ -9,6 +9,7 @@ app/coach.py), which the gateway forwards and never these sources.
 Nothing is decided here: the plan is the engine's, and the lines say its
 figures as it gave them. The ids a sentence cites: "due:<key>",
 "ev:<n>", "session:<n>"."""
+
 from fastapi import APIRouter, HTTPException
 from wingtip import coach
 
@@ -23,12 +24,21 @@ router = APIRouter()
 #: entries and a few debriefs' profiles are well under 1 MB.
 COACH = gateway("signed-in", csrf=False, body_limit=1024 * 1024)
 
-STATUS_WORDS = {"current": "current", "due_soon": "lapses soon", "lapsed": "lapsed", "pending": "not current yet",
-                "unknown": "nothing on record"}
+STATUS_WORDS = {
+    "current": "current",
+    "due_soon": "lapses soon",
+    "lapsed": "lapsed",
+    "pending": "not current yet",
+    "unknown": "nothing on record",
+}
 
 
-@router.post("/api/pilot/coach", response_model=ProficiencyPlan, openapi_extra=COACH,
-             responses={422: {"description": "A day or a debrief not of the engine's shape"}})
+@router.post(
+    "/api/pilot/coach",
+    response_model=ProficiencyPlan,
+    openapi_extra=COACH,
+    responses={422: {"description": "A day or a debrief not of the engine's shape"}},
+)
 def coach_plan(ask: CoachAsk) -> ProficiencyPlan:
     """The pilot's proficiency plan: each currency with its last day and
     status, the reminders for those lapsing within remindDays (30 where
@@ -49,7 +59,7 @@ def coach_plan(ask: CoachAsk) -> ProficiencyPlan:
     }
     try:
         return ProficiencyPlan.model_validate(coach.plan(given, ask.home))
-    except ValueError as refused:   # the engine's Err: input not of its shape
+    except ValueError as refused:  # the engine's Err: input not of its shape
         raise HTTPException(status_code=422, detail=str(refused)) from refused
 
 
@@ -74,8 +84,13 @@ def plan_sources(p: ProficiencyPlan) -> list[Source]:
             where += f", the {s.place.approach}." if s.place.approach else "."
         who = " With an instructor." if s.instructor else ""
         wings = f" {s.wings.note}: {s.wings.area}, ACS {s.wings.acs}." if s.wings else ""
-        out.append(Source(id=s.id, label=f"Session {i}",
-                          text=f"Session {i}: {s.practise}.{where} About {s.minutes} min.{who}{wings} Answers {', '.join(s.why)}."))
+        out.append(
+            Source(
+                id=s.id,
+                label=f"Session {i}",
+                text=f"Session {i}: {s.practise}.{where} About {s.minutes} min.{who}{wings} Answers {', '.join(s.why)}.",
+            )
+        )
     return out
 
 

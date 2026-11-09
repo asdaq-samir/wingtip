@@ -45,12 +45,23 @@ class ReminderSendTest {
     @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:18");
 
-    @Autowired private ReminderService reminders;
-    @Autowired private PilotRepository pilots;
-    @Autowired private JdbcTemplate jdbc;
-    @MockitoBean private JavaMailSender mail;
-    @MockitoBean private PlannerClient planner;
-    @Value("${MAIL_FROM:no-reply@wingtipmaps.app}") private String from;
+    @Autowired
+    private ReminderService reminders;
+
+    @Autowired
+    private PilotRepository pilots;
+
+    @Autowired
+    private JdbcTemplate jdbc;
+
+    @MockitoBean
+    private JavaMailSender mail;
+
+    @MockitoBean
+    private PlannerClient planner;
+
+    @Value("${MAIL_FROM:no-reply@wingtipmaps.app}")
+    private String from;
 
     private static final LocalDate TODAY = LocalDate.of(2026, 10, 11);
 
@@ -58,8 +69,25 @@ class ReminderSendTest {
      *  there); here it answers with the medical's day as the pilot gave it. */
     @BeforeEach
     void plannerGivesTheMedical() {
-        given(planner.currency(any(), any(), any(), any(), any())).willAnswer(ask -> new CurrencyDto(
-                null, null, null, null, ask.getArgument(2), 0, 0, 0, 0, 0, null, null, null, null, 0, false, false));
+        given(planner.currency(any(), any(), any(), any(), any()))
+                .willAnswer(ask -> new CurrencyDto(
+                        null,
+                        null,
+                        null,
+                        null,
+                        ask.getArgument(2),
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        null,
+                        null,
+                        null,
+                        null,
+                        0,
+                        false,
+                        false));
     }
 
     private Pilot pilotWithMedicalEnding(LocalDate on, boolean asked) {
@@ -87,8 +115,11 @@ class ReminderSendTest {
         // Thirteen days on it is 7 days off: the mail fails, nothing is kept...
         doThrow(new MailSendException("down")).when(mail).send(any(SimpleMailMessage.class));
         assertThatThrownBy(() -> reminders.sendTo(pilot, TODAY.plusDays(13))).isInstanceOf(MailSendException.class);
-        assertThat(jdbc.queryForObject("SELECT count(*) FROM reminders_sent WHERE pilot_id = ? AND days_before = 7",
-                Integer.class, pilot.getId())).isZero();
+        assertThat(jdbc.queryForObject(
+                        "SELECT count(*) FROM reminders_sent WHERE pilot_id = ? AND days_before = 7",
+                        Integer.class,
+                        pilot.getId()))
+                .isZero();
         // ...and the next day, the mail back, it goes.
         reset(mail);
         assertThat(reminders.sendTo(pilot, TODAY.plusDays(14))).isEqualTo(1);
@@ -99,6 +130,9 @@ class ReminderSendTest {
     void onlyThePilotsWhoAskedAreReminded() {
         Pilot asked = pilotWithMedicalEnding(TODAY.plusDays(3), true);
         Pilot not = pilotWithMedicalEnding(TODAY.plusDays(3), false);
-        assertThat(pilots.findByRemindersTrue()).extracting(Pilot::getId).contains(asked.getId()).doesNotContain(not.getId());
+        assertThat(pilots.findByRemindersTrue())
+                .extracting(Pilot::getId)
+                .contains(asked.getId())
+                .doesNotContain(not.getId());
     }
 }

@@ -12,8 +12,8 @@ import { useLegHighlight } from "../../map/legHighlight";
  * for a hazard the planner could not place.
  */
 export default function OnRouteRow({ on, briefing, hazardKey }: { on: OnRoute | null | undefined; briefing: Briefing; hazardKey: string }) {
-  const toggle = useLegHighlight(s => s.toggle);
-  const shown = useLegHighlight(s => s.shown?.key === hazardKey);
+  const toggle = useLegHighlight((s) => s.toggle);
+  const shown = useLegHighlight((s) => s.shown?.key === hazardKey);
   if (!on || on.legs.length === 0) return null;
   return (
     <ListRow

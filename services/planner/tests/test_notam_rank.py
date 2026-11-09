@@ -3,6 +3,7 @@ route's NOTAMs and TFRs handed to the engine's notams_ranked with each
 field's time and runway in use, and every one back, best first, with its
 text as sent. The feed, the TFRs and the airspace are stood in for; the
 ranking is the engine's own."""
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -26,17 +27,54 @@ def _feed(monkeypatch, found, tfrs=()):
 
 
 def test_the_runway_in_use_closed_comes_first_and_tomorrows_closure_last(monkeypatch):
-    asked = _feed(monkeypatch, [
-        {"id": "MSN 11/030", "location": "MSN", "starts": "2026-11-15T12:00:00Z", "ends": "2026-11-15T20:00:00Z",
-         "schedule": None, "text": "RWY 09/27 CLSD", "raw": "!MSN 11/030 MSN RWY 09/27 CLSD 2611151200-2611152000"},
-        {"id": "MSN 11/012", "location": "MSN", "starts": "2026-11-14T14:00:00Z", "ends": "2026-11-14T18:00:00Z",
-         "schedule": None, "text": "RWY 18/36 CLSD", "raw": "!MSN 11/012 MSN RWY 18/36 CLSD 2611141400-2611141800"},
-    ], tfrs=[{"notam_id": "6/1234", "title": "VIP movement", "effective": "2026-11-14T13:00:00Z",
-              "expires": "2026-11-14T19:00:00Z", "floor_ft": 0, "floor_ref": "SFC", "ceiling_ft": 3000, "ceiling_ref": "MSL",
-              "crosses": True}])
+    asked = _feed(
+        monkeypatch,
+        [
+            {
+                "id": "MSN 11/030",
+                "location": "MSN",
+                "starts": "2026-11-15T12:00:00Z",
+                "ends": "2026-11-15T20:00:00Z",
+                "schedule": None,
+                "text": "RWY 09/27 CLSD",
+                "raw": "!MSN 11/030 MSN RWY 09/27 CLSD 2611151200-2611152000",
+            },
+            {
+                "id": "MSN 11/012",
+                "location": "MSN",
+                "starts": "2026-11-14T14:00:00Z",
+                "ends": "2026-11-14T18:00:00Z",
+                "schedule": None,
+                "text": "RWY 18/36 CLSD",
+                "raw": "!MSN 11/012 MSN RWY 18/36 CLSD 2611141400-2611141800",
+            },
+        ],
+        tfrs=[
+            {
+                "notam_id": "6/1234",
+                "title": "VIP movement",
+                "effective": "2026-11-14T13:00:00Z",
+                "expires": "2026-11-14T19:00:00Z",
+                "floor_ft": 0,
+                "floor_ref": "SFC",
+                "ceiling_ft": 3000,
+                "ceiling_ref": "MSL",
+                "crosses": True,
+            }
+        ],
+    )
 
-    resp = client.post("/api/notams/ranked", json={"dep": "C81", "dest": "KMSN", "depart": "2026-11-14T14:00:00Z",
-                                                   "ete_min": 70, "altitude_ft": 4500, "runways": {"kmsn": "RWY 36"}})
+    resp = client.post(
+        "/api/notams/ranked",
+        json={
+            "dep": "C81",
+            "dest": "KMSN",
+            "depart": "2026-11-14T14:00:00Z",
+            "ete_min": 70,
+            "altitude_ft": 4500,
+            "runways": {"kmsn": "RWY 36"},
+        },
+    )
 
     assert resp.status_code == 200, resp.text
     body = resp.json()
@@ -69,8 +107,9 @@ def test_the_tfrs_unread_are_said_and_nothing_heard_is_nothing_ranked(monkeypatc
 def test_each_field_is_timed_round_when_the_flight_is_there():
     from datetime import datetime, timezone
 
-    fields, flight = notam_rank.windows([("C81", "dep"), ("KJVL", "stop"), ("KMSN", "dest")],
-                                        datetime(2026, 11, 14, 14, tzinfo=timezone.utc), 70)
+    fields, flight = notam_rank.windows(
+        [("C81", "dep"), ("KJVL", "stop"), ("KMSN", "dest")], datetime(2026, 11, 14, 14, tzinfo=timezone.utc), 70
+    )
     assert [(f["from"], f["until"]) for f in fields] == [
         ("2026-11-14T13:00:00Z", "2026-11-14T15:00:00Z"),
         ("2026-11-14T13:00:00Z", "2026-11-14T16:10:00Z"),

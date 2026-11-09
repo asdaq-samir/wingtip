@@ -4,6 +4,7 @@ the shared fixture the engine and the web are held to
 (apps/web/src/lib/fixtures/dataCycles.json, its dates from the FAA's 28 and 56
 Day Product Schedule, the NASR subscription page and the DOF page); the
 module finds each edition on disk and says when one is out of date."""
+
 import json
 import logging
 from datetime import date, datetime
@@ -91,6 +92,7 @@ def test_the_owner_is_told_in_the_log_once_a_day(on_disk, caplog, monkeypatch):
 def test_an_edition_is_chosen_by_the_0901z_it_takes_effect_at(monkeypatch):
     """The engine counts a cycle from 0000Z (safe for a warning); the
     d-TPP, Chart Supplement and CIFP chosen to use wait for 0901Z."""
+
     class At(datetime):
         hour, minute = 8, 0
 

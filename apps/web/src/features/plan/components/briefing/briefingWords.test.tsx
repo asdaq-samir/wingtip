@@ -14,7 +14,8 @@ const ANSWER: WordsAnswer = {
     { text: "The ceiling is 4,500 feet.", sources: ["metar:KDLH"] },
   ],
   sources: [{ id: "metar:KDLH", label: "METAR KDLH 1753Z", text: "KDLH 031753Z 27012G18KT 10SM BKN045 08/M02 A2992" }],
-  model: "claude-haiku-5-5", unavailable: null,
+  model: "claude-haiku-5-5",
+  unavailable: null,
 };
 
 describe("the NOTAMs' coverage", () => {
@@ -27,8 +28,15 @@ describe("the NOTAMs' coverage", () => {
     expect(notamNone("2026-10-19")).toBe("None heard since 19 Oct");
     expect(notamNone(undefined)).toBe("None heard");
     const answer: WordsAnswer = { sentences: [], sources: [], model: "m", unavailable: null, coverage_since: "2026-10-19" };
-    render(<WordsSection title="NOTAMs that matter" testId="w" state={wordsState({ data: answer, error: null })}
-      credit={notamCredit(answer.coverage_since)} empty={notamNone(answer.coverage_since)} />);
+    render(
+      <WordsSection
+        title="NOTAMs that matter"
+        testId="w"
+        state={wordsState({ data: answer, error: null })}
+        credit={notamCredit(answer.coverage_since)}
+        empty={notamNone(answer.coverage_since)}
+      />,
+    );
     expect(screen.getByTestId("w-empty").textContent).toBe("None heard since 19 Oct");
     expect(screen.getByTestId("w-credit").textContent).toBe("FAA NOTAM feed since 19 Oct 2026");
     expect(document.body.textContent).not.toMatch(/no notams/i);
@@ -36,7 +44,15 @@ describe("the NOTAMs' coverage", () => {
   });
 
   test("with words, the credit still follows the chips", () => {
-    render(<WordsSection title="NOTAMs that matter" testId="w" state={wordsState({ data: ANSWER, error: null })} credit={notamCredit("2026-10-19")} empty={notamNone("2026-10-19")} />);
+    render(
+      <WordsSection
+        title="NOTAMs that matter"
+        testId="w"
+        state={wordsState({ data: ANSWER, error: null })}
+        credit={notamCredit("2026-10-19")}
+        empty={notamNone("2026-10-19")}
+      />,
+    );
     expect(screen.getByTestId("w-words")).toBeTruthy();
     expect(screen.getByTestId("w-credit").textContent).toBe("FAA NOTAM feed since 19 Oct 2026");
   });

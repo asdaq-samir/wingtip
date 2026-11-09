@@ -177,7 +177,8 @@ fn a_ceiling_is_the_lowest_broken_overcast_or_obscured_layer() {
 
 #[test]
 fn a_visibility_in_metres_is_read_in_statute_miles() {
-    let vis = |value: f64, unit: &str| ask("ceiling_visibility", json!({"visibility": {"value": value, "unit": unit}}))["visibility_sm"].clone();
+    let vis =
+        |value: f64, unit: &str| ask("ceiling_visibility", json!({"visibility": {"value": value, "unit": unit}}))["visibility_sm"].clone();
     // 1,609.344 m in a statute mile, to the hundredth; 9999 is 10 km or
     // more, the AWC's 6+ (WMO No. 306), as CAVOK is.
     assert_eq!(vis(1600.0, "m"), json!(0.99));
@@ -206,7 +207,10 @@ fn a_ceiling_sent_with_no_height_is_not_known_and_says_only_what_the_visibility_
 /// A profile `dev_c` from a standard day (ICAO Doc 7488's 1.98 C a
 /// thousand feet from 15 C) at the GFS's levels.
 fn isa_plus(dev_c: f64) -> Value {
-    json!([3000.0_f64, 6000.0, 9000.0, 12000.0, 18000.0, 24000.0].iter().map(|&h| json!([h, 15.0 - 0.0019812 * h + dev_c])).collect::<Vec<_>>())
+    json!([3000.0_f64, 6000.0, 9000.0, 12000.0, 18000.0, 24000.0]
+        .iter()
+        .map(|&h| json!([h, 15.0 - 0.0019812 * h + dev_c]))
+        .collect::<Vec<_>>())
 }
 
 // wingtip.performance's test of the Python copy, which this call

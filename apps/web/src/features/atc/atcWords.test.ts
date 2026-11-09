@@ -4,7 +4,7 @@ import { atcCall, type AtcItem } from "./atcEngine";
 import { actionOf, callLine, itemWords } from "./atcWords";
 
 const items = (name: string): AtcItem[] => {
-  const c = fixture.calls.find(x => x.name === name)!;
+  const c = fixture.calls.find((x) => x.name === name)!;
   return atcCall(c.heard, fixture.tail, null).items;
 };
 

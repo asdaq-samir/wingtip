@@ -11,13 +11,13 @@ A no-wind racetrack, at the leg's true airspeed: a pilot corrects for the
 wind as it is found there, and a timed hold's lap takes as long whatever
 the wind (its inbound leg is the timed one, its outbound adjusted to it).
 """
+
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass
 
 import wingtip_native
-
 
 
 @dataclass(frozen=True)
@@ -51,16 +51,23 @@ def parse_all(text: str) -> list[tuple[str, Hold | None]]:
 
 def _hold(h: dict) -> Hold:
     return Hold(
-        fix=h["fix"], inbound_deg=int(h["inbound"]), right=h["right"], leg_min=h["leg_min"], leg_nm=h["leg_nm"],
-        turns=None if h["turns"] is None else int(h["turns"]), minutes=None if h["minutes"] is None else float(h["minutes"]),
+        fix=h["fix"],
+        inbound_deg=int(h["inbound"]),
+        right=h["right"],
+        leg_min=h["leg_min"],
+        leg_nm=h["leg_nm"],
+        turns=None if h["turns"] is None else int(h["turns"]),
+        minutes=None if h["minutes"] is None else float(h["minutes"]),
     )
 
 
 def _figures(hold: Hold, tas_kt: float) -> dict:
     """The engine's figures of a hold at `tas_kt` (hold_figures)."""
     legs = {
-        "leg_min": hold.leg_min, "leg_nm": None if hold.leg_min is not None else (hold.leg_nm or 0),
-        "turns": hold.turns, "minutes": hold.minutes,
+        "leg_min": hold.leg_min,
+        "leg_nm": None if hold.leg_min is not None else (hold.leg_nm or 0),
+        "turns": hold.turns,
+        "minutes": hold.minutes,
     }
     return json.loads(wingtip_native.call("hold_figures", json.dumps({"hold": legs, "tas_kt": tas_kt})))
 
@@ -77,8 +84,11 @@ def entry(arrival_deg: float, inbound_deg: float, right: bool) -> str:
     (110 to 180) teardrop, the 110 beyond parallel; left turns the
     mirror. The engine's (wingtip_engine::figures::holding), the one copy
     the hold's page and the phones use too."""
-    return json.loads(wingtip_native.call("hold_entry", json.dumps(
-        {"arrival_deg": arrival_deg, "inbound_deg": inbound_deg, "turns": "right" if right else "left"})))
+    return json.loads(
+        wingtip_native.call(
+            "hold_entry", json.dumps({"arrival_deg": arrival_deg, "inbound_deg": inbound_deg, "turns": "right" if right else "left"})
+        )
+    )
 
 
 def held_minutes(hold: Hold, tas_kt: float) -> float:

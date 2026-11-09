@@ -62,7 +62,9 @@ mod tests {
 
     #[test]
     fn rfc_4648_section_10s_vectors() {
-        for (plain, coded) in [("", ""), ("f", "Zg=="), ("fo", "Zm8="), ("foo", "Zm9v"), ("foob", "Zm9vYg=="), ("fooba", "Zm9vYmE="), ("foobar", "Zm9vYmFy")] {
+        for (plain, coded) in
+            [("", ""), ("f", "Zg=="), ("fo", "Zm8="), ("foo", "Zm9v"), ("foob", "Zm9vYg=="), ("fooba", "Zm9vYmE="), ("foobar", "Zm9vYmFy")]
+        {
             assert_eq!(encode(plain.as_bytes()), coded);
             assert_eq!(decode(coded).unwrap(), plain.as_bytes());
         }

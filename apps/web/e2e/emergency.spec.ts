@@ -51,18 +51,34 @@ test("in flight, Emergency opens the best fields, the squawk and the MAYDAY", { 
   await expect(page.getByTestId("map-emergency")).toHaveCount(0);
 });
 
-test("the pilot's own \"mayday\" at the microphone opens it at once", async ({ page }) => {
+test('the pilot\'s own "mayday" at the microphone opens it at once', async ({ page }) => {
   // The browser's recognizer, a stand-in saying the pilot's words (clearance.spec's way).
   await page.addInitScript(() => {
     class Heard {
-      lang = ""; continuous = false; interimResults = false;
-      onresult: ((e: unknown) => void) | null = null; onerror: ((e: unknown) => void) | null = null; onend: (() => void) | null = null;
+      lang = "";
+      continuous = false;
+      interimResults = false;
+      onresult: ((e: unknown) => void) | null = null;
+      onerror: ((e: unknown) => void) | null = null;
+      onend: (() => void) | null = null;
       start() {
-        setTimeout(() => this.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript: "mayday mayday mayday engine failure" }], { isFinal: true })] }), 300);
+        setTimeout(
+          () =>
+            this.onresult?.({
+              resultIndex: 0,
+              results: [Object.assign([{ transcript: "mayday mayday mayday engine failure" }], { isFinal: true })],
+            }),
+          300,
+        );
       }
-      stop() { setTimeout(() => this.onend?.(), 50); }
+      stop() {
+        setTimeout(() => this.onend?.(), 50);
+      }
     }
-    Object.assign(window, { SpeechRecognition: Object.assign(Heard, { available: async () => "available" }), webkitSpeechRecognition: Heard });
+    Object.assign(window, {
+      SpeechRecognition: Object.assign(Heard, { available: async () => "available" }),
+      webkitSpeechRecognition: Heard,
+    });
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);

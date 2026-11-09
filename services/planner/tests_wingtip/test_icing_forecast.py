@@ -3,6 +3,7 @@ the hour of its middle, from this hour's issue or the last's; a leg past
 the forecast's reach, or one the AWC had nothing for, unchecked; no
 answer at all unavailable, never "no icing"; and the engine's reading of
 what came back (its rule is held to apps/web/src/lib/fixtures/icingForecast.json)."""
+
 from datetime import datetime, timezone
 
 import pytest
@@ -19,8 +20,7 @@ def _section(at_ft: float, category: int, width: int = 2) -> dict:
     """A section with `category` at the level `at_ft` over every column."""
     level = icing_forecast.LEVELS_FT.index(at_ft)
     column = [category if i == level else 0 for i in range(LEVELS)]
-    return {"width": width, "data_levels": LEVELS, "param": "icing_severity",
-            "values": column * width, "sfc_hgt": [200] * width}
+    return {"width": width, "data_levels": LEVELS, "param": "icing_severity", "values": column * width, "sfc_hgt": [200] * width}
 
 
 class _Answer:
@@ -100,8 +100,9 @@ def test_no_answer_at_all_is_unavailable_not_clear(monkeypatch):
 
 
 def test_a_section_of_another_shape_is_unchecked(monkeypatch):
-    monkeypatch.setattr(icing_forecast.requests, "get",
-                        lambda url, headers, timeout: _Answer({"width": 2, "data_levels": 30, "values": [0] * 60}))
+    monkeypatch.setattr(
+        icing_forecast.requests, "get", lambda url, headers, timeout: _Answer({"width": 2, "data_levels": 30, "values": [0] * 60})
+    )
     answer = icing_forecast.along([(41.9, -87.9), (42.5, -89.0)], [6000], [40], None, NOW, now=NOW)
     assert answer["unchecked"] == [0]
 

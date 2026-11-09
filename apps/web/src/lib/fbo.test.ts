@@ -5,8 +5,21 @@ import { NO_FILTER, filtering, inEmergency, keptFilter, kindOf, matches, relatio
 const LWM = { lat: 42.7172, lon: -71.1234, elevationFt: 148 };
 
 const plane = (over: Partial<TrafficAircraft>): TrafficAircraft => ({
-  hex: "a89c1e", lat: 42.9, lon: -71.12, altitude_ft: 3000, track_deg: 180, vertical_fpm: -500, speed_kt: 100,
-  callsign: null, registration: "N654FL", type: "P28A", pressure_altitude: false, seen_s: 1, squawk: null, emergency: null, category: "A1",
+  hex: "a89c1e",
+  lat: 42.9,
+  lon: -71.12,
+  altitude_ft: 3000,
+  track_deg: 180,
+  vertical_fpm: -500,
+  speed_kt: 100,
+  callsign: null,
+  registration: "N654FL",
+  type: "P28A",
+  pressure_altitude: false,
+  seen_s: 1,
+  squawk: null,
+  emergency: null,
+  category: "A1",
   ...over,
 });
 
@@ -21,12 +34,25 @@ describe("the Aircraft tab's filters", () => {
     // The emitter categories by weight (GDL 90 ICD Rev A, Table 11): A1
     // under 15,500 lb, A2 to 75,000, A3 to 300,000, A4 a B757, A5 over
     // 300,000, A6 highly maneuverable, A7 rotorcraft.
-    expect(["A1", "A2", "A3", "A4", "A5", "A6", "A7", null].map(category => kindOf({ category })))
-      .toEqual(["light", "small", "large", "large", "large", "other", "helicopter", "other"]);
+    expect(["A1", "A2", "A3", "A4", "A5", "A6", "A7", null].map((category) => kindOf({ category }))).toEqual([
+      "light",
+      "small",
+      "large",
+      "large",
+      "large",
+      "other",
+      "helicopter",
+      "other",
+    ]);
     // 7700 an emergency (AIM 6-2-2), 7500 unlawful interference (6-3-4),
     // 7600 a radio failed (6-4-2); 1200, VFR, none.
-    expect(["7700", "7500", "7600", "1200", "7777"].map(squawk => inEmergency({ squawk, emergency: null })))
-      .toEqual([true, true, true, false, false]);
+    expect(["7700", "7500", "7600", "1200", "7777"].map((squawk) => inEmergency({ squawk, emergency: null }))).toEqual([
+      true,
+      true,
+      true,
+      false,
+      false,
+    ]);
     expect(inEmergency({ squawk: "1200", emergency: "general" })).toBe(true);
   });
 

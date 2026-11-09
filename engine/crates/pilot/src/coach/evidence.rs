@@ -116,7 +116,10 @@ fn approach(d: &Value, mut add: impl FnMut(Weak, String)) {
             .filter(|h| *h > 0.0 && *h < STABLE_BY_FT)
             .fold(None, |low: Option<f64>, h| Some(low.map_or(h, |l| l.min(h))));
         if let Some(h) = lowest_off {
-            add(Weak::Unstable, format!("Off the course or glidepath {} ft above the field, under the 500 ft gate (AC 61-98D 2.1.4)", feet(h)));
+            add(
+                Weak::Unstable,
+                format!("Off the course or glidepath {} ft above the field, under the 500 ft gate (AC 61-98D 2.1.4)", feet(h)),
+            );
         }
     }
     for f in list(d, "findings") {
@@ -138,7 +141,14 @@ fn flight(d: &Value, mut add: impl FnMut(Weak, String)) {
         if matches!(p.get("ok"), Some(Value::Bool(false))) {
             let ident = p.get("ident").and_then(Value::as_str).unwrap_or("the field");
             let off = num(p, "off_ft").unwrap_or(0.0);
-            add(Weak::Pattern, format!("At {ident} the downwind was {} ft {} pattern altitude", feet(off.abs()), if off >= 0.0 { "above" } else { "below" }));
+            add(
+                Weak::Pattern,
+                format!(
+                    "At {ident} the downwind was {} ft {} pattern altitude",
+                    feet(off.abs()),
+                    if off >= 0.0 { "above" } else { "below" }
+                ),
+            );
         }
     }
     for l in list(d, "legs") {

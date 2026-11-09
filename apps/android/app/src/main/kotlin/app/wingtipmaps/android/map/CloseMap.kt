@@ -1,16 +1,13 @@
 package app.wingtipmaps.android.map
 
-import app.wingtipmaps.android.Config
-
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.await
 import app.wingtipmaps.android.api.googleMaps
-import java.net.URLEncoder
-import java.security.MessageDigest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -18,6 +15,8 @@ import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.net.URLEncoder
+import java.security.MessageDigest
 
 /**
  * The street map close in, under the runways where the chart is only

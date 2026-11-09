@@ -101,14 +101,20 @@ pub fn holds(points: &[Point], runs: &[(usize, usize)], fields: &[Field], hold_f
             if !sized(a) || !sized(b) || a.deg.signum() != b.deg.signum() || points[b.from].t - points[a.to].t < LEG_MIN_MS {
                 continue;
             }
-            let span = (a.from..=b.to).all(|i| distance_nm(points[a.from].lat, points[a.from].lon, points[i].lat, points[i].lon) <= SPAN_NM);
-            let clear = (a.from..=b.to).all(|i| fields.iter().all(|f| distance_nm(f.lat, f.lon, points[i].lat, points[i].lon) > FIELD_CLEAR_NM));
+            let span =
+                (a.from..=b.to).all(|i| distance_nm(points[a.from].lat, points[a.from].lon, points[i].lat, points[i].lon) <= SPAN_NM);
+            let clear =
+                (a.from..=b.to).all(|i| fields.iter().all(|f| distance_nm(f.lat, f.lon, points[i].lat, points[i].lon) > FIELD_CLEAR_NM));
             if !span || !clear {
                 continue;
             }
             match found.last_mut() {
                 // The next racetrack of the same hold.
-                Some(h) if a.from <= h.to + 1 || distance_nm(h.lat, h.lon, points[a.from].lat, points[a.from].lon) <= SPAN_NM && points[a.from].t - points[h.to].t < 120_000.0 => {
+                Some(h)
+                    if a.from <= h.to + 1
+                        || distance_nm(h.lat, h.lon, points[a.from].lat, points[a.from].lon) <= SPAN_NM
+                            && points[a.from].t - points[h.to].t < 120_000.0 =>
+                {
                     h.to = h.to.max(b.to);
                     h.turns += 1;
                 }

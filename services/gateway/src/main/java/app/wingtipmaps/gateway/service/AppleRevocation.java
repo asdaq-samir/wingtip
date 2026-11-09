@@ -35,9 +35,11 @@ public class AppleRevocation {
 
     private final Optional<ClientRegistrationRepository> registrations;
     private final String revokeUrl;
-    private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+    private final HttpClient http =
+            HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
 
-    public AppleRevocation(Optional<ClientRegistrationRepository> registrations,
+    public AppleRevocation(
+            Optional<ClientRegistrationRepository> registrations,
             @Value("${apple.revoke-url:https://appleid.apple.com/auth/revoke}") String revokeUrl) {
         this.registrations = registrations;
         this.revokeUrl = revokeUrl;
@@ -48,7 +50,8 @@ public class AppleRevocation {
         if (refreshToken == null || refreshToken.isBlank()) {
             return;
         }
-        ClientRegistration apple = registrations.map(r -> r.findByRegistrationId("apple")).orElse(null);
+        ClientRegistration apple =
+                registrations.map(r -> r.findByRegistrationId("apple")).orElse(null);
         if (apple == null) {
             log.warn("A pilot's Apple token was kept but Sign in with Apple is not configured; not revoked");
             return;

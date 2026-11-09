@@ -16,6 +16,7 @@ standard library only, for the Mac's python3 and CI's.
   python3 scripts/build/legal_pages.py           write the pages
   python3 scripts/build/legal_pages.py --check   fail if a page is stale (CI)
 """
+
 import html
 import re
 import sys

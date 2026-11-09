@@ -1,21 +1,22 @@
 """The nightly flake hunt's list (ci.yml, flake-report; docs/CI.md, "Flaky tests").
 
-    python3 scripts/ci/flaky_tests.py e2e RESULTS.json OUT.txt
-        The browser tests Playwright's JSON report calls flaky (failed, then
-        passed on the retry), one a line, into OUT.txt.
+python3 scripts/ci/flaky_tests.py e2e RESULTS.json OUT.txt
+    The browser tests Playwright's JSON report calls flaky (failed, then
+    passed on the retry), one a line, into OUT.txt.
 
-    python3 scripts/ci/flaky_tests.py report RUNS_DIR [--dry-run]
-        RUNS_DIR holds the unit suites' runs in random order -- pytest's
-        JUnit XML (<suite>/run-N.xml) and vitest's JSON (apps/web/run-N.json) --
-        and the browser runs' flaky lists (e2e/**/*.txt). A unit test that
-        failed in at least one run and passed in another is flaky. The list,
-        kept for 14 days after a test was last seen, goes into the body of
-        one standing issue, "Flaky tests (nightly)": created if there is
-        none and there is something to say, edited when the list changed,
-        left alone otherwise. At most one GitHub write a night, never a
-        comment: a burst of writes got the owner's account suspended once
-        (CLAUDE.md, "Write to GitHub gently").
+python3 scripts/ci/flaky_tests.py report RUNS_DIR [--dry-run]
+    RUNS_DIR holds the unit suites' runs in random order -- pytest's
+    JUnit XML (<suite>/run-N.xml) and vitest's JSON (apps/web/run-N.json) --
+    and the browser runs' flaky lists (e2e/**/*.txt). A unit test that
+    failed in at least one run and passed in another is flaky. The list,
+    kept for 14 days after a test was last seen, goes into the body of
+    one standing issue, "Flaky tests (nightly)": created if there is
+    none and there is something to say, edited when the list changed,
+    left alone otherwise. At most one GitHub write a night, never a
+    comment: a burst of writes got the owner's account suspended once
+    (CLAUDE.md, "Write to GitHub gently").
 """
+
 import datetime
 import json
 import os
@@ -29,8 +30,12 @@ from pathlib import Path
 TITLE = "Flaky tests (nightly)"
 KEEP_DAYS = 14
 DATA = re.compile(r"<!-- flaky-tests (\{.*\}) -->", re.S)
-SUITES = {"wingtip": "Python (services/planner/tests_wingtip)", "planner": "Python (services/planner/tests)",
-          "web": "Web (vitest)", "e2e": "Browser (Playwright)"}
+SUITES = {
+    "wingtip": "Python (services/planner/tests_wingtip)",
+    "planner": "Python (services/planner/tests)",
+    "web": "Web (vitest)",
+    "e2e": "Browser (Playwright)",
+}
 
 
 def clean(name: str) -> str:
@@ -135,8 +140,12 @@ def report(runs: Path, dry_run: bool) -> None:
 
 
 def find_issue():
-    answer = subprocess.run(["gh", "issue", "list", "--state", "open", "--search", f'in:title "{TITLE}"',
-                             "--json", "number,title,body", "--limit", "20"], capture_output=True, text=True, check=True).stdout
+    answer = subprocess.run(
+        ["gh", "issue", "list", "--state", "open", "--search", f'in:title "{TITLE}"', "--json", "number,title,body", "--limit", "20"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
     return next((issue for issue in json.loads(answer) if issue["title"] == TITLE), None)
 
 
@@ -146,8 +155,9 @@ def render(entries: dict, today: str) -> str:
     rows = []
     for key, entry in sorted(entries.items(), key=lambda kv: (kv[1]["last"], kv[0]), reverse=True):
         suite, test = key.split("|", 1)
-        rows.append(f"| `{test.replace('|', '/')}` | {SUITES.get(suite, suite)} | {entry['tonight'] or '-'} "
-                    f"| {entry['nights']} | {entry['last']} |")
+        rows.append(
+            f"| `{test.replace('|', '/')}` | {SUITES.get(suite, suite)} | {entry['tonight'] or '-'} | {entry['nights']} | {entry['last']} |"
+        )
     lines = [
         "Tests that both failed and passed in the same night: the Python and web unit suites, five runs each in random order, "
         "and the browser tests that passed only on their retry. Kept here 14 days after a test was last seen. "

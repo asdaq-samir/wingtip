@@ -37,18 +37,27 @@ describe("a checkpoint's note box", () => {
 
   test("a save that fails leaves the typing in the box", async () => {
     let fail!: () => void;
-    const onSave = vi.fn(() => new Promise<void>((_, reject) => { fail = () => reject(new Error("502")); }));
+    const onSave = vi.fn(
+      () =>
+        new Promise<void>((_, reject) => {
+          fail = () => reject(new Error("502"));
+        }),
+    );
     const { box } = cell(generated("a town"), onSave);
     fireEvent.change(box, { target: { value: "the grain elevator" } });
     fireEvent.blur(box);
-    await act(async () => { fail(); });
+    await act(async () => {
+      fail();
+    });
     expect(box.value).toBe("the grain elevator");
   });
 
   test("once saved, the box goes back to showing the note as it stands", async () => {
     const { box, rerender } = cell(generated("a town"));
     fireEvent.change(box, { target: { value: "the grain elevator" } });
-    await act(async () => { fireEvent.blur(box); });
+    await act(async () => {
+      fireEvent.blur(box);
+    });
     rerender({ text: "the grain elevator", source: "saved" });
     rerender(generated("regenerated later"));
     expect(box.value).toBe("regenerated later");

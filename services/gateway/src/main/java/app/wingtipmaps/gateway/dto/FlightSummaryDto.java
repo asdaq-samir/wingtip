@@ -31,9 +31,22 @@ public record FlightSummaryDto(
         @Nullable String picks) {
 
     public static FlightSummaryDto of(Flight f) {
-        return new FlightSummaryDto(f.getId(), f.getDepartureIdent(), f.getDestinationIdent(), f.getStops(),
+        return new FlightSummaryDto(
+                f.getId(),
+                f.getDepartureIdent(),
+                f.getDestinationIdent(),
+                f.getStops(),
                 f.getAircraft() == null ? null : f.getAircraft().getTailNumber(),
-                f.getCruiseAltitudeFt(), f.getTotalDistanceNm(), f.getTotalEteMin(), f.getTotalFuelGal(),
-                f.getPlannedFor(), f.getCreatedAt(), f.getRiskScore() == null ? null : new RiskAssessmentDto(f.getRiskScore(), f.getRiskLevel(), f.getRiskFactors()), f.getOwnAltitudes(), f.getPicks());
+                f.getCruiseAltitudeFt(),
+                f.getTotalDistanceNm(),
+                f.getTotalEteMin(),
+                f.getTotalFuelGal(),
+                f.getPlannedFor(),
+                f.getCreatedAt(),
+                f.getRiskScore() == null
+                        ? null
+                        : new RiskAssessmentDto(f.getRiskScore(), f.getRiskLevel(), f.getRiskFactors()),
+                f.getOwnAltitudes(),
+                f.getPicks());
     }
 }

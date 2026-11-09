@@ -19,7 +19,12 @@ import ProcedureMenu from "../ProcedureMenu";
 import { FuelGauge } from "../FuelGauge";
 import { groundMinAt, type NavLogRow } from "../navlog/rows";
 import {
-  DAY_MIN, toggleField, useOpenRunwayLines, type ProcedureAirport, type ProcedureKind, type ProceduresRouteModel,
+  DAY_MIN,
+  toggleField,
+  useOpenRunwayLines,
+  type ProcedureAirport,
+  type ProcedureKind,
+  type ProceduresRouteModel,
 } from "../../hooks/useProceduresRoute";
 import { PatternChips, TRAY_HEAD, type Landing } from "./PatternChips";
 import { KIND_WORD, patternNote } from "./procedureWords";
@@ -28,7 +33,13 @@ import { pointEnd } from "./pointEnd";
 type Kind = ProcedureKind;
 
 /** A field's step: what is flown there, in the order it is flown. */
-export function FieldStep({ vm, a, row, last, leads }: {
+export function FieldStep({
+  vm,
+  a,
+  row,
+  last,
+  leads,
+}: {
   vm: ProceduresRouteModel;
   a: ProcedureAirport;
   row: NavLogRow | undefined;
@@ -36,24 +47,66 @@ export function FieldStep({ vm, a, row, last, leads }: {
   leads: boolean;
 }) {
   const {
-    airports, lists, cards, inRoute, procedures, crossings, depart, weather, fit, edit, ground, startMs, tanks, asCards, openLines,
-    windOf, pickOf, chosenAt, takeoffAt, ask, pick, onAt, setLesson, hasKind, onProcedures, onFix, isOpen, pointIndex, reportedOf,
-    isFuelStop, landingOf, landedAt, onPick, onTakeoff, onDepart, onGround,
+    airports,
+    lists,
+    cards,
+    inRoute,
+    procedures,
+    crossings,
+    depart,
+    weather,
+    fit,
+    edit,
+    ground,
+    startMs,
+    tanks,
+    asCards,
+    openLines,
+    windOf,
+    pickOf,
+    chosenAt,
+    takeoffAt,
+    ask,
+    pick,
+    onAt,
+    setLesson,
+    hasKind,
+    onProcedures,
+    onFix,
+    isOpen,
+    pointIndex,
+    reportedOf,
+    isFuelStop,
+    landingOf,
+    landedAt,
+    onPick,
+    onTakeoff,
+    onDepart,
+    onGround,
   } = vm;
   // A kind's pull-down: the one in the route said on it (ProcedureMenu).
   const wind = windOf(a.ident);
-  const i = airports.findIndex(f => sameField(f.ident, a.ident));
+  const i = airports.findIndex((f) => sameField(f.ident, a.ident));
   const kindMenu = (kind: Kind, look: "button" | "add") => (
     <ProcedureMenu
-      key={kind} ident={a.ident} kind={kind} list={lists[i]?.data} loading={!!lists[i]?.isFetching} look={look}
-      picked={pickOf(a.ident, kind)} label={inRoute.find(p => sameField(p.ident, a.ident) && p.kind === kind)?.label ?? null}
-      fixes={inRoute.find(p => sameField(p.ident, a.ident) && p.kind === kind)?.fixes?.map(f => f.ident)}
-      runway={chosenAt(a.ident)} windward={wind && !wind.calm ? wind.ident : null}
-      onOpen={() => ask(a.ident)} onPick={next => pick(a.ident, kind, next)} onAll={() => onAt({ ident: a.ident, kind })}
+      key={kind}
+      ident={a.ident}
+      kind={kind}
+      list={lists[i]?.data}
+      loading={!!lists[i]?.isFetching}
+      look={look}
+      picked={pickOf(a.ident, kind)}
+      label={inRoute.find((p) => sameField(p.ident, a.ident) && p.kind === kind)?.label ?? null}
+      fixes={inRoute.find((p) => sameField(p.ident, a.ident) && p.kind === kind)?.fixes?.map((f) => f.ident)}
+      runway={chosenAt(a.ident)}
+      windward={wind && !wind.calm ? wind.ident : null}
+      onOpen={() => ask(a.ident)}
+      onPick={(next) => pick(a.ident, kind, next)}
+      onAll={() => onAt({ ident: a.ident, kind })}
       onLearn={kind === "approach" ? () => setLesson(pickOf(a.ident, kind)) : undefined}
     />
   );
-  const has = (kind: Kind) => hasKind(a.ident, kind) || inRoute.some(p => sameField(p.ident, a.ident) && p.kind === kind);
+  const has = (kind: Kind) => hasKind(a.ident, kind) || inRoute.some((p) => sameField(p.ident, a.ident) && p.kind === kind);
   const time = row ? etaAt(depart || new Date().toISOString(), row.minutesFlown) : null;
   // 22 in the 36 of its glass button, where the map's 26 filled it.
   // Before the plan, the field's own mark from its card (its airspace,
@@ -62,8 +115,15 @@ export function FieldStep({ vm, a, row, last, leads }: {
   // shows, where a blue dot stood in for it while the route was drawn (the
   // owner's screenshot, 2026-10-29: BDL to KGLH, "Drawing Route...").
   const placed = cards[i]?.data;
-  const mark = row ? <PointMark row={row} number={undefined} weather={weather} airportSize={22} />
-    : <AirportMark airspaceClass={placed?.airspace_class ?? null} colour={weather(a.ident) ?? colourOf(placed?.metar?.flight_category ?? null)} size={22} />;
+  const mark = row ? (
+    <PointMark row={row} number={undefined} weather={weather} airportSize={22} />
+  ) : (
+    <AirportMark
+      airspaceClass={placed?.airspace_class ?? null}
+      colour={weather(a.ident) ?? colourOf(placed?.metar?.flight_category ?? null)}
+      size={22}
+    />
+  );
   // A step of the field's, at the owner's pick (option C of the
   // procedures canvas): its name and time in its head, its runway chips
   // under with its info at their start ("Info can go on the left side of
@@ -72,17 +132,27 @@ export function FieldStep({ vm, a, row, last, leads }: {
   // (FixBranch), its pull-down its name; each kind not picked a dashed
   // "+ Arrival" to pick one.
   const branch = (kind: Kind) => {
-    const inPlace = inRoute.find(p => sameField(p.ident, a.ident) && p.kind === kind);
+    const inPlace = inRoute.find((p) => sameField(p.ident, a.ident) && p.kind === kind);
     // By its id, not its kind: the field's list, which says each pick's
     // kind, is asked for only as a pull-down opens.
-    const chosen = inPlace && procedures.find(p => sameField(p.ident, a.ident) && p.id === inPlace.id);
+    const chosen = inPlace && procedures.find((p) => sameField(p.ident, a.ident) && p.id === inPlace.id);
     if (!inPlace || !chosen) return null;
     return (
       <FixBranch
-        key={`branch-${kind}`} name={inPlace.label} kind={KIND_WORD[kind]} menu={kindMenu(kind, "button")}
-        fixes={inPlace.fixes ?? []} direct={inPlace.direct ?? null} crossings={crossings}
-        onDirect={fix => onProcedures(procedures.map(p => (p === chosen ? { ...p, direct: fix } : p)), null)}
-        onOpen={fix => onFix(a.ident, kind, fix)}
+        key={`branch-${kind}`}
+        name={inPlace.label}
+        kind={KIND_WORD[kind]}
+        menu={kindMenu(kind, "button")}
+        fixes={inPlace.fixes ?? []}
+        direct={inPlace.direct ?? null}
+        crossings={crossings}
+        onDirect={(fix) =>
+          onProcedures(
+            procedures.map((p) => (p === chosen ? { ...p, direct: fix } : p)),
+            null,
+          )
+        }
+        onOpen={(fix) => onFix(a.ident, kind, fix)}
       />
     );
   };
@@ -98,10 +168,16 @@ export function FieldStep({ vm, a, row, last, leads }: {
   const opened = isOpen(key);
   // `line`, the runway line's key and the runway picked on it
   // (PatternChips folds a line with a runway picked to that runway's chip).
-  type Part = { role: "Arrive" | "Depart"; kinds: Kind[]; chips: (trailing: ReactNode) => ReactNode; leaves: ReactNode; line: { key: string; chosen: string | null } };
+  type Part = {
+    role: "Arrive" | "Depart";
+    kinds: Kind[];
+    chips: (trailing: ReactNode) => ReactNode;
+    leaves: ReactNode;
+    line: { key: string; chosen: string | null };
+  };
   const partBody = (part: Part) => {
-    const picked = part.kinds.filter(k => inRoute.some(p => sameField(p.ident, a.ident) && p.kind === k));
-    const unpicked = part.kinds.filter(k => !picked.includes(k));
+    const picked = part.kinds.filter((k) => inRoute.some((p) => sameField(p.ident, a.ident) && p.kind === k));
+    const unpicked = part.kinds.filter((k) => !picked.includes(k));
     const Glyph = part.role === "Arrive" ? PlaneLanding : PlaneTakeoff;
     // The pull-downs for the procedures not yet picked beside the runway's
     // chip while its line is folded to it, at the owner's ask ("Can
@@ -110,7 +186,7 @@ export function FieldStep({ vm, a, row, last, leads }: {
     // open, its runways across the row.
     const foldable = part.line.chosen !== null && a.runways !== null;
     const lineOpen = openLines.includes(part.line.key);
-    const adds = unpicked.map(k => kindMenu(k, "add"));
+    const adds = unpicked.map((k) => kindMenu(k, "add"));
     return (
       <div className="space-y-3 pt-3">
         <div className="flex items-center gap-2">
@@ -133,14 +209,21 @@ export function FieldStep({ vm, a, row, last, leads }: {
               content. Its open state stays the page's (useOpenRunwayLines),
               as the list is drawn again as the sheet moves. */}
           <Collapsible
-            asChild open={foldable && lineOpen}
-            onOpenChange={next => useOpenRunwayLines.setState(st => ({ open: next ? [...st.open, part.line.key] : st.open.filter(k => k !== part.line.key) }))}
+            asChild
+            open={foldable && lineOpen}
+            onOpenChange={(next) =>
+              useOpenRunwayLines.setState((st) => ({
+                open: next ? [...st.open, part.line.key] : st.open.filter((k) => k !== part.line.key),
+              }))
+            }
           >
             <div className="flex min-w-0 flex-1 items-start">
               {foldable ? (
                 <CollapsibleTrigger asChild>
                   <button
-                    type="button" data-testid="runway-line-toggle" data-disclosure=""
+                    type="button"
+                    data-testid="runway-line-toggle"
+                    data-disclosure=""
                     aria-label={lineOpen ? `${a.ident}: fold the runways` : `${a.ident}: all the runways`}
                     className={cn(TRAY_HEAD, "outline-none focus-visible:ring-2 focus-visible:ring-ring")}
                   >
@@ -164,8 +247,14 @@ export function FieldStep({ vm, a, row, last, leads }: {
   const block = (parts: Part[], headTime: ReactNode) => {
     const first = parts[0]!;
     const end = pointEnd(vm, a.ident, {
-      time: headTime, waypoint: false, elevationFt: a.elevationFt ?? cards[i]?.data?.elevation_ft ?? null, to: a.role !== "Departure", stop: a.role === "Stop",
-      holdable: a.role === "Destination", row, index: pointIndex(a.ident, a.role),
+      time: headTime,
+      waypoint: false,
+      elevationFt: a.elevationFt ?? cards[i]?.data?.elevation_ft ?? null,
+      to: a.role !== "Departure",
+      stop: a.role === "Stop",
+      holdable: a.role === "Destination",
+      row,
+      index: pointIndex(a.ident, a.role),
     });
     const reported = reportedOf(a.ident);
     // Without the "T" after its direction, at the owner's ask ("No need
@@ -178,10 +267,16 @@ export function FieldStep({ vm, a, row, last, leads }: {
       // and aria-controls Radix's, and the landing's or the takeoff's body
       // its content. A stop's second part, in a section of its own, is
       // shown with it (a Collapsible has one content).
-      <Collapsible key={key} asChild open={opened} onOpenChange={next => toggleField(key, a.ident, next)}>
-        <li className={cn("relative", asCards && cn(POINT_CARD, "isolate"), asCards && !last && CARD_GAP)} data-testid="route-field" data-ident={a.ident}>
+      <Collapsible key={key} asChild open={opened} onOpenChange={(next) => toggleField(key, a.ident, next)}>
+        <li
+          className={cn("relative", asCards && cn(POINT_CARD, "isolate"), asCards && !last && CARD_GAP)}
+          data-testid="route-field"
+          data-ident={a.ident}
+        >
           {asCards && <CardThread first={leads} last={last} />}
-          {!last && !asCards && <span aria-hidden="true" className="absolute top-3 bottom-0 left-[calc(0.875rem-1px)] w-0.5" style={ROUTE_LINE} />}
+          {!last && !asCards && (
+            <span aria-hidden="true" className="absolute top-3 bottom-0 left-[calc(0.875rem-1px)] w-0.5" style={ROUTE_LINE} />
+          )}
           <section aria-label={`${a.ident} · ${first.role}`} className={cn(!(opened && parts[1]) && !asCards && "pb-5")}>
             {/* The airport's lines: a tap anywhere on them -- its symbol, its
                 ident, its fuel, its wind, its time -- opens it, at the
@@ -200,22 +295,29 @@ export function FieldStep({ vm, a, row, last, leads }: {
               {/* Centred on the two lines, at the owner's ask ("Center it
                   on the two lines"): the column as tall as they are. */}
               <div className="relative z-10 flex w-7 shrink-0 items-center justify-center">
-                {(face => (asCards ? <CardMark>{face}</CardMark> : face))(end.menu(
-                  <span className="relative">
-                    {mark}
-                    {a.role === "Stop" && isFuelStop(a.ident) && (
-                      <span className="absolute -top-1.5 -right-1.5 grid size-4 place-items-center rounded-full bg-caution text-white ring-2 ring-background">
-                        <Fuel className="size-2.5" strokeWidth={2.6} aria-label="fuel stop" role="img" />
-                      </span>
-                    )}
-                  </span>,
-                ))}
+                {((face) => (asCards ? <CardMark>{face}</CardMark> : face))(
+                  end.menu(
+                    <span className="relative">
+                      {mark}
+                      {a.role === "Stop" && isFuelStop(a.ident) && (
+                        <span className="absolute -top-1.5 -right-1.5 grid size-4 place-items-center rounded-full bg-caution text-white ring-2 ring-background">
+                          <Fuel className="size-2.5" strokeWidth={2.6} aria-label="fuel stop" role="img" />
+                        </span>
+                      )}
+                    </span>,
+                  ),
+                )}
               </div>
               {/* Two lines, as a waypoint's row and the list before had them,
                   at the owner's ask ("line up the time with airport id and
                   elevation with wind like before"): the ident and the time,
                   then the wind and the elevation. */}
-              <div className={cn("grid min-w-0 flex-1 items-center gap-x-2", end.grip ? "grid-cols-[minmax(0,1fr)_auto_auto]" : "grid-cols-[minmax(0,1fr)_auto]")}>
+              <div
+                className={cn(
+                  "grid min-w-0 flex-1 items-center gap-x-2",
+                  end.grip ? "grid-cols-[minmax(0,1fr)_auto_auto]" : "grid-cols-[minmax(0,1fr)_auto]",
+                )}
+              >
                 <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-1.5">
                   {/* The disclosure, iOS's small chevron by the symbol, not
                       an icon button (data-disclosure): the Collapsible's
@@ -227,7 +329,10 @@ export function FieldStep({ vm, a, row, last, leads }: {
                       alone. */}
                   <CollapsibleTrigger asChild>
                     <button
-                      type="button" data-testid="field-toggle" data-ident={a.ident} data-disclosure=""
+                      type="button"
+                      data-testid="field-toggle"
+                      data-ident={a.ident}
+                      data-disclosure=""
                       aria-label={`${a.ident}: runways and procedures`}
                       // Its area over the lines a ::before: on a touch screen
                       // index.css gives every button's ::after its 44 points,
@@ -252,22 +357,40 @@ export function FieldStep({ vm, a, row, last, leads }: {
                   {asCards && edit?.onReplace && pointIndex(a.ident, a.role) !== undefined ? (
                     <h3 className="min-w-0">
                       <CardIdent
-                        value={a.ident} label={`${a.ident}, change`} testId="field-ident"
-                        onCommit={v => { const at = pointIndex(a.ident, a.role); if (at !== undefined && !sameField(v, a.ident)) edit.onReplace!(at, v); }}
+                        value={a.ident}
+                        label={`${a.ident}, change`}
+                        testId="field-ident"
+                        onCommit={(v) => {
+                          const at = pointIndex(a.ident, a.role);
+                          if (at !== undefined && !sameField(v, a.ident)) edit.onReplace!(at, v);
+                        }}
                       />
                     </h3>
-                  ) : <h3 className={cn("truncate font-semibold", TEXT.row)}>{a.ident}</h3>}
-                  {tank && <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : a.role === "Stop" && isFuelStop(a.ident) ? "fuel" : undefined} />}
+                  ) : (
+                    <h3 className={cn("truncate font-semibold", TEXT.row)}>{a.ident}</h3>
+                  )}
+                  {tank && (
+                    <FuelGauge
+                      gal={tank.gal}
+                      usable={tank.usable}
+                      tone={tank.low ? "low" : a.role === "Stop" && isFuelStop(a.ident) ? "fuel" : undefined}
+                    />
+                  )}
                 </div>
                 <div className="relative z-10 col-start-2 row-start-1 justify-self-end">{end.time}</div>
-                <p className={cn("col-start-1 row-start-2 flex min-w-0 items-center gap-1 font-semibold text-tint tabular-nums", TEXT.note)} data-testid="field-wind">
-                  {end.direct ? "Direct to" : wind && (
-                    <>
-                      <Wind className="size-3.5 shrink-0" aria-hidden />
-                      <span aria-hidden="true">{wind}</span>
-                      <span className="sr-only">{`Wind ${reported === "calm" ? "calm" : reported ? reported.spoken : ""}`}</span>
-                    </>
-                  )}
+                <p
+                  className={cn("col-start-1 row-start-2 flex min-w-0 items-center gap-1 font-semibold text-tint tabular-nums", TEXT.note)}
+                  data-testid="field-wind"
+                >
+                  {end.direct
+                    ? "Direct to"
+                    : wind && (
+                        <>
+                          <Wind className="size-3.5 shrink-0" aria-hidden />
+                          <span aria-hidden="true">{wind}</span>
+                          <span className="sr-only">{`Wind ${reported === "calm" ? "calm" : reported ? reported.spoken : ""}`}</span>
+                        </>
+                      )}
                 </p>
                 <div className="col-start-2 row-start-2 justify-self-end">{end.elevation}</div>
                 {end.grip && <div className="relative z-10 col-start-3 row-span-2 row-start-1 self-center">{end.grip}</div>}
@@ -280,7 +403,11 @@ export function FieldStep({ vm, a, row, last, leads }: {
                 on the runway's line. */}
             <CollapsibleContent className={asCards ? CARD_BODY : "pl-[2.375rem]"}>{partBody(first)}</CollapsibleContent>
           </section>
-          {opened && parts[1] && <section aria-label={`${a.ident} · ${parts[1].role}`} className={asCards ? CARD_BODY : "pl-[2.375rem] pb-5"}>{partBody(parts[1])}</section>}
+          {opened && parts[1] && (
+            <section aria-label={`${a.ident} · ${parts[1].role}`} className={asCards ? CARD_BODY : "pl-[2.375rem] pb-5"}>
+              {partBody(parts[1])}
+            </section>
+          )}
         </li>
       </Collapsible>
     );
@@ -290,29 +417,74 @@ export function FieldStep({ vm, a, row, last, leads }: {
   // marked on its chip and said in the field's info, at the owner's ask.
   const card = cards[i]?.data;
   const reportedWind = card?.metar ?? card?.nearby_metar?.metar ?? null;
-  const fitOf = (kind: "takeoff" | "landing") => (runway: Runway, end: RunwayEnd) => (fit ? endFit({
-    aircraft: fit.aircraft, runway, end, kind,
-    wind: reportedWind && { dirTrueDeg: reportedWind.wind_dir_true_deg, speedKt: reportedWind.wind_speed_kt, gustKt: reportedWind.wind_gust_kt },
-    elevationFt: a.elevationFt ?? null, altimeterInHg: card?.metar?.altimeter_in_hg, tempC: card?.metar?.temp_c,
-    weightLb: kind === "takeoff" ? fit.takeoffLb : fit.landingLb,
-  }) : null);
-  const chips = (kind: "takeoff" | "landing", chosen: string | null, landing: Landing | null, note: string | null, pick: (end: string) => void, label?: string) =>
+  const fitOf = (kind: "takeoff" | "landing") => (runway: Runway, end: RunwayEnd) =>
+    fit
+      ? endFit({
+          aircraft: fit.aircraft,
+          runway,
+          end,
+          kind,
+          wind: reportedWind && {
+            dirTrueDeg: reportedWind.wind_dir_true_deg,
+            speedKt: reportedWind.wind_speed_kt,
+            gustKt: reportedWind.wind_gust_kt,
+          },
+          elevationFt: a.elevationFt ?? null,
+          altimeterInHg: card?.metar?.altimeter_in_hg,
+          tempC: card?.metar?.temp_c,
+          weightLb: kind === "takeoff" ? fit.takeoffLb : fit.landingLb,
+        })
+      : null;
+  const chips =
+    (
+      kind: "takeoff" | "landing",
+      chosen: string | null,
+      landing: Landing | null,
+      note: string | null,
+      pick: (end: string) => void,
+      label?: string,
+    ) =>
     (trailing: ReactNode) => (
       <PatternChips
-        airport={a} wind={wind} chosen={chosen} landing={landing} label={label} onPick={pick} fitOf={fitOf(kind)}
-        note={note} trailing={trailing}
+        airport={a}
+        wind={wind}
+        chosen={chosen}
+        landing={landing}
+        label={label}
+        onPick={pick}
+        fitOf={fitOf(kind)}
+        note={note}
+        trailing={trailing}
       />
     );
-  const landingChips = chips("landing", chosenAt(a.ident), landingOf(a.ident), patternNote(a, chosenAt(a.ident), landingOf(a.ident)), end => onPick(a.ident, end));
+  const landingChips = chips(
+    "landing",
+    chosenAt(a.ident),
+    landingOf(a.ident),
+    patternNote(a, chosenAt(a.ident), landingOf(a.ident)),
+    (end) => onPick(a.ident, end),
+  );
   // A round trip's departure is left from its own runway (`takeoff`), the
   // field's pattern the landing's, as a stop's are.
-  const roundTrip = a.role === "Departure" && airports.some(b => b !== a && b.role === "Destination" && sameField(b.ident, a.ident));
+  const roundTrip = a.role === "Departure" && airports.some((b) => b !== a && b.role === "Destination" && sameField(b.ident, a.ident));
   const departChips = roundTrip
-    ? chips("takeoff", takeoffAt(a.ident), null, takeoffAt(a.ident) ? `Runway ${takeoffAt(a.ident)}` : null,
-      end => onTakeoff(a.ident, end), `${a.ident} takeoff runway`)
-    : chips("takeoff", chosenAt(a.ident), null, patternNote(a, chosenAt(a.ident), null), end => onPick(a.ident, end));
-  const takeoffChips = chips("takeoff", takeoffAt(a.ident), null, takeoffAt(a.ident) ? `Runway ${takeoffAt(a.ident)}` : null,
-    end => onTakeoff(a.ident, end), `${a.ident} takeoff runway`);
+    ? chips(
+        "takeoff",
+        takeoffAt(a.ident),
+        null,
+        takeoffAt(a.ident) ? `Runway ${takeoffAt(a.ident)}` : null,
+        (end) => onTakeoff(a.ident, end),
+        `${a.ident} takeoff runway`,
+      )
+    : chips("takeoff", chosenAt(a.ident), null, patternNote(a, chosenAt(a.ident), null), (end) => onPick(a.ident, end));
+  const takeoffChips = chips(
+    "takeoff",
+    takeoffAt(a.ident),
+    null,
+    takeoffAt(a.ident) ? `Runway ${takeoffAt(a.ident)}` : null,
+    (end) => onTakeoff(a.ident, end),
+    `${a.ident} takeoff runway`,
+  );
   // The departure's time on its own step, from the route's box at the
   // owner's ask ("The departure time can move from the route box to the
   // departure and arrival boxes"): picked there, Now for about now.
@@ -322,9 +494,24 @@ export function FieldStep({ vm, a, row, last, leads }: {
   const landingLine = { key: `${a.ident}:`, chosen: chosenAt(a.ident) };
   const takeoffLine = { key: `${a.ident}:${a.ident} takeoff runway`, chosen: takeoffAt(a.ident) };
   if (a.role === "Departure") {
-    return block([{ role: "Depart", kinds: (["departure"] as Kind[]).filter(has), chips: departChips, leaves: null, line: roundTrip ? takeoffLine : landingLine }], leaving);
+    return block(
+      [
+        {
+          role: "Depart",
+          kinds: (["departure"] as Kind[]).filter(has),
+          chips: departChips,
+          leaves: null,
+          line: roundTrip ? takeoffLine : landingLine,
+        },
+      ],
+      leaving,
+    );
   }
-  if (a.role === "Destination") return block([{ role: "Arrive", kinds: (["arrival", "approach"] as Kind[]).filter(has), chips: landingChips, leaves: null, line: landingLine }], time);
+  if (a.role === "Destination")
+    return block(
+      [{ role: "Arrive", kinds: (["arrival", "approach"] as Kind[]).filter(has), chips: landingChips, leaves: null, line: landingLine }],
+      time,
+    );
   // A stop is landed at and left again, each with its own runway, at the
   // owner's ask ("If a stop is an airport then it should have arrival
   // first with a runway and a separate departure with a runway"): two
@@ -342,17 +529,28 @@ export function FieldStep({ vm, a, row, last, leads }: {
   // departure picked a quarter of an hour after the one shown was 44
   // minutes on the ground, not 45 (the stops spec, 2026-11-03).
   const landsMs = flownTo == null ? null : Math.floor((startMs + flownTo * 60_000) / 60_000) * 60_000;
-  const leaves = landsMs === null ? null : (
-    <DepartPicker
-      value={new Date(landsMs + onGroundMin * 60_000).toISOString()} look="time" label={`Departure from ${a.ident}`} testId={`depart-date-${a.ident}`} leavesNow={false}
-      // From landing to a day after, as the planner takes a stop's time
-      // on the ground (PlanQuery.own_ground).
-      earliest={landsMs} latest={landsMs + DAY_MIN * 60_000}
-      onChange={iso => { if (iso) onGround(a.ident, Math.min(DAY_MIN, Math.max(0, Math.round((Date.parse(iso) - landsMs) / 60_000)))); }}
-    />
+  const leaves =
+    landsMs === null ? null : (
+      <DepartPicker
+        value={new Date(landsMs + onGroundMin * 60_000).toISOString()}
+        look="time"
+        label={`Departure from ${a.ident}`}
+        testId={`depart-date-${a.ident}`}
+        leavesNow={false}
+        // From landing to a day after, as the planner takes a stop's time
+        // on the ground (PlanQuery.own_ground).
+        earliest={landsMs}
+        latest={landsMs + DAY_MIN * 60_000}
+        onChange={(iso) => {
+          if (iso) onGround(a.ident, Math.min(DAY_MIN, Math.max(0, Math.round((Date.parse(iso) - landsMs) / 60_000))));
+        }}
+      />
+    );
+  return block(
+    [
+      { role: "Arrive", kinds: (["arrival", "approach"] as Kind[]).filter(has), chips: landingChips, leaves: null, line: landingLine },
+      { role: "Depart", kinds: (["departure"] as Kind[]).filter(has), chips: takeoffChips, leaves, line: takeoffLine },
+    ],
+    time,
   );
-  return block([
-    { role: "Arrive", kinds: (["arrival", "approach"] as Kind[]).filter(has), chips: landingChips, leaves: null, line: landingLine },
-    { role: "Depart", kinds: (["departure"] as Kind[]).filter(has), chips: takeoffChips, leaves, line: takeoffLine },
-  ], time);
 }

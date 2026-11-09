@@ -7,6 +7,7 @@ import app.wingtipmaps.android.api.TrafficAircraft
 import app.wingtipmaps.android.api.generated.OverlayTilesLayer
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.Geo
+import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.map.MapLayers
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapRest
@@ -15,7 +16,6 @@ import app.wingtipmaps.android.map.MapWeather
 import app.wingtipmaps.android.map.TrafficDrawing
 import app.wingtipmaps.android.tiles.TileTemplate
 import app.wingtipmaps.android.ui.airspaceHours
-import app.wingtipmaps.android.format.Format
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray

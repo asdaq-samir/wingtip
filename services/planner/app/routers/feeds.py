@@ -1,5 +1,6 @@
 """GET /api/status/feeds: each live feed's last message or fetch and
 whether it is stale (app.feeds.watch, wingtip.feed_health)."""
+
 from fastapi import APIRouter
 
 from ..feeds import watch

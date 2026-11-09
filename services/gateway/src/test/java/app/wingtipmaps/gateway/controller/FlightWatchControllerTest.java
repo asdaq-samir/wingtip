@@ -52,8 +52,13 @@ class FlightWatchControllerTest {
     }
 
     private static FlightWatchDto sampleWatch() {
-        return new FlightWatchDto(7L, DEPART, CHECKED, CHECKED,
-                List.of(new BriefingChangeDto("KDLH's ceiling is forecast 1,500 ft, down from 4,000.", List.of("taf:KDLH"))),
+        return new FlightWatchDto(
+                7L,
+                DEPART,
+                CHECKED,
+                CHECKED,
+                List.of(new BriefingChangeDto(
+                        "KDLH's ceiling is forecast 1,500 ft, down from 4,000.", List.of("taf:KDLH"))),
                 List.of(new BriefingSourceDto("taf:KDLH", "TAF KDLH 031720Z", "KDLH 031720Z 0318/0418 ...")));
     }
 
@@ -61,7 +66,8 @@ class FlightWatchControllerTest {
     void watch_returns401_whenSignedOut() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.empty());
 
-        mockMvc.perform(post("/api/flights/7/watch").with(csrf())
+        mockMvc.perform(post("/api/flights/7/watch")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"departAt\":\"2026-11-04T14:00:00Z\"}"))
                 .andExpect(status().isUnauthorized());
@@ -72,7 +78,9 @@ class FlightWatchControllerTest {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
         given(watches.watch(any(), eq(7L), eq(DEPART))).willReturn(Optional.of(sampleWatch()));
 
-        mockMvc.perform(post("/api/flights/7/watch").with(oidcLogin()).with(csrf())
+        mockMvc.perform(post("/api/flights/7/watch")
+                        .with(oidcLogin())
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"departAt\":\"2026-11-04T14:00:00Z\"}"))
                 .andExpect(status().isOk())
@@ -87,7 +95,9 @@ class FlightWatchControllerTest {
     void watch_returns400_withoutADepartureTime() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
 
-        mockMvc.perform(post("/api/flights/7/watch").with(oidcLogin()).with(csrf())
+        mockMvc.perform(post("/api/flights/7/watch")
+                        .with(oidcLogin())
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
@@ -98,7 +108,9 @@ class FlightWatchControllerTest {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
         given(watches.watch(any(), eq(8L), any())).willReturn(Optional.empty());
 
-        mockMvc.perform(post("/api/flights/8/watch").with(oidcLogin()).with(csrf())
+        mockMvc.perform(post("/api/flights/8/watch")
+                        .with(oidcLogin())
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"departAt\":\"2026-11-04T14:00:00Z\"}"))
                 .andExpect(status().isNotFound());
@@ -110,7 +122,9 @@ class FlightWatchControllerTest {
         given(watches.watch(any(), eq(7L), any()))
                 .willThrow(new PlannerClient.Unavailable("the planner could not be reached for the briefing"));
 
-        mockMvc.perform(post("/api/flights/7/watch").with(oidcLogin()).with(csrf())
+        mockMvc.perform(post("/api/flights/7/watch")
+                        .with(oidcLogin())
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"departAt\":\"2026-11-04T14:00:00Z\"}"))
                 .andExpect(status().isBadGateway())
@@ -121,7 +135,8 @@ class FlightWatchControllerTest {
     void watch_isRefusedWithoutTheCsrfToken() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
 
-        mockMvc.perform(post("/api/flights/7/watch").with(oidcLogin())
+        mockMvc.perform(post("/api/flights/7/watch")
+                        .with(oidcLogin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"departAt\":\"2026-11-04T14:00:00Z\"}"))
                 .andExpect(status().isForbidden());
@@ -136,7 +151,8 @@ class FlightWatchControllerTest {
         mockMvc.perform(get("/api/flights/7/watch").with(oidcLogin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.changedAt").value("2026-11-03T20:00:00Z"))
-                .andExpect(jsonPath("$.changes[0].text").value("KDLH's ceiling is forecast 1,500 ft, down from 4,000."));
+                .andExpect(
+                        jsonPath("$.changes[0].text").value("KDLH's ceiling is forecast 1,500 ft, down from 4,000."));
         mockMvc.perform(get("/api/flights/8/watch").with(oidcLogin())).andExpect(status().isNotFound());
     }
 
@@ -146,7 +162,9 @@ class FlightWatchControllerTest {
         given(watches.unwatch(any(), eq(7L))).willReturn(true);
         given(watches.unwatch(any(), eq(8L))).willReturn(false);
 
-        mockMvc.perform(delete("/api/flights/7/watch").with(oidcLogin()).with(csrf())).andExpect(status().isNoContent());
-        mockMvc.perform(delete("/api/flights/8/watch").with(oidcLogin()).with(csrf())).andExpect(status().isNotFound());
+        mockMvc.perform(delete("/api/flights/7/watch").with(oidcLogin()).with(csrf()))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(delete("/api/flights/8/watch").with(oidcLogin()).with(csrf()))
+                .andExpect(status().isNotFound());
     }
 }

@@ -1,4 +1,5 @@
 """Where an airplane is based: the field its own flights keep to."""
+
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
@@ -28,8 +29,9 @@ def _base_of(flights: list[dict]) -> dict | None:
     and BASED_SHARE; None where none is. No open data says where an
     airplane is kept, so where it flies from and back to is taken for it,
     at the owner's ask (the Aircraft tab's "based at" filter, 2026-10-13)."""
-    ends = [f["origin"] for f in flights if f.get("origin")] \
-        + [f["destination"] for f in flights if f.get("destination") and f.get("landed")]
+    ends = [f["origin"] for f in flights if f.get("origin")] + [
+        f["destination"] for f in flights if f.get("destination") and f.get("landed")
+    ]
     counts: dict[str, int] = {}
     for end in ends:
         counts[end["ident"]] = counts.get(end["ident"], 0) + 1

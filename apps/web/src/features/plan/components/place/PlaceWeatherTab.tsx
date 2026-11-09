@@ -32,7 +32,16 @@ function observedLine(at: string): string {
  * hour (G1) over the reports as sent -- its own, else the weather modelled
  * at it and the nearest station's -- and its ATIS, heard or sent.
  */
-export function PlaceWeatherTab({ ident, place, known, chip, hourly, weatherLine, weatherAge, arrival }: {
+export function PlaceWeatherTab({
+  ident,
+  place,
+  known,
+  chip,
+  hourly,
+  weatherLine,
+  weatherAge,
+  arrival,
+}: {
   /** The ident the card was opened on. */
   ident: string;
   place: AirportPlace | undefined;
@@ -52,9 +61,9 @@ export function PlaceWeatherTab({ ident, place, known, chip, hourly, weatherLine
   const metar = place?.metar ?? null;
   // The nearest station's within 30 nm, for one with no report of its own
   // (wingtip.weather.nearest_report), and its category.
-  const nearby = place && !metar ? place.nearby_metar ?? null : null;
+  const nearby = place && !metar ? (place.nearby_metar ?? null) : null;
   const nearbyCategory = nearby?.metar.flight_category ?? null;
-  const modelled = place && !metar ? place.modelled_weather ?? null : null;
+  const modelled = place && !metar ? (place.modelled_weather ?? null) : null;
   return (
     <>
       {/* The weather's card at the top of its tab, as Apple's Weather
@@ -68,8 +77,13 @@ export function PlaceWeatherTab({ ident, place, known, chip, hourly, weatherLine
         <ListGroup>
           <ListRow
             media={chip || undefined}
-            title={<span className={TEXT.prose} data-testid="place-forecast-sentence">{place ? hourly.sentence ?? weatherLine : "…"}</span>}
-            value={weatherAge ?? undefined} data-testid="place-weather-summary"
+            title={
+              <span className={TEXT.prose} data-testid="place-forecast-sentence">
+                {place ? (hourly.sentence ?? weatherLine) : "…"}
+              </span>
+            }
+            value={weatherAge ?? undefined}
+            data-testid="place-weather-summary"
           />
           {place && hourly.hours.length > 0 && (
             <div className="min-w-0">
@@ -88,7 +102,8 @@ export function PlaceWeatherTab({ ident, place, known, chip, hourly, weatherLine
                     own ship's receiver). Its wind is true, as reported. */}
                 {metar.observed_at && (
                   <ListRow
-                    title="Observed" data-testid="place-observed"
+                    title="Observed"
+                    data-testid="place-observed"
                     value={<span className="text-foreground">{observedLine(metar.observed_at)}</span>}
                   />
                 )}
@@ -97,35 +112,67 @@ export function PlaceWeatherTab({ ident, place, known, chip, hourly, weatherLine
                     under them. */}
                 {metar.wind_speed_kt != null && (
                   <ListRow
-                    media={<RowBadge colour={BADGE.weather}><Wind /></RowBadge>} title="Wind"
-                    value={<span className="font-semibold text-foreground">{windLine(metar)}</span>} data-testid="place-wind"
+                    media={
+                      <RowBadge colour={BADGE.weather}>
+                        <Wind />
+                      </RowBadge>
+                    }
+                    title="Wind"
+                    value={<span className="font-semibold text-foreground">{windLine(metar)}</span>}
+                    data-testid="place-wind"
                   />
                 )}
                 <ListRow
-                  media={<RowBadge colour={BADGE.weather}><Eye /></RowBadge>} title="Visibility"
+                  media={
+                    <RowBadge colour={BADGE.weather}>
+                      <Eye />
+                    </RowBadge>
+                  }
+                  title="Visibility"
                   value={<span className="font-semibold text-foreground">{miles(metar.visibility_sm)}</span>}
                 />
                 <ListRow
-                  media={<RowBadge colour={BADGE.weather}><Cloud /></RowBadge>} title="Ceiling"
-                  value={<span className="font-semibold text-foreground">{metar.ceiling_ft == null ? "None" : feet(metar.ceiling_ft)}</span>}
+                  media={
+                    <RowBadge colour={BADGE.weather}>
+                      <Cloud />
+                    </RowBadge>
+                  }
+                  title="Ceiling"
+                  value={
+                    <span className="font-semibold text-foreground">{metar.ceiling_ft == null ? "None" : feet(metar.ceiling_ft)}</span>
+                  }
                 />
                 {metar.temp_c != null && (
                   <ListRow
-                    media={<RowBadge colour={BADGE.weather}><Thermometer /></RowBadge>} title="Temperature"
+                    media={
+                      <RowBadge colour={BADGE.weather}>
+                        <Thermometer />
+                      </RowBadge>
+                    }
+                    title="Temperature"
                     description={metar.dewpoint_c != null ? `Dew point ${Math.round(metar.dewpoint_c)} °C` : undefined}
                     value={<span className="font-semibold text-foreground">{Math.round(metar.temp_c)} °C</span>}
                   />
                 )}
                 {metar.altimeter_in_hg != null && (
                   <ListRow
-                    media={<RowBadge colour={BADGE.weather}><Gauge /></RowBadge>} title="Altimeter"
+                    media={
+                      <RowBadge colour={BADGE.weather}>
+                        <Gauge />
+                      </RowBadge>
+                    }
+                    title="Altimeter"
                     value={<span className="font-semibold text-foreground">{metar.altimeter_in_hg.toFixed(2)} inHg</span>}
                   />
                 )}
                 <ListRow title={<span className="font-mono break-words">{metar.raw}</span>} />
               </>
             ) : (
-              <ListRow title={place.weather_unavailable ? "The weather service could not be reached" : "No weather station reports from this field"} />
+              <ListRow
+                title={
+                  place.weather_unavailable ? "The weather service could not be reached" : "No weather station reports from this field"
+                }
+              />
             )}
           </ListGroup>
           {/* For one with no report of its own, the weather modelled at
@@ -137,17 +184,40 @@ export function PlaceWeatherTab({ ident, place, known, chip, hourly, weatherLine
                   guidance from a model, not an observation. */}
               <ListGroup title={`Modelled for ${zuluOf(modelled.valid_at)}`}>
                 <ListRow
-                  media={<RowBadge colour={BADGE.weather}><CloudSun /></RowBadge>} title="Flight category"
+                  media={
+                    <RowBadge colour={BADGE.weather}>
+                      <CloudSun />
+                    </RowBadge>
+                  }
+                  title="Flight category"
                   value={<span className="font-semibold text-foreground">{modelled.flight_category}</span>}
                 />
                 <ListRow
-                  media={<RowBadge colour={BADGE.weather}><Eye /></RowBadge>} title="Visibility"
+                  media={
+                    <RowBadge colour={BADGE.weather}>
+                      <Eye />
+                    </RowBadge>
+                  }
+                  title="Visibility"
                   // GLMP's most is 10 sm, as a METAR's "10SM" is.
-                  value={<span className="font-semibold text-foreground">{modelled.visibility_sm >= 10 ? "10+ sm" : miles(modelled.visibility_sm)}</span>}
+                  value={
+                    <span className="font-semibold text-foreground">
+                      {modelled.visibility_sm >= 10 ? "10+ sm" : miles(modelled.visibility_sm)}
+                    </span>
+                  }
                 />
                 <ListRow
-                  media={<RowBadge colour={BADGE.weather}><Cloud /></RowBadge>} title="Ceiling"
-                  value={<span className="font-semibold text-foreground">{modelled.ceiling_ft == null ? "None" : feet(modelled.ceiling_ft)}</span>}
+                  media={
+                    <RowBadge colour={BADGE.weather}>
+                      <Cloud />
+                    </RowBadge>
+                  }
+                  title="Ceiling"
+                  value={
+                    <span className="font-semibold text-foreground">
+                      {modelled.ceiling_ft == null ? "None" : feet(modelled.ceiling_ft)}
+                    </span>
+                  }
                 />
               </ListGroup>
             </div>

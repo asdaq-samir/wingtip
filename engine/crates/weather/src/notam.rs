@@ -46,8 +46,16 @@ fn iso_minute(text: &str) -> Option<String> {
     let t = text.trim();
     let b = t.as_bytes();
     let dig = |r: std::ops::Range<usize>| r.clone().all(|i| b.get(i).is_some_and(u8::is_ascii_digit));
-    let ok = b.len() >= 16 && dig(0..4) && b[4] == b'-' && dig(5..7) && b[7] == b'-' && dig(8..10) && b[10] == b'T'
-        && dig(11..13) && b[13] == b':' && dig(14..16);
+    let ok = b.len() >= 16
+        && dig(0..4)
+        && b[4] == b'-'
+        && dig(5..7)
+        && b[7] == b'-'
+        && dig(8..10)
+        && b[10] == b'T'
+        && dig(11..13)
+        && b[13] == b':'
+        && dig(14..16);
     if !ok {
         return None;
     }
@@ -55,7 +63,9 @@ fn iso_minute(text: &str) -> Option<String> {
     let tail = &t[16..];
     let tail = tail.strip_suffix('Z').or_else(|| tail.strip_suffix("+00:00")).unwrap_or(tail);
     let tail_ok = tail.is_empty()
-        || (tail.len() >= 3 && tail.as_bytes()[0] == b':' && tail[1..3].bytes().all(|c| c.is_ascii_digit())
+        || (tail.len() >= 3
+            && tail.as_bytes()[0] == b':'
+            && tail[1..3].bytes().all(|c| c.is_ascii_digit())
             && (tail.len() == 3 || (tail.as_bytes()[3] == b'.' && tail.len() > 4 && tail[4..].bytes().all(|c| c.is_ascii_digit()))));
     tail_ok.then(|| format!("{}:00Z", &t[..16]))
 }
@@ -185,8 +195,9 @@ pub fn from_fns(text: &str) -> Vec<Notam> {
         let found = fns_icao_id(icao_or_text);
         let (series, number, year) = (get("series"), get("number"), get("year"));
         let icao_number = found.as_ref().map(|f| f.0.clone()).or_else(|| {
-            (!series.is_empty() && !number.is_empty() && !year.is_empty())
-                .then(|| format!("{series}{number:0>4}/{}", year.chars().rev().take(2).collect::<Vec<_>>().into_iter().rev().collect::<String>()))
+            (!series.is_empty() && !number.is_empty() && !year.is_empty()).then(|| {
+                format!("{series}{number:0>4}/{}", year.chars().rev().take(2).collect::<Vec<_>>().into_iter().rev().collect::<String>())
+            })
         });
         let ext = |tag: &str| event.find(&["extension", "EventExtension"]).and_then(|e| e.text_at(&[tag])).and_then(some);
         let place = icao_place(icao_or_text).or_else(|| ext("icaoLocation")).or_else(|| some(&get("location")));
@@ -212,7 +223,12 @@ pub fn from_fns(text: &str) -> Vec<Notam> {
             (Some((_, n)), Some("R" | "C")) => n.clone(),
             _ => None,
         };
-        let raw = [domestic.as_deref(), icao.as_deref(), Some(text.as_str())].into_iter().flatten().find(|s| !s.is_empty()).unwrap_or("").to_string();
+        let raw = [domestic.as_deref(), icao.as_deref(), Some(text.as_str())]
+            .into_iter()
+            .flatten()
+            .find(|s| !s.is_empty())
+            .unwrap_or("")
+            .to_string();
         out.push(Notam {
             id: key,
             icao_id: icao_number,
@@ -243,9 +259,15 @@ pub fn to_json(list: &[Notam]) -> String {
         out.push_str("{\"id\":");
         json::string(&mut out, &n.id);
         for (name, v) in [
-            ("icao_id", &n.icao_id), ("names", &n.names), ("type", &n.kind), ("location", &n.location),
-            ("icao_location", &n.icao_location), ("classification", &n.classification), ("issued", &n.issued),
-            ("starts", &n.starts), ("ends", &n.ends),
+            ("icao_id", &n.icao_id),
+            ("names", &n.names),
+            ("type", &n.kind),
+            ("location", &n.location),
+            ("icao_location", &n.icao_location),
+            ("classification", &n.classification),
+            ("issued", &n.issued),
+            ("starts", &n.starts),
+            ("ends", &n.ends),
         ] {
             out.push_str(&format!(",\"{name}\":"));
             json::opt_string(&mut out, v.as_deref());

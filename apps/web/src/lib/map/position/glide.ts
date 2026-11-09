@@ -25,7 +25,10 @@ export function glideRangeNm(fix: Fix | null, groundFt: number | null | undefine
 export function reachesField(fix: Fix | null, field: { distance_nm: number; elevation_ft?: number | null }): boolean {
   if (!fix) return false;
   return callEngine("glide_reaches", {
-    altitude_ft: fix.altitudeFt, speed_kt: fix.speedKt, distance_nm: field.distance_nm, elevation_ft: field.elevation_ft ?? null,
+    altitude_ft: fix.altitudeFt,
+    speed_kt: fix.speedKt,
+    distance_nm: field.distance_nm,
+    elevation_ft: field.elevation_ft ?? null,
   });
 }
 

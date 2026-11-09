@@ -11,8 +11,18 @@ export interface MenuKit {
   Shortcut: ComponentType<{ className?: string; children?: ReactNode }>;
 }
 
-export const DROPDOWN: MenuKit = { Item: DropdownMenuItem, Label: DropdownMenuLabel, Separator: DropdownMenuSeparator, Shortcut: DropdownMenuShortcut };
-export const CONTEXT_MENU: MenuKit = { Item: ContextMenuItem, Label: ContextMenuLabel, Separator: ContextMenuSeparator, Shortcut: ContextMenuShortcut };
+export const DROPDOWN: MenuKit = {
+  Item: DropdownMenuItem,
+  Label: DropdownMenuLabel,
+  Separator: DropdownMenuSeparator,
+  Shortcut: DropdownMenuShortcut,
+};
+export const CONTEXT_MENU: MenuKit = {
+  Item: ContextMenuItem,
+  Label: ContextMenuLabel,
+  Separator: ContextMenuSeparator,
+  Shortcut: ContextMenuShortcut,
+};
 
 /**
  * A sheet, a dialog or a search opened from a menu's item once the menu has
@@ -27,7 +37,11 @@ export const CONTEXT_MENU: MenuKit = { Item: ContextMenuItem, Label: ContextMenu
 export function useAfterMenu() {
   const pending = useRef<{ go: () => void; keep: boolean } | null>(null);
   return {
-    later: (go: () => void, keep = false) => () => { pending.current = { go, keep }; },
+    later:
+      (go: () => void, keep = false) =>
+      () => {
+        pending.current = { go, keep };
+      },
     onCloseAutoFocus: (e: Event) => {
       const next = pending.current;
       if (!next) return;
@@ -37,4 +51,3 @@ export function useAfterMenu() {
     },
   };
 }
-

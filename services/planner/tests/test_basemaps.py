@@ -1,4 +1,5 @@
 """/api/map/google: the deployment's key for Google's map tiles, or none."""
+
 from fastapi.testclient import TestClient
 
 from wingtip.config import get_settings

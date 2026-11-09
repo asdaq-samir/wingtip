@@ -44,14 +44,20 @@ pub fn candidates(segments: &[Value], legs: usize, profile: Option<&Profile>) ->
     let mut out = Vec::with_capacity(legs);
     for s in segments {
         let options: Vec<f64> = match s.get("candidates_ft") {
-            Some(Value::Array(items)) => items.iter().map(|a| a.as_f64().ok_or("a segment's \"candidates_ft\" is not a list of feet")).collect::<Result<_, _>>()?,
+            Some(Value::Array(items)) => {
+                items.iter().map(|a| a.as_f64().ok_or("a segment's \"candidates_ft\" is not a list of feet")).collect::<Result<_, _>>()?
+            }
             None | Some(Value::Null) => Vec::new(),
             Some(_) => return Err("a segment's \"candidates_ft\" is not a list".to_owned()),
         };
         if options.is_empty() {
             return Ok(None);
         }
-        let held: Vec<f64> = if profile.is_some_and(|p| p.oxygen) { options.clone() } else { options.iter().copied().filter(|a| *a <= OXYGEN_CAP_FT).collect() };
+        let held: Vec<f64> = if profile.is_some_and(|p| p.oxygen) {
+            options.clone()
+        } else {
+            options.iter().copied().filter(|a| *a <= OXYGEN_CAP_FT).collect()
+        };
         out.push(if held.is_empty() { options } else { held });
     }
     Ok(Some(out))
@@ -72,7 +78,12 @@ pub struct Flights<'a> {
 impl<'a> Flights<'a> {
     pub fn new(name: &'a str, fixes: &'a [Value], profile: Option<&'a Profile>, air: &'a [LegAir]) -> R<Self> {
         if air.len() + 1 != fixes.len() {
-            return Err(format!("{name}: {} fixes make {} legs, and the air is given for {}", fixes.len(), fixes.len().saturating_sub(1), air.len()));
+            return Err(format!(
+                "{name}: {} fixes make {} legs, and the air is given for {}",
+                fixes.len(),
+                fixes.len().saturating_sub(1),
+                air.len()
+            ));
         }
         Ok(Flights { name, fixes, profile, air, climber: profile.map(|p| Climber::new(&p.airplane)), cache: RefCell::new(HashMap::new()) })
     }
@@ -84,7 +95,15 @@ impl<'a> Flights<'a> {
             return Ok(leg.clone());
         }
         let air = &self.air[i];
-        let leg = leg_between(self.name, &self.fixes[i], &self.fixes[i + 1], altitude_ft, self.profile, air.at(self.name, i, altitude_ft)?, air.variation_deg)?;
+        let leg = leg_between(
+            self.name,
+            &self.fixes[i],
+            &self.fixes[i + 1],
+            altitude_ft,
+            self.profile,
+            air.at(self.name, i, altitude_ft)?,
+            air.variation_deg,
+        )?;
         self.cache.borrow_mut().insert(key, leg.clone());
         Ok(leg)
     }
@@ -102,7 +121,9 @@ impl<'a> Flights<'a> {
 /// dynamic programming over the legs, one state per legal altitude of the
 /// leg. A step's cost is the leg's own, since a climb is flown in the air
 /// of the leg it climbs to. Ties go to the lower altitude.
-fn best_path(candidates: &[Vec<f64>], leg_cost: &dyn Fn(usize, f64) -> R<f64>, step_cost: &dyn Fn(usize, Option<f64>, f64) -> R<f64>) -> R<Vec<f64>> {
+fn best_path(
+    candidates: &[Vec<f64>], leg_cost: &dyn Fn(usize, f64) -> R<f64>, step_cost: &dyn Fn(usize, Option<f64>, f64) -> R<f64>,
+) -> R<Vec<f64>> {
     // Per leg: each altitude's cost so far and the altitude before it.
     let mut best: Vec<Vec<(f64, f64, Option<f64>)>> = Vec::with_capacity(candidates.len());
     for (i, options) in candidates.iter().enumerate() {
@@ -247,7 +268,8 @@ impl Plan<'_> {
         };
         let from = |prev: Option<f64>| prev.unwrap_or(start_ft);
         let climb_step = |i: usize, prev: Option<f64>, a: f64| climb_penalty_min(from(prev), a, profile, climber, Some(&f.leg_at(i, a)?));
-        let fuel_step = |i: usize, prev: Option<f64>, a: f64| climb_fuel_penalty_gal(from(prev), a, profile, climber, Some(&f.leg_at(i, a)?));
+        let fuel_step =
+            |i: usize, prev: Option<f64>, a: f64| climb_fuel_penalty_gal(from(prev), a, profile, climber, Some(&f.leg_at(i, a)?));
         let fixed_step = |_: usize, prev: Option<f64>, a: f64| Ok(if prev.is_some_and(|p| p != a) { STEP_PENALTY_FT_NM } else { 0.0 });
         let minutes = |i: usize, a: f64| Ok(f.leg_at(i, a)?.opt("ete_min")?.unwrap_or(f64::INFINITY));
         let gallons = |i: usize, a: f64| Ok(f.leg_at(i, a)?.opt("fuel_gal")?.unwrap_or(f64::INFINITY));
@@ -376,13 +398,22 @@ pub fn join_options(by_hop: &[Vec<Obj>], lengths: &[f64]) -> R<Vec<Value>> {
                 steps.extend(s.iter().cloned());
             }
         }
-        let count = |key: &str| -> R<f64> { Ok(py_sum(mine.iter().map(|o| o.opt(key)).collect::<R<Vec<_>>>()?.into_iter().map(|v| v.unwrap_or(0.0)))) };
+        let count = |key: &str| -> R<f64> {
+            Ok(py_sum(mine.iter().map(|o| o.opt(key)).collect::<R<Vec<_>>>()?.into_iter().map(|v| v.unwrap_or(0.0))))
+        };
         joined.push(object(vec![
             ("kind", Value::String(kind.to_owned())),
             ("steps", Value::Array(steps)),
             ("ete_min", total("ete_min")?),
             ("fuel_gal", total("fuel_gal")?),
-            ("climb_penalty_min", if mine.iter().all(|o| o.has("climb_penalty_min")) { number(py_round(count("climb_penalty_min")?, 1)) } else { Value::Null }),
+            (
+                "climb_penalty_min",
+                if mine.iter().all(|o| o.has("climb_penalty_min")) {
+                    number(py_round(count("climb_penalty_min")?, 1))
+                } else {
+                    Value::Null
+                },
+            ),
             ("tailwind_kt", if weight != 0.0 { number(py_round(tailwind / weight, 1)) } else { Value::Null }),
             ("unflyable_legs", number(count("unflyable_legs")?)),
             ("legs_without_wind", number(count("legs_without_wind")?)),
@@ -445,7 +476,11 @@ pub fn join_figures(by_hop: &[Vec<Obj>], lengths: &[f64]) -> R<Vec<Value>> {
         }
         let total = |key: &str| -> R<Value> {
             let values = mine.iter().map(|o| o.opt(key)).collect::<R<Vec<_>>>()?;
-            Ok(if gap || values.iter().any(Option::is_none) { Value::Null } else { number(py_round(py_sum(values.into_iter().flatten()), 1)) })
+            Ok(if gap || values.iter().any(Option::is_none) {
+                Value::Null
+            } else {
+                number(py_round(py_sum(values.into_iter().flatten()), 1))
+            })
         };
         let (tailwind, weight) = weighed_wind(&mine, &offered_nm)?;
         let everywhere = !gap && mine.iter().all(|f| f.truthy("everywhere") && f.num("altitude_ft").ok() == Some(target));

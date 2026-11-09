@@ -9,6 +9,6 @@
  *  (2026-11-03). */
 let query: MediaQueryList | null | undefined;
 export function prefersReducedMotion(): boolean {
-  if (query === undefined) query = typeof window !== "undefined" ? window.matchMedia?.("(prefers-reduced-motion: reduce)") ?? null : null;
+  if (query === undefined) query = typeof window !== "undefined" ? (window.matchMedia?.("(prefers-reduced-motion: reduce)") ?? null) : null;
   return !!query?.matches;
 }

@@ -170,8 +170,7 @@ struct SplitLayout<Map: View>: View {
                 } else {
                     airports = next
                 }
-            }
-        )
+            })
     }
 
     private var inspectorShown: Binding<Bool> {

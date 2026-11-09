@@ -1,6 +1,7 @@
 """The model reading one photographed page: the photo and the ask for its
 kind in, the page's figures out as a filled-in shape (structured outputs,
 `messages.parse`), so what comes back is data and not prose to parse."""
+
 from __future__ import annotations
 
 import anthropic
@@ -13,8 +14,10 @@ from .schemas import ClearancePage, HandbookPage, Kind, LogbookPage
 
 #: What each kind of page is read into.
 SHAPES: dict[str, type[BaseModel]] = {
-    "poh-performance": HandbookPage, "weight-balance": HandbookPage,
-    "logbook-page": LogbookPage, "clearance": ClearancePage,
+    "poh-performance": HandbookPage,
+    "weight-balance": HandbookPage,
+    "logbook-page": LogbookPage,
+    "clearance": ClearancePage,
 }
 #: Non-streaming, as one page's figures are a few thousand tokens at most;
 #: the model thinks first, within this (the notes' lesson: too few and it
@@ -34,12 +37,20 @@ def read(kind: Kind, image_b64: str, media_type: str) -> BaseModel:
     try:
         with tracing.claude_call("documents", s.documents_model) as used:
             response = anthropic.Anthropic().messages.parse(
-                model=s.documents_model, max_tokens=MAX_TOKENS, system=SYSTEM,
-                messages=[{"role": "user", "content": [
-                    {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": image_b64}},
-                    {"type": "text", "text": ASKS[kind]},
-                ]}],
-                output_format=shape, output_config={"effort": s.documents_effort},
+                model=s.documents_model,
+                max_tokens=MAX_TOKENS,
+                system=SYSTEM,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": image_b64}},
+                            {"type": "text", "text": ASKS[kind]},
+                        ],
+                    }
+                ],
+                output_format=shape,
+                output_config={"effort": s.documents_effort},
             )
             used.add(response)
     except anthropic.AnthropicError as err:

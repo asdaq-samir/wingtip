@@ -553,8 +553,7 @@ struct LostCommsSegmentsSections: View {
         EngineContract.LostCommsInput(
             segments: zip(segments, minimums).map { .init(name: $0.name, minimumFt: Self.feet($1)) },
             assignedFt: Self.feet(assigned), expectedFt: Self.feet(expected), expectedFrom: expectedFrom,
-            approachFix: approachFix, efc: efc, eta: eta
-        )
+            approachFix: approachFix, efc: efc, eta: eta)
     }
 
     static func feet(_ text: String) -> Double? { Double(text.trimmingCharacters(in: .whitespaces)) }

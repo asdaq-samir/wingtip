@@ -29,9 +29,18 @@ const STORES = { APP_STORE: "App Store", PLAY: "Google Play", WEB: "Website", GR
  */
 export default function SubscriptionPanel() {
   const { data: subscription, isPending, error } = useQuery(subscriptionQuery);
-  if (isPending) return <p role="status" className={cn("px-1 text-muted-foreground", TEXT.note)}>Checking your subscription…</p>;
+  if (isPending)
+    return (
+      <p role="status" className={cn("px-1 text-muted-foreground", TEXT.note)}>
+        Checking your subscription…
+      </p>
+    );
   if (error || !subscription) {
-    return <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>Your subscription could not be checked.</p>;
+    return (
+      <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
+        Your subscription could not be checked.
+      </p>
+    );
   }
   return (
     <div className="space-y-4" data-testid="subscription-panel">
@@ -48,14 +57,21 @@ export default function SubscriptionPanel() {
         subscription.state !== "COMPED" && (
           // Each written by Claude as it is asked for; the month starts again on the 1st.
           <ListGroup title="This Month">
-            {subscription.uses.map(use => (
-              <ListRow key={use.feature} title={COUNTED[use.feature]} value={`${use.used} of ${use.cap}`}
-                data-testid={`subscription-use-${use.feature}`} />
+            {subscription.uses.map((use) => (
+              <ListRow
+                key={use.feature}
+                title={COUNTED[use.feature]}
+                value={`${use.used} of ${use.cap}`}
+                data-testid={`subscription-use-${use.feature}`}
+              />
             ))}
           </ListGroup>
         )
       ) : (
-        <PaidPrompt feature="NARRATIVE" title="The Subscription">The flight told in plain words, a line for each checkpoint, a mock oral on your route, and your flown track measured against the plan.</PaidPrompt>
+        <PaidPrompt feature="NARRATIVE" title="The Subscription">
+          The flight told in plain words, a line for each checkpoint, a mock oral on your route, and your flown track measured against the
+          plan.
+        </PaidPrompt>
       )}
     </div>
   );

@@ -1,11 +1,11 @@
 package app.wingtipmaps.android.briefing
 
 import app.wingtipmaps.android.checklist.MemoryStore
-import java.time.ZoneId
-import java.time.ZonedDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 /** The passenger briefing's message and the ticks kept for a flight
  *  (PassengerBriefing, PassengerTicks): the words the web app's

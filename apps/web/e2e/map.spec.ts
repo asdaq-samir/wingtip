@@ -1,12 +1,29 @@
 import { test, expect } from "@playwright/test";
-import { airportMarks, chartZoom, drawn, mapStill, beforeTheRoute, openPanel, settle, sideDrawer, slow, tapTheChart, grabberTo, controlsInSight, openNavLog, navLogSheet } from "./helpers";
+import {
+  airportMarks,
+  chartZoom,
+  drawn,
+  mapStill,
+  beforeTheRoute,
+  openPanel,
+  settle,
+  sideDrawer,
+  slow,
+  tapTheChart,
+  grabberTo,
+  controlsInSight,
+  openNavLog,
+  navLogSheet,
+} from "./helpers";
 
 /**
  * The map: its popups, its zoom toggle and the dev page's zoom button,
  * own ship when the map is panned, and a route with no map to draw.
  */
 
-test("plan page: a route from an airport to itself is a local flight: the field's briefing, and the time aloft with its fuel check", async ({ page }) => {
+test("plan page: a route from an airport to itself is a local flight: the field's briefing, and the time aloft with its fuel check", async ({
+  page,
+}) => {
   // The pattern, practice approaches: it was refused, the page asking for
   // two different airports.
   await page.goto("/app/plan?dep=C81&dest=C81");
@@ -56,7 +73,10 @@ test("plan page: every popup the map opens dismisses the same way", async ({ pag
     await page.waitForTimeout(400);
   }
 
-  const chip = page.locator(".maplibregl-marker").filter({ has: page.locator('[data-airspace="B"]'), hasText: "KORD" }).first();
+  const chip = page
+    .locator(".maplibregl-marker")
+    .filter({ has: page.locator('[data-airspace="B"]'), hasText: "KORD" })
+    .first();
   await expect(chip).toBeVisible({ timeout: slow(25000) });
   // A Class B chip opens the field's card in the panel, as every
   // airport on the chart does, not a popup of its own on the map.
@@ -69,27 +89,31 @@ test("plan page: every popup the map opens dismisses the same way", async ({ pag
   await expect(page.getByTestId("place-card")).toHaveCount(0);
 });
 
-test("plan page: a checkpoint picked on the map brings the map in to it, so there is no zoom button", { tag: "@smoke" }, async ({ page }) => {
-  // The map's buttons had a zoom toggle between the whole route and the
-  // selected point; picking a point already does the one, and the wheel
-  // or a pinch the other.
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await settle(page);
-  await expect(page.locator("[data-map-controls]")).toBeVisible();
-  await expect(page.locator("[data-map-controls]").getByRole("button", { name: /zoom|fit route|show selected/i })).toHaveCount(0);
-  const zoomOfTiles = () => chartZoom(page);
-  const before = await zoomOfTiles();
-  // A checkpoint drawn at this zoom: those without room for their dots
-  // wait for the map to come in (RouteMap's useSpaced).
-  const marker = page.locator(".maplibregl-marker", { hasText: /^\d+$/ }).first();
-  await expect(marker).toBeVisible({ timeout: slow(60000) });
-  // Its own click, not one at its place: the route fitted to a phone
-  // stacks neighbouring checkpoints, and a click there lands on the one
-  // drawn over it.
-  await marker.dispatchEvent("click");
-  await expect.poll(zoomOfTiles, { timeout: slow(10000) }).toBeGreaterThan(before);
-  await expect.poll(async () => (await drawn(page, "route-line")).length).toBeGreaterThan(0);
-});
+test(
+  "plan page: a checkpoint picked on the map brings the map in to it, so there is no zoom button",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    // The map's buttons had a zoom toggle between the whole route and the
+    // selected point; picking a point already does the one, and the wheel
+    // or a pinch the other.
+    await page.goto("/app/plan?dep=C81&dest=KDLH");
+    await settle(page);
+    await expect(page.locator("[data-map-controls]")).toBeVisible();
+    await expect(page.locator("[data-map-controls]").getByRole("button", { name: /zoom|fit route|show selected/i })).toHaveCount(0);
+    const zoomOfTiles = () => chartZoom(page);
+    const before = await zoomOfTiles();
+    // A checkpoint drawn at this zoom: those without room for their dots
+    // wait for the map to come in (RouteMap's useSpaced).
+    const marker = page.locator(".maplibregl-marker", { hasText: /^\d+$/ }).first();
+    await expect(marker).toBeVisible({ timeout: slow(60000) });
+    // Its own click, not one at its place: the route fitted to a phone
+    // stacks neighbouring checkpoints, and a click there lands on the one
+    // drawn over it.
+    await marker.dispatchEvent("click");
+    await expect.poll(zoomOfTiles, { timeout: slow(10000) }).toBeGreaterThan(before);
+    await expect.poll(async () => (await drawn(page, "route-line")).length).toBeGreaterThan(0);
+  },
+);
 
 test("plan page: panning the map with own ship off leaves 'Keep the map on me' as it was", async ({ page }) => {
   // `follow` is remembered per browser. A pan at the desk -- own ship
@@ -111,7 +135,9 @@ test("plan page: panning the map with own ship off leaves 'Keep the map on me' a
   expect(await follow()).toBe(true);
 });
 
-test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks they were chosen from at every zoom, and off leaves the course line alone", async ({ page }) => {
+test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks they were chosen from at every zoom, and off leaves the course line alone", async ({
+  page,
+}) => {
   // They used to start at a zoom picked from a menu (close in, by
   // default), so a route zoomed out to its region showed a line and two
   // airports; the landmarks, from zoom 7.
@@ -144,7 +170,9 @@ test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks
     await toggle.click();
   });
   const asked: string[] = [];
-  page.on("request", r => { if (/\/(checkpoints|navlog)\?/.test(r.url())) asked.push(new URL(r.url()).pathname.split("/").pop()!); });
+  page.on("request", (r) => {
+    if (/\/(checkpoints|navlog)\?/.test(r.url())) asked.push(new URL(r.url()).pathname.split("/").pop()!);
+  });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await expect(page.locator(".maplibregl-marker", { hasText: "KDLH" }).first()).toBeVisible({ timeout: slow(30000) });
@@ -159,7 +187,9 @@ test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks
   expect(asked).not.toContain("checkpoints");
 });
 
-test("my position is the location arrow among the map's buttons, on both pages, and over plain http it says why there is none", async ({ page }) => {
+test("my position is the location arrow among the map's buttons, on both pages, and over plain http it says why there is none", async ({
+  page,
+}) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   const arrow = page.locator("[data-map-controls]").getByTestId("my-position-button");
@@ -191,7 +221,7 @@ test("the chart's airports keep coming in under a finger's pan, before it lets g
   await page.goto("/app/plan?place=C81");
   await settle(page);
   await mapStill(page);
-  const idents = async () => new Set((await airportMarks(page)).map(m => m.ident));
+  const idents = async () => new Set((await airportMarks(page)).map((m) => m.ident));
   await expect.poll(async () => (await idents()).size, { timeout: slow(15_000) }).toBeGreaterThan(0);
   const before = await idents();
   // A pan to the west of most of a screen, the finger still down, from
@@ -210,6 +240,6 @@ test("the chart's airports keep coming in under a finger's pan, before it lets g
     await page.waitForTimeout(40);
   }
   // Still held: fields drawn that were not in sight before.
-  await expect.poll(async () => [...(await idents())].some(i => !before.has(i)), { timeout: slow(10_000) }).toBe(true);
+  await expect.poll(async () => [...(await idents())].some((i) => !before.has(i)), { timeout: slow(10_000) }).toBe(true);
   await page.mouse.up();
 });

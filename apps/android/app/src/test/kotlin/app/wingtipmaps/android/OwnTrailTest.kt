@@ -2,11 +2,11 @@ package app.wingtipmaps.android
 
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.flight.OwnTrail
-import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 /** The path flown's keep rules (OwnTrail), the web's and iOS's: a point
  *  every tenth of a mile or ten seconds at flying speed, none on the

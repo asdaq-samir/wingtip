@@ -84,8 +84,10 @@ fn the_lists_and_figures_the_apps_kept() {
     let reach = ask("traffic_reach", json!({}));
     assert_eq!(reach["around_nm"].as_f64(), f["trafficReach"]["around_nm"].as_f64());
     assert_eq!(reach["relation_nm"].as_f64(), f["trafficReach"]["relation_nm"].as_f64());
-    let phases = serde_json::from_str::<Value>(&std::fs::read_to_string(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures/checklist.json")).unwrap()).unwrap();
+    let phases = serde_json::from_str::<Value>(
+        &std::fs::read_to_string(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures/checklist.json")).unwrap(),
+    )
+    .unwrap();
     assert_eq!(ask("checklist_phases", json!({ "kind": "normal" })), phases["phases"]["normal"]);
     assert_eq!(ask("checklist_phases", json!({ "kind": "emergency" })), phases["phases"]["emergency"]);
     let lost = ask("lost_comms", json!({ "segments": [] }));

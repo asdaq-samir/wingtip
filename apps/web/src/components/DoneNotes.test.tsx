@@ -5,13 +5,31 @@ import DoneNotes from "./DoneNotes";
 import { done } from "../lib/doneNote";
 
 describe("a confirmation said where it happened", () => {
-  afterEach(() => { cleanup(); vi.useRealTimers(); });
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
 
   it("shows beside the control just tapped, says it to a reader, and goes in two seconds", () => {
     vi.useFakeTimers();
-    render(<><button type="button">Save</button><DoneNotes /></>);
+    render(
+      <>
+        <button type="button">Save</button>
+        <DoneNotes />
+      </>,
+    );
     const save = screen.getByRole("button", { name: "Save" });
-    save.getBoundingClientRect = () => ({ left: 100, top: 300, width: 80, height: 40, right: 180, bottom: 340, x: 100, y: 300, toJSON: () => ({}) });
+    save.getBoundingClientRect = () => ({
+      left: 100,
+      top: 300,
+      width: 80,
+      height: 40,
+      right: 180,
+      bottom: 340,
+      x: 100,
+      y: 300,
+      toJSON: () => ({}),
+    });
     save.focus();
     act(() => done("Flight Saved"));
     const note = screen.getByTestId("done-note");

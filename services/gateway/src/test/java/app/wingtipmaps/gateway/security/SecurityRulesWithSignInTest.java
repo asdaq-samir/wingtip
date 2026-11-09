@@ -59,14 +59,14 @@ class SecurityRulesWithSignInTest {
     @Test
     void loggingOutAnswersNoContent() throws Exception {
         signedInAs(PilotRole.PILOT);
-        mockMvc.perform(post("/logout").with(oidcLogin()).with(csrf()))
-                .andExpect(status().isNoContent());
+        mockMvc.perform(post("/logout").with(oidcLogin()).with(csrf())).andExpect(status().isNoContent());
     }
 
     @Test
     void readingFromThePlannerStaysPublic() throws Exception {
         mockMvc.perform(get("/api/planner/course"))
-                .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(401));
+                .andExpect(
+                        result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(401));
     }
 
     /** ForeFlight's download manager asks for the pack's size first, with
@@ -74,7 +74,8 @@ class SecurityRulesWithSignInTest {
     @Test
     void theForeFlightPackAnswersAHeadToo() throws Exception {
         mockMvc.perform(head("/api/planner/foreflight-pack/C81-KDLH/C81-KDLH-checkpoints.zip"))
-                .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(401));
+                .andExpect(
+                        result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(401));
         mockMvc.perform(head("/api/planner/course")).andExpect(status().isUnauthorized());
     }
 
@@ -83,7 +84,9 @@ class SecurityRulesWithSignInTest {
      *  token, as it reads the rest of the planner. */
     @Test
     void thePlannersReadsByPostStayPublicWithoutAToken() throws Exception {
-        for (String path : new String[] {"/api/planner/go-no-go", "/api/planner/debrief", "/api/planner/lost-comms", "/api/planner/clearance/places"}) {
+        for (String path : new String[] {
+            "/api/planner/go-no-go", "/api/planner/debrief", "/api/planner/lost-comms", "/api/planner/clearance/places"
+        }) {
             mockMvc.perform(post(path)).andExpect(notRefused());
         }
         mockMvc.perform(get("/api/planner/diversion")).andExpect(notRefused());
@@ -92,8 +95,7 @@ class SecurityRulesWithSignInTest {
 
     @Test
     void writingThroughThePlannerNeedsASession() throws Exception {
-        mockMvc.perform(post("/api/planner/picks").with(csrf()))
-                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/planner/picks").with(csrf())).andExpect(status().isUnauthorized());
     }
 
     /** A refused request is not saved for a redirect back after sign-in,
@@ -106,7 +108,8 @@ class SecurityRulesWithSignInTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(result -> {
                     var session = result.getRequest().getSession(false);
-                    assertThat(session == null ? null : session.getAttribute("SPRING_SECURITY_SAVED_REQUEST")).isNull();
+                    assertThat(session == null ? null : session.getAttribute("SPRING_SECURITY_SAVED_REQUEST"))
+                            .isNull();
                 });
     }
 
@@ -122,12 +125,19 @@ class SecurityRulesWithSignInTest {
     @Test
     void aPlainPilotMayNotDoTheDevelopersWork() throws Exception {
         signedInAs(PilotRole.PILOT);
-        mockMvc.perform(post("/api/planner/retrain").with(oidcLogin()).with(csrf())).andExpect(status().isForbidden());
-        mockMvc.perform(post("/api/planner/charts/refresh").with(oidcLogin()).with(csrf())).andExpect(status().isForbidden());
-        mockMvc.perform(post("/api/planner/picks").with(oidcLogin()).with(csrf())).andExpect(status().isForbidden());
-        mockMvc.perform(delete("/api/planner/picks").with(oidcLogin()).with(csrf())).andExpect(status().isForbidden());
-        mockMvc.perform(post("/api/planner/oral/question").with(oidcLogin()).with(csrf())).andExpect(status().isForbidden());
-        mockMvc.perform(post("/api/planner/dev/services/ml/start").with(oidcLogin()).with(csrf()))
+        mockMvc.perform(post("/api/planner/retrain").with(oidcLogin()).with(csrf()))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/planner/charts/refresh").with(oidcLogin()).with(csrf()))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/planner/picks").with(oidcLogin()).with(csrf()))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/planner/picks").with(oidcLogin()).with(csrf()))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/planner/oral/question").with(oidcLogin()).with(csrf()))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/planner/dev/services/ml/start")
+                        .with(oidcLogin())
+                        .with(csrf()))
                 .andExpect(status().isForbidden());
         mockMvc.perform(get("/api/planner/status").with(oidcLogin())).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/planner/dev/services").with(oidcLogin())).andExpect(status().isForbidden());
@@ -139,9 +149,12 @@ class SecurityRulesWithSignInTest {
     @Test
     void aDeveloperMayDoTheDevelopersWork() throws Exception {
         signedInAs(PilotRole.DEVELOPER);
-        mockMvc.perform(post("/api/planner/retrain").with(oidcLogin()).with(csrf())).andExpect(notRefused());
-        mockMvc.perform(post("/api/planner/picks").with(oidcLogin()).with(csrf())).andExpect(notRefused());
-        mockMvc.perform(post("/api/planner/oral/grade").with(oidcLogin()).with(csrf())).andExpect(notRefused());
+        mockMvc.perform(post("/api/planner/retrain").with(oidcLogin()).with(csrf()))
+                .andExpect(notRefused());
+        mockMvc.perform(post("/api/planner/picks").with(oidcLogin()).with(csrf()))
+                .andExpect(notRefused());
+        mockMvc.perform(post("/api/planner/oral/grade").with(oidcLogin()).with(csrf()))
+                .andExpect(notRefused());
         mockMvc.perform(get("/api/planner/status").with(oidcLogin())).andExpect(notRefused());
         mockMvc.perform(get("/api/planner/dev/services").with(oidcLogin())).andExpect(notRefused());
         mockMvc.perform(get("/api/planner/detect/stream").with(oidcLogin())).andExpect(notRefused());
@@ -171,7 +184,10 @@ class SecurityRulesWithSignInTest {
     void aNarrativeNeedsASession() throws Exception {
         mockMvc.perform(post("/api/planner/briefing/narrative").with(csrf())).andExpect(status().isUnauthorized());
         signedInAs(PilotRole.PILOT);
-        mockMvc.perform(post("/api/planner/briefing/narrative").with(oidcLogin()).with(csrf())).andExpect(notRefused());
+        mockMvc.perform(post("/api/planner/briefing/narrative")
+                        .with(oidcLogin())
+                        .with(csrf()))
+                .andExpect(notRefused());
     }
 
     private void signedInAs(PilotRole role) {

@@ -55,8 +55,16 @@ public class Diagnostic {
         // JPA
     }
 
-    public Diagnostic(Instant receivedAt, Instant occurredAt, String platform, String version, String os, String device,
-            String kind, String signature, String detail) {
+    public Diagnostic(
+            Instant receivedAt,
+            Instant occurredAt,
+            String platform,
+            String version,
+            String os,
+            String device,
+            String kind,
+            String signature,
+            String detail) {
         this.receivedAt = receivedAt;
         this.occurredAt = occurredAt;
         this.platform = platform;

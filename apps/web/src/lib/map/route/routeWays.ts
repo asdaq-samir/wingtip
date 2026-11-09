@@ -36,8 +36,10 @@ export const wayIcon = made(function wayIcon(key: string, label: string, name: s
   const ink = shown ? "#ffffff" : WAY_CHIP;
   return divIcon({
     className: "",
-    iconSize: [width, height], iconAnchor: [14, height + 7],
-    html: `<span data-route-way="${text(key)}" class="relative flex h-full w-full flex-col justify-center rounded-xl px-2.5 text-[13px] leading-4 font-semibold shadow-[0_1px_4px_rgba(0,0,0,.35)] after:absolute after:-inset-x-1 after:-inset-y-1 after:content-['']" style="background-color:${fill};color:${ink}">` +
+    iconSize: [width, height],
+    iconAnchor: [14, height + 7],
+    html:
+      `<span data-route-way="${text(key)}" class="relative flex h-full w-full flex-col justify-center rounded-xl px-2.5 text-[13px] leading-4 font-semibold shadow-[0_1px_4px_rgba(0,0,0,.35)] after:absolute after:-inset-x-1 after:-inset-y-1 after:content-['']" style="background-color:${fill};color:${ink}">` +
       `<span class="whitespace-nowrap tabular-nums">${text(label)}</span>` +
       (lines === 2 ? `<span class="whitespace-nowrap font-medium">${text(name)}</span>` : "") +
       `<span aria-hidden="true" class="absolute left-2 top-full h-0 w-0 border-x-[6px] border-t-[8px] border-x-transparent" style="border-top-color:${fill}"></span></span>`,
@@ -53,11 +55,12 @@ export function wayAt(path: [number, number][], share: number): [number, number]
   let left = legs.reduce((sum, d) => sum + d, 0) * share;
   for (let i = 0; i < legs.length; i++) {
     if (left <= legs[i]! || i === legs.length - 1) {
-      const a = path[i]!, b = path[i + 1]!, t = legs[i] ? Math.min(1, left / legs[i]!) : 0;
+      const a = path[i]!,
+        b = path[i + 1]!,
+        t = legs[i] ? Math.min(1, left / legs[i]!) : 0;
       return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
     }
     left -= legs[i]!;
   }
   return path[0]!;
 }
-

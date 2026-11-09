@@ -15,7 +15,15 @@ import type { PanelTab } from "./useTabCards";
  * and Nearest's, whose text lives in features/plan/lib/tabSearch; the Adds that focus
  * them without moving the panel; and Favorites brought in by a link.
  */
-export function useSearchPanel({ tab, selectPlace, listAway, panel, setPanel, searchParams, setSearchParams }: {
+export function useSearchPanel({
+  tab,
+  selectPlace,
+  listAway,
+  panel,
+  setPanel,
+  searchParams,
+  setSearchParams,
+}: {
   tab: PanelTab;
   selectPlace: (ident: string | null) => void;
   /** A list in full put away, where it is the one open. */
@@ -33,23 +41,26 @@ export function useSearchPanel({ tab, selectPlace, listAway, panel, setPanel, se
   const searchInput = useRef<HTMLInputElement>(null);
   const search = useAirportSearch(query, !started);
   const { addRecentAirport: addRecent, setHomeAirport, toggleFavoriteAirport, moveFavoriteAirport } = usePreferences.getState();
-  const home = usePreferences(p => p.homeAirport);
-  const favorites = usePreferences(p => p.favoriteAirports);
-  const pickPlace = useCallback(async (airport: RecentAirport) => {
-    setQuery("");
-    (document.activeElement as HTMLElement | null)?.blur();
-    if (picking === "place") {
-      addRecent(airport);
-      selectPlace(airport.ident);
-      return;
-    }
-    // Where it is, for how far it is from own ship.
-    const full = await queryClient.fetchQuery(airportQuery(airport.ident)).catch(() => null);
-    const kept = full ? { ident: full.ident, name: full.name, municipality: full.municipality, lat: full.lat, lon: full.lon } : airport;
-    if (picking === "home") setHomeAirport(kept);
-    else if (!favorites.some(a => a.ident === kept.ident)) toggleFavoriteAirport(kept);
-    setPicking("place");
-  }, [picking, addRecent, selectPlace, setHomeAirport, toggleFavoriteAirport, favorites]);
+  const home = usePreferences((p) => p.homeAirport);
+  const favorites = usePreferences((p) => p.favoriteAirports);
+  const pickPlace = useCallback(
+    async (airport: RecentAirport) => {
+      setQuery("");
+      (document.activeElement as HTMLElement | null)?.blur();
+      if (picking === "place") {
+        addRecent(airport);
+        selectPlace(airport.ident);
+        return;
+      }
+      // Where it is, for how far it is from own ship.
+      const full = await queryClient.fetchQuery(airportQuery(airport.ident)).catch(() => null);
+      const kept = full ? { ident: full.ident, name: full.name, municipality: full.municipality, lat: full.lat, lon: full.lon } : airport;
+      if (picking === "home") setHomeAirport(kept);
+      else if (!favorites.some((a) => a.ident === kept.ident)) toggleFavoriteAirport(kept);
+      setPicking("place");
+    },
+    [picking, addRecent, selectPlace, setHomeAirport, toggleFavoriteAirport, favorites],
+  );
   // An Add's focus on a search field leaves the panel the height it is,
   // at the owner's ask ("Clicking on any button in half card should not
   // open the full card"): what is typed in it then takes it up, where
@@ -77,13 +88,15 @@ export function useSearchPanel({ tab, selectPlace, listAway, panel, setPanel, se
     useTabSearch.setState({ pickingMine: what === "mine", pickingFavorite: what === "airplane" });
     focusQuietly(useTabSearch.getState().focusAircraft ?? undefined);
   };
-  const upAsTyped = (typed: string) => { if (typed && panel === "peek") setPanel("full"); };
+  const upAsTyped = (typed: string) => {
+    if (typed && panel === "peek") setPanel("full");
+  };
 
   // Aircraft's and Nearest's fields, the search bar's shape (SearchField) in
   // the same place, what is typed kept in features/plan/lib/tabSearch for their lists.
-  const aircraftTyped = useTabSearch(t => t.aircraft);
-  const pickingMine = useTabSearch(t => t.pickingMine);
-  const pickingFavorite = useTabSearch(t => t.pickingFavorite);
+  const aircraftTyped = useTabSearch((t) => t.aircraft);
+  const pickingMine = useTabSearch((t) => t.pickingMine);
+  const pickingFavorite = useTabSearch((t) => t.pickingFavorite);
   // An Add on the pill (addFromPill) focuses the field once the panel is
   // up and the field is drawn.
   const aircraftInput = useRef<HTMLInputElement>(null);
@@ -91,7 +104,7 @@ export function useSearchPanel({ tab, selectPlace, listAway, panel, setPanel, se
     useTabSearch.setState({ focusAircraft: () => aircraftInput.current?.focus() });
     return () => useTabSearch.setState({ focusAircraft: null });
   }, []);
-  const nearTyped = useTabSearch(t => t.near);
+  const nearTyped = useTabSearch((t) => t.near);
 
   // A link that brings favorites with it -- ?favorites=KORD,KMKE&home=C81
   // -- adds them to this browser's, so a set made on one device (or sent
@@ -102,23 +115,48 @@ export function useSearchPanel({ tab, selectPlace, listAway, panel, setPanel, se
     const homeListed = searchParams.get("home");
     if (seeded.current || (!listed && !homeListed)) return;
     seeded.current = true;
-    const look = (ident: string) => queryClient.fetchQuery(airportQuery(ident)).then(a => ({ ident: a.ident, name: a.name, municipality: a.municipality, lat: a.lat, lon: a.lon })).catch(() => null);
+    const look = (ident: string) =>
+      queryClient
+        .fetchQuery(airportQuery(ident))
+        .then((a) => ({ ident: a.ident, name: a.name, municipality: a.municipality, lat: a.lat, lon: a.lon }))
+        .catch(() => null);
     void (async () => {
       for (const ident of (listed ?? "").split(",").map(identOf).filter(Boolean)) {
-        if (usePreferences.getState().favoriteAirports.some(a => a.ident === ident)) continue;
+        if (usePreferences.getState().favoriteAirports.some((a) => a.ident === ident)) continue;
         const airport = await look(ident);
         if (airport) usePreferences.getState().toggleFavoriteAirport(airport);
       }
-      const home = homeListed && await look(identOf(homeListed));
+      const home = homeListed && (await look(identOf(homeListed)));
       if (home) usePreferences.getState().setHomeAirport(home);
-      setSearchParams(prev => {
-        return patched(prev, { favorites: null, home: null });
-      }, { replace: true });
+      setSearchParams(
+        (prev) => {
+          return patched(prev, { favorites: null, home: null });
+        },
+        { replace: true },
+      );
     })();
   }, [searchParams, setSearchParams]);
   return {
-    query, setQuery, picking, setPicking, searchInput, search, pickPlace, quietFocus, askFor, addFromPill, upAsTyped,
-    aircraftTyped, pickingMine, pickingFavorite, aircraftInput, nearTyped, home, favorites, setHomeAirport, toggleFavoriteAirport,
+    query,
+    setQuery,
+    picking,
+    setPicking,
+    searchInput,
+    search,
+    pickPlace,
+    quietFocus,
+    askFor,
+    addFromPill,
+    upAsTyped,
+    aircraftTyped,
+    pickingMine,
+    pickingFavorite,
+    aircraftInput,
+    nearTyped,
+    home,
+    favorites,
+    setHomeAirport,
+    toggleFavoriteAirport,
     moveFavoriteAirport,
   };
 }

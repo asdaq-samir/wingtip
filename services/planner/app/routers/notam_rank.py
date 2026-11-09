@@ -3,6 +3,7 @@ bear on it first (wingtip.notam_rank, the engine's notams_ranked). The
 route parses the ask, finds the route's fields and asks; the ranking is
 the engine's. The assistant asks it for the Brief's "NOTAMs that matter"
 and words the top three; the phones may ask it as it is."""
+
 from datetime import datetime, timezone
 
 from fastapi import APIRouter
@@ -16,7 +17,7 @@ router = APIRouter()
 
 
 def _end(ident: str) -> str:
-    """"36" from "RWY 36" or "36": the end as the engine reads it."""
+    """ "36" from "RWY 36" or "36": the end as the engine reads it."""
     return ident.strip().upper().removeprefix("RWY").strip()
 
 
@@ -36,5 +37,4 @@ def notams_ranked(ask: NotamsRankedAsk) -> NotamsRanked:
     depart = depart if depart.tzinfo else depart.replace(tzinfo=timezone.utc)
     runways = {k.upper(): [_end(v)] for k, v in ask.runways.items() if v.strip()}
     found = notam_rank.ranked(fields, [(a["lat"], a["lon"]) for a in r.airports], depart, ask.ete_min, ask.altitude_ft, runways)
-    return NotamsRanked(notams=found["ranked"], top=found["top"], coverage_since=notam_rank.coverage_since(),
-                        unchecked=found["unchecked"])
+    return NotamsRanked(notams=found["ranked"], top=found["top"], coverage_since=notam_rank.coverage_since(), unchecked=found["unchecked"])

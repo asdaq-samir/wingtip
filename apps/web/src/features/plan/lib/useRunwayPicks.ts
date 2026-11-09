@@ -9,6 +9,7 @@ import { patternsOf } from "../../../lib/trafficPattern";
  *  and the wind's runway only where there is none. Read here rather than
  *  handed down, so every part that says a runway reads the same one. */
 export function useRunwayPicks(): RunwayPicks {
-  const pattern = useSearchParam("pattern"), takeoff = useSearchParam("takeoff");
+  const pattern = useSearchParam("pattern"),
+    takeoff = useSearchParam("takeoff");
   return useMemo(() => ({ pattern: patternsOf(pattern), takeoff: patternsOf(takeoff) }), [pattern, takeoff]);
 }

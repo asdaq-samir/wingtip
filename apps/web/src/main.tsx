@@ -144,10 +144,7 @@ const router = createBrowserRouter(
     // redirect rather than a component, since the router's own
     // `redirect` is the one place a query string can be carried over
     // before anything renders.
-    {
-      path: "label",
-      loader: ({ request }) => redirect(`/dev${new URL(request.url).search}`),
-    },
+    { path: "label", loader: ({ request }) => redirect(`/dev${new URL(request.url).search}`) },
     { path: "settings", element: <Navigate to="/plan" replace /> },
   ],
   { basename: "/app" },
@@ -176,9 +173,12 @@ void queryClient.prefetchQuery({ ...chartQuery, meta: { silent: true } });
 // request), so the map's first overlay tile goes straight to its bytes
 // (lib/map/sources/overlayTiles warmOverlayArchive). The module is the map
 // chunk's, asked for here on its own.
-void queryClient.fetchQuery(overlayTilesQuery)
-  .then(tiles => import("./lib/map/sources/overlayTiles").then(m => m.warmOverlayArchive(tiles)))
-  .catch(() => { /* no archive yet: the map adds the overlays once there is one */ });
+void queryClient
+  .fetchQuery(overlayTilesQuery)
+  .then((tiles) => import("./lib/map/sources/overlayTiles").then((m) => m.warmOverlayArchive(tiles)))
+  .catch(() => {
+    /* no archive yet: the map adds the overlays once there is one */
+  });
 
 const opening = new URLSearchParams(window.location.search);
 const openingDep = opening.get("dep")?.trim().toUpperCase();
@@ -199,11 +199,19 @@ else prefetchCourse();
 // A chunk that will not load -- the deploy after this page's own replaced
 // it, or no signal -- loads the page again, once a minute at most, as
 // Vite's own guide does: past that it falls to the route's PageError.
-window.addEventListener("vite:preloadError", event => {
+window.addEventListener("vite:preloadError", (event) => {
   let last = 0;
-  try { last = Number(sessionStorage.getItem("wingtip.chunkReload")) || 0; } catch { /* storage refused: reload once */ }
+  try {
+    last = Number(sessionStorage.getItem("wingtip.chunkReload")) || 0;
+  } catch {
+    /* storage refused: reload once */
+  }
   if (Date.now() - last < 60_000) return;
-  try { sessionStorage.setItem("wingtip.chunkReload", String(Date.now())); } catch { /* as above */ }
+  try {
+    sessionStorage.setItem("wingtip.chunkReload", String(Date.now()));
+  } catch {
+    /* as above */
+  }
   event.preventDefault();
   window.location.reload();
 });
@@ -211,40 +219,47 @@ window.addEventListener("vite:preloadError", event => {
 // A render React could not finish takes the page down: reported too.
 // Drawn without waiting for the engine (above); an engine that failed to
 // load is reported, and the gated parts stay their placeholders.
-const render = () => ReactDOM.createRoot(document.getElementById("root")!, {
-  onUncaughtError: error => { sendReport(reportOf("render", error)); console.error(error); },
-}).render(
-  <React.StrictMode>
-    {/* Light, dark, or the OS's own choice -- the settings' Theme
+const render = () =>
+  ReactDOM.createRoot(document.getElementById("root")!, {
+    onUncaughtError: (error) => {
+      sendReport(reportOf("render", error));
+      console.error(error);
+    },
+  }).render(
+    <React.StrictMode>
+      {/* Light, dark, or the OS's own choice -- the settings' Theme
         sets it, next-themes keeps it and puts the `dark` class on
         <html>, which is what every colour token in index.css keys off
         (and what the Toaster below already reads). */}
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="wingtip.theme" disableTransitionOnChange>
-    <QueryClientProvider client={queryClient}>
-      {/* One instance for the whole app, the same as sonner's own
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="wingtip.theme" disableTransitionOnChange>
+        <QueryClientProvider client={queryClient}>
+          {/* One instance for the whole app, the same as sonner's own
           Toaster below -- every icon-only button's own Tooltip shares
           this one delay/grouping context (hover one, then another
           shows instantly) instead of each re-running its own
           default-delay timer independently. */}
-      <TooltipProvider>
-        <RouterProvider router={router} />
-        <AppToaster />
-        <DoneNotes />
-        {/* Inside the provider too: its close is the app's CloseButton,
+          <TooltipProvider>
+            <RouterProvider router={router} />
+            <AppToaster />
+            <DoneNotes />
+            {/* Inside the provider too: its close is the app's CloseButton,
             whose Tooltip outside one threw and blanked the page the
             first time an alert opened on a phone. */}
-        <ErrorAlert />
-        <BrandLook />
-      </TooltipProvider>
-    </QueryClientProvider>
-    </ThemeProvider>
-  </React.StrictMode>,
-);
+            <ErrorAlert />
+            <BrandLook />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </React.StrictMode>,
+  );
 // And the face in before the first render, so no word is drawn in another
 // first; never held more than 400 ms for it, the system's face then.
 const faceLoaded = Promise.race([
-  Promise.all(["400", "500", "600", "700"].map(weight => document.fonts.load(`${weight} 1rem Barlow`))),
-  new Promise(resolve => setTimeout(resolve, 400)),
+  Promise.all(["400", "500", "600", "700"].map((weight) => document.fonts.load(`${weight} 1rem Barlow`))),
+  new Promise((resolve) => setTimeout(resolve, 400)),
 ]);
-void engineLoaded.catch(error => { sendReport(reportOf("error", error)); console.error(error); });
+void engineLoaded.catch((error) => {
+  sendReport(reportOf("error", error));
+  console.error(error);
+});
 void faceLoaded.then(render, render);

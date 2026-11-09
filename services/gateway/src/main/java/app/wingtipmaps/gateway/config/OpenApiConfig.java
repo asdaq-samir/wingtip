@@ -63,7 +63,8 @@ public class OpenApiConfig {
             }
             openApi.getComponents().getSchemas().values().forEach(schema -> {
                 if (schema.getProperties() != null && !schema.getProperties().isEmpty()) {
-                    schema.setRequired(new ArrayList<>(new TreeSet<>(schema.getProperties().keySet())));
+                    schema.setRequired(
+                            new ArrayList<>(new TreeSet<>(schema.getProperties().keySet())));
                 }
             });
         };
@@ -73,7 +74,8 @@ public class OpenApiConfig {
      *  JSR-305's all mean the same thing here. */
     private static boolean declaredNullable(AnnotatedType type) {
         Annotation[] annotations = type.getCtxAnnotations();
-        return annotations != null && Arrays.stream(annotations)
-                .anyMatch(a -> a.annotationType().getSimpleName().equals("Nullable"));
+        return annotations != null
+                && Arrays.stream(annotations)
+                        .anyMatch(a -> a.annotationType().getSimpleName().equals("Nullable"));
     }
 }

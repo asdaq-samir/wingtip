@@ -9,6 +9,7 @@ KD-tree.
 These pin what those two measure, so the model is learning the
 landmarks rather than a regression.
 """
+
 import math
 
 import pytest
@@ -75,17 +76,19 @@ def test_same_kind_counts_only_its_own_category_and_not_itself():
     close_town = destination_point(*a, bearing=270, distance_nm_=1.0)
     far_river = destination_point(*a, bearing=90, distance_nm_=5.0)
 
-    df = build([
-        _detection(*a, category="river"),
-        _detection(*close_river, category="river"),
-        _detection(*close_town, category="town"),
-        _detection(*far_river, category="river"),
-    ])
+    df = build(
+        [
+            _detection(*a, category="river"),
+            _detection(*close_river, category="river"),
+            _detection(*close_town, category="town"),
+            _detection(*far_river, category="river"),
+        ]
+    )
 
-    assert df["same_kind_within_2nm"].iloc[0] == 1   # the close river, not the town, not itself
+    assert df["same_kind_within_2nm"].iloc[0] == 1  # the close river, not the town, not itself
     assert df["same_kind_within_2nm"].iloc[1] == 1
-    assert df["same_kind_within_2nm"].iloc[2] == 0   # the only town
-    assert df["same_kind_within_2nm"].iloc[3] == 0   # five miles from the others
+    assert df["same_kind_within_2nm"].iloc[2] == 0  # the only town
+    assert df["same_kind_within_2nm"].iloc[3] == 0  # five miles from the others
 
 
 def test_the_two_mile_radius_is_the_boundary():

@@ -35,6 +35,7 @@ the pilot's to see. Where the data cannot be had, nothing can be ruled
 out, and the caller takes every point as congested: 91.119(b)'s 1,000 ft,
 the safer answer.
 """
+
 from __future__ import annotations
 
 import logging
@@ -178,8 +179,9 @@ def _rings(geometry) -> list:
     """A town's outline as the engine reads it: each polygon its outer ring
     and holes, each ring [[lon, lat], ...]."""
     parts = getattr(geometry, "geoms", [geometry])
-    return [[shapely.get_coordinates(ring).tolist() for ring in (part.exterior, *part.interiors)]
-            for part in parts if hasattr(part, "exterior")]
+    return [
+        [shapely.get_coordinates(ring).tolist() for ring in (part.exterior, *part.interiors)] for part in parts if hasattr(part, "exterior")
+    ]
 
 
 def congested(lats, lons) -> np.ndarray | None:

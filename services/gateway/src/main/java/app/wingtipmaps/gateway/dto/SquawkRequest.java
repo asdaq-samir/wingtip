@@ -15,9 +15,15 @@ import org.springframework.lang.Nullable;
 public record SquawkRequest(
         @NotNull(message = "reportedOn is required") @PastOrPresent(message = "reportedOn cannot be in the future")
         LocalDate reportedOn,
-        @NotBlank(message = "text is required") @Size(max = 500, message = "text must be at most 500 characters") String text,
+
+        @NotBlank(message = "text is required") @Size(max = 500, message = "text must be at most 500 characters")
+        String text,
+
         boolean inoperative,
         @Nullable DeferredFor deferredFor,
-        @Nullable @PastOrPresent(message = "fixedOn cannot be in the future") LocalDate fixedOn,
-        @Nullable @Size(max = 500, message = "fixNote must be at most 500 characters") String fixNote) {
-}
+
+        @Nullable @PastOrPresent(message = "fixedOn cannot be in the future")
+        LocalDate fixedOn,
+
+        @Nullable @Size(max = 500, message = "fixNote must be at most 500 characters")
+        String fixNote) {}

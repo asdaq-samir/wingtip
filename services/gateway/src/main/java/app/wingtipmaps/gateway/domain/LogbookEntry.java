@@ -95,8 +95,17 @@ public class LogbookEntry {
     }
 
     /** Every column at once, as the entry's form sends them. */
-    public LogbookEntry set(LocalDate flownOn, String aircraft, String aircraftType, String route, double totalHours,
-                            double nightHours, double crossCountryHours, int dayLandings, int nightLandings, String remarks) {
+    public LogbookEntry set(
+            LocalDate flownOn,
+            String aircraft,
+            String aircraftType,
+            String route,
+            double totalHours,
+            double nightHours,
+            double crossCountryHours,
+            int dayLandings,
+            int nightLandings,
+            String remarks) {
         this.flownOn = flownOn;
         this.aircraft = aircraft;
         this.aircraftType = aircraftType;
@@ -111,8 +120,13 @@ public class LogbookEntry {
     }
 
     /** The training columns, as the entry's form sends them. */
-    public LogbookEntry training(double dualHours, double soloHours, double instrumentHours, int toweredLandings,
-                                 double distanceNm, double longestLegNm) {
+    public LogbookEntry training(
+            double dualHours,
+            double soloHours,
+            double instrumentHours,
+            int toweredLandings,
+            double distanceNm,
+            double longestLegNm) {
         this.dualHours = dualHours;
         this.soloHours = soloHours;
         this.instrumentHours = instrumentHours;

@@ -3,6 +3,7 @@ own table (no test reaches a real one), and fresh settings. The table
 stands in for the HTTP call alone (the generated client's _send), so
 every answer still goes through the client's typed functions and is
 read into the planner's own models, as a real one is."""
+
 import pytest
 
 from app.generated import planner_client

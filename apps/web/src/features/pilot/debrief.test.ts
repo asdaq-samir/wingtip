@@ -8,12 +8,66 @@ import { readTrack, thin, TrackError, type TrackPoint } from "../../lib/track";
 /** A flight due north along 88° W: A at 42° N, a lake 30 nm on, B 30 nm
  *  past it, 18 minutes a leg at 3,500 ft. */
 const FLIGHT = {
-  id: 1, departureIdent: "A", destinationIdent: "B", stops: [], aircraftTailNumber: null, cruiseAltitudeFt: 3500,
-  totalDistanceNm: 60, totalEteMin: 36, totalFuelGal: 6, plannedFor: null, createdAt: "2026-10-01T12:00:00Z", risk: null, altitudes: null, picks: null,
+  id: 1,
+  departureIdent: "A",
+  destinationIdent: "B",
+  stops: [],
+  aircraftTailNumber: null,
+  cruiseAltitudeFt: 3500,
+  totalDistanceNm: 60,
+  totalEteMin: 36,
+  totalFuelGal: 6,
+  plannedFor: null,
+  createdAt: "2026-10-01T12:00:00Z",
+  risk: null,
+  altitudes: null,
+  picks: null,
   checkpoints: [
-    { sequenceNo: 0, name: "A", category: "departure", lat: 42, lon: -88, alongTrackNm: 0, legDistanceNm: null, trueCourseDeg: null, magneticHeadingDeg: null, groundspeedKt: null, eteMin: null, fuelGal: null, altitudeFt: null },
-    { sequenceNo: 1, name: "Lake", category: "lake", lat: 42.5, lon: -88, alongTrackNm: 30, legDistanceNm: 30, trueCourseDeg: 0, magneticHeadingDeg: 3, groundspeedKt: 100, eteMin: 18, fuelGal: 3, altitudeFt: 3500 },
-    { sequenceNo: 2, name: "B", category: "destination", lat: 43, lon: -88, alongTrackNm: 60, legDistanceNm: 30, trueCourseDeg: 0, magneticHeadingDeg: 3, groundspeedKt: 100, eteMin: 18, fuelGal: 3, altitudeFt: 3500 },
+    {
+      sequenceNo: 0,
+      name: "A",
+      category: "departure",
+      lat: 42,
+      lon: -88,
+      alongTrackNm: 0,
+      legDistanceNm: null,
+      trueCourseDeg: null,
+      magneticHeadingDeg: null,
+      groundspeedKt: null,
+      eteMin: null,
+      fuelGal: null,
+      altitudeFt: null,
+    },
+    {
+      sequenceNo: 1,
+      name: "Lake",
+      category: "lake",
+      lat: 42.5,
+      lon: -88,
+      alongTrackNm: 30,
+      legDistanceNm: 30,
+      trueCourseDeg: 0,
+      magneticHeadingDeg: 3,
+      groundspeedKt: 100,
+      eteMin: 18,
+      fuelGal: 3,
+      altitudeFt: 3500,
+    },
+    {
+      sequenceNo: 2,
+      name: "B",
+      category: "destination",
+      lat: 43,
+      lon: -88,
+      alongTrackNm: 60,
+      legDistanceNm: 30,
+      trueCourseDeg: 0,
+      magneticHeadingDeg: 3,
+      groundspeedKt: 100,
+      eteMin: 18,
+      fuelGal: 3,
+      altitudeFt: 3500,
+    },
   ],
 } as Flight;
 
@@ -44,12 +98,13 @@ describe("a track read", () => {
       <trkpt lat="42.1" lon="-88.1"><ele>1000</ele><time>2026-10-02T15:00:05Z</time></trkpt>
       <trkpt lat="42.0" lon="-88.0"><ele>304.8</ele><time>2026-10-02T15:00:00Z</time></trkpt>
     </trkseg></trk></gpx>`);
-    expect(points.map(p => p.lat)).toEqual([42.0, 42.1]);
+    expect(points.map((p) => p.lat)).toEqual([42.0, 42.1]);
     expect(points[0]!.altFt).toBeCloseTo(1000, 0);
   });
 
   test("KML's gx:Track, as ForeFlight writes its track log", () => {
-    const points = readTrack(`<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2"><Document><Placemark><gx:Track>
+    const points =
+      readTrack(`<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2"><Document><Placemark><gx:Track>
       <when>2026-10-02T15:00:00Z</when><when>2026-10-02T15:00:04Z</when>
       <gx:coord>-88.0 42.0 300</gx:coord><gx:coord>-88.0 42.01 310</gx:coord>
     </gx:Track></Placemark></Document></kml>`);
@@ -59,7 +114,9 @@ describe("a track read", () => {
 
   test("a file it cannot use says why", () => {
     expect(() => readTrack("not xml at all")).toThrow(TrackError);
-    expect(() => readTrack(`<gpx><trk><trkseg><trkpt lat="42" lon="-88"/><trkpt lat="42.1" lon="-88"/></trkseg></trk></gpx>`)).toThrow(/no times/);
+    expect(() => readTrack(`<gpx><trk><trkseg><trkpt lat="42" lon="-88"/><trkpt lat="42.1" lon="-88"/></trkseg></trk></gpx>`)).toThrow(
+      /no times/,
+    );
     expect(thin(flown(), 100)).toHaveLength(100);
   });
 });
@@ -85,13 +142,13 @@ describe("a flight debriefed", () => {
     expect(d.legs[1]!.altitudeWithin).toBeLessThan(0.95);
     expect(d.legs[1]!.worstAltFt).toBe(300);
     // On the map, the two minutes at 3,800 are the off part of the line.
-    const off = d.line.filter(pt => pt.off);
+    const off = d.line.filter((pt) => pt.off);
     expect(off.length).toBeGreaterThan(10);
-    expect(off.every(pt => pt.lat > 42 + 40 / 60 && pt.lat < 42 + 44 / 60)).toBe(true);
+    expect(off.every((pt) => pt.lat > 42 + 40 / 60 && pt.lat < 42 + 44 / 60)).toBe(true);
   });
 
   test("each checkpoint when it was due and when it was passed, and the pattern", () => {
-    expect(d.passes.map(p => p.name)).toEqual(["Lake", "B"]);
+    expect(d.passes.map((p) => p.name)).toEqual(["Lake", "B"]);
     expect(d.passes[0]!.dueMin).toBe(18);
     expect(d.passes[0]!.passedMin).toBeCloseTo(18, 0);
     expect(d.passes[0]!.closestNm).toBeCloseTo(0.5, 1);
@@ -102,7 +159,7 @@ describe("a flight debriefed", () => {
   });
 
   test("a track from somewhere else is said, and one that never flew is none", () => {
-    const elsewhere = flown().map(p => ({ ...p, lat: p.lat + 1 }));
+    const elsewhere = flown().map((p) => ({ ...p, lat: p.lat + 1 }));
     expect(debrief(FLIGHT, elsewhere)!.notes[0]).toMatch(/takes off 60 nm from A/);
     const taxi = flown().slice(0, 20);
     expect(debrief(FLIGHT, taxi)).toBeNull();

@@ -43,12 +43,22 @@ export interface RouteLegView {
  */
 export default function RouteLegCard({ open, onClose }: { open: RouteLegView | null; onClose: () => void }) {
   return (
-    <ResponsivePopover open={!!open} onOpenChange={next => { if (!next) onClose(); }}>
+    <ResponsivePopover
+      open={!!open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
       {/* Beside the top of the screen on a desktop. */}
-      <ResponsivePopoverAnchor asChild><span aria-hidden="true" className="pointer-events-none fixed top-16 left-1/2 size-0" /></ResponsivePopoverAnchor>
+      <ResponsivePopoverAnchor asChild>
+        <span aria-hidden="true" className="pointer-events-none fixed top-16 left-1/2 size-0" />
+      </ResponsivePopoverAnchor>
       <ResponsivePopoverContent
-        title="Route Leg" side="bottom" align="center"
-        className="flex w-80 flex-col gap-3 p-3" data-testid="route-leg-card"
+        title="Route Leg"
+        side="bottom"
+        align="center"
+        className="flex w-80 flex-col gap-3 p-3"
+        data-testid="route-leg-card"
         action={<CloseButton onClick={onClose} data-testid="route-leg-close" />}
       >
         {open && <RouteLegBody leg={open} />}
@@ -67,14 +77,21 @@ function RouteLegBody({ leg }: { leg: RouteLegView }) {
           <ArrowRight className="size-4 shrink-0" aria-label="to" />
           <span className="truncate">{leg.to}</span>
         </p>
-        {leg.active && <Badge variant="secondary" className="shrink-0" data-testid="route-leg-active">Active Leg</Badge>}
+        {leg.active && (
+          <Badge variant="secondary" className="shrink-0" data-testid="route-leg-active">
+            Active Leg
+          </Badge>
+        )}
       </div>
       {actions > 0 && (
         <div className={cn("grid gap-2", actions === 2 ? "grid-cols-2" : "grid-cols-1")} data-testid="route-leg-actions">
           {leg.direct && (
             <CardAction
-              icon={<DirectToIcon />} label={leg.direct.on ? "Cancel Direct" : `Direct ${leg.to}`} pressed={leg.direct.on}
-              onClick={leg.direct.go} testId="route-leg-direct"
+              icon={<DirectToIcon />}
+              label={leg.direct.on ? "Cancel Direct" : `Direct ${leg.to}`}
+              pressed={leg.direct.on}
+              onClick={leg.direct.go}
+              testId="route-leg-direct"
             />
           )}
           {leg.remove && (
@@ -85,7 +102,8 @@ function RouteLegBody({ leg }: { leg: RouteLegView }) {
       <ListGroup>
         <ListRow title="Distance" value={leg.distanceNm === null ? "—" : nm(leg.distanceNm)} data-testid="route-leg-distance" />
         <ListRow
-          title="Course" value={leg.courseMagDeg === null ? "—" : `${threeFigures(leg.courseMagDeg)}°M`}
+          title="Course"
+          value={leg.courseMagDeg === null ? "—" : `${threeFigures(leg.courseMagDeg)}°M`}
           data-testid="route-leg-course"
         />
       </ListGroup>

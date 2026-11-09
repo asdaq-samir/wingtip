@@ -34,37 +34,80 @@ public class AircraftService {
         return aircraft.findByIdAndPilotId(id, pilot.getId());
     }
 
-    public Aircraft add(Pilot pilot, String tailNumber, String typeDesignator, double cruiseTasKt, double fuelBurnGph,
-                        Double cruisePowerPct, Double climbTasKt, Double climbFuelBurnGph, Double usableFuelGal,
-                        String equipment, String surveillance, String colour) {
-        return aircraft.save(new Aircraft(pilot, tailNumber, typeDesignator, cruiseTasKt, fuelBurnGph, cruisePowerPct,
-                climbTasKt, climbFuelBurnGph, usableFuelGal)
+    public Aircraft add(
+            Pilot pilot,
+            String tailNumber,
+            String typeDesignator,
+            double cruiseTasKt,
+            double fuelBurnGph,
+            Double cruisePowerPct,
+            Double climbTasKt,
+            Double climbFuelBurnGph,
+            Double usableFuelGal,
+            String equipment,
+            String surveillance,
+            String colour) {
+        return aircraft.save(new Aircraft(
+                        pilot,
+                        tailNumber,
+                        typeDesignator,
+                        cruiseTasKt,
+                        fuelBurnGph,
+                        cruisePowerPct,
+                        climbTasKt,
+                        climbFuelBurnGph,
+                        usableFuelGal)
                 .describeForFlightPlan(Typed.code(equipment), Typed.code(surveillance), Typed.words(colour)));
     }
 
     /** Empty when no such aircraft exists for this pilot -- not
      *  distinguished from "belongs to someone else," which reads
      *  identically to a caller guessing ids on purpose. */
-    public Optional<Aircraft> update(Pilot pilot, Long id, String tailNumber, String typeDesignator,
-                                     double cruiseTasKt, double fuelBurnGph, Double cruisePowerPct, Double climbTasKt,
-                                     Double climbFuelBurnGph, Double usableFuelGal,
-                                     String equipment, String surveillance, String colour) {
-        return get(pilot, id).map(a -> aircraft.save(a.update(tailNumber, typeDesignator, cruiseTasKt, fuelBurnGph,
-                cruisePowerPct, climbTasKt, climbFuelBurnGph, usableFuelGal)
-                .describeForFlightPlan(Typed.code(equipment), Typed.code(surveillance), Typed.words(colour))));
+    public Optional<Aircraft> update(
+            Pilot pilot,
+            Long id,
+            String tailNumber,
+            String typeDesignator,
+            double cruiseTasKt,
+            double fuelBurnGph,
+            Double cruisePowerPct,
+            Double climbTasKt,
+            Double climbFuelBurnGph,
+            Double usableFuelGal,
+            String equipment,
+            String surveillance,
+            String colour) {
+        return get(pilot, id)
+                .map(a -> aircraft.save(a.update(
+                                tailNumber,
+                                typeDesignator,
+                                cruiseTasKt,
+                                fuelBurnGph,
+                                cruisePowerPct,
+                                climbTasKt,
+                                climbFuelBurnGph,
+                                usableFuelGal)
+                        .describeForFlightPlan(Typed.code(equipment), Typed.code(surveillance), Typed.words(colour))));
     }
 
     /** The airplane's VOR check for IFR, as the pilot records it (14 CFR 91.171(d)). */
-    public Optional<Aircraft> recordVorCheck(Pilot pilot, Long id, LocalDate on, VorCheck kind, String place, double errorDeg) {
-        return get(pilot, id).map(a -> aircraft.save(a.recordVorCheck(on, kind, Typed.text(place),
-                errorDeg)));
+    public Optional<Aircraft> recordVorCheck(
+            Pilot pilot, Long id, LocalDate on, VorCheck kind, String place, double errorDeg) {
+        return get(pilot, id).map(a -> aircraft.save(a.recordVorCheck(on, kind, Typed.text(place), errorDeg)));
     }
 
     /** The airplane's inspections and tests, as its owner records them. */
     public Optional<Aircraft> recordInspections(Pilot pilot, Long id, InspectionsRequest r) {
-        return get(pilot, id).map(a -> aircraft.save(a.recordInspections(r.annualOn(), r.hundredHourAtHours(), r.hoursNow(),
-                r.staticCheckOn(), r.transponderCheckOn(), r.eltInspectedOn(), r.eltBatteryDueOn())
-                .forHire(r.forHire() == null ? a.isForHire() : r.forHire())));
+        return get(pilot, id)
+                .map(a -> aircraft.save(a.recordInspections(
+                                r.annualOn(),
+                                r.hundredHourAtHours(),
+                                r.hoursNow(),
+                                r.staticCheckOn(),
+                                r.transponderCheckOn(),
+                                r.eltInspectedOn(),
+                                r.eltBatteryDueOn())
+                        .forHire(r.forHire() == null ? a.isForHire() : r.forHire())));
     }
 
     /** Its handbook figures as its pilot confirmed them, kept as sent (the
@@ -81,13 +124,15 @@ public class AircraftService {
     }
 
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final TypeReference<Map<String, Object>> AS_MAP = new TypeReference<>() { };
+    private static final TypeReference<Map<String, Object>> AS_MAP = new TypeReference<>() {};
 
     /** @return true if an aircraft was actually deleted */
     public boolean delete(Pilot pilot, Long id) {
-        return get(pilot, id).map(a -> {
-            aircraft.delete(a);
-            return true;
-        }).orElse(false);
+        return get(pilot, id)
+                .map(a -> {
+                    aircraft.delete(a);
+                    return true;
+                })
+                .orElse(false);
     }
 }

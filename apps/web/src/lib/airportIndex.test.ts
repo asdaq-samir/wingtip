@@ -12,7 +12,7 @@ const INDEX = indexOf([
   ["KOSH", "Wittman Regional Airport", "Oshkosh", "WI", 1, "OSH"],
   ["MN01", "A Helipad", "Duluth", "MN", 3],
 ]);
-const idents = (typed: string) => searchIndex(INDEX, typed).map(r => r.ident);
+const idents = (typed: string) => searchIndex(INDEX, typed).map((r) => r.ident);
 
 describe("the phone's own airport search", () => {
   test("finds a word of the name or the town, not only its start", () => {
@@ -38,7 +38,13 @@ describe("the phone's own airport search", () => {
   });
 
   test("names each row as the planner's search does", () => {
-    expect(searchIndex(INDEX, "C81")[0]).toEqual({ ident: "C81", name: "Campbell Airport", municipality: "Grayslake", region: "US-IL", kind: "airport" });
+    expect(searchIndex(INDEX, "C81")[0]).toEqual({
+      ident: "C81",
+      name: "Campbell Airport",
+      municipality: "Grayslake",
+      region: "US-IL",
+      kind: "airport",
+    });
   });
 
   test("puts a name that starts with it, then the nearest, first among fields of a size", () => {
@@ -49,8 +55,8 @@ describe("the phone's own airport search", () => {
       ["1A3", "Martin Campbell Field", "Copperhill", "TN", 2, 35.0, -84.3],
       ["C81", "Campbell Airport", "Grayslake", "IL", 2, 42.32, -88.07, "KC81"],
     ]);
-    expect(searchIndex(placed, "campbell").map(r => r.ident)).toEqual(["06XS", "C81", "1A3"]);
-    expect(searchIndex(placed, "campbell", 8, [{ lat: 42.3, lon: -88.0 }]).map(r => r.ident)).toEqual(["C81", "06XS", "1A3"]);
+    expect(searchIndex(placed, "campbell").map((r) => r.ident)).toEqual(["06XS", "C81", "1A3"]);
+    expect(searchIndex(placed, "campbell", 8, [{ lat: 42.3, lon: -88.0 }]).map((r) => r.ident)).toEqual(["C81", "06XS", "1A3"]);
     // Still found by its other ident, after the place.
     expect(searchIndex(placed, "KC81")[0]!.ident).toBe("C81");
   });

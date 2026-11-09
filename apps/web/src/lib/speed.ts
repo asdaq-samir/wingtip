@@ -24,7 +24,9 @@ export function startSpeedReports(win: Window = window) {
   idle(() => {
     void import("web-vitals").then(({ onCLS, onFCP, onINP, onLCP, onTTFB }) => {
       const pending: Record<string, number> = {};
-      const keep = (metric: Metric) => { pending[metric.name] = metric.value; };
+      const keep = (metric: Metric) => {
+        pending[metric.name] = metric.value;
+      };
       for (const on of [onCLS, onFCP, onINP, onLCP, onTTFB]) on(keep);
       // After the library's own listeners, which are added as each onX
       // is called and give their final values as the page is hidden.

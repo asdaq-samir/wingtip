@@ -13,7 +13,11 @@
  * edit is carried over as what it did -- these points out, those in after
  * that one -- onto the route as it is now.
  */
-interface Route { dep: string; stops: string[]; dest: string }
+interface Route {
+  dep: string;
+  stops: string[];
+  dest: string;
+}
 
 const pointsOf = (r: Route) => [r.dep, ...r.stops, r.dest].filter(Boolean);
 const same = (a: Route, b: Route) => pointsOf(a).join("|") === pointsOf(b).join("|") && !!a.dep === !!b.dep && !!a.dest === !!b.dest;
@@ -22,7 +26,8 @@ const same = (a: Route, b: Route) => pointsOf(a).join("|") === pointsOf(b).join(
  *  the route shown is the route now, as it nearly always is. */
 export function rebasedRoute(shown: Route, next: Route, now: Route): Route {
   if (same(shown, now)) return next;
-  const before = pointsOf(shown), after = pointsOf(next);
+  const before = pointsOf(shown),
+    after = pointsOf(next);
   // What the edit took out, each once (a route may name a point twice).
   const out = [...before];
   const added: { ident: string; anchor: string | null; ahead: string | null }[] = [];
@@ -49,6 +54,7 @@ export function rebasedRoute(shown: Route, next: Route, now: Route): Route {
   // first the departure and the last the destination; one, the end the
   // edit kept.
   if (!points.length) return { dep: "", stops: [], dest: "" };
-  if (points.length === 1) return !next.dep && next.dest ? { dep: "", stops: [], dest: points[0]! } : { dep: points[0]!, stops: [], dest: "" };
+  if (points.length === 1)
+    return !next.dep && next.dest ? { dep: "", stops: [], dest: points[0]! } : { dep: points[0]!, stops: [], dest: "" };
   return { dep: points[0]!, stops: points.slice(1, -1), dest: points.at(-1)! };
 }

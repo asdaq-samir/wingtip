@@ -37,16 +37,33 @@ export default function RatingGuide() {
     <div className="space-y-6">
       <ListGroup
         title="Rating scale"
-        footer={<>0 vs 1 matters most: 0 means the detector should never have surfaced it, 1 that it&rsquo;s real but poor. Ignore spacing, since selection already keeps them apart, and judge at this zoom.</>}
+        footer={
+          <>
+            0 vs 1 matters most: 0 means the detector should never have surfaced it, 1 that it&rsquo;s real but poor. Ignore spacing, since
+            selection already keeps them apart, and judge at this zoom.
+          </>
+        }
       >
         <ListRow
-          title={<span className="italic">Flying this leg, would I look up and know <i className="not-italic font-semibold">that&rsquo;s the one</i>, not one like it?</span>}
+          title={
+            <span className="italic">
+              Flying this leg, would I look up and know <i className="not-italic font-semibold">that&rsquo;s the one</i>, not one like it?
+            </span>
+          }
         />
         {SCALE.map(([n, lead, text]) => (
           <ListRow
             key={n}
-            media={<Badge className="w-6 justify-center px-0" style={{ backgroundColor: COLORS[n], color: inkOn(COLORS[n]) }}>{n}</Badge>}
-            title={<span>{lead && <b>{lead}</b>} {text}</span>}
+            media={
+              <Badge className="w-6 justify-center px-0" style={{ backgroundColor: COLORS[n], color: inkOn(COLORS[n]) }}>
+                {n}
+              </Badge>
+            }
+            title={
+              <span>
+                {lead && <b>{lead}</b>} {text}
+              </span>
+            }
           />
         ))}
       </ListGroup>

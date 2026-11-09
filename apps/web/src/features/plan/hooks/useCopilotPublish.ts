@@ -10,7 +10,13 @@ import { useLoad } from "./useLoad";
  * and whether anyone but the pilot is aboard. Null with no route or no
  * nav log yet. The copilot then works from own ship alone.
  */
-export function useCopilotPublish({ dest, rules, line, totals, aircraft }: {
+export function useCopilotPublish({
+  dest,
+  rules,
+  line,
+  totals,
+  aircraft,
+}: {
   dest: string;
   rules: string;
   line: [number, number][] | null | undefined;
@@ -24,8 +30,10 @@ export function useCopilotPublish({ dest, rules, line, totals, aircraft }: {
   // by their POH names. The pilot's own station ("Pilot and front
   // passenger") is not counted, so a front-seat passenger alone is not
   // seen; the copilot then says less, never something untrue.
-  const passengers = !!loading && !!load && loading.stations.some((station, i) =>
-    !/pilot|baggage|cargo/i.test(station.name) && (load.stationsLb[i] ?? 0) > 0);
+  const passengers =
+    !!loading &&
+    !!load &&
+    loading.stations.some((station, i) => !/pilot|baggage|cargo/i.test(station.name) && (load.stationsLb[i] ?? 0) > 0);
   const distance = totals?.distance_nm ?? null;
   const ete = totals?.ete_min ?? null;
   const plannedGsKt = distance && ete ? distance / (ete / 60) : null;

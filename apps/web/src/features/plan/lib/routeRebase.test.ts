@@ -17,8 +17,9 @@ describe("rebasedRoute", () => {
     const fromStaleBox = r("C81", [], "KRYV");
     expect(rebasedRoute(shown, fromStaleBox, r("KRYV", [], "KMSP"))).toEqual(r("KRYV", [], ""));
     // A stop taken out after another, the first not drawn yet.
-    expect(rebasedRoute(r("C81", ["KRYV", "KMSN"], "KMSP"), r("C81", ["KMSN"], "KMSP"), r("C81", ["KRYV"], "KMSP")))
-      .toEqual(r("C81", [], "KMSP"));
+    expect(rebasedRoute(r("C81", ["KRYV", "KMSN"], "KMSP"), r("C81", ["KMSN"], "KMSP"), r("C81", ["KRYV"], "KMSP"))).toEqual(
+      r("C81", [], "KMSP"),
+    );
   });
 
   it("puts a point added after the one it followed in the route now", () => {

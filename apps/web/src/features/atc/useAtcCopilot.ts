@@ -14,10 +14,12 @@ import { actionOf, callLine, type ItemAction } from "./atcWords";
 /** The cards, newest first, and the transmissions already read (by id,
  *  with the words read), kept for the page as the radio's log is. */
 const useCards = create<{ cards: AtcCard[]; read: Map<number, string>; started: boolean }>(() => ({
-  cards: [], read: new Map(), started: false,
+  cards: [],
+  read: new Map(),
+  started: false,
 }));
 
-const setCards = (next: (cards: AtcCard[]) => AtcCard[]) => useCards.setState(s => ({ cards: next(s.cards) }));
+const setCards = (next: (cards: AtcCard[]) => AtcCard[]) => useCards.setState((s) => ({ cards: next(s.cards) }));
 
 /** Listens on and on for our call sign, the copilot having started it. */
 function start() {
@@ -34,7 +36,7 @@ function onRadio(s: ReturnType<typeof useAtcRadio.getState>) {
     for (const t of s.heard) {
       if (!t.final || read.get(t.id) === t.text) continue;
       read.set(t.id, t.text);
-      setCards(cards => heardInto(cards, t, s.tail));
+      setCards((cards) => heardInto(cards, t, s.tail));
     }
   }
   // A Read Back tapped with the radio off: the microphone's pill heard
@@ -43,7 +45,7 @@ function onRadio(s: ReturnType<typeof useAtcRadio.getState>) {
   const pill = s.pill;
   const latest = useCards.getState().cards[0];
   if (pill && !pill.listening && pill.text && latest?.awaiting && pill.readbackOf === latest.text) {
-    setCards(cards => [readBack(latest, pill.text, s.tail), ...cards.slice(1)]);
+    setCards((cards) => [readBack(latest, pill.text, s.tail), ...cards.slice(1)]);
     useAtcRadio.setState({ pill: null });
   }
 }
@@ -83,13 +85,13 @@ export function useAtcCopilot(): AtcCopilot {
   // The copilot listens or is not there: where the browser has no
   // recognizer it is off, whatever the setting says.
   const voice = useCanListen();
-  const on = useAtcListen(s => s.value === "flying") && voice;
-  const flying = useFlying(s => s.flying);
-  const tail = useAtcRadio(s => s.tail);
-  const listening = useAtcRadio(s => s.listening);
-  const error = useAtcRadio(s => s.error);
+  const on = useAtcListen((s) => s.value === "flying") && voice;
+  const flying = useFlying((s) => s.flying);
+  const tail = useAtcRadio((s) => s.tail);
+  const listening = useAtcRadio((s) => s.listening);
+  const error = useAtcRadio((s) => s.error);
   const { fly, directTo, enter } = useRadioActions();
-  const cards = useCards(s => s.cards);
+  const cards = useCards((s) => s.cards);
   const [problem, setProblem] = useState<string | null>(null);
   const auto = on && flying && !!tail;
 
@@ -158,12 +160,12 @@ export function useAtcCopilot(): AtcCopilot {
       default:
         return;
     }
-    setCards(all => all.map(c => (c.id === card.id ? { ...c, set: [...c.set, index] } : c)));
+    setCards((all) => all.map((c) => (c.id === card.id ? { ...c, set: [...c.set, index] } : c)));
   };
 
   const readBackNow = () => {
     if (!card) return;
-    setCards(all => all.map(c => (c.id === card.id ? { ...c, awaiting: true, readback: null } : c)));
+    setCards((all) => all.map((c) => (c.id === card.id ? { ...c, awaiting: true, readback: null } : c)));
     // Listening already, the next transmission is the readback; else the
     // microphone listens once, from this tap.
     if (!useAtcRadio.getState().listening) void listenOnce([], card.text);
@@ -171,12 +173,21 @@ export function useAtcCopilot(): AtcCopilot {
 
   const dismiss = () => {
     if (!card) return;
-    setCards(all => all.map(c => (c.id === card.id ? { ...c, dismissed: true } : c)));
+    setCards((all) => all.map((c) => (c.id === card.id ? { ...c, dismissed: true } : c)));
     setProblem(null);
   };
 
   return {
-    on, card, needsTap: auto && !listening, noTail: on && flying && !tail, error: on ? error : null, problem,
-    can, act, listen: start, readBackNow, dismiss,
+    on,
+    card,
+    needsTap: auto && !listening,
+    noTail: on && flying && !tail,
+    error: on ? error : null,
+    problem,
+    can,
+    act,
+    listen: start,
+    readBackNow,
+    dismiss,
   };
 }

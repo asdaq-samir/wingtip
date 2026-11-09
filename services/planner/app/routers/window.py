@@ -2,6 +2,7 @@
 each departure hour the forecasts reach and the best windows to leave in
 (app.window). The route parses the ask, asks app.window.hours and
 answers; the rules are the engine's."""
+
 from fastapi import APIRouter
 
 from ..gateway import gateway

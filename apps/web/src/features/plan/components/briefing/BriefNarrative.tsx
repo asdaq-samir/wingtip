@@ -22,7 +22,11 @@ import type { Narrative } from "../../hooks/useNarrative";
  * narrative's place says so (PaidPrompt) and nothing is asked for; with
  * it, what is left of the month's briefings is said under the text.
  */
-export default function BriefNarrative({ ready, onGenerateNarrative, narrative }: {
+export default function BriefNarrative({
+  ready,
+  onGenerateNarrative,
+  narrative,
+}: {
   /** The whole nav log is in: a narrative is written from all of it. */
   ready: boolean;
   onGenerateNarrative: () => void;
@@ -46,16 +50,22 @@ export default function BriefNarrative({ ready, onGenerateNarrative, narrative }
           {!allowed && !narrative.text && (
             <PaidPrompt feature="NARRATIVE">The flight told in a page of plain words, from the whole nav log and the weather.</PaidPrompt>
           )}
-          {allowed && !ready && !narrative.text && (
-            <p>Written from the whole nav log, once it is in.</p>
-          )}
+          {allowed && !ready && !narrative.text && <p>Written from the whole nav log, once it is in.</p>}
           {askable && (
-            <Button variant="outline" onClick={ask} data-testid="brief-narrative-write">Write it</Button>
+            <Button variant="outline" onClick={ask} data-testid="brief-narrative-write">
+              Write it
+            </Button>
           )}
           {narrative.loading && !narrative.text && (
-            <p className="text-muted-foreground" role="status">Generating the narrative…</p>
+            <p className="text-muted-foreground" role="status">
+              Generating the narrative…
+            </p>
           )}
-          {narrative.error && <p className="text-destructive" role="alert">Narrative unavailable: {narrative.error}</p>}
+          {narrative.error && (
+            <p className="text-destructive" role="alert">
+              Narrative unavailable: {narrative.error}
+            </p>
+          )}
           {narrative.text && <p className="whitespace-pre-wrap">{narrative.text}</p>}
           {/* What is left of the month's briefings, under the text. */}
           {narrative.text && left && <p className={cn("pt-2 text-muted-foreground", TEXT.note)}>{left}.</p>}

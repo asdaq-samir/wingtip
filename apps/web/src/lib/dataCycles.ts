@@ -22,7 +22,7 @@ export function dayWords(day: string | null | undefined): string {
 
 /** The data sets past their cycle. */
 export function outOfDate(cycles: readonly DataCycle[] | null | undefined): DataCycle[] {
-  return (cycles ?? []).filter(c => c.state === "expired");
+  return (cycles ?? []).filter((c) => c.state === "expired");
 }
 
 /** Under a data set's row, when it is past its cycle: since when, and
@@ -47,7 +47,7 @@ const SHORT: Record<string, string> = {
  *  cycle, null when none is: "FAA data out of date: charts and
  *  procedures". */
 export function dataWarning(cycles: readonly DataCycle[] | null | undefined): string | null {
-  const names = outOfDate(cycles).map(c => SHORT[c.key] ?? c.name.toLowerCase());
+  const names = outOfDate(cycles).map((c) => SHORT[c.key] ?? c.name.toLowerCase());
   if (!names.length) return null;
   const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
   return `FAA data out of date: ${list}`;

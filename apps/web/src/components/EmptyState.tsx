@@ -9,7 +9,13 @@ import { TEXT } from "../lib/text";
  * and an action under them when there is one -- shadcn's Empty, at the
  * app's sizes: the title 20 (iOS's Title 3), the line 15.
  */
-export default function EmptyState({ icon, title, children, action, className }: {
+export default function EmptyState({
+  icon,
+  title,
+  children,
+  action,
+  className,
+}: {
   icon: ReactNode;
   title: string;
   children?: ReactNode;
@@ -19,7 +25,9 @@ export default function EmptyState({ icon, title, children, action, className }:
   return (
     <Empty className={cn("gap-3 p-6", className)}>
       <EmptyHeader className="gap-1.5">
-        <EmptyMedia variant="icon" className="mb-1 size-12 rounded-xl text-tint [&_svg:not([class*='size-'])]:size-6">{icon}</EmptyMedia>
+        <EmptyMedia variant="icon" className="mb-1 size-12 rounded-xl text-tint [&_svg:not([class*='size-'])]:size-6">
+          {icon}
+        </EmptyMedia>
         <EmptyTitle className={cn("font-semibold tracking-tight", TEXT.heading)}>{title}</EmptyTitle>
         {children && <EmptyDescription className={TEXT.prose}>{children}</EmptyDescription>}
       </EmptyHeader>

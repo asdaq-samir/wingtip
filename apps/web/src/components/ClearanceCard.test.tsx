@@ -14,7 +14,7 @@ import clearances from "../lib/fixtures/clearances.json";
 import readbacks from "../lib/fixtures/readbacks.json";
 import { LocalSpeech, speechAnswered } from "../test/localSpeech";
 
-vi.mock("../lib/api/client", async importOriginal => ({
+vi.mock("../lib/api/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/api/client")>()),
   api: { clearancePlaces: vi.fn() },
 }));
@@ -24,18 +24,29 @@ vi.mock("../lib/atcListening", () => ({ listenOnce: vi.fn(), startRadio: vi.fn()
 vi.mock("../lib/audioInput", async () => {
   const { create } = await import("zustand");
   type Input = { id: string; label: string; outside: boolean };
-  const useInputs = create<{ found: boolean; inputs: Input[]; chosen: string | null; problem: string | null }>(() => ({ found: false, inputs: [], chosen: null, problem: null }));
+  const useInputs = create<{ found: boolean; inputs: Input[]; chosen: string | null; problem: string | null }>(() => ({
+    found: false,
+    inputs: [],
+    chosen: null,
+    problem: null,
+  }));
   return {
     useInputs,
     canPickInput: () => true,
     hold: vi.fn(() => () => {}),
     refresh: vi.fn(async () => {}),
-    find: vi.fn(async () => useInputs.setState({
-      found: true,
-      inputs: [{ id: "iphone", label: "iPhone Microphone", outside: false }, { id: "gma", label: "GMA 350c", outside: true }],
-    })),
+    find: vi.fn(async () =>
+      useInputs.setState({
+        found: true,
+        inputs: [
+          { id: "iphone", label: "iPhone Microphone", outside: false },
+          { id: "gma", label: "GMA 350c", outside: true },
+        ],
+      }),
+    ),
     pick: vi.fn(async () => {}),
-    matchInput: (inputs: Input[], want: { id: string; label: string } | null) => (want ? inputs.find(i => i.id === want.id) ?? null : null),
+    matchInput: (inputs: Input[], want: { id: string; label: string } | null) =>
+      want ? (inputs.find((i) => i.id === want.id) ?? null) : null,
     isOutside: (label: string) => !/iPhone/.test(label),
   };
 });
@@ -52,10 +63,13 @@ const { default: ClearanceCard } = await import("./ClearanceCard");
  *  was found by its name, which the planner sends as true. */
 const CLEARED = readbacks.cleared;
 const ROUTE_FOUND = clearances.routes[0]!.found;
-const FOUND = { limit: { ...ROUTE_FOUND.limit, sure: true }, route: (ROUTE_FOUND.route ?? []).map(run => run.map(p => ({ ...p, sure: true }))) };
+const FOUND = {
+  limit: { ...ROUTE_FOUND.limit, sure: true },
+  route: (ROUTE_FOUND.route ?? []).map((run) => run.map((p) => ({ ...p, sure: true }))),
+};
 /** A route filed through Brainerd: the clearance puts Gopher before it. */
 const PLANNED = { dep: "KMSP", stops: ["BRD"], dest: "KDLH" };
-const PARTLY = readbacks.cases.find(c => c.name.startsWith("an altitude said differently"))!;
+const PARTLY = readbacks.cases.find((c) => c.name.startsWith("an altitude said differently"))!;
 
 afterEach(() => {
   cleanup();
@@ -65,7 +79,20 @@ afterEach(() => {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(api.clearancePlaces).mockResolvedValue(FOUND as never);
-  useAtcRadio.setState({ listening: false, error: null, heard: [], seen: null, cardOpen: false, cardText: null, tail: null, near: "", mode: null, pill: null, input: null, atisStop: null });
+  useAtcRadio.setState({
+    listening: false,
+    error: null,
+    heard: [],
+    seen: null,
+    cardOpen: false,
+    cardText: null,
+    tail: null,
+    near: "",
+    mode: null,
+    pill: null,
+    input: null,
+    atisStop: null,
+  });
   audioInput.useInputs.setState({ found: false, inputs: [], chosen: null, problem: null });
   usePreferences.setState({ listenInput: null });
   useRadioActions.setState({ route: PLANNED, enter: vi.fn() });
@@ -73,7 +100,13 @@ beforeEach(() => {
 
 function card(onDone = vi.fn()) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(<QueryClientProvider client={client}><TooltipProvider><ClearanceCard onDone={onDone} /></TooltipProvider></QueryClientProvider>);
+  render(
+    <QueryClientProvider client={client}>
+      <TooltipProvider>
+        <ClearanceCard onDone={onDone} />
+      </TooltipProvider>
+    </QueryClientProvider>,
+  );
   const state = (id: string) => screen.getByTestId(`clearance-state-${id}`).textContent;
   return { onDone, state };
 }
@@ -145,7 +178,9 @@ describe("the clearance card", () => {
 
     fireEvent.change(said, { target: { value: readbacks.cases[0]!.said } });
     expect(state("readback")).toBe("Read back in full");
-    expect(screen.getByTestId("clearance-readback-lines").textContent).toBe("Limit, route, altitude, expected altitude, frequency and squawk read back");
+    expect(screen.getByTestId("clearance-readback-lines").textContent).toBe(
+      "Limit, route, altitude, expected altitude, frequency and squawk read back",
+    );
   });
 
   test("Read back again listens once and takes the words as the microphone ends; nothing heard is the card's error line", async () => {
@@ -159,9 +194,17 @@ describe("the clearance card", () => {
     fireEvent.click(screen.getByTestId("clearance-readback-mic"));
     expect(listenOnce).toHaveBeenCalledWith([], CLEARED);
     expect(state("readback")).toBe("Listening…");
-    act(() => useAtcRadio.setState({ listening: true, mode: "once", pill: { listening: true, text: "", error: null, readbackOf: CLEARED } }));
+    act(() =>
+      useAtcRadio.setState({ listening: true, mode: "once", pill: { listening: true, text: "", error: null, readbackOf: CLEARED } }),
+    );
     expect(state("readback")).toBe("Listening…");
-    act(() => useAtcRadio.setState({ listening: false, mode: null, pill: { listening: false, text: PARTLY.said, error: null, readbackOf: CLEARED } }));
+    act(() =>
+      useAtcRadio.setState({
+        listening: false,
+        mode: null,
+        pill: { listening: false, text: PARTLY.said, error: null, readbackOf: CLEARED },
+      }),
+    );
     expect(state("readback")).toBe("4 of 6 read back");
     // The pill's own line is not wanted as well: the card has the check.
     expect(useAtcRadio.getState().pill).toBeNull();
@@ -169,8 +212,12 @@ describe("the clearance card", () => {
     fireEvent.click(screen.getByTestId("clearance-readback-mic"));
     expect(state("readback")).toBe("Listening…");
     const quiet = "Nothing was heard. Tap the microphone and speak, or hold the phone to the speaker.";
-    act(() => useAtcRadio.setState({ listening: true, mode: "once", pill: { listening: true, text: "", error: null, readbackOf: CLEARED } }));
-    act(() => useAtcRadio.setState({ listening: false, mode: null, pill: { listening: false, text: "", error: quiet, readbackOf: CLEARED } }));
+    act(() =>
+      useAtcRadio.setState({ listening: true, mode: "once", pill: { listening: true, text: "", error: null, readbackOf: CLEARED } }),
+    );
+    act(() =>
+      useAtcRadio.setState({ listening: false, mode: null, pill: { listening: false, text: "", error: quiet, readbackOf: CLEARED } }),
+    );
     expect(state("readback")).toBe("Not yet");
     expect(screen.getByTestId("clearance-error").textContent).toBe(quiet);
   });
@@ -190,14 +237,25 @@ describe("the browser's recognizer, on the device where it can be", () => {
 
   test("a recognizer without Chrome's on-device ask (Safari): the microphone is offered", async () => {
     vi.stubGlobal("SpeechRecognition", undefined);
-    vi.stubGlobal("webkitSpeechRecognition", class { start() {} stop() {} });
+    vi.stubGlobal(
+      "webkitSpeechRecognition",
+      class {
+        start() {}
+        stop() {}
+      },
+    );
     await speechAnswered();
     card();
     expect(screen.getByTestId("clearance-toggle")).toBeTruthy();
   });
 
   test("on-device recognition unavailable for English: the browser's recognizer, still offered", async () => {
-    vi.stubGlobal("SpeechRecognition", class extends LocalSpeech { static override available = async () => "unavailable"; });
+    vi.stubGlobal(
+      "SpeechRecognition",
+      class extends LocalSpeech {
+        static override available = async () => "unavailable";
+      },
+    );
     await speechAnswered();
     card();
     expect(screen.getByTestId("clearance-toggle")).toBeTruthy();
@@ -210,7 +268,14 @@ describe("Listen through, in the Hear row", () => {
     vi.stubGlobal("SpeechRecognition", LocalSpeech);
     await speechAnswered();
     // Radix's menu measures itself, which jsdom cannot.
-    vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
   });
 
   test("Find Inputs until the inputs can be named, then the menu of them; a pick is taken", async () => {
@@ -225,7 +290,7 @@ describe("Listen through, in the Hear row", () => {
     expect(menu.getAttribute("aria-label")).toBe("Listen through: Choose");
     fireEvent.keyDown(menu, { key: "Enter" });
     const options = await screen.findAllByTestId("listen-input-option");
-    expect(options.map(o => o.textContent)).toEqual(["iPhone Microphone", "GMA 350c"]);
+    expect(options.map((o) => o.textContent)).toEqual(["iPhone Microphone", "GMA 350c"]);
     fireEvent.click(options[1]!);
     expect(audioInput.pick).toHaveBeenCalledWith("gma");
   });
@@ -262,18 +327,30 @@ describe("Listen through, in the Hear row", () => {
     await speechAnswered();
     card();
     act(() => useAtcRadio.setState({ input: { label: "GMA 350c", outside: true, lost: false, why: null, instead: null, paused: false } }));
-    expect((screen.getByTestId("clearance-text") as HTMLTextAreaElement).placeholder).toMatch(/^Tap the microphone and hold the phone to the speaker, /);
+    expect((screen.getByTestId("clearance-text") as HTMLTextAreaElement).placeholder).toMatch(
+      /^Tap the microphone and hold the phone to the speaker, /,
+    );
   });
 
   test("the input chosen not heard: said under the picker, what is heard instead, and none shown chosen", () => {
     card();
     act(() => {
-      audioInput.useInputs.setState({ found: true, inputs: [{ id: "iphone", label: "iPhone Microphone", outside: false }, { id: "gma", label: "GMA 350c", outside: true }] });
+      audioInput.useInputs.setState({
+        found: true,
+        inputs: [
+          { id: "iphone", label: "iPhone Microphone", outside: false },
+          { id: "gma", label: "GMA 350c", outside: true },
+        ],
+      });
       usePreferences.setState({ listenInput: { id: "gma", label: "GMA 350c" } });
-      useAtcRadio.setState({ input: { label: "GMA 350c", outside: true, lost: true, why: "moved", instead: "iPhone Microphone", paused: false } });
+      useAtcRadio.setState({
+        input: { label: "GMA 350c", outside: true, lost: true, why: "moved", instead: "iPhone Microphone", paused: false },
+      });
     });
     const through = within(screen.getByTestId("listen-through"));
-    expect(through.getByTestId("listen-problem").textContent).toBe("Not hearing GMA 350c, the iPhone microphone took over; choose it again in Listen through");
+    expect(through.getByTestId("listen-problem").textContent).toBe(
+      "Not hearing GMA 350c, the iPhone microphone took over; choose it again in Listen through",
+    );
     expect(through.getByTestId("listen-hearing").textContent).toBe("Sound fromiPhone Microphone");
     expect(through.getByTestId("listen-input").getAttribute("aria-label")).toBe("Listen through: Choose");
     // Not in the card's own line, which keeps the read back's.
@@ -283,8 +360,9 @@ describe("Listen through, in the Hear row", () => {
   test("a choice that could not be had is said under the picker", () => {
     card();
     act(() => audioInput.useInputs.setState({ problem: "Microphone access was refused; allow it in Safari's settings for this website." }));
-    expect(within(screen.getByTestId("listen-through")).getByTestId("listen-problem").textContent)
-      .toBe("Microphone access was refused; allow it in Safari's settings for this website.");
+    expect(within(screen.getByTestId("listen-through")).getByTestId("listen-problem").textContent).toBe(
+      "Microphone access was refused; allow it in Safari's settings for this website.",
+    );
     expect(screen.queryByTestId("clearance-error")).toBeNull();
   });
 });

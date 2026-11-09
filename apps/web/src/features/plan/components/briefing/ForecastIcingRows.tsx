@@ -38,7 +38,7 @@ export default function ForecastIcingRows({ vm, legs }: { vm: FlightBriefing; le
       footer={`AWC CIP and FIP, issued ${clockTime(new Date(found.issued))}`}
       className="pt-2"
     >
-      {found.legs.map(leg => {
+      {found.legs.map((leg) => {
         const on = legs[leg.index];
         const iced = leg.severity != null && leg.severity !== "none";
         return (
@@ -46,7 +46,13 @@ export default function ForecastIcingRows({ vm, legs }: { vm: FlightBriefing; le
             key={leg.index}
             media={<FindingIcon finding={leg.severity == null ? "unknown" : iced ? "caution" : "ok"} />}
             title={<span className="line-clamp-1">{on ? `${on.from} → ${on.to}` : `Leg ${leg.index + 1}`}</span>}
-            description={leg.layer ? `Icing forecast ${feetRange([leg.layer.bottom_ft, leg.layer.top_ft])}` : leg.severity == null ? undefined : "No icing forecast over the leg"}
+            description={
+              leg.layer
+                ? `Icing forecast ${feetRange([leg.layer.bottom_ft, leg.layer.top_ft])}`
+                : leg.severity == null
+                  ? undefined
+                  : "No icing forecast over the leg"
+            }
             value={`${severityWord(leg.severity)} at ${altFt(leg.altitude_ft)} ft${iced && leg.share != null && leg.share < 1 ? `, ${Math.round(leg.share * 100)}% of it` : ""}`}
             data-testid="icing-forecast-leg"
           />

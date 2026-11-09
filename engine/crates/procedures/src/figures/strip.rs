@@ -32,11 +32,7 @@ pub struct Short {
 /// the flights the tanks fall short on, a fuel margin under nothing being
 /// the fuel and its reserve (14 CFR 91.151, 91.167) more than they hold.
 pub fn fuel_figure(
-    required_gal: Option<f64>,
-    margin_gal: Option<f64>,
-    hops: &[Hop],
-    hop: usize,
-    burnt_gal: Option<f64>,
+    required_gal: Option<f64>, margin_gal: Option<f64>, hops: &[Hop], hop: usize, burnt_gal: Option<f64>,
 ) -> (Option<f64>, Vec<Short>) {
     let planned = match hops.get(hop.min(hops.len().saturating_sub(1))) {
         Some(h) => h.fuel_required_gal,
@@ -51,10 +47,7 @@ pub fn fuel_figure(
     } else {
         hops.iter().map(|h| (format!("{} → {}", h.departure, h.destination), h.fuel_margin_gal)).collect()
     };
-    let short = flights
-        .into_iter()
-        .filter_map(|(name, m)| m.filter(|m| *m < 0.0).map(|m| Short { name, short_gal: -m }))
-        .collect();
+    let short = flights.into_iter().filter_map(|(name, m)| m.filter(|m| *m < 0.0).map(|m| Short { name, short_gal: -m })).collect();
     (required, short)
 }
 
@@ -73,7 +66,9 @@ pub fn estimate_reserve_min() -> f64 {
 /// (`taxi_fuel_gal`, its profile's; left out where it has none, never a
 /// stock airplane's) and the estimate's reserve at the cruise burn. None
 /// where the book gives no speed (or no burn, for the fuel).
-pub fn estimate(distance_nm: f64, cruise_tas_kt: Option<f64>, fuel_burn_gph: Option<f64>, taxi_fuel_gal: Option<f64>) -> (Option<f64>, Option<f64>, Option<f64>) {
+pub fn estimate(
+    distance_nm: f64, cruise_tas_kt: Option<f64>, fuel_burn_gph: Option<f64>, taxi_fuel_gal: Option<f64>,
+) -> (Option<f64>, Option<f64>, Option<f64>) {
     let minutes = cruise_tas_kt.filter(|t| *t > 0.0).map(|t| distance_nm / t * 60.0);
     let burn = fuel_burn_gph.filter(|b| *b > 0.0);
     let trip = minutes.zip(burn).map(|(m, b)| m / 60.0 * b);

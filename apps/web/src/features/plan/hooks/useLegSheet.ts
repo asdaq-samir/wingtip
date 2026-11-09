@@ -12,7 +12,16 @@ import type { PlanAnswer, PlanCourse } from "./planTypes";
  * the course line tapped on the map, with its Route Leg sheet's figures
  * and actions.
  */
-export function useLegSheet({ routeKey, course, logSelected, legs, dryRunning, directParam, directToPoint, removeStop }: {
+export function useLegSheet({
+  routeKey,
+  course,
+  logSelected,
+  legs,
+  dryRunning,
+  directParam,
+  directToPoint,
+  removeStop,
+}: {
   /** The route the selection is kept for: a new route starts with nothing selected. */
   routeKey: string;
   course: PlanCourse | null;
@@ -38,10 +47,7 @@ export function useLegSheet({ routeKey, course, logSelected, legs, dryRunning, d
   );
   // The map's own half of point selection -- clicking a checkpoint
   // marker focuses the same point the matching nav log row would.
-  const selectCandidate = useCallback(
-    (c: Candidate) => selectPoint({ lat: c.lat, lon: c.lon }),
-    [selectPoint],
-  );
+  const selectCandidate = useCallback((c: Candidate) => selectPoint({ lat: c.lat, lon: c.lon }), [selectPoint]);
   const selectPointAt = useCallback((lat: number, lon: number) => selectPoint({ lat, lon }), [selectPoint]);
   const deselectPoint = useCallback(() => selectPoint(null), [selectPoint]);
   // The route in order in FPL, the nav log's place: its fields with their
@@ -59,17 +65,35 @@ export function useLegSheet({ routeKey, course, logSelected, legs, dryRunning, d
   const [legAt, setLegAt] = useState<string | null>(null);
   const flyingTo = useFlyingTo(dryRunning, routeRows);
   const openLeg = useMemo<RouteLegView | null>(() => {
-    const at = mapLegs.find(l => l.key === legAt);
+    const at = mapLegs.find((l) => l.key === legAt);
     if (!at) return null;
     const row = at.toRow;
     const ident = row.kind === "checkpoint" ? null : row.airport.ident;
     const on = ident !== null && directParam !== null && sameField(directParam, ident);
     return {
-      key: at.key, from: at.from.name, to: at.to.name,
-      distanceNm: at.leg?.distance_nm ?? null, courseMagDeg: at.leg?.magnetic_course_deg ?? null,
+      key: at.key,
+      from: at.from.name,
+      to: at.to.name,
+      distanceNm: at.leg?.distance_nm ?? null,
+      courseMagDeg: at.leg?.magnetic_course_deg ?? null,
       active: flyingTo === at.key,
-      direct: ident === null ? null : { on, go: () => { directToPoint(on ? null : ident); setLegAt(null); } },
-      remove: row.kind === "stop" ? () => { removeStop(row.airport.ident); setLegAt(null); } : null,
+      direct:
+        ident === null
+          ? null
+          : {
+              on,
+              go: () => {
+                directToPoint(on ? null : ident);
+                setLegAt(null);
+              },
+            },
+      remove:
+        row.kind === "stop"
+          ? () => {
+              removeStop(row.airport.ident);
+              setLegAt(null);
+            }
+          : null,
     };
   }, [mapLegs, legAt, directParam, flyingTo, directToPoint, removeStop]);
   const closeLeg = useCallback(() => setLegAt(null), []);

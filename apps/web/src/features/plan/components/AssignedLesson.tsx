@@ -14,15 +14,13 @@ import ApproachLesson, { type FromInstructor } from "./ApproachLesson";
  * Where it is no longer theirs -- taken back, or the instructor gone --
  * it closes.
  */
-export default function AssignedLesson({ id, aircraft, onClose }: {
-  id: number;
-  aircraft: AircraftProfile | null;
-  onClose: () => void;
-}) {
+export default function AssignedLesson({ id, aircraft, onClose }: { id: number; aircraft: AircraftProfile | null; onClose: () => void }) {
   const queryClient = useQueryClient();
   const { data: training, isSuccess } = useQuery(trainingQuery);
-  const lesson = training?.lessons.find(l => l.id === id) ?? null;
-  useEffect(() => { if (isSuccess && !lesson) onClose(); }, [isSuccess, lesson, onClose]);
+  const lesson = training?.lessons.find((l) => l.id === id) ?? null;
+  useEffect(() => {
+    if (isSuccess && !lesson) onClose();
+  }, [isSuccess, lesson, onClose]);
   const report = useMutation({
     mutationFn: (body: LessonProgressRequest) => api.training.lessonProgress(id, body),
     onSuccess: (next: Training) => queryClient.setQueryData(["training"], next),
@@ -31,23 +29,34 @@ export default function AssignedLesson({ id, aircraft, onClose }: {
   // Said once a lesson: Got It through the brief again, or flown again,
   // tells the instructor nothing new (the server keeps the first time).
   const said = useRef({ briefed: false, flown: false });
-  const briefedAt = lesson?.briefedAt, flownAt = lesson?.flownAt;
-  const once = useCallback((what: "briefed" | "flown") => {
-    if (said.current[what] || (what === "briefed" ? briefedAt : flownAt)) return;
-    said.current[what] = true;
-    send({ briefed: what === "briefed", flown: what === "flown", quiz: null });
-  }, [send, briefedAt, flownAt]);
+  const briefedAt = lesson?.briefedAt,
+    flownAt = lesson?.flownAt;
+  const once = useCallback(
+    (what: "briefed" | "flown") => {
+      if (said.current[what] || (what === "briefed" ? briefedAt : flownAt)) return;
+      said.current[what] = true;
+      send({ briefed: what === "briefed", flown: what === "flown", quiz: null });
+    },
+    [send, briefedAt, flownAt],
+  );
   // One approach for as long as it is open: a new one each render took
   // the lesson off the chart (ApproachLesson ends it as `at` changes).
-  const ident = lesson?.airportIdent, procedure = lesson?.procedureId;
+  const ident = lesson?.airportIdent,
+    procedure = lesson?.procedureId;
   const at = useMemo(() => (ident && procedure ? lessonPicked({ airportIdent: ident, procedureId: procedure }) : null), [ident, procedure]);
-  const from = useMemo<FromInstructor | undefined>(() => (lesson ? {
-    instructorName: lesson.instructorName,
-    notes: lesson.fixNotes,
-    onBriefed: () => once("briefed"),
-    onFlown: () => once("flown"),
-    onQuiz: (answers, of) => send({ briefed: false, flown: false, quiz: { answers, of } }),
-    problem: report.error ? `Your progress could not be sent to ${lesson.instructorName}: ${report.error.message}` : null,
-  } : undefined), [lesson, once, send, report.error]);
+  const from = useMemo<FromInstructor | undefined>(
+    () =>
+      lesson
+        ? {
+            instructorName: lesson.instructorName,
+            notes: lesson.fixNotes,
+            onBriefed: () => once("briefed"),
+            onFlown: () => once("flown"),
+            onQuiz: (answers, of) => send({ briefed: false, flown: false, quiz: { answers, of } }),
+            problem: report.error ? `Your progress could not be sent to ${lesson.instructorName}: ${report.error.message}` : null,
+          }
+        : undefined,
+    [lesson, once, send, report.error],
+  );
   return <ApproachLesson at={at} aircraft={aircraft} onClose={onClose} from={from} />;
 }

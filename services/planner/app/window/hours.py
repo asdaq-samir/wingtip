@@ -9,6 +9,7 @@ the TAFs, G-AIRMETs and TFRs over its window. What holds only now is left
 to the hours it holds in: an hour more than LIVE_WITHIN_S off does not
 read today's METARs (a field's weather then is its TAF's), today's ITWS
 alerts, the Command Center's programs or SFDPS's status of an area."""
+
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
@@ -19,9 +20,7 @@ from wingtip import departure_window as forecast, runway_wind, weather
 from wingtip import planning as planning_module
 from ..gonogo import ask as engine
 from ..router_basics import load_route
-from ..gonogo.flight import (
-    ROUTE_FIELDS, PlanQuery, Planned, alternate_for, briefing_or_failure, findings_for, plan_for,
-)
+from ..gonogo.flight import ROUTE_FIELDS, PlanQuery, Planned, alternate_for, briefing_or_failure, findings_for, plan_for
 from .schemas import DepartureWindowAsk
 
 #: How near now a departure reads what is reported now -- the METARs, the
@@ -72,8 +71,13 @@ class Plans:
         ete = _ete(planned)
         if not self.airplane or ete is None:
             return planned
-        night = engine("night_on_the_way", start=list(self.r.start), end=list(self.r.end), depart_s=depart.timestamp(),
-                       minutes=ete + ((planned.totals or {}).get("ground_min") or 0))
+        night = engine(
+            "night_on_the_way",
+            start=list(self.r.start),
+            end=list(self.r.end),
+            depart_s=depart.timestamp(),
+            minutes=ete + ((planned.totals or {}).get("ground_min") or 0),
+        )
         if bool((planned.totals or {}).get("night")) == night:
             return planned
         return self._planned((period, night), depart)
@@ -104,13 +108,16 @@ def _as_forecast(briefing: dict, r, depart: datetime, ete_min: float | None) -> 
         if field is not None:
             fields[ident] = {**field, "runways": runway_wind.with_winds(field.get("runways") or [], report, airport["lat"], airport["lon"])}
     return {
-        **briefing, "metars": reports, "airports": {**airports, **fields},
+        **briefing,
+        "metars": reports,
+        "airports": {**airports, **fields},
         "vfr_not_recommended": weather.vfr_not_recommended_reasons(list(where), {i: None for i in where}, briefing["forecast"]),
     }
 
 
-def _hour(ask: DepartureWindowAsk, q: PlanQuery, r, plans: Plans, depart: datetime, now: datetime,
-          reach: float) -> tuple[dict, dict | None]:
+def _hour(
+    ask: DepartureWindowAsk, q: PlanQuery, r, plans: Plans, depart: datetime, now: datetime, reach: float
+) -> tuple[dict, dict | None]:
     """One hour as the engine reads it, and its risk assessment's input."""
     planned = plans.for_hour(depart)
     ete = _ete(planned) if ask.airplane else None
@@ -131,10 +138,13 @@ def _hour(ask: DepartureWindowAsk, q: PlanQuery, r, plans: Plans, depart: dateti
     return {
         "depart_s": depart.timestamp(),
         "reaches": arrive <= reach,
-        "ete_min": ete, "fuel_gal": totals.get("fuel_gal") if ask.airplane else None,
+        "ete_min": ete,
+        "fuel_gal": totals.get("fuel_gal") if ask.airplane else None,
         "ground_min": totals.get("ground_min") or 0,
-        "ceiling_ft": forecast_worst.get("min_ceiling_ft"), "visibility_sm": forecast_worst.get("min_visibility_sm"),
-        "verdict": found.verdict, "alternate": alternate,
+        "ceiling_ft": forecast_worst.get("min_ceiling_ft"),
+        "visibility_sm": forecast_worst.get("min_visibility_sm"),
+        "verdict": found.verdict,
+        "alternate": alternate,
     }, found.risk_in
 
 
@@ -154,9 +164,13 @@ def departure_window(ask: DepartureWindowAsk) -> dict:
         gathered = list(pool.map(lambda h: _hour(ask, q, r, plans, h, now, reach), hours))
     risk = next((risk_in for _, risk_in in gathered if risk_in), None)
     answer = engine(
-        "departure_window", start=list(r.start), end=list(r.end), airplane=ask.airplane,
+        "departure_window",
+        start=list(r.start),
+        end=list(r.end),
+        airplane=ask.airplane,
         minimums={"ceiling_ft": ask.minimums.ceiling_ft, "visibility_sm": ask.minimums.visibility_sm},
-        risk=risk, hours=[h for h, _ in gathered],
+        risk=risk,
+        hours=[h for h, _ in gathered],
     )
 
     def at(s: float) -> datetime:
@@ -164,8 +178,17 @@ def departure_window(ask: DepartureWindowAsk) -> dict:
 
     return {
         "hours": [{**{k: v for k, v in h.items() if k != "depart_s"}, "depart": at(h["depart_s"])} for h in answer["hours"]],
-        "windows": [{"start": at(w["from_s"]), "last": at(w["last_s"]), "hours": w["hours"], "margin": w["margin"],
-                     "ete_min": w["ete_min"], "quickest": at(w["quickest_s"])} for w in answer["windows"]],
+        "windows": [
+            {
+                "start": at(w["from_s"]),
+                "last": at(w["last_s"]),
+                "hours": w["hours"],
+                "margin": w["margin"],
+                "ete_min": w["ete_min"],
+                "quickest": at(w["quickest_s"]),
+            }
+            for w in answer["windows"]
+        ],
         "airplane": ask.airplane,
         "forecast_until": at(reach) if reach is not None else None,
     }

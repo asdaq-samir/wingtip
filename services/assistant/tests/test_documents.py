@@ -6,6 +6,7 @@ input, and comes back with the rule's answer; a clearance note comes back
 as words for the app's clearance reader; the photo is checked before any
 call, and a reader out of reach is a 503. The photos are the drawn sample
 pages beside these tests (fixtures/pages/make_pages.py)."""
+
 import base64
 import json
 from pathlib import Path
@@ -54,6 +55,7 @@ def claude(monkeypatch):
         fake = FakeClaude(answer, stop_reason)
         monkeypatch.setattr(reader.anthropic, "Anthropic", fake)
         return fake
+
     return use
 
 
@@ -61,6 +63,7 @@ def claude(monkeypatch):
 def no_real_model(monkeypatch):
     def unexpected():
         raise AssertionError("the model was asked without a canned answer")
+
     monkeypatch.setattr(reader.anthropic, "Anthropic", unexpected)
 
 
@@ -70,13 +73,29 @@ def post(kind: str, name: str, media_type="image/png", **more):
 
 CLEAN = SHARED["handbook"][0]["input"]
 ENGINE_ANSWER = {
-    "items": [{"key": "cruise.2", "group": "cruise", "title": "6,000 ft, 65%", "figures": [
-        {"path": "cruise.2.tas", "label": "True airspeed", "value": 113, "unit": "kt", "app_value": 113, "app_unit": "kt"}],
-        "flags": []}],
-    "handbook": {"cruise": [{"altitude_ft": 6000, "power_pct": 65, "rpm": 2450, "tas_kt": 113, "burn_gph": 8.5}],
-                 "takeoff": [], "landing": [], "envelope": []},
-    "profile": {"cruise_tas_kt": 113, "fuel_burn_gph": 8.5, "cruise_power_pct": 65, "cruise_from": "cruise.2",
-                "climb_fuel_burn_gph": 11, "usable_fuel_gal": 53},
+    "items": [
+        {
+            "key": "cruise.2",
+            "group": "cruise",
+            "title": "6,000 ft, 65%",
+            "figures": [{"path": "cruise.2.tas", "label": "True airspeed", "value": 113, "unit": "kt", "app_value": 113, "app_unit": "kt"}],
+            "flags": [],
+        }
+    ],
+    "handbook": {
+        "cruise": [{"altitude_ft": 6000, "power_pct": 65, "rpm": 2450, "tas_kt": 113, "burn_gph": 8.5}],
+        "takeoff": [],
+        "landing": [],
+        "envelope": [],
+    },
+    "profile": {
+        "cruise_tas_kt": 113,
+        "fuel_burn_gph": 8.5,
+        "cruise_power_pct": 65,
+        "cruise_from": "cruise.2",
+        "climb_fuel_burn_gph": 11,
+        "usable_fuel_gal": 53,
+    },
 }
 
 
@@ -127,8 +146,10 @@ def test_a_logbook_page_is_checked_with_the_apps_date_and_its_departure_as_from(
 
 
 def test_a_clearance_note_comes_back_as_the_controllers_words_and_asks_no_engine(claude, fake_planner):
-    said = ("Cleared to KDLH via radar vectors GOPHER then as filed, maintain 3000, expect 7000 10 minutes after departure, "
-            "departure frequency 125.35, squawk 4521.")
+    said = (
+        "Cleared to KDLH via radar vectors GOPHER then as filed, maintain 3000, expect 7000 10 minutes after departure, "
+        "departure frequency 125.35, squawk 4521."
+    )
     claude({"clearance": {"written": "C KDLH\nRV / GOPHER / AF\nM 3000 E 7000 10\nDEP 125.35\nSQ 4521", "said": said}})
 
     r = post("clearance", "clearance.png")

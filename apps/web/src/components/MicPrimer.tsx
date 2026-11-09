@@ -13,7 +13,7 @@ import { askMicrophone, permissionState } from "../lib/permissions";
 export function useMicPrimer(): [ReactNode, (then: () => void) => void] {
   const [waiting, setWaiting] = useState<(() => void) | null>(null);
   const ask = (then: () => void) => {
-    void permissionState("microphone").then(state => {
+    void permissionState("microphone").then((state) => {
       if (state === "granted") then();
       else setWaiting(() => then);
     });
@@ -26,13 +26,21 @@ export function useMicPrimer(): [ReactNode, (then: () => void) => void] {
   };
   const sheet = (
     <SheetDialog
-      open={waiting !== null} onOpenChange={open => { if (!open) setWaiting(null); }} title="The Microphone"
+      open={waiting !== null}
+      onOpenChange={(open) => {
+        if (!open) setWaiting(null);
+      }}
+      title="The Microphone"
       description="Wingtip listens to the radio to write down your clearance. Wingtip records no audio, and keeps speech on this device wherever your browser can."
       testId="mic-primer"
     >
       <div className="grid gap-2">
-        <Button type="button" size="lg" className="h-12 rounded-[14px] font-semibold" onClick={allow} data-testid="mic-allow">Allow</Button>
-        <Button type="button" variant="ghost" onClick={() => setWaiting(null)} data-testid="mic-not-now">Not Now</Button>
+        <Button type="button" size="lg" className="h-12 rounded-[14px] font-semibold" onClick={allow} data-testid="mic-allow">
+          Allow
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => setWaiting(null)} data-testid="mic-not-now">
+          Not Now
+        </Button>
       </div>
     </SheetDialog>
   );

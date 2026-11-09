@@ -1,6 +1,10 @@
 import type {
-  ExpressionSpecification, LayerSpecification, LineLayerSpecification, RasterLayerSpecification,
-  RasterSourceSpecification, SymbolLayerSpecification,
+  ExpressionSpecification,
+  LayerSpecification,
+  LineLayerSpecification,
+  RasterLayerSpecification,
+  RasterSourceSpecification,
+  SymbolLayerSpecification,
 } from "maplibre-gl";
 import type { ChartInfo } from "../../api/types";
 import type { AirspaceVolume } from "../sources/overlayTypes";
@@ -83,7 +87,13 @@ export function chartPaint(night: boolean, sunlight: boolean): RasterLayerSpecif
  * the same tile addresses (tiles.ts tileTemplate, with the cycle and the
  * revision), the same zooms, the same two levels of enlargement.
  */
-export function chartStyle(chart: ChartInfo, base: string, pinned: boolean, origin: string, paint = chartPaint(false, false)): ChartStyle | null {
+export function chartStyle(
+  chart: ChartInfo,
+  base: string,
+  pinned: boolean,
+  origin: string,
+  paint = chartPaint(false, false),
+): ChartStyle | null {
   const { base: baseLayer, overlay } = chartPair(chart.chart_layers, base);
   if (!baseLayer) return null;
   const sources: Record<string, RasterSourceSpecification> = {};
@@ -97,7 +107,13 @@ export function chartStyle(chart: ChartInfo, base: string, pinned: boolean, orig
   sources.chart = { type: "raster", tiles: tiles(baseLayer.kind), tileSize: 256, minzoom: baseLayer.min_zoom, maxzoom: baseLayer.max_zoom };
   layers.push({ id: "chart", type: "raster", source: "chart", paint });
   if (overlay && pinned) {
-    sources["chart-terminal"] = { type: "raster", tiles: tiles(overlay.kind), tileSize: 256, minzoom: overlay.min_zoom, maxzoom: overlay.max_zoom };
+    sources["chart-terminal"] = {
+      type: "raster",
+      tiles: tiles(overlay.kind),
+      tileSize: 256,
+      minzoom: overlay.min_zoom,
+      maxzoom: overlay.max_zoom,
+    };
     layers.push({ id: "chart-terminal", type: "raster", source: "chart-terminal", minzoom: glZoom(overlay.min_zoom), paint });
   }
   return { sources, layers, maxZoom: glZoom(baseLayer.max_zoom + OVERZOOM) };
@@ -144,13 +160,15 @@ const feet = (ft: number) => String(Math.round(ft));
  *  Chart User's Guide, Airspace) is "<3000": a Class D under a Class B
  *  shelf. The figures are the FAA's, as the tiles and the planner carry
  *  them; only the wording is the map's. */
-export function airspaceText(volume: Pick<AirspaceVolume, "airspace_class" | "floor_ft" | "floor_sfc" | "ceiling_ft" | "ceiling_excluded">): string | null {
+export function airspaceText(
+  volume: Pick<AirspaceVolume, "airspace_class" | "floor_ft" | "floor_sfc" | "ceiling_ft" | "ceiling_excluded">,
+): string | null {
   if (volume.ceiling_ft == null) return null;
   const floor = volume.floor_sfc ? "SFC" : feet(volume.floor_ft);
   return `${volume.airspace_class}: ${floor}–${volume.ceiling_excluded ? "<" : ""}${feet(volume.ceiling_ft)}`;
 }
 
-export const AIRSPACE_LINE_LAYERS = (["D", "C", "B"] as const).map(c => `airspace-${c}`);
+export const AIRSPACE_LINE_LAYERS = (["D", "C", "B"] as const).map((c) => `airspace-${c}`);
 
 /** The dark tab an airspace's altitudes sit in (icon-text-fit stretches
  *  it to the text), bordered in its class's ink: its id by class, for
@@ -179,7 +197,12 @@ const byZoom = (stops: [appZoom: number, px: number][]) =>
  *  sectional's own vignette (the pale strip inside Madison's Class C
  *  line, the owner's screenshot, 2026-11-08): a few pixels at a
  *  region's zoom, wider as the map comes in. */
-const BAND_STOPS: [number, number][] = [[7, 3], [9, 6], [11, 10], [13, 16]];
+const BAND_STOPS: [number, number][] = [
+  [7, 3],
+  [9, 6],
+  [11, 10],
+  [13, 16],
+];
 const BAND_WIDTH = byZoom(BAND_STOPS);
 /** The band's middle off the boundary, inwards: half the band and a
  *  little over half the line, so its edge meets the line's. A positive
@@ -200,26 +223,36 @@ const BAND_OFFSET = byZoom(BAND_STOPS.map(([z, w]) => [z, w / 2 + 1.5]));
  *  tiles but not drawn. */
 export function airspaceLayers(font: string[], labelPoints = true): LayerSpecification[] {
   const from = { source: OVERLAY_SOURCE, "source-layer": "airspace" };
-  const lines: LineLayerSpecification[] = (["D", "C", "B"] as const).flatMap(c => {
+  const lines: LineLayerSpecification[] = (["D", "C", "B"] as const).flatMap((c) => {
     const ink = AIRSPACE_INK[c];
     const common = { type: "line" as const, ...from, minzoom: glZoom(AIRSPACE_FROM[c]), filter: ["==", ["get", "class"], c] as never };
     return [
       {
-        id: `airspace-${c}-band`, ...common,
+        id: `airspace-${c}-band`,
+        ...common,
         layout: { "line-join": "round" },
         paint: { "line-color": ink.colour, "line-opacity": ink.band, "line-width": BAND_WIDTH, "line-offset": BAND_OFFSET },
       },
       {
-        id: `airspace-${c}`, ...common,
+        id: `airspace-${c}`,
+        ...common,
         layout: { "line-join": "round", "line-cap": ink.dash ? "butt" : "round" },
-        paint: { "line-color": ink.colour, "line-width": ink.width, "line-opacity": ink.opacity, ...(ink.dash ? { "line-dasharray": ink.dash } : {}) },
+        paint: {
+          "line-color": ink.colour,
+          "line-width": ink.width,
+          "line-opacity": ink.opacity,
+          ...(ink.dash ? { "line-dasharray": ink.dash } : {}),
+        },
       },
     ];
   });
   const tab = {
     "text-field": AIRSPACE_TILE_LABEL as never,
     "text-font": font,
-    "text-size": byZoom([[8, 11], [12, 13]]),
+    "text-size": byZoom([
+      [8, 11],
+      [12, 13],
+    ]),
     "icon-image": ["concat", "airspace|tab|", ["get", "class"]] as never,
     "icon-text-fit": "both" as const,
     "icon-text-fit-padding": [2, 6, 2, 6] as [number, number, number, number],
@@ -233,34 +266,41 @@ export function airspaceLayers(font: string[], labelPoints = true): LayerSpecifi
   };
   const labels: SymbolLayerSpecification = labelPoints
     ? {
-      id: "airspace-labels", type: "symbol", source: OVERLAY_SOURCE, "source-layer": "airspace_labels", minzoom: glZoom(AIRSPACE_LABELS_FROM),
-      filter: ["in", ["get", "class"], ["literal", ["B", "C", "D"]]],
-      layout: {
-        ...tab,
-        // Along the ring where it sits: the tiles' turn, upright already;
-        // the map never turns (GlMapShell), so the chart's north is the
-        // screen's.
-        "text-rotate": ["get", "angle"],
-        "icon-rotate": ["get", "angle"],
-        "text-rotation-alignment": "map",
-        "icon-rotation-alignment": "map",
-      },
-      paint: { "text-color": "#ffffff" },
-    }
+        id: "airspace-labels",
+        type: "symbol",
+        source: OVERLAY_SOURCE,
+        "source-layer": "airspace_labels",
+        minzoom: glZoom(AIRSPACE_LABELS_FROM),
+        filter: ["in", ["get", "class"], ["literal", ["B", "C", "D"]]],
+        layout: {
+          ...tab,
+          // Along the ring where it sits: the tiles' turn, upright already;
+          // the map never turns (GlMapShell), so the chart's north is the
+          // screen's.
+          "text-rotate": ["get", "angle"],
+          "icon-rotate": ["get", "angle"],
+          "text-rotation-alignment": "map",
+          "icon-rotation-alignment": "map",
+        },
+        paint: { "text-color": "#ffffff" },
+      }
     : {
-      id: "airspace-labels", type: "symbol", ...from, minzoom: glZoom(AIRSPACE_LABELS_FROM),
-      filter: ["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "ceiling_ft"]],
-      layout: {
-        ...tab,
-        "symbol-placement": "line",
-        "symbol-spacing": 320,
-        "text-rotation-alignment": "viewport",
-        "icon-rotation-alignment": "viewport",
-        "text-keep-upright": true,
-        "text-max-angle": 30,
-      },
-      paint: { "text-color": "#ffffff" },
-    };
+        id: "airspace-labels",
+        type: "symbol",
+        ...from,
+        minzoom: glZoom(AIRSPACE_LABELS_FROM),
+        filter: ["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "ceiling_ft"]],
+        layout: {
+          ...tab,
+          "symbol-placement": "line",
+          "symbol-spacing": 320,
+          "text-rotation-alignment": "viewport",
+          "icon-rotation-alignment": "viewport",
+          "text-keep-upright": true,
+          "text-max-angle": 30,
+        },
+        paint: { "text-color": "#ffffff" },
+      };
   return [...lines, labels];
 }
 
@@ -295,17 +335,30 @@ export function specialUseLayers(): LineLayerSpecification[] {
   const order = ["case", restricted, 1, 0] as never;
   return [
     {
-      id: "sua-band", type: "line", ...from, filter,
+      id: "sua-band",
+      type: "line",
+      ...from,
+      filter,
       layout: { "line-join": "round", "line-sort-key": order },
       paint: {
         "line-pattern": ["case", restricted, suaHatch("restricted"), suaHatch("moa")] as never,
-        "line-width": BAND_WIDTH, "line-offset": BAND_OFFSET,
+        "line-width": BAND_WIDTH,
+        "line-offset": BAND_OFFSET,
       },
     },
     {
-      id: "sua-line", type: "line", ...from, filter,
+      id: "sua-line",
+      type: "line",
+      ...from,
+      filter,
       layout: { "line-join": "round", "line-cap": "round", "line-sort-key": order },
-      paint: { "line-color": ["case", restricted, SUA_INK.restricted, SUA_INK.moa] as never, "line-width": byZoom([[7, 2], [10, 3]]) },
+      paint: {
+        "line-color": ["case", restricted, SUA_INK.restricted, SUA_INK.moa] as never,
+        "line-width": byZoom([
+          [7, 2],
+          [10, 3],
+        ]),
+      },
     },
   ];
 }
@@ -326,15 +379,24 @@ export const CHECKPOINT_SOURCE = "checkpoints";
 /** The course as a line (its edge and core: routeLayers), and with it each
  *  leg's own piece of it (`part: "leg"`, its nav-log key), which the green
  *  casing is drawn along when that leg is the one selected. */
-export function routeFeature(line: [number, number][], legs: { key: string; from: { lat: number; lon: number }; to: { lat: number; lon: number } }[] = []): GeoJSON.FeatureCollection<GeoJSON.LineString> {
+export function routeFeature(
+  line: [number, number][],
+  legs: { key: string; from: { lat: number; lon: number }; to: { lat: number; lon: number } }[] = [],
+): GeoJSON.FeatureCollection<GeoJSON.LineString> {
   const lonLat = (pts: [number, number][]) => pts.map(([lat, lon]) => [lon, lat]);
-  const features: GeoJSON.Feature<GeoJSON.LineString>[] = [{ type: "Feature", properties: { part: "route" }, geometry: { type: "LineString", coordinates: lonLat(line) } }];
+  const features: GeoJSON.Feature<GeoJSON.LineString>[] = [
+    { type: "Feature", properties: { part: "route" }, geometry: { type: "LineString", coordinates: lonLat(line) } },
+  ];
   let from = 0;
   for (const leg of legs) {
     const piece = legPiece(line, leg.from, leg.to, from);
     if (!piece) continue;
     from = piece.end;
-    features.push({ type: "Feature", properties: { part: "leg", leg: leg.key }, geometry: { type: "LineString", coordinates: lonLat(piece.points) } });
+    features.push({
+      type: "Feature",
+      properties: { part: "leg", leg: leg.key },
+      geometry: { type: "LineString", coordinates: lonLat(piece.points) },
+    });
   }
   return { type: "FeatureCollection", features };
 }
@@ -343,26 +405,40 @@ export function routeFeature(line: [number, number][], legs: { key: string; from
  *  of it, nearest from `after` on (a flat lat/lon fit is enough for
  *  matching a leg's end to the vertices the course was drawn through). */
 function along(line: [number, number][], p: { lat: number; lon: number }, after: number): number {
-  let best = after, bestD = Infinity;
+  let best = after,
+    bestD = Infinity;
   const kx = Math.cos((p.lat * Math.PI) / 180);
   for (let i = Math.floor(after); i < line.length - 1; i++) {
-    const [la, lo] = line[i]!, [lb, ob] = line[i + 1]!;
-    const dy = lb - la, dx = (ob - lo) * kx;
+    const [la, lo] = line[i]!,
+      [lb, ob] = line[i + 1]!;
+    const dy = lb - la,
+      dx = (ob - lo) * kx;
     const len2 = dx * dx + dy * dy;
-    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, (((p.lon - lo) * kx) * dx + (p.lat - la) * dy) / len2));
+    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.lon - lo) * kx * dx + (p.lat - la) * dy) / len2));
     const d = Math.hypot((p.lon - lo) * kx - t * dx, p.lat - la - t * dy);
-    if (d < bestD - 1e-12 && i + t >= after) { bestD = d; best = i + t; }
+    if (d < bestD - 1e-12 && i + t >= after) {
+      bestD = d;
+      best = i + t;
+    }
   }
   return best;
 }
 
 /** The course between a leg's two ends, and where it ended along the line. */
-export function legPiece(line: [number, number][], from: { lat: number; lon: number }, to: { lat: number; lon: number }, after = 0): { points: [number, number][]; end: number } | null {
+export function legPiece(
+  line: [number, number][],
+  from: { lat: number; lon: number },
+  to: { lat: number; lon: number },
+  after = 0,
+): { points: [number, number][]; end: number } | null {
   if (line.length < 2) return null;
-  const a = along(line, from, after), b = along(line, to, a);
+  const a = along(line, from, after),
+    b = along(line, to, a);
   const at = (pos: number): [number, number] => {
-    const i = Math.min(Math.floor(pos), line.length - 2), t = pos - i;
-    const [la, lo] = line[i]!, [lb, ob] = line[i + 1]!;
+    const i = Math.min(Math.floor(pos), line.length - 2),
+      t = pos - i;
+    const [la, lo] = line[i]!,
+      [lb, ob] = line[i + 1]!;
     return [la + (lb - la) * t, lo + (ob - lo) * t];
   };
   const points: [number, number][] = [at(a)];
@@ -374,7 +450,11 @@ export function legPiece(line: [number, number][], from: { lat: number; lon: num
 export function pointFeatures(points: RoutePoint[]): GeoJSON.FeatureCollection<GeoJSON.Point, Omit<RoutePoint, "lat" | "lon">> {
   return {
     type: "FeatureCollection",
-    features: points.map(({ lat, lon, ...props }) => ({ type: "Feature", properties: props, geometry: { type: "Point", coordinates: [lon, lat] } })),
+    features: points.map(({ lat, lon, ...props }) => ({
+      type: "Feature",
+      properties: props,
+      geometry: { type: "Point", coordinates: [lon, lat] },
+    })),
   };
 }
 
@@ -385,13 +465,43 @@ export function pointFeatures(points: RoutePoint[]): GeoJSON.FeatureCollection<G
 const widthByZoom = (stops: [number, number][]) => ["interpolate", ["linear"], ["zoom"], ...stops.flat()];
 // The green a band of 2.5 to 3.5 either side, as wide as ForeFlight's
 // reads at a phone's width; the edge a point round it.
-const CORE_WIDTH = widthByZoom([[3, 2], [6, 3], [10, 4.5], [14, 5.5]]);
-const CASING_WIDTH = widthByZoom([[3, 5], [6, 8], [10, 10.5], [14, 12.5]]);
-const EDGE_WIDTH = widthByZoom([[3, 6.5], [6, 10], [10, 12.5], [14, 14.5]]);
-const EDGE_WIDTH_SUN = widthByZoom([[3, 7.5], [6, 11.5], [10, 14], [14, 16]]);
+const CORE_WIDTH = widthByZoom([
+  [3, 2],
+  [6, 3],
+  [10, 4.5],
+  [14, 5.5],
+]);
+const CASING_WIDTH = widthByZoom([
+  [3, 5],
+  [6, 8],
+  [10, 10.5],
+  [14, 12.5],
+]);
+const EDGE_WIDTH = widthByZoom([
+  [3, 6.5],
+  [6, 10],
+  [10, 12.5],
+  [14, 14.5],
+]);
+const EDGE_WIDTH_SUN = widthByZoom([
+  [3, 7.5],
+  [6, 11.5],
+  [10, 14],
+  [14, 16],
+]);
 // With no green, the edge a point round the magenta (a little more in sunlight).
-const THIN_EDGE_WIDTH = widthByZoom([[3, 3.5], [6, 5], [10, 6.5], [14, 7.5]]);
-const THIN_EDGE_WIDTH_SUN = widthByZoom([[3, 4], [6, 5.5], [10, 7], [14, 8]]);
+const THIN_EDGE_WIDTH = widthByZoom([
+  [3, 3.5],
+  [6, 5],
+  [10, 6.5],
+  [14, 7.5],
+]);
+const THIN_EDGE_WIDTH_SUN = widthByZoom([
+  [3, 4],
+  [6, 5.5],
+  [10, 7],
+  [14, 8],
+]);
 
 /** The filter that draws the green casing and the outer edge framing it
  *  only along the leg whose Route Leg sheet is open (ForeFlight shows the
@@ -432,19 +542,35 @@ export function routeEdgePaint(night: boolean, sunlight: boolean): Record<string
 export function routeLayers(courseColour = COURSE_MAGENTA): LayerSpecification[] {
   const round = { "line-join": "round", "line-cap": "round" } as const;
   const outer: LineLayerSpecification = {
-    id: "route-outer", type: "line", source: ROUTE_SOURCE, layout: round, filter: selectedLegFilter(null),
+    id: "route-outer",
+    type: "line",
+    source: ROUTE_SOURCE,
+    layout: round,
+    filter: selectedLegFilter(null),
     paint: routeOuterPaint(false, false) as LineLayerSpecification["paint"],
   };
   const edge: LineLayerSpecification = {
-    id: "route-edge", type: "line", source: ROUTE_SOURCE, layout: round, filter: WHOLE_ROUTE,
+    id: "route-edge",
+    type: "line",
+    source: ROUTE_SOURCE,
+    layout: round,
+    filter: WHOLE_ROUTE,
     paint: routeEdgePaint(false, false) as LineLayerSpecification["paint"],
   };
   const casing: LineLayerSpecification = {
-    id: "route-casing", type: "line", source: ROUTE_SOURCE, layout: round, filter: selectedLegFilter(null),
+    id: "route-casing",
+    type: "line",
+    source: ROUTE_SOURCE,
+    layout: round,
+    filter: selectedLegFilter(null),
     paint: routeCasingPaint(false) as LineLayerSpecification["paint"],
   };
   const core: LineLayerSpecification = {
-    id: "route-core", type: "line", source: ROUTE_SOURCE, layout: round, filter: WHOLE_ROUTE,
+    id: "route-core",
+    type: "line",
+    source: ROUTE_SOURCE,
+    layout: round,
+    filter: WHOLE_ROUTE,
     paint: { "line-color": courseColour, "line-width": CORE_WIDTH as never },
   };
   return [outer, edge, casing, core];

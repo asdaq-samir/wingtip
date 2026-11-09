@@ -4,7 +4,7 @@ import { cardClose, drawn, grabberTo, openTab, settle, settled, sideDrawer, slow
 /** The traffic patterns the map draws, by name ("pattern-at-KDLH",
  *  "departure-at-C81": PatternsGl's lines). A line can come back once for
  *  each tile it crosses, so the names, each once. */
-const circuitsOf = (page: Page) => async () => [...new Set((await drawn(page, "patterns")).map(p => String(p.name)))].sort();
+const circuitsOf = (page: Page) => async () => [...new Set((await drawn(page, "patterns")).map((p) => String(p.name)))].sort();
 
 /**
  * The route's Procedures (ProceduresRoute), FPL's list, at the pilot's ask: a field's
@@ -28,7 +28,10 @@ async function openRunways(field: Locator) {
   // seen the line open and gone on, the runway then clicked gone under the
   // finger (the mobile project, CI 2026-10-28, and here on the merged
   // bundle). Calm, nothing is picked, and the line is open already.
-  await folded.first().waitFor({ timeout: slow(10000) }).catch(() => {});
+  await folded
+    .first()
+    .waitFor({ timeout: slow(10000) })
+    .catch(() => {});
   await expect(async () => {
     if (await folded.count()) await folded.click();
     await expect(folded).toHaveCount(0, { timeout: 1500 });
@@ -46,7 +49,10 @@ test("a field's traffic pattern is picked by its runway, kept in the address and
   const destination = procedures.getByRole("region", { name: "KDLH · Arrive" });
   await expect(destination.getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(20000) });
   await openRunways(destination);
-  const runway = destination.getByRole("radio", { name: /^Runway / }).and(page.locator(':not([disabled]):not([aria-checked="true"])')).first();
+  const runway = destination
+    .getByRole("radio", { name: /^Runway / })
+    .and(page.locator(':not([disabled]):not([aria-checked="true"])'))
+    .first();
   const name = (await runway.innerText()).trim();
   await runway.click();
   // The line folded to the runway picked.
@@ -76,7 +82,11 @@ test("a runway line opened stays open until folded, and folds with its field", a
   // A runway picked first, the pilot's own, which a pick into the wind
   // landing late leaves be: then opened from its fold, and left alone.
   await openRunways(destination);
-  await destination.getByRole("radio", { name: /^Runway / }).and(page.locator(':not([disabled]):not([aria-checked="true"])')).first().click();
+  await destination
+    .getByRole("radio", { name: /^Runway / })
+    .and(page.locator(':not([disabled]):not([aria-checked="true"])'))
+    .first()
+    .click();
   await destination.locator("[data-folded]").click();
   await page.waitForTimeout(3000);
   await expect(destination.locator("[data-folded]")).toHaveCount(0);
@@ -88,58 +98,130 @@ test("a runway line opened stays open until folded, and folds with its field", a
   await expect(destination.locator("[data-folded]")).toHaveCount(1);
 });
 
-test("the field left from is drawn off its runway and out of the pattern, not round it, and both runways are sent to the planner", { tag: "@smoke" }, async ({ page }) => {
-  // The owner, 2026-10-27: "why is c81 also drawing a visual pattern?" and
-  // "is it not flying that and landing?".
-  const asked: URL[] = [];
-  page.on("request", r => { if (r.url().includes("/navlog?")) asked.push(new URL(r.url())); });
-  await page.goto("/app/plan?dep=C81&dest=KDLH&pattern=C81%3A24%2CKDLH%3A27&auto=-");
-  await settle(page);
-  await expect.poll(circuitsOf(page), { timeout: slow(20000) }).toEqual(["departure-at-C81", "pattern-at-KDLH"]);
-  await expect.poll(() => asked.some(u => u.searchParams.get("runways") === "C81:24" && u.searchParams.get("patterns") === "KDLH:27"), { timeout: slow(20000) }).toBe(true);
-});
+test(
+  "the field left from is drawn off its runway and out of the pattern, not round it, and both runways are sent to the planner",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    // The owner, 2026-10-27: "why is c81 also drawing a visual pattern?" and
+    // "is it not flying that and landing?".
+    const asked: URL[] = [];
+    page.on("request", (r) => {
+      if (r.url().includes("/navlog?")) asked.push(new URL(r.url()));
+    });
+    await page.goto("/app/plan?dep=C81&dest=KDLH&pattern=C81%3A24%2CKDLH%3A27&auto=-");
+    await settle(page);
+    await expect.poll(circuitsOf(page), { timeout: slow(20000) }).toEqual(["departure-at-C81", "pattern-at-KDLH"]);
+    await expect
+      .poll(() => asked.some((u) => u.searchParams.get("runways") === "C81:24" && u.searchParams.get("patterns") === "KDLH:27"), {
+        timeout: slow(20000),
+      })
+      .toBe(true);
+  },
+);
 
 // KDLH's ILS as the planner would send it (wingtip.procedures), stubbed: the
 // FAA's file is not read on CI's runner.
 const LIST = {
-  airport: "KDLH", cycle: "261001",
+  airport: "KDLH",
+  cycle: "261001",
   procedures: [
     { kind: "approach", id: "I09", name: "ILS RWY 09", runway: "09", transitions: ["DLH"], runway_transitions: [] },
     { kind: "arrival", id: "SKETC1", name: "SKETC1", runway: null, transitions: [], runway_transitions: ["ALL"] },
   ],
 };
 const DRAWN = {
-  airport: "KDLH", kind: "approach", id: "I09", name: "ILS RWY 09", transition: "DLH", cycle: "261001",
+  airport: "KDLH",
+  kind: "approach",
+  id: "I09",
+  name: "ILS RWY 09",
+  transition: "DLH",
+  cycle: "261001",
   lines: [
-    { role: "transition", name: "DLH", points: [[46.80, -92.36], [46.84, -92.40]] },
-    { role: "final", name: null, points: [[46.84, -92.40], [46.84, -92.30], [46.842, -92.21]] },
-    { role: "missed", name: null, points: [[46.842, -92.21], [46.843, -92.17], [46.80, -92.36]] },
+    {
+      role: "transition",
+      name: "DLH",
+      points: [
+        [46.8, -92.36],
+        [46.84, -92.4],
+      ],
+    },
+    {
+      role: "final",
+      name: null,
+      points: [
+        [46.84, -92.4],
+        [46.84, -92.3],
+        [46.842, -92.21],
+      ],
+    },
+    {
+      role: "missed",
+      name: null,
+      points: [
+        [46.842, -92.21],
+        [46.843, -92.17],
+        [46.8, -92.36],
+      ],
+    },
   ],
-  holds: [{ fix: "DLH", turn: "R", inbound_deg: 90, missed: true, points: [[46.80, -92.36], [46.79, -92.34], [46.78, -92.36], [46.80, -92.36]] }],
+  holds: [
+    {
+      fix: "DLH",
+      turn: "R",
+      inbound_deg: 90,
+      missed: true,
+      points: [
+        [46.8, -92.36],
+        [46.79, -92.34],
+        [46.78, -92.36],
+        [46.8, -92.36],
+      ],
+    },
+  ],
   fixes: [
-    { ident: "DLH", lat: 46.80, lon: -92.36, roles: ["hold"], min_ft: 3500, max_ft: null, speed_kt: null, missed: false },
-    { ident: "OFOFO", lat: 46.84, lon: -92.40, roles: ["IAF", "IF"], min_ft: 3500, max_ft: null, speed_kt: null, missed: false },
-    { ident: "FAKER", lat: 46.84, lon: -92.30, roles: ["FAF"], min_ft: 2700, max_ft: 2700, speed_kt: null, missed: false },
+    { ident: "DLH", lat: 46.8, lon: -92.36, roles: ["hold"], min_ft: 3500, max_ft: null, speed_kt: null, missed: false },
+    { ident: "OFOFO", lat: 46.84, lon: -92.4, roles: ["IAF", "IF"], min_ft: 3500, max_ft: null, speed_kt: null, missed: false },
+    { ident: "FAKER", lat: 46.84, lon: -92.3, roles: ["FAF"], min_ft: 2700, max_ft: 2700, speed_kt: null, missed: false },
   ],
 };
 
 // KDLH's arrival in the stubbed list, drawn: its common route alone.
 const ARRIVAL_DRAWN = {
-  airport: "KDLH", kind: "arrival", id: "SKETC1", name: "SKETC1", transition: null, cycle: "261001",
-  lines: [{ role: "common", name: null, points: [[46.95, -92.60], [46.84, -92.40]] }],
+  airport: "KDLH",
+  kind: "arrival",
+  id: "SKETC1",
+  name: "SKETC1",
+  transition: null,
+  cycle: "261001",
+  lines: [
+    {
+      role: "common",
+      name: null,
+      points: [
+        [46.95, -92.6],
+        [46.84, -92.4],
+      ],
+    },
+  ],
   holds: [],
-  fixes: [{ ident: "OFOFO", lat: 46.84, lon: -92.40, roles: [], min_ft: null, max_ft: null, speed_kt: null, missed: false }],
+  fixes: [{ ident: "OFOFO", lat: 46.84, lon: -92.4, roles: [], min_ft: null, max_ft: null, speed_kt: null, missed: false }],
 };
 
-test("a field's approach is picked on its own page with its transition, drawn on the map as it is chosen, and added to the route with Add to Route, as ForeFlight picks one", async ({ page }) => {
+test("a field's approach is picked on its own page with its transition, drawn on the map as it is chosen, and added to the route with Add to Route, as ForeFlight picks one", async ({
+  page,
+}) => {
   const asked: string[] = [];
-  await page.route(url => /\/airport\/[^/]+\/procedures/.test(url.pathname), route => {
-    const url = new URL(route.request().url());
-    asked.push(`${url.pathname}${url.search}`);
-    if (url.pathname.endsWith("/KDLH/procedures")) return route.fulfill({ json: LIST });
-    if (url.pathname.endsWith("/KDLH/procedures/I09")) return route.fulfill({ json: { ...DRAWN, transition: url.searchParams.get("transition") } });
-    return route.fulfill({ json: { airport: "C81", cycle: "261001", procedures: [] } });
-  });
+  await page.route(
+    (url) => /\/airport\/[^/]+\/procedures/.test(url.pathname),
+    (route) => {
+      const url = new URL(route.request().url());
+      asked.push(`${url.pathname}${url.search}`);
+      if (url.pathname.endsWith("/KDLH/procedures")) return route.fulfill({ json: LIST });
+      if (url.pathname.endsWith("/KDLH/procedures/I09"))
+        return route.fulfill({ json: { ...DRAWN, transition: url.searchParams.get("transition") } });
+      return route.fulfill({ json: { airport: "C81", cycle: "261001", procedures: [] } });
+    },
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openTab(page, "Nav Log");
@@ -156,7 +238,7 @@ test("a field's approach is picked on its own page with its transition, drawn on
   // The destination's approaches, a page of their own.
   const kdlh = procedures.getByRole("region", { name: "KDLH · Arrive" });
   // Its pull-down's foot: the field's whole list.
-  await kdlh.locator('[data-testid=procedure-kind][data-kind=approach]').click();
+  await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
   await page.getByTestId("procedure-menu-all").click();
   await expect(page.getByRole("heading", { name: "KDLH approaches" })).toBeVisible();
   // Its own page: drawn on the map from vectors as it opens, before it is
@@ -213,8 +295,8 @@ test("a field's approach is picked on its own page with its transition, drawn on
   // Checked in the list, and on its page Remove from Route takes it off
   // the address, and off the map once the sheet is put away.
   await openTab(page, "Nav Log");
-  await expect(kdlh.locator('[data-testid=procedure-kind][data-kind=approach]')).toContainText("ILS 09 · DLH");
-  await kdlh.locator('[data-testid=procedure-kind][data-kind=approach]').click();
+  await expect(kdlh.locator("[data-testid=procedure-kind][data-kind=approach]")).toContainText("ILS 09 · DLH");
+  await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
   await page.getByTestId("procedure-menu-all").click();
   const ils = page.getByTestId("procedure-option").filter({ hasText: "ILS RWY 09" });
   await expect(ils).toContainText("In the route, from DLH");
@@ -235,19 +317,27 @@ test("a field's approach is picked on its own page with its transition, drawn on
  * landed straight in; another is let only where the plate publishes
  * circling minimums, a circle to land; and no pattern is drawn then.
  */
-test("an approach puts its field's runway on its own, and another is let only where its plate publishes circling minimums", async ({ page }) => {
+test("an approach puts its field's runway on its own, and another is let only where its plate publishes circling minimums", async ({
+  page,
+}) => {
   let circling = false;
-  await page.route(url => /\/airport\/[^/]+\/procedures/.test(url.pathname), route => {
-    const url = new URL(route.request().url());
-    if (url.pathname.endsWith("/KDLH/procedures")) return route.fulfill({ json: LIST });
-    if (url.pathname.endsWith("/KDLH/procedures/I09/plate")) {
-      // Off the map's way: placed far from the route, as the test reads only its circling.
-      return route.fulfill({ json: { cycle: "2610", name: "ILS OR LOC RWY 09", south: 0, west: 0, north: 0.1, east: 0.1, fixes: [], circling } });
-    }
-    if (url.pathname.endsWith("/KDLH/procedures/I09")) return route.fulfill({ json: { ...DRAWN, transition: url.searchParams.get("transition") } });
-    if (url.pathname.endsWith("/KDLH/procedures/SKETC1")) return route.fulfill({ json: ARRIVAL_DRAWN });
-    return route.fulfill({ json: { airport: "C81", cycle: "261001", procedures: [] } });
-  });
+  await page.route(
+    (url) => /\/airport\/[^/]+\/procedures/.test(url.pathname),
+    (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname.endsWith("/KDLH/procedures")) return route.fulfill({ json: LIST });
+      if (url.pathname.endsWith("/KDLH/procedures/I09/plate")) {
+        // Off the map's way: placed far from the route, as the test reads only its circling.
+        return route.fulfill({
+          json: { cycle: "2610", name: "ILS OR LOC RWY 09", south: 0, west: 0, north: 0.1, east: 0.1, fixes: [], circling },
+        });
+      }
+      if (url.pathname.endsWith("/KDLH/procedures/I09"))
+        return route.fulfill({ json: { ...DRAWN, transition: url.searchParams.get("transition") } });
+      if (url.pathname.endsWith("/KDLH/procedures/SKETC1")) return route.fulfill({ json: ARRIVAL_DRAWN });
+      return route.fulfill({ json: { airport: "C81", cycle: "261001", procedures: [] } });
+    },
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH&pattern=KDLH:27&auto=-");
   await settle(page);
   await openTab(page, "Nav Log");
@@ -257,7 +347,7 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await expect.poll(circuitsOf(page), { timeout: slow(10000) }).toContain("pattern-at-KDLH");
   // The ILS to 9 added from its pull-down, from DLH: the runway is 9,
   // landed straight in, and no pattern drawn.
-  await kdlh.locator('[data-testid=procedure-kind][data-kind=approach]').click();
+  await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
   const menu = page.getByTestId("procedure-menu");
   await expect(menu.getByText("Runway 9", { exact: false })).toBeVisible({ timeout: slow(10000) });
   await menu.getByTestId("procedure-menu-item").filter({ hasText: "ILS" }).click();
@@ -272,9 +362,9 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await settled(sideDrawer(page));
   await openTab(page, "Nav Log");
   await expect(kdlh.getByRole("radio", { name: /^Runway 9\b/ })).toHaveAttribute("aria-checked", "true");
-  await expect(kdlh.locator('[data-testid=procedure-kind][data-kind=approach]')).toContainText("ILS 09 · DLH");
+  await expect(kdlh.locator("[data-testid=procedure-kind][data-kind=approach]")).toContainText("ILS 09 · DLH");
   // The field's arrival, a pull-down beside it once the list is in.
-  await kdlh.locator('[data-testid=procedure-kind][data-kind=arrival]').click();
+  await kdlh.locator("[data-testid=procedure-kind][data-kind=arrival]").click();
   await page.getByTestId("procedure-menu").getByTestId("procedure-menu-item").filter({ hasText: "SKETC1" }).click();
   await expect(page).toHaveURL(/[?&]procs=[^&]*KDLH(%3A|:)SKETC1/);
   await settled(sideDrawer(page));
@@ -329,20 +419,29 @@ test("an approach puts its field's runway on its own, and another is let only wh
  * forecast's wind, stubbed an easterly: Duluth's 9.
  */
 test("the destination's runway into the wind is picked as the route comes in, and a pilot's own is kept", async ({ page }) => {
-  await page.route(url => /\/airport\/[^/]+\/forecast-wind$/.test(url.pathname), route => route.fulfill({
-    json: { ident: "KDLH", distance_nm: 0, dir_true_deg: 90, speed_kt: 14, gust_kt: null, valid_from: 0, valid_to: 4_000_000_000 },
-  }));
+  await page.route(
+    (url) => /\/airport\/[^/]+\/forecast-wind$/.test(url.pathname),
+    (route) =>
+      route.fulfill({
+        json: { ident: "KDLH", distance_nm: 0, dir_true_deg: 90, speed_kt: 14, gust_kt: null, valid_from: 0, valid_to: 4_000_000_000 },
+      }),
+  );
   const depart = encodeURIComponent(new Date(Date.now() + 3 * 60 * 60_000).toISOString());
   await page.goto(`/app/plan?dep=C81&dest=KDLH&depart=${depart}&pattern=KDLH:NONE`);
   await settle(page);
   await openTab(page, "Nav Log");
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
   await expect(kdlh.getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(20000) });
-  await expect(kdlh.getByRole("radio", { name: /^Runway 9, into the wind/ })).toHaveAttribute("aria-checked", "true", { timeout: slow(60_000) });
+  await expect(kdlh.getByRole("radio", { name: /^Runway 9, into the wind/ })).toHaveAttribute("aria-checked", "true", {
+    timeout: slow(60_000),
+  });
   await expect(page).not.toHaveURL(/NONE/);
   await expect(page).not.toHaveURL(/[?&]procs=/);
   await openRunways(kdlh);
-  const other = kdlh.getByRole("radio", { name: /^Runway / }).and(page.locator(':not([disabled]):not([aria-checked="true"])')).first();
+  const other = kdlh
+    .getByRole("radio", { name: /^Runway / })
+    .and(page.locator(':not([disabled]):not([aria-checked="true"])'))
+    .first();
   const name = (await other.innerText()).trim();
   await other.click();
   await expect(page).toHaveURL(new RegExp(`[?&]pattern=[^&]*KDLH(%3A|:)${name}(%2C|,|&|$)`));
@@ -366,14 +465,14 @@ test("a field typed as ORD is KORD, its arrivals offered and its runways one lin
   await settle(page);
   await openTab(page, "Nav Log");
   const kord = page.getByTestId("procedures").getByRole("region", { name: "KORD · Arrive" });
-  await expect(kord.locator('[data-testid=procedure-kind][data-kind=arrival]')).toBeVisible({ timeout: slow(20000) });
+  await expect(kord.locator("[data-testid=procedure-kind][data-kind=arrival]")).toBeVisible({ timeout: slow(20000) });
   const chips = kord.getByTestId("procedure-pattern");
   await expect(chips.first()).toBeVisible({ timeout: slow(20000) });
   // Folded to 9L, picked; opened, every runway on one line.
   await expect(chips).toHaveCount(1);
   await expect(chips.first()).toHaveText("9L");
   await openRunways(kord);
-  const tops = await chips.evaluateAll(all => all.map(c => Math.round(c.getBoundingClientRect().top)));
+  const tops = await chips.evaluateAll((all) => all.map((c) => Math.round(c.getBoundingClientRect().top)));
   expect(tops.length).toBeGreaterThan(5);
   expect(new Set(tops).size).toBe(1);
   // The runway picked scrolled into sight, in the line's middle where it
@@ -381,13 +480,18 @@ test("a field typed as ORD is KORD, its arrivals offered and its runways one lin
   // the line's end lets it.
   const nineLeft = kord.getByRole("radio", { name: /^Runway 9L/ });
   await expect(nineLeft).toBeInViewport();
-  await expect.poll(() => nineLeft.evaluate(chip => {
-    const line = chip.closest<HTMLElement>("[data-slides]")!;
-    const box = line.getBoundingClientRect(), c = chip.getBoundingClientRect();
-    const off = Math.abs((c.left + c.width / 2) - (box.left + box.width / 2));
-    const atEnd = line.scrollLeft <= 0 || line.scrollLeft >= line.scrollWidth - line.clientWidth - 1;
-    return off <= 2 || atEnd;
-  })).toBe(true);
+  await expect
+    .poll(() =>
+      nineLeft.evaluate((chip) => {
+        const line = chip.closest<HTMLElement>("[data-slides]")!;
+        const box = line.getBoundingClientRect(),
+          c = chip.getBoundingClientRect();
+        const off = Math.abs(c.left + c.width / 2 - (box.left + box.width / 2));
+        const atEnd = line.scrollLeft <= 0 || line.scrollLeft >= line.scrollWidth - line.clientWidth - 1;
+        return off <= 2 || atEnd;
+      }),
+    )
+    .toBe(true);
 });
 
 /**
@@ -413,11 +517,13 @@ test("a field's departure is picked after its runways, as its arrival and approa
   // and approach pills be next to the runway when runway is collapsed?",
   // "Same with departure", "Approach doesn't need to go next line just let
   // it slide with runways"): beside the runway picked, or sliding with them.
-  await expect.poll(async () => {
-    const [m, c] = [await menu.boundingBox(), await chips.boundingBox()];
-    if (!m || !c) return false;
-    return m.x > c.x + c.width - 1 && Math.abs((m.y + m.height / 2) - (c.y + c.height / 2)) < 8;
-  }).toBe(true);
+  await expect
+    .poll(async () => {
+      const [m, c] = [await menu.boundingBox(), await chips.boundingBox()];
+      if (!m || !c) return false;
+      return m.x > c.x + c.width - 1 && Math.abs(m.y + m.height / 2 - (c.y + c.height / 2)) < 8;
+    })
+    .toBe(true);
   // And the departure's time on its own step, not in the route's box.
   await expect(kord.getByTestId("depart-date")).toHaveText(/^Now/);
 });
@@ -452,14 +558,20 @@ test.describe("on the owner's phone's width, to a finger", () => {
     // a touch's lift where it no longer is was no tap (a flake on
     // 48a36f99 as well, one run in two).
     let last = "";
-    await expect.poll(async () => {
-      const at = JSON.stringify(await trigger.boundingBox());
-      const still = at === last;
-      last = at;
-      return still;
-    }, { timeout: slow(30000), intervals: [700] }).toBe(true);
+    await expect
+      .poll(
+        async () => {
+          const at = JSON.stringify(await trigger.boundingBox());
+          const still = at === last;
+          last = at;
+          return still;
+        },
+        { timeout: slow(30000), intervals: [700] },
+      )
+      .toBe(true);
     const box = (await trigger.boundingBox())!;
-    const x = box.x + box.width / 2, y = box.y + box.height / 2;
+    const x = box.x + box.width / 2,
+      y = box.y + box.height / 2;
     // Touched and held, no lift: closed.
     const cdp = await page.context().newCDPSession(page);
     await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
@@ -470,20 +582,25 @@ test.describe("on the owner's phone's width, to a finger", () => {
     await expect(page.getByTestId("procedure-menu")).toBeVisible();
   });
 
-  test("a route with a procedure's chip and three fields stays one line in the route's box, the field past its end taking no line of its own", async ({ page }) => {
-  test.skip(test.info().project.name !== "mobile", "a phone's box");
-  // The owner's recording: C81 → its ILS 09 via DLH → KDLH → KRFD, where
-  // the empty field after KRFD wrapped onto a second line.
-  await page.route(url => /\/airport\/KDLH\/procedures\/I09/.test(url.pathname), route => route.fulfill({ json: { ...DRAWN, transition: "DLH" } }));
-  await page.goto("/app/plan?dep=C81&stops=KDLH&dest=KRFD&procs=KDLH:I09:DLH");
-  await settle(page);
-  // Half way, the sheet in from the screen's sides, its box the narrower.
-  await grabberTo(page, "half");
-  const box = sideDrawer(page).getByTestId("route-box");
-  await expect(box.getByTestId("route-procedure")).toBeVisible({ timeout: slow(10000) });
-  // Its lines', the buttons under them in the box since the owner's ask.
-  expect((await box.getByTestId("route-slide").boundingBox())!.height).toBeLessThanOrEqual(48);
-});
+  test("a route with a procedure's chip and three fields stays one line in the route's box, the field past its end taking no line of its own", async ({
+    page,
+  }) => {
+    test.skip(test.info().project.name !== "mobile", "a phone's box");
+    // The owner's recording: C81 → its ILS 09 via DLH → KDLH → KRFD, where
+    // the empty field after KRFD wrapped onto a second line.
+    await page.route(
+      (url) => /\/airport\/KDLH\/procedures\/I09/.test(url.pathname),
+      (route) => route.fulfill({ json: { ...DRAWN, transition: "DLH" } }),
+    );
+    await page.goto("/app/plan?dep=C81&stops=KDLH&dest=KRFD&procs=KDLH:I09:DLH");
+    await settle(page);
+    // Half way, the sheet in from the screen's sides, its box the narrower.
+    await grabberTo(page, "half");
+    const box = sideDrawer(page).getByTestId("route-box");
+    await expect(box.getByTestId("route-procedure")).toBeVisible({ timeout: slow(10000) });
+    // Its lines', the buttons under them in the box since the owner's ask.
+    expect((await box.getByTestId("route-slide").boundingBox())!.height).toBeLessThanOrEqual(48);
+  });
 });
 
 test("a procedure picked lengthens the plan by its path: the fuel and the time to the field are the flight flown", async ({ page }) => {
@@ -492,7 +609,10 @@ test("a procedure picked lengthens the plan by its path: the fuel and the time t
   // the leg in by the approach picked, its miles more in the figures.
   const figures = async () => {
     await expect(page.getByTestId("navlog-fuel")).toHaveText(/^\d+\.\d\s?gal$/, { timeout: slow(120_000) });
-    return { fuel: parseFloat((await page.getByTestId("navlog-fuel").textContent())!), ete: (await page.getByTestId("navlog-ete").textContent())! };
+    return {
+      fuel: parseFloat((await page.getByTestId("navlog-fuel").textContent())!),
+      ete: (await page.getByTestId("navlog-ete").textContent())!,
+    };
   };
   const minutes = (ete: string) => {
     const [, h, m] = /^(?:(\d+)h)? ?(?:(\d+)m)?$/.exec(ete.trim())!;
@@ -515,13 +635,17 @@ test("a procedure picked lengthens the plan by its path: the fuel and the time t
 test("an approach can be flown direct to one of its fixes, as ATC sends an airplane, and back as charted", async ({ page }) => {
   // The owner's ask: "the procedures should give the ability to go direct
   // to a fix as told by ATC".
-  await page.route(url => /\/airport\/[^/]+\/procedures/.test(url.pathname), route => {
-    const url = new URL(route.request().url());
-    if (url.pathname.endsWith("/KDLH/procedures")) return route.fulfill({ json: LIST });
-    if (url.pathname.endsWith("/plate")) return route.fulfill({ status: 404, json: { detail: "none" } });
-    if (url.pathname.endsWith("/KDLH/procedures/I09")) return route.fulfill({ json: { ...DRAWN, transition: url.searchParams.get("transition") } });
-    return route.fulfill({ json: { airport: "C81", cycle: "261001", procedures: [] } });
-  });
+  await page.route(
+    (url) => /\/airport\/[^/]+\/procedures/.test(url.pathname),
+    (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname.endsWith("/KDLH/procedures")) return route.fulfill({ json: LIST });
+      if (url.pathname.endsWith("/plate")) return route.fulfill({ status: 404, json: { detail: "none" } });
+      if (url.pathname.endsWith("/KDLH/procedures/I09"))
+        return route.fulfill({ json: { ...DRAWN, transition: url.searchParams.get("transition") } });
+      return route.fulfill({ json: { airport: "C81", cycle: "261001", procedures: [] } });
+    },
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH&procs=KDLH:I09:DLH");
   await settle(page);
   await openTab(page, "Nav Log");
@@ -546,17 +670,23 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
 });
 
-test("a procedure's fixes branch off the route, each sent direct to or given an altitude to cross it at, from the list or the map", async ({ page }) => {
+test("a procedure's fixes branch off the route, each sent direct to or given an altitude to cross it at, from the list or the map", async ({
+  page,
+}) => {
   // The owner's pick, option 4 of the fix canvas: "expandable list of
   // connected points like git graph", any fix direct to or an altitude
   // to cross it at, its card opened from the list or the map.
-  await page.route(url => /\/airport\/[^/]+\/procedures/.test(url.pathname), route => {
-    const url = new URL(route.request().url());
-    if (url.pathname.endsWith("/KDLH/procedures")) return route.fulfill({ json: LIST });
-    if (url.pathname.endsWith("/plate")) return route.fulfill({ status: 404, json: { detail: "none" } });
-    if (url.pathname.endsWith("/KDLH/procedures/I09")) return route.fulfill({ json: { ...DRAWN, transition: url.searchParams.get("transition") } });
-    return route.fulfill({ json: { airport: "C81", cycle: "261001", procedures: [] } });
-  });
+  await page.route(
+    (url) => /\/airport\/[^/]+\/procedures/.test(url.pathname),
+    (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname.endsWith("/KDLH/procedures")) return route.fulfill({ json: LIST });
+      if (url.pathname.endsWith("/plate")) return route.fulfill({ status: 404, json: { detail: "none" } });
+      if (url.pathname.endsWith("/KDLH/procedures/I09"))
+        return route.fulfill({ json: { ...DRAWN, transition: url.searchParams.get("transition") } });
+      return route.fulfill({ json: { airport: "C81", cycle: "261001", procedures: [] } });
+    },
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH&procs=KDLH:I09:DLH");
   await settle(page);
   await openTab(page, "Nav Log");

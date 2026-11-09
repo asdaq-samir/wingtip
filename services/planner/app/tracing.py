@@ -7,6 +7,7 @@ weather product read (wingtip.tracing), so a slow plan is one trace from
 the page's call down. The page's request id (X-Request-Id, which the
 gateway passes on) is the span's wingtip.request_id. Without the
 endpoint nothing is loaded and nothing is sent."""
+
 from wingtip import tracing
 
 #: The page's id for the request, as the gateway sends it on.

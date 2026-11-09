@@ -115,7 +115,9 @@ class NoServiceWorker extends Error {
 async function workerReady(): Promise<boolean> {
   if (!keepingAvailable()) return false;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const late = new Promise<false>(resolve => { timer = setTimeout(() => resolve(false), WORKER_WAIT_MS); });
+  const late = new Promise<false>((resolve) => {
+    timer = setTimeout(() => resolve(false), WORKER_WAIT_MS);
+  });
   try {
     return await Promise.race([navigator.serviceWorker.ready.then(() => true as const), late]);
   } finally {
@@ -127,12 +129,18 @@ async function workerReady(): Promise<boolean> {
  *  (cached by the worker too): none for a waypoint, a field with none, or
  *  a card that could not be had. A field may have a diagram and no crop. */
 async function routeDiagrams(course: Course): Promise<string[]> {
-  const idents = [...new Set([course.departure, ...(course.stops ?? []), course.destination]
-    .filter(a => a.kind !== "fix").map(a => a.ident))];
-  const cards = await Promise.allSettled(idents.map(ident => api.airport(ident)));
-  return cards.flatMap(card => (card.status === "fulfilled" && card.value.airport_diagram_cycle
-    ? [diagramPicture(card.value.ident, card.value.airport_diagram_cycle),
-       diagramRunwaysPicture(card.value.ident, card.value.airport_diagram_cycle)] : []));
+  const idents = [
+    ...new Set([course.departure, ...(course.stops ?? []), course.destination].filter((a) => a.kind !== "fix").map((a) => a.ident)),
+  ];
+  const cards = await Promise.allSettled(idents.map((ident) => api.airport(ident)));
+  return cards.flatMap((card) =>
+    card.status === "fulfilled" && card.value.airport_diagram_cycle
+      ? [
+          diagramPicture(card.value.ident, card.value.airport_diagram_cycle),
+          diagramRunwaysPicture(card.value.ident, card.value.airport_diagram_cycle),
+        ]
+      : [],
+  );
 }
 
 /** The route's Stops (api.stopsAlong, the same address the Stops card
@@ -143,11 +151,12 @@ async function routeDiagrams(course: Course): Promise<string[]> {
  *  airport-pictures). Its own fetches, the lists'; the rest as URLs to
  *  fetch with the tiles. None where the planner cannot be asked. */
 export async function routeStopsKept(course: Course): Promise<string[]> {
-  const own = [course.departure, ...(course.stops ?? []), course.destination].filter(a => a.kind !== "fix").map(a => a.ident);
-  const stops = await api.stopsAlong(course.departure.ident, course.destination.ident, (course.stops ?? []).map(s => s.ident).join(","))
+  const own = [course.departure, ...(course.stops ?? []), course.destination].filter((a) => a.kind !== "fix").map((a) => a.ident);
+  const stops = await api
+    .stopsAlong(course.departure.ident, course.destination.ident, (course.stops ?? []).map((s) => s.ident).join(","))
     .catch(() => null);
-  const idents = [...new Set([...own, ...(stops?.fields ?? []).map(f => f.ident)])];
-  const pictures = await Promise.allSettled(idents.map(ident => api.airportPhotos(ident)));
+  const idents = [...new Set([...own, ...(stops?.fields ?? []).map((f) => f.ident)])];
+  const pictures = await Promise.allSettled(idents.map((ident) => api.airportPhotos(ident)));
   return idents.flatMap((ident, i) => {
     const found = pictures[i];
     const shown = found?.status === "fulfilled" ? [found.value.aerial_url, ...(found.value.photo ? [found.value.photo.url] : [])] : [];
@@ -162,13 +171,17 @@ export async function routeStopsKept(course: Course): Promise<string[]> {
  * dropped connection) is counted and skipped.
  */
 async function keepRouteCharts(
-  course: Course, kind: string, zooms: number[], onProgress: (p: KeepProgress) => void, signal?: AbortSignal,
+  course: Course,
+  kind: string,
+  zooms: number[],
+  onProgress: (p: KeepProgress) => void,
+  signal?: AbortSignal,
 ): Promise<KeepProgress> {
   if (!(await workerReady())) throw new NoServiceWorker();
   const urls = [
-    ...await routeDiagrams(course),
-    ...await routeStopsKept(course),
-    ...corridorTiles(course.course_line as [number, number][], zooms).map(t => tileUrl(course, kind, t.z, t.x, t.y)),
+    ...(await routeDiagrams(course)),
+    ...(await routeStopsKept(course)),
+    ...corridorTiles(course.course_line as [number, number][], zooms).map((t) => tileUrl(course, kind, t.z, t.x, t.y)),
   ];
   const progress: KeepProgress = { done: 0, total: urls.length, failed: 0 };
   onProgress({ ...progress });
@@ -218,9 +231,7 @@ const KEPT_FOR_MS = 30 * 24 * 3600 * 1000;
  * Keep Charts Offline on, a route opened again -- a reload, a saved
  * flight -- is not downloaded again while its tiles are still held.
  */
-export const useKeptCharts = create<{ kept: Record<string, number> }>()(
-  persist(() => ({ kept: {} }), { name: "wingtip.kept-charts" }),
-);
+export const useKeptCharts = create<{ kept: Record<string, number> }>()(persist(() => ({ kept: {} }), { name: "wingtip.kept-charts" }));
 
 export function keptAlready(key: string, now = Date.now()): boolean {
   const at = useKeptCharts.getState().kept[key];
@@ -228,20 +239,20 @@ export function keptAlready(key: string, now = Date.now()): boolean {
 }
 
 function remember(key: string, now = Date.now()) {
-  useKeptCharts.setState(s => ({
+  useKeptCharts.setState((s) => ({
     kept: Object.fromEntries([...Object.entries(s.kept).filter(([, at]) => now - at < KEPT_FOR_MS), [key, now]]),
   }));
 }
 
 export function keepKey(course: Course, kind: string): string {
-  const route = [course.departure, ...(course.stops ?? []), course.destination].map(a => a.ident).join("->");
+  const route = [course.departure, ...(course.stops ?? []), course.destination].map((a) => a.ident).join("->");
   const { cycle, revision } = kindCycle(course, kind);
   return `${route}/${kind}/${cycle}/${revision}`;
 }
 
 /** The zooms kept: from a whole-route view (8) down to the chart's own detail. */
 function keptZooms(layer: ChartLayer): number[] {
-  return Array.from({ length: layer.max_zoom - 8 + 1 }, (_, i) => 8 + i).filter(z => z >= layer.min_zoom);
+  return Array.from({ length: layer.max_zoom - 8 + 1 }, (_, i) => 8 + i).filter((z) => z >= layer.min_zoom);
 }
 
 let current: AbortController | null = null;
@@ -254,11 +265,17 @@ export async function keep(course: Course, layer: ChartLayer): Promise<void> {
   const mine = new AbortController();
   current = mine;
   const key = keepKey(course, layer.kind);
-  const write = (job: KeepJob) => { if (current === mine) useKeepJob.setState(job, true); };
+  const write = (job: KeepJob) => {
+    if (current === mine) useKeepJob.setState(job, true);
+  };
   write({ status: "keeping", key, progress: null });
   try {
     const progress = await keepRouteCharts(
-      course, layer.kind, keptZooms(layer), p => write({ status: "keeping", key, progress: p }), mine.signal,
+      course,
+      layer.kind,
+      keptZooms(layer),
+      (p) => write({ status: "keeping", key, progress: p }),
+      mine.signal,
     );
     if (mine.signal.aborted) return;
     if (progress.failed < progress.total) remember(key);

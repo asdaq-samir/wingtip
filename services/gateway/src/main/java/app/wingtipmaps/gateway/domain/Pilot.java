@@ -65,6 +65,7 @@ public class Pilot {
      *  day their medical certificate runs out: the dates their currency
      *  is reckoned from beside the logbook (V12). Null until they say. */
     private LocalDate flightReviewOn;
+
     private LocalDate medicalExpiresOn;
 
     /** The day of their last instrument proficiency check (14 CFR
@@ -94,6 +95,7 @@ public class Pilot {
      *  Null until they say. */
     @Column(length = 24)
     private String phone;
+
     @Column(length = 11)
     private String homeBase;
 
@@ -103,7 +105,9 @@ public class Pilot {
      *  61-65K, appendix A). All null for a pilot who is not one. */
     @Column(length = 20)
     private String instructorCertificate;
+
     private LocalDate instructorUntil;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 3)
     private InstructorUntil instructorUntilKind;

@@ -23,8 +23,10 @@ const DAYS = [
 ];
 
 test("the Speed page, under System, charts pilots' figures beside the lab's, by device", async ({ page }) => {
-  await page.route(url => url.pathname === "/api/speed", route =>
-    route.fulfill({ contentType: "application/json", body: JSON.stringify(DAYS) }));
+  await page.route(
+    (url) => url.pathname === "/api/speed",
+    (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify(DAYS) }),
+  );
   await page.goto("/app/dev");
   await showTabs(page);
   await openConsole(page);
@@ -54,10 +56,13 @@ test("a pilot's browser reports its Web Vitals as the page is put away, and noth
   await page.addInitScript(() => Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false }));
   await page.addInitScript(noTips);
   const sent: string[] = [];
-  await page.route(url => url.pathname === "/api/speed/field", route => {
-    sent.push(route.request().postData() ?? "");
-    return route.fulfill({ status: 204 });
-  });
+  await page.route(
+    (url) => url.pathname === "/api/speed/field",
+    (route) => {
+      sent.push(route.request().postData() ?? "");
+      return route.fulfill({ status: 204 });
+    },
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await page.locator('[data-slot="map-panel"]').waitFor();
   // The library loads once the page is idle.
@@ -71,7 +76,7 @@ test("a pilot's browser reports its Web Vitals as the page is put away, and noth
   const report = JSON.parse(sent[0]!) as { page: string; device: string; version: string; metrics: Record<string, number> };
   expect(report.page).toBe("plan");
   expect(["phone", "tablet", "desktop"]).toContain(report.device);
-  expect(Object.keys(report.metrics).every(m => ["LCP", "INP", "CLS", "FCP", "TTFB"].includes(m))).toBe(true);
+  expect(Object.keys(report.metrics).every((m) => ["LCP", "INP", "CLS", "FCP", "TTFB"].includes(m))).toBe(true);
   expect(report.metrics.TTFB).toBeGreaterThanOrEqual(0);
   // The route's airports are in the address; none of it goes.
   expect(sent[0]).not.toMatch(/C81|KDLH|dep=|lat|lon/);

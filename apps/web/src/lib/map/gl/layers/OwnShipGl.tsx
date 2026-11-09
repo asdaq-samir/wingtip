@@ -22,13 +22,13 @@ const LOCAL_ZOOM = 9;
  */
 export function OwnShipGl() {
   const { map } = useGlMap();
-  const look = usePreferences(s => s.ownShipLook);
-  const enabled = useOwnShip(s => s.enabled);
-  const fix = useOwnShip(s => s.fix);
-  const simulated = useOwnShip(s => s.simulated);
-  const follow = useOwnShip(s => s.follow);
-  const recentred = useOwnShip(s => s.recentred);
-  const recentreZoom = useOwnShip(s => s.recentreZoom);
+  const look = usePreferences((s) => s.ownShipLook);
+  const enabled = useOwnShip((s) => s.enabled);
+  const fix = useOwnShip((s) => s.fix);
+  const simulated = useOwnShip((s) => s.simulated);
+  const follow = useOwnShip((s) => s.follow);
+  const recentred = useOwnShip((s) => s.recentred);
+  const recentreZoom = useOwnShip((s) => s.recentreZoom);
   const marker = useRef<Marker | null>(null);
   useEffect(() => {
     const el = document.createElement("div");
@@ -38,12 +38,19 @@ export function OwnShipGl() {
       if (e.originalEvent && useOwnShip.getState().follow) useOwnShip.getState().setFollow(false);
     };
     map.on("dragstart", stop);
-    return () => { map.off("dragstart", stop); marker.current?.remove(); marker.current = null; };
+    return () => {
+      map.off("dragstart", stop);
+      marker.current?.remove();
+      marker.current = null;
+    };
   }, [map]);
   useEffect(() => {
     const m = marker.current;
     if (!m) return;
-    if (!fix) { m.remove(); return; }
+    if (!fix) {
+      m.remove();
+      return;
+    }
     // The app's own mark (icons.ts ownShipHtml, with the
     // `data-own-ship` the specs find), turned by the marker to the heading.
     const heading = enabled ? fix.headingDeg : null;
@@ -51,7 +58,9 @@ export function OwnShipGl() {
     const el = m.getElement();
     el.style.width = el.style.height = `${size}px`;
     el.innerHTML = html;
-    m.setLngLat([fix.lon, fix.lat]).setRotation(heading ?? 0).addTo(map);
+    m.setLngLat([fix.lon, fix.lat])
+      .setRotation(heading ?? 0)
+      .addTo(map);
   }, [map, fix, enabled, simulated, look]);
   const flown = useRef(recentred);
   useEffect(() => {

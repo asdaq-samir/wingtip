@@ -15,7 +15,10 @@ pub use crate::figures::glide::{nm_per_1000_ft, range_nm, reaches, underway, AIR
 pub(super) fn range_rule(v: &Value) -> Result<String, String> {
     let n = "glide_range";
     let mut out = String::new();
-    json::opt_number(&mut out, range_nm(opt(n, v, "altitude_ft")?, opt(n, v, "speed_kt")?, opt(n, v, "ground_ft")?, opt(n, v, "glide_ratio")?));
+    json::opt_number(
+        &mut out,
+        range_nm(opt(n, v, "altitude_ft")?, opt(n, v, "speed_kt")?, opt(n, v, "ground_ft")?, opt(n, v, "glide_ratio")?),
+    );
     Ok(out)
 }
 

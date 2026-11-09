@@ -16,9 +16,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.CurrencyDto;
-import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.service.LogbookService;
 import app.wingtipmaps.gateway.service.PilotService;
+import app.wingtipmaps.gateway.service.PlannerClient;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -65,10 +65,15 @@ class LogbookControllerTest {
     @Test
     void add_returns200_withTheEntry() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(PILOT));
-        given(logbook.add(any(), any())).willReturn(new LogbookEntry(PILOT)
-                .set(LocalDate.of(2026, 9, 20), "N12345", "C172", "C81 KDLH", 3.4, 0, 3.4, 1, 0, null));
+        given(logbook.add(any(), any()))
+                .willReturn(new LogbookEntry(PILOT)
+                        .set(LocalDate.of(2026, 9, 20), "N12345", "C172", "C81 KDLH", 3.4, 0, 3.4, 1, 0, null));
 
-        mockMvc.perform(post("/api/logbook").with(oidcLogin()).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(ENTRY))
+        mockMvc.perform(post("/api/logbook")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(ENTRY))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.route").value("C81 KDLH"))
                 .andExpect(jsonPath("$.flownOn").value("2026-09-20"));
@@ -77,10 +82,16 @@ class LogbookControllerTest {
     @Test
     void add_returns400_forNegativeHoursOrNoDate() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(PILOT));
-        mockMvc.perform(post("/api/logbook").with(oidcLogin()).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post("/api/logbook")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(ENTRY.replace("\"totalHours\": 3.4", "\"totalHours\": -1")))
                 .andExpect(status().isBadRequest());
-        mockMvc.perform(post("/api/logbook").with(oidcLogin()).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post("/api/logbook")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(ENTRY.replace("\"flownOn\": \"2026-09-20\",", "")))
                 .andExpect(status().isBadRequest());
     }
@@ -91,7 +102,11 @@ class LogbookControllerTest {
         given(logbook.update(any(), anyLong(), any())).willReturn(Optional.empty());
         given(logbook.delete(any(), eq(7L))).willReturn(false);
 
-        mockMvc.perform(put("/api/logbook/7").with(oidcLogin()).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(ENTRY))
+        mockMvc.perform(put("/api/logbook/7")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(ENTRY))
                 .andExpect(status().isNotFound());
         mockMvc.perform(delete("/api/logbook/7").with(oidcLogin()).with(csrf())).andExpect(status().isNotFound());
     }
@@ -100,9 +115,25 @@ class LogbookControllerTest {
     void currency_returns200_asComputed() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(PILOT));
         given(logbook.list(any())).willReturn(List.of());
-        given(planner.currency(any(), any(), any(), any(), any())).willReturn(new CurrencyDto(
-                LocalDate.of(2026, 12, 19), null, LocalDate.of(2025, 6, 14), LocalDate.of(2027, 6, 30), null, 4.0, 0, 3.4, 9, 4,
-                LocalDate.of(2027, 3, 31), null, null, LocalDate.of(2027, 9, 30), 6, true, true));
+        given(planner.currency(any(), any(), any(), any(), any()))
+                .willReturn(new CurrencyDto(
+                        LocalDate.of(2026, 12, 19),
+                        null,
+                        LocalDate.of(2025, 6, 14),
+                        LocalDate.of(2027, 6, 30),
+                        null,
+                        4.0,
+                        0,
+                        3.4,
+                        9,
+                        4,
+                        LocalDate.of(2027, 3, 31),
+                        null,
+                        null,
+                        LocalDate.of(2027, 9, 30),
+                        6,
+                        true,
+                        true));
 
         mockMvc.perform(get("/api/logbook/currency").with(oidcLogin()))
                 .andExpect(status().isOk())
@@ -118,13 +149,20 @@ class LogbookControllerTest {
         given(pilotService.current(any())).willReturn(Optional.of(PILOT));
         given(logbook.importAll(any(), any())).willReturn(new app.wingtipmaps.gateway.dto.LogbookImportResult(3, 1));
 
-        mockMvc.perform(post("/api/logbook/import").with(oidcLogin()).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post("/api/logbook/import")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"entries\": [" + ENTRY + "]}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.added").value(3))
                 .andExpect(jsonPath("$.duplicates").value(1));
-        mockMvc.perform(post("/api/logbook/import").with(oidcLogin()).with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"entries\": [" + ENTRY + "," + ENTRY.replace("\"totalHours\": 3.4", "\"totalHours\": 1500") + "]}"))
+        mockMvc.perform(post("/api/logbook/import")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"entries\": [" + ENTRY + ","
+                                + ENTRY.replace("\"totalHours\": 3.4", "\"totalHours\": 1500") + "]}"))
                 .andExpect(status().isBadRequest());
     }
 }

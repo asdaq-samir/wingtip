@@ -31,7 +31,10 @@ fn a_call_is_read_into_its_items_and_its_speaker() {
 fn a_readback_with_no_call_sign_follows_our_call() {
     let f = fixture();
     for case in f["prior"].as_array().unwrap() {
-        let answer = ask("atc_call", json!({ "text": case["heard"], "tail": f["tail"], "prior": { "text": case["prior"], "ago_s": case["ago_s"] } }));
+        let answer = ask(
+            "atc_call",
+            json!({ "text": case["heard"], "tail": f["tail"], "prior": { "text": case["prior"], "ago_s": case["ago_s"] } }),
+        );
         assert_eq!(answer["who"], case["who"], "{}", case["name"]);
     }
 }
@@ -69,7 +72,8 @@ fn without_a_tail_the_call_sign_is_not_asked() {
 fn figures_out_of_their_range_are_not_read() {
     // A heading of 0 or past 360 (AIM 4-2-10's three figures, north 360), a
     // runway past 36 (AIM 2-3-3) and an altimeter of 1x.xx were misheard.
-    let answer = ask("atc_call", json!({ "text": "fly heading four zero zero, altimeter one niner niner two, cleared to land runway four two" }));
+    let answer =
+        ask("atc_call", json!({ "text": "fly heading four zero zero, altimeter one niner niner two, cleared to land runway four two" }));
     assert_eq!(answer["items"], json!([]));
     let answer = ask("atc_call", json!({ "text": "fly heading three six zero" }));
     assert_eq!(answer["items"], json!([{ "kind": "heading", "deg": 360, "turn": null, "by_deg": null }]));

@@ -19,15 +19,26 @@ describe("the progress toast", () => {
 });
 
 describe("a tight leg", () => {
-  const segment = (over: Partial<AltitudeSegment>) => ({
-    tight: true, candidates_ft: [4400], band_ceiling_ft: 4500, airspace_ceiling_ft: 4500, cloud_ceiling_ft: null,
-    floor_ft: 4100, from_nm: 12.4, to_nm: 30.6, ...over,
-  }) as unknown as AltitudeSegment;
+  const segment = (over: Partial<AltitudeSegment>) =>
+    ({
+      tight: true,
+      candidates_ft: [4400],
+      band_ceiling_ft: 4500,
+      airspace_ceiling_ft: 4500,
+      cloud_ceiling_ft: null,
+      floor_ft: 4100,
+      from_nm: 12.4,
+      to_nm: 30.6,
+      ...over,
+    }) as unknown as AltitudeSegment;
 
   it("says where, at what, and the room either side", () => {
-    expect(tightLegWords([segment({})])).toBe("Tight 12–31 nm along: 4,400 ft, 100 ft under the Class B and 300 ft over the obstacle minimum.");
-    expect(tightLegWords([segment({ airspace_ceiling_ft: null, cloud_ceiling_ft: 4500, floor_ft: 4400 })]))
-      .toBe("Tight 12–31 nm along: 4,400 ft, 100 ft under the cloud clearance and right at the obstacle minimum.");
+    expect(tightLegWords([segment({})])).toBe(
+      "Tight 12–31 nm along: 4,400 ft, 100 ft under the Class B and 300 ft over the obstacle minimum.",
+    );
+    expect(tightLegWords([segment({ airspace_ceiling_ft: null, cloud_ceiling_ft: 4500, floor_ft: 4400 })])).toBe(
+      "Tight 12–31 nm along: 4,400 ft, 100 ft under the cloud clearance and right at the obstacle minimum.",
+    );
   });
 
   it("says nothing with no tight leg", () => {
@@ -39,7 +50,9 @@ describe("a tight leg", () => {
 describe("the tabs' marks", () => {
   it("are the worst finding on each tab, and the Brief's the worst of all", () => {
     const marks = marksOf([
-      { tab: "depart", finding: "caution" }, { tab: "depart", finding: "stop" }, { tab: "enroute", finding: "caution" },
+      { tab: "depart", finding: "caution" },
+      { tab: "depart", finding: "stop" },
+      { tab: "enroute", finding: "caution" },
       { tab: "arrive", finding: "ok" as never },
     ]);
     expect(marks).toEqual({ depart: "stop", enroute: "caution" });

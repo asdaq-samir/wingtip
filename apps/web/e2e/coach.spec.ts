@@ -12,37 +12,94 @@ import { library, openConsole, showTabs } from "./helpers";
 const PLAN = {
   today: "2026-11-09",
   due: [
-    { key: "night_passengers", id: "due:night_passengers", label: "Passengers at night", rule: "14 CFR 61.57(b)", until: "2026-11-18", from: null,
-      days_left: 9, status: "due_soon", detail: "90 days from the third most recent night full-stop landing (61.57(b))" },
+    {
+      key: "night_passengers",
+      id: "due:night_passengers",
+      label: "Passengers at night",
+      rule: "14 CFR 61.57(b)",
+      until: "2026-11-18",
+      from: null,
+      days_left: 9,
+      status: "due_soon",
+      detail: "90 days from the third most recent night full-stop landing (61.57(b))",
+    },
   ],
-  reminders: [{ key: "night_passengers", text: "Passengers at night: current until 18 Nov 2026, in 9 days (14 CFR 61.57(b)).", until: "2026-11-18", days_left: 9 }],
-  evidence: [{ id: "ev:1", flown_on: "2026-10-25", place: "KMSN", area: "unstable_approach",
-    text: "Off the course or glidepath 413 ft above the field, under the 500 ft gate (AC 61-98D 2.1.4)" }],
+  reminders: [
+    {
+      key: "night_passengers",
+      text: "Passengers at night: current until 18 Nov 2026, in 9 days (14 CFR 61.57(b)).",
+      until: "2026-11-18",
+      days_left: 9,
+    },
+  ],
+  evidence: [
+    {
+      id: "ev:1",
+      flown_on: "2026-10-25",
+      place: "KMSN",
+      area: "unstable_approach",
+      text: "Off the course or glidepath 413 ft above the field, under the 500 ft gate (AC 61-98D 2.1.4)",
+    },
+  ],
   weak_areas: [{ key: "unstable_approach", label: "Stabilized approaches", acs: ["IR.VI.A", "IR.VI.B", "PA.IV.B"], evidence: ["ev:1"] }],
   sessions: [
-    { id: "session:1", key: "night_passengers", practise: "Three takeoffs and three landings to a full stop, from 1 hour after sunset (61.57(b))",
-      why: ["due:night_passengers"], place: { ident: "C29", name: "Middleton Muni - Morey Fld", distance_nm: 0, approach: null },
-      minutes: 60, instructor: false, wings: null },
-    { id: "session:2", key: "unstable_approach", practise: "Stabilized approaches by 500 ft above the field (AC 61-98D 2.1.4)",
-      why: ["ev:1"], place: { ident: "KMSN", name: "Dane County Rgnl/Truax Fld", distance_nm: 7.6, approach: "ILS OR LOC RWY 36" },
-      minutes: 60, instructor: true, wings: { area: "Takeoffs and landings", acs: "PA.IV.B", note: "May count toward a WINGS flight activity" } },
+    {
+      id: "session:1",
+      key: "night_passengers",
+      practise: "Three takeoffs and three landings to a full stop, from 1 hour after sunset (61.57(b))",
+      why: ["due:night_passengers"],
+      place: { ident: "C29", name: "Middleton Muni - Morey Fld", distance_nm: 0, approach: null },
+      minutes: 60,
+      instructor: false,
+      wings: null,
+    },
+    {
+      id: "session:2",
+      key: "unstable_approach",
+      practise: "Stabilized approaches by 500 ft above the field (AC 61-98D 2.1.4)",
+      why: ["ev:1"],
+      place: { ident: "KMSN", name: "Dane County Rgnl/Truax Fld", distance_nm: 7.6, approach: "ILS OR LOC RWY 36" },
+      minutes: 60,
+      instructor: true,
+      wings: { area: "Takeoffs and landings", acs: "PA.IV.B", note: "May count toward a WINGS flight activity" },
+    },
   ],
 };
 
 test("the Coach makes a plan from the logbook and puts it in words", async ({ page }) => {
   const asked: Record<string, unknown>[] = [];
-  await page.route(url => url.pathname === "/api/logbook", route => route.fulfill({ json: [] }));
-  await page.route(url => url.pathname === "/api/flights", route => route.fulfill({ json: [] }));
-  await page.route(url => url.pathname === "/api/training", route => route.fulfill({ json: { experience: [], knowledgeTestCodes: [], endorsements: [], lessons: [] } }));
-  await page.route(url => url.pathname === "/api/planner/pilot/coach", async route => {
-    asked.push(route.request().postDataJSON() as Record<string, unknown>);
-    await route.fulfill({ json: PLAN });
-  });
-  await page.route(url => url.pathname === "/api/planner/words/coach", route => route.fulfill({ json: {
-    sentences: [{ text: "Your night passenger currency runs out on 18 Nov.", sources: ["due:night_passengers"] }],
-    session_lines: [{ session: "session:2", text: "Fly the ILS at KMSN with an instructor.", sources: ["session:2", "ev:1"] }],
-    sources: [], model: "claude-haiku-5-5", unavailable: null,
-  } }));
+  await page.route(
+    (url) => url.pathname === "/api/logbook",
+    (route) => route.fulfill({ json: [] }),
+  );
+  await page.route(
+    (url) => url.pathname === "/api/flights",
+    (route) => route.fulfill({ json: [] }),
+  );
+  await page.route(
+    (url) => url.pathname === "/api/training",
+    (route) => route.fulfill({ json: { experience: [], knowledgeTestCodes: [], endorsements: [], lessons: [] } }),
+  );
+  await page.route(
+    (url) => url.pathname === "/api/planner/pilot/coach",
+    async (route) => {
+      asked.push(route.request().postDataJSON() as Record<string, unknown>);
+      await route.fulfill({ json: PLAN });
+    },
+  );
+  await page.route(
+    (url) => url.pathname === "/api/planner/words/coach",
+    (route) =>
+      route.fulfill({
+        json: {
+          sentences: [{ text: "Your night passenger currency runs out on 18 Nov.", sources: ["due:night_passengers"] }],
+          session_lines: [{ session: "session:2", text: "Fly the ILS at KMSN with an instructor.", sources: ["session:2", "ev:1"] }],
+          sources: [],
+          model: "claude-haiku-5-5",
+          unavailable: null,
+        },
+      }),
+  );
 
   await page.goto("/app/plan");
   await showTabs(page);

@@ -34,7 +34,13 @@ function SignedWords({ text, signature }: { text: string; signature: string }) {
 /** A row for an endorsement signed in the app: its name, rule and
  *  signature line, the day it runs out, and its words a tap away -- with,
  *  for the instructor who signed it, a way to void it for a correction. */
-export function SignedRow({ kind, e, who, onVoid, voiding }: {
+export function SignedRow({
+  kind,
+  e,
+  who,
+  onVoid,
+  voiding,
+}: {
   kind: EndorsementKind | undefined;
   e: SignedEndorsement;
   /** Whom it was signed for, on the instructor's own record. */
@@ -48,24 +54,29 @@ export function SignedRow({ kind, e, who, onVoid, voiding }: {
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
       <CollapsibleTrigger asChild>
-      <ListRow
-        title={kind?.label ?? e.code}
-        description={(
-          <>
-            <span className="block">
-              {[who, kind?.rule, e.voided ? "Voided" : `Signed ${said(e.signedOn)}`].filter(Boolean).join(" · ")}
-            </span>
-            {!e.voided && <GoodTo until={e.until} />}
-          </>
-        )}
-        value={open ? "Hide" : "Read"}
-        data-testid="signed-endorsement"
-      />
+        <ListRow
+          title={kind?.label ?? e.code}
+          description={
+            <>
+              <span className="block">
+                {[who, kind?.rule, e.voided ? "Voided" : `Signed ${said(e.signedOn)}`].filter(Boolean).join(" · ")}
+              </span>
+              {!e.voided && <GoodTo until={e.until} />}
+            </>
+          }
+          value={open ? "Hide" : "Read"}
+          data-testid="signed-endorsement"
+        />
       </CollapsibleTrigger>
       <CollapsibleContent>
         <SignedWords text={e.text} signature={e.signature} />
         {onVoid && !e.voided && (
-          <ListRow title={<span className="text-destructive">Void it</span>} disabled={voiding} onClick={onVoid} data-testid="signed-void" />
+          <ListRow
+            title={<span className="text-destructive">Void it</span>}
+            disabled={voiding}
+            onClick={onVoid}
+            data-testid="signed-void"
+          />
         )}
       </CollapsibleContent>
     </Collapsible>
@@ -88,7 +99,16 @@ function determinations() {
  * them to determine. The gateway signs what these fields make and nothing
  * else (InstructorService.sign).
  */
-export function SignForm({ kind, studentId, studentName, instructor, initial, reviewId, onDone, onCancel }: {
+export function SignForm({
+  kind,
+  studentId,
+  studentName,
+  instructor,
+  initial,
+  reviewId,
+  onDone,
+  onCancel,
+}: {
   kind: EndorsementKind;
   studentId: number;
   studentName: string;
@@ -99,20 +119,20 @@ export function SignForm({ kind, studentId, studentName, instructor, initial, re
   onCancel: () => void;
 }) {
   const queryClient = useQueryClient();
-  const [fields, setFields] = useState<Record<string, string>>(
-    () => Object.fromEntries(kind.fields.map(f => [f.key, initial?.[f.key] ?? ""])),
+  const [fields, setFields] = useState<Record<string, string>>(() =>
+    Object.fromEntries(kind.fields.map((f) => [f.key, initial?.[f.key] ?? ""])),
   );
   const crossCountry = kind.code === "solo-xc-flight";
   const DETERMINATIONS = determinations();
   const [determined, setDetermined] = useState(() => DETERMINATIONS.map(() => false));
   const signedOn = localDay();
   const text = renderEndorsement(kind.template, studentName, fields);
-  const missing = kind.fields.filter(f => f.required && !fields[f.key]?.trim());
+  const missing = kind.fields.filter((f) => f.required && !fields[f.key]?.trim());
   // A passed date warns and never stops the signature (lapseWarning).
   const lapsed = lapseWarning(instructor, signedOn);
   const sign = useMutation({
     mutationFn: () => api.instructor.sign(studentId, { code: kind.code, fields, text, signedOn, reviewId: reviewId ?? null }),
-    onSuccess: record => {
+    onSuccess: (record) => {
       queryClient.setQueryData(["student-training", studentId], record);
       void queryClient.invalidateQueries({ queryKey: ["instructor"] });
       onDone();
@@ -124,13 +144,19 @@ export function SignForm({ kind, studentId, studentName, instructor, initial, re
       {/* The endorsement's AC 61-65K paragraph and 14 CFR section are its
           kind's (kind.paragraph, kind.rule). */}
       <ListGroup title={kind.label}>
-        {kind.fields.map(f => (
+        {kind.fields.map((f) => (
           <ListRow key={f.key} id={`sign-${kind.code}-${f.key}`} title={f.label}>
-            <FieldHit htmlFor={`sign-${kind.code}-${f.key}`}><Input
-              id={`sign-${kind.code}-${f.key}`} value={fields[f.key] ?? ""} placeholder={f.example} maxLength={300}
-              className="h-8 w-44 sm:w-56" data-testid={`sign-field-${f.key}`}
-              onChange={e => setFields(prev => ({ ...prev, [f.key]: e.target.value }))}
-            /></FieldHit>
+            <FieldHit htmlFor={`sign-${kind.code}-${f.key}`}>
+              <Input
+                id={`sign-${kind.code}-${f.key}`}
+                value={fields[f.key] ?? ""}
+                placeholder={f.example}
+                maxLength={300}
+                className="h-8 w-44 sm:w-56"
+                data-testid={`sign-field-${f.key}`}
+                onChange={(e) => setFields((prev) => ({ ...prev, [f.key]: e.target.value }))}
+              />
+            </FieldHit>
           </ListRow>
         ))}
       </ListGroup>
@@ -139,8 +165,14 @@ export function SignForm({ kind, studentId, studentName, instructor, initial, re
         <ListGroup title="Your determination">
           {DETERMINATIONS.map((d, i) => (
             <ListRow
-              key={d.rule} checkbox={{ checked: !!determined[i], onChange: next => setDetermined(prev => prev.map((on, j) => (j === i ? next : on))) }}
-              title={d.label} description={d.rule} data-testid="sign-determination"
+              key={d.rule}
+              checkbox={{
+                checked: !!determined[i],
+                onChange: (next) => setDetermined((prev) => prev.map((on, j) => (j === i ? next : on))),
+              }}
+              title={d.label}
+              description={d.rule}
+              data-testid="sign-determination"
             />
           ))}
         </ListGroup>
@@ -152,15 +184,29 @@ export function SignForm({ kind, studentId, studentName, instructor, initial, re
         <SignedWords text={text} signature={signatureLine(instructor, signedOn)} />
         <ListRow
           title={<span className="font-medium text-tint">Sign as {instructor.fullName}</span>}
-          description={lapsed || missing.length ? <>
-            {lapsed && <span className={cn("block", FINDING_TONE.caution)} data-testid="sign-lapsed">{lapsed}</span>}
-            {missing.length > 0 && <span className="block">Fill in {missing.map(f => f.label.toLowerCase()).join(", ")}</span>}
-          </> : undefined}
-          disabled={!ready || sign.isPending} onClick={() => sign.mutate()} data-testid="sign-endorsement"
+          description={
+            lapsed || missing.length ? (
+              <>
+                {lapsed && (
+                  <span className={cn("block", FINDING_TONE.caution)} data-testid="sign-lapsed">
+                    {lapsed}
+                  </span>
+                )}
+                {missing.length > 0 && <span className="block">Fill in {missing.map((f) => f.label.toLowerCase()).join(", ")}</span>}
+              </>
+            ) : undefined
+          }
+          disabled={!ready || sign.isPending}
+          onClick={() => sign.mutate()}
+          data-testid="sign-endorsement"
         />
         <ListRow title="Cancel" onClick={onCancel} />
       </ListGroup>
-      {sign.error && <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="sign-problem">{sign.error.message}</p>}
+      {sign.error && (
+        <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="sign-problem">
+          {sign.error.message}
+        </p>
+      )}
     </div>
   );
 }

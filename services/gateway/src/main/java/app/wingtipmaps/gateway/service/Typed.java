@@ -13,8 +13,7 @@ import org.springframework.util.StringUtils;
  */
 public final class Typed {
 
-    private Typed() {
-    }
+    private Typed() {}
 
     /** As typed, its ends trimmed; blank is none. */
     public static String text(String typed) {
@@ -37,7 +36,8 @@ public final class Typed {
      *  pilot's address matches whatever case either was written in. */
     public static Set<String> addresses(String commaSeparated) {
         return Arrays.stream(commaSeparated.split(","))
-                .map(String::trim).filter(StringUtils::hasText)
+                .map(String::trim)
+                .filter(StringUtils::hasText)
                 .map(address -> address.toLowerCase(Locale.ROOT))
                 .collect(Collectors.toUnmodifiableSet());
     }

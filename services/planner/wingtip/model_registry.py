@@ -7,6 +7,7 @@ purpose so it stays importable with zero third-party dependencies: the
 planner imports it to report the model serving and the last training run,
 and has no scikit-learn of its own.
 """
+
 import json
 import os
 import shutil

@@ -75,20 +75,22 @@ const rule = {
       const message = problem(file, spec);
       if (message) context.report({ node, message });
     };
-    const fromSource = node => node.source && check(node.source, node.source.value);
+    const fromSource = (node) => node.source && check(node.source, node.source.value);
     return {
       ImportDeclaration: fromSource,
       ExportNamedDeclaration: fromSource,
       ExportAllDeclaration: fromSource,
-      ImportExpression: node => node.source.type === "Literal" && check(node.source, node.source.value),
-      TSImportType: node => {
+      ImportExpression: (node) => node.source.type === "Literal" && check(node.source, node.source.value),
+      TSImportType: (node) => {
         const literal = node.argument?.literal ?? node.argument;
         if (literal?.type === "Literal") check(node, literal.value);
       },
-      CallExpression: node => {
+      CallExpression: (node) => {
         const callee = node.callee;
-        const mocked = callee.type === "MemberExpression" && callee.object.name === "vi"
-          && ["mock", "doMock", "importActual", "unmock"].includes(callee.property.name);
+        const mocked =
+          callee.type === "MemberExpression" &&
+          callee.object.name === "vi" &&
+          ["mock", "doMock", "importActual", "unmock"].includes(callee.property.name);
         if (mocked && node.arguments[0]?.type === "Literal") check(node.arguments[0], node.arguments[0].value);
       },
     };

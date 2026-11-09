@@ -208,10 +208,8 @@ pub fn way_round(start: Point, end: Point, ceiling_ft: f64, heights_ft: &[f64], 
     // The fields with fuel near that way are the stepping stones.
     let way: Vec<Point> = path.iter().map(|&c| g.centre(c)).collect();
     let every = 1usize.max(way.len() / 200);
-    let picked: Vec<&Field> = fields
-        .iter()
-        .filter(|fd| way.iter().step_by(every).any(|p| geo::distance_nm(p.0, p.1, fd.at.0, fd.at.1) <= FIELD_NM))
-        .collect();
+    let picked: Vec<&Field> =
+        fields.iter().filter(|fd| way.iter().step_by(every).any(|p| geo::distance_nm(p.0, p.1, fd.at.0, fd.at.1) <= FIELD_NM)).collect();
     // And the way's own turns, where a straight line from one to the next
     // keeps clear, so a chain is always there.
     let mut points = vec![start];
@@ -260,7 +258,13 @@ pub fn way_round(start: Point, end: Point, ceiling_ft: f64, heights_ft: &[f64], 
             if leg > LEG_NM {
                 continue;
             }
-            let add = if next == count - 1 { 0.0 } else if next < fields_end { TURN_NM } else { TURN_NM + OWN_POINT_NM };
+            let add = if next == count - 1 {
+                0.0
+            } else if next < fields_end {
+                TURN_NM
+            } else {
+                TURN_NM + OWN_POINT_NM
+            };
             let d = spent + leg + add;
             if d >= best[next] {
                 continue;

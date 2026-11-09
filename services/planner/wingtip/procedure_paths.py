@@ -12,6 +12,7 @@ A sketch, as the drawings are: a course reversal is a teardrop where the
 chart puts no hold, and an approach from vectors is joined as a controller
 turns an airplane onto it.
 """
+
 from __future__ import annotations
 
 import math
@@ -71,7 +72,7 @@ def joined_lines(lines: list) -> list:
         part = [tuple(p) for p in line]
         if points:
             joined = next((i for i, p in enumerate(part) if _nm(p, points[-1]) < SAME_PLACE_NM), None)
-            part = part[joined + 1:] if joined is not None else part
+            part = part[joined + 1 :] if joined is not None else part
         points.extend(part)
     return points
 
@@ -152,8 +153,7 @@ def procedure_path(drawing: dict, toward: tuple | None = None, runway: str | Non
     if drawing["kind"] == "departure":
         lines = [ln for ln in drawing.get("lines", []) if ln["role"] == "runway"]
         return _crossings(drawing, joined_lines(_runway_line(lines, runway) + _of(drawing, "common", "transition")))
-    nearest = (min(runways, key=lambda ln: _nm(tuple(ln[-1]), toward))
-               if toward is not None and runways else None)
+    nearest = min(runways, key=lambda ln: _nm(tuple(ln[-1]), toward)) if toward is not None and runways else None
     return _crossings(drawing, joined_lines(_of(drawing, "transition", "common") + ([nearest] if nearest else [])))
 
 
@@ -167,7 +167,7 @@ def missed_path(drawing: dict, start: tuple) -> dict | None:
     the approach draws none."""
     path = joined_lines(_of(drawing, "missed"))
     at = next((i for i, p in enumerate(path) if _nm(p, start) < SAME_PLACE_NM), None)
-    points = path[at + 1:] if at is not None else path
+    points = path[at + 1 :] if at is not None else path
     hold = next(([tuple(p) for p in h["points"]] for h in drawing.get("holds", []) if h["missed"]), None)
     if hold and len(hold) > 2 and points and _nm(hold[0], points[-1]) < SAME_PLACE_NM:
         points = points + hold[1:]
@@ -221,7 +221,7 @@ def _teardrop(fix: tuple, cin: float, cout: float) -> list:
     for k in range(1, 8):
         f = k / 8
         # A quadratic Bezier through the tip, near enough a turn over a few miles.
-        curve.append(tuple((1 - f) ** 2 * o + 2 * (1 - f) * f * t + f ** 2 * i for o, t, i in zip(out, tip, inbound)))
+        curve.append(tuple((1 - f) ** 2 * o + 2 * (1 - f) * f * t + f**2 * i for o, t, i in zip(out, tip, inbound)))
     return [out, *curve, inbound, fix]
 
 
@@ -320,9 +320,16 @@ def _direct(piece: dict | None, drawing: dict | None) -> dict | None:
     return sent
 
 
-def flown(start: tuple, end: tuple, departure: dict | None = None, arrival: dict | None = None,
-          approach: dict | None = None, runway: str | None = None,
-          takeoff_circuit: dict | None = None, landing_circuit: dict | None = None) -> dict | None:
+def flown(
+    start: tuple,
+    end: tuple,
+    departure: dict | None = None,
+    arrival: dict | None = None,
+    approach: dict | None = None,
+    runway: str | None = None,
+    takeoff_circuit: dict | None = None,
+    landing_circuit: dict | None = None,
+) -> dict | None:
     """A leg flown by the procedures picked, from its `start` to its `end`:
     out of the field it leaves by its departure, into the one it lands at
     by its arrival and its approach, each to its runway, a course reversal
@@ -389,9 +396,11 @@ def flown(start: tuple, end: tuple, departure: dict | None = None, arrival: dict
         map_at = hits[-1] if hits else None
         missed = missed_path(approach, map_point)
     return {
-        "path": [[round(p[0], 6), round(p[1], 6)] for p in path], "ft": ft, "nm": length_nm(path),
-        "landing": bool(star or app or circuit_in), "final_at": final_at, "map_at": map_at,
-        "missed": None if missed is None else {
-            "path": [[round(p[0], 6), round(p[1], 6)] for p in missed["points"]], "ft": missed["ft"],
-        },
+        "path": [[round(p[0], 6), round(p[1], 6)] for p in path],
+        "ft": ft,
+        "nm": length_nm(path),
+        "landing": bool(star or app or circuit_in),
+        "final_at": final_at,
+        "map_at": map_at,
+        "missed": None if missed is None else {"path": [[round(p[0], 6), round(p[1], 6)] for p in missed["points"]], "ft": missed["ft"]},
     }

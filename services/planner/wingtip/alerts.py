@@ -11,6 +11,7 @@ not a terrain awareness and warning system (TSO-C151) or a substitute
 for the chart, the pilot's own planning (14 CFR 91.103) or looking
 outside.
 """
+
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
@@ -28,8 +29,11 @@ def _polygons(geometry) -> list:
     """A shapely polygon or multipolygon as the engine reads it: each
     polygon its outline and holes, each ring [[lon, lat], ...]."""
     parts = getattr(geometry, "geoms", [geometry])
-    return [[[[float(x), float(y)] for x, y in ring.coords] for ring in (part.exterior, *part.interiors)]
-            for part in parts if hasattr(part, "exterior")]
+    return [
+        [[[float(x), float(y)] for x, y in ring.coords] for ring in (part.exterior, *part.interiors)]
+        for part in parts
+        if hasattr(part, "exterior")
+    ]
 
 
 def _ground_ft(lat: float, lon: float) -> float | None:
@@ -56,9 +60,17 @@ def _unix(when: str | None) -> float | None:
 
 
 def _volumes(shp_path, box: tuple) -> list:
-    return [{"name": v["name"], "class": v["class"], "floor_ft": v["floor_ft_msl"], "ceiling_ft": v["ceiling_ft_msl"],
-             "polygons": _polygons(v["geometry"])}
-            for v in airspace.load_controlled_airspace(shp_path, box) if v["class"] in ("B", "C", "D")]
+    return [
+        {
+            "name": v["name"],
+            "class": v["class"],
+            "floor_ft": v["floor_ft_msl"],
+            "ceiling_ft": v["ceiling_ft_msl"],
+            "polygons": _polygons(v["geometry"]),
+        }
+        for v in airspace.load_controlled_airspace(shp_path, box)
+        if v["class"] in ("B", "C", "D")
+    ]
 
 
 def _special_use(box: tuple) -> list | None:
@@ -66,10 +78,20 @@ def _special_use(box: tuple) -> list | None:
         found = sua.areas_in(box)
     except sua.SpecialUseUnavailable:
         return None
-    return [{"name": area["name"], "type": area["type"], "floor_ft": area["floor_ft"], "floor_ref": area["floor_ref"],
-             "ceiling_ft": area["ceiling_ft"], "ceiling_ref": area["ceiling_ref"], "times_of_use": area["times_of_use"],
-             "ground_ft": _ground_under(geometry, (area["floor_ref"], area["ceiling_ref"])), "polygons": _polygons(geometry)}
-            for area, geometry in found]
+    return [
+        {
+            "name": area["name"],
+            "type": area["type"],
+            "floor_ft": area["floor_ft"],
+            "floor_ref": area["floor_ref"],
+            "ceiling_ft": area["ceiling_ft"],
+            "ceiling_ref": area["ceiling_ref"],
+            "times_of_use": area["times_of_use"],
+            "ground_ft": _ground_under(geometry, (area["floor_ref"], area["ceiling_ref"])),
+            "polygons": _polygons(geometry),
+        }
+        for area, geometry in found
+    ]
 
 
 def _tfrs() -> list | None:
@@ -83,14 +105,21 @@ def _tfrs() -> list | None:
             geometry = shape(restriction["geometry"])
         except (KeyError, TypeError, ValueError):
             continue
-        out.append({
-            "notam_id": restriction["notam_id"], "title": restriction.get("title"), "rule": restriction.get("rule"),
-            "floor_ft": restriction.get("floor_ft"), "floor_ref": restriction.get("floor_ref"),
-            "ceiling_ft": restriction.get("ceiling_ft"), "ceiling_ref": restriction.get("ceiling_ref"),
-            "effective": _unix(restriction.get("effective")), "expires": _unix(restriction.get("expires")),
-            "ground_ft": _ground_under(geometry, (restriction.get("floor_ref"), restriction.get("ceiling_ref"))),
-            "polygons": _polygons(geometry),
-        })
+        out.append(
+            {
+                "notam_id": restriction["notam_id"],
+                "title": restriction.get("title"),
+                "rule": restriction.get("rule"),
+                "floor_ft": restriction.get("floor_ft"),
+                "floor_ref": restriction.get("floor_ref"),
+                "ceiling_ft": restriction.get("ceiling_ft"),
+                "ceiling_ref": restriction.get("ceiling_ref"),
+                "effective": _unix(restriction.get("effective")),
+                "expires": _unix(restriction.get("expires")),
+                "ground_ft": _ground_under(geometry, (restriction.get("floor_ref"), restriction.get("ceiling_ref"))),
+                "polygons": _polygons(geometry),
+            }
+        )
     return out
 
 
@@ -98,8 +127,9 @@ def _swath_ground(frame: dict) -> list | None:
     """The ground at the swath's points (the engine's `ahead_frame`), feet;
     None where the terrain tiles cannot be read."""
     try:
-        return [[elevation.ground_m(lat, lon) * M_TO_FT for lat, lon in zip(lats, lons)]
-                for lats, lons in zip(frame["lats"], frame["lons"])]
+        return [
+            [elevation.ground_m(lat, lon) * M_TO_FT for lat, lon in zip(lats, lons)] for lats, lons in zip(frame["lats"], frame["lons"])
+        ]
     except (requests.RequestException, OSError, ValueError):
         return None
 
@@ -111,8 +141,9 @@ def _obstacles(box: tuple, faa_cache_dir) -> list | None:
         found = faa_data.load_obstacles(faa_data.ensure_nasr_file("DOF.DAT", faa_cache_dir), box, min_agl_ft=0)
     except (requests.RequestException, OSError, ValueError):
         return None
-    return [{"lat": float(r.lat), "lon": float(r.lon), "amsl_ft": float(r.amsl_ft), "type": r.type or ""}
-            for r in found.itertuples(index=False)]
+    return [
+        {"lat": float(r.lat), "lon": float(r.lon), "amsl_ft": float(r.amsl_ft), "type": r.type or ""} for r in found.itertuples(index=False)
+    ]
 
 
 def _near_field(lat: float, lon: float) -> dict | None:
@@ -125,8 +156,17 @@ def _near_field(lat: float, lon: float) -> dict | None:
     return {"distance_nm": nearest[0]["distance_nm"], "elevation_ft": nearest[0].get("elevation_ft")} if nearest else None
 
 
-def ahead(lat: float, lon: float, track_deg: float, gs_kt: float, alt_ft: float | None = None,
-          vs_fpm: float = 0.0, shp_path=None, faa_cache_dir=None, now: datetime | None = None) -> dict:
+def ahead(
+    lat: float,
+    lon: float,
+    track_deg: float,
+    gs_kt: float,
+    alt_ft: float | None = None,
+    vs_fpm: float = 0.0,
+    shp_path=None,
+    faa_cache_dir=None,
+    now: datetime | None = None,
+) -> dict:
     """The alerts ahead of an airplane at (lat, lon) on `track_deg` true
     at `gs_kt`, at `alt_ft` MSL (the GPS's; None where it gives none),
     climbing or descending at `vs_fpm`: the engine's {"alerts": [...],
@@ -145,11 +185,20 @@ def ahead(lat: float, lon: float, track_deg: float, gs_kt: float, alt_ft: float 
         special_use = pool.submit(_special_use, box)
         tfrs = pool.submit(_tfrs)
         volumes = _volumes(shp_path, box)
-        given = {**own, "now": now.timestamp(), "ground_ft": ground.result(), "airspace": volumes,
-                 "special_use": special_use.result(), "tfrs": tfrs.result()}
+        given = {
+            **own,
+            "now": now.timestamp(),
+            "ground_ft": ground.result(),
+            "airspace": volumes,
+            "special_use": special_use.result(),
+            "tfrs": tfrs.result(),
+        }
     if alt_ft is not None:
-        given |= {"near_field": _near_field(lat, lon), "swath_ground_ft": _swath_ground(frame),
-                  "obstacles": _obstacles(near_box, faa_cache_dir)}
+        given |= {
+            "near_field": _near_field(lat, lon),
+            "swath_ground_ft": _swath_ground(frame),
+            "obstacles": _obstacles(near_box, faa_cache_dir),
+        }
     found = engine("alerts_ahead", **given)
     return {"alerts": _with_sfdps(found["alerts"]), "unavailable": found["unavailable"]}
 
@@ -165,5 +214,9 @@ def _with_sfdps(alerts: list[dict]) -> list[dict]:
         status = saa.status(names, now=datetime.now(timezone.utc).timestamp())
     except Exception:  # noqa: BLE001 -- the store unread: the alerts as the engine gave them
         return alerts
-    return [{**a, "sfdps_active": status[a["name"]]["active"], "sfdps_until": status[a["name"]]["until"]}
-            if a.get("kind") == "special_use" and a["name"] in status else a for a in alerts]
+    return [
+        {**a, "sfdps_active": status[a["name"]]["active"], "sfdps_until": status[a["name"]]["until"]}
+        if a.get("kind") == "special_use" and a["name"] in status
+        else a
+        for a in alerts
+    ]

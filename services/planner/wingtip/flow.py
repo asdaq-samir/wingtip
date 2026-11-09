@@ -26,6 +26,7 @@ Kept in wingtip.live_reports (kind "flow"), one report an airport and
 program or restriction, until its end. Words only: what a program means
 for a flight is the engine's (the Go / No-Go's flow finding).
 """
+
 from __future__ import annotations
 
 import re
@@ -113,19 +114,21 @@ def restriction(root) -> list[dict]:
     airports = _text(root, "airports").split()
     out = []
     for airport in airports:
-        out.append({
-            "restriction": True,
-            "airport": airport,
-            "kind": _text(root, "restrictionType") or None,
-            "category": _text(root, "restrictionCategory") or None,
-            "value": _text(root, "mitValue") or _text(root, "minitValue") or None,
-            "element": _text(root, "restrictedNasElements") or None,
-            "reason": _text(root, "reasonText") or None,
-            "facility": _text(root, "facility") or None,
-            "starts": _when(_text(root, "startTime")),
-            "ends": _when(_text(root, "stopTime")),
-            "id": _text(root, "restrictionId") or None,
-        })
+        out.append(
+            {
+                "restriction": True,
+                "airport": airport,
+                "kind": _text(root, "restrictionType") or None,
+                "category": _text(root, "restrictionCategory") or None,
+                "value": _text(root, "mitValue") or _text(root, "minitValue") or None,
+                "element": _text(root, "restrictedNasElements") or None,
+                "reason": _text(root, "reasonText") or None,
+                "facility": _text(root, "facility") or None,
+                "starts": _when(_text(root, "startTime")),
+                "ends": _when(_text(root, "stopTime")),
+                "id": _text(root, "restrictionId") or None,
+            }
+        )
     return out
 
 
@@ -147,16 +150,24 @@ def heard(xml: str | bytes, now: float | None = None) -> int:
         if found["cancelled"]:
             live_reports.drop(KIND, key)
         else:
-            live_reports.put(KIND, key, found, place=found["airport"], starts=found["starts"],
-                             ends=found["ends"] or now + OPEN_ENDED_S, now=now)
+            live_reports.put(
+                KIND, key, found, place=found["airport"], starts=found["starts"], ends=found["ends"] or now + OPEN_ENDED_S, now=now
+            )
         return 1
     if _find(root, "restrictionMessage") is not None:
         found = restriction(root)
         for r in found:
             # Its stop time past is its end: a message that ends it early
             # comes with its stop time then (action, as TFMS sends it).
-            live_reports.put(KIND, f"{live_reports.ident(r['airport'])}:restriction:{r['id']}", r,
-                             place=r["airport"], starts=r["starts"], ends=r["ends"] or now + OPEN_ENDED_S, now=now)
+            live_reports.put(
+                KIND,
+                f"{live_reports.ident(r['airport'])}:restriction:{r['id']}",
+                r,
+                place=r["airport"],
+                starts=r["starts"],
+                ends=r["ends"] or now + OPEN_ENDED_S,
+                now=now,
+            )
         return len(found)
     return 0
 

@@ -152,8 +152,9 @@ fn first_max<T>(items: impl IntoIterator<Item = T>, key: impl Fn(&T) -> f64) -> 
 /// (`recent`, its direction and speed), the runway in use, said so, else
 /// the first one named. None with no report, a variable wind or no end
 /// with a heading.
-pub fn favoured_end(ends: &[(Option<String>, Option<f64>)], report: Option<&Reported>, variation_deg: f64, recent: Option<(f64, f64)>)
-                    -> Option<Favoured> {
+pub fn favoured_end(
+    ends: &[(Option<String>, Option<f64>)], report: Option<&Reported>, variation_deg: f64, recent: Option<(f64, f64)>,
+) -> Option<Favoured> {
     let report = report?;
     let speed = report.speed_kt?;
     let headed: Vec<(&Option<String>, f64)> =
@@ -162,7 +163,12 @@ pub fn favoured_end(ends: &[(Option<String>, Option<f64>)], report: Option<&Repo
         return None;
     }
     let calm = |end: &Option<String>, in_use: bool| Favoured {
-        end: end.clone(), headwind_kt: 0.0, crosswind_kt: 0.0, gust_crosswind_kt: None, calm: true, in_use,
+        end: end.clone(),
+        headwind_kt: 0.0,
+        crosswind_kt: 0.0,
+        gust_crosswind_kt: None,
+        calm: true,
+        in_use,
     };
     if speed == 0.0 {
         return Some(match recent {
@@ -189,8 +195,9 @@ pub fn favoured_end(ends: &[(Option<String>, Option<f64>)], report: Option<&Repo
 /// (ident, true heading or None). Calm with the field's last wind
 /// (`recent`): the one runway the last wind favoured most is the one in
 /// use, on its end into that wind; the rest stay calm on their first end.
-pub fn with_winds(runways: &[Vec<(Option<String>, Option<f64>)>], report: Option<&Reported>, variation_deg: f64,
-                  recent: Option<(f64, f64)>) -> Vec<Option<Favoured>> {
+pub fn with_winds(
+    runways: &[Vec<(Option<String>, Option<f64>)>], report: Option<&Reported>, variation_deg: f64, recent: Option<(f64, f64)>,
+) -> Vec<Option<Favoured>> {
     let mut out: Vec<Option<Favoured>> = runways.iter().map(|ends| favoured_end(ends, report, variation_deg, None)).collect();
     let Some((dir, kt)) = recent else { return out };
     if report.and_then(|r| r.speed_kt) != Some(0.0) {
@@ -259,8 +266,15 @@ pub struct WindPick {
 /// 2026-10-20), the report now set aside.
 pub fn wind_pick(runways: &[Runway], nearby: Option<&Nearby>, forecast_at: Option<f64>) -> Option<WindPick> {
     let none = WindPick {
-        ident: String::new(), headwind_kt: 0.0, crosswind_kt: 0.0, gust_crosswind_kt: None, calm: true, variable_kt: None, in_use: false,
-        from: None, forecast_at,
+        ident: String::new(),
+        headwind_kt: 0.0,
+        crosswind_kt: 0.0,
+        gust_crosswind_kt: None,
+        calm: true,
+        variable_kt: None,
+        in_use: false,
+        from: None,
+        forecast_at,
     };
     // A forecast's wind is worked out here alone: the runways' winds are
     // the field's report now.

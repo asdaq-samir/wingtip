@@ -1,5 +1,6 @@
 """What every assistant tool hands the model: the planner's answer as
 compact JSON, or its refusal in its own words, never a traceback."""
+
 from __future__ import annotations
 
 import json

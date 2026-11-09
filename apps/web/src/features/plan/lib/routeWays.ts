@@ -10,7 +10,7 @@ export function gridScale(found: RouteOptions | undefined, ownMinutes: number | 
   // way's air time where that way adds no stop (RouteOptions.own) -- with
   // neither, the two clocks are told as they are.
   const bands = (found?.current_along?.bands ?? []).reduce((sum, b) => sum + b.min, 0);
-  const grid = bands || (found?.own && !found.own.fuel.length ? found.own.air_min ?? 0 : 0);
+  const grid = bands || (found?.own && !found.own.fuel.length ? (found.own.air_min ?? 0) : 0);
   return ownMinutes && grid > 0 ? ownMinutes / grid : 1;
 }
 

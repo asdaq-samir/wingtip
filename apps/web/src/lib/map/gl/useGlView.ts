@@ -31,19 +31,27 @@ export function useGlView(): GlView {
   const [view, setView] = useState<GlView>(() => ({ box: aheadOf(map.getBounds()), level: levelOf(appZoomOf(map.getZoom())) }));
   useEffect(() => {
     let frame = 0;
-    const look = () => setView(was => {
-      const bounds = map.getBounds();
-      const box = within(bounds, was.box) ? was.box : aheadOf(bounds);
-      const level = levelOf(appZoomOf(map.getZoom()));
-      return box === was.box && level === was.level ? was : { box, level };
-    });
+    const look = () =>
+      setView((was) => {
+        const bounds = map.getBounds();
+        const box = within(bounds, was.box) ? was.box : aheadOf(bounds);
+        const level = levelOf(appZoomOf(map.getZoom()));
+        return box === was.box && level === was.level ? was : { box, level };
+      });
     const moved = () => {
       if (frame) return;
-      frame = requestAnimationFrame(() => { frame = 0; look(); });
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        look();
+      });
     };
     map.on("move", moved);
     map.on("moveend", look);
-    return () => { map.off("move", moved); map.off("moveend", look); cancelAnimationFrame(frame); };
+    return () => {
+      map.off("move", moved);
+      map.off("moveend", look);
+      cancelAnimationFrame(frame);
+    };
   }, [map]);
   return view;
 }

@@ -110,7 +110,8 @@ final class SlidingWindowLimiter {
      *  address it came from where nobody is. */
     static String callerOf(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()
+        if (authentication != null
+                && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken)) {
             return "user:" + authentication.getName();
         }

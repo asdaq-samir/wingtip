@@ -17,7 +17,7 @@ const LIVE_MS = 60_000;
 
 /** Idents as the planner's lists take them, upper case and once each. */
 function idents(list: (string | null | undefined)[]): string[] {
-  return [...new Set(list.filter((i): i is string => !!i).map(i => i.trim().toUpperCase()))].sort();
+  return [...new Set(list.filter((i): i is string => !!i).map((i) => i.trim().toUpperCase()))].sort();
 }
 
 /** The ITWS alerts at these airports. Said nowhere of its own: an empty
@@ -25,40 +25,62 @@ function idents(list: (string | null | undefined)[]): string[] {
 export const itwsQuery = (airports: (string | null | undefined)[]) => {
   const asked = idents(airports);
   return {
-    queryKey: ["live", "itws", asked], queryFn: () => api.liveItws(asked), enabled: asked.length > 0,
-    staleTime: LIVE_MS, refetchInterval: LIVE_MS, meta: { silent: true },
+    queryKey: ["live", "itws", asked],
+    queryFn: () => api.liveItws(asked),
+    enabled: asked.length > 0,
+    staleTime: LIVE_MS,
+    refetchInterval: LIVE_MS,
+    meta: { silent: true },
   };
 };
 
 export const flowQuery = (airports: (string | null | undefined)[]) => {
   const asked = idents(airports);
   return {
-    queryKey: ["live", "flow", asked], queryFn: () => api.liveFlow(asked), enabled: asked.length > 0,
-    staleTime: 5 * LIVE_MS, refetchInterval: 5 * LIVE_MS, meta: { silent: true },
+    queryKey: ["live", "flow", asked],
+    queryFn: () => api.liveFlow(asked),
+    enabled: asked.length > 0,
+    staleTime: 5 * LIVE_MS,
+    refetchInterval: 5 * LIVE_MS,
+    meta: { silent: true },
   };
 };
 
 export const saaQuery = (designators: string[]) => {
   const asked = [...new Set(designators.filter(Boolean))].sort();
   return {
-    queryKey: ["live", "saa", asked], queryFn: () => api.liveSaa(asked), enabled: asked.length > 0,
-    staleTime: LIVE_MS, refetchInterval: LIVE_MS, meta: { silent: true },
+    queryKey: ["live", "saa", asked],
+    queryFn: () => api.liveSaa(asked),
+    enabled: asked.length > 0,
+    staleTime: LIVE_MS,
+    refetchInterval: LIVE_MS,
+    meta: { silent: true },
   };
 };
 
 export const rvrQuery = (airport: string | null | undefined) => ({
-  queryKey: ["live", "rvr", airport?.toUpperCase() ?? ""], queryFn: () => api.liveRvr(airport!), enabled: !!airport,
-  staleTime: LIVE_MS, refetchInterval: LIVE_MS, meta: { silent: true },
+  queryKey: ["live", "rvr", airport?.toUpperCase() ?? ""],
+  queryFn: () => api.liveRvr(airport!),
+  enabled: !!airport,
+  staleTime: LIVE_MS,
+  refetchInterval: LIVE_MS,
+  meta: { silent: true },
 });
 
 export const datisQuery = (airport: string | null | undefined) => ({
-  queryKey: ["live", "atis", airport?.toUpperCase() ?? ""], queryFn: () => api.liveAtis(airport!), enabled: !!airport,
-  staleTime: 5 * LIVE_MS, meta: { silent: true },
+  queryKey: ["live", "atis", airport?.toUpperCase() ?? ""],
+  queryFn: () => api.liveAtis(airport!),
+  enabled: !!airport,
+  staleTime: 5 * LIVE_MS,
+  meta: { silent: true },
 });
 
 export const departuresQuery = (ident: string | null | undefined) => ({
-  queryKey: ["live", "departures", ident?.toUpperCase() ?? ""], queryFn: () => api.liveDepartures(ident!), enabled: !!ident && ident.length >= 2,
-  staleTime: 5 * LIVE_MS, meta: { silent: true },
+  queryKey: ["live", "departures", ident?.toUpperCase() ?? ""],
+  queryFn: () => api.liveDepartures(ident!),
+  enabled: !!ident && ident.length >= 2,
+  staleTime: 5 * LIVE_MS,
+  meta: { silent: true },
 });
 
 /** A time as the app says one in Zulu: "2130Z". */
@@ -71,7 +93,7 @@ export function zulu(unixS: number): string {
  *  weather finding takes them: "ATL: Runway 27L arrival microburst alert
  *  40 kt, 3 mile final to runway". */
 export function itwsLines(products: ItwsProduct[]): string[] {
-  return products.flatMap(p => p.alerts.map(a => `${p.airport}: ${a.words}`));
+  return products.flatMap((p) => p.alerts.map((a) => `${p.airport}: ${a.words}`));
 }
 
 /** A program in a line: "Ground stop at EWR until 2130Z, delays average

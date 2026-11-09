@@ -6,13 +6,13 @@ import app.wingtipmaps.android.api.AheadAlert
 import app.wingtipmaps.android.api.generated.CopilotAround
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.OwnShip
-import kotlin.math.max
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.math.max
 
 /** One message of the copilot's, the engine's. */
 typealias CopilotMessage = EngineContract.CopilotMessage

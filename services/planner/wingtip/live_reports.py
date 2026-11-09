@@ -13,6 +13,7 @@ A report is written over by the next of the same key, so the store holds
 each thing's latest word; one past its end is never given and is dropped
 after KEEP_ENDED_S. Each reader module says what its key and report are.
 """
+
 from __future__ import annotations
 
 import json
@@ -64,16 +65,26 @@ def ident(place: str) -> str:
     return s[1:] if len(s) == 4 and s.startswith("K") and s.isalpha() else s
 
 
-def put(kind: str, key: str, report: dict, *, place: str | None, starts: float | None = None,
-        ends: float | None = None, now: float | None = None) -> None:
+def put(
+    kind: str,
+    key: str,
+    report: dict,
+    *,
+    place: str | None,
+    starts: float | None = None,
+    ends: float | None = None,
+    now: float | None = None,
+) -> None:
     """A report kept as the latest of its kind and key."""
     now = time.time() if now is None else now
     with _LOCK:
         db = _connection()
-        db.execute("INSERT INTO reports (kind, key, place, starts, ends, heard, report) VALUES (?, ?, ?, ?, ?, ?, ?) "
-                   "ON CONFLICT (kind, key) DO UPDATE SET place = excluded.place, starts = excluded.starts, "
-                   "ends = excluded.ends, heard = excluded.heard, report = excluded.report",
-                   (kind, key, ident(place) if place else None, starts, ends, now, json.dumps(report)))
+        db.execute(
+            "INSERT INTO reports (kind, key, place, starts, ends, heard, report) VALUES (?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT (kind, key) DO UPDATE SET place = excluded.place, starts = excluded.starts, "
+            "ends = excluded.ends, heard = excluded.heard, report = excluded.report",
+            (kind, key, ident(place) if place else None, starts, ends, now, json.dumps(report)),
+        )
         _prune(db, now)
         db.commit()
 
@@ -109,12 +120,13 @@ def at(kind: str, places: list[str], now: float | None = None) -> list[dict]:
     if not keys:
         return []
     marks = ",".join("?" * len(keys))
-    return _rows(f"SELECT report, heard FROM reports WHERE kind = ? AND place IN ({marks}) "
-                 "AND (ends IS NULL OR ends > ?) ORDER BY place, key", (kind, *keys, now))
+    return _rows(
+        f"SELECT report, heard FROM reports WHERE kind = ? AND place IN ({marks}) AND (ends IS NULL OR ends > ?) ORDER BY place, key",
+        (kind, *keys, now),
+    )
 
 
 def every(kind: str, now: float | None = None) -> list[dict]:
     """Every report of a kind not yet ended."""
     now = time.time() if now is None else now
-    return _rows("SELECT report, heard FROM reports WHERE kind = ? AND (ends IS NULL OR ends > ?) ORDER BY place, key",
-                 (kind, now))
+    return _rows("SELECT report, heard FROM reports WHERE kind = ? AND (ends IS NULL OR ends > ?) ORDER BY place, key", (kind, now))

@@ -42,8 +42,12 @@ const fixSchema = z.object({ note: z.string().trim().max(500, "At most 500 chara
 type FixValues = z.infer<typeof fixSchema>;
 
 const asRequest = (s: Squawk): SquawkRequest => ({
-  reportedOn: s.reportedOn, text: s.text, inoperative: s.inoperative, deferredFor: s.deferredFor ?? null,
-  fixedOn: s.fixedOn ?? null, fixNote: s.fixNote ?? null,
+  reportedOn: s.reportedOn,
+  text: s.text,
+  inoperative: s.inoperative,
+  deferredFor: s.deferredFor ?? null,
+  fixedOn: s.fixedOn ?? null,
+  fixNote: s.fixNote ?? null,
 });
 
 /**
@@ -63,14 +67,23 @@ export default function SquawksPage({ aircraft }: { aircraft: Aircraft }) {
   const squawks = asked.data;
   const textId = useId();
   const fixId = useId();
-  const { register, control, handleSubmit, reset, formState: { errors } } = useForm<SquawkValues>({
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<SquawkValues>({
     resolver: zodResolver(squawkSchema),
     defaultValues: { text: "", reportedOn: today(), inoperative: false, deferredFor: "none" },
   });
   const inoperative = useWatch({ control, name: "inoperative" });
   const fixForm = useForm<FixValues>({ resolver: zodResolver(fixSchema), defaultValues: { note: "" } });
   const [fixing, setFixing] = useState<Squawk | null>(null);
-  const startFix = (squawk: Squawk) => { fixForm.reset({ note: "" }); setFixing(squawk); };
+  const startFix = (squawk: Squawk) => {
+    fixForm.reset({ note: "" });
+    setFixing(squawk);
+  };
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["squawks", aircraft.id] });
     // The airplane's open squawks ride with it, for the risk on the day.
@@ -85,48 +98,68 @@ export default function SquawksPage({ aircraft }: { aircraft: Aircraft }) {
       refresh();
     },
   });
-  const onAdd = handleSubmit(values => add.mutate({
-    reportedOn: values.reportedOn, text: values.text.trim(), inoperative: values.inoperative,
-    deferredFor: values.inoperative && values.deferredFor !== "none" ? values.deferredFor : null, fixedOn: null, fixNote: null,
-  }));
+  const onAdd = handleSubmit((values) =>
+    add.mutate({
+      reportedOn: values.reportedOn,
+      text: values.text.trim(),
+      inoperative: values.inoperative,
+      deferredFor: values.inoperative && values.deferredFor !== "none" ? values.deferredFor : null,
+      fixedOn: null,
+      fixNote: null,
+    }),
+  );
   const save = useMutation({
     mutationFn: ({ id, request }: { id: number; request: SquawkRequest }) => api.aircraft.updateSquawk(aircraft.id, id, request),
-    onSuccess: () => { setFixing(null); refresh(); },
+    onSuccess: () => {
+      setFixing(null);
+      refresh();
+    },
   });
-  const onFix = fixForm.handleSubmit(values => {
+  const onFix = fixForm.handleSubmit((values) => {
     if (fixing) save.mutate({ id: fixing.id, request: { ...asRequest(fixing), fixedOn: today(), fixNote: values.note.trim() || null } });
   });
   if (!squawks) return <QueryState query={asked} fetching="Fetching the squawks…" failed="The squawks could not be fetched." />;
-  const open = squawks.filter(s => !s.fixedOn);
-  const fixed = squawks.filter(s => s.fixedOn);
-  const standing = (s: Squawk) => !s.inoperative ? undefined
-    : s.deferredFor ? REACHES.find(r => r.value === s.deferredFor)!.label : "Inoperative, not deferred";
+  const open = squawks.filter((s) => !s.fixedOn);
+  const fixed = squawks.filter((s) => s.fixedOn);
+  const standing = (s: Squawk) =>
+    !s.inoperative ? undefined : s.deferredFor ? REACHES.find((r) => r.value === s.deferredFor)!.label : "Inoperative, not deferred";
 
   return (
     <div className="space-y-4" data-testid="squawks">
       <ListGroup title="Open">
-        {open.length === 0 ? <ListRow muted title="None open" />
-          : open.map(s => (
+        {open.length === 0 ? (
+          <ListRow muted title="None open" />
+        ) : (
+          open.map((s) => (
             <ListRow
-              key={s.id} title={s.text}
+              key={s.id}
+              title={s.text}
               description={[s.reportedOn, standing(s)].filter(Boolean).join(" · ")}
               onClick={() => startFix(s)}
               data-testid="squawk-open"
             />
-          ))}
+          ))
+        )}
       </ListGroup>
       {fixing && (
         <ListGroup title={`Fix: ${fixing.text}`}>
           <div className="p-2">
             <RowField id={fixId} error={fixForm.formState.errors.note?.message} wide>
               <Textarea
-                id={fixId} {...fixForm.register("note")} rows={3} {...invalidProps(fixId, fixForm.formState.errors.note?.message)}
-                placeholder="What was done, and by whom" aria-label="The fix" data-testid="squawk-fix-note"
+                id={fixId}
+                {...fixForm.register("note")}
+                rows={3}
+                {...invalidProps(fixId, fixForm.formState.errors.note?.message)}
+                placeholder="What was done, and by whom"
+                aria-label="The fix"
+                data-testid="squawk-fix-note"
               />
             </RowField>
           </div>
           <ListRow
-            title={<span className="font-medium text-tint">Fixed today</span>} disabled={save.isPending} data-testid="squawk-fix"
+            title={<span className="font-medium text-tint">Fixed today</span>}
+            disabled={save.isPending}
+            data-testid="squawk-fix"
             onClick={() => void onFix()}
           />
           <ListRow title="Cancel" onClick={() => setFixing(null)} />
@@ -141,37 +174,62 @@ export default function SquawksPage({ aircraft }: { aircraft: Aircraft }) {
         <div className="p-2">
           <RowField id={textId} error={errors.text?.message} wide>
             <Textarea
-              id={textId} {...register("text")} rows={2} maxLength={500} {...invalidProps(textId, errors.text?.message)}
-              placeholder="What was found" aria-label="What was found" data-testid="squawk-text"
+              id={textId}
+              {...register("text")}
+              rows={2}
+              maxLength={500}
+              {...invalidProps(textId, errors.text?.message)}
+              placeholder="What was found"
+              aria-label="What was found"
+              data-testid="squawk-text"
             />
           </RowField>
         </div>
         <ListRow id={foundId} title="Found on">
           <RowField id={foundId} error={errors.reportedOn?.message}>
-            <FieldHit htmlFor={foundId}><Input id={foundId} type="date" className="h-8 w-40" max={today()} aria-label="Found on"
-              {...register("reportedOn")} {...invalidProps(foundId, errors.reportedOn?.message)} /></FieldHit>
+            <FieldHit htmlFor={foundId}>
+              <Input
+                id={foundId}
+                type="date"
+                className="h-8 w-40"
+                max={today()}
+                aria-label="Found on"
+                {...register("reportedOn")}
+                {...invalidProps(foundId, errors.reportedOn?.message)}
+              />
+            </FieldHit>
           </RowField>
         </ListRow>
         <ListRow title="Inoperative equipment">
-          <Controller control={control} name="inoperative" render={({ field }) => (
-            <TogglePill pressed={field.value} onPressedChange={field.onChange} label="Inoperative" testId="squawk-inoperative" />
-          )} />
+          <Controller
+            control={control}
+            name="inoperative"
+            render={({ field }) => (
+              <TogglePill pressed={field.value} onPressedChange={field.onChange} label="Inoperative" testId="squawk-inoperative" />
+            )}
+          />
         </ListRow>
         {inoperative && (
           <ListRow title="91.213(d)">
-            <Controller control={control} name="deferredFor" render={({ field }) => (
-              <PullDown label="Deferred for" value={field.value} options={REACHES} testId="squawk-deferred" onChange={field.onChange} />
-            )} />
+            <Controller
+              control={control}
+              name="deferredFor"
+              render={({ field }) => (
+                <PullDown label="Deferred for" value={field.value} options={REACHES} testId="squawk-deferred" onChange={field.onChange} />
+              )}
+            />
           </ListRow>
         )}
         <ListRow
-          title={<span className="font-medium text-tint">Write it</span>} onClick={() => void onAdd()}
-          disabled={add.isPending} data-testid="squawk-add"
+          title={<span className="font-medium text-tint">Write it</span>}
+          onClick={() => void onAdd()}
+          disabled={add.isPending}
+          data-testid="squawk-add"
         />
       </ListGroup>
       {fixed.length > 0 && (
         <ListGroup title="Fixed">
-          {fixed.map(s => (
+          {fixed.map((s) => (
             <ListRow key={s.id} title={s.text} description={[`Fixed ${s.fixedOn}`, s.fixNote].filter(Boolean).join(" · ")} />
           ))}
         </ListGroup>

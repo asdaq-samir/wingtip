@@ -63,7 +63,10 @@ fn clip(s: Option<&str>, most: usize, what: &str, flags: &mut Vec<Flag>, field: 
     if s.chars().count() <= most {
         return Some(s.to_owned());
     }
-    flags.push(Flag { field: Some(field), ..check(format!("The {what} is longer than the logbook keeps ({most} characters); it is cut there.")) });
+    flags.push(Flag {
+        field: Some(field),
+        ..check(format!("The {what} is longer than the logbook keeps ({most} characters); it is cut there."))
+    });
     Some(s.chars().take(most).collect())
 }
 
@@ -92,8 +95,17 @@ fn row(r: &Value, today: Option<(i64, i64, i64)>) -> R<(String, [f64; 9])> {
         _ => {}
     }
     let instrument = num(r, "instrument_actual")? + num(r, "instrument_simulated")?;
-    let figures = [num(r, "total")?, num(r, "night")?, num(r, "cross_country")?, num(r, "dual")?, num(r, "solo")?, instrument,
-        num(r, "day_landings")?, num(r, "night_landings")?, num(r, "approaches")?];
+    let figures = [
+        num(r, "total")?,
+        num(r, "night")?,
+        num(r, "cross_country")?,
+        num(r, "dual")?,
+        num(r, "solo")?,
+        instrument,
+        num(r, "day_landings")?,
+        num(r, "night_landings")?,
+        num(r, "approaches")?,
+    ];
     let [total, night, xc, dual, solo, _, day_landings, night_landings, approaches] = figures;
     for (i, (_, field, what)) in TOTALLED.iter().enumerate() {
         if figures[i] < 0.0 {
@@ -112,18 +124,33 @@ fn row(r: &Value, today: Option<(i64, i64, i64)>) -> R<(String, [f64; 9])> {
     }
     for (i, (_, field, what)) in TOTALLED.iter().enumerate().take(6).skip(1) {
         if total > 0.0 && figures[i] > total + 1e-9 {
-            flag(&mut flags, wrong(format!("The {what} ({} h) reads longer than the flight ({} h).", figure(figures[i]), figure(total))), field);
+            flag(
+                &mut flags,
+                wrong(format!("The {what} ({} h) reads longer than the flight ({} h).", figure(figures[i]), figure(total))),
+                field,
+            );
         }
     }
     if dual + solo > total + 1e-9 && dual > 0.0 && solo > 0.0 {
-        flag(&mut flags, wrong(format!("Dual ({} h) and solo ({} h) add to more than the flight: solo is alone aboard (14 CFR 61.51(d)).",
-            figure(dual), figure(solo))), "soloHours");
+        flag(
+            &mut flags,
+            wrong(format!(
+                "Dual ({} h) and solo ({} h) add to more than the flight: solo is alone aboard (14 CFR 61.51(d)).",
+                figure(dual),
+                figure(solo)
+            )),
+            "soloHours",
+        );
     }
     if night_landings > 0.0 && night == 0.0 {
         flag(&mut flags, check("Night landings with no night time (14 CFR 61.57(b)).".into()), "nightLandings");
     }
     if approaches > 0.0 && instrument == 0.0 {
-        flag(&mut flags, check("Approaches with no instrument time: they count when flown by instruments (14 CFR 61.51(g)(1), 61.57(c)).".into()), "approaches");
+        flag(
+            &mut flags,
+            check("Approaches with no instrument time: they count when flown by instruments (14 CFR 61.51(g)(1), 61.57(c)).".into()),
+            "approaches",
+        );
     }
     let holding = matches!(r.get("holding"), Some(Value::Bool(true)));
     if holding && instrument == 0.0 {
@@ -142,7 +169,13 @@ fn row(r: &Value, today: Option<(i64, i64, i64)>) -> R<(String, [f64; 9])> {
     if from.is_none() || to.is_none() {
         flag(&mut flags, check("Where it departed or arrived was not read (14 CFR 61.51(b)(1)(iii)).".into()), "route");
     } else if xc > 0.0 && from == to && via.is_empty() {
-        flag(&mut flags, check("Cross-country time on a flight back to where it departed with no stop: it takes a landing elsewhere (14 CFR 61.1).".into()), "crossCountryHours");
+        flag(
+            &mut flags,
+            check(
+                "Cross-country time on a flight back to where it departed with no stop: it takes a landing elsewhere (14 CFR 61.1).".into(),
+            ),
+            "crossCountryHours",
+        );
     }
     let route = [from.into_iter().collect::<Vec<_>>(), via, to.into_iter().collect()].concat().join(" ");
     let (id, kind) = (text(r, "aircraft_id")?, text(r, "aircraft_type")?);
@@ -156,13 +189,29 @@ fn row(r: &Value, today: Option<(i64, i64, i64)>) -> R<(String, [f64; 9])> {
     let count = |x: f64| x.max(0.0).round();
     let hours = |x: f64| x.max(0.0);
     let entry = Obj::new()
-        .text("flownOn", day.and(on)).text("aircraft", aircraft.as_deref()).text("aircraftType", aircraft_type.as_deref())
-        .text("route", route.as_deref()).num("totalHours", hours(total).min(MOST_HOURS)).num("nightHours", hours(night))
-        .num("crossCountryHours", hours(xc)).num("dayLandings", count(day_landings)).num("nightLandings", count(night_landings))
-        .text("remarks", remarks.as_deref()).num("dualHours", hours(dual)).num("soloHours", hours(solo))
-        .num("instrumentHours", hours(instrument)).num("toweredLandings", 0.0).num("distanceNm", 0.0).num("longestLegNm", 0.0)
-        .num("approaches", count(approaches)).flag("holding", holding).flag("tracking", false).num("airHours", 0.0)
-        .num("touchAndGoes", 0.0).flag("fromTrack", false).raw("flightId", "null")
+        .text("flownOn", day.and(on))
+        .text("aircraft", aircraft.as_deref())
+        .text("aircraftType", aircraft_type.as_deref())
+        .text("route", route.as_deref())
+        .num("totalHours", hours(total).min(MOST_HOURS))
+        .num("nightHours", hours(night))
+        .num("crossCountryHours", hours(xc))
+        .num("dayLandings", count(day_landings))
+        .num("nightLandings", count(night_landings))
+        .text("remarks", remarks.as_deref())
+        .num("dualHours", hours(dual))
+        .num("soloHours", hours(solo))
+        .num("instrumentHours", hours(instrument))
+        .num("toweredLandings", 0.0)
+        .num("distanceNm", 0.0)
+        .num("longestLegNm", 0.0)
+        .num("approaches", count(approaches))
+        .flag("holding", holding)
+        .flag("tracking", false)
+        .num("airHours", 0.0)
+        .num("touchAndGoes", 0.0)
+        .flag("fromTrack", false)
+        .raw("flightId", "null")
         .done();
     Ok((Obj::new().raw("entry", &entry).raw("flags", &flags_json(&flags)).done(), figures))
 }
@@ -191,12 +240,18 @@ pub fn check_page(v: &Value) -> R<String> {
     if let Some(t @ Value::Object(_)) = v.get("page_totals") {
         let instrument = num(t, "instrument_actual")? + num(t, "instrument_simulated")?;
         for (i, (key, field, what)) in TOTALLED.iter().enumerate() {
-            let given = if *key == "instrument" { (t.get("instrument_actual").is_some() || t.get("instrument_simulated").is_some()).then_some(instrument) } else { t.get(key).and_then(Value::as_f64) };
+            let given = if *key == "instrument" {
+                (t.get("instrument_actual").is_some() || t.get("instrument_simulated").is_some()).then_some(instrument)
+            } else {
+                t.get(key).and_then(Value::as_f64)
+            };
             if let Some(g) = given.filter(|g| (g - sums[i]).abs() > 0.05) {
-                flags.push(Flag { field: Some(field), ..check(format!("The page's {what} total reads {}; its rows add to {}.", figure(g), figure(sums[i]))) });
+                flags.push(Flag {
+                    field: Some(field),
+                    ..check(format!("The page's {what} total reads {}; its rows add to {}.", figure(g), figure(sums[i])))
+                });
             }
         }
     }
     Ok(Obj::new().raw("rows", &array(out)).raw("flags", &flags_json(&flags)).done())
 }
-

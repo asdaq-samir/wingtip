@@ -20,6 +20,7 @@ ahead of the cycle's date can wait for a quiet hour.
 Where ONE_AT_A_TIME_LOCK is unset (production, CI) there is no one to
 share with, and every run has its turn.
 """
+
 from __future__ import annotations
 
 import contextlib
@@ -73,8 +74,9 @@ def try_take(lock: Path, slots: int, label: str) -> Path | None:
 
 
 @contextlib.contextmanager
-def turn(label: str, lock: str | None = None, slots: int | None = None, wait_s: float = TURN_WAIT_S,
-         sleep=time.sleep, clock=time.monotonic):
+def turn(
+    label: str, lock: str | None = None, slots: int | None = None, wait_s: float = TURN_WAIT_S, sleep=time.sleep, clock=time.monotonic
+):
     """Yields whether a turn was had, holding it (touched each minute)
     until the block ends however it ends."""
     lock = lock if lock is not None else os.environ.get("ONE_AT_A_TIME_LOCK")

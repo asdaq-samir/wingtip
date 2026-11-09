@@ -19,5 +19,4 @@ public record SignedEndorsementDto(
         @Nullable LocalDate until,
         boolean voided,
         /** SHA-256 of the words, the signature line and the moment signed. */
-        String digest) {
-}
+        String digest) {}

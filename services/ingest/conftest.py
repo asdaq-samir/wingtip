@@ -1,5 +1,6 @@
 """What every test of ingest shares: a live store of its own, and fresh
 settings either side of each test."""
+
 import pytest
 from wingtip import live_reports
 from wingtip.config import get_settings as wingtip_settings

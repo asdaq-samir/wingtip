@@ -89,10 +89,23 @@ struct Item {
 }
 
 fn item_json(i: &Item) -> String {
-    let figures = array(i.figures.iter().map(|f| Obj::new().text("path", Some(&f.path)).text("label", Some(f.label))
-        .num("value", f.value).text("unit", Some(f.unit)).num("app_value", f.app_value).text("app_unit", Some(f.app_unit)).done()));
-    Obj::new().text("key", Some(&i.key)).text("group", Some(i.group)).text("title", Some(&i.title))
-        .raw("figures", &figures).raw("flags", &flags_json(&i.flags)).done()
+    let figures = array(i.figures.iter().map(|f| {
+        Obj::new()
+            .text("path", Some(&f.path))
+            .text("label", Some(f.label))
+            .num("value", f.value)
+            .text("unit", Some(f.unit))
+            .num("app_value", f.app_value)
+            .text("app_unit", Some(f.app_unit))
+            .done()
+    }));
+    Obj::new()
+        .text("key", Some(&i.key))
+        .text("group", Some(i.group))
+        .text("title", Some(&i.title))
+        .raw("figures", &figures)
+        .raw("flags", &flags_json(&i.flags))
+        .done()
 }
 
 fn missing(item: &mut Item, what: &str) {
@@ -107,23 +120,40 @@ fn cruise(v: &Value, u: &Units, items: &mut Vec<Item>) -> R<Vec<(usize, Cruise)>
     for (i, r) in rows(v, "cruise")?.iter().enumerate() {
         let (alt, power, rpm, tas, burn) = (num(r, "altitude_ft")?, num(r, "power_pct")?, num(r, "rpm")?, num(r, "tas")?, num(r, "burn")?);
         let p = |k: &str| format!("cruise.{i}.{k}");
-        let mut item = Item { key: format!("cruise.{i}"), group: "cruise", figures: Vec::new(), flags: Vec::new(),
+        let mut item = Item {
+            key: format!("cruise.{i}"),
+            group: "cruise",
+            figures: Vec::new(),
+            flags: Vec::new(),
             title: match (alt, power, rpm) {
                 (Some(a), Some(pc), _) => format!("{} ft, {}%", figure(a), figure(pc)),
                 (Some(a), None, Some(n)) => format!("{} ft, {} rpm", figure(a), figure(n)),
                 (Some(a), None, None) => format!("{} ft", figure(a)),
                 _ => "Cruise".into(),
-            } };
-        if let Some(a) = alt { item.figures.push(fig(p("altitude_ft"), "Pressure altitude", a, "ft", a, "ft")); }
-        if let Some(x) = power { item.figures.push(fig(p("power_pct"), "Power", x, "%", x, "%")); }
-        if let Some(x) = rpm { item.figures.push(fig(p("rpm"), "RPM", x, "rpm", x, "rpm")); }
-        if let Some(x) = tas { item.figures.push(fig(p("tas"), "True airspeed", x, u.speed, u.kt(x), "kt")); }
-        if let Some(x) = burn { item.figures.push(fig(p("burn"), "Fuel burn", x, u.burn, u.gph(x), "gph")); }
+            },
+        };
+        if let Some(a) = alt {
+            item.figures.push(fig(p("altitude_ft"), "Pressure altitude", a, "ft", a, "ft"));
+        }
+        if let Some(x) = power {
+            item.figures.push(fig(p("power_pct"), "Power", x, "%", x, "%"));
+        }
+        if let Some(x) = rpm {
+            item.figures.push(fig(p("rpm"), "RPM", x, "rpm", x, "rpm"));
+        }
+        if let Some(x) = tas {
+            item.figures.push(fig(p("tas"), "True airspeed", x, u.speed, u.kt(x), "kt"));
+        }
+        if let Some(x) = burn {
+            item.figures.push(fig(p("burn"), "Fuel burn", x, u.burn, u.gph(x), "gph"));
+        }
         if u.burn == "pph" {
             item.flags.push(check_flag("The burn reads in pounds an hour, taken as avgas at 6 lb a gallon.".into()));
         }
         match (alt, tas, burn) {
-            (Some(a), Some(t), Some(b)) => kept.push((items.len(), Cruise { altitude_ft: a, power_pct: power, rpm, tas_kt: u.kt(t), burn_gph: u.gph(b) })),
+            (Some(a), Some(t), Some(b)) => {
+                kept.push((items.len(), Cruise { altitude_ft: a, power_pct: power, rpm, tas_kt: u.kt(t), burn_gph: u.gph(b) }))
+            }
             _ => missing(&mut item, "altitude, true airspeed or fuel burn"),
         }
         items.push(item);
@@ -138,19 +168,37 @@ fn cruise(v: &Value, u: &Units, items: &mut Vec<Item>) -> R<Vec<(usize, Cruise)>
 fn distances(v: &Value, key: &'static str, title: &str, u: &Units, items: &mut Vec<Item>) -> R<Vec<Distance>> {
     let mut kept = Vec::new();
     for (i, r) in rows(v, key)?.iter().enumerate() {
-        let (alt, temp, roll, over) = (num(r, "pressure_altitude_ft")?, num(r, "temp_c")?, num(r, "ground_roll")?, num(r, "over_obstacle")?);
+        let (alt, temp, roll, over) =
+            (num(r, "pressure_altitude_ft")?, num(r, "temp_c")?, num(r, "ground_roll")?, num(r, "over_obstacle")?);
         let p = |k: &str| format!("{key}.{i}.{k}");
-        let mut item = Item { key: format!("{key}.{i}"), group: key, figures: Vec::new(), flags: Vec::new(), title: match (alt, temp) {
-            (Some(a), Some(t)) => format!("{title} at {} ft, {} °C", figure(a), figure(t)),
-            _ => title.into(),
-        } };
-        if let Some(a) = alt { item.figures.push(fig(p("pressure_altitude_ft"), "Pressure altitude", a, "ft", a, "ft")); }
-        if let Some(t) = temp { item.figures.push(fig(p("temp_c"), "Temperature", t, "°C", t, "°C")); }
-        if let Some(x) = roll { item.figures.push(fig(p("ground_roll"), "Ground roll", x, u.distance, u.ft(x), "ft")); }
-        if let Some(x) = over { item.figures.push(fig(p("over_obstacle"), "Over a 50 ft obstacle", x, u.distance, u.ft(x), "ft")); }
+        let mut item = Item {
+            key: format!("{key}.{i}"),
+            group: key,
+            figures: Vec::new(),
+            flags: Vec::new(),
+            title: match (alt, temp) {
+                (Some(a), Some(t)) => format!("{title} at {} ft, {} °C", figure(a), figure(t)),
+                _ => title.into(),
+            },
+        };
+        if let Some(a) = alt {
+            item.figures.push(fig(p("pressure_altitude_ft"), "Pressure altitude", a, "ft", a, "ft"));
+        }
+        if let Some(t) = temp {
+            item.figures.push(fig(p("temp_c"), "Temperature", t, "°C", t, "°C"));
+        }
+        if let Some(x) = roll {
+            item.figures.push(fig(p("ground_roll"), "Ground roll", x, u.distance, u.ft(x), "ft"));
+        }
+        if let Some(x) = over {
+            item.figures.push(fig(p("over_obstacle"), "Over a 50 ft obstacle", x, u.distance, u.ft(x), "ft"));
+        }
         match (alt, temp, roll, over) {
             (Some(a), Some(t), Some(g), Some(o)) => {
-                kept.push((items.len(), Distance { pressure_altitude_ft: a, temp_c: t, ground_roll_ft: u.ft(g), over_obstacle_ft: u.ft(o) }));
+                kept.push((
+                    items.len(),
+                    Distance { pressure_altitude_ft: a, temp_c: t, ground_roll_ft: u.ft(g), over_obstacle_ft: u.ft(o) },
+                ));
             }
             _ => missing(&mut item, "altitude, temperature, ground roll or distance over 50 ft"),
         }
@@ -167,7 +215,9 @@ fn pick_profile<'a>(cruise: &'a [(usize, Cruise)], items: &[Item]) -> Option<(us
     let clean = |at: &usize| !items[*at].flags.iter().any(|f| f.level == Level::Wrong);
     let near = cruise.iter().filter(|(at, c)| clean(at) && (c.altitude_ft - CRUISE_REFERENCE_FT).abs() <= REFERENCE_SLACK_FT);
     let best = near.min_by(|(_, a), (_, b)| {
-        let key = |c: &Cruise| ((c.altitude_ft - CRUISE_REFERENCE_FT).abs(), (c.power_pct.unwrap_or(PLANNING_POWER_PCT) - PLANNING_POWER_PCT).abs());
+        let key = |c: &Cruise| {
+            ((c.altitude_ft - CRUISE_REFERENCE_FT).abs(), (c.power_pct.unwrap_or(PLANNING_POWER_PCT) - PLANNING_POWER_PCT).abs())
+        };
         key(a).partial_cmp(&key(b)).unwrap_or(std::cmp::Ordering::Equal)
     });
     best.map(|(at, c)| (*at, c))
@@ -175,8 +225,14 @@ fn pick_profile<'a>(cruise: &'a [(usize, Cruise)], items: &[Item]) -> Option<(us
 
 /// The rule: the read in, `{"items", "handbook", "profile"}` out.
 pub fn check(v: &Value) -> R<String> {
-    let u = Units::read(text(v, "speed_unit")?, text(v, "distance_unit")?, text(v, "weight_unit")?, text(v, "arm_unit")?,
-        text(v, "fuel_unit")?, text(v, "burn_unit")?)?;
+    let u = Units::read(
+        text(v, "speed_unit")?,
+        text(v, "distance_unit")?,
+        text(v, "weight_unit")?,
+        text(v, "arm_unit")?,
+        text(v, "fuel_unit")?,
+        text(v, "burn_unit")?,
+    )?;
     let mut items = Vec::new();
     let cruise = cruise(v, &u, &mut items)?;
 
@@ -184,9 +240,15 @@ pub fn check(v: &Value) -> R<String> {
     let (vy, rate, cburn) = (num(c, "speed")?.map(|x| u.kt(x)), num(c, "rate_fpm")?, num(c, "burn")?.map(|x| u.gph(x)));
     if vy.is_some() || rate.is_some() || cburn.is_some() {
         let mut figures = Vec::new();
-        if let Some(x) = num(c, "speed")? { figures.push(fig("climb.speed".into(), "Climb speed (Vy)", x, u.speed, u.kt(x), "KIAS")); }
-        if let Some(x) = rate { figures.push(fig("climb.rate_fpm".into(), "Rate of climb", x, "fpm", x, "fpm")); }
-        if let Some(x) = num(c, "burn")? { figures.push(fig("climb.burn".into(), "Climb fuel burn", x, u.burn, u.gph(x), "gph")); }
+        if let Some(x) = num(c, "speed")? {
+            figures.push(fig("climb.speed".into(), "Climb speed (Vy)", x, u.speed, u.kt(x), "KIAS"));
+        }
+        if let Some(x) = rate {
+            figures.push(fig("climb.rate_fpm".into(), "Rate of climb", x, "fpm", x, "fpm"));
+        }
+        if let Some(x) = num(c, "burn")? {
+            figures.push(fig("climb.burn".into(), "Climb fuel burn", x, u.burn, u.gph(x), "gph"));
+        }
         items.push(Item { key: "climb".into(), group: "climb", title: "Climb".into(), figures, flags: checks::climb(vy, rate, cburn) });
     }
 
@@ -194,8 +256,12 @@ pub fn check(v: &Value) -> R<String> {
     let (glide_kias, ratio) = (num(g, "speed")?.map(|x| u.kt(x)), num(g, "ratio")?);
     if glide_kias.is_some() || ratio.is_some() {
         let mut figures = Vec::new();
-        if let Some(x) = num(g, "speed")? { figures.push(fig("glide.speed".into(), "Best glide speed", x, u.speed, u.kt(x), "KIAS")); }
-        if let Some(x) = ratio { figures.push(fig("glide.ratio".into(), "Glide ratio", x, "to 1", x, "to 1")); }
+        if let Some(x) = num(g, "speed")? {
+            figures.push(fig("glide.speed".into(), "Best glide speed", x, u.speed, u.kt(x), "KIAS"));
+        }
+        if let Some(x) = ratio {
+            figures.push(fig("glide.ratio".into(), "Glide ratio", x, "to 1", x, "to 1"));
+        }
         items.push(Item { key: "glide".into(), group: "glide", title: "Glide".into(), figures, flags: checks::glide(glide_kias, ratio) });
     }
 
@@ -207,10 +273,16 @@ pub fn check(v: &Value) -> R<String> {
     let mtow = num(v, "max_takeoff_weight")?.map(|x| u.lb(x));
     if ew.is_some() || ea.is_some() {
         let mut figures = Vec::new();
-        if let Some(x) = num(e, "weight")? { figures.push(fig("empty.weight".into(), "Empty weight", x, u.weight, u.lb(x), "lb")); }
-        if let Some(x) = num(e, "arm")? { figures.push(fig("empty.arm".into(), "Arm", x, u.arm, u.inch(x), "in")); }
+        if let Some(x) = num(e, "weight")? {
+            figures.push(fig("empty.weight".into(), "Empty weight", x, u.weight, u.lb(x), "lb"));
+        }
+        if let Some(x) = num(e, "arm")? {
+            figures.push(fig("empty.arm".into(), "Arm", x, u.arm, u.inch(x), "in"));
+        }
         let moment = num(e, "moment")?;
-        if let Some(m) = moment { figures.push(fig("empty.moment".into(), "Moment", m, "as read", m, "as read")); }
+        if let Some(m) = moment {
+            figures.push(fig("empty.moment".into(), "Moment", m, "as read", m, "as read"));
+        }
         // The moment is checked in the page's own units: weight × arm as
         // read, over the divisor it is printed in (often 1,000).
         let divisor = num(e, "moment_divisor")?.filter(|d| *d > 0.0).unwrap_or(1.0);
@@ -223,8 +295,13 @@ pub fn check(v: &Value) -> R<String> {
     }
     if let Some(m) = mtow {
         let x = num(v, "max_takeoff_weight")?.unwrap_or(m);
-        items.push(Item { key: "weight".into(), group: "weight", title: "Maximum takeoff weight".into(),
-            figures: vec![fig("max_takeoff_weight".into(), "Maximum takeoff weight", x, u.weight, m, "lb")], flags: checks::max_weight(m, ew) });
+        items.push(Item {
+            key: "weight".into(),
+            group: "weight",
+            title: "Maximum takeoff weight".into(),
+            figures: vec![fig("max_takeoff_weight".into(), "Maximum takeoff weight", x, u.weight, m, "lb")],
+            flags: checks::max_weight(m, ew),
+        });
     }
 
     let mut corners: Vec<Corner> = Vec::new();
@@ -239,7 +316,13 @@ pub fn check(v: &Value) -> R<String> {
                 corners.push((u.inch(a), u.lb(w)));
             }
         }
-        items.push(Item { key: "envelope".into(), group: "envelope", title: "CG envelope".into(), figures, flags: checks::envelope(&corners, mtow) });
+        items.push(Item {
+            key: "envelope".into(),
+            group: "envelope",
+            title: "CG envelope".into(),
+            figures,
+            flags: checks::envelope(&corners, mtow),
+        });
     }
 
     let picked = pick_profile(&cruise, &items);
@@ -247,29 +330,64 @@ pub fn check(v: &Value) -> R<String> {
     let (total, usable) = (num(f, "total")?.map(|x| u.gal(x)), num(f, "usable")?.map(|x| u.gal(x)));
     if total.is_some() || usable.is_some() {
         let mut figures = Vec::new();
-        if let Some(x) = num(f, "total")? { figures.push(fig("fuel.total".into(), "Total fuel", x, u.fuel, u.gal(x), "gal")); }
-        if let Some(x) = num(f, "usable")? { figures.push(fig("fuel.usable".into(), "Usable fuel", x, u.fuel, u.gal(x), "gal")); }
-        items.push(Item { key: "fuel".into(), group: "fuel", title: "Fuel".into(), figures, flags: checks::fuel(total, usable, picked.map(|(_, c)| c.burn_gph)) });
+        if let Some(x) = num(f, "total")? {
+            figures.push(fig("fuel.total".into(), "Total fuel", x, u.fuel, u.gal(x), "gal"));
+        }
+        if let Some(x) = num(f, "usable")? {
+            figures.push(fig("fuel.usable".into(), "Usable fuel", x, u.fuel, u.gal(x), "gal"));
+        }
+        items.push(Item {
+            key: "fuel".into(),
+            group: "fuel",
+            title: "Fuel".into(),
+            figures,
+            flags: checks::fuel(total, usable, picked.map(|(_, c)| c.burn_gph)),
+        });
     }
 
-    let row = |c: &Cruise| Obj::new().num("altitude_ft", c.altitude_ft).opt("power_pct", c.power_pct).opt("rpm", c.rpm)
-        .num("tas_kt", c.tas_kt).num("burn_gph", c.burn_gph).done();
-    let dist = |d: &Distance| Obj::new().num("pressure_altitude_ft", d.pressure_altitude_ft).num("temp_c", d.temp_c)
-        .num("ground_roll_ft", d.ground_roll_ft).num("over_obstacle_ft", d.over_obstacle_ft).done();
+    let row = |c: &Cruise| {
+        Obj::new()
+            .num("altitude_ft", c.altitude_ft)
+            .opt("power_pct", c.power_pct)
+            .opt("rpm", c.rpm)
+            .num("tas_kt", c.tas_kt)
+            .num("burn_gph", c.burn_gph)
+            .done()
+    };
+    let dist = |d: &Distance| {
+        Obj::new()
+            .num("pressure_altitude_ft", d.pressure_altitude_ft)
+            .num("temp_c", d.temp_c)
+            .num("ground_roll_ft", d.ground_roll_ft)
+            .num("over_obstacle_ft", d.over_obstacle_ft)
+            .done()
+    };
     let handbook = Obj::new()
         .raw("cruise", &array(cruise.iter().map(|(_, c)| row(c))))
-        .opt("climb_speed_kias", vy).opt("climb_rate_fpm", rate).opt("climb_burn_gph", cburn)
-        .opt("glide_speed_kias", glide_kias).opt("glide_ratio", ratio)
-        .raw("takeoff", &array(takeoff.iter().map(dist))).raw("landing", &array(landing.iter().map(dist)))
-        .opt("empty_weight_lb", ew).opt("empty_arm_in", ea).opt("max_takeoff_weight_lb", mtow)
-        .raw("envelope", &array(super::envelope::closed(&corners).iter().map(|(a, w)| Obj::new().num("arm_in", *a).num("weight_lb", *w).done())))
-        .opt("fuel_total_gal", total).opt("usable_fuel_gal", usable)
+        .opt("climb_speed_kias", vy)
+        .opt("climb_rate_fpm", rate)
+        .opt("climb_burn_gph", cburn)
+        .opt("glide_speed_kias", glide_kias)
+        .opt("glide_ratio", ratio)
+        .raw("takeoff", &array(takeoff.iter().map(dist)))
+        .raw("landing", &array(landing.iter().map(dist)))
+        .opt("empty_weight_lb", ew)
+        .opt("empty_arm_in", ea)
+        .opt("max_takeoff_weight_lb", mtow)
+        .raw(
+            "envelope",
+            &array(super::envelope::closed(&corners).iter().map(|(a, w)| Obj::new().num("arm_in", *a).num("weight_lb", *w).done())),
+        )
+        .opt("fuel_total_gal", total)
+        .opt("usable_fuel_gal", usable)
         .done();
     let profile = Obj::new()
-        .opt("cruise_tas_kt", picked.map(|(_, c)| c.tas_kt)).opt("fuel_burn_gph", picked.map(|(_, c)| c.burn_gph))
+        .opt("cruise_tas_kt", picked.map(|(_, c)| c.tas_kt))
+        .opt("fuel_burn_gph", picked.map(|(_, c)| c.burn_gph))
         .opt("cruise_power_pct", picked.and_then(|(_, c)| c.power_pct).filter(|p| (40.0..=100.0).contains(p)))
         .text("cruise_from", picked.map(|(at, _)| items[at].key.as_str()))
-        .opt("climb_fuel_burn_gph", cburn).opt("usable_fuel_gal", usable)
+        .opt("climb_fuel_burn_gph", cburn)
+        .opt("usable_fuel_gal", usable)
         .done();
     Ok(Obj::new().raw("items", &array(items.iter().map(item_json))).raw("handbook", &handbook).raw("profile", &profile).done())
 }

@@ -15,9 +15,14 @@ const zulu = (unix: number) => `${new Date(unix * 1000).toISOString().slice(11, 
 
 export function AreaCard({ area, line, altitudeFt }: { area: WeatherArea; line: [number, number][] | null; altitudeFt: number | null }) {
   const { title, altitudes } = areaWords(area);
-  const when = area.kind === "gairmet"
-    ? area.valid_from != null ? `Forecast for ${zulu(area.valid_from)}` : null
-    : [area.valid_from != null && `From ${zulu(area.valid_from)}`, area.valid_to != null && `to ${zulu(area.valid_to)}`].filter(Boolean).join(" ");
+  const when =
+    area.kind === "gairmet"
+      ? area.valid_from != null
+        ? `Forecast for ${zulu(area.valid_from)}`
+        : null
+      : [area.valid_from != null && `From ${zulu(area.valid_from)}`, area.valid_to != null && `to ${zulu(area.valid_to)}`]
+          .filter(Boolean)
+          .join(" ");
   const through = line ? routeThrough(area, line, altitudeFt) : null;
   return (
     <MapCard title={title} subtitle={[area.severity && faaWords(area.severity), when].filter(Boolean).join(" · ")}>
@@ -28,7 +33,10 @@ export function AreaCard({ area, line, altitudeFt }: { area: WeatherArea; line: 
         {through && (
           <p className="font-semibold" data-testid="weather-area-route">
             Your route crosses it for {Math.round(through.nm)} nm
-            {through.relation && altitudeFt != null ? `, at ${mapLevel(altitudeFt)}: ${through.relation === "in" ? "in it" : `${through.relation} it`}` : ""}.
+            {through.relation && altitudeFt != null
+              ? `, at ${mapLevel(altitudeFt)}: ${through.relation === "in" ? "in it" : `${through.relation} it`}`
+              : ""}
+            .
           </p>
         )}
         {area.raw && <p className="text-muted-foreground">{area.kind === "gairmet" ? faaWords(area.raw) : area.raw}</p>}
@@ -40,7 +48,10 @@ export function AreaCard({ area, line, altitudeFt }: { area: WeatherArea; line: 
 /** A PIREP's card, on either map. */
 export function PirepCard({ pirep }: { pirep: MapPirep }) {
   return (
-    <MapCard title={pirep.urgent ? "Urgent PIREP" : "PIREP"} subtitle={[pirep.observed_at && `${pirep.observed_at.slice(11, 16)}Z`, pirep.aircraft].filter(Boolean).join(" · ")}>
+    <MapCard
+      title={pirep.urgent ? "Urgent PIREP" : "PIREP"}
+      subtitle={[pirep.observed_at && `${pirep.observed_at.slice(11, 16)}Z`, pirep.aircraft].filter(Boolean).join(" · ")}
+    >
       <div className="space-y-1 text-left" data-testid="pirep-card">
         {pirep.altitude_ft != null && <p>At {mapLevel(pirep.altitude_ft)}</p>}
         {pirep.turbulence && <p>Turbulence: {faaWords(pirep.turbulence)}</p>}
@@ -56,9 +67,16 @@ export function PirepCard({ pirep }: { pirep: MapPirep }) {
  *  altitude and whose winds they are, the GFS's (lib/windsAloft). */
 export function WindCard({ wind, altitudeFt }: { wind: StationWind; altitudeFt: number }) {
   return (
-    <MapCard title={`${bearing(wind.dir_true_deg)} true at ${knots(wind.speed_kt)}`} subtitle={`${wind.ident} · at ${mapLevel(altitudeFt)} · ${WINDS_MODELLED}`}>
-      {wind.temp_c != null && <p className="text-left" data-testid="wind-card">{wind.temp_c > 0 ? "+" : ""}{wind.temp_c} °C</p>}
+    <MapCard
+      title={`${bearing(wind.dir_true_deg)} true at ${knots(wind.speed_kt)}`}
+      subtitle={`${wind.ident} · at ${mapLevel(altitudeFt)} · ${WINDS_MODELLED}`}
+    >
+      {wind.temp_c != null && (
+        <p className="text-left" data-testid="wind-card">
+          {wind.temp_c > 0 ? "+" : ""}
+          {wind.temp_c} °C
+        </p>
+      )}
     </MapCard>
   );
 }
-

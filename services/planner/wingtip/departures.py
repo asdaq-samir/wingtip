@@ -18,6 +18,7 @@ Kept in wingtip.live_reports (kind "departure"), one report a flight
 card can say when it was cleared, from where, to where and from which
 gate.
 """
+
 from __future__ import annotations
 
 import re

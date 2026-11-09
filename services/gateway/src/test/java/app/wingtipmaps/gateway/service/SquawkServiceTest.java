@@ -50,14 +50,27 @@ class SquawkServiceTest {
         given(aircraft.get(PILOT, 7L)).willReturn(Optional.of(plane()));
         given(squawks.save(any(Squawk.class))).willAnswer(call -> call.getArgument(0));
 
-        SquawkDto chip = service.add(PILOT, 7L, new SquawkRequest(LocalDate.of(2026, 10, 10), " Paint chip on the cowl ", false,
-                DeferredFor.ALL, null, " ")).orElseThrow();
+        SquawkDto chip = service.add(
+                        PILOT,
+                        7L,
+                        new SquawkRequest(
+                                LocalDate.of(2026, 10, 10),
+                                " Paint chip on the cowl ",
+                                false,
+                                DeferredFor.ALL,
+                                null,
+                                " "))
+                .orElseThrow();
         assertThat(chip.text()).isEqualTo("Paint chip on the cowl");
         assertThat(chip.deferredFor()).isNull();
         assertThat(chip.fixNote()).isNull();
 
-        SquawkDto light = service.add(PILOT, 7L, new SquawkRequest(LocalDate.of(2026, 10, 10), "Landing light out", true,
-                DeferredFor.VFR_DAY, null, null)).orElseThrow();
+        SquawkDto light = service.add(
+                        PILOT,
+                        7L,
+                        new SquawkRequest(
+                                LocalDate.of(2026, 10, 10), "Landing light out", true, DeferredFor.VFR_DAY, null, null))
+                .orElseThrow();
         assertThat(light.deferredFor()).isEqualTo(DeferredFor.VFR_DAY);
     }
 

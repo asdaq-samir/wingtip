@@ -3,6 +3,7 @@ special-use areas and the places of one region, for the phone to answer
 with no network. The same for every pilot for the whole cycle, which a
 pack's address names. And the map's FAA overlays as vector tiles of the
 same cycle (wingtip.vector_tiles), one PMTiles archive read in byte ranges."""
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from wingtip import cycle_pack
@@ -27,8 +28,7 @@ def cycle_packs() -> JSONResponse:
     return JSONResponse(CyclePacks(**index).model_dump(), headers={"Cache-Control": SHARED_CACHE})
 
 
-@router.get("/api/cycle-pack/{cycle}/{region}.pack",
-            responses={200: {"content": {"application/octet-stream": {}}}}, openapi_extra=SHARED)
+@router.get("/api/cycle-pack/{cycle}/{region}.pack", responses={200: {"content": {"application/octet-stream": {}}}}, openapi_extra=SHARED)
 def cycle_pack_file(cycle: str, region: str) -> FileResponse:
     """One region's pack of a cycle, by its name in /api/cycle-packs. Its
     cycle is in its address, so it is kept as an airport diagram is: the
@@ -51,15 +51,17 @@ def overlay_tiles() -> JSONResponse:
     return JSONResponse(OverlayTiles(**index).model_dump(), headers={"Cache-Control": SHARED_CACHE})
 
 
-@router.get("/api/overlay-tiles/{name}.pmtiles",
-            responses={200: {"content": {"application/octet-stream": {}}},
-                       206: {"description": "The byte range asked for (Range: bytes=a-b)",
-                             "content": {"application/octet-stream": {}}}},
-            # Read in byte ranges: the range asked goes through, and the
-            # range answered and the ETag, which the map's PMTiles reader
-            # checks every range against, come back.
-            openapi_extra=gateway("public", cache=True, range=True,
-                                  headers=("Content-Length", "Content-Range", "Accept-Ranges", "ETag")))
+@router.get(
+    "/api/overlay-tiles/{name}.pmtiles",
+    responses={
+        200: {"content": {"application/octet-stream": {}}},
+        206: {"description": "The byte range asked for (Range: bytes=a-b)", "content": {"application/octet-stream": {}}},
+    },
+    # Read in byte ranges: the range asked goes through, and the
+    # range answered and the ETag, which the map's PMTiles reader
+    # checks every range against, come back.
+    openapi_extra=gateway("public", cache=True, range=True, headers=("Content-Length", "Content-Range", "Accept-Ranges", "ETag")),
+)
 def overlay_tiles_file(name: str) -> FileResponse:
     """The archive by its name in /api/overlay-tiles, whole or -- as a map
     reads it, a tile at a time -- the byte ranges asked for (206, with

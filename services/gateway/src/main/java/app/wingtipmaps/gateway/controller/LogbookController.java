@@ -6,12 +6,12 @@ import app.wingtipmaps.gateway.dto.CurrencyDatesRequest;
 import app.wingtipmaps.gateway.dto.CurrencyDto;
 import app.wingtipmaps.gateway.dto.LogbookEntryDto;
 import app.wingtipmaps.gateway.dto.LogbookEntryRequest;
-import app.wingtipmaps.gateway.dto.RemindersDto;
 import app.wingtipmaps.gateway.dto.LogbookImportRequest;
 import app.wingtipmaps.gateway.dto.LogbookImportResult;
-import app.wingtipmaps.gateway.service.PlannerClient;
+import app.wingtipmaps.gateway.dto.RemindersDto;
 import app.wingtipmaps.gateway.service.LogbookService;
 import app.wingtipmaps.gateway.service.PilotService;
+import app.wingtipmaps.gateway.service.PlannerClient;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
@@ -50,26 +50,36 @@ public class LogbookController {
 
     @GetMapping
     public ResponseEntity<List<LogbookEntryDto>> list(Authentication authentication) {
-        return PilotResponses.withPilot(pilots, authentication, pilot ->
-                ResponseEntity.ok(logbook.list(pilot).stream().map(LogbookController::toDto).toList()));
+        return PilotResponses.withPilot(
+                pilots,
+                authentication,
+                pilot -> ResponseEntity.ok(logbook.list(pilot).stream()
+                        .map(LogbookController::toDto)
+                        .toList()));
     }
 
     @PostMapping
-    public ResponseEntity<LogbookEntryDto> add(Authentication authentication, @Valid @RequestBody LogbookEntryRequest request) {
-        return PilotResponses.withPilot(pilots, authentication, pilot -> ResponseEntity.ok(toDto(logbook.add(pilot, request))));
+    public ResponseEntity<LogbookEntryDto> add(
+            Authentication authentication, @Valid @RequestBody LogbookEntryRequest request) {
+        return PilotResponses.withPilot(
+                pilots, authentication, pilot -> ResponseEntity.ok(toDto(logbook.add(pilot, request))));
     }
 
     /** A logbook brought in from a file, its flights not already here added. */
     @PostMapping("/import")
-    public ResponseEntity<LogbookImportResult> importAll(Authentication authentication, @Valid @RequestBody LogbookImportRequest request) {
-        return PilotResponses.withPilot(pilots, authentication, pilot -> ResponseEntity.ok(logbook.importAll(pilot, request.entries())));
+    public ResponseEntity<LogbookImportResult> importAll(
+            Authentication authentication, @Valid @RequestBody LogbookImportRequest request) {
+        return PilotResponses.withPilot(
+                pilots, authentication, pilot -> ResponseEntity.ok(logbook.importAll(pilot, request.entries())));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<LogbookEntryDto> update(
             Authentication authentication, @PathVariable Long id, @Valid @RequestBody LogbookEntryRequest request) {
-        return PilotResponses.found(pilots, authentication, pilot -> logbook.update(pilot, id, request)
-                .map(LogbookController::toDto));
+        return PilotResponses.found(
+                pilots,
+                authentication,
+                pilot -> logbook.update(pilot, id, request).map(LogbookController::toDto));
     }
 
     @DeleteMapping("/{id}")
@@ -86,31 +96,63 @@ public class LogbookController {
      *  (ReminderService). */
     @GetMapping("/reminders")
     public ResponseEntity<RemindersDto> reminders(Authentication authentication) {
-        return PilotResponses.withPilot(pilots, authentication, pilot -> ResponseEntity.ok(new RemindersDto(pilot.isReminders())));
+        return PilotResponses.withPilot(
+                pilots, authentication, pilot -> ResponseEntity.ok(new RemindersDto(pilot.isReminders())));
     }
 
     @PutMapping("/reminders")
     public ResponseEntity<RemindersDto> setReminders(Authentication authentication, @RequestBody RemindersDto request) {
-        return PilotResponses.withPilot(pilots, authentication, pilot ->
-                ResponseEntity.ok(new RemindersDto(logbook.setReminders(pilot, request.on()).isReminders())));
+        return PilotResponses.withPilot(
+                pilots,
+                authentication,
+                pilot -> ResponseEntity.ok(new RemindersDto(
+                        logbook.setReminders(pilot, request.on()).isReminders())));
     }
 
     @PutMapping("/currency")
-    public ResponseEntity<CurrencyDto> setCurrencyDates(Authentication authentication, @RequestBody CurrencyDatesRequest request) {
-        return PilotResponses.withPilot(pilots, authentication, pilot -> ResponseEntity.ok(currencyOf(
-                logbook.setCurrencyDates(pilot, request.flightReviewOn(), request.medicalExpiresOn(), request.ipcOn()))));
+    public ResponseEntity<CurrencyDto> setCurrencyDates(
+            Authentication authentication, @RequestBody CurrencyDatesRequest request) {
+        return PilotResponses.withPilot(
+                pilots,
+                authentication,
+                pilot -> ResponseEntity.ok(currencyOf(logbook.setCurrencyDates(
+                        pilot, request.flightReviewOn(), request.medicalExpiresOn(), request.ipcOn()))));
     }
 
     private CurrencyDto currencyOf(Pilot pilot) {
-        return planner.currency(logbook.list(pilot), pilot.getFlightReviewOn(), pilot.getMedicalExpiresOn(),
-                pilot.getIpcOn(), LocalDate.now());
+        return planner.currency(
+                logbook.list(pilot),
+                pilot.getFlightReviewOn(),
+                pilot.getMedicalExpiresOn(),
+                pilot.getIpcOn(),
+                LocalDate.now());
     }
 
     private static LogbookEntryDto toDto(LogbookEntry e) {
-        return new LogbookEntryDto(e.getId(), e.getFlownOn(), e.getAircraft(), e.getAircraftType(), e.getRoute(),
-                e.getTotalHours(), e.getNightHours(), e.getCrossCountryHours(), e.getDayLandings(), e.getNightLandings(),
-                e.getRemarks(), e.getDualHours(), e.getSoloHours(), e.getInstrumentHours(), e.getToweredLandings(),
-                e.getDistanceNm(), e.getLongestLegNm(), e.getApproaches(), e.isHolding(), e.isTracking(),
-                e.getAirHours(), e.getTouchAndGoes(), e.isFromTrack(), e.getFlightId());
+        return new LogbookEntryDto(
+                e.getId(),
+                e.getFlownOn(),
+                e.getAircraft(),
+                e.getAircraftType(),
+                e.getRoute(),
+                e.getTotalHours(),
+                e.getNightHours(),
+                e.getCrossCountryHours(),
+                e.getDayLandings(),
+                e.getNightLandings(),
+                e.getRemarks(),
+                e.getDualHours(),
+                e.getSoloHours(),
+                e.getInstrumentHours(),
+                e.getToweredLandings(),
+                e.getDistanceNm(),
+                e.getLongestLegNm(),
+                e.getApproaches(),
+                e.isHolding(),
+                e.isTracking(),
+                e.getAirHours(),
+                e.getTouchAndGoes(),
+                e.isFromTrack(),
+                e.getFlightId());
     }
 }

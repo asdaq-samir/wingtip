@@ -3,6 +3,7 @@ before the lead, the FAA's files not up, no turn on the machine, staged
 with the old cycle kept and served, nothing more before the date, and
 after the swap the old cycle deleted -- a failure said and raised, and
 the FAA asked by one sectional's zip."""
+
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
@@ -28,8 +29,17 @@ def disk(tmp_path, monkeypatch):
 
 def _complete(cycle):
     for kind in charts.KINDS:
-        charts._write_pyramid_status(cycle, {"kind": kind, "zooms": [3], "sheets": sorted(charts.COVERAGE[kind]),
-                                             "finished_at": "t", "tiles": 1, "renderer": charts.RENDERER_VERSION})
+        charts._write_pyramid_status(
+            cycle,
+            {
+                "kind": kind,
+                "zooms": [3],
+                "sheets": sorted(charts.COVERAGE[kind]),
+                "finished_at": "t",
+                "tiles": 1,
+                "renderer": charts.RENDERER_VERSION,
+            },
+        )
 
 
 def test_the_jobs_run_through_a_cycle(disk, monkeypatch):
@@ -52,6 +62,7 @@ def test_the_jobs_run_through_a_cycle(disk, monkeypatch):
     # In the lead, the FAA's files not up: said, nothing built.
     assert next_cycle.run(now=utc("2026-12-18T12:00"), is_published=lambda c: False) == chart_next.NOT_PUBLISHED
     assert built == []
+
     # No turn on the machine: said, nothing built.
     @contextmanager
     def no_turn():

@@ -14,6 +14,7 @@ marked right, the mock oral stays the developer's.
 Each question is two billed calls' worth of a large model; --count says
 how many.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -69,9 +70,7 @@ def review(count: int, seed: int = 0) -> dict:
             items.append({"n": n, "focus": focus, "plan": plan, **oral.ask(plan, [focus], [])})
         except oral.OralUnavailable as err:
             items.append({"n": n, "focus": focus, "plan": plan, "error": str(err)})
-    return {
-        "model": oral.ORAL_MODEL, "made": time.strftime("%Y-%m-%d"), "editions": oral.editions(), "items": items,
-    }
+    return {"model": oral.ORAL_MODEL, "made": time.strftime("%Y-%m-%d"), "editions": oral.editions(), "items": items}
 
 
 def sheet(made: dict) -> str:
@@ -79,8 +78,7 @@ def sheet(made: dict) -> str:
     lines = [
         "# Mock oral review",
         "",
-        f"{len(made['items'])} questions from the mock oral ({made['model']}), {made['made']}. "
-        f"Sources: {json.dumps(made['editions'])}.",
+        f"{len(made['items'])} questions from the mock oral ({made['model']}), {made['made']}. Sources: {json.dumps(made['editions'])}.",
         "",
         "For each: is the question one an examiner would ask, is the answer right and complete at the private "
         "pilot level, and do the quotes support it? Mark it, and note what is wrong.",
@@ -91,14 +89,23 @@ def sheet(made: dict) -> str:
             lines += [f"## {q['n']}. {q['focus']['code']}", "", f"Not asked: {q['error']}", ""]
             continue
         lines += [
-            f"## {q['n']}. {q['acs_code']}", "",
-            f"**The flight.** {q['plan'].splitlines()[0]}", "",
-            f"**Question.** {q['question']}", "",
-            f"**Answer.** {q['model_answer']}", "",
-            "**Key points.** " + "; ".join(q["key_points"]), "",
+            f"## {q['n']}. {q['acs_code']}",
+            "",
+            f"**The flight.** {q['plan'].splitlines()[0]}",
+            "",
+            f"**Question.** {q['question']}",
+            "",
+            f"**Answer.** {q['model_answer']}",
+            "",
+            "**Key points.** " + "; ".join(q["key_points"]),
+            "",
             "**Quoted.**" + (" none survived the check: unsupported" if q["unsupported"] else ""),
-            *[f"- {c['source']}: \u201c{c['quote']}\u201d" for c in q["citations"]], "",
-            "**Mark.** Right / Partly / Wrong. Notes:", "", "---", "",
+            *[f"- {c['source']}: \u201c{c['quote']}\u201d" for c in q["citations"]],
+            "",
+            "**Mark.** Right / Partly / Wrong. Notes:",
+            "",
+            "---",
+            "",
         ]
     return "\n".join(lines)
 

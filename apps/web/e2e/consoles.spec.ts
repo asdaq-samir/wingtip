@@ -1,5 +1,21 @@
 import { test, expect } from "@playwright/test";
-import { closeConsole, closeSidebarWithTheStockKey, consoleSheet, expectDrawerClosed, grabberTo, library, openConsole, openAccount, openSetup, openSidebar, pickControl, settle, settled, showTabs, consolePage } from "./helpers";
+import {
+  closeConsole,
+  closeSidebarWithTheStockKey,
+  consoleSheet,
+  expectDrawerClosed,
+  grabberTo,
+  library,
+  openConsole,
+  openAccount,
+  openSetup,
+  openSidebar,
+  pickControl,
+  settle,
+  settled,
+  showTabs,
+  consolePage,
+} from "./helpers";
 
 /**
  * The consoles and the settings: fitting the screen, the pilot
@@ -13,7 +29,10 @@ test("signed in, each console fits the screen's width: nothing but a table's own
   // developer's buttons, and on a phone ran off the right edge). Wide
   // tables scroll inside their own container, which is the one thing
   // allowed past the edge.
-  for (const [path, button] of [["/app/plan", "setup-button"], ["/app/dev", "setup-button"]] as const) {
+  for (const [path, button] of [
+    ["/app/plan", "setup-button"],
+    ["/app/dev", "setup-button"],
+  ] as const) {
     await page.goto(path);
     void button;
     await openConsole(page);
@@ -23,83 +42,92 @@ test("signed in, each console fits the screen's width: nothing but a table's own
     await expect(page.getByTestId("pilot-address")).toHaveText("developer@example.com");
     await page.keyboard.press("Escape");
     await expect(page.getByRole("menu")).toHaveCount(0);
-    const past = await consoleSheet(page).evaluate(sheet => {
+    const past = await consoleSheet(page).evaluate((sheet) => {
       const edge = document.documentElement.clientWidth + 1;
       return [...sheet.querySelectorAll("*")]
-        .filter(el => !el.closest('[data-slot="table-container"]'))
-        .filter(el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.right > edge; })
-        .map(el => (el.textContent ?? "").trim().slice(0, 40));
+        .filter((el) => !el.closest('[data-slot="table-container"]'))
+        .filter((el) => {
+          const r = el.getBoundingClientRect();
+          return r.width > 0 && r.right > edge;
+        })
+        .map((el) => (el.textContent ?? "").trim().slice(0, 40));
     });
     expect(past, `${path}: past the right edge`).toEqual([]);
   }
 });
 
-test("plan page: the pilot console holds the account, airplanes and flights, and the drawer opens once it is closed", { tag: "@smoke" }, async ({ page }) => {
-  await page.goto("/app/plan");
-  await settle(page);
-  // Opened as the tabs alone, at the owner's ask (MapPanel).
-  await expect(page.locator('[data-slot="map-panel"]')).toHaveAttribute("data-panel", "peek");
-  expect(await consoleSheet(page).count()).toBe(0);
+test(
+  "plan page: the pilot console holds the account, airplanes and flights, and the drawer opens once it is closed",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    await page.goto("/app/plan");
+    await settle(page);
+    // Opened as the tabs alone, at the owner's ask (MapPanel).
+    await expect(page.locator('[data-slot="map-panel"]')).toHaveAttribute("data-panel", "peek");
+    expect(await consoleSheet(page).count()).toBe(0);
 
-  await showTabs(page);
-  await openConsole(page);
-  const pilot = consoleSheet(page);
-  await expect(pilot).toBeVisible();
-  // Settings is a tab of the bar, the tab up while the console is out:
-  // on a phone the console is the panel's layer, under the tab bar, in
-  // the search bar's place; elsewhere a sheet.
-  const phone = page.viewportSize()!.width < 768;
-  await showTabs(page);
-  await expect(page.getByTestId("setup-button")).toHaveAttribute("aria-current", "page");
-  if (phone) expect(await pilot.evaluate(el => !!el.closest('[data-slot="map-panel"]'))).toBe(true);
-  // The role, a menu, in Personal's Account row, at the owner's ask: Pilot
-  // (chosen here), Developer for a developer, and Sign out last; who is
-  // signed in beside it.
-  // Setup is a tab's page, named for the console, no dialog over the panel.
-  await expect(pilot).toHaveAccessibleName("Pilot");
-  await expect(page.getByRole("dialog", { name: "Pilot" })).toHaveCount(0);
-  await openAccount(page);
-  await expect(pilot.getByTestId("role-menu")).toHaveText("Pilot");
-  // Who is signed in, the role menu's title.
-  await pilot.getByTestId("role-menu").click();
-  await expect(page.getByTestId("pilot-address")).toHaveText("developer@example.com");
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("menu")).toHaveCount(0);
-  await pilot.getByTestId("role-menu").click();
-  await expect(page.getByRole("menuitemradio", { name: "Pilot" })).toHaveAttribute("aria-checked", "true");
-  await expect(page.getByRole("menuitemradio", { name: "Developer" })).toHaveAttribute("aria-checked", "false");
-  await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("menuitem", { name: "Sign out" })).toHaveCount(0);
-  // One page, no tabs over it: the account first, then the rest as rows
-  // (Setup, the owner's pick of the redesign).
-  await expect(pilot.getByTestId("setup-page")).toBeVisible();
-  await expect(pilot.getByRole("tab")).toHaveCount(0);
-  // The pilot's own things in one tab, Personal (it was Library), a
-  // segment each.
-  await library(pilot, "Airplanes");
-  await expect(pilot.getByRole("region", { name: "Airplanes", exact: true })).toBeVisible();
-  await library(pilot, "Flights");
-  await expect(pilot.getByRole("region", { name: "Flights", exact: true })).toBeVisible();
-  // Guide and About as links at the page's foot, no Settings page.
-  await consolePage(pilot, "Account");
-  for (const link of ["guide-link", "about-link"]) await expect(pilot.getByTestId("setup-page").getByTestId(link)).toBeVisible();
-  await expect(pilot.getByTestId("setup-page").getByRole("button", { name: /^Settings/ })).toHaveCount(0);
-  // The personal minimums are Personal's, with no sign-in needed.
-  await library(pilot, "Minimums");
-  await expect(pilot.getByTestId("minimum-ceilingFt")).toBeVisible();
+    await showTabs(page);
+    await openConsole(page);
+    const pilot = consoleSheet(page);
+    await expect(pilot).toBeVisible();
+    // Settings is a tab of the bar, the tab up while the console is out:
+    // on a phone the console is the panel's layer, under the tab bar, in
+    // the search bar's place; elsewhere a sheet.
+    const phone = page.viewportSize()!.width < 768;
+    await showTabs(page);
+    await expect(page.getByTestId("setup-button")).toHaveAttribute("aria-current", "page");
+    if (phone) expect(await pilot.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))).toBe(true);
+    // The role, a menu, in Personal's Account row, at the owner's ask: Pilot
+    // (chosen here), Developer for a developer, and Sign out last; who is
+    // signed in beside it.
+    // Setup is a tab's page, named for the console, no dialog over the panel.
+    await expect(pilot).toHaveAccessibleName("Pilot");
+    await expect(page.getByRole("dialog", { name: "Pilot" })).toHaveCount(0);
+    await openAccount(page);
+    await expect(pilot.getByTestId("role-menu")).toHaveText("Pilot");
+    // Who is signed in, the role menu's title.
+    await pilot.getByTestId("role-menu").click();
+    await expect(page.getByTestId("pilot-address")).toHaveText("developer@example.com");
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("menu")).toHaveCount(0);
+    await pilot.getByTestId("role-menu").click();
+    await expect(page.getByRole("menuitemradio", { name: "Pilot" })).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByRole("menuitemradio", { name: "Developer" })).toHaveAttribute("aria-checked", "false");
+    await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("menuitem", { name: "Sign out" })).toHaveCount(0);
+    // One page, no tabs over it: the account first, then the rest as rows
+    // (Setup, the owner's pick of the redesign).
+    await expect(pilot.getByTestId("setup-page")).toBeVisible();
+    await expect(pilot.getByRole("tab")).toHaveCount(0);
+    // The pilot's own things in one tab, Personal (it was Library), a
+    // segment each.
+    await library(pilot, "Airplanes");
+    await expect(pilot.getByRole("region", { name: "Airplanes", exact: true })).toBeVisible();
+    await library(pilot, "Flights");
+    await expect(pilot.getByRole("region", { name: "Flights", exact: true })).toBeVisible();
+    // Guide and About as links at the page's foot, no Settings page.
+    await consolePage(pilot, "Account");
+    for (const link of ["guide-link", "about-link"]) await expect(pilot.getByTestId("setup-page").getByTestId(link)).toBeVisible();
+    await expect(pilot.getByTestId("setup-page").getByRole("button", { name: /^Settings/ })).toHaveCount(0);
+    // The personal minimums are Personal's, with no sign-in needed.
+    await library(pilot, "Minimums");
+    await expect(pilot.getByTestId("minimum-ceilingFt")).toBeVisible();
 
-  // Escape puts it away -- the search under it at the height it was, on
-  // a phone -- and then Escape lowers the panel too, and its grabber opens
-  // it again.
-  await page.keyboard.press("Escape");
-  await expect(pilot).toHaveCount(0);
-  await closeSidebarWithTheStockKey(page);
-  await expectDrawerClosed(page);
-  await openSidebar(page);
-});
+    // Escape puts it away -- the search under it at the height it was, on
+    // a phone -- and then Escape lowers the panel too, and its grabber opens
+    // it again.
+    await page.keyboard.press("Escape");
+    await expect(pilot).toHaveCount(0);
+    await closeSidebarWithTheStockKey(page);
+    await expectDrawerClosed(page);
+    await openSidebar(page);
+  },
+);
 
-test("the navigation bar's edge is a setting: the panel moves to it, the map's buttons take the other, the console comes from it, and it is remembered", async ({ page }) => {
+test("the navigation bar's edge is a setting: the panel moves to it, the map's buttons take the other, the console comes from it, and it is remembered", async ({
+  page,
+}) => {
   // By default the bottom on a phone and the top from md up; the other
   // edge picked in the settings moves the panel there, the map's
   // buttons to the edge away from it, and the console in from it.
@@ -138,10 +166,15 @@ test("the navigation bar's edge is a setting: the panel moves to it, the map's b
   await showTabs(page);
   await openConsole(page);
   const pilot = consoleSheet(page);
-  await expect(pilot.getByTestId("setup-page").or(pilot.getByRole("tab", { name: "Guide" })).first()).toBeVisible();
+  await expect(
+    pilot
+      .getByTestId("setup-page")
+      .or(pilot.getByRole("tab", { name: "Guide" }))
+      .first(),
+  ).toBeVisible();
   // An animation cancelled on the way (a transition replaced by the next)
   // rejects its `finished`; it has stopped all the same.
-  await pilot.evaluate(el => Promise.all(el.getAnimations({ subtree: true }).map(a => a.finished.catch(() => undefined))));
+  await pilot.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))));
   const box = (await (phone ? page.locator('[data-slot="map-panel"]') : pilot).boundingBox())!;
   // All the way up: the sheet to the screen's edge (MapPanel's "edge").
   if (phone) expect(Math.round(box.y)).toBeLessThanOrEqual(8);
@@ -176,8 +209,13 @@ test("the console is the panel's own: up from the bottom of a phone's screen, in
   const half = (await panel.boundingBox())!;
   await openConsole(page);
   const pilot = consoleSheet(page);
-  await expect(pilot.getByTestId("setup-page").or(pilot.getByRole("tab", { name: "Guide" })).first()).toBeVisible();
-  await pilot.evaluate(el => Promise.all(el.getAnimations({ subtree: true }).map(a => a.finished)));
+  await expect(
+    pilot
+      .getByTestId("setup-page")
+      .or(pilot.getByRole("tab", { name: "Guide" }))
+      .first(),
+  ).toBeVisible();
+  await pilot.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));
   const viewport = page.viewportSize();
   if (!viewport) throw new Error("no viewport configured");
   const box = (await pilot.boundingBox())!;
@@ -211,7 +249,7 @@ test("Setup's Appearance control is system, light or dark, a menu of all three, 
   const html = page.locator("html");
   const theme = page.getByTestId("setup-page").getByTestId("theme-select");
   await expect(theme).toHaveAccessibleName("Appearance: System");
-  await expect(html).not.toHaveClass(/dark/);   // "system", and the test browser prefers light
+  await expect(html).not.toHaveClass(/dark/); // "system", and the test browser prefers light
   await pickControl(page, "theme-select", "theme-dark");
   await expect(html).toHaveClass(/dark/);
   // The one already chosen, picked again, stays chosen: a menu of one of

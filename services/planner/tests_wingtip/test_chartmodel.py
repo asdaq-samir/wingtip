@@ -5,6 +5,7 @@ The table and the readiness need nothing past wingtip's own list. retrain
 needs scikit-learn, which the root suite does not install (it is the
 training image's), so that test runs where it is there and skips where
 it is not."""
+
 import json
 
 import pandas as pd
@@ -15,8 +16,16 @@ from wingtip.chartfeatures import FEATURE_COLS
 
 
 def _detection(lat, lon, category="road_or_rail", score=3.6):
-    return {"lat": lat, "lon": lon, "category": category, "area_m2": 0.0, "pixels": 40,
-            "cross_track_nm": 0.1, "along_track_nm": 5.0, "score": score}
+    return {
+        "lat": lat,
+        "lon": lon,
+        "category": category,
+        "area_m2": 0.0,
+        "pixels": 40,
+        "cross_track_nm": 0.1,
+        "along_track_nm": 5.0,
+        "score": score,
+    }
 
 
 def _pick(lat, lon, rating):
@@ -46,8 +55,9 @@ def test_no_ratings_still_give_the_tables_columns():
 def test_readiness_says_how_many_more_and_why_some_do_not_count():
     short = chartmodel.readiness(usable=28, rated=32, off_detection=4, reading=[], needed=30)
     assert not short["ready"]
-    assert short["message"] == ("28 of the 30 ratings training needs. 4 of your 32 are on points the chart "
-                                "reader no longer finds. Rate 2 more.")
+    assert short["message"] == (
+        "28 of the 30 ratings training needs. 4 of your 32 are on points the chart reader no longer finds. Rate 2 more."
+    )
 
     assert chartmodel.readiness(usable=30, rated=30, off_detection=0, reading=[], needed=30)["ready"]
 
@@ -71,12 +81,22 @@ def test_retrain_scores_the_model_against_the_palettes_constants_on_the_same_hel
 
     # A power line read as a road is a 0, a real crossing a 4: the
     # palette gives both 3.6, and the model can tell them by their ink.
-    rows = pd.DataFrame([
-        {"route": "C81->KDLH", "lat": 42 + i / 50, "lon": -88.0, "category": "road_or_rail",
-         **{c: 0.0 for c in FEATURE_COLS}, "linework_px": 200.0 if i % 2 else 20.0, "is_road_or_rail": 1.0,
-         "palette_score": 3.6, "rating": 0 if i % 2 else 4}
-        for i in range(40)
-    ])
+    rows = pd.DataFrame(
+        [
+            {
+                "route": "C81->KDLH",
+                "lat": 42 + i / 50,
+                "lon": -88.0,
+                "category": "road_or_rail",
+                **{c: 0.0 for c in FEATURE_COLS},
+                "linework_px": 200.0 if i % 2 else 20.0,
+                "is_road_or_rail": 1.0,
+                "palette_score": 3.6,
+                "rating": 0 if i % 2 else 4,
+            }
+            for i in range(40)
+        ]
+    )
     table = tmp_path / "chart_training.parquet"
     rows.to_parquet(table)
 

@@ -34,10 +34,17 @@ import { descriptionKey } from "../../hooks/useCheckpointNotes";
 export type NavLogRow =
   | { kind: "departure"; key: string; airport: Airport; minutesFlown: number }
   | { kind: "checkpoint"; key: string; cp: Candidate; leg: Leg | undefined; part?: Leg; minutesFlown: number | null }
-  | { kind: "stop"; key: string; airport: Airport; leg: Leg | undefined; part?: Leg; minutesFlown: number | null;
+  | {
+      kind: "stop";
+      key: string;
+      airport: Airport;
+      leg: Leg | undefined;
+      part?: Leg;
+      minutesFlown: number | null;
       /** Its minutes on the ground before it is left again (groundMinAt);
        *  a waypoint's none. */
-      groundMin: number }
+      groundMin: number;
+    }
   | { kind: "destination"; key: string; airport: Airport; leg: Leg | undefined; part?: Leg; minutesFlown: number | null }
   | { kind: "toc"; key: string; point: TopOfClimb; leg: Leg; part: Leg; minutesFlown: number | null }
   | { kind: "tod"; key: string; point: TopOfDescent; leg: Leg; part: Leg; minutesFlown: number | null };
@@ -59,11 +66,12 @@ function piece(leg: Leg, from: { nm: number; min: number; gal: number }, to: { n
   return { ...leg, distance_nm: Math.max(0, to.nm - from.nm), ete_min: less(to.min, from.min), fuel_gal: less(to.gal, from.gal) };
 }
 
-export type RouteEnds = Pick<Course, "departure" | "destination"> & Partial<Pick<Course, "stops">> & {
-  /** Minutes on the ground at the stops, by ident (the address's
-   *  `ground`): a landing stop not named, the planner's (groundMinAt). */
-  ground?: Record<string, number>;
-};
+export type RouteEnds = Pick<Course, "departure" | "destination"> &
+  Partial<Pick<Course, "stops">> & {
+    /** Minutes on the ground at the stops, by ident (the address's
+     *  `ground`): a landing stop not named, the planner's (groundMinAt). */
+    ground?: Record<string, number>;
+  };
 
 /** The time on the ground at a stop the pilot gave none for, min: a
  *  turnaround, at the owner's pick (2026-10-20), the engine's
@@ -117,7 +125,7 @@ export function navLogRows(ends: RouteEnds | null, selected: Candidate[], legs: 
   };
   const stops = ends.stops ?? [];
   for (let hop = 0; hop <= stops.length; hop++) {
-    for (const cp of selected.filter(c => (c.hop ?? 0) === hop)) {
+    for (const cp of selected.filter((c) => (c.hop ?? 0) === hop)) {
       const { leg, part } = arriving();
       rows.push({ kind: "checkpoint", key: descriptionKey(cp.lat, cp.lon), cp, leg, part, minutesFlown: minutesTo(part ?? leg) });
     }
@@ -138,7 +146,7 @@ export function navLogRows(ends: RouteEnds | null, selected: Candidate[], legs: 
 
 /** What a row's figures are: the piece of its leg that arrives at it,
  *  the whole leg where nothing cuts it; the departure has none. */
-export const legOf = (row: NavLogRow): Leg | undefined => (row.kind === "departure" ? undefined : row.part ?? row.leg);
+export const legOf = (row: NavLogRow): Leg | undefined => (row.kind === "departure" ? undefined : (row.part ?? row.leg));
 
 /**
  * The miles a row's leg is flown beyond its own straight line, where it
@@ -171,8 +179,7 @@ export function flownNmOf(row: NavLogRow): number | null {
 }
 
 /** The tops of climb and descent: rows of their own, and not filed. */
-export const isLegPoint = (row: NavLogRow): row is Extract<NavLogRow, { kind: "toc" | "tod" }> =>
-  row.kind === "toc" || row.kind === "tod";
+export const isLegPoint = (row: NavLogRow): row is Extract<NavLogRow, { kind: "toc" | "tod" }> => row.kind === "toc" || row.kind === "tod";
 
 /** A row's place on the chart and the name the log shows for it. */
 export function rowPoint(row: NavLogRow): { name: string; lat: number; lon: number } {
@@ -200,9 +207,11 @@ export interface RouteLeg {
 
 export function routeLegs(rows: NavLogRow[]): RouteLeg[] {
   const ends = rows.filter((row): row is Exclude<NavLogRow, { kind: "toc" | "tod" }> => !isLegPoint(row));
-  return ends.slice(1).flatMap((row, i) => (row.kind === "departure" ? [] : [{
-    key: row.key, from: rowPoint(ends[i]!), to: rowPoint(row), toRow: row, leg: row.leg,
-  }]));
+  return ends
+    .slice(1)
+    .flatMap((row, i) =>
+      row.kind === "departure" ? [] : [{ key: row.key, from: rowPoint(ends[i]!), to: rowPoint(row), toRow: row, leg: row.leg }],
+    );
 }
 
 /**
@@ -215,27 +224,37 @@ export function routeLegs(rows: NavLogRow[]): RouteLeg[] {
  */
 export function savedCheckpoints(rows: NavLogRow[], distanceNm: number): SaveFlightRequest["checkpoints"] {
   let flownNm = 0;
-  return rows.filter((row): row is Exclude<NavLogRow, { kind: "toc" | "tod" }> => !isLegPoint(row)).map((row, sequenceNo) => {
-    const { name, lat, lon } = rowPoint(row);
-    const leg = row.kind === "departure" ? undefined : row.leg;
-    flownNm += leg?.distance_nm ?? 0;
-    return {
-      // An airport's as the planner names it -- a present position its own
-      // "@lat,lon,alt" -- what is stored, not the coordinates it is shown by.
-      sequenceNo, name: row.kind === "checkpoint" ? name : row.airport.ident, lat, lon,
-      category: row.kind === "checkpoint" ? row.cp.category
-        : row.kind === "stop" && row.airport.kind === "fix" ? "waypoint" : row.kind,
-      alongTrackNm: row.kind === "departure" ? 0 : row.kind === "checkpoint" ? row.cp.along_track_nm
-        : row.kind === "stop" ? Math.round(flownNm * 10) / 10 : distanceNm,
-      legDistanceNm: leg?.distance_nm ?? null,
-      trueCourseDeg: leg?.true_course_deg ?? null,
-      magneticHeadingDeg: leg?.magnetic_heading_deg ?? null,
-      groundspeedKt: leg?.groundspeed_kt ?? null,
-      eteMin: leg?.ete_min ?? null,
-      fuelGal: leg?.fuel_gal ?? null,
-      // Each leg's own altitude: a plan may step, so the flight's one
-      // cruise altitude is not the whole story.
-      altitudeFt: leg?.altitude_ft ?? null,
-    };
-  });
+  return rows
+    .filter((row): row is Exclude<NavLogRow, { kind: "toc" | "tod" }> => !isLegPoint(row))
+    .map((row, sequenceNo) => {
+      const { name, lat, lon } = rowPoint(row);
+      const leg = row.kind === "departure" ? undefined : row.leg;
+      flownNm += leg?.distance_nm ?? 0;
+      return {
+        // An airport's as the planner names it -- a present position its own
+        // "@lat,lon,alt" -- what is stored, not the coordinates it is shown by.
+        sequenceNo,
+        name: row.kind === "checkpoint" ? name : row.airport.ident,
+        lat,
+        lon,
+        category: row.kind === "checkpoint" ? row.cp.category : row.kind === "stop" && row.airport.kind === "fix" ? "waypoint" : row.kind,
+        alongTrackNm:
+          row.kind === "departure"
+            ? 0
+            : row.kind === "checkpoint"
+              ? row.cp.along_track_nm
+              : row.kind === "stop"
+                ? Math.round(flownNm * 10) / 10
+                : distanceNm,
+        legDistanceNm: leg?.distance_nm ?? null,
+        trueCourseDeg: leg?.true_course_deg ?? null,
+        magneticHeadingDeg: leg?.magnetic_heading_deg ?? null,
+        groundspeedKt: leg?.groundspeed_kt ?? null,
+        eteMin: leg?.ete_min ?? null,
+        fuelGal: leg?.fuel_gal ?? null,
+        // Each leg's own altitude: a plan may step, so the flight's one
+        // cruise altitude is not the whole story.
+        altitudeFt: leg?.altitude_ft ?? null,
+      };
+    });
 }

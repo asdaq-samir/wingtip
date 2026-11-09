@@ -4,7 +4,6 @@ import app.wingtipmaps.android.api.TrafficAircraft
 import app.wingtipmaps.android.api.name
 import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.flight.Mark
-import kotlin.math.roundToInt
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.addJsonArray
@@ -13,6 +12,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
+import kotlin.math.roundToInt
 
 /**
  * The traffic as the map draws it (MapStyle's traffic layers, the web's

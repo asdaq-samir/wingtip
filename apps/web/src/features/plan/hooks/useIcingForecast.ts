@@ -20,18 +20,19 @@ interface IcingWhere {
  *  has the nav log's legs, each leg read for the hour of its middle. */
 export function useIcingForecast({ ifr, briefing, legs, depart }: IcingWhere) {
   const fixes = briefing?.legs_from === "navlog" ? briefing.leg_fixes : [];
-  const ready = ifr && legs.length > 0 && fixes.length === legs.length + 1 && legs.every(l => l.ete_min != null);
+  const ready = ifr && legs.length > 0 && fixes.length === legs.length + 1 && legs.every((l) => l.ete_min != null);
   const q = {
-    fixes: fixes.map(p => `${p.lat.toFixed(5)},${p.lon.toFixed(5)}`).join(";"),
-    altFt: legs.map(l => Math.round(l.altitude_ft)).join(","),
-    legMin: legs.map(l => (l.ete_min ?? 0).toFixed(1)).join(","),
-    groundMin: legs.map(l => (l.ground_min ?? 0).toFixed(0)).join(","),
+    fixes: fixes.map((p) => `${p.lat.toFixed(5)},${p.lon.toFixed(5)}`).join(";"),
+    altFt: legs.map((l) => Math.round(l.altitude_ft)).join(","),
+    legMin: legs.map((l) => (l.ete_min ?? 0).toFixed(1)).join(","),
+    groundMin: legs.map((l) => (l.ground_min ?? 0).toFixed(0)).join(","),
     depart,
   };
   return useQuery<IcingForecast>({
     queryKey: ["icingRoute", q.fixes, q.altFt, q.legMin, q.groundMin, depart],
     queryFn: () => api.icingRoute(q),
-    enabled: ready, staleTime: 10 * 60_000,
+    enabled: ready,
+    staleTime: 10 * 60_000,
     // Said in its own rows, where it was asked for.
     meta: { silent: true },
   });

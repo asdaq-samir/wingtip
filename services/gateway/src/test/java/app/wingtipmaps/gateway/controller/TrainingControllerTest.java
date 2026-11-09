@@ -65,7 +65,12 @@ class TrainingControllerTest {
             List.of(new ExperienceItemDto("total", "61.109(a)", "Flight time", 12.5, 40, "h", false)),
             List.of("PA.I.E.K1"),
             List.of(new EndorsementDto("pre-solo-knowledge", LocalDate.of(2026, 9, 1), null)),
-            List.of(), List.of(), "Avery B. Student", List.of(), List.of(), List.of());
+            List.of(),
+            List.of(),
+            "Avery B. Student",
+            List.of(),
+            List.of(),
+            List.of());
 
     @Test
     void get_returns401_whenSignedOut() throws Exception {
@@ -87,8 +92,11 @@ class TrainingControllerTest {
     @Test
     void knowledgeTest_refusesACodeThatIsNotAnAcsCode() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(PILOT));
-        mockMvc.perform(put("/api/training/knowledge-test").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"codes\": [\"PA.I.E.K1\", \"not a code\"]}"))
+        mockMvc.perform(put("/api/training/knowledge-test")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"codes\": [\"PA.I.E.K1\", \"not a code\"]}"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -97,8 +105,11 @@ class TrainingControllerTest {
         given(pilotService.current(any())).willReturn(Optional.of(PILOT));
         given(training.setKnowledgeTestCodes(eq(PILOT), any())).willReturn(PILOT);
         given(training.training(eq(PILOT), any(), any())).willReturn(RECORD);
-        mockMvc.perform(put("/api/training/knowledge-test").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"codes\": [\"PA.I.E.K1\", \"IR.III.B.K2\"]}"))
+        mockMvc.perform(put("/api/training/knowledge-test")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"codes\": [\"PA.I.E.K1\", \"IR.III.B.K2\"]}"))
                 .andExpect(status().isOk());
         verify(training).setKnowledgeTestCodes(PILOT, List.of("PA.I.E.K1", "IR.III.B.K2"));
     }
@@ -108,28 +119,39 @@ class TrainingControllerTest {
         given(pilotService.current(any())).willReturn(Optional.of(PILOT));
         given(training.isEndorsement("solo-xc-training")).willReturn(true);
         given(training.training(eq(PILOT), any(), any())).willReturn(RECORD);
-        mockMvc.perform(put("/api/training/endorsements/solo-xc-training").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"endorsedOn\": \"2026-10-01\"}"))
+        mockMvc.perform(put("/api/training/endorsements/solo-xc-training")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"endorsedOn\": \"2026-10-01\"}"))
                 .andExpect(status().isOk());
         verify(training).endorse(PILOT, "solo-xc-training", LocalDate.of(2026, 10, 1));
         given(training.withdraw(PILOT, "nope")).willReturn(false);
-        mockMvc.perform(delete("/api/training/endorsements/nope").with(oidcLogin()).with(csrf()))
+        mockMvc.perform(delete("/api/training/endorsements/nope")
+                        .with(oidcLogin())
+                        .with(csrf()))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void endorse_refusesACodeOfItsOwnShape() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(PILOT));
-        mockMvc.perform(put("/api/training/endorsements/NOT_OURS").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"endorsedOn\": \"2026-10-01\"}"))
+        mockMvc.perform(put("/api/training/endorsements/NOT_OURS")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"endorsedOn\": \"2026-10-01\"}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void endorse_refusesACodeNoEndorsementHas() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(PILOT));
-        mockMvc.perform(put("/api/training/endorsements/solo-forever").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"endorsedOn\": \"2026-10-01\"}"))
+        mockMvc.perform(put("/api/training/endorsements/solo-forever")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"endorsedOn\": \"2026-10-01\"}"))
                 .andExpect(status().isBadRequest());
         verify(training, never()).endorse(any(), any(), any());
     }
@@ -138,12 +160,19 @@ class TrainingControllerTest {
     void askInstructor_answersARefusalWithItsStatus_andAnAddressThatIsNotOneIs400() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(PILOT));
         willThrow(new InstructorService.Refused(HttpStatus.TOO_MANY_REQUESTS, "You have asked 5 instructors today."))
-                .given(instructors).ask(eq(PILOT), eq("cfi@example.com"), any());
-        mockMvc.perform(post("/api/training/instructors").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"email\": \"cfi@example.com\"}"))
+                .given(instructors)
+                .ask(eq(PILOT), eq("cfi@example.com"), any());
+        mockMvc.perform(post("/api/training/instructors")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\": \"cfi@example.com\"}"))
                 .andExpect(status().isTooManyRequests());
-        mockMvc.perform(post("/api/training/instructors").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"email\": \"not an address\"}"))
+        mockMvc.perform(post("/api/training/instructors")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\": \"not an address\"}"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -151,10 +180,15 @@ class TrainingControllerTest {
     void lessonProgress_isOnlyForTheirOwn_andAQuizOfNoQuestionsIs400() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(PILOT));
         given(lessons.progress(eq(PILOT), eq(5L), any(), any())).willReturn(false);
-        mockMvc.perform(post("/api/training/lessons/5/progress").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"briefed\": true, \"flown\": false}"))
+        mockMvc.perform(post("/api/training/lessons/5/progress")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"briefed\": true, \"flown\": false}"))
                 .andExpect(status().isNotFound());
-        mockMvc.perform(post("/api/training/lessons/5/progress").with(oidcLogin()).with(csrf())
+        mockMvc.perform(post("/api/training/lessons/5/progress")
+                        .with(oidcLogin())
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"briefed\": false, \"flown\": false, \"quiz\": {\"answers\": [], \"of\": 0}}"))
                 .andExpect(status().isBadRequest());

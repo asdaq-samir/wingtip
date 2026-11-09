@@ -23,19 +23,44 @@ function Leg({ leg, used, canUse, onUse }: { leg: TripLeg; used: boolean; canUse
   const leave = clockTime(new Date(leg.change.depart));
   const land = leg.arrive ? clockTime(new Date(leg.arrive)) : null;
   const figures = [feet(leg.altitude_ft), nm(leg.distance_nm), leg.ete_min != null ? duration(leg.ete_min) : null, gal(leg.fuel_gal)]
-    .filter(Boolean).join(" · ");
+    .filter(Boolean)
+    .join(" · ");
   return (
     <div className="flex flex-col gap-1.5" data-testid="trip-leg" data-kind={leg.kind}>
-      <p className={cn("font-semibold", TEXT.prose)} data-testid="trip-route">{route}</p>
+      <p className={cn("font-semibold", TEXT.prose)} data-testid="trip-route">
+        {route}
+      </p>
       <p className={cn("tabular-nums", TEXT.prose)} data-testid="trip-times">
-        {leg.kind === "return" ? "Back" : "Leave"} {leave}{land ? `, land ${land}` : ""}
+        {leg.kind === "return" ? "Back" : "Leave"} {leave}
+        {land ? `, land ${land}` : ""}
         {leg.window ? ` · in the go window ${clockTime(new Date(leg.window.start))}–${clockTime(new Date(leg.window.last))}` : ""}
       </p>
-      <p className={cn("tabular-nums text-muted-foreground", TEXT.note)} data-testid="trip-figures">{figures}</p>
-      {leg.cautions.map(c => <p key={c} className={cn("text-caution-ink", TEXT.note)}>{c}</p>)}
-      <Button size="sm" variant={used ? "secondary" : "default"} disabled={used || !canUse}
-        className={cn("self-start rounded-full", AREA, used && "disabled:opacity-100")} onClick={onUse} data-testid="trip-use">
-        {used ? <><Check aria-hidden />Loaded</> : leg.kind === "return" ? "Use return leg" : "Use this plan"}
+      <p className={cn("tabular-nums text-muted-foreground", TEXT.note)} data-testid="trip-figures">
+        {figures}
+      </p>
+      {leg.cautions.map((c) => (
+        <p key={c} className={cn("text-caution-ink", TEXT.note)}>
+          {c}
+        </p>
+      ))}
+      <Button
+        size="sm"
+        variant={used ? "secondary" : "default"}
+        disabled={used || !canUse}
+        className={cn("self-start rounded-full", AREA, used && "disabled:opacity-100")}
+        onClick={onUse}
+        data-testid="trip-use"
+      >
+        {used ? (
+          <>
+            <Check aria-hidden />
+            Loaded
+          </>
+        ) : leg.kind === "return" ? (
+          "Use return leg"
+        ) : (
+          "Use this plan"
+        )}
       </Button>
     </div>
   );
@@ -65,43 +90,92 @@ export default function TripPlanner({ onClose }: { onClose: () => void }) {
       )}
       {state.status && (
         <p className={cn("flex items-center gap-2 text-muted-foreground", TEXT.note)} role="status" data-testid="trip-status">
-          <Spinner aria-hidden />{state.status}…
+          <Spinner aria-hidden />
+          {state.status}…
         </p>
       )}
       {(p || state.words) && (
-        <div className="flex flex-col gap-3 rounded-2xl rounded-bl-md bg-card px-3.5 py-3 shadow-[0_1px_4px_rgb(0_0_0/0.06)]" data-testid="trip-proposal">
-          {state.words && <p className={cn("whitespace-pre-wrap", TEXT.prose)} data-testid="trip-words">{state.words}</p>}
-          {p?.legs.map(leg => (
+        <div
+          className="flex flex-col gap-3 rounded-2xl rounded-bl-md bg-card px-3.5 py-3 shadow-[0_1px_4px_rgb(0_0_0/0.06)]"
+          data-testid="trip-proposal"
+        >
+          {state.words && (
+            <p className={cn("whitespace-pre-wrap", TEXT.prose)} data-testid="trip-words">
+              {state.words}
+            </p>
+          )}
+          {p?.legs.map((leg) => (
             <Leg key={leg.kind} leg={leg} used={state.used.includes(leg.kind)} canUse={canUse} onUse={() => use(leg)} />
           ))}
           {p && p.unmet.length > 0 && (
             <ul className="flex flex-col gap-1" data-testid="trip-unmet">
-              {p.unmet.map(u => <li key={u} className={cn("text-caution-ink", TEXT.note)}>{u}</li>)}
+              {p.unmet.map((u) => (
+                <li key={u} className={cn("text-caution-ink", TEXT.note)}>
+                  {u}
+                </li>
+              ))}
             </ul>
           )}
           {!state.busy && <SourceChips sources={state.sources} testId="trip-source" />}
         </div>
       )}
-      {state.error && <p className={cn("text-destructive-ink", TEXT.note)} role="alert" data-testid="trip-problem">{state.error}</p>}
+      {state.error && (
+        <p className={cn("text-destructive-ink", TEXT.note)} role="alert" data-testid="trip-problem">
+          {state.error}
+        </p>
+      )}
       <div className="flex items-center gap-2">
         <Input
-          value={text} onChange={e => setText(e.target.value)} placeholder="Describe the trip" aria-label="Describe the trip"
-          enterKeyHint="send" autoComplete="off" data-testid="trip-field"
-          onKeyDown={e => { if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Describe the trip"
+          aria-label="Describe the trip"
+          enterKeyHint="send"
+          autoComplete="off"
+          data-testid="trip-field"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              send();
+            }
+          }}
           className={cn("h-12 rounded-full border-0 px-4", PANEL_FIELD)}
         />
         {state.busy ? (
-          <IconButton label="Stop" variant="secondary" size="icon-lg" className="size-12 shrink-0 rounded-full" onClick={stop} data-testid="trip-stop">
+          <IconButton
+            label="Stop"
+            variant="secondary"
+            size="icon-lg"
+            className="size-12 shrink-0 rounded-full"
+            onClick={stop}
+            data-testid="trip-stop"
+          >
             <Square className="size-4" />
           </IconButton>
         ) : (
-          <IconButton label="Plan the trip" variant="default" size="icon-lg" className="size-12 shrink-0 rounded-full" onClick={send}
-            disabled={!text.trim()} data-testid="trip-send">
+          <IconButton
+            label="Plan the trip"
+            variant="default"
+            size="icon-lg"
+            className="size-12 shrink-0 rounded-full"
+            onClick={send}
+            disabled={!text.trim()}
+            data-testid="trip-send"
+          >
             <ArrowUp className="size-5" />
           </IconButton>
         )}
-        <IconButton label="Close the trip planner" variant="ghost" size="icon-lg" className="size-12 shrink-0 rounded-full"
-          onClick={() => { clear(); onClose(); }} data-testid="trip-close">
+        <IconButton
+          label="Close the trip planner"
+          variant="ghost"
+          size="icon-lg"
+          className="size-12 shrink-0 rounded-full"
+          onClick={() => {
+            clear();
+            onClose();
+          }}
+          data-testid="trip-close"
+        >
           <X className="size-5" />
         </IconButton>
       </div>

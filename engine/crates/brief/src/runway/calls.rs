@@ -31,7 +31,11 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         "wind_calm" => i.opt_num(v, "speed_kt").map(|s| wind::is_calm(s).to_string()),
         "runway_calm" => runway_wind_of(i, v).map(|w| wind::calm_on_runway(&w).to_string()),
         "runway_end_heading" => (|| {
-            let h = wind::end_heading_true_deg(i.opt_str(v, "ident")?.as_deref(), i.opt_num(v, "heading_true_deg")?, i.num(v, "variation_deg")?);
+            let h = wind::end_heading_true_deg(
+                i.opt_str(v, "ident")?.as_deref(),
+                i.opt_num(v, "heading_true_deg")?,
+                i.num(v, "variation_deg")?,
+            );
             Ok(opt_number(h))
         })(),
         "runway_with_winds" => (|| {
@@ -208,13 +212,11 @@ fn end_headings(i: In, v: &Value, key: &str) -> R<Vec<(Option<String>, Option<f6
 /// truth takes it).
 fn reported(i: In, v: &Value, key: &str) -> R<Option<Reported>> {
     match i.obj(v, key)? {
-        Some(m @ Value::Object(members)) if !members.is_empty() => {
-            Ok(Some(Reported {
-                dir_true_deg: i.opt_num(m, "wind_dir_true_deg")?,
-                speed_kt: i.opt_num(m, "wind_speed_kt")?,
-                gust_kt: i.opt_num(m, "wind_gust_kt")?,
-            }))
-        }
+        Some(m @ Value::Object(members)) if !members.is_empty() => Ok(Some(Reported {
+            dir_true_deg: i.opt_num(m, "wind_dir_true_deg")?,
+            speed_kt: i.opt_num(m, "wind_speed_kt")?,
+            gust_kt: i.opt_num(m, "wind_gust_kt")?,
+        })),
         _ => Ok(None),
     }
 }
@@ -223,9 +225,7 @@ fn reported(i: In, v: &Value, key: &str) -> R<Option<Reported>> {
 /// calm one; None for none.
 fn recent(i: In, v: &Value) -> R<Option<(f64, f64)>> {
     match i.obj(v, "recent")? {
-        Some(r @ Value::Object(members)) if !members.is_empty() => {
-            Ok(Some((i.num(r, "wind_dir_true_deg")?, i.num(r, "wind_speed_kt")?)))
-        }
+        Some(r @ Value::Object(members)) if !members.is_empty() => Ok(Some((i.num(r, "wind_dir_true_deg")?, i.num(r, "wind_speed_kt")?))),
         _ => Ok(None),
     }
 }

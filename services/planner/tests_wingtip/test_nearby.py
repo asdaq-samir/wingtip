@@ -1,5 +1,6 @@
 """wingtip.nearby: places to eat, sleep and hire a car and flight schools near a field, from
 Overture Maps' places."""
+
 import json
 
 import pytest
@@ -15,19 +16,22 @@ FLIGHT_SCHOOL = {"primary": "flight_school", "hierarchy": ["education", "place_o
 MUSIC_SCHOOL = {"primary": "music_school", "hierarchy": ["education", "place_of_learning", "specialty_school", "music_school"]}
 
 
-@pytest.mark.parametrize("taxonomy, basic, kind", [
-    (RESTAURANT, "restaurant", "food"),
-    # A pilot flying on may not within 8 hours of a drink (14 CFR 91.17).
-    (BAR, "bar", None),
-    (MOTEL, "hotel", "lodging"),
-    # The hotels' holding companies, filed as bare lodging.
-    (HOLDING, "lodging", None),
-    (RENTAL, "rental_service", "cars"),
-    # The Stops' Training: a flight school, not every specialty school.
-    (FLIGHT_SCHOOL, "specialty_school", "training"),
-    (MUSIC_SCHOOL, "specialty_school", None),
-    (None, None, None),
-])
+@pytest.mark.parametrize(
+    "taxonomy, basic, kind",
+    [
+        (RESTAURANT, "restaurant", "food"),
+        # A pilot flying on may not within 8 hours of a drink (14 CFR 91.17).
+        (BAR, "bar", None),
+        (MOTEL, "hotel", "lodging"),
+        # The hotels' holding companies, filed as bare lodging.
+        (HOLDING, "lodging", None),
+        (RENTAL, "rental_service", "cars"),
+        # The Stops' Training: a flight school, not every specialty school.
+        (FLIGHT_SCHOOL, "specialty_school", "training"),
+        (MUSIC_SCHOOL, "specialty_school", None),
+        (None, None, None),
+    ],
+)
 def test_what_a_place_is_for_a_pilot(taxonomy, basic, kind):
     assert nearby._kind_of(taxonomy, basic) == kind
 
@@ -54,6 +58,7 @@ def test_an_older_releases_answer_where_overture_cannot_be_read(tmp_path, monkey
 
     def unreadable(lat, lon, release):
         raise OSError("S3 is out of reach")
+
     monkeypatch.setattr(nearby, "_read", unreadable)
     assert nearby.around("KHYS", 38.8, -99.3, tmp_path) == {"food": [], "lodging": [], "cars": []}
     with pytest.raises(nearby.NearbyUnavailable):
@@ -62,6 +67,7 @@ def test_an_older_releases_answer_where_overture_cannot_be_read(tmp_path, monkey
 
 def test_a_field_not_yet_read_is_none_and_read_once_however_often_asked(tmp_path, monkeypatch):
     import threading
+
     monkeypatch.setattr(nearby, "latest_release", lambda: "2026-10-21.0")
     monkeypatch.setattr(nearby, "CACHE_DIR", tmp_path)
     assert nearby.kept("KHYS", tmp_path) is None
@@ -72,12 +78,14 @@ def test_a_field_not_yet_read_is_none_and_read_once_however_often_asked(tmp_path
         gate.wait(5)
         (tmp_path / "2026-10-21.0").mkdir(exist_ok=True)
         (tmp_path / "2026-10-21.0" / f"{ident}{nearby.KEPT_SUFFIX}").write_text('{"food": [], "lodging": [], "cars": []}')
+
     monkeypatch.setattr(nearby, "around", around)
     nearby.read_later("khys", 38.8, -99.3)
     nearby.read_later("KHYS", 38.8, -99.3)
     gate.set()
     nearby._POOL.submit(lambda: None).result(5)
     import time
+
     for _ in range(50):
         if nearby.kept("KHYS", tmp_path) is not None:
             break
@@ -90,6 +98,7 @@ def test_a_place_to_eat_is_on_the_field_inside_its_outline_not_across_the_road()
     # Cubano Bros across the road 13 m outside (the owner's "food at the
     # airport itself", 2026-10-25); with no outline, near its point.
     from shapely.geometry import box
+
     outline = box(-88.104, 41.985, -88.0957, 41.993)
     assert nearby._on_field(outline, 41.990866, -88.102364, 199.0)
     assert not nearby._on_field(outline, 41.989803, -88.09545, 462.0)
@@ -108,6 +117,7 @@ def test_food_at_the_field_is_a_place_on_it_or_a_walk_from_it(tmp_path, monkeypa
     import json
 
     from wingtip import nearby
+
     monkeypatch.setattr(nearby, "latest_release", lambda timeout_s=10.0: "2026-10-21.0")
     (tmp_path / "2026-10-21.0").mkdir()
 

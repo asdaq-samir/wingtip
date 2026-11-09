@@ -69,7 +69,9 @@ fn corridor<'a>(start: Point, end: Point, fields: &'a [Field], skip: &[String]) 
     let direct = geo::distance_nm(start.0, start.1, end.0, end.1);
     fields
         .iter()
-        .filter(|f| geo::distance_nm(start.0, start.1, f.lat, f.lon) + geo::distance_nm(f.lat, f.lon, end.0, end.1) - direct <= MAX_ADDED_NM)
+        .filter(|f| {
+            geo::distance_nm(start.0, start.1, f.lat, f.lon) + geo::distance_nm(f.lat, f.lon, end.0, end.1) - direct <= MAX_ADDED_NM
+        })
         .filter(|f| !skip.contains(&f.ident) && !skip.contains(&f.faa_ident))
         .filter(|f| f.runway_ft >= MIN_RUNWAY_FT)
         .collect()
@@ -229,7 +231,13 @@ pub fn along(flights: &[(String, Point, Point)], skip: &[String], fields: &[Fiel
             seen.push(f.ident.clone());
             let to_it = geo::distance_nm(start.0, start.1, f.lat, f.lon);
             let then = geo::distance_nm(f.lat, f.lon, end.0, end.1);
-            out.push(Along { field: f.clone(), flight: k, departure: departure.clone(), from_nm: r1(to_it), added_nm: r1(to_it + then - direct) });
+            out.push(Along {
+                field: f.clone(),
+                flight: k,
+                departure: departure.clone(),
+                from_nm: r1(to_it),
+                added_nm: r1(to_it + then - direct),
+            });
         }
     }
     out.sort_by(|a, b| a.added_nm.total_cmp(&b.added_nm));
@@ -294,7 +302,8 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let r = Reader { name };
     let fields = fields_in(&r, v)?;
     let skip = r.strings(v, "skip")?;
-    let point = |w: &Value, key: &str| -> Result<Point, String> { r.point(w.get(key).ok_or_else(|| format!("{name}: \"{key}\" is missing"))?) };
+    let point =
+        |w: &Value, key: &str| -> Result<Point, String> { r.point(w.get(key).ok_or_else(|| format!("{name}: \"{key}\" is missing"))?) };
     if name == "fields_along" {
         let flights = r
             .opt_list(v, "flights")?
@@ -439,7 +448,14 @@ mod tests {
         let found = along(
             &flights,
             &["A".into(), "MID".into(), "B".into()],
-            &fields(&[("LATE", 0.0, 4.0), ("EARLY", 0.0, 1.0), ("SECOND", 0.1, 7.0), ("OFF", 3.0, 2.0), ("MID", 0.0, 5.0), ("SHORT", 0.0, 3.0)]),
+            &fields(&[
+                ("LATE", 0.0, 4.0),
+                ("EARLY", 0.0, 1.0),
+                ("SECOND", 0.1, 7.0),
+                ("OFF", 3.0, 2.0),
+                ("MID", 0.0, 5.0),
+                ("SHORT", 0.0, 3.0),
+            ]),
         );
         let got: Vec<(&str, usize, &str)> = found.iter().map(|a| (a.field.ident.as_str(), a.flight, a.departure.as_str())).collect();
         assert_eq!(got, vec![("EARLY", 0, "A"), ("LATE", 0, "A"), ("SECOND", 1, "MID")]);

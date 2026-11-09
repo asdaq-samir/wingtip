@@ -79,7 +79,9 @@ class CacheHeadersTest {
 
     @DynamicPropertySource
     static void plannerUrl(DynamicPropertyRegistry registry) {
-        registry.add("planner-service.base-url", () -> "http://127.0.0.1:" + planner.getAddress().getPort());
+        registry.add(
+                "planner-service.base-url",
+                () -> "http://127.0.0.1:" + planner.getAddress().getPort());
     }
 
     private MockHttpServletResponse planner(String path) throws Exception {
@@ -110,7 +112,9 @@ class CacheHeadersTest {
     @Test
     void theSecurityHeadersAreWrittenBeforeAnAnswerIsPiped() {
         List<Filter> filters = filterChains.getFilterChains().getFirst().getFilters();
-        assertThat(filters).filteredOn(HeaderWriterFilter.class::isInstance).singleElement()
+        assertThat(filters)
+                .filteredOn(HeaderWriterFilter.class::isInstance)
+                .singleElement()
                 .extracting(filter -> ReflectionTestUtils.getField(filter, "shouldWriteHeadersEagerly"))
                 .isEqualTo(true);
     }
@@ -124,19 +128,26 @@ class CacheHeadersTest {
 
     @Test
     void anFaaChartsPagesMayBeKeptByEveryone() throws Exception {
-        for (String path : new String[] {"/api/planner/faa-chart?url=https://aeronav.faa.gov/d-tpp/2610/EC3TO.PDF&airport=KMSN",
-                "/api/planner/faa-chart/page/dtpp/2610/EC3TO.PDF/33.png"}) {
+        for (String path : new String[] {
+            "/api/planner/faa-chart?url=https://aeronav.faa.gov/d-tpp/2610/EC3TO.PDF&airport=KMSN",
+            "/api/planner/faa-chart/page/dtpp/2610/EC3TO.PDF/33.png"
+        }) {
             MockHttpServletResponse answer = planner(path);
-            assertThat(answer.getHeaders("Cache-Control")).as(path).containsExactly("public, max-age=300, s-maxage=3600");
+            assertThat(answer.getHeaders("Cache-Control"))
+                    .as(path)
+                    .containsExactly("public, max-age=300, s-maxage=3600");
         }
     }
 
     @Test
     void anAnswerWithWeatherOrARouteInItIsNeverKept() throws Exception {
-        for (String path : new String[] {"/api/planner/airports/in-view?south=46&west=-93&north=47&east=-92",
-                "/api/planner/course?dep=C81&dest=KDLH"}) {
+        for (String path : new String[] {
+            "/api/planner/airports/in-view?south=46&west=-93&north=47&east=-92", "/api/planner/course?dep=C81&dest=KDLH"
+        }) {
             MockHttpServletResponse answer = planner(path);
-            assertThat(String.join(", ", answer.getHeaders("Cache-Control"))).as(path).contains("no-store")
+            assertThat(String.join(", ", answer.getHeaders("Cache-Control")))
+                    .as(path)
+                    .contains("no-store")
                     .doesNotContain("public");
         }
     }
@@ -144,10 +155,12 @@ class CacheHeadersTest {
     @Test
     void aPilotsOwnIsNeverKeptSignedInOrNot() throws Exception {
         for (String path : new String[] {"/api/me", "/api/flights"}) {
-            MockHttpServletResponse signedOut = mockMvc.perform(get(path)).andReturn().getResponse();
+            MockHttpServletResponse signedOut =
+                    mockMvc.perform(get(path)).andReturn().getResponse();
             assertThat(signedOut.getHeader("Cache-Control")).as(path).contains("no-store");
             MockHttpServletResponse signedIn = mockMvc.perform(get(path).with(user("pilot@example.com")))
-                    .andReturn().getResponse();
+                    .andReturn()
+                    .getResponse();
             assertThat(signedIn.getHeader("Cache-Control")).as(path).contains("no-store");
         }
     }

@@ -178,7 +178,9 @@ impl Drawing {
             .collect::<R<_>>()?;
         let holds = list(name, v, "holds")?
             .iter()
-            .map(|h| Ok(Hold { fix: str_or_empty(name, h, "fix")?, kind: str_or_empty(name, h, "kind")?, missed: flag(name, h, "missed")? }))
+            .map(|h| {
+                Ok(Hold { fix: str_or_empty(name, h, "fix")?, kind: str_or_empty(name, h, "kind")?, missed: flag(name, h, "missed")? })
+            })
             .collect::<R<_>>()?;
         let fixes = list(name, v, "fixes")?
             .iter()

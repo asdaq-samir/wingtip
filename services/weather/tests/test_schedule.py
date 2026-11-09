@@ -2,6 +2,7 @@
 at its full pace while a pilot is planning and slowly otherwise; a failure
 written beside the copy it leaves in place; and the health check's word on
 how fresh each product is."""
+
 import time
 
 import pytest
@@ -18,6 +19,7 @@ def _products(calls: list, fail: set = frozenset()):
             if name in fail:
                 raise radar.RadarUnavailable(f"{name} down")
             weather_store.write(name, {}, fetched_at=time.time(), until=None)
+
         return go
 
     return (main.Product("metars", run("metars"), "reports"), main.Product("radar", run("radar"), "radar"))
@@ -62,7 +64,7 @@ def test_a_failure_is_written_beside_the_copy_it_leaves_and_the_planner_says_so(
 def test_the_health_check_says_how_fresh_each_product_is(monkeypatch):
     now = time.time()
     weather_store.write("metars", {}, fetched_at=now - 60, until=None)
-    weather_store.write("tafs", [], fetched_at=now - 60, until=now - 1)          # past its own validity
+    weather_store.write("tafs", [], fetched_at=now - 60, until=now - 1)  # past its own validity
     body = main.health(now)
     assert body["status"] == "stale" and body["in_use"] is False
     assert body["products"]["metars"]["age_s"] == 60.0 and not body["products"]["metars"]["stale"]

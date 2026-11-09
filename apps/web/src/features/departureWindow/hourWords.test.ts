@@ -9,8 +9,15 @@ const ZONE = "America/Chicago";
 const NOW = new Date("2026-11-10T10:30:00Z");
 
 const hour = (over: Partial<WindowHour> = {}): WindowHour => ({
-  depart: "2026-11-10T13:00:00Z", verdict: "go", reasons: [], ete_min: 58, fuel_gal: 11.6, night: false, night_passengers: false,
-  margin: 1.2, ...over,
+  depart: "2026-11-10T13:00:00Z",
+  verdict: "go",
+  reasons: [],
+  ete_min: 58,
+  fuel_gal: 11.6,
+  night: false,
+  night_passengers: false,
+  margin: 1.2,
+  ...over,
 });
 
 // The engine's rule as the web's build of it answers the shared cases
@@ -27,13 +34,20 @@ describe("an hour as the strip writes it", () => {
   });
 
   test("the best window, its first and last departure hours", () => {
-    const run: DepartureWindowRun = { start: "2026-11-10T13:00:00Z", last: "2026-11-10T16:00:00Z", hours: 4, margin: 1.2, ete_min: 55,
-      quickest: "2026-11-10T14:00:00Z" };
+    const run: DepartureWindowRun = {
+      start: "2026-11-10T13:00:00Z",
+      last: "2026-11-10T16:00:00Z",
+      hours: 4,
+      margin: 1.2,
+      ete_min: 55,
+      quickest: "2026-11-10T14:00:00Z",
+    };
     expect(bestLine(run, NOW, ZONE)).toBe("Best: 07:00–10:00 CST");
     expect(bestLine({ ...run, last: run.start, hours: 1 }, NOW, ZONE)).toBe("Best: 07:00 CST");
     // Tomorrow's, named by its day.
-    expect(bestLine({ ...run, start: "2026-11-11T13:00:00Z", last: "2026-11-11T14:00:00Z", hours: 2 }, NOW, ZONE))
-      .toBe("Best: Wed 07:00–08:00 CST");
+    expect(bestLine({ ...run, start: "2026-11-11T13:00:00Z", last: "2026-11-11T14:00:00Z", hours: 2 }, NOW, ZONE)).toBe(
+      "Best: Wed 07:00–08:00 CST",
+    );
     expect(dayOf("2026-11-10T23:00:00Z", NOW, ZONE)).toBeNull();
   });
 
@@ -44,9 +58,16 @@ describe("an hour as the strip writes it", () => {
 
   test("each verdict a mark of its own shape, and a label that says it in words", () => {
     expect(HOUR_FINDING).toEqual({ go: "ok", caution: "caution", "no-go": "stop", unknown: "unknown" });
-    const why = { key: "weather" as const, label: "Weather", tab: "enroute" as const, section: "Adverse Conditions", finding: "stop" as const,
-      detail: "VFR not recommended: KOSH forecast 800 ft overcast, 2 sm" };
-    expect(hourLabel(hour({ verdict: "no-go", night: true, reasons: [why] }), ZONE))
-      .toBe("07:00: No-go, at night. VFR not recommended: KOSH forecast 800 ft overcast, 2 sm");
+    const why = {
+      key: "weather" as const,
+      label: "Weather",
+      tab: "enroute" as const,
+      section: "Adverse Conditions",
+      finding: "stop" as const,
+      detail: "VFR not recommended: KOSH forecast 800 ft overcast, 2 sm",
+    };
+    expect(hourLabel(hour({ verdict: "no-go", night: true, reasons: [why] }), ZONE)).toBe(
+      "07:00: No-go, at night. VFR not recommended: KOSH forecast 800 ft overcast, 2 sm",
+    );
   });
 });

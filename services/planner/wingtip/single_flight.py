@@ -24,6 +24,7 @@ R = TypeVar("R")
 def once(maxsize: int | None = 128) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """lru_cache(maxsize), each key built by one caller at a time. A hit
     takes the key's lock only while another caller is still building it."""
+
     def decorate(build: Callable[P, R]) -> Callable[P, R]:
         cached = lru_cache(maxsize=maxsize)(build)
         locks: dict = {}
@@ -48,4 +49,5 @@ def once(maxsize: int | None = 128) -> Callable[[Callable[P, R]], Callable[P, R]
         read.cache_clear = cached.cache_clear  # type: ignore[attr-defined]
         read.cache_info = cached.cache_info  # type: ignore[attr-defined]
         return read
+
     return decorate

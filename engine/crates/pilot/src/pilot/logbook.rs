@@ -73,7 +73,6 @@ fn cell(v: Option<&Value>) -> String {
     }
 }
 
-
 /// JavaScript's truth of a value, for `holding ? 1 : 0`.
 fn truthy(v: Option<&Value>) -> bool {
     match v {
@@ -181,7 +180,13 @@ fn date_of(v: Option<&str>) -> Option<String> {
     }
     let parts: Vec<&str> = s.split('/').collect();
     if let [m, d, y] = parts[..] {
-        if (1..=2).contains(&m.len()) && digits(m.as_bytes()) && (1..=2).contains(&d.len()) && digits(d.as_bytes()) && y.len() == 4 && digits(y.as_bytes()) {
+        if (1..=2).contains(&m.len())
+            && digits(m.as_bytes())
+            && (1..=2).contains(&d.len())
+            && digits(d.as_bytes())
+            && y.len() == 4
+            && digits(y.as_bytes())
+        {
             return Some(format!("{y}-{m:0>2}-{d:0>2}"));
         }
     }
@@ -244,11 +249,19 @@ pub fn read(text_in: &str) -> (Vec<String>, Vec<Skipped>) {
         };
         let total = hours(at("totaltime"));
         if total > 24.0 {
-            skipped.push(Skipped { line, reason: format!("{} hours is more than a day: a summary entry, to log as its flights", js::number_string(total)) });
+            skipped.push(Skipped {
+                line,
+                reason: format!("{} hours is more than a day: a summary entry, to log as its flights", js::number_string(total)),
+            });
             continue;
         }
         let tail = js::trim(at("aircraftid").unwrap_or(""));
-        let route = [at("from"), at("route"), at("to")].iter().map(|s| js::trim(s.unwrap_or(""))).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
+        let route = [at("from"), at("route"), at("to")]
+            .iter()
+            .map(|s| js::trim(s.unwrap_or("")))
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join(" ");
         let night = count(at("nightlandingsfullstop"));
         // All its landings, by day or night, as day landings for 61.57(a),
         // the night full-stop ones apart; where it gives no total, its day

@@ -10,6 +10,7 @@ on so many clicks of it.
 26; MIRL runway 08/26 - CTAF." and "Weather advisory - CTAF 5 clicks or
 815-444-1729."
 """
+
 from __future__ import annotations
 
 import csv
@@ -27,29 +28,129 @@ FAA_CACHE_DIR = DATA_DIR / "raw" / "faa_nasr"
 # (MIRL, REIL, PAPI, MALSR...) and the radio's (CTAF, UNICOM, AWOS) are
 # what a pilot reads on the chart and hears on the radio, so they stay.
 WORDS = {
-    "ACTVT": "activate", "ACTVTD": "activated", "RWY": "runway", "RY": "runway", "RWYS": "runways", "RYS": "runways",
-    "LGT": "light", "LGTS": "lights", "LGTD": "lighted", "LGTG": "lighting", "INTST": "intensity", "INTS": "intensity",
-    "INCR": "increase", "DECR": "decrease", "CONSLY": "continuously", "CONT": "continuous", "BCN": "beacon",
-    "OPR": "operates", "OPER": "operates", "OPRS": "operates", "OPS": "operations", "CLSD": "closed", "ATCT": "the tower",
-    "TWR": "tower", "ROTG": "rotating", "RTG": "rotating", "SS": "sunset", "SR": "sunrise", "TWY": "taxiway",
-    "TWYS": "taxiways", "PERI": "perimeter", "HR": "hour", "HRS": "hours", "MIN": "minute", "MINS": "minutes",
-    "SECS": "seconds", "AVBL": "available", "UNAVBL": "unavailable", "MED": "medium", "AFT": "after", "NSTD": "non-standard",
-    "REQ": "request", "AMGR": "the airport manager", "ARPT": "airport", "FREQ": "frequency", "CTC": "contact",
-    "OTS": "out of service", "CTL": "control", "PCL": "pilot-controlled lighting", "WX": "weather", "RDO": "radio",
-    "DALGT": "daylight", "DURG": "during", "DRG": "during", "OTR": "other", "PPR": "prior permission required",
-    "NGT": "night", "FM": "from", "EXTN": "extension", "LCL": "local", "ADZY": "advisory", "INDEFLY": "indefinitely",
-    "WI": "within", "TEMP": "temperature", "ALT": "altitude", "BTN": "between", "ANNC": "announce", "TKOFF": "takeoff",
-    "INFO": "information", "REBCST": "rebroadcast", "THLD": "threshold", "APCH": "approach", "PRESET": "preset",
+    "ACTVT": "activate",
+    "ACTVTD": "activated",
+    "RWY": "runway",
+    "RY": "runway",
+    "RWYS": "runways",
+    "RYS": "runways",
+    "LGT": "light",
+    "LGTS": "lights",
+    "LGTD": "lighted",
+    "LGTG": "lighting",
+    "INTST": "intensity",
+    "INTS": "intensity",
+    "INCR": "increase",
+    "DECR": "decrease",
+    "CONSLY": "continuously",
+    "CONT": "continuous",
+    "BCN": "beacon",
+    "OPR": "operates",
+    "OPER": "operates",
+    "OPRS": "operates",
+    "OPS": "operations",
+    "CLSD": "closed",
+    "ATCT": "the tower",
+    "TWR": "tower",
+    "ROTG": "rotating",
+    "RTG": "rotating",
+    "SS": "sunset",
+    "SR": "sunrise",
+    "TWY": "taxiway",
+    "TWYS": "taxiways",
+    "PERI": "perimeter",
+    "HR": "hour",
+    "HRS": "hours",
+    "MIN": "minute",
+    "MINS": "minutes",
+    "SECS": "seconds",
+    "AVBL": "available",
+    "UNAVBL": "unavailable",
+    "MED": "medium",
+    "AFT": "after",
+    "NSTD": "non-standard",
+    "REQ": "request",
+    "AMGR": "the airport manager",
+    "ARPT": "airport",
+    "FREQ": "frequency",
+    "CTC": "contact",
+    "OTS": "out of service",
+    "CTL": "control",
+    "PCL": "pilot-controlled lighting",
+    "WX": "weather",
+    "RDO": "radio",
+    "DALGT": "daylight",
+    "DURG": "during",
+    "DRG": "during",
+    "OTR": "other",
+    "PPR": "prior permission required",
+    "NGT": "night",
+    "FM": "from",
+    "EXTN": "extension",
+    "LCL": "local",
+    "ADZY": "advisory",
+    "INDEFLY": "indefinitely",
+    "WI": "within",
+    "TEMP": "temperature",
+    "ALT": "altitude",
+    "BTN": "between",
+    "ANNC": "announce",
+    "TKOFF": "takeoff",
+    "INFO": "information",
+    "REBCST": "rebroadcast",
+    "THLD": "threshold",
+    "APCH": "approach",
+    "PRESET": "preset",
     # A navaid's (NAV_RMK): where its signal cannot be used.
-    "UNUSBL": "unusable", "BYD": "beyond", "BLW": "below", "ABV": "above", "RESTR": "restricted",
+    "UNUSBL": "unusable",
+    "BYD": "beyond",
+    "BLW": "below",
+    "ABV": "above",
+    "RESTR": "restricted",
 }
 KEEP = {
-    "CTAF", "UNICOM", "AWOS", "ASOS", "ATIS", "MIRL", "MIRLS", "HIRL", "LIRL", "REIL", "REILS", "PAPI", "PAPIS", "VASI",
-    "MALSR", "MALSF", "MALS", "ODALS", "ALSF", "SSALR", "RLLS", "PCL", "FSS", "ATC", "GCO", "AIM", "AGL", "MSL", "VFR", "IFR",
-    "VOR", "DME", "TACAN", "VORTAC", "NDB", "ILS", "GPS", "NOTAM",
+    "CTAF",
+    "UNICOM",
+    "AWOS",
+    "ASOS",
+    "ATIS",
+    "MIRL",
+    "MIRLS",
+    "HIRL",
+    "LIRL",
+    "REIL",
+    "REILS",
+    "PAPI",
+    "PAPIS",
+    "VASI",
+    "MALSR",
+    "MALSF",
+    "MALS",
+    "ODALS",
+    "ALSF",
+    "SSALR",
+    "RLLS",
+    "PCL",
+    "FSS",
+    "ATC",
+    "GCO",
+    "AIM",
+    "AGL",
+    "MSL",
+    "VFR",
+    "IFR",
+    "VOR",
+    "DME",
+    "TACAN",
+    "VORTAC",
+    "NDB",
+    "ILS",
+    "GPS",
+    "NOTAM",
     # The fuel and who sells it, as the pump and the sign say: 100LL's
     # letters, the FBO.
-    "LL", "FBO",
+    "LL",
+    "FBO",
 }
 
 # Which of an airport's remarks are about its lights, and which about the
@@ -72,7 +173,8 @@ def _remarks_of(path: str, _mtime: float) -> dict:
     with open(path, newline="", encoding="utf-8", errors="replace") as f:
         for row in csv.DictReader(f):
             by_airport.setdefault(row["ARPT_ID"].strip().upper(), []).append(
-                (row["REF_COL_NAME"], row["REMARK"].strip(), (row.get("ELEMENT") or "").strip().upper()))
+                (row["REF_COL_NAME"], row["REMARK"].strip(), (row.get("ELEMENT") or "").strip().upper())
+            )
     return by_airport
 
 
@@ -86,6 +188,7 @@ def plain(remark: str) -> str:
     """A remark in plain English: its contractions spelled out, the rest
     in lower case but for the names a pilot reads and hears as they are,
     each sentence started with a capital."""
+
     def word(match: re.Match) -> str:
         token = match.group(0)
         if token in WORDS:
@@ -123,9 +226,17 @@ def airport_notes(faa_id: str, cache_dir=FAA_CACHE_DIR) -> dict:
 _FUEL = re.compile(r"\b(FUEL|FUELING|100LL|JET A|SELF[- ]SERVE?|SELF[- ]SVC|FBO)\b")
 _CAR = re.compile(r"\b(COURTESY|CRS|CREW)\s+CARS?\b")
 _SERVICE_WORDS = {
-    "SVC": "service", "SVCS": "service", "OPN": "operation", "PSGR": "passenger", "PROVDD": "provided",
-    "SKED": "scheduled", "UNSKED": "unscheduled", "AMGR": "the airport manager", "ATNDD": "attended",
-    "ATNDT": "attendant", "THRU": "through",
+    "SVC": "service",
+    "SVCS": "service",
+    "OPN": "operation",
+    "PSGR": "passenger",
+    "PROVDD": "provided",
+    "SKED": "scheduled",
+    "UNSKED": "unscheduled",
+    "AMGR": "the airport manager",
+    "ATNDD": "attended",
+    "ATNDT": "attendant",
+    "THRU": "through",
 }
 
 
@@ -161,8 +272,20 @@ def service_notes(faa_id: str, cache_dir=FAA_CACHE_DIR) -> dict:
 _TURF = r"TURF(?:-(?:GRVL|DIRT))?|GRASS|SOD"
 _SURFACE = rf"(?P<surface>{_TURF}|ASPH(?:ALT)?|CONC(?:RETE)?|GRVL|GRAVEL|DIRT)\b"
 #: The compass points a remark names an end of a runway by.
-_POINTS = {"N": 0, "NORTH": 0, "NE": 45, "E": 90, "EAST": 90, "SE": 135, "S": 180, "SOUTH": 180, "SW": 225,
-           "W": 270, "WEST": 270, "NW": 315}
+_POINTS = {
+    "N": 0,
+    "NORTH": 0,
+    "NE": 45,
+    "E": 90,
+    "EAST": 90,
+    "SE": 135,
+    "S": 180,
+    "SOUTH": 180,
+    "SW": 225,
+    "W": 270,
+    "WEST": 270,
+    "NW": 315,
+}
 _POINT = "|".join(sorted(_POINTS, key=len, reverse=True))
 _LENGTH = r"(?P<length>\d[\d,]*)\s*FT(?:\s*(?:X|BY)\s*\d+\s*FT)?"
 _END = rf"(?:(?:RWY|RY)\s+(?P<end>\d{{1,2}}[LRC]?)|(?P<point>{_POINT}))"
@@ -198,7 +321,7 @@ def _turf_of(remark: str, ends: list[str]) -> list[dict]:
     rest = None
     for clause in re.split(r"[;,]", remark.upper()):
         clause = re.sub(r"^\s*(?:RWY|RY)\s+[\dLRC]+/?[\dLRC]*\s+", "", clause.strip()).strip(" .")
-        if (rest_match := _REMAINDER.match(clause)):
+        if rest_match := _REMAINDER.match(clause):
             rest = rest_match.group("surface")
             continue
         for pattern in _PARTS:

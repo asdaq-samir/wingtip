@@ -22,7 +22,9 @@ fn drawings(name: &str, v: &Value) -> R<Vec<Drawing>> {
 fn points(name: &str, v: &Value) -> R<Vec<Point>> {
     list(name, v, "points")?
         .iter()
-        .map(|p| Ok(Point { t: num(name, p, "t")?, lat: num(name, p, "lat")?, lon: num(name, p, "lon")?, alt_ft: opt_num(name, p, "alt_ft")? }))
+        .map(|p| {
+            Ok(Point { t: num(name, p, "t")?, lat: num(name, p, "lat")?, lon: num(name, p, "lon")?, alt_ft: opt_num(name, p, "alt_ft")? })
+        })
         .collect()
 }
 
@@ -47,7 +49,13 @@ fn path(name: &str, v: &Value) -> R<Vec<(f64, f64)>> {
 fn frequencies(name: &str, v: &Value) -> R<Vec<Frequency>> {
     list(name, v, "frequencies")?
         .iter()
-        .map(|f| Ok(Frequency { kind: opt_str(name, f, "type")?, description: opt_str(name, f, "description")?, mhz: opt_num(name, f, "frequency_mhz")? }))
+        .map(|f| {
+            Ok(Frequency {
+                kind: opt_str(name, f, "type")?,
+                description: opt_str(name, f, "description")?,
+                mhz: opt_num(name, f, "frequency_mhz")?,
+            })
+        })
         .collect()
 }
 
@@ -125,7 +133,8 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         "approach_guidance" => Ok(opt_string_json(Some(debrief::guidance_of(&opt_str(name, v, "id")?.unwrap_or_default()).key()))),
         "approach_attempts" => {
             let attempts = debrief::attempts_at(&drawing(name, v)?, &points(name, v)?);
-            let parts: Vec<String> = attempts.iter().map(|a| format!("{{\"faf\":{},\"from\":{},\"to\":{}}}", a.faf, a.from, a.to)).collect();
+            let parts: Vec<String> =
+                attempts.iter().map(|a| format!("{{\"faf\":{},\"from\":{},\"to\":{}}}", a.faf, a.from, a.to)).collect();
             Ok(format!("[{}]", parts.join(",")))
         }
         "approach_debrief" => {
@@ -142,7 +151,8 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         }
         "approach_find" => {
             let picked = opt_str(name, v, "picked")?;
-            let found = debrief::find_approaches(&drawings(name, v)?, &points(name, v)?, picked.as_deref(), opt_num(name, v, "minimums_ft")?);
+            let found =
+                debrief::find_approaches(&drawings(name, v)?, &points(name, v)?, picked.as_deref(), opt_num(name, v, "minimums_ft")?);
             let parts: Vec<String> = found.iter().map(|d| debrief_json(Some(d))).collect();
             Ok(format!("[{}]", parts.join(",")))
         }
@@ -160,8 +170,14 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             let findings = list(name, v, "findings")?
                 .iter()
                 .map(|f| {
-                    let tone = opt_str(name, f, "tone")?.and_then(|t| Tone::read(&t)).ok_or_else(|| format!("{name}: a finding's tone is not one"))?;
-                    Ok(Finding { tone, text: opt_str(name, f, "text")?.unwrap_or_default(), minimums: matches!(f.get("minimums"), Some(Value::Bool(true))) })
+                    let tone = opt_str(name, f, "tone")?
+                        .and_then(|t| Tone::read(&t))
+                        .ok_or_else(|| format!("{name}: a finding's tone is not one"))?;
+                    Ok(Finding {
+                        tone,
+                        text: opt_str(name, f, "text")?.unwrap_or_default(),
+                        minimums: matches!(f.get("minimums"), Some(Value::Bool(true))),
+                    })
                 })
                 .collect::<R<Vec<_>>>()?;
             let outcome = opt_str(name, v, "outcome")?
@@ -180,8 +196,12 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         }
         "approach_along_nm" => Ok(number_json(lesson::along_nm(&path(name, v)?, place(name, v.get("at"))?))),
         "approach_brief" => {
-            let items =
-                lesson::approach_brief(&drawing(name, v)?, &frequencies(name, v)?, opt_num(name, v, "vref_kt")?, opt_num(name, v, "vso_kt")?);
+            let items = lesson::approach_brief(
+                &drawing(name, v)?,
+                &frequencies(name, v)?,
+                opt_num(name, v, "vref_kt")?,
+                opt_num(name, v, "vso_kt")?,
+            );
             let mut out = String::from("[");
             for (i, item) in items.iter().enumerate() {
                 if i > 0 {

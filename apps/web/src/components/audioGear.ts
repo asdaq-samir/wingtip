@@ -91,39 +91,88 @@ const GROUND_TEST = "Before relying on it, tune the ATIS with the cabin speaker 
 // headsets" and "Designed specifically for fixed-wing aircraft" (Sporty's
 // 7718), so a headset with a 6-pin (Lemo or Redel) or XLR panel-power plug
 // needs a recording cable made for that plug.
-const CABLE = "For the radio, use a recording cable made for your headset's plug: the NFlightCam USB-C cable fits twin plugs, not a 6-pin or XLR panel-power plug.";
+const CABLE =
+  "For the radio, use a recording cable made for your headset's plug: the NFlightCam USB-C cable fits twin plugs, not a 6-pin or XLR panel-power plug.";
 
 const pickIn = (what: string) => `In the iPhone's Settings, Bluetooth, pick ${what}.`;
 
 // Garmin's GMA 350c and 350Hc: the same keys turn Recording Mode off
 // again, so the step checks PILOT first (350c p.38, 350Hc p.40).
-const RECORDING_ON = "Once it's connected, if PILOT isn't already blue, press PILOT and the small knob together: PILOT turns blue and you hear \"Bluetooth Recording Mode Enabled\". The panel remembers it for this phone; pressing them together again turns it off.";
+const RECORDING_ON =
+  "Once it's connected, if PILOT isn't already blue, press PILOT and the small knob together: PILOT turns blue and you hear \"Bluetooth Recording Mode Enabled\". The panel remembers it for this phone; pressing them together again turns it off.";
 // Garmin documents a call carrying the headset mics (350c p.36, 350Hc
 // p.38) and only Recording Mode sending the radio (350c p.38, 350Hc p.40).
-const GARMIN_NO_CALL = "Don't use a phone call for this: Garmin documents a call carrying only the headset microphones, and only Recording Mode sending the radio.";
+const GARMIN_NO_CALL =
+  "Don't use a phone call for this: Garmin documents a call carrying only the headset microphones, and only Recording Mode sending the radio.";
 // Garmin's GMA 345 and 245: one Bluetooth connection at a time, and the
 // wired music inputs still play (345 PG pp.25, 29; 245 PG pp.15, 25).
-const ONE_CONNECTION = "The panel holds one Bluetooth connection at a time: while the phone is connected, no other phone, tablet or camera can connect. Music wired to the panel still plays.";
+const ONE_CONNECTION =
+  "The panel holds one Bluetooth connection at a time: while the phone is connected, no other phone, tablet or camera can connect. Music wired to the panel still plays.";
 // "Momentarily" (345 PG p.29, 245 PG p.25): held, TEL (PAIR) pairs and
 // disconnects the device connected, and PILOT toggles 3D audio.
-const RECORDING_TEL_PILOT = "Once it's connected, briefly press TEL (PAIR) and PILOT together, without holding: you hear \"Bluetooth Recording Mode Enabled\". It's needed once for each phone.";
+const RECORDING_TEL_PILOT =
+  "Once it's connected, briefly press TEL (PAIR) and PILOT together, without holding: you hear \"Bluetooth Recording Mode Enabled\". It's needed once for each phone.";
 
-const GARMIN_350C = "https://static.garmin.com/pumac/190-01134-12_L.pdf (GMA 350/350c Pilot's Guide 190-01134-12 Rev. L, June 2017, pp.10-11, 15-24, 36-38; " + SEEN + ")";
-const GARMIN_2015 = "https://garmin.com/en-US/newsroom/?p=1681 (Garmin release, 16 July 2015: the GMA 350c series is the 350c, 35c and 350Hc; VIRB XE gets intercom and ATC over Bluetooth; " + SEEN + ")";
-const GARMIN_2017 = "https://garmin.com/en-US/newsroom/?p=1409 (Garmin release, 29 March 2017: Bluetooth on the GMA 345, a 3.5 mm jack on the GMA 342, both slide-in for the GMA 340; " + SEEN + ")";
-const GARMIN_342_345_IM = "https://static.garmin.com/pumac/190-01878-02_06.pdf (GMA 342/345 Installation Manual 190-01878-02 Rev. 6, July 2023, pp.1-1, 1-2, 1-5; " + SEEN + ")";
-const GARMIN_245_IM = "https://static.garmin.com/pumac/190-01879-11_14.pdf (GMA 245/245R Installation Manual 190-01879-11 Rev. 14, March 2026, pp.1-1, 1-4; " + SEEN + ")";
-const GARMIN_G3X_EXP = "https://static.garmin.com/pumac/190-01754-00_z.pdf (G3X Touch Pilot's Guide 190-01754-00 Rev. Z, May 2024, pp.130-132; " + SEEN + ")";
-const PSE_450B_PG = "https://www.ps-engineering.com/assets/docs/PMA450B_PG.pdf (PMA450B Pilot Guide 202-450-0600 Rev. 11, April 2025, pp.10-14 (BT1 and BT2 names p.12), 18-24; " + SEEN + ")";
-const PSE_450B_IM = "https://www.ps-engineering.com/assets/docs/PMA450B_IM.pdf (PMA450B Installation Manual 200-450-0600 Rev. 6, June 2023, §2.7.5.3, §2.12.4.1 p.2-16, §3.11.1.2 p.3-13, §3.12 pp.3-13 to 3-14, §3.15; " + SEEN + ")";
-const PSE_450A_IM = "https://www.ps-engineering.com/assets/docs/PMA450A_IM.pdf (PMA450A Installation Manual 200-450-0100 Rev. 7, February 2018, §2.7.4.3 p.2-12, §2.12.4.1 p.2-15, §3.12 p.3-14, §3.15, §3.18.2; " + SEEN + ")";
-const PSE_450A_PG = "https://www.ps-engineering.com/assets/docs/PMA450A_PG.pdf (PMA450A Pilot Guide 202-450-0103 Rev. 3, March 2018, pp.12, 14, 18, 21-23; " + SEEN + ")";
-const PSE_8000G_IM = "https://www.ps-engineering.com/assets/docs/PMA8000G_IM.pdf (PMA8000G Installation Manual 200-890-0912 Rev. 20, November 2025, §2.4.15; revision 15, August 2021: \"Discontinued -0913 version\"; " + SEEN + ")";
-const PSE_8000G_STREAMER_PG = "https://jaxnfc.com/wp-content/uploads/2020/07/PMA8000G_PG.pdf (PMA8000G Pilot Guide 202-890-0913 Rev. 5, July 2020, pp.17-18, PS Streamer for 050-890-0913; the June 2017 edition says the same; " + SEEN + ")";
-const PSE_8000G_DS = "https://www.ps-engineering.com/assets/docs/PMA8000G_DS.pdf (PMA8000G data sheet: \"With BT Streaming ... 050-890-0913\"; " + SEEN + ")";
-const LIGHTSPEED_FLIGHTLINK = "https://rev.lightspeedaviation.com/?p=8117 (Lightspeed FlightLink Support and FAQ, ©2024: newer Sierra and Zulu 2 compatible, older ones a $69 retrofit; the cable for Zulu 2, Zulu 3, Tango and Sierra, four conductors; Bluetooth \"will override the audio cable and create the 'hot mic' scenario using your headset microphone\"; on the Zulu 3, Tango and Sierra Bluetooth is for calls and music, recording on the PFX; " + SEEN + ")";
-const SPORTYS_FAQ = "https://www.sportys.com/blog/bluetooth-in-aviation-headsets-frequently-asked-questions/ (Sporty's, 18 Sep 2025: a Bluetooth aviation headset can't record cockpit audio on a phone; that needs an adapter into the intercom; " + SEEN + ")";
-const NFLIGHTCAM_SPORTYS = "https://www.sportys.com/nflightcam-audio-recording-cable-for-smartphones.html (Sporty's, NFlightCam Audio Cable for Smartphones with USB Type-C, SKU 7718, $39.99: \"Compatible with standard twin-plug headsets\", \"Designed specifically for fixed-wing aircraft\", \"Not compatible with earlier iPhones\"; " + SEEN + ")";
+const GARMIN_350C =
+  "https://static.garmin.com/pumac/190-01134-12_L.pdf (GMA 350/350c Pilot's Guide 190-01134-12 Rev. L, June 2017, pp.10-11, 15-24, 36-38; " +
+  SEEN +
+  ")";
+const GARMIN_2015 =
+  "https://garmin.com/en-US/newsroom/?p=1681 (Garmin release, 16 July 2015: the GMA 350c series is the 350c, 35c and 350Hc; VIRB XE gets intercom and ATC over Bluetooth; " +
+  SEEN +
+  ")";
+const GARMIN_2017 =
+  "https://garmin.com/en-US/newsroom/?p=1409 (Garmin release, 29 March 2017: Bluetooth on the GMA 345, a 3.5 mm jack on the GMA 342, both slide-in for the GMA 340; " +
+  SEEN +
+  ")";
+const GARMIN_342_345_IM =
+  "https://static.garmin.com/pumac/190-01878-02_06.pdf (GMA 342/345 Installation Manual 190-01878-02 Rev. 6, July 2023, pp.1-1, 1-2, 1-5; " +
+  SEEN +
+  ")";
+const GARMIN_245_IM =
+  "https://static.garmin.com/pumac/190-01879-11_14.pdf (GMA 245/245R Installation Manual 190-01879-11 Rev. 14, March 2026, pp.1-1, 1-4; " +
+  SEEN +
+  ")";
+const GARMIN_G3X_EXP =
+  "https://static.garmin.com/pumac/190-01754-00_z.pdf (G3X Touch Pilot's Guide 190-01754-00 Rev. Z, May 2024, pp.130-132; " + SEEN + ")";
+const PSE_450B_PG =
+  "https://www.ps-engineering.com/assets/docs/PMA450B_PG.pdf (PMA450B Pilot Guide 202-450-0600 Rev. 11, April 2025, pp.10-14 (BT1 and BT2 names p.12), 18-24; " +
+  SEEN +
+  ")";
+const PSE_450B_IM =
+  "https://www.ps-engineering.com/assets/docs/PMA450B_IM.pdf (PMA450B Installation Manual 200-450-0600 Rev. 6, June 2023, §2.7.5.3, §2.12.4.1 p.2-16, §3.11.1.2 p.3-13, §3.12 pp.3-13 to 3-14, §3.15; " +
+  SEEN +
+  ")";
+const PSE_450A_IM =
+  "https://www.ps-engineering.com/assets/docs/PMA450A_IM.pdf (PMA450A Installation Manual 200-450-0100 Rev. 7, February 2018, §2.7.4.3 p.2-12, §2.12.4.1 p.2-15, §3.12 p.3-14, §3.15, §3.18.2; " +
+  SEEN +
+  ")";
+const PSE_450A_PG =
+  "https://www.ps-engineering.com/assets/docs/PMA450A_PG.pdf (PMA450A Pilot Guide 202-450-0103 Rev. 3, March 2018, pp.12, 14, 18, 21-23; " +
+  SEEN +
+  ")";
+const PSE_8000G_IM =
+  'https://www.ps-engineering.com/assets/docs/PMA8000G_IM.pdf (PMA8000G Installation Manual 200-890-0912 Rev. 20, November 2025, §2.4.15; revision 15, August 2021: "Discontinued -0913 version"; ' +
+  SEEN +
+  ")";
+const PSE_8000G_STREAMER_PG =
+  "https://jaxnfc.com/wp-content/uploads/2020/07/PMA8000G_PG.pdf (PMA8000G Pilot Guide 202-890-0913 Rev. 5, July 2020, pp.17-18, PS Streamer for 050-890-0913; the June 2017 edition says the same; " +
+  SEEN +
+  ")";
+const PSE_8000G_DS =
+  'https://www.ps-engineering.com/assets/docs/PMA8000G_DS.pdf (PMA8000G data sheet: "With BT Streaming ... 050-890-0913"; ' + SEEN + ")";
+const LIGHTSPEED_FLIGHTLINK =
+  "https://rev.lightspeedaviation.com/?p=8117 (Lightspeed FlightLink Support and FAQ, ©2024: newer Sierra and Zulu 2 compatible, older ones a $69 retrofit; the cable for Zulu 2, Zulu 3, Tango and Sierra, four conductors; Bluetooth \"will override the audio cable and create the 'hot mic' scenario using your headset microphone\"; on the Zulu 3, Tango and Sierra Bluetooth is for calls and music, recording on the PFX; " +
+  SEEN +
+  ")";
+const SPORTYS_FAQ =
+  "https://www.sportys.com/blog/bluetooth-in-aviation-headsets-frequently-asked-questions/ (Sporty's, 18 Sep 2025: a Bluetooth aviation headset can't record cockpit audio on a phone; that needs an adapter into the intercom; " +
+  SEEN +
+  ")";
+const NFLIGHTCAM_SPORTYS =
+  'https://www.sportys.com/nflightcam-audio-recording-cable-for-smartphones.html (Sporty\'s, NFlightCam Audio Cable for Smartphones with USB Type-C, SKU 7718, $39.99: "Compatible with standard twin-plug headsets", "Designed specifically for fixed-wing aircraft", "Not compatible with earlier iPhones"; ' +
+  SEEN +
+  ")";
 
 /** The catalogue, in the order labels are matched: where two entries could
  *  take one label, the narrower comes first ("Delta Zulu" before "Zulu 3"). */
@@ -195,7 +244,9 @@ export const GEAR: readonly Gear[] = [
     says: "GMA 350Hc: the radio comes in once PILOT is blue (Bluetooth Recording Mode). Check the words follow the ATIS.",
     confidence: "documented",
     sources: [
-      "https://static.garmin.com/pumac/190-01134-14_L.pdf (GMA 350H/350Hc Pilot's Guide 190-01134-14 Rev. L, October 2017, pp.38-40; " + SEEN + ")",
+      "https://static.garmin.com/pumac/190-01134-14_L.pdf (GMA 350H/350Hc Pilot's Guide 190-01134-14 Rev. L, October 2017, pp.38-40; " +
+        SEEN +
+        ")",
       GARMIN_2015,
     ],
   },
@@ -239,7 +290,7 @@ export const GEAR: readonly Gear[] = [
       ON_THE_GROUND,
       AIRPLANE_MODE,
       OTHERS_OFF,
-      "Hold TEL (PAIR) for one second: the Bluetooth light flashes, you hear \"Pairing Enabled\", and the panel can be found for two minutes.",
+      'Hold TEL (PAIR) for one second: the Bluetooth light flashes, you hear "Pairing Enabled", and the panel can be found for two minutes.',
       "If another phone or tablet is connected to the panel, holding TEL (PAIR) for one second disconnects it.",
       pickIn("the audio panel"),
       RECORDING_TEL_PILOT,
@@ -251,7 +302,9 @@ export const GEAR: readonly Gear[] = [
     says: "GMA 345: may send the radio in its recording mode, untested with a phone. Check the words follow the ATIS.",
     confidence: "test",
     sources: [
-      "https://static.garmin.com/pumac/190-01878-01_d.pdf (GMA 345 Pilot's Guide 190-01878-01 Rev. D, June 2023, pp.19, 22, 24-30; " + SEEN + ")",
+      "https://static.garmin.com/pumac/190-01878-01_d.pdf (GMA 345 Pilot's Guide 190-01878-01 Rev. D, June 2023, pp.19, 22, 24-30; " +
+        SEEN +
+        ")",
       GARMIN_342_345_IM,
       GARMIN_2017,
     ],
@@ -291,8 +344,12 @@ export const GEAR: readonly Gear[] = [
     says: "GMA 1360: may send the radio if PILOT ICS is blue with no key flashing, untested with a phone. Check the words follow the ATIS.",
     confidence: "test",
     sources: [
-      "https://static.garmin.com/pumac/190-02177-03_a.pdf (G1000 NXi Pilot's Guide for the Cessna NAV III 190-02177-03 Rev. A, ©2017-2019, 2021, printed pp.119-120, 142, 144-145, 485-486; " + SEEN + ")",
-      "https://static.garmin.com/pumac/190-02823-00_a.pdf (G1000 NXi Pilot's Guide for the Cessna NAV III 190-02823-00 Rev. A, software 4013.00, printed p.1: \"GMA 1347 (1)\"; " + SEEN + ")",
+      "https://static.garmin.com/pumac/190-02177-03_a.pdf (G1000 NXi Pilot's Guide for the Cessna NAV III 190-02177-03 Rev. A, ©2017-2019, 2021, printed pp.119-120, 142, 144-145, 485-486; " +
+        SEEN +
+        ")",
+      'https://static.garmin.com/pumac/190-02823-00_a.pdf (G1000 NXi Pilot\'s Guide for the Cessna NAV III 190-02823-00 Rev. A, software 4013.00, printed p.1: "GMA 1347 (1)"; ' +
+        SEEN +
+        ")",
     ],
   },
   {
@@ -314,10 +371,18 @@ export const GEAR: readonly Gear[] = [
     says: "GMA 1347: no Bluetooth. For the radio, use a cable on your headset.",
     confidence: "documented",
     sources: [
-      "https://static.garmin.com/pumac/190-00498-08_0A_Web.pdf (G1000 Pilot's Guide for the Cessna NAV III 190-00498-08 Rev. A, May 2013, printed p.3; no Bluetooth in its 662 pages; " + SEEN + ")",
-      "https://static.garmin.com/pumac/190-02177-01_a.pdf (G1000 NXi Pilot's Guide for the Cessna NAV III 190-02177-01 Rev. A, May 2018, printed pp.2, 137; " + SEEN + ")",
-      "https://static.garmin.com/pumac/190-02177-00_b.pdf (G1000 NXi Pilot's Guide for the Cessna NAV III 190-02177-00 Rev. B, May 2017, printed p.2; " + SEEN + ")",
-      "https://static.garmin.com/pumac/190-02823-00_a.pdf (G1000 NXi Pilot's Guide for the Cessna NAV III 190-02823-00 Rev. A, software 4013.00, printed p.1; " + SEEN + ")",
+      "https://static.garmin.com/pumac/190-00498-08_0A_Web.pdf (G1000 Pilot's Guide for the Cessna NAV III 190-00498-08 Rev. A, May 2013, printed p.3; no Bluetooth in its 662 pages; " +
+        SEEN +
+        ")",
+      "https://static.garmin.com/pumac/190-02177-01_a.pdf (G1000 NXi Pilot's Guide for the Cessna NAV III 190-02177-01 Rev. A, May 2018, printed pp.2, 137; " +
+        SEEN +
+        ")",
+      "https://static.garmin.com/pumac/190-02177-00_b.pdf (G1000 NXi Pilot's Guide for the Cessna NAV III 190-02177-00 Rev. B, May 2017, printed p.2; " +
+        SEEN +
+        ")",
+      "https://static.garmin.com/pumac/190-02823-00_a.pdf (G1000 NXi Pilot's Guide for the Cessna NAV III 190-02823-00 Rev. A, software 4013.00, printed p.1; " +
+        SEEN +
+        ")",
     ],
   },
   {
@@ -346,7 +411,9 @@ export const GEAR: readonly Gear[] = [
     says: "GMA 245R: Garmin sends its audio only to a VIRB camera, untested with a phone. Check the words follow the ATIS.",
     confidence: "test",
     sources: [
-      "https://static.garmin.com/pumac/190-02472-00_g.pdf (G3X Touch Pilot's Guide for Certified Aircraft 190-02472-00 Rev. G, 2024, pp.110-112; " + SEEN + ")",
+      "https://static.garmin.com/pumac/190-02472-00_g.pdf (G3X Touch Pilot's Guide for Certified Aircraft 190-02472-00 Rev. G, 2024, pp.110-112; " +
+        SEEN +
+        ")",
       GARMIN_G3X_EXP,
       GARMIN_245_IM,
     ],
@@ -371,7 +438,7 @@ export const GEAR: readonly Gear[] = [
       ON_THE_GROUND,
       AIRPLANE_MODE,
       OTHERS_OFF,
-      "Hold TEL (PAIR) for one second: the Bluetooth light flashes, you hear \"Pairing Enabled\", and the panel can be found for two minutes. With a G3X Touch, Pair Device on the Audio Panel's Phone & Media tab does the same.",
+      'Hold TEL (PAIR) for one second: the Bluetooth light flashes, you hear "Pairing Enabled", and the panel can be found for two minutes. With a G3X Touch, Pair Device on the Audio Panel\'s Phone & Media tab does the same.',
       pickIn("the audio panel"),
       RECORDING_TEL_PILOT,
       ONE_CONNECTION,
@@ -381,7 +448,9 @@ export const GEAR: readonly Gear[] = [
     says: "GMA 245: may send the radio in its recording mode, untested with a phone. Check the words follow the ATIS.",
     confidence: "test",
     sources: [
-      "https://static.garmin.com/pumac/190-01879-10_h.pdf (GMA 245 Pilot's Guide 190-01879-10 Rev. H, 2024, pp.9, 15, 21, 23-26; " + SEEN + ")",
+      "https://static.garmin.com/pumac/190-01879-10_h.pdf (GMA 245 Pilot's Guide 190-01879-10 Rev. H, 2024, pp.9, 15, 21, 23-26; " +
+        SEEN +
+        ")",
       GARMIN_245_IM,
       GARMIN_G3X_EXP,
     ],
@@ -419,9 +488,15 @@ export const GEAR: readonly Gear[] = [
     says: "GMA 35c: Garmin documents the cockpit audio only to a VIRB camera, untested with a phone. Check the words follow the ATIS.",
     confidence: "test",
     sources: [
-      "https://static.garmin.com/pumac/190-01007-03_r.pdf (GTN 725/750 Pilot's Guide 190-01007-03 Rev. R, 2019, p.2-25 Bluetooth Setup; p.16-45 §16.12 and Fig. 16-54: pairing mode, \"GMA Bluetooth\", one device at a time; " + SEEN + ")",
-      "https://static.garmin.com/pumac/190-02327-03_h.pdf (GTN Xi Pilot's Guide 190-02327-03 Rev. H, 07.01.26, software v21.11, p.2-71; " + SEEN + ")",
-      "https://www.manualslib.com/manual/1376052/Garmin-Gma-35.html?page=9 (GMA 35/35c Installation Manual 190-00858-11 Rev. H, p.1-1: VIRB XE link, smartphones and tablets for audio and calls; p.1-3 on page 11 of this copy; " + SEEN + ")",
+      'https://static.garmin.com/pumac/190-01007-03_r.pdf (GTN 725/750 Pilot\'s Guide 190-01007-03 Rev. R, 2019, p.2-25 Bluetooth Setup; p.16-45 §16.12 and Fig. 16-54: pairing mode, "GMA Bluetooth", one device at a time; ' +
+        SEEN +
+        ")",
+      "https://static.garmin.com/pumac/190-02327-03_h.pdf (GTN Xi Pilot's Guide 190-02327-03 Rev. H, 07.01.26, software v21.11, p.2-71; " +
+        SEEN +
+        ")",
+      "https://www.manualslib.com/manual/1376052/Garmin-Gma-35.html?page=9 (GMA 35/35c Installation Manual 190-00858-11 Rev. H, p.1-1: VIRB XE link, smartphones and tablets for audio and calls; p.1-3 on page 11 of this copy; " +
+        SEEN +
+        ")",
       GARMIN_2015,
     ],
   },
@@ -440,11 +515,16 @@ export const GEAR: readonly Gear[] = [
     shows: null,
     names: [],
     gives: "none",
-    steps: ["The GMA 342 has no Bluetooth. Its 3.5 mm jack is for music or a phone call: with TEL on it sends the phone the intercom, and Garmin doesn't say it sends the radio.", CABLE],
+    steps: [
+      "The GMA 342 has no Bluetooth. Its 3.5 mm jack is for music or a phone call: with TEL on it sends the phone the intercom, and Garmin doesn't say it sends the radio.",
+      CABLE,
+    ],
     says: "GMA 342: no Bluetooth. For the radio, use a cable on your headset.",
     confidence: "documented",
     sources: [
-      "https://static.garmin.com/pumac/190-01878-00_C.pdf (GMA 342 Pilot's Guide 190-01878-00 Rev. C, February 2018, pp.7, 21-22; " + SEEN + ")",
+      "https://static.garmin.com/pumac/190-01878-00_C.pdf (GMA 342 Pilot's Guide 190-01878-00 Rev. C, February 2018, pp.7, 21-22; " +
+        SEEN +
+        ")",
       GARMIN_342_345_IM,
       GARMIN_2017,
     ],
@@ -463,7 +543,9 @@ export const GEAR: readonly Gear[] = [
     says: "GMA 340: no Bluetooth. For the radio, use a cable on your headset.",
     confidence: "documented",
     sources: [
-      "https://www.aircraftspruce.com/catalog/pdf/gma340pilots.pdf (GMA 340 Pilot's Guide 190-00149-10 Rev. C, no Bluetooth in its 12 pages; " + SEEN + ")",
+      "https://www.aircraftspruce.com/catalog/pdf/gma340pilots.pdf (GMA 340 Pilot's Guide 190-00149-10 Rev. C, no Bluetooth in its 12 pages; " +
+        SEEN +
+        ")",
       GARMIN_2017,
     ],
   },
@@ -481,12 +563,19 @@ export const GEAR: readonly Gear[] = [
     shows: null,
     names: [],
     gives: "none",
-    steps: ["The GMA 240 has no Bluetooth. Its 2.5 mm jack on the face is for music or a phone call: with TEL on it sends the phone the intercom, and Garmin doesn't say it sends the radio.", CABLE],
+    steps: [
+      "The GMA 240 has no Bluetooth. Its 2.5 mm jack on the face is for music or a phone call: with TEL on it sends the phone the intercom, and Garmin doesn't say it sends the radio.",
+      CABLE,
+    ],
     says: "GMA 240: no Bluetooth. For the radio, use a cable on your headset.",
     confidence: "documented",
     sources: [
-      "https://www.aircraftspruce.com/catalog/pdf/gma240pilots.pdf (GMA 240 Pilot's Guide 190-00917-00 Rev. A, June 2008, pp.4-5, 9-10; no Bluetooth in its 12 pages; " + SEEN + ")",
-      "https://static.garmin.com/pumac/190-00917-01_E.pdf (GMA 240 Installation Manual 190-00917-01 Rev. E, September 2015, pp.1-2, 1-3, 1-4, 4-4 Table 4-3; " + SEEN + ")",
+      "https://www.aircraftspruce.com/catalog/pdf/gma240pilots.pdf (GMA 240 Pilot's Guide 190-00917-00 Rev. A, June 2008, pp.4-5, 9-10; no Bluetooth in its 12 pages; " +
+        SEEN +
+        ")",
+      "https://static.garmin.com/pumac/190-00917-01_E.pdf (GMA 240 Installation Manual 190-00917-01 Rev. E, September 2015, pp.1-2, 1-3, 1-4, 4-4 Table 4-3; " +
+        SEEN +
+        ")",
     ],
   },
 
@@ -598,8 +687,12 @@ export const GEAR: readonly Gear[] = [
     says: "PMA450C: hears the intercom, not the radio. For the radio, use a cable on your headset.",
     confidence: "likely",
     sources: [
-      "https://www.ps-engineering.com/assets/docs/PMA450C_PG.pdf (PMA450C Pilot Guide 202-450-0800 Rev. 3, August 2024, pp.11-15 (BT1 and BT2 names p.12); " + SEEN + ")",
-      "https://www.ps-engineering.com/assets/docs/PMA450C_IM.pdf (PMA450C Installation Manual 200-450-0800 Rev. 4, August 2024, §2.6.4.3 p.2-10, §2.11.4.1 p.2-14, §3.10.1.2 p.3-12; " + SEEN + ")",
+      "https://www.ps-engineering.com/assets/docs/PMA450C_PG.pdf (PMA450C Pilot Guide 202-450-0800 Rev. 3, August 2024, pp.11-15 (BT1 and BT2 names p.12); " +
+        SEEN +
+        ")",
+      "https://www.ps-engineering.com/assets/docs/PMA450C_IM.pdf (PMA450C Installation Manual 200-450-0800 Rev. 4, August 2024, §2.6.4.3 p.2-10, §2.11.4.1 p.2-14, §3.10.1.2 p.3-12; " +
+        SEEN +
+        ")",
     ],
   },
   {
@@ -617,7 +710,11 @@ export const GEAR: readonly Gear[] = [
     steps: ["Its Bluetooth is for phone and music: a phone hears the intercom, not the radio.", CABLE, NO_CALL],
     says: "PMA450: hears the intercom, not the radio. For the radio, use a cable on your headset.",
     confidence: "likely",
-    sources: ["https://www.ps-engineering.com/assets/docs/PMA450_PG.pdf (PMA450 Pilot Guide 202-450-0000 Rev. 9, December 2015, pp.10-11; " + SEEN + ")"],
+    sources: [
+      "https://www.ps-engineering.com/assets/docs/PMA450_PG.pdf (PMA450 Pilot Guide 202-450-0000 Rev. 9, December 2015, pp.10-11; " +
+        SEEN +
+        ")",
+    ],
   },
   {
     // PMA8000G 050-890-0913, sold until August 2021 (IM revision 15), has a
@@ -644,7 +741,7 @@ export const GEAR: readonly Gear[] = [
       "Only PMA8000G 050-890-0913 units have the PS Streamer.",
       "Hold AUX and SPR together: the Bluetooth light flashes fast, then slowly, and stays on once paired, in about 30 seconds. If the iPhone doesn't find it, start pairing from the iPhone.",
       "Phone and music drop while the Streamer pairs; reconnect them afterwards.",
-      "Hold MUSIC and SPR until you hear \"COM Audio\": that sends the radio alone. \"Headset Audio\" sends everything the crew hears.",
+      'Hold MUSIC and SPR until you hear "COM Audio": that sends the radio alone. "Headset Audio" sends everything the crew hears.',
       "The Streamer is off each time the panel is turned on: hold AUX and SPR to turn it on every flight.",
       GROUND_TEST,
     ],
@@ -675,7 +772,9 @@ export const GEAR: readonly Gear[] = [
     says: "PMA8000G: hears the intercom, not the radio. For the radio, use a PS Streamer (050-890-0913) or a cable on your headset.",
     confidence: "likely",
     sources: [
-      "https://www.ps-engineering.com/assets/docs/PMA8000G_PG.pdf (PMA8000G Pilot Guide 202-890-0912 Rev. 9, January 2023, pp.9, 11; " + SEEN + ")",
+      "https://www.ps-engineering.com/assets/docs/PMA8000G_PG.pdf (PMA8000G Pilot Guide 202-890-0912 Rev. 9, January 2023, pp.9, 11; " +
+        SEEN +
+        ")",
       PSE_8000G_IM,
       PSE_8000G_STREAMER_PG,
       PSE_8000G_DS,
@@ -694,7 +793,11 @@ export const GEAR: readonly Gear[] = [
     steps: ["Its Bluetooth is for phone and music: PS Engineering says the phone does not hear ATC.", CABLE, NO_CALL],
     says: "PMA8000BT: hears the intercom, not the radio. For the radio, use a cable on your headset.",
     confidence: "documented",
-    sources: ["https://www.ps-engineering.com/assets/docs/PMA8000BT_PG.pdf (PMA8000BT Pilot Guide 202-890-0702 Rev. 11, May 2019, pp.6-7; " + SEEN + ")"],
+    sources: [
+      "https://www.ps-engineering.com/assets/docs/PMA8000BT_PG.pdf (PMA8000BT Pilot Guide 202-890-0702 Rev. 11, May 2019, pp.6-7; " +
+        SEEN +
+        ")",
+    ],
   },
   {
     // No Bluetooth; its front utility jack takes a phone in TEL mode, where
@@ -709,7 +812,11 @@ export const GEAR: readonly Gear[] = [
     steps: ["The PMA8000B has no Bluetooth, and a phone on its utility jack hears the intercom, not ATC.", CABLE],
     says: "PMA8000B: no Bluetooth. For the radio, use a cable on your headset.",
     confidence: "documented",
-    sources: ["https://www.ps-engineering.com/assets/docs/PMA8000B_IM.pdf (PMA8000B Installation Manual 200-890-0101 Rev. 7, April 2018, pp.1-1, 3-2; no Bluetooth in its 40 pages; " + SEEN + ")"],
+    sources: [
+      "https://www.ps-engineering.com/assets/docs/PMA8000B_IM.pdf (PMA8000B Installation Manual 200-890-0101 Rev. 7, April 2018, pp.1-1, 3-2; no Bluetooth in its 40 pages; " +
+        SEEN +
+        ")",
+    ],
   },
   {
     // "The telephone party will not hear ATC communications, and vice
@@ -727,8 +834,12 @@ export const GEAR: readonly Gear[] = [
     says: "PAR200B: hears the intercom, not the radio. For the radio, use a cable on your headset.",
     confidence: "documented",
     sources: [
-      "https://www.ps-engineering.com/assets/docs/PAR200B_PG.pdf (PAR200B Pilot Guide 202-228-0300 Rev. 2, August 2024, pp.9-10, 12; " + SEEN + ")",
-      "https://www.ps-engineering.com/assets/docs/PAR200B_IM.pdf (PAR200B Installation Manual 200-228-0300 Rev. 5, August 2024, §2.5 p.2-7, §3.9 p.3-10; " + SEEN + ")",
+      "https://www.ps-engineering.com/assets/docs/PAR200B_PG.pdf (PAR200B Pilot Guide 202-228-0300 Rev. 2, August 2024, pp.9-10, 12; " +
+        SEEN +
+        ")",
+      "https://www.ps-engineering.com/assets/docs/PAR200B_IM.pdf (PAR200B Installation Manual 200-228-0300 Rev. 5, August 2024, §2.5 p.2-7, §3.9 p.3-10; " +
+        SEEN +
+        ")",
     ],
   },
   {
@@ -745,7 +856,11 @@ export const GEAR: readonly Gear[] = [
     steps: ["Its Bluetooth is for phone and music: PS Engineering says the phone does not hear ATC.", CABLE, NO_CALL],
     says: "PAR200A: hears the intercom, not the radio. For the radio, use a cable on your headset.",
     confidence: "documented",
-    sources: ["https://www.ps-engineering.com/assets/docs/PAR200A_PG.pdf (PAR200A Pilot Guide 202-228-0200 Rev. 1, February 2020, pp.8-9; " + SEEN + ")"],
+    sources: [
+      "https://www.ps-engineering.com/assets/docs/PAR200A_PG.pdf (PAR200A Pilot Guide 202-228-0200 Rev. 1, February 2020, pp.8-9; " +
+        SEEN +
+        ")",
+    ],
   },
 
   // ---- Avidyne ----
@@ -770,7 +885,11 @@ export const GEAR: readonly Gear[] = [
     ],
     says: "AMX240: hears the intercom, not the radio. For the radio, use a cable on your headset.",
     confidence: "documented",
-    sources: ["https://www.avidyne.com/wp-content/uploads/2025/05/AMX240_200-890-0240.pdf (AMX240 Installation Manual 200-890-0240 Rev. 03, September 2026, §1.3 p.2, §2.4.8 pp.9-10, §2.12.4 p.17, §3.5 p.20, §3.10 pp.23-24, §3.11-3.12 p.24; " + SEEN + ")"],
+    sources: [
+      "https://www.avidyne.com/wp-content/uploads/2025/05/AMX240_200-890-0240.pdf (AMX240 Installation Manual 200-890-0240 Rev. 03, September 2026, §1.3 p.2, §2.4.8 pp.9-10, §2.12.4 p.17, §3.5 p.20, §3.10 pp.23-24, §3.11-3.12 p.24; " +
+        SEEN +
+        ")",
+    ],
   },
 
   // ---- Lightspeed headsets ----
@@ -806,9 +925,15 @@ export const GEAR: readonly Gear[] = [
     says: "Delta Zulu: may send the radio or only your voice; Lightspeed documents the radio only to its own app. Check the words follow the ATIS.",
     confidence: "test",
     sources: [
-      "https://web.archive.org/web/20251214082155/https://www.lightspeedaviation.com/wp-content/uploads/2024/10/LSDeltaZulu_UG_1024.pdf (Lightspeed Delta Zulu User Guide 704-00028-000.A8 10/24, pp.10-12, 18-19, 23, 25, 33-34; " + SEEN + ")",
-      "https://www.flightstore.com.au/assets/files/Delta-Zulu-User-Guide-0922.pdf (Delta Zulu User Guide 704-00028-000 REV0922, pp.18-19, 23 (older: MFB pressed 3 times); " + SEEN + ")",
-      "https://apps.apple.com/us/app/lightspeed-app/id1469234593 (Lightspeed App version notes 2.1, 24 Oct 2023, and 2.2.0, 18 Jul 2024; " + SEEN + ")",
+      "https://web.archive.org/web/20251214082155/https://www.lightspeedaviation.com/wp-content/uploads/2024/10/LSDeltaZulu_UG_1024.pdf (Lightspeed Delta Zulu User Guide 704-00028-000.A8 10/24, pp.10-12, 18-19, 23, 25, 33-34; " +
+        SEEN +
+        ")",
+      "https://www.flightstore.com.au/assets/files/Delta-Zulu-User-Guide-0922.pdf (Delta Zulu User Guide 704-00028-000 REV0922, pp.18-19, 23 (older: MFB pressed 3 times); " +
+        SEEN +
+        ")",
+      "https://apps.apple.com/us/app/lightspeed-app/id1469234593 (Lightspeed App version notes 2.1, 24 Oct 2023, and 2.2.0, 18 Jul 2024; " +
+        SEEN +
+        ")",
     ],
   },
   {
@@ -832,7 +957,7 @@ export const GEAR: readonly Gear[] = [
       OTHERS_OFF,
       "Set DIP switch 6 (Record Comms) on, in the battery box.",
       "Turn the headset on with its power button: the green light flashes.",
-      "Hold the Bluetooth button about two seconds, until it flashes red and blue and says \"Pairing Mode Enabled\". Five seconds or more turns Bluetooth off.",
+      'Hold the Bluetooth button about two seconds, until it flashes red and blue and says "Pairing Mode Enabled". Five seconds or more turns Bluetooth off.',
       pickIn("Zulu 4_ and its number"),
       "Play no music or app sounds on this iPhone while it listens: Lightspeed says an app that plays audio interrupts Record Comms, and to run it on a second device.",
       GROUND_TEST,
@@ -841,8 +966,12 @@ export const GEAR: readonly Gear[] = [
     says: "Zulu 4: may send the intercom and radio with DIP switch 6 on; Lightspeed's own app records it, untested here. Check the words follow the ATIS.",
     confidence: "test",
     sources: [
-      "https://www.sportys.com/media/pdf/zulu4userguide.pdf (Zulu 4 User Guide 704-00037-000.A1, 7/25, pp.2, 6, 10-13, 16, 20; " + SEEN + ")",
-      "https://www.lightspeedaviation.com/wp-content/uploads/2025/07/Zulu-4-User-Guide-070825.pdf (Lightspeed's own copy of 704-00037-000.A1 7/25, the Download User Guide link on its Zulu 4 support page; same text, read through the Wayback Machine's 2026-02-27 capture; " + SEEN + ")",
+      "https://www.sportys.com/media/pdf/zulu4userguide.pdf (Zulu 4 User Guide 704-00037-000.A1, 7/25, pp.2, 6, 10-13, 16, 20; " +
+        SEEN +
+        ")",
+      "https://www.lightspeedaviation.com/wp-content/uploads/2025/07/Zulu-4-User-Guide-070825.pdf (Lightspeed's own copy of 704-00037-000.A1 7/25, the Download User Guide link on its Zulu 4 support page; same text, read through the Wayback Machine's 2026-02-27 capture; " +
+        SEEN +
+        ")",
     ],
   },
   {
@@ -876,8 +1005,12 @@ export const GEAR: readonly Gear[] = [
     confidence: "test",
     sources: [
       "https://www.sportys.com/media/pdf/Zulu_PFX_User_Guide.pdf (Zulu PFX User Guide 704-00007-000.A1, 6/14, pp.13, 16-17; " + SEEN + ")",
-      "https://www.lightspeedaviation.com/wp-content/uploads/2018/09/PFX_User_Guide_revA5.pdf (PFX User Guide 704-00007-000.A5, 2/17, pp.13-17; read through the Wayback Machine's capture 20251215211416; " + SEEN + ")",
-      "https://rev.lightspeedaviation.com/?p=8112 (PFX Support, ©2024: \"Select PFX ####\", reconnects to the most recently paired device; " + SEEN + ")",
+      "https://www.lightspeedaviation.com/wp-content/uploads/2018/09/PFX_User_Guide_revA5.pdf (PFX User Guide 704-00007-000.A5, 2/17, pp.13-17; read through the Wayback Machine's capture 20251215211416; " +
+        SEEN +
+        ")",
+      'https://rev.lightspeedaviation.com/?p=8112 (PFX Support, ©2024: "Select PFX ####", reconnects to the most recently paired device; ' +
+        SEEN +
+        ")",
       LIGHTSPEED_FLIGHTLINK,
     ],
   },
@@ -924,13 +1057,25 @@ export const GEAR: readonly Gear[] = [
     confidence: "likely",
     sources: [
       LIGHTSPEED_FLIGHTLINK,
-      "https://rev.lightspeedaviation.com/?p=8108 (Zulu 3 Support, ©2024: \"Select Lightspeed-V### (numbers may vary)\"; " + SEEN + ")",
-      "https://rev.lightspeedaviation.com/wp-content/uploads/2021/09/Zulu3_UG_Sept2021_V2.pdf (Zulu 3 User Guide, ©2021, pp.7, 11-14; " + SEEN + ")",
-      "https://rev.lightspeedaviation.com/wp-content/uploads/2018/09/Zulu2_UG_RevA4_May2016.pdf (Zulu.2 User Guide 704-00005-000 Rev. A4 0516, pp.11-14; " + SEEN + ")",
-      "https://rev.lightspeedaviation.com/wp-content/uploads/2021/11/H-Mod-User-Guide-704-00027-000.A1.pdf (Zulu H-Mod User Guide 704-00027-000 REV1021, pp.11-14, 19; " + SEEN + ")",
-      "https://rev.lightspeedaviation.com/wp-content/uploads/2021/09/Sierra_UG_Sept2021_V2.pdf (Sierra User Guide 704-00001-000 REV0921, pp.8-9, 11-12, 14; " + SEEN + ")",
-      "https://www.siebert.aero/media/articles/pdf/SierraUserGuide_A1.pdf (Sierra User Guide 704-00001-000 Rev. A1, ©2010, pp.7, 9, 11: older aux jack, audio only; " + SEEN + ")",
-      "https://flightstore.com.au/assets/files/TANGO_UG_Sept2021_V2.pdf (Tango User Guide 704-00009-000 REV0921, pp.6, 16-18; " + SEEN + ")",
+      'https://rev.lightspeedaviation.com/?p=8108 (Zulu 3 Support, ©2024: "Select Lightspeed-V### (numbers may vary)"; ' + SEEN + ")",
+      "https://rev.lightspeedaviation.com/wp-content/uploads/2021/09/Zulu3_UG_Sept2021_V2.pdf (Zulu 3 User Guide, ©2021, pp.7, 11-14; " +
+        SEEN +
+        ")",
+      "https://rev.lightspeedaviation.com/wp-content/uploads/2018/09/Zulu2_UG_RevA4_May2016.pdf (Zulu.2 User Guide 704-00005-000 Rev. A4 0516, pp.11-14; " +
+        SEEN +
+        ")",
+      "https://rev.lightspeedaviation.com/wp-content/uploads/2021/11/H-Mod-User-Guide-704-00027-000.A1.pdf (Zulu H-Mod User Guide 704-00027-000 REV1021, pp.11-14, 19; " +
+        SEEN +
+        ")",
+      "https://rev.lightspeedaviation.com/wp-content/uploads/2021/09/Sierra_UG_Sept2021_V2.pdf (Sierra User Guide 704-00001-000 REV0921, pp.8-9, 11-12, 14; " +
+        SEEN +
+        ")",
+      "https://www.siebert.aero/media/articles/pdf/SierraUserGuide_A1.pdf (Sierra User Guide 704-00001-000 Rev. A1, ©2010, pp.7, 9, 11: older aux jack, audio only; " +
+        SEEN +
+        ")",
+      "https://flightstore.com.au/assets/files/TANGO_UG_Sept2021_V2.pdf (Tango User Guide 704-00009-000 REV0921, pp.6, 16-18; " +
+        SEEN +
+        ")",
     ],
   },
 
@@ -949,11 +1094,17 @@ export const GEAR: readonly Gear[] = [
     shows: "Bose A20",
     names: [/\bBose\s*A20\b/i],
     gives: "voice",
-    steps: ["Over Bluetooth it sends the phone your boom mic, not the radio.", "Bose says not to make phone calls with it in flight.", CABLE],
+    steps: [
+      "Over Bluetooth it sends the phone your boom mic, not the radio.",
+      "Bose says not to make phone calls with it in flight.",
+      CABLE,
+    ],
     says: "Bose A20: hears your voice, not the radio. For the radio, use the audio panel's recording mode or a cable.",
     confidence: "likely",
     sources: [
-      "https://archive.org/download/manualsonline-id-0246f315-867e-43d5-87cd-e868088c00c8/0246f315-867e-43d5-87cd-e868088c00c8.pdf (Bose A20 Owner's Guide AM325453 Rev.07, 2012, pp.i, 7, 18-19, 22; " + SEEN + ")",
+      "https://archive.org/download/manualsonline-id-0246f315-867e-43d5-87cd-e868088c00c8/0246f315-867e-43d5-87cd-e868088c00c8.pdf (Bose A20 Owner's Guide AM325453 Rev.07, 2012, pp.i, 7, 18-19, 22; " +
+        SEEN +
+        ")",
       SPORTYS_FAQ,
       NFLIGHTCAM_SPORTYS,
     ],
@@ -975,7 +1126,9 @@ export const GEAR: readonly Gear[] = [
     says: "Bose A30: hears your voice, not the radio. For the radio, use the audio panel's recording mode or a cable.",
     confidence: "likely",
     sources: [
-      "https://www.siebert.aero/media/articles/pdf/Bose_A30_Manual_english.pdf (Bose A30 Aviation Headset owner's guide, ©2023, pp.3, 34, 39, 43-45; " + SEEN + ")",
+      "https://www.siebert.aero/media/articles/pdf/Bose_A30_Manual_english.pdf (Bose A30 Aviation Headset owner's guide, ©2023, pp.3, 34, 39, 43-45; " +
+        SEEN +
+        ")",
       SPORTYS_FAQ,
       NFLIGHTCAM_SPORTYS,
     ],
@@ -1001,10 +1154,16 @@ export const GEAR: readonly Gear[] = [
     says: "Bose ProFlight: hears your voice, not the radio. For the radio, use the audio panel's recording mode or a cable.",
     confidence: "likely",
     sources: [
-      "https://assets.bosecreative.com/m/482a584e750830d9/original/838428_OG_PFS2-HEADSETAVIA_enUS.pdf (Bose ProFlight Series 2 Owner's Guide AM838428-0040 Rev. 00, ©2024, pp.3, 11, 13, 30-31, 34-36, 39-40; " + SEEN + ")",
-      "https://assets.bosecreative.com/m/4a6919ca5adc2cc3/original/OG_PF_AviationHeadset_enUS.pdf (Bose ProFlight Owner's Guide AM802347 Rev. 02, ©2018, pp.33, 35; " + SEEN + ")",
+      "https://assets.bosecreative.com/m/482a584e750830d9/original/838428_OG_PFS2-HEADSETAVIA_enUS.pdf (Bose ProFlight Series 2 Owner's Guide AM838428-0040 Rev. 00, ©2024, pp.3, 11, 13, 30-31, 34-36, 39-40; " +
+        SEEN +
+        ")",
+      "https://assets.bosecreative.com/m/4a6919ca5adc2cc3/original/OG_PF_AviationHeadset_enUS.pdf (Bose ProFlight Owner's Guide AM802347 Rev. 02, ©2018, pp.33, 35; " +
+        SEEN +
+        ")",
       SPORTYS_FAQ,
-      "https://www.bose.com/p/headphones-aviation-headsets/proflight-series-2-aviation-headset/PFS2-HEADSETAVIA.html (Bose ProFlight Series 2 page: Bluetooth audio mixes with the intercom; the Bose Connect app renames it; nothing on recording; " + SEEN + ")",
+      "https://www.bose.com/p/headphones-aviation-headsets/proflight-series-2-aviation-headset/PFS2-HEADSETAVIA.html (Bose ProFlight Series 2 page: Bluetooth audio mixes with the intercom; the Bose Connect app renames it; nothing on recording; " +
+        SEEN +
+        ")",
       NFLIGHTCAM_SPORTYS,
     ],
   },
@@ -1025,12 +1184,20 @@ export const GEAR: readonly Gear[] = [
     shows: "DC ONE-X",
     names: [/\bDC\s*ONE-?X[PAH]?\b/i],
     gives: "voice",
-    steps: ["Over Bluetooth it sends the phone your boom mic, not the radio.", "David Clark doesn't recommend calls while it's plugged into the intercom.", CABLE],
+    steps: [
+      "Over Bluetooth it sends the phone your boom mic, not the radio.",
+      "David Clark doesn't recommend calls while it's plugged into the intercom.",
+      CABLE,
+    ],
     says: "DC ONE-X: hears your voice, not the radio. For the radio, use the audio panel's recording mode or a cable.",
     confidence: "likely",
     sources: [
-      "https://www.davidclarkcompany.com/files/literature/230-42427%20DC%20ONE%20QRG%20Rev%2011-25.pdf (DC ONE-X Quick Reference Guide 230-42427 Rev 11-25, pp.9-10, 12; " + SEEN + ")",
-      "https://www.davidclarkcompany.com/files/literature/DC-ONE-XP-Data-Sheet.pdf (DC ONE-XP data sheet: \"6-Pin Redel Plug\"; " + SEEN + ")",
+      "https://www.davidclarkcompany.com/files/literature/230-42427%20DC%20ONE%20QRG%20Rev%2011-25.pdf (DC ONE-X Quick Reference Guide 230-42427 Rev 11-25, pp.9-10, 12; " +
+        SEEN +
+        ")",
+      'https://www.davidclarkcompany.com/files/literature/DC-ONE-XP-Data-Sheet.pdf (DC ONE-XP data sheet: "6-Pin Redel Plug"; ' +
+        SEEN +
+        ")",
       SPORTYS_FAQ,
       NFLIGHTCAM_SPORTYS,
     ],
@@ -1046,11 +1213,17 @@ export const GEAR: readonly Gear[] = [
     shows: "DC PRO-X2",
     names: [/\bDC\s*PRO-?X\s?2\b/i],
     gives: "voice",
-    steps: ["Over Bluetooth it sends the phone your boom mic, not the radio.", "David Clark doesn't recommend calls while it's plugged into the intercom.", CABLE],
+    steps: [
+      "Over Bluetooth it sends the phone your boom mic, not the radio.",
+      "David Clark doesn't recommend calls while it's plugged into the intercom.",
+      CABLE,
+    ],
     says: "DC PRO-X2: hears your voice, not the radio. For the radio, use the audio panel's recording mode or a cable.",
     confidence: "likely",
     sources: [
-      "https://www.davidclarkcompany.com/files/literature/230-42431%20DC%20PRO-X2%20QRG%20Rev%2011-25.pdf (DC PRO-X2 Quick Reference Guide 230-42431 Rev 11-25, pp.5, 7-8, 11; " + SEEN + ")",
+      "https://www.davidclarkcompany.com/files/literature/230-42431%20DC%20PRO-X2%20QRG%20Rev%2011-25.pdf (DC PRO-X2 Quick Reference Guide 230-42431 Rev 11-25, pp.5, 7-8, 11; " +
+        SEEN +
+        ")",
       SPORTYS_FAQ,
       NFLIGHTCAM_SPORTYS,
     ],
@@ -1068,11 +1241,17 @@ export const GEAR: readonly Gear[] = [
     shows: "DC PRO-X",
     names: [/\bDC\s*PRO-?X[PA]?\b/i],
     gives: "voice",
-    steps: ["Over Bluetooth it sends the phone your boom mic, not the radio.", "David Clark doesn't recommend calls while it's plugged into the intercom.", CABLE],
+    steps: [
+      "Over Bluetooth it sends the phone your boom mic, not the radio.",
+      "David Clark doesn't recommend calls while it's plugged into the intercom.",
+      CABLE,
+    ],
     says: "DC PRO-X: hears your voice, not the radio. For the radio, use the audio panel's recording mode or a cable.",
     confidence: "likely",
     sources: [
-      "https://www.davidclarkcompany.com/files/literature/230-35538%20DC%20PRO-X%20Manual%20LR%20Rev%2012-18%20FINAL.pdf (DC PRO-X manual 230-35538 Rev 12-18, pp.7-8, 11; " + SEEN + ")",
+      "https://www.davidclarkcompany.com/files/literature/230-35538%20DC%20PRO-X%20Manual%20LR%20Rev%2012-18%20FINAL.pdf (DC PRO-X manual 230-35538 Rev 12-18, pp.7-8, 11; " +
+        SEEN +
+        ")",
       SPORTYS_FAQ,
       NFLIGHTCAM_SPORTYS,
     ],
@@ -1102,10 +1281,16 @@ export const GEAR: readonly Gear[] = [
     says: "AirPods: hear your voice and the cabin, not the radio. For the radio, use the audio panel's recording mode or a cable.",
     confidence: "documented",
     sources: [
-      "https://support.apple.com/en-us/HT207009 (Apple, Change the settings of your AirPods and AirPods Pro: \"There's a microphone in each AirPod, so you can make phone calls and use Siri\"; set to Always Left or Right, an AirPod uses the microphone \"even if you remove it from your ear or put it in the case\"; " + SEEN + ")",
-      "https://www.apple.com/airpods-pro/specs/ (Apple, AirPods Pro 3 Technical Specifications: \"Dual beamforming microphones\", \"Inward-facing microphone\", no other audio input; " + SEEN + ")",
+      'https://support.apple.com/en-us/HT207009 (Apple, Change the settings of your AirPods and AirPods Pro: "There\'s a microphone in each AirPod, so you can make phone calls and use Siri"; set to Always Left or Right, an AirPod uses the microphone "even if you remove it from your ear or put it in the case"; ' +
+        SEEN +
+        ")",
+      'https://www.apple.com/airpods-pro/specs/ (Apple, AirPods Pro 3 Technical Specifications: "Dual beamforming microphones", "Inward-facing microphone", no other audio input; ' +
+        SEEN +
+        ")",
       "https://support.apple.com/guide/airpods/deva392f031a/web (Apple, Rename your AirPods; " + SEEN + ")",
-      "https://www.macrumors.com/how-to/change-name-airpods/ (MacRumors, 29 March 2019: the default name \"[Your Name]'s AirPods\"; " + SEEN + ")",
+      'https://www.macrumors.com/how-to/change-name-airpods/ (MacRumors, 29 March 2019: the default name "[Your Name]\'s AirPods"; ' +
+        SEEN +
+        ")",
     ],
   },
 
@@ -1136,8 +1321,12 @@ export const GEAR: readonly Gear[] = [
     says: "NFlightCam cable: the radio comes in, with the intercom.",
     confidence: "documented",
     sources: [
-      "https://www.amazon.com/dp/B0D75FQD4W (NFlightCam's own listing, sold by NFlightCam, model NF15USBC, part 409C: \"The phone will record everything you hear and say through the headset, including intercom and ATC communications\"; \"Compatible with iPhone 15\"; " + SEEN + ")",
-      "https://cdn.shopify.com/s/files/1/0750/7051/files/smartphone_kit_475K.pdf (NFlightCam Smartphone Kit 475K sheet p.2: the cable's 1/4\" plug into the airplane's 1/4\" jack, the headset's 1/4\" plug into the cable; " + SEEN + ")",
+      'https://www.amazon.com/dp/B0D75FQD4W (NFlightCam\'s own listing, sold by NFlightCam, model NF15USBC, part 409C: "The phone will record everything you hear and say through the headset, including intercom and ATC communications"; "Compatible with iPhone 15"; ' +
+        SEEN +
+        ")",
+      "https://cdn.shopify.com/s/files/1/0750/7051/files/smartphone_kit_475K.pdf (NFlightCam Smartphone Kit 475K sheet p.2: the cable's 1/4\" plug into the airplane's 1/4\" jack, the headset's 1/4\" plug into the cable; " +
+        SEEN +
+        ")",
       NFLIGHTCAM_SPORTYS,
     ],
   },
@@ -1165,8 +1354,12 @@ export const GEAR: readonly Gear[] = [
     says: "Pilot USA cable: the radio comes in, with the intercom, once the adapter works.",
     confidence: "test",
     sources: [
-      "https://www.pilot-usa.com/adapters/recording-adapters/pa-80s-iphone.html (Pilot Communications USA, Smartphone Digital Audio Recorder Adapter, SKU PA-80S/iPhone, $75.00: \"record all audio heard through your headset\", \"all transmissions through the Intercom systems including in-cabin and ATC transmissions\"; the photo shows one 1/4-inch plug and socket and a 3.5 mm plug; no manual published; " + SEEN + ")",
-      "https://www.aircraftspruce.com/catalog/pnpages/11-10531.php (Aircraft Spruce, Pilot USA PA-80S/iPhone, P/N 11-10531; its answer that it works on an iPhone 7 \"if you have the adapter to go from headphone to lightning\"; " + SEEN + ")",
+      'https://www.pilot-usa.com/adapters/recording-adapters/pa-80s-iphone.html (Pilot Communications USA, Smartphone Digital Audio Recorder Adapter, SKU PA-80S/iPhone, $75.00: "record all audio heard through your headset", "all transmissions through the Intercom systems including in-cabin and ATC transmissions"; the photo shows one 1/4-inch plug and socket and a 3.5 mm plug; no manual published; ' +
+        SEEN +
+        ")",
+      'https://www.aircraftspruce.com/catalog/pnpages/11-10531.php (Aircraft Spruce, Pilot USA PA-80S/iPhone, P/N 11-10531; its answer that it works on an iPhone 7 "if you have the adapter to go from headphone to lightning"; ' +
+        SEEN +
+        ")",
     ],
   },
   {
@@ -1196,9 +1389,15 @@ export const GEAR: readonly Gear[] = [
     says: "Flight Gear cable: the radio comes in, with the intercom, once the adapter works.",
     confidence: "test",
     sources: [
-      "https://www.sportys.com/flight-gear-ga-audio-input-cable.html (Sporty's, Flight Gear GA Audio Input Cable, SKU 27010, $19.99: two 3.5 mm plugs, the phone's TRRS; twin plug and LEMO versions; " + SEEN + ")",
-      "https://www.sportys.com/flight-gear-ga-audio-input-cable-with-gopro-and-type-c-adapter-recording-kit.html (Sporty's, Flight Gear GA Audio Input Cable with GoPro and Type C Adapter Recording Kit, SKU B2320: \"will work with camera and phones that have a Type-C charging port\"; " + SEEN + ")",
-      "https://www.amazon.com/dp/B0DH92Q6X9 (Flight Gear listing: \"Made for use with standard dual GA headset plugs ... captures the audio from your intercom\"; the USB-C adapter is TRRS with \"an input for secondary microphones\"; " + SEEN + ")",
+      "https://www.sportys.com/flight-gear-ga-audio-input-cable.html (Sporty's, Flight Gear GA Audio Input Cable, SKU 27010, $19.99: two 3.5 mm plugs, the phone's TRRS; twin plug and LEMO versions; " +
+        SEEN +
+        ")",
+      'https://www.sportys.com/flight-gear-ga-audio-input-cable-with-gopro-and-type-c-adapter-recording-kit.html (Sporty\'s, Flight Gear GA Audio Input Cable with GoPro and Type C Adapter Recording Kit, SKU B2320: "will work with camera and phones that have a Type-C charging port"; ' +
+        SEEN +
+        ")",
+      'https://www.amazon.com/dp/B0DH92Q6X9 (Flight Gear listing: "Made for use with standard dual GA headset plugs ... captures the audio from your intercom"; the USB-C adapter is TRRS with "an input for secondary microphones"; ' +
+        SEEN +
+        ")",
     ],
   },
   {
@@ -1226,10 +1425,18 @@ export const GEAR: readonly Gear[] = [
     says: "Stratus Audio Cable: the radio may come in, with the intercom; Appareo's own app doesn't hear it on iPhone 12 and later. Check the words follow the ATIS.",
     confidence: "test",
     sources: [
-      "https://www.appareo.com/wp-content/uploads/2018/07/600890-000065-Stratus-Horizon-Pro-Pilots-Guide.pdf (Appareo, Stratus Horizon Pro Pilot's Guide 600890-000065 rev 1.0, p.1 records ATC audio, p.2 cable connection, twin-plug note and cabin filter; " + SEEN + ")",
-      "https://stratusbyappareo.com/shop2/stratus-audio-cable/ (Appareo store, Stratus Audio Cable SKU 253030-000022, $50: not on iPhone 12 and newer; GA dual fixed-wing plugs only, not LEMO, helicopter or airline; " + SEEN + ")",
-      "https://appareo.com/stratus-horizon-pro-app/ (Appareo, Stratus Horizon Pro: radio transcription and playback \"does not work on ... iPhone 12 and newer\"; " + SEEN + ")",
-      "https://www.aircraftspruce.com/catalog/avpages/appareo_11-19009.php (Aircraft Spruce, Appareo Stratus Audio Cable, P/N 11-19009; " + SEEN + ")",
+      "https://www.appareo.com/wp-content/uploads/2018/07/600890-000065-Stratus-Horizon-Pro-Pilots-Guide.pdf (Appareo, Stratus Horizon Pro Pilot's Guide 600890-000065 rev 1.0, p.1 records ATC audio, p.2 cable connection, twin-plug note and cabin filter; " +
+        SEEN +
+        ")",
+      "https://stratusbyappareo.com/shop2/stratus-audio-cable/ (Appareo store, Stratus Audio Cable SKU 253030-000022, $50: not on iPhone 12 and newer; GA dual fixed-wing plugs only, not LEMO, helicopter or airline; " +
+        SEEN +
+        ")",
+      'https://appareo.com/stratus-horizon-pro-app/ (Appareo, Stratus Horizon Pro: radio transcription and playback "does not work on ... iPhone 12 and newer"; ' +
+        SEEN +
+        ")",
+      "https://www.aircraftspruce.com/catalog/avpages/appareo_11-19009.php (Aircraft Spruce, Appareo Stratus Audio Cable, P/N 11-19009; " +
+        SEEN +
+        ")",
     ],
   },
 ];
@@ -1242,7 +1449,7 @@ const bare = (label: string) => label.replace(/^(Default|Communications)\s*-\s*/
 export function gearFor(label: string | null | undefined): Gear | null {
   const name = bare(label ?? "");
   if (!name) return null;
-  return GEAR.find(g => g.names.some(re => re.test(name))) ?? null;
+  return GEAR.find((g) => g.names.some((re) => re.test(name))) ?? null;
 }
 
 /** The phone's or computer's own microphone by its label: Safari's
@@ -1269,7 +1476,7 @@ const BUILT_IN = [
  *  as the device's own. */
 export function hearing(label: string | null | undefined): Hearing {
   const name = bare(label ?? "");
-  if (!name || BUILT_IN.some(re => re.test(name))) return "phone-mic";
+  if (!name || BUILT_IN.some((re) => re.test(name))) return "phone-mic";
   const gives = gearFor(name)?.gives;
   if (gives === "radio") return "radio";
   if (gives === "voice") return "voice";

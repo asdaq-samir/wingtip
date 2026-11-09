@@ -6,8 +6,7 @@ const isEnd = (p: string) => p.length === 4 || p.startsWith("@");
 
 describe("a point dragged in FPL's list", () => {
   it("is moved, the route's ends and stops from the new order", () => {
-    expect(movedRoute(["KUGN", "KJVL", "KMSN", "KDLH"], 2, 1, isEnd))
-      .toEqual({ dep: "KUGN", stops: ["KMSN", "KJVL"], dest: "KDLH" });
+    expect(movedRoute(["KUGN", "KJVL", "KMSN", "KDLH"], 2, 1, isEnd)).toEqual({ dep: "KUGN", stops: ["KMSN", "KJVL"], dest: "KDLH" });
   });
 
   it("is not moved to an end where it is a waypoint", () => {

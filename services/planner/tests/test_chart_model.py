@@ -1,6 +1,7 @@
 """The planner's side of the chart model: its ratings counted on the
 corridor the training page reads, the table written from them, and the
 model's scores on the training page's points."""
+
 import threading
 
 import pandas as pd
@@ -15,13 +16,17 @@ client = TestClient(app)
 
 
 def _landmark(lat, lon, category="road_or_rail", score=3.6):
-    return chartvision.Landmark(category, lat, lon, 0.0, score, 40,
-                                extras={"along_track_nm": 5.0, "cross_track_nm": 0.1})
+    return chartvision.Landmark(category, lat, lon, 0.0, score, 40, extras={"along_track_nm": 5.0, "cross_track_nm": 0.1})
 
 
 def _job(landmarks, done=True):
-    return {"blocks": [{"block": 0, "blocks": 1, "tiles": 4, "missing": 0, "landmarks": landmarks}],
-            "done": done, "error": None, "at": 0.0, "cond": threading.Condition()}
+    return {
+        "blocks": [{"block": 0, "blocks": 1, "tiles": 4, "missing": 0, "landmarks": landmarks}],
+        "done": done,
+        "error": None,
+        "at": 0.0,
+        "cond": threading.Condition(),
+    }
 
 
 PICKS = [
@@ -48,8 +53,9 @@ def test_the_ratings_on_points_the_reader_finds_count_and_the_rest_are_named(mon
 
     assert (readiness["usable"], readiness["rated"], readiness["off_detection"]) == (2, 3, 1)
     assert not readiness["ready"]
-    assert readiness["message"] == ("2 of the 30 ratings training needs. 1 of your 3 are on points the chart "
-                                    "reader no longer finds. Rate 28 more.")
+    assert readiness["message"] == (
+        "2 of the 30 ratings training needs. 1 of your 3 are on points the chart reader no longer finds. Rate 28 more."
+    )
 
 
 def test_a_corridor_still_being_read_is_named_not_counted(monkeypatch):

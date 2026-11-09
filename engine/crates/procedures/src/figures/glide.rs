@@ -45,7 +45,9 @@ pub fn range_nm(altitude_ft: Option<f64>, speed_kt: Option<f64>, ground_ft: Opti
 /// field's own elevation, not the nearest one's: a field on higher ground
 /// is nearer the airplane's height. False where either height is not
 /// known, or the airplane's profile has no glide ratio.
-pub fn reaches(altitude_ft: Option<f64>, speed_kt: Option<f64>, distance_nm: f64, elevation_ft: Option<f64>, glide_ratio: Option<f64>) -> bool {
+pub fn reaches(
+    altitude_ft: Option<f64>, speed_kt: Option<f64>, distance_nm: f64, elevation_ft: Option<f64>, glide_ratio: Option<f64>,
+) -> bool {
     let (Some(alt), Some(elevation), Some(per_1000)) = (altitude_ft, elevation_ft, nm_per_1000_ft(glide_ratio)) else { return false };
     if speed_kt.unwrap_or(0.0) < AIRBORNE_KT {
         return false;

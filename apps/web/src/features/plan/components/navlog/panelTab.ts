@@ -20,11 +20,7 @@ export const useTabAsk = create<{
   ask: { tab: PanelTab; section?: string } | null;
   go: (tab: PanelTab, section?: string) => void;
   heard: () => void;
-}>(set => ({
-  ask: null,
-  go: (tab, section) => set({ ask: { tab, section } }),
-  heard: () => set({ ask: null }),
-}));
+}>((set) => ({ ask: null, go: (tab, section) => set({ ask: { tab, section } }), heard: () => set({ ask: null }) }));
 
 /** En route's legs -- its totals, its table and its notes -- its first
  *  section, before its profile and its altitude's reasoning: up as a

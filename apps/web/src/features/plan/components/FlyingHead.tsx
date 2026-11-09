@@ -31,13 +31,20 @@ import { isLegPoint, rowPoint, type NavLogRow } from "./navlog/rows";
  * at each of a run's frames, as the dry run's figures are (DryRunFigures).
  */
 
-interface Next { index: number; number: number; name: string; nm: number; min: number | null; at: number | null }
+interface Next {
+  index: number;
+  number: number;
+  name: string;
+  nm: number;
+  min: number | null;
+  at: number | null;
+}
 
 /** Its number as the log counts the checkpoints: the departure 0. */
-const numberOf = (rows: NavLogRow[], index: number) => rows.slice(1, index + 1).filter(r => !isLegPoint(r)).length;
+const numberOf = (rows: NavLogRow[], index: number) => rows.slice(1, index + 1).filter((r) => !isLegPoint(r)).length;
 
 export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: NavLogRow[] }) {
-  const key = usePastFlight(s => {
+  const key = usePastFlight((s) => {
     if (!run || s.hex !== DRY_RUN || s.at === null) return "";
     const index = dryRunNext(run, rows, s.at);
     const at = dryRunAt(run, s.at);
@@ -47,7 +54,7 @@ export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: Na
     const min = Math.max(0, (run.rowT[index]! - s.at) / 60);
     return [index, nm.toFixed(1), Math.round(min), Math.floor(run.rowT[index]! / 60) * 60].join(" ");
   });
-  const gpsKey = useOwnShip(s => {
+  const gpsKey = useOwnShip((s) => {
     if (run || !s.enabled || !s.fix) {
       forgetPassed();
       return "";
@@ -64,8 +71,12 @@ export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: Na
   const [i, nm, min, at] = words.split(" ");
   const index = Number(i);
   const next: Next = {
-    index, number: numberOf(rows, index), name: rowPoint(rows[index]!).name,
-    nm: Number(nm), min: min === "" ? null : Number(min), at: at === "" ? null : Number(at),
+    index,
+    number: numberOf(rows, index),
+    name: rowPoint(rows[index]!).name,
+    nm: Number(nm),
+    min: min === "" ? null : Number(min),
+    at: at === "" ? null : Number(at),
   };
   return (
     <div
@@ -85,16 +96,21 @@ export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: Na
         <span className={TEXT.card}>{next.number}</span>
       </div>
       <div className="min-w-0 flex-1">
-        <div className={cn(GROUP_HEADING, "truncate")}>Next · <span data-testid="flying-next-name">{next.name}</span></div>
+        <div className={cn(GROUP_HEADING, "truncate")}>
+          Next · <span data-testid="flying-next-name">{next.name}</span>
+        </div>
         <div className="truncate text-[1.875rem] leading-[2.0625rem] font-bold tabular-nums" data-testid="flying-next-figures">
-          {next.nm.toFixed(1)}<span className={cn(TEXT.title, "font-medium")}> nm</span>
+          {next.nm.toFixed(1)}
+          <span className={cn(TEXT.title, "font-medium")}> nm</span>
           {next.min !== null && <> · {duration(next.min)}</>}
         </div>
       </div>
       {next.at !== null && (
         <div className="text-right">
           <div className={GROUP_HEADING}>ETA</div>
-          <div className={cn(TEXT.card, "font-semibold tabular-nums")} data-testid="flying-next-eta">{clockTime(new Date(next.at * 1000))}</div>
+          <div className={cn(TEXT.card, "font-semibold tabular-nums")} data-testid="flying-next-eta">
+            {clockTime(new Date(next.at * 1000))}
+          </div>
         </div>
       )}
       {/* The emergency assistant's way in from flying mode, inside its own
@@ -108,7 +124,10 @@ export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: Na
 function EmergencyEntry() {
   return (
     <Button
-      type="button" variant="ghost" size="sm" data-testid="flying-emergency"
+      type="button"
+      variant="ghost"
+      size="sm"
+      data-testid="flying-emergency"
       className="pointer-events-auto relative -mr-2 font-semibold text-destructive after:absolute after:-inset-1.5"
       onClick={() => openEmergency("flying")}
     >

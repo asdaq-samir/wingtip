@@ -1,6 +1,7 @@
 """A stream that fails after its first line cannot change its status
 any more, so the failure has to arrive as the stream's own last line --
 the only thing a browser can tell apart from a stream still loading."""
+
 import threading
 
 from fastapi import HTTPException
@@ -37,9 +38,14 @@ def test_a_weather_failure_mid_navlog_is_the_streams_last_line(monkeypatch, alti
     altitude = next(m for m in lines if m["type"] == "altitude")
     assert altitude["flown"] is None and altitude["altitude_ft"] is None and altitude["altitude_selection"]
     assert lines[-1] == {
-        "type": "error", "detail": "aviationweather.gov request failed: timed out", "retry": True, "brief": None,
-        "reasons": [], "advice": None,
-        "class_b": False, "detours": [],
+        "type": "error",
+        "detail": "aviationweather.gov request failed: timed out",
+        "retry": True,
+        "brief": None,
+        "reasons": [],
+        "advice": None,
+        "class_b": False,
+        "detours": [],
     }
 
 
@@ -53,15 +59,20 @@ def test_a_chart_that_would_not_read_is_reported_inside_the_navlog_stream(monkey
 
     assert resp.status_code == 200
     detail = "the chart along C81->KDLH could not be read: tile fetch failed"
-    assert messages(resp)[-1] == {"type": "error", "detail": detail, "retry": True, "brief": None, "reasons": [], "advice": None,
-                                     "class_b": False, "detours": []}
+    assert messages(resp)[-1] == {
+        "type": "error",
+        "detail": detail,
+        "retry": True,
+        "brief": None,
+        "reasons": [],
+        "advice": None,
+        "class_b": False,
+        "detours": [],
+    }
 
 
 def test_a_failed_corridor_read_ends_the_detect_stream_with_an_error(monkeypatch, messages):
-    failed_job = {
-        "blocks": [], "done": True, "error": "RuntimeError: tile fetch failed",
-        "at": 0.0, "cond": threading.Condition(),
-    }
+    failed_job = {"blocks": [], "done": True, "error": "RuntimeError: tile fetch failed", "at": 0.0, "cond": threading.Condition()}
     monkeypatch.setattr(chart, "detect_job", lambda key, start, end, half_width_nm: failed_job)
     monkeypatch.setattr(chart, "faa_airports", lambda *args, **kwargs: [])
     monkeypatch.setattr(chartlabels, "load_picks", lambda route: [])

@@ -57,25 +57,36 @@ class DiagnosticsControllerTest {
 
     @Test
     void aPhonesReportIsKeptWithNoSessionOrToken() throws Exception {
-        mockMvc.perform(post("/api/diagnostics").header("X-Forwarded-For", "203.0.113.20")
-                        .contentType(MediaType.APPLICATION_JSON).content(IOS))
+        mockMvc.perform(post("/api/diagnostics")
+                        .header("X-Forwarded-For", "203.0.113.20")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(IOS))
                 .andExpect(status().isNoContent());
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<Fault>> faults = ArgumentCaptor.forClass(List.class);
-        verify(diagnostics).record(eq(new Origin("ios", "1.0 (42)", "iOS 26.1", "phone")), faults.capture(), eq("app"),
-                eq(Map.of("launch_ms_p50", 812.0, "hang_ms", 0.0)));
-        assertThat(faults.getValue()).singleElement()
+        verify(diagnostics)
+                .record(
+                        eq(new Origin("ios", "1.0 (42)", "iOS 26.1", "phone")),
+                        faults.capture(),
+                        eq("app"),
+                        eq(Map.of("launch_ms_p50", 812.0, "hang_ms", 0.0)));
+        assertThat(faults.getValue())
+                .singleElement()
                 .satisfies(f -> assertThat(f.signature()).isEqualTo("EXC_BAD_ACCESS SIGSEGV"));
     }
 
     @Test
     void notAReportIsRefused() throws Exception {
-        mockMvc.perform(post("/api/diagnostics").header("X-Forwarded-For", "203.0.113.21")
-                        .contentType(MediaType.APPLICATION_JSON).content(IOS.replace("\"ios\"", "\"watch\"")))
+        mockMvc.perform(post("/api/diagnostics")
+                        .header("X-Forwarded-For", "203.0.113.21")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(IOS.replace("\"ios\"", "\"watch\"")))
                 .andExpect(status().isBadRequest());
-        mockMvc.perform(post("/api/diagnostics").header("X-Forwarded-For", "203.0.113.21")
-                        .contentType(MediaType.APPLICATION_JSON).content(IOS.replace("launch_ms_p50", "Position")))
+        mockMvc.perform(post("/api/diagnostics")
+                        .header("X-Forwarded-For", "203.0.113.21")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(IOS.replace("launch_ms_p50", "Position")))
                 .andExpect(status().isBadRequest());
         verify(diagnostics, never()).record(any(), any(), anyString(), anyMap());
     }
@@ -83,8 +94,10 @@ class DiagnosticsControllerTest {
     @Test
     void pastTheHoursAllowanceReportsAreDroppedQuietly() throws Exception {
         for (int i = 0; i < DiagnosticsController.PER_HOUR + 5; i++) {
-            mockMvc.perform(post("/api/diagnostics").header("X-Forwarded-For", "203.0.113.22")
-                            .contentType(MediaType.APPLICATION_JSON).content(IOS))
+            mockMvc.perform(post("/api/diagnostics")
+                            .header("X-Forwarded-For", "203.0.113.22")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(IOS))
                     .andExpect(status().isNoContent());
         }
         verify(diagnostics, times(DiagnosticsController.PER_HOUR)).record(any(), any(), anyString(), anyMap());

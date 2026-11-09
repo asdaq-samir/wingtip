@@ -11,8 +11,6 @@ import app.wingtipmaps.android.api.generated.assistant.TripAsk
 import app.wingtipmaps.android.api.generated.assistant.TripLeg
 import app.wingtipmaps.android.api.generated.assistant.TripMessage
 import app.wingtipmaps.android.api.generated.assistant.TripProposal
-import java.io.IOException
-import java.time.ZoneId
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -29,6 +27,8 @@ import kotlinx.serialization.encodeToString
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.IOException
+import java.time.ZoneId
 
 /**
  * The trip planner, as the web's (features/tripPlanner) has it: a trip in

@@ -61,11 +61,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class SubscriptionService {
 
     /** Why a paid call was refused: the status and the pilot's sentence. */
-    public record Refusal(int status, String detail) {
-    }
+    public record Refusal(int status, String detail) {}
 
     /** Who has the features Claude writes where no subscription is sold. */
-    public enum ClaudeFeatures { OFF, DEVELOPERS, EVERYONE }
+    public enum ClaudeFeatures {
+        OFF,
+        DEVELOPERS,
+        EVERYONE
+    }
 
     /** The trial is already started, or was once: once an account. */
     public static class TrialUsedException extends RuntimeException {
@@ -87,7 +90,10 @@ public class SubscriptionService {
     private final ClaudeFeatures claude;
 
     @Autowired
-    public SubscriptionService(SubscriptionRepository subscriptions, PilotService pilots, SignInOptions signIn,
+    public SubscriptionService(
+            SubscriptionRepository subscriptions,
+            PilotService pilots,
+            SignInOptions signIn,
             @Value("${app.subscription.trial-days:30}") int trialDays,
             @Value("${app.subscription.caps.narrative:60}") int narrativeCap,
             @Value("${app.subscription.caps.checkpoint-notes:60}") int notesCap,
@@ -97,21 +103,50 @@ public class SubscriptionService {
             @Value("${app.subscription.comped-emails:}") String compedEmails,
             @Value("${app.subscription.enabled:false}") boolean sold,
             @Value("${app.claude-features:EVERYONE}") ClaudeFeatures claude) {
-        this(subscriptions, pilots, signIn, Clock.systemUTC(), trialDays,
-                Map.of(PaidFeature.NARRATIVE, narrativeCap, PaidFeature.CHECKPOINT_NOTES, notesCap,
-                        PaidFeature.ORAL, oralCap, PaidFeature.ASSISTANT, assistantCap,
-                        PaidFeature.WORDS, wordsCap),
-                compedEmails, sold, claude);
+        this(
+                subscriptions,
+                pilots,
+                signIn,
+                Clock.systemUTC(),
+                trialDays,
+                Map.of(
+                        PaidFeature.NARRATIVE,
+                        narrativeCap,
+                        PaidFeature.CHECKPOINT_NOTES,
+                        notesCap,
+                        PaidFeature.ORAL,
+                        oralCap,
+                        PaidFeature.ASSISTANT,
+                        assistantCap,
+                        PaidFeature.WORDS,
+                        wordsCap),
+                compedEmails,
+                sold,
+                claude);
     }
 
     /** A deployment that sells the subscription, as the tests mostly ask about. */
-    SubscriptionService(SubscriptionRepository subscriptions, PilotService pilots, SignInOptions signIn, Clock clock,
-            int trialDays, Map<PaidFeature, Integer> caps, String compedEmails) {
+    SubscriptionService(
+            SubscriptionRepository subscriptions,
+            PilotService pilots,
+            SignInOptions signIn,
+            Clock clock,
+            int trialDays,
+            Map<PaidFeature, Integer> caps,
+            String compedEmails) {
         this(subscriptions, pilots, signIn, clock, trialDays, caps, compedEmails, true, ClaudeFeatures.EVERYONE);
     }
 
-    SubscriptionService(SubscriptionRepository subscriptions, PilotService pilots, SignInOptions signIn, Clock clock,
-            int trialDays, Map<PaidFeature, Integer> caps, String compedEmails, boolean sold, ClaudeFeatures claude) {
+    SubscriptionService(
+            SubscriptionRepository subscriptions,
+            PilotService pilots,
+            SignInOptions signIn,
+            Clock clock,
+            int trialDays,
+            Map<PaidFeature, Integer> caps,
+            String compedEmails,
+            boolean sold,
+            ClaudeFeatures claude) {
         this.subscriptions = subscriptions;
         this.pilots = pilots;
         this.signIn = signIn;
@@ -142,15 +177,22 @@ public class SubscriptionService {
         };
         // Once an account, and for a pilot who has never paid: a store's
         // introductory offer is a new subscriber's too.
-        boolean trialAvailable = held.map(s -> s.getTrialStartedAt() == null && s.getPaidUntil() == null).orElse(true);
+        boolean trialAvailable = held.map(s -> s.getTrialStartedAt() == null && s.getPaidUntil() == null)
+                .orElse(true);
         Map<String, Integer> used = usesThisMonth(pilot, now);
         List<SubscriptionDto.FeatureUse> uses = Arrays.stream(PaidFeature.values())
                 .filter(PaidFeature::capped)
                 .map(f -> new SubscriptionDto.FeatureUse(f, used.getOrDefault(f.name(), 0), caps.getOrDefault(f, 0)))
                 .toList();
         boolean paid = state == State.SUBSCRIBED;
-        return new SubscriptionDto(state, state != State.FREE, until, trialAvailable && state == State.FREE,
-                trialDays, paid ? held.orElseThrow().getPlan() : null, paid ? held.orElseThrow().getStore() : null,
+        return new SubscriptionDto(
+                state,
+                state != State.FREE,
+                until,
+                trialAvailable && state == State.FREE,
+                trialDays,
+                paid ? held.orElseThrow().getPlan() : null,
+                paid ? held.orElseThrow().getStore() : null,
                 uses);
     }
 
@@ -224,21 +266,25 @@ public class SubscriptionService {
         int used = usesThisMonth(pilot, now).getOrDefault(feature.name(), 0);
         if (used >= cap) {
             LocalDate next = month(now).plusMonths(1);
-            return Optional.of(new Refusal(429, "That is this month's " + cap + " " + feature.counted()
-                    + ". More on " + DAY.format(next) + "."));
+            return Optional.of(new Refusal(
+                    429,
+                    "That is this month's " + cap + " " + feature.counted() + ". More on " + DAY.format(next) + "."));
         }
         subscriptions.countUse(pilot.getId(), month(now), feature.name());
         return Optional.empty();
     }
 
     private State stateOf(Pilot pilot, Optional<Subscription> held, Instant now) {
-        if (pilot.getRole().isDeveloper() || compedEmails.contains(pilot.getEmail().toLowerCase(Locale.ROOT))) {
+        if (pilot.getRole().isDeveloper()
+                || compedEmails.contains(pilot.getEmail().toLowerCase(Locale.ROOT))) {
             return State.COMPED;
         }
-        if (held.map(s -> s.getPaidUntil() != null && s.getPaidUntil().isAfter(now)).orElse(false)) {
+        if (held.map(s -> s.getPaidUntil() != null && s.getPaidUntil().isAfter(now))
+                .orElse(false)) {
             return State.SUBSCRIBED;
         }
-        if (held.map(s -> s.getTrialEndsAt() != null && s.getTrialEndsAt().isAfter(now)).orElse(false)) {
+        if (held.map(s -> s.getTrialEndsAt() != null && s.getTrialEndsAt().isAfter(now))
+                .orElse(false)) {
             return State.TRIAL;
         }
         return State.FREE;

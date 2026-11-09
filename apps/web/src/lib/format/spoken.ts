@@ -17,8 +17,26 @@
  */
 
 const ONES = [
-  "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
-  "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen",
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
+  "eleven",
+  "twelve",
+  "thirteen",
+  "fourteen",
+  "fifteen",
+  "sixteen",
+  "seventeen",
+  "eighteen",
+  "nineteen",
 ];
 const TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
 
@@ -27,7 +45,8 @@ export const NOT_KNOWN = "not known";
 
 /** A whole number from 0 to 999 in words: "one hundred two", "forty-five". */
 function underThousand(n: number): string {
-  const hundreds = Math.floor(n / 100), rest = n % 100;
+  const hundreds = Math.floor(n / 100),
+    rest = n % 100;
   const restWords = rest < 20 ? ONES[rest]! : `${TENS[Math.floor(rest / 10)]}${rest % 10 ? `-${ONES[rest % 10]}` : ""}`;
   if (!hundreds) return restWords;
   return rest ? `${ONES[hundreds]} hundred ${restWords}` : `${ONES[hundreds]} hundred`;
@@ -39,7 +58,9 @@ function numberWords(n: number): string {
   const whole = Math.round(Math.abs(n));
   if (whole === 0) return "zero";
   const parts: string[] = [];
-  const millions = Math.floor(whole / 1_000_000), thousands = Math.floor(whole / 1000) % 1000, rest = whole % 1000;
+  const millions = Math.floor(whole / 1_000_000),
+    thousands = Math.floor(whole / 1000) % 1000,
+    rest = whole % 1000;
   if (millions) parts.push(`${numberWords(millions)} million`);
   if (thousands) parts.push(`${underThousand(thousands)} thousand`);
   if (rest) parts.push(underThousand(rest));
@@ -51,14 +72,15 @@ function numberWords(n: number): string {
  *  the written form's toFixed reads to a pilot. */
 function tenthsWords(x: number): string {
   const tenths = Math.round(Math.abs(x) * 10);
-  const whole = Math.floor(tenths / 10), tenth = tenths % 10;
+  const whole = Math.floor(tenths / 10),
+    tenth = tenths % 10;
   const sign = x < 0 && tenths > 0 ? "minus " : "";
   return `${sign}${numberWords(whole)}${tenth ? ` point ${ONES[tenth]}` : ""}`;
 }
 
 /** Each figure said by itself: "one two", "zero four five". */
 function digits(s: string): string {
-  return [...s].map(d => ONES[Number(d)]).join(" ");
+  return [...s].map((d) => ONES[Number(d)]).join(" ");
 }
 
 /** "one knot", "two knots". */
@@ -73,7 +95,9 @@ export function spokenAltitude(ft: number | null | undefined): string {
   if (ft === null || ft === undefined || !Number.isFinite(ft)) return NOT_KNOWN;
   const whole = Math.round(Math.abs(ft));
   if (whole === 0) return "zero feet";
-  const thousands = Math.floor(whole / 1000), hundreds = Math.floor(whole / 100) % 10, rest = whole % 100;
+  const thousands = Math.floor(whole / 1000),
+    hundreds = Math.floor(whole / 100) % 10,
+    rest = whole % 100;
   const parts: string[] = [];
   if (thousands) parts.push(`${digits(String(thousands))} thousand`);
   if (hundreds) parts.push(`${ONES[hundreds]} hundred`);
@@ -121,7 +145,8 @@ export function spokenFuel(gal: number | null | undefined): string {
 export function spokenDuration(minutes: number): string {
   if (!Number.isFinite(minutes)) return NOT_KNOWN;
   const whole = Math.max(0, Math.round(minutes));
-  const h = Math.floor(whole / 60), m = whole % 60;
+  const h = Math.floor(whole / 60),
+    m = whole % 60;
   const hours = h ? unit(numberWords(h), "hour", "hours") : "";
   const mins = m || !h ? unit(numberWords(m), "minute", "minutes") : "";
   return [hours, mins].filter(Boolean).join(" ");

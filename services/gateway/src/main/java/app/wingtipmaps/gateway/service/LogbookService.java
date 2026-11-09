@@ -38,20 +38,24 @@ public class LogbookService {
     }
 
     public LogbookEntry add(Pilot pilot, LogbookEntryRequest r) {
-        return entries.save(fill(new LogbookEntry(pilot), r).track(r.airHours(), r.touchAndGoes(), r.fromTrack(),
-                ownFlight(pilot, r.flightId())));
+        return entries.save(fill(new LogbookEntry(pilot), r)
+                .track(r.airHours(), r.touchAndGoes(), r.fromTrack(), ownFlight(pilot, r.flightId())));
     }
 
     /** The saved flight an entry was flown as, where it is the pilot's
      *  own; none otherwise. */
     private Long ownFlight(Pilot pilot, Long flightId) {
-        return flightId == null ? null
-                : flights.findByIdAndPilotId(flightId, pilot.getId()).map(f -> flightId).orElse(null);
+        return flightId == null
+                ? null
+                : flights.findByIdAndPilotId(flightId, pilot.getId())
+                        .map(f -> flightId)
+                        .orElse(null);
     }
 
     public Optional<LogbookEntry> update(Pilot pilot, Long id, LogbookEntryRequest r) {
-        return entries.findByIdAndPilotId(id, pilot.getId()).map(e -> entries.save(fill(e, r)
-                .track(r.airHours(), r.touchAndGoes(), r.fromTrack(), ownFlight(pilot, r.flightId()))));
+        return entries.findByIdAndPilotId(id, pilot.getId())
+                .map(e -> entries.save(fill(e, r)
+                        .track(r.airHours(), r.touchAndGoes(), r.fromTrack(), ownFlight(pilot, r.flightId()))));
     }
 
     /** Entries brought in from a file, all or none: each not already in the
@@ -75,16 +79,18 @@ public class LogbookService {
 
     /** What makes two entries one flight, for an import. */
     private static String sameFlight(LocalDate on, String aircraft, String route, double totalHours) {
-        return on + "|" + Objects.toString(aircraft, "").toUpperCase() + "|" + Objects.toString(route, "").toUpperCase()
-                + "|" + Math.round(totalHours * 10);
+        return on + "|" + Objects.toString(aircraft, "").toUpperCase() + "|"
+                + Objects.toString(route, "").toUpperCase() + "|" + Math.round(totalHours * 10);
     }
 
     /** @return true if an entry was actually deleted */
     public boolean delete(Pilot pilot, Long id) {
-        return entries.findByIdAndPilotId(id, pilot.getId()).map(e -> {
-            entries.delete(e);
-            return true;
-        }).orElse(false);
+        return entries.findByIdAndPilotId(id, pilot.getId())
+                .map(e -> {
+                    entries.delete(e);
+                    return true;
+                })
+                .orElse(false);
     }
 
     /** Whether the pilot is emailed before their currency runs out. */
@@ -99,10 +105,23 @@ public class LogbookService {
     }
 
     private static LogbookEntry fill(LogbookEntry e, LogbookEntryRequest r) {
-        return e.set(r.flownOn(), Typed.text(r.aircraft()), Typed.text(r.aircraftType()), Typed.text(r.route()),
-                r.totalHours(), r.nightHours(), r.crossCountryHours(), r.dayLandings(), r.nightLandings(),
-                Typed.text(r.remarks()))
-                .training(r.dualHours(), r.soloHours(), r.instrumentHours(), r.toweredLandings(), r.distanceNm(),
+        return e.set(
+                        r.flownOn(),
+                        Typed.text(r.aircraft()),
+                        Typed.text(r.aircraftType()),
+                        Typed.text(r.route()),
+                        r.totalHours(),
+                        r.nightHours(),
+                        r.crossCountryHours(),
+                        r.dayLandings(),
+                        r.nightLandings(),
+                        Typed.text(r.remarks()))
+                .training(
+                        r.dualHours(),
+                        r.soloHours(),
+                        r.instrumentHours(),
+                        r.toweredLandings(),
+                        r.distanceNm(),
                         r.longestLegNm())
                 .instrument(r.approaches(), r.holding(), r.tracking());
     }

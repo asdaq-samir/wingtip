@@ -19,6 +19,7 @@ magnetic = true - declination (this falls out of "east is least, west is
 best" automatically once the sign is applied consistently -- see
 wingtip.navlog.magnetic_heading_deg).
 """
+
 from datetime import date
 
 from .engine import ask as engine

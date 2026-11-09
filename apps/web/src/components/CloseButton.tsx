@@ -11,7 +11,10 @@ import RoundButton from "./RoundButton";
  * 20 it read as a small mark. Its size held against a row's own glyph
  * size (`!`).
  */
-export default function CloseButton({ label = "Close", ...props }: Omit<ComponentProps<typeof RoundButton>, "label" | "children"> & {
+export default function CloseButton({
+  label = "Close",
+  ...props
+}: Omit<ComponentProps<typeof RoundButton>, "label" | "children"> & {
   /** What it does, where that is more than closing ("Clear the route"). */
   label?: string;
 }) {

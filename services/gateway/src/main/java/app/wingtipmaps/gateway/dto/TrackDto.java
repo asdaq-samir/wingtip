@@ -10,10 +10,8 @@ import java.util.List;
  *  (lib/track) and thins it: the file's name, and its points in time
  *  order. In and out of PUT and GET /api/flights/{id}/track alike. */
 public record TrackDto(
-        @NotBlank(message = "source is required")
-        @Size(max = 120, message = "source must be at most 120 characters")
+        @NotBlank(message = "source is required") @Size(max = 120, message = "source must be at most 120 characters")
         String source,
-        @NotNull(message = "points is required")
-        @Size(min = 2, max = 5000, message = "a track has 2 to 5000 points")
-        List<@Valid @NotNull TrackPointDto> points) {
-}
+
+        @NotNull(message = "points is required") @Size(min = 2, max = 5000, message = "a track has 2 to 5000 points")
+        List<@Valid @NotNull TrackPointDto> points) {}

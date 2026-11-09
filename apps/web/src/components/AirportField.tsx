@@ -9,7 +9,14 @@ import type { RecentAirport } from "../lib/preferences";
  *  for one: the search bar's field and, while something is typed, the
  *  airports that answer it (PanelCapsule); the one picked shown in the
  *  field as "Madison, KMSN", its results put away. */
-export default function AirportField({ label, placeholder, icon, picked, onPick, testId }: {
+export default function AirportField({
+  label,
+  placeholder,
+  icon,
+  picked,
+  onPick,
+  testId,
+}: {
   label: string;
   placeholder: string;
   icon?: typeof MapPin;
@@ -24,14 +31,34 @@ export default function AirportField({ label, placeholder, icon, picked, onPick,
     <div className="flex flex-col gap-1.5">
       <span className={cn("px-1 text-muted-foreground", TEXT.note)}>{label}</span>
       <SearchField
-        value={value} placeholder={placeholder} label={label} testId={testId} icon={icon}
-        onChange={v => { onPick(null); setTyped(v); setOpen(true); }}
-        onFocus={() => setOpen(true)} onCancel={() => setOpen(false)} onSubmit={() => undefined}
-        onClear={() => { onPick(null); setTyped(""); }}
+        value={value}
+        placeholder={placeholder}
+        label={label}
+        testId={testId}
+        icon={icon}
+        onChange={(v) => {
+          onPick(null);
+          setTyped(v);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onCancel={() => setOpen(false)}
+        onSubmit={() => undefined}
+        onClear={() => {
+          onPick(null);
+          setTyped("");
+        }}
       />
       {open && !picked && typed.trim() && (
         <div className="max-h-56 overflow-y-auto" data-testid={`${testId}-results`}>
-          <SearchResults query={typed} onPick={a => { onPick(a); setTyped(""); setOpen(false); }} />
+          <SearchResults
+            query={typed}
+            onPick={(a) => {
+              onPick(a);
+              setTyped("");
+              setOpen(false);
+            }}
+          />
         </div>
       )}
     </div>

@@ -20,7 +20,9 @@ final class PilotResponses {
 
     static <T> ResponseEntity<T> withPilot(
             PilotService pilots, Authentication authentication, Function<Pilot, ResponseEntity<T>> action) {
-        return pilots.current(authentication).map(action).orElseGet(() -> ResponseEntity.status(401).build());
+        return pilots.current(authentication)
+                .map(action)
+                .orElseGet(() -> ResponseEntity.status(401).build());
     }
 
     /** The action's answer for the pilot: 200 with it, or 404 when it
@@ -33,8 +35,11 @@ final class PilotResponses {
     /** 204 once the action is done for the pilot, or 404 when it found
      *  nothing of theirs to do it to. */
     static ResponseEntity<Void> done(PilotService pilots, Authentication authentication, Predicate<Pilot> action) {
-        return withPilot(pilots, authentication, pilot -> action.test(pilot)
-                ? ResponseEntity.noContent().build()
-                : ResponseEntity.notFound().build());
+        return withPilot(
+                pilots,
+                authentication,
+                pilot -> action.test(pilot)
+                        ? ResponseEntity.noContent().build()
+                        : ResponseEntity.notFound().build());
     }
 }

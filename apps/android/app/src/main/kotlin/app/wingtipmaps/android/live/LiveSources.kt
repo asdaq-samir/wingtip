@@ -1,13 +1,13 @@
 package app.wingtipmaps.android.live
 
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.airspaceAt
 import app.wingtipmaps.android.api.generated.AirportAtis
 import app.wingtipmaps.android.api.generated.AirportRvr
 import app.wingtipmaps.android.api.generated.AirspaceAt
 import app.wingtipmaps.android.api.generated.DepartureEvents
 import app.wingtipmaps.android.api.generated.FlowAtAirports
 import app.wingtipmaps.android.api.generated.SaaStatuses
-import app.wingtipmaps.android.api.airspaceAt
 import app.wingtipmaps.android.api.liveAtis
 import app.wingtipmaps.android.api.liveDepartures
 import app.wingtipmaps.android.api.liveFlow

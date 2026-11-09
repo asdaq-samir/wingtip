@@ -10,8 +10,4 @@ export const LABEL_HALO = { "text-halo-color": "#ffffff", "text-halo-width": 2 }
 /** A tap's reach and order: a mark within a finger's half-width (a 44 pt
  *  target), a line within 10 px; the route's airports
  *  before its checkpoints before anything on the chart under them. */
-export const TAP = {
-  mark: 22,
-  line: 10,
-  rank: { field: 0, checkpoint: 1, mark: 2, line: 5, area: 8 },
-} as const;
+export const TAP = { mark: 22, line: 10, rank: { field: 0, checkpoint: 1, mark: 2, line: 5, area: 8 } } as const;

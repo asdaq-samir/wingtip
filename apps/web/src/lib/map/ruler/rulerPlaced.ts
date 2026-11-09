@@ -13,11 +13,15 @@ const MIN_BAND = 220;
 type XY = { x: number; y: number };
 export type Placed = ReturnType<typeof placed>;
 
-export function placed(at: (p: XY) => { lat: number; lon: number }, [a, b]: readonly [XY, XY], declination: Declination | null, tasKt: number | null) {
+export function placed(
+  at: (p: XY) => { lat: number; lon: number },
+  [a, b]: readonly [XY, XY],
+  declination: Declination | null,
+  tasKt: number | null,
+) {
   const { angleDeg, flipped } = upright(a, b);
   const [left, right] = flipped ? [b, a] : [a, b];
   const words = rulerWords(at(left), at(right), declination, tasKt);
   const width = Math.max(MIN_BAND, Math.hypot(b.x - a.x, b.y - a.y) - 2 * FINGER_CLEAR);
   return { a, b, angleDeg, words, width, middle: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } };
 }
-

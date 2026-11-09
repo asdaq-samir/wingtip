@@ -35,8 +35,13 @@ import org.springframework.test.web.servlet.MockMvc;
  * {@code permitAll}. Each case here fails loudly if the split between
  * shared and pilot-scoped data moves.
  */
-@WebMvcTest({PilotController.class, SignInCapabilitiesController.class, AppSiteAssociationController.class,
-        AssetLinksController.class, DeviceSignInController.class})
+@WebMvcTest({
+    PilotController.class,
+    SignInCapabilitiesController.class,
+    AppSiteAssociationController.class,
+    AssetLinksController.class,
+    DeviceSignInController.class
+})
 @Import(SecurityConfig.class)
 class SecurityRulesTest {
 
@@ -55,9 +60,11 @@ class SecurityRulesTest {
      *  policy must let them, and nothing wider. */
     @Test
     void thePolicyLetsTheOverlayAndThePhotosReachTheirHostsOnly() throws Exception {
-        String policy = mockMvc.perform(get("/api/me")).andReturn().getResponse().getHeader("Content-Security-Policy");
-        assertThat(policy).containsPattern(
-                "img-src 'self' data:[^;]* https://basemap\\.nationalmap\\.gov https://tile\\.googleapis\\.com https://mesonet\\.agron\\.iastate\\.edu https://t\\.plnspttrs\\.net;");
+        String policy =
+                mockMvc.perform(get("/api/me")).andReturn().getResponse().getHeader("Content-Security-Policy");
+        assertThat(policy)
+                .containsPattern(
+                        "img-src 'self' data:[^;]* https://basemap\\.nationalmap\\.gov https://tile\\.googleapis\\.com https://mesonet\\.agron\\.iastate\\.edu https://t\\.plnspttrs\\.net;");
         assertThat(policy).contains("connect-src 'self' https://tile.googleapis.com https://api.planespotters.net;");
         assertThat(policy).doesNotContain("*");
     }
@@ -66,8 +73,7 @@ class SecurityRulesTest {
     void anAnonymousCallerIsRefusedWith401RatherThanRedirected() throws Exception {
         // A redirect here is the trap: fetch() follows it and reports a
         // 200 carrying a login page.
-        mockMvc.perform(get("/api/flights"))
-                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/flights")).andExpect(status().isUnauthorized());
     }
 
     /** Who is signed in, asked by every page: signed out is an empty
@@ -76,16 +82,17 @@ class SecurityRulesTest {
     void signedOutTheSignInCheckAnswersNoOne() throws Exception {
         mockMvc.perform(get("/api/me"))
                 .andExpect(status().isNoContent())
-                .andExpect(result -> assertThat(result.getResponse().getContentAsString()).isEmpty());
+                .andExpect(result ->
+                        assertThat(result.getResponse().getContentAsString()).isEmpty());
     }
 
     @Test
     void aSignedInPilotSeesThemselves() throws Exception {
-        given(pilotService.current(any()))
-                .willReturn(Optional.of(new Pilot("pilot@example.com", "A. Pilot", "sub-1")));
+        given(pilotService.current(any())).willReturn(Optional.of(new Pilot("pilot@example.com", "A. Pilot", "sub-1")));
 
-        mockMvc.perform(get("/api/me").with(oidcLogin()
-                        .idToken(token -> token.claim("sub", "sub-1").claim("email", "pilot@example.com"))))
+        mockMvc.perform(get("/api/me")
+                        .with(oidcLogin()
+                                .idToken(token -> token.claim("sub", "sub-1").claim("email", "pilot@example.com"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("pilot@example.com"));
     }
@@ -118,7 +125,8 @@ class SecurityRulesTest {
     @Test
     void plannerReadsStayOpen() throws Exception {
         mockMvc.perform(get("/api/planner/course"))
-                .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotIn(401, 403));
+                .andExpect(
+                        result -> assertThat(result.getResponse().getStatus()).isNotIn(401, 403));
     }
 
     /** Aircraft and flights are private to whoever owns them, so a
@@ -133,9 +141,11 @@ class SecurityRulesTest {
     @Test
     void healthAndDocsStayReachableWithoutASession() throws Exception {
         mockMvc.perform(get("/actuator/health"))
-                .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(401));
+                .andExpect(
+                        result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(401));
         mockMvc.perform(get("/v3/api-docs"))
-                .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(401));
+                .andExpect(
+                        result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(401));
     }
 
     /** Session cookies are attached by the browser automatically, which is
@@ -143,14 +153,14 @@ class SecurityRulesTest {
      *  token is refused even when the caller is signed in. */
     @Test
     void aStateChangingCallWithoutACsrfTokenIsRefused() throws Exception {
-        mockMvc.perform(post("/api/aircraft").with(oidcLogin()))
-                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/aircraft").with(oidcLogin())).andExpect(status().isForbidden());
     }
 
     @Test
     void theSameCallWithACsrfTokenIsNotRefusedByCsrf() throws Exception {
         mockMvc.perform(post("/api/aircraft").with(oidcLogin()).with(csrf()))
-                .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(403));
+                .andExpect(
+                        result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(403));
     }
 
     @Test
@@ -177,12 +187,20 @@ class SecurityRulesTest {
     @Test
     void aTvSignsInWithoutASessionAndOnlyAPilotApprovesIt() throws Exception {
         mockMvc.perform(post("/api/auth/device").with(csrf())).andExpect(status().isOk());
-        mockMvc.perform(post("/api/auth/device/token").with(csrf()).contentType("application/json")
-                .content("{\"deviceCode\":\"unknown\"}")).andExpect(status().isGone());
-        mockMvc.perform(post("/api/auth/device/approve").with(csrf()).contentType("application/json")
-                .content("{\"userCode\":\"BCDF-GHJK\"}")).andExpect(status().isUnauthorized());
-        mockMvc.perform(get("/tv")).andExpect(status().is3xxRedirection())
-                .andExpect(result -> assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/app/plan?tv-link=1"));
+        mockMvc.perform(post("/api/auth/device/token")
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content("{\"deviceCode\":\"unknown\"}"))
+                .andExpect(status().isGone());
+        mockMvc.perform(post("/api/auth/device/approve")
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content("{\"userCode\":\"BCDF-GHJK\"}"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/tv"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(result ->
+                        assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/app/plan?tv-link=1"));
     }
 
     /** Nobody can sign in and nothing opened it: the developer's
@@ -192,7 +210,8 @@ class SecurityRulesTest {
     void theDevelopersReadsAreRefusedTooInAClosedDeployment() throws Exception {
         for (String path : new String[] {"/api/planner/status", "/api/planner/dev/services"}) {
             mockMvc.perform(get(path))
-                    .andExpect(result -> assertThat(result.getResponse().getStatus()).isIn(401, 403));
+                    .andExpect(result ->
+                            assertThat(result.getResponse().getStatus()).isIn(401, 403));
         }
     }
 }

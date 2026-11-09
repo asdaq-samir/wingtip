@@ -12,7 +12,11 @@ import { frdIdent } from "../../../lib/identSchema";
  * iOS asks for a figure or two: an alert with its fields from `md` up, and
  * on a phone a sheet with Cancel and Add in its title row (SheetDialog).
  */
-export default function FixFromDialog({ from, onClose, onCreate }: {
+export default function FixFromDialog({
+  from,
+  onClose,
+  onCreate,
+}: {
   /** The point it is measured from; null, put away. */
   from: string | null;
   onClose: () => void;
@@ -42,30 +46,60 @@ export default function FixFromDialog({ from, onClose, onCreate }: {
   const ident = valid ? frdIdent(at, deg, nm) : null;
   return (
     <SheetDialog
-      open={!!from} onOpenChange={open => { if (!open) onClose(); }} alert cancel size="sm"
+      open={!!from}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      alert
+      cancel
+      size="sm"
       title={`A fix from ${at}`}
       description={`Its magnetic course from ${at}, a VOR's radial, and how far. Flown over next${ident ? `: ${ident}` : "."}`}
       action={{ label: "Add", form, disabled: !valid, testId: "fix-from-add" }}
-      onOpenAutoFocus={e => { e.preventDefault(); (e.currentTarget as HTMLElement).querySelector("input")?.focus(); }}
+      onOpenAutoFocus={(e) => {
+        e.preventDefault();
+        (e.currentTarget as HTMLElement).querySelector("input")?.focus();
+      }}
     >
-      <form id={form} onSubmit={e => { e.preventDefault(); if (ident) onCreate(ident); }} className="flex gap-2">
+      <form
+        id={form}
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (ident) onCreate(ident);
+        }}
+        className="flex gap-2"
+      >
         {/* Each figure with its unit inside the field, the stock input
             group, as the airplane form's figures have theirs. */}
         <InputGroup className="h-10 flex-1 font-mono">
           <InputGroupInput
-            value={course} onChange={e => setCourse(e.target.value.replace(/\D/g, "").slice(0, 3))}
-            placeholder="090" inputMode="numeric" spellCheck={false} aria-label={`Magnetic course from ${at}, degrees`}
-            className="font-mono" data-testid="fix-from-course"
+            value={course}
+            onChange={(e) => setCourse(e.target.value.replace(/\D/g, "").slice(0, 3))}
+            placeholder="090"
+            inputMode="numeric"
+            spellCheck={false}
+            aria-label={`Magnetic course from ${at}, degrees`}
+            className="font-mono"
+            data-testid="fix-from-course"
           />
-          <InputGroupAddon align="inline-end"><InputGroupText>°</InputGroupText></InputGroupAddon>
+          <InputGroupAddon align="inline-end">
+            <InputGroupText>°</InputGroupText>
+          </InputGroupAddon>
         </InputGroup>
         <InputGroup className="h-10 flex-1 font-mono">
           <InputGroupInput
-            value={distance} onChange={e => setDistance(e.target.value.replace(/[^\d.]/g, "").slice(0, 5))}
-            placeholder="30" inputMode="decimal" spellCheck={false} aria-label={`Distance from ${at}, nautical miles`}
-            className="font-mono" data-testid="fix-from-distance"
+            value={distance}
+            onChange={(e) => setDistance(e.target.value.replace(/[^\d.]/g, "").slice(0, 5))}
+            placeholder="30"
+            inputMode="decimal"
+            spellCheck={false}
+            aria-label={`Distance from ${at}, nautical miles`}
+            className="font-mono"
+            data-testid="fix-from-distance"
           />
-          <InputGroupAddon align="inline-end"><InputGroupText>nm</InputGroupText></InputGroupAddon>
+          <InputGroupAddon align="inline-end">
+            <InputGroupText>nm</InputGroupText>
+          </InputGroupAddon>
         </InputGroup>
       </form>
     </SheetDialog>

@@ -96,7 +96,11 @@ fn session(out: &mut String, (i, s): &(usize, &Session)) {
             out.push('{');
             str_(out, "area", w.area);
             str_(out, "acs", w.acs);
-            str_(out, "note", "May count toward a WINGS flight activity when flown with an authorized instructor to the ACS standard (AC 61-91K 7.3)");
+            str_(
+                out,
+                "note",
+                "May count toward a WINGS flight activity when flown with an authorized instructor to the ACS standard (AC 61-91K 7.3)",
+            );
             out.push('}');
         }
         None => out.push_str("null"),

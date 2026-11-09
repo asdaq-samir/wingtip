@@ -21,6 +21,7 @@ call and the check. The words never fail the figures: where the model
 cannot be reached the answer has no sentences and says why
 (`unavailable`), and the screen shows the figures without the words.
 """
+
 from __future__ import annotations
 
 import html
@@ -149,9 +150,12 @@ def _said(material: str, output: type[WordsSaid]) -> WordsSaid:
     try:
         with tracing.claude_call("words", WORDS_MODEL) as used:
             response = anthropic.Anthropic().messages.parse(
-                model=WORDS_MODEL, max_tokens=WORDS_MAX_TOKENS, system=SYSTEM,
+                model=WORDS_MODEL,
+                max_tokens=WORDS_MAX_TOKENS,
+                system=SYSTEM,
                 messages=[{"role": "user", "content": material}],
-                output_format=output, output_config={"effort": WORDS_EFFORT},
+                output_format=output,
+                output_config={"effort": WORDS_EFFORT},
             )
             used.add(response)
     except anthropic.AnthropicError as err:
@@ -188,8 +192,15 @@ def checked(sentences: list[Sentence], sources: list[Source], most: int) -> tupl
     return kept, [s for s in sources if s.id in cited]
 
 
-def say(ask: str, sources: list[Source], *, most: int = 8, output: type[WordsSaid] = WordsSaid,
-        answer: type[WordsAnswer] = WordsAnswer, coverage_since: str | None = None) -> WordsAnswer:
+def say(
+    ask: str,
+    sources: list[Source],
+    *,
+    most: int = 8,
+    output: type[WordsSaid] = WordsSaid,
+    answer: type[WordsAnswer] = WordsAnswer,
+    coverage_since: str | None = None,
+) -> WordsAnswer:
     """The sources put into words as `ask` asks, each sentence checked
     against them. The model fills in `output`, and what that has beyond
     the sentences (the debrief's instructor note) is the `answer`'s too,
@@ -221,19 +232,29 @@ router = APIRouter()
 MOST_SENTENCES = 3
 MOST_DEBRIEF_SENTENCES = 4
 
-NOTAMS_ASK = ("Which of these NOTAMs and TFRs matter for this flight, and why: the most important first, one sentence each, "
-              "leaving out those that do not bear on it. At most three sentences, each short: the pilot looks and goes.")
-WEATHER_ASK = ("The weather for this flight as a pilot would brief it: the departure now, each leg at its time, the destination "
-               "at arrival, then what could change it -- the hazards, the pilot reports, the TFRs. Where the figures give a "
-               "reason not to go VFR, say so plainly. At most three sentences, each short: the pilot looks and goes.")
-RISK_ASK = ("Where the risk in this flight is, in the pilot's terms: the weather, the airplane, the pilot's own recency and "
-            "minimums, the plan; and what would lower it, where the findings say. The most important first. Never say the "
-            "flight is safe. At most three sentences, each short: the pilot looks and goes.")
-DEBRIEF_ASK = ("The flight as flown against its plan, as an instructor would debrief it: what was held and what was not, leg by "
-               "leg, the checkpoints' times and the pattern entries, the most important first. Then one paragraph for the "
-               "pilot's instructor, from those sentences alone. At most four sentences, each short: the pilot looks and goes.")
-CHANGES_ASK = ("What changed in this flight's weather since the last look, and what it means for the flight: each change in a "
-               "sentence, the most important first, with both readings where they help. At most three sentences, each short.")
+NOTAMS_ASK = (
+    "Which of these NOTAMs and TFRs matter for this flight, and why: the most important first, one sentence each, "
+    "leaving out those that do not bear on it. At most three sentences, each short: the pilot looks and goes."
+)
+WEATHER_ASK = (
+    "The weather for this flight as a pilot would brief it: the departure now, each leg at its time, the destination "
+    "at arrival, then what could change it -- the hazards, the pilot reports, the TFRs. Where the figures give a "
+    "reason not to go VFR, say so plainly. At most three sentences, each short: the pilot looks and goes."
+)
+RISK_ASK = (
+    "Where the risk in this flight is, in the pilot's terms: the weather, the airplane, the pilot's own recency and "
+    "minimums, the plan; and what would lower it, where the findings say. The most important first. Never say the "
+    "flight is safe. At most three sentences, each short: the pilot looks and goes."
+)
+DEBRIEF_ASK = (
+    "The flight as flown against its plan, as an instructor would debrief it: what was held and what was not, leg by "
+    "leg, the checkpoints' times and the pattern entries, the most important first. Then one paragraph for the "
+    "pilot's instructor, from those sentences alone. At most four sentences, each short: the pilot looks and goes."
+)
+CHANGES_ASK = (
+    "What changed in this flight's weather since the last look, and what it means for the flight: each change in a "
+    "sentence, the most important first, with both readings where they help. At most three sentences, each short."
+)
 
 
 class NotamWords(WordsAnswer):
@@ -268,8 +289,13 @@ class ChangesWords(WordsAnswer):
 
 
 #: Each reading's sources at the planner (POST /api/words/{kind}/sources).
-SOURCES = {"notams": planner.notam_sources, "weather": planner.weather_sources, "risk": planner.risk_sources,
-           "debrief": planner.debrief_sources, "changes": planner.changes_sources}
+SOURCES = {
+    "notams": planner.notam_sources,
+    "weather": planner.weather_sources,
+    "risk": planner.risk_sources,
+    "debrief": planner.debrief_sources,
+    "changes": planner.changes_sources,
+}
 
 
 def sources_for(kind: str, ask: dict) -> WordsSources:
@@ -330,8 +356,9 @@ def debrief_words(ask: dict = ASK) -> DebriefWordsAnswer:
     """A flown flight's debrief ({debrief}) in a few sentences, and a
     paragraph for the pilot's instructor written from them. A 422 from
     the planner where there is no debrief: the track never flew."""
-    return say(DEBRIEF_ASK, _sources(sources_for("debrief", ask)), most=MOST_DEBRIEF_SENTENCES,
-               output=DebriefWords, answer=DebriefWordsAnswer)
+    return say(
+        DEBRIEF_ASK, _sources(sources_for("debrief", ask)), most=MOST_DEBRIEF_SENTENCES, output=DebriefWords, answer=DebriefWordsAnswer
+    )
 
 
 @router.post("/api/words/changes", openapi_extra=WORDS)

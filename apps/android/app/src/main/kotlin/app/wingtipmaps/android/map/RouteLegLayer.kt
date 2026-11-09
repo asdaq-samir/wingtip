@@ -3,11 +3,11 @@ package app.wingtipmaps.android.map
 import androidx.core.graphics.toColorInt
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.route.RouteLegs
+import org.maplibre.android.maps.Style
 import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory
-import org.maplibre.android.maps.Style
 
 /**
  * The selected leg's green casing, as ForeFlight cases a selected course

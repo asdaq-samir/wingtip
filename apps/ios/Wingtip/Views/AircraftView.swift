@@ -88,7 +88,7 @@ struct AircraftView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(profile.type ?? profile.designator ?? profile.name.uppercased()).font(.headline)
                                 Text("\(Format.speed(profile.cruiseTasKt)) · \(Format.number(profile.fuelBurnGph, decimals: 1)) gal/h · ceiling \(Format.altitude(profile.serviceCeilingFt))"
-                                     + (profile.usableFuelGal.map { " · \(Format.fuel($0, decimals: 0)) usable" } ?? ""))
+                                    + (profile.usableFuelGal.map { " · \(Format.fuel($0, decimals: 0)) usable" } ?? ""))
                                     .font(.footnote).foregroundStyle(.secondary)
                             }
                             Spacer()

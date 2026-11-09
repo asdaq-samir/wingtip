@@ -21,7 +21,11 @@ describe("the engine gate", () => {
     function Asks() {
       return <p>{callEngine("holding_leg_minutes", { altitude_ft: 16_000 })} min</p>;
     }
-    render(<EngineGate fallback={<p>waiting</p>}><Asks /></EngineGate>);
+    render(
+      <EngineGate fallback={<p>waiting</p>}>
+        <Asks />
+      </EngineGate>,
+    );
     expect(screen.getByText("waiting")).toBeTruthy();
     expect(screen.queryByText(/min/)).toBeNull();
     await act(() => loadEngine(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "wingtip-engine.wasm"))));

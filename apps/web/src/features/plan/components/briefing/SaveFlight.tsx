@@ -69,7 +69,7 @@ export function SaveFlightButton(flight: FlightToSave) {
   const plan = useMemo(() => request && planOf(request), [request]);
   const filedPlans = useMutationState({
     filters: { mutationKey: SAVE_FLIGHT, status: "success" },
-    select: m => planOf(m.state.variables as SaveFlightRequest),
+    select: (m) => planOf(m.state.variables as SaveFlightRequest),
   });
   const saving = useIsMutating({ mutationKey: SAVE_FLIGHT }) > 0;
   const saved = !!plan && filedPlans.includes(plan);
@@ -77,7 +77,11 @@ export function SaveFlightButton(flight: FlightToSave) {
   if (!pilot) return null;
 
   return (
-    <DropdownMenuItem onSelect={() => request && save.mutate(request)} disabled={!request || saving || saved} data-testid="save-flight-button">
+    <DropdownMenuItem
+      onSelect={() => request && save.mutate(request)}
+      disabled={!request || saving || saved}
+      data-testid="save-flight-button"
+    >
       {saving ? <Spinner aria-hidden /> : saved ? <Check /> : <Save />}
       {saving ? "Saving…" : saved ? "Saved" : "Save this flight"}
     </DropdownMenuItem>
@@ -94,10 +98,11 @@ export function ReviewAskItem({ flight, onAsk }: { flight: FlightToSave; onAsk: 
   const { data: pilot } = useQuery(pilotQuery);
   const { data: training } = useQuery({ ...trainingQuery, enabled: !!pilot });
   const request = useSaveRequest(flight);
-  if (!pilot || !training?.instructors.some(l => l.accepted)) return null;
+  if (!pilot || !training?.instructors.some((l) => l.accepted)) return null;
   return (
     <DropdownMenuItem disabled={!request} onSelect={onAsk} data-testid="ask-review">
-      <GraduationCap />Ask for a solo cross-country review
+      <GraduationCap />
+      Ask for a solo cross-country review
     </DropdownMenuItem>
   );
 }
@@ -117,37 +122,46 @@ export function ReviewAskSheet({ flight, onDone }: { flight: FlightToSave; onDon
   // asked about as it is, not filed again.
   const filed = useMutationState({
     filters: { mutationKey: SAVE_FLIGHT, status: "success" },
-    select: m => ({ plan: planOf(m.state.variables as SaveFlightRequest), id: (m.state.data as { id: number }).id }),
+    select: (m) => ({ plan: planOf(m.state.variables as SaveFlightRequest), id: (m.state.data as { id: number }).id }),
   });
   const ask = useMutation({
     mutationFn: async (a: ReviewAsk) => {
       const plan = planOf(request!);
-      const flightId = filed.find(f => f.plan === plan)?.id ?? (await save.mutateAsync(request!)).id;
+      const flightId = filed.find((f) => f.plan === plan)?.id ?? (await save.mutateAsync(request!)).id;
       return api.training.askReview({ flightId, ...a });
     },
-    onSuccess: next => {
+    onSuccess: (next) => {
       queryClient.setQueryData(["training"], next);
       void queryClient.invalidateQueries({ queryKey: ["flights"] });
       done("Sent to Your Instructor");
       onDone();
     },
   });
-  const theirs = training?.instructors.filter(l => l.accepted) ?? [];
+  const theirs = training?.instructors.filter((l) => l.accepted) ?? [];
   return (
     <ResponsivePopoverContent
-      title="Solo cross-country review" align="end" className="w-96 max-w-[calc(100vw-2rem)] p-3" data-testid="review-sheet"
+      title="Solo cross-country review"
+      align="end"
+      className="w-96 max-w-[calc(100vw-2rem)] p-3"
+      data-testid="review-sheet"
       // Opened as the Share menu goes, whose focus goes back to its button
       // as it closes: taken for a move outside, it shut the sheet just
       // opened, now and then. A tap outside or Escape still closes it.
-      onFocusOutside={e => e.preventDefault()}
+      onFocusOutside={(e) => e.preventDefault()}
       description="Your instructor reviews its planning and the weather, and endorses it for the airplane and the day (14 CFR 61.93(c)(3), (d))."
     >
       <div className="space-y-3">
         <ReviewAskForm
-          instructors={theirs} pending={ask.isPending || !request} onAsk={a => ask.mutate(a)}
+          instructors={theirs}
+          pending={ask.isPending || !request}
+          onAsk={(a) => ask.mutate(a)}
           initialDay={localDay(flight.depart ? new Date(flight.depart) : new Date())}
         />
-        {ask.error && <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="review-problem">{ask.error.message}</p>}
+        {ask.error && (
+          <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="review-problem">
+            {ask.error.message}
+          </p>
+        )}
       </div>
     </ResponsivePopoverContent>
   );

@@ -28,7 +28,9 @@ test("the relief is shaded over the chart, and stood up in 3D with the route at 
   await settle(page);
   await expect(map(page)).toHaveAttribute("data-terrain", "3d", { timeout: slow(20_000) });
   // Once the legs are in, the route in the air, a piece every half mile.
-  await expect.poll(async () => Number(await map(page).getAttribute("data-route-aloft") ?? 0), { timeout: slow(60_000) }).toBeGreaterThan(100);
+  await expect
+    .poll(async () => Number((await map(page).getAttribute("data-route-aloft")) ?? 0), { timeout: slow(60_000) })
+    .toBeGreaterThan(100);
 
   // Flat again: the chart as printed, north up.
   await pickTerrain(page, "Flat");
@@ -53,7 +55,9 @@ test("the dry run seen from the pilot's seat, its key a view and not clearance",
   await expect(map(page)).toHaveAttribute("data-terrain", "3d", { timeout: slow(20_000) });
   await expect(map(page)).toHaveAttribute("data-pilot-view", "", { timeout: slow(20_000) });
   // Coloured from the airplane's altitude as it climbs out of C81 (869 ft).
-  await expect.poll(async () => Number(await map(page).getAttribute("data-pilot-alt-ft") ?? 0), { timeout: slow(20_000) }).toBeGreaterThan(800);
+  await expect
+    .poll(async () => Number((await map(page).getAttribute("data-pilot-alt-ft")) ?? 0), { timeout: slow(20_000) })
+    .toBeGreaterThan(800);
   const key = sideDrawer(page).getByTestId("dry-run-pilot-key");
   await expect(key).toContainText("Ground within 1,000 ft");
   await expect(key).toContainText("A view, not terrain clearance");

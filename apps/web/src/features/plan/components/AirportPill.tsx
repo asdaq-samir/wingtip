@@ -8,7 +8,7 @@ import { TEXT } from "../../../lib/text";
 import { useStripShows } from "../hooks/useStripShows";
 
 /** Find Nearby's tiles in Maps' order for them: food first. */
-const NEARBY: StopKind[] = ["food", ...KIND_ORDER.filter(k => k !== "food")];
+const NEARBY: StopKind[] = ["food", ...KIND_ORDER.filter((k) => k !== "food")];
 
 /**
  * The Airport tab's Find Nearby, under its strip, as Apple Maps' Find
@@ -21,10 +21,16 @@ function FindNearby({ onFind }: { onFind: (kind: StopKind) => void }) {
   return (
     <PillSection title="Find Nearby" testId="find-nearby">
       <div className="grid grid-cols-2 gap-2">
-        {NEARBY.map(kind => (
+        {NEARBY.map((kind) => (
           <button
-            key={kind} type="button" onClick={() => onFind(kind)} data-testid={`find-nearby-${kind}`}
-            className={cn("flex h-14 min-w-0 items-center gap-3 rounded-2xl bg-foreground/8 px-3 text-left font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring", TEXT.row)}
+            key={kind}
+            type="button"
+            onClick={() => onFind(kind)}
+            data-testid={`find-nearby-${kind}`}
+            className={cn(
+              "flex h-14 min-w-0 items-center gap-3 rounded-2xl bg-foreground/8 px-3 text-left font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              TEXT.row,
+            )}
           >
             <StopKindGlyph kind={kind} className="size-9" />
             <span className="min-w-0 truncate">{STOP_KINDS[kind].tile}</span>
@@ -43,7 +49,15 @@ function FindNearby({ onFind }: { onFind: (kind: StopKind) => void }) {
  * airport/aircraft"), its title the list in full: the Favorites to change,
  * the Recents to take off, the nearest fields.
  */
-export default function AirportPill({ favorites, recents, nearest, onAllFavorites, onAllRecents, onAllNearest, onFindNearby }: {
+export default function AirportPill({
+  favorites,
+  recents,
+  nearest,
+  onAllFavorites,
+  onAllRecents,
+  onAllNearest,
+  onFindNearby,
+}: {
   favorites: ReactNode;
   recents: ReactNode;
   nearest: ReactNode;
@@ -55,7 +69,7 @@ export default function AirportPill({ favorites, recents, nearest, onAllFavorite
   /** Find Nearby's tile tapped: the Stops round the pilot, that kind picked. */
   onFindNearby?: (kind: StopKind) => void;
 }) {
-  const shows = useStripShows(s => s.airport);
+  const shows = useStripShows((s) => s.airport);
   return (
     // Its sections a tab page's room apart (TAB_PAGE_GAP), as every tab's
     // are: Find Nearby sat 16 under the strip where the rest are 24
@@ -63,11 +77,19 @@ export default function AirportPill({ favorites, recents, nearest, onAllFavorite
     <div className={cn("flex flex-col", TAB_PAGE_GAP)} data-testid="airport-pill">
       <StripSection
         lists={[
-          { value: "favorites", label: "Favorites", onMore: onAllFavorites, section: "pill-section-favorites", testId: "airport-shows-favorites" },
+          {
+            value: "favorites",
+            label: "Favorites",
+            onMore: onAllFavorites,
+            section: "pill-section-favorites",
+            testId: "airport-shows-favorites",
+          },
           { value: "recents", label: "Recents", onMore: onAllRecents, section: "airport-recents", testId: "airport-shows-recents" },
           { value: "nearest", label: "Nearest", onMore: onAllNearest, section: "pill-section-nearest", testId: "airport-shows-nearest" },
         ]}
-        shows={shows} onShow={airport => useStripShows.setState({ airport })} menuTestId="airport-strip-shows"
+        shows={shows}
+        onShow={(airport) => useStripShows.setState({ airport })}
+        menuTestId="airport-strip-shows"
       >
         {shows === "favorites" ? favorites : shows === "recents" ? recents : nearest}
       </StripSection>

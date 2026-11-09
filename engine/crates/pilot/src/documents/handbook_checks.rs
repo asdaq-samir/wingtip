@@ -24,7 +24,12 @@ fn band(flags: &mut Vec<Flag>, what: &str, v: f64, unit: &str, lo: f64, hi: f64,
     if positive && v <= 0.0 {
         flags.push(wrong(format!("{what} reads {} {unit}: it must be more than none.", figure(v))));
     } else if v < lo || v > hi {
-        flags.push(check(format!("{what} reads {} {unit}, outside the {}–{} {unit} light airplanes' handbooks give.", figure(v), figure(lo), figure(hi))));
+        flags.push(check(format!(
+            "{what} reads {} {unit}, outside the {}–{} {unit} light airplanes' handbooks give.",
+            figure(v),
+            figure(lo),
+            figure(hi)
+        )));
     }
 }
 
@@ -43,31 +48,42 @@ pub struct Cruise {
 /// is wrong for it. Within one altitude, more power cannot give less
 /// speed or burn less fuel.
 pub fn cruise(rows: &[Cruise], kind: &str) -> Vec<Vec<Flag>> {
-    rows.iter().enumerate().map(|(i, r)| {
-        let mut f = Vec::new();
-        if kind != "tas" {
-            f.push(wrong(format!("The table's speeds read as {} airspeeds; the airplane's profile flies true airspeed (KTAS).",
-                if kind == "cas" { "calibrated" } else { "indicated" })));
-        }
-        band(&mut f, "The pressure altitude", r.altitude_ft, "ft", 0.0, 25_000.0, false);
-        if let Some(p) = r.power_pct {
-            band(&mut f, "The power", p, "%", 40.0, 100.0, true);
-        }
-        band(&mut f, "The true airspeed", r.tas_kt, "kt", 50.0, 350.0, true);
-        band(&mut f, "The fuel burn", r.burn_gph, "gph", 1.0, 60.0, true);
-        for (j, o) in rows.iter().enumerate() {
-            if j == i || o.altitude_ft != r.altitude_ft {
-                continue;
+    rows.iter()
+        .enumerate()
+        .map(|(i, r)| {
+            let mut f = Vec::new();
+            if kind != "tas" {
+                f.push(wrong(format!(
+                    "The table's speeds read as {} airspeeds; the airplane's profile flies true airspeed (KTAS).",
+                    if kind == "cas" { "calibrated" } else { "indicated" }
+                )));
             }
-            match (r.power_pct, o.power_pct) {
-                (Some(p), Some(q)) if p == q && j < i => f.push(check(format!("Another row reads the same {} ft and {}%.", figure(r.altitude_ft), figure(p)))),
-                (Some(p), Some(q)) if p > q && (r.tas_kt < o.tas_kt || r.burn_gph < o.burn_gph) => f.push(check(format!(
-                    "At {} ft, {}% reads less speed or less fuel than {}%: more power gives more of both.", figure(r.altitude_ft), figure(p), figure(q)))),
-                _ => {}
+            band(&mut f, "The pressure altitude", r.altitude_ft, "ft", 0.0, 25_000.0, false);
+            if let Some(p) = r.power_pct {
+                band(&mut f, "The power", p, "%", 40.0, 100.0, true);
             }
-        }
-        f
-    }).collect()
+            band(&mut f, "The true airspeed", r.tas_kt, "kt", 50.0, 350.0, true);
+            band(&mut f, "The fuel burn", r.burn_gph, "gph", 1.0, 60.0, true);
+            for (j, o) in rows.iter().enumerate() {
+                if j == i || o.altitude_ft != r.altitude_ft {
+                    continue;
+                }
+                match (r.power_pct, o.power_pct) {
+                    (Some(p), Some(q)) if p == q && j < i => {
+                        f.push(check(format!("Another row reads the same {} ft and {}%.", figure(r.altitude_ft), figure(p))))
+                    }
+                    (Some(p), Some(q)) if p > q && (r.tas_kt < o.tas_kt || r.burn_gph < o.burn_gph) => f.push(check(format!(
+                        "At {} ft, {}% reads less speed or less fuel than {}%: more power gives more of both.",
+                        figure(r.altitude_ft),
+                        figure(p),
+                        figure(q)
+                    ))),
+                    _ => {}
+                }
+            }
+            f
+        })
+        .collect()
 }
 
 /// The climb: its speed (indicated, Vy), rate and burn.
@@ -117,26 +133,31 @@ pub struct Distance {
 /// field, or at the same field a warmer day, cannot take less distance
 /// (the air is thinner: FAA-H-8083-25C, chapter 11, "Aircraft Performance").
 pub fn distances(rows: &[Distance]) -> Vec<Vec<Flag>> {
-    rows.iter().map(|r| {
-        let mut f = Vec::new();
-        band(&mut f, "The pressure altitude", r.pressure_altitude_ft, "ft", 0.0, 12_000.0, false);
-        band(&mut f, "The temperature", r.temp_c, "°C", -40.0, 50.0, false);
-        band(&mut f, "The ground roll", r.ground_roll_ft, "ft", 100.0, 6_000.0, true);
-        band(&mut f, "The distance over 50 ft", r.over_obstacle_ft, "ft", 200.0, 10_000.0, true);
-        if r.over_obstacle_ft < r.ground_roll_ft {
-            f.push(wrong(format!("The distance over 50 ft ({} ft) reads shorter than the ground roll ({} ft) it includes.",
-                figure(r.over_obstacle_ft), figure(r.ground_roll_ft))));
-        }
-        let thinner = rows.iter().any(|o| {
-            let higher = o.temp_c == r.temp_c && o.pressure_altitude_ft < r.pressure_altitude_ft;
-            let cooler = o.pressure_altitude_ft == r.pressure_altitude_ft && o.temp_c < r.temp_c;
-            (higher || cooler) && (o.ground_roll_ft > r.ground_roll_ft || o.over_obstacle_ft > r.over_obstacle_ft)
-        });
-        if thinner {
-            f.push(check("A lower or cooler row reads longer than this one: thinner air takes more distance.".into()));
-        }
-        f
-    }).collect()
+    rows.iter()
+        .map(|r| {
+            let mut f = Vec::new();
+            band(&mut f, "The pressure altitude", r.pressure_altitude_ft, "ft", 0.0, 12_000.0, false);
+            band(&mut f, "The temperature", r.temp_c, "°C", -40.0, 50.0, false);
+            band(&mut f, "The ground roll", r.ground_roll_ft, "ft", 100.0, 6_000.0, true);
+            band(&mut f, "The distance over 50 ft", r.over_obstacle_ft, "ft", 200.0, 10_000.0, true);
+            if r.over_obstacle_ft < r.ground_roll_ft {
+                f.push(wrong(format!(
+                    "The distance over 50 ft ({} ft) reads shorter than the ground roll ({} ft) it includes.",
+                    figure(r.over_obstacle_ft),
+                    figure(r.ground_roll_ft)
+                )));
+            }
+            let thinner = rows.iter().any(|o| {
+                let higher = o.temp_c == r.temp_c && o.pressure_altitude_ft < r.pressure_altitude_ft;
+                let cooler = o.pressure_altitude_ft == r.pressure_altitude_ft && o.temp_c < r.temp_c;
+                (higher || cooler) && (o.ground_roll_ft > r.ground_roll_ft || o.over_obstacle_ft > r.over_obstacle_ft)
+            });
+            if thinner {
+                f.push(check("A lower or cooler row reads longer than this one: thinner air takes more distance.".into()));
+            }
+            f
+        })
+        .collect()
 }
 
 /// The empty weight and its arm, held to its moment where the page gives
@@ -153,8 +174,12 @@ pub fn empty(weight_lb: Option<f64>, arm_in: Option<f64>, as_read: Option<(f64, 
     if let Some((w, a, m, divisor)) = as_read {
         let expected = w * a / divisor;
         if (expected - m).abs() > 0.01 * expected.abs().max(1.0) {
-            f.push(wrong(format!("Weight × arm{} is {}, but the moment reads {}: one of the three is misread.",
-                if divisor == 1.0 { String::new() } else { format!(" / {}", figure(divisor)) }, figure(expected), figure(m))));
+            f.push(wrong(format!(
+                "Weight × arm{} is {}, but the moment reads {}: one of the three is misread.",
+                if divisor == 1.0 { String::new() } else { format!(" / {}", figure(divisor)) },
+                figure(expected),
+                figure(m)
+            )));
         }
     }
     f
@@ -166,7 +191,11 @@ pub fn max_weight(max_lb: f64, empty_lb: Option<f64>) -> Vec<Flag> {
     let mut f = Vec::new();
     band(&mut f, "The maximum takeoff weight", max_lb, "lb", 500.0, SMALL_AIRPLANE_LB, true);
     if let Some(e) = empty_lb.filter(|e| max_lb <= *e) {
-        f.push(wrong(format!("The maximum takeoff weight ({} lb) reads no more than the empty weight ({} lb).", figure(max_lb), figure(e))));
+        f.push(wrong(format!(
+            "The maximum takeoff weight ({} lb) reads no more than the empty weight ({} lb).",
+            figure(max_lb),
+            figure(e)
+        )));
     }
     f
 }
@@ -193,7 +222,11 @@ pub fn envelope(corners: &[Corner], max_lb: Option<f64>) -> Vec<Flag> {
     }
     let top = c.iter().map(|p| p.1).fold(f64::MIN, f64::max);
     if let Some(m) = max_lb.filter(|m| (top - m).abs() > 0.005 * m) {
-        f.push(check(format!("The envelope's top reads {} lb, the maximum takeoff weight {} lb: they are the same on most charts.", figure(top), figure(m))));
+        f.push(check(format!(
+            "The envelope's top reads {} lb, the maximum takeoff weight {} lb: they are the same on most charts.",
+            figure(top),
+            figure(m)
+        )));
     }
     f
 }

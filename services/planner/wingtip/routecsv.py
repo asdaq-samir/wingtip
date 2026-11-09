@@ -14,6 +14,7 @@ count. A pick and a note are matched to a checkpoint by proximity, and
 two thresholds that were equal by coincidence and documented as equal in
 both files would eventually stop being equal.
 """
+
 from __future__ import annotations
 
 import csv
@@ -32,9 +33,7 @@ from .geo import distance_nm
 SAME_PLACE_NM = 0.2
 
 
-def read_rows(
-    path: Path, *, route: str | None = None, floats: tuple = (), ints: tuple = ()
-) -> list[dict]:
+def read_rows(path: Path, *, route: str | None = None, floats: tuple = (), ints: tuple = ()) -> list[dict]:
     """Every row, or just one route's. A missing file means none yet,
     which is the normal state before anything has been recorded.
 

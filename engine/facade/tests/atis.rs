@@ -27,7 +27,9 @@ fn a_broadcast_is_read_as_the_web_reads_it() {
 
 #[test]
 fn the_rule_answers_by_name_with_the_shape() {
-    let answer = call("read_atis", &json!({ "text": "Milwaukee information Charlie, wind calm, altimeter two niner niner two" }).to_string()).unwrap();
+    let answer =
+        call("read_atis", &json!({ "text": "Milwaukee information Charlie, wind calm, altimeter two niner niner two" }).to_string())
+            .unwrap();
     let v: Value = serde_json::from_str(&answer).unwrap();
     assert_eq!(v["information"], "C");
     assert_eq!(v["wind"], json!({ "from_deg": null, "kt": 0, "gust_kt": null, "variable": false }));

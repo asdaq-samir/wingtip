@@ -37,7 +37,11 @@ pub enum Product {
     Texts(Vec<Text>),
     /// NEXRAD blocks: each with its bins, or empty (none of them has
     /// precipitation: what was drawn there before is gone).
-    Nexrad { regional: bool, blocks: Vec<Block>, empty: Vec<u32> },
+    Nexrad {
+        regional: bool,
+        blocks: Vec<Block>,
+        empty: Vec<u32>,
+    },
     /// A product the app does not read (the graphics of icing, cloud
     /// tops, turbulence, lightning; a TWGO product's graphic records).
     Other,

@@ -108,17 +108,8 @@ unsafe fn text<'a>(s: *const c_char) -> Option<&'a str> {
 /// `near_lon` hold `near_count` each. All alive for the call.
 #[no_mangle]
 pub unsafe extern "C" fn wt_clearance_hear(
-    heard: *const c_char,
-    tail: *const c_char,
-    packs: *const *const u8,
-    lens: *const usize,
-    count: usize,
-    near_lat: *const f64,
-    near_lon: *const f64,
-    near_count: usize,
-    dep: *const c_char,
-    stops: *const c_char,
-    dest: *const c_char,
+    heard: *const c_char, tail: *const c_char, packs: *const *const u8, lens: *const usize, count: usize, near_lat: *const f64,
+    near_lon: *const f64, near_count: usize, dep: *const c_char, stops: *const c_char, dest: *const c_char,
 ) -> *mut c_char {
     let Some(heard) = text(heard) else { return std::ptr::null_mut() };
     let mut places = Vec::new();
@@ -165,8 +156,10 @@ pub unsafe extern "C" fn wt_string_free(s: *mut c_char) {
 /// `ptrs` and `lens` hold `count` entries, each as for every function
 /// here; `tfrs` NULL or a NUL-terminated string.
 #[no_mangle]
-pub unsafe extern "C" fn wt_ahead(ptrs: *const *const u8, lens: *const usize, count: usize, lat: f64, lon: f64, track_deg: f64,
-                                  gs_kt: f64, alt_ft: f64, vs_fpm: f64, now: i64, tfrs: *const c_char, tfrs_at: i64) -> *mut c_char {
+pub unsafe extern "C" fn wt_ahead(
+    ptrs: *const *const u8, lens: *const usize, count: usize, lat: f64, lon: f64, track_deg: f64, gs_kt: f64, alt_ft: f64, vs_fpm: f64,
+    now: i64, tfrs: *const c_char, tfrs_at: i64,
+) -> *mut c_char {
     let packs = packs(ptrs, lens, count);
     let lines = if tfrs.is_null() { None } else { CStr::from_ptr(tfrs).to_str().ok() };
     let alt = (!alt_ft.is_nan()).then_some(alt_ft);
@@ -188,8 +181,9 @@ pub unsafe extern "C" fn wt_ahead(ptrs: *const *const u8, lens: *const usize, co
 /// # Safety
 /// `ptrs` and `lens` hold `count` entries, each as for every function here.
 #[no_mangle]
-pub unsafe extern "C" fn wt_airspace_in_view(ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64,
-                                             north: f64, east: f64) -> *mut c_char {
+pub unsafe extern "C" fn wt_airspace_in_view(
+    ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64, north: f64, east: f64,
+) -> *mut c_char {
     give(view::airspace_in_view(&packs(ptrs, lens, count), south, west, north, east))
 }
 
@@ -200,8 +194,9 @@ pub unsafe extern "C" fn wt_airspace_in_view(ptrs: *const *const u8, lens: *cons
 /// # Safety
 /// As above.
 #[no_mangle]
-pub unsafe extern "C" fn wt_airports_in_view(ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64,
-                                             north: f64, east: f64) -> *mut c_char {
+pub unsafe extern "C" fn wt_airports_in_view(
+    ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64, north: f64, east: f64,
+) -> *mut c_char {
     give(view::airports_in_view(&packs(ptrs, lens, count), south, west, north, east))
 }
 
@@ -211,8 +206,9 @@ pub unsafe extern "C" fn wt_airports_in_view(ptrs: *const *const u8, lens: *cons
 /// # Safety
 /// As above.
 #[no_mangle]
-pub unsafe extern "C" fn wt_navaids_in_view(ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64,
-                                            north: f64, east: f64) -> *mut c_char {
+pub unsafe extern "C" fn wt_navaids_in_view(
+    ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64, north: f64, east: f64,
+) -> *mut c_char {
     give(view::navaids_in_view(&packs(ptrs, lens, count), south, west, north, east))
 }
 
@@ -223,8 +219,9 @@ pub unsafe extern "C" fn wt_navaids_in_view(ptrs: *const *const u8, lens: *const
 /// # Safety
 /// As above.
 #[no_mangle]
-pub unsafe extern "C" fn wt_special_use_in_view(ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64,
-                                                north: f64, east: f64) -> *mut c_char {
+pub unsafe extern "C" fn wt_special_use_in_view(
+    ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64, north: f64, east: f64,
+) -> *mut c_char {
     give(view_marks::special_use_in_view(&packs(ptrs, lens, count), south, west, north, east))
 }
 
@@ -234,8 +231,9 @@ pub unsafe extern "C" fn wt_special_use_in_view(ptrs: *const *const u8, lens: *c
 /// # Safety
 /// As above.
 #[no_mangle]
-pub unsafe extern "C" fn wt_fixes_in_view(ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64,
-                                          north: f64, east: f64) -> *mut c_char {
+pub unsafe extern "C" fn wt_fixes_in_view(
+    ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64, north: f64, east: f64,
+) -> *mut c_char {
     give(view_marks::fixes_in_view(&packs(ptrs, lens, count), south, west, north, east))
 }
 

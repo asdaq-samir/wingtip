@@ -25,6 +25,7 @@ The planner (app.feed_health) reads this each minute, shows it in the
 developer console, and raises an alert for a feed stale longer than
 FEED_ALERT_AFTER_MIN.
 """
+
 from __future__ import annotations
 
 import logging
@@ -106,7 +107,7 @@ def swim(beats: dict, now: float) -> list[dict]:
             out.append({**line, "state": STALE, "detail": f"{said} (stale after {_span(rule.silence_s)})"})
             continue
         quiet = rule.silence_s is None
-        detail = (f"connected; last message {_age(now, last_at)} ago" if last_at else "connected, nothing sent yet")
+        detail = f"connected; last message {_age(now, last_at)} ago" if last_at else "connected, nothing sent yet"
         out.append({**line, "state": OK, "detail": detail + (" (quiet by nature: stale only when down)" if quiet else "")})
     return out
 
@@ -126,19 +127,47 @@ def weather_feeds(url: str | None, now: float, get=requests.get) -> list[dict]:
             for name, p in products.items():
                 fetched = p.get("fetched_at")
                 if p.get("stale"):
-                    detail = (f"fetch failing: {p.get('error')}" if p.get("failing")
-                              else f"last fetched {_age(now, fetched)} ago" if fetched else "never fetched")
+                    detail = (
+                        f"fetch failing: {p.get('error')}"
+                        if p.get("failing")
+                        else f"last fetched {_age(now, fetched)} ago"
+                        if fetched
+                        else "never fetched"
+                    )
                 else:
                     detail = f"fetched {_age(now, fetched)} ago" if fetched else "fetched"
-                out.append({"name": name, "kind": "weather", "what": "weather", "last_at": fetched,
-                            "state": STALE if p.get("stale") else OK, "detail": detail})
+                out.append(
+                    {
+                        "name": name,
+                        "kind": "weather",
+                        "what": "weather",
+                        "last_at": fetched,
+                        "state": STALE if p.get("stale") else OK,
+                        "detail": detail,
+                    }
+                )
             return out
-    out = [{"name": "weather service", "kind": "weather", "what": "weather", "last_at": None, "state": STALE,
-            "detail": "not answering; its products' fetch times below are from the store, unjudged"
-            if url else "no WEATHER_URL to ask"}]
+    out = [
+        {
+            "name": "weather service",
+            "kind": "weather",
+            "what": "weather",
+            "last_at": None,
+            "state": STALE,
+            "detail": "not answering; its products' fetch times below are from the store, unjudged" if url else "no WEATHER_URL to ask",
+        }
+    ]
     for name, fetched in weather.dataset_status().items():
-        out.append({"name": name, "kind": "weather", "what": "weather", "last_at": fetched, "state": OK,
-                    "detail": f"fetched {_age(now, fetched)} ago" if fetched else "never fetched"})
+        out.append(
+            {
+                "name": name,
+                "kind": "weather",
+                "what": "weather",
+                "last_at": fetched,
+                "state": OK,
+                "detail": f"fetched {_age(now, fetched)} ago" if fetched else "never fetched",
+            }
+        )
     return out
 
 
@@ -150,8 +179,17 @@ def check(weather_url: str | None, now: float | None = None) -> list[dict]:
     except Exception as err:  # noqa: BLE001 -- the store unreadable is itself the news
         log.warning("live store's beats not read", exc_info=True)
         beats = None
-        lines = [{"name": name, "kind": "swim", "what": RULES[name].what, "last_at": None, "state": STALE,
-                  "detail": f"live store not readable: {err}"} for name in SWIM_FEEDS]
+        lines = [
+            {
+                "name": name,
+                "kind": "swim",
+                "what": RULES[name].what,
+                "last_at": None,
+                "state": STALE,
+                "detail": f"live store not readable: {err}",
+            }
+            for name in SWIM_FEEDS
+        ]
     if beats is not None:
         lines = swim(beats, now)
     return lines + weather_feeds(weather_url, now)

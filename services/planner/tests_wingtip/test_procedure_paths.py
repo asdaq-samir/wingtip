@@ -1,5 +1,6 @@
 """The way the procedures picked are flown (wingtip.procedure_paths): the path
 the planner lengthens a leg by and the web app's dry run flies."""
+
 import pytest
 
 from wingtip import geo
@@ -18,7 +19,11 @@ def near(a, b, nm=0.05):
 # the transition DLH to ANDOE, the final from WIRSA through ANDOE to the
 # runway.
 ILS27_DLH = {
-    "airport": "KDLH", "kind": "approach", "id": "I27", "transition": "DLH", "holds": [],
+    "airport": "KDLH",
+    "kind": "approach",
+    "id": "I27",
+    "transition": "DLH",
+    "holds": [],
     "lines": [
         {"role": "transition", "points": [[46.802164, -92.202869], [46.837742, -92.050569]]},
         {"role": "final", "points": [[46.831561, -91.841322], [46.837742, -92.050569], [46.841361, -92.180119]]},
@@ -52,7 +57,7 @@ def test_where_the_approach_doubles_back_it_turns_in_a_teardrop_out_past_the_fix
     assert leg["landing"] is True
     # Its final from ANDOE, the final approach fix, the last time it is there.
     assert near(path[leg["final_at"]], ANDOE)
-    assert all(not near(p, ANDOE) for p in path[leg["final_at"] + 1:])
+    assert all(not near(p, ANDOE) for p in path[leg["final_at"] + 1 :])
 
 
 def test_no_reversal_is_flown_at_the_procedures_first_fix_come_to_from_the_route():
@@ -61,7 +66,9 @@ def test_no_reversal_is_flown_at_the_procedures_first_fix_come_to_from_the_route
     over the field; the reversal is at EL, where the final doubles back."""
     eld, el, rw = (33.25, -92.75), (33.30, -92.70), (33.22, -92.81)
     approach = {
-        "kind": "approach", "transition": "ELD", "holds": [],
+        "kind": "approach",
+        "transition": "ELD",
+        "holds": [],
         "lines": [{"role": "transition", "points": [list(eld), list(el)]}, {"role": "final", "points": [list(el), list(rw)]}],
         "fixes": [fix("ELD", *eld), fix("EL", *el, ["IAF", "FAF"], 2000), fix("RW22", *rw, ["MAP"])],
     }
@@ -69,7 +76,7 @@ def test_no_reversal_is_flown_at_the_procedures_first_fix_come_to_from_the_route
     path = [tuple(p) for p in leg["path"]]
     # Straight from the route to ELD and on to EL: nothing south-west of the VOR first.
     assert path[1] == eld
-    assert not any(p[0] < eld[0] - 0.01 for p in path[:path.index(el)])
+    assert not any(p[0] < eld[0] - 0.01 for p in path[: path.index(el)])
     # Turned round at EL, out past it to the north-east.
     assert any(p[0] > el[0] + 0.02 for p in path)
 
@@ -107,7 +114,9 @@ def test_from_vectors_with_the_field_between_flies_a_downwind_abeam_the_first_fi
 
 def test_a_departure_is_left_by_its_first_runway_transition_then_on_to_the_route():
     sid = {
-        "kind": "departure", "holds": [], "fixes": [],
+        "kind": "departure",
+        "holds": [],
+        "fixes": [],
         "lines": [
             {"role": "runway", "points": [[46.0, -92.8], [46.05, -92.8]]},
             {"role": "common", "points": [[46.05, -92.8], [46.1, -92.6]]},
@@ -123,7 +132,9 @@ def test_a_departure_is_left_by_its_first_runway_transition_then_on_to_the_route
 
 def test_an_arrival_comes_in_by_the_runway_transition_nearest_the_approachs_start():
     star = {
-        "kind": "arrival", "holds": [], "fixes": [],
+        "kind": "arrival",
+        "holds": [],
+        "fixes": [],
         "lines": [
             {"role": "common", "points": [[46.6, -92.4], [46.75, -92.3]]},
             {"role": "runway", "points": [[46.75, -92.3], [46.84, -92.5]]},
@@ -138,7 +149,8 @@ def test_an_arrival_comes_in_by_the_runway_transition_nearest_the_approachs_star
 
 def test_the_missed_approach_is_flown_from_its_point_round_its_hold_climbing_to_its_highest_fix():
     drawing = {
-        "kind": "approach", "holds": [{"missed": True, "points": [[43, -88.3], [43.05, -88.35], [43, -88.3]]}],
+        "kind": "approach",
+        "holds": [{"missed": True, "points": [[43, -88.3], [43.05, -88.35], [43, -88.3]]}],
         "lines": [{"role": "missed", "points": [[43, -88], [43, -88.3]]}],
         "fixes": [fix("UDTEG", 43, -88.3, ["hold"], 3300, missed=True)],
     }
@@ -175,10 +187,15 @@ IAF, FAF, RWY = (43.0, -88.0), (43.0, -88.2), (43.0, -88.4)
 
 def hilpt_approach():
     inbound = geo.bearing_deg(*IAF, *FAF)
-    racetrack = [list(IAF), list(geo.destination_point(*IAF, inbound + 90, 1.3)),
-                 list(geo.destination_point(*IAF, inbound + 180, 2)), list(IAF)]
+    racetrack = [
+        list(IAF),
+        list(geo.destination_point(*IAF, inbound + 90, 1.3)),
+        list(geo.destination_point(*IAF, inbound + 180, 2)),
+        list(IAF),
+    ]
     return {
-        "kind": "approach", "transition": "IAF",
+        "kind": "approach",
+        "transition": "IAF",
         "holds": [{"missed": False, "points": racetrack, "inbound_deg": round(inbound), "leg_nm": 2.0, "turn": "R"}],
         "lines": [{"role": "final", "points": [list(IAF), list(FAF), list(RWY)]}],
         "fixes": [fix("IAF", *IAF, ["IAF"], 3000), fix("FAF", *FAF, ["FAF"], 2500), fix("RW", *RWY, ["MAP"])],
@@ -194,7 +211,7 @@ def test_a_hold_in_lieu_of_a_procedure_turn_at_the_first_fix_is_flown_from_the_f
     leg = flown((43.05, -88.6), RWY, approach=hilpt_approach())
     path = [tuple(p) for p in leg["path"]]
     assert path[1] == IAF
-    out = [p for p in path[2:path.index(FAF)]]
+    out = [p for p in path[2 : path.index(FAF)]]
     assert any(p[1] > IAF[1] + 0.02 for p in out)
     assert near(out[-1], IAF)
     assert near(path[leg["final_at"]], FAF)
@@ -208,6 +225,7 @@ def test_from_the_near_side_the_first_fixs_hold_is_not_flown():
 
 def test_a_hold_is_entered_as_the_aim_says_by_the_course_it_is_come_to_on():
     from wingtip.procedure_paths import _entered
+
     hold = hilpt_approach()["holds"][0]
     inbound = hold["inbound_deg"]
     # Arriving on the outbound course, 180° off the inbound (right turns):
@@ -229,9 +247,14 @@ def test_an_approach_whose_missed_approach_point_is_short_of_the_runway_lands_at
     flown from the MAP."""
     map_point, threshold = (43.0, -88.35), (43.0, -88.4)
     approach = {
-        "kind": "approach", "transition": None, "holds": [], "threshold": list(threshold),
-        "lines": [{"role": "final", "points": [list(FAF), list(map_point)]},
-                  {"role": "missed", "points": [list(map_point), [43.1, -88.5]]}],
+        "kind": "approach",
+        "transition": None,
+        "holds": [],
+        "threshold": list(threshold),
+        "lines": [
+            {"role": "final", "points": [list(FAF), list(map_point)]},
+            {"role": "missed", "points": [list(map_point), [43.1, -88.5]]},
+        ],
         "fixes": [fix("FAF", *FAF, ["FAF"], 2500), fix("MAP", *map_point, ["MAP"]), fix("HOLD", 43.1, -88.5, ["hold"], 3000, missed=True)],
     }
     leg = flown((43.0, -87.8), threshold, approach=approach)
@@ -277,7 +300,8 @@ def test_a_transition_that_is_its_fix_alone_is_flown_from_that_fix_round_its_pro
     mizou, dlh, rw = (46.69, -92.25), (46.80, -92.20), (46.84, -92.19)
     turn = [list(dlh), [46.75, -92.25], [46.70, -92.27], [46.72, -92.20], [46.76, -92.215], list(dlh)]
     approach = {
-        "kind": "approach", "transition": "DLH",
+        "kind": "approach",
+        "transition": "DLH",
         "holds": [{"missed": False, "kind": "procedure turn", "points": turn, "inbound_deg": 12, "turn": "R"}],
         "lines": [{"role": "final", "points": [list(mizou), list(dlh), list(rw)]}],
         "fixes": [fix("MIZOU", *mizou, ["FACF"]), fix("DLH", *dlh, ["IAF", "FAF"], 2800), fix("RW03", *rw, ["MAP"])],
@@ -292,14 +316,19 @@ def test_a_leg_with_runways_picked_is_flown_out_by_its_upwind_and_in_by_the_patt
     """C81 to UGN with 24 and 5 picked: off the runway's threshold, round
     UGN's pattern and down onto 5's threshold, not to the field's middle."""
     from wingtip import pattern
-    ugn = {"runway_ends": [
-        {"ident": "05", "heading_true_deg": 49.0, "traffic": "left", "lat": 42.4176, "lon": -87.8742},
-        {"ident": "23", "heading_true_deg": 229.0, "traffic": "right", "lat": 42.4268, "lon": -87.8593},
-    ]}
-    c81 = {"runway_ends": [
-        {"ident": "6", "heading_true_deg": 58.0, "traffic": "left", "lat": 42.3236, "lon": -88.0800},
-        {"ident": "24", "heading_true_deg": 238.0, "traffic": "left", "lat": 42.3270, "lon": -88.0710},
-    ]}
+
+    ugn = {
+        "runway_ends": [
+            {"ident": "05", "heading_true_deg": 49.0, "traffic": "left", "lat": 42.4176, "lon": -87.8742},
+            {"ident": "23", "heading_true_deg": 229.0, "traffic": "right", "lat": 42.4268, "lon": -87.8593},
+        ]
+    }
+    c81 = {
+        "runway_ends": [
+            {"ident": "6", "heading_true_deg": 58.0, "traffic": "left", "lat": 42.3236, "lon": -88.0800},
+            {"ident": "24", "heading_true_deg": 238.0, "traffic": "left", "lat": 42.3270, "lon": -88.0710},
+        ]
+    }
     start, end = (42.3250, -88.0750), (42.4222, -87.8678)
     out = pattern.departure_circuit(c81, "6", end)
     into = pattern.arrival_circuit(ugn, "5", 1700, 727)
@@ -313,10 +342,13 @@ def test_a_leg_with_runways_picked_is_flown_out_by_its_upwind_and_in_by_the_patt
 
 def test_the_pattern_alone_is_a_landing_and_nothing_picked_is_the_route():
     from wingtip import pattern
-    ugn = {"runway_ends": [
-        {"ident": "05", "heading_true_deg": 49.0, "traffic": "left", "lat": 42.4176, "lon": -87.8742},
-        {"ident": "23", "heading_true_deg": 229.0, "traffic": "right", "lat": 42.4268, "lon": -87.8593},
-    ]}
+
+    ugn = {
+        "runway_ends": [
+            {"ident": "05", "heading_true_deg": 49.0, "traffic": "left", "lat": 42.4176, "lon": -87.8742},
+            {"ident": "23", "heading_true_deg": 229.0, "traffic": "right", "lat": 42.4268, "lon": -87.8593},
+        ]
+    }
     into = pattern.arrival_circuit(ugn, "5", 1700, 727)
     assert flown((42.3, -88.0), (42.4222, -87.8678), landing_circuit=into)["landing"]
     assert flown((42.3, -88.0), (42.4222, -87.8678)) is None

@@ -14,8 +14,8 @@ import { grouped } from "../../../lib/format";
  * under way. It was an item in More beside the route, pressed per route.
  */
 export function useKeepOffline(course: Course | null) {
-  const on = usePreferences(s => s.keepOffline);
-  const base = usePreferences(s => s.base);
+  const on = usePreferences((s) => s.keepOffline);
+  const base = usePreferences((s) => s.base);
   useEffect(() => {
     if (!on) {
       stopKeeping();
@@ -60,7 +60,8 @@ export function useKeepRouteToast() {
         // The tiles that could not be fetched are a problem, said where
         // problems are (lib/problems) and kept until the next keep, not a
         // bracket inside the news that it worked.
-        if (failed) raiseProblem({ id: TOAST_ID, title: `${grouped(failed)} chart tiles not kept: those parts of the route need a connection` });
+        if (failed)
+          raiseProblem({ id: TOAST_ID, title: `${grouped(failed)} chart tiles not kept: those parts of the route need a connection` });
       }
     } else if (before === "keeping" && job.status === "failed") {
       toast.dismiss(TOAST_ID);

@@ -2,6 +2,7 @@
 hemispheric rule leg by leg, and every 500 ft within 3,000 ft of the
 ground where it does not apply; and the freezing level as an icing
 warning rather than a ceiling."""
+
 from pathlib import Path
 
 import pytest
@@ -13,9 +14,10 @@ from wingtip.engine import ask as engine
 def under_clouds(base_ft):
     return engine("highest_under_clouds_ft", cloud_base_ft=base_ft)
 
+
 PROFILE = {"service_ceiling_ft": 14000, "cruise_tas_kt": 110}
-DEP, DEST = (45.0, -90.0), (46.0, -90.0)          # due north
-DOGLEG = (45.5, -89.85)                            # east of the line
+DEP, DEST = (45.0, -90.0), (46.0, -90.0)  # due north
+DOGLEG = (45.5, -89.85)  # east of the line
 
 
 @pytest.fixture
@@ -23,11 +25,13 @@ def sources(monkeypatch):
     """Flat 2,000 ft floor over 1,500 ft ground -- so the hemispheric rule
     begins at 4,500 ft -- no airspace, no variation, and weather the test
     sets: a standard day's temperatures unless it sets them."""
-    state = {"freezing": None, "cv": {"min_ceiling_ft": None, "min_visibility_sm": None, "stations": []},
-             "hazards": [], "temperatures": []}
+    state = {"freezing": None, "cv": {"min_ceiling_ft": None, "min_visibility_sm": None, "stations": []}, "hazards": [], "temperatures": []}
     monkeypatch.setattr(airspace, "ensure_class_airspace_shapefile", lambda cache_dir: Path("/nowhere"))
-    monkeypatch.setattr(terrain, "floor_profile", lambda start, end, breaks, faa_cache_dir=None: (
-        [{"floor_ft": 2000.0, "lowest_ground_ft": 1500.0}] * (len(breaks) - 1)))
+    monkeypatch.setattr(
+        terrain,
+        "floor_profile",
+        lambda start, end, breaks, faa_cache_dir=None: [{"floor_ft": 2000.0, "lowest_ground_ft": 1500.0}] * (len(breaks) - 1),
+    )
     monkeypatch.setattr(airspace, "airspace_ceiling_profile", lambda start, end, fixes, shp: [None] * (len(fixes) - 1))
     monkeypatch.setattr(airspace, "airspace_transits", lambda start, end, shp, fixes=None: [])
     monkeypatch.setattr(altitude, "magnetic_variation_deg", lambda lat, lon: 0.0)
@@ -70,8 +74,7 @@ def test_a_low_cloud_deck_keeps_the_altitudes_under_it_the_rule_left_out(sources
     # the rule's first altitude is 3,500 -- too close to the cloud -- and
     # the leg had none; within 3,000 ft of the ground 2,000 and 2,500 are
     # legal.
-    sources["cv"] = {"min_ceiling_ft": 2200, "min_visibility_sm": 5.0,
-                     "stations": [_station("KXYZ", 45.5, -90.0, 2200)]}
+    sources["cv"] = {"min_ceiling_ft": 2200, "min_visibility_sm": 5.0, "stations": [_station("KXYZ", 45.5, -90.0, 2200)]}
 
     result = altitude.select_cruise_altitude(DEP, DEST, PROFILE, fixes=[DEP, DEST])
 
@@ -86,7 +89,7 @@ def test_the_freezing_level_no_longer_caps_the_altitudes(sources):
 
     assert max(result["candidates_ft"]) > 6000.0
     assert result["band_ceiling_ft"] == 14000
-    assert result["icing_possible"] is False        # cold, but nothing forecast to ice in
+    assert result["icing_possible"] is False  # cold, but nothing forecast to ice in
 
 
 def test_icing_is_flagged_with_cloud_forecast_above_the_freezing_level(sources):
@@ -98,8 +101,7 @@ def test_icing_is_flagged_with_cloud_forecast_above_the_freezing_level(sources):
 
 def test_an_icing_airmet_is_moisture_too(sources):
     sources["freezing"] = {"ft": 6000.0, "at_or_below": True}
-    sources["hazards"] = [{"hazard": "ICE", "type": "AIRMET", "altitude_low_ft": None,
-                           "altitude_high_ft": 12000.0, "raw": "AIRMET ZULU"}]
+    sources["hazards"] = [{"hazard": "ICE", "type": "AIRMET", "altitude_low_ft": None, "altitude_high_ft": 12000.0, "raw": "AIRMET ZULU"}]
 
     result = altitude.select_cruise_altitude(DEP, DEST, PROFILE)
 
@@ -122,25 +124,47 @@ def test_icing_is_unknown_when_the_freezing_level_could_not_be_checked(sources, 
 def test_no_altitude_enters_a_prohibited_area_the_route_crosses(sources):
     """A prohibited area from the surface to 5,000 ft on the second leg:
     that leg's altitudes start above it; the first leg's are untouched."""
-    sources["special_use"] = [{"name": "P-99", "type": "P", "kind": "prohibited area", "floor_ft": 0.0,
-                               "floor_ref": "SFC", "ceiling_ft": 5000.0, "ceiling_ref": "MSL",
-                               "times_of_use": "CONTINUOUS", "controlling_agency": None,
-                               "along_track_nm": 40.0, "legs": [1]}]
+    sources["special_use"] = [
+        {
+            "name": "P-99",
+            "type": "P",
+            "kind": "prohibited area",
+            "floor_ft": 0.0,
+            "floor_ref": "SFC",
+            "ceiling_ft": 5000.0,
+            "ceiling_ref": "MSL",
+            "times_of_use": "CONTINUOUS",
+            "controlling_agency": None,
+            "along_track_nm": 40.0,
+            "legs": [1],
+        }
+    ]
 
     result = altitude.select_cruise_altitude(DEP, DEST, PROFILE, fixes=[DEP, DOGLEG, DEST])
 
     first, second = result["segments"]
     assert first["candidates_ft"][0] == 2000.0
     assert min(second["candidates_ft"]) > 5000.0
-    assert min(result["candidates_ft"]) > 5000.0            # the whole route crosses it
+    assert min(result["candidates_ft"]) > 5000.0  # the whole route crosses it
     assert result["special_use"][0]["name"] == "P-99"
 
 
 def test_a_restricted_area_is_listed_but_not_a_ceiling(sources):
-    sources["special_use"] = [{"name": "R-4501", "type": "R", "kind": "restricted area", "floor_ft": 0.0,
-                               "floor_ref": "SFC", "ceiling_ft": 18000.0, "ceiling_ref": "MSL",
-                               "times_of_use": "0700-2200 MON-FRI", "controlling_agency": "FAA",
-                               "along_track_nm": 20.0, "legs": [0]}]
+    sources["special_use"] = [
+        {
+            "name": "R-4501",
+            "type": "R",
+            "kind": "restricted area",
+            "floor_ft": 0.0,
+            "floor_ref": "SFC",
+            "ceiling_ft": 18000.0,
+            "ceiling_ref": "MSL",
+            "times_of_use": "0700-2200 MON-FRI",
+            "controlling_agency": "FAA",
+            "along_track_nm": 20.0,
+            "legs": [0],
+        }
+    ]
 
     result = altitude.select_cruise_altitude(DEP, DEST, PROFILE)
 
@@ -182,16 +206,14 @@ def test_no_fixes_is_the_direct_line_as_one_leg(sources, monkeypatch):
 def _station(ident, lat, lon, ceiling_ft, elevation_ft=1000):
     """A TAF station near the route, as ceiling_visibility_along_route
     gives it: the ceiling above the field, the field's elevation."""
-    return {"icaoId": ident, "lat": lat, "lon": lon, "elevation_ft": elevation_ft,
-            "ceiling_ft": ceiling_ft, "visibility_sm": 5.0}
+    return {"icaoId": ident, "lat": lat, "lon": lon, "elevation_ft": elevation_ft, "ceiling_ft": ceiling_ft, "visibility_sm": 5.0}
 
 
 def test_a_leg_keeps_500_ft_under_the_clouds_forecast_near_it(sources):
     # A 4,500 ft ceiling over a 1,000 ft field on the second leg's line:
     # cloud at 5,500 ft MSL, so nothing above 5,000 there. The first leg,
     # with no station near it, keeps its whole band.
-    sources["cv"] = {"min_ceiling_ft": 4500, "min_visibility_sm": 5.0,
-                     "stations": [_station("KXYZ", 45.95, -89.99, 4500)]}
+    sources["cv"] = {"min_ceiling_ft": 4500, "min_visibility_sm": 5.0, "stations": [_station("KXYZ", 45.95, -89.99, 4500)]}
 
     result = altitude.select_cruise_altitude(DEP, DEST, PROFILE, fixes=[DEP, DOGLEG, DEST])
 
@@ -217,8 +239,7 @@ def test_clouds_too_low_over_the_floor_are_said_and_the_leg_keeps_its_band(sourc
     # a 2,000 ft floor, and nothing there keeps 500 ft below it. Not a
     # refusal to plan: the leg keeps its band without the clouds, and
     # says the clearance could not be kept.
-    sources["cv"] = {"min_ceiling_ft": 1200, "min_visibility_sm": 5.0,
-                     "stations": [_station("KXYZ", 45.5, -90.0, 1200)]}
+    sources["cv"] = {"min_ceiling_ft": 1200, "min_visibility_sm": 5.0, "stations": [_station("KXYZ", 45.5, -90.0, 1200)]}
 
     result = altitude.select_cruise_altitude(DEP, DEST, PROFILE, fixes=[DEP, DEST])
 
@@ -231,8 +252,7 @@ def test_clouds_too_low_over_the_floor_are_said_and_the_leg_keeps_its_band(sourc
 
 def test_a_station_far_from_the_leg_does_not_cap_it(sources):
     # 42 nm west of the line: its forecast is not this leg's.
-    sources["cv"] = {"min_ceiling_ft": 1200, "min_visibility_sm": 5.0,
-                     "stations": [_station("KFAR", 45.5, -91.0, 1200)]}
+    sources["cv"] = {"min_ceiling_ft": 1200, "min_visibility_sm": 5.0, "stations": [_station("KFAR", 45.5, -91.0, 1200)]}
 
     result = altitude.select_cruise_altitude(DEP, DEST, PROFILE, fixes=[DEP, DEST])
 
@@ -256,7 +276,7 @@ def test_the_book_service_ceiling_where_the_temperatures_are_unknown(sources, mo
         raise weather.WeatherServiceError("aviationweather.gov is down")
 
     monkeypatch.setattr(weather, "freezing_level", down)
-    sources["temperatures"] = [(6000.0, 40.0)]           # never read: the forecast failed
+    sources["temperatures"] = [(6000.0, 40.0)]  # never read: the forecast failed
 
     result = altitude.select_cruise_altitude(DEP, DEST, PROFILE)
 
@@ -270,8 +290,8 @@ def test_the_book_service_ceiling_where_the_temperatures_are_unknown(sources, mo
 # 1,800 is -- under the shelf, not at it -- though tight.
 
 
-
 # --- Under IFR (wingtip.ifr) -------------------------------------------------
+
 
 @pytest.fixture
 def ifr_floors(sources, monkeypatch):
@@ -280,8 +300,9 @@ def ifr_floors(sources, monkeypatch):
     from wingtip import ifr
 
     def floors(fixes, faa_cache_dir=None):
-        return [{"floor_ft": 3100.0, "highest_ft": 2050.0, "highest_is_obstacle": False, "mountainous": i == 0}
-                for i in range(len(fixes) - 1)]
+        return [
+            {"floor_ft": 3100.0, "highest_ft": 2050.0, "highest_is_obstacle": False, "mountainous": i == 0} for i in range(len(fixes) - 1)
+        ]
 
     monkeypatch.setattr(ifr, "floor_profile", floors)
     monkeypatch.setattr(airspace, "airspace_ceiling_profile", lambda start, end, fixes, shp: [3000.0] * (len(fixes) - 1))
@@ -302,8 +323,7 @@ def test_under_ifr_each_leg_flies_thousands_by_its_own_course_from_its_minimum_i
 
 
 def test_under_ifr_no_shelf_cloud_or_class_a_caps_the_altitudes_only_the_service_ceiling(ifr_floors):
-    ifr_floors["cv"] = {"min_ceiling_ft": 2200, "min_visibility_sm": 2.0,
-                        "stations": [_station("KXYZ", 45.5, -90.0, 2200)]}
+    ifr_floors["cv"] = {"min_ceiling_ft": 2200, "min_visibility_sm": 2.0, "stations": [_station("KXYZ", 45.5, -90.0, 2200)]}
     profile = {**PROFILE, "service_ceiling_ft": 25000}
 
     result = altitude.select_cruise_altitude(DEP, DEST, profile, fixes=[DEP, DEST], rules="ifr")

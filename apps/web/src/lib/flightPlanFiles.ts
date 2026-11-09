@@ -23,8 +23,13 @@ export interface PlanPoint {
  *  (CONTPACK@LAKE_ZURICH: the pack must be in ForeFlight), else at its
  *  place, as ForeFlight writes a position in a route (42.3700/-88.0800). */
 export function foreflightRoute(points: PlanPoint[], altitudeFt?: number | null, named = false): string {
-  const tokens = points.map(p => (p.kind !== "checkpoint" ? p.ident.toUpperCase()
-    : named && p.waypoint ? `CONTPACK@${p.waypoint}` : `${p.lat.toFixed(4)}/${p.lon.toFixed(4)}`));
+  const tokens = points.map((p) =>
+    p.kind !== "checkpoint"
+      ? p.ident.toUpperCase()
+      : named && p.waypoint
+        ? `CONTPACK@${p.waypoint}`
+        : `${p.lat.toFixed(4)}/${p.lon.toFixed(4)}`,
+  );
   if (altitudeFt) tokens.push(`${Math.round(altitudeFt)}ft`);
   return `foreflightmobile://maps/search?q=${tokens.join("+")}`;
 }

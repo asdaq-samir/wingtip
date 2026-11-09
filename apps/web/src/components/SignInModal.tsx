@@ -28,7 +28,10 @@ import { Separator } from "./ui/separator";
  * one that was not opened a blank 401 -- on the local stack, which
  * registers neither, both did.
  */
-export default function SignInModal({ plain = false, inline = false }: {
+export default function SignInModal({
+  plain = false,
+  inline = false,
+}: {
   /** A tinted word, as a row's action (Setup's Account group), not a
    *  bordered button. */
   plain?: boolean;
@@ -45,10 +48,7 @@ export default function SignInModal({ plain = false, inline = false }: {
   // mutation's own variable -- not a copy taken from the box when the
   // answer came back, which said "Check" whatever had been typed since,
   // and survived a close and reopen mid-request.
-  const magicLink = useMutation({
-    mutationFn: (address: string) => api.requestMagicLink(address),
-    meta: { silent: true },
-  });
+  const magicLink = useMutation({ mutationFn: (address: string) => api.requestMagicLink(address), meta: { silent: true } });
   // Said under the field it is about (it was a toast over the map), and
   // whose fault it was: an address the server refused is the pilot's to
   // fix; a server or network failure is not, and "check the address"
@@ -57,10 +57,14 @@ export default function SignInModal({ plain = false, inline = false }: {
   // Only a 400 is the address: a 401 or 403 is the page's own token
   // refused (an http page that could not read the https port's Secure
   // cookie was one), which a reload replaces.
-  const linkFailure = !linkError ? null
-    : linkError instanceof ApiError && linkError.status === 429 ? "Too many sign-in links asked for. Wait a few minutes and try again."
-      : linkError instanceof ApiError && linkError.status === 400 ? "Couldn't send that link. Check the address and try again."
-        : linkError instanceof ApiError && linkError.status < 500 ? "Couldn't send that link. Reload the page and try again."
+  const linkFailure = !linkError
+    ? null
+    : linkError instanceof ApiError && linkError.status === 429
+      ? "Too many sign-in links asked for. Wait a few minutes and try again."
+      : linkError instanceof ApiError && linkError.status === 400
+        ? "Couldn't send that link. Check the address and try again."
+        : linkError instanceof ApiError && linkError.status < 500
+          ? "Couldn't send that link. Reload the page and try again."
           : "Couldn't reach the sign-in service. Try again in a minute.";
   const sent = magicLink.isSuccess ? magicLink.variables : null;
   // On a phone a sheet from the navigation bar's edge, the bottom unless
@@ -69,105 +73,140 @@ export default function SignInModal({ plain = false, inline = false }: {
   // the dialog in the middle (SheetDialog).
   return (
     <SheetDialog
-      open={open} onOpenChange={o => {
+      open={open}
+      onOpenChange={(o) => {
         setOpen(o);
         if (!o) {
           setEmail("");
           magicLink.reset();
         }
       }}
-      title="Sign in to Wingtip Maps" description="Save your airplanes and filed flights to your own account."
-      trigger={inline ? (
-        <button
-          type="button" data-testid="sign-in-inline"
-          className="relative font-semibold text-tint outline-none after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          Sign in
-        </button>
-      ) : plain ? (
-        <Button
-          variant="ghost" size="sm" data-testid="sign-in"
-          className={cn("relative -mr-2 px-2 font-normal text-tint after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
-        >
-          Sign in
-        </Button>
-      ) : <Button variant="outline" size="sm">Sign in</Button>}
+      title="Sign in to Wingtip Maps"
+      description="Save your airplanes and filed flights to your own account."
+      trigger={
+        inline ? (
+          <button
+            type="button"
+            data-testid="sign-in-inline"
+            className="relative font-semibold text-tint outline-none after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Sign in
+          </button>
+        ) : plain ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            data-testid="sign-in"
+            className={cn("relative -mr-2 px-2 font-normal text-tint after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
+          >
+            Sign in
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm">
+            Sign in
+          </Button>
+        )
+      }
     >
       {/* On a TV, a code to type in on a phone (TvCode): the emailed
           link opens where the mail is read, and Google's and Apple's
           pages want a keyboard. */}
-      {onTv ? <TvCode /> : (<>
-      {providers.length > 0 && (
-        <>
-          <div className="flex flex-col gap-2">
-            {providers.includes("google") && (
-              <Button asChild variant="outline" className="justify-start gap-3">
-                <a href="/oauth2/authorization/google">
-                  <GoogleLogo className="size-4" />
-                  Continue with Google
-                </a>
-              </Button>
-            )}
-            {providers.includes("apple") && (
-              <Button asChild variant="outline" className="justify-start gap-3">
-                <a href="/oauth2/authorization/apple">
-                  <AppleLogo className="size-4" />
-                  Continue with Apple
-                </a>
-              </Button>
-            )}
-          </div>
-          <div className={`flex items-center gap-3 text-muted-foreground ${TEXT.note}`}>
-            <Separator className="flex-1" />
-            or
-            <Separator className="flex-1" />
-          </div>
-        </>
-      )}
-      {sent ? (
-        <p className={`text-muted-foreground ${TEXT.prose}`} role="status">
-          Check <span className="font-semibold text-foreground">{sent}</span> for a sign-in link.
-          It expires in 15 minutes.
-        </p>
+      {onTv ? (
+        <TvCode />
       ) : (
-        <form
-          className="flex flex-col gap-2"
-          onSubmit={e => { e.preventDefault(); magicLink.mutate(trimmedEmail); }}
-        >
-          <div className="flex gap-2">
-            <Input
-              type="email"
-              required
-              placeholder="you@example.com"
-              aria-label="Email address"
-              autoComplete="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-            />
-            {/* Its word on it, where a grey envelope alone read as nothing
+        <>
+          {providers.length > 0 && (
+            <>
+              <div className="flex flex-col gap-2">
+                {providers.includes("google") && (
+                  <Button asChild variant="outline" className="justify-start gap-3">
+                    <a href="/oauth2/authorization/google">
+                      <GoogleLogo className="size-4" />
+                      Continue with Google
+                    </a>
+                  </Button>
+                )}
+                {providers.includes("apple") && (
+                  <Button asChild variant="outline" className="justify-start gap-3">
+                    <a href="/oauth2/authorization/apple">
+                      <AppleLogo className="size-4" />
+                      Continue with Apple
+                    </a>
+                  </Button>
+                )}
+              </div>
+              <div className={`flex items-center gap-3 text-muted-foreground ${TEXT.note}`}>
+                <Separator className="flex-1" />
+                or
+                <Separator className="flex-1" />
+              </div>
+            </>
+          )}
+          {sent ? (
+            <p className={`text-muted-foreground ${TEXT.prose}`} role="status">
+              Check <span className="font-semibold text-foreground">{sent}</span> for a sign-in link. It expires in 15 minutes.
+            </p>
+          ) : (
+            <form
+              className="flex flex-col gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                magicLink.mutate(trimmedEmail);
+              }}
+            >
+              <div className="flex gap-2">
+                <Input
+                  type="email"
+                  required
+                  placeholder="you@example.com"
+                  aria-label="Email address"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                {/* Its word on it, where a grey envelope alone read as nothing
                 to tap (the UI audit, 2026-11-09); a spinner in place of
                 the envelope while the link is on its way. */}
-            <Button
-              type="submit"
-              disabled={magicLink.isPending || !trimmedEmail}
-              aria-busy={magicLink.isPending}
-              className="h-auto shrink-0"
-            >
-              {magicLink.isPending ? <Spinner className="size-4" role="presentation" aria-label={undefined} aria-hidden /> : <Mail className="size-4" aria-hidden="true" />}
-              Send Link
-            </Button>
-          </div>
-          {linkFailure && <p className={`text-destructive ${TEXT.prose}`} role="alert" data-testid="sign-in-error">{linkFailure}</p>}
-        </form>
+                <Button
+                  type="submit"
+                  disabled={magicLink.isPending || !trimmedEmail}
+                  aria-busy={magicLink.isPending}
+                  className="h-auto shrink-0"
+                >
+                  {magicLink.isPending ? (
+                    <Spinner className="size-4" role="presentation" aria-label={undefined} aria-hidden />
+                  ) : (
+                    <Mail className="size-4" aria-hidden="true" />
+                  )}
+                  Send Link
+                </Button>
+              </div>
+              {linkFailure && (
+                <p className={`text-destructive ${TEXT.prose}`} role="alert" data-testid="sign-in-error">
+                  {linkFailure}
+                </p>
+              )}
+            </form>
+          )}
+        </>
       )}
-      </>)}
       {/* One row of links, not links in a sentence: each gets its 44-point
           area from a pseudo-element, and a wrapped sentence would put
           those areas on top of each other. */}
-      <p className={`text-center text-muted-foreground ${TEXT.note}`} data-testid="sign-in-accept">By signing in you accept the</p>
+      <p className={`text-center text-muted-foreground ${TEXT.note}`} data-testid="sign-in-accept">
+        By signing in you accept the
+      </p>
       <nav aria-label="Legal" className={`flex justify-center gap-2 text-tint ${TEXT.note}`} data-testid="sign-in-legal">
-        {[LEGAL_PAGES[1], LEGAL_PAGES[0], LEGAL_PAGES[2]].map(p => (
-          <a key={p.key} className="relative after:absolute after:-inset-x-1 after:-inset-y-3.5" href={p.href} target="_blank" rel="noreferrer">{p.title}</a>
+        {[LEGAL_PAGES[1], LEGAL_PAGES[0], LEGAL_PAGES[2]].map((p) => (
+          <a
+            key={p.key}
+            className="relative after:absolute after:-inset-x-1 after:-inset-y-3.5"
+            href={p.href}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {p.title}
+          </a>
         ))}
       </nav>
     </SheetDialog>

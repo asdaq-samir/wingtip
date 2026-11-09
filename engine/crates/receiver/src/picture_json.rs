@@ -204,9 +204,9 @@ pub fn read(v: Option<&Value>) -> Picture {
         station: num(r, "station_lat").zip(num(r, "station_lon")),
         station_at: num(r, "station_at"),
     };
-    let ownship = v.get("ownship").and_then(|o| {
-        Some(Ownship { heard: read_report(o)?, geometric_ft: num(o, "geometric_ft"), vfom_m: num(o, "vfom_m") })
-    });
+    let ownship = v
+        .get("ownship")
+        .and_then(|o| Some(Ownship { heard: read_report(o)?, geometric_ft: num(o, "geometric_ft"), vfom_m: num(o, "vfom_m") }));
     let targets = items(v, "targets").iter().filter_map(read_report).collect();
     let texts = items(v, "texts")
         .iter()
@@ -228,7 +228,14 @@ pub fn read(v: Option<&Value>) -> Picture {
         .filter_map(|b| {
             let bins: Vec<u8> = text(b, "bins")?.bytes().map(|c| c.wrapping_sub(b'0').min(7)).collect();
             (bins.len() == crate::nexrad::BINS).then_some(())?;
-            let block = Block { id: num(b, "id")? as u32, north: num(b, "north")?, west: num(b, "west")?, south: num(b, "south")?, east: num(b, "east")?, bins };
+            let block = Block {
+                id: num(b, "id")? as u32,
+                north: num(b, "north")?,
+                west: num(b, "west")?,
+                south: num(b, "south")?,
+                east: num(b, "east")?,
+                bins,
+            };
             Some(KeptBlock { block, regional: flag(b, "regional"), time: text(b, "time").unwrap_or_default(), at: num(b, "at")? })
         })
         .collect();

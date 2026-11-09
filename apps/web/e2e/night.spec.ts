@@ -16,7 +16,9 @@ test.use({ colorScheme: "dark" });
  *  paint, nothing over the chart touched. */
 const lookOf = (page: Page) => page.getByTestId("gl-map").getAttribute("data-chart-look");
 
-test("in the dark theme the page is the night's navy and only the chart's tiles are dimmed, until Chart at night is Normal", async ({ page }) => {
+test("in the dark theme the page is the night's navy and only the chart's tiles are dimmed, until Chart at night is Normal", async ({
+  page,
+}) => {
   test.setTimeout(slow(60000));
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -30,7 +32,7 @@ test("in the dark theme the page is the night's navy and only the chart's tiles 
     return { background: s.getPropertyValue("--background").trim(), card: s.getPropertyValue("--card").trim() };
   });
   expect(tokens).toEqual({ background: "#0b1422", card: "#17283a" });
-  expect(await page.locator("body").evaluate(el => getComputedStyle(el).backgroundColor)).toBe("rgb(11, 20, 34)");
+  expect(await page.locator("body").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(11, 20, 34)");
 
   // The chart's tiles dimmed, by the map's paint.
   await expect.poll(() => lookOf(page), { timeout: slow(15000) }).toBe("dimmed");

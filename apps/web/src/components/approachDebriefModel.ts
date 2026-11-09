@@ -35,7 +35,6 @@ import type { TrackPoint } from "../lib/track";
 
 export type { ApproachFinding };
 
-
 /** How the course is flown, by the approach's coded identifier (ARINC
  *  424-18 5.10): a localizer's, a GPS's, or another (VOR, NDB, LDA, back
  *  course), whose course is measured and marked nowhere. */
@@ -107,21 +106,39 @@ export interface ApproachDebrief {
 function shaped(d: Debriefed): ApproachDebrief {
   const gp = d.profile.glidepath;
   return {
-    airport: d.airport, id: d.id, name: d.name, transition: d.transition, guidance: d.guidance,
-    fafAt: d.faf_at, fitNm: d.fit_nm, glidepathFitFt: d.glidepath_fit_ft,
-    crossings: d.crossings.map(c => ({ ident: c.ident, roles: c.roles, minFt: c.min_ft, maxFt: c.max_ft, t: c.t, altFt: c.alt_ft, underFt: c.under_ft })),
-    findings: d.findings, lowestFt: d.lowest_ft, plan: d.plan,
+    airport: d.airport,
+    id: d.id,
+    name: d.name,
+    transition: d.transition,
+    guidance: d.guidance,
+    fafAt: d.faf_at,
+    fitNm: d.fit_nm,
+    glidepathFitFt: d.glidepath_fit_ft,
+    crossings: d.crossings.map((c) => ({
+      ident: c.ident,
+      roles: c.roles,
+      minFt: c.min_ft,
+      maxFt: c.max_ft,
+      t: c.t,
+      altFt: c.alt_ft,
+      underFt: c.under_ft,
+    })),
+    findings: d.findings,
+    lowestFt: d.lowest_ft,
+    plan: d.plan,
     profile: {
-      track: d.profile.track.map(p => ({ toGoNm: p.to_go_nm, altFt: p.alt_ft, off: p.off })),
-      fixes: d.profile.fixes.map(f => ({ ident: f.ident, toGoNm: f.to_go_nm, minFt: f.min_ft, maxFt: f.max_ft })),
+      track: d.profile.track.map((p) => ({ toGoNm: p.to_go_nm, altFt: p.alt_ft, off: p.off })),
+      fixes: d.profile.fixes.map((f) => ({ ident: f.ident, toGoNm: f.to_go_nm, minFt: f.min_ft, maxFt: f.max_ft })),
       glidepath: gp && { fromNm: gp.from_nm, fromFt: gp.from_ft, toNm: gp.to_nm, toFt: gp.to_ft },
     },
     outcome: { kind: d.outcome.kind, secondsAfterMap: d.outcome.seconds_after_map },
-    hasAltitude: d.has_altitude, alsoFits: d.also_fits, wayIn: d.way_in,
+    hasAltitude: d.has_altitude,
+    alsoFits: d.also_fits,
+    wayIn: d.way_in,
   };
 }
 
-const enginePoints = (points: TrackPoint[]) => points.map(p => ({ t: p.t, lat: p.lat, lon: p.lon, alt_ft: p.altFt }));
+const enginePoints = (points: TrackPoint[]) => points.map((p) => ({ t: p.t, lat: p.lat, lon: p.lon, alt_ft: p.altFt }));
 
 /** Each time the track flew inbound over the approach's final approach
  *  fix: the attempts at it, as point indices -- from the last one's end,
@@ -146,7 +163,10 @@ interface DebriefOptions {
  */
 export function debriefApproach(d: ProcedureDrawing, points: TrackPoint[], options: DebriefOptions = {}): ApproachDebrief | null {
   const flown = callEngine("approach_debrief", {
-    drawing: d, points: enginePoints(points), attempt: options.attempt ?? null, minimums_ft: options.minimumsFt ?? null,
+    drawing: d,
+    points: enginePoints(points),
+    attempt: options.attempt ?? null,
+    minimums_ft: options.minimumsFt ?? null,
   });
   return flown && shaped(flown);
 }
@@ -160,7 +180,10 @@ export function debriefApproach(d: ProcedureDrawing, points: TrackPoint[], optio
  */
 export function withMinimums(d: ApproachDebrief, minimumsFt: number | null): ApproachDebrief {
   const findings = callEngine("approach_minimums", {
-    findings: d.findings, lowest_ft: d.lowestFt, outcome: d.outcome.kind, minimums_ft: minimumsFt,
+    findings: d.findings,
+    lowest_ft: d.lowestFt,
+    outcome: d.outcome.kind,
+    minimums_ft: minimumsFt,
   });
   return { ...d, findings };
 }
@@ -172,7 +195,10 @@ export function withMinimums(d: ApproachDebrief, minimumsFt: number | null): App
  * the one the pilot picked for the flight where it fits as well.
  */
 export function findApproaches(
-  drawings: ProcedureDrawing[], points: TrackPoint[], picked: string | null = null, minimumsFt: number | null = null,
+  drawings: ProcedureDrawing[],
+  points: TrackPoint[],
+  picked: string | null = null,
+  minimumsFt: number | null = null,
 ): ApproachDebrief[] {
   return callEngine("approach_find", { drawings, points: enginePoints(points), picked, minimums_ft: minimumsFt }).map(shaped);
 }
@@ -182,9 +208,18 @@ export function findApproaches(
  * fix of it before the final passed, and the closest to it on the way; the
  * debrief from vectors (`vectors`) where none was flown.
  */
-export function withTransition(vectors: ApproachDebrief, drawings: ProcedureDrawing[], points: TrackPoint[], minimumsFt: number | null = null): ApproachDebrief {
+export function withTransition(
+  vectors: ApproachDebrief,
+  drawings: ProcedureDrawing[],
+  points: TrackPoint[],
+  minimumsFt: number | null = null,
+): ApproachDebrief {
   const best = callEngine("approach_transition", {
-    faf_at: vectors.fafAt, passed: vectors.wayIn.passed, drawings, points: enginePoints(points), minimums_ft: minimumsFt,
+    faf_at: vectors.fafAt,
+    passed: vectors.wayIn.passed,
+    drawings,
+    points: enginePoints(points),
+    minimums_ft: minimumsFt,
   });
   return best ? { ...shaped(best), alsoFits: vectors.alsoFits } : vectors;
 }

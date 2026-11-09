@@ -294,7 +294,14 @@ pub(super) fn point_rule(v: &Value) -> Result<String, String> {
     let n = "diagram_point";
     let g = v.get("graticule").ok_or("diagram_point: \"graticule\" is missing")?;
     let lat_on_x = matches!(g.get("lat_on_x"), Some(Value::Bool(true)));
-    let g = Graticule { lat_on_x, a: num(n, g, "a")?, b: num(n, g, "b")?, c: num(n, g, "c")?, d: num(n, g, "d")?, north_deg: num(n, g, "north_deg")? };
+    let g = Graticule {
+        lat_on_x,
+        a: num(n, g, "a")?,
+        b: num(n, g, "b")?,
+        c: num(n, g, "c")?,
+        d: num(n, g, "d")?,
+        north_deg: num(n, g, "north_deg")?,
+    };
     let (x, y) = place(&g, num(n, v, "lat")?, num(n, v, "lon")?);
     let (w, h) = (num(n, v, "width")?, num(n, v, "height")?);
     let mut out = String::from("{\"x\":");
@@ -313,11 +320,16 @@ mod tests {
     /// PDFKit finds them, turned to the top left: north to the left.
     fn kdlh() -> Vec<(String, f64, f64)> {
         let h = 594.0;
-        [("92°13'W", 361.42, 96.50, 4.85, 23.21), ("46°51'N", 66.92, 505.19, 4.85, 23.19), ("46°50'N", 294.17, 505.82, 4.86, 23.21),
-         ("92°12'W", 360.26, 254.22, 4.86, 23.21), ("92°11'W", 359.45, 411.88, 4.87, 23.21)]
-            .iter()
-            .map(|&(t, x, y, w, ht)| (t.to_owned(), x + w / 2.0, h - (y + ht / 2.0)))
-            .collect()
+        [
+            ("92°13'W", 361.42, 96.50, 4.85, 23.21),
+            ("46°51'N", 66.92, 505.19, 4.85, 23.19),
+            ("46°50'N", 294.17, 505.82, 4.86, 23.21),
+            ("92°12'W", 360.26, 254.22, 4.86, 23.21),
+            ("92°11'W", 359.45, 411.88, 4.87, 23.21),
+        ]
+        .iter()
+        .map(|&(t, x, y, w, ht)| (t.to_owned(), x + w / 2.0, h - (y + ht / 2.0)))
+        .collect()
     }
 
     #[test]

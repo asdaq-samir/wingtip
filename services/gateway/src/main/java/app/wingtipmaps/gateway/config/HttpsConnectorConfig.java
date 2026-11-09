@@ -2,7 +2,6 @@ package app.wingtipmaps.gateway.config;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-
 import org.apache.catalina.connector.Connector;
 import org.apache.tomcat.util.net.SSLHostConfig;
 import org.apache.tomcat.util.net.SSLHostConfigCertificate;
@@ -63,7 +62,11 @@ public class HttpsConnectorConfig {
             @Value("${app.https.keystore-password:changeit}") String password,
             @Value("${app.https.port:8443}") int port,
             ObjectProvider<ServerProperties> server) {
-        return httpsConnector(keystore, password, port, server.getIfAvailable(ServerProperties::new).getCompression());
+        return httpsConnector(
+                keystore,
+                password,
+                port,
+                server.getIfAvailable(ServerProperties::new).getCompression());
     }
 
     WebServerFactoryCustomizer<TomcatServletWebServerFactory> httpsConnector(
@@ -72,8 +75,10 @@ public class HttpsConnectorConfig {
             // docker-compose.yml names the file whether or not make-certs.sh
             // has been run yet; absent, the plain port is all there is.
             if (!isKeystore(keystore)) {
-                log.info("no HTTPS: app.https.keystore '{}' is not a readable file "
-                        + "(infra/local-https/make-certs.sh writes one)", keystore);
+                log.info(
+                        "no HTTPS: app.https.keystore '{}' is not a readable file "
+                                + "(infra/local-https/make-certs.sh writes one)",
+                        keystore);
                 return;
             }
             log.info("HTTPS on port {}, certificate from {}", port, keystore);
@@ -83,7 +88,8 @@ public class HttpsConnectorConfig {
             connector.setSecure(true);
             connector.setProperty("SSLEnabled", "true");
             SSLHostConfig ssl = new SSLHostConfig();
-            SSLHostConfigCertificate certificate = new SSLHostConfigCertificate(ssl, SSLHostConfigCertificate.Type.UNDEFINED);
+            SSLHostConfigCertificate certificate =
+                    new SSLHostConfigCertificate(ssl, SSLHostConfigCertificate.Type.UNDEFINED);
             certificate.setCertificateKeystoreFile(keystore);
             certificate.setCertificateKeystorePassword(password);
             certificate.setCertificateKeystoreType("PKCS12");
@@ -107,7 +113,9 @@ public class HttpsConnectorConfig {
         }
         connector.setProperty("compression", "on");
         connector.setProperty("compressibleMimeType", String.join(",", compression.getMimeTypes()));
-        connector.setProperty("compressionMinSize", String.valueOf(compression.getMinResponseSize().toBytes()));
+        connector.setProperty(
+                "compressionMinSize",
+                String.valueOf(compression.getMinResponseSize().toBytes()));
     }
 
     static boolean isKeystore(String keystore) {

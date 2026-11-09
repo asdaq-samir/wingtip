@@ -8,8 +8,12 @@ export function useAcsTable(): AcsTable | null {
   const [table, setTable] = useState<AcsTable | null>(null);
   useEffect(() => {
     let live = true;
-    void import("./acs.json").then(m => { if (live) setTable(m.default as AcsTable); });
-    return () => { live = false; };
+    void import("./acs.json").then((m) => {
+      if (live) setTable(m.default as AcsTable);
+    });
+    return () => {
+      live = false;
+    };
   }, []);
   return table;
 }

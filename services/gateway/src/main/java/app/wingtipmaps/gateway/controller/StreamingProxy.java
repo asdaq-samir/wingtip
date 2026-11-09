@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.tracing.TraceHeaders;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -10,7 +11,6 @@ import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.function.Function;
-import app.wingtipmaps.gateway.tracing.TraceHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -63,7 +63,8 @@ public class StreamingProxy {
     /** Turns an upstream response into this app's, once there is one to
      *  turn: the callers differ in which headers they carry over. */
     @FunctionalInterface
-    public interface ResponseShaper extends Function<HttpResponse<InputStream>, ResponseEntity<StreamingResponseBody>> {}
+    public interface ResponseShaper
+            extends Function<HttpResponse<InputStream>, ResponseEntity<StreamingResponseBody>> {}
 
     private final HttpClient http = HttpClient.newBuilder()
             .version(HttpClient.Version.HTTP_1_1)
@@ -187,7 +188,6 @@ public class StreamingProxy {
 
     /** The content type an upstream declared, or JSON if it declared none. */
     public static String contentTypeOf(HttpResponse<InputStream> response) {
-        return response.headers().firstValue(HttpHeaders.CONTENT_TYPE)
-                .orElse(MediaType.APPLICATION_JSON_VALUE);
+        return response.headers().firstValue(HttpHeaders.CONTENT_TYPE).orElse(MediaType.APPLICATION_JSON_VALUE);
     }
 }

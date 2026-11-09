@@ -3,10 +3,20 @@ import type { StopField } from "./api/types";
 import { kindLines, kindsOf, repairWords, whereWords } from "./stopKinds";
 
 const FIELD: StopField = {
-  ident: "06C", name: "SCHAUMBURG RGNL", city: "Schaumburg", lat: 41.99, lon: -88.1, distance_nm: 12.4, bearing_deg: 45,
-  phone: "847-895-3800", fuel_types: ["100LL", "A"], airframe_repair: "major", powerplant_repair: "minor",
+  ident: "06C",
+  name: "SCHAUMBURG RGNL",
+  city: "Schaumburg",
+  lat: 41.99,
+  lon: -88.1,
+  distance_nm: 12.4,
+  bearing_deg: 45,
+  phone: "847-895-3800",
+  fuel_types: ["100LL", "A"],
+  airframe_repair: "major",
+  powerplant_repair: "minor",
   food: [{ name: "Pilot Pete's", kind: "American restaurant", distance_m: 199, lat: 41.99, lon: -88.1, on_field: true }],
-  training: [], places_known: true,
+  training: [],
+  places_known: true,
 };
 
 describe("a stop's row", () => {

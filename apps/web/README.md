@@ -275,7 +275,7 @@ these took the planner's cold-load JavaScript from 1.67 MB to 1.00 MB.
 
 **Cold load.** `main.tsx` asks the planner for the course named in the
 address (`prefetchQuery`, the same query key and fetcher `usePlan`
-uses) *before* `ReactDOM.createRoot(...).render(...)` runs — React
+uses) _before_ `ReactDOM.createRoot(...).render(...)` runs — React
 mounting, the router resolving and the workspace rendering all used to
 happen first, with the request queued behind them for a route the URL
 had already named. The component then finds the answer already in

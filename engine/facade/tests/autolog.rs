@@ -52,8 +52,14 @@ fn the_c81_to_kdlh_flight_is_logged_as_flown() {
     let kinds: Vec<&str> = d["landings"].as_array().unwrap().iter().map(|l| l["kind"].as_str().unwrap()).collect();
     assert_eq!(kinds, ["touch_and_go", "full_stop"]);
     let (tg, stop) = (&d["landings"][0], &d["landings"][1]);
-    assert_eq!((tg["night"].as_bool(), tg["passenger_night"].as_bool(), tg["counts_night"].as_bool()), (Some(true), Some(false), Some(false)));
-    assert_eq!((stop["night"].as_bool(), stop["passenger_night"].as_bool(), stop["counts_night"].as_bool()), (Some(true), Some(true), Some(true)));
+    assert_eq!(
+        (tg["night"].as_bool(), tg["passenger_night"].as_bool(), tg["counts_night"].as_bool()),
+        (Some(true), Some(false), Some(false))
+    );
+    assert_eq!(
+        (stop["night"].as_bool(), stop["passenger_night"].as_bool(), stop["counts_night"].as_bool()),
+        (Some(true), Some(true), Some(true))
+    );
     assert_eq!(d["takeoffs"][0]["field"], "C81");
     assert_eq!(d["takeoffs"][0]["night"], false);
     // 323 nm in a straight line: cross-country under 61.1(b)(ii).
@@ -74,7 +80,10 @@ fn the_c81_to_kdlh_flight_is_logged_as_flown() {
     assert!(e["remarks"].as_str().unwrap().contains("ILS RWY 27 KDLH x2"));
     // Every figure says why, with its source.
     for item in ["totalHours", "nightHours", "landing", "crossCountryHours", "approaches", "holding", "flownOn"] {
-        assert!(d["reasons"].as_array().unwrap().iter().any(|r| r["item"] == item && r["source"].as_str().is_some_and(|s| !s.is_empty())), "{item}");
+        assert!(
+            d["reasons"].as_array().unwrap().iter().any(|r| r["item"] == item && r["source"].as_str().is_some_and(|s| !s.is_empty())),
+            "{item}"
+        );
     }
 }
 

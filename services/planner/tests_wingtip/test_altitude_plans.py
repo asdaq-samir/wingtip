@@ -4,6 +4,7 @@ network anywhere, the plans the engine's (wingtip_route::navlog, whose
 climbs, descents and penalties are tested in engine/facade/tests/navlog.rs):
 the per-leg wind lookup is stubbed, and the segments come in the shape
 wingtip.altitude.select_cruise_altitude produces."""
+
 import pytest
 
 from wingtip import navlog
@@ -19,11 +20,18 @@ def lowest_vfr_cruising_altitude(floor_ft, course):
 
 
 def legal_cruising_altitudes(floor_ft, ceiling_ft, course, rule_from_ft=None):
-    return engine("legal_cruising_altitudes", floor_ft=floor_ft, ceiling_ft=ceiling_ft, magnetic_course_deg=course,
-                  rule_from_ft=rule_from_ft)
+    return engine(
+        "legal_cruising_altitudes", floor_ft=floor_ft, ceiling_ft=ceiling_ft, magnetic_course_deg=course, rule_from_ft=rule_from_ft
+    )
 
-PROFILE = {"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.0, "climb_rate_fpm_sea_level": 800.0, "climb_tas_kt": 70.0,
-           "service_ceiling_ft": 14000.0}
+
+PROFILE = {
+    "cruise_tas_kt": 100.0,
+    "fuel_burn_gph": 8.0,
+    "climb_rate_fpm_sea_level": 800.0,
+    "climb_tas_kt": 70.0,
+    "service_ceiling_ft": 14000.0,
+}
 
 
 @pytest.fixture(autouse=True)
@@ -33,8 +41,8 @@ def _standard_day(monkeypatch):
 
 
 def test_lowest_legal_altitude_follows_the_hemispheric_rule():
-    assert lowest_vfr_cruising_altitude(2200.0, 328.0) == 2500.0   # westbound: even thousands + 500
-    assert lowest_vfr_cruising_altitude(2200.0, 90.0) == 3500.0    # eastbound: odd thousands + 500
+    assert lowest_vfr_cruising_altitude(2200.0, 328.0) == 2500.0  # westbound: even thousands + 500
+    assert lowest_vfr_cruising_altitude(2200.0, 90.0) == 3500.0  # eastbound: odd thousands + 500
 
 
 def test_the_hemisphere_is_decided_once_for_the_page_to_name():
@@ -55,9 +63,7 @@ def test_legal_altitudes_stop_under_class_a_when_nothing_else_caps_them():
 
 def test_below_where_the_rule_begins_every_500_ft_is_legal_too():
     # Westbound over ground at 800 ft: the rule begins at 3,800.
-    assert legal_cruising_altitudes(1700.0, 7000.0, 328.0, rule_from_ft=3800.0) == [
-        2000.0, 2500.0, 3000.0, 3500.0, 4500.0, 6500.0,
-    ]
+    assert legal_cruising_altitudes(1700.0, 7000.0, 328.0, rule_from_ft=3800.0) == [2000.0, 2500.0, 3000.0, 3500.0, 4500.0, 6500.0]
     # Under a ceiling that the rule's first altitude is above.
     assert legal_cruising_altitudes(1700.0, 2111.0, 328.0, rule_from_ft=3800.0) == [2000.0]
 
@@ -71,27 +77,41 @@ FIXES = [
 
 def _segments(candidates_per_leg):
     return [
-        {"from_nm": 0.0, "to_nm": 60.0, "floor_ft": 2000.0, "airspace_ceiling_ft": None,
-         "band_ceiling_ft": max(c) if c else None, "candidates_ft": list(c)}
+        {
+            "from_nm": 0.0,
+            "to_nm": 60.0,
+            "floor_ft": 2000.0,
+            "airspace_ceiling_ft": None,
+            "band_ceiling_ft": max(c) if c else None,
+            "candidates_ft": list(c),
+        }
         for c in candidates_per_leg
     ]
 
 
 def _winds(by_altitude):
     """A wind_at_altitude stand-in: the same wind everywhere, keyed by altitude."""
+
     def wind(lat, lon, altitude_ft, fcst_hr="06"):
         return by_altitude.get(altitude_ft)
+
     return wind
 
 
 def test_fastest_climbs_for_a_tailwind_and_lowest_stays_low(monkeypatch):
     # Dead calm at 3,500, a 30 kt tailwind straight up the course at
     # 5,500 and 7,500: climbing pays, and lowest ignores it.
-    monkeypatch.setattr(navlog, "wind_at_altitude", _winds({
-        3500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 0.0},
-        5500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 30.0},
-        7500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 30.0},
-    }))
+    monkeypatch.setattr(
+        navlog,
+        "wind_at_altitude",
+        _winds(
+            {
+                3500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 0.0},
+                5500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 30.0},
+                7500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 30.0},
+            }
+        ),
+    )
     plans = navlog.altitude_profiles(FIXES, _segments([[3500.0, 5500.0, 7500.0]] * 2), PROFILE)
 
     assert [s["altitude_ft"] for s in plans["lowest"]["steps"]] == [3500.0]
@@ -110,10 +130,11 @@ def test_economical_climbs_for_a_tailwind_only_when_it_pays_for_the_climbs_fuel(
     # but not the fuel the climb burns, so the economical plan stays low
     # and burns less for being slower.
     own = {**PROFILE, "climb_fuel_burn_gph": 14.0}
-    monkeypatch.setattr(navlog, "wind_at_altitude", _winds({
-        3500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 0.0},
-        9500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 4.0},
-    }))
+    monkeypatch.setattr(
+        navlog,
+        "wind_at_altitude",
+        _winds({3500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 0.0}, 9500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 4.0}}),
+    )
     plans = navlog.altitude_profiles(FIXES, _segments([[3500.0, 9500.0]] * 2), own, departure_elevation_ft=500.0)
 
     assert [s["altitude_ft"] for s in plans["fastest"]["steps"]] == [9500.0]
@@ -123,10 +144,11 @@ def test_economical_climbs_for_a_tailwind_only_when_it_pays_for_the_climbs_fuel(
 
 
 def test_a_strong_tailwind_pays_for_the_climbs_fuel_too(monkeypatch):
-    monkeypatch.setattr(navlog, "wind_at_altitude", _winds({
-        3500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 0.0},
-        9500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 30.0},
-    }))
+    monkeypatch.setattr(
+        navlog,
+        "wind_at_altitude",
+        _winds({3500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 0.0}, 9500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 30.0}}),
+    )
     plans = navlog.altitude_profiles(FIXES, _segments([[3500.0, 9500.0]] * 2), PROFILE, departure_elevation_ft=500.0)
     assert [s["altitude_ft"] for s in plans["economical"]["steps"]] == [9500.0]
 
@@ -135,16 +157,15 @@ def test_a_shelf_over_the_first_leg_makes_the_plans_step(monkeypatch):
     # Under a Class B shelf the first leg can only fly 3,500; past it
     # the band opens up. Highest and fastest step up after the shelf;
     # lowest stays at 3,500 throughout, since stepping buys it nothing.
-    monkeypatch.setattr(navlog, "wind_at_altitude", _winds({
-        3500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 0.0},
-        5500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 25.0},
-    }))
+    monkeypatch.setattr(
+        navlog,
+        "wind_at_altitude",
+        _winds({3500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 0.0}, 5500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 25.0}}),
+    )
     plans = navlog.altitude_profiles(FIXES, _segments([[3500.0], [3500.0, 5500.0]]), PROFILE)
 
     assert [s["altitude_ft"] for s in plans["lowest"]["steps"]] == [3500.0]
-    assert [(s["from"], s["to"], s["altitude_ft"]) for s in plans["highest"]["steps"]] == [
-        ("AAA", "Lake", 3500.0), ("Lake", "BBB", 5500.0),
-    ]
+    assert [(s["from"], s["to"], s["altitude_ft"]) for s in plans["highest"]["steps"]] == [("AAA", "Lake", 3500.0), ("Lake", "BBB", 5500.0)]
     assert [s["altitude_ft"] for s in plans["fastest"]["steps"]] == [3500.0, 5500.0]
     assert plans["fastest"]["legs"][1]["altitude_ft"] == 5500.0
     assert plans["fastest"]["climb_penalty_min"] > plans["lowest"]["climb_penalty_min"]
@@ -178,10 +199,11 @@ def test_the_route_flown_at_each_altitude_any_leg_may_fly_is_given_for_the_wheel
     """The altitude wheel's figures (the owner's pick, 2026-10-20): every
     altitude a leg may fly, the route flown at it, a leg where it is not
     legal at its own nearest -- here the second leg, legal at 3,500 alone."""
-    monkeypatch.setattr(navlog, "wind_at_altitude", _winds({
-        3500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 0.0},
-        5500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 30.0},
-    }))
+    monkeypatch.setattr(
+        navlog,
+        "wind_at_altitude",
+        _winds({3500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 0.0}, 5500.0: {"wind_dir_true_deg": 225.0, "wind_speed_kt": 30.0}}),
+    )
     plans = navlog.altitude_profiles(FIXES, _segments([[3500.0, 5500.0], [3500.0]]), PROFILE)
     figures = {f["altitude_ft"]: f for f in plans.by_altitude}
     assert sorted(figures) == [3500.0, 5500.0]

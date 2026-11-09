@@ -2,6 +2,7 @@
 the log, the webhook, the hooks -- and said again when it is back; a hook
 that raises keeps the others from nothing; GET /api/status/feeds answers
 the last check with ISO times."""
+
 import logging
 
 from fastapi.testclient import TestClient
@@ -14,9 +15,20 @@ NOW = 1_800_000_000.0
 
 
 def _stale(monkeypatch, state="stale"):
-    monkeypatch.setattr(lines_of, "check", lambda url, now=None: [
-        {"name": "TFMS", "kind": "swim", "what": "flight plans", "state": state, "detail": "no message for 10 min",
-         "last_at": NOW - 600}])
+    monkeypatch.setattr(
+        lines_of,
+        "check",
+        lambda url, now=None: [
+            {
+                "name": "TFMS",
+                "kind": "swim",
+                "what": "flight plans",
+                "state": state,
+                "detail": "no message for 10 min",
+                "last_at": NOW - 600,
+            }
+        ],
+    )
 
 
 def test_an_alert_is_said_once_and_its_end_once(monkeypatch, caplog):
@@ -42,9 +54,9 @@ def test_an_alert_is_said_once_and_its_end_once(monkeypatch, caplog):
     assert heard[0]["stale_since"].startswith("2027-01-15")
     assert posted[0][0] == "http://hooks.example/feeds" and posted[0][1]["event"] == "stale"
     assert "feed TFMS stale for 15 min or more" in caplog.text
-    assert "feed alert hook" in caplog.text           # the broken hook logged, the next still heard
+    assert "feed alert hook" in caplog.text  # the broken hook logged, the next still heard
     feed_health.check(NOW + 20 * 60)
-    assert len(heard) == 1                             # said once
+    assert len(heard) == 1  # said once
 
     _stale(monkeypatch, "ok")
     feed_health.check(NOW + 21 * 60)

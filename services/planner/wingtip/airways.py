@@ -16,6 +16,7 @@ which 14 CFR 91.177(a)(1) makes the minimum IFR altitude along it.
 A segment with a gap in the airway, or marked unusable, is refused.
 
 The table is read once, on first use, and held: twenty thousand rows."""
+
 from __future__ import annotations
 
 import csv
@@ -82,7 +83,7 @@ def _feet(text: str | None) -> float | None:
 
 
 def _bound(text: str | None) -> str:
-    """"NE BND" as "NE"; "" where the MEA is for both ways."""
+    """ "NE BND" as "NE"; "" where the MEA is for both ways."""
     return (text or "").replace("BND", "").strip().upper()
 
 
@@ -100,16 +101,24 @@ def _read(path: Path) -> dict[str, list[_Row]]:
                 seq = int(row.get("POINT_SEQ") or 0)
             except ValueError:
                 continue
-            table.setdefault(ident, []).append((seq, _Row(
-                from_ident=(row.get("FROM_POINT") or "").strip().upper(), to_ident=to,
-                mea_ft=_feet(row.get("MIN_ENROUTE_ALT")), mea_bound=_bound(row.get("MIN_ENROUTE_ALT_DIR")),
-                mea_opposite_ft=_feet(row.get("MIN_ENROUTE_ALT_OPPOSITE")),
-                mea_opposite_bound=_bound(row.get("MIN_ENROUTE_ALT_OPPOSITE_DIR")),
-                gnss_mea_ft=_feet(row.get("GPS_MIN_ENROUTE_ALT")),
-                gnss_mea_opposite_ft=_feet(row.get("GPS_MIN_ENROUTE_ALT_OPPOSITE")),
-                moca_ft=_feet(row.get("MIN_OBSTN_CLNC_ALT")), maa_ft=_feet(row.get("MAX_AUTH_ALT")),
-                unusable=(row.get("MEA_GAP") or "").strip() == "U" or (row.get("AWY_SEG_GAP_FLAG") or "").strip() == "Y",
-            )))
+            table.setdefault(ident, []).append(
+                (
+                    seq,
+                    _Row(
+                        from_ident=(row.get("FROM_POINT") or "").strip().upper(),
+                        to_ident=to,
+                        mea_ft=_feet(row.get("MIN_ENROUTE_ALT")),
+                        mea_bound=_bound(row.get("MIN_ENROUTE_ALT_DIR")),
+                        mea_opposite_ft=_feet(row.get("MIN_ENROUTE_ALT_OPPOSITE")),
+                        mea_opposite_bound=_bound(row.get("MIN_ENROUTE_ALT_OPPOSITE_DIR")),
+                        gnss_mea_ft=_feet(row.get("GPS_MIN_ENROUTE_ALT")),
+                        gnss_mea_opposite_ft=_feet(row.get("GPS_MIN_ENROUTE_ALT_OPPOSITE")),
+                        moca_ft=_feet(row.get("MIN_OBSTN_CLNC_ALT")),
+                        maa_ft=_feet(row.get("MAX_AUTH_ALT")),
+                        unusable=(row.get("MEA_GAP") or "").strip() == "U" or (row.get("AWY_SEG_GAP_FLAG") or "").strip() == "Y",
+                    ),
+                )
+            )
     return {ident: [r for _, r in sorted(rows, key=lambda pair: pair[0])] for ident, rows in table.items()}
 
 

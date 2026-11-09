@@ -63,8 +63,11 @@ fn plan(name: &str, v: &Value) -> Result<String, String> {
     let (due, currency) = due::due(name, &entries, &dates, &standing, &held, today, remind_days)?;
     let evidence = evidence::evidence(name, list(name, v, "debriefs")?, today)?;
     // The weak areas, the most evidence first, ties in Weak::ALL's order.
-    let mut weak: Vec<(Weak, Vec<&evidence::Evidence>)> =
-        Weak::ALL.iter().map(|w| (*w, evidence.iter().filter(|e| e.weak == *w).collect::<Vec<_>>())).filter(|(_, e)| !e.is_empty()).collect();
+    let mut weak: Vec<(Weak, Vec<&evidence::Evidence>)> = Weak::ALL
+        .iter()
+        .map(|w| (*w, evidence.iter().filter(|e| e.weak == *w).collect::<Vec<_>>()))
+        .filter(|(_, e)| !e.is_empty())
+        .collect();
     weak.sort_by(|a, b| b.1.len().cmp(&a.1.len()));
     let places = sessions::places(name, list(name, v, "places")?)?;
     let sessions = sessions::plan(&due, &weak, &currency, &places);

@@ -30,7 +30,7 @@ export function zoneName(at: Date = new Date()): string {
   let name = zones.get(offset);
   if (name === undefined) {
     zoneFormat ??= new Intl.DateTimeFormat("en-US", { timeZoneName: "short" });
-    name = zoneFormat.formatToParts(at).find(p => p.type === "timeZoneName")?.value ?? "local";
+    name = zoneFormat.formatToParts(at).find((p) => p.type === "timeZoneName")?.value ?? "local";
     zones.set(offset, name);
   }
   return name;

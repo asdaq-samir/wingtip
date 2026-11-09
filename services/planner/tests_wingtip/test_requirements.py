@@ -1,4 +1,5 @@
 """Pins that two images must agree on, read from their requirement files."""
+
 import re
 from pathlib import Path
 

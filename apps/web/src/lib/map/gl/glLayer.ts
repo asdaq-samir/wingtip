@@ -66,7 +66,7 @@ const unclaimed = new WeakMap<MlMap, Set<string>>();
 const parked = new WeakSet<MlMap>();
 const addedOf = (map: MlMap) => {
   let kept = added.get(map);
-  if (!kept) added.set(map, kept = new Map());
+  if (!kept) added.set(map, (kept = new Map()));
   return kept;
 };
 
@@ -116,14 +116,16 @@ export function useGlLayer(slot: Slot, sources: Record<string, SourceSpecificati
     const kept = addedOf(map);
     const left = unclaimed.get(map);
     for (const [id, source] of Object.entries(sources)) {
-      const key = `s:${id}`, as = JSON.stringify(source);
+      const key = `s:${id}`,
+        as = JSON.stringify(source);
       if (map.getSource(id) && kept.has(key) && kept.get(key) !== as) removeSource(map, id);
       if (!map.getSource(id)) map.addSource(id, source);
       kept.set(key, as);
       left?.delete(key);
     }
     for (const layer of layers) {
-      const key = `l:${layer.id}`, as = JSON.stringify(layer);
+      const key = `l:${layer.id}`,
+        as = JSON.stringify(layer);
       if (map.getLayer(layer.id) && kept.get(key) !== as) map.removeLayer(layer.id);
       if (!map.getLayer(layer.id)) map.addLayer(layer, under && map.getLayer(under) ? under : slotId(slot));
       kept.set(key, as);
@@ -151,8 +153,11 @@ export const FADE_IN_MS = 250;
 
 /** Each layer type's opacities, the paint a fade sets. */
 const OPACITIES: Partial<Record<LayerSpecification["type"], string[]>> = {
-  fill: ["fill-opacity"], line: ["line-opacity"], circle: ["circle-opacity", "circle-stroke-opacity"],
-  symbol: ["icon-opacity", "text-opacity"], raster: ["raster-opacity"],
+  fill: ["fill-opacity"],
+  line: ["line-opacity"],
+  circle: ["circle-opacity", "circle-stroke-opacity"],
+  symbol: ["icon-opacity", "text-opacity"],
+  raster: ["raster-opacity"],
 };
 
 /** The layers (useGlLayer's, called before this) clear as they are added,
@@ -168,7 +173,8 @@ export function useGlFadeIn(layers: LayerSpecification[], shown: boolean) {
     const each = (paint: (id: string, prop: string, to: unknown) => void) => {
       for (const layer of spec.current) {
         if (!map.getLayer(layer.id)) continue;
-        for (const prop of OPACITIES[layer.type] ?? []) paint(layer.id, prop, (layer.paint as Record<string, unknown> | undefined)?.[prop] ?? 1);
+        for (const prop of OPACITIES[layer.type] ?? [])
+          paint(layer.id, prop, (layer.paint as Record<string, unknown> | undefined)?.[prop] ?? 1);
       }
     };
     const set = (id: string, k: string, v: unknown) => map.setPaintProperty(id, k as Parameters<MlMap["setPaintProperty"]>[1], v as never);
@@ -189,7 +195,9 @@ export function useGlFadeIn(layers: LayerSpecification[], shown: boolean) {
       // Drawn clear once before the fade, or MapLibre has nothing to ease from.
       if (shown) {
         map.once("render", fade);
-        return () => { map.off("render", fade); };
+        return () => {
+          map.off("render", fade);
+        };
       }
     }
     if (shown) fade();
@@ -223,7 +231,9 @@ export function useGlPaint(layers: string[], paint: Record<string, unknown>) {
 export function useGlTap(layers: string[], reach: number, rank: number, onTap: GlTap["onTap"]) {
   const { addTap } = useGlMap();
   const handler = useRef(onTap);
-  useEffect(() => { handler.current = onTap; });
+  useEffect(() => {
+    handler.current = onTap;
+  });
   const ids = layers.join();
   useEffect(() => addTap({ layers: ids.split(","), reach, rank, onTap: (f, e) => handler.current(f, e) }), [addTap, ids, reach, rank]);
 }
@@ -232,15 +242,19 @@ export function useGlTap(layers: string[], reach: number, rank: number, onTap: G
 export function useGlMiss(onMiss: (event: MapMouseEvent) => void) {
   const { addMiss } = useGlMap();
   const handler = useRef(onMiss);
-  useEffect(() => { handler.current = onMiss; });
-  useEffect(() => addMiss(e => handler.current(e)), [addMiss]);
+  useEffect(() => {
+    handler.current = onMiss;
+  });
+  useEffect(() => addMiss((e) => handler.current(e)), [addMiss]);
 }
 
 export const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
 /** A picture that stretches to fit its text (icon-text-fit), its corners
  *  `inset` px each way kept as drawn. */
-export interface Stretch { inset: number }
+export interface Stretch {
+  inset: number;
+}
 
 /** A picture ready for addImage: drawn, and its density and stretch. */
 export interface DrawnImage {
@@ -253,10 +267,12 @@ export interface DrawnImage {
  *  cannot be drawn. */
 export function drawSvg(svg: string, stretch?: Stretch): Promise<DrawnImage | null> {
   const ratio = Math.max(1, Math.min(3, Math.ceil(window.devicePixelRatio || 1)));
-  return new Promise(resolve => {
-    const w = Number(/width="([\d.]+)"/.exec(svg)?.[1] ?? 24), h = Number(/height="([\d.]+)"/.exec(svg)?.[1] ?? 24);
+  return new Promise((resolve) => {
+    const w = Number(/width="([\d.]+)"/.exec(svg)?.[1] ?? 24),
+      h = Number(/height="([\d.]+)"/.exec(svg)?.[1] ?? 24);
     const sized = svg
-      .replace(`width="${w}"`, `width="${w * ratio}"`).replace(`height="${h}"`, `height="${h * ratio}"`)
+      .replace(`width="${w}"`, `width="${w * ratio}"`)
+      .replace(`height="${h}"`, `height="${h * ratio}"`)
       .replace(/^<svg (?!xmlns)/, `<svg xmlns="http://www.w3.org/2000/svg" `);
     const image = new Image(w * ratio, h * ratio);
     image.onload = () => {

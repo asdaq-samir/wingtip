@@ -1,4 +1,15 @@
-import { Suspense, lazy, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { showError } from "../../lib/problems";
 import { patched, useSearchParamsNow } from "../../lib/useSearchParamsNow";
 import { cn } from "cn";
@@ -44,12 +55,18 @@ type Mode = "pilot" | "dev";
  *  asks the server for a collected one instead). */
 const MODES = {
   pilot: {
-    title: "Plan a route — Wingtip Maps", panel: "Flight Planning", console: "Pilot",
-    Workspace: PlanWorkspace, route: ["", ""] as const,
+    title: "Plan a route — Wingtip Maps",
+    panel: "Flight Planning",
+    console: "Pilot",
+    Workspace: PlanWorkspace,
+    route: ["", ""] as const,
   },
   dev: {
-    title: "Dev — Wingtip Maps", panel: "Model Training", console: "Developer",
-    Workspace: TrainWorkspace, route: ["C81", "KDLH"] as const,
+    title: "Dev — Wingtip Maps",
+    panel: "Model Training",
+    console: "Developer",
+    Workspace: TrainWorkspace,
+    route: ["C81", "KDLH"] as const,
   },
 };
 
@@ -70,7 +87,7 @@ const MODES = {
  */
 export default function MapPage({ mode }: { mode: Mode }) {
   const { title, panel: panelLabel, console: consoleLabel, Workspace, route } = MODES[mode];
-  const navBar = usePreferences(s => s.navBar);
+  const navBar = usePreferences((s) => s.navBar);
   const edge = useNavEdge();
   // A desktop's keys: / to the search, 1 to 4 for the tabs, Escape back.
   useShortcuts(useIsDesktop());
@@ -102,9 +119,12 @@ export default function MapPage({ mode }: { mode: Mode }) {
       "That sign-in was refused",
       "The provider has not verified that account's email address. Verify it there, or sign in with an emailed link.",
     );
-    setSearchParams(prev => {
-      return patched(prev, { signin: null });
-    }, { replace: true });
+    setSearchParams(
+      (prev) => {
+        return patched(prev, { signin: null });
+      },
+      { replace: true },
+    );
   }, [refused, setSearchParams]);
 
   // How far the panel is out. All the way, on the planner, is the
@@ -116,29 +136,38 @@ export default function MapPage({ mode }: { mode: Mode }) {
   // airspace at a point or an airplane half way, where every card opens,
   // as on 2026-10-11 (the owner's "pill to half to full worked really
   // well").
-  const [localPanel, setLocalPanel] = useState<PanelState>(() => (
-    mode !== "pilot" ? "peek"
-      : ["place", "at", "flight"].some(key => searchParams.has(key)) ? "half"
-        : ["past", "aircraft", "near", "saved", "list"].some(key => searchParams.has(key)) ? "full" : "peek"));
+  const [localPanel, setLocalPanel] = useState<PanelState>(() =>
+    mode !== "pilot"
+      ? "peek"
+      : ["place", "at", "flight"].some((key) => searchParams.has(key))
+        ? "half"
+        : ["past", "aircraft", "near", "saved", "list"].some((key) => searchParams.has(key))
+          ? "full"
+          : "peek",
+  );
   // The airport index downloaded ahead of the first search, which at rest
   // is out of sight (lib/airportIndex).
   useWarmAirportIndex(mode === "pilot");
   const briefingInAddress = searchParams.get("view") === "briefing";
-  const panel: PanelState = mode === "pilot"
-    ? (briefingInAddress ? "full" : localPanel === "full" ? "peek" : localPanel)
-    : localPanel;
+  const panel: PanelState = mode === "pilot" ? (briefingInAddress ? "full" : localPanel === "full" ? "peek" : localPanel) : localPanel;
   // flushSync: the panel moves the moment the address says so. React
   // Router lands a navigation in a transition, which a busy page (the
   // plan streaming in) holds back, and the toggle read the state from
   // before it: a close pressed then opened it again, one run in three
   // under load.
-  const setPanel = useCallback((next: PanelState) => {
-    setLocalPanel(next);
-    if (mode !== "pilot" || (next === "full") === briefingInAddress) return;
-    setSearchParams(prev => {
-      return patched(prev, { view: next === "full" ? "briefing" : null });
-    }, { replace: true, flushSync: true });
-  }, [mode, briefingInAddress, setSearchParams]);
+  const setPanel = useCallback(
+    (next: PanelState) => {
+      setLocalPanel(next);
+      if (mode !== "pilot" || (next === "full") === briefingInAddress) return;
+      setSearchParams(
+        (prev) => {
+          return patched(prev, { view: next === "full" ? "briefing" : null });
+        },
+        { replace: true, flushSync: true },
+      );
+    },
+    [mode, briefingInAddress, setSearchParams],
+  );
   // Landed on a list's address, all the way up, as its link asks (above):
   // the planner's all the way up is the address's (`view`), so said there
   // once.
@@ -155,7 +184,11 @@ export default function MapPage({ mode }: { mode: Mode }) {
   // render the page again.
   const [insets, setInsets] = useState<MapInsets>(NO_INSETS);
   const changeInsets = useCallback((next: MapInsets) => {
-    setInsets(prev => (prev.top === next.top && prev.bottom === next.bottom && prev.left === next.left && prev.out === next.out && prev.up === next.up ? prev : next));
+    setInsets((prev) =>
+      prev.top === next.top && prev.bottom === next.bottom && prev.left === next.left && prev.out === next.out && prev.up === next.up
+        ? prev
+        : next,
+    );
   }, []);
 
   // The console, Setup: its button the tab bar's last tab (TabBar), on both
@@ -166,8 +199,8 @@ export default function MapPage({ mode }: { mode: Mode }) {
   // Out or not, the app's (useConsoleOpen): a developer's Pilot and
   // Developer in the console's title change the page under it, and the
   // console stays out, the other page's.
-  const consoleOpen = useConsoleOpen(s => s.open);
-  const setConsoleOpen = useConsoleOpen(s => s.setOpen);
+  const consoleOpen = useConsoleOpen((s) => s.open);
+  const setConsoleOpen = useConsoleOpen((s) => s.setOpen);
   // The sheet is drawn once, with no trigger of its own: its button is the
   // tab bar's Settings (TabBar), opened from and given the focus back on
   // closing.
@@ -202,136 +235,153 @@ export default function MapPage({ mode }: { mode: Mode }) {
   if (layerDrawn && !setupDrawn) setSetupDrawn(true);
   const consoleLayerOf = (pieces: WorkspacePieces) => (
     <ConsoleInPanelContext.Provider value={consoleInPanel}>
-      <ConsoleLayer label={consoleLabel} detent={panel === "full" ? "large" : "medium"} edge={edge} onClose={closeConsole} shown={consoleLayer}>
-          <PagesShown.Provider value={consoleLayer}>
-            <AfterTheSheet>{pieces.console}</AfterTheSheet>
-          </PagesShown.Provider>
+      <ConsoleLayer
+        label={consoleLabel}
+        detent={panel === "full" ? "large" : "medium"}
+        edge={edge}
+        onClose={closeConsole}
+        shown={consoleLayer}
+      >
+        <PagesShown.Provider value={consoleLayer}>
+          <AfterTheSheet>{pieces.console}</AfterTheSheet>
+        </PagesShown.Provider>
       </ConsoleLayer>
     </ConsoleInPanelContext.Provider>
   );
 
   // The route's box or form and the actions beside it.
   const routeRowOf = (pieces: WorkspacePieces) => (
-              <>
-                <div className="min-w-0 flex-1">
-                  {pieces.route ?? (
-                    <RouteForm
-                      dep={dep} dest={dest} onDepChange={setDep} onDestChange={setDest}
-                      onSubmit={() => pieces.submit?.()} disabled={pieces.loading}
-                    />
-                  )}
-                </div>
-                {pieces.actions && <div className="flex shrink-0 items-center">{pieces.actions}</div>}
-              </>
-            );
+    <>
+      <div className="min-w-0 flex-1">
+        {pieces.route ?? (
+          <RouteForm
+            dep={dep}
+            dest={dest}
+            onDepChange={setDep}
+            onDestChange={setDest}
+            onSubmit={() => pieces.submit?.()}
+            disabled={pieces.loading}
+          />
+        )}
+      </div>
+      {pieces.actions && <div className="flex shrink-0 items-center">{pieces.actions}</div>}
+    </>
+  );
   // The panel's top row with it out: the workspace's head, or the route's
   // row; none over a card alone or the console's layer.
-  const topRowOf = (pieces: WorkspacePieces, routeRow: ReactNode) => pieces.alone || consoleLayer ? null : pieces.head ?? routeRow;
+  const topRowOf = (pieces: WorkspacePieces, routeRow: ReactNode) => (pieces.alone || consoleLayer ? null : (pieces.head ?? routeRow));
 
   return (
     // The fallback is the page's own background rather than a spinner:
     // it is on screen for one request, and a flash of "loading" where
     // a chart is about to be is worse than a moment of nothing.
     <Suspense fallback={<div className="h-dvh w-full bg-background" />}>
-    {/* The workspace asks the shared engine while it renders (the
+      {/* The workspace asks the shared engine while it renders (the
         planner's first render writes its procedures with it): drawn once
         the engine is there. Until then the map alone (BootMap: the chart
         and the overlay tiles, which ask it nothing), so the page paints
         without waiting for the .wasm (main.tsx); the workspace's map
         takes that one up as it is, rather than drawing a second. */}
-    <EngineGate fallback={<BootMapPage />}>
-    <Workspace dep={dep} dest={dest} panel={panel} setPanel={setPanel}>
-      {pieces => {
-        // The route's row built once a render, the same element as the top
-        // row and as the one MapPanel keeps under the other tabs (`kept`).
-        const routeRow = routeRowOf(pieces);
-        const topRow = topRowOf(pieces, routeRow);
-        return (
-        <div
-          // Pinned to the viewport rather than sized to it (`h-dvh`): a
-          // page that can scroll at all, iOS Safari scrolls for its own
-          // reasons -- turned to landscape and back, it was left scrolled
-          // by the height of the toolbar it had collapsed. Pinned, there
-          // is nothing to scroll; the panel and the consoles scroll inside
-          // themselves. On paper the panel flows as a document.
-          className="fixed inset-0 overflow-hidden print:static print:overflow-visible"
-          // The navigation bar's edge, for index.css's `nav-bottom`
-          // variant: "auto" until one is picked, the bottom on a phone.
-          data-nav={navBar ?? "auto"}
-          data-mode={mode}
-        >
-          {/* React hoists a rendered <title> into the document head
+      <EngineGate fallback={<BootMapPage />}>
+        <Workspace dep={dep} dest={dest} panel={panel} setPanel={setPanel}>
+          {(pieces) => {
+            // The route's row built once a render, the same element as the top
+            // row and as the one MapPanel keeps under the other tabs (`kept`).
+            const routeRow = routeRowOf(pieces);
+            const topRow = topRowOf(pieces, routeRow);
+            return (
+              <div
+                // Pinned to the viewport rather than sized to it (`h-dvh`): a
+                // page that can scroll at all, iOS Safari scrolls for its own
+                // reasons -- turned to landscape and back, it was left scrolled
+                // by the height of the toolbar it had collapsed. Pinned, there
+                // is nothing to scroll; the panel and the consoles scroll inside
+                // themselves. On paper the panel flows as a document.
+                className="fixed inset-0 overflow-hidden print:static print:overflow-visible"
+                // The navigation bar's edge, for index.css's `nav-bottom`
+                // variant: "auto" until one is picked, the bottom on a phone.
+                data-nav={navBar ?? "auto"}
+                data-mode={mode}
+              >
+                {/* React hoists a rendered <title> into the document head
               itself, so the browser tab says which page this is
               without an effect writing document.title by hand. */}
-          <title>{title}</title>
-          {/* An emailed sign-in link lands here (#signin=…) and is
+                <title>{title}</title>
+                {/* An emailed sign-in link lands here (#signin=…) and is
               finished in the app's own dialog. */}
-          <LinkSignIn />
-          <TvLink />
-          {/* The emergency assistant, opened from flying mode, the pilot's words or the checklists (features/emergency). */}
-          <EmergencyHost />
-          {/* A flight ended on own ship's GPS, offered for the logbook (features/logbook-auto). */}
-          <AutoLogbookHost />
-          {/* Dev mode's refusal: someone it is not for, on the dev page,
+                <LinkSignIn />
+                <TvLink />
+                {/* The emergency assistant, opened from flying mode, the pilot's words or the checklists (features/emergency). */}
+                <EmergencyHost />
+                {/* A flight ended on own ship's GPS, offered for the logbook (features/logbook-auto). */}
+                <AutoLogbookHost />
+                {/* Dev mode's refusal: someone it is not for, on the dev page,
               is taken to the map (the switch itself is in the settings). */}
-          <DevGuard />
-          {/* For a keyboard: past the panel to the map in one press.
+                <DevGuard />
+                {/* For a keyboard: past the panel to the map in one press.
               Visible only while it has focus, so at a keyboard's 14
               (text-sm), outside the touch type scale. */}
-          <a
-            href="#content"
-            className="sr-only z-50 rounded-md bg-background px-3 py-2 text-sm shadow outline-none focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            Skip to the map
-          </a>
-          {/* `isolate`: the map's markers and buttons carry z-indexes of
+                <a
+                  href="#content"
+                  className="sr-only z-50 rounded-md bg-background px-3 py-2 text-sm shadow outline-none focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                >
+                  Skip to the map
+                </a>
+                {/* `isolate`: the map's markers and buttons carry z-indexes of
               their own (MapControls' 1000); contained here, the map is one flat layer under
               the panel and the sheets. The insets as variables, for the
               chart credit (index.css). */}
-          <main
-            id="content"
-            className="absolute inset-0 isolate print:hidden"
-            style={{
-              "--map-inset-top": `${insets.top}px`,
-              "--map-inset-bottom": `${insets.bottom}px`,
-              "--map-inset-left": `${insets.left}px`,
-            } as CSSProperties}
-          >
-            <MapInsetsContext.Provider value={insets}>
-              {pieces.map}
-            </MapInsetsContext.Provider>
-          </main>
-          <MapPanel
-            label={consoleLayer ? consoleLabel : panelLabel} controls={pieces.alone || consoleLayer ? undefined : pieces.controls}
-            state={panel} onStateChange={setPanel} onInsetsChange={changeInsets}
-            // The pill: the workspace's own (a card's summary, the route's
-            // one line), or else the top row itself -- the same element, so
-            // a search bar typed into keeps its focus as the sheet comes up.
-            // The console's layer (Setup) has none: at rest it is the tabs.
-            compact={consoleLayer ? undefined : pieces.compact ?? topRow} toEdge={!!pieces.toEdge}
-            // The tab bar over a card alone too, as iOS keeps its tab bar on
-            // every screen: the tabs were gone while one was open. Setup has
-            // no pill of its own: at rest it is the tabs, for the way back to
-            // the others.
-            bar={pieces.bar} layer={consoleLayer ? "console" : pieces.alone ? "card" : "tab"}
-            foot={consoleLayer ? undefined : pieces.foot}
-            cardOver={!!pieces.cardOver} flying={!!pieces.flying}
-            // Kept too where the row holds the workspace's actions: one can
-            // own a card in the panel (Train's Filter, a ResponsivePopover),
-            // and the card's own coming up hides the head -- built again,
-            // the card went with it the moment it opened (dev-page.spec,
-            // 2026-11-05).
-            top={topRow} kept={pieces.route != null || pieces.actions != null ? routeRow : undefined}
-          >
-            {setupDrawn && consoleLayerOf(pieces)}
-            {/* Under the console while it is out, kept as it is. */}
-            <div className={consoleLayer ? "hidden" : "contents"}>{pieces.sidebar}</div>
-          </MapPanel>
-        </div>
-        );
-      }}
-    </Workspace>
-    </EngineGate>
+                <main
+                  id="content"
+                  className="absolute inset-0 isolate print:hidden"
+                  style={
+                    {
+                      "--map-inset-top": `${insets.top}px`,
+                      "--map-inset-bottom": `${insets.bottom}px`,
+                      "--map-inset-left": `${insets.left}px`,
+                    } as CSSProperties
+                  }
+                >
+                  <MapInsetsContext.Provider value={insets}>{pieces.map}</MapInsetsContext.Provider>
+                </main>
+                <MapPanel
+                  label={consoleLayer ? consoleLabel : panelLabel}
+                  controls={pieces.alone || consoleLayer ? undefined : pieces.controls}
+                  state={panel}
+                  onStateChange={setPanel}
+                  onInsetsChange={changeInsets}
+                  // The pill: the workspace's own (a card's summary, the route's
+                  // one line), or else the top row itself -- the same element, so
+                  // a search bar typed into keeps its focus as the sheet comes up.
+                  // The console's layer (Setup) has none: at rest it is the tabs.
+                  compact={consoleLayer ? undefined : (pieces.compact ?? topRow)}
+                  toEdge={!!pieces.toEdge}
+                  // The tab bar over a card alone too, as iOS keeps its tab bar on
+                  // every screen: the tabs were gone while one was open. Setup has
+                  // no pill of its own: at rest it is the tabs, for the way back to
+                  // the others.
+                  bar={pieces.bar}
+                  layer={consoleLayer ? "console" : pieces.alone ? "card" : "tab"}
+                  foot={consoleLayer ? undefined : pieces.foot}
+                  cardOver={!!pieces.cardOver}
+                  flying={!!pieces.flying}
+                  // Kept too where the row holds the workspace's actions: one can
+                  // own a card in the panel (Train's Filter, a ResponsivePopover),
+                  // and the card's own coming up hides the head -- built again,
+                  // the card went with it the moment it opened (dev-page.spec,
+                  // 2026-11-05).
+                  top={topRow}
+                  kept={pieces.route != null || pieces.actions != null ? routeRow : undefined}
+                >
+                  {setupDrawn && consoleLayerOf(pieces)}
+                  {/* Under the console while it is out, kept as it is. */}
+                  <div className={consoleLayer ? "hidden" : "contents"}>{pieces.sidebar}</div>
+                </MapPanel>
+              </div>
+            );
+          }}
+        </Workspace>
+      </EngineGate>
     </Suspense>
   );
 }
@@ -357,7 +407,14 @@ function BootMapPage() {
  * the focus has gone while it is up; not when a menu open in it took the
  * key first.
  */
-function ConsoleLayer({ label, detent, edge, onClose, shown, children }: {
+function ConsoleLayer({
+  label,
+  detent,
+  edge,
+  onClose,
+  shown,
+  children,
+}: {
   label: string;
   detent: "medium" | "large";
   edge: "top" | "bottom";
@@ -368,7 +425,9 @@ function ConsoleLayer({ label, detent, edge, onClose, shown, children }: {
 }) {
   const layer = useRef<HTMLElement>(null);
   const close = useRef(onClose);
-  useEffect(() => { close.current = onClose; });
+  useEffect(() => {
+    close.current = onClose;
+  });
   useEffect(() => {
     const node = layer.current;
     if (!node || !shown) return;
@@ -393,10 +452,13 @@ function ConsoleLayer({ label, detent, edge, onClose, shown, children }: {
   }, [shown]);
   return (
     <section
-      ref={layer} aria-label={label}
+      ref={layer}
+      aria-label={label}
       // Named for the suite only while it is up: put away it is there,
       // hidden, for the next tap on Setup.
-      data-testid={shown ? "console-sheet" : undefined} data-detent={detent} data-edge={edge}
+      data-testid={shown ? "console-sheet" : undefined}
+      data-detent={detent}
+      data-edge={edge}
       className={cn("min-h-0 flex-1 flex-col print:hidden", shown ? "flex" : "hidden")}
     >
       {children}

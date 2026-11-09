@@ -16,7 +16,9 @@
     "pretypecheck": "npm run types",
     "typecheck": "tsc --noEmit",
     "prelint": "npm run types",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "format": "prettier --write --log-level warn . ../../scripts/build/*.mjs",
+    "format:check": "prettier --check --log-level warn . ../../scripts/build/*.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -80,6 +82,7 @@
     "json-schema-to-typescript": "15.0.4",
     "knip": "5.88.1",
     "openapi-typescript": "7.13.0",
+    "prettier": "3.9.10",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.71.1",

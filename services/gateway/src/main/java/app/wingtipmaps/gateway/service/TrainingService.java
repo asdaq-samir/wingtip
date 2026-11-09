@@ -41,9 +41,14 @@ public class TrainingService {
     private final LessonService lessons;
     private final PlannerClient planner;
 
-    public TrainingService(EndorsementRepository endorsements, PilotRepository pilots, SignedEndorsementRepository signed,
-                           InstructorLinkRepository links, CrossCountryReviewRepository reviews, LessonService lessons,
-                           PlannerClient planner) {
+    public TrainingService(
+            EndorsementRepository endorsements,
+            PilotRepository pilots,
+            SignedEndorsementRepository signed,
+            InstructorLinkRepository links,
+            CrossCountryReviewRepository reviews,
+            LessonService lessons,
+            PlannerClient planner) {
         this.endorsements = endorsements;
         this.pilots = pilots;
         this.signed = signed;
@@ -70,27 +75,53 @@ public class TrainingService {
         List<Endorsement> paper = endorsements.findByKeyPilotIdOrderByKeyCode(pilot.getId());
         List<SignedEndorsement> theirs = signed.findByStudentIdOrderBySignedAtDesc(pilot.getId());
         List<InstructorLinkDto> instructors = links.findByStudentIdOrderByAskedAt(pilot.getId()).stream()
-                .filter(l -> instructor == null || (l.isAccepted() && l.getInstructor().getId().equals(instructor.getId())))
-                .map(l -> new InstructorLinkDto(l.getId(), l.getEmail(), l.isAccepted() ? EndorsementRecords.nameOf(l.getInstructor()) : null,
-                        l.isAccepted() ? l.getInstructor().getInstructorCertificate() : null, l.isAccepted(), l.getAskedAt()))
+                .filter(l -> instructor == null
+                        || (l.isAccepted() && l.getInstructor().getId().equals(instructor.getId())))
+                .map(l -> new InstructorLinkDto(
+                        l.getId(),
+                        l.getEmail(),
+                        l.isAccepted() ? EndorsementRecords.nameOf(l.getInstructor()) : null,
+                        l.isAccepted() ? l.getInstructor().getInstructorCertificate() : null,
+                        l.isAccepted(),
+                        l.getAskedAt()))
                 .toList();
         List<CrossCountryReviewDto> asked = (instructor == null
-                ? reviews.findByStudentIdOrderByAskedAtDesc(pilot.getId())
-                : reviews.findByStudentIdAndInstructorIdOrderByAskedAtDesc(pilot.getId(), instructor.getId())).stream()
-                .map(r -> EndorsementRecords.dto(planner, r, EndorsementRecords.checks(planner, r.getFlightOn(), paper, theirs))).toList();
+                        ? reviews.findByStudentIdOrderByAskedAtDesc(pilot.getId())
+                        : reviews.findByStudentIdAndInstructorIdOrderByAskedAtDesc(pilot.getId(), instructor.getId()))
+                .stream()
+                        .map(r -> EndorsementRecords.dto(
+                                planner, r, EndorsementRecords.checks(planner, r.getFlightOn(), paper, theirs)))
+                        .toList();
         // Each paper endorsement's last good day, the engine's, in order.
-        List<LocalDate> paperUntil = paper.isEmpty() ? List.of() : planner.endorsements(paper.stream()
-                .map(e -> PlannerClient.held(e.getKey().code(), e.getEndorsedOn(), null)).toList(), null).getUntil();
-        return new TrainingDto(planner.experience(entries, today), codesOf(pilot),
-                java.util.stream.IntStream.range(0, paper.size()).mapToObj(i -> new EndorsementDto(paper.get(i).getKey().code(),
-                        paper.get(i).getEndorsedOn(), paperUntil.get(i))).toList(),
+        List<LocalDate> paperUntil = paper.isEmpty()
+                ? List.of()
+                : planner.endorsements(
+                                paper.stream()
+                                        .map(e -> PlannerClient.held(e.getKey().code(), e.getEndorsedOn(), null))
+                                        .toList(),
+                                null)
+                        .getUntil();
+        return new TrainingDto(
+                planner.experience(entries, today),
+                codesOf(pilot),
+                java.util.stream.IntStream.range(0, paper.size())
+                        .mapToObj(i -> new EndorsementDto(
+                                paper.get(i).getKey().code(), paper.get(i).getEndorsedOn(), paperUntil.get(i)))
+                        .toList(),
                 EndorsementRecords.dtos(planner, theirs),
-                planner.endorsementKinds(), pilot.getFullName(), instructors, asked, lessons.lessonsOf(pilot, instructor));
+                planner.endorsementKinds(),
+                pilot.getFullName(),
+                instructors,
+                asked,
+                lessons.lessonsOf(pilot, instructor));
     }
 
     @Transactional
     public Pilot setKnowledgeTestCodes(Pilot pilot, List<String> codes) {
-        pilot.setKnowledgeTestCodes(codes.isEmpty() ? null : String.join(" ", codes.stream().distinct().toList()));
+        pilot.setKnowledgeTestCodes(
+                codes.isEmpty()
+                        ? null
+                        : String.join(" ", codes.stream().distinct().toList()));
         return pilots.save(pilot);
     }
 
@@ -103,8 +134,11 @@ public class TrainingService {
     @Transactional
     public void endorse(Pilot pilot, String code, LocalDate endorsedOn) {
         Endorsement.Key key = new Endorsement.Key(pilot.getId(), code);
-        endorsements.findById(key).ifPresentOrElse(
-                e -> e.endorsedOn(endorsedOn), () -> endorsements.save(new Endorsement(pilot.getId(), code, endorsedOn)));
+        endorsements
+                .findById(key)
+                .ifPresentOrElse(
+                        e -> e.endorsedOn(endorsedOn),
+                        () -> endorsements.save(new Endorsement(pilot.getId(), code, endorsedOn)));
     }
 
     /** @return true if the endorsement was there to take out */
@@ -120,7 +154,8 @@ public class TrainingService {
 
     static List<String> codesOf(Pilot pilot) {
         String codes = pilot.getKnowledgeTestCodes();
-        return codes == null || codes.isBlank() ? List.of() : Arrays.asList(codes.trim().split("\\s+"));
+        return codes == null || codes.isBlank()
+                ? List.of()
+                : Arrays.asList(codes.trim().split("\\s+"));
     }
-
 }

@@ -11,7 +11,7 @@ type Rings = number[][][];
 export function outsides(geometry: { type?: string; coordinates?: unknown }): Rings {
   const c = geometry.coordinates as number[][][] | number[][][][] | undefined;
   if (!c?.length) return [];
-  return geometry.type === "Polygon" ? [(c as number[][][])[0]!] : (c as number[][][][]).map(polygon => polygon[0]!).filter(Boolean);
+  return geometry.type === "Polygon" ? [(c as number[][][])[0]!] : (c as number[][][][]).map((polygon) => polygon[0]!).filter(Boolean);
 }
 
 /** Whether a point is inside a ring, by the crossings of a ray east of it
@@ -19,18 +19,22 @@ export function outsides(geometry: { type?: string; coordinates?: unknown }): Ri
 function inside(ring: number[][], at: LatLon): boolean {
   let hit = false;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const [xi, yi] = ring[i]!, [xj, yj] = ring[j]!;
-    if ((yi! > at.lat) !== (yj! > at.lat) && at.lon < ((xj! - xi!) * (at.lat - yi!)) / (yj! - yi!) + xi!) hit = !hit;
+    const [xi, yi] = ring[i]!,
+      [xj, yj] = ring[j]!;
+    if (yi! > at.lat !== yj! > at.lat && at.lon < ((xj! - xi!) * (at.lat - yi!)) / (yj! - yi!) + xi!) hit = !hit;
   }
   return hit;
 }
 
-export const insideAny = (rings: Rings, at: LatLon) => rings.some(ring => inside(ring, at));
+export const insideAny = (rings: Rings, at: LatLon) => rings.some((ring) => inside(ring, at));
 
 function crosses(a: LatLon, b: LatLon, c: number[], d: number[]): boolean {
   const o = (p: { x: number; y: number }, q: { x: number; y: number }, r: { x: number; y: number }) =>
     Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x));
-  const p1 = { x: a.lon, y: a.lat }, p2 = { x: b.lon, y: b.lat }, p3 = { x: c[0]!, y: c[1]! }, p4 = { x: d[0]!, y: d[1]! };
+  const p1 = { x: a.lon, y: a.lat },
+    p2 = { x: b.lon, y: b.lat },
+    p3 = { x: c[0]!, y: c[1]! },
+    p4 = { x: d[0]!, y: d[1]! };
   return o(p1, p2, p3) !== o(p1, p2, p4) && o(p3, p4, p1) !== o(p3, p4, p2);
 }
 
@@ -38,7 +42,7 @@ function crosses(a: LatLon, b: LatLon, c: number[], d: number[]): boolean {
  *  area: a point of it inside, or a leg across its edge. */
 export function lineEnters(rings: Rings, line: readonly (readonly [number, number])[]): boolean {
   const points = line.map(([lat, lon]) => ({ lat, lon }));
-  if (points.some(p => insideAny(rings, p))) return true;
+  if (points.some((p) => insideAny(rings, p))) return true;
   for (let k = 1; k < points.length; k++) {
     for (const ring of rings) {
       for (let i = 1; i < ring.length; i++) if (crosses(points[k - 1]!, points[k]!, ring[i - 1]!, ring[i]!)) return true;

@@ -48,24 +48,35 @@ export default function NotamRankingSection() {
       ) : (
         <>
           {top.length === 0 && rest.length === 0 && (
-            <p className={cn("text-muted-foreground", TEXT.prose)} data-testid="brief-notams-empty">{notamNone(since)}</p>
+            <p className={cn("text-muted-foreground", TEXT.prose)} data-testid="brief-notams-empty">
+              {notamNone(since)}
+            </p>
           )}
           {top.length > 0 && (
             <ol className="flex flex-col gap-3" data-testid="brief-notams-top">
-              {top.map(n => <Line key={n.id} notam={n} testId="brief-notam" />)}
+              {top.map((n) => (
+                <Line key={n.id} notam={n} testId="brief-notam" />
+              ))}
             </ol>
           )}
           {rest.length > 0 && (
             <Collapsible>
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="group relative -ml-2 self-start text-tint after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']" data-testid="brief-notams-more">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="group relative -ml-2 self-start text-tint after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']"
+                  data-testid="brief-notams-more"
+                >
                   {rest.length} more
                   <ChevronDown className="transition-transform group-data-[state=open]:rotate-180" aria-hidden />
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <ol className="flex flex-col gap-3 pt-1" data-testid="brief-notams-rest">
-                  {rest.map(n => <Line key={n.id} notam={n} testId="brief-notam-folded" />)}
+                  {rest.map((n) => (
+                    <Line key={n.id} notam={n} testId="brief-notam-folded" />
+                  ))}
                 </ol>
               </CollapsibleContent>
             </Collapsible>
@@ -76,9 +87,13 @@ export default function NotamRankingSection() {
             </p>
           )}
           {answer?.unchecked.includes("tfrs") && (
-            <p className={cn("text-muted-foreground", TEXT.note)} data-testid="brief-notams-unchecked">TFRs could not be checked just now.</p>
+            <p className={cn("text-muted-foreground", TEXT.note)} data-testid="brief-notams-unchecked">
+              TFRs could not be checked just now.
+            </p>
           )}
-          <p className={cn("pb-2 text-muted-foreground", TEXT.note)} data-testid="brief-notams-credit">{notamCredit(since)}</p>
+          <p className={cn("pb-2 text-muted-foreground", TEXT.note)} data-testid="brief-notams-credit">
+            {notamCredit(since)}
+          </p>
         </>
       )}
     </PillSection>

@@ -16,6 +16,7 @@ own list. STARTABLE below only names them for the console; the sidecar
 is what enforces the list. It sits on a network only this service
 shares, so nothing else in the stack can ask it anything.
 """
+
 import logging
 
 from fastapi import APIRouter, HTTPException
@@ -46,10 +47,7 @@ def dev_services() -> DevServices:
     states = {s["name"]: s["state"] for s in response.json()}
     return DevServices(
         available=True,
-        services=[
-            DevService(name=name, label=label, state=states.get(name, "absent"))
-            for name, label in services.STARTABLE.items()
-        ],
+        services=[DevService(name=name, label=label, state=states.get(name, "absent")) for name, label in services.STARTABLE.items()],
     )
 
 

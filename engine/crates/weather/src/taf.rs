@@ -84,7 +84,9 @@ fn weather_of(p: &mut Period, words: &[&str]) {
             // matters (WMO No. 306): the AWC writes its weather NSW.
             p.visibility_sm = Some(6.0);
             p.weather = vec!["NSW".to_string()];
-        } else if p.visibility_sm.is_none() && w.len() == 1 && w.as_bytes()[0].is_ascii_digit()
+        } else if p.visibility_sm.is_none()
+            && w.len() == 1
+            && w.as_bytes()[0].is_ascii_digit()
             && words.get(i).is_some_and(|n| n.contains('/') && n.ends_with("SM"))
         {
             p.visibility_sm = metar::statute_miles(words[i], w.parse().ok()).map(|(v, _)| v);
@@ -237,7 +239,10 @@ mod tests {
         assert_eq!(t.periods.len(), 4);
         assert_eq!((t.periods[0].to, t.periods[0].ceiling_ft()), (day + 18 * 3600, Some(4000.0)));
         assert_eq!((t.periods[1].change.as_str(), t.periods[1].to), ("FM", day + 36 * 3600));
-        assert_eq!((t.periods[2].change.as_str(), t.periods[2].visibility_sm, t.periods[2].ceiling_ft()), ("TEMPO", Some(2.0), Some(1200.0)));
+        assert_eq!(
+            (t.periods[2].change.as_str(), t.periods[2].visibility_sm, t.periods[2].ceiling_ft()),
+            ("TEMPO", Some(2.0), Some(1200.0))
+        );
         assert_eq!((t.periods[3].change.as_str(), t.periods[3].probability, t.periods[3].ceiling_ft()), ("PROB", Some(30), Some(200.0)));
         assert!(t.periods.iter().all(|p| !p.ceiling_unknown()));
     }

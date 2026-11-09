@@ -27,6 +27,7 @@ which the planner's status and the developer console show. The run itself
 is the charts job's (services/jobs/charts/next_cycle.py); the planner's
 check that starts it is app.chart_cycle.
 """
+
 from __future__ import annotations
 
 import json
@@ -50,19 +51,20 @@ RETRY_AFTER_S = 6 * 3600
 STATUS_FILE = "next.json"
 
 #: What the job last did, as `next.json`'s "state" says.
-WAITING = "waiting"              # before the lead: nothing to do yet
+WAITING = "waiting"  # before the lead: nothing to do yet
 NOT_PUBLISHED = "not_published"  # in the lead, the FAA's files not up yet
-NO_TURN = "no_turn"              # the machine's heavy work had every turn
-STAGING = "staging"              # fetching, rendering, packing
-STAGED = "staged"                # complete, waiting for its date
-FAILED = "failed"                # stopped with an error; tried again later
-SWAPPED = "swapped"              # in force and served; the old one deleted
+NO_TURN = "no_turn"  # the machine's heavy work had every turn
+STAGING = "staging"  # fetching, rendering, packing
+STAGED = "staged"  # complete, waiting for its date
+FAILED = "failed"  # stopped with an error; tried again later
+SWAPPED = "swapped"  # in force and served; the old one deleted
 
 
 @dataclass(frozen=True)
 class Plan:
     """Where the chart cycles stand on a day: the one in force (the map's),
     the next one's effective date, and the day its staging may start."""
+
     in_force: date
     next: date
     stage_from: date
@@ -145,8 +147,7 @@ def older_cycles(keep: str) -> list[str]:
     return sorted(found)
 
 
-def due(p: Plan, last: dict | None, next_due: bool, in_force_complete: bool, old_on_disk: bool,
-        now: float | None = None) -> str | None:
+def due(p: Plan, last: dict | None, next_due: bool, in_force_complete: bool, old_on_disk: bool, now: float | None = None) -> str | None:
     """What the `next` run has to do, or None: "prune" once the cycle in
     force is complete and older ones are still on disk (after the swap);
     "stage" while the next cycle is in its lead and not complete -- unless
@@ -158,8 +159,12 @@ def due(p: Plan, last: dict | None, next_due: bool, in_force_complete: bool, old
         return "prune"
     if not p.staging or not next_due:
         return None
-    if (last and last.get("cycle") == p.next_name and last.get("state") in (NOT_PUBLISHED, NO_TURN, FAILED)
-            and now - float(last.get("at") or 0) < RETRY_AFTER_S):
+    if (
+        last
+        and last.get("cycle") == p.next_name
+        and last.get("state") in (NOT_PUBLISHED, NO_TURN, FAILED)
+        and now - float(last.get("at") or 0) < RETRY_AFTER_S
+    ):
         return None
     return "stage"
 
@@ -168,8 +173,13 @@ def question(now: datetime | None = None, lead_days: int = 7) -> tuple[Plan, str
     """The plan and what is due, from what is on disk now."""
     p = plan(now, lead_days)
     in_force_complete = charts.pyramid_complete(p.in_force_name)
-    return p, due(p, read_status(), bool(charts.pyramid_due(p.next_name)), in_force_complete,
-                  bool(in_force_complete and older_cycles(p.in_force_name)))
+    return p, due(
+        p,
+        read_status(),
+        bool(charts.pyramid_due(p.next_name)),
+        in_force_complete,
+        bool(in_force_complete and older_cycles(p.in_force_name)),
+    )
 
 
 def report(auto: bool, lead_days: int = 7, now: datetime | None = None) -> dict:
@@ -181,14 +191,20 @@ def report(auto: bool, lead_days: int = 7, now: datetime | None = None) -> dict:
         state, detail, at = last.get("state"), last.get("detail"), last.get("at")
     else:
         state = STAGED if p.staging and not charts.pyramid_due(p.next_name) else WAITING
-        detail = (f"staging starts {p.stage_from.isoformat()}" if not p.staging
-                  else "waiting for the planner's next check in the render window")
+        detail = (
+            f"staging starts {p.stage_from.isoformat()}" if not p.staging else "waiting for the planner's next check in the render window"
+        )
         at = None
         if last.get("state") == SWAPPED:
             detail = f"{last.get('cycle')} swapped in ({last.get('detail')}); {detail}"
             at = last.get("at")
     return {
-        "cycle": p.next_name, "effective": p.next.isoformat(), "stage_from": p.stage_from.isoformat(),
-        "lead_days": p.lead_days, "auto": auto, "state": state, "detail": detail,
+        "cycle": p.next_name,
+        "effective": p.next.isoformat(),
+        "stage_from": p.stage_from.isoformat(),
+        "lead_days": p.lead_days,
+        "auto": auto,
+        "state": state,
+        "detail": detail,
         "updated_at": datetime.fromtimestamp(at, tz=timezone.utc).isoformat() if at else None,
     }

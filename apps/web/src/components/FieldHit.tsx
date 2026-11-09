@@ -8,5 +8,9 @@ import type { ReactNode } from "react";
  * nav log does the same (DescriptionCell).
  */
 export default function FieldHit({ htmlFor, children }: { htmlFor: string; children: ReactNode }) {
-  return <label htmlFor={htmlFor} className="relative -my-1.5 block py-1.5">{children}</label>;
+  return (
+    <label htmlFor={htmlFor} className="relative -my-1.5 block py-1.5">
+      {children}
+    </label>
+  );
 }

@@ -15,7 +15,7 @@ import { usePreferences, type NavEdge } from "../lib/preferences";
  * prop -- a sheet's side, a drawer's direction, the toaster's corner.
  */
 export function useNavEdge(): NavEdge {
-  const chosen = usePreferences(s => s.navBar);
+  const chosen = usePreferences((s) => s.navBar);
   const onPhone = useIsMobile();
   return chosen ?? (onPhone ? "bottom" : "top");
 }

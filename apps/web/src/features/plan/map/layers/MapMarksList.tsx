@@ -12,10 +12,11 @@ const MOST = 25;
 
 /** The fields in the map's view, nearest its middle first. */
 function inSight(fields: Field[], bounds: { south: number; west: number; north: number; east: number }) {
-  const lat = (bounds.south + bounds.north) / 2, lon = (bounds.west + bounds.east) / 2;
+  const lat = (bounds.south + bounds.north) / 2,
+    lon = (bounds.west + bounds.east) / 2;
   const away = (f: Field) => (f.lat - lat) ** 2 + ((f.lon - lon) * Math.cos((lat * Math.PI) / 180)) ** 2;
   return fields
-    .filter(f => f.lat >= bounds.south && f.lat <= bounds.north && f.lon >= bounds.west && f.lon <= bounds.east)
+    .filter((f) => f.lat >= bounds.south && f.lat <= bounds.north && f.lon >= bounds.west && f.lon <= bounds.east)
     .sort((a, b) => away(a) - away(b))
     .slice(0, MOST);
 }
@@ -43,16 +44,24 @@ export default function MapMarksList({ fields, onSelect }: { fields: Field[]; on
   useEffect(() => {
     const look = () => setBounds(boxOf(map.getBounds()));
     map.on("moveend", look);
-    return () => { map.off("moveend", look); };
+    return () => {
+      map.off("moveend", look);
+    };
   }, [map]);
   const shown = inSight(fields, bounds);
   if (!shown.length) return null;
   return (
-    <nav aria-label="Airports on the map" className="sr-only focus-within:not-sr-only focus-within:absolute focus-within:top-2 focus-within:left-2 focus-within:z-[1100] focus-within:max-h-[50%] focus-within:overflow-y-auto focus-within:rounded-xl focus-within:bg-popover focus-within:p-2 focus-within:shadow-lg" data-testid="map-marks-list">
+    <nav
+      aria-label="Airports on the map"
+      className="sr-only focus-within:not-sr-only focus-within:absolute focus-within:top-2 focus-within:left-2 focus-within:z-[1100] focus-within:max-h-[50%] focus-within:overflow-y-auto focus-within:rounded-xl focus-within:bg-popover focus-within:p-2 focus-within:shadow-lg"
+      data-testid="map-marks-list"
+    >
       <ul className="flex flex-col gap-2">
-        {shown.map(f => (
+        {shown.map((f) => (
           <li key={f.ident}>
-            <button type="button" className={cn("text-left text-tint", TEXT.row)} onClick={() => onSelect(f.ident)}>{fieldWords(f)}</button>
+            <button type="button" className={cn("text-left text-tint", TEXT.row)} onClick={() => onSelect(f.ident)}>
+              {fieldWords(f)}
+            </button>
           </li>
         ))}
       </ul>

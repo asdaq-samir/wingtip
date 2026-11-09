@@ -26,5 +26,9 @@ export function RowBadge({ colour, children }: { colour: string; children: React
 /** A chart's badge: the FAA's charts and the Chart Supplement, on every
  *  card that lists them. */
 export function ChartBadge() {
-  return <RowBadge colour={BADGE.chart}><FileText /></RowBadge>;
+  return (
+    <RowBadge colour={BADGE.chart}>
+      <FileText />
+    </RowBadge>
+  );
 }

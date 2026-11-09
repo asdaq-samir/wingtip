@@ -1,4 +1,14 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from "react";
 import { cn } from "cn";
 import { useIsMobile } from "../hooks/use-mobile";
 import { useIsDesktop } from "../hooks/use-desktop";
@@ -6,8 +16,16 @@ import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { useKeyboardInset, useSafeArea, useWindowHeight } from "../hooks/use-viewport";
 import {
-  GLASS, MATERIAL, BarOverPicture, PanelSize, PILL_RADIUS, SHEET_MARGIN, TabBarMinimized,
-  useTabsShown, type MapInsets, type PanelState,
+  GLASS,
+  MATERIAL,
+  BarOverPicture,
+  PanelSize,
+  PILL_RADIUS,
+  SHEET_MARGIN,
+  TabBarMinimized,
+  useTabsShown,
+  type MapInsets,
+  type PanelState,
 } from "../lib/mapChrome";
 import { useOpenCards } from "../lib/openCards";
 import { PillPicture } from "./PillPicture";
@@ -85,7 +103,9 @@ const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
  *  iOS's Settings reaches a page with no resize). */
 let rootFont: number | null = null;
 if (typeof window !== "undefined") {
-  const forget = () => { rootFont = null; };
+  const forget = () => {
+    rootFont = null;
+  };
   window.addEventListener("resize", forget);
   window.addEventListener("pageshow", forget);
   document.addEventListener("visibilitychange", forget);
@@ -95,7 +115,8 @@ const rootPx = () => (rootFont ??= parseFloat(getComputedStyle(document.document
 /** Under the head, the body and the foot a shade darker than the glass
  *  over them, the grey of notes and the blue of tappable words a step
  *  darker on it for WCAG's 4.5:1 (--tint-shade, index.css). */
-const SHEET_BELOW = "[--muted-foreground:oklch(0.5_0_0)] [--tint:var(--tint-shade)] dark:[--muted-foreground:oklch(0.708_0_0)] print:bg-transparent";
+const SHEET_BELOW =
+  "[--muted-foreground:oklch(0.5_0_0)] [--tint:var(--tint-shade)] dark:[--muted-foreground:oklch(0.708_0_0)] print:bg-transparent";
 
 /**
  * The page's one panel over the map, the way Maps on an iPhone has one:
@@ -131,17 +152,33 @@ const SHEET_BELOW = "[--muted-foreground:oklch(0.5_0_0)] [--tint:var(--tint-shad
  * under it inherits a value that changes per frame, and the pill is
  * measured only as the pill at rest.
  */
-export default function MapPanel({ label, top, kept, controls, compact, children, state: pageState, onStateChange: tellPage, onInsetsChange: tellInsets, toEdge: edgeAsked = false, bar, layer = "tab", cardOver: overAsked = false, foot, flying = false }: Props) {
+export default function MapPanel({
+  label,
+  top,
+  kept,
+  controls,
+  compact,
+  children,
+  state: pageState,
+  onStateChange: tellPage,
+  onInsetsChange: tellInsets,
+  toEdge: edgeAsked = false,
+  bar,
+  layer = "tab",
+  cardOver: overAsked = false,
+  foot,
+  flying = false,
+}: Props) {
   const cardInPill = layer === "card";
   const cardOver = layer !== "console" && overAsked;
   // A card opened over whatever is here (SheetCard): the body's room its,
   // the head's row, the controls and the foot out of sight under it.
-  const raised = useSheetCards(s => raisedFor(s.stack));
+  const raised = useSheetCards((s) => raisedFor(s.stack));
   const cardsUp = raised !== null;
   // The top card's content's own height, where it is a card raised half
   // way: the sheet then goes no higher than it needs (the detents' full).
-  const sheetHost = useSheetCards(s => s.host);
-  const topCard = useSheetCards(s => s.stack.at(-1)?.id ?? null);
+  const sheetHost = useSheetCards((s) => s.host);
+  const topCard = useSheetCards((s) => s.stack.at(-1)?.id ?? null);
   const [measuredFit, setMeasuredFit] = useState<{ id: string; px: number } | null>(null);
   useEffect(() => {
     if (!sheetHost || !topCard || raised !== "half") return;
@@ -149,7 +186,11 @@ export default function MapPanel({ label, top, kept, controls, compact, children
     if (!card) return;
     const seen = new ResizeObserver(() => {
       const last = card.lastElementChild as HTMLElement | null;
-      if (last) setMeasuredFit({ id: topCard, px: Math.ceil(last.offsetTop + last.offsetHeight + parseFloat(getComputedStyle(card).paddingBottom)) });
+      if (last)
+        setMeasuredFit({
+          id: topCard,
+          px: Math.ceil(last.offsetTop + last.offsetHeight + parseFloat(getComputedStyle(card).paddingBottom)),
+        });
     });
     for (const part of card.children) seen.observe(part);
     return () => seen.disconnect();
@@ -193,15 +234,28 @@ export default function MapPanel({ label, top, kept, controls, compact, children
   // The same node for the writes made outside render (place, the settle):
   // a state's value is not to be changed, a ref's may be.
   const panelRef = useRef<HTMLElement | null>(null);
-  const setPanelNode = useCallback((node: HTMLElement | null) => { panelRef.current = node; setPanel(node); }, []);
+  const setPanelNode = useCallback((node: HTMLElement | null) => {
+    panelRef.current = node;
+    setPanel(node);
+  }, []);
   const [headBand, setHeadBandState] = useState<HTMLDivElement | null>(null);
   const [footNode, setFootNodeState] = useState<HTMLDivElement | null>(null);
   // The parts held in sight at the free edge (pin), written to directly.
   const parts = useRef<SheetParts>({ head: null, body: null, inner: null, foot: null });
-  const setHeadBand = useCallback((node: HTMLDivElement | null) => { parts.current.head = node; setHeadBandState(node); }, []);
-  const setFootNode = useCallback((node: HTMLDivElement | null) => { parts.current.foot = node; setFootNodeState(node); }, []);
-  const setBodyNode = useCallback((node: HTMLDivElement | null) => { parts.current.body = node; }, []);
-  const setInnerNode = useCallback((node: HTMLDivElement | null) => { parts.current.inner = node; }, []);
+  const setHeadBand = useCallback((node: HTMLDivElement | null) => {
+    parts.current.head = node;
+    setHeadBandState(node);
+  }, []);
+  const setFootNode = useCallback((node: HTMLDivElement | null) => {
+    parts.current.foot = node;
+    setFootNodeState(node);
+  }, []);
+  const setBodyNode = useCallback((node: HTMLDivElement | null) => {
+    parts.current.body = node;
+  }, []);
+  const setInnerNode = useCallback((node: HTMLDivElement | null) => {
+    parts.current.inner = node;
+  }, []);
   const [headHeight, setHeadHeight] = useState(0);
   // The figures' height at half and at the other two sizes, each measured
   // at its own: smaller at half, where they are set small and the box
@@ -213,7 +267,9 @@ export default function MapPanel({ label, top, kept, controls, compact, children
   const [pillHeight, setPillHeight] = useState<number | null>(null);
   useEffect(() => {
     if (!headBand) return;
-    const watch = new ResizeObserver(() => { if (!movingRef.current) setHeadHeight(headBand.offsetHeight); });
+    const watch = new ResizeObserver(() => {
+      if (!movingRef.current) setHeadHeight(headBand.offsetHeight);
+    });
     watch.observe(headBand);
     return () => watch.disconnect();
   }, [headBand]);
@@ -246,7 +302,7 @@ export default function MapPanel({ label, top, kept, controls, compact, children
       const h = Math.ceil(el.getBoundingClientRect().height);
       const half = at === "other" && !halfSeen.current ? measureHalf(el) : null;
       if (half !== null) halfSeen.current = true;
-      setFootHeights(was => {
+      setFootHeights((was) => {
         const next = { ...was, [at]: h, ...(half !== null && was.half === null ? { half } : {}) };
         return next.half === was.half && next.other === was.other ? was : next;
       });
@@ -261,8 +317,8 @@ export default function MapPanel({ label, top, kept, controls, compact, children
   // The bar: the sheet's first row -- and the pill itself, unless the pill
   // is the figures (the tabs layout with a route) or the strip's field.
   const barShown = !!bar && !(onPhone && keyboard) && !flying;
-  const pictureCard = useOpenCards(s => s.picture);
-  const tabsShown = useTabsShown(s => s.shown);
+  const pictureCard = useOpenCards((s) => s.picture);
+  const tabsShown = useTabsShown((s) => s.shown);
   // A card from another tab over this one on a phone: the tab bar
   // minimized to the card's kind, as iOS's navigation bar is; a card from
   // a control or the chart (SheetCard) the same, its name on the bar.
@@ -278,7 +334,7 @@ export default function MapPanel({ label, top, kept, controls, compact, children
   const ownHead = pictureCard && layer === "card" && !cardsUp && !atPill && !tabsShown;
   const barHere = barShown && !ownHead && !(atPill && footShown);
   // In the pill, the card's name over its head's picture (PillPicture).
-  const pill = useOpenCards(s => s.pill);
+  const pill = useOpenCards((s) => s.pill);
   const pillPictured = !!pill && (pictureCard || !!pill.colour) && atPill && minimized && barHere && !tabsShown;
   // The head's row: in the pill only without a tab bar (whose pill is the
   // bar or the figures); out of it wherever there is a top row or no bar.
@@ -323,7 +379,7 @@ export default function MapPanel({ label, top, kept, controls, compact, children
       if (!pillLaid.current || movingRef.current) return;
       const h = Math.ceil(headBand.offsetHeight + (footShown && footNode ? footNode.offsetHeight : 0) + pillChrome);
       setPillHeight(h);
-      setPillHeights(was => (was[pillKey] === h ? was : { ...was, [pillKey]: h }));
+      setPillHeights((was) => (was[pillKey] === h ? was : { ...was, [pillKey]: h }));
     };
     measure();
     const watch = new ResizeObserver(measure);
@@ -337,7 +393,7 @@ export default function MapPanel({ label, top, kept, controls, compact, children
   // Where it comes to rest: the pill, half and all the way up, in px.
   const detents = useMemo<Detents>(() => {
     const tabsPill = Math.round(4.25 * rootPx()) + pillChrome;
-    const peek = pillHeights[pillKey] ?? (tabsAlone ? tabsPill : pillHeight ?? tabsPill);
+    const peek = pillHeights[pillKey] ?? (tabsAlone ? tabsPill : (pillHeight ?? tabsPill));
     const whole = Math.max(peek, room);
     const askedHalf = Math.max(peek, Math.min(Math.round(HALF_REM * rootPx()) + halfChrome, Math.round(whole * HALF_MOST)));
     const body = askedHalf - headHeight - halfChrome - footHalf;
@@ -357,22 +413,48 @@ export default function MapPanel({ label, top, kept, controls, compact, children
   // a settle, dragged a frame at a time, and the room it leaves told.
   // Landed, the head and the figures measured at rest at the size it came
   // to: half's own, or the other two's.
-  const landed = useCallback((target: PanelState) => {
-    if (headBand) setHeadHeight(headBand.offsetHeight);
-    if (footNode) {
-      const at = target === "half" ? "half" : "other";
-      const h = footNode.offsetHeight;
-      setFootHeights(was => (was[at] === h ? was : { ...was, [at]: h }));
-    }
-  }, [headBand, footNode]);
+  const landed = useCallback(
+    (target: PanelState) => {
+      if (headBand) setHeadHeight(headBand.offsetHeight);
+      if (footNode) {
+        const at = target === "half" ? "half" : "other";
+        const h = footNode.offsetHeight;
+        setFootHeights((was) => (was[at] === h ? was : { ...was, [at]: h }));
+      }
+    },
+    [headBand, footNode],
+  );
   const { ask, startDrag, swallow, dragBody } = useSheetMotion({
-    size, setSize, sizeRef, moving, setMoving, movingRef, detents, pageState, tellPage, tellInsets, onPhone, wide: desktop, fromBottom, floating, footShown, safeTop: safe.top,
-    panel, panelRef, partsRef: parts, pillHeight, atPill, landed,
+    size,
+    setSize,
+    sizeRef,
+    moving,
+    setMoving,
+    movingRef,
+    detents,
+    pageState,
+    tellPage,
+    tellInsets,
+    onPhone,
+    wide: desktop,
+    fromBottom,
+    floating,
+    footShown,
+    safeTop: safe.top,
+    panel,
+    panelRef,
+    partsRef: parts,
+    pillHeight,
+    atPill,
+    landed,
   });
-  const setBody = useCallback((node: HTMLDivElement | null) => {
-    setBodyNode(node);
-    dragBody(node);
-  }, [setBodyNode, dragBody]);
+  const setBody = useCallback(
+    (node: HTMLDivElement | null) => {
+      setBodyNode(node);
+      dragBody(node);
+    },
+    [setBodyNode, dragBody],
+  );
 
   // Escape lowers it, pressed anywhere in it -- but not in a menu or a
   // list it opened, which closes first.
@@ -438,9 +520,9 @@ export default function MapPanel({ label, top, kept, controls, compact, children
       const at = event.target;
       if (at instanceof HTMLElement && at.classList.contains("under-head") && panel.contains(at)) frost(at);
     };
-    const frame = requestAnimationFrame(() => frost(
-      [...panel.querySelectorAll<HTMLElement>(".under-head")].find(el => el.checkVisibility?.() ?? el.offsetParent !== null),
-    ));
+    const frame = requestAnimationFrame(() =>
+      frost([...panel.querySelectorAll<HTMLElement>(".under-head")].find((el) => el.checkVisibility?.() ?? el.offsetParent !== null)),
+    );
     document.addEventListener("scroll", onScroll, { capture: true, passive: true });
     return () => {
       cancelAnimationFrame(frame);
@@ -472,7 +554,9 @@ export default function MapPanel({ label, top, kept, controls, compact, children
   // what else is over the map (index.css). Each set on its own.
   useLayoutEffect(() => {
     document.body.dataset.mapPanel = size;
-    return () => { delete document.body.dataset.mapPanel; };
+    return () => {
+      delete document.body.dataset.mapPanel;
+    };
   }, [size]);
   useLayoutEffect(() => {
     document.body.toggleAttribute("data-map-sheet", onPhone);
@@ -517,15 +601,25 @@ export default function MapPanel({ label, top, kept, controls, compact, children
       aria-label={label}
       aria-expanded={expanded}
       data-testid="sidebar-trigger-button"
-      onClick={cycle} onKeyDown={arrows}
-      onPointerDown={event => { event.stopPropagation(); startDrag(event); }}
+      onClick={cycle}
+      onKeyDown={arrows}
+      onPointerDown={(event) => {
+        event.stopPropagation();
+        startDrag(event);
+      }}
       className={cn(
         "absolute inset-x-0 z-30 mx-auto flex w-24 touch-none justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset print:hidden",
         "after:inset-x-0! after:top-0! after:bottom-0!",
         fromBottom ? "top-0 h-2.5 items-start pt-1" : "bottom-0 h-4 items-end pb-[5px]",
       )}
     >
-      <span className={cn("h-[5px] w-9 rounded-full", ownHead || pillPictured ? "bg-white/75 shadow-[0_0_3px_rgba(0,0,0,.5)]" : "bg-muted-foreground/40")} aria-hidden="true" />
+      <span
+        className={cn(
+          "h-[5px] w-9 rounded-full",
+          ownHead || pillPictured ? "bg-white/75 shadow-[0_0_3px_rgba(0,0,0,.5)]" : "bg-muted-foreground/40",
+        )}
+        aria-hidden="true"
+      />
     </button>
   );
   const restingPill = atPill && !moving;
@@ -545,13 +639,20 @@ export default function MapPanel({ label, top, kept, controls, compact, children
         // A top sheet's grabber over its last 16 points (bottom-0 h-4): room
         // for it under the figures at half, which it sat on at their small
         // size there; the pill's and full's are centred in a taller box.
-        "flex shrink-0 flex-col justify-center border-t print:hidden", fromBottom || at !== "half" ? "pb-1" : "pb-4", at === "half" ? "min-h-0" : "min-h-[3.875rem]", ROW_PAD, cardInPill ? "px-0" : "px-4",
+        "flex shrink-0 flex-col justify-center border-t print:hidden",
+        fromBottom || at !== "half" ? "pb-1" : "pb-4",
+        at === "half" ? "min-h-0" : "min-h-[3.875rem]",
+        ROW_PAD,
+        cardInPill ? "px-0" : "px-4",
         !footShown && "hidden",
         // In the pill the finger is the sheet's (touch-none), as on the
         // tabs: the browser's own scroll took it and cancelled the drag.
         pillHere ? "touch-none border-transparent [&_[data-pill-hides]]:hidden [&>*]:flex-none" : cn("border-border/60", SHEET_BELOW),
       ),
-      style: { "--sheet-progress": at === "half" && !desktop ? "0" : "1", ...(toEdge && fromBottom && !pillHere ? { paddingBottom: Math.max(10, edgeInset) } : {}) } as CSSProperties,
+      style: {
+        "--sheet-progress": at === "half" && !desktop ? "0" : "1",
+        ...(toEdge && fromBottom && !pillHere ? { paddingBottom: Math.max(10, edgeInset) } : {}),
+      } as CSSProperties,
     };
   };
   // Half's look for the box, for its measure before the sheet is first
@@ -562,143 +663,177 @@ export default function MapPanel({ label, top, kept, controls, compact, children
   });
 
   return (
-          <section
-            ref={setPanelNode}
-            data-slot="map-panel" data-panel={size} {...(onPhone ? { "data-sheet": "" } : {})}
-            aria-label={label}
-            onClickCapture={swallow}
-            data-capsule={restingPill || undefined}
-            // Its three heights, for a probe or a test to read.
-            data-detents={`${detents.peek},${detents.half},${detents.full}`}
-            style={{
-              ...vars,
-              // Held on its edge, on the keyboard while it is up; laid out
-              // once at its full height and slid (place).
-              ...(fromBottom ? { bottom: keyboard } : { top: floating ? FLOAT_PX : 0 }),
-              height: detents.full,
-              borderRadius: floating ? PILL_RADIUS : fromBottom ? `${PILL_RADIUS}px ${PILL_RADIUS}px 0 0` : `0 0 ${PILL_RADIUS}px ${PILL_RADIUS}px`,
-            } as CSSProperties}
-            className={cn(
-              // Clipped rather than hidden: a hidden overflow can still be
-              // scrolled by a script, and a row brought into view in the
-              // body scrolled the whole panel, its head up out of sight.
-              "fixed z-40 flex flex-col overflow-clip text-foreground outline-none will-change-transform print:static",
-              // Liquid Glass at every size, as Maps' is: the chart through
-              // it, blurred, the same pane whether it is the pill or the sheet.
-              onPhone ? GLASS : MATERIAL,
-              onPhone ? "inset-x-0" : cn(
-                // A card at the left from a tablet's width, a side panel with
-                // room for a desktop's type from 1024 (design/tokens.json
-                // size.panel, panel-wide; the UI audit, 2026-11-09).
-                "left-[max(1rem,env(safe-area-inset-left))] w-(--size-panel) lg:w-(--size-panel-wide) ring-1 ring-black/5 dark:ring-white/10",
-                // Floating, its edge drawn inside: the clip at its top (place)
-                // cuts whatever is outside its box, a ring's or a shadow's.
-                floating ? "ring-inset" : "shadow-[0_2px_10px_rgba(0,0,0,0.12)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.45)]",
-              ),
-            )}
-          >
-            {pillPictured && pill && <PillPicture pill={pill} />}
-            {fromBottom && grabber}
-            {/* The head's band: the first row (the bar), the top row, any
+    <section
+      ref={setPanelNode}
+      data-slot="map-panel"
+      data-panel={size}
+      {...(onPhone ? { "data-sheet": "" } : {})}
+      aria-label={label}
+      onClickCapture={swallow}
+      data-capsule={restingPill || undefined}
+      // Its three heights, for a probe or a test to read.
+      data-detents={`${detents.peek},${detents.half},${detents.full}`}
+      style={
+        {
+          ...vars,
+          // Held on its edge, on the keyboard while it is up; laid out
+          // once at its full height and slid (place).
+          ...(fromBottom ? { bottom: keyboard } : { top: floating ? FLOAT_PX : 0 }),
+          height: detents.full,
+          borderRadius: floating
+            ? PILL_RADIUS
+            : fromBottom
+              ? `${PILL_RADIUS}px ${PILL_RADIUS}px 0 0`
+              : `0 0 ${PILL_RADIUS}px ${PILL_RADIUS}px`,
+        } as CSSProperties
+      }
+      className={cn(
+        // Clipped rather than hidden: a hidden overflow can still be
+        // scrolled by a script, and a row brought into view in the
+        // body scrolled the whole panel, its head up out of sight.
+        "fixed z-40 flex flex-col overflow-clip text-foreground outline-none will-change-transform print:static",
+        // Liquid Glass at every size, as Maps' is: the chart through
+        // it, blurred, the same pane whether it is the pill or the sheet.
+        onPhone ? GLASS : MATERIAL,
+        onPhone
+          ? "inset-x-0"
+          : cn(
+              // A card at the left from a tablet's width, a side panel with
+              // room for a desktop's type from 1024 (design/tokens.json
+              // size.panel, panel-wide; the UI audit, 2026-11-09).
+              "left-[max(1rem,env(safe-area-inset-left))] w-(--size-panel) lg:w-(--size-panel-wide) ring-1 ring-black/5 dark:ring-white/10",
+              // Floating, its edge drawn inside: the clip at its top (place)
+              // cuts whatever is outside its box, a ring's or a shadow's.
+              floating ? "ring-inset" : "shadow-[0_2px_10px_rgba(0,0,0,0.12)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.45)]",
+            ),
+      )}
+    >
+      {pillPictured && pill && <PillPicture pill={pill} />}
+      {fromBottom && grabber}
+      {/* The head's band: the first row (the bar), the top row, any
                 notice, the controls. Over the body, which runs on up under
                 it (`under`): frosted while anything is there. */}
-            <div
-              ref={setHeadBand} data-head-band=""
-              onPointerDown={startDrag}
-              className={cn("relative flex shrink-0 touch-none flex-col", under && "z-20", !fromBottom && "pt-[env(safe-area-inset-top)]")}
-            >
-              {bar && (
-                <div
-                  className={cn(
-                    // The grabber's band, the tabs 52 tall, six under them: the
-                    // tab up's capsule clear of the grabber and of the search
-                    // under it (the owner, 2026-11-04: 49 points "too
-                    // congested", "make the space around the tabs slick like
-                    // the grabber and the search bar"); minimized to a card's
-                    // name, as tall as the name's 44-point area, a line under it,
-                    // 16 over it rather than the band's 10: the name's 44 are
-                    // centred on its 32, so 6 run up, and they start where the
-                    // grabber's 10 stop (the iOS audit's P1, "lost 3",
-                    // 2026-11-05).
-                    "flex shrink-0 px-2", minimized ? "min-h-11 border-b border-border/60 pt-4 pb-2" : cn(ROW_PAD, "h-[4.25rem] pb-1.5"),
-                    !barHere && "hidden",
-                  )}
-                >
-                  <TabBarMinimized.Provider value={minimized}><BarOverPicture.Provider value={pillPictured}><PanelSize.Provider value={panelSize}>{bar}</PanelSize.Provider></BarOverPicture.Provider></TabBarMinimized.Provider>
-                </div>
-              )}
-              {/* Under the tab bar, the route's box and its buttons a shade
+      <div
+        ref={setHeadBand}
+        data-head-band=""
+        onPointerDown={startDrag}
+        className={cn("relative flex shrink-0 touch-none flex-col", under && "z-20", !fromBottom && "pt-[env(safe-area-inset-top)]")}
+      >
+        {bar && (
+          <div
+            className={cn(
+              // The grabber's band, the tabs 52 tall, six under them: the
+              // tab up's capsule clear of the grabber and of the search
+              // under it (the owner, 2026-11-04: 49 points "too
+              // congested", "make the space around the tabs slick like
+              // the grabber and the search bar"); minimized to a card's
+              // name, as tall as the name's 44-point area, a line under it,
+              // 16 over it rather than the band's 10: the name's 44 are
+              // centred on its 32, so 6 run up, and they start where the
+              // grabber's 10 stop (the iOS audit's P1, "lost 3",
+              // 2026-11-05).
+              "flex shrink-0 px-2",
+              minimized ? "min-h-11 border-b border-border/60 pt-4 pb-2" : cn(ROW_PAD, "h-[4.25rem] pb-1.5"),
+              !barHere && "hidden",
+            )}
+          >
+            <TabBarMinimized.Provider value={minimized}>
+              <BarOverPicture.Provider value={pillPictured}>
+                <PanelSize.Provider value={panelSize}>{bar}</PanelSize.Provider>
+              </BarOverPicture.Provider>
+            </TabBarMinimized.Provider>
+          </div>
+        )}
+        {/* Under the tab bar, the route's box and its buttons a shade
                   darker (SHEET_BELOW), for the clear glass to stand off it. */}
-              <div className={cn("relative flex flex-col", bar && barHere && !atPill && SHEET_BELOW, !headerShown && kept == null && "hidden")}>
-                {(headerShown || kept != null) && (
-                  <header
-                    className={!headerShown ? "contents" : cn(
+        <div className={cn("relative flex flex-col", bar && barHere && !atPill && SHEET_BELOW, !headerShown && kept == null && "hidden")}>
+          {(headerShown || kept != null) && (
+            <header
+              className={
+                !headerShown
+                  ? "contents"
+                  : cn(
                       "@container flex items-center gap-2 print:hidden",
-                      atPill ? cn("px-[9px] pb-3", ROW_PAD)
-                        : top == null ? undefined
-                          : cn("px-3 pb-1", barHere ? "pt-1" : ROW_PAD),
-                    )}
-                  >
-                    {/* The kept row first, in the one place whatever is shown,
+                      atPill ? cn("px-[9px] pb-3", ROW_PAD) : top == null ? undefined : cn("px-3 pb-1", barHere ? "pt-1" : ROW_PAD),
+                    )
+              }
+            >
+              {/* The kept row first, in the one place whatever is shown,
                         so it is never built again; out of sight inert and not
                         laid out (tab-away). */}
-                    {kept != null && (
-                      <div className={keptHere ? "contents" : "tab-away pointer-events-none absolute"} inert={!keptHere}>{kept}</div>
-                    )}
-                    {headerShown && !keptHere && headContent}
-                  </header>
-                )}
-                {headerShown && !atPill && controls && (
-                  <div className={cn("flex flex-wrap items-center gap-x-2 gap-y-3 px-3 pt-1 print:hidden", fromBottom ? "pb-1.5" : "pb-5")}>{controls}</div>
-                )}
-              </div>
+              {kept != null && (
+                <div className={keptHere ? "contents" : "tab-away pointer-events-none absolute"} inert={!keptHere}>
+                  {kept}
+                </div>
+              )}
+              {headerShown && !keptHere && headContent}
+            </header>
+          )}
+          {headerShown && !atPill && controls && (
+            <div className={cn("flex flex-wrap items-center gap-x-2 gap-y-3 px-3 pt-1 print:hidden", fromBottom ? "pb-1.5" : "pb-5")}>
+              {controls}
             </div>
-            {/* The body, laid out at every size and cut off where the sheet
+          )}
+        </div>
+      </div>
+      {/* The body, laid out at every size and cut off where the sheet
                 ends: over a bottom sheet's figures by a translate, its
                 content moved back by the same. At rest in the pill out of
                 sight and of the keyboard's reach. */}
-            <div
-              ref={setBody}
-              className={cn(
-                // No line over it at rest, on any tab: the head draws its own
-                // while content is scrolled under it (index.css, data-under),
-                // as iOS's sheets do (the owner, 2026-11-05: "why is there a
-                // separator for all the tabs?", then "Ok").
-                "flex min-h-0 flex-1 flex-col", expanded && !fromBottom && "pb-4",
-                SHEET_BELOW,
-                restingPill && "invisible",
-              )}
-              inert={restingPill}
-              // The sizes the body's content is laid out to: changed as it
-              // sets off and at rest, never per frame.
-              style={{ "--half-body": `${halfBody}px`, "--full-body": `${fullBody}px`, "--half-foot": `${toEdge && fromBottom ? halfChrome : 0}px`, "--head-room": `${under ? headHeight : 0}px`, "--foot-room": `${footShown ? (size === "half" ? footHalf : footFull) : 0}px`, "--panel-head": `${under ? headHeight : 0}px` } as CSSProperties}
-              data-panel-body=""
-            >
-              <div ref={setInnerNode} className="flex min-h-0 flex-1 flex-col">
-                <TabKept away={cardsUp}>{children}</TabKept>
-                <SheetCardHost shown={cardsUp} />
-              </div>
-            </div>
-            {/* The route's figures, or the strip's field, pinned at the
+      <div
+        ref={setBody}
+        className={cn(
+          // No line over it at rest, on any tab: the head draws its own
+          // while content is scrolled under it (index.css, data-under),
+          // as iOS's sheets do (the owner, 2026-11-05: "why is there a
+          // separator for all the tabs?", then "Ok").
+          "flex min-h-0 flex-1 flex-col",
+          expanded && !fromBottom && "pb-4",
+          SHEET_BELOW,
+          restingPill && "invisible",
+        )}
+        inert={restingPill}
+        // The sizes the body's content is laid out to: changed as it
+        // sets off and at rest, never per frame.
+        style={
+          {
+            "--half-body": `${halfBody}px`,
+            "--full-body": `${fullBody}px`,
+            "--half-foot": `${toEdge && fromBottom ? halfChrome : 0}px`,
+            "--head-room": `${under ? headHeight : 0}px`,
+            "--foot-room": `${footShown ? (size === "half" ? footHalf : footFull) : 0}px`,
+            "--panel-head": `${under ? headHeight : 0}px`,
+          } as CSSProperties
+        }
+        data-panel-body=""
+      >
+        <div ref={setInnerNode} className="flex min-h-0 flex-1 flex-col">
+          <TabKept away={cardsUp}>{children}</TabKept>
+          <SheetCardHost shown={cardsUp} />
+        </div>
+      </div>
+      {/* The route's figures, or the strip's field, pinned at the
                 sheet's foot at every size: in the pill its one row. Kept
                 under a card, out of sight, with what it holds open. */}
-            {!!foot && (footShown || cardsUp) && (
-              // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to open the sheet, and the figures' own buttons stay focusable
-              <div
-                ref={setFootNode}
-                className={footLook(size).className}
-                style={footLook(size).style}
-                data-testid="panel-foot"
-                // In the pill a finger anywhere on it drags the sheet, as
-                // the tabs do; a tap on it opens it half way.
-                onPointerDown={atPill ? startDrag : undefined}
-                onClick={atPill ? () => ask("half", true) : undefined}
-              >{foot}</div>
-            )}
-            {!fromBottom && grabber}
-            {/* The rest of the way to the screen's edge, under the home
+      {!!foot && (footShown || cardsUp) && (
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to open the sheet, and the figures' own buttons stay focusable
+        <div
+          ref={setFootNode}
+          className={footLook(size).className}
+          style={footLook(size).style}
+          data-testid="panel-foot"
+          // In the pill a finger anywhere on it drags the sheet, as
+          // the tabs do; a tap on it opens it half way.
+          onPointerDown={atPill ? startDrag : undefined}
+          onClick={atPill ? () => ask("half", true) : undefined}
+        >
+          {foot}
+        </div>
+      )}
+      {!fromBottom && grabber}
+      {/* The rest of the way to the screen's edge, under the home
                 indicator -- in the body where it runs to the edge (toEdge). */}
-            {!toEdge && edgeInset > 0 && <div className="shrink-0" style={{ height: edgeInset }} aria-hidden="true" />}
-          </section>
+      {!toEdge && edgeInset > 0 && <div className="shrink-0" style={{ height: edgeInset }} aria-hidden="true" />}
+    </section>
   );
 }

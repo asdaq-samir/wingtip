@@ -70,7 +70,9 @@ public class SecurityConfig {
     // And the weather the map draws as tiles (apps/web/src/lib/map/WeatherLayers):
     // the Iowa Environmental Mesonet's NEXRAD radar and GOES satellite
     // mosaics, drawn by the browser straight from IEM's tile cache.
-    private static final String OVERLAY_IMAGES = "https://basemap.nationalmap.gov https://tile.googleapis.com https://mesonet.agron.iastate.edu";
+    private static final String OVERLAY_IMAGES =
+            "https://basemap.nationalmap.gov https://tile.googleapis.com https://mesonet.agron.iastate.edu";
+
     private static final String OVERLAY_CONNECT = "https://tile.googleapis.com";
     // An airplane's photo on its card (apps/web/src/features/plan/lib/planePhoto.ts): asked of
     // Planespotters.net's API by the browser, as its terms have an app's
@@ -93,14 +95,16 @@ public class SecurityConfig {
 
     private final SignInOptions signIn;
 
-    SecurityConfig(Optional<ClientRegistrationRepository> clientRegistrations,
-                   @Value("${spring.mail.host:}") String mailHost,
-                   @Value("${app.chart-tiles-origin:}") String chartTilesOrigin,
-                   @Value("${app.hsts:true}") boolean hsts,
-                   @Value("${app.open-writes:false}") boolean openWrites,
-                   @Value("${app.public-base-url:}") String publicBaseUrl) {
+    SecurityConfig(
+            Optional<ClientRegistrationRepository> clientRegistrations,
+            @Value("${spring.mail.host:}") String mailHost,
+            @Value("${app.chart-tiles-origin:}") String chartTilesOrigin,
+            @Value("${app.hsts:true}") boolean hsts,
+            @Value("${app.open-writes:false}") boolean openWrites,
+            @Value("${app.public-base-url:}") String publicBaseUrl) {
         this.hsts = hsts;
-        this.httpsHost = publicBaseUrl.startsWith("https://") ? URI.create(publicBaseUrl).getHost() : null;
+        this.httpsHost =
+                publicBaseUrl.startsWith("https://") ? URI.create(publicBaseUrl).getHost() : null;
         // A session can be obtained through OIDC, or through the magic
         // link -- which only ever sends when a mail host is configured.
         // Where nobody can sign in, writes are open to every caller only
@@ -132,17 +136,20 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, PilotService pilots,
-            Optional<OAuth2AuthorizedClientService> authorizedClients) throws Exception {
-        http
-                .authorizeHttpRequests(auth -> {
+    SecurityFilterChain securityFilterChain(
+            HttpSecurity http, PilotService pilots, Optional<OAuth2AuthorizedClientService> authorizedClients)
+            throws Exception {
+        http.authorizeHttpRequests(auth -> {
                     auth
                             // Health and docs: an orchestrator and a reader,
                             // neither of which can hold a session.
-                            .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
-                            .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                            .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info")
+                            .permitAll()
+                            .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
+                            .permitAll()
                             // The front end itself.
-                            .requestMatchers("/app", "/app/**").permitAll();
+                            .requestMatchers("/app", "/app/**")
+                            .permitAll();
                     // The developer's work: the role where a session can
                     // hold one; nobody where none can and nothing opened them.
                     AuthorizationManager<RequestAuthorizationContext> developer = switch (signIn.access()) {
@@ -161,19 +168,22 @@ public class SecurityConfig {
                     // what it says; the training page's chart reads are
                     // chart-vision jobs the planner runs and keeps.
                     UpstreamRoutes upstream = UpstreamRoutes.shipped();
-                    auth
-                            .requestMatchers(upstream.matcher(UpstreamRoutes.Access.DEVELOPER)).access(developer)
+                    auth.requestMatchers(upstream.matcher(UpstreamRoutes.Access.DEVELOPER))
+                            .access(developer)
                             // The apps' speed over time and faults (SpeedController, DiagnosticsController).
-                            .requestMatchers(HttpMethod.GET, "/api/speed", "/api/diagnostics").access(developer);
+                            .requestMatchers(HttpMethod.GET, "/api/speed", "/api/diagnostics")
+                            .access(developer);
                     // Reading from the planner: planning a route needs no
                     // account. The Go / No-Go, the debrief, lost comms and a
                     // clearance's places are reads too, though POSTs: the
                     // pilot's own inputs ride in the body, and nothing on
                     // the planner changes.
-                    auth.requestMatchers(upstream.matcher(UpstreamRoutes.Access.PUBLIC)).permitAll();
+                    auth.requestMatchers(upstream.matcher(UpstreamRoutes.Access.PUBLIC))
+                            .permitAll();
                     // A download manager asks for a file's size first:
                     // ForeFlight's, for the checkpoints' pack.
-                    auth.requestMatchers(HttpMethod.HEAD, "/api/planner/foreflight-pack/**").permitAll();
+                    auth.requestMatchers(HttpMethod.HEAD, "/api/planner/foreflight-pack/**")
+                            .permitAll();
                     // Writing through the planner -- a checkpoint note, the
                     // Brief's narrative, the assistant, the words (a real
                     // billed Claude call every time) -- and any address no
@@ -200,44 +210,58 @@ public class SecurityConfig {
                             // /login/oauth2/code/** (Spring Security's own
                             // routes for Google/Apple) are never matched
                             // against "anyRequest" here either.
-                            .requestMatchers("/api/auth/magic-link/**").permitAll()
+                            .requestMatchers("/api/auth/magic-link/**")
+                            .permitAll()
                             // The iOS app's native Apple sheet, before any
                             // session exists (AppleNativeSignInController).
-                            .requestMatchers(HttpMethod.POST, "/api/auth/apple/native").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/auth/apple/native")
+                            .permitAll()
                             // A TV asking for its code and whether it has
                             // been typed in, before it has a session; the
                             // phone's approval is a signed-in pilot's
                             // (DeviceSignInController). And /tv, the short
                             // address the TV shows, a redirect into the app.
-                            .requestMatchers(HttpMethod.POST, "/api/auth/device", "/api/auth/device/token").permitAll()
-                            .requestMatchers(HttpMethod.GET, "/tv").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/auth/device", "/api/auth/device/token")
+                            .permitAll()
+                            .requestMatchers(HttpMethod.GET, "/tv")
+                            .permitAll()
                             // Who is signed in, asked by every page as it
                             // opens: signed out is an answer (204), not a
                             // refusal -- a 401 here was an error in the
                             // browser's console on every signed-out visit,
                             // which Lighthouse's best practices count
                             // (PilotController).
-                            .requestMatchers(HttpMethod.GET, "/api/me").permitAll()
+                            .requestMatchers(HttpMethod.GET, "/api/me")
+                            .permitAll()
                             // Asked before any session exists, to decide
                             // whether a sign-in button is worth showing
                             // at all (SignInCapabilitiesController).
-                            .requestMatchers(HttpMethod.GET, "/api/auth/capabilities").permitAll()
+                            .requestMatchers(HttpMethod.GET, "/api/auth/capabilities")
+                            .permitAll()
                             // A device's faults, before sign-in as after (DiagnosticsController);
                             // the legal pages, read before any account exists (WebMvcConfig).
-                            .requestMatchers(HttpMethod.POST, "/api/diagnostics").permitAll()
-                            .requestMatchers(HttpMethod.GET, "/privacy", "/terms", "/support").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/diagnostics")
+                            .permitAll()
+                            .requestMatchers(HttpMethod.GET, "/privacy", "/terms", "/support")
+                            .permitAll()
                             // A page's speed from a pilot's browser, signed in
                             // or not, and the nightly lab run's, which carries
                             // its own token (SpeedController).
-                            .requestMatchers(HttpMethod.POST, "/api/speed/field", "/api/speed/lab").permitAll()
-                            .requestMatchers(HttpMethod.GET, "/", "/error").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/speed/field", "/api/speed/lab")
+                            .permitAll()
+                            .requestMatchers(HttpMethod.GET, "/", "/error")
+                            .permitAll()
                             // What iOS and Android read to open this site's
                             // links in the app (AppSiteAssociationController,
                             // AssetLinksController).
-                            .requestMatchers(HttpMethod.GET, "/.well-known/apple-app-site-association",
-                                    "/.well-known/assetlinks.json").permitAll()
+                            .requestMatchers(
+                                    HttpMethod.GET,
+                                    "/.well-known/apple-app-site-association",
+                                    "/.well-known/assetlinks.json")
+                            .permitAll()
                             // Everything else that exists is pilot-scoped.
-                            .anyRequest().authenticated();
+                            .anyRequest()
+                            .authenticated();
                 })
 
                 // Cookie-based CSRF tokens, readable by script so the
@@ -245,8 +269,7 @@ public class SecurityConfig {
                 // authentication means the browser attaches credentials
                 // automatically, which is exactly the condition CSRF
                 // exploits, so this stays on.
-                .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                         // sendBeacon carries no header, and a forged report only adds a row the
                         // owner reads (DiagnosticsController) or a sample to the speed trend; the
@@ -274,8 +297,8 @@ public class SecurityConfig {
                 // answers 204 when signed out, as the ordinary
                 // signed-out answer, and every other call
                 // falls back to the status text.
-                .exceptionHandling(handling -> handling
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                .exceptionHandling(handling ->
+                        handling.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
 
                 // Spring Security already writes X-Content-Type-Options
                 // and a frame-options header by default; this makes both
@@ -299,9 +322,10 @@ public class SecurityConfig {
                 // for its session and viewport itself. Only those two
                 // hosts, and Google's works only with a key the
                 // deployment sets, so both are allowed always.
-                .headers(headers -> headers
-                        .frameOptions(frame -> frame.deny())
-                        .httpStrictTransportSecurity(strict -> { if (!hsts) strict.disable(); })
+                .headers(headers -> headers.frameOptions(frame -> frame.deny())
+                        .httpStrictTransportSecurity(strict -> {
+                            if (!hsts) strict.disable();
+                        })
                         // A magic-link verify URL carries its one-time
                         // token as a query param (?token=...) -- default
                         // browser behaviour would otherwise forward the
@@ -310,18 +334,18 @@ public class SecurityConfig {
                         // makes after that redirect. no-referrer drops it
                         // (and every other page's query string) entirely.
                         .referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.NO_REFERRER))
-                        .contentSecurityPolicy(csp -> csp.policyDirectives(
-                                "default-src 'self'; "
-                                        + "img-src 'self' data:" + chartTilesOrigin + " " + OVERLAY_IMAGES + " " + PHOTO_IMAGES + "; "
-                                        + "style-src 'self' 'unsafe-inline'; "
-                                        // 'wasm-unsafe-eval': WebAssembly compiled from
-                                        // this origin's own files, the page reader's
-                                        // engine (web features/plan/lib/readPage); no script eval.
-                                        + "script-src 'self' 'wasm-unsafe-eval'; "
-                                        + "connect-src 'self' " + OVERLAY_CONNECT + " " + PHOTO_CONNECT + "; "
-                                        + "object-src 'none'; "
-                                        + "base-uri 'self'; "
-                                        + "frame-ancestors 'none'")));
+                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; "
+                                + "img-src 'self' data:" + chartTilesOrigin + " " + OVERLAY_IMAGES + " " + PHOTO_IMAGES
+                                + "; "
+                                + "style-src 'self' 'unsafe-inline'; "
+                                // 'wasm-unsafe-eval': WebAssembly compiled from
+                                // this origin's own files, the page reader's
+                                // engine (web features/plan/lib/readPage); no script eval.
+                                + "script-src 'self' 'wasm-unsafe-eval'; "
+                                + "connect-src 'self' " + OVERLAY_CONNECT + " " + PHOTO_CONNECT + "; "
+                                + "object-src 'none'; "
+                                + "base-uri 'self'; "
+                                + "frame-ancestors 'none'")));
 
         // logout() is unconditional -- it is plain session invalidation,
         // not specific to OIDC, and a magic-link sign-in (which needs no
@@ -332,7 +356,8 @@ public class SecurityConfig {
         // /login?logout, a page this app does not have, whose 401 the
         // page's fetch followed and read as the logout failing, so the
         // page stayed signed in until it was reloaded.
-        http.logout(logout -> logout.logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)));
+        http.logout(logout ->
+                logout.logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)));
         // A sign-in gets a new session rather than the old one renamed:
         // with sessions in Postgres, a request still running on the old
         // session saves its copy when it ends and writes the old id back
@@ -359,20 +384,21 @@ public class SecurityConfig {
             // port's certificate (the Mac's own authority) -- it came to that
             // port in plain HTTP, which a TLS port refuses. The pack holds a
             // route and its checkpoints, nothing of the pilot's.
-            http.redirectToHttps(https -> https.requestMatchers(
-                    request -> httpsHost.equalsIgnoreCase(request.getServerName())
+            http.redirectToHttps(
+                    https -> https.requestMatchers(request -> httpsHost.equalsIgnoreCase(request.getServerName())
                             && !request.getRequestURI().startsWith("/api/planner/foreflight-pack/")));
         }
         if (oauthConfigured) {
             // The pilot is resolved at sign-in (PilotOidcUserService), and
             // a sign-in it refuses lands here -- Spring's default
             // /login?error is a page this app does not have.
-            http.oauth2Login(login -> login
-                    .userInfoEndpoint(userInfo -> userInfo.oidcUserService(new PilotOidcUserService(pilots)))
+            http.oauth2Login(login -> login.userInfoEndpoint(
+                            userInfo -> userInfo.oidcUserService(new PilotOidcUserService(pilots)))
                     .successHandler((request, response, authentication) -> {
                         keepAppleRefreshToken(pilots, authorizedClients, authentication);
-                        response.sendRedirect(
-                                pilots.current(authentication).map(SignInLanding::after).orElse("/app/plan"));
+                        response.sendRedirect(pilots.current(authentication)
+                                .map(SignInLanding::after)
+                                .orElse("/app/plan"));
                     })
                     .failureUrl("/app/plan?signin=refused"));
         }
@@ -400,8 +426,10 @@ public class SecurityConfig {
 
     /** Apple issues a refresh token at every sign-in; it is kept so that
      *  deleting the account can revoke it (App Review 5.1.1(v)). */
-    private static void keepAppleRefreshToken(PilotService pilots,
-            Optional<OAuth2AuthorizedClientService> authorizedClients, Authentication authentication) {
+    private static void keepAppleRefreshToken(
+            PilotService pilots,
+            Optional<OAuth2AuthorizedClientService> authorizedClients,
+            Authentication authentication) {
         if (authentication instanceof OAuth2AuthenticationToken oauth
                 && "apple".equals(oauth.getAuthorizedClientRegistrationId())) {
             authorizedClients

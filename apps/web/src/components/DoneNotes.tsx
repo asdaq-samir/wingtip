@@ -14,7 +14,7 @@ export default function DoneNotes() {
   const notes = useDoneNotes();
   return (
     <div aria-live="polite" role="status" className="pointer-events-none fixed inset-0 z-[100]" data-testid="done-notes">
-      {notes.map(n => {
+      {notes.map((n) => {
         const above = n.at.top > 56;
         return (
           <div

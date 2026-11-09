@@ -66,7 +66,10 @@ async function startSensor() {
       const now = was ? lux >= OFF_LUX : lux >= ON_LUX;
       if (now !== was) useSunlightSensor.setState({ bright: now });
     });
-    s.addEventListener("error", () => { s.stop(); sensor = null; });
+    s.addEventListener("error", () => {
+      s.stop();
+      sensor = null;
+    });
     s.start();
     sensor = s;
   } catch {
@@ -84,8 +87,8 @@ function stopSensor() {
  *  "normal") from the setting and the sensor, which runs only while the
  *  setting is Auto. Mounted once, with the map's banners. */
 export function useSunlight() {
-  const chartLight = usePreferences(s => s.chartLight);
-  const bright = useSunlightSensor(s => s.bright);
+  const chartLight = usePreferences((s) => s.chartLight);
+  const bright = useSunlightSensor((s) => s.bright);
   useEffect(() => {
     if (chartLight === "auto") void startSensor();
     else stopSensor();

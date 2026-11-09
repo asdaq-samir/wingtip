@@ -42,7 +42,9 @@ public final class AnswerContract {
         return switch (schema.path("type").asText("")) {
             case "object" -> {
                 ObjectNode out = NODES.objectNode();
-                schema.path("properties").fields().forEachRemaining(f -> out.set(f.getKey(), sample(f.getValue(), depth + 1)));
+                schema.path("properties")
+                        .fields()
+                        .forEachRemaining(f -> out.set(f.getKey(), sample(f.getValue(), depth + 1)));
                 if (schema.path("additionalProperties").isObject()) {
                     out.set("key", sample(schema.get("additionalProperties"), depth + 1));
                 }
@@ -53,11 +55,15 @@ public final class AnswerContract {
                 out.add(sample(schema.path("items"), depth + 1));
                 yield out;
             }
-            case "string" -> schema.has("enum") ? schema.get("enum").get(0) : NODES.textNode(switch (schema.path("format").asText("")) {
-                case "date" -> "2026-11-09";
-                case "date-time" -> "2026-11-09T12:00:00Z";
-                default -> "x";
-            });
+            case "string" ->
+                schema.has("enum")
+                        ? schema.get("enum").get(0)
+                        : NODES.textNode(
+                                switch (schema.path("format").asText("")) {
+                                    case "date" -> "2026-11-09";
+                                    case "date-time" -> "2026-11-09T12:00:00Z";
+                                    default -> "x";
+                                });
             case "number" -> NODES.numberNode(1.5);
             case "integer" -> NODES.numberNode(1);
             case "boolean" -> NODES.booleanNode(true);

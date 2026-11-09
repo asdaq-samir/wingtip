@@ -1,5 +1,6 @@
 """wingtip.elevation's on-disk cache: what two lookups at once each fetched
 is kept, and the file is never seen half-written."""
+
 import threading
 
 import numpy as np
@@ -71,7 +72,7 @@ def test_the_ground_at_a_point_is_read_from_its_terrain_tile(tmp_path, monkeypat
     monkeypatch.setattr(elevation, "TERRAIN_TILE_DIR", tmp_path)
     monkeypatch.setattr(elevation, "_TERRAIN_TILES", {})
     lat, lon, zoom = 42.3172, -88.0905, elevation.TERRAIN_TILE_ZOOM
-    n = 2 ** zoom
+    n = 2**zoom
     x = int((lon + 180) / 360 * n)
     y = int((1 - math.asinh(math.tan(math.radians(lat))) / math.pi) / 2 * n)
     # Terrarium's encoding: (R * 256 + G + B / 256) - 32768 metres.
@@ -128,8 +129,8 @@ def test_a_void_in_a_tile_reads_as_the_ground_beside_it(tmp_path, monkeypatch):
     from PIL import Image
 
     rgb = np.zeros((256, 256, 3), dtype=np.uint8)
-    rgb[:, :] = (128, 100, 0)                  # 100 m
-    rgb[120:136, 120:136] = (0, 0, 0)          # a void
+    rgb[:, :] = (128, 100, 0)  # 100 m
+    rgb[120:136, 120:136] = (0, 0, 0)  # a void
     path = tmp_path / "12" / "1" / "2.png"
     path.parent.mkdir(parents=True)
     Image.fromarray(rgb).save(path)

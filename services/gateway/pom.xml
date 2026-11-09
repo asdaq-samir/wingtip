@@ -156,6 +156,25 @@
 
     <build>
         <plugins>
+            <!-- The Java's one layout (scripts/dev/format.sh java, or
+                 `mvn spotless:apply`; `mvn spotless:check` in CI's gateway
+                 job): palantir-java-format, Google's formatter at 120
+                 columns with lambdas and chains kept closer to how they
+                 are written here, through Spotless. src/main and src/test
+                 only, Spotless's default, so target/generated-sources is
+                 left as its generator writes it. -->
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>3.10.4</version>
+                <configuration>
+                    <java>
+                        <palantirJavaFormat>
+                            <version>2.102.0</version>
+                        </palantirJavaFormat>
+                    </java>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

@@ -1,5 +1,5 @@
-import { useTheme } from "next-themes"
-import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { useTheme } from "next-themes";
+import { Toaster as Sonner, type ToasterProps } from "sonner";
 
 // Matches shadcn's own registry file for this component, deliberately --
 // an earlier version here hand-picked icons and pinned every toast's
@@ -12,7 +12,7 @@ import { Toaster as Sonner, type ToasterProps } from "sonner"
 // customized (light/dark tokens instead of sonner's own hardcoded
 // white/black) -- the rest is stock.
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
+  const { theme = "system" } = useTheme();
 
   return (
     <Sonner
@@ -27,7 +27,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }
       {...props}
     />
-  )
-}
+  );
+};
 
-export { Toaster }
+export { Toaster };

@@ -16,11 +16,13 @@ describe("ageWords", () => {
 describe("trafficAt", () => {
   it("is the newest answer's time less its own age", () => {
     const answer = (age: number) => ({ aircraft: [], age_s: age }) as unknown as Traffic;
-    expect(trafficAt([
-      { data: answer(3), updatedAt: NOW - 60_000 },
-      { data: answer(12), updatedAt: NOW },
-      { data: undefined, updatedAt: NOW + 5_000 },
-    ])).toBe(NOW - 12_000);
+    expect(
+      trafficAt([
+        { data: answer(3), updatedAt: NOW - 60_000 },
+        { data: answer(12), updatedAt: NOW },
+        { data: undefined, updatedAt: NOW + 5_000 },
+      ]),
+    ).toBe(NOW - 12_000);
     expect(trafficAt([])).toBeNull();
   });
 });

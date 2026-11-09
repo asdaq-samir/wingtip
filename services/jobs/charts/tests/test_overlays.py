@@ -12,6 +12,7 @@ the tiles read.
   its layers and fields declared, each feature first in the tiles of its
   zoom, and Chicago's Class B drawn within TOLERANCE_M of the FAA's line,
   both ways round, in every zoom-12 tile it crosses."""
+
 import csv
 import gzip
 import json
@@ -35,29 +36,89 @@ from wingtip import fixes as wingtip_fixes
 FIXTURES = Path(__file__).resolve().parents[3] / "planner" / "tests_wingtip" / "fixtures" / "native"
 NEEDS_TIPPECANOE = pytest.mark.skipif(
     shutil.which("tippecanoe") is None or shutil.which("tippecanoe-decode") is None,
-    reason="no tippecanoe here: the charts job's image has it")
+    reason="no tippecanoe here: the charts job's image has it",
+)
 #: The cut a test builds: Chicago's Class B and round it.
 BBOX = (-88.6, 41.4, -87.2, 42.5)
 
 APT_BASE = [
-    {"SITE_NO": "04508.", "SITE_TYPE_CODE": "A", "ARPT_ID": "ORD", "ICAO_ID": "KORD", "ARPT_NAME": "CHICAGO O'HARE INTL",
-     "OWNERSHIP_TYPE_CODE": "PU", "FACILITY_USE_CODE": "PU", "LAT_DECIMAL": "41.97694027", "LONG_DECIMAL": "-87.90814972",
-     "ELEV": "680", "ARPT_STATUS": "O", "FUEL_TYPES": "100LL,A", "TWR_TYPE_CODE": "ATCT"},
-    {"SITE_NO": "04518.8", "SITE_TYPE_CODE": "A", "ARPT_ID": "06C", "ICAO_ID": "", "ARPT_NAME": "SCHAUMBURG RGNL",
-     "OWNERSHIP_TYPE_CODE": "PU", "FACILITY_USE_CODE": "PU", "LAT_DECIMAL": "41.98934083", "LONG_DECIMAL": "-88.10124277",
-     "ELEV": "801", "ARPT_STATUS": "O", "FUEL_TYPES": "100LL,A", "TWR_TYPE_CODE": "NON-ATCT"},
-    {"SITE_NO": "04588.2", "SITE_TYPE_CODE": "A", "ARPT_ID": "LL22", "ICAO_ID": "", "ARPT_NAME": "BROOKERIDGE AIR PARK",
-     "OWNERSHIP_TYPE_CODE": "PR", "FACILITY_USE_CODE": "PR", "LAT_DECIMAL": "41.73277777", "LONG_DECIMAL": "-87.99941666",
-     "ELEV": "749.4", "ARPT_STATUS": "O", "FUEL_TYPES": "", "TWR_TYPE_CODE": "NON-ATCT"},
-    {"SITE_NO": "04382.4", "SITE_TYPE_CODE": "H", "ARPT_ID": "7IL4", "ICAO_ID": "",
-     "ARPT_NAME": "NORTHWEST COMMUNITY HOSPITAL", "OWNERSHIP_TYPE_CODE": "PR", "FACILITY_USE_CODE": "PR",
-     "LAT_DECIMAL": "42.06774722", "LONG_DECIMAL": "-87.99348888", "ELEV": "758", "ARPT_STATUS": "O", "FUEL_TYPES": "",
-     "TWR_TYPE_CODE": "NON-ATCT"},
+    {
+        "SITE_NO": "04508.",
+        "SITE_TYPE_CODE": "A",
+        "ARPT_ID": "ORD",
+        "ICAO_ID": "KORD",
+        "ARPT_NAME": "CHICAGO O'HARE INTL",
+        "OWNERSHIP_TYPE_CODE": "PU",
+        "FACILITY_USE_CODE": "PU",
+        "LAT_DECIMAL": "41.97694027",
+        "LONG_DECIMAL": "-87.90814972",
+        "ELEV": "680",
+        "ARPT_STATUS": "O",
+        "FUEL_TYPES": "100LL,A",
+        "TWR_TYPE_CODE": "ATCT",
+    },
+    {
+        "SITE_NO": "04518.8",
+        "SITE_TYPE_CODE": "A",
+        "ARPT_ID": "06C",
+        "ICAO_ID": "",
+        "ARPT_NAME": "SCHAUMBURG RGNL",
+        "OWNERSHIP_TYPE_CODE": "PU",
+        "FACILITY_USE_CODE": "PU",
+        "LAT_DECIMAL": "41.98934083",
+        "LONG_DECIMAL": "-88.10124277",
+        "ELEV": "801",
+        "ARPT_STATUS": "O",
+        "FUEL_TYPES": "100LL,A",
+        "TWR_TYPE_CODE": "NON-ATCT",
+    },
+    {
+        "SITE_NO": "04588.2",
+        "SITE_TYPE_CODE": "A",
+        "ARPT_ID": "LL22",
+        "ICAO_ID": "",
+        "ARPT_NAME": "BROOKERIDGE AIR PARK",
+        "OWNERSHIP_TYPE_CODE": "PR",
+        "FACILITY_USE_CODE": "PR",
+        "LAT_DECIMAL": "41.73277777",
+        "LONG_DECIMAL": "-87.99941666",
+        "ELEV": "749.4",
+        "ARPT_STATUS": "O",
+        "FUEL_TYPES": "",
+        "TWR_TYPE_CODE": "NON-ATCT",
+    },
+    {
+        "SITE_NO": "04382.4",
+        "SITE_TYPE_CODE": "H",
+        "ARPT_ID": "7IL4",
+        "ICAO_ID": "",
+        "ARPT_NAME": "NORTHWEST COMMUNITY HOSPITAL",
+        "OWNERSHIP_TYPE_CODE": "PR",
+        "FACILITY_USE_CODE": "PR",
+        "LAT_DECIMAL": "42.06774722",
+        "LONG_DECIMAL": "-87.99348888",
+        "ELEV": "758",
+        "ARPT_STATUS": "O",
+        "FUEL_TYPES": "",
+        "TWR_TYPE_CODE": "NON-ATCT",
+    },
     # Closed indefinitely (ARPT_STATUS CI): no field to draw. Its place is
     # moved into the cut, so it is left out for its status alone.
-    {"SITE_NO": "04500.01", "SITE_TYPE_CODE": "A", "ARPT_ID": "IL63", "ICAO_ID": "", "ARPT_NAME": "MAYS AVIATION",
-     "OWNERSHIP_TYPE_CODE": "PR", "FACILITY_USE_CODE": "PR", "LAT_DECIMAL": "41.9", "LONG_DECIMAL": "-88.0",
-     "ELEV": "720", "ARPT_STATUS": "CI", "FUEL_TYPES": "", "TWR_TYPE_CODE": "NON-ATCT"},
+    {
+        "SITE_NO": "04500.01",
+        "SITE_TYPE_CODE": "A",
+        "ARPT_ID": "IL63",
+        "ICAO_ID": "",
+        "ARPT_NAME": "MAYS AVIATION",
+        "OWNERSHIP_TYPE_CODE": "PR",
+        "FACILITY_USE_CODE": "PR",
+        "LAT_DECIMAL": "41.9",
+        "LONG_DECIMAL": "-88.0",
+        "ELEV": "720",
+        "ARPT_STATUS": "CI",
+        "FUEL_TYPES": "",
+        "TWR_TYPE_CODE": "NON-ATCT",
+    },
 ]
 APT_RWY = [
     {"SITE_NO": "04508.", "RWY_ID": "04L/22R", "RWY_LEN": "7500", "SURFACE_TYPE_CODE": "ASPH", "RWY_WIDTH": "150"},
@@ -71,45 +132,121 @@ APT_RWY = [
     {"SITE_NO": "04382.4", "RWY_ID": "H1", "RWY_LEN": "50", "SURFACE_TYPE_CODE": "CONC"},
 ]
 APT_RWY_END = [
-    {"SITE_NO": "04508.", "RWY_ID": "10L/28R", "RWY_END_ID": "10L", "TRUE_ALIGNMENT": "90",
-     "LAT_DECIMAL": "41.96899488", "LONG_DECIMAL": "-87.93153172"},
-    {"SITE_NO": "04508.", "RWY_ID": "10L/28R", "RWY_END_ID": "28R", "TRUE_ALIGNMENT": "270",
-     "LAT_DECIMAL": "41.96907025", "LONG_DECIMAL": "-87.883729"},
+    {
+        "SITE_NO": "04508.",
+        "RWY_ID": "10L/28R",
+        "RWY_END_ID": "10L",
+        "TRUE_ALIGNMENT": "90",
+        "LAT_DECIMAL": "41.96899488",
+        "LONG_DECIMAL": "-87.93153172",
+    },
+    {
+        "SITE_NO": "04508.",
+        "RWY_ID": "10L/28R",
+        "RWY_END_ID": "28R",
+        "TRUE_ALIGNMENT": "270",
+        "LAT_DECIMAL": "41.96907025",
+        "LONG_DECIMAL": "-87.883729",
+    },
     # 06C's 11 with its position, 29 without: a runway with an end
     # unsurveyed is no shape.
-    {"SITE_NO": "04518.8", "RWY_ID": "11/29", "RWY_END_ID": "11", "TRUE_ALIGNMENT": "",
-     "LAT_DECIMAL": "41.99070305", "LONG_DECIMAL": "-88.10798888"},
+    {
+        "SITE_NO": "04518.8",
+        "RWY_ID": "11/29",
+        "RWY_END_ID": "11",
+        "TRUE_ALIGNMENT": "",
+        "LAT_DECIMAL": "41.99070305",
+        "LONG_DECIMAL": "-88.10798888",
+    },
 ]
 NAV_BASE = [
-    {"NAV_ID": "DPA", "NAV_TYPE": "VOR/DME", "NAME": "DUPAGE", "NAV_STATUS": "OPERATIONAL RESTRICTED",
-     "LAT_DECIMAL": "41.89037147", "LONG_DECIMAL": "-88.35017747", "ELEV": "801.6", "MAG_VARN": "2",
-     "MAG_VARN_HEMIS": "E", "FREQ": "114.55", "CHAN": "92Y", "ALT_CODE": "VL", "OPER_HOURS": "24", "STATE_CODE": "IL"},
-    {"NAV_ID": "CGT", "NAV_TYPE": "VORTAC", "NAME": "CHICAGO HEIGHTS", "NAV_STATUS": "OPERATIONAL RESTRICTED",
-     "LAT_DECIMAL": "41.51000658", "LONG_DECIMAL": "-87.57154611", "ELEV": "633.6", "MAG_VARN": "2",
-     "MAG_VARN_HEMIS": "E", "FREQ": "114.2", "CHAN": "89X", "ALT_CODE": "L", "OPER_HOURS": "24", "STATE_CODE": "IL"},
+    {
+        "NAV_ID": "DPA",
+        "NAV_TYPE": "VOR/DME",
+        "NAME": "DUPAGE",
+        "NAV_STATUS": "OPERATIONAL RESTRICTED",
+        "LAT_DECIMAL": "41.89037147",
+        "LONG_DECIMAL": "-88.35017747",
+        "ELEV": "801.6",
+        "MAG_VARN": "2",
+        "MAG_VARN_HEMIS": "E",
+        "FREQ": "114.55",
+        "CHAN": "92Y",
+        "ALT_CODE": "VL",
+        "OPER_HOURS": "24",
+        "STATE_CODE": "IL",
+    },
+    {
+        "NAV_ID": "CGT",
+        "NAV_TYPE": "VORTAC",
+        "NAME": "CHICAGO HEIGHTS",
+        "NAV_STATUS": "OPERATIONAL RESTRICTED",
+        "LAT_DECIMAL": "41.51000658",
+        "LONG_DECIMAL": "-87.57154611",
+        "ELEV": "633.6",
+        "MAG_VARN": "2",
+        "MAG_VARN_HEMIS": "E",
+        "FREQ": "114.2",
+        "CHAN": "89X",
+        "ALT_CODE": "L",
+        "OPER_HOURS": "24",
+        "STATE_CODE": "IL",
+    },
 ]
 #: A navaid's own remark (NAV_RMK.csv), as the FAA files it.
-NAV_RMK = [
-    {"NAV_ID": "DPA", "NAV_TYPE": "VOR/DME", "TAB_NAME": "NAVIGATION_AID",
-     "REMARK": "VOR UNUSABLE 072-090 BYD 34 NM BLO 3000 FT."},
-]
+NAV_RMK = [{"NAV_ID": "DPA", "NAV_TYPE": "VOR/DME", "TAB_NAME": "NAVIGATION_AID", "REMARK": "VOR UNUSABLE 072-090 BYD 34 NM BLO 3000 FT."}]
 FIX_BASE = [
-    {"FIX_ID": "VPAON", "STATE_CODE": "IL", "LAT_DECIMAL": "42.07806388", "LONG_DECIMAL": "-87.86358888",
-     "FIX_USE_CODE": "VFR  ", "CHARTS": "SECTIONAL,VFR TERMINAL AREA"},
-    {"FIX_ID": "VPDVA", "STATE_CODE": "IL", "LAT_DECIMAL": "41.99245", "LONG_DECIMAL": "-88.02363888",
-     "FIX_USE_CODE": "VFR  ", "CHARTS": "HELICOPTER ROUTE"},
-    {"FIX_ID": "ACCRA", "STATE_CODE": "IL", "LAT_DECIMAL": "41.93333333", "LONG_DECIMAL": "-88.01944444",
-     "FIX_USE_CODE": "WP   ", "CHARTS": "CONTROLLER,ENROUTE HIGH,ENROUTE LOW,SID"},
-    {"FIX_ID": "EVRSN", "STATE_CODE": "IL", "LAT_DECIMAL": "41.94477222", "LONG_DECIMAL": "-87.95461666",
-     "FIX_USE_CODE": "WP   ", "CHARTS": "IAP"},
+    {
+        "FIX_ID": "VPAON",
+        "STATE_CODE": "IL",
+        "LAT_DECIMAL": "42.07806388",
+        "LONG_DECIMAL": "-87.86358888",
+        "FIX_USE_CODE": "VFR  ",
+        "CHARTS": "SECTIONAL,VFR TERMINAL AREA",
+    },
+    {
+        "FIX_ID": "VPDVA",
+        "STATE_CODE": "IL",
+        "LAT_DECIMAL": "41.99245",
+        "LONG_DECIMAL": "-88.02363888",
+        "FIX_USE_CODE": "VFR  ",
+        "CHARTS": "HELICOPTER ROUTE",
+    },
+    {
+        "FIX_ID": "ACCRA",
+        "STATE_CODE": "IL",
+        "LAT_DECIMAL": "41.93333333",
+        "LONG_DECIMAL": "-88.01944444",
+        "FIX_USE_CODE": "WP   ",
+        "CHARTS": "CONTROLLER,ENROUTE HIGH,ENROUTE LOW,SID",
+    },
+    {
+        "FIX_ID": "EVRSN",
+        "STATE_CODE": "IL",
+        "LAT_DECIMAL": "41.94477222",
+        "LONG_DECIMAL": "-87.95461666",
+        "FIX_USE_CODE": "WP   ",
+        "CHARTS": "IAP",
+    },
 ]
 #: A restricted area as the feature service gives one, as
 #: services/planner/tests_wingtip/test_phone_pack.py's: a counter-clockwise outer ring, a hole.
 AREA_OUTER = [(-88.3, 41.5), (-88.1, 41.5), (-88.1, 41.7), (-88.3, 41.7), (-88.3, 41.5)]
 AREA_HOLE = [(-88.22, 41.58), (-88.22, 41.62), (-88.18, 41.62), (-88.18, 41.58), (-88.22, 41.58)]
-AREA_PROPS = {"NAME": "R-9999 TEST", "TYPE_CODE": "R", "LOWER_VAL": "0", "LOWER_UOM": "FT", "LOWER_CODE": "SFC",
-              "UPPER_VAL": "5000", "UPPER_UOM": "FT", "UPPER_CODE": "MSL", "TIMESOFUSE": "0700-2200 MON-FRI",
-              "GMTOFFSET": "-6", "DST_CODE": "1", "CONT_AGENT": "CHICAGO TRACON"}
+AREA_PROPS = {
+    "NAME": "R-9999 TEST",
+    "TYPE_CODE": "R",
+    "LOWER_VAL": "0",
+    "LOWER_UOM": "FT",
+    "LOWER_CODE": "SFC",
+    "UPPER_VAL": "5000",
+    "UPPER_UOM": "FT",
+    "UPPER_CODE": "MSL",
+    "TIMESOFUSE": "0700-2200 MON-FRI",
+    "GMTOFFSET": "-6",
+    "DST_CODE": "1",
+    "CONT_AGENT": "CHICAGO TRACON",
+}
 
 
 def _csv(path: Path, rows: list[dict]) -> Path:
@@ -131,12 +268,26 @@ def sources(tmp_path_factory):
         shp.with_suffix(f".{part}").write_bytes(gzip.decompress((FIXTURES / f"chicago_airspace.{part}.gz").read_bytes()))
     shutil.copy(FIXTURES / "chicago_airspace.shx", shp.with_suffix(".shx"))
     area = Polygon(AREA_OUTER, [AREA_HOLE])
-    packed = cycle_pack.write(root / "packs", "2026-10-29", shp_path=shp, sua_held=[({"properties": AREA_PROPS}, area, area.bounds)],
-                              sua_at=0.0, urban=[], urban_path=None, tables={})
+    packed = cycle_pack.write(
+        root / "packs",
+        "2026-10-29",
+        shp_path=shp,
+        sua_held=[({"properties": AREA_PROPS}, area, area.bounds)],
+        sua_at=0.0,
+        urban=[],
+        urban_path=None,
+        tables={},
+    )
     nasr = root / "nasr"
     nasr.mkdir()
-    for name, rows in (("APT_BASE.csv", APT_BASE), ("APT_RWY.csv", APT_RWY), ("APT_RWY_END.csv", APT_RWY_END),
-                       ("NAV_BASE.csv", NAV_BASE), ("NAV_RMK.csv", NAV_RMK), ("FIX_BASE.csv", FIX_BASE)):
+    for name, rows in (
+        ("APT_BASE.csv", APT_BASE),
+        ("APT_RWY.csv", APT_RWY),
+        ("APT_RWY_END.csv", APT_RWY_END),
+        ("NAV_BASE.csv", NAV_BASE),
+        ("NAV_RMK.csv", NAV_RMK),
+        ("FIX_BASE.csv", FIX_BASE),
+    ):
         _csv(nasr / name, rows)
     return cycle_pack.Pack(packed), nasr
 
@@ -154,20 +305,26 @@ def test_the_airspace_carries_the_shapefiles_fields_and_its_shape_unchanged(sour
     # all to 10,000 ft (LOWER_VAL, UPPER_VAL).
     assert floors == [0, 1900, 3000, 3600, 4000, 4000]
     b = next(f for f in features if f["properties"]["class"] == "B" and f["properties"]["floor_ft"] == 0)
-    expected = {"class": "B", "local_type": "CLASS_B", "name": "CHICAGO CLASS B", "ident": "ORD", "floor_ft": 0.0,
-                "floor_ref": "SFC", "ceiling_ft": 10000.0, "ceiling_excluded": False}
+    expected = {
+        "class": "B",
+        "local_type": "CLASS_B",
+        "name": "CHICAGO CLASS B",
+        "ident": "ORD",
+        "floor_ft": 0.0,
+        "floor_ref": "SFC",
+        "ceiling_ft": 10000.0,
+        "ceiling_excluded": False,
+    }
     assert {k: b["properties"].get(k) for k in expected} == expected
     assert isinstance(b["properties"]["number"], int)
     assert b["tippecanoe"] == {"minzoom": 4}
     # The shape as the pack holds it, only wound as GeoJSON winds it.
-    held = [g for a, g in zip(pack.attrs("airspace"), pack.geometries("airspace"))
-            if a["CLASS"] == "B" and float(a["LOWER_VAL"]) == 0][0]
+    held = [g for a, g in zip(pack.attrs("airspace"), pack.geometries("airspace")) if a["CLASS"] == "B" and float(a["LOWER_VAL"]) == 0][0]
     drawn = shapely.from_geojson(json.dumps(b["geometry"]))
     assert drawn.equals(held)
     assert all(p.exterior.is_ccw for p in getattr(drawn, "geoms", [drawn]))
     zooms = {(f["properties"]["class"], f["properties"]["local_type"]): f["tippecanoe"]["minzoom"] for f in features}
-    assert zooms == {("B", "CLASS_B"): 4, ("C", "CLASS_C"): 5, ("D", "CLASS_D"): 6, ("E", "CLASS_E2"): 7,
-                     ("E", "CLASS_E5"): 8}
+    assert zooms == {("B", "CLASS_B"): 4, ("C", "CLASS_C"): 5, ("D", "CLASS_D"): 6, ("E", "CLASS_E2"): 7, ("E", "CLASS_E5"): 8}
 
 
 def test_each_class_b_c_and_d_shelf_has_one_label_on_its_ring(sources):
@@ -176,8 +333,11 @@ def test_each_class_b_c_and_d_shelf_has_one_label_on_its_ring(sources):
     upright."""
     pack, _ = sources
     labels = _lines(overlays.airspace_label_features(pack))
-    shapes = {n: g for a, n, g in zip(pack.attrs("airspace"), cycle_pack._controlled_numbers(pack), pack.geometries("airspace"))
-              if a["CLASS"] in "BCD"}
+    shapes = {
+        n: g
+        for a, n, g in zip(pack.attrs("airspace"), cycle_pack._controlled_numbers(pack), pack.geometries("airspace"))
+        if a["CLASS"] in "BCD"
+    }
     assert sorted(f["properties"]["number"] for f in labels) == sorted(shapes)
     for f in labels:
         p = f["properties"]
@@ -198,16 +358,18 @@ def test_a_round_rings_label_is_north_north_west_along_the_ring():
     it in the arc's middle, along it."""
     lat0 = 43.14
     k = math.cos(math.radians(lat0))
-    circle = Polygon([(-89.35 + 0.07 * math.sin(math.radians(a)) / k, lat0 + 0.07 * math.cos(math.radians(a)))
-                      for a in range(0, 360, 5)])
+    circle = Polygon([(-89.35 + 0.07 * math.sin(math.radians(a)) / k, lat0 + 0.07 * math.cos(math.radians(a))) for a in range(0, 360, 5)])
     (lon, lat), angle = overlays._label_place(circle, (-89.35, lat0))
     azimuth = math.degrees(math.atan2((lon + 89.35) * k, lat - lat0)) % 360
     assert azimuth == pytest.approx(330, abs=3)
     assert angle == pytest.approx(-30, abs=3)
     # A shelf south of its centre, between 150 and 210 degrees: its
     # outer arc's middle, due south, the text level.
-    arc = [(-89.35 + r * math.sin(math.radians(a)) / k, lat0 + r * math.cos(math.radians(a)))
-           for r, angles in ((0.14, range(150, 211, 5)), (0.07, range(210, 149, -5))) for a in angles]
+    arc = [
+        (-89.35 + r * math.sin(math.radians(a)) / k, lat0 + r * math.cos(math.radians(a)))
+        for r, angles in ((0.14, range(150, 211, 5)), (0.07, range(210, 149, -5)))
+        for a in angles
+    ]
     (lon, lat), angle = overlays._label_place(Polygon(arc), (-89.35, lat0))
     assert lon == pytest.approx(-89.35, abs=1e-6) and lat == pytest.approx(lat0 - 0.14, abs=1e-6)
     assert angle == pytest.approx(0, abs=1)
@@ -216,9 +378,17 @@ def test_a_round_rings_label_is_north_north_west_along_the_ring():
 def test_the_special_use_area_keeps_its_hole_and_fields(sources):
     pack, _ = sources
     [area] = _lines(overlays.special_use_features(pack))
-    expected = {"type": "R", "kind": "restricted area", "name": "R-9999 TEST", "floor_ft": 0.0, "floor_ref": "SFC",
-                "ceiling_ft": 5000.0, "ceiling_ref": "MSL", "times_of_use": "0700-2200 MON-FRI",
-                "controlling_agency": "CHICAGO TRACON"}
+    expected = {
+        "type": "R",
+        "kind": "restricted area",
+        "name": "R-9999 TEST",
+        "floor_ft": 0.0,
+        "floor_ref": "SFC",
+        "ceiling_ft": 5000.0,
+        "ceiling_ref": "MSL",
+        "times_of_use": "0700-2200 MON-FRI",
+        "controlling_agency": "CHICAGO TRACON",
+    }
     assert {k: area["properties"].get(k) for k in expected} == expected
     assert area["tippecanoe"] == {"minzoom": 5}
     geometry = shapely.from_geojson(json.dumps(area["geometry"]))
@@ -227,20 +397,35 @@ def test_the_special_use_area_keeps_its_hole_and_fields(sources):
 
 def test_the_airports_as_nasr_files_them(sources):
     _, nasr = sources
-    found = {f["properties"]["faa_id"]: f for f in _lines(overlays.airport_features(
-        nasr / "APT_BASE.csv", nasr / "APT_RWY.csv", nasr / "APT_RWY_END.csv"))}
+    found = {
+        f["properties"]["faa_id"]: f
+        for f in _lines(overlays.airport_features(nasr / "APT_BASE.csv", nasr / "APT_RWY.csv", nasr / "APT_RWY_END.csv"))
+    }
     # The closed field is not drawn as a field.
     assert set(found) == {"ORD", "06C", "LL22", "7IL4"}
     assert found["ORD"]["properties"] == {
-        "ident": "KORD", "faa_id": "ORD", "name": "CHICAGO O'HARE INTL", "type": "airport", "use": "public",
-        "towered": True, "elevation_ft": 680.0, "longest_ft": 13000, "hard_ft": 13000, "runway_true": 90,
-        "fuel": "100LL,A", "rank": 0,
+        "ident": "KORD",
+        "faa_id": "ORD",
+        "name": "CHICAGO O'HARE INTL",
+        "type": "airport",
+        "use": "public",
+        "towered": True,
+        "elevation_ft": 680.0,
+        "longest_ft": 13000,
+        "hard_ft": 13000,
+        "runway_true": 90,
+        "fuel": "100LL,A",
+        "rank": 0,
     }
     assert found["ORD"]["geometry"] == {"type": "Point", "coordinates": [-87.90814972, 41.97694027]}
     assert found["06C"]["properties"]["rank"] == 1 and "runway_true" not in found["06C"]["properties"]
     # 2,813 ft of asphalt and 1,940 ft of turf: hard, but under 3,000 ft.
     assert {k: found["LL22"]["properties"][k] for k in ("use", "longest_ft", "hard_ft", "rank")} == {
-        "use": "private", "longest_ft": 2813, "hard_ft": 2813, "rank": 3}
+        "use": "private",
+        "longest_ft": 2813,
+        "hard_ft": 2813,
+        "rank": 3,
+    }
     # A helipad is no runway.
     assert found["7IL4"]["properties"]["type"] == "heliport" and "longest_ft" not in found["7IL4"]["properties"]
     assert {k: f["tippecanoe"]["minzoom"] for k, f in found.items()} == {"ORD": 5, "06C": 6, "LL22": 9, "7IL4": 10}
@@ -258,8 +443,13 @@ def test_the_runways_from_their_surveyed_ends(sources):
     assert set(parts) == {"surface", "centreline"} and set(ends) == {"10L", "28R"}
     assert all(f["tippecanoe"]["minzoom"] == overlays.RUNWAY_MIN_ZOOM for f in found)
     assert parts["surface"]["properties"] == {
-        "site_no": "04508.", "runway": "10L/28R", "width_ft": 150.0, "surface": "ASPH-CONC", "hard": True,
-        "part": "surface"}
+        "site_no": "04508.",
+        "runway": "10L/28R",
+        "width_ft": 150.0,
+        "surface": "ASPH-CONC",
+        "hard": True,
+        "part": "surface",
+    }
     assert ends["10L"]["geometry"]["coordinates"] == [-87.93153172, 41.96899488]
     # Landing on 10L is flying east, 28R west: NASR's TRUE_ALIGNMENT 90 and 270.
     assert ends["10L"]["properties"]["heading"] == 90 and ends["28R"]["properties"]["heading"] == 270
@@ -274,10 +464,22 @@ def test_the_runways_from_their_surveyed_ends(sources):
     assert area / length == pytest.approx(150 * 0.3048, rel=0.01)
 
 
-@pytest.mark.parametrize(("surface", "hard"), [
-    ("ASPH", True), ("CONC", True), ("ASPH-CONC", True), ("ASPH-TRTD", True), ("PEM", True),
-    ("ASPH-TURF", False), ("TURF", False), ("GRVL", False), ("TRTD", False), ("WATER", False), ("", False),
-])
+@pytest.mark.parametrize(
+    ("surface", "hard"),
+    [
+        ("ASPH", True),
+        ("CONC", True),
+        ("ASPH-CONC", True),
+        ("ASPH-TRTD", True),
+        ("PEM", True),
+        ("ASPH-TURF", False),
+        ("TURF", False),
+        ("GRVL", False),
+        ("TRTD", False),
+        ("WATER", False),
+        ("", False),
+    ],
+)
 def test_a_hard_surface_is_one_paved_all_through(surface, hard):
     assert overlays._hard(surface) is hard
 
@@ -286,14 +488,24 @@ def test_the_navaids_and_every_fix(sources):
     _, nasr = sources
     navaids = {f["properties"]["ident"]: f for f in _lines(overlays.navaid_features(nasr / "NAV_BASE.csv"))}
     assert navaids["DPA"]["properties"] == {
-        "ident": "DPA", "name": "Dupage", "kind": "VOR/DME", "freq": "114.55", "channel": "92Y", "service_volume": "VL",
-        "mag_var": 2.0, "elevation_ft": 801.6, "hours": "24", "restricted": True,
+        "ident": "DPA",
+        "name": "Dupage",
+        "kind": "VOR/DME",
+        "freq": "114.55",
+        "channel": "92Y",
+        "service_volume": "VL",
+        "mag_var": 2.0,
+        "elevation_ft": 801.6,
+        "hours": "24",
+        "restricted": True,
     }
     assert navaids["DPA"]["tippecanoe"] == {"minzoom": 5}
     # With NAV_RMK.csv, each one's own remarks, read as the VOR's card in
     # view reads them (wingtip.fixes.navaid_remarks), one a line.
-    remarked = {f["properties"]["ident"]: f["properties"] for f in _lines(
-        overlays.navaid_features(nasr / "NAV_BASE.csv", rmk_path=nasr / "NAV_RMK.csv"))}
+    remarked = {
+        f["properties"]["ident"]: f["properties"]
+        for f in _lines(overlays.navaid_features(nasr / "NAV_BASE.csv", rmk_path=nasr / "NAV_RMK.csv"))
+    }
     assert remarked["DPA"]["remarks"] == "\n".join(wingtip_fixes.navaid_remarks("DPA", "VOR/DME", nasr))
     assert "072-090" in remarked["DPA"]["remarks"]
     assert "remarks" not in remarked["CGT"]
@@ -306,8 +518,9 @@ def test_the_navaids_and_every_fix(sources):
 def test_a_box_keeps_only_what_meets_it(sources):
     _, nasr = sources
     north_of_ohare = (-88.2, 42.0, -87.8, 42.3)
-    assert [json.loads(f)["properties"]["faa_id"] for f in overlays.airport_features(
-        nasr / "APT_BASE.csv", None, None, north_of_ohare)] == ["7IL4"]
+    assert [
+        json.loads(f)["properties"]["faa_id"] for f in overlays.airport_features(nasr / "APT_BASE.csv", None, None, north_of_ohare)
+    ] == ["7IL4"]
 
 
 # --- The archive, with tippecanoe ------------------------------------------------
@@ -322,16 +535,16 @@ def built(sources, tmp_path_factory):
 
 
 def _tile(lon: float, lat: float, z: int) -> tuple[int, int]:
-    n = 2 ** z
-    return (int((lon + 180) / 360 * n),
-            int((1 - math.asinh(math.tan(math.radians(lat))) / math.pi) / 2 * n))
+    n = 2**z
+    return (int((lon + 180) / 360 * n), int((1 - math.asinh(math.tan(math.radians(lat))) / math.pi) / 2 * n))
 
 
 def _tile_bounds(z: int, x: int, y: int) -> tuple[float, float, float, float]:
-    n = 2 ** z
+    n = 2**z
 
     def lat(row):
         return math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * row / n))))
+
     return x / n * 360 - 180, lat(y + 1), (x + 1) / n * 360 - 180, lat(y)
 
 
@@ -351,7 +564,7 @@ def test_the_archive_is_pmtiles_of_vector_tiles_with_its_layers_and_fields(built
     meta_at, meta_len = struct.unpack_from("<QQ", data, 24)
     internal, tile_compression, tile_type, min_zoom, max_zoom = struct.unpack_from("<BBBBB", data, 97)
     assert (tile_type, min_zoom, max_zoom) == (1, 4, 12)  # 1: Mapbox vector tiles
-    raw = data[meta_at:meta_at + meta_len]
+    raw = data[meta_at : meta_at + meta_len]
     meta = json.loads(gzip.decompress(raw) if internal == 2 else raw)
     layers = {layer["id"]: layer for layer in meta["vector_layers"]}
     assert set(layers) == set(vector_tiles.LAYERS)
@@ -367,8 +580,13 @@ def test_the_archive_is_pmtiles_of_vector_tiles_with_its_layers_and_fields(built
     pack, nasr = sources
     assert {layer["name"]: layer["features"] for layer in index["layers"]} == {
         "airspace": len(list(overlays.airspace_features(pack, BBOX))),
-        "airspace_labels": len(list(overlays.airspace_label_features(pack, BBOX))), "special_use": 1, "airports": 4,
-        "navaids": 2, "fixes": 4, "runways": 4}
+        "airspace_labels": len(list(overlays.airspace_label_features(pack, BBOX))),
+        "special_use": 1,
+        "airports": 4,
+        "navaids": 2,
+        "fixes": 4,
+        "runways": 4,
+    }
 
 
 @NEEDS_TIPPECANOE
@@ -382,8 +600,12 @@ def test_each_feature_starts_at_its_zoom(built, sources):
     def anywhere(z: int) -> set:
         """Each airspace's LOCAL_TYPE in any tile of the cut at zoom z."""
         (x0, y0), (x1, y1) = _tile(BBOX[0], BBOX[3], z), _tile(BBOX[2], BBOX[1], z)
-        return {f["properties"]["local_type"] for x in range(x0, x1 + 1) for y in range(y0, y1 + 1)
-                for f in _decode(path, z, x, y).get("airspace", [])}
+        return {
+            f["properties"]["local_type"]
+            for x in range(x0, x1 + 1)
+            for y in range(y0, y1 + 1)
+            for f in _decode(path, z, x, y).get("airspace", [])
+        }
 
     starts = {}
     for line in overlays.airspace_features(pack, BBOX):
@@ -446,8 +668,10 @@ def test_the_class_b_is_drawn_within_tolerance_of_the_faas_line(built, sources):
             for floor, line in faa.items():
                 mine = _metres(shapely.union_all([g.boundary for g in drawn.get(floor, [])]), lat0)
                 theirs = line.intersection(inner)
-                for points, other in ((shapely.get_coordinates(mine.intersection(inner)), line),
-                                      (shapely.get_coordinates(theirs.segmentize(5.0)), mine)):
+                for points, other in (
+                    (shapely.get_coordinates(mine.intersection(inner)), line),
+                    (shapely.get_coordinates(theirs.segmentize(5.0)), mine),
+                ):
                     if len(points):
                         assert not other.is_empty
                         d = shapely.distance(shapely.points(points), other)
@@ -552,8 +776,11 @@ def test_a_runway_is_drawn_where_nasr_surveys_its_ends(built, sources):
     _, path = built
     _, nasr = sources
     with open(nasr / "APT_RWY_END.csv") as f:
-        surveyed = {row["RWY_END_ID"]: (float(row["LONG_DECIMAL"]), float(row["LAT_DECIMAL"]))
-                    for row in csv.DictReader(f) if row["RWY_ID"] == "10L/28R"}
+        surveyed = {
+            row["RWY_END_ID"]: (float(row["LONG_DECIMAL"]), float(row["LAT_DECIMAL"]))
+            for row in csv.DictReader(f)
+            if row["RWY_ID"] == "10L/28R"
+        }
     assert set(surveyed) == {"10L", "28R"}
     kx, ky = 111_320 * math.cos(math.radians(41.969)), 110_574
 
@@ -561,8 +788,7 @@ def test_a_runway_is_drawn_where_nasr_surveys_its_ends(built, sources):
         return math.hypot((a[0] - b[0]) * kx, (a[1] - b[1]) * ky)
 
     for end_id, at in surveyed.items():
-        drawn = [f for f in _decode(path, 12, *_tile(*at, 12)).get("runways", [])
-                 if f["properties"]["runway"] == "10L/28R"]
+        drawn = [f for f in _decode(path, 12, *_tile(*at, 12)).get("runways", []) if f["properties"]["runway"] == "10L/28R"]
         end = next(f for f in drawn if f["properties"].get("end_id") == end_id)
         assert metres(end["geometry"]["coordinates"], at) <= overlays.TOLERANCE_M
         line = next(f for f in drawn if f["properties"]["part"] == "centreline")["geometry"]["coordinates"]

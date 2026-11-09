@@ -3,10 +3,10 @@ package app.wingtipmaps.android.strip
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.Pilot
-import java.time.ZoneId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.time.ZoneId
 
 /** The strip's rows and words from the planner's legs (StripData): the
  *  figures are the planner's, the order and the formats the web app's. */

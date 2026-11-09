@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { CARD, CARD_WIDE, FLOAT_PX, clampHeight, follow, insetsOf, restingAt, settleSeconds, sheetTakes, speedAt, type Box, type Detents, type Track } from "./engine";
+import {
+  CARD,
+  CARD_WIDE,
+  FLOAT_PX,
+  clampHeight,
+  follow,
+  insetsOf,
+  restingAt,
+  settleSeconds,
+  sheetTakes,
+  speedAt,
+  type Box,
+  type Detents,
+  type Track,
+} from "./engine";
 
 const detents: Detents = { peek: 62, half: 376, full: 820 };
 

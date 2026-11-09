@@ -85,12 +85,7 @@ pub struct Band {
 }
 
 fn rule(visibility_sm: f64, clouds: Option<(f64, f64, f64)>) -> Rule {
-    Rule {
-        visibility_sm,
-        below_ft: clouds.map(|c| c.0),
-        above_ft: clouds.map(|c| c.1),
-        horizontal_ft: clouds.map(|c| c.2),
-    }
+    Rule { visibility_sm, below_ft: clouds.map(|c| c.0), above_ft: clouds.map(|c| c.1), horizontal_ft: clouds.map(|c| c.2) }
 }
 
 /// 91.155(a)'s basic VFR weather minimums for a band of `class` whose
@@ -203,9 +198,9 @@ pub fn equipment(class: char, floor_msl: f64, agl: f64, in_veil: bool, above_bc:
             "A transponder with altitude reporting and ADS-B Out: above a Class B or C, \
              within its lateral limits, to 10,000 ft MSL (91.215(b)(4), 91.225(d)(3)).",
         ),
-        _ if in_veil && floor_msl < TEN_THOUSAND_FT => Some(
-            "A transponder with altitude reporting and ADS-B Out: inside a 30 nm Mode C veil (91.215(b)(2), 91.225(d)(2)).",
-        ),
+        _ if in_veil && floor_msl < TEN_THOUSAND_FT => {
+            Some("A transponder with altitude reporting and ADS-B Out: inside a 30 nm Mode C veil (91.215(b)(2), 91.225(d)(2)).")
+        }
         _ => None,
     }
 }

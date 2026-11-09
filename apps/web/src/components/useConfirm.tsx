@@ -30,8 +30,19 @@ export function useConfirm({ title, description, confirmLabel, destructive, onCo
   const [open, setOpen] = useState(false);
   const dialog = (
     <SheetDialog
-      open={open} onOpenChange={setOpen} alert title={title} description={description}
-      action={{ label: confirmLabel, destructive, onClick: () => { setOpen(false); onConfirm(); } }}
+      open={open}
+      onOpenChange={setOpen}
+      alert
+      title={title}
+      description={description}
+      action={{
+        label: confirmLabel,
+        destructive,
+        onClick: () => {
+          setOpen(false);
+          onConfirm();
+        },
+      }}
     />
   );
   return [() => setOpen(true), dialog];

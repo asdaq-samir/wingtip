@@ -3,6 +3,7 @@ planner's OpenAPI document and the engine's contract, and the rule tools
 are the contract's tagged rules, whole: CI's check that the committed
 output matches its sources (run here, so scripts/dev/check.sh assistant
 runs it too)."""
+
 import json
 import subprocess
 import sys
@@ -15,8 +16,7 @@ CONTRACT = json.loads((ROOT / "engine/contract/engine.schema.json").read_text())
 
 
 def test_the_committed_generated_code_is_what_its_sources_make():
-    run = subprocess.run([sys.executable, str(ROOT / "scripts/build/assistant_client.py"), "--check"],
-                         capture_output=True, text=True)
+    run = subprocess.run([sys.executable, str(ROOT / "scripts/build/assistant_client.py"), "--check"], capture_output=True, text=True)
     assert run.returncode == 0, run.stdout + run.stderr
 
 

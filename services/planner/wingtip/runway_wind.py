@@ -13,6 +13,7 @@ wingtip_native.call), the very code the web app (lib/wind, lib/pattern) and
 the phones (wt_call) ask; these keep their names and dicts and only carry
 them across.
 """
+
 import json
 
 import wingtip_native
@@ -29,8 +30,7 @@ def end_heading_true_deg(ident: str | None, heading_true_deg: float | None, vari
     """A runway end's true heading: the table's, or its number's magnetic
     heading turned true (variation east positive). None where it has
     neither."""
-    return _ask("runway_end_heading", ident=ident, heading_true_deg=_ends([(ident, heading_true_deg)])[0][1],
-                variation_deg=variation_deg)
+    return _ask("runway_end_heading", ident=ident, heading_true_deg=_ends([(ident, heading_true_deg)])[0][1], variation_deg=variation_deg)
 
 
 def _ends(ends: list) -> list:
@@ -41,9 +41,16 @@ def _ends(ends: list) -> list:
 def _slim(runways: list) -> list:
     """The runways as the engine reads them (pattern.with_traffic's), and
     nothing else of them."""
-    return [{"closed": bool(r.get("closed")), "surface": r.get("surface"), "length_ft": r.get("length_ft"), "wind": r.get("wind") or None,
-             "runway_ends": [{"ident": e.get("ident"), "heading_true_deg": e.get("heading_true_deg")} for e in r.get("runway_ends") or []]}
-            for r in runways]
+    return [
+        {
+            "closed": bool(r.get("closed")),
+            "surface": r.get("surface"),
+            "length_ft": r.get("length_ft"),
+            "wind": r.get("wind") or None,
+            "runway_ends": [{"ident": e.get("ident"), "heading_true_deg": e.get("heading_true_deg")} for e in r.get("runway_ends") or []],
+        }
+        for r in runways
+    ]
 
 
 def _report(metar: dict | None) -> dict | None:
@@ -55,8 +62,13 @@ def with_winds(runways: list, metar: dict | None, lat: float, lon: float, recent
     the end it favours (`wind`, favoured_end), at a field at (lat, lon);
     `recent`, the field's last wind, for a calm one: the one runway it
     favoured most is the one in use."""
-    winds = _ask("runway_with_winds", runways=[{"end_headings": _ends(r.get("end_headings", []))} for r in runways],
-                 metar=_report(metar), variation_deg=magnetic_variation_deg(lat, lon), recent=recent or None)
+    winds = _ask(
+        "runway_with_winds",
+        runways=[{"end_headings": _ends(r.get("end_headings", []))} for r in runways],
+        metar=_report(metar),
+        variation_deg=magnetic_variation_deg(lat, lon),
+        recent=recent or None,
+    )
     return [{**r, "wind": w} for r, w in zip(runways, winds)]
 
 

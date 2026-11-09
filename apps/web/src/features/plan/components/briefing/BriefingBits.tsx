@@ -52,5 +52,9 @@ export function Flag({ finding, testId, children }: { finding: "stop" | "caution
 
 /** A section's line while what it shows is still coming, or failed. */
 export function Pending({ children }: { children: ReactNode }) {
-  return <p className="text-muted-foreground" role="status">{children}</p>;
+  return (
+    <p className="text-muted-foreground" role="status">
+      {children}
+    </p>
+  );
 }

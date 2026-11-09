@@ -22,22 +22,60 @@ export default function ClearancePhoto({ onRead }: { onRead: (said: string) => v
   return (
     <div className="flex flex-col gap-2" data-testid="clearance-photo">
       <input
-        ref={input} type="file" accept="image/*" capture="environment" className="hidden" data-testid="clearance-photo-file"
-        onChange={e => { const f = e.target.files?.[0]; if (f) reading.mutate(f); e.target.value = ""; }}
+        ref={input}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        data-testid="clearance-photo-file"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) reading.mutate(f);
+          e.target.value = "";
+        }}
       />
-      <Button variant="ghost" size="sm" className="self-start text-tint" onClick={() => input.current?.click()} disabled={reading.isPending}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="self-start text-tint"
+        onClick={() => input.current?.click()}
+        disabled={reading.isPending}
         data-testid="clearance-photo-take"
       >
         {reading.isPending ? <Spinner aria-hidden /> : <Camera aria-hidden="true" />} From a Photo
       </Button>
-      {reading.isPending && <p role="status" className={cn("text-muted-foreground", TEXT.detail)}>Reading the note…</p>}
-      {reading.error && <p role="alert" className={cn(FINDING_TONE.stop, TEXT.detail)}>The note could not be read: {reading.error.message}</p>}
-      {reading.data?.unreadable && <p role="alert" className={cn(FINDING_TONE.caution, TEXT.detail)}>{reading.data.unreadable}</p>}
+      {reading.isPending && (
+        <p role="status" className={cn("text-muted-foreground", TEXT.detail)}>
+          Reading the note…
+        </p>
+      )}
+      {reading.error && (
+        <p role="alert" className={cn(FINDING_TONE.stop, TEXT.detail)}>
+          The note could not be read: {reading.error.message}
+        </p>
+      )}
+      {reading.data?.unreadable && (
+        <p role="alert" className={cn(FINDING_TONE.caution, TEXT.detail)}>
+          {reading.data.unreadable}
+        </p>
+      )}
       {note && (
         <div className="flex flex-col gap-1.5">
-          <pre className={cn("whitespace-pre-wrap rounded-md bg-muted p-2 font-mono", TEXT.detail)} aria-label="The note as written">{note.written}</pre>
-          <p className={TEXT.detail} data-testid="clearance-photo-said">{note.said}</p>
-          <Button size="sm" className="self-start" onClick={() => { onRead(note.said); reading.reset(); }} data-testid="clearance-photo-use">
+          <pre className={cn("whitespace-pre-wrap rounded-md bg-muted p-2 font-mono", TEXT.detail)} aria-label="The note as written">
+            {note.written}
+          </pre>
+          <p className={TEXT.detail} data-testid="clearance-photo-said">
+            {note.said}
+          </p>
+          <Button
+            size="sm"
+            className="self-start"
+            onClick={() => {
+              onRead(note.said);
+              reading.reset();
+            }}
+            data-testid="clearance-photo-use"
+          >
             Use It
           </Button>
         </div>

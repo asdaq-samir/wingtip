@@ -47,7 +47,9 @@ pub struct Candidate {
 /// spacing allows. `length_nm`, a hop's own length, keeps only those
 /// NEAR_A_STOP_NM in from both its ends. Ties go to the nearer along the
 /// route, so the answer does not hang on the order the candidates came in.
-pub fn select(candidates: &[Candidate], min_spacing_nm: f64, max_count: Option<usize>, min_score: Option<f64>, length_nm: Option<f64>) -> Vec<usize> {
+pub fn select(
+    candidates: &[Candidate], min_spacing_nm: f64, max_count: Option<usize>, min_score: Option<f64>, length_nm: Option<f64>,
+) -> Vec<usize> {
     let mut usable: Vec<(usize, f64, f64)> = candidates
         .iter()
         .enumerate()

@@ -25,7 +25,7 @@ describe("a clearance read back", () => {
   test("the clearance's six parts, and the lines for a read back", () => {
     const clearance = readClearance(fixture.cleared);
     expect(clearanceParts(clearance)).toEqual(["limit", "route", "altitude", "expect", "frequency", "squawk"]);
-    const partly = fixture.cases.find(c => c.name.startsWith("an altitude said differently"))!;
+    const partly = fixture.cases.find((c) => c.name.startsWith("an altitude said differently"))!;
     expect(readbackLines(clearance, readbackCheck(fixture.cleared, partly.said))).toEqual([
       { ok: true, words: "Limit, route, expected altitude and frequency read back" },
       { ok: false, words: "Altitude: 4,000 ft said, 5,000 ft cleared" },

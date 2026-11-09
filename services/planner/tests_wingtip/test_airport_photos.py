@@ -1,5 +1,6 @@
 """wingtip.airport_photos: an airport's aerial from the USGS and its photo from
 the ground from Wikipedia."""
+
 import json
 
 import pytest

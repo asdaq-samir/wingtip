@@ -42,10 +42,16 @@ class AppleNativeSignInControllerTest {
     }
 
     private static Jwt token(String audience) {
-        return Jwt.withTokenValue("apple-token").header("alg", "RS256")
-                .issuer("https://appleid.apple.com").audience(List.of(audience)).subject("apple-sub-1")
-                .claim("email", "pilot@example.com").claim("email_verified", "true")
-                .issuedAt(Instant.now()).expiresAt(Instant.now().plusSeconds(600)).build();
+        return Jwt.withTokenValue("apple-token")
+                .header("alg", "RS256")
+                .issuer("https://appleid.apple.com")
+                .audience(List.of(audience))
+                .subject("apple-sub-1")
+                .claim("email", "pilot@example.com")
+                .claim("email_verified", "true")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(600))
+                .build();
     }
 
     @Test
@@ -56,12 +62,15 @@ class AppleNativeSignInControllerTest {
         JwtDecoder decoder = value -> token("app.wingtipmaps.ios");
         MockHttpServletRequest request = new MockHttpServletRequest();
 
-        var answer = new AppleNativeSignInController(pilots, decoder).signIn(
-                new AppleNativeSignInController.AppleToken("apple-token"), request, new MockHttpServletResponse());
+        var answer = new AppleNativeSignInController(pilots, decoder)
+                .signIn(
+                        new AppleNativeSignInController.AppleToken("apple-token"),
+                        request,
+                        new MockHttpServletResponse());
 
         assertThat(answer.getStatusCode().value()).isEqualTo(200);
-        SecurityContext context = (SecurityContext) request.getSession().getAttribute(
-                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        SecurityContext context = (SecurityContext)
+                request.getSession().getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
         OAuth2AuthenticationToken signedIn = (OAuth2AuthenticationToken) context.getAuthentication();
         assertThat(signedIn.getAuthorizedClientRegistrationId()).isEqualTo("apple");
         assertThat(signedIn.getName()).isEqualTo("apple-sub-1");
@@ -73,8 +82,8 @@ class AppleNativeSignInControllerTest {
             throw new BadJwtException("signature");
         };
         MockHttpServletRequest request = new MockHttpServletRequest();
-        var answer = new AppleNativeSignInController(mock(PilotService.class), decoder).signIn(
-                new AppleNativeSignInController.AppleToken("forged"), request, new MockHttpServletResponse());
+        var answer = new AppleNativeSignInController(mock(PilotService.class), decoder)
+                .signIn(new AppleNativeSignInController.AppleToken("forged"), request, new MockHttpServletResponse());
         assertThat(answer.getStatusCode().value()).isEqualTo(401);
         assertThat(request.getSession(false)).isNull();
     }
@@ -82,18 +91,23 @@ class AppleNativeSignInControllerTest {
     @Test
     void anUnverifiedAddressSignsNobodyIn() {
         PilotService pilots = mock(PilotService.class);
-        given(pilots.fromOidcUser(any(OidcUser.class), eq("apple"))).willThrow(new UnverifiedEmailException("pilot@example.com"));
-        var answer = new AppleNativeSignInController(pilots, value -> token("app.wingtipmaps.ios")).signIn(
-                new AppleNativeSignInController.AppleToken("apple-token"), new MockHttpServletRequest(),
-                new MockHttpServletResponse());
+        given(pilots.fromOidcUser(any(OidcUser.class), eq("apple")))
+                .willThrow(new UnverifiedEmailException("pilot@example.com"));
+        var answer = new AppleNativeSignInController(pilots, value -> token("app.wingtipmaps.ios"))
+                .signIn(
+                        new AppleNativeSignInController.AppleToken("apple-token"),
+                        new MockHttpServletRequest(),
+                        new MockHttpServletResponse());
         assertThat(answer.getStatusCode().value()).isEqualTo(401);
     }
 
     @Test
     void withNoAppThereIsNoNativeSignIn() {
-        var answer = new AppleNativeSignInController(mock(PilotService.class), (JwtDecoder) null).signIn(
-                new AppleNativeSignInController.AppleToken("apple-token"), new MockHttpServletRequest(),
-                new MockHttpServletResponse());
+        var answer = new AppleNativeSignInController(mock(PilotService.class), (JwtDecoder) null)
+                .signIn(
+                        new AppleNativeSignInController.AppleToken("apple-token"),
+                        new MockHttpServletRequest(),
+                        new MockHttpServletResponse());
         assertThat(answer.getStatusCode().value()).isEqualTo(404);
     }
 

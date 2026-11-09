@@ -1,5 +1,6 @@
 """The committed openapi.json is what apps/web/ builds its types from, so it
 has to be the document this code actually serves."""
+
 from app.openapi import OPENAPI_PATH, render
 
 

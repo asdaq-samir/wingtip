@@ -23,7 +23,9 @@ function Stat({ label, value, finding }: { label: string; value: ReactNode; find
   return (
     <div className="min-w-0 flex-1">
       <div className={cn("truncate text-muted-foreground uppercase tracking-wide", TEXT.caption)}>{label}</div>
-      <div className={cn("truncate font-semibold tabular-nums", TEXT.heading, finding && finding !== "ok" && FINDING_TONE[finding])}>{value}</div>
+      <div className={cn("truncate font-semibold tabular-nums", TEXT.heading, finding && finding !== "ok" && FINDING_TONE[finding])}>
+        {value}
+      </div>
     </div>
   );
 }
@@ -31,7 +33,7 @@ function Stat({ label, value, finding }: { label: string; value: ReactNode; find
 const DASH = "—";
 /** Whom a frequency is for, in a word over it: "Campbell traffic" is the
  *  field's CTAF, "Duluth ATIS" its ATIS. */
-const radioLabel = (to: string) => (/traffic$/i.test(to) ? "CTAF" : to.split(" ").at(-1) ?? to);
+const radioLabel = (to: string) => (/traffic$/i.test(to) ? "CTAF" : (to.split(" ").at(-1) ?? to));
 const ft = (n: number | null) => (n == null ? DASH : `${grouped(n)}`);
 const time = (iso: string | null) => (iso ? clockTime(new Date(iso)) : null);
 /** The verdict's wash: the Brief's one alarm. */
@@ -45,7 +47,17 @@ const CARD = "rounded-xl bg-card shadow-[0_0_0_0.5px_var(--border)]";
  *  the verdict, the cards and their figures all red the Brief had three
  *  reds for one finding, and the banner, the one to act on, no longer
  *  stood out (the design review, 2026-10-28, the owner's "I want all"). */
-function Card({ tab, label, ident, category, at, finding, stats, note, onOpen }: {
+function Card({
+  tab,
+  label,
+  ident,
+  category,
+  at,
+  finding,
+  stats,
+  note,
+  onOpen,
+}: {
   tab: PanelTab;
   label: string;
   ident?: string;
@@ -59,7 +71,10 @@ function Card({ tab, label, ident, category, at, finding, stats, note, onOpen }:
   const marked = finding === "stop" || finding === "caution";
   return (
     <button
-      type="button" onClick={() => onOpen(tab)} data-testid={`brief-glance-${tab}`} data-finding={finding}
+      type="button"
+      onClick={() => onOpen(tab)}
+      data-testid={`brief-glance-${tab}`}
+      data-finding={finding}
       className={cn("flex w-full flex-col gap-1.5 px-3.5 py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring", CARD)}
     >
       <span className="flex w-full items-center gap-2">
@@ -78,18 +93,43 @@ function Card({ tab, label, ident, category, at, finding, stats, note, onOpen }:
 
 /** A field's card: its runway, the distance over 50 ft, and its first
  *  frequency; the runway's length and the wind under. */
-function FieldCard({ tab, label, field, landing, onOpen }: { tab: PanelTab; label: string; field: FieldGlance; landing: boolean; onOpen: (tab: PanelTab) => void }) {
+function FieldCard({
+  tab,
+  label,
+  field,
+  landing,
+  onOpen,
+}: {
+  tab: PanelTab;
+  label: string;
+  field: FieldGlance;
+  landing: boolean;
+  onOpen: (tab: PanelTab) => void;
+}) {
   return (
     <Card
-      tab={tab} label={label} ident={field.ident} category={field.category} at={time(field.at)} finding={field.finding} onOpen={onOpen}
-      stats={(
+      tab={tab}
+      label={label}
+      ident={field.ident}
+      category={field.category}
+      at={time(field.at)}
+      finding={field.finding}
+      onOpen={onOpen}
+      stats={
         <>
           <Stat label="Runway" value={field.runway ?? DASH} />
-          <Stat label={landing ? "Landing 50 ft" : "Takeoff 50 ft"} value={ft(field.overFiftyFt)} finding={field.finding === "stop" ? "stop" : undefined} />
+          <Stat
+            label={landing ? "Landing 50 ft" : "Takeoff 50 ft"}
+            value={ft(field.overFiftyFt)}
+            finding={field.finding === "stop" ? "stop" : undefined}
+          />
           <Stat label={field.radio ? radioLabel(field.radio.to) : "Radio"} value={field.radio ? mhzText(field.radio.mhz) : DASH} />
         </>
-      )}
-      note={[field.runwayFt != null && `Of ${grouped(field.runwayFt)} ft`, field.wind && `wind ${field.wind}`].filter(Boolean).join(" · ") || undefined}
+      }
+      note={
+        [field.runwayFt != null && `Of ${grouped(field.runwayFt)} ft`, field.wind && `wind ${field.wind}`].filter(Boolean).join(" · ") ||
+        undefined
+      }
     />
   );
 }
@@ -105,20 +145,26 @@ function Line({ line, onOpen }: { line: GlanceLine; onOpen: (tab: PanelTab) => v
     <Collapsible className={CARD} data-testid={`brief-line-${line.key}`} data-finding={line.finding}>
       <CollapsibleTrigger className={cn(TRIGGER, TEXT.row)}>
         <FindingIcon finding={line.finding} className="mt-0.5 size-5 shrink-0" />
-        <span className="min-w-0 flex-1 font-medium" data-testid="brief-line-words">{line.line}</span>
+        <span className="min-w-0 flex-1 font-medium" data-testid="brief-line-words">
+          {line.line}
+        </span>
         <ChevronRight className="mt-0.5 size-5 shrink-0 text-tint transition-transform group-data-[state=open]:rotate-90" aria-hidden />
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-2 px-3.5 pb-3" data-testid="brief-line-why">
         <p className={cn("rounded-lg bg-muted px-3 py-2", TEXT.detail)}>
-          <span className="font-semibold">Why it matters: </span>{line.why} <span className="text-muted-foreground">({line.cite})</span>
+          <span className="font-semibold">Why it matters: </span>
+          {line.why} <span className="text-muted-foreground">({line.cite})</span>
         </p>
         {line.raw.length > 0 && (
           <div className={cn("space-y-1 px-1 font-mono whitespace-pre-wrap text-muted-foreground", TEXT.note)} data-testid="brief-line-raw">
-            {line.raw.map(r => <p key={r}>{r}</p>)}
+            {line.raw.map((r) => (
+              <p key={r}>{r}</p>
+            ))}
           </div>
         )}
         <button
-          type="button" onClick={() => onOpen(line.tab)}
+          type="button"
+          onClick={() => onOpen(line.tab)}
           className={cn("relative ml-1 font-semibold text-tint after:absolute after:-inset-x-2 after:-inset-y-3", TEXT.detail)}
         >
           See it in full
@@ -137,7 +183,11 @@ function DataWarning() {
   const line = dataWarning(useDataCycles());
   if (!line) return null;
   return (
-    <div className={cn("flex items-center gap-2.5 rounded-xl bg-caution-wash px-3.5 py-2.5", TEXT.detail)} role="status" data-testid="brief-data-out-of-date">
+    <div
+      className={cn("flex items-center gap-2.5 rounded-xl bg-caution-wash px-3.5 py-2.5", TEXT.detail)}
+      role="status"
+      data-testid="brief-data-out-of-date"
+    >
       <FindingIcon finding="caution" className="size-5 shrink-0" />
       <span className={cn("min-w-0 flex-1", FINDING_TONE.caution)}>{line}</span>
     </div>
@@ -150,10 +200,13 @@ function DataWarning() {
 function InstructorNote() {
   const { data: pilot } = useQuery(pilotQuery);
   const { data: training } = useQuery({ ...trainingQuery, enabled: !!pilot });
-  const link = training?.instructors.find(l => l.accepted);
+  const link = training?.instructors.find((l) => l.accepted);
   if (!link) return null;
   return (
-    <div className={cn("flex items-center gap-2.5 rounded-xl bg-primary/10 px-3.5 py-2.5 text-foreground", TEXT.detail)} data-testid="brief-instructor">
+    <div
+      className={cn("flex items-center gap-2.5 rounded-xl bg-primary/10 px-3.5 py-2.5 text-foreground", TEXT.detail)}
+      data-testid="brief-instructor"
+    >
       <GraduationCap className="size-5 shrink-0 text-tint" aria-hidden />
       <span>Your instructor, {link.name ?? link.email}, sees the flights you put to them and can sign off from their phone.</span>
     </div>
@@ -172,7 +225,12 @@ function InstructorNote() {
  * its page. Stacked, not swiped: a swipe only ever goes back (the owner's
  * rule), and a pager showed one part at a time, as the tabs did.
  */
-export default function BriefGlance({ onOpen, before: first, afterVerdict, after }: {
+export default function BriefGlance({
+  onOpen,
+  before: first,
+  afterVerdict,
+  after,
+}: {
   onOpen: (tab: PanelTab) => void;
   /** Under the verdict and its lines, then under that, and after the
    *  cards: the assistant's field, the words and the watch
@@ -181,8 +239,8 @@ export default function BriefGlance({ onOpen, before: first, afterVerdict, after
   afterVerdict?: ReactNode;
   after?: ReactNode;
 }) {
-  const glance = useGlance(g => g.glance);
-  const items = useVerdict(v => v.items);
+  const glance = useGlance((g) => g.glance);
+  const items = useVerdict((v) => v.items);
   const verdict = items.length ? verdictLine(items) : null;
   const lines = items.length ? glanceLines(items, glance) : null;
   const before = glance?.before;
@@ -197,13 +255,17 @@ export default function BriefGlance({ onOpen, before: first, afterVerdict, after
       {verdict && (
         <div
           className={cn("flex items-center gap-2.5 rounded-xl px-3.5 py-2.5", MARK_TINT[verdict.finding] ?? "bg-muted")}
-          role="status" data-testid="brief-verdict" data-finding={verdict.finding}
+          role="status"
+          data-testid="brief-verdict"
+          data-finding={verdict.finding}
         >
           <FindingIcon finding={verdict.finding} className="size-6" />
           <span className={cn("font-semibold", TEXT.row, FINDING_TONE[verdict.finding])}>{verdict.words}</span>
         </div>
       )}
-      {lines?.act.map(line => <Line key={line.key} line={line} onOpen={onOpen} />)}
+      {lines?.act.map((line) => (
+        <Line key={line.key} line={line} onOpen={onOpen} />
+      ))}
       {/* The verdict and its lines first, the assistant's field straight
           under them, at the owner's word ("Verdict first", 2026-11-08):
           the Brief opened on Ask, the verdict fourth and at 19.65 px half
@@ -214,17 +276,27 @@ export default function BriefGlance({ onOpen, before: first, afterVerdict, after
         <Collapsible className={CARD} data-testid="brief-rest" data-finding={lines.rest.finding}>
           <CollapsibleTrigger className={cn(TRIGGER, "items-center", TEXT.row)}>
             <FindingIcon finding={lines.rest.finding} className="size-5 shrink-0" />
-            <span className="min-w-0 flex-1" data-testid="brief-rest-words">{lines.rest.line}</span>
+            <span className="min-w-0 flex-1" data-testid="brief-rest-words">
+              {lines.rest.line}
+            </span>
             <ChevronRight className="size-5 shrink-0 text-tint transition-transform group-data-[state=open]:rotate-90" aria-hidden />
           </CollapsibleTrigger>
           <CollapsibleContent className="px-3.5 pb-2">
-            {lines.rest.items.map(i => (
+            {lines.rest.items.map((i) => (
               <button
-                key={i.key} type="button" onClick={() => onOpen(i.tab)} data-testid={`brief-rest-${i.key}`}
-                className={cn("flex w-full items-start gap-2 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring", TEXT.detail)}
+                key={i.key}
+                type="button"
+                onClick={() => onOpen(i.tab)}
+                data-testid={`brief-rest-${i.key}`}
+                className={cn(
+                  "flex w-full items-start gap-2 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  TEXT.detail,
+                )}
               >
                 <FindingIcon finding={i.finding} className="mt-0.5 size-4 shrink-0" />
-                <span className="min-w-0 flex-1"><span className="font-medium">{i.label}</span> · {i.detail}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="font-medium">{i.label}</span> · {i.detail}
+                </span>
               </button>
             ))}
           </CollapsibleContent>
@@ -232,32 +304,61 @@ export default function BriefGlance({ onOpen, before: first, afterVerdict, after
       )}
       <DataWarning />
       <Card
-        tab="preflight" label="Before you go" finding={before?.finding ?? "pending"} onOpen={onOpen}
-        stats={(
+        tab="preflight"
+        label="Before you go"
+        finding={before?.finding ?? "pending"}
+        onOpen={onOpen}
+        stats={
           <>
-            <Stat label="Risk" value={before?.risk ? `${before.risk.score} · ${before.risk.level === "high" ? "High" : before.risk.level === "caution" ? "Caution" : "Low"}` : DASH}
-              finding={before?.risk ? ({ high: "stop", caution: "caution", low: "ok" } as const)[before.risk.level] : undefined} />
+            <Stat
+              label="Risk"
+              value={
+                before?.risk
+                  ? `${before.risk.score} · ${before.risk.level === "high" ? "High" : before.risk.level === "caution" ? "Caution" : "Low"}`
+                  : DASH
+              }
+              finding={before?.risk ? ({ high: "stop", caution: "caution", low: "ok" } as const)[before.risk.level] : undefined}
+            />
             {airplane && (
               <>
-                <Stat label="Fuel spare" value={before?.spareGal != null ? `${before.spareGal.toFixed(1)} gal` : DASH} finding={before?.spareGal != null && before.spareGal < 0 ? "stop" : undefined} />
-                <Stat label="W&B" value={before?.balance ? (before.balance.within ? "Within" : "Outside") : DASH} finding={before?.balance && !before.balance.within ? "stop" : undefined} />
+                <Stat
+                  label="Fuel spare"
+                  value={before?.spareGal != null ? `${before.spareGal.toFixed(1)} gal` : DASH}
+                  finding={before?.spareGal != null && before.spareGal < 0 ? "stop" : undefined}
+                />
+                <Stat
+                  label="W&B"
+                  value={before?.balance ? (before.balance.within ? "Within" : "Outside") : DASH}
+                  finding={before?.balance && !before.balance.within ? "stop" : undefined}
+                />
               </>
             )}
           </>
-        )}
-        note={airplane ? before?.balance?.problem ?? undefined : undefined}
+        }
+        note={airplane ? (before?.balance?.problem ?? undefined) : undefined}
       />
       {glance?.depart && <FieldCard tab="depart" label="Depart" field={glance.depart} landing={false} onOpen={onOpen} />}
       <Card
-        tab="enroute" label="En route" finding={enroute?.finding ?? "pending"} onOpen={onOpen}
+        tab="enroute"
+        label="En route"
+        finding={enroute?.finding ?? "pending"}
+        onOpen={onOpen}
         at={enroute?.eteMin != null ? duration(enroute.eteMin) : null}
-        stats={(
+        stats={
           <>
-            <Stat label="Ceiling" value={enroute?.ceilingFt != null ? `${grouped(enroute.ceilingFt)} ft` : "None"} finding={enroute?.finding === "stop" && enroute.ceilingFt != null ? "stop" : undefined} />
-            <Stat label="Visibility" value={enroute?.visibilitySm != null ? `${enroute.visibilitySm} sm` : DASH} finding={enroute?.finding === "stop" && enroute.visibilitySm != null ? "stop" : undefined} />
+            <Stat
+              label="Ceiling"
+              value={enroute?.ceilingFt != null ? `${grouped(enroute.ceilingFt)} ft` : "None"}
+              finding={enroute?.finding === "stop" && enroute.ceilingFt != null ? "stop" : undefined}
+            />
+            <Stat
+              label="Visibility"
+              value={enroute?.visibilitySm != null ? `${enroute.visibilitySm} sm` : DASH}
+              finding={enroute?.finding === "stop" && enroute.visibilitySm != null ? "stop" : undefined}
+            />
             <Stat label="Wind aloft" value={enroute?.wind ?? DASH} />
           </>
-        )}
+        }
         note={enroute?.line ?? undefined}
       />
       {glance?.arrive && <FieldCard tab="arrive" label="Arrive" field={glance.arrive} landing onOpen={onOpen} />}

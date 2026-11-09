@@ -44,6 +44,7 @@ two, held none of those commits whole. They are the tile renderer's own
 work. A split is worth another look when a change arrives here for a
 reason other than rendering, serving or keeping up with the cycle.
 """
+
 from __future__ import annotations
 
 import contextlib
@@ -124,10 +125,10 @@ Box = tuple[float, float, float, float]  # (west, south, east, north), degrees
 
 @dataclass(frozen=True)
 class ChartKind:
-    key: str                 # what the API and the tile cache call it
-    label: str               # what the map's layer picker calls it
-    zip_url: str             # the FAA's URL template for one chart's zip, with {cycle} and {name}
-    raster_suffixes: tuple   # which members of the zip are the chart (a TAC zip also carries the flyway planning chart)
+    key: str  # what the API and the tile cache call it
+    label: str  # what the map's layer picker calls it
+    zip_url: str  # the FAA's URL template for one chart's zip, with {cycle} and {name}
+    raster_suffixes: tuple  # which members of the zip are the chart (a TAC zip also carries the flyway planning chart)
     min_zoom: int
     max_zoom: int
     # Typical collar widths (west, south, east, north) in degrees, for
@@ -155,20 +156,31 @@ class ChartKind:
 
 
 SECTIONAL = ChartKind(
-    "sec", "Sectional", FAA_VISUAL_ZIP_URL.replace("{folder}", "sectional-files"), (" SEC.tif", " VFR Chart.tif"),
-    VFR_SECTIONAL_MIN_ZOOM, VFR_SECTIONAL_MAX_ZOOM, (1.1, 0.2, 0.35, 0.55), masked_lines=True,
+    "sec",
+    "Sectional",
+    FAA_VISUAL_ZIP_URL.replace("{folder}", "sectional-files"),
+    (" SEC.tif", " VFR Chart.tif"),
+    VFR_SECTIONAL_MIN_ZOOM,
+    VFR_SECTIONAL_MAX_ZOOM,
+    (1.1, 0.2, 0.35, 0.55),
+    masked_lines=True,
 )
 TAC = ChartKind(
-    "tac", "Terminal area", FAA_VISUAL_ZIP_URL.replace("{folder}", "tac-files").replace("{name}", "{name}_TAC"),
-    (" TAC.tif",), VFR_TAC_MIN_ZOOM, VFR_TAC_MAX_ZOOM, (0.35, 0.02, 0.35, 0.08), base=False, over=("sec",),
+    "tac",
+    "Terminal area",
+    FAA_VISUAL_ZIP_URL.replace("{folder}", "tac-files").replace("{name}", "{name}_TAC"),
+    (" TAC.tif",),
+    VFR_TAC_MIN_ZOOM,
+    VFR_TAC_MAX_ZOOM,
+    (0.35, 0.02, 0.35, 0.08),
+    base=False,
+    over=("sec",),
 )
 IFR_LOW = ChartKind(
-    "ifr_low", "IFR low", FAA_ENROUTE_ZIP_URL, (".tif",), IFR_LOW_MIN_ZOOM, IFR_LOW_MAX_ZOOM, (0.3, 0.3, 0.3, 0.3),
-    straight_border=True,
+    "ifr_low", "IFR low", FAA_ENROUTE_ZIP_URL, (".tif",), IFR_LOW_MIN_ZOOM, IFR_LOW_MAX_ZOOM, (0.3, 0.3, 0.3, 0.3), straight_border=True
 )
 IFR_HIGH = ChartKind(
-    "ifr_high", "IFR high", FAA_ENROUTE_ZIP_URL, (".tif",), IFR_HIGH_MIN_ZOOM, IFR_HIGH_MAX_ZOOM, (0.3, 0.3, 0.3, 0.3),
-    straight_border=True,
+    "ifr_high", "IFR high", FAA_ENROUTE_ZIP_URL, (".tif",), IFR_HIGH_MIN_ZOOM, IFR_HIGH_MAX_ZOOM, (0.3, 0.3, 0.3, 0.3), straight_border=True
 )
 # The IFR area charts: the enroute charts' own terminal-area sheets
 # (Atlanta, Chicago, Denver ... fourteen of them, two zips), drawn over
@@ -177,8 +189,16 @@ IFR_HIGH = ChartKind(
 # zips: those rasters are georeferenced as strips of their parent
 # sheets, seven and ten degrees across, not as the excerpts they show.
 IFR_AREA = ChartKind(
-    "ifr_area", "IFR area", FAA_ENROUTE_ZIP_URL, (".tif",), IFR_AREA_MIN_ZOOM, IFR_AREA_MAX_ZOOM, (0.2, 0.2, 0.2, 0.2),
-    base=False, over=("ifr_low", "ifr_high"), straight_border=True,
+    "ifr_area",
+    "IFR area",
+    FAA_ENROUTE_ZIP_URL,
+    (".tif",),
+    IFR_AREA_MIN_ZOOM,
+    IFR_AREA_MAX_ZOOM,
+    (0.2, 0.2, 0.2, 0.2),
+    base=False,
+    over=("ifr_low", "ifr_high"),
+    straight_border=True,
 )
 KINDS = {kind.key: kind for kind in (SECTIONAL, TAC, IFR_LOW, IFR_HIGH, IFR_AREA)}
 
@@ -191,9 +211,7 @@ _ZIP_URL_OVERRIDES = {
     ("sec", "Caribbean_2_VFR"): FAA_VISUAL_ZIP_URL.replace("{folder}", "Caribbean"),
     ("tac", "Honolulu_Inset"): FAA_VISUAL_ZIP_URL.replace("{folder}", "sectional-files").replace("{name}", "Hawaiian_Islands"),
 }
-_MEMBER_OVERRIDES = {
-    ("tac", "Honolulu_Inset"): ("Honolulu Inset SEC.tif",),
-}
+_MEMBER_OVERRIDES = {("tac", "Honolulu_Inset"): ("Honolulu Inset SEC.tif",)}
 
 
 def zip_url(kind: ChartKind, name: str, cycle: str) -> str:
@@ -460,10 +478,11 @@ def current_cycle(today: date | None = None, fetch: bool = True) -> str:
 # Tile geometry
 # ---------------------------------------------------------------------------
 
+
 def tile_bbox_3857(x: int, y: int, zoom: int) -> tuple:
     """The (xmin, ymin, xmax, ymax) of one standard tile, in EPSG:3857
     metres."""
-    resolution = 2 * _MERCATOR_ORIGIN_M / (2 ** zoom)
+    resolution = 2 * _MERCATOR_ORIGIN_M / (2**zoom)
     xmin = -_MERCATOR_ORIGIN_M + x * resolution
     ymax = _MERCATOR_ORIGIN_M - y * resolution
     return xmin, ymax - resolution, xmin + resolution, ymax
@@ -484,11 +503,12 @@ def _intersects(a: Box, b: Box) -> bool:
 # Charts on disk
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class Raster:
     path: Path
-    face: Box       # what the renderer draws: the chart, neatline inward
-    envelope: Box   # the whole raster, collar included
+    face: Box  # what the renderer draws: the chart, neatline inward
+    envelope: Box  # the whole raster, collar included
     # A small companion raster, 255 where the sheet is chart and 0
     # where it is collar, for a sheet whose chart area is a rectangle
     # of pixels rather than of latitude and longitude (the IFR enroute
@@ -556,9 +576,13 @@ def _load_ready(directory: Path, kind: ChartKind, name: str, cycle: str) -> Char
     except (OSError, ValueError):
         return None
     rasters = tuple(
-        Raster(path=directory / r["file"], face=tuple(r["face"]), envelope=tuple(r["envelope"]),
-               mask=directory / r["mask"] if r.get("mask") else None,
-               masked_lines=None if r.get("masked_lines") is None else tuple(tuple(b) for b in r["masked_lines"]))
+        Raster(
+            path=directory / r["file"],
+            face=tuple(r["face"]),
+            envelope=tuple(r["envelope"]),
+            mask=directory / r["mask"] if r.get("mask") else None,
+            masked_lines=None if r.get("masked_lines") is None else tuple(tuple(b) for b in r["masked_lines"]),
+        )
         for r in data.get("rasters", [])
     )
     if not rasters or not all(r.path.exists() for r in rasters):
@@ -568,11 +592,18 @@ def _load_ready(directory: Path, kind: ChartKind, name: str, cycle: str) -> Char
 
 def _write_ready(directory: Path, chart: Chart) -> None:
     data = {
-        "name": chart.name, "kind": chart.kind.key, "cycle": chart.cycle, "prepared_at": chart.prepared_at,
+        "name": chart.name,
+        "kind": chart.kind.key,
+        "cycle": chart.cycle,
+        "prepared_at": chart.prepared_at,
         "rasters": [
-            {"file": r.path.name, "face": list(r.face), "envelope": list(r.envelope),
-             "mask": r.mask.name if r.mask else None,
-             "masked_lines": None if r.masked_lines is None else [list(b) for b in r.masked_lines]}
+            {
+                "file": r.path.name,
+                "face": list(r.face),
+                "envelope": list(r.envelope),
+                "mask": r.mask.name if r.mask else None,
+                "masked_lines": None if r.masked_lines is None else [list(b) for b in r.masked_lines],
+            }
             for r in chart.rasters
         ],
     }
@@ -688,10 +719,14 @@ def _download_and_prepare(kind: ChartKind, name: str, cycle: str) -> Chart:
         removed = chart_faces.remove_masked_lines(path, [f for f, _ in parts]) if kind.masked_lines else None
         for part_face, part_envelope in parts:
             rasters.append(Raster(path=path, face=part_face, envelope=part_envelope, mask=mask, masked_lines=removed))
-        log.info("prepared %s in %.0f s: face %s within %s", path.name, time.time() - started,
-                 tuple(round(v, 3) for v in face), tuple(round(v, 3) for v in envelope))
-    chart = Chart(kind=kind, name=name, cycle=cycle, rasters=tuple(rasters),
-                  prepared_at=datetime.now(tz=timezone.utc).isoformat())
+        log.info(
+            "prepared %s in %.0f s: face %s within %s",
+            path.name,
+            time.time() - started,
+            tuple(round(v, 3) for v in face),
+            tuple(round(v, 3) for v in envelope),
+        )
+    chart = Chart(kind=kind, name=name, cycle=cycle, rasters=tuple(rasters), prepared_at=datetime.now(tz=timezone.utc).isoformat())
     _write_ready(directory, chart)
     return chart
 
@@ -711,8 +746,6 @@ def build_overviews(path: Path) -> None:
         if len(ds.overviews(1)) < len(_OVERVIEW_LEVELS):
             ds.build_overviews(_OVERVIEW_LEVELS, Resampling.nearest)
             ds.update_tags(ns="rio_overview", resampling="nearest")
-
-
 
 
 # From how far past the chart's own resolution a tile is drawn smooth
@@ -776,8 +809,9 @@ def _web_mercator():
     return crs
 
 
-def _warp_rgb(path: Path, bbox_3857: tuple, width: int, height: int, centre_lat: float,
-              mask: Path | None = None, face: Box | None = None) -> tuple:
+def _warp_rgb(
+    path: Path, bbox_3857: tuple, width: int, height: int, centre_lat: float, mask: Path | None = None, face: Box | None = None
+) -> tuple:
     """Part of a raster, reprojected to web mercator: (height, width,
     3) RGB and (height, width) float32 coverage, 0 to 1, of how much
     of each pixel the raster actually had (and, given a companion
@@ -828,8 +862,7 @@ def _warp_grid(src, bbox_3857: tuple, w: int, h: int, mask: Path | None) -> tupl
     # No nodata value: with one, GDAL "protects" it by rewriting
     # every source pixel of that index to the next one, and index
     # 0 is the chart's paper. add_alpha gives the mask instead.
-    grid = dict(crs=_web_mercator(), transform=from_bounds(xmin, ymin, xmax, ymax, w, h), width=w, height=h,
-                resampling=Resampling.nearest)
+    grid = dict(crs=_web_mercator(), transform=from_bounds(xmin, ymin, xmax, ymax, w, h), width=w, height=h, resampling=Resampling.nearest)
     with WarpedVRT(src, add_alpha=True, **grid) as vrt:
         rgb = chart_faces.read_rgb(vrt)
         alpha = vrt.read(src.count + 1)
@@ -892,15 +925,14 @@ def _warp_coarse(src, bbox_3857: tuple, width: int, height: int, oversample: int
     # centre: the middle one of an odd block, the middle two by two of
     # an even one (the centre lies between them).
     lo, hi = (oversample - 1) // 2, oversample // 2 + 1
-    block = inside[box[1]:box[3], box[0]:box[2]].reshape(height, oversample, width, oversample)
+    block = inside[box[1] : box[3], box[0] : box[2]].reshape(height, oversample, width, oversample)
     centre = block[:, lo:hi, :, lo:hi].any(axis=(1, 3))
     coverage = np.where(centre, 1.0, np.clip(total, 0.0, 1.0)).astype(np.float32)
     out = np.where((total > 0)[:, :, None], smooth, 0.0)
     return np.clip(out + 0.5, 0, 255).astype(np.uint8), coverage
 
 
-def _warp_smooth(src, bbox_3857: tuple, width: int, height: int, upsample: float, mask: Path | None,
-                 face: Box | None) -> tuple:
+def _warp_smooth(src, bbox_3857: tuple, width: int, height: int, upsample: float, mask: Path | None, face: Box | None) -> tuple:
     """_warp_rgb for a tile finer than the sheet: the indices warped at
     twice the sheet's own resolution, coloured, then resized to the
     tile in RGB with a smooth filter -- the way the FAA's own PDF and
@@ -983,7 +1015,7 @@ def _composite(rgba: np.ndarray, rgb: np.ndarray, coverage: np.ndarray) -> np.nd
     if not touched.any():
         return rgba
     total = old + weight
-    colour = (rgba[:, :, :3].astype(np.float32) * old[:, :, None] + rgb.astype(np.float32) * weight[:, :, None])
+    colour = rgba[:, :, :3].astype(np.float32) * old[:, :, None] + rgb.astype(np.float32) * weight[:, :, None]
     colour = colour / np.maximum(total, 1e-6)[:, :, None]
     rgba[touched, :3] = np.clip(colour[touched] + 0.5, 0, 255).astype(np.uint8)
     rgba[touched, 3] = np.where(total[touched] >= 0.5, 255, total[touched] * 255.0).astype(np.uint8)
@@ -1275,8 +1307,7 @@ def serving_cycle() -> str:
         return _serving_cache["value"]
     pointer = _published_pointer() if CHART_TILES_URL else None
     value = pointer and pointer["cycle"]
-    value = value or next((c for c in _cycles_on_disk(CHART_TILE_CACHE_DIR)
-                           if in_force(c) and pyramid_complete(c, ("sec",))), None)
+    value = value or next((c for c in _cycles_on_disk(CHART_TILE_CACHE_DIR) if in_force(c) and pyramid_complete(c, ("sec",))), None)
     value = value or current_cycle()
     _serving_cache.update(value=value, at=time.time(), pointer=pointer)
     return value
@@ -1301,8 +1332,9 @@ def serving_cycle_of(kind: str) -> str:
     held = _kind_serving.get(kind)
     if held and time.time() - held[1] < _SERVING_TTL_S:
         return held[0]
-    value = next((c for c in _cycles_on_disk(CHART_TILE_CACHE_DIR) if in_force(c) and pyramid_complete(c, (kind,))),
-                 None) or serving_cycle()
+    value = (
+        next((c for c in _cycles_on_disk(CHART_TILE_CACHE_DIR) if in_force(c) and pyramid_complete(c, (kind,))), None) or serving_cycle()
+    )
     _kind_serving[kind] = (value, time.time())
     return value
 
@@ -1349,14 +1381,14 @@ def status() -> dict:
     # lines) was two thirds of the status endpoint's time, and each
     # chart's name, cycle and rasters made up 19 of its 24 KB -- for a
     # console that shows a count per kind.
-    prepared = Counter(
-        ready.parent.parent.name for ready in CHARTS_DIR.glob(f"*/*/*/{_READY}") if ready.parent.parent.name in KINDS
-    )
+    prepared = Counter(ready.parent.parent.name for ready in CHARTS_DIR.glob(f"*/*/*/{_READY}") if ready.parent.parent.name in KINDS)
     serving, current = serving_cycle(), current_cycle(fetch=False)
 
     def described(cycle: str) -> dict:
-        return {key: {**record, "complete": pyramid_complete(cycle, (key,)), "missing": pyramid_missing(cycle, key)}
-                for key, record in pyramid_status(cycle).items()}
+        return {
+            key: {**record, "complete": pyramid_complete(cycle, (key,)), "missing": pyramid_missing(cycle, key)}
+            for key, record in pyramid_status(cycle).items()
+        }
 
     pyramid = described(serving)
     # What the pyramid wrote, not a walk of the cache: counting three
@@ -1365,8 +1397,13 @@ def status() -> dict:
     tiles = sum(p["tiles"] for p in pyramid.values())
     building = described(current) if current != serving else {}
     return {
-        "cycle": serving, "current_cycle": current, "prepared": dict(prepared), "tiles_cached": tiles,
-        "pyramid": pyramid, "building": building, "refresh_running": refresh_running(),
+        "cycle": serving,
+        "current_cycle": current,
+        "prepared": dict(prepared),
+        "tiles_cached": tiles,
+        "pyramid": pyramid,
+        "building": building,
+        "refresh_running": refresh_running(),
     }
 
 
@@ -1420,17 +1457,21 @@ def _redetect(chart: Chart) -> Chart:
         for path in sorted({r.path for r in chart.rasters}):
             envelope, face, mask = chart_faces.detect_face(path, chart.kind)
             for part_face, part_envelope in chart_faces.split_antimeridian(face, envelope):
-                rasters.append(Raster(path=path, face=part_face, envelope=part_envelope, mask=mask,
-                                      masked_lines=removed.get(path)))
-        chart = Chart(kind=chart.kind, name=chart.name, cycle=chart.cycle, rasters=tuple(rasters),
-                      prepared_at=datetime.now(tz=timezone.utc).isoformat())
+                rasters.append(Raster(path=path, face=part_face, envelope=part_envelope, mask=mask, masked_lines=removed.get(path)))
+        chart = Chart(
+            kind=chart.kind,
+            name=chart.name,
+            cycle=chart.cycle,
+            rasters=tuple(rasters),
+            prepared_at=datetime.now(tz=timezone.utc).isoformat(),
+        )
         _write_ready(directory, chart)
     return chart
 
 
 def _tile_range(face: Box, zoom: int) -> tuple:
     """(x0, x1, y0, y1), inclusive, of the tiles a face touches."""
-    n = 2 ** zoom
+    n = 2**zoom
     west, south, east, north = face
     # Web Mercator ends short of the poles; a face's edge past that
     # would be off the grid.
@@ -1495,8 +1536,7 @@ def _render_row(args: tuple) -> int:
     xmin = tile_bbox_3857(x0, y, zoom)[0]
     _, ymin, xmax, ymax = tile_bbox_3857(x1, y, zoom)
     width = (x1 - x0 + 1) * px
-    strip, coverage = _warp_rgb(Path(path), (xmin, ymin, xmax, ymax), width, px, float(lats[px // 2]),
-                                Path(mask) if mask else None, face)
+    strip, coverage = _warp_rgb(Path(path), (xmin, ymin, xmax, ymax), width, px, float(lats[px // 2]), Path(mask) if mask else None, face)
 
     written = 0
     for x, tile_path, rgba, fill in owed:
@@ -1555,12 +1595,18 @@ def _record(kind_key: str, raw: dict) -> dict:
         return raw
     finished = raw.get("finished_at")
     return {
-        "kind": kind_key, "zooms": raw.get("zooms", []),
+        "kind": kind_key,
+        "zooms": raw.get("zooms", []),
         "sheets": sorted(COVERAGE.get(kind_key, {})) if finished else [],
-        "finished_at": finished, "tiles": raw.get("tiles_written", 0),
-        "current_pass": None if finished or not raw.get("started_at") else {
-            "started_at": raw["started_at"], "done": raw.get("rasters_done", 0),
-            "total": raw.get("rasters_total", 0), "current": raw.get("current"),
+        "finished_at": finished,
+        "tiles": raw.get("tiles_written", 0),
+        "current_pass": None
+        if finished or not raw.get("started_at")
+        else {
+            "started_at": raw["started_at"],
+            "done": raw.get("rasters_done", 0),
+            "total": raw.get("rasters_total", 0),
+            "current": raw.get("current"),
         },
     }
 
@@ -1587,8 +1633,7 @@ def pyramid_complete(cycle: str, kinds: tuple = tuple(KINDS)) -> bool:
     the FAA publishes of it rendered."""
     progress = pyramid_status(cycle)
     return all(
-        progress.get(k, {}).get("finished_at") and not (set(COVERAGE.get(k, {})) - set(progress[k].get("sheets", [])))
-        for k in kinds
+        progress.get(k, {}).get("finished_at") and not (set(COVERAGE.get(k, {})) - set(progress[k].get("sheets", []))) for k in kinds
     )
 
 
@@ -1596,8 +1641,7 @@ def pyramid_due(cycle: str, kinds: tuple = tuple(KINDS)) -> tuple:
     """The kinds of `kinds` a refresh has to render for `cycle`: those
     not complete, and those last drawn under another RENDERER_VERSION."""
     progress = pyramid_status(cycle)
-    return tuple(k for k in kinds if not pyramid_complete(cycle, (k,))
-                 or progress[k].get("renderer", 1) != RENDERER_VERSION)
+    return tuple(k for k in kinds if not pyramid_complete(cycle, (k,)) or progress[k].get("renderer", 1) != RENDERER_VERSION)
 
 
 # What one render worker holds at its peak, by the largest density it
@@ -1623,10 +1667,12 @@ def available_memory(root: Path = Path("/")) -> int | None:
             text = path.read_text().strip()
         except OSError:
             return None
-        return int(text) if text.isdigit() else None   # "max": no limit
+        return int(text) if text.isdigit() else None  # "max": no limit
 
-    for limit, usage in (("sys/fs/cgroup/memory.max", "sys/fs/cgroup/memory.current"),
-                         ("sys/fs/cgroup/memory/memory.limit_in_bytes", "sys/fs/cgroup/memory/memory.usage_in_bytes")):
+    for limit, usage in (
+        ("sys/fs/cgroup/memory.max", "sys/fs/cgroup/memory.current"),
+        ("sys/fs/cgroup/memory/memory.limit_in_bytes", "sys/fs/cgroup/memory/memory.usage_in_bytes"),
+    ):
         cap = number(root / limit)
         # v1 says "no limit" with a number near 2**63.
         if cap is not None and cap < 2**60:
@@ -1660,8 +1706,14 @@ def pyramid_workers(scales: tuple, available: int | None, cpus: int | None) -> i
     return max(1, min(cpus, (available - PARENT_MEMORY) // each))
 
 
-def render_pyramid(kind: ChartKind, zooms: tuple | None = None, workers: int | None = None, charts: list | None = None,
-                   cycle: str | None = None, scales: tuple | None = None) -> int:
+def render_pyramid(
+    kind: ChartKind,
+    zooms: tuple | None = None,
+    workers: int | None = None,
+    charts: list | None = None,
+    cycle: str | None = None,
+    scales: tuple | None = None,
+) -> int:
     """Every tile of every prepared chart of `kind` in `cycle` (the
     FAA's current one by default), at each zoom of the kind's own
     range, written into the tile cache. Sheets are done one at a time
@@ -1681,9 +1733,13 @@ def render_pyramid(kind: ChartKind, zooms: tuple | None = None, workers: int | N
     if workers is None:
         available = available_memory()
         workers = pyramid_workers(scales, available, os.cpu_count())
-        log.info("%s: %d render worker(s) for scales %s, from %s available (--workers to choose)", kind.key,
-                 workers, ",".join(map(str, scales)),
-                 f"{available / 2**30:.1f} GB" if available is not None else "an unknown amount of memory")
+        log.info(
+            "%s: %d render worker(s) for scales %s, from %s available (--workers to choose)",
+            kind.key,
+            workers,
+            ",".join(map(str, scales)),
+            f"{available / 2**30:.1f} GB" if available is not None else "an unknown amount of memory",
+        )
     if charts is None:
         cycle = cycle or current_cycle()
         charts = prepared_charts(cycle)
@@ -1708,10 +1764,20 @@ def render_pyramid(kind: ChartKind, zooms: tuple | None = None, workers: int | N
     else:
         since = None
     record = {
-        "kind": kind.key, "zooms": list(zooms), "sheets": before["sheets"], "finished_at": before["finished_at"],
-        "tiles": before["tiles"], "renderer": before.get("renderer", 1),
-        "current_pass": {"started_at": started.isoformat(), "done": 0, "total": len(rasters), "current": None,
-                         "renderer": RENDERER_VERSION, "since": since},
+        "kind": kind.key,
+        "zooms": list(zooms),
+        "sheets": before["sheets"],
+        "finished_at": before["finished_at"],
+        "tiles": before["tiles"],
+        "renderer": before.get("renderer", 1),
+        "current_pass": {
+            "started_at": started.isoformat(),
+            "done": 0,
+            "total": len(rasters),
+            "current": None,
+            "renderer": RENDERER_VERSION,
+            "since": since,
+        },
     }
     _write_pyramid_status(cycle, record)
 
@@ -1725,9 +1791,22 @@ def render_pyramid(kind: ChartKind, zooms: tuple | None = None, workers: int | N
             for zoom in zooms:
                 x0, x1, y0, y1 = _tile_range(raster.face, zoom)
                 jobs = [
-                    (str(raster.path), raster.face, kind.key, chart.cycle, zoom, y, x0, x1,
-                     str(raster.mask) if raster.mask else None, since, scale, str(CHART_TILE_CACHE_DIR))
-                    for scale in scales for y in range(y0, y1 + 1)
+                    (
+                        str(raster.path),
+                        raster.face,
+                        kind.key,
+                        chart.cycle,
+                        zoom,
+                        y,
+                        x0,
+                        x1,
+                        str(raster.mask) if raster.mask else None,
+                        since,
+                        scale,
+                        str(CHART_TILE_CACHE_DIR),
+                    )
+                    for scale in scales
+                    for y in range(y0, y1 + 1)
                 ]
                 if pool is None:
                     sheet_tiles += sum(map(_render_row, jobs))
@@ -1736,8 +1815,15 @@ def render_pyramid(kind: ChartKind, zooms: tuple | None = None, workers: int | N
             total += sheet_tiles
             record["current_pass"]["done"] = i + 1
             _write_pyramid_status(cycle, record)
-            log.info("%s: %d tiles in %.0f s (%d of %d sheets, %d tiles so far)",
-                     raster.path.stem, sheet_tiles, time.time() - sheet_started, i + 1, len(rasters), total)
+            log.info(
+                "%s: %d tiles in %.0f s (%d of %d sheets, %d tiles so far)",
+                raster.path.stem,
+                sheet_tiles,
+                time.time() - sheet_started,
+                i + 1,
+                len(rasters),
+                total,
+            )
     finally:
         if pool is not None:
             pool.shutdown()
@@ -1749,8 +1835,11 @@ def render_pyramid(kind: ChartKind, zooms: tuple | None = None, workers: int | N
     # them to the ones drawn before.
     record.update(
         sheets=sorted(set(record["sheets"]) | {c.name for c in charts}),
-        finished_at=datetime.now(tz=timezone.utc).isoformat(), tiles=record["tiles"] + total, current_pass=None,
-        renderer=RENDERER_VERSION, scales=sorted(set(before.get("scales", [1])) | set(scales)),
+        finished_at=datetime.now(tz=timezone.utc).isoformat(),
+        tiles=record["tiles"] + total,
+        current_pass=None,
+        renderer=RENDERER_VERSION,
+        scales=sorted(set(before.get("scales", [1])) | set(scales)),
     )
     _write_pyramid_status(cycle, record)
     if since is not None:
@@ -1761,8 +1850,7 @@ def render_pyramid(kind: ChartKind, zooms: tuple | None = None, workers: int | N
     log.info("%s %s: pass finished, %d tiles written, %d finished at its end", cycle, kind.key, total, promoted)
     missing = sorted(set(COVERAGE.get(kind.key, {})) - set(record["sheets"]))
     if missing:
-        log.warning("%s %s: not complete, %d sheet(s) never rendered: %s", cycle, kind.key, len(missing),
-                    ", ".join(missing))
+        log.warning("%s %s: not complete, %d sheet(s) never rendered: %s", cycle, kind.key, len(missing), ", ".join(missing))
     return total
 
 
@@ -1826,8 +1914,12 @@ def rerender_tiles(kind: ChartKind, boxes: list, cycle: str, workers: int = 2) -
         for box in boxes:
             x0, x1, y0, y1 = _tile_range(box, zoom)
             tiles.update(
-                (x, y, zoom, scale) for x in range(x0, x1 + 1) for y in range(y0, y1 + 1) for scale in TILE_SCALES
-                if (archives[scale].has(zoom, x, y) if archives[scale] else _tile_path(kind, cycle, x, y, zoom, scale).exists()))
+                (x, y, zoom, scale)
+                for x in range(x0, x1 + 1)
+                for y in range(y0, y1 + 1)
+                for scale in TILE_SCALES
+                if (archives[scale].has(zoom, x, y) if archives[scale] else _tile_path(kind, cycle, x, y, zoom, scale).exists())
+            )
     order = sorted(tiles, key=lambda t: (t[3], t[2], t[1], t[0]))
     jobs = [(kind.key, cycle, x, y, zoom, scale) for x, y, zoom, scale in order]
     log.info("%s %s: rendering %d tiles again", cycle, kind.key, len(jobs))
@@ -1887,8 +1979,14 @@ def _bump_revision(cycle: str) -> None:
 
 
 def _archive_metadata(kind: ChartKind, cycle: str, scale: int) -> dict:
-    return {"name": f"FAA {kind.key} {cycle}", "kind": kind.key, "cycle": cycle, "scale": scale,
-            "renderer": RENDERER_VERSION, "attribution": "FAA aeronautical charts"}
+    return {
+        "name": f"FAA {kind.key} {cycle}",
+        "kind": kind.key,
+        "cycle": cycle,
+        "scale": scale,
+        "renderer": RENDERER_VERSION,
+        "attribution": "FAA aeronautical charts",
+    }
 
 
 def pack_pyramid(kind: ChartKind, cycle: str, scale: int = 1) -> int:
@@ -1905,7 +2003,7 @@ def pack_pyramid(kind: ChartKind, cycle: str, scale: int = 1) -> int:
     # they are, not only beside a tile packed.
     marker = re.compile(rf"\d+{re.escape(suffix)}\.(none|partial)")
     tiles, markers, base = [], [], CHART_TILE_CACHE_DIR / cycle / kind.key
-    for z_dir in (os.scandir(base) if base.is_dir() else ()):
+    for z_dir in os.scandir(base) if base.is_dir() else ():
         if not z_dir.name.isdigit():
             continue
         for x_dir in os.scandir(z_dir.path):
@@ -1913,8 +2011,7 @@ def pack_pyramid(kind: ChartKind, cycle: str, scale: int = 1) -> int:
                 continue
             for f in os.scandir(x_dir.path):
                 if match := name.fullmatch(f.name):
-                    tiles.append((int(z_dir.name), int(x_dir.name), int(match[1]), f.stat().st_size,
-                                  lambda p=f.path: Path(p).read_bytes()))
+                    tiles.append((int(z_dir.name), int(x_dir.name), int(match[1]), f.stat().st_size, lambda p=f.path: Path(p).read_bytes()))
                 elif marker.fullmatch(f.name):
                     markers.append(Path(f.path))
     count = tile_archive.write(_archive_path(kind.key, cycle, scale), tiles, _archive_metadata(kind, cycle, scale))
@@ -1977,16 +2074,15 @@ def unmask_prepared(cycle: str | None = None, workers: int = 2, again: bool = Fa
                     continue
                 removed[path] = (before, chart_faces.remove_masked_lines(path, [r.face for r in parts], known=before))
             rasters = tuple(
-                Raster(path=r.path, face=r.face, envelope=r.envelope, mask=r.mask,
-                       masked_lines=removed[r.path][0] + removed[r.path][1])
+                Raster(path=r.path, face=r.face, envelope=r.envelope, mask=r.mask, masked_lines=removed[r.path][0] + removed[r.path][1])
                 for r in chart.rasters
             )
-            _write_ready(directory, Chart(kind=chart.kind, name=chart.name, cycle=chart.cycle, rasters=rasters,
-                                          prepared_at=chart.prepared_at))
+            _write_ready(
+                directory, Chart(kind=chart.kind, name=chart.name, cycle=chart.cycle, rasters=rasters, prepared_at=chart.prepared_at)
+            )
         boxes = [box for _, found in removed.values() for box in found]
         changed.setdefault(chart.kind.key, []).extend(boxes)
-        log.info("%s/%s: %d masked-line area(s) removed in %.0f s", chart.kind.key, chart.name, len(boxes),
-                 time.time() - started)
+        log.info("%s/%s: %d masked-line area(s) removed in %.0f s", chart.kind.key, chart.name, len(boxes), time.time() - started)
     for key, boxes in changed.items():
         if boxes:
             count = rerender_tiles(KINDS[key], boxes, cycle, workers=workers)
@@ -2042,8 +2138,7 @@ def refresh_lock(wait: bool = False):
             fcntl.flock(handle, fcntl.LOCK_UN)
 
 
-def refresh(kinds: tuple = tuple(KINDS), workers: int = 2, prune: bool = True,
-            publish_bucket: str | None = None, client=None) -> str:
+def refresh(kinds: tuple = tuple(KINDS), workers: int = 2, prune: bool = True, publish_bucket: str | None = None, client=None) -> str:
     """Bring the FAA's current cycle to a complete pyramid, publish it
     to `publish_bucket` if one is given (the AWS refresh task's job),
     then drop older cycles. Returns the cycle. Idempotent: a complete,
@@ -2158,8 +2253,12 @@ def publish(cycle: str, bucket: str, prefix: str = CHART_TILES_PREFIX, client=No
         name = _published_name(path)
         if name not in done:
             # upload_file: in parts, a sectional's @2x archive being GBs.
-            client.upload_file(str(path), bucket, f"{prefix}/{cycle}/{name}", ExtraArgs={
-                "ContentType": "application/vnd.pmtiles", "CacheControl": "public, max-age=2419200, immutable"})
+            client.upload_file(
+                str(path),
+                bucket,
+                f"{prefix}/{cycle}/{name}",
+                ExtraArgs={"ContentType": "application/vnd.pmtiles", "CacheControl": "public, max-age=2419200, immutable"},
+            )
             done.add(name)
             uploaded += 1
             _write_atomically(ledger, json.dumps(sorted(done)).encode())
@@ -2167,13 +2266,20 @@ def publish(cycle: str, bucket: str, prefix: str = CHART_TILES_PREFIX, client=No
         archives.setdefault(kind_key, {})[density.removesuffix("x") or "1"] = name
 
     progress = pyramid_status(cycle)
-    pointer = {"cycle": cycle, "kinds": {k: p["tiles"] for k, p in progress.items()},
-               "scales": {k: p.get("scales", [1]) for k, p in progress.items()},
-               "archives": archives, "revision": _disk_revision(cycle),
-               "published_at": datetime.now(tz=timezone.utc).isoformat()}
+    pointer = {
+        "cycle": cycle,
+        "kinds": {k: p["tiles"] for k, p in progress.items()},
+        "scales": {k: p.get("scales", [1]) for k, p in progress.items()},
+        "archives": archives,
+        "revision": _disk_revision(cycle),
+        "published_at": datetime.now(tz=timezone.utc).isoformat(),
+    }
     client.put_object(
-        Bucket=bucket, Key=f"{prefix}/serving.json", Body=json.dumps(pointer).encode(),
-        ContentType="application/json", CacheControl="public, max-age=300",
+        Bucket=bucket,
+        Key=f"{prefix}/serving.json",
+        Body=json.dumps(pointer).encode(),
+        ContentType="application/json",
+        CacheControl="public, max-age=300",
     )
     log.info("cycle %s published: %d archives uploaded, serving.json points at it", cycle, uploaded)
     return uploaded

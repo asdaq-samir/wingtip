@@ -19,7 +19,7 @@ export function lasted(seconds: number): string {
  *  near where it was first or last heard (out of the receivers' reach
  *  there) a question mark, where a dash read as a fault. */
 export function legOf(flight: PastFlightSummary): string {
-  const to = flight.in_air ? "in the air" : flight.destination?.ident ?? "?";
+  const to = flight.in_air ? "in the air" : (flight.destination?.ident ?? "?");
   return `${flight.origin?.ident ?? "?"} → ${to}`;
 }
 
@@ -29,8 +29,11 @@ export const statusOf = (flight: PastFlightSummary) => (flight.in_air ? "In the 
 /** "15:10 today", "09:42 yesterday", "18:05 Sat 11 Oct": when, as
  *  FlightAware's list says it, in this device's 24-hour clock. */
 export function whenSaid(at: Date, today: Date = new Date()): string {
-  const days = Math.round((new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()
-    - new Date(at.getFullYear(), at.getMonth(), at.getDate()).getTime()) / 86_400_000);
+  const days = Math.round(
+    (new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime() -
+      new Date(at.getFullYear(), at.getMonth(), at.getDate()).getTime()) /
+      86_400_000,
+  );
   const day = days === 0 ? "today" : days === 1 ? "yesterday" : dayOf(at);
   return `${clockTime(at)} ${day}`;
 }

@@ -11,8 +11,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import app.wingtipmaps.gateway.domain.Flight;
-import app.wingtipmaps.gateway.domain.PaidFeature;
 import app.wingtipmaps.gateway.domain.FlightCheckpoint;
+import app.wingtipmaps.gateway.domain.PaidFeature;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.TrackDto;
 import app.wingtipmaps.gateway.dto.TrackPointDto;
@@ -94,7 +94,9 @@ class FlightControllerTest {
     void save_returns400_whenDepartureIdentIsTheWrongShape() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
 
-        mockMvc.perform(post("/api/flights").with(oidcLogin()).with(csrf())
+        mockMvc.perform(post("/api/flights")
+                        .with(oidcLogin())
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"departureIdent\":\"toolongident\",\"destinationIdent\":\"KDLH\"}"))
                 .andExpect(status().isBadRequest());
@@ -106,11 +108,17 @@ class FlightControllerTest {
         given(flightService.save(any(), any())).willReturn(sampleFlight());
 
         // Fly Here's Direct-To in the air: from where the airplane is.
-        mockMvc.perform(post("/api/flights").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"departureIdent\":\"@42.2340,-87.9877\",\"destinationIdent\":\"KDLH\",\"checkpoints\":[]}"))
+        mockMvc.perform(
+                        post("/api/flights")
+                                .with(oidcLogin())
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        "{\"departureIdent\":\"@42.2340,-87.9877\",\"destinationIdent\":\"KDLH\",\"checkpoints\":[]}"))
                 .andExpect(status().isOk());
-        mockMvc.perform(post("/api/flights").with(oidcLogin()).with(csrf())
+        mockMvc.perform(post("/api/flights")
+                        .with(oidcLogin())
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"departureIdent\":\"@42.2340\",\"destinationIdent\":\"KDLH\"}"))
                 .andExpect(status().isBadRequest());
@@ -120,9 +128,13 @@ class FlightControllerTest {
     void save_returns400_whenAStopIsTheWrongShape() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
 
-        mockMvc.perform(post("/api/flights").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\",\"stops\":[\"not an ident\"]}"))
+        mockMvc.perform(
+                        post("/api/flights")
+                                .with(oidcLogin())
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        "{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\",\"stops\":[\"not an ident\"]}"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -130,9 +142,13 @@ class FlightControllerTest {
     void save_returns400_whenTheAltitudesAreNotIdentFeetPairs() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
 
-        mockMvc.perform(post("/api/flights").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\",\"altitudes\":\"VPBNG=4500\"}"))
+        mockMvc.perform(
+                        post("/api/flights")
+                                .with(oidcLogin())
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        "{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\",\"altitudes\":\"VPBNG=4500\"}"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -141,10 +157,13 @@ class FlightControllerTest {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
         given(flightService.save(any(), any())).willReturn(sampleFlight());
 
-        mockMvc.perform(post("/api/flights").with(oidcLogin()).with(csrf())
+        mockMvc.perform(post("/api/flights")
+                        .with(oidcLogin())
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\",\"stops\":[\"VPBNG/090/30\",\"DLH090030\"],"
-                                + "\"altitudes\":\"VPBNG/090/30:4500,KDLH:2400\"}"))
+                        .content(
+                                "{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\",\"stops\":[\"VPBNG/090/30\",\"DLH090030\"],"
+                                        + "\"altitudes\":\"VPBNG/090/30:4500,KDLH:2400\"}"))
                 .andExpect(status().is2xxSuccessful());
     }
 
@@ -163,14 +182,22 @@ class FlightControllerTest {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
         given(flightService.save(any(), any())).willReturn(sampleFlight());
 
-        mockMvc.perform(post("/api/flights").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\","
-                                + "\"picks\":\"pattern=KMSN%3A18&holds=KMSN%3A180%3AL%3A1M%3A2T&class_b=0&altitude_choice=economical\"}"))
+        mockMvc.perform(
+                        post("/api/flights")
+                                .with(oidcLogin())
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        "{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\","
+                                                + "\"picks\":\"pattern=KMSN%3A18&holds=KMSN%3A180%3AL%3A1M%3A2T&class_b=0&altitude_choice=economical\"}"))
                 .andExpect(status().is2xxSuccessful());
-        mockMvc.perform(post("/api/flights").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\",\"picks\":\"redirect=https%3A%2F%2Fexample.com\"}"))
+        mockMvc.perform(
+                        post("/api/flights")
+                                .with(oidcLogin())
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        "{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\",\"picks\":\"redirect=https%3A%2F%2Fexample.com\"}"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -188,7 +215,9 @@ class FlightControllerTest {
     void save_returns400_whenTheRiskLevelIsNotOneOfTheThree() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
 
-        mockMvc.perform(post("/api/flights").with(oidcLogin()).with(csrf())
+        mockMvc.perform(post("/api/flights")
+                        .with(oidcLogin())
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\","
                                 + "\"risk\":{\"score\":4,\"level\":\"fine\",\"factors\":[]}}"))
@@ -202,10 +231,14 @@ class FlightControllerTest {
         given(flightService.save(any(), any())).willReturn(assessed);
         given(flightService.list(any())).willReturn(List.of(assessed));
 
-        mockMvc.perform(post("/api/flights").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\",\"checkpoints\":[],"
-                                + "\"risk\":{\"score\":9,\"level\":\"caution\",\"factors\":[\"Night\",\"Somewhere to be by a time\"]}}"))
+        mockMvc.perform(
+                        post("/api/flights")
+                                .with(oidcLogin())
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        "{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\",\"checkpoints\":[],"
+                                                + "\"risk\":{\"score\":9,\"level\":\"caution\",\"factors\":[\"Night\",\"Somewhere to be by a time\"]}}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.risk.level").value("caution"));
         mockMvc.perform(get("/api/flights").with(oidcLogin()))
@@ -230,16 +263,24 @@ class FlightControllerTest {
     void aTrackIsSavedRead_andOneWithAPointOffTheEarthRefused() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
         given(flightService.saveTrack(any(), any(), any())).willReturn(true);
-        given(flightService.track(any(), any())).willReturn(Optional.of(new TrackDto("flight.gpx", List.of(
-                new TrackPointDto(1L, 42.0, -88.0, 900.0), new TrackPointDto(2L, 42.1, -88.0, null)))));
+        given(flightService.track(any(), any()))
+                .willReturn(Optional.of(new TrackDto(
+                        "flight.gpx",
+                        List.of(new TrackPointDto(1L, 42.0, -88.0, 900.0), new TrackPointDto(2L, 42.1, -88.0, null)))));
         String body = "{\"source\":\"flight.gpx\",\"points\":[{\"t\":1,\"lat\":42,\"lon\":-88,\"altFt\":900},"
                 + "{\"t\":2,\"lat\":%s,\"lon\":-88,\"altFt\":null}]}";
 
-        mockMvc.perform(put("/api/flights/7/track").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(body.formatted("42.1")))
+        mockMvc.perform(put("/api/flights/7/track")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body.formatted("42.1")))
                 .andExpect(status().isNoContent());
-        mockMvc.perform(put("/api/flights/7/track").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(body.formatted("95")))
+        mockMvc.perform(put("/api/flights/7/track")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body.formatted("95")))
                 .andExpect(status().isBadRequest());
         mockMvc.perform(get("/api/flights/7/track").with(oidcLogin()))
                 .andExpect(status().isOk())
@@ -253,14 +294,20 @@ class FlightControllerTest {
     void aTrackIsNotKeptWithoutTheSubscription_butOneKeptIsStillRead() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
         given(subscriptions.refusal(any(), org.mockito.ArgumentMatchers.eq(PaidFeature.DEBRIEF)))
-                .willReturn(Optional.of(new SubscriptionService.Refusal(402, "The debrief comes with the subscription")));
-        given(flightService.track(any(), any())).willReturn(Optional.of(new TrackDto("flight.gpx", List.of(
-                new TrackPointDto(1L, 42.0, -88.0, 900.0), new TrackPointDto(2L, 42.1, -88.0, null)))));
+                .willReturn(
+                        Optional.of(new SubscriptionService.Refusal(402, "The debrief comes with the subscription")));
+        given(flightService.track(any(), any()))
+                .willReturn(Optional.of(new TrackDto(
+                        "flight.gpx",
+                        List.of(new TrackPointDto(1L, 42.0, -88.0, 900.0), new TrackPointDto(2L, 42.1, -88.0, null)))));
 
-        mockMvc.perform(put("/api/flights/7/track").with(oidcLogin()).with(csrf())
+        mockMvc.perform(put("/api/flights/7/track")
+                        .with(oidcLogin())
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"source\":\"flight.gpx\",\"points\":[{\"t\":1,\"lat\":42,\"lon\":-88,\"altFt\":900},"
-                                + "{\"t\":2,\"lat\":42.1,\"lon\":-88,\"altFt\":null}]}"))
+                        .content(
+                                "{\"source\":\"flight.gpx\",\"points\":[{\"t\":1,\"lat\":42,\"lon\":-88,\"altFt\":900},"
+                                        + "{\"t\":2,\"lat\":42.1,\"lon\":-88,\"altFt\":null}]}"))
                 .andExpect(status().isPaymentRequired());
         org.mockito.Mockito.verify(flightService, org.mockito.Mockito.never()).saveTrack(any(), any(), any());
         mockMvc.perform(get("/api/flights/7/track").with(oidcLogin())).andExpect(status().isOk());
@@ -271,7 +318,9 @@ class FlightControllerTest {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
         given(flightService.save(any(), any())).willReturn(sampleFlight());
 
-        mockMvc.perform(post("/api/flights").with(oidcLogin()).with(csrf())
+        mockMvc.perform(post("/api/flights")
+                        .with(oidcLogin())
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\",\"checkpoints\":[]}"))
                 .andExpect(status().isOk())

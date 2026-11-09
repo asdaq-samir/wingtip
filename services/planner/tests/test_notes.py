@@ -2,6 +2,7 @@
 note seeded for one, for the assistant service that writes them; a
 pilot's own edit is what that pilot sees while everyone else keeps the
 shared note."""
+
 from fastapi.testclient import TestClient
 from wingtip import checkpoint_notes
 
@@ -10,8 +11,7 @@ from app.routers import notes
 
 client = TestClient(app)
 
-CHECKPOINT = {"lat": 45.0, "lon": -90.0, "id": "water@45.00000,-90.00000", "name": "Lake Mary", "category": "water",
-              "along_track_nm": 12.0}
+CHECKPOINT = {"lat": 45.0, "lon": -90.0, "id": "water@45.00000,-90.00000", "name": "Lake Mary", "category": "water", "along_track_nm": 12.0}
 
 
 def _setup(monkeypatch, tmp_path):
@@ -21,17 +21,17 @@ def _setup(monkeypatch, tmp_path):
 
 
 def _pending(headers=None) -> list[dict]:
-    resp = client.post("/api/checkpoint-notes/pending",
-                       json={"departure_ident": "C81", "destination_ident": "KDLH"}, headers=headers or {})
+    resp = client.post("/api/checkpoint-notes/pending", json={"departure_ident": "C81", "destination_ident": "KDLH"}, headers=headers or {})
     assert resp.status_code == 200, resp.text
     assert resp.json()["departure_ident"] == "C81"
     return resp.json()["checkpoints"]
 
 
 def _seed(description: str) -> dict:
-    resp = client.post("/api/checkpoint-notes/seed",
-                       json={"hop_key": checkpoint_notes.route_key("C81", "KDLH"), "lat": 45.0, "lon": -90.0,
-                             "description": description})
+    resp = client.post(
+        "/api/checkpoint-notes/seed",
+        json={"hop_key": checkpoint_notes.route_key("C81", "KDLH"), "lat": 45.0, "lon": -90.0, "description": description},
+    )
     assert resp.status_code == 200, resp.text
     return resp.json()
 
@@ -42,17 +42,18 @@ def test_a_checkpoint_without_a_note_is_pending_with_its_hop_and_a_seeded_note_i
     first = _pending()
     assert first == [{**CHECKPOINT, "hop_key": checkpoint_notes.route_key("C81", "KDLH"), "saved": None}]
 
-    assert _seed("Generated: the lake south of the highway") == {
-        "description": "Generated: the lake south of the highway", "written": True}
+    assert _seed("Generated: the lake south of the highway") == {"description": "Generated: the lake south of the highway", "written": True}
     assert _pending({"X-Pilot-Id": "42"})[0]["saved"] == "Generated: the lake south of the highway"
 
 
 def test_a_pilots_edit_is_theirs(monkeypatch, tmp_path):
     _setup(monkeypatch, tmp_path)
     _seed("Generated: the lake south of the highway")
-    resp = client.post("/api/checkpoint-notes", headers={"X-Pilot-Id": "42"}, json={
-        "departure_ident": "C81", "destination_ident": "KDLH", "lat": 45.0, "lon": -90.0,
-        "description": "Mine: look for the island"})
+    resp = client.post(
+        "/api/checkpoint-notes",
+        headers={"X-Pilot-Id": "42"},
+        json={"departure_ident": "C81", "destination_ident": "KDLH", "lat": 45.0, "lon": -90.0, "description": "Mine: look for the island"},
+    )
     assert resp.status_code == 200
 
     assert _pending({"X-Pilot-Id": "42"})[0]["saved"] == "Mine: look for the island"
@@ -73,8 +74,10 @@ def test_a_shared_edit_saved_before_the_seed_is_kept(monkeypatch, tmp_path):
 
 def test_an_empty_seed_is_refused(monkeypatch, tmp_path):
     _setup(monkeypatch, tmp_path)
-    resp = client.post("/api/checkpoint-notes/seed",
-                       json={"hop_key": checkpoint_notes.route_key("C81", "KDLH"), "lat": 45.0, "lon": -90.0, "description": " "})
+    resp = client.post(
+        "/api/checkpoint-notes/seed",
+        json={"hop_key": checkpoint_notes.route_key("C81", "KDLH"), "lat": 45.0, "lon": -90.0, "description": " "},
+    )
     assert resp.status_code == 422
 
 
@@ -91,13 +94,18 @@ def test_a_deleted_account_takes_its_own_notes_and_only_those(monkeypatch, tmp_p
     assert client.delete("/api/checkpoint-notes/mine").status_code == 422
 
 
-
 def test_a_note_longer_than_500_characters_is_refused(monkeypatch, tmp_path):
     _setup(monkeypatch, tmp_path)
     long = "x" * 501
-    assert client.post("/api/checkpoint-notes", json={
-        "departure_ident": "C81", "destination_ident": "KDLH", "lat": 45.0, "lon": -90.0,
-        "description": long}).status_code == 422
-    resp = client.post("/api/checkpoint-notes/seed", json={
-        "hop_key": checkpoint_notes.route_key("C81", "KDLH"), "lat": 45.0, "lon": -90.0, "description": long})
+    assert (
+        client.post(
+            "/api/checkpoint-notes",
+            json={"departure_ident": "C81", "destination_ident": "KDLH", "lat": 45.0, "lon": -90.0, "description": long},
+        ).status_code
+        == 422
+    )
+    resp = client.post(
+        "/api/checkpoint-notes/seed",
+        json={"hop_key": checkpoint_notes.route_key("C81", "KDLH"), "lat": 45.0, "lon": -90.0, "description": long},
+    )
     assert resp.status_code == 422

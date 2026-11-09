@@ -27,8 +27,8 @@ const DIGITS: [&str; 10] = ["zero", "one", "two", "three", "four", "five", "six"
 /// The ICAO phonetic alphabet (AIM 4-2-7, TBL 4-2-2).
 fn letter(c: char) -> Option<&'static str> {
     const LETTERS: [&str; 26] = [
-        "Alfa", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliett", "Kilo", "Lima", "Mike",
-        "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey", "X-ray", "Yankee", "Zulu",
+        "Alfa", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliett", "Kilo", "Lima", "Mike", "November",
+        "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey", "X-ray", "Yankee", "Zulu",
     ];
     c.is_ascii_uppercase().then(|| LETTERS[(c as u8 - b'A') as usize])
 }
@@ -161,8 +161,9 @@ fn squeeze(text: &str, squeezed: impl Fn(char) -> bool) -> String {
 pub fn place_name(name: Option<&str>, ident: &str) -> String {
     let name = name.unwrap_or("");
     let cut = name.find(['-', '/', '(']).map_or(name, |at| &name[..at]);
-    const WORDS: [&str; 11] =
-        ["international", "national", "regional", "municipal", "county", "executive", "memorial", "airport", "airfield", "field", "airpark"];
+    const WORDS: [&str; 11] = [
+        "international", "national", "regional", "municipal", "county", "executive", "memorial", "airport", "airfield", "field", "airpark",
+    ];
     let left = squeeze(&drop_words(cut, &WORDS, true), char::is_whitespace);
     let left = left.trim();
     if left.is_empty() {
@@ -176,8 +177,8 @@ pub fn place_name(name: Option<&str>, ident: &str) -> String {
 /// ("ROCKFORD TWR" is Rockford), else the field's.
 fn facility_name(f: &Frequency, field: &str) -> String {
     const CODES: [&str; 18] = [
-        "TWR", "TOWER", "GND", "GROUND", "APP", "DEP", "APCH", "APP/DEP", "A/D", "CLNC", "DEL", "CLD", "CTAF", "UNICOM", "ATIS", "AWOS", "ASOS",
-        "RDO",
+        "TWR", "TOWER", "GND", "GROUND", "APP", "DEP", "APCH", "APP/DEP", "A/D", "CLNC", "DEL", "CLD", "CTAF", "UNICOM", "ATIS", "AWOS",
+        "ASOS", "RDO",
     ];
     let upper = f.description.as_deref().unwrap_or("").to_uppercase();
     let own = squeeze(&drop_words(&upper, &CODES, false), |c| c == '/' || c.is_whitespace());
@@ -312,7 +313,10 @@ fn departure(cs: &str, fields: &[Field], legs: &[Leg], i: usize) -> Phase {
                 clearance.mhz,
                 format!("{name} Clearance, {cs}, VFR to {to}, {heading}bound, {altitude}{atis}."),
             );
-            c.note = Some(format!("Class {}: where the Chart Supplement sends VFR departures to clearance delivery first.", class.unwrap_or("")));
+            c.note = Some(format!(
+                "Class {}: where the Chart Supplement sends VFR departures to clearance delivery first.",
+                class.unwrap_or("")
+            ));
             calls.push(c);
         }
         if let Some(ground) = of(f, &["GND"]) {
@@ -324,8 +328,13 @@ fn departure(cs: &str, fields: &[Field], legs: &[Leg], i: usize) -> Phase {
             ));
         }
         let name = facility_name(tower, &field);
-        let mut c = call(format!("{name} Tower"), tower.mhz, format!("{name} Tower, {cs}, holding short {runway}, ready for departure, {heading}bound."));
-        c.note = Some(format!("The tower may give another runway and a way out: read back the runway and the clearance.{}", when_closed(f)));
+        let mut c = call(
+            format!("{name} Tower"),
+            tower.mhz,
+            format!("{name} Tower, {cs}, holding short {runway}, ready for departure, {heading}bound."),
+        );
+        c.note =
+            Some(format!("The tower may give another runway and a way out: read back the runway and the clearance.{}", when_closed(f)));
         calls.push(c);
     } else {
         let mhz = ctaf_mhz(f);
@@ -394,7 +403,11 @@ fn arrival(cs: &str, fields: &[Field], legs: &[Leg], i: usize) -> Phase {
         if let Some(radar) = radar {
             let approach = format!("{} Approach", facility_name(radar, &field));
             let cruise = last.map_or_else(|| "[altitude]".to_owned(), |l| spoken_altitude(l.altitude_ft));
-            let mut c = call(approach.clone(), radar.mhz, format!("{approach}, {cs}, [distance] {from} of {field}, {cruise}{atis}, landing {field}."));
+            let mut c = call(
+                approach.clone(),
+                radar.mhz,
+                format!("{approach}, {cs}, [distance] {from} of {field}, {cruise}{atis}, landing {field}."),
+            );
             c.note = Some(
                 if class == Some("B") {
                     "Well outside the Class B: stay out until you hear \"cleared into the Class Bravo\" (91.131)."
@@ -427,7 +440,11 @@ fn arrival(cs: &str, fields: &[Field], legs: &[Leg], i: usize) -> Phase {
         calls.push(c);
         if let Some(ground) = of(f, &["GND"]) {
             let name = facility_name(ground, &field);
-            let mut c = call(format!("{name} Ground"), ground.mhz, format!("{name} Ground, {cs}, clear of {runway} at [taxiway], taxi to [where you are going]."));
+            let mut c = call(
+                format!("{name} Ground"),
+                ground.mhz,
+                format!("{name} Ground, {cs}, clear of {runway} at [taxiway], taxi to [where you are going]."),
+            );
             c.note = Some("Once clear of the runway, when the tower says to.".to_owned());
             calls.push(c);
         }

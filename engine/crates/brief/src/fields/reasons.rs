@@ -36,14 +36,10 @@ pub fn of(mode: Mode, r: &Ranked) -> Vec<Reason> {
 fn reach(r: &Ranked) -> Reason {
     match (r.reach, r.arrive_agl_ft, r.reach_nm) {
         (Reach::Within, Some(agl), _) => ("ok", format!("Within glide: over the field at about {} ft", grouped(round_to(agl, 100.0)))),
-        (Reach::Low, Some(agl), _) => (
-            "caution",
-            format!("Reachable low: about {} ft over the field, under pattern height", grouped(round_to(agl, 100.0))),
-        ),
-        (Reach::Beyond, _, Some(nm)) if nm > 0.0 => (
-            "stop",
-            format!("Beyond glide: about {:.1} nm short", (r.distance_nm - nm).max(0.1)),
-        ),
+        (Reach::Low, Some(agl), _) => {
+            ("caution", format!("Reachable low: about {} ft over the field, under pattern height", grouped(round_to(agl, 100.0))))
+        }
+        (Reach::Beyond, _, Some(nm)) if nm > 0.0 => ("stop", format!("Beyond glide: about {:.1} nm short", (r.distance_nm - nm).max(0.1))),
         _ => ("stop", "Beyond glide".to_owned()),
     }
 }

@@ -29,7 +29,8 @@ const toasts = (page: Page) => page.locator("[data-sonner-toast]");
  *  simply down does. */
 async function plannerDown(page: Page, detail = "planner service unreachable") {
   await page.route("**/api/planner/**", (route: Route) =>
-    route.fulfill({ status: 502, contentType: "application/json", body: JSON.stringify({ detail }) }));
+    route.fulfill({ status: 502, contentType: "application/json", body: JSON.stringify({ detail }) }),
+  );
 }
 
 /** The planner's progress line held up: the course never answers. */
@@ -66,8 +67,7 @@ test("a planner that is down says so once, in one line, not once per call", asyn
   await plannerDown(page);
   await page.goto(PLAN);
 
-  await expect.poll(async () => (await problemTitles(page)).filter(t => t.includes("unreachable")).length,
-    { timeout: 20000 }).toBe(1);
+  await expect.poll(async () => (await problemTitles(page)).filter((t) => t.includes("unreachable")).length, { timeout: 20000 }).toBe(1);
   await expect(toasts(page).filter({ hasText: "unreachable" })).toHaveCount(0);
 });
 
@@ -92,16 +92,23 @@ test("two different failures are two problems, counted on the line and listed on
   // Deduplication is by message, so genuinely different problems must
   // still each get said. Only the identical ones collapse.
   await page.route("**/api/planner/course**", (route: Route) =>
-    route.fulfill({ status: 502, contentType: "application/json", body: JSON.stringify({ detail: "planner service unreachable" }) }));
+    route.fulfill({ status: 502, contentType: "application/json", body: JSON.stringify({ detail: "planner service unreachable" }) }),
+  );
   await page.route("**/api/planner/aircraft-profiles**", (route: Route) =>
-    route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "the aircraft store is offline" }) }));
+    route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "the aircraft store is offline" }) }),
+  );
   await page.goto(PLAN);
 
   await expect(page.getByTestId("problem-banner-title")).toHaveText(/^\d+ problems$/, { timeout: 20000 });
-  await expect.poll(async () => {
-    const shown = await problemTitles(page);
-    return [shown.some(t => t.includes("unreachable")), shown.some(t => t.includes("aircraft store"))];
-  }, { timeout: 15000 }).toEqual([true, true]);
+  await expect
+    .poll(
+      async () => {
+        const shown = await problemTitles(page);
+        return [shown.some((t) => t.includes("unreachable")), shown.some((t) => t.includes("aircraft store"))];
+      },
+      { timeout: 15000 },
+    )
+    .toEqual([true, true]);
 });
 
 test("a problem goes with the route it was about", async ({ page }) => {
@@ -109,9 +116,12 @@ test("a problem goes with the route it was about", async ({ page }) => {
   // closed stayed on the map. A failure of the planner's own, not a
   // place it does not know (a 404, the route box's: below).
   await page.route("**/api/planner/course**", (route: Route) =>
-    route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "the course store is offline" }) }));
+    route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "the course store is offline" }) }),
+  );
   await page.goto(PLAN);
-  await expect.poll(async () => (await problemTitles(page)).some(t => t.includes("course store is offline")), { timeout: 20000 }).toBe(true);
+  await expect
+    .poll(async () => (await problemTitles(page)).some((t) => t.includes("course store is offline")), { timeout: 20000 })
+    .toBe(true);
 
   // The route cleared from the panel, its Share menu's Clear the route.
   await clearTheRoute(page);
@@ -156,8 +166,10 @@ test("the line sits beside the map's buttons, level with them, one line tall, an
   expect(box.height).toBeLessThanOrEqual(48);
 
   const arrow = (await page.getByTestId("my-position-button").boundingBox())!;
-  const hit = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest("[data-testid=my-position-button]") !== null,
-    [arrow.x + arrow.width / 2, arrow.y + arrow.height / 2]);
+  const hit = await page.evaluate(
+    ([x, y]) => document.elementFromPoint(x, y)?.closest("[data-testid=my-position-button]") !== null,
+    [arrow.x + arrow.width / 2, arrow.y + arrow.height / 2],
+  );
   expect(hit).toBe(true);
 });
 
@@ -179,8 +191,10 @@ test("the panel all the way out goes over the line, and its grabber still lowers
   await settled(page, '[data-slot="map-panel"]');
 
   const box = (await line.boundingBox())!;
-  const over = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest('[data-slot="map-panel"]') !== null,
-    [box.x + box.width / 2, box.y + box.height / 2]);
+  const over = await page.evaluate(
+    ([x, y]) => document.elementFromPoint(x, y)?.closest('[data-slot="map-panel"]') !== null,
+    [box.x + box.width / 2, box.y + box.height / 2],
+  );
   expect(over).toBe(true);
   // A tap: down a size, to half (MapPanel's three sizes).
   await page.getByTestId("sidebar-trigger-button").click();
@@ -201,8 +215,8 @@ test("the progress line spans the screen and is centred on it", async ({ page })
 
   const leftGap = box.x;
   const rightGap = viewport.width - (box.x + box.width);
-  expect(leftGap).toBeGreaterThanOrEqual(8);                     // a gutter, not edge to edge
-  expect(Math.abs(leftGap - rightGap)).toBeLessThanOrEqual(2);   // centred
+  expect(leftGap).toBeGreaterThanOrEqual(8); // a gutter, not edge to edge
+  expect(Math.abs(leftGap - rightGap)).toBeLessThanOrEqual(2); // centred
   if (viewport.width < 768) {
     // A phone: the screen's width less a gutter either side, at its top
     // (the map's buttons ride on the sheet since 2026-10-26).
@@ -245,10 +259,13 @@ test("the chart underneath stays draggable while a toast is showing", async ({ p
   const box = (await first.boundingBox())!;
 
   // Dead centre of the toast card -- the worst case.
-  const beneath = await page.evaluate(([x, y]) => {
-    const el = document.elementFromPoint(x, y);
-    return el?.closest("[data-sonner-toast]") ? "the toast" : "something under it";
-  }, [box.x + box.width / 2, box.y + box.height / 2]);
+  const beneath = await page.evaluate(
+    ([x, y]) => {
+      const el = document.elementFromPoint(x, y);
+      return el?.closest("[data-sonner-toast]") ? "the toast" : "something under it";
+    },
+    [box.x + box.width / 2, box.y + box.height / 2],
+  );
   expect(beneath).toBe("something under it");
 });
 

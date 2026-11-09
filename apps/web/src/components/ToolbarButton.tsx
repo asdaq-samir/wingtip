@@ -13,11 +13,13 @@ import { EXPANDED_BUTTON } from "./expandedButton";
  * DropdownMenuTrigger `asChild` outside it, `ref` and every other prop
  * on the button; ringed while what it opened is open.
  */
-export default function ToolbarButton({ icon, text, label, className, ...props }: ComponentProps<typeof Button> & {
-  icon: ReactNode;
-  text: string;
-  label?: string;
-}) {
+export default function ToolbarButton({
+  icon,
+  text,
+  label,
+  className,
+  ...props
+}: ComponentProps<typeof Button> & { icon: ReactNode; text: string; label?: string }) {
   return (
     <Button
       variant="ghost"

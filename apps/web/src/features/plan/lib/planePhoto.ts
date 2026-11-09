@@ -12,11 +12,7 @@ interface PlanePhoto {
 }
 
 interface Answer {
-  photos?: {
-    thumbnail_large?: { src?: string; size?: { width?: number; height?: number } };
-    link?: string;
-    photographer?: string;
-  }[];
+  photos?: { thumbnail_large?: { src?: string; size?: { width?: number; height?: number } }; link?: string; photographer?: string }[];
 }
 
 /**
@@ -30,23 +26,27 @@ interface Answer {
  * feature. None where Planespotters has no photo of it or does not
  * answer: the card's sketch is then its only picture.
  */
-export const planePhotoQuery = (hex: string) => queryOptions({
-  queryKey: ["plane-photo", hex],
-  queryFn: async ({ signal }): Promise<PlanePhoto | null> => {
-    const response = await fetch(`https://api.planespotters.net/pub/photos/hex/${encodeURIComponent(hex)}`, { signal });
-    if (!response.ok) return null;
-    const photo = ((await response.json()) as Answer).photos?.[0];
-    const large = photo?.thumbnail_large;
-    if (!large?.src || !photo?.link || !photo.photographer) return null;
-    return {
-      src: large.src, width: large.size?.width ?? 420, height: large.size?.height ?? 280,
-      link: photo.link, photographer: photo.photographer,
-    };
-  },
-  // A photo changes seldom: asked once a day an airplane at most, and
-  // never again on a failure, which shows the sketch alone.
-  staleTime: 24 * 3600_000,
-  gcTime: 24 * 3600_000,
-  retry: false,
-  meta: { silent: true },
-});
+export const planePhotoQuery = (hex: string) =>
+  queryOptions({
+    queryKey: ["plane-photo", hex],
+    queryFn: async ({ signal }): Promise<PlanePhoto | null> => {
+      const response = await fetch(`https://api.planespotters.net/pub/photos/hex/${encodeURIComponent(hex)}`, { signal });
+      if (!response.ok) return null;
+      const photo = ((await response.json()) as Answer).photos?.[0];
+      const large = photo?.thumbnail_large;
+      if (!large?.src || !photo?.link || !photo.photographer) return null;
+      return {
+        src: large.src,
+        width: large.size?.width ?? 420,
+        height: large.size?.height ?? 280,
+        link: photo.link,
+        photographer: photo.photographer,
+      };
+    },
+    // A photo changes seldom: asked once a day an airplane at most, and
+    // never again on a failure, which shows the sketch alone.
+    staleTime: 24 * 3600_000,
+    gcTime: 24 * 3600_000,
+    retry: false,
+    meta: { silent: true },
+  });

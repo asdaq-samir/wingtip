@@ -4,6 +4,7 @@ ratings and debriefs in, the engine's proficiency plan out
 ProficiencyPlanInput, ProficiencyPlanAnswer). The logbook entries are
 the gateway's LogbookEntry, camelCase, as the app has them from GET
 /api/logbook; the rest is the engine's own snake_case, passed on whole."""
+
 from datetime import date
 from typing import Literal
 
@@ -13,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class CoachLogbookEntry(BaseModel):
     """One logbook entry, the columns the currency rules read; a column
     missing is none of it."""
+
     model_config = ConfigDict(extra="ignore")
 
     flownOn: date
@@ -31,6 +33,7 @@ class CoachLogbookEntry(BaseModel):
 
 class CoachEndorsement(BaseModel):
     """An endorsement a student holds: AC 61-65K's code and its day."""
+
     code: str = Field(max_length=32)
     on: date
 
@@ -66,6 +69,7 @@ class CoachDebrief(BaseModel):
     """One of the pilot's own debriefed flights, trimmed (the engine's
     CoachDebrief): an approach's profile and findings, or a flight's legs
     and pattern entries."""
+
     kind: Literal["approach", "flight"]
     flown_on: date
     place: str = Field("", max_length=40)
@@ -80,6 +84,7 @@ class CoachAsk(BaseModel):
     """What the app holds of the pilot: the logbook and the dates from the
     gateway, the ratings the pilot gives, a student's endorsements, the
     debriefs of their recent flights, their home field and their day."""
+
     entries: list[CoachLogbookEntry] = Field(max_length=5000)
     flightReviewOn: date | None = None
     medicalExpiresOn: date | None = None
@@ -153,6 +158,7 @@ class CoachSession(BaseModel):
 
 class ProficiencyPlan(BaseModel):
     """The engine's proficiency_plan answer."""
+
     model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
 
     today: date

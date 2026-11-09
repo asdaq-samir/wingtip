@@ -10,13 +10,20 @@ import { closeConsole, library, openConsole, controlsInSight } from "./helpers";
 
 const A_PILOT = { id: 1, email: "pilot@example.com", displayName: "A Pilot", developer: false };
 const aircraft = (id: number, tailNumber: string) => ({
-  id, tailNumber, typeDesignator: "C172", cruiseTasKt: 110, fuelBurnGph: 8, usableFuelGal: 53,
+  id,
+  tailNumber,
+  typeDesignator: "C172",
+  cruiseTasKt: 110,
+  fuelBurnGph: 8,
+  usableFuelGal: 53,
 });
 
 /** A route whose answer waits until `release()` is called. */
 function held() {
   let release!: () => void;
-  const gate = new Promise<void>(resolve => { release = resolve; });
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
   return { gate, release: () => release() };
 }
 
@@ -28,55 +35,58 @@ async function openPlannerConsole(page: Page) {
   return consoleSheet(page);
 }
 
-test("an add still saving when Edit is clicked says added, and leaves the airplane being edited in the form", { tag: "@smoke" }, async ({ page }) => {
-  await page.route("**/api/me", route =>
-    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(A_PILOT) }));
-  const hold = held();
-  await page.route("**/api/aircraft", async (route: Route) => {
-    if (route.request().method() === "POST") {
-      await hold.gate;
-      await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify(aircraft(3, "N3")) });
-    } else {
-      await route.fulfill({
-        status: 200, contentType: "application/json", body: JSON.stringify([aircraft(1, "N1"), aircraft(2, "N2")]),
-      });
-    }
-  });
-  const console = await openPlannerConsole(page);
-  await library(console, "Airplanes");
-  // The form opens from the list's New airplane row -- a popover, or
-  // on a phone a sheet from the bottom -- on the page, not inside the
-  // console's own element.
-  await expect(page.getByLabel("Tail number")).toHaveCount(0);
-  await console.getByTestId("new-aircraft-button").click();
-  await page.getByLabel("Tail number").fill("N3");
-  await page.getByLabel("Type designator").fill("C172");
-  await page.getByLabel("Cruise TAS in knots").fill("110");
-  await page.getByLabel("Cruise fuel burn in gallons per hour").fill("8");
-  await page.getByRole("button", { name: "Add airplane" }).click();
+test(
+  "an add still saving when Edit is clicked says added, and leaves the airplane being edited in the form",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    await page.route("**/api/me", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(A_PILOT) }),
+    );
+    const hold = held();
+    await page.route("**/api/aircraft", async (route: Route) => {
+      if (route.request().method() === "POST") {
+        await hold.gate;
+        await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify(aircraft(3, "N3")) });
+      } else {
+        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([aircraft(1, "N1"), aircraft(2, "N2")]) });
+      }
+    });
+    const console = await openPlannerConsole(page);
+    await library(console, "Airplanes");
+    // The form opens from the list's New airplane row -- a popover, or
+    // on a phone a sheet from the bottom -- on the page, not inside the
+    // console's own element.
+    await expect(page.getByLabel("Tail number")).toHaveCount(0);
+    await console.getByTestId("new-aircraft-button").click();
+    await page.getByLabel("Tail number").fill("N3");
+    await page.getByLabel("Type designator").fill("C172");
+    await page.getByLabel("Cruise TAS in knots").fill("110");
+    await page.getByLabel("Cruise fuel burn in gallons per hour").fill("8");
+    await page.getByRole("button", { name: "Add airplane" }).click();
 
-  // The popover away first (the add is in flight regardless): on a
-  // phone it covers the rows, and their Edit buttons, under it.
-  await page.keyboard.press("Escape");
-  await expect(page.getByLabel("Tail number")).toHaveCount(0);
-  // The airplane's row, or on a phone its card: whichever is shown.
-  await console.locator("[data-aircraft-row]:visible", { hasText: "N2" }).getByRole("button", { name: "Edit" }).click();
-  await expect(page.getByLabel("Tail number")).toHaveValue("N2");
-  hold.release();
+    // The popover away first (the add is in flight regardless): on a
+    // phone it covers the rows, and their Edit buttons, under it.
+    await page.keyboard.press("Escape");
+    await expect(page.getByLabel("Tail number")).toHaveCount(0);
+    // The airplane's row, or on a phone its card: whichever is shown.
+    await console.locator("[data-aircraft-row]:visible", { hasText: "N2" }).getByRole("button", { name: "Edit" }).click();
+    await expect(page.getByLabel("Tail number")).toHaveValue("N2");
+    hold.release();
 
-  await expect(page.getByTestId("done-note").filter({ hasText: "Airplane Added" })).toBeVisible();
-  await expect(page.getByTestId("done-note").filter({ hasText: "Airplane Saved" })).toHaveCount(0);
-  await expect(page.getByLabel("Tail number")).toHaveValue("N2");
-});
+    await expect(page.getByTestId("done-note").filter({ hasText: "Airplane Added" })).toBeVisible();
+    await expect(page.getByTestId("done-note").filter({ hasText: "Airplane Saved" })).toHaveCount(0);
+    await expect(page.getByLabel("Tail number")).toHaveValue("N2");
+  },
+);
 
 test.describe("the email sign-in link", () => {
   test.beforeEach(async ({ page }) => {
-    await page.route("**/api/me", route => route.fulfill({ status: 401, body: "" }));
+    await page.route("**/api/me", (route) => route.fulfill({ status: 401, body: "" }));
   });
 
   test("says which address it went to, whatever was typed after", { tag: "@smoke" }, async ({ page }) => {
     const hold = held();
-    await page.route("**/api/auth/magic-link", async route => {
+    await page.route("**/api/auth/magic-link", async (route) => {
       await hold.gate;
       await route.fulfill({ status: 204, body: "" });
     });
@@ -95,7 +105,7 @@ test.describe("the email sign-in link", () => {
 
   test("closed while sending, it opens again on the form", async ({ page }) => {
     const hold = held();
-    await page.route("**/api/auth/magic-link", async route => {
+    await page.route("**/api/auth/magic-link", async (route) => {
       await hold.gate;
       await route.fulfill({ status: 204, body: "" });
     });
@@ -114,7 +124,7 @@ test.describe("the email sign-in link", () => {
     // console under it open.
     await expect(page.getByLabel("Email address")).toHaveCount(0);
     await expect(console).toBeVisible();
-    const answered = page.waitForResponse(r => r.url().includes("/api/auth/magic-link"));
+    const answered = page.waitForResponse((r) => r.url().includes("/api/auth/magic-link"));
     hold.release();
     await answered;
 
@@ -124,7 +134,7 @@ test.describe("the email sign-in link", () => {
   });
 
   test("too many asked for says so, not to check the address", async ({ page }) => {
-    await page.route("**/api/auth/magic-link", route => route.fulfill({ status: 429, body: "" }));
+    await page.route("**/api/auth/magic-link", (route) => route.fulfill({ status: 429, body: "" }));
     const console = await openPlannerConsole(page);
     await console.getByRole("button", { name: "Sign in" }).click();
     await page.getByLabel("Email address").fill("a@example.com");
@@ -137,7 +147,7 @@ test.describe("the email sign-in link", () => {
   test("a refused token says to reload, not to check the address", async ({ page }) => {
     // What an http page that could not read the https port's Secure
     // XSRF-TOKEN got: its POST refused before the address was looked at.
-    await page.route("**/api/auth/magic-link", route => route.fulfill({ status: 401, body: "" }));
+    await page.route("**/api/auth/magic-link", (route) => route.fulfill({ status: 401, body: "" }));
     const console = await openPlannerConsole(page);
     await console.getByRole("button", { name: "Sign in" }).click();
     await page.getByLabel("Email address").fill("a@example.com");
@@ -147,11 +157,10 @@ test.describe("the email sign-in link", () => {
 });
 
 test("the airplane the nav log flies is ticked, and a tap on another flies that one", async ({ page }) => {
-  await page.route("**/api/me", route =>
-    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(A_PILOT) }));
-  await page.route("**/api/aircraft", route => route.fulfill({
-    status: 200, contentType: "application/json", body: JSON.stringify([aircraft(1, "N1"), aircraft(2, "N2")]),
-  }));
+  await page.route("**/api/me", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(A_PILOT) }));
+  await page.route("**/api/aircraft", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([aircraft(1, "N1"), aircraft(2, "N2")]) }),
+  );
   const console = await openPlannerConsole(page);
   await library(console, "Airplanes");
   // The row's own radio, which says whether it is the one flown.

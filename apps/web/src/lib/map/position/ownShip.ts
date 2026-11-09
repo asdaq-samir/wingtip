@@ -101,7 +101,7 @@ export function ownShipAvailable(): boolean {
  * or has no fix.
  */
 export function useOwnShipNear(): { lat: number; lon: number } | null {
-  const at = useOwnShip(o => (o.enabled && o.fix ? `${o.fix.lat.toFixed(2)},${o.fix.lon.toFixed(2)}` : null));
+  const at = useOwnShip((o) => (o.enabled && o.fix ? `${o.fix.lat.toFixed(2)},${o.fix.lon.toFixed(2)}` : null));
   return useMemo(() => {
     const fix = at === null ? null : useOwnShip.getState().fix;
     return fix ? { lat: fix.lat, lon: fix.lon } : null;
@@ -111,7 +111,7 @@ export function useOwnShipNear(): { lat: number; lon: number } | null {
 /** Own ship's fix while it is on, what every distance from the airplane is
  *  measured from; null while it is off. */
 export function useOwnFix() {
-  return useOwnShip(o => (o.enabled ? o.fix : null));
+  return useOwnShip((o) => (o.enabled ? o.fix : null));
 }
 
 /** Own ship as it was before a dry run took it over, to give back
@@ -132,10 +132,14 @@ function stopWatching() {
 function startWatching(set: (patch: Partial<OwnShip>) => void) {
   if (!ownShipAvailable() || watchId !== null) return;
   watchId = navigator.geolocation.watchPosition(
-    position => applyFix(set, position),
-    err => failed(set, err.code === err.PERMISSION_DENIED
-      ? "Location access was refused; allow it for this site in the browser's settings."
-      : err.message || "No position yet."),
+    (position) => applyFix(set, position),
+    (err) =>
+      failed(
+        set,
+        err.code === err.PERMISSION_DENIED
+          ? "Location access was refused; allow it for this site in the browser's settings."
+          : err.message || "No position yet.",
+      ),
     { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 },
   );
 }
@@ -150,7 +154,9 @@ function applyFix(set: (patch: Partial<OwnShip>) => void, position: GeolocationP
     lastFix: { lat: Math.round(latitude * 1000) / 1000, lon: Math.round(longitude * 1000) / 1000 },
     error: null,
     fix: {
-      lat: latitude, lon: longitude, accuracyM: accuracy,
+      lat: latitude,
+      lon: longitude,
+      accuracyM: accuracy,
       headingDeg: heading === null || Number.isNaN(heading) ? null : heading,
       speedKt: speed === null || Number.isNaN(speed) ? null : speed * 1.943844,
       altitudeFt: altitude === null || Number.isNaN(altitude) ? null : altitude * 3.28084,
@@ -173,7 +179,7 @@ function failed(set: (patch: Partial<OwnShip>) => void, message: string) {
 
 export const useOwnShip = create<OwnShip>()(
   persist(
-    set => ({
+    (set) => ({
       enabled: false,
       simulated: false,
       follow: true,
@@ -182,7 +188,7 @@ export const useOwnShip = create<OwnShip>()(
       recentred: 0,
       recentreZoom: null,
       lastFix: null,
-      setEnabled: enabled => {
+      setEnabled: (enabled) => {
         if (enabled && !ownShipAvailable()) return;
         if (enabled) {
           set({ enabled: true, error: null });
@@ -194,10 +200,10 @@ export const useOwnShip = create<OwnShip>()(
           set({ enabled: false, error: null });
         }
       },
-      setFollow: follow => set({ follow }),
-      recentre: zoom => set(s => ({ follow: true, recentred: s.recentred + 1, recentreZoom: zoom ?? null })),
+      setFollow: (follow) => set({ follow }),
+      recentre: (zoom) => set((s) => ({ follow: true, recentred: s.recentred + 1, recentreZoom: zoom ?? null })),
       routeAsked: 0,
-      showRoute: () => set(s => ({ routeAsked: s.routeAsked + 1 })),
+      showRoute: () => set((s) => ({ routeAsked: s.routeAsked + 1 })),
       routeOutOfView: false,
       routeDrawn: false,
     }),
@@ -208,7 +214,7 @@ export const useOwnShip = create<OwnShip>()(
       // a degree, so a write a hundred metres or so.
       storage: createJSONStorage(() => browserStorage),
       // A dry run's own ship is not kept: what the pilot had before it is.
-      partialize: s => ({
+      partialize: (s) => ({
         enabled: s.simulated ? (beforeSimulation?.enabled ?? false) : s.enabled,
         follow: s.simulated ? (beforeSimulation?.follow ?? true) : s.follow,
         lastFix: s.lastFix,
@@ -218,9 +224,9 @@ export const useOwnShip = create<OwnShip>()(
       // prompt (if it still has one to show) comes up at once rather
       // than after a tap. Remembered on but unavailable here (plain
       // http), it is off until the switch is reachable again.
-      onRehydrateStorage: () => state => {
+      onRehydrateStorage: () => (state) => {
         if (!state?.enabled) return;
-        if (ownShipAvailable()) startWatching(patch => useOwnShip.setState(patch));
+        if (ownShipAvailable()) startWatching((patch) => useOwnShip.setState(patch));
         else useOwnShip.setState({ enabled: false });
       },
     },
@@ -239,7 +245,14 @@ export const SIMULATED_FIX_MS = 250;
 const DRY_RUN_ZOOM = 10;
 
 /** A point of the planned flight's dry run (features/plan/map/pastFlight's). */
-interface SimulatedPoint { t: number; lat: number; lon: number; alt_ft?: number | null; gs_kt?: number | null; track_deg?: number | null }
+interface SimulatedPoint {
+  t: number;
+  lat: number;
+  lon: number;
+  alt_ft?: number | null;
+  gs_kt?: number | null;
+  track_deg?: number | null;
+}
 
 /**
  * Own ship flown by the dry run, as if a pilot were flying the route, at
@@ -254,15 +267,27 @@ export function simulateFix(point: SimulatedPoint) {
   if (!s.simulated) {
     beforeSimulation = { enabled: s.enabled, follow: s.follow };
     stopWatching();
-    useOwnShip.setState(s => ({ simulated: true, enabled: true, follow: true, error: null, recentred: s.recentred + 1, recentreZoom: DRY_RUN_ZOOM }));
+    useOwnShip.setState((s) => ({
+      simulated: true,
+      enabled: true,
+      follow: true,
+      error: null,
+      recentred: s.recentred + 1,
+      recentreZoom: DRY_RUN_ZOOM,
+    }));
   }
   useOwnShip.setState({
     fix: {
-      lat: point.lat, lon: point.lon, accuracyM: 5, headingDeg: point.track_deg ?? null, speedKt: point.gs_kt ?? null,
+      lat: point.lat,
+      lon: point.lon,
+      accuracyM: 5,
+      headingDeg: point.track_deg ?? null,
+      speedKt: point.gs_kt ?? null,
       // The flight's own clock, not the page's: a climb read over these
       // (what is ahead's vertical speed) is the plan's, whatever the
       // replay's speed.
-      altitudeFt: point.alt_ft ?? null, at: point.t * 1000,
+      altitudeFt: point.alt_ft ?? null,
+      at: point.t * 1000,
     },
   });
 }
@@ -274,7 +299,7 @@ export function endSimulation() {
   const was = beforeSimulation ?? { enabled: false, follow: true };
   beforeSimulation = null;
   useOwnShip.setState({ simulated: false, enabled: was.enabled, follow: was.follow, fix: null, error: null });
-  if (was.enabled && ownShipAvailable()) startWatching(patch => useOwnShip.setState(patch));
+  if (was.enabled && ownShipAvailable()) startWatching((patch) => useOwnShip.setState(patch));
 }
 
 /**
@@ -291,8 +316,11 @@ export function endSimulation() {
  */
 export async function locateOnOpen() {
   if (!ownShipAvailable()) return;
-  const permission = await navigator.permissions?.query({ name: "geolocation" })
-    .then(status => status.state).catch(() => "prompt" as const) ?? "prompt";
+  const permission =
+    (await navigator.permissions
+      ?.query({ name: "geolocation" })
+      .then((status) => status.state)
+      .catch(() => "prompt" as const)) ?? "prompt";
   if (permission === "denied") return;
   const { enabled, setEnabled, recentre } = useOwnShip.getState();
   if (!enabled) {
@@ -316,18 +344,24 @@ export async function positionNow(waitMs = 1500): Promise<Fix | null> {
   if (ship.enabled && ship.fix) return ship.fix;
   if (!ownShipAvailable()) return null;
   if (!ship.enabled) {
-    void navigator.permissions?.query({ name: "geolocation" }).then(status => {
-      if (status.state === "denied" || useOwnShip.getState().enabled) return;
-      quiet = true;
-      ship.setFollow(false);
-      ship.setEnabled(true);
-    }).catch(() => undefined);
+    void navigator.permissions
+      ?.query({ name: "geolocation" })
+      .then((status) => {
+        if (status.state === "denied" || useOwnShip.getState().enabled) return;
+        quiet = true;
+        ship.setFollow(false);
+        ship.setEnabled(true);
+      })
+      .catch(() => undefined);
     return null;
   }
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     let stop = () => {};
-    const timer = window.setTimeout(() => { stop(); resolve(null); }, waitMs);
-    stop = useOwnShip.subscribe(s => {
+    const timer = window.setTimeout(() => {
+      stop();
+      resolve(null);
+    }, waitMs);
+    stop = useOwnShip.subscribe((s) => {
       if (!s.fix && s.enabled && !s.error) return;
       window.clearTimeout(timer);
       stop();

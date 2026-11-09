@@ -13,7 +13,9 @@ type Facilities = Briefing["airports"][string];
 /** A chevron at (x, y) pointing `deg` clockwise from up: the way the
  *  pattern is flown there. */
 function Chevron({ x, y, deg }: { x: number; y: number; deg: number }) {
-  return <path d="M-4 3 L0 -2 L4 3" transform={`translate(${x} ${y}) rotate(${deg})`} fill="none" stroke="currentColor" strokeWidth={1.5} />;
+  return (
+    <path d="M-4 3 L0 -2 L4 3" transform={`translate(${x} ${y}) rotate(${deg})`} fill="none" stroke="currentColor" strokeWidth={1.5} />
+  );
 }
 
 /**
@@ -35,11 +37,23 @@ function PatternDiagram({ end, opposite, fromDeg }: { end: RunwayEnd; opposite: 
     // Its labels at 12 in a 240-wide drawing never drawn wider than 240
     // (max-w-60): 12 points or more on the screen, over the 11 HIG's
     // smallest -- a diagram's labels, outside the type scale on purpose.
-    <svg viewBox="0 0 240 240" className="mx-auto h-auto w-full max-w-60 text-foreground" role="img" aria-label={label} data-testid="pattern-diagram">
+    <svg
+      viewBox="0 0 240 240"
+      className="mx-auto h-auto w-full max-w-60 text-foreground"
+      role="img"
+      aria-label={label}
+      data-testid="pattern-diagram"
+    >
       <g className="text-xs text-muted-foreground" fill="currentColor" textAnchor="middle">
-        <text x={xd + side * 12} y={150} transform={`rotate(${-90 * side} ${xd + side * 12} 150)`}>Downwind</text>
-        <text x={across} y={214}>Base</text>
-        <text x={120 - side * 8} y={190} textAnchor={right ? "end" : "start"}>Final</text>
+        <text x={xd + side * 12} y={150} transform={`rotate(${-90 * side} ${xd + side * 12} 150)`}>
+          Downwind
+        </text>
+        <text x={across} y={214}>
+          Base
+        </text>
+        <text x={120 - side * 8} y={190} textAnchor={right ? "end" : "start"}>
+          Final
+        </text>
       </g>
       <path d={`M120 80 V40 H${xd} V200 H120 V160`} fill="none" stroke="currentColor" strokeOpacity={0.55} strokeWidth={1.5} />
       <g className="text-muted-foreground">
@@ -53,29 +67,44 @@ function PatternDiagram({ end, opposite, fromDeg }: { end: RunwayEnd; opposite: 
           each read from its own approach. */}
       <rect x={110} y={80} width={20} height={80} rx={1.5} fill="currentColor" />
       <g className="fill-background text-xs" fontWeight={700} textAnchor="middle">
-        <text x={120} y={155}>{runwayNumber(end.ident)}</text>
-        {opposite && <text x={120} y={155} transform="rotate(180 120 120)">{runwayNumber(opposite)}</text>}
+        <text x={120} y={155}>
+          {runwayNumber(end.ident)}
+        </text>
+        {opposite && (
+          <text x={120} y={155} transform="rotate(180 120 120)">
+            {runwayNumber(opposite)}
+          </text>
+        )}
       </g>
       <g className="text-tint">
         <path d={`M${xd + side * 50} 70 L${xd} 120`} stroke="currentColor" strokeWidth={2} fill="none" />
         <Chevron x={xd + side * 6} y={114} deg={right ? 225 : 135} />
-        <text x={right ? 236 : 4} y={62} className="text-xs" textAnchor={right ? "end" : "start"} fill="currentColor">45° entry</text>
+        <text x={right ? 236 : 4} y={62} className="text-xs" textAnchor={right ? "end" : "start"} fill="currentColor">
+          45° entry
+        </text>
       </g>
       {/* North, turned to the runway: the page's up is its heading. */}
       <g transform={`translate(${120 - side * 96} 26) rotate(${-heading})`} className="text-muted-foreground">
         <path d="M0 -11 L4 5 L0 2 L-4 5 Z" fill="currentColor" />
-        <text y={-14} className="text-xs" textAnchor="middle" fill="currentColor" transform={`rotate(${heading} 0 -17)`}>N</text>
+        <text y={-14} className="text-xs" textAnchor="middle" fill="currentColor" transform={`rotate(${heading} 0 -17)`}>
+          N
+        </text>
       </g>
       {rel != null && (
         <g className="text-tint" data-testid="pattern-arrival">
           <path
             d={`M${120 + 116 * Math.sin(rel)} ${120 - 116 * Math.cos(rel)} L${120 + 98 * Math.sin(rel)} ${120 - 98 * Math.cos(rel)}`}
-            stroke="currentColor" strokeWidth={2} strokeDasharray="3 2"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeDasharray="3 2"
           />
           <Chevron x={120 + 98 * Math.sin(rel)} y={120 - 98 * Math.cos(rel)} deg={(rel * 180) / Math.PI + 180} />
           <text
-            x={120 + 107 * Math.sin(rel) + 12 * Math.cos(rel)} y={120 - 107 * Math.cos(rel) + 12 * Math.sin(rel) + 3}
-            className="text-xs" textAnchor="middle" fill="currentColor"
+            x={120 + 107 * Math.sin(rel) + 12 * Math.cos(rel)}
+            y={120 - 107 * Math.cos(rel) + 12 * Math.sin(rel) + 3}
+            className="text-xs"
+            textAnchor="middle"
+            fill="currentColor"
           >
             You
           </text>
@@ -89,11 +118,15 @@ function PatternDiagram({ end, opposite, fromDeg }: { end: RunwayEnd; opposite: 
 function Words({ words }: { words: string }) {
   return (
     <>
-      {words.split(/(\[[^\]]+\])/).map((part, i) => (
-        part.startsWith("[")
-          ? <span key={i} className="text-muted-foreground italic">{part}</span>
-          : <Fragment key={i}>{part}</Fragment>
-      ))}
+      {words.split(/(\[[^\]]+\])/).map((part, i) =>
+        part.startsWith("[") ? (
+          <span key={i} className="text-muted-foreground italic">
+            {part}
+          </span>
+        ) : (
+          <Fragment key={i}>{part}</Fragment>
+        ),
+      )}
     </>
   );
 }
@@ -102,12 +135,20 @@ function CallRow({ call }: { call: RadioCall }) {
   return (
     <ListRow
       title={call.listen ? `Listen: ${call.to}` : call.to}
-      description={(
+      description={
         <>
-          <span className={cn("block", !call.listen && "text-foreground")}>{call.listen ? call.words : <>“<Words words={call.words} />”</>}</span>
+          <span className={cn("block", !call.listen && "text-foreground")}>
+            {call.listen ? (
+              call.words
+            ) : (
+              <>
+                “<Words words={call.words} />”
+              </>
+            )}
+          </span>
           {call.note && <span className="block pt-0.5">{call.note}</span>}
         </>
-      )}
+      }
       value={call.mhz != null ? <Mhz mhz={call.mhz} /> : undefined}
       data-testid="radio-call"
     />
@@ -119,9 +160,9 @@ function CallRow({ call }: { call: RadioCall }) {
 function PatternRows({ phase, facilities, courseDeg }: { phase: RadioPhase; facilities: Facilities; courseDeg: number | null }) {
   const end = phase.end;
   const pattern = facilities.pattern;
-  const runway = facilities.runways.find(r => r.runway_ends?.some(e => e.ident === end?.ident));
-  const opposite = runway?.runway_ends?.find(e => e.ident !== end?.ident)?.ident ?? null;
-  const rightEnds = facilities.runways.flatMap(r => r.runway_ends ?? []).filter(e => e.traffic === "right" && e.ident !== end?.ident);
+  const runway = facilities.runways.find((r) => r.runway_ends?.some((e) => e.ident === end?.ident));
+  const opposite = runway?.runway_ends?.find((e) => e.ident !== end?.ident)?.ident ?? null;
+  const rightEnds = facilities.runways.flatMap((r) => r.runway_ends ?? []).filter((e) => e.traffic === "right" && e.ident !== end?.ident);
   const entry = end && phase.kind === "arrival" && courseDeg != null ? entryFor(end, courseDeg) : null;
   return (
     // At a towered field the tower gives the runway and the pattern, either side.
@@ -134,9 +175,11 @@ function PatternRows({ phase, facilities, courseDeg }: { phase: RadioPhase; faci
       {pattern && (
         <ListRow
           title="Pattern altitude"
-          description={pattern.published
-            ? `${altFt(pattern.agl_ft)} ft above the field, as the FAA publishes it`
-            : `${altFt(pattern.agl_ft)} ft above the field: none published, so AC 90-66C's for a propeller airplane`}
+          description={
+            pattern.published
+              ? `${altFt(pattern.agl_ft)} ft above the field, as the FAA publishes it`
+              : `${altFt(pattern.agl_ft)} ft above the field: none published, so AC 90-66C's for a propeller airplane`
+          }
           value={pattern.altitude_ft != null ? `${altFt(pattern.altitude_ft)} ft` : undefined}
           data-testid="pattern-altitude"
         />
@@ -149,7 +192,11 @@ function PatternRows({ phase, facilities, courseDeg }: { phase: RadioPhase; faci
         <ListRow muted title="No runway with a heading to draw" />
       )}
       {rightEnds.length > 0 && (
-        <ListRow title="Right traffic too" value={rightEnds.map(e => runwayNumber(e.ident)).join(", ")} description="The other runway ends the FAA flies right; the rest left" />
+        <ListRow
+          title="Right traffic too"
+          value={rightEnds.map((e) => runwayNumber(e.ident)).join(", ")}
+          description="The other runway ends the FAA flies right; the rest left"
+        />
       )}
       {entry && <ListRow title="Joining" description={entry.words} data-testid="pattern-entry" />}
       {end && phase.kind === "departure" && <ListRow title="Leaving" description={exitFor(end)} />}
@@ -166,7 +213,13 @@ function PatternRows({ phase, facilities, courseDeg }: { phase: RadioPhase; faci
  * calls know the next. Nothing for a local flight: there is no route to
  * call along.
  */
-export default function PatternRadio({ briefing, landings, legs, callSign, at }: {
+export default function PatternRadio({
+  briefing,
+  landings,
+  legs,
+  callSign,
+  at,
+}: {
   briefing: Briefing;
   landings: string[];
   legs: Leg[];
@@ -178,16 +231,22 @@ export default function PatternRadio({ briefing, landings, legs, callSign, at }:
   const phases = fieldPhases(briefing, landings, legs, callSign, at, picks);
   if (!phases.length) return null;
   const courseInto = (ident: string) => {
-    const into = legs.filter(l => l.to === ident);
+    const into = legs.filter((l) => l.to === ident);
     return into.length ? into[into.length - 1]!.true_course_deg : null;
   };
   return (
     <>
       {phases.map((phase, i) => (
         <div key={`${phase.kind}${i}`} className="space-y-2" data-testid="radio-phase">
-          <PatternRows phase={phase} facilities={briefing.airports[phase.ident]!} courseDeg={phase.kind === "arrival" ? courseInto(phase.ident) : null} />
+          <PatternRows
+            phase={phase}
+            facilities={briefing.airports[phase.ident]!}
+            courseDeg={phase.kind === "arrival" ? courseInto(phase.ident) : null}
+          />
           <ListGroup>
-            {phase.calls.map((call, j) => <CallRow key={j} call={call} />)}
+            {phase.calls.map((call, j) => (
+              <CallRow key={j} call={call} />
+            ))}
           </ListGroup>
         </div>
       ))}

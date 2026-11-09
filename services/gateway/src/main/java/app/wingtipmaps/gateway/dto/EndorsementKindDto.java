@@ -15,5 +15,4 @@ public record EndorsementKindDto(
         String label,
         /** The sample's words, {student} and each field's {key} in them. */
         String template,
-        List<EndorsementFieldDto> fields) {
-}
+        List<EndorsementFieldDto> fields) {}

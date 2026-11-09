@@ -20,9 +20,19 @@ export const planOf = (r: SaveFlightRequest) => JSON.stringify({ ...r, risk: nul
  *  course (the airports' own idents and places, not a route being
  *  switched to), the nav log and its totals. Save used to be offered
  *  mid-stream, or after a stream failed, and filed null totals. */
-export function useSaveRequest({ course, totals, nav, legs, selected, aircraftId, depart, altitudes = "", picks = "" }: FlightToSave): SaveFlightRequest | null {
+export function useSaveRequest({
+  course,
+  totals,
+  nav,
+  legs,
+  selected,
+  aircraftId,
+  depart,
+  altitudes = "",
+  picks = "",
+}: FlightToSave): SaveFlightRequest | null {
   // The briefing's risk assessment (lib/frat), filed with the flight.
-  const risk = useRisk(s => s.assessment);
+  const risk = useRisk((s) => s.assessment);
   return useMemo((): SaveFlightRequest | null => {
     if (!course || !nav || !totals) return null;
     return {
@@ -30,7 +40,7 @@ export function useSaveRequest({ course, totals, nav, legs, selected, aircraftId
       // A present position without the moment's altitude (withoutAltitude).
       departureIdent: withoutAltitude(course.departure.ident),
       destinationIdent: course.destination.ident,
-      stops: (course.stops ?? []).map(stop => stop.ident),
+      stops: (course.stops ?? []).map((stop) => stop.ident),
       cruiseAltitudeFt: nav.altitude_ft,
       totalDistanceNm: totals.distance_nm,
       totalEteMin: totals.ete_min,
@@ -38,7 +48,7 @@ export function useSaveRequest({ course, totals, nav, legs, selected, aircraftId
       plannedFor: depart || null,
       // The nav log's own rows (navLogRows), as the checkpoints Spring files.
       checkpoints: savedCheckpoints(navLogRows(course, selected, legs), course.distance_nm),
-      risk: risk ? { score: risk.score, level: risk.level, factors: risk.factors.map(f => f.label) } : null,
+      risk: risk ? { score: risk.score, level: risk.level, factors: risk.factors.map((f) => f.label) } : null,
       altitudes: altitudes || null,
       picks: picks || null,
     };

@@ -1,5 +1,6 @@
 """Traffic near a point, for the map (wingtip.traffic): the airplanes ADS-B
 receivers hear there now, from adsb.lol's open data."""
+
 import datetime as dt
 
 from fastapi import APIRouter, HTTPException, Path, Query
@@ -13,7 +14,8 @@ router = APIRouter()
 
 @router.get("/api/traffic", response_model=Traffic, openapi_extra=PUBLIC)
 def traffic_near(
-    lat: float = Query(ge=-90, le=90), lon: float = Query(ge=-180, le=180),
+    lat: float = Query(ge=-90, le=90),
+    lon: float = Query(ge=-180, le=180),
     radius: float = Query(default=25, gt=0, le=250, description="Nautical miles"),
 ) -> Traffic:
     """The airplanes in the air within `radius` nm of a point (at most 165),
@@ -66,7 +68,8 @@ def traffic_status(hex_id: str = Path(pattern=r"^~?[0-9a-fA-F]{6}$")) -> FlightS
 @router.get("/api/traffic/route", response_model=FlightRoute | None, openapi_extra=PUBLIC)
 def traffic_route(
     callsign: str = Query(min_length=2, max_length=10),
-    lat: float | None = Query(default=None, ge=-90, le=90), lon: float | None = Query(default=None, ge=-180, le=180),
+    lat: float | None = Query(default=None, ge=-90, le=90),
+    lon: float | None = Query(default=None, ge=-180, le=180),
 ) -> FlightRoute | None:
     """The route a flight number is scheduled to fly -- TJSJ to KORD for
     UAL2088 -- and whether the airplane at lat/lon is on or near it, from

@@ -4,8 +4,6 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import app.wingtipmaps.android.map.MapLayers
 import app.wingtipmaps.android.map.MapLayersStore
 import app.wingtipmaps.android.map.OverlayStore
-import java.io.File
-import kotlin.io.path.createTempDirectory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -19,6 +17,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
+import kotlin.io.path.createTempDirectory
 
 /** What the map keeps on the phone: Setup's switches across launches
  *  (MapLayersStore) and the overlay archive's ranges for the air

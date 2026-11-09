@@ -39,7 +39,11 @@ import java.util.List;
 public record SignInOptions(List<String> providers, Access access) {
 
     /** How a deployment is reached; see {@link SignInOptions}. */
-    public enum Access { SIGN_IN, OPEN, CLOSED }
+    public enum Access {
+        SIGN_IN,
+        OPEN,
+        CLOSED
+    }
 
     static Access accessFor(boolean signInPossible, boolean openWrites) {
         return signInPossible ? Access.SIGN_IN : openWrites ? Access.OPEN : Access.CLOSED;

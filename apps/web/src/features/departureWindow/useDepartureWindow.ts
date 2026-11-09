@@ -23,33 +23,50 @@ const KEPT_MS = 10 * 60_000;
  */
 export function useDepartureWindow() {
   const plan = useBriefPlan();
-  const aircraft = usePreferences(p => p.aircraft);
-  const rules = usePreferences(p => p.flightRules);
-  const minimums = usePreferences(p => p.minimums);
+  const aircraft = usePreferences((p) => p.aircraft);
+  const rules = usePreferences((p) => p.flightRules);
+  const minimums = usePreferences((p) => p.minimums);
   const airplane = airplaneChosen(aircraft);
   const { data: pilot } = useQuery(pilotQuery);
   const { data: currency } = useQuery({ ...currencyQuery, enabled: !!pilot });
   const ask: DepartureWindowAsk = {
-    dep: plan.dep, dest: plan.dest, stops: plan.stops.join(","),
+    dep: plan.dep,
+    dest: plan.dest,
+    stops: plan.stops.join(","),
     // None asked with no airplane picked: the planner then assumes none.
     aircraft: airplane ? aircraft.profile : null,
-    cruise_tas_kt: aircraft.cruiseTasKt ?? null, fuel_burn_gph: aircraft.fuelBurnGph ?? null,
-    usable_fuel_gal: aircraft.usableFuelGal ?? null, climb_tas_kt: aircraft.climbTasKt ?? null,
-    climb_fuel_burn_gph: aircraft.climbFuelBurnGph ?? null, cruise_power_pct: aircraft.cruisePowerPct ?? null,
+    cruise_tas_kt: aircraft.cruiseTasKt ?? null,
+    fuel_burn_gph: aircraft.fuelBurnGph ?? null,
+    usable_fuel_gal: aircraft.usableFuelGal ?? null,
+    climb_tas_kt: aircraft.climbTasKt ?? null,
+    climb_fuel_burn_gph: aircraft.climbFuelBurnGph ?? null,
+    cruise_power_pct: aircraft.cruisePowerPct ?? null,
     service_ceiling_ft: aircraft.serviceCeilingFt ?? null,
     rules,
     airplane,
     // The route as planned, the planner's defaults for the rest: the
     // altitude plan it picks, checkpoints, no own altitudes, procedures,
     // holds or ground time; each hour a departure of its own.
-    alternate: "", altitude_choice: "fastest", altitude_nearest: false, altitudes: "", checkpoints: true,
-    class_b_clearance: false, crossings: "", ground: "", holds: "", procedures: "", runways: "", ticked: [],
+    alternate: "",
+    altitude_choice: "fastest",
+    altitude_nearest: false,
+    altitudes: "",
+    checkpoints: true,
+    class_b_clearance: false,
+    crossings: "",
+    ground: "",
+    holds: "",
+    procedures: "",
+    runways: "",
+    ticked: [],
     hours: 48,
     // The pilot's own day, which the logbook's dates are read on.
     day: format(new Date(), "yyyy-MM-dd"),
     minimums: {
-      ceiling_ft: minimums.ceilingFt, visibility_sm: minimums.visibilitySm,
-      crosswind_kt: minimums.crosswindKt, wind_kt: minimums.windKt,
+      ceiling_ft: minimums.ceilingFt,
+      visibility_sm: minimums.visibilitySm,
+      crosswind_kt: minimums.crosswindKt,
+      wind_kt: minimums.windKt,
     },
     currency: currency ? currencyInput(currency) : null,
   };
@@ -66,7 +83,7 @@ export function useDepartureWindow() {
   const [picked, setPicked] = useState<string | null>(null);
   const hours = query.data?.hours ?? [];
   const best = query.data?.windows[0] ?? null;
-  const selected: WindowHour | null = hours.find(h => h.depart === picked) ?? null;
+  const selected: WindowHour | null = hours.find((h) => h.depart === picked) ?? null;
   return {
     shown: plan.routed && !plan.local,
     signedIn: !!pilot,
@@ -77,6 +94,6 @@ export function useDepartureWindow() {
     airplane,
     forecastUntil: query.data?.forecast_until ?? null,
     selected,
-    pick: (depart: string) => setPicked(p => (p === depart ? null : depart)),
+    pick: (depart: string) => setPicked((p) => (p === depart ? null : depart)),
   };
 }

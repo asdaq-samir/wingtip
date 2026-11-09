@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.diagramFixUsable
@@ -69,7 +70,6 @@ import kotlinx.serialization.Serializable
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
-import app.wingtipmaps.android.design.generated.WingtipColors
 
 /**
  * The FAA's airport diagram with the airplane on it (#218), as the iOS

@@ -15,10 +15,17 @@ import org.springframework.lang.Nullable;
  *  required, by day, by time in service, both or neither. */
 public record DueItemRequest(
         @NotNull(message = "kind is required") DueItemKind kind,
+
         @NotBlank(message = "title is required") @Size(max = 120, message = "title must be at most 120 characters")
         String title,
-        @Nullable @Size(max = 60, message = "reference must be at most 60 characters") String reference,
-        @Nullable @Size(max = 200, message = "method must be at most 200 characters") String method,
+
+        @Nullable @Size(max = 60, message = "reference must be at most 60 characters")
+        String reference,
+
+        @Nullable @Size(max = 200, message = "method must be at most 200 characters")
+        String method,
+
         @Nullable LocalDate dueOn,
-        @Nullable @PositiveOrZero(message = "dueAtHours cannot be negative") Double dueAtHours) {
-}
+
+        @Nullable @PositiveOrZero(message = "dueAtHours cannot be negative")
+        Double dueAtHours) {}

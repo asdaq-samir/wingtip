@@ -8,6 +8,7 @@ there is asked here with no code added, and no other rule is.
 Internal: only the assistant service asks it, on the stack's own network.
 It carries no x-gateway, so the gateway does not forward it and no
 browser or phone reaches it."""
+
 from typing import Any
 
 from fastapi import APIRouter, Body, HTTPException

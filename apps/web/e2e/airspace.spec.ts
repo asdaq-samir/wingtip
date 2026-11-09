@@ -5,7 +5,9 @@ import { closeCard, grabberTo, settle, slow } from "./helpers";
 // Saved planned ahead at idle ask the planner then -- found the page
 // closed and failed the test (navlog-fit.spec, CI, 2026-10-28): the
 // handlers taken off, their errors let go, as each test ends.
-test.afterEach(async ({ page }) => { await page.unrouteAll({ behavior: "ignoreErrors" }); });
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
 
 /**
  * The airspace over a point (AirspaceCard): a right-click on the chart,
@@ -13,18 +15,22 @@ test.afterEach(async ({ page }) => { await page.unrouteAll({ behavior: "ignoreEr
  * the address; the planner answers from the FAA's airspace file.
  */
 
-test("C81's column: G at the surface, E from 700 ft above it, Chicago's Class B over both, in the Mode C veil", { tag: "@smoke" }, async ({ page }) => {
-  await page.goto("/app/plan?at=42.3172,-88.0905");
-  const card = page.getByTestId("airspace-card");
-  await expect(card.getByTestId("airspace-band").first()).toBeVisible({ timeout: slow(30000) });
-  // At the pill's size the lowest two; every one all the way up.
-  await grabberTo(page, "full");
-  await expect(card.getByTestId("airspace-class")).toHaveText(["G", "E", "B", "E", "A"]);
-  await expect(card.getByTestId("airspace-band").nth(2)).toContainText("Class B · Chicago");
-  await expect(card.getByTestId("airspace-band").first()).toContainText("1 sm, clear of clouds");
-  await expect(card.getByTestId("airspace-veil")).toContainText("KORD");
-  await expect(card.getByTestId("airspace-where")).toContainText("N42°19.0′ W088°05.4′");
-});
+test(
+  "C81's column: G at the surface, E from 700 ft above it, Chicago's Class B over both, in the Mode C veil",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    await page.goto("/app/plan?at=42.3172,-88.0905");
+    const card = page.getByTestId("airspace-card");
+    await expect(card.getByTestId("airspace-band").first()).toBeVisible({ timeout: slow(30000) });
+    // At the pill's size the lowest two; every one all the way up.
+    await grabberTo(page, "full");
+    await expect(card.getByTestId("airspace-class")).toHaveText(["G", "E", "B", "E", "A"]);
+    await expect(card.getByTestId("airspace-band").nth(2)).toContainText("Class B · Chicago");
+    await expect(card.getByTestId("airspace-band").first()).toContainText("1 sm, clear of clouds");
+    await expect(card.getByTestId("airspace-veil")).toContainText("KORD");
+    await expect(card.getByTestId("airspace-where")).toContainText("N42°19.0′ W088°05.4′");
+  },
+);
 
 test("a right-click on the chart asks what is there, and Close puts the card away", async ({ page }) => {
   await page.goto("/app/plan");
@@ -40,16 +46,31 @@ test("a right-click on the chart asks what is there, and Close puts the card awa
   await expect(card).toHaveCount(0);
 });
 
-test("a point held on the chart goes into the route as the pilot's own point off the nearest fix: added, flown to direct, or held at", async ({ page }) => {
+test("a point held on the chart goes into the route as the pilot's own point off the nearest fix: added, flown to direct, or held at", async ({
+  page,
+}) => {
   // The owner's pick (mock 2 of the canvas's points, 2026-10-20): the
   // dropped point's card with Add to Route, Direct To and Hold Here. Its
   // name is the planner's (wingtip.fixes.frd_near), stubbed here.
-  await page.route(url => url.pathname.endsWith("/airspace/at"), async route => {
-    const real = await (await route.fetch()).json();
-    await route.fulfill({ json: { ...real, point: {
-      ident: "VPBNG/280/20", base: "VPBNG", course_deg: 280, distance_nm: 20, radial: false, name: "20 nm on 280° from VPBNG",
-    } } });
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/airspace/at"),
+    async (route) => {
+      const real = await (await route.fetch()).json();
+      await route.fulfill({
+        json: {
+          ...real,
+          point: {
+            ident: "VPBNG/280/20",
+            base: "VPBNG",
+            course_deg: 280,
+            distance_nm: 20,
+            radial: false,
+            name: "20 nm on 280° from VPBNG",
+          },
+        },
+      });
+    },
+  );
   const open = async () => {
     await page.goto("/app/plan?dep=C81&dest=KDLH&at=42.35,-88.55");
     const card = page.getByTestId("airspace-card");

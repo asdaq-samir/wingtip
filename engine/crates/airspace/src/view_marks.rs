@@ -57,7 +57,9 @@ pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, ea
     let mut found: Vec<(bool, String, String)> = Vec::new();
     let mut out: Vec<(bool, String)> = Vec::new();
     for p in packs {
-        let (Some(layer), Some(alt), Some(names), Some(rec)) = (p.layer("sua"), p.section("sua.alt"), p.section("sua.names"), p.section("sua.rec")) else {
+        let (Some(layer), Some(alt), Some(names), Some(rec)) =
+            (p.layer("sua"), p.section("sua.alt"), p.section("sua.names"), p.section("sua.rec"))
+        else {
             continue;
         };
         for i in 0..layer.count {
@@ -133,7 +135,8 @@ pub fn fixes_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east: f6
     let mut fixes: Vec<(String, f64, f64, bool)> = Vec::new();
     for p in packs {
         let Some(t) = p.section("fixes").and_then(|b| std::str::from_utf8(b).ok()).and_then(json::table) else { continue };
-        let (id, lat, lon, usage, charts) = (t.col("FIX_ID"), t.col("LAT_DECIMAL"), t.col("LONG_DECIMAL"), t.col("FIX_USE_CODE"), t.col("CHARTS"));
+        let (id, lat, lon, usage, charts) =
+            (t.col("FIX_ID"), t.col("LAT_DECIMAL"), t.col("LONG_DECIMAL"), t.col("FIX_USE_CODE"), t.col("CHARTS"));
         for r in &t.rows {
             let get = |c: Option<usize>| c.and_then(|c| r.get(c)).map(|s| s.trim()).unwrap_or("");
             let ident = get(id).to_uppercase();
@@ -256,7 +259,8 @@ mod tests {
         let packs = [Pack::read(&bytes).unwrap()];
         let got = json::parse(&special_use_in_view(&packs, 41.0, -89.0, 43.0, -87.0)).unwrap();
         let areas = got.get("areas").and_then(|a| a.as_array()).unwrap();
-        let said: Vec<(&str, &str)> = areas.iter().map(|a| (a.get("type").unwrap().as_str().unwrap(), a.get("name").unwrap().as_str().unwrap())).collect();
+        let said: Vec<(&str, &str)> =
+            areas.iter().map(|a| (a.get("type").unwrap().as_str().unwrap(), a.get("name").unwrap().as_str().unwrap())).collect();
         assert_eq!(said, vec![("MOA", "Ash"), ("R", "R-1")]);
         assert_eq!(areas[1].get("ceiling_ft").and_then(|v| v.as_f64()), Some(9000.0));
         assert!(areas[0].get("ceiling_ft").unwrap().as_f64().is_none());

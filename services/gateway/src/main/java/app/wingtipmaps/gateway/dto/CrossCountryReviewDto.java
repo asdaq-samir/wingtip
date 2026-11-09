@@ -21,5 +21,4 @@ public record CrossCountryReviewDto(
         List<ReviewCheckDto> checks,
         @Nullable SignedEndorsementDto endorsement,
         @Nullable String declinedNote,
-        @Nullable Instant answeredAt) {
-}
+        @Nullable Instant answeredAt) {}

@@ -20,5 +20,4 @@ public record TrainingDto(
         @Nullable String fullName,
         List<InstructorLinkDto> instructors,
         List<CrossCountryReviewDto> reviews,
-        List<ApproachLessonDto> lessons) {
-}
+        List<ApproachLessonDto> lessons) {}

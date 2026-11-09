@@ -4,13 +4,31 @@ import { ASK_GAP_MS, alertTitle, alertWhen, alertWhere, askFor, heldAsk } from "
 import type { Fix } from "./ownShip";
 
 const fix = (over: Partial<Fix> = {}): Fix => ({
-  lat: 42.31723, lon: -88.09051, accuracyM: 5, headingDeg: 92.4, speedKt: 112, altitudeFt: 3042, at: 0, ...over,
+  lat: 42.31723,
+  lon: -88.09051,
+  accuracyM: 5,
+  headingDeg: 92.4,
+  speedKt: 112,
+  altitudeFt: 3042,
+  at: 0,
+  ...over,
 });
 
-const alert = (over: Partial<AheadAlert>): AheadAlert => ({
-  id: "x", kind: "airspace", level: "caution", name: "ROCKFORD CLASS C", class: "C", need: "", inside: false,
-  seconds: 130, distance_nm: 4.21, lat: 42, lon: -88, ...over,
-} as AheadAlert);
+const alert = (over: Partial<AheadAlert>): AheadAlert =>
+  ({
+    id: "x",
+    kind: "airspace",
+    level: "caution",
+    name: "ROCKFORD CLASS C",
+    class: "C",
+    need: "",
+    inside: false,
+    seconds: 130,
+    distance_nm: 4.21,
+    lat: 42,
+    lon: -88,
+    ...over,
+  }) as AheadAlert;
 
 describe("askFor", () => {
   it("rounds the fix so the planner is asked again only as it changes", () => {

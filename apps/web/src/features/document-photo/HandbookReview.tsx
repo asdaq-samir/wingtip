@@ -17,18 +17,27 @@ function FigureRow({ figure, onChange }: { figure: Figure; onChange: (value: num
     <ListRow
       title={figure.label}
       description={converted ? `${tenth(figure.app_value)} ${figure.app_unit}` : undefined}
-      value={(
+      value={
         <span className="flex items-center gap-1.5">
           <FieldHit htmlFor={id}>
             <Input
-              id={id} type="number" inputMode="decimal" step="any" defaultValue={figure.value} className="h-8 w-24 text-right"
-              aria-label={`${figure.label} in ${figure.unit}`} data-testid={`figure-${figure.path}`}
-              onBlur={e => { const v = Number(e.target.value); if (e.target.value !== "" && v !== figure.value) onChange(v); }}
+              id={id}
+              type="number"
+              inputMode="decimal"
+              step="any"
+              defaultValue={figure.value}
+              className="h-8 w-24 text-right"
+              aria-label={`${figure.label} in ${figure.unit}`}
+              data-testid={`figure-${figure.path}`}
+              onBlur={(e) => {
+                const v = Number(e.target.value);
+                if (e.target.value !== "" && v !== figure.value) onChange(v);
+              }}
             />
           </FieldHit>
           <span className="text-muted-foreground">{figure.unit}</span>
         </span>
-      )}
+      }
     />
   );
 }
@@ -44,9 +53,11 @@ export default function HandbookReview({ photo }: { photo: DocumentPhoto }) {
   if (!items.length) return <p className="text-muted-foreground">No figures were read from this page.</p>;
   return (
     <>
-      {items.map(item => (
+      {items.map((item) => (
         <ListGroup key={item.key} title={item.title}>
-          {item.figures.map(f => <FigureRow key={`${f.path}:${f.value}`} figure={f} onChange={v => photo.correct(f.path, v)} />)}
+          {item.figures.map((f) => (
+            <FigureRow key={`${f.path}:${f.value}`} figure={f} onChange={(v) => photo.correct(f.path, v)} />
+          ))}
           {item.flags.length > 0 && <ListRow title={<FlagLines flags={item.flags} testId={`flags-${item.key}`} />} />}
           <ListRow
             title="Keep These Figures"

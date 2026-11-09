@@ -1,6 +1,7 @@
 """The leg-by-leg airspace ceiling, on a made-up shelf: a Class B shelf
 over the first leg only, so that leg is capped and the next is free --
 the geometry the stepped altitude plans rest on."""
+
 from shapely.geometry import Polygon
 
 from wingtip import airspace
@@ -10,14 +11,11 @@ START, MID, END = (40.0, -90.0), (40.7, -89.1), (41.4, -88.2)
 
 
 def _shelf(floor_ft, x0, y0, x1, y1, klass="B", name="TEST"):
-    return {
-        "name": name, "class": klass, "floor_ft_msl": floor_ft,
-        "geometry": Polygon([(x0, y0), (x1, y0), (x1, y1), (x0, y1)]),
-    }
+    return {"name": name, "class": klass, "floor_ft_msl": floor_ft, "geometry": Polygon([(x0, y0), (x1, y0), (x1, y1), (x0, y1)])}
 
 
 def test_a_shelf_over_the_first_leg_caps_that_leg_only(monkeypatch):
-    shelf = _shelf(3600.0, -90.2, 39.8, -89.5, 40.4)   # around the departure, short of MID
+    shelf = _shelf(3600.0, -90.2, 39.8, -89.5, 40.4)  # around the departure, short of MID
     monkeypatch.setattr(airspace, "load_controlled_airspace", lambda shp_path, bbox: [shelf])
 
     ceilings = airspace.airspace_ceiling_profile(START, END, [START, MID, END], shp_path="unused")
@@ -35,7 +33,7 @@ def test_the_lowest_shelf_wins_where_two_overlap_a_leg(monkeypatch):
 def test_class_c_and_d_and_the_routes_own_surface_areas_impose_nothing(monkeypatch):
     shapes = [
         _shelf(2000.0, -90.2, 39.8, -89.5, 40.4, klass="C", name="CHARLIE"),
-        _shelf(0.0, -90.1, 39.9, -89.9, 40.1, name="OWN FIELD"),   # Class B from the surface around the departure
+        _shelf(0.0, -90.1, 39.9, -89.9, 40.1, name="OWN FIELD"),  # Class B from the surface around the departure
     ]
     monkeypatch.setattr(airspace, "load_controlled_airspace", lambda shp_path, bbox: shapes)
 
@@ -47,9 +45,9 @@ def test_a_route_into_a_class_b_airport_is_cleared_through_its_whole_class_b(mon
     # shelf of the same Class B between them. Landing there takes the
     # clearance, so neither caps the route.
     shapes = [
-        _shelf(0.0, -88.4, 41.2, -88.0, 41.6, name="CHICAGO CLASS B"),      # round END
-        _shelf(1900.0, -89.3, 40.5, -88.9, 40.9, name="CHICAGO CLASS B"),   # across the way
-        _shelf(2500.0, -90.2, 39.8, -89.5, 40.4, name="ELSEWHERE CLASS B"), # another one entirely
+        _shelf(0.0, -88.4, 41.2, -88.0, 41.6, name="CHICAGO CLASS B"),  # round END
+        _shelf(1900.0, -89.3, 40.5, -88.9, 40.9, name="CHICAGO CLASS B"),  # across the way
+        _shelf(2500.0, -90.2, 39.8, -89.5, 40.4, name="ELSEWHERE CLASS B"),  # another one entirely
     ]
     monkeypatch.setattr(airspace, "load_controlled_airspace", lambda shp_path, bbox: shapes)
 

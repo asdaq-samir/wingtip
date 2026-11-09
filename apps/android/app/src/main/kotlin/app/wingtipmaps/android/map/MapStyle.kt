@@ -1,7 +1,10 @@
 package app.wingtipmaps.android.map
 
+import androidx.compose.ui.graphics.toArgb
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.OverlayTiles
+import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.design.generated.WingtipPalettes
 import app.wingtipmaps.android.tiles.TileTemplate
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -16,9 +19,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
-import app.wingtipmaps.android.design.generated.WingtipColors
-import app.wingtipmaps.android.design.generated.WingtipPalettes
-import androidx.compose.ui.graphics.toArgb
 
 /**
  * The map's style as the web's MapLibre GL map has it

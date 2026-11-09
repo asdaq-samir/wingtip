@@ -12,11 +12,7 @@ import { useCopilot } from "./useCopilot";
 
 /** A warning's red, a caution's amber, as the alerts banner's are; an
  *  advisory in the text's own ink. */
-const INK = {
-  warning: "text-destructive-ink",
-  caution: "text-caution-ink",
-  advisory: "text-foreground",
-} as const;
+const INK = { warning: "text-destructive-ink", caution: "text-caution-ink", advisory: "text-foreground" } as const;
 
 const ICON = { warning: TriangleAlert, caution: CircleAlert, advisory: Info } as const;
 
@@ -35,10 +31,18 @@ function AtcLine() {
     return () => window.clearTimeout(timer);
   }, [atc.at]);
   if (!atc.line || atc.cardShown || atc.at == null || gone === atc.at) return null;
-  const set = [atc.frequency && `Next ${atc.facility ? `${atc.facility} ` : ""}${atc.frequency}`, atc.squawk && `Code ${atc.squawk}`].filter(Boolean).join(" · ");
+  const set = [atc.frequency && `Next ${atc.facility ? `${atc.facility} ` : ""}${atc.frequency}`, atc.squawk && `Code ${atc.squawk}`]
+    .filter(Boolean)
+    .join(" · ");
   return (
-    <p className={cn(GLASS, "w-fit max-w-full rounded-[22px] px-3 py-2 tabular-nums", TEXT.detail)} role="status" data-testid="copilot-atc-line">
-      <span className="font-semibold">ATC </span>{atc.line}{set && <span className="text-muted-foreground"> · {set}</span>}
+    <p
+      className={cn(GLASS, "w-fit max-w-full rounded-[22px] px-3 py-2 tabular-nums", TEXT.detail)}
+      role="status"
+      data-testid="copilot-atc-line"
+    >
+      <span className="font-semibold">ATC </span>
+      {atc.line}
+      {set && <span className="text-muted-foreground"> · {set}</span>}
     </p>
   );
 }
@@ -63,10 +67,12 @@ export default function CopilotBanner() {
         // Told to a screen reader once by useCopilot (lib/announce): a
         // live region arriving with its words in it is not read by every
         // reader, and the message is read again with each look.
-        role="region" aria-label="Copilot"
+        role="region"
+        aria-label="Copilot"
         className={cn(
           "flex min-h-11 gap-2 rounded-[22px] border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0",
-          open ? "items-start *:[svg]:mt-[0.6rem]" : "items-center", INK[message.level],
+          open ? "items-start *:[svg]:mt-[0.6rem]" : "items-center",
+          INK[message.level],
         )}
       >
         <Icon className="shrink-0" />
@@ -78,14 +84,26 @@ export default function CopilotBanner() {
             <span className={cn("block max-w-full font-semibold", !open && "line-clamp-2")}>{message.title}</span>
           </CollapsibleTrigger>
           <CollapsibleContent className="flex flex-col gap-1.5 pb-1 text-foreground" data-testid="copilot-detail">
-            {message.detail.map(line => <p key={line}>{line}</p>)}
-            {message.sources.map(source => <p key={source} className="text-muted-foreground" data-copilot-source="">{source}</p>)}
+            {message.detail.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+            {message.sources.map((source) => (
+              <p key={source} className="text-muted-foreground" data-copilot-source="">
+                {source}
+              </p>
+            ))}
           </CollapsibleContent>
         </Collapsible>
         <Button
-          type="button" size="sm" variant="ghost" className={cn("shrink-0 rounded-full text-tint", open && "self-start")}
+          type="button"
+          size="sm"
+          variant="ghost"
+          className={cn("shrink-0 rounded-full text-tint", open && "self-start")}
           data-testid="copilot-dismiss"
-          onClick={() => { dismiss(); setOpen(false); }}
+          onClick={() => {
+            dismiss();
+            setOpen(false);
+          }}
         >
           OK
         </Button>
