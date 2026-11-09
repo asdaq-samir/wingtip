@@ -74,13 +74,21 @@ A few terms you will meet in the code:
 
 ## Run it locally
 
-You need Docker Desktop and Git; nothing else is installed natively.
+You need Docker Desktop (with 8 GB or more of memory for it), Git and
+`make` (it ships with macOS); nothing else is installed natively.
 
 ```bash
 git clone https://github.com/asdaq-samir/wingtip.git
 cd wingtip
-docker compose up -d
+make dev
 ```
+
+`make dev` checks Docker, makes `.env` from `.env.example` if there is
+none, builds the images, starts the stack, waits until every service is
+healthy and prints the addresses. `make` alone lists the other commands
+(`make stop`, `make logs s=planner`, `make check`). In VS Code, "Reopen in
+Container" uses `.devcontainer/`
+([LOCAL-DEV.md](docs/LOCAL-DEV.md#in-a-vs-code-dev-container)).
 
 1. Open [localhost:8080/app](http://localhost:8080/app). The first start
    fetches the FAA's data, so give the planner a few minutes.
@@ -117,6 +125,7 @@ docs/        the docs below, and the architecture diagrams
 | [DATA.md](docs/DATA.md) | The database, the data folder, the chart model |
 | [CI.md](docs/CI.md) | What CI runs and what gates a merge |
 | [README-AWS.md](docs/README-AWS.md) | The AWS design and how to deploy it |
+| [decisions/](docs/decisions/README.md) | The owner's standing decisions and why, so none is undone by accident |
 | [CONTRIBUTING.md](.github/CONTRIBUTING.md) | Where a change goes and how it lands |
 
 ## Licence and credits
