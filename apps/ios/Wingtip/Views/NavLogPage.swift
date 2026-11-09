@@ -13,8 +13,8 @@ struct NavLogPage: View {
                 Text(plan.planning ? "Planning…" : "No legs yet: plan the route first.").foregroundStyle(.secondary)
             } else {
                 Section {
-                    ForEach(plan.legs) { leg in
-                        NavigationLink(value: leg) { LegRow(leg: leg) }
+                    ForEach(Array(plan.legs.enumerated()), id: \.element.id) { i, leg in
+                        NavigationLink(value: leg) { LegRow(leg: leg, number: i + 1) }
                     }
                 } header: {
                     // The page is titled Nav Log; its section says at what.
@@ -30,6 +30,9 @@ struct NavLogPage: View {
 /// and the fuel, the figures the kneeboard wants at a glance.
 struct LegRow: View {
     let leg: Leg
+    /// The leg's place in the route from one, said first so VoiceOver's
+    /// list reads as the nav log's rows do; nil where it is not known.
+    var number: Int?
 
     var body: some View {
         HStack {
@@ -64,26 +67,30 @@ struct LegRow: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(spoken)
+        .accessibilityLabel(Self.spoken(leg, number: number))
     }
 
-    /// The row as a pilot reads a nav log aloud: "To KHIB, heading zero
-    /// nine zero, ninety-eight knots, wind two seven zero at twelve, twenty
-    /// nautical miles, twelve minutes, one point four gallons".
-    private var spoken: String {
-        var parts = ["To \(leg.to)"]
+    /// The row as a pilot reads a nav log aloud: "Leg 2, KDPA to KRFD,
+    /// heading zero nine zero degrees magnetic, ninety-eight knots, wind
+    /// two seven zero degrees true at twelve knots, twenty nautical miles,
+    /// twelve minutes, one point four gallons". The winds aloft are given
+    /// from true north (FAA Aviation Weather Handbook, FAA-H-8083-28, the
+    /// winds and temperatures aloft forecast), the nav log's heading and
+    /// course magnetic, so each says which.
+    static func spoken(_ leg: Leg, number: Int?) -> String {
+        var parts = [number.map { "Leg \($0), \(leg.from) to \(leg.to)" } ?? "\(leg.from) to \(leg.to)"]
         if let heading = leg.magneticHeadingDeg {
-            parts.append("heading \(SpokenFigures.degrees(heading))")
+            parts.append("heading \(Format.spokenHeadingMagnetic(heading))")
         } else {
-            parts.append("course \(SpokenFigures.degrees(leg.magneticCourseDeg))")
+            parts.append("course \(Format.spokenHeadingMagnetic(leg.magneticCourseDeg))")
         }
-        if let gs = leg.groundspeedKt { parts.append(SpokenFigures.knots(gs)) }
+        if let gs = leg.groundspeedKt { parts.append("ground speed \(Format.spokenSpeed(gs))") }
         if let wind = leg.wind {
-            parts.append("wind \(SpokenFigures.degrees(wind.windDirTrueDeg)) at \(SpokenFigures.number(wind.windSpeedKt))")
+            parts.append("wind \(Format.spokenHeadingTrue(wind.windDirTrueDeg)) at \(Format.spokenSpeed(wind.windSpeedKt))")
         }
-        parts.append(SpokenFigures.nauticalMiles(leg.distanceNm))
-        if let ete = leg.eteMin { parts.append(SpokenFigures.minutes(ete)) }
-        if let fuel = leg.fuelGal { parts.append(SpokenFigures.gallons(fuel)) }
+        parts.append(Format.spokenDistance(leg.distanceNm))
+        if let ete = leg.eteMin { parts.append(Format.spokenDuration(ete)) }
+        if let fuel = leg.fuelGal { parts.append(Format.spokenFuel(fuel)) }
         return parts.joined(separator: ", ")
     }
 }

@@ -59,6 +59,9 @@ struct FPLView: View {
                             .accessibilityLabel(ClearanceListener.shared.listening ? "Listening to the radio" : "Listen to the radio")
                         Button("Plan") { focused = nil; plan.plan() }
                             .buttonStyle(.borderedProminent)
+                            // ⌘Return plans from an iPad's keyboard; Return
+                            // in a field already does (onSubmit).
+                            .keyboardShortcut(.return, modifiers: .command)
                             .disabled(!plan.routed || plan.planning)
                     }
                     if plan.routed && plan.course != nil && RouteLine.shows(plan.routes, picked: plan.pickedChip, problem: plan.routesProblem) {
@@ -105,7 +108,7 @@ struct FPLView: View {
                 RouteExtrasSection()
                 if let totals = plan.totals {
                     Section {
-                        HStack {
+                        FigureRow {
                             stripFigure("TO", plan.dest)
                             stripFigure("DIST", Format.distance(totals.distanceNm), spoken: SpokenFigures.nauticalMiles(totals.distanceNm))
                             // Time and fuel are an airplane's: none picked,
@@ -117,8 +120,6 @@ struct FPLView: View {
                             }
                         }
                         .accessibilityElement(children: .combine)
-                        // As the sheet's strip: four across stop at this size.
-                        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
                     }
                 }
                 if plan.course != nil {

@@ -120,8 +120,29 @@ struct DiagramOwnShipView: View {
             .onTapGesture(count: 2) {
                 scale = 1; settledScale = 1; offset = .zero; settledOffset = .zero
             }
+            // The pinch and the double tap for VoiceOver's three-finger
+            // zoom and Switch Control, which cannot pinch or drag: the
+            // page one element, where the airplane is its value.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Airport diagram")
+            .accessibilityValue(youAreHere(diagram, fix: fix))
+            .accessibilityAddTraits(.isImage)
+            .accessibilityZoomAction { zoom in
+                scale = max(1, min(8, scale * (zoom.direction == .zoomIn ? 1.5 : 1 / 1.5)))
+                settledScale = scale
+                if scale == 1 { offset = .zero; settledOffset = .zero }
+            }
+            .accessibilityAction(named: "Fit the page") {
+                scale = 1; settledScale = 1; offset = .zero; settledOffset = .zero
+            }
         }
         .background(Color.white)
+    }
+
+    /// Where the airplane is on the page, as VoiceOver says it.
+    private func youAreHere(_ diagram: DiagramPage, fix: OwnShip.Fix?) -> String {
+        guard let fix, let at = diagram.place(fix), at.onPage else { return "You are not on this diagram" }
+        return fix.trackDeg.map { "You are here, tracking \(Format.spokenHeadingTrue($0))" } ?? "You are here"
     }
 
     /// The page's size fitted into the room, its shape kept.

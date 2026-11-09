@@ -116,7 +116,9 @@ final class Copilot {
         // banner speaks what is ahead.
         if let first, !first.elsewhere, !said.contains(first.id) {
             said.insert(first.id)
-            if mode == .spoken { voice.say(first.say, interrupt: first.level == "warning") }
+            // Spoken, the copilot's own voice says it; else VoiceOver does,
+            // for a pilot who cannot see the banner come in.
+            if mode == .spoken { voice.say(first.say, interrupt: first.level == "warning") } else { Announce.alert(first.title, urgent: first.level == "warning") }
         }
     }
 

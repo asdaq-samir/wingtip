@@ -31,6 +31,26 @@ struct EmergencyFieldsSection: View {
         } header: {
             SectionTitle(model.ranked?.glide.map { "Best Fields · Glide About \(Format.distance($0.stillAirNm, decimals: 0))" } ?? "Best Fields")
         }
+        // The best field said by VoiceOver as it is found and each time
+        // another takes its place: a pilot in an emergency is not reading
+        // the list.
+        .onChange(of: model.ranked?.fields.first?.ident, initial: true) { _, ident in
+            guard ident != nil, let best = model.ranked?.fields.first else { return }
+            Announce.alert(Self.spokenBest(best), urgent: true)
+        }
+    }
+
+    /// The heading to a field said, magnetic where the variation is
+    /// known, else true, as the row writes it.
+    static func spokenHeading(_ field: Emergency.Field) -> String {
+        if let mag = field.headingMagDeg { return Format.spokenHeadingMagnetic(mag) }
+        return field.headingTrueDeg.map(Format.spokenHeadingTrue) ?? Format.spokenNone
+    }
+
+    /// "Best field KXYZ, heading zero four five degrees magnetic, four point
+    /// two nautical miles".
+    static func spokenBest(_ field: Emergency.Field) -> String {
+        "Best field \(field.ident), heading \(spokenHeading(field)), \(Format.spokenDistance(field.distanceNm))"
     }
 
     private func row(_ field: Emergency.Field, picked: Bool) -> some View {
@@ -51,8 +71,10 @@ struct EmergencyFieldsSection: View {
                 // The heading to fly, magnetic where the variation is known, else true.
                 if let heading = field.headingMagDeg ?? field.headingTrueDeg {
                     Text(Format.heading(heading) + (field.headingMagDeg == nil ? " T" : "")).fontWeight(.semibold)
+                        .accessibilityLabel("heading " + Self.spokenHeading(field))
                 }
                 Text(Format.distance(field.distanceNm)).foregroundStyle(.secondary)
+                    .accessibilityLabel(Format.spokenDistance(field.distanceNm))
             }
             .monospacedDigit()
         }

@@ -61,7 +61,7 @@ struct ProfileCard: View {
                         }
                         // "FL-045" read as the feet it stands for.
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel([SpokenFigures.feet(altitude), name(of: altitude), ete.map(SpokenFigures.minutes)].compactMap { $0 }.joined(separator: ", "))
+                        .accessibilityLabel([Format.spokenAltitude(altitude), name(of: altitude), ete.map(SpokenFigures.minutes)].compactMap { $0 }.joined(separator: ", "))
                         .tag(altitude)
                     }
                 }

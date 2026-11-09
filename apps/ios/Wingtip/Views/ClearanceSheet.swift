@@ -139,8 +139,8 @@ struct ClearanceSheet: View {
     /// The same for VoiceOver, each altitude in words (SpokenFigures).
     private var altitudeSpoken: String {
         var parts: [String] = []
-        if let ft = clearance.maintainFt { parts.append("maintain " + (clearance.vfr ? "VFR " : "") + (clearance.maintainLimit.map { "\($0) " } ?? "") + SpokenFigures.feet(Double(ft))) }
-        if let ft = clearance.expectFt { parts.append("expect " + SpokenFigures.feet(Double(ft)) + (clearance.expectMin.map { " \(SpokenFigures.minutes(Double($0))) after departure" } ?? "")) }
+        if let ft = clearance.maintainFt { parts.append("maintain " + (clearance.vfr ? "VFR " : "") + (clearance.maintainLimit.map { "\($0) " } ?? "") + Format.spokenAltitude(Double(ft))) }
+        if let ft = clearance.expectFt { parts.append("expect " + Format.spokenAltitude(Double(ft)) + (clearance.expectMin.map { " \(SpokenFigures.minutes(Double($0))) after departure" } ?? "")) }
         return parts.joined(separator: ", ")
     }
 

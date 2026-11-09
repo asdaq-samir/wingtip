@@ -308,7 +308,7 @@ struct SheetView: View {
                 FiguresStrip()
                     .padding(.top, WingtipSpace.md)
                     .frame(maxWidth: .infinity)
-                    .background(.regularMaterial)
+                    .glassBackground()
                     .transition(.opacity)
             }
         }

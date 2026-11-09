@@ -190,6 +190,8 @@ final class ClearanceListener {
     /// A call to us: a time-sensitive notification while the app is not
     /// in front, the haptics in the app (the call is on its screen).
     private func tell(_ text: String) {
+        // VoiceOver says the call at once, as the banner shows it.
+        Announce.alert("ATC called you: \(text)", urgent: true)
         if !Notifications.tell("ATC called you", text) {
             UINotificationFeedbackGenerator().notificationOccurred(.warning)
         }

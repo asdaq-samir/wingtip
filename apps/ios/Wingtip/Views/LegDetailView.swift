@@ -39,7 +39,7 @@ struct LegDetailView: View {
             }
             Section(title: "Speed, Time and Fuel") {
                 LabeledContent("Altitude", value: Format.altitude(leg.altitudeFt))
-                    .accessibilityValue(SpokenFigures.feet(leg.altitudeFt))
+                    .accessibilityValue(Format.spokenAltitude(leg.altitudeFt))
                 if let tas = leg.tasKt { LabeledContent("True airspeed", value: Format.speed(tas)).accessibilityValue(SpokenFigures.knots(tas)) }
                 if let gs = leg.groundspeedKt { LabeledContent("Groundspeed", value: Format.speed(gs)).accessibilityValue(SpokenFigures.knots(gs)) }
                 LabeledContent("Distance", value: Format.distance(leg.distanceNm))

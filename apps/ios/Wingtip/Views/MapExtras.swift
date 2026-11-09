@@ -165,6 +165,8 @@ final class MapExtrasState: NSObject {
         let hold = UILongPressGestureRecognizer(target: self, action: #selector(held(_:)))
         hold.minimumPressDuration = 0.5
         map.addGestureRecognizer(hold)
+        // The airports, checkpoints and traffic in view in VoiceOver's rotor.
+        map.accessibilityCustomRotors = MapRotors.rotors(for: map)
     }
 
     @objc private func held(_ gesture: UILongPressGestureRecognizer) {

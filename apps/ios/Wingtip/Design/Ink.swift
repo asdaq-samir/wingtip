@@ -13,6 +13,9 @@ enum WingtipInk {
     static let caution = Color(dynamic(\.cautionInk))
     /// What is fine.
     static let go = Color(dynamic(\.goInk))
+    /// The solid surface glass falls back to under Reduce Transparency:
+    /// the sheet's own colour, by day or at night.
+    static let sheet = Color(dynamic(\.sheet))
 
     private static func dynamic(_ role: KeyPath<WingtipPalette, UIColor>) -> UIColor {
         UIColor { $0.userInterfaceStyle == .dark ? WingtipPalette.dark[keyPath: role] : WingtipPalette.light[keyPath: role] }

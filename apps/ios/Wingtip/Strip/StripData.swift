@@ -143,10 +143,26 @@ enum StripData {
         return parts.joined(separator: " · ")
     }
 
+    /// The same line as VoiceOver says it: the arrows as "to", the
+    /// altitude in words ("FL-045" would be read as letters).
+    static func spokenHeadLine(dep: String, dest: String, stops: [String], airplane: String, cruiseFt: Double?, departAt: Date?) -> String {
+        var parts = [routeName(dep: dep, dest: dest, stops: stops).replacingOccurrences(of: " → ", with: " to ")]
+        if !airplane.isEmpty { parts.append(airplane) }
+        if let cruiseFt { parts.append(Format.spokenAltitude(cruiseFt)) }
+        parts.append(departAt.map { "leaving \(Format.time($0))" } ?? "leaving now")
+        return parts.joined(separator: ", ")
+    }
+
     /// The ribbon's figures at the right: the time and the fuel, "2h 45m ·
     /// 29.1 gal"; "" with neither.
     static func figures(eteMin: Double?, fuelGal: Double?) -> String {
         [eteMin.map(Format.duration), fuelGal.map { Format.fuel($0) }].compactMap { $0 }.joined(separator: " · ")
+    }
+
+    /// The same figures as VoiceOver says them: "one hour five minutes,
+    /// twelve gallons", where "1h 5m" would be read as letters.
+    static func spokenFigures(eteMin: Double?, fuelGal: Double?) -> String {
+        [eteMin.map(Format.spokenDuration), fuelGal.map(Format.spokenFuel)].compactMap { $0 }.joined(separator: ", ")
     }
 
     /// The verdict's tag, as the ribbon wears it; nil for a finding with

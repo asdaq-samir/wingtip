@@ -14,11 +14,15 @@ struct CloseButton: View {
     let action: () -> Void
 
     var body: some View {
+        // Escape on an iPad's keyboard closes the level too, as the
+        // system's own sheets do (the cancel action's shortcut).
         if #available(iOS 26.0, *) {
             Button(role: .close, action: action)
+                .keyboardShortcut(.cancelAction)
         } else {
             Button(action: action) { Image(systemName: "xmark") }
                 .accessibilityLabel("Close")
+                .keyboardShortcut(.cancelAction)
         }
     }
 }

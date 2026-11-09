@@ -10,26 +10,67 @@ import SwiftUI
 extension View {
     /// A floating control or card over the map: glass in `shape`; on iOS
     /// 18, `material` behind it. `interactive` for a button, whose glass
-    /// answers the touch as the system's does.
-    @ViewBuilder
+    /// answers the touch as the system's does. With Reduce Transparency on,
+    /// the sheet's solid colour instead (FloatingGlass).
     func floatingGlass<S: Shape>(in shape: S, material: Material = .regularMaterial, interactive: Bool = false) -> some View {
-        if #available(iOS 26.0, *) {
-            glassEffect(interactive ? .regular.interactive() : .regular, in: shape)
-        } else {
-            background(material, in: shape)
-        }
+        modifier(FloatingGlass(shape: shape, material: material, interactive: interactive))
     }
 
     /// The planner's sheet over the map: on iOS 26 the system's Liquid
     /// Glass sheet and its own corners, untouched; on iOS 18 the regular
-    /// material, so the map shows through as it does on iOS 26.
-    @ViewBuilder
-    func sheetGlass() -> some View {
-        if #available(iOS 26.0, *) {
-            self
+    /// material, so the map shows through as it does on iOS 26. With
+    /// Reduce Transparency on, solid.
+    func sheetGlass() -> some View { modifier(SheetGlass()) }
+
+    /// A bar or a backdrop of `material` that is not glass (the strip's
+    /// foot, the figures pill), solid with Reduce Transparency on.
+    func glassBackground(_ material: Material = .regularMaterial) -> some View {
+        modifier(GlassBackground(material: material))
+    }
+}
+
+/// Reduce Transparency asks for no see-through surfaces: a pilot who has
+/// it on finds words over a busy chart hard to read through glass. The
+/// system frosts its own glass and materials a little under it; these go
+/// to the token's solid sheet colour, so every glass in the app follows
+/// from here.
+private struct FloatingGlass<S: Shape>: ViewModifier {
+    let shape: S
+    let material: Material
+    let interactive: Bool
+    @Environment(\.accessibilityReduceTransparency) private var solid
+
+    func body(content: Content) -> some View {
+        if solid {
+            content.background(WingtipInk.sheet, in: shape)
+        } else if #available(iOS 26.0, *) {
+            content.glassEffect(interactive ? .regular.interactive() : .regular, in: shape)
         } else {
-            presentationBackground(.regularMaterial)
+            content.background(material, in: shape)
         }
+    }
+}
+
+private struct SheetGlass: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var solid
+
+    func body(content: Content) -> some View {
+        if solid {
+            content.presentationBackground(WingtipInk.sheet)
+        } else if #available(iOS 26.0, *) {
+            content
+        } else {
+            content.presentationBackground(.regularMaterial)
+        }
+    }
+}
+
+private struct GlassBackground: ViewModifier {
+    let material: Material
+    @Environment(\.accessibilityReduceTransparency) private var solid
+
+    func body(content: Content) -> some View {
+        if solid { content.background(WingtipInk.sheet) } else { content.background(material) }
     }
 }
 
