@@ -3082,6 +3082,13 @@ export interface EngineContract {
     input: BelowVfrMinimumsInput;
     answer: BelowVfrMinimumsAnswer;
   };
+  /**
+   * "When should I go?": the Go / No-Go for each departure hour the forecasts reach (the Brief's findings, the IFR alternate's say and the risk assessment with the hour's night, 14 CFR 1.1 and 61.57(b)), each go, caution, no-go or unknown with the one or two findings that decide it, and the runs of go hours ranked best first: the most margin over the minimums, then the shortest ETE.
+   */
+  departure_window: {
+    input: DepartureWindowInput;
+    answer: DepartureWindowAnswer;
+  };
 }
 export interface HoldingInput {
   /**
@@ -4612,6 +4619,10 @@ export interface GonogoIcingLineInput {
     reports?: number | null;
   };
 }
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "GonogoRiskInput".
+ */
 export interface GonogoRiskInput {
   /**
    * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
@@ -8391,6 +8402,104 @@ export interface CheckpointsSelectInput {
 export interface BelowVfrMinimumsInput {
   ceiling_ft?: number | null;
   visibility_sm?: number | null;
+}
+export interface DepartureWindowInput {
+  /**
+   * The departure, [lat, lon]: the night is judged along the straight line to `end`.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * The destination, [lat, lon].
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  /**
+   * An airplane is picked: without one the fuel, the runways and the weight and balance are left out, ETE and fuel are null, and the night is judged at the departure alone.
+   */
+  airplane?: boolean | null;
+  /**
+   * The pilot's own ceiling and visibility minimums, which the margin is counted against; 14 CFR 91.155(c), (d)'s 1,000 ft and 3 sm where one is not set.
+   */
+  minimums?: {
+    ceiling_ft?: number | null;
+    visibility_sm?: number | null;
+  } | null;
+  /**
+   * The risk assessment's input as the Go / No-Go sends it; its briefing and nav log members (vfr_not_recommended, under_minimums, tfr_on_route, hazards, night, night_passengers, fuel_margin_gal) are each hour's own. Null: no assessment, as with no briefing.
+   */
+  risk?: GonogoRiskInput | null;
+  hours: DepartureWindowHourIn[];
+}
+export interface DepartureWindowHourIn {
+  /**
+   * The departure, UNIX seconds.
+   */
+  depart_s: number;
+  /**
+   * The forecasts reach the whole flight; false, the hour is unknown.
+   */
+  reaches?: boolean | null;
+  ete_min?: number | null;
+  fuel_gal?: number | null;
+  /**
+   * Minutes on the ground at the stops, counted in the night's span.
+   */
+  ground_min?: number | null;
+  /**
+   * The forecast's lowest ceiling along the route for this flight; null, none.
+   */
+  ceiling_ft?: number | null;
+  visibility_sm?: number | null;
+  verdict: VerdictInput;
+  alternate?: GonogoAlternateData | null;
+}
+export interface DepartureWindowAnswer {
+  hours: DepartureWindowHour[];
+  /**
+   * The runs of go hours, best first.
+   */
+  windows: DepartureWindowRun[];
+}
+export interface DepartureWindowHour {
+  depart_s: number;
+  verdict: "go" | "caution" | "no-go" | "unknown";
+  /**
+   * The one or two findings that decide it; for a go, the weather's.
+   */
+  reasons: GonogoItem[];
+  ete_min: number | null;
+  fuel_gal: number | null;
+  /**
+   * Any of the flight at night (14 CFR 1.1).
+   */
+  night: boolean;
+  /**
+   * Any of it in 14 CFR 61.57(b)'s night-passenger period.
+   */
+  night_passengers: boolean;
+  /**
+   * The forecast's worst along the route over the minimums, the lesser ratio of ceiling and visibility, at most 3.
+   */
+  margin: number | null;
+}
+export interface DepartureWindowRun {
+  from_s: number;
+  /**
+   * Its last departure hour.
+   */
+  last_s: number;
+  hours: number;
+  margin: number | null;
+  ete_min: number | null;
+  /**
+   * The departure hour in it with the shortest ETE.
+   */
+  quickest_s: number;
 }
 /**
  * This interface was referenced by `EngineContract`'s JSON-Schema

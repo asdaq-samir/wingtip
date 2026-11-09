@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { api } from "../../lib/api/client";
 import type { DepartureWindowAsk, WindowHour } from "../../lib/api/types";
 import { routeKeyOf, useBriefPlan } from "../../lib/briefPlan";
@@ -37,6 +38,14 @@ export function useDepartureWindow() {
     service_ceiling_ft: aircraft.serviceCeilingFt ?? null,
     rules,
     airplane,
+    // The route as planned, the planner's defaults for the rest: the
+    // altitude plan it picks, checkpoints, no own altitudes, procedures,
+    // holds or ground time; each hour a departure of its own.
+    alternate: "", altitude_choice: "fastest", altitude_nearest: false, altitudes: "", checkpoints: true,
+    class_b_clearance: false, crossings: "", ground: "", holds: "", procedures: "", runways: "", ticked: [],
+    hours: 48,
+    // The pilot's own day, which the logbook's dates are read on.
+    day: format(new Date(), "yyyy-MM-dd"),
     minimums: {
       ceiling_ft: minimums.ceilingFt, visibility_sm: minimums.visibilitySm,
       crosswind_kt: minimums.crosswindKt, wind_kt: minimums.windKt,

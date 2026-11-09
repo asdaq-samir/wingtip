@@ -55,20 +55,20 @@ export default function DepartureWindowStrip() {
         <>
           {!m.best && (
             <p className={cn(TEXT.detail, "text-muted-foreground")} data-testid="departure-window-no-go">
-              No hour with nothing against it before {clock(m.hours[m.hours.length - 1].depart)}.
+              No hour with nothing against it before {clock(m.hours.at(-1)!.depart)}.
             </p>
           )}
           {/* Across, as far as the forecasts reach: the strip scrolls,
               the page does not. Each tile's hit area is 44 points by its
               pseudo-element, the tiles gap-2 apart so the areas meet. */}
-          <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1" role="list" data-testid="departure-window-hours">
+          <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1" role="group" aria-label="Departure hours" data-testid="departure-window-hours">
             {m.hours.map(h => {
               const finding = HOUR_FINDING[h.verdict];
               const on = m.selected?.depart === h.depart;
               const day = dayOf(h.depart, now);
               return (
                 <button
-                  key={h.depart} type="button" role="listitem" onClick={() => m.pick(h.depart)}
+                  key={h.depart} type="button" onClick={() => m.pick(h.depart)}
                   aria-pressed={on} aria-label={hourLabel(h)} data-testid="departure-window-hour" data-verdict={h.verdict}
                   className={cn(
                     "relative flex w-12 shrink-0 snap-start flex-col items-center gap-0.5 rounded-xl py-1.5 outline-none",
