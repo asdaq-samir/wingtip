@@ -17,24 +17,58 @@ if [ -n "${SKIP_HOOKS:-}" ]; then
   exit 0
 fi
 
-here=$(git rev-parse --show-toplevel)
+repo=$(git rev-parse --show-toplevel)
+here=$repo
 PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:$HOME/.local/bin:$HOME/.cargo/bin
 zero=0000000000000000000000000000000000000000
 
 # The files the pushed commits change against origin/main (from where they
 # left it), for each ref pushed. A deleted ref changes nothing.
+refs=$(cat)
 changed=$(
   while read -r _local_ref local_sha _remote_ref _remote_sha; do
     [ "$local_sha" = "$zero" ] && continue
     base=$(git merge-base origin/main "$local_sha" 2>/dev/null) || continue
     git diff --name-only --diff-filter=d "$base" "$local_sha"
-  done | sort -u
+  done <<<"$refs" | sort -u
 )
 if [ -z "$changed" ]; then exit 0; fi
+
+# The commit pushed (the last of the refs, for a push of several), since the
+# checks must read it and not whatever this checkout holds: a push from the
+# main checkout of another branch's commit (`git push origin
+# origin/claude/x:refs/heads/claude/y`) made ruff report E902 "No such file"
+# for every file only the pushed commit has (2026-11-08). When the checkout
+# is not on that commit, or has uncommitted changes to tracked files, the
+# commit is checked out detached into a temporary worktree, removed on exit.
+pushed=$(printf '%s\n' "$refs" | awk -v z="$zero" '$2 != z { sha = $2 } END { print sha }')
+tmp=""
+cleanup() {
+  if [ -n "$tmp" ]; then
+    git -C "$repo" worktree remove --force "$tmp" >/dev/null 2>&1 || rm -rf "$tmp"
+    git -C "$repo" worktree prune
+  fi
+}
+trap cleanup EXIT
+note_tree=""
+if [ -n "$pushed" ] && { [ "$(git -C "$repo" rev-parse HEAD)" != "$pushed" ] || [ -n "$(git -C "$repo" status --porcelain --untracked-files=no)" ]; }; then
+  tmp=$(mktemp -d "${TMPDIR:-/tmp}/wingtip-pre-push.XXXXXX")
+  if git -C "$repo" worktree add -q --detach "$tmp" "$pushed" >/dev/null 2>&1; then
+    here=$tmp
+    # Packages are installed once, in the checkout; the pushed tree reads them.
+    if [ -d "$repo/apps/web/node_modules" ]; then ln -s "$repo/apps/web/node_modules" "$tmp/apps/web/node_modules"; fi
+    note_tree="pushed commit ${pushed:0:9}, in a temporary worktree"
+  else
+    echo "pre-push: could not check out ${pushed:0:9}; checking this working tree instead"
+    rm -rf "$tmp"
+    tmp=""
+  fi
+fi
 
 failed=0
 note() { echo "pre-push: $*"; }
 fail() { echo "pre-push: $* failed"; failed=1; }
+if [ -n "$note_tree" ]; then note "checking the $note_tree"; fi
 
 # --- web: tsc over the project, ESLint over the files changed ---------------
 web_files=$(grep -E '^apps/web/.*\.(ts|tsx|js|jsx|mjs|cjs)$' <<<"$changed" | grep -v '^apps/web/src/lib/engine/pkg/' || true)
@@ -118,8 +152,17 @@ if grep -qE '^engine/' <<<"$changed"; then
     # The directories of worktrees not pushed from in two weeks go (a cold
     # check at worst).
     find "$HOME/Library/Caches/wingtip-pre-push-cargo" -mindepth 1 -maxdepth 1 -type d -mtime +14 -exec rm -rf {} + 2>/dev/null || true
-    CARGO_TARGET_DIR=${WINGTIP_HOOK_CARGO_TARGET:-$HOME/Library/Caches/wingtip-pre-push-cargo/$(basename "$here")-$(printf '%s' "$here" | shasum -a 256 | cut -c1-8)} \
-      cargo check -q --manifest-path "$here/engine/Cargo.toml" "${pkgs[@]}" || fail "cargo check"
+    # Keyed by the lock's hash as well: the same path with another lock gave
+    # a false "cannot find `performance` in `wingtip_flight`" while a clean
+    # target passed (2026-11-08), so a failure is tried once more on a clean
+    # target, and only that second result counts.
+    lockkey=$(shasum -a 256 "$here/engine/Cargo.lock" 2>/dev/null | cut -c1-8)
+    target=${WINGTIP_HOOK_CARGO_TARGET:-$HOME/Library/Caches/wingtip-pre-push-cargo/$(basename "$repo")-$(printf '%s' "$repo" | shasum -a 256 | cut -c1-8)-${lockkey:-nolock}}
+    if ! CARGO_TARGET_DIR=$target cargo check -q --manifest-path "$here/engine/Cargo.toml" "${pkgs[@]}"; then
+      note "engine: cargo check failed; once more on a clean target"
+      rm -rf "$target"
+      CARGO_TARGET_DIR=$target cargo check -q --manifest-path "$here/engine/Cargo.toml" "${pkgs[@]}" || fail "cargo check"
+    fi
   else
     note "engine: skipped, no Rust toolchain here (CI checks it)"
   fi

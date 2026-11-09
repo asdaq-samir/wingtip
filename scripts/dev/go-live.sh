@@ -41,7 +41,11 @@ done
 cd "$live"
 # Every service that mounts the repo at /workspace also gets the main
 # checkout's data/ at /workspace/data (compose reads this file itself).
-docker compose -p wingtip config --format json | python3 -c '
+# The jobs (charts, charts-overlays, retrain) sit behind a profile and are
+# left out of a plain `config`; they need the mount most, or a
+# `docker compose --profile jobs run charts` writes into this worktree's
+# own empty data/ (2026-11-08). --profile '*' lists every service.
+docker compose -p wingtip --profile '*' config --format json | python3 -c '
 import json, sys
 main = sys.argv[1]
 cfg = json.load(sys.stdin)
