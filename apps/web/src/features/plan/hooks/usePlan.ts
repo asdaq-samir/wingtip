@@ -16,6 +16,7 @@ import type {
   Totals,
 } from "../../../lib/api/types";
 import type { FlightRules } from "../../../lib/preferences";
+import { withOwnFigures } from "../../../lib/aircraftChoice";
 import { useCheckpointNotes } from "./useCheckpointNotes";
 import { useNarrative } from "./useNarrative";
 import { briefingLegs } from "./briefingLegs";
@@ -392,14 +393,13 @@ export function usePlan({
   }
   const holding = !whole && !navlog.error && navlog.isFetching && held?.key === holdKey;
   const messages = holding ? held.messages : streamed;
-  // Each message narrowed by its own `type`, not cast: the "altitude"
-  // line was cast to a hand-written copy of its shape, whose comments had
-  // gone stale while the cast kept compiling.
+  // Each message narrowed by its own `type`, not cast: the "altitude" line was cast to a hand-written
+  // copy of its shape, whose comments had gone stale while the cast kept compiling.
   const legs = useMemo(() => messages.flatMap((m): Leg[] => (m.type === "leg" ? [stripType(m)] : [])), [messages]);
   const nav = useMemo<NavLogAltitude | null>(() => {
     const altitude = messages.find((m): m is Extract<NavLogMessage, { type: "altitude" }> => m.type === "altitude");
-    return altitude ? stripType(altitude) : null;
-  }, [messages]);
+    return altitude ? withOwnFigures(stripType(altitude), aircraft.unmatched) : null;
+  }, [messages, aircraft.unmatched]);
   const totals = useMemo<Totals | null>(() => {
     const done = messages.find((m) => m.type === "done");
     return done && done.type === "done" ? done.totals : null;

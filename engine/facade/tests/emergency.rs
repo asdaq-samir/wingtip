@@ -87,3 +87,17 @@ fn the_checklist_opens_at_the_emergency_asked() {
         assert_eq!(answer, case["index"], "{case}");
     }
 }
+
+#[test]
+fn with_no_airplane_the_guidance_is_general_and_sourced() {
+    // The owner, 2026-11-09: no airplane, no airplane's figures -- fly,
+    // a field, 7700, MAYDAY and 121.5, each from the AIM or the AFH.
+    let items = ask("emergency_guidance", &json!({}))["items"].as_array().unwrap().clone();
+    assert_eq!(items[0]["title"], json!("Fly the airplane"));
+    assert!(items.iter().all(|i| !i["source"].as_str().unwrap().is_empty()));
+    assert!(items.iter().any(|i| i["title"] == json!("Squawk 7700") && i["source"].as_str().unwrap().contains("AIM 6-2-2")));
+    assert!(items.iter().any(|i| i["title"].as_str().unwrap().contains("121.5")));
+    // Nothing of any one airplane's: no knots, no nm, no POH.
+    let words = serde_json::to_string(&items).unwrap();
+    assert!(!words.contains(" kt") && !words.contains(" nm") && !words.contains("POH"), "{words}");
+}

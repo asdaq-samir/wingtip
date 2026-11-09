@@ -1,5 +1,4 @@
-import type { Aircraft, AircraftChoice, AircraftProfileSummary } from "./api/types";
-import { DEFAULT_AIRCRAFT } from "./preferences";
+import type { Aircraft, AircraftChoice, AircraftProfileSummary, NavLogAltitude } from "./api/types";
 import { callEngine } from "./engine/engine";
 
 /** One value per choice: a pilot's own by id, a stock profile by name.
@@ -34,20 +33,31 @@ export function profileOfRegistered(registered: {
   });
 }
 
+/** The profile a pilot's own airplane of no stock type is planned on.
+ *  The planner lays the pilot's own speeds, burns and fuel over a stock
+ *  profile and has no plan without one (wingtip.planning.aircraft_profile):
+ *  its service ceiling and climb rate are the base's until the airplane's
+ *  record carries its own. Its POH figures are never this airplane's
+ *  (`unmatched`: no glide, no start and taxi fuel). */
+const UNMATCHED_BASE = "c172";
+
 /** A pilot's own airplane rides on the stock profile whose name
  *  matches its type designator (a C172 on c172) for the service ceiling
- *  the altitude selection needs; anything else rides on the default. */
-function baseProfile(typeDesignator: string, profiles: AircraftProfileSummary[]): string {
+ *  the altitude selection needs; null for a type with none. */
+function baseProfile(typeDesignator: string, profiles: AircraftProfileSummary[]): string | null {
   const wanted = typeDesignator.toLowerCase().replace(/[^a-z0-9]/g, "");
-  return profiles.find((p) => p.name === wanted)?.name ?? DEFAULT_AIRCRAFT.profile;
+  return profiles.find((p) => p.name === wanted)?.name ?? null;
 }
 
 /** A pilot's own airplane as the nav log flies it: its figures, on the
  *  stock profile of its type. One place for the picker under the route
  *  and the Library's Aircraft, which both choose it. */
 export function choiceOf(a: Aircraft, profiles: AircraftProfileSummary[]): AircraftChoice {
+  const base = baseProfile(a.typeDesignator, profiles);
   return {
-    profile: baseProfile(a.typeDesignator, profiles),
+    profile: base ?? UNMATCHED_BASE,
+    ...(base ? {} : { unmatched: true }),
+    ...(a.handbook?.glide_ratio != null ? { glideRatio: a.handbook.glide_ratio } : {}),
     label: `${a.tailNumber} · ${a.typeDesignator}`,
     cruiseTasKt: a.cruiseTasKt,
     fuelBurnGph: a.fuelBurnGph,
@@ -70,5 +80,36 @@ export function shortName(label: string): string {
  *  pilot gave none. The planner's figures before its nav log comes, and
  *  the map's ruler, which times a line at it. */
 export function cruiseTasOf(a: AircraftChoice, profiles: AircraftProfileSummary[] | undefined): number | null {
+  if (a.none) return null;
   return a.cruiseTasKt ?? profiles?.find((p) => p.name === a.profile)?.cruise_tas_kt ?? null;
+}
+
+/** The picked airplane's still-air glide ratio: its own handbook's, else
+ *  its stock profile's POH figure (data/aircraft, Section 3); null with no
+ *  airplane, a profile with none, or an own airplane of no stock type --
+ *  no glide is then worked out, never another airplane's (the owner,
+ *  2026-11-09). */
+export function glideRatioOf(a: AircraftChoice, profiles: AircraftProfileSummary[] | undefined): number | null {
+  if (a.none) return null;
+  if (a.glideRatio != null) return a.glideRatio;
+  if (a.unmatched) return null;
+  return profiles?.find((p) => p.name === a.profile)?.glide?.ratio ?? null;
+}
+
+/** The picked airplane's own fuel for start, taxi and takeoff, gal: its
+ *  stock profile's POH figure; null with none, which is then left out
+ *  rather than taken from another airplane. */
+export function taxiFuelOf(a: AircraftChoice, profiles: AircraftProfileSummary[] | undefined): number | null {
+  if (a.none || a.unmatched) return null;
+  return profiles?.find((p) => p.name === a.profile)?.taxi_fuel_gal ?? null;
+}
+
+/** The nav log's airplane as the app reads its POH figures: for an own
+ *  airplane of no stock type (`unmatched`), its base profile's loading,
+ *  short-field tables and demonstrated crosswind are another airplane's
+ *  and are taken out -- the weight and balance and the runway distances
+ *  then say they are not in this airplane's profile. */
+export function withOwnFigures(nav: NavLogAltitude, unmatched: boolean | undefined): NavLogAltitude {
+  if (!unmatched || !nav.aircraft) return nav;
+  return { ...nav, aircraft: { ...nav.aircraft, loading: null, takeoff: null, landing: null, crosswind: null } };
 }

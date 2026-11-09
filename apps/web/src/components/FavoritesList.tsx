@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { House, Plus } from "lucide-react";
 import type { RecentAirport } from "../lib/preferences";
 import { placeLink } from "../lib/flightLink";
 import { SwipeToDelete } from "./SwipeToDelete";
+import { UndoRow } from "./UndoRow";
 import { ListGroup, ListRow } from "./GroupedList";
 import { EditToggle, KeptMark, ListPageHead, Mark, RemoveMinus } from "./Favorites";
 import { MoveHandle, SortableRow, SortableRows } from "./SortableRows";
@@ -31,11 +32,20 @@ export default function FavoritesList({
   onOpen: (airport: RecentAirport) => void;
   onChangeHome: () => void;
   onRemoveHome: () => void;
+  /** The card's star: a field in the list taken off, one not in it kept
+   *  at the list's end (preferences' toggleFavoriteAirport). */
   onRemove: (airport: RecentAirport) => void;
   onMove: (from: number, to: number) => void;
   onAdd: () => void;
 }) {
   const [editing, setEditing] = useState(false);
+  // The airport last taken off and where it was, for its Undo in the list.
+  const [removed, setRemoved] = useState<{ airport: RecentAirport; at: number } | null>(null);
+  const remove = (airport: RecentAirport, at: number) => {
+    onRemove(airport);
+    setRemoved({ airport, at });
+  };
+  const forget = useCallback(() => setRemoved(null), []);
   return (
     <div className="space-y-6" data-testid="favorites-list">
       {/* Every list's head (ListPageHead), where this was a copy of it. */}
@@ -82,10 +92,22 @@ export default function FavoritesList({
       </ListGroup>
       <SortableRows ids={favorites.map((a) => a.ident)} onMove={onMove}>
         <ListGroup title="Airports">
-          {favorites.length === 0 && <ListRow muted title="A star on an airport's card adds it here" />}
+          {removed && (
+            <UndoRow
+              said={`Removed ${removed.airport.ident}`}
+              onUndo={() => {
+                // Kept again at the end, then moved back to where it was.
+                onRemove(removed.airport);
+                onMove(favorites.length, removed.at);
+              }}
+              onDone={forget}
+              testId="favorites-undo"
+            />
+          )}
+          {favorites.length === 0 && !removed && <ListRow muted title="A star on an airport's card adds it here" />}
           {favorites.map((a, index) => (
             <SortableRow key={a.ident} id={a.ident}>
-              <SwipeToDelete label={`Remove ${a.ident} from Favorites`} onDelete={() => onRemove(a)} share={placeLink(a)}>
+              <SwipeToDelete label={`Remove ${a.ident} from Favorites`} onDelete={() => remove(a, index)} share={placeLink(a)}>
                 {editing ? (
                   <ListRow
                     media={<RemoveMinus label={`Remove ${a.ident} from Favorites…`} />}

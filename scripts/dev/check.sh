@@ -43,7 +43,7 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")/../.." && pwd)
 PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:$HOME/.local/bin:$HOME/.cargo/bin
 
-RUST_IMAGE=rust:1.89-slim-bookworm
+RUST_IMAGE=rust:1.99-slim-bookworm
 # CI's (ci.yml's test job).
 CARGO_MACHETE=0.9.1
 
@@ -121,7 +121,7 @@ py_image() {
   (cd "$here" && git ls-files -z -co --exclude-standard -- engine | xargs -0 tar cf - 2>/dev/null) | tar xf - -C "$ctx"
   cat > "$ctx/Dockerfile" <<EOF
 # The wheel's stage: the same for every directory, so BuildKit builds it once.
-FROM python:3.14-slim AS native
+FROM python:3.15-slim AS native
 COPY --from=$RUST_IMAGE /usr/local/cargo /usr/local/cargo
 COPY --from=$RUST_IMAGE /usr/local/rustup /usr/local/rustup
 ENV PATH=/usr/local/cargo/bin:\$PATH CARGO_HOME=/usr/local/cargo RUSTUP_HOME=/usr/local/rustup
@@ -129,7 +129,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \\
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \\
     rm -f /etc/apt/apt.conf.d/docker-clean \\
     && apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev
-RUN --mount=type=cache,id=wingtip-uv,target=/root/.cache/uv pip install -q uv && uv pip install --system -q maturin==1.9.4
+RUN --mount=type=cache,id=wingtip-uv,target=/root/.cache/uv pip install -q uv && uv pip install --system -q maturin==1.16.0
 COPY engine /engine
 # The target is this worktree's own (the id carries its path's hash): Cargo
 # fingerprints by mtime, so a target shared with another worktree took its
@@ -211,12 +211,12 @@ run_area() {
       docker run --rm -v "$here:/repo" --tmpfs /repo/apps/web/node_modules -w /repo/apps/web "$tag" \
         sh -c 'ln -s /node_modules/* /node_modules/.bin node_modules/ && npm run -s types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx knip --no-progress && npx vitest run'
       ;;
-    py) run_py services/planner requirements-dev-wingtip.txt 3.14 wingtip tests_wingtip ;;
-    planner) run_py services/planner requirements-dev.txt 3.14 app tests ;;
-    ingest) run_py services/ingest requirements-dev.txt 3.14 ingest tests ;;
-    assistant) run_py services/assistant requirements-dev.txt 3.14 app tests ;;
-    weather) run_py services/weather requirements-dev.txt 3.14 app tests ;;
-    jobs) run_py services/jobs requirements-dev-jobs.txt 3.14 charts charts/tests ;;
+    py) run_py services/planner requirements-dev-wingtip.txt 3.15 wingtip tests_wingtip ;;
+    planner) run_py services/planner requirements-dev.txt 3.15 app tests ;;
+    ingest) run_py services/ingest requirements-dev.txt 3.15 ingest tests ;;
+    assistant) run_py services/assistant requirements-dev.txt 3.15 app tests ;;
+    weather) run_py services/weather requirements-dev.txt 3.15 app tests ;;
+    jobs) run_py services/jobs requirements-dev-jobs.txt 3.15 charts charts/tests ;;
     engine)
       # The crates' layering, as engine/README.md's table gives it (seconds).
       python3 "$here/scripts/ci/engine_layers.py"
@@ -225,19 +225,21 @@ run_area() {
       docker run --rm -v "$here:/w" -v wingtip-cargo-registry:/usr/local/cargo/registry \
         -v wingtip-cargo-tools:/tools -w /w/engine "$RUST_IMAGE" sh -c \
         "[ -x /tools/bin/cargo-machete ] || cargo install -q --locked cargo-machete@$CARGO_MACHETE --root /tools; /tools/bin/cargo-machete"
-      # CI's own cargo test line (ci.yml's test job), so the crates tested
-      # here are always the ones tested there.
+      # Clippy with its warnings denied, then CI's own cargo test line
+      # (ci.yml's test job), so the crates tested here are always the ones
+      # tested there.
       local cmd
       cmd=$(grep -oE 'cargo test --profile ci [^#]*' "$here/.github/workflows/ci.yml" | head -1)
       key=$(worktree_key)
       # The target is a volume of this worktree's own, labelled with its path
       # so tidy-local.sh can remove it when the worktree is gone.
-      local tvol=wingtip-cargo-target-tests-1.89-$(docker version -f '{{.Server.Arch}}')-$(worktree_hash)
+      local tvol=wingtip-cargo-target-tests-1.99-$(docker version -f '{{.Server.Arch}}')-$(worktree_hash)
       docker volume inspect "$tvol" >/dev/null 2>&1 || docker volume create --label "wingtip.worktree=$here" "$tvol" >/dev/null
       docker run --rm -v "$here:/w/$key" \
         -v wingtip-cargo-registry:/usr/local/cargo/registry -v wingtip-cargo-git:/usr/local/cargo/git \
         -v "$tvol":/target \
-        -e CARGO_TARGET_DIR=/target -w "/w/$key" "$RUST_IMAGE" sh -c "$cmd"
+        -e CARGO_TARGET_DIR=/target -w "/w/$key" "$RUST_IMAGE" sh -c \
+        "rustup component add clippy 2>/dev/null && cargo clippy -q --manifest-path engine/Cargo.toml --workspace --all-targets -- -D warnings && $cmd"
       ;;
     java)
       # services/, not the gateway alone: the pom generates the assistant's

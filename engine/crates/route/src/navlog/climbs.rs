@@ -33,8 +33,13 @@ pub fn isa_dev_c(leg: Option<&Obj>) -> R<f64> {
 /// miles, minutes and gallons into the leg, the altitude, and the climb's
 /// true airspeed and ground speed). A descent costs nothing here: at
 /// cruise power it is if anything faster (with_descents places it).
+/// A profile with no climb speed of its own flies no climb: the legs as
+/// they are, level from the start, with no top of climb -- the climb's
+/// ground is not guessed from another airplane's (the owner, 2026-11-09).
 pub fn with_climbs(legs: &[Obj], start_altitude_ft: Option<f64>, profile: &Profile, climber: &Climber) -> R<Vec<Obj>> {
-    let climb_tas = profile.airplane.climb_tas_kt();
+    let Some(climb_tas) = profile.airplane.climb_tas_kt() else {
+        return Ok(legs.to_vec());
+    };
     let mut level_ft = start_altitude_ft;
     let mut climb_left_min = 0.0;
     // The fuel flow of the climb in hand over all its minutes: one that
@@ -44,12 +49,12 @@ pub fn with_climbs(legs: &[Obj], start_altitude_ft: Option<f64>, profile: &Profi
     for leg in legs {
         let mut leg = leg.clone();
         let target_ft = leg.num("altitude_ft")?;
-        if let Some(level) = level_ft {
-            if target_ft > level {
-                let climb = climber.climb(level, target_ft, isa_dev_c(Some(&leg))?);
-                climb_burn_gph = (climb_left_min * climb_burn_gph + climb.gallons * 60.0) / (climb_left_min + climb.minutes);
-                climb_left_min += climb.minutes;
-            }
+        if let Some(level) = level_ft
+            && target_ft > level
+        {
+            let climb = climber.climb(level, target_ft, isa_dev_c(Some(&leg))?);
+            climb_burn_gph = (climb_left_min * climb_burn_gph + climb.gallons * 60.0) / (climb_left_min + climb.minutes);
+            climb_left_min += climb.minutes;
         }
         let level = level_ft.map_or(target_ft, |l| l.max(target_ft));
         level_ft = Some(level);
@@ -177,10 +182,10 @@ pub fn with_descents(legs: &[Obj], fixes: &[Obj], end: &End) -> R<Vec<Obj>> {
             // On this leg, or at its start where it cannot have started
             // sooner: the first leg, or one climbed to.
             let down_nm = (altitude - limit_ft) / ft_per_nm;
-            if down_nm < distance - flat || i == 0 || altitudes[i - 1] < altitude {
-                if let Some(b) = &binds {
-                    tods.push((starts[i].max(ends[i] - flat - down_nm), i, b.clone()));
-                }
+            if (down_nm < distance - flat || i == 0 || altitudes[i - 1] < altitude)
+                && let Some(b) = &binds
+            {
+                tods.push((starts[i].max(ends[i] - flat - down_nm), i, b.clone()));
             }
         }
         limit_ft += (distance - flat) * ft_per_nm;
@@ -257,8 +262,10 @@ pub fn with_descents(legs: &[Obj], fixes: &[Obj], end: &End) -> R<Vec<Obj>> {
 /// where given), flown at the climb speed rather than the leg's cruise,
 /// and the difference is ground not covered. A descent costs nothing, and
 /// never below nothing: a climb speed typed above the cruise does not make
-/// climbing pay.
+/// climbing pay. Nothing with no climb speed in the profile, which flies
+/// no climb (with_climbs).
 pub fn climb_penalty_min(from_ft: f64, to_ft: f64, profile: &Profile, climber: &Climber, leg: Option<&Obj>) -> R<f64> {
+    let Some(climb_tas) = profile.airplane.climb_tas_kt() else { return Ok(0.0) };
     if to_ft <= from_ft {
         return Ok(0.0);
     }
@@ -267,13 +274,15 @@ pub fn climb_penalty_min(from_ft: f64, to_ft: f64, profile: &Profile, climber: &
         Some(l) => l.num("tas_kt")?,
         None => profile.airplane.cruise_tas_kt,
     };
-    Ok((minutes * (1.0 - profile.airplane.climb_tas_kt() / cruise_tas)).max(0.0))
+    Ok((minutes * (1.0 - climb_tas / cruise_tas)).max(0.0))
 }
 
 /// Gallons a climb from `from_ft` to `to_ft` burns over cruising the same
 /// ground: its gallons, less what the leg's cruise would have burned over
-/// the ground the climb covers at the climb speed. Never below nothing.
+/// the ground the climb covers at the climb speed. Never below nothing,
+/// and nothing with no climb speed in the profile (with_climbs).
 pub fn climb_fuel_penalty_gal(from_ft: f64, to_ft: f64, profile: &Profile, climber: &Climber, leg: Option<&Obj>) -> R<f64> {
+    let Some(climb_tas) = profile.airplane.climb_tas_kt() else { return Ok(0.0) };
     if to_ft <= from_ft {
         return Ok(0.0);
     }
@@ -282,7 +291,7 @@ pub fn climb_fuel_penalty_gal(from_ft: f64, to_ft: f64, profile: &Profile, climb
         Some(l) => (l.num("tas_kt")?, l.num("fuel_burn_gph")?),
         None => (profile.airplane.cruise_tas_kt, profile.airplane.fuel_burn_gph),
     };
-    let cruise_gal = climb.minutes / 60.0 * cruise_burn * profile.airplane.climb_tas_kt() / cruise_tas;
+    let cruise_gal = climb.minutes / 60.0 * cruise_burn * climb_tas / cruise_tas;
     Ok((climb.gallons - cruise_gal).max(0.0))
 }
 

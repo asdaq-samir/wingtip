@@ -10,6 +10,7 @@ import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.bestFields
 import app.wingtipmaps.android.engine.generated.checklistSection
 import app.wingtipmaps.android.engine.generated.compassWord
+import app.wingtipmaps.android.engine.generated.emergencyGuidance
 import app.wingtipmaps.android.engine.generated.magneticVariation
 import app.wingtipmaps.android.engine.generated.maydayCall
 import app.wingtipmaps.android.flight.OwnShip
@@ -49,6 +50,10 @@ interface EmergencyRules {
     fun checklistSection(titles: List<String>): Int?
     fun sections(text: String): List<ChecklistSection>
     fun compassWord(bearingDeg: Double): String?
+
+    /** With no airplane, what to do in general (`emergency_guidance`: the
+     *  AIM's and the Airplane Flying Handbook's, each item sourced). */
+    fun guidance(): List<EngineContract.EmergencyGuidanceAnswerItemsItem> = emptyList()
 }
 
 /** Where the fields come from: the planner, a fake in the tests. */
@@ -108,4 +113,6 @@ object EngineEmergency : EmergencyRules {
     override fun sections(text: String): List<ChecklistSection> = ChecklistText.read(text).getOrDefault(emptyList())
 
     override fun compassWord(bearingDeg: Double): String? = Engine.compassWord(bearingDeg).getOrNull()
+
+    override fun guidance(): List<EngineContract.EmergencyGuidanceAnswerItemsItem> = Engine.emergencyGuidance().getOrNull()?.items.orEmpty()
 }

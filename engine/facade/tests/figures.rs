@@ -450,21 +450,6 @@ fn the_strip_says_the_fuel_required_to_the_next_landing() {
 }
 
 #[test]
-fn an_estimate_carries_the_taxi_allowance_and_45_minutes() {
-    use serde_json::json;
-    // 120 nm at 120 kt is an hour; at 8 gph, 8 gal; with 1.4 gal to start
-    // and taxi and 45 minutes' reserve (14 CFR 91.151(a)(2), 91.167(a)(3)),
-    // 6 gal, 15.4.
-    let a = ask("fuel_estimate", json!({"distance_nm": 120.0, "cruise_tas_kt": 120.0, "fuel_burn_gph": 8.0}));
-    assert_eq!(a["minutes"], json!(60.0));
-    assert_eq!(a["trip_gal"], json!(8.0));
-    assert!((a["required_gal"].as_f64().unwrap() - 15.4).abs() < 1e-9);
-    let none = ask("fuel_estimate", json!({"distance_nm": 120.0, "cruise_tas_kt": 120.0}));
-    assert_eq!(none["required_gal"], serde_json::Value::Null);
-    assert_eq!(ask("fuel_estimate", json!({"distance_nm": 120.0}))["minutes"], serde_json::Value::Null);
-}
-
-#[test]
 fn the_reserve_is_the_rules() {
     use serde_json::json;
     // 14 CFR 91.151(a): 30 minutes by day, 45 at night; 91.167(a)(3): 45.

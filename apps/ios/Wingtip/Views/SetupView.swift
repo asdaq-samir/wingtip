@@ -8,6 +8,8 @@ struct SetupView: View {
     @Environment(Traffic.self) private var traffic
     @Environment(Plan.self) private var plan
     @State private var signingIn = false
+    /// The pages pushed, so a screen asked for by its name lands on its page.
+    @State private var path: [Screen] = []
     @State private var keptBytes: Int64 = 0
     @AppStorage(MapExtrasInput.Keys.waypoints) private var waypointsOn = false
     @AppStorage(MapExtrasInput.Keys.classB) private var classBOn = false
@@ -21,11 +23,11 @@ struct SetupView: View {
     @AppStorage(Look.key) private var look = Look.standard.rawValue
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 Section(title: "Account") {
                     if let pilot = session.pilot {
-                        LabeledContent("Signed in as", value: pilot.displayName ?? pilot.email ?? "you")
+                        LabeledContent("Signed in as", value: pilot.displayName)
                         LabeledContent("Email", value: pilot.email)
                         NavigationLink("Contact") { ContactView().closesBack() }
                         ExportDataButton()
@@ -128,6 +130,11 @@ struct SetupView: View {
                 }
             }
             .navigationTitle("Setup")
+            .navigationDestination(for: Screen.self) { SetupPage(screen: $0).closesBack() }
+            // A page of Setup's asked for by its name (RootView.openScreen).
+            .onChange(of: ScreenAsk.shared.wanted, initial: true) { _, _ in
+                if let screen = ScreenAsk.shared.take(SetupPage.screens) { path = [screen] }
+            }
             .sheet(isPresented: $signingIn) { SignInView() }
             .task { keptBytes = TileStore.shared.bytes() }
             .refreshable {
@@ -135,6 +142,23 @@ struct SetupView: View {
                 await session.refresh()
                 keptBytes = TileStore.shared.bytes()
             }
+        }
+    }
+}
+
+/// Setup's pages a screen's name opens, as its rows open them.
+struct SetupPage: View {
+    static let screens: Set<Screen> = [.logbook, .coach, .minimums, .guide, .downloads, .about]
+    let screen: Screen
+
+    var body: some View {
+        switch screen {
+        case .logbook: LogbookView()
+        case .coach: CoachView()
+        case .guide: PilotGuideView()
+        case .downloads: DownloadsView()
+        case .about: AboutView()
+        default: MinimumsView()
         }
     }
 }

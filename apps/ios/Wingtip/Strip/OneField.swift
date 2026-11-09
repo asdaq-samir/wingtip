@@ -243,11 +243,11 @@ struct StripSourceSheet: View {
 /// How the profile menu opens a screen: the sheet's own (StripSheetView
 /// puts it in the environment), so the menu needs no binding to the path.
 private struct OpenStripScreenKey: EnvironmentKey {
-    static let defaultValue: ((FieldScreen) -> Void)? = nil
+    static let defaultValue: (@MainActor (FieldScreen) -> Void)? = nil
 }
 
 extension EnvironmentValues {
-    var openStripScreen: ((FieldScreen) -> Void)? {
+    var openStripScreen: (@MainActor (FieldScreen) -> Void)? {
         get { self[OpenStripScreenKey.self] }
         set { self[OpenStripScreenKey.self] = newValue }
     }

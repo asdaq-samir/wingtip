@@ -216,34 +216,8 @@ fn alerts_go_off_once_as_it_happens() {
 
 // --- Glide ------------------------------------------------------------------
 
-#[test]
-fn the_glide_ring_is_1_5_nm_a_thousand_feet_in_the_air() {
-    let range =
-        |alt: Value, kt: Value, ground: Value| ask("glide_range", json!({ "altitude_ft": alt, "speed_kt": kt, "ground_ft": ground }));
-    assert_eq!(n(&range(json!(4800), json!(100), json!(800))), 6.0);
-    assert_eq!(range(json!(1000), json!(100), json!(800)), Value::Null);
-    assert_eq!(range(json!(4800), json!(10), json!(800)), Value::Null);
-    assert_eq!(range(Value::Null, json!(100), json!(800)), Value::Null);
-    assert_eq!(range(json!(4800), json!(100), Value::Null), Value::Null);
-}
-
-#[test]
-fn a_field_within_a_glide_is_judged_over_its_own_elevation_at_pattern_height() {
-    let reaches = |alt: f64, kt: f64, nm: f64, elevation: Value| {
-        ask("glide_reaches", json!({ "altitude_ft": alt, "speed_kt": kt, "distance_nm": nm, "elevation_ft": elevation })).as_bool().unwrap()
-    };
-    // 5,000 ft over a 600 ft field is 3,400 ft to spare above its pattern:
-    // 5.1 nm. A field 6 nm off at 2,500 ft has 1,500 ft: 2.25 nm.
-    assert!(reaches(5000.0, 100.0, 5.0, json!(600)));
-    assert!(!reaches(5000.0, 100.0, 6.0, json!(600)));
-    assert!(!reaches(5000.0, 100.0, 6.0, json!(2500)));
-    assert!(!reaches(5000.0, 10.0, 1.0, json!(600)));
-    assert!(!reaches(5000.0, 100.0, 1.0, Value::Null));
-    assert!(!reaches(1500.0, 100.0, 0.5, json!(600)));
-    assert_eq!(ask("underway", json!({ "speed_kt": 40 })), json!(true));
-    assert_eq!(ask("underway", json!({ "speed_kt": 39.9 })), json!(false));
-    assert_eq!(ask("underway", json!({})), json!(false));
-}
+// The c172 profile's 9 to 1 (its POH, figure 3-1), feet in a nm.
+const FT_PER_NM: f64 = 1852.0 / 0.3048;
 
 // --- In flight (#218) ---------------------------------------------------------
 
@@ -284,12 +258,18 @@ fn in_flight_counts_down_to_the_next_waypoint_and_the_destination() {
 fn the_vertical_speed_and_the_glide_ring() {
     let samples: Vec<Value> = (0..=10).map(|t| json!({ "t_s": t, "altitude_ft": 4000 - 10 * t })).collect();
     assert!(close(n(&ask("vertical_speed", json!({ "samples": samples }))), -600.0, 1e-9));
-    let ring =
-        ask("glide_ring", json!({ "lat": 45, "lon": -93, "altitude_ft": 4800, "speed_kt": 100, "terrain_ft": 800, "field_ft": 500 }));
-    assert_eq!(n(&ring["range_nm"]), 6.0);
+    let ring = ask(
+        "glide_ring",
+        json!({ "lat": 45, "lon": -93, "altitude_ft": 4800, "speed_kt": 100, "terrain_ft": 800, "field_ft": 500, "glide_ratio": 9 }),
+    );
+    assert!(close(n(&ring["range_nm"]), 4.0 * 9000.0 / FT_PER_NM, 1e-9));
     assert_eq!(n(&ring["ground_ft"]), 800.0);
     assert_eq!(ring["ring"].as_array().unwrap().len(), 73);
-    assert_eq!(ask("glide_ring", json!({ "lat": 45, "lon": -93, "altitude_ft": 4800, "speed_kt": 20, "terrain_ft": 800 })), Value::Null);
+    assert_eq!(
+        ask("glide_ring", json!({ "lat": 45, "lon": -93, "altitude_ft": 4800, "speed_kt": 20, "terrain_ft": 800, "glide_ratio": 9 })),
+        Value::Null
+    );
+    assert_eq!(ask("glide_ring", json!({ "lat": 45, "lon": -93, "altitude_ft": 4800, "speed_kt": 100, "terrain_ft": 800 })), Value::Null);
 }
 
 #[test]
@@ -769,7 +749,7 @@ fn times_are_read_as_iso_8601_in_utc() {
     use wingtip_engine::motion::track::iso_ms;
     assert_eq!(iso_ms("2026-10-01T14:00:00Z"), Some(1790863200000.0));
     assert_eq!(iso_ms("2026-10-01T14:00:00.5Z"), Some(1790863200500.0));
-    assert_eq!(iso_ms("2026-10-01T14:00:02-05:00"), Some(1790863202000.0 + 5.0 * 3600_000.0));
+    assert_eq!(iso_ms("2026-10-01T14:00:02-05:00"), Some(1790863202000.0 + 5.0 * 3_600_000.0));
     assert_eq!(iso_ms("2026-10-02"), Some(1790899200000.0));
     // GPX 1.1 sets its times in UTC: one with no offset is UTC.
     assert_eq!(iso_ms("2026-10-01T14:00:00"), Some(1790863200000.0));

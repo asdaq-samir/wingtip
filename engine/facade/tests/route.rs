@@ -114,8 +114,8 @@ fn a_holds_minutes() {
     assert_eq!(holds::held_minutes(Leg::Minutes(1.0), None, Some(15.0), 110.0), 15.0);
     // No airspeed is flown as a knot, not divided by nothing.
     assert!(holds::lap_minutes(Leg::Nm(4.0), 0.0).is_finite());
-    // A standard-rate turn's radius: 0.64 nm at 120 kt.
-    assert!((holds::turn_radius_nm(120.0) - 0.6366).abs() < 1e-4);
+    // A standard-rate turn's radius: 0.64 nm (2/pi) at 120 kt.
+    assert!((holds::turn_radius_nm(120.0) - std::f64::consts::FRAC_2_PI).abs() < 1e-4);
     let figures = ask("hold_figures", json!({ "hold": { "leg_min": 1, "turns": 2 }, "tas_kt": 110 }));
     assert_eq!(figures["lap_min"], 4.0);
     assert_eq!(figures["held_min"], 8.0);

@@ -139,9 +139,7 @@ pub fn ground_speeds(points: &[Point]) -> Vec<f64> {
         .map(|i| {
             let (mut j, mut k) = (i, i);
             while points[k].t - points[j].t < 10_000.0 && (j > 0 || k < last) {
-                if j > 0 {
-                    j -= 1;
-                }
+                j = j.saturating_sub(1);
                 if k < last {
                     k += 1;
                 }
@@ -313,45 +311,49 @@ pub fn debrief(checkpoints: &[Checkpoint], points: &[Point], patterns: &[(String
             let since_leg_start = along - from.along_track_nm;
             let (to_field, from_field) = (cps[b].along_track_nm - along, along - cps[a].along_track_nm);
             // Course: not over the fields, nor in the turn onto a leg.
-            if let Some(course) = to.true_course_deg {
-                if from_field > 2.0 && to_field > 2.0 && since_leg_start > 1.0 {
-                    let (mut j, mut k) = (i, i);
-                    while points[k].t - points[j].t < 20_000.0 && (j > start || k < end) {
-                        if j > start {
-                            j -= 1;
-                        }
-                        if k < end {
-                            k += 1;
-                        }
+            if let Some(course) = to.true_course_deg
+                && from_field > 2.0
+                && to_field > 2.0
+                && since_leg_start > 1.0
+            {
+                let (mut j, mut k) = (i, i);
+                while points[k].t - points[j].t < 20_000.0 && (j > start || k < end) {
+                    if j > start {
+                        j -= 1;
                     }
-                    if k > j {
-                        let off = angle_between(bearing_deg(points[j].lat, points[j].lon, points[k].lat, points[k].lon), course);
-                        g.course_w += weight;
-                        if off <= COURSE_DEG {
-                            g.course_in += weight;
-                        }
+                    if k < end {
+                        k += 1;
                     }
-                    if g.worst_off.is_none_or(|w| right.abs() > w.abs()) {
-                        g.worst_off = Some(right);
+                }
+                if k > j {
+                    let off = angle_between(bearing_deg(points[j].lat, points[j].lon, points[k].lat, points[k].lon), course);
+                    g.course_w += weight;
+                    if off <= COURSE_DEG {
+                        g.course_in += weight;
                     }
+                }
+                if g.worst_off.is_none_or(|w| right.abs() > w.abs()) {
+                    g.worst_off = Some(right);
                 }
             }
             // Altitude: in the cruise, and not in a step to a new one.
             let planned = to.altitude_ft;
             let stepped = best > a && cps[best].altitude_ft != planned && since_leg_start < 3.0;
             let mut off_line = right.abs() > OFF_ROUTE_NM && from_field > 2.0 && to_field > 2.0;
-            if let (Some(alt), Some(planned)) = (p.alt_ft, planned) {
-                if cruise_from <= p.t && p.t <= cruise_to && !stepped {
-                    let dev = alt - planned;
-                    g.alt_w += weight;
-                    if dev.abs() <= ALTITUDE_FT {
-                        g.alt_in += weight;
-                    } else {
-                        off_line = true;
-                    }
-                    if g.worst_alt.is_none_or(|w| dev.abs() > w.abs()) {
-                        g.worst_alt = Some(dev);
-                    }
+            if let (Some(alt), Some(planned)) = (p.alt_ft, planned)
+                && cruise_from <= p.t
+                && p.t <= cruise_to
+                && !stepped
+            {
+                let dev = alt - planned;
+                g.alt_w += weight;
+                if dev.abs() <= ALTITUDE_FT {
+                    g.alt_in += weight;
+                } else {
+                    off_line = true;
+                }
+                if g.worst_alt.is_none_or(|w| dev.abs() > w.abs()) {
+                    g.worst_alt = Some(dev);
                 }
             }
             line.push(LinePoint { lat: p.lat, lon: p.lon, off: off_line });

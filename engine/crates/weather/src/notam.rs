@@ -212,11 +212,11 @@ pub fn from_fns(text: &str) -> Vec<Notam> {
         let (starts, _) = utc12(&get("effectiveStart"));
         let (mut ends, mut estimated) = utc12(&get("effectiveEnd"));
         let lifetime = event.find(&["featureLifetime", "TimePeriod", "endPosition"]).and_then(|e| iso_minute(&e.text));
-        if let Some(l) = lifetime {
-            if ends.as_ref().is_none_or(|e| l < *e) {
-                ends = Some(l);
-                estimated = false;
-            }
+        if let Some(l) = lifetime
+            && ends.as_ref().is_none_or(|e| l < *e)
+        {
+            ends = Some(l);
+            estimated = false;
         }
         let kind = some(&get("type"));
         let names = match (&found, kind.as_deref()) {

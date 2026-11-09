@@ -209,10 +209,10 @@ pub fn with_winds(
             .map(|h| headwind_kt(dir, kt, h))
             .fold(f64::NEG_INFINITY, |a, b| if b > a { b } else { a })
     };
-    if let Some(best) = first_max(0..runways.len(), |&k| into_last(&runways[k])) {
-        if out[best].is_some() {
-            out[best] = favoured_end(&runways[best], report, variation_deg, recent);
-        }
+    if let Some(best) = first_max(0..runways.len(), |&k| into_last(&runways[k]))
+        && out[best].is_some()
+    {
+        out[best] = favoured_end(&runways[best], report, variation_deg, recent);
     }
     out
 }
@@ -278,21 +278,20 @@ pub fn wind_pick(runways: &[Runway], nearby: Option<&Nearby>, forecast_at: Optio
     };
     // A forecast's wind is worked out here alone: the runways' winds are
     // the field's report now.
-    if forecast_at.is_none() {
-        if let Some((r, e, true)) = runway_in_use(runways) {
-            if let Some(w) = &runways[r].wind {
-                let calm = calm_on_runway(w);
-                return Some(WindPick {
-                    ident: runway_number(&runways[r].ends[e].ident).to_owned(),
-                    headwind_kt: w.headwind_kt,
-                    crosswind_kt: w.crosswind_kt,
-                    gust_crosswind_kt: w.gust_crosswind_kt,
-                    calm,
-                    in_use: calm && w.in_use,
-                    ..none
-                });
-            }
-        }
+    if forecast_at.is_none()
+        && let Some((r, e, true)) = runway_in_use(runways)
+        && let Some(w) = &runways[r].wind
+    {
+        let calm = calm_on_runway(w);
+        return Some(WindPick {
+            ident: runway_number(&runways[r].ends[e].ident).to_owned(),
+            headwind_kt: w.headwind_kt,
+            crosswind_kt: w.crosswind_kt,
+            gust_crosswind_kt: w.gust_crosswind_kt,
+            calm,
+            in_use: calm && w.in_use,
+            ..none
+        });
     }
     let nearby = nearby?;
     let speed = nearby.wind.speed_kt?;

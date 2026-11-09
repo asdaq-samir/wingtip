@@ -51,7 +51,9 @@ export function useAircraftPick() {
   const pickTail = useCallback(
     (tail: string, profile: string) => {
       // With the figures the pilot set for it, where they have (AirplaneFigures).
-      setAircraft({ profile, label: `${tail} · ${profile.toUpperCase()}`, tail, ...usePreferences.getState().tailFigures[tail] });
+      // No stock profile (its type not known yet, or none): its N-number alone.
+      const label = profile ? `${tail} · ${profile.toUpperCase()}` : tail;
+      setAircraft({ profile, label, tail, ...usePreferences.getState().tailFigures[tail] });
     },
     [setAircraft],
   );

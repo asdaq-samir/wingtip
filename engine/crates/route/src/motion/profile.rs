@@ -187,12 +187,12 @@ pub fn plan_profile(rows: &[Row]) -> (Vec<ProfilePoint>, Vec<Mark>, f64) {
         let start = along;
         along += f(part, "distance_nm");
         // A step-down levelling off on this piece.
-        if let Some((to, at, false)) = descent {
-            if at <= along {
-                point(at, to);
-                level = Some(to);
-                descent = None;
-            }
+        if let Some((to, at, false)) = descent
+            && at <= along
+        {
+            point(at, to);
+            level = Some(to);
+            descent = None;
         }
         match (row.kind, row.point) {
             (Kind::Toc, Some(p)) => {

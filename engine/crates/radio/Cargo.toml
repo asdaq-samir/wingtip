@@ -1,7 +1,7 @@
 [package]
 name = "wingtip-radio"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 publish = false
 description = "What is heard on the radio: an ATC clearance read into its items, a call to us by its call sign, the readback and the ATIS"
 
@@ -17,3 +17,6 @@ wingtip-flight = { path = "../flight" }
 wingtip-weather = { path = "../weather" }
 # How a figure is written (figures::words), for the MAYDAY call (mayday).
 wingtip-procedures = { path = "../procedures" }
+
+[lints]
+workspace = true

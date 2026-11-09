@@ -260,7 +260,7 @@ struct RiskView: View {
                     .accessibilityElement(children: .combine)
                 }
                 let own = Set((verdict.answer?.selfChecks ?? []).map(\.key))
-                let raised = (risk.factors ?? []).filter { !own.contains($0.key) }
+                let raised = risk.factors.filter { !own.contains($0.key) }
                 Section(title: "From the Briefing and Your Logbook") {
                     if raised.isEmpty {
                         Text("Nothing raised").foregroundStyle(.secondary)

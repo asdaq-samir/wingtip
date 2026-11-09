@@ -107,7 +107,7 @@ class TripToolbox(Toolbox):
             "dep": dep.strip().upper(),
             "dest": dest.strip().upper(),
             "stops": stops,
-            "aircraft": c.aircraft or "c172",
+            "aircraft": c.aircraft or None,
             "airplane": bool(c.aircraft),
             "rules": c.rules,
             "start": _utc(self.depart(start)),

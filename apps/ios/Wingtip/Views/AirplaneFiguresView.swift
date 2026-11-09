@@ -59,7 +59,7 @@ struct AirplaneFiguresView: View {
                 if let problem { ProblemLine(problem) }
             }
             Section {
-                PhotosPicker(selection: $picked, matching: .images) {
+                PhotosPicker(selection: $picked, matching: .images) { [reading] in
                     Label(reading ? "Reading the page…" : "Read from a photo", systemImage: "camera")
                 }
                 .disabled(reading)

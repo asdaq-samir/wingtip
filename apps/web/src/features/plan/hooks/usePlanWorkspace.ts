@@ -11,7 +11,7 @@ import {
   routeOf,
   stopsOf,
 } from "../../../lib/identSchema";
-import { cruiseTasOf, shortName } from "../../../lib/aircraftChoice";
+import { cruiseTasOf, shortName, taxiFuelOf } from "../../../lib/aircraftChoice";
 import { clockTime } from "../../../lib/format";
 import { useMinuteClock } from "../../../lib/useMinuteClock";
 import { legsWithoutWind, windsOutOfDate } from "../format";
@@ -706,13 +706,12 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   // One floating progress line for the whole page (planWords'
   // progressWords).
   const progress = progressWords(s.navStage, s.stage, s.briefing.state === "loading", s.descriptionProgress);
-  // The flight's figures before the nav log's, at the pilot's ask for
-  // them as soon as can be (FlightLine's `estimate`): this route's course
-  // distance, and the airplane's book cruise speed and burn -- its own
-  // where the pilot set them, else its profile's.
+  // The flight's figures before the nav log's, at the pilot's ask for them as soon as can be (FlightLine's `estimate`): this
+  // route's course distance, the airplane's book cruise speed and burn (its own where set) and its profile's taxi fuel.
   const profile = profiles?.find((p) => p.name === aircraft.profile);
   const cruiseTasKt = cruiseTasOf(aircraft, profiles);
   const fuelBurnGph = aircraft.fuelBurnGph ?? profile?.fuel_burn_gph ?? null;
+  const taxiFuelGal = taxiFuelOf(aircraft, profiles);
   // Before the course comes, at the tap: the great circles between the
   // route's points, placed from the airport index the browser keeps
   // (placeOf) -- the figures at once, where they waited a second or more
@@ -731,11 +730,11 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   const estimate = useMemo(
     () =>
       routed && course && course.destination.ident === planned.dest && course.departure.ident === planned.dep
-        ? { distanceNm: course.distance_nm, cruiseTasKt, fuelBurnGph }
+        ? { distanceNm: course.distance_nm, cruiseTasKt, fuelBurnGph, taxiFuelGal }
         : straightNm != null
-          ? { distanceNm: straightNm, cruiseTasKt, fuelBurnGph }
+          ? { distanceNm: straightNm, cruiseTasKt, fuelBurnGph, taxiFuelGal }
           : null,
-    [routed, course, planned.dep, planned.dest, cruiseTasKt, fuelBurnGph, straightNm],
+    [routed, course, planned.dep, planned.dest, cruiseTasKt, fuelBurnGph, taxiFuelGal, straightNm],
   );
   // A toast however far out the panel is, at the pilot's ask, where the
   // flight's line said it with the panel out: that line keeps the

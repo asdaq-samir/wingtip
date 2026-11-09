@@ -59,6 +59,11 @@ class InFlight private constructor() {
     @Volatile
     var terrainFt: Double? = null
 
+    /** The picked airplane's own glide ratio (AirplaneGlide), the ring's;
+     *  none, no ring. */
+    @Volatile
+    var glideRatio: Double? = null
+
     /** The nearest field's elevation, the ring's ground where no pack
      *  reaches, asked of the planner now and then while moving. */
     @Volatile
@@ -86,7 +91,7 @@ class InFlight private constructor() {
             altitudes.addLast(t to ft)
         }
         val vs = Engine.verticalSpeed(altitudes.map { EngineContract.VerticalSpeedInputSamplesItem(it.first, it.second) })
-        val glide = Engine.glideRing(fix.lat, fix.lon, fix.altitudeFt, fix.groundspeedKt, terrainFt, fieldFt)
+        val glide = Engine.glideRing(fix.lat, fix.lon, fix.altitudeFt, fix.groundspeedKt, terrainFt, fieldFt, glideRatio)
         val progress = progress(fix, plan, nowMs)
         val underway = OwnShip.underway(fix.groundspeedKt)
         // The first rule that failed, in the engine's words (Engine.rule

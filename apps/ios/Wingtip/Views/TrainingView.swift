@@ -55,7 +55,7 @@ struct TrainingView: View {
     // The codes on the Airman Knowledge Test Report: the examiner goes over
     // each again, and the instructor endorses their review (61.39(a)(6)(iii)).
     @ViewBuilder private func knowledgeTest(_ t: Training) -> some View {
-        let codes = t.knowledgeTestCodes ?? []
+        let codes = t.knowledgeTestCodes
         let found = Result { try Endorsing.acsCodes(in: pasted) }
         let typed = (try? found.get()) ?? []
         Section(title: "Knowledge Test") {
@@ -94,7 +94,7 @@ struct TrainingView: View {
     @ViewBuilder private func endorsements(_ t: Training) -> some View {
         let inForce = Result { try Endorsing.inForce(t.signed) }
         let signed = (try? inForce.get()) ?? [:]
-        let recorded = Dictionary((t.endorsements ?? []).map { ($0.code, $0) }, uniquingKeysWith: { a, _ in a })
+        let recorded = Dictionary(t.endorsements.map { ($0.code, $0) }, uniquingKeysWith: { a, _ in a })
         if !t.kinds.isEmpty {
             let kinds = t.kinds
             Section(title: "Endorsements") {

@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_route::motion::call",
-  "description": "The still-air glide ring about own ship (#218): glide_range's radius (1.5 nm per 1,000 ft, the C172S POH figure 3-1) over the higher of the ground under the airplane (a pack's terrain) and the nearest field's elevation, and its outline as 73 points on the sphere, the first repeated last. Null on the ground, under flying speed or with no height.",
+  "description": "The still-air glide ring about own ship (#218): glide_range's radius at the picked airplane's own glide_ratio over the higher of the ground under the airplane (a pack's terrain) and the nearest field's elevation, and its outline as 73 points on the sphere, the first repeated last. Null on the ground, under flying speed, with no height, or with no glide ratio (no airplane, or none in its profile).",
   "type": "object",
   "properties": {
     "input": {
@@ -32,6 +32,13 @@
           ]
         },
         "field_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "glide_ratio": {
+          "description": "The airplane's still-air glide ratio, feet forward for each foot down (its profile's glide.ratio); null or missing for none.",
           "type": [
             "number",
             "null"

@@ -97,6 +97,12 @@
     "openapi-typescript": {
       "typescript": "$typescript"
     },
+    "@ts-morph/common": {
+      "minimatch": "^11.0.5"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.5"
+    },
     "workbox-build": {
       "glob": "^14.0.4"
     }

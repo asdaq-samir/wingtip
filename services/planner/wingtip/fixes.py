@@ -55,7 +55,7 @@ VOR_KINDS = ("VORTAC", "VOR/DME", "VOR")
 #: (VOT), the fan markers or a marine beacon, which no route flies to.
 NAVAID_KINDS = ("VORTAC", "VOR/DME", "VOR", "DME", "TACAN", "NDB/DME", "NDB")
 
-_TABLE: "_Table | None" = None
+_TABLE: _Table | None = None
 _LOCK = threading.Lock()
 
 

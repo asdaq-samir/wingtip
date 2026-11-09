@@ -387,15 +387,16 @@ fn is_facility(toks: &[Token], i: usize) -> bool {
 fn altitude_at(toks: &[Token], i: usize) -> Option<(i64, usize)> {
     let word = |k: usize| toks.get(k).map(|t| t.word.as_str());
     let num = |k: usize| toks.get(k).and_then(|t| t.num.as_deref());
-    if word(i) == Some("flight") && word(i + 1) == Some("level") {
-        if let Some(level) = num(i + 2).and_then(|n| n.parse::<f64>().ok()) {
-            return Some(((level * 100.0) as i64, 3));
-        }
+    if word(i) == Some("flight")
+        && word(i + 1) == Some("level")
+        && let Some(level) = num(i + 2).and_then(|n| n.parse::<f64>().ok())
+    {
+        return Some(((level * 100.0) as i64, 3));
     }
-    if word(i) == Some("fl") {
-        if let Some(level) = num(i + 1).and_then(|n| n.parse::<f64>().ok()) {
-            return Some(((level * 100.0) as i64, 2));
-        }
+    if word(i) == Some("fl")
+        && let Some(level) = num(i + 1).and_then(|n| n.parse::<f64>().ok())
+    {
+        return Some(((level * 100.0) as i64, 2));
     }
     let n = num(i)?;
     if n.contains('.') {
@@ -482,13 +483,13 @@ fn route_of(toks: &[Token]) -> (Vec<Item>, bool) {
             let name = place_words(&words[..words.len() - 1]);
             words.clear();
             let mut transition = None;
-            if let Some(end) = (i + 1..toks.len()).find(|&k| toks[k].word == "transition") {
-                if end - i <= 4 {
-                    let said: Vec<Token> = toks[i + 1..end].iter().filter(|x| !BETWEEN.contains(&x.word.as_str())).cloned().collect();
-                    let said = place_words(&said);
-                    transition = (!said.is_empty()).then_some(said);
-                    i = end;
-                }
+            if let Some(end) = (i + 1..toks.len()).find(|&k| toks[k].word == "transition")
+                && end - i <= 4
+            {
+                let said: Vec<Token> = toks[i + 1..end].iter().filter(|x| !BETWEEN.contains(&x.word.as_str())).cloned().collect();
+                let said = place_words(&said);
+                transition = (!said.is_empty()).then_some(said);
+                i = end;
             }
             route.push(Item::Procedure { kind: if w == "departure" { "departure" } else { "arrival" }, name, number, transition });
         } else if BETWEEN.contains(&w) || w == "fly" || w == "after" {
@@ -584,29 +585,30 @@ pub fn read(text: &str) -> Clearance {
                 i += used;
                 // "...one zero minutes after departure".
                 let minutes = (i + 1..(i + 4).min(toks.len())).find(|&k| ["minutes", "minute", "min"].contains(&toks[k].word.as_str()));
-                if let Some(m) = minutes {
-                    if m - i > 1 {
-                        out.expect_min = toks[m - 1].num.as_deref().and_then(|n| n.parse::<f64>().ok()).map(|n| n as i64);
-                    }
+                if let Some(m) = minutes
+                    && m - i > 1
+                {
+                    out.expect_min = toks[m - 1].num.as_deref().and_then(|n| n.parse::<f64>().ok()).map(|n| n as i64);
                 }
             }
         } else if w == "squawk" || w == "transponder" || w == "code" {
             let code = toks[i + 1..(i + 3).min(toks.len())].iter().find_map(|x| x.num.clone());
-            if let Some(code) = code {
-                if is_squawk(&code) && out.squawk.is_none() {
-                    out.squawk = Some(code);
-                }
+            if let Some(code) = code
+                && is_squawk(&code)
+                && out.squawk.is_none()
+            {
+                out.squawk = Some(code);
             }
-        } else if let Some(num) = &t.num {
-            if out.frequency.is_none() {
-                let said: Vec<&str> = toks[i.saturating_sub(4)..i].iter().map(|x| x.word.as_str()).collect();
-                let facility = said.iter().rev().find(|w| FACILITIES.contains(w)).map(|w| (*w).to_owned());
-                if let Some(frequency) = frequency_of(num) {
-                    if facility.is_some() || said.contains(&"contact") || said.contains(&"monitor") || said.contains(&"frequency") {
-                        out.frequency = Some(frequency);
-                        out.facility = facility;
-                    }
-                }
+        } else if let Some(num) = &t.num
+            && out.frequency.is_none()
+        {
+            let said: Vec<&str> = toks[i.saturating_sub(4)..i].iter().map(|x| x.word.as_str()).collect();
+            let facility = said.iter().rev().find(|w| FACILITIES.contains(w)).map(|w| (*w).to_owned());
+            if let Some(frequency) = frequency_of(num)
+                && (facility.is_some() || said.contains(&"contact") || said.contains(&"monitor") || said.contains(&"frequency"))
+            {
+                out.frequency = Some(frequency);
+                out.facility = facility;
             }
         }
         i += 1;

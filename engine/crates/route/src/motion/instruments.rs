@@ -277,21 +277,24 @@ pub fn vertical_speed(samples: &[(f64, f64)]) -> Option<f64> {
     (sxx > 0.0).then(|| sxy / sxx * 60.0)
 }
 
-/// The glide ring: its radius (motion::glide's still-air range, the C172S
-/// POH's 1.5 nm for every 1,000 ft) over the higher of the ground under
-/// the airplane (the pack's terrain grid) and the nearest field's
-/// elevation, and its outline on the sphere for a map that draws polygons.
-/// None on the ground, slower than flying speed or with no height to go by.
+/// A glide ring: its range, nm, the ground it is reckoned over, ft, and
+/// its outline, latitude and longitude.
+pub type GlideRing = (f64, f64, Vec<(f64, f64)>);
+
+/// The glide ring: its radius (motion::glide's still-air range at the picked airplane's own glide ratio) over the higher of
+/// the ground under the airplane (the pack's terrain grid) and the nearest field's elevation, and its outline on the sphere
+/// for a map that draws polygons. None on the ground, under flying speed, with no height or no glide ratio.
 pub fn glide_ring(
     lat: f64, lon: f64, altitude_ft: Option<f64>, speed_kt: Option<f64>, terrain_ft: Option<f64>, field_ft: Option<f64>,
-) -> Option<(f64, f64, Vec<(f64, f64)>)> {
+    glide_ratio: Option<f64>,
+) -> Option<GlideRing> {
     // The higher ground of the two: the ring is how far the airplane
     // glides before it meets it, so the lower would draw it too wide.
     let ground = match (terrain_ft, field_ft) {
         (Some(t), Some(f)) => Some(t.max(f)),
         (t, f) => t.or(f),
     };
-    let range = glide::range_nm(altitude_ft, speed_kt, ground)?;
+    let range = glide::range_nm(altitude_ft, speed_kt, ground, glide_ratio)?;
     let ring = (0..=RING_POINTS).map(|k| destination(lat, lon, 360.0 * (k % RING_POINTS) as f64 / RING_POINTS as f64, range)).collect();
     Some((range, ground?, ring))
 }
@@ -415,9 +418,8 @@ pub(super) fn vertical_speed_rule(v: &Value) -> Result<String, String> {
     Ok(out)
 }
 
-/// `glide_ring`: `{"range_nm", "ground_ft", "ring": [[lat, lon]]}` or null,
-/// from `{"lat", "lon", "altitude_ft"?, "speed_kt"?, "terrain_ft"?,
-/// "field_ft"?}`.
+/// `glide_ring`: `{"range_nm", "ground_ft", "ring": [[lat, lon]]}` or null, from `{"lat", "lon", "altitude_ft"?,
+/// "speed_kt"?, "terrain_ft"?, "field_ft"?, "glide_ratio"?}`.
 pub(super) fn glide_ring_rule(v: &Value) -> Result<String, String> {
     let n = "glide_ring";
     let Some((range, ground, ring)) = glide_ring(
@@ -427,6 +429,7 @@ pub(super) fn glide_ring_rule(v: &Value) -> Result<String, String> {
         opt(n, v, "speed_kt")?,
         opt(n, v, "terrain_ft")?,
         opt(n, v, "field_ft")?,
+        opt(n, v, "glide_ratio")?,
     ) else {
         return Ok("null".to_owned());
     };
@@ -507,12 +510,13 @@ mod tests {
 
     #[test]
     fn the_ring_is_over_the_higher_ground() {
-        let (range, ground, ring) = glide_ring(45.0, -93.0, Some(5000.0), Some(100.0), Some(1200.0), Some(900.0)).unwrap();
+        let (range, ground, ring) = glide_ring(45.0, -93.0, Some(5000.0), Some(100.0), Some(1200.0), Some(900.0), Some(9.0)).unwrap();
         assert_eq!(ground, 1200.0);
-        assert!((range - 3.8 * 1.5).abs() < 1e-9);
+        assert!((range - 3.8 * 9000.0 / glide::FT_PER_NM).abs() < 1e-9, "the 172S's 9 to 1, its POH figure 3-1");
         assert_eq!(ring.len(), RING_POINTS + 1);
         assert_eq!(ring[0], ring[RING_POINTS]);
         assert!((distance_nm(45.0, -93.0, ring[10].0, ring[10].1) - range).abs() < 1e-6);
-        assert!(glide_ring(45.0, -93.0, Some(5000.0), Some(10.0), Some(1200.0), None).is_none());
+        assert!(glide_ring(45.0, -93.0, Some(5000.0), Some(10.0), Some(1200.0), None, Some(9.0)).is_none());
+        assert!(glide_ring(45.0, -93.0, Some(5000.0), Some(100.0), Some(1200.0), Some(900.0), None).is_none(), "no ratio, no ring");
     }
 }

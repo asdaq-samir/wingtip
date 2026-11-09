@@ -10,7 +10,7 @@ CLAUDE.md says what to run for each part of the repo; this says how to run it he
 **When (the owner, 2026-11-08, a standing rule):** code first, validation at the end. While a wave of code changes is being written, run only a compile or type check of what changed. Run the full checks below once, at the end of the wave, on `claude/integration`, where every finished branch has been merged. Fix what they find there, then open the grouped pull requests. Sections below that say "before pushing" mean before those pull requests.
 
 **Where you are running matters:**
-- **In CI (GitHub's runners):** the workflow sets up node, Python 3.14 and Java 25. Run CLAUDE.md's commands directly, after `pip install -r requirements-dev.txt` (or `requirements-dev-wingtip.txt` for wingtip's suite) in that directory, and skip sections 3 and 4.
+- **In CI (GitHub's runners):** the workflow sets up node, Python 3.15 and Java 25. Run CLAUDE.md's commands directly, after `pip install -r requirements-dev.txt` (or `requirements-dev-wingtip.txt` for wingtip's suite) in that directory, and skip sections 3 and 4.
 - **On the owner's Mac:** it has no node, npm, pytest or ruff, so everything runs in a container from the repo root. Chain every step with `&&` so that one failure stops the rest. Report exit codes, never an "OK" marker found with grep: an old marker can look like a new pass.
 
 ## 1. What the change needs
@@ -31,7 +31,7 @@ CLAUDE.md says what to run for each part of the repo; this says how to run it he
 It is fast because nothing starts cold after the first run on the Mac, in any worktree:
 - `wingtip-check-web:<hash of apps/web/.nvmrc, package.json and package-lock>`: node with web's packages at `/node_modules`, found by walking up from `/repo/apps/web`. A worktree's own `apps/web/node_modules`, if it has one, is hidden behind an empty one.
 - `wingtip-check-py-<dir>:<hash>`: python with that directory's requirements-dev (followed through `-r`) and the wingtip_native wheel built from this `engine/`, rebuilt when either changes.
-- Volumes: `wingtip-cargo-registry`, `wingtip-cargo-git`, `wingtip-cargo-target-tests-1.89-<arch>` (the engine tests' build; each worktree is mounted at its own path, so its own crates are never taken for another's), `wingtip-check-raw` (the FAA files the Python tests fetch into `data/raw`), `fp-m2`. BuildKit's caches `wingtip-npm`, `wingtip-uv` and the wheel's target.
+- Volumes: `wingtip-cargo-registry`, `wingtip-cargo-git`, `wingtip-cargo-target-tests-1.99-<arch>` (the engine tests' build; each worktree is mounted at its own path, so its own crates are never taken for another's), `wingtip-check-raw` (the FAA files the Python tests fetch into `data/raw`), `fp-m2`. BuildKit's caches `wingtip-npm`, `wingtip-uv` and the wheel's target.
 - The phones' engine (xcframework, Android's `app/engine`) under `~/Library/Caches/wingtip-checks`, keyed by the engine's files; Xcode's DerivedData per worktree; Gradle's `~/.gradle`.
 
 `scripts/build/build-engine-wasm.sh` stays apart: a clean build in its pinned image, so the committed `.wasm` is reproducible. Run it after an engine change, as before. Removing any image or volume above costs one cold run, nothing more.
@@ -45,9 +45,9 @@ The commands below are what it runs, for reading a failure or running one by han
 docker run --rm -v "$PWD":/repo -w /repo/apps/web node:26-slim sh -c 'npm run -s types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx vitest run'
 ```
 
-**Python.** This mirrors CI: Python 3.14, the suite's requirements installed with uv, and a cache volume that brings a repeat run down to under a minute. Both suites run from `-w /repo/services/planner`: `requirements-dev-wingtip.txt` with `ruff check wingtip tests_wingtip && pytest tests_wingtip/`, or `requirements-dev.txt` with `ruff check app tests && pytest tests/`.
+**Python.** This mirrors CI: Python 3.15, the suite's requirements installed with uv, and a cache volume that brings a repeat run down to under a minute. Both suites run from `-w /repo/services/planner`: `requirements-dev-wingtip.txt` with `ruff check wingtip tests_wingtip && pytest tests_wingtip/`, or `requirements-dev.txt` with `ruff check app tests && pytest tests/`.
 ```sh
-docker run --rm -v "$PWD":/repo -v fp-uv-cache:/root/.cache/uv -w /repo/services/planner python:3.14-slim sh -c 'pip install -q uv && uv pip install --system -q -r requirements-dev.txt && ruff check app tests && pytest tests/ -q -p no:cacheprovider'
+docker run --rm -v "$PWD":/repo -v fp-uv-cache:/root/.cache/uv -w /repo/services/planner python:3.15-slim sh -c 'pip install -q uv && uv pip install --system -q -r requirements-dev.txt && ruff check app tests && pytest tests/ -q -p no:cacheprovider'
 ```
 The planner's OpenAPI document comes from the same container: `python -m app.openapi` in `services/planner`.
 

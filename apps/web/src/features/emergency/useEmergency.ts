@@ -4,7 +4,7 @@ import { api } from "../../lib/api/client";
 import { aircraftKey, shortName } from "../../lib/aircraftChoice";
 import { checklistOf } from "../../lib/checklist";
 import { checklistText, useChecklists } from "../../lib/checklists";
-import { bestFields, checklistSection, maydayCall, positionWords, variationAt } from "./emergency";
+import { bestFields, checklistSection, emergencyGuidance, maydayCall, positionWords, variationAt } from "./emergency";
 import { useEmergencyLine } from "../../lib/map/marks/emergencyLine";
 import { usePointActions } from "../../lib/map/cards/pointActions";
 import { useOwnFix, useOwnShip } from "../../lib/map/position/ownShip";
@@ -32,7 +32,11 @@ export function useEmergency() {
   const showPosition = useOwnShip((s) => s.setEnabled);
   const aircraft = usePreferences((s) => s.aircraft);
   const stations = usePointActions((s) => s.stations);
-  const profile = aircraft.none ? null : aircraft.profile;
+  // A stock profile's figures alone, and only the airplane's own: none for
+  // no airplane, or an own airplane of no stock type (aircraftChoice's
+  // `unmatched`), whose base is another airplane's.
+  const profile = aircraft.none || aircraft.unmatched || !aircraft.profile ? null : aircraft.profile;
+  const chosen = !aircraft.none;
   // Asked again as the airplane moves on and comes down, not at each fix.
   const lat = fix ? at(fix.lat) : 0;
   const lon = fix ? at(fix.lon) : 0;
@@ -52,8 +56,11 @@ export function useEmergency() {
   const picked = ranked?.fields.find((f) => f.ident === pickedIdent) ?? ranked?.fields[0] ?? null;
   const pickedData = data?.fields.find((f) => f.ident === picked?.ident) ?? null;
 
-  // The airplane's own emergency checklist, opened at the emergency asked.
-  const text = useChecklists((s) => checklistText(s.value, aircraftKey(aircraft), "emergency"));
+  // The airplane's own emergency checklist, opened at the emergency asked;
+  // with no airplane none, but the AIM's and the AFH's general guidance
+  // (the engine's emergency_guidance; the owner, 2026-11-09).
+  const text = useChecklists((s) => (chosen ? checklistText(s.value, aircraftKey(aircraft), "emergency") : ""));
+  const guidance = useMemo(() => (chosen ? null : emergencyGuidance()), [chosen]);
   const sections = useMemo(() => checklistOf(text).sections, [text]);
   const [sectionPicked, pickSection] = useState<number | null>(null);
   const section = sectionPicked ?? checklistSection(sections.map((s) => s.title)) ?? (sections.length ? 0 : null);
@@ -113,6 +120,7 @@ export function useEmergency() {
     phone: pickedData?.phone ?? null,
     metar: pickedData?.metar?.raw ?? null,
     airplaneName: aircraft.none ? null : shortName(aircraft.label),
+    guidance,
     sections,
     section,
     pickSection,

@@ -129,8 +129,9 @@ def _hour(
     found = findings_for(ask, q_hour, r, planned, briefing, failed, depart, live=live)
     totals = planned.totals or {}
     alternate = None
-    if q.rules == "ifr" and _ete(planned) is not None:
-        tas = ((planned.nav or {}).get("aircraft") or {}).get("cruise_tas_kt") or 110
+    # At the airplane's own cruise: none, no alternate is timed.
+    tas = ((planned.nav or {}).get("aircraft") or {}).get("cruise_tas_kt")
+    if q.rules == "ifr" and _ete(planned) is not None and tas:
         alternate = alternate_for(r.idents[-1], depart + timedelta(minutes=_ete(planned)), tas, q.alternate)
     forecast_worst = (briefing or {}).get("forecast") or {}
     arrive = depart.timestamp() + 60 * ((ete or 0) + (totals.get("ground_min") or 0))

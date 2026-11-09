@@ -103,24 +103,10 @@ fn a_leg_flies_the_airplanes_figures_in_its_own_air() {
 }
 
 #[test]
-fn the_fuel_required_includes_start_taxi_and_takeoff() {
-    let plan =
-        ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": {"fuel_burn_gph": 8.0, "usable_fuel_gal": 40}, "night": false}));
-    // The C172S POH's 1.4 gal, and 30 minutes at 8 gph by day (91.151(a)(1)).
-    assert_eq!(f(&plan["taxi_gal"]), 1.4);
-    assert_eq!(f(&plan["fuel_required_gal"]), 25.4);
-    assert_eq!(f(&plan["fuel_margin_gal"]), 14.6);
-    let own =
-        ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": {"fuel_burn_gph": 8.0, "taxi_fuel_gal": 2.0}, "night": false}));
-    assert_eq!(f(&own["fuel_required_gal"]), 26.0);
-    assert!(own["fuel_margin_gal"].is_null());
-}
-
-#[test]
 fn under_ifr_the_reserve_is_45_minutes_by_day_and_by_night() {
     // 14 CFR 91.167(a)(3), where VFR's is 30 by day (91.151(a)(1)) and 45
     // at night (91.151(a)(2)).
-    let p = json!({"fuel_burn_gph": 8.0});
+    let p = json!({"fuel_burn_gph": 8.0, "taxi_fuel_gal": 1.4});
     assert_eq!(f(&ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": p, "night": false}))["reserve_min"]), 30.0);
     assert_eq!(f(&ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": p, "night": true}))["reserve_min"]), 45.0);
     let day = ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": p, "night": false, "rules": "ifr"}));

@@ -28,9 +28,18 @@ struct APIAircraftProfiles: Codable, Equatable, Sendable {
 // MARK: - APIAircraftProfileSummary
 struct APIAircraftProfileSummary: Codable, Equatable, Sendable {
     var cruiseTasKt, fuelBurnGph: Double
+    var glide: APIGlideFigures?
     var name: String
     var serviceCeilingFt: Double
+    var taxiFuelGal: Double?
     var type: String
+}
+
+/// The POH's best-glide speed and glide ratio (Section 3).
+// MARK: - APIGlideFigures
+struct APIGlideFigures: Codable, Equatable, Sendable {
+    var bestGlideKias, ratio: Double
+    var source: String
 }
 
 // MARK: - APIAirportAtis
@@ -1723,13 +1732,6 @@ struct APIDemonstratedCrosswind: Codable, Equatable, Sendable {
     var source: String
 }
 
-/// The POH's best-glide speed and glide ratio (Section 3).
-// MARK: - APIGlideFigures
-struct APIGlideFigures: Codable, Equatable, Sendable {
-    var bestGlideKias, ratio: Double
-    var source: String
-}
-
 /// A POH's short-field takeoff or landing distances: a table per
 /// weight, and how much a dry grass runway adds to the ground roll.
 // MARK: - APIShortField
@@ -1738,7 +1740,9 @@ struct APIShortField: Codable, Equatable, Sendable {
     var pressureAltitudesFt: [Double]
     var source: String
     var tables: [APIDistanceTable]
+    var tailwindMaxKt: Double?
     var temperaturesC, weightsLb: [Double]
+    var windSource: String?
 }
 
 /// One weight's distances, by pressure altitude (rows) and

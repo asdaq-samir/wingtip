@@ -82,17 +82,17 @@ pub struct Weather {
 pub fn under_minimums(m: &Minimums, w: &Weather) -> Vec<String> {
     let mut reasons = Vec::new();
     let ceiling = |reasons: &mut Vec<String>, at: &str, ft: Option<f64>| {
-        if let (Some(min), Some(ft)) = (m.ceiling_ft, ft) {
-            if ft < min {
-                reasons.push(format!("{at} ceiling {} ft, under your {} ft", alt_ft(Some(ft)), alt_ft(Some(min))));
-            }
+        if let (Some(min), Some(ft)) = (m.ceiling_ft, ft)
+            && ft < min
+        {
+            reasons.push(format!("{at} ceiling {} ft, under your {} ft", alt_ft(Some(ft)), alt_ft(Some(min))));
         }
     };
     let visibility = |reasons: &mut Vec<String>, at: &str, sm: Option<f64>| {
-        if let (Some(min), Some(sm)) = (m.visibility_sm, sm) {
-            if sm < min {
-                reasons.push(format!("{at} visibility {} sm, under your {} sm", js_num(sm), js_num(min)));
-            }
+        if let (Some(min), Some(sm)) = (m.visibility_sm, sm)
+            && sm < min
+        {
+            reasons.push(format!("{at} visibility {} sm, under your {} sm", js_num(sm), js_num(min)));
         }
     };
     for field in &w.landings {
@@ -101,25 +101,25 @@ pub fn under_minimums(m: &Minimums, w: &Weather) -> Vec<String> {
             ceiling(&mut reasons, ident, metar.ceiling_ft);
             visibility(&mut reasons, ident, metar.visibility_sm);
             let wind = steady_or_gust_kt(metar.wind_speed_kt.unwrap_or(0.0), metar.wind_gust_kt);
-            if let Some(most) = m.wind_kt {
-                if wind > most {
-                    // `gust ? "12G22" : "12"`: a gust of 0 is not said.
-                    let reported = match metar.wind_gust_kt {
-                        Some(gust) if gust != 0.0 && !gust.is_nan() => format!("{}G{}", js_opt(metar.wind_speed_kt), js_num(gust)),
-                        _ => js_opt(metar.wind_speed_kt),
-                    };
-                    reasons.push(format!("{ident} wind {reported} kt, over your {} kt", js_num(most)));
-                }
+            if let Some(most) = m.wind_kt
+                && wind > most
+            {
+                // `gust ? "12G22" : "12"`: a gust of 0 is not said.
+                let reported = match metar.wind_gust_kt {
+                    Some(gust) if gust != 0.0 && !gust.is_nan() => format!("{}G{}", js_opt(metar.wind_speed_kt), js_num(gust)),
+                    _ => js_opt(metar.wind_speed_kt),
+                };
+                reasons.push(format!("{ident} wind {reported} kt, over your {} kt", js_num(most)));
             }
         }
         let crosswind = best_crosswind(&field.runways, field.metar.map(|r| (r.wind_speed_kt, r.wind_gust_kt)));
-        if let (Some(most), Some((end, kt))) = (m.crosswind_kt, crosswind) {
-            if kt > most {
-                reasons.push(match end {
-                    None => format!("{ident} variable wind {} kt, which may all be crosswind, over your {} kt", js_num(kt), js_num(most)),
-                    Some(end) => format!("{ident} crosswind {} kt on its best runway ({end}), over your {} kt", js_num(kt), js_num(most)),
-                });
-            }
+        if let (Some(most), Some((end, kt))) = (m.crosswind_kt, crosswind)
+            && kt > most
+        {
+            reasons.push(match end {
+                None => format!("{ident} variable wind {} kt, which may all be crosswind, over your {} kt", js_num(kt), js_num(most)),
+                Some(end) => format!("{ident} crosswind {} kt on its best runway ({end}), over your {} kt", js_num(kt), js_num(most)),
+            });
         }
     }
     if let Some((ft, sm)) = w.dest_forecast {

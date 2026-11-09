@@ -22,6 +22,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +46,8 @@ import app.wingtipmaps.android.api.NavLogTotals
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
+import app.wingtipmaps.android.navigation.ScreenRequests
+import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.FlightRules
 import app.wingtipmaps.android.route.LegWords
@@ -88,6 +91,9 @@ fun FPLScreen(plan: Plan) {
                 onClick = { plan.plan(dep, dest, stops.split(",")) },
                 enabled = dep.isNotBlank() && dest.isNotBlank() && !state.planning,
             ) { Text(stringResource(R.string.plan)) }
+            // The route's Brief beside its Plan, where the pilot looks for it
+            // once the route is in (OpenScreen's sheet, as the strip has it).
+            if (state.routed && !state.planning) TextButton(onClick = { ScreenRequests.ask(Screen.BRIEF) }) { Text(stringResource(R.string.brief)) }
             if (state.planning) CircularProgressIndicator(Modifier.size(WingtipSpace.Xl))
             state.stage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
@@ -176,4 +182,13 @@ private fun TotalsRows(totals: NavLogTotals) {
         totals.fuelRequiredGal?.let { Figure(stringResource(R.string.figure_required), Format.fuel(it), warn = warn, said = stringResource(R.string.said_fuel_required) + ", " + Spoken.fuel(it)) }
     }
     if (warn) ProblemLine(stringResource(R.string.under_reserve), Modifier.padding(top = WingtipSpace.Xs))
+    // An airplane whose profile has no start, taxi and takeoff allowance:
+    // the planner leaves it out of the fuel required rather than take a
+    // stock airplane's (the owner, 2026-11-09), and the pilot is told.
+    if (totals.fuelRequiredGal != null && totals.taxiGal == null) {
+        Text(
+            stringResource(R.string.taxi_not_in_profile), style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = WingtipSpace.Xs),
+        )
+    }
 }

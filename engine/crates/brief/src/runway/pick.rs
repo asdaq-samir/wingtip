@@ -254,7 +254,7 @@ pub fn pattern_altitude_flown(elevation_ft: Option<f64>, published_agl_ft: Optio
 /// them), else left (14 CFR 91.126(b)(1)).
 pub fn end_traffic(ident: Option<&str>, right: &[String]) -> &'static str {
     let key = end_key(ident.unwrap_or(""));
-    if right.iter().any(|r| *r == key) {
+    if right.contains(&key) {
         "right"
     } else {
         "left"

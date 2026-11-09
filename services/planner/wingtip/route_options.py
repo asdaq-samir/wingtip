@@ -254,6 +254,7 @@ def options(
             frame["cell_deg"],
             height_ft=frame["lowest_cruise_ft"],
             speed_kt=max(float(frame["tas_kt"]), 1.0),
+            glide_ratio=((profile or {}).get("glide") or {}).get("ratio"),
         )
         asked["water_far"] = (np.asarray(far, dtype=np.uint8).ravel() + ord("0")).tobytes().decode()
     except (water.WaterUnavailable, OSError, ValueError) as error:

@@ -13,6 +13,7 @@ import { nmAway, nmFigure } from "../../../lib/useAway";
 import { mhzText } from "../../../lib/frequencies";
 import { chipFillOf, colourOf } from "../../../lib/map/marks/flightCategory";
 import { glideRangeNm, reachesField, underway } from "../../../lib/map/position/glide";
+import { useGlideRatio } from "../../../lib/map/position/useGlideRatio";
 import { airportMarkSvg } from "../../../lib/map/marks/airportMark";
 import { positionNow, useOwnShip, useOwnFix } from "../../../lib/map/position/ownShip";
 import { nearestQuery } from "../../../lib/queryClient";
@@ -261,7 +262,9 @@ export default function NearestCard({
     void positionNow(0);
   }, []);
   // A glide only from where the airplane is, with its altitude.
-  const glide = !from && fix ? glideRangeNm(fix, data?.[0]?.elevation_ft) : null;
+  // At the picked airplane's own glide ratio; none, no glide said.
+  const ratio = useGlideRatio();
+  const glide = !from && fix ? glideRangeNm(fix, data?.[0]?.elevation_ft, ratio) : null;
   // The arrows from the airplane's track, where it is moving and the list
   // is from where it is.
   // Underway (the engine's, its flying speed): the GPS track is steady
@@ -293,7 +296,13 @@ export default function NearestCard({
             title={from ? `Near ${from.label}` : glide != null ? `Within a glide: about ${Math.round(glide)} nm` : "Nearest to you"}
           >
             {(data ?? []).map((a) => (
-              <NearestRow key={a.ident} field={a} ahead={ahead} reach={!from && reachesField(fix, a)} onOpen={() => onOpen(a.ident)} />
+              <NearestRow
+                key={a.ident}
+                field={a}
+                ahead={ahead}
+                reach={!from && reachesField(fix, a, ratio)}
+                onOpen={() => onOpen(a.ident)}
+              />
             ))}
             {/* Where they could not be found, said with Try again, where the
                 list stayed on "Looking…" (QueryState). */}

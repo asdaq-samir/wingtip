@@ -3,6 +3,7 @@ import { Fragment, type CSSProperties, type KeyboardEvent, type ReactNode } from
 import { cn } from "cn";
 import { zoneName } from "../../../../lib/format";
 import { placeName } from "../../lib/radio";
+import { wantPlace } from "../../../../lib/navigation/wanted";
 import { TEXT } from "../../../../lib/text";
 import { altFt, bearing, etaAt, one, windAloft } from "../../format";
 import { PointMark } from "./PointMark";
@@ -167,6 +168,7 @@ export function NavLogList({
                 : "airport" in row && row.airport.kind !== "fix"
                   ? `${row.airport.ident} · ${placeName(row.airport.name, row.airport.ident)}`
                   : rowPoint(row).name;
+          const field = "airport" in row && row.airport.kind !== "fix" ? row.airport.ident : null;
           const heading = leg ? leg.magnetic_heading_deg : null;
           const select = () => (selected ? onDeselect() : onSelect(row));
           const keys = (event: KeyboardEvent) => {
@@ -242,7 +244,25 @@ export function NavLogList({
                     <PointMark row={row} number={numberOf(row)} weather={weather} />
                   </span>
                   <span role="rowheader" className={cn("min-w-0 font-medium text-foreground [overflow-wrap:anywhere]", TEXT.row)}>
-                    {name}
+                    {field ? (
+                      // The field's name opens its card, as it does on the
+                      // map and in the route's list (tap what you see,
+                      // docs/navigation.md); the rest of the row selects it.
+                      <button
+                        type="button"
+                        data-testid="navlog-field-open"
+                        aria-label={`${name}: open the airport`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          wantPlace(field);
+                        }}
+                        className="relative text-left text-tint after:absolute after:-inset-y-2 after:inset-x-0 after:content-['']"
+                      >
+                        {name}
+                      </button>
+                    ) : (
+                      name
+                    )}
                   </span>
                   <span
                     role="cell"

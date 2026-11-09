@@ -23,7 +23,7 @@ interface TripInput {
   totals: Totals | null;
   /** Before the nav log's totals: the course's distance and the book
    *  cruise speed and burn over it (see FlightLine). */
-  estimate?: { distanceNm: number; cruiseTasKt: number | null; fuelBurnGph: number | null } | null;
+  estimate?: { distanceNm: number; cruiseTasKt: number | null; fuelBurnGph: number | null; taxiFuelGal?: number | null } | null;
   local: boolean;
   /** The route's destination, the To of a route with no stops. */
   destination: string;
@@ -165,14 +165,15 @@ export function shortFlights(totals: Totals | null): { name: string; shortGal: n
 /** The figures from the airplane's book alone (FlightLine's `estimate`):
  *  the distance as the course has it, and at cruise speed with no wind
  *  the time, and the fuel required at the cruise burn over that time with
- *  the start and taxi allowance and the night or IFR reserve, so it is
- *  never short -- the engine's (fuel_estimate) -- each marked "≈", none of
- *  the nav log's climb, wind or legs in it. */
-function guess({ distanceNm, cruiseTasKt, fuelBurnGph }: { distanceNm: number; cruiseTasKt: number | null; fuelBurnGph: number | null }) {
+ *  the airplane's own start and taxi allowance (none where its profile
+ *  has none) and the night or IFR reserve -- the engine's (fuel_estimate)
+ *  -- each marked "≈", none of the nav log's climb, wind or legs in it. */
+function guess({ distanceNm, cruiseTasKt, fuelBurnGph, taxiFuelGal }: NonNullable<TripInput["estimate"]>) {
   const { minutes, required_gal: required } = callEngine("fuel_estimate", {
     distance_nm: distanceNm,
     cruise_tas_kt: cruiseTasKt,
     fuel_burn_gph: fuelBurnGph,
+    taxi_fuel_gal: taxiFuelGal ?? null,
   });
   // Written as the nav log's own time is once it is in (lib/format duration): this
   // one rounded its minutes on their own, and 119.6 read "1h 60m".

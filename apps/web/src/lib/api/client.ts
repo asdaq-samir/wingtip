@@ -395,7 +395,7 @@ const stopsParam = (stops?: string[]) => (stops?.length ? stops.join(",") : unde
  *  figures, and null for every one that needs an airplane -- rather than
  *  the stock profile it was asked with before (the owner, 2026-11-09:
  *  "don't assume"). */
-const plannerAircraft = (aircraft?: AircraftChoice) => (aircraft?.none ? undefined : aircraft?.profile);
+const plannerAircraft = (aircraft?: AircraftChoice) => (aircraft?.none || !aircraft?.profile ? undefined : aircraft.profile);
 
 /** The airport index's shape (wingtip.airports.search_index), in its address
  *  so a day's copy in the browser of an older shape is not read as this

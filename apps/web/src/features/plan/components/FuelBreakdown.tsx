@@ -2,6 +2,7 @@ import { ListGroup, ListRow } from "../../../components/GroupedList";
 import type { Totals } from "../../../lib/api/types";
 import { one } from "../format";
 import { gal } from "../../../lib/format";
+import { requestAirplanePick } from "../../../lib/pickAirplane";
 
 /** The reserve's rule, as the planner chose it (wingtip.navlog.fuel_plan). */
 function reserveRule(totals: Totals): string {
@@ -52,7 +53,19 @@ export default function FuelBreakdown({
               : "Climb, cruise and descent, with the winds"
           }
         />
-        <ListRow title="Start, taxi and takeoff" value={gal(totals.taxi_gal)} />
+        {totals.taxi_gal == null && totals.fuel_required_gal != null ? (
+          // The airplane's own allowance only, never another's (the owner,
+          // 2026-11-09): its profile has none, so the fuel required leaves it out.
+          <ListRow
+            title="Start, taxi and takeoff"
+            description="Not in this airplane's profile, and not counted: add it to the airplane"
+            value="—"
+            onClick={requestAirplanePick}
+            data-testid="fuel-taxi-missing"
+          />
+        ) : (
+          <ListRow title="Start, taxi and takeoff" value={gal(totals.taxi_gal)} />
+        )}
         {totals.alternate && (
           <ListRow
             title={`On to ${totals.alternate.ident}`}

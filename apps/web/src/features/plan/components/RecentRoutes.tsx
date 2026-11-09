@@ -70,7 +70,7 @@ export function RecentRoutesPage({ onBack }: { onBack: () => void }) {
   const groups = whenGroups(routes, now);
   return (
     <>
-      <ListPageHead title="Recents" backLabel="Back to Saved" onBack={onBack} testId="route-recents-page" />
+      <ListPageHead title="Recents" backLabel="Back to FPL" onBack={onBack} testId="route-recents-page" />
       {routes.length > 0 ? (
         <div className="flex flex-col gap-5">
           {groups.map((group) => (

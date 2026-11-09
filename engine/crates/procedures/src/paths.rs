@@ -232,7 +232,8 @@ mod tests {
 
     #[test]
     fn a_hold_at_120_kt_turns_0_64_nm_round_and_closes_at_its_fix() {
-        assert!((hold_turn_nm() - 0.6366).abs() < 1e-4);
+        // 4 nm round in two minutes at 120 kt, so a radius of 2/pi nm, 0.64.
+        assert!((hold_turn_nm() - std::f64::consts::FRAC_2_PI).abs() < 1e-4);
         let fix = (34.2, -118.36);
         let track = hold(fix, 80.0, true, 2.0);
         assert_eq!(track.len(), 1 + 37 + 2 + 37 + 2);

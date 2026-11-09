@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SetURLSearchParams } from "react-router-dom";
 import type { PanelState } from "../../../lib/mapChrome";
+import { takePlace, useWanted } from "../../../lib/navigation/wanted";
 import { patched } from "../../../lib/useSearchParamsNow";
 import { panelNow } from "./panelNow";
 import { useAddressCards, type PanelTab } from "./useTabCards";
@@ -89,6 +90,21 @@ export function usePlaceCards({
       else if (nearOpen) setPanel("full");
     },
     [place, heldPoint, nearOpen, setSearchParams, setPanel, setApproachesOf],
+  );
+  // A field's card asked for from anywhere -- its name tapped in the nav
+  // log (lib/navigation/wanted) -- opened as a tap on the chart opens it.
+  // Listened for as the store changes, not read in a render.
+  const selectWanted = useRef(selectPlace);
+  useEffect(() => {
+    selectWanted.current = selectPlace;
+  });
+  useEffect(
+    () =>
+      useWanted.subscribe((s) => {
+        const ident = s.place && takePlace();
+        if (ident) selectWanted.current(ident);
+      }),
+    [],
   );
   // An airplane's airport opened from its card (its airport's tile): the
   // airport's card over the airplane's, and its close back to the

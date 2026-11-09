@@ -184,7 +184,7 @@ pub fn evidence(name: &str, debriefs: &[Value], today: i64) -> Result<Vec<Eviden
         }
     }
     // Newest first, the order found kept within a day.
-    found.sort_by(|a, b| b.0.cmp(&a.0));
+    found.sort_by_key(|f| std::cmp::Reverse(f.0));
     Ok(found
         .into_iter()
         .enumerate()
