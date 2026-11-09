@@ -2,6 +2,11 @@
 
 export type HoldingLegMinutesAnswer = number;
 export type HoldEntryAnswer = "direct" | "teardrop" | "parallel";
+export type ProcedureArcAnswer = [number, number][];
+export type ProcedureHoldAnswer = [number, number][];
+export type ProcedureTurnAnswer = [number, number][];
+export type ProcedureClimbNmAnswer = number;
+export type ProcedureHoldLegNmAnswer = number | null;
 export type WindTriangleAnswer = {
   wca: number;
   th: number;
@@ -805,6 +810,41 @@ export interface EngineContract {
   hold_entry: {
     input: HoldEntryInput;
     answer: HoldEntryAnswer;
+  };
+  /**
+   * An RF leg's arc round its centre fix, or an AF (DME arc) leg's round its navaid (ARINC 424 5.21): points from start to end, turning right (clockwise) or left, one every five degrees, at the centre's distance from the end.
+   */
+  procedure_arc: {
+    input: ProcedureArcInput;
+    answer: ProcedureArcAnswer;
+  };
+  /**
+   * A CIFP hold's racetrack (HA, HF, HM) at its fix, inbound on the true course to the fix, turning right or left, with standard-rate turns at a light airplane's 120 kt (AIM 5-3-8): the fix, the turn out, the outbound leg, the turn in, and back to the fix.
+   */
+  procedure_hold: {
+    input: ProcedureHoldInput;
+    answer: ProcedureHoldAnswer;
+  };
+  /**
+   * A 45°/180° procedure turn at its fix (AIM 5-4-9): 4 nm out on the final's reciprocal, 2 nm on the barb's true course, a standard-rate 180° turn at 120 kt toward the final's side, back to meet the final within 10 nm, and in to the fix.
+   */
+  procedure_turn: {
+    input: ProcedureTurnInput;
+    answer: ProcedureTurnAnswer;
+  };
+  /**
+   * How far a leg flown to an altitude (CA, VA, FA) is drawn, nm: from the altitude known at its start at 200 ft a nm (FAA Order 8260.3), within 1 to 15; 2 nm where either is not known or it is no climb.
+   */
+  procedure_climb_nm: {
+    input: ProcedureClimbNmInput;
+    answer: ProcedureClimbNmAnswer;
+  };
+  /**
+   * A hold's leg, nm: a timed leg flown at 120 kt (AIM 5-3-8 j.4), else the distance the CIFP codes; null with neither.
+   */
+  procedure_hold_leg_nm: {
+    input: ProcedureHoldLegNmInput;
+    answer: ProcedureHoldLegNmAnswer;
   };
   /**
    * The planner's /api/lost-comms answer (14 CFR 91.185): VFR's words, the routes in the rule's order (c)(1), each segment's altitude (c)(2) and when to leave the clearance limit (c)(3).
@@ -3072,6 +3112,61 @@ export interface HoldEntryInput {
    * Right where not given (standard).
    */
   turns?: "right" | "left" | null;
+}
+export interface ProcedureArcInput {
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  center: [number, number];
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  turn: "R" | "L";
+}
+export interface ProcedureHoldInput {
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  fix: [number, number];
+  inbound_deg: number;
+  turn: "R" | "L";
+  leg_nm: number;
+}
+export interface ProcedureTurnInput {
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  fix: [number, number];
+  inbound_deg: number;
+  pt_course_deg: number;
+}
+export interface ProcedureClimbNmInput {
+  altitude_ft?: number | null;
+  known_ft?: number | null;
+}
+export interface ProcedureHoldLegNmInput {
+  minutes?: number | null;
+  distance_nm?: number | null;
 }
 export interface LostCommsInput {
   segments: {

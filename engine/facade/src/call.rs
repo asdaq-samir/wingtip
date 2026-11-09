@@ -176,6 +176,10 @@
 //! - `endorsement_kinds`: AC 61-65K's student endorsements, each `{"code",
 //!   "paragraph", "rule", "label", "template", "fields": [{"key",
 //!   "label", "example", "required"}]}`, from `{}`;
+//! - `procedure_arc`, `procedure_hold`, `procedure_turn`,
+//!   `procedure_climb_nm`, `procedure_hold_leg_nm`: a published
+//!   procedure's RF/AF arc, CIFP hold, 45°/180° procedure turn (AIM
+//!   5-3-8, 5-4-9) and open legs' lengths (paths.rs lists the inputs);
 //! - `solo_xc_determinations`: 14 CFR 61.93(d)(1)-(3), `[{"rule",
 //!   "label"}]`, from `{}`;
 //! - `passenger_briefing`: the passengers' briefing (91.107(a), the
@@ -1053,6 +1057,8 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         // AC 61-65K's endorsements and their words filled in (kinds.rs),
         // the gateway's EndorsementKind before #482.
         _ if crate::pilot::kinds::NAMES.contains(&name) => crate::pilot::kinds::call(name, ask.v),
+        // A procedure's legs as they are drawn (procedures' paths.rs).
+        _ if crate::paths::NAMES.contains(&name) => crate::paths::call(name, ask.v),
         // The passengers' briefing (brief's passengers.rs, 14 CFR 91.107(a)).
         _ if crate::passengers::NAMES.contains(&name) => crate::passengers::call(name),
         _ if crate::wording::NAMES.contains(&name) => crate::wording::answer(name, ask.v),

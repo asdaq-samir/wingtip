@@ -78,6 +78,7 @@ fn code_names() -> BTreeSet<String> {
         include_str!("../../crates/pilot/src/pilot/records.rs"),
         include_str!("../../crates/pilot/src/pilot/kinds.rs"),
         include_str!("../../crates/brief/src/passengers.rs"),
+        include_str!("../../crates/procedures/src/paths.rs"),
         include_str!("../../crates/weather/src/forecast/calls.rs"),
         include_str!("../../crates/altitude/src/altitude/calls.rs"),
         include_str!("../../crates/brief/src/alternates.rs"),
@@ -596,6 +597,12 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         c.ask("diagram_fix_usable", json!({ "age_s": case["age_s"], "accuracy_m": case["accuracy_m"] }));
     }
     c.ask("traffic_reach", json!({}));
+    // A procedure's legs drawn (paths.rs), as the planner asks them.
+    c.ask("procedure_arc", json!({ "center": [34.0, -118.0], "start": [34.08, -118.0], "end": [34.0, -117.9], "turn": "R" }));
+    c.ask("procedure_hold", json!({ "fix": [34.2, -118.36], "inbound_deg": 80, "turn": "L", "leg_nm": 2 }));
+    c.ask("procedure_turn", json!({ "fix": [33.2, -92.8], "inbound_deg": 220, "pt_course_deg": 355 }));
+    c.ask("procedure_climb_nm", json!({ "altitude_ft": 3000, "known_ft": 2600 }));
+    c.ask("procedure_hold_leg_nm", json!({ "minutes": null, "distance_nm": 4 }));
 
     // Night, the checkpoints and 91.155's basic minimums (planning.json).
     let planning = fixture("planning.json");

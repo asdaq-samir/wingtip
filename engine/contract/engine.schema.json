@@ -276,6 +276,255 @@
       ],
       "additionalProperties": false
     },
+    "procedure_arc": {
+      "description": "An RF leg's arc round its centre fix, or an AF (DME arc) leg's round its navaid (ARINC 424 5.21): points from start to end, turning right (clockwise) or left, one every five degrees, at the centre's distance from the end.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedureArcInput",
+          "type": "object",
+          "properties": {
+            "center": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "start": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "end": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "turn": {
+              "type": "string",
+              "enum": [
+                "R",
+                "L"
+              ]
+            }
+          },
+          "required": [
+            "center",
+            "start",
+            "end",
+            "turn"
+          ]
+        },
+        "answer": {
+          "title": "ProcedureArcAnswer",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "[lat, lon]"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "procedure_hold": {
+      "description": "A CIFP hold's racetrack (HA, HF, HM) at its fix, inbound on the true course to the fix, turning right or left, with standard-rate turns at a light airplane's 120 kt (AIM 5-3-8): the fix, the turn out, the outbound leg, the turn in, and back to the fix.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedureHoldInput",
+          "type": "object",
+          "properties": {
+            "fix": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "inbound_deg": {
+              "type": "number"
+            },
+            "turn": {
+              "type": "string",
+              "enum": [
+                "R",
+                "L"
+              ]
+            },
+            "leg_nm": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "fix",
+            "inbound_deg",
+            "turn",
+            "leg_nm"
+          ]
+        },
+        "answer": {
+          "title": "ProcedureHoldAnswer",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "[lat, lon]"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "procedure_turn": {
+      "description": "A 45°/180° procedure turn at its fix (AIM 5-4-9): 4 nm out on the final's reciprocal, 2 nm on the barb's true course, a standard-rate 180° turn at 120 kt toward the final's side, back to meet the final within 10 nm, and in to the fix.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedureTurnInput",
+          "type": "object",
+          "properties": {
+            "fix": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "inbound_deg": {
+              "type": "number"
+            },
+            "pt_course_deg": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "fix",
+            "inbound_deg",
+            "pt_course_deg"
+          ]
+        },
+        "answer": {
+          "title": "ProcedureTurnAnswer",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "[lat, lon]"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "procedure_climb_nm": {
+      "description": "How far a leg flown to an altitude (CA, VA, FA) is drawn, nm: from the altitude known at its start at 200 ft a nm (FAA Order 8260.3), within 1 to 15; 2 nm where either is not known or it is no climb.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedureClimbNmInput",
+          "type": "object",
+          "properties": {
+            "altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "known_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": []
+        },
+        "answer": {
+          "title": "ProcedureClimbNmAnswer",
+          "type": "number"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "procedure_hold_leg_nm": {
+      "description": "A hold's leg, nm: a timed leg flown at 120 kt (AIM 5-3-8 j.4), else the distance the CIFP codes; null with neither.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedureHoldLegNmInput",
+          "type": "object",
+          "properties": {
+            "minutes": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "distance_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": []
+        },
+        "answer": {
+          "title": "ProcedureHoldLegNmAnswer",
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "lost_comms": {
       "description": "The planner's /api/lost-comms answer (14 CFR 91.185): VFR's words, the routes in the rule's order (c)(1), each segment's altitude (c)(2) and when to leave the clearance limit (c)(3).",
       "type": "object",
@@ -20000,6 +20249,11 @@
     "holding",
     "holding_leg_minutes",
     "hold_entry",
+    "procedure_arc",
+    "procedure_hold",
+    "procedure_turn",
+    "procedure_climb_nm",
+    "procedure_hold_leg_nm",
     "lost_comms",
     "diversion",
     "wind_triangle",

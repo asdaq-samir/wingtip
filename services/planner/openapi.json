@@ -12099,7 +12099,7 @@
         "type": "object"
       },
       "ProcedureHold": {
-        "description": "A holding pattern of a drawn procedure, or its procedure turn: at `fix`, its inbound\ncourse `inbound_deg` true, its turns right or left (`turn`), drawn to\na light airplane's size (wingtip.procedures.HOLD_SPEED_KT).",
+        "description": "A holding pattern of a drawn procedure, or its procedure turn: at `fix`, its inbound\ncourse `inbound_deg` true, its turns right or left (`turn`), drawn to\na light airplane's size (the engine's paths.rs, HOLD_SPEED_KT).",
         "properties": {
           "fix": {
             "title": "Fix",

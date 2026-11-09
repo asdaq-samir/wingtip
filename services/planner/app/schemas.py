@@ -2102,7 +2102,7 @@ class ProcedureLine(BaseModel):
 class ProcedureHold(BaseModel):
     """A holding pattern of a drawn procedure, or its procedure turn: at `fix`, its inbound
     course `inbound_deg` true, its turns right or left (`turn`), drawn to
-    a light airplane's size (wingtip.procedures.HOLD_SPEED_KT)."""
+    a light airplane's size (the engine's paths.rs, HOLD_SPEED_KT)."""
 
     fix: str
     turn: Literal["L", "R"]

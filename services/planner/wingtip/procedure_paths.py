@@ -41,7 +41,7 @@ REVERSAL_DEG = 120.0
 #: (AIM 5-4-5, 5-4-9; 14 CFR 91.175(j)).
 CODED_REVERSAL_DEG = 90.0
 #: A standard-rate turn's radius in a hold's entry, nm: at the 120 knots
-#: the chart's holds are drawn at (wingtip.procedures.HOLD_TURN_NM).
+#: the chart's holds are drawn at (the engine's paths.rs, hold_turn_nm).
 ENTRY_TURN_NM = 120 * (120 / 3600) / (2 * math.pi)
 
 
