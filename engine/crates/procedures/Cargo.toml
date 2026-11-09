@@ -13,3 +13,6 @@ name = "wingtip_procedures"
 [dependencies]
 wingtip-core = { path = "../core" }
 wingtip-flight = { path = "../flight" }
+
+[lints]
+workspace = true

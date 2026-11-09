@@ -11,3 +11,6 @@ name = "wingtip_core"
 # None: the bottom of the engine's crates (engine/README.md), plain Rust,
 # so the phones carry it as it is.
 [dependencies]
+
+[lints]
+workspace = true

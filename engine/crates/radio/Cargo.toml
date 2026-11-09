@@ -17,3 +17,6 @@ wingtip-flight = { path = "../flight" }
 wingtip-weather = { path = "../weather" }
 # How a figure is written (figures::words), for the MAYDAY call (mayday).
 wingtip-procedures = { path = "../procedures" }
+
+[lints]
+workspace = true

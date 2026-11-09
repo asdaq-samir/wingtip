@@ -769,7 +769,7 @@ fn times_are_read_as_iso_8601_in_utc() {
     use wingtip_engine::motion::track::iso_ms;
     assert_eq!(iso_ms("2026-10-01T14:00:00Z"), Some(1790863200000.0));
     assert_eq!(iso_ms("2026-10-01T14:00:00.5Z"), Some(1790863200500.0));
-    assert_eq!(iso_ms("2026-10-01T14:00:02-05:00"), Some(1790863202000.0 + 5.0 * 3600_000.0));
+    assert_eq!(iso_ms("2026-10-01T14:00:02-05:00"), Some(1790863202000.0 + 5.0 * 3_600_000.0));
     assert_eq!(iso_ms("2026-10-02"), Some(1790899200000.0));
     // GPX 1.1 sets its times in UTC: one with no offset is UTC.
     assert_eq!(iso_ms("2026-10-01T14:00:00"), Some(1790863200000.0));

@@ -25,11 +25,11 @@ fn gunzip(name: &str) -> Vec<u8> {
 }
 
 fn f64s(b: &[u8]) -> Vec<f64> {
-    b.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())).collect()
+    b.as_chunks::<8>().0.iter().map(|c| f64::from_le_bytes(*c)).collect()
 }
 
 fn i64s(b: &[u8]) -> Vec<i64> {
-    b.chunks_exact(8).map(|c| i64::from_le_bytes(c.try_into().unwrap())).collect()
+    b.as_chunks::<8>().0.iter().map(|c| i64::from_le_bytes(*c)).collect()
 }
 
 fn point(v: &Value) -> Point {
@@ -113,7 +113,9 @@ fn chicago_taps_find_the_records_shapely_found() {
     // The .shx: from byte 100, each record's offset and length in 16-bit
     // words, big-endian (ESRI's shapefile technical description, 1998).
     let records: Vec<&[u8]> = shx[100..]
-        .chunks_exact(8)
+        .as_chunks::<8>()
+        .0
+        .iter()
         .map(|e| {
             let offset = u32::from_be_bytes(e[..4].try_into().unwrap()) as usize * 2 + 8;
             let length = u32::from_be_bytes(e[4..].try_into().unwrap()) as usize * 2;

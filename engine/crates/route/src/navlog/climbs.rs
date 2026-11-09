@@ -44,12 +44,12 @@ pub fn with_climbs(legs: &[Obj], start_altitude_ft: Option<f64>, profile: &Profi
     for leg in legs {
         let mut leg = leg.clone();
         let target_ft = leg.num("altitude_ft")?;
-        if let Some(level) = level_ft {
-            if target_ft > level {
-                let climb = climber.climb(level, target_ft, isa_dev_c(Some(&leg))?);
-                climb_burn_gph = (climb_left_min * climb_burn_gph + climb.gallons * 60.0) / (climb_left_min + climb.minutes);
-                climb_left_min += climb.minutes;
-            }
+        if let Some(level) = level_ft
+            && target_ft > level
+        {
+            let climb = climber.climb(level, target_ft, isa_dev_c(Some(&leg))?);
+            climb_burn_gph = (climb_left_min * climb_burn_gph + climb.gallons * 60.0) / (climb_left_min + climb.minutes);
+            climb_left_min += climb.minutes;
         }
         let level = level_ft.map_or(target_ft, |l| l.max(target_ft));
         level_ft = Some(level);
@@ -177,10 +177,10 @@ pub fn with_descents(legs: &[Obj], fixes: &[Obj], end: &End) -> R<Vec<Obj>> {
             // On this leg, or at its start where it cannot have started
             // sooner: the first leg, or one climbed to.
             let down_nm = (altitude - limit_ft) / ft_per_nm;
-            if down_nm < distance - flat || i == 0 || altitudes[i - 1] < altitude {
-                if let Some(b) = &binds {
-                    tods.push((starts[i].max(ends[i] - flat - down_nm), i, b.clone()));
-                }
+            if (down_nm < distance - flat || i == 0 || altitudes[i - 1] < altitude)
+                && let Some(b) = &binds
+            {
+                tods.push((starts[i].max(ends[i] - flat - down_nm), i, b.clone()));
             }
         }
         limit_ft += (distance - flat) * ft_per_nm;

@@ -140,6 +140,10 @@ jobs:
       - run: cargo machete engine
       # The Rust as rustfmt writes it (engine/rustfmt.toml).
       - run: rustup component add rustfmt && scripts/dev/format.sh --check rust
+      # No warning stands (the owner, 2026-11-09): rustc's are denied in the
+      # workspace (engine/Cargo.toml's [workspace.lints]), clippy's here,
+      # every crate and the bindings, tests and all.
+      - run: rustup component add clippy && cargo clippy --manifest-path engine/Cargo.toml --workspace --all-targets -- -D warnings
       - run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine -p wingtip-core -p wingtip-flight -p wingtip-weather -p wingtip-procedures -p wingtip-radio -p wingtip-airspace -p wingtip-wording -p wingtip-brief -p wingtip-route -p wingtip-pilot -p wingtip-altitude -p wingtip-contract-gen
       # The web app's copy of the engine (apps/web/src/lib/engine), committed
       # because the web build has no Rust: built again in the script's

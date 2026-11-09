@@ -19,3 +19,6 @@ wingtip-airspace = { path = "../airspace" }
 # default features, so a host that leaves route options out keeps them out.
 wingtip-brief = { path = "../brief" }
 wingtip-route = { path = "../route", default-features = false }
+
+[lints]
+workspace = true

@@ -11,3 +11,6 @@ name = "wingtip_flight"
 # None: a rule module with no other crate under it (engine/README.md),
 # plain Rust, so the phones carry it as it is.
 [dependencies]
+
+[lints]
+workspace = true

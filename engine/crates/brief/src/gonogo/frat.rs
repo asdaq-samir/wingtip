@@ -147,16 +147,16 @@ pub fn inspection_factors(i: &Inspections, day: &str, ifr: bool) -> Vec<Factor> 
             "transponder", "The transponder test is past due: stay out of the airspace that needs one", "91.413(a), 91.215(b)", 3, false,
         ));
     }
-    if let (Some(due), Some(now)) = (i.hundred_hour_due_at_hours, i.hours_now) {
-        if now >= due {
-            factors.push(factor(
-                "hundredHour",
-                "The 100-hour inspection is due",
-                "91.409(b): carrying anyone for hire, or flight instruction for hire in an airplane you provide",
-                2,
-                false,
-            ));
-        }
+    if let (Some(due), Some(now)) = (i.hundred_hour_due_at_hours, i.hours_now)
+        && now >= due
+    {
+        factors.push(factor(
+            "hundredHour",
+            "The 100-hour inspection is due",
+            "91.409(b): carrying anyone for hire, or flight instruction for hire in an airplane you provide",
+            2,
+            false,
+        ));
     }
     factors
 }
@@ -197,7 +197,7 @@ pub fn squawk_factors(open: &[Squawk], night: bool, ifr: bool) -> Vec<Factor> {
     // A reach the web's REACH does not have compares as undefined: never
     // less, so that squawk is not one that grounds.
     let grounding: Vec<&Squawk> =
-        open.iter().filter(|s| s.inoperative && s.deferred_for.as_deref().map_or(true, |d| reach(d).is_some_and(|r| r < needs))).collect();
+        open.iter().filter(|s| s.inoperative && s.deferred_for.as_deref().is_none_or(|d| reach(d).is_some_and(|r| r < needs))).collect();
     let mut factors = Vec::new();
     if !grounding.is_empty() {
         let texts: Vec<&str> = grounding.iter().map(|s| s.text.as_str()).collect();

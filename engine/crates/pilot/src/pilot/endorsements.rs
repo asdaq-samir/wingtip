@@ -178,7 +178,7 @@ fn acs_code_at(c: &[char], i: usize) -> Option<(String, usize)> {
             if js::boundary(c, end) {
                 let number: String = c[j..after].iter().collect();
                 let sub = if take { letter.map(|l| l.to_ascii_lowercase().to_string()).unwrap_or_default() } else { String::new() };
-                return Some((format!("{}.{roman}.{task}.{kind}{number}{sub}", &c[i..i + 2].iter().collect::<String>()), end));
+                return Some((format!("{}.{roman}.{task}.{kind}{number}{sub}", c[i..i + 2].iter().collect::<String>()), end));
             }
         }
     }

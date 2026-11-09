@@ -14,3 +14,6 @@ name = "wingtip_brief"
 wingtip-core = { path = "../core" }
 wingtip-flight = { path = "../flight" }
 wingtip-procedures = { path = "../procedures" }
+
+[lints]
+workspace = true

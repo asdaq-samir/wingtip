@@ -203,16 +203,16 @@ pub fn parse(raw: &str, near: i64) -> Option<Taf> {
             p.to = starts.iter().copied().filter(|&s| s > p.from).min().unwrap_or(valid_to);
         }
         weather_of(&mut p, &words);
-        if p.change == "BECMG" {
-            if let Some(before) = &prevailing {
-                p.wind = p.wind.or(before.wind);
-                p.visibility_sm = p.visibility_sm.or(before.visibility_sm);
-                if p.layers.is_empty() && !words.iter().any(|w| matches!(*w, "SKC" | "CLR" | "NSC" | "CAVOK")) {
-                    p.layers = before.layers.clone();
-                }
-                if p.weather.is_empty() {
-                    p.weather = before.weather.clone();
-                }
+        if p.change == "BECMG"
+            && let Some(before) = &prevailing
+        {
+            p.wind = p.wind.or(before.wind);
+            p.visibility_sm = p.visibility_sm.or(before.visibility_sm);
+            if p.layers.is_empty() && !words.iter().any(|w| matches!(*w, "SKC" | "CLR" | "NSC" | "CAVOK")) {
+                p.layers = before.layers.clone();
+            }
+            if p.weather.is_empty() {
+                p.weather = before.weather.clone();
             }
         }
         if lasting {

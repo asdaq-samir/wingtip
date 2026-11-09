@@ -28,6 +28,14 @@ members = [
 ]
 resolver = "3"
 
+# No warning is let stand (the owner, 2026-11-09): every crate's rustc
+# warnings are errors, here for every build and not only CI's. Clippy's
+# are made errors where it runs (ci.yml's engine job,
+# `cargo clippy --workspace --all-targets -- -D warnings`). Each member
+# takes these with `[lints] workspace = true`.
+[workspace.lints.rust]
+warnings = "deny"
+
 [profile.release]
 lto = true
 codegen-units = 1

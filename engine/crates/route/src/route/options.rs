@@ -163,6 +163,9 @@ fn path_nm(path: &[Point]) -> f64 {
 /// off the nearest fix -- or, with none near enough, as a position
 /// (@lat,lon), which the route takes as a point of its own -- and its fuel
 /// stops in order along it, with its distance, minutes and fuel.
+// Called once, by the options' search, with what it holds for each way;
+// a struct to carry them would be built at that one call and taken apart here.
+#[allow(clippy::too_many_arguments)]
 fn make_way(
     kind: &str, grid: &mut Grid, gs: &Vec<f64>, a: &Ask, mut turns: Vec<Point>, stops: &[Stop], no_fuel_said: bool, year: f64,
 ) -> Way {

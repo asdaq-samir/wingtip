@@ -15,3 +15,6 @@ wingtip-core = { path = "../core" }
 wingtip-flight = { path = "../flight" }
 wingtip-procedures = { path = "../procedures" }
 wingtip-radio = { path = "../radio" }
+
+[lints]
+workspace = true

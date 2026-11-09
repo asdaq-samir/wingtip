@@ -80,7 +80,7 @@ pub fn read(d: &[u8]) -> Option<Report> {
         address: (d[1] as u32) << 16 | (d[2] as u32) << 8 | d[3] as u32,
         lat: semicircles(&d[4..7]),
         lon: semicircles(&d[7..10]),
-        pressure_ft: (altitude != 0xFFF).then(|| altitude as f64 * 25.0 - 1000.0),
+        pressure_ft: (altitude != 0xFFF).then_some(altitude as f64 * 25.0 - 1000.0),
         airborne: misc & 0x08 != 0,
         extrapolated: misc & 0x04 != 0,
         track_deg: (!track_kind.is_empty()).then(|| d[16] as f64 * 360.0 / 256.0),
@@ -89,7 +89,7 @@ pub fn read(d: &[u8]) -> Option<Report> {
         nacp: d[12] & 0x0F,
         speed_kt: (speed != 0xFFF).then_some(speed as f64),
         // 12-bit two's complement; 0x800 is "no vertical rate" (3.5.1.8).
-        vertical_fpm: (vertical != 0x800).then(|| (((vertical << 4) as i16) >> 4) as f64 * 64.0),
+        vertical_fpm: (vertical != 0x800).then_some((((vertical << 4) as i16) >> 4) as f64 * 64.0),
         emitter: d[17],
         callsign: (!callsign.is_empty()).then_some(callsign),
         emergency: d[26] >> 4,

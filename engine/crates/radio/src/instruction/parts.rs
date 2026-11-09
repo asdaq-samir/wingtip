@@ -161,31 +161,32 @@ pub(super) fn approach_at(toks: &[Token], i: usize, kind: &'static str) -> Optio
         k += 1;
     }
     // A letter after it: "RNAV (GPS) Zulu", "ILS Yankee".
-    if let Some(l) = word(toks, k).and_then(letter) {
-        if matches!(word(toks, k + 1), Some("runway") | Some("approach")) {
-            name = format!("{name} {l}");
-            k += 1;
-        }
+    if let Some(l) = word(toks, k).and_then(letter)
+        && matches!(word(toks, k + 1), Some("runway") | Some("approach"))
+    {
+        name = format!("{name} {l}");
+        k += 1;
     }
     let mut runway = None;
     let mut runway_k = None;
-    if word(toks, k) == Some("runway") {
-        if let Some((r, used)) = runway_at(toks, k + 1) {
-            runway = Some(r);
-            runway_k = Some(k + 1);
-            k += 1 + used;
-        }
+    if word(toks, k) == Some("runway")
+        && let Some((r, used)) = runway_at(toks, k + 1)
+    {
+        runway = Some(r);
+        runway_k = Some(k + 1);
+        k += 1 + used;
     }
     let approach = word(toks, k) == Some("approach");
     if approach {
         k += 1;
         // "Visual approach runway two seven".
-        if runway.is_none() && word(toks, k) == Some("runway") {
-            if let Some((r, used)) = runway_at(toks, k + 1) {
-                runway = Some(r);
-                runway_k = Some(k + 1);
-                k += 1 + used;
-            }
+        if runway.is_none()
+            && word(toks, k) == Some("runway")
+            && let Some((r, used)) = runway_at(toks, k + 1)
+        {
+            runway = Some(r);
+            runway_k = Some(k + 1);
+            k += 1 + used;
         }
     }
     if runway.is_none() && !approach {

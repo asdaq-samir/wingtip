@@ -225,8 +225,9 @@ run_area() {
       docker run --rm -v "$here:/w" -v wingtip-cargo-registry:/usr/local/cargo/registry \
         -v wingtip-cargo-tools:/tools -w /w/engine "$RUST_IMAGE" sh -c \
         "[ -x /tools/bin/cargo-machete ] || cargo install -q --locked cargo-machete@$CARGO_MACHETE --root /tools; /tools/bin/cargo-machete"
-      # CI's own cargo test line (ci.yml's test job), so the crates tested
-      # here are always the ones tested there.
+      # Clippy with its warnings denied, then CI's own cargo test line
+      # (ci.yml's test job), so the crates tested here are always the ones
+      # tested there.
       local cmd
       cmd=$(grep -oE 'cargo test --profile ci [^#]*' "$here/.github/workflows/ci.yml" | head -1)
       key=$(worktree_key)
@@ -237,7 +238,8 @@ run_area() {
       docker run --rm -v "$here:/w/$key" \
         -v wingtip-cargo-registry:/usr/local/cargo/registry -v wingtip-cargo-git:/usr/local/cargo/git \
         -v "$tvol":/target \
-        -e CARGO_TARGET_DIR=/target -w "/w/$key" "$RUST_IMAGE" sh -c "$cmd"
+        -e CARGO_TARGET_DIR=/target -w "/w/$key" "$RUST_IMAGE" sh -c \
+        "rustup component add clippy 2>/dev/null && cargo clippy -q --manifest-path engine/Cargo.toml --workspace --all-targets -- -D warnings && $cmd"
       ;;
     java)
       # services/, not the gateway alone: the pom generates the assistant's

@@ -60,10 +60,9 @@ pub(crate) fn wind(group: &str) -> Option<Wind> {
     }
     let (body, factor) = if let Some(b) = group.strip_suffix("KT") {
         (b, 1.0)
-    } else if let Some(b) = group.strip_suffix("MPS") {
-        (b, KT_PER_MPS)
     } else {
-        return None;
+        let b = group.strip_suffix("MPS")?;
+        (b, KT_PER_MPS)
     };
     if body.len() < 5 {
         return None;
@@ -144,7 +143,7 @@ const PHENOMENA: [&str; 22] =
 pub(crate) fn is_weather(group: &str) -> bool {
     let g = group.strip_prefix(['+', '-']).unwrap_or(group);
     let g = g.strip_prefix("VC").unwrap_or(g);
-    if g.is_empty() || g.len() % 2 != 0 || !g.is_ascii() {
+    if g.is_empty() || !g.len().is_multiple_of(2) || !g.is_ascii() {
         return false;
     }
     let pairs: Vec<&str> = (0..g.len()).step_by(2).map(|i| &g[i..i + 2]).collect();
@@ -415,10 +414,8 @@ pub fn parse(raw: &str) -> Option<Metar> {
                 m.altimeter_inhg = Some(w[1..].parse::<f64>().unwrap() / 100.0);
                 inches = true;
             }
-            _ if w.len() == 5 && w.starts_with('Q') && w[1..].bytes().all(|b| b.is_ascii_digit()) => {
-                if !inches {
-                    m.altimeter_inhg = Some((w[1..].parse::<f64>().unwrap() * INHG_PER_HPA * 100.0).round() / 100.0);
-                }
+            _ if w.len() == 5 && w.starts_with('Q') && w[1..].bytes().all(|b| b.is_ascii_digit()) && !inches => {
+                m.altimeter_inhg = Some((w[1..].parse::<f64>().unwrap() * INHG_PER_HPA * 100.0).round() / 100.0);
             }
             _ => {}
         }

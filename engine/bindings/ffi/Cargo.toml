@@ -13,3 +13,6 @@ crate-type = ["staticlib"]
 # bindgen brings dozens of crates with it for five functions.
 [dependencies]
 wingtip-engine = { path = "../../facade" }
+
+[lints]
+workspace = true

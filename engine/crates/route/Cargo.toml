@@ -23,3 +23,6 @@ wingtip-procedures = { path = "../procedures" }
 [features]
 default = ["options"]
 options = ["dep:wingtip-weather"]
+
+[lints]
+workspace = true

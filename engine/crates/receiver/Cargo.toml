@@ -12,3 +12,6 @@ name = "wingtip_receiver"
 # plain Rust, so the phones carry it as it is.
 [dependencies]
 wingtip-core = { path = "../core" }
+
+[lints]
+workspace = true

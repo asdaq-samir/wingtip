@@ -17,3 +17,6 @@ crate-type = ["cdylib"]
 # never asks them, and they were 153 KB of the module.
 [dependencies]
 wingtip-engine = { path = "../../facade", default-features = false }
+
+[lints]
+workspace = true
