@@ -1,10 +1,10 @@
-import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { cn } from "cn";
 import { useIsMobile } from "../hooks/use-mobile";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { useKeyboardInset, useSafeArea, useWindowHeight } from "../hooks/use-viewport";
 import {
-  GLASS, MATERIAL, BarOverPicture, PanelSize, PILL_RADIUS, usePanelDragging, SHEET_MARGIN, TabBarMinimized,
+  GLASS, MATERIAL, BarOverPicture, PanelSize, PILL_RADIUS, SHEET_MARGIN, TabBarMinimized,
   useTabsShown, type MapInsets, type PanelState,
 } from "./mapChrome";
 import { useOpenCards } from "../lib/openCards";
@@ -12,9 +12,8 @@ import { PillPicture } from "./PillPicture";
 import { SheetCardHost } from "./SheetCard";
 import { raisedFor, useSheetCards } from "../lib/sheetCards";
 import TabKept from "./TabKept";
-import { prefersReducedMotion } from "../lib/motion";
-import { restingAt, settleSeconds, type Detents } from "./sheet/engine";
-import { useSheetDrag } from "./sheet/useSheetDrag";
+import { FLOAT_PX, type Detents } from "./sheet/engine";
+import { useSheetMotion, type SheetParts } from "./sheet/useSheetMotion";
 
 interface Props {
   /** The panel's name -- "Flight Planning", "Model Training" -- for its
@@ -70,16 +69,12 @@ const HALF_MOST = 0.85;
 /** The least body worth showing at half, rem: one row of a list (44
  *  points). Less is no body: the half ends at the head and the foot. */
 const HALF_BODY_LEAST_REM = 2.75;
-/** A card's width from `md` up: 24rem. */
-const CARD = 384;
 /** The grabber's row at the far edge of a card or a sheet from the top. */
 const GRABBER = 16;
 /** The first row's room under the grabber: ten points, the grabber's bar
  *  in it four from the edge (iOS's is five on a sheet, two on Maps' pill:
  *  one place at every size here). */
 const ROW_PAD = "pt-2.5";
-/** A settle's curve: iOS's ease-out (feedback: no spring). */
-const CURVE = "cubic-bezier(0, 0, 0.58, 1)";
 /** The sizes in order, for which way the panel last moved. */
 const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
 
@@ -95,59 +90,10 @@ if (typeof window !== "undefined") {
 }
 const rootPx = () => (rootFont ??= parseFloat(getComputedStyle(document.documentElement).fontSize) || 16);
 
-/** Where the map's buttons and its credits ride on the sheet's top
- *  (--sheet-cover, index.css): a rule of their own, set on them alone.
- *  Set on <body>, an inherited property, every change of it restyled the
- *  whole page (177 to 260 ms of a phone's at 4x, 2026-10-28). */
-let coverDeclaration: CSSStyleDeclaration | null = null;
-let rideDeclaration: CSSStyleDeclaration | null = null;
-const coverRule = () => {
-  if (!coverDeclaration) {
-    const sheet = document.head.appendChild(document.createElement("style")).sheet!;
-    sheet.insertRule("[data-map-controls], [data-map-food], .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right {}", 0);
-    // The translate they ride the sheet's top by: only those at the foot
-    // of the map (the mic's circle is at its top but in flight).
-    sheet.insertRule("[data-map-controls], [data-map-food][data-rides], .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right {}", 1);
-    coverDeclaration = (sheet.cssRules[0] as CSSStyleRule).style;
-    rideDeclaration = (sheet.cssRules[1] as CSSStyleRule).style;
-  }
-  return coverDeclaration;
-};
-const rideRule = () => {
-  coverRule();
-  return rideDeclaration!;
-};
-
 /** Under the head, the body and the foot a shade darker than the glass
  *  over them, the grey of notes and the blue of tappable words a step
  *  darker on it for WCAG's 4.5:1 (--tint-shade, index.css). */
 const SHEET_BELOW = "[--muted-foreground:oklch(0.5_0_0)] [--tint:var(--tint-shade)] dark:[--muted-foreground:oklch(0.708_0_0)] print:bg-transparent";
-
-/** What the panel covers of the map at `s`: on a phone the pill's strip,
- *  or the half sheet -- all the way up as well, where what counts is what
- *  shows once it comes down; from `md` up the column at the left while it
- *  is out, or the corner it rests in. */
-/** Over a wider screen the top sheet floats this far under the window's
- *  top, its four corners round, as Maps' card does on an iPad and a Mac;
- *  on a phone it hangs from the edge (the owner's screenshot, 2026-11-06:
- *  the tabs ran into the window's top). */
-const FLOAT_PX = 16;
-
-// The screen's top under a sheet from the bottom is the status bar's and
-// the Dynamic Island's (`safeTop`, env(safe-area-inset-top), about 59 pt on
-// an iPhone 16 Pro with viewport-fit=cover): kept out of the map's room, as
-// HIG's layout keeps content inside the safe area, where a fit put KOSH at
-// y = 38 under it (the FPL audit's A11). A sheet from the top covers it.
-function insetsOf(s: PanelState, d: Detents, onPhone: boolean, fromBottom: boolean, safeTop = 0): MapInsets {
-  const up = s === "full";
-  if (!onPhone && s !== "peek") return { top: safeTop, bottom: 0, left: 16 + CARD, out: true, up };
-  const strip = onPhone ? (s === "peek" ? d.peek : d.half) : d.peek + SHEET_MARGIN + (fromBottom ? 0 : FLOAT_PX);
-  return fromBottom ? { top: safeTop, bottom: strip, left: 0, out: s !== "peek", up } : { top: strip, bottom: 0, left: 0, out: s !== "peek", up };
-}
-
-/** What a phone's sheet says as it sets off for another size, on its
- *  "sheetturn" event: the room it will leave the map (GlMapShell). */
-export interface SheetTurn { insets: MapInsets }
 
 /**
  * The page's one panel over the map, the way Maps on an iPhone has one:
@@ -177,7 +123,8 @@ export interface SheetTurn { insets: MapInsets }
  * translate of their own (ride), the map follows once it has set off
  * (sheetturn, lib/map/sheetSlide's glide) and stays still under a finger,
  * and the page hears the room it leaves once it has landed
- * (onInsetsChange). The rules each of today's bugs broke, kept: its edge
+ * (onInsetsChange) -- all of that motion sheet/useSheetMotion's, the
+ * measures and the drawing this file's. The rules each of today's bugs broke, kept: its edge
  * never leaves the screen's, nothing it does waits on a render, nothing
  * under it inherits a value that changes per frame, and the pill is
  * measured only as the pill at rest.
@@ -227,12 +174,15 @@ export default function MapPanel({ label, top, kept, controls, compact, children
   // (a drag let go, the grabber, a tab's tap), told to the page once it
   // has landed -- told at once, the page drew the whole workspace again
   // for the new size as the sheet set off (140 ms at 4x).
+  // The size the sheet shows: the page's, or the one it was sent to here
+  // (a drag let go, the grabber, a tab's tap), told to the page once it
+  // has landed (useSheetMotion).
   const [size, setSize] = useState(pageState);
   const sizeRef = useRef(size);
-  const asked = useRef<PanelState | null>(null);
   // On its way: under a finger or easing to a size. What the workspace
   // draws for a sheet on the move, and the measures held till it rests.
   const [moving, setMoving] = useState(false);
+  const movingRef = useRef(moving);
   const atPill = size === "peek" && hasPill;
 
   // Measured at rest: the head's band, the foot, and what the pill shows.
@@ -244,7 +194,7 @@ export default function MapPanel({ label, top, kept, controls, compact, children
   const [headBand, setHeadBandState] = useState<HTMLDivElement | null>(null);
   const [footNode, setFootNodeState] = useState<HTMLDivElement | null>(null);
   // The parts held in sight at the free edge (pin), written to directly.
-  const parts = useRef<{ head: HTMLElement | null; body: HTMLElement | null; inner: HTMLElement | null; foot: HTMLElement | null }>({ head: null, body: null, inner: null, foot: null });
+  const parts = useRef<SheetParts>({ head: null, body: null, inner: null, foot: null });
   const setHeadBand = useCallback((node: HTMLDivElement | null) => { parts.current.head = node; setHeadBandState(node); }, []);
   const setFootNode = useCallback((node: HTMLDivElement | null) => { parts.current.foot = node; setFootNodeState(node); }, []);
   const setBodyNode = useCallback((node: HTMLDivElement | null) => { parts.current.body = node; }, []);
@@ -258,7 +208,6 @@ export default function MapPanel({ label, top, kept, controls, compact, children
   const halfLook = useRef<{ className: string; paddingBottom: string } | null>(null);
   const halfSeen = useRef(false);
   const [pillHeight, setPillHeight] = useState<number | null>(null);
-  const movingRef = useRef(moving);
   useEffect(() => {
     if (!headBand) return;
     const watch = new ResizeObserver(() => { if (!movingRef.current) setHeadHeight(headBand.offsetHeight); });
@@ -395,227 +344,24 @@ export default function MapPanel({ label, top, kept, controls, compact, children
     const full = cardFit === null ? whole : Math.max(Math.min(half, whole), Math.min(whole, headHeight + halfChrome + cardFit));
     return { peek, half: Math.min(half, full), full };
   }, [pillHeight, pillHeights, pillKey, tabsAlone, pillChrome, room, halfChrome, headHeight, footHalf, cardFit]);
-  const detentsRef = useRef(detents);
   const halfBody = Math.max(0, detents.half - headHeight - halfChrome - footHalf);
   const fullBody = Math.max(0, detents.full - headHeight - halfChrome - footFull);
 
-  // What it covers of the map where it comes to rest (insetsOf).
-  const insetsFor = useCallback((s: PanelState, d: Detents) => insetsOf(s, d, onPhone, fromBottom, safe.top), [onPhone, fromBottom, safe.top]);
-
-  // The parts held in sight, `off` px in from where the popup's free edge
-  // is laid out (its full height less its height now): a bottom sheet's
-  // figures and body up by it, the body's content back down; a top
-  // sheet's head and body down by it. Transform only, on these alone.
-  const pinState = useRef({ fromBottom, footShown, floating });
-  useLayoutEffect(() => {
-    pinState.current = { fromBottom, footShown, floating };
-  }, [fromBottom, footShown, floating]);
-  const pin = useCallback((off: number, ease: string) => {
-    const { head, body, inner, foot } = parts.current;
-    const { fromBottom: bottom, footShown: figures } = pinState.current;
-    const shift = (px: number) => (Math.abs(px) < 0.25 ? "" : `translate3d(0, ${Math.round(px * 100) / 100}px, 0)`);
-    const write = (el: HTMLElement | null, px: number, also = "") => {
-      if (!el) return;
-      // The figures' growth (--sheet-progress) eased with the sheet too,
-      // and a top sheet's body's cut (below) with its move.
-      const transition = !ease ? "" : el === foot ? `transform ${ease}, --sheet-progress ${ease}` : `transform ${ease}${also && `, ${also} ${ease}`}`;
-      const transform = shift(px);
-      // Written only where it changes: each write is a restyle.
-      if (el.style.transition !== transition) el.style.transition = transition;
-      if (el.style.transform !== transform) el.style.transform = transform;
-      // Its own layer while it is moved off its place, so a frame of a
-      // drag or a settle moves it rather than painting it again; none
-      // where it rests in place (all the way up), the layers cost memory.
-      const layer = px || ease ? "transform" : "";
-      if (el.style.willChange !== layer) el.style.willChange = layer;
-    };
-    const up = bottom && figures ? off : 0;
-    write(foot, bottom ? -up : 0);
-    write(body, bottom ? -up : off, bottom ? "" : "clip-path");
-    write(inner, up);
-    write(head, bottom ? 0 : off);
-    if (body && body.style.overflow !== (up ? "clip" : "")) body.style.overflow = up ? "clip" : "";
-    // A top sheet's body, moved down by `off`, runs on under the figures
-    // pinned at its foot: cut off at their top, as a bottom sheet's is by
-    // its overflow above, or its last rows are drawn over the figures (the
-    // owner's screenshot, 2026-11-06: "Add a Stop" over the distance).
-    const cut = !bottom && figures && off >= 0.25 ? `inset(0 0 ${Math.round(off * 100) / 100}px 0)` : "";
-    if (body && body.style.clipPath !== cut) body.style.clipPath = cut;
-  }, []);
-  // The map's buttons ride on a phone's bottom sheet's top: placed at the
-  // height it rests at (--sheet-cover, their `bottom`, set once a move)
-  // and moved from there by a translate on the compositor, on the sheet's
-  // own curve and time in a settle and a frame at a time under a finger.
-  // Their `bottom` written each frame from the main thread lagged the
-  // sheet and stepped (the owner, 2026-11-04: "The buttons on top of tabs
-  // stutter").
-  const coverAt = useRef<number | null>(null);
-  const ride = useCallback((h: number, ease: string, from?: number) => {
-    const cover = coverRule();
-    const rule = rideRule();
-    if (!onPhone || !pinState.current.fromBottom) {
-      cover.removeProperty("--sheet-cover");
-      rule.removeProperty("translate");
-      rule.removeProperty("transition");
-      coverAt.current = null;
-      return;
+  // Its motion (useSheetMotion): placed by its height, eased to a size in
+  // a settle, dragged a frame at a time, and the room it leaves told.
+  // Landed, the head and the figures measured at rest at the size it came
+  // to: half's own, or the other two's.
+  const landed = useCallback((target: PanelState) => {
+    if (headBand) setHeadHeight(headBand.offsetHeight);
+    if (footNode) {
+      const at = target === "half" ? "half" : "other";
+      const h = footNode.offsetHeight;
+      setFootHeights(was => (was[at] === h ? was : { ...was, [at]: h }));
     }
-    if (from !== undefined || coverAt.current === null) {
-      // Placed where it is going, shown where it is, then let go to it.
-      coverAt.current = Math.round(h);
-      rule.setProperty("transition", "opacity 0.2s");
-      cover.setProperty("--sheet-cover", `${coverAt.current}px`);
-      rule.setProperty("translate", `0 ${Math.round((from ?? h) - h) * -1}px`);
-      if (!ease) return;
-      const one = document.querySelector<HTMLElement>("[data-map-controls]");
-      if (one) void getComputedStyle(one).translate;
-      rule.setProperty("transition", `translate ${ease}, opacity 0.2s`);
-      rule.setProperty("translate", "0 0px");
-      return;
-    }
-    rule.setProperty("transition", ease ? `translate ${ease}, opacity 0.2s` : "opacity 0.2s");
-    rule.setProperty("translate", `0 ${coverAt.current - Math.round(h)}px`);
-  }, [onPhone]);
-
-  // The sheet at `h`, written straight to the style: slid off its edge by
-  // what is laid out past h (its full height less h), with the parts held
-  // in sight and the map's buttons going with it. `ease` for a settle,
-  // the transition the browser runs on the compositor; none under a
-  // finger. `from` for a settle's start, where the buttons are shown.
-  const hRef = useRef(detents[size]);
-  const fullRef = useRef(detents.full);
-  const place = useCallback((h: number, ease: string, from?: number) => {
-    hRef.current = h;
-    const panel = panelRef.current;
-    if (!panel) return;
-    const off = Math.max(0, fullRef.current - h);
-    const y = Math.round((pinState.current.fromBottom ? off : -off) * 100) / 100;
-    // A floating sheet slid up by `off` would show its glass in the gap
-    // over it: cut at its own `off`, where the window's gap ends, its top
-    // corners rounded there, eased with the slide.
-    const { floating: cutAtTop } = pinState.current;
-    const transition = ease ? `transform ${ease}${cutAtTop ? `, clip-path ${ease}` : ""}` : "";
-    if (panel.style.transition !== transition) panel.style.transition = transition;
-    panel.style.transform = `translate3d(0, ${y}px, 0)`;
-    const cut = cutAtTop ? `inset(${Math.round(off * 100) / 100}px 0 0 0 round ${PILL_RADIUS}px)` : "";
-    if (panel.style.clipPath !== cut) panel.style.clipPath = cut;
-    pin(off, ease);
-    ride(h, ease, from);
-  }, [pin, ride]);
-  // Where it is this frame: its last placing, or on its way, from the
-  // transform the browser has it at.
-  const currentHeight = useCallback(() => {
-    const panel = panelRef.current;
-    if (!panel || !movingRef.current) return hRef.current;
-    const t = getComputedStyle(panel).transform;
-    const y = t && t !== "none" ? Math.abs(new DOMMatrix(t).m42) : 0;
-    return fullRef.current - y;
-  }, []);
-
-  // To `target`, from where it is, at once: the transition written in this
-  // frame -- a finger's release, a tap, a key -- and the map told a frame
-  // on and the sheet laid out for the size in a React transition after,
-  // so neither's work is in the way of its first frames; the page told
-  // once it has landed.
-  const landTimer = useRef(0);
-  const settle = useCallback((target: PanelState, tell: boolean, now: boolean) => {
-    const from = currentHeight();
-    const to = detentsRef.current[target];
-    const seconds = prefersReducedMotion() || Math.abs(to - from) < 0.5 ? 0 : settleSeconds(to - from);
-    window.clearTimeout(landTimer.current);
-    if (tell) asked.current = target;
-    sizeRef.current = target;
-    movingRef.current = true;
-    place(from, "");
-    if (seconds > 0 && panel) void panel.offsetHeight;
-    place(to, seconds > 0 ? `${seconds}s ${CURVE}` : "", from);
-    const turn = () => panel?.dispatchEvent(new CustomEvent<SheetTurn>("sheetturn", { bubbles: true, detail: { insets: insetsFor(target, detentsRef.current) } }));
-    const lay = () => {
-      setSize(target);
-      setMoving(true);
-    };
-    if (now) {
-      requestAnimationFrame(turn);
-      startTransition(lay);
-    } else {
-      turn();
-      lay();
-    }
-    landTimer.current = window.setTimeout(() => {
-      movingRef.current = false;
-      place(detentsRef.current[target], "");
-      setMoving(false);
-      if (asked.current === target) {
-        asked.current = null;
-        tellPage(target);
-      }
-      if (headBand) setHeadHeight(headBand.offsetHeight);
-      if (footNode) {
-        // Measured at rest at the size it came to: half's own, or the
-        // other two's.
-        const at = target === "half" ? "half" : "other";
-        const h = footNode.offsetHeight;
-        setFootHeights(was => (was[at] === h ? was : { ...was, [at]: h }));
-      }
-    }, seconds * 1000 + 40);
-  }, [panel, currentHeight, place, insetsFor, tellPage, headBand, footNode]);
-  const ask = useCallback((target: PanelState, now = false) => settle(target, true, now), [settle]);
-  useEffect(() => () => window.clearTimeout(landTimer.current), []);
-  useEffect(() => () => {
-    coverRule().removeProperty("--sheet-cover");
-    for (const name of ["translate", "transition"]) rideRule().removeProperty(name);
-  }, []);
-
-  // At rest after a commit: put where its size is -- eased there where it
-  // has grown or shrunk at rest (the route's figures come to the pill,
-  // the keyboard up), at once on the first measure. `floating` is a
-  // dependency for the clip place writes, which must follow a turn across
-  // md even where no detent moves.
-  const settledOnce = useRef(false);
-  useLayoutEffect(() => {
-    fullRef.current = detents.full;
-    detentsRef.current = detents;
-    if (movingRef.current) return;
-    const target = detents[size];
-    if (settledOnce.current && Math.abs(hRef.current - target) > 1 && !prefersReducedMotion()) {
-      settle(size, false, false);
-      return;
-    }
-    if (pillHeight !== null || !atPill) settledOnce.current = true;
-    place(target, "");
-  }, [detents, size, pillHeight, atPill, footShown, fromBottom, floating, place, settle]);
-  // The page's own size, come as a prop: gone to.
-  useEffect(() => {
-    if (pageState !== sizeRef.current) settle(pageState, false, false);
-  }, [pageState, settle]);
-  // What the workspace draws for a sheet on the move (FPL's strips).
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => usePanelDragging.setState({ dragging: moving }));
-    return () => cancelAnimationFrame(frame);
-  }, [moving]);
-  // The room it leaves the map, told once at rest (the turn's event said
-  // it as the sheet set off).
-  const insetsNow = useMemo(() => insetsFor(size, detents), [insetsFor, size, detents]);
-  useEffect(() => {
-    if (!moving) tellInsets(insetsNow);
-  }, [moving, insetsNow, tellInsets]);
-
-  // A drag: from the grabber, the first row, the head and the pill's foot
-  // by pointer; from the body by touch where its content is not
-  // scrolling (useSheetDrag). It follows the finger a frame at a time and
-  // lets go to the detent it was heading for, one size at most.
-  const { startDrag, swallow, body: dragBody } = useSheetDrag({
-    detents, fromBottom,
-    height: currentHeight,
-    began: () => {
-      const h = currentHeight();
-      window.clearTimeout(landTimer.current);
-      movingRef.current = true;
-      place(h, "");
-      setMoving(true);
-    },
-    place: h => place(h, ""),
-    release: (h, speed) => settle(restingAt(detentsRef.current, h, speed), true, true),
+  }, [headBand, footNode]);
+  const { ask, startDrag, swallow, dragBody } = useSheetMotion({
+    size, setSize, sizeRef, moving, setMoving, movingRef, detents, pageState, tellPage, tellInsets, onPhone, fromBottom, floating, footShown, safeTop: safe.top,
+    panel, panelRef, partsRef: parts, pillHeight, atPill, landed,
   });
   const setBody = useCallback((node: HTMLDivElement | null) => {
     setBodyNode(node);

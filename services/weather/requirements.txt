@@ -2,5 +2,5 @@
 # (services/planner/requirements-wingtip.txt, installed by the base image,
 # services/Dockerfile.base), which brings requests, numpy, cachetools,
 # pydantic-settings and the engine's wheel. Pinned to what python:3.14-slim
-# resolves; Dependabot keeps the pin moving (.github/dependabot.yml).
+# resolves; moved on in each wave's end pass.
 gribberish==1.8.3   # app.gfs and app.glmp read the GFS's and GLMP's GRIB2, complex packing included (MIT; 2 MB, where eccodes is 100)

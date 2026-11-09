@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampHeight, follow, restingAt, settleSeconds, sheetTakes, speedAt, type Box, type Detents, type Track } from "./engine";
+import { CARD, FLOAT_PX, clampHeight, follow, insetsOf, restingAt, settleSeconds, sheetTakes, speedAt, type Box, type Detents, type Track } from "./engine";
 
 const detents: Detents = { peek: 62, half: 376, full: 820 };
 
@@ -106,5 +106,21 @@ describe("sheetTakes", () => {
     expect(sheetTakes([{ ...box, atStart: false, atEnd: true }, body], 30, true, true)).toBe(false);
     // Short of a line to scroll, it is no box to scroll first.
     expect(sheetTakes([{ ...box, scrolls: false }, body], -30, true, true)).toBe(true);
+  });
+});
+
+describe("insetsOf", () => {
+  it("leaves a phone's map the pill's strip at rest, and half all the way up", () => {
+    expect(insetsOf("peek", detents, true, true, 59)).toEqual({ top: 59, bottom: 62, left: 0, out: false, up: false });
+    expect(insetsOf("full", detents, true, true, 59)).toEqual({ top: 59, bottom: 376, left: 0, out: true, up: true });
+    // A sheet from the top covers the status bar itself.
+    expect(insetsOf("half", detents, true, false, 59)).toEqual({ top: 376, bottom: 0, left: 0, out: true, up: false });
+  });
+
+  it("leaves a wider screen's map all but the card's column while it is out", () => {
+    expect(insetsOf("half", detents, false, true)).toEqual({ top: 0, bottom: 0, left: 16 + CARD, out: true, up: false });
+    // At rest in its corner, the pill and its margin; floating from the top, its gap too.
+    expect(insetsOf("peek", detents, false, true)).toEqual({ top: 0, bottom: 62 + 8, left: 0, out: false, up: false });
+    expect(insetsOf("peek", detents, false, false)).toEqual({ top: 62 + 8 + FLOAT_PX, bottom: 0, left: 0, out: false, up: false });
   });
 });

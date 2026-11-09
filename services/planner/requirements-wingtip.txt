@@ -16,8 +16,8 @@
 # The CI build job imports what each service imports inside its built
 # image, so a missing line fails there rather than on a restart.
 #
-# Pinned to what python:3.14-slim resolves; Dependabot keeps the pins
-# moving (.github/dependabot.yml watches /services/planner).
+# Pinned to what python:3.14-slim resolves; the pins move on in each
+# wave's end pass, with Dependabot's alerts flagging an advisory between them.
 numpy==2.5.3        # wingtip.geo, wingtip.ml_features, wingtip.osm, wingtip.weather
 pandas==3.0.6       # wingtip.airports, wingtip.faa_data, wingtip.ml_features, wingtip.pipeline
 requests==2.34.2    # every external source (wingtip.retry)
