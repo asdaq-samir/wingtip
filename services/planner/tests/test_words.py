@@ -200,3 +200,18 @@ def test_the_debrief_sources_read_the_webs_own_figures_camel_cased_and_unmarked(
     assert "furthest off 300 ft high" in found["leg:1"]["text"] and "outside tolerance" in found["leg:1"]["text"]
     assert "100 ft high" in found["pattern:B"]["text"]
     assert client.post("/api/words/debrief/sources", json={"debrief": {"takeoff": 1}}).status_code == 422
+
+
+def test_a_debrief_with_too_many_or_too_long_notes_or_a_huge_pilot_record_is_refused():
+    figures = {
+        "takeoff": 1, "landing": 2, "flownMin": 1.0, "plannedMin": 1.0, "legs": [], "passes": [], "patterns": [],
+        "hasAltitude": False, "notes": ["n"] * 51,
+    }
+    resp = client.post("/api/words/debrief/sources", json={"debrief": figures})
+    assert resp.status_code == 422
+    figures["notes"] = ["n" * 501]
+    assert client.post("/api/words/debrief/sources", json={"debrief": figures}).status_code == 422
+
+    verdict = {"line": {"finding": "ok", "words": "Fine"}, "items": []}
+    huge = {"k": "y" * 30_000}
+    assert client.post("/api/words/risk/sources", json={"verdict": verdict, "pilot": huge}).status_code == 422

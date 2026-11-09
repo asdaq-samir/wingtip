@@ -4,7 +4,8 @@ inspections fall due, for the gateway: it keeps the records and asks here
 for what they mean (CLAUDE.md: Spring Boot holds no aviation logic). The
 rules are the shared engine's (pilot_currency, pilot_experience:
 engine/crates/pilot/src/pilot/currency.rs; endorsement_records,
-inspections_due: records.rs), asked by name through wingtip_native.call;
+inspections_due: records.rs; AC 61-65K's endorsements and their words,
+endorsement_kinds and endorsement_fill: kinds.rs), asked by name through wingtip_native.call;
 this only carries the records across.
 
 The entries are the gateway's LogbookEntry, camelCase, as the engine
@@ -123,7 +124,7 @@ def experience(ask: ExperienceAsk) -> list[ExperienceItem]:
 
 class HeldEndorsement(BaseModel):
     """An endorsement the student holds: its code (AC 61-65K's, as the
-    gateway's EndorsementKind names it), the day it was given, and the make
+    engine's endorsement_kinds names it), the day it was given, and the make
     and model it names where it says."""
     code: str
     on: date
@@ -164,6 +165,58 @@ def endorsements(ask: EndorsementsAsk) -> Endorsements:
     got = _ask("endorsement_records", flight_on=ask.flightOn.isoformat() if ask.flightOn else None,
                held=[{"code": h.code, "on": h.on.isoformat(), "make_model": h.makeModel} for h in ask.held])
     return Endorsements(until=got["until"], soloUntil=got["solo_until"], checks=[ReviewCheck(**c) for c in got["checks"]])
+
+
+class EndorsementField(BaseModel):
+    """A blank in an endorsement's words, as the instructor's sheet asks for it."""
+    key: str
+    label: str
+    example: str
+    required: bool
+
+
+class EndorsementKind(BaseModel):
+    """One of the student endorsements (the engine's endorsement_kinds):
+    its code, AC 61-65K's paragraph, the 14 CFR section it answers, its
+    name, and the sample's words with the blanks the instructor fills."""
+    code: str
+    paragraph: str = Field(description="AC 61-65K's paragraph, \"A.10\".")
+    rule: str = Field(description="The 14 CFR section it answers, \"61.93(c)(3)\".")
+    label: str
+    template: str = Field(description="The sample's words, {student} and each field's {key} in them.")
+    fields: list[EndorsementField]
+
+
+@router.get("/api/pilot/endorsement-kinds")
+def endorsement_kinds() -> list[EndorsementKind]:
+    """AC 61-65K's endorsements a student meets on the way to a private
+    pilot certificate, in the order they meet them, word for word."""
+    return [EndorsementKind(**k) for k in _ask("endorsement_kinds")]
+
+
+class EndorsementFillAsk(BaseModel):
+    """An endorsement to sign: its code, the student's name as on their
+    certificate, and the fields the instructor gave."""
+    code: str
+    student: str = ""
+    fields: dict[str, str] = {}
+
+
+class EndorsementFilled(BaseModel):
+    """The endorsement made ready to sign (the engine's endorsement_fill)."""
+    fields: dict[str, str] = Field(description="Each field it takes, tidied to single spaces, \"\" where not given.")
+    missing: list[str] = Field(description="The labels of the required fields still empty.")
+    text: str = Field(description="Its words with the student and the fields in, as they are signed.")
+
+
+@router.post("/api/pilot/endorsement-fill")
+def endorsement_fill(ask: EndorsementFillAsk) -> EndorsementFilled:
+    """An endorsement's fields, what is still missing and its words as
+    they will be signed; 404 for a code no endorsement has."""
+    got = _ask("endorsement_fill", code=ask.code, student=ask.student, fields=ask.fields)
+    if got is None:
+        raise HTTPException(status_code=404, detail=f"No such endorsement: {ask.code}.")
+    return EndorsementFilled(**got)
 
 
 class VorCheckAsk(BaseModel):

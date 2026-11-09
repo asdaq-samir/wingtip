@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CHECKLIST_PHASES, checklistText, forgetChecklists, phasesText, saveChecklist, useChecklists, withChecklist } from "./checklists";
+import { checklistPhases, checklistText, forgetChecklists, phasesText, saveChecklist, useChecklists, withChecklist } from "./checklists";
 import { checklistOf } from "./checklist";
 
 describe("an airplane's checklists, kept on the device", () => {
@@ -29,9 +29,9 @@ describe("an airplane's checklists, kept on the device", () => {
 
 describe("the phases a list starts from", () => {
   it("are the handbook's sections in order, headings and nothing under them", () => {
-    expect(CHECKLIST_PHASES.normal[0]).toBe("Preflight inspection");
-    expect(CHECKLIST_PHASES.normal.at(-1)).toBe("Securing the airplane");
-    expect(CHECKLIST_PHASES.emergency).toHaveLength(12);
+    expect(checklistPhases("normal")[0]).toBe("Preflight inspection");
+    expect(checklistPhases("normal").at(-1)).toBe("Securing the airplane");
+    expect(checklistPhases("emergency")).toHaveLength(12);
     const text = phasesText("emergency");
     expect(text.split("\n").filter(Boolean).every(line => line.startsWith("# "))).toBe(true);
     // Read, headings alone are no checklist: nothing is run until written.

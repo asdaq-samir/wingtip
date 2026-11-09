@@ -111,36 +111,17 @@ class ChecklistStore(private val store: TextStore) {
  * list, so the run view shows only the sections the pilot has filled.
  */
 object ChecklistPhases {
-    val NORMAL: List<String> = listOf(
-        "Preflight inspection",
-        "Before starting engine",
-        "Starting engine",
-        "Before takeoff",
-        "Takeoff",
-        "Climb",
-        "Cruise",
-        "Descent",
-        "Before landing",
-        "Landing",
-        "After landing",
-        "Shutdown",
-        "Securing the airplane",
-    )
+    @kotlinx.serialization.Serializable
+    class PhasesAsk(val kind: String)
 
-    val EMERGENCY: List<String> = listOf(
-        "Engine failure on the takeoff roll",
-        "Engine failure right after takeoff",
-        "Engine failure in flight",
-        "Emergency landing without engine power",
-        "Precautionary landing with engine power",
-        "Ditching",
-        "Engine fire during start",
-        "Engine fire in flight",
-        "Electrical fire in flight",
-        "Cabin fire",
-        "Electrical power failure",
-        "Inadvertent icing",
-    )
+    private fun asked(kind: String): List<String> =
+        runCatching { Engine.call<PhasesAsk, List<String>>("checklist_phases", PhasesAsk(kind)) }.getOrDefault(emptyList())
+
+    /** The headings, the engine's (`checklist_phases`), as the web and
+     *  the iPhone start from them. */
+    val NORMAL: List<String> by lazy { asked("normal") }
+
+    val EMERGENCY: List<String> by lazy { asked("emergency") }
 
     fun headings(kind: ChecklistKind): List<String> = when (kind) {
         ChecklistKind.NORMAL -> NORMAL

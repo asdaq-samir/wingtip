@@ -174,6 +174,24 @@
 //! - `endorsement_render`: an endorsement's words as they will be signed,
 //!   from `{"template", "student", "fields"?: {name: text}}`;
 //! - `acs_codes`: the ACS codes in pasted text, each once, from `{"text"}`;
+//! - `endorsement_kinds`: AC 61-65K's student endorsements, each `{"code",
+//!   "paragraph", "rule", "label", "template", "fields": [{"key",
+//!   "label", "example", "required"}]}`, from `{}`;
+//! - `procedure_arc`, `procedure_hold`, `procedure_turn`,
+//!   `procedure_climb_nm`, `procedure_hold_leg_nm`: a published
+//!   procedure's RF/AF arc, CIFP hold, 45°/180° procedure turn (AIM
+//!   5-3-8, 5-4-9) and open legs' lengths (paths.rs lists the inputs);
+//! - `checklist_phases`: the headings a checklist starts from, a
+//!   handbook's Normal or Emergency Procedures (GAMA Specification No. 1,
+//!   Sections 4 and 3), from `{"kind": "normal"|"emergency"}`;
+//! - `solo_xc_determinations`: 14 CFR 61.93(d)(1)-(3), `[{"rule",
+//!   "label"}]`, from `{}`;
+//! - `passenger_briefing`: the passengers' briefing (91.107(a), the
+//!   FAA's SAFETY briefing, ACS PA.II.B.S2), `[{"key", "title",
+//!   "rule"}]`, from `{}`;
+//! - `endorsement_fill`: one filled in to sign, `{"fields", "missing",
+//!   "text"}` or null for no such code, from `{"code", "student"?,
+//!   "fields"?}`;
 //! - `pilot_currency`: where the pilot stands on a day, the gateway's
 //!   CurrencyDto (14 CFR 61.56(c), 61.57(a)-(d)), from `{"entries":
 //!   [LogbookEntry], "flight_review_on"?, "medical_expires_on"?,
@@ -464,7 +482,9 @@
 //!   (crate::limits: 71.33, 91.119(c), 91.121, 91.159, 91.179);
 //! - `filed_level`, `filed_speed` (`{"tas_kt"}`), `filed_duration`
 //!   (`{"minutes"}`), `filed_wake` (`{"max_takeoff_lb"?}`), `filed_zzzz`
-//!   (`{"ident"}`), `filed_route` (`{"stops", "airways"?, "departure"?,
+//!   (`{"ident"}`), `filed_endurance` (whole minutes, or null, from
+//!   `{"fuel_gal", "burn_gph"}`), `filed_dof` ("DOF/YYMMDD" or null, from
+//!   `{"depart", "today"}`), `filed_rnav` (`{"airways"}`), `filed_route` (`{"stops", "airways"?, "departure"?,
 //!   "arrival"?}`): FAA Form 7233-4's items (crate::filing);
 //! - `planning_figures` `{"turnaround_min", "cruise_reference_ft"}` from
 //!   `{}`; `workings_right` from `{"key", "typed", "answer"}` (an E6B's
@@ -1004,6 +1024,9 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
             Ok(out)
         }
         "filed_level" | "filed_speed" | "filed_duration" | "filed_wake" | "filed_route" | "filed_zzzz" => filing_rule(&ask),
+        // Item 19's endurance, item 18's date of flight and a T or Q route
+        // (the web's lib/flightPlanForm before #482).
+        "filed_endurance" | "filed_dof" | "filed_rnav" => filing_more_rule(&ask),
         "magnetic_variation" => {
             // The model's time, a decimal year: as given (the planner's
             // test against pygeomag asks at any instant), else the day's.
@@ -1042,6 +1065,28 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         // What is ahead of own ship from the planner's data (ahead.rs).
         _ if crate::ahead::NAMES.contains(&name) => crate::ahead::call(name, ask.v),
         _ if crate::pilot::records::NAMES.contains(&name) => crate::pilot::records::call(name, ask.v),
+        // AC 61-65K's endorsements and their words filled in (kinds.rs),
+        // the gateway's EndorsementKind before #482.
+        _ if crate::pilot::kinds::NAMES.contains(&name) => crate::pilot::kinds::call(name, ask.v),
+        // The headings a checklist starts from (checklist.rs, GAMA
+        // Specification No. 1, Sections 3 and 4).
+        "checklist_phases" => {
+            let kind = ask.str("kind")?;
+            let phases: &[&str] = if kind == "normal" {
+                &checklist::NORMAL_PHASES
+            } else if kind == "emergency" {
+                &checklist::EMERGENCY_PHASES
+            } else {
+                return Err(format!("checklist_phases: no kind {kind:?}, only \"normal\" or \"emergency\""));
+            };
+            let mut out = String::new();
+            strings(&mut out, &phases.iter().map(|p| (*p).to_owned()).collect::<Vec<_>>());
+            Ok(out)
+        }
+        // A procedure's legs as they are drawn (procedures' paths.rs).
+        _ if crate::paths::NAMES.contains(&name) => crate::paths::call(name, ask.v),
+        // The passengers' briefing (brief's passengers.rs, 14 CFR 91.107(a)).
+        _ if crate::passengers::NAMES.contains(&name) => crate::passengers::call(name),
         _ if crate::wording::NAMES.contains(&name) => crate::wording::answer(name, ask.v),
         // A field's weather (forecast::calls), the traffic list's filters and
         // the registry's airplanes (aircraft::calls).
@@ -1481,6 +1526,28 @@ fn filing_rule(ask: &Ask) -> Result<String, String> {
             let (stops, airways) = (words("stops")?, words("airways")?);
             let (departure, arrival) = (procedure("departure")?, procedure("arrival")?);
             json::string(&mut out, &filing::route(&stops, |w| airways.contains(&w), departure.as_ref(), arrival.as_ref()));
+        }
+    }
+    Ok(out)
+}
+
+/// FAA Form 7233-4's items the web worked out itself before (crate::filing).
+fn filing_more_rule(ask: &Ask) -> Result<String, String> {
+    use crate::filing;
+    let mut out = String::new();
+    match ask.name {
+        "filed_endurance" => match filing::endurance_minutes(ask.num("fuel_gal")?, ask.num("burn_gph")?) {
+            Some(m) => out.push_str(&m.to_string()),
+            None => out.push_str("null"),
+        },
+        "filed_dof" => json::opt_string(&mut out, filing::date_of_flight(ask.str("depart")?, ask.str("today")?).as_deref()),
+        _ => {
+            let airways: Vec<&str> = match ask.v.get("airways") {
+                None | Some(Value::Null) => Vec::new(),
+                Some(Value::Array(list)) => list.iter().filter_map(Value::as_str).collect(),
+                Some(_) => return Err("filed_rnav: \"airways\" is not a list of strings".to_owned()),
+            };
+            out.push_str(if filing::rnav_route(&airways) { "true" } else { "false" });
         }
     }
     Ok(out)

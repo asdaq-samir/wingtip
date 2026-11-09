@@ -34,6 +34,30 @@ fn leg_with_wind(wind_dir: f64, wind_kt: f64, oat_c: Option<f64>) -> Value {
     ask("navlog_legs", json!({"fixes": [a, b], "altitude_ft": 6000.0, "profile": {"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.5}, "air": air}))[0].clone()
 }
 
+/// One leg between two points with the variation given, still air.
+fn leg_with_variation(a: (f64, f64), b: (f64, f64), variation_deg: f64) -> Value {
+    let fix = |name: &str, (lat, lon): (f64, f64)| json!({"name": name, "category": "waypoint", "lat": lat, "lon": lon});
+    let air = json!([{"variation_deg": variation_deg, "at": [{"altitude_ft": 6000.0, "wind": null, "oat_c": null}]}]);
+    ask("navlog_legs", json!({"fixes": [fix("A", a), fix("B", b)], "altitude_ft": 6000.0,
+        "profile": {"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.5}, "air": air}))[0].clone()
+}
+
+#[test]
+fn the_magnetic_course_is_the_true_course_less_east_variation() {
+    // FAA-H-8083-25C ch. 16: "east is least, west is best". A course due
+    // east, 090 true: 3 degrees east makes it 087 magnetic, 3 west 093.
+    let east = leg_with_variation((45.0, -90.0), (45.0, -89.0), 3.0);
+    let tc = f(&east["true_course_deg"]);
+    assert!(close(f(&east["magnetic_course_deg"]), tc - 3.0, 1e-9), "{east}");
+    let west = leg_with_variation((45.0, -90.0), (45.0, -89.0), -3.0);
+    assert!(close(f(&west["magnetic_course_deg"]), tc + 3.0, 1e-9), "{west}");
+    // Through north it wraps: 000 true with 4 east is 356 magnetic.
+    let north = leg_with_variation((44.0, -90.0), (45.0, -90.0), 4.0);
+    assert!(close(f(&north["magnetic_course_deg"]), 356.0, 1e-6), "{north}");
+    // In still air the course and the heading are one.
+    assert!(close(f(&north["magnetic_course_deg"]), f(&north["magnetic_heading_deg"]), 1e-9));
+}
+
 #[test]
 fn a_crosswind_stronger_than_tas_is_unflyable() {
     // 150 kt from 190 on an eastbound course for a 100 kt airplane: no

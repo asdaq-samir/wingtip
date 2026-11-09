@@ -2,6 +2,11 @@
 
 export type HoldingLegMinutesAnswer = number;
 export type HoldEntryAnswer = "direct" | "teardrop" | "parallel";
+export type ProcedureArcAnswer = [number, number][];
+export type ProcedureHoldAnswer = [number, number][];
+export type ProcedureTurnAnswer = [number, number][];
+export type ProcedureClimbNmAnswer = number;
+export type ProcedureHoldLegNmAnswer = number | null;
 export type WindTriangleAnswer = {
   wca: number;
   th: number;
@@ -12,12 +17,17 @@ export type GroundspeedKtAnswer = number;
 export type DiversionReasonableAnswer = boolean;
 export type DebriefAirborneAnswer = [number, number][];
 export type ChecklistWriteAnswer = string;
+export type ChecklistPhasesAnswer = string[];
 export type CsvRowsAnswer = string[][];
 export type LogbookCsvWriteAnswer = string;
 export type EndorsementLapseAnswer = string | null;
 export type EndorsementsInForceAnswer = [string, number][];
 export type EndorsementRenderAnswer = string;
 export type AcsCodesAnswer = string[];
+export type EndorsementKindsAnswer = EndorsementKind[];
+export type EndorsementFillAnswer = EndorsementFilled | null;
+export type SoloXcDeterminationsAnswer = SoloXcDetermination[];
+export type PassengerBriefingAnswer = PassengerItem[];
 export type PilotExperienceAnswer = ExperienceItem[];
 /**
  * This interface was referenced by `EngineContract`'s JSON-Schema
@@ -627,6 +637,7 @@ export type DiagramGraticuleAnswer = {
   d: number;
   north_deg: number;
 } | null;
+export type DiagramFixUsableAnswer = boolean;
 export type FuelInTanksAnswer = ({
   gal: number;
   low: boolean;
@@ -722,6 +733,9 @@ export type FiledSpeedAnswer = string;
 export type FiledDurationAnswer = string;
 export type FiledWakeAnswer = string | null;
 export type FiledZzzzAnswer = boolean;
+export type FiledEnduranceAnswer = number | null;
+export type FiledDofAnswer = string | null;
+export type FiledRnavAnswer = boolean;
 export type FiledRouteAnswer = string;
 export type RoutePositionAnswer = {
   along_nm: number;
@@ -797,6 +811,41 @@ export interface EngineContract {
   hold_entry: {
     input: HoldEntryInput;
     answer: HoldEntryAnswer;
+  };
+  /**
+   * An RF leg's arc round its centre fix, or an AF (DME arc) leg's round its navaid (ARINC 424 5.21): points from start to end, turning right (clockwise) or left, one every five degrees, at the centre's distance from the end.
+   */
+  procedure_arc: {
+    input: ProcedureArcInput;
+    answer: ProcedureArcAnswer;
+  };
+  /**
+   * A CIFP hold's racetrack (HA, HF, HM) at its fix, inbound on the true course to the fix, turning right or left, with standard-rate turns at a light airplane's 120 kt (AIM 5-3-8): the fix, the turn out, the outbound leg, the turn in, and back to the fix.
+   */
+  procedure_hold: {
+    input: ProcedureHoldInput;
+    answer: ProcedureHoldAnswer;
+  };
+  /**
+   * A 45°/180° procedure turn at its fix (AIM 5-4-9): 4 nm out on the final's reciprocal, 2 nm on the barb's true course, a standard-rate 180° turn at 120 kt toward the final's side, back to meet the final within 10 nm, and in to the fix.
+   */
+  procedure_turn: {
+    input: ProcedureTurnInput;
+    answer: ProcedureTurnAnswer;
+  };
+  /**
+   * How far a leg flown to an altitude (CA, VA, FA) is drawn, nm: from the altitude known at its start at 200 ft a nm (FAA Order 8260.3), within 1 to 15; 2 nm where either is not known or it is no climb.
+   */
+  procedure_climb_nm: {
+    input: ProcedureClimbNmInput;
+    answer: ProcedureClimbNmAnswer;
+  };
+  /**
+   * A hold's leg, nm: a timed leg flown at 120 kt (AIM 5-3-8 j.4), else the distance the CIFP codes; null with neither.
+   */
+  procedure_hold_leg_nm: {
+    input: ProcedureHoldLegNmInput;
+    answer: ProcedureHoldLegNmAnswer;
   };
   /**
    * The planner's /api/lost-comms answer (14 CFR 91.185): VFR's words, the routes in the rule's order (c)(1), each segment's altitude (c)(2) and when to leave the clearance limit (c)(3).
@@ -876,6 +925,13 @@ export interface EngineContract {
     answer: ChecklistWriteAnswer;
   };
   /**
+   * The headings a checklist can start from, with nothing under them: a pilot's operating handbook's Normal Procedures (GAMA Specification No. 1, Section 4) or Emergency Procedures (Section 3), in its order; the items are the pilot's, from their own airplane's handbook (FAA-H-8083-3C, chapter 2).
+   */
+  checklist_phases: {
+    input: ChecklistPhasesInput;
+    answer: ChecklistPhasesAnswer;
+  };
+  /**
    * A CSV file's rows of fields.
    */
   csv_rows: {
@@ -930,6 +986,34 @@ export interface EngineContract {
   acs_codes: {
     input: AcsCodesInput;
     answer: AcsCodesAnswer;
+  };
+  /**
+   * The endorsements a student meets on the way to a private pilot certificate, in the order they meet them: AC 61-65K appendix A's sample for each (November 2025), word for word, with the 14 CFR section it answers. A template names the student {student} and each blank by its field's key.
+   */
+  endorsement_kinds: {
+    input: EndorsementKindsInput;
+    answer: EndorsementKindsAnswer;
+  };
+  /**
+   * An endorsement filled in to sign (AC 61-65K appendix A): the fields it takes, each tidied to single spaces and "" where not given, any it does not take left out; the labels of the required ones still empty; and its words with the student and the fields in, as endorsement_render fills them. Null for a code no endorsement has.
+   */
+  endorsement_fill: {
+    input: EndorsementFillInput;
+    answer: EndorsementFillAnswer;
+  };
+  /**
+   * 14 CFR 61.93(d)(1)-(3): what an instructor must determine of a solo cross-country themselves before endorsing it (AC 61-65K A.10); (4) and (5) the record answers (endorsement_records).
+   */
+  solo_xc_determinations: {
+    input: SoloXcDeterminationsInput;
+    answer: SoloXcDeterminationsAnswer;
+  };
+  /**
+   * The passengers' briefing in the order of the FAA's SAFETY briefing (FAA Safety Briefing, Jan/Feb 2007 and Jul/Aug 2014): 14 CFR 91.107(a)(1)'s belts and (a)(2), (3)'s fastened for taxi, takeoff and landing, the rest the Private Pilot ACS's PA.II.B.S2 guidance, each with where it comes from.
+   */
+  passenger_briefing: {
+    input: PassengerBriefingInput;
+    answer: PassengerBriefingAnswer;
   };
   /**
    * Where the pilot stands on a day, from the logbook and the dates they give: passengers by day (14 CFR 61.57(a)) and at night (61.57(b)), the flight review (61.56(c)), the medical, the logbook's totals and instrument currency (61.57(c)(1), (d)). The gateway's CurrencyDto.
@@ -1667,6 +1751,13 @@ export interface EngineContract {
     answer: RegisteredProfileAnswer;
   };
   /**
+   * How far round an airport its traffic is asked for, nm: around_nm, about the field (its pattern and one joining it, past 91.117(b)'s 4 nm), and relation_nm, the reach of an airplane inbound or departing, the figures field_relation judges by.
+   */
+  traffic_reach: {
+    input: TrafficReachInput;
+    answer: TrafficReachAnswer;
+  };
+  /**
    * The FAA's capitals in sentence case, its codes kept (AIM 3-2-1's "Class B"): one string from text, or each of texts as a list (a null row answers "").
    */
   faa_words: {
@@ -2176,6 +2267,13 @@ export interface EngineContract {
   diagram_point: {
     input: DiagramPointInput;
     answer: DiagramPointAnswer;
+  };
+  /**
+   * Whether own ship is drawn on the airport diagram: a fix no older than 3 s (AC 120-76D 11.17.2.3) and good to 30 m or better (11.17.2.4); a negative accuracy, none known, never.
+   */
+  diagram_fix_usable: {
+    input: DiagramFixUsableInput;
+    answer: DiagramFixUsableAnswer;
   };
   /**
    * The fuel figure in the strip at the sheet's foot, web, iPhone and Android alike: the fuel required to the landing of hop `hop` (the first where the route has stops, the tanks filled at each; the whole route's where it has none), less what a flight under way has burnt, never below nothing; and the flights the tanks fall short on, a fuel margin under nothing (14 CFR 91.151, 91.167).
@@ -2731,6 +2829,27 @@ export interface EngineContract {
     answer: FiledZzzzAnswer;
   };
   /**
+   * Item 19's endurance in whole minutes: the fuel aboard at the cruise burn, to the minute below (AIM Appendix 4); null where the burn is not a positive figure.
+   */
+  filed_endurance: {
+    input: FiledEnduranceInput;
+    answer: FiledEnduranceAnswer;
+  };
+  /**
+   * Item 18's date of flight, DOF/YYMMDD, where the flight is not on the UTC day it is filed (AIM Appendix 4, TBL 4-1); null on the same day.
+   */
+  filed_dof: {
+    input: FiledDofInput;
+    answer: FiledDofAnswer;
+  };
+  /**
+   * Whether item 15's route takes a T or Q route, an RNAV route (AIM 5-3-4), which asks for G and R in item 10a and PBN/C2 in item 18 where the airplane has them (AIM Appendix 4, TBL 4-13).
+   */
+  filed_rnav: {
+    input: FiledRnavInput;
+    answer: FiledRnavAnswer;
+  };
+  /**
    * Item 15's route between the departure and the destination (AIM Appendix 4: "DALL3 EIC V18 MEI LGC4", "FLACK DCT IRW"): airways between the fixes they are joined and left at, DCT between two fixes flown direct, a departure procedure first with its transition's fix, an arrival last after its transition's fix; DCT alone for a flight direct. `airways` names which of the stops are airways.
    */
   filed_route: {
@@ -3002,6 +3121,61 @@ export interface HoldEntryInput {
    */
   turns?: "right" | "left" | null;
 }
+export interface ProcedureArcInput {
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  center: [number, number];
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  turn: "R" | "L";
+}
+export interface ProcedureHoldInput {
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  fix: [number, number];
+  inbound_deg: number;
+  turn: "R" | "L";
+  leg_nm: number;
+}
+export interface ProcedureTurnInput {
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  fix: [number, number];
+  inbound_deg: number;
+  pt_course_deg: number;
+}
+export interface ProcedureClimbNmInput {
+  altitude_ft?: number | null;
+  known_ft?: number | null;
+}
+export interface ProcedureHoldLegNmInput {
+  minutes?: number | null;
+  distance_nm?: number | null;
+}
 export interface LostCommsInput {
   segments: {
     name?: string | null;
@@ -3024,6 +3198,10 @@ export interface LostCommsAnswer {
     label: string;
     rule: string;
   }[];
+  /**
+   * 91.185(c)(2), the altitude rule, in words.
+   */
+  altitude: string;
   segments: {
     /**
      * "Segment" where none is given.
@@ -3261,6 +3439,9 @@ export interface Checklist {
     }[];
   }[];
 }
+export interface ChecklistPhasesInput {
+  kind: "normal" | "emergency";
+}
 export interface CsvRowsInput {
   text: string;
 }
@@ -3348,6 +3529,55 @@ export interface EndorsementRenderInput {
 }
 export interface AcsCodesInput {
   text: string;
+}
+export interface EndorsementKindsInput {}
+export interface EndorsementKind {
+  code: string;
+  /**
+   * AC 61-65K's paragraph, "A.10".
+   */
+  paragraph: string;
+  /**
+   * The 14 CFR section it answers, "61.93(c)(3)".
+   */
+  rule: string;
+  label: string;
+  /**
+   * The sample's words, {student} and each field's {key} in them.
+   */
+  template: string;
+  fields: EndorsementField[];
+}
+export interface EndorsementField {
+  key: string;
+  label: string;
+  example: string;
+  required: boolean;
+}
+export interface EndorsementFillInput {
+  code: string;
+  student?: string | null;
+  fields?: {
+    [k: string]: string;
+  } | null;
+}
+export interface EndorsementFilled {
+  fields: {
+    [k: string]: string;
+  };
+  missing: string[];
+  text: string;
+}
+export interface SoloXcDeterminationsInput {}
+export interface SoloXcDetermination {
+  rule: string;
+  label: string;
+}
+export interface PassengerBriefingInput {}
+export interface PassengerItem {
+  key: string;
+  title: string;
+  rule: string;
 }
 export interface PilotCurrencyInput {
   entries: LogbookEntry[];
@@ -4999,6 +5229,11 @@ export interface RegisteredProfileInput {
   model?: string | null;
   year?: number | null;
 }
+export interface TrafficReachInput {}
+export interface TrafficReachAnswer {
+  around_nm: number;
+  relation_nm: number;
+}
 export interface FaaWordsInput {
   text?: string | null;
   /**
@@ -5869,6 +6104,16 @@ export interface DiagramPointAnswer {
   y: number;
   on_page: boolean;
 }
+export interface DiagramFixUsableInput {
+  /**
+   * The fix's age, s.
+   */
+  age_s: number;
+  /**
+   * Its horizontal accuracy, m.
+   */
+  accuracy_m: number;
+}
 export interface StripFuelInput {
   fuel_required_gal?: number | null;
   fuel_margin_gal?: number | null;
@@ -6524,6 +6769,7 @@ export interface NavLogLegOneAnswer {
   true_heading_deg?: number;
   magnetic_variation_deg?: number;
   magnetic_heading_deg?: number;
+  magnetic_course_deg?: number;
   groundspeed_kt?: number | null;
   ete_min?: number | null;
   fuel_gal?: number | null;
@@ -6614,6 +6860,7 @@ export interface NavLogLeg {
   true_heading_deg?: number;
   magnetic_variation_deg?: number;
   magnetic_heading_deg?: number;
+  magnetic_course_deg?: number;
   groundspeed_kt?: number | null;
   ete_min?: number | null;
   fuel_gal?: number | null;
@@ -6826,6 +7073,7 @@ export interface NavLogLeg1 {
   true_heading_deg?: number;
   magnetic_variation_deg?: number;
   magnetic_heading_deg?: number;
+  magnetic_course_deg?: number;
   groundspeed_kt?: number | null;
   ete_min?: number | null;
   fuel_gal?: number | null;
@@ -7386,6 +7634,23 @@ export interface FiledWakeInput {
 }
 export interface FiledZzzzInput {
   ident: string;
+}
+export interface FiledEnduranceInput {
+  fuel_gal: number;
+  burn_gph: number;
+}
+export interface FiledDofInput {
+  /**
+   * ISO, UTC.
+   */
+  depart: string;
+  /**
+   * ISO, UTC.
+   */
+  today: string;
+}
+export interface FiledRnavInput {
+  airways: string[];
 }
 export interface FiledRouteInput {
   stops: string[];

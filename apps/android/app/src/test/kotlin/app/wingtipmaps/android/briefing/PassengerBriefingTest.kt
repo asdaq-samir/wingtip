@@ -5,25 +5,14 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** The passenger briefing's items, its message and the ticks kept for a
- *  flight (PassengerBriefing, PassengerTicks): the words the web app's
- *  lib/passengers writes. */
+/** The passenger briefing's message and the ticks kept for a flight
+ *  (PassengerBriefing, PassengerTicks): the words the web app's
+ *  lib/passengers writes. Its items are the engine's (EngineTest). */
 class PassengerBriefingTest {
     private val chicago = ZoneId.of("America/Chicago")
     private val leaves = ZonedDateTime.of(2026, 11, 8, 14, 10, 0, 0, chicago).toInstant().toEpochMilli()
-
-    @Test
-    fun theItemsAreSafetysEachWithItsSource() {
-        val keys = PassengerBriefing.ITEMS.map { it.key }
-        assertEquals(listOf("pax-belts", "pax-fastened", "pax-air", "pax-fire", "pax-exits", "pax-traffic", "pax-questions"), keys)
-        assertEquals("14 CFR 91.107(a)(1)", PassengerBriefing.ITEMS[0].source)
-        assertEquals("14 CFR 91.107(a)(2), (3)", PassengerBriefing.ITEMS[1].source)
-        assertTrue(PassengerBriefing.ITEMS.first { it.key == "pax-exits" }.source.contains("PA.II.B.S2"))
-        assertTrue(PassengerBriefing.ITEMS.all { it.source.isNotBlank() })
-    }
 
     @Test
     fun theMessageSaysWhereWhenHowLongAndTheWeather() {

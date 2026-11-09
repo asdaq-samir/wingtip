@@ -161,24 +161,79 @@ final class AirspaceLine: MKPolyline {
     var cls = "D"
 }
 
+/// A volume's band along the inside of its boundary, as ForeFlight draws
+/// the sectional's vignette (the owner's screenshot over Madison,
+/// 2026-11-08; the web's airspace-*-band layers): its rings as one
+/// polygon, the largest the shell and the rest inside it, which the
+/// renderer fills with nothing and strokes wide, clipped to the polygon
+/// by the even-odd rule -- the inside of a shelf's outer ring and of its
+/// hole alike.
+final class AirspaceVignette: MKPolygon {
+    var cls = "D"
+
+    static func of(_ lines: [[[Double]]], cls: String) -> AirspaceVignette? {
+        let rings = lines.map { $0.compactMap { $0.count == 2 ? CLLocationCoordinate2D(latitude: $0[0], longitude: $0[1]) : nil } }
+            .filter { $0.count >= 3 }
+        guard let outer = rings.indices.max(by: { AirspaceTab.extent(rings[$0]) < AirspaceTab.extent(rings[$1]) }) else { return nil }
+        let shell = rings[outer]
+        let inner = rings.indices.filter { $0 != outer }.map { MKPolygon(coordinates: rings[$0], count: rings[$0].count) }
+        let band = AirspaceVignette(coordinates: shell, count: shell.count, interiorPolygons: inner)
+        band.cls = cls
+        return band
+    }
+}
+
+/// Draws an AirspaceVignette: a stroke twice the band's width along every
+/// ring, clipped to the polygon, so only its inner half shows. The band
+/// widens as the map comes in, as the web's BAND_WIDTH: 3 points at
+/// Leaflet's 7, 6 at 9, 10 at 11, 16 at 13.
+final class AirspaceVignetteRenderer: MKPolygonRenderer {
+    static func width(zoom: Double) -> CGFloat {
+        let stops: [(Double, Double)] = [(7, 3), (9, 6), (11, 10), (13, 16)]
+        if zoom <= stops[0].0 { return CGFloat(stops[0].1) }
+        for (a, b) in zip(stops, stops.dropFirst()) where zoom <= b.0 {
+            return CGFloat(a.1 + (b.1 - a.1) * (zoom - a.0) / (b.0 - a.0))
+        }
+        return CGFloat(stops.last!.1)
+    }
+
+    override func draw(_ mapRect: MKMapRect, zoomScale: MKZoomScale, in context: CGContext) {
+        if path == nil { createPath() }
+        guard let path, let colour = strokeColor else { return }
+        // MapKit's world is 2^28 map points across, Leaflet's 256 * 2^z
+        // screen points: the level from the scale.
+        let zoom = log2(Double(zoomScale)) + 20
+        context.saveGState()
+        context.addPath(path)
+        context.clip(using: .evenOdd)
+        context.addPath(path)
+        context.setStrokeColor(colour.cgColor)
+        context.setLineWidth(2 * Self.width(zoom: zoom) / zoomScale)
+        context.setLineJoin(.round)
+        context.strokePath()
+        context.restoreGState()
+    }
+}
+
 /// A volume's altitudes in its tab, as ForeFlight writes them and the web
-/// map's airspaceText: the class, then the ceiling over the floor in the
-/// sectional's hundreds of feet MSL (FAA Aeronautical Chart User's
-/// Guide, VFR Terms and Symbols, Airspace) -- "B: 100–30", "C: 48–SFC" --
-/// and a Class D its ceiling alone, "D: 25", with a minus where the file
-/// says the top is "up to but not including" it (TNI, a Class D under a
-/// Class B shelf: "D: -30"). None where the file gives no top.
+/// map's airspaceText (the owner's screenshot over Madison, 2026-11-08):
+/// the class, then the floor and the ceiling in feet MSL with an en dash
+/// -- "C: 2300–4900", "B: SFC–10000", "D: SFC–2500" -- the surface "SFC",
+/// and "<" before a ceiling the file says is "up to but not including"
+/// (UPPER_DESC TNI, which the sectional prints as a minus: FAA
+/// Aeronautical Chart User's Guide, VFR Terms and Symbols, Airspace; a
+/// Class D under a Class B shelf, "D: SFC–<3000"). None where the file
+/// gives no top.
 enum AirspaceTab {
     static func text(_ volume: AirspaceVolume) -> String? {
         guard let ceiling = volume.ceilingFt else { return nil }
-        let top = (volume.ceilingExcluded ? "-" : "") + hundreds(ceiling)
-        if volume.airspaceClass == "D" { return "D: \(top)" }
-        return "\(volume.airspaceClass): \(top)–\(volume.floorSfc ? "SFC" : hundreds(volume.floorFt))"
+        let floor = volume.floorSfc ? "SFC" : feet(volume.floorFt)
+        return "\(volume.airspaceClass): \(floor)–\(volume.ceilingExcluded ? "<" : "")\(feet(ceiling))"
     }
 
-    /// Feet as the chart's hundreds: 3,600 is "36", 10,000 "100".
-    static func hundreds(_ ft: Double) -> String {
-        String(Int((ft / 100).rounded()))
+    /// Feet MSL whole, as ForeFlight's tab writes them: "2300".
+    static func feet(_ ft: Double) -> String {
+        String(Int(ft.rounded()))
     }
 
     /// The same for VoiceOver, in words a pilot says.
@@ -188,19 +243,58 @@ enum AirspaceTab {
         return "Class \(volume.airspaceClass) airspace, \(floor) to \(top)"
     }
 
-    /// Where a volume's tab sits: on its ring, at the northernmost of its
-    /// points in sight (ForeFlight's tab on the line, as the web map
-    /// places its label along it); none where no point of it is.
-    static func point(_ lines: [[[Double]]], in rect: MKMapRect) -> CLLocationCoordinate2D? {
-        var best: CLLocationCoordinate2D?
-        for line in lines {
-            for p in line where p.count == 2 {
-                let at = CLLocationCoordinate2D(latitude: p[0], longitude: p[1])
-                guard rect.contains(MKMapPoint(at)) else { continue }
-                if best == nil || at.latitude > best!.latitude { best = at }
-            }
+    /// A ring's size, its bounds' span: the largest of a volume's rings is
+    /// its outer one.
+    static func extent(_ ring: [CLLocationCoordinate2D]) -> Double {
+        let lats = ring.map(\.latitude), lons = ring.map(\.longitude)
+        return ((lats.max() ?? 0) - (lats.min() ?? 0)) + ((lons.max() ?? 0) - (lons.min() ?? 0))
+    }
+
+    /// Where on a round ring its tab sits: the azimuth from its
+    /// airspace's centre, a little west of north, where ForeFlight puts
+    /// Madison's Class C tab (the charts job's LABEL_AZIMUTH).
+    static let azimuth = 330.0
+
+    /// Where a volume's tab sits and how it is turned, as the charts job
+    /// places the web's (overlays.py _label_place): a point in sight on
+    /// the shelf's outer edge (its outer ring's points farthest from the
+    /// airspace's `centre`), in the middle of that edge, or at `azimuth`
+    /// where the edge goes all the way round; and the ring's direction
+    /// there as the text's clockwise turn in degrees, upright (-90 to 90)
+    /// with the map's `heading` taken off. In a plane tangent at the
+    /// centre (east by the cosine of the latitude), Mercator being
+    /// conformal. None where no point of the ring is in sight.
+    static func place(_ lines: [[[Double]]], centre: CLLocationCoordinate2D, in rect: MKMapRect, heading: Double = 0)
+        -> (at: CLLocationCoordinate2D, angle: Double)? {
+        let rings = lines.map { $0.compactMap { $0.count == 2 ? CLLocationCoordinate2D(latitude: $0[0], longitude: $0[1]) : nil } }
+        guard var ring = rings.max(by: { extent($0) < extent($1) }), ring.count >= 3 else { return nil }
+        if let first = ring.first, let last = ring.last, first.latitude == last.latitude, first.longitude == last.longitude {
+            ring.removeLast()
         }
-        return best
+        let k = cos(centre.latitude * .pi / 180)
+        let xy = ring.map { ((($0.longitude - centre.longitude) * k), $0.latitude - centre.latitude) }
+        let far = xy.map { hypot($0.0, $0.1) }.max() ?? 0
+        let sight = ring.indices.filter { rect.contains(MKMapPoint(ring[$0])) }
+        guard far > 0, !sight.isEmpty else { return nil }
+        var edge = sight.filter { hypot(xy[$0].0, xy[$0].1) >= 0.97 * far }
+        if edge.isEmpty { edge = sight }
+        let units = edge.map { i -> (Double, Double) in
+            let d = hypot(xy[i].0, xy[i].1)
+            return d > 0 ? (xy[i].0 / d, xy[i].1 / d) : (0, 0)
+        }
+        var sx = units.reduce(0) { $0 + $1.0 }, sy = units.reduce(0) { $0 + $1.1 }
+        if hypot(sx, sy) < 0.5 * Double(units.count) {
+            sx = sin(azimuth * .pi / 180)
+            sy = cos(azimuth * .pi / 180)
+        }
+        let best = units.indices.max { units[$0].0 * sx + units[$0].1 * sy < units[$1].0 * sx + units[$1].1 * sy }!
+        let i = edge[best], n = ring.count
+        let a = xy[(i - 1 + n) % n], b = xy[(i + 1) % n]
+        let bearing = atan2(b.0 - a.0, b.1 - a.1) * 180 / .pi
+        var turn = bearing - 90 - heading
+        while turn > 90 { turn -= 180 }
+        while turn <= -90 { turn += 180 }
+        return (ring[i], turn)
     }
 }
 
@@ -208,29 +302,33 @@ final class AirspaceTabAnnotation: NSObject, MKAnnotation {
     let volume: AirspaceVolume
     let text: String
     @objc dynamic var coordinate: CLLocationCoordinate2D
+    /// The tab's clockwise turn on the screen, degrees (AirspaceTab.place).
+    var angle: Double
 
-    init(_ volume: AirspaceVolume, text: String, at: CLLocationCoordinate2D) {
+    init(_ volume: AirspaceVolume, text: String, at: CLLocationCoordinate2D, angle: Double) {
         self.volume = volume
         self.text = text
         coordinate = at
+        self.angle = angle
     }
 }
 
-/// The tab: white bold type in a dark rounded box with a white edge, level
-/// on the screen (web AIRSPACE_TAB_PICTURE).
+/// The tab: white bold type in a dark rounded box bordered in its class's
+/// ink, turned along its ring (web airspace|tab|<class>).
 final class AirspaceTabView: MKAnnotationView {
     static let reuse = "airspace-tab"
+    private let box = UIView()
     private let label = UILabel()
 
     override init(annotation: (any MKAnnotation)?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
-        backgroundColor = SectionalInk.tab
-        layer.cornerRadius = 3
-        layer.borderWidth = 1
-        layer.borderColor = UIColor.white.cgColor
+        box.backgroundColor = SectionalInk.tab
+        box.layer.cornerRadius = 3
+        box.layer.borderWidth = 1.5
         label.font = UIFont.systemFont(ofSize: 11, weight: .bold)
         label.textColor = .white
-        addSubview(label)
+        addSubview(box)
+        box.addSubview(label)
         canShowCallout = false
         isEnabled = false
         isAccessibilityElement = true
@@ -246,12 +344,27 @@ final class AirspaceTabView: MKAnnotationView {
         didSet { show() }
     }
 
+    /// Turned again as the map turns or the tab moves along its ring.
+    func turn() {
+        guard let tab = annotation as? AirspaceTabAnnotation else { return }
+        box.transform = CGAffineTransform(rotationAngle: CGFloat(tab.angle * .pi / 180))
+    }
+
     private func show() {
         guard let tab = annotation as? AirspaceTabAnnotation else { return }
+        box.layer.borderColor = (tab.volume.airspaceClass == "C" ? SectionalInk.airspaceMagenta : SectionalInk.airspaceBlue).cgColor
         label.text = tab.text
         label.sizeToFit()
-        frame.size = CGSize(width: label.bounds.width + 10, height: label.bounds.height + 4)
-        label.frame.origin = CGPoint(x: 5, y: 2)
+        box.transform = .identity
+        let size = CGSize(width: label.bounds.width + 12, height: label.bounds.height + 4)
+        box.bounds = CGRect(origin: .zero, size: size)
+        label.frame.origin = CGPoint(x: 6, y: 2)
+        // The view a square round the turned box, so MapKit's collision
+        // keeps room for it at any turn.
+        let side = hypot(size.width, size.height)
+        frame.size = CGSize(width: side, height: side)
+        box.center = CGPoint(x: side / 2, y: side / 2)
+        turn()
         accessibilityLabel = AirspaceTab.spoken(tab.volume)
     }
 }
@@ -463,7 +576,7 @@ struct RunwayShape: Equatable, Sendable {
 final class ChartOverlays {
     private var airspaceFetch = ViewFetch()
     private var vorFetch = ViewFetch()
-    private var volumes: [String: (volume: AirspaceVolume, lines: [AirspaceLine])] = [:]
+    private var volumes: [String: (volume: AirspaceVolume, lines: [AirspaceLine], band: AirspaceVignette?)] = [:]
     private var tabs: [String: AirspaceTabAnnotation] = [:]
     private var vors: [String: VorAnnotation] = [:]
     private var runwayLines: [String: [any MKOverlay]] = [:]
@@ -482,6 +595,13 @@ final class ChartOverlays {
     }
 
     func renderer(for overlay: any MKOverlay) -> MKOverlayRenderer? {
+        if let band = overlay as? AirspaceVignette {
+            // The class's ink, faint (glStyle AIRSPACE_INK's band).
+            let renderer = AirspaceVignetteRenderer(polygon: band)
+            renderer.strokeColor = (band.cls == "C" ? SectionalInk.airspaceMagenta : SectionalInk.airspaceBlue)
+                .withAlphaComponent(band.cls == "D" ? 0.22 : 0.3)
+            return renderer
+        }
         if let line = overlay as? AirspaceLine {
             let renderer = MKPolylineRenderer(polyline: line)
             switch line.cls {
@@ -579,6 +699,7 @@ final class ChartOverlays {
         let byId = Dictionary(fresh.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         for (id, kept) in volumes where byId[id] == nil || byId[id]! != kept.volume {
             map.removeOverlays(kept.lines)
+            if let band = kept.band { map.removeOverlay(band) }
             volumes[id] = nil
             if let tab = tabs.removeValue(forKey: id) { map.removeAnnotation(tab) }
         }
@@ -590,7 +711,7 @@ final class ChartOverlays {
                 line.cls = volume.airspaceClass
                 return line
             }
-            volumes[id] = (volume: volume, lines: lines)
+            volumes[id] = (volume: volume, lines: lines, band: AirspaceVignette.of(volume.lines, cls: volume.airspaceClass))
         }
         drawAirspace(map, zoom: zoom, chart: chart)
         placeTabs(map, zoom: zoom)
@@ -606,10 +727,12 @@ final class ChartOverlays {
     /// Each volume's lines on the map from its class's zoom, off before it,
     /// over the chart and under the route.
     private func drawAirspace(_ map: MKMapView, zoom: Double, chart: (any MKOverlay)?) {
-        let on = Set(map.overlays.compactMap { $0 as? AirspaceLine }.map(ObjectIdentifier.init))
+        let on = Set(map.overlays.filter { $0 is AirspaceLine || $0 is AirspaceVignette }.map { ObjectIdentifier($0) })
         for (_, kept) in volumes {
             let wanted = zoom >= AirspaceZoom.from(kept.volume.airspaceClass)
-            for line in kept.lines {
+            // The band first, so each line is put over it.
+            let overlays: [any MKOverlay] = (kept.band.map { [$0] } ?? []) + kept.lines
+            for line in overlays {
                 let drawn = on.contains(ObjectIdentifier(line))
                 if wanted && !drawn {
                     if let chart, map.overlays.contains(where: { $0 === chart }) {
@@ -624,20 +747,36 @@ final class ChartOverlays {
         }
     }
 
-    /// The tabs on the rings in sight, from the tabs' zoom.
+    /// The tabs on the rings in sight, from the tabs' zoom: one a volume,
+    /// on its outer edge and turned along it (AirspaceTab.place), each
+    /// airspace's centre the middle of its volumes' bounds (a Class C's
+    /// surface area and shelf, a Class B's shelves), as the charts job
+    /// places the web's.
     private func placeTabs(_ map: MKMapView, zoom: Double) {
         let rect = map.visibleMapRect
+        var bounds: [String: (s: Double, w: Double, n: Double, e: Double)] = [:]
+        func key(_ v: AirspaceVolume) -> String { "\(v.airspaceClass)|\(v.ident ?? v.name)" }
+        for (_, kept) in volumes {
+            for p in kept.volume.lines.joined() where p.count == 2 {
+                let b = bounds[key(kept.volume)] ?? (p[0], p[1], p[0], p[1])
+                bounds[key(kept.volume)] = (min(b.s, p[0]), min(b.w, p[1]), max(b.n, p[0]), max(b.e, p[1]))
+            }
+        }
         for (id, kept) in volumes {
-            let point = zoom >= AirspaceZoom.tabsFrom && zoom >= AirspaceZoom.from(kept.volume.airspaceClass)
-                ? AirspaceTab.point(kept.volume.lines, in: rect) : nil
-            guard let point, let text = AirspaceTab.text(kept.volume) else {
+            let b = bounds[key(kept.volume)]
+            let centre = CLLocationCoordinate2D(latitude: ((b?.s ?? 0) + (b?.n ?? 0)) / 2, longitude: ((b?.w ?? 0) + (b?.e ?? 0)) / 2)
+            let place = zoom >= AirspaceZoom.tabsFrom && zoom >= AirspaceZoom.from(kept.volume.airspaceClass)
+                ? AirspaceTab.place(kept.volume.lines, centre: centre, in: rect, heading: map.camera.heading) : nil
+            guard let place, let text = AirspaceTab.text(kept.volume) else {
                 if let tab = tabs.removeValue(forKey: id) { map.removeAnnotation(tab) }
                 continue
             }
             if let tab = tabs[id] {
-                tab.coordinate = point
+                tab.coordinate = place.at
+                tab.angle = place.angle
+                (map.view(for: tab) as? AirspaceTabView)?.turn()
             } else {
-                let tab = AirspaceTabAnnotation(kept.volume, text: text, at: point)
+                let tab = AirspaceTabAnnotation(kept.volume, text: text, at: place.at, angle: place.angle)
                 tabs[id] = tab
                 map.addAnnotation(tab)
             }

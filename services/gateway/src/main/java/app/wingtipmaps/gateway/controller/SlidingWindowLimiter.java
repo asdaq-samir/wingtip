@@ -3,10 +3,13 @@ package app.wingtipmaps.gateway.controller;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletRequestWrapper;
 import jakarta.servlet.http.HttpServletRequest;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -23,6 +26,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * not account for every call.
  */
 final class SlidingWindowLimiter {
+
+    /** The proxies whose X-Forwarded-For is believed, as addresses or
+     *  CIDR blocks, from GATEWAY_TRUSTED_PROXIES (comma-separated); loopback
+     *  only where it is unset. A deployment behind a proxy names the
+     *  proxy's network (infra/docker-compose.prod.yml); a gateway facing a
+     *  LAN directly (the phone mode) names none, so a LAN client's own
+     *  header cannot change who it is counted as. */
+    private static volatile List<String> trusted = parse(System.getenv("GATEWAY_TRUSTED_PROXIES"));
 
     private final Duration window;
     private final Map<String, Deque<Instant>> recent = new ConcurrentHashMap<>();
@@ -57,6 +68,44 @@ final class SlidingWindowLimiter {
         }
     }
 
+    static List<String> parse(String configured) {
+        if (configured == null || configured.isBlank()) {
+            return List.of("127.0.0.0/8", "::1/128");
+        }
+        return List.of(configured.split("\\s*,\\s*"));
+    }
+
+    /** For tests: who is trusted from now on (null: the default). */
+    static void trustProxies(String configured) {
+        trusted = parse(configured);
+    }
+
+    /** Whether `address` is one of the trusted proxies (an address or a
+     *  CIDR block such as 172.16.0.0/12). */
+    static boolean isTrustedProxy(String address) {
+        try {
+            byte[] a = InetAddress.getByName(address).getAddress();
+            for (String entry : trusted) {
+                String[] parts = entry.trim().split("/", 2);
+                byte[] net = InetAddress.getByName(parts[0]).getAddress();
+                if (net.length != a.length) {
+                    continue;
+                }
+                int bits = parts.length == 2 ? Integer.parseInt(parts[1]) : net.length * 8;
+                boolean same = true;
+                for (int i = 0; i < bits && same; i++) {
+                    same = ((a[i / 8] ^ net[i / 8]) & (0x80 >> (i % 8))) == 0;
+                }
+                if (same) {
+                    return true;
+                }
+            }
+        } catch (UnknownHostException | NumberFormatException ignored) {
+            // A name that is no address is no proxy.
+        }
+        return false;
+    }
+
     /** The key a request is counted under: whoever is signed in, or the
      *  address it came from where nobody is. */
     static String callerOf(HttpServletRequest request) {
@@ -80,6 +129,11 @@ final class SlidingWindowLimiter {
      * 25 in a row accepted against a limit of 20). With no proxy in front
      * the caller can still write the last entry too; but mail is only
      * ever sent from a deployment behind the load balancer.
+     *
+     * <p>The header is read only where the connection came from a trusted
+     * proxy ({@link #isTrustedProxy}); from anyone else it is ignored and
+     * the connection's own address is the client, so a phone-mode LAN
+     * client cannot rotate it to dodge a limit.
      */
     static String clientOf(HttpServletRequest request) {
         ServletRequest received = request;
@@ -87,7 +141,7 @@ final class SlidingWindowLimiter {
             received = wrapper.getRequest();
         }
         String forwarded = received instanceof HttpServletRequest http ? http.getHeader("X-Forwarded-For") : null;
-        if (forwarded != null && !forwarded.isBlank()) {
+        if (forwarded != null && !forwarded.isBlank() && isTrustedProxy(received.getRemoteAddr())) {
             String[] hops = forwarded.split(",");
             return hops[hops.length - 1].trim();
         }

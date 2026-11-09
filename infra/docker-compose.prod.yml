@@ -161,9 +161,11 @@ services:
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
     mem_limit: 256m
     # The regulations and the AIM the mock oral quotes, fetched once into
-    # data/raw/references and kept across deploys.
+    # data/raw/references and kept across deploys. Only that folder is
+    # mounted (read-write: the service writes its cache there), as this
+    # service holds the Anthropic key and reads nothing else of the data.
     volumes:
-      - /srv/wingtip/data:/workspace/data
+      - /srv/wingtip/data/raw/references:/workspace/data/raw/references
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       PLANNER_URL: http://planner:8000
@@ -226,6 +228,11 @@ services:
       # network: plain HTTP inside, TLS at Caddy and at CloudFront.
       APP_PUBLIC_BASE_URL: https://${PUBLIC_HOST}
       APP_HSTS: "true"
+      # Caddy, on the server's own Docker network, is the only way in and
+      # rewrites X-Forwarded-For to the viewer's address (infra/server/
+      # Caddyfile): believed from these private blocks only
+      # (SlidingWindowLimiter.clientOf).
+      GATEWAY_TRUSTED_PROXIES: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
       APP_DEVELOPER_EMAILS: ${APP_DEVELOPER_EMAILS:-}
       # The nightly speed lab's token (SpeedController; CI's SPEED_LAB_TOKEN).
       APP_SPEED_LAB_TOKEN: ${APP_SPEED_LAB_TOKEN:-}

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { ChartInfo } from "../../api/types";
 import type { AirspaceVolume } from "../overlayTypes";
-import { absoluteTiles, airspaceLayers, airspaceText, OVERLAY_SOURCE, chartPaint, chartStyle, DAY_CONTRAST, DAY_SATURATION, glZoom } from "./glStyle";
+import type { LineLayerSpecification } from "maplibre-gl";
+import { absoluteTiles, airspaceLayers, airspaceText, OVERLAY_SOURCE, chartPaint, chartStyle, DAY_CONTRAST, DAY_SATURATION, glZoom, specialUseLayers } from "./glStyle";
 
 const chart = {
   chart_cycle: "10-29-2026", chart_revision: 6, chart_tiles_base: null,
@@ -46,19 +47,37 @@ describe("airspaceLayers", () => {
     id: "ORD-B-1", airspace_class: "B", floor_ft: 3000, floor_sfc: false, ceiling_ft: 10000, ceiling_excluded: false,
   } as unknown as AirspaceVolume;
 
-  it("writes a volume's altitudes as the chart's tab does", () => {
-    expect(airspaceText(volume)).toBe("B: 100–30");
+  it("writes a volume's floor and ceiling in feet MSL, as ForeFlight's tab does", () => {
+    expect(airspaceText(volume)).toBe("B: 3000–10000");
+    // Madison's Class C shelf (the owner's ForeFlight screenshot).
+    expect(airspaceText({ ...volume, airspace_class: "C", floor_ft: 2300, ceiling_ft: 4900 })).toBe("C: 2300–4900");
+    expect(airspaceText({ ...volume, airspace_class: "D", floor_ft: 0, floor_sfc: true, ceiling_ft: 2500 })).toBe("D: SFC–2500");
+    expect(airspaceText({ ...volume, ceiling_ft: null })).toBeNull();
   });
 
-  it("draws the tiles' rings, Class E left out", () => {
+  it("draws the tiles' rings each with its band along the inside, Class E left out", () => {
     const layers = airspaceLayers(["Inter"]);
-    expect(layers.map(l => l.id)).toEqual(["airspace-D", "airspace-C", "airspace-B", "airspace-labels"]);
+    expect(layers.map(l => l.id)).toEqual([
+      "airspace-D-band", "airspace-D", "airspace-C-band", "airspace-C", "airspace-B-band", "airspace-B", "airspace-labels",
+    ]);
     expect(layers.every(l => "source" in l && l.source === OVERLAY_SOURCE)).toBe(true);
+    const band = layers.find(l => l.id === "airspace-C-band") as LineLayerSpecification;
+    // Inwards, wider as the map comes in, the line's own ink faint.
+    expect(band.paint).toMatchObject({ "line-color": "#e02ad8", "line-opacity": 0.3 });
+    const offset = band.paint!["line-offset"] as unknown as (string | number)[];
+    expect(offset.slice(3).filter((_, i) => i % 2 === 1)).toEqual([3, 4.5, 6.5, 9.5]);
+  });
+
+  it("draws the special-use areas' lines and hatched bands, restricted orange-brown and MOAs magenta", () => {
+    const [band, line] = specialUseLayers();
+    expect(band!.paint!["line-pattern"]).toEqual(["case", ["in", ["get", "type"], ["literal", ["P", "R", "W", "D"]]], "sua|hatch|restricted", "sua|hatch|moa"]);
+    expect(line!.paint!["line-color"]).toEqual(["case", ["in", ["get", "type"], ["literal", ["P", "R", "W", "D"]]], "#e0662a", "#e02ad8"]);
+    expect(band!["source-layer"]).toBe("special_use");
   });
 
   it("draws each class from its own zoom, the labels from 8", () => {
     const layers = airspaceLayers(["Inter"]);
     const from = Object.fromEntries(layers.map(l => [l.id, l.minzoom]));
-    expect(from).toMatchObject({ "airspace-B": glZoom(6), "airspace-C": glZoom(7), "airspace-D": glZoom(8), "airspace-labels": glZoom(8) });
+    expect(from).toMatchObject({ "airspace-B": glZoom(6), "airspace-B-band": glZoom(6), "airspace-C": glZoom(7), "airspace-D": glZoom(8), "airspace-labels": glZoom(8) });
   });
 });

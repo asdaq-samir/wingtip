@@ -137,14 +137,17 @@ enum Endorsing {
         return "Waiting for your instructor"
     }
 
+    /// One of 61.93(d)'s determinations: the rule and what it asks.
+    struct Determination: Decodable, Sendable {
+        let rule: String
+        let label: String
+    }
+
     /// 14 CFR 61.93(d)(1)-(3): what an instructor must determine of a solo
-    /// cross-country themselves before endorsing it; (4) and (5), the
-    /// student's endorsements, the record answers.
-    static let determinations: [(rule: String, label: String)] = [
-        ("61.93(d)(1)", "The student's cross-country planning is correct for the flight"),
-        ("61.93(d)(2)", "The current and forecast weather allow it to be completed under VFR"),
-        ("61.93(d)(3)", "The student is proficient to conduct it safely"),
-    ]
+    /// cross-country themselves before endorsing it, the engine's
+    /// (`solo_xc_determinations`); (4) and (5), the student's
+    /// endorsements, the record answers.
+    static let determinations: [Determination] = (try? Engine.call("solo_xc_determinations", json: [:])) ?? []
 
     /// The airports' blanks of a solo cross-country's endorsement, filled
     /// from the flight put to the instructor, as the web app fills them.
@@ -360,7 +363,7 @@ enum LostComms {
     static var vfr: String { words()?.vfr ?? "" }
 
     /// 91.185(c)(2): the altitude rule, in words.
-    static let altitude = "On each segment, the highest of the altitude assigned in the last clearance, the minimum altitude for IFR operations, and the altitude ATC said to expect in a further clearance."
+    static var altitude: String { words()?.altitude ?? "" }
 
     /// 91.185(c)(3): when to leave the clearance limit, in words.
     static func leaveLimit(approachFix: Bool, efc: String, eta: String) -> String {

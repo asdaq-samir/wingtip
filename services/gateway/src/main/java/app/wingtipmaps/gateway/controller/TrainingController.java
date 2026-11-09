@@ -1,6 +1,5 @@
 package app.wingtipmaps.gateway.controller;
 
-import app.wingtipmaps.gateway.domain.EndorsementKind;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.AskInstructorRequest;
 import app.wingtipmaps.gateway.dto.AskReviewRequest;
@@ -74,7 +73,7 @@ public class TrainingController {
             @PathVariable @Pattern(regexp = "^[a-z0-9-]{1,40}$", message = "an endorsement's code") String code,
             @Valid @RequestBody EndorsementRequest request) {
         return PilotResponses.withPilot(pilots, authentication, pilot -> {
-            if (EndorsementKind.of(code).isEmpty()) {
+            if (!training.isEndorsement(code)) {
                 return ResponseEntity.badRequest().build();
             }
             training.endorse(pilot, code, request.endorsedOn());

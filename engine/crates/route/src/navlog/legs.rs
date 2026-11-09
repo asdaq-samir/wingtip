@@ -18,8 +18,9 @@ pub use wingtip_flight::flight::DEFAULT_TAXI_FUEL_GAL;
 /// leg's air (wingtip_flight::performance: its figures are at a reference
 /// altitude on a standard day, and the forecast temperature makes the
 /// density altitude they are flown at), the wind triangle (PHAK ch. 16),
-/// the magnetic heading (true heading less the variation, east positive)
-/// and the time and fuel.
+/// the magnetic course and heading (the true one less the variation, east
+/// positive: "east is least, west is best", FAA-H-8083-25C ch. 16) and the time and
+/// fuel.
 ///
 /// With no wind (no winds-aloft station near), the correction is none and
 /// the ground speed the TAS: a no-wind estimate, not a calm, and the leg's
@@ -49,6 +50,10 @@ pub fn assemble_leg(start: (f64, f64), end: (f64, f64), altitude_ft: f64, profil
     };
     let true_heading_deg = py_mod(true_course_deg + wca_deg, 360.0);
     let magnetic_heading_deg = py_mod(true_heading_deg - variation_deg, 360.0);
+    // The course over the ground as the compass reads it: the figure a
+    // pilot sets on the course selector, and the map's Route Leg sheet
+    // shows (ForeFlight's "Course 346°M").
+    let magnetic_course_deg = py_mod(true_course_deg - variation_deg, 360.0);
     let ete_min = if gs_kt > 0.0 { (leg_distance_nm / gs_kt) * 60.0 } else { f64::INFINITY };
     let fuel_gal = (ete_min / 60.0) * cruise.fuel_burn_gph;
     let mut leg = Obj::default();
@@ -60,6 +65,7 @@ pub fn assemble_leg(start: (f64, f64), end: (f64, f64), altitude_ft: f64, profil
     leg.set_num("true_heading_deg", true_heading_deg);
     leg.set_num("magnetic_variation_deg", variation_deg);
     leg.set_num("magnetic_heading_deg", magnetic_heading_deg);
+    leg.set_num("magnetic_course_deg", magnetic_course_deg);
     // Kept as they are until leg_between decides flyability.
     leg.set("groundspeed_kt", Value::Number(gs_kt));
     leg.set("ete_min", Value::Number(ete_min));

@@ -69,3 +69,20 @@ def test_inspections_answer_the_shared_fixture():
         assert body["hundredHourDueAtHours"] == want["hundred_hour_due_at_hours"]
         assert body["vorCheck"] == {"limitDeg": want["vor_check"]["limit_deg"], "within": want["vor_check"]["within"],
                                     "until": want["vor_check"]["until"]}
+
+
+def test_endorsement_fill_answers_the_shared_fixture():
+    for case in RECORDS["fills"]:
+        given = case["input"]
+        answer = client.post("/api/pilot/endorsement-fill", json={k: given[k] for k in ("code", "student", "fields") if k in given})
+        if case["answer"] is None:
+            assert answer.status_code == 404, case["name"]
+            continue
+        assert answer.status_code == 200, answer.text
+        assert answer.json() == case["answer"], case["name"]
+
+
+def test_the_endorsement_kinds_are_ac_61_65ks():
+    kinds = client.get("/api/pilot/endorsement-kinds").json()
+    assert [k["code"] for k in kinds][:3] == ["pre-solo-knowledge", "pre-solo-flight", "solo-first"]
+    assert {k["paragraph"] for k in kinds} >= {"A.1", "A.10", "A.37"}

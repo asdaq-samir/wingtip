@@ -81,4 +81,15 @@ class InFlightEngineTest {
         assertTrue(at.onPage)
         assertEquals(183.0, at.x, 2.0)
     }
+
+    /** AC 120-76D 11.17.2.3 and 11.17.2.4, the engine's
+     *  diagram_fix_usable: off within 3 s, none past 30 m. */
+    @Test
+    fun ownShipGoesWhenItsFixIsStaleOrCoarse() {
+        val now = 1_700_000_010_000L
+        fun fix(ageMs: Long, metres: Double) = OwnShip.Fix(46.84, -92.19, null, null, 0.0, metres, now - ageMs)
+        assertNotNull(DiagramPage.usable(fix(1_000, 5.0), now))
+        assertEquals(null, DiagramPage.usable(fix(3_500, 5.0), now))
+        assertEquals(null, DiagramPage.usable(fix(1_000, 31.0), now))
+    }
 }

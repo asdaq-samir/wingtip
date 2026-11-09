@@ -19,8 +19,11 @@ import { Spinner } from "./ui/spinner";
  *  points, its word in the reader's size: the glyph, padding and gap are
  *  fixed, but the word's line still grows with the text size (checked at
  *  a 19 px root, not at the largest sizes). */
-export function CardAction({ icon, label, spoken, filled, busy, disabled, onClick, href, testId, pressed, ...trigger }: {
+export function CardAction({ icon, label, spoken, filled, destructive, busy, disabled, onClick, href, testId, pressed, ...trigger }: {
   icon: ReactNode; label: string; filled?: boolean; onClick?: () => void; testId: string;
+  /** An action that takes something away (the Route Leg sheet's Remove):
+   *  its glyph and word in iOS's red, where the rest are the tint. */
+  destructive?: boolean;
   /** A switch's state, said: Follow on or off. */
   pressed?: boolean;
   /** Where it goes instead, outside the app: a phone number to call, the
@@ -46,7 +49,8 @@ export function CardAction({ icon, label, spoken, filled, busy, disabled, onClic
     // on the darker grey the tint read 4.44 to 1, short of WCAG's 4.5 (the
     // iOS audit's P15, an airplane's Alert menu, 2026-11-05); the menu
     // under it says it is open.
-    "text-tint hover:text-tint aria-expanded:bg-foreground/8 dark:text-[#8cc4ff] dark:hover:text-[#8cc4ff]"));
+    destructive ? "text-destructive-ink hover:text-destructive-ink" : "text-tint hover:text-tint dark:text-[#8cc4ff] dark:hover:text-[#8cc4ff]",
+    "aria-expanded:bg-foreground/8"));
   const face = (
     <>
       {busy ? <Spinner className="size-[20px]" aria-hidden="true" /> : icon}

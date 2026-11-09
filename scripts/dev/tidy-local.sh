@@ -6,7 +6,13 @@
 #   origin/claude/integration, unless it is locked (a running agent's)
 #   or is the live stack's (~/Developer/wingtip-live);
 # - local branches whose commits are all on those two (none checked out);
-# - stopped containers and dangling images (never volumes).
+# - stopped containers of the worktrees' and scratch stacks (compose
+#   projects named wingtip-<something>) and the leftovers of
+#   `docker compose run` in the live project (label oneoff=True), plus
+#   dangling images (never volumes). Never the live `wingtip` project's
+#   other stopped containers (ml, retrain, charts, charts-overlays: the
+#   dev-services sidecar can only start a container that exists), and
+#   never another project's.
 #   scripts/dev/tidy-local.sh [--dry-run]
 set -uo pipefail
 dry=0; [ "${1:-}" = "--dry-run" ] && dry=1
@@ -51,6 +57,17 @@ for b in $(git for-each-ref --format='%(refname:short)' refs/heads/); do
   landed "$b" && run git branch -D "$b" >/dev/null && echo "branch removed: $b"
 done
 
-run docker container prune -f >/dev/null
+# One at a time, chosen by label, so nothing of another project or of the
+# live stack's jobs is touched: `docker container prune` has no such rule.
+while read -r id project oneoff; do
+  [ -n "$id" ] || continue
+  case $project in
+    wingtip) [ "$oneoff" = "True" ] || continue;;   # a `run --rm` leftover, not a job container
+    wingtip-*) ;;
+    *) continue;;
+  esac
+  run docker rm "$id" >/dev/null
+done < <(docker ps -a --filter status=exited --filter status=dead \
+  --format '{{.ID}} {{.Label "com.docker.compose.project"}} {{.Label "com.docker.compose.oneoff"}}' 2>/dev/null)
 run docker image prune -f >/dev/null
 df -h /System/Volumes/Data | tail -1

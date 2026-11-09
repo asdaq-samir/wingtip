@@ -19,6 +19,7 @@
 pub mod alternates;
 pub mod gonogo;
 pub mod icing_forecast;
+pub mod passengers;
 pub mod runway;
 
 // The modules below this crate by the names they had when the engine was

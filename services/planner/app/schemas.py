@@ -290,6 +290,9 @@ class Leg(BaseModel):
     true_heading_deg: float
     magnetic_variation_deg: float
     magnetic_heading_deg: float
+    # The true course less the variation (east is least, west is best,
+    # FAA-H-8083-25C ch. 16), the engine's: what the map's Route Leg sheet shows.
+    magnetic_course_deg: float
     groundspeed_kt: float | None
     ete_min: float | None
     fuel_gal: float | None
@@ -2106,7 +2109,7 @@ class ProcedureLine(BaseModel):
 class ProcedureHold(BaseModel):
     """A holding pattern of a drawn procedure, or its procedure turn: at `fix`, its inbound
     course `inbound_deg` true, its turns right or left (`turn`), drawn to
-    a light airplane's size (wingtip.procedures.HOLD_SPEED_KT)."""
+    a light airplane's size (the engine's paths.rs, HOLD_SPEED_KT)."""
 
     fix: str
     turn: Literal["L", "R"]

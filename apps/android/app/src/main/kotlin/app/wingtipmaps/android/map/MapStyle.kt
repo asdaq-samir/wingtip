@@ -108,8 +108,10 @@ object MapStyle {
      *  and Symbols, Airports). */
     const val BLUE = "#2465b8"
     const val MAGENTA = "#c0309f"
-    /** The chart's own ink for a fix (the web's FIX_INK). */
+    /** The chart's own ink for a fix's ident (the web's FIX_INK). */
     const val FIX_INK = "#1c1a17"
+    /** A fix's four-point star, ForeFlight's blue (the web's FIX_BLUE). */
+    const val FIX_BLUE = "#2f8cff"
     /** A VFR waypoint's ink: ForeFlight's green triangle at the owner's
      *  ask (2026-11-07), where the sectional prints a magenta flag (Chart
      *  User's Guide, VFR waypoints). */
@@ -120,13 +122,13 @@ object MapStyle {
      *  Class B solid blue, Class C solid magenta, Class D dashed blue --
      *  in ForeFlight's brighter blue and magenta, and bolder (B and C 4
      *  dp, D 3.5), so they stand off the chart's own printed ring. */
-    data class Ink(val colour: String, val width: Float, val dash: List<Double>? = null)
+    data class Ink(val colour: String, val width: Float, val dash: List<Double>? = null, val band: Double = 0.3)
 
     val AIRSPACE_INK: Map<String, Ink> = mapOf(
         "B" to Ink("#2f8cff", 4f),
         "C" to Ink("#e02ad8", 4f),
         // A dash of 10 and a gap of 5, in MapLibre's units, the line's width.
-        "D" to Ink("#2f8cff", 3.5f, listOf(10 / 3.5, 5 / 3.5)),
+        "D" to Ink("#2f8cff", 3.5f, listOf(10 / 3.5, 5 / 3.5), band = 0.22),
     )
 
     /** From which Leaflet zoom each class is drawn, the web's
@@ -150,7 +152,7 @@ object MapStyle {
     const val RUNWAYS_FROM = 12.0
 
     /** The pictures the layers ask for, by id (OverlayPictures draws them). */
-    const val AIRSPACE_TAB = "airspace|tab"
+    fun airspaceTab(cls: String) = "airspace|tab|$cls"
     const val NAV_TAG = "nav|tag"
     val SIZES = listOf("large", "medium", "small", "other")
     val USES = listOf("", "private", "military", "heliport")
@@ -276,7 +278,9 @@ object MapStyle {
      *  AIRSPACE_TILE_LAYERS, NAVAID_TILE_LAYERS), and the ones a tap is
      *  looked for in (the web's useGlTap layers). */
     val AIRSPACE_LINES = listOf("airspace-D", "airspace-C", "airspace-B")
-    val AIRSPACE_LAYERS = AIRSPACE_LINES + "airspace-labels"
+    // The special-use areas' ids written out: SUA_LAYERS is set further
+    // down, after this list is.
+    val AIRSPACE_LAYERS = listOf("D", "C", "B").flatMap { listOf("airspace-$it-band", "airspace-$it") } + "airspace-labels" + listOf("sua-band", "sua-line")
     val NAVAID_LAYERS = listOf("navaids", "navaids-idents", "fixes", "fixes-idents")
     const val AIRPORTS = "airports"
     const val VORS = "navaids"
@@ -306,7 +310,8 @@ object MapStyle {
         val has = tiles.layers.map { it.name }.toSet()
         val specs = if (lines) {
             (if ("runways" in has) runwayLayers() else emptyList()) +
-                (if ("airspace" in has) airspaceLayers() else emptyList())
+                (if ("special_use" in has) specialUseLayers() else emptyList()) +
+                (if ("airspace" in has) airspaceLayers("airspace_labels" in has) else emptyList())
         } else {
             marks(has, layers, weather)
         }
@@ -335,73 +340,176 @@ object MapStyle {
             (if ("airports" in has) listOf(airportsLayer(layers, weather)) else emptyList())
     }
 
-    /** A figure of a tile's feature in the sectional's hundreds of feet:
-     *  3,600 is "36" (Chart User's Guide, Airspace: altitudes in hundreds
-     *  of feet MSL). */
-    private fun hundredsOf(field: String) = e("to-string", e("round", e("/", e("get", field), 100)))
+    /** A figure of a tile's feature in whole feet MSL, as the web's
+     *  airspaceText writes it. */
+    private fun feetOf(field: String) = e("to-string", e("round", e("get", field)))
 
-    /** The ring's tab, the web's AIRSPACE_TILE_LABEL: "B: 100–30",
-     *  "C: 48–SFC", "D: -25" -- the ceiling with a minus where the volume
-     *  stops under it ("up to but not including", UPPER_DESC TNI), over
-     *  the floor or SFC where the floor is the surface (0 ft). */
+    /** The ring's tab, the web's AIRSPACE_TILE_LABEL, as ForeFlight writes
+     *  it (the owner's screenshot over Madison, 2026-11-08): the class,
+     *  then the floor and the ceiling in feet MSL with an en dash, "C:
+     *  2300–4900", "B: SFC–10000"; the surface "SFC" (0 ft); a ceiling the
+     *  volume stops under ("up to but not including", UPPER_DESC TNI,
+     *  which the sectional prints as a minus: Chart User's Guide,
+     *  Airspace) "<3000". */
     val AIRSPACE_LABEL: JsonArray = run {
-        val top = e("concat", e("case", e("==", e("get", "ceiling_excluded"), true), "-", ""), hundredsOf("ceiling_ft"))
-        val floor = e("case", e("==", e("coalesce", e("get", "floor_ft"), 0), 0), "SFC", hundredsOf("floor_ft"))
-        e("concat", e("get", "class"), ": ", e("case", e("==", e("get", "class"), "D"), top, e("concat", top, "–", floor)))
+        val top = e("concat", e("case", e("==", e("get", "ceiling_excluded"), true), "<", ""), feetOf("ceiling_ft"))
+        val floor = e("case", e("==", e("coalesce", e("get", "floor_ft"), 0), 0), "SFC", feetOf("floor_ft"))
+        e("concat", e("get", "class"), ": ", floor, "–", top)
     }
 
-    /** One line layer a class from that class's zoom, and the altitudes in
-     *  a dark tab on every ring, level on the screen and kept off each
-     *  other by MapLibre's collision (the web's airspaceLayers, tiles). */
-    private fun airspaceLayers(): List<JsonObject> {
-        val lines = listOf("D", "C", "B").map { cls ->
+    /** A width by Leaflet zoom, MapLibre's levels. */
+    private fun byZoom(vararg stops: Pair<Double, Double>): JsonArray =
+        e("interpolate", e("linear"), e("zoom"), *stops.flatMap { (z, v) -> listOf(glZoom(z), v) }.toTypedArray())
+
+    /** The band along the inside of a boundary (the web's BAND_WIDTH and
+     *  BAND_OFFSET), as ForeFlight draws the sectional's vignette: wider
+     *  as the map comes in, its middle half the band and a little over
+     *  half the line inwards. A positive offset is to the right of a
+     *  line's way, and a vector tile's outer ring runs clockwise on the
+     *  screen and its holes anticlockwise (the Mapbox Vector Tile spec
+     *  2.1, 4.3.4.4), so the right is always the inside. */
+    private val BAND_STOPS = listOf(7.0 to 3.0, 9.0 to 6.0, 11.0 to 10.0, 13.0 to 16.0)
+    val BAND_WIDTH: JsonArray = byZoom(*BAND_STOPS.toTypedArray())
+    val BAND_OFFSET: JsonArray = byZoom(*BAND_STOPS.map { (z, w) -> z to w / 2 + 1.5 }.toTypedArray())
+
+    /** Each class's band and line from that class's zoom, and the
+     *  altitudes in a dark tab bordered in the class's ink, one a shelf on
+     *  its ring and turned along it from the tiles' `airspace_labels`
+     *  (the charts job's airspace_label_features), or along every ring
+     *  where an older archive has not got that layer (the web's
+     *  airspaceLayers). The map never turns (ChartMap), so the tiles'
+     *  turn is the screen's. */
+    private fun airspaceLayers(labelPoints: Boolean): List<JsonObject> {
+        val lines = listOf("D", "C", "B").flatMap { cls ->
             val ink = AIRSPACE_INK.getValue(cls)
-            buildJsonObject {
-                put("id", "airspace-$cls")
-                put("type", "line")
-                from("airspace")
-                put("minzoom", glZoom(AIRSPACE_FROM.getValue(cls)))
-                put("filter", e("==", e("get", "class"), cls))
-                putJsonObject("layout") {
-                    put("line-join", "round")
-                    put("line-cap", if (ink.dash != null) "butt" else "round")
-                }
-                putJsonObject("paint") {
-                    put("line-color", ink.colour)
-                    put("line-width", ink.width)
-                    if (ink.dash != null) put("line-dasharray", e(*ink.dash.toTypedArray()))
-                }
-            }
+            listOf(
+                buildJsonObject {
+                    put("id", "airspace-$cls-band")
+                    put("type", "line")
+                    from("airspace")
+                    put("minzoom", glZoom(AIRSPACE_FROM.getValue(cls)))
+                    put("filter", e("==", e("get", "class"), cls))
+                    putJsonObject("layout") { put("line-join", "round") }
+                    putJsonObject("paint") {
+                        put("line-color", ink.colour)
+                        put("line-opacity", ink.band)
+                        put("line-width", BAND_WIDTH)
+                        put("line-offset", BAND_OFFSET)
+                    }
+                },
+                buildJsonObject {
+                    put("id", "airspace-$cls")
+                    put("type", "line")
+                    from("airspace")
+                    put("minzoom", glZoom(AIRSPACE_FROM.getValue(cls)))
+                    put("filter", e("==", e("get", "class"), cls))
+                    putJsonObject("layout") {
+                        put("line-join", "round")
+                        put("line-cap", if (ink.dash != null) "butt" else "round")
+                    }
+                    putJsonObject("paint") {
+                        put("line-color", ink.colour)
+                        put("line-width", ink.width)
+                        if (ink.dash != null) put("line-dasharray", e(*ink.dash.toTypedArray()))
+                    }
+                },
+            )
         }
         val labels = buildJsonObject {
             put("id", "airspace-labels")
             put("type", "symbol")
-            from("airspace")
+            from(if (labelPoints) "airspace_labels" else "airspace")
             put("minzoom", glZoom(AIRSPACE_LABELS_FROM))
-            put("filter", e("all", e("match", e("get", "class"), listOf("B", "C", "D"), true, false), e("has", "ceiling_ft")))
+            val classes = e("match", e("get", "class"), listOf("B", "C", "D"), true, false)
+            put("filter", if (labelPoints) classes else e("all", classes, e("has", "ceiling_ft")))
             putJsonObject("layout") {
-                put("symbol-placement", "line")
-                put("symbol-spacing", 320)
                 put("text-field", AIRSPACE_LABEL)
                 put("text-font", e(FONT))
-                put("text-size", 11)
-                put("text-rotation-alignment", "viewport")
-                put("icon-rotation-alignment", "viewport")
-                put("icon-image", AIRSPACE_TAB)
+                put("text-size", byZoom(8.0 to 11.0, 12.0 to 13.0))
+                put("icon-image", e("concat", "airspace|tab|", e("get", "class")))
                 put("icon-text-fit", "both")
-                put("icon-text-fit-padding", e(2, 5, 2, 5))
+                put("icon-text-fit-padding", e(2, 6, 2, 6))
                 put("text-padding", 4)
-                // One tab a ring segment, never on another tab or an
-                // airport's mark, read upright; the nearer class wins.
+                // Never on another tab or an airport's mark; the nearer
+                // class wins.
                 put("text-allow-overlap", false)
                 put("icon-allow-overlap", false)
-                put("text-keep-upright", true)
-                put("text-max-angle", 30)
                 put("symbol-sort-key", e("match", e("get", "class"), "B", 0, "C", 1, 2))
+                if (labelPoints) {
+                    put("text-rotate", e("get", "angle"))
+                    put("icon-rotate", e("get", "angle"))
+                    put("text-rotation-alignment", "map")
+                    put("icon-rotation-alignment", "map")
+                } else {
+                    put("symbol-placement", "line")
+                    put("symbol-spacing", 320)
+                    put("text-rotation-alignment", "viewport")
+                    put("icon-rotation-alignment", "viewport")
+                    put("text-keep-upright", true)
+                    put("text-max-angle", 30)
+                }
             }
             putJsonObject("paint") { put("text-color", "#ffffff") }
         }
         return lines + labels
+    }
+
+    /** The special-use areas' inks (the web's SUA_INK), ForeFlight's over
+     *  the sectional (the owner's screenshot over Lake Michigan,
+     *  2026-11-08): restricted, prohibited, warning and danger areas
+     *  orange-brown, MOAs and alert areas magenta. By the FAA's TYPE_CODE
+     *  (wingtip.sua TYPES). */
+    const val SUA_RESTRICTED_INK = "#e0662a"
+    val SUA_MOA_INK = AIRSPACE_INK.getValue("C").colour
+    private val SUA_RESTRICTED = listOf("P", "R", "W", "D")
+    private val SUA_MOA = listOf("MOA", "A")
+    const val SUA_HATCH_RESTRICTED = "sua|hatch|restricted"
+    const val SUA_HATCH_MOA = "sua|hatch|moa"
+    const val SUA_FROM = 7.0
+    val SUA_LAYERS = listOf("sua-band", "sua-line")
+
+    /** The special-use areas from the tiles' `special_use` layer (the
+     *  web's specialUseLayers): each boundary a solid line and a hatched
+     *  band of short diagonal ticks along its inside, a restricted area
+     *  drawn over a MOA it lies in. */
+    private fun specialUseLayers(): List<JsonObject> {
+        val restricted = e("match", e("get", "type"), SUA_RESTRICTED, true, false)
+        val filter = e("match", e("get", "type"), SUA_RESTRICTED + SUA_MOA, true, false)
+        val order = e("case", restricted, 1, 0)
+        return listOf(
+            buildJsonObject {
+                put("id", "sua-band")
+                put("type", "line")
+                from("special_use")
+                put("minzoom", glZoom(SUA_FROM))
+                put("filter", filter)
+                putJsonObject("layout") {
+                    put("line-join", "round")
+                    put("line-sort-key", order)
+                }
+                putJsonObject("paint") {
+                    put("line-pattern", e("case", restricted, SUA_HATCH_RESTRICTED, SUA_HATCH_MOA))
+                    put("line-width", BAND_WIDTH)
+                    put("line-offset", BAND_OFFSET)
+                }
+            },
+            buildJsonObject {
+                put("id", "sua-line")
+                put("type", "line")
+                from("special_use")
+                put("minzoom", glZoom(SUA_FROM))
+                put("filter", filter)
+                putJsonObject("layout") {
+                    put("line-join", "round")
+                    put("line-cap", "round")
+                    put("line-sort-key", order)
+                }
+                putJsonObject("paint") {
+                    put("line-color", e("case", restricted, SUA_RESTRICTED_INK, SUA_MOA_INK))
+                    put("line-width", byZoom(7.0 to 2.0, 10.0 to 3.0))
+                }
+            },
+        )
     }
 
     /** The runways as ForeFlight draws them close in: a dark grey surface
@@ -573,7 +681,7 @@ object MapStyle {
             put("text-font", e(FONT))
             put("text-size", e("interpolate", e("linear"), e("zoom"), farthest, 10, glZoom(10.0), 12, glZoom(13.0), 13))
             put("text-anchor", "left")
-            put("text-offset", e(0.9, 0))
+            put("text-offset", e(1.15, 0))
             // The ident gives way, the mark stays: a busy area keeps its fields.
             put("text-optional", true)
             put("text-padding", 1)

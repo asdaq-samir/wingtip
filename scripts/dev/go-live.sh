@@ -18,6 +18,12 @@ main=$(git -C "$(dirname "$0")/../.." rev-parse --path-format=absolute --git-com
 main=${main%/.git}
 live=${WINGTIP_LIVE_DIR:-$HOME/Developer/wingtip-live}
 export PATH="$PATH:$HOME/.docker/bin"
+# The live tree is force-checked-out below: were it the main checkout (a
+# WINGTIP_LIVE_DIR pointed there), the owner's uncommitted changes go.
+if [ "$(cd "$live" 2>/dev/null && pwd -P || echo "$live")" = "$(cd "$main" && pwd -P)" ]; then
+  echo "go-live: $live is the main checkout; the live stack needs a worktree of its own" >&2
+  exit 1
+fi
 
 # Tidy first: merged worktrees and branches, stopped containers.
 "$(dirname "$0")/tidy-local.sh" || true

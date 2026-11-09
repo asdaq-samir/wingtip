@@ -141,5 +141,36 @@
       },
       "written": ""
     }
-  ]
+  ],
+  "phases": {
+    "normal": [
+      "Preflight inspection",
+      "Before starting engine",
+      "Starting engine",
+      "Before takeoff",
+      "Takeoff",
+      "Climb",
+      "Cruise",
+      "Descent",
+      "Before landing",
+      "Landing",
+      "After landing",
+      "Shutdown",
+      "Securing the airplane"
+    ],
+    "emergency": [
+      "Engine failure on the takeoff roll",
+      "Engine failure right after takeoff",
+      "Engine failure in flight",
+      "Emergency landing without engine power",
+      "Precautionary landing with engine power",
+      "Ditching",
+      "Engine fire during start",
+      "Engine fire in flight",
+      "Electrical fire in flight",
+      "Cabin fire",
+      "Electrical power failure",
+      "Inadvertent icing"
+    ]
+  }
 }

@@ -1,4 +1,5 @@
 import { keptStore } from "./storage";
+import { callEngine } from "./engine/engine";
 
 /**
  * Each airplane's checklists, kept in this browser (the owner's option A
@@ -54,23 +55,15 @@ export function forgetChecklists(): void {
  * Airplane Flying Handbook (FAA-H-8083-3C, chapter 2) asks a pilot to use.
  * The items are the pilot's to copy from their airplane's own handbook: a
  * heading with none under it is dropped when the text is read, so what is
- * not written is not run. The iPhone (Checklists.swift) and Android
- * (checklist/Checklists.kt) start from the same headings.
+ * not written is not run. The headings are the engine's
+ * (`checklist_phases`), which the iPhone (Checklists.swift) and Android
+ * (checklist/Checklists.kt) start from too.
  */
-export const CHECKLIST_PHASES: Record<ChecklistKind, string[]> = {
-  normal: [
-    "Preflight inspection", "Before starting engine", "Starting engine", "Before takeoff", "Takeoff", "Climb",
-    "Cruise", "Descent", "Before landing", "Landing", "After landing", "Shutdown", "Securing the airplane",
-  ],
-  emergency: [
-    "Engine failure on the takeoff roll", "Engine failure right after takeoff", "Engine failure in flight",
-    "Emergency landing without engine power", "Precautionary landing with engine power", "Ditching",
-    "Engine fire during start", "Engine fire in flight", "Electrical fire in flight", "Cabin fire",
-    "Electrical power failure", "Inadvertent icing",
-  ],
-};
+export function checklistPhases(kind: ChecklistKind): string[] {
+  return callEngine("checklist_phases", { kind });
+}
 
 /** The headings as the text to write under, a blank line after each. */
 export function phasesText(kind: ChecklistKind): string {
-  return CHECKLIST_PHASES[kind].map(title => `# ${title}\n\n`).join("");
+  return checklistPhases(kind).map(title => `# ${title}\n\n`).join("");
 }

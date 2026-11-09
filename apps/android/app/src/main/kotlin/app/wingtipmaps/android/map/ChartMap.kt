@@ -274,8 +274,12 @@ private class MapHolder(val view: MapView, private val density: Float) {
             map.getStyle { style ->
                 val paint = MapStyle.chartPaint(night)
                 style.getLayerAs<LineLayer>(ROUTE_CASING)?.setProperties(
-                    PropertyFactory.lineColor(casingColour(night)),
-                    PropertyFactory.lineOpacity(if (night) 0.7f else 0.6f),
+                    PropertyFactory.lineColor(greenColour(night)),
+                    PropertyFactory.lineOpacity(if (night) 0.9f else 1f),
+                )
+                style.getLayerAs<LineLayer>(ROUTE_EDGE)?.setProperties(
+                    PropertyFactory.lineColor(edgeColour(night)),
+                    PropertyFactory.lineOpacity(if (night) 0.35f else 0.6f),
                 )
                 for (id in MapStyle.CHART_LAYERS) {
                     style.getLayerAs<RasterLayer>(id)?.setProperties(
@@ -602,6 +606,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
         )
         when {
+            style.getLayer(ROUTE_EDGE) != null -> style.addLayerBelow(layer, ROUTE_EDGE)
             style.getLayer(ROUTE_CASING) != null -> style.addLayerBelow(layer, ROUTE_CASING)
             style.getLayer(ROUTE) != null -> style.addLayerBelow(layer, ROUTE)
             else -> below(style, layer, MapStyle.ROUTE_SLOT)
@@ -616,35 +621,51 @@ private class MapHolder(val view: MapView, private val density: Float) {
             return
         }
         style.addSource(GeoJsonSource(ROUTE, geoJson))
-        // The route line as the web app draws it: the blue tint, a little
-        // see-through so the chart reads under it.
-        // Over the airspace, under the navaids and the airports (the
-        // style's route slot), as the web's map lays them.
+        // The course line as the web app draws it, and ForeFlight (the
+        // owner's screenshot, 2026-11-08): the chart's magenta core, a band
+        // of green either side, a dark edge round the green. Over the
+        // airspace, under the navaids and the airports (the style's route
+        // slot), as the web's map lays them. Widths as the web's at zoom
+        // 10 (glStyle's routeLayers).
         val layer = LineLayer(ROUTE, ROUTE).withProperties(
-            PropertyFactory.lineColor(Color.rgb(0, 122, 255)),
-            PropertyFactory.lineWidth(4f),
-            PropertyFactory.lineOpacity(0.8f),
+            PropertyFactory.lineColor(COURSE_MAGENTA),
+            PropertyFactory.lineWidth(4.5f),
             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
             PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
         )
-        // A casing under it keeps it legible: a dark rim by day, a light
-        // one on the dimmed night chart (the web's routeCasingPaint).
         val casing = LineLayer(ROUTE_CASING, ROUTE).withProperties(
-            PropertyFactory.lineColor(casingColour(night)),
-            PropertyFactory.lineWidth(7f),
-            PropertyFactory.lineOpacity(if (night) 0.7f else 0.6f),
+            PropertyFactory.lineColor(greenColour(night)),
+            PropertyFactory.lineWidth(10.5f),
+            PropertyFactory.lineOpacity(if (night) 0.9f else 1f),
             PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
             PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
         )
+        // The edge keeps the green legible: a dark rim by day, a faint
+        // light one on the dimmed night chart (the web's routeEdgePaint).
+        val edge = LineLayer(ROUTE_EDGE, ROUTE).withProperties(
+            PropertyFactory.lineColor(edgeColour(night)),
+            PropertyFactory.lineWidth(12.5f),
+            PropertyFactory.lineOpacity(if (night) 0.35f else 0.6f),
+            PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
+            PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
+        )
+        below(style, edge, MapStyle.ROUTE_SLOT)
         below(style, casing, MapStyle.ROUTE_SLOT)
         below(style, layer, MapStyle.ROUTE_SLOT)
     }
 
-    private fun casingColour(night: Boolean): Int = if (night) Color.WHITE else Color.rgb(0x1c, 0x1a, 0x17)
+    /** The green either side of the course (the web's ROUTE_GREEN and
+     *  ROUTE_GREEN_NIGHT, lib/map/chartColors), a shade deeper at night. */
+    private fun greenColour(night: Boolean): Int = if (night) Color.rgb(0x3f, 0x9a, 0x1c) else Color.rgb(0x52, 0xc4, 0x1a)
+
+    private fun edgeColour(night: Boolean): Int = if (night) Color.WHITE else Color.rgb(0x0b, 0x0f, 0x0a)
 
     private companion object {
         const val ROUTE = "route"
         const val ROUTE_CASING = "route-casing"
+        const val ROUTE_EDGE = "route-edge"
+        /** The chart's magenta, the web's COURSE_MAGENTA. */
+        val COURSE_MAGENTA = Color.rgb(0xe6, 0x00, 0xe6)
         const val OWN_SHIP = "own-ship"
         const val TRAIL = "trail"
         /** A finger's reach round a mark, and round a line, dp (the web's

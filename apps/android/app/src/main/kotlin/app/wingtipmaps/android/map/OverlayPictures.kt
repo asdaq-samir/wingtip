@@ -17,9 +17,10 @@ import org.maplibre.android.maps.Style
  * NAVAID_PICTURES, AIRSPACE_TAB_PICTURE, airportMark's
  * sectionalAirportSvg) drawn with Android's Canvas in place of an SVG:
  * the sectional's airport symbols (FAA Aeronautical Chart User's Guide,
- * VFR Terms and Symbols, Airports), the VOR's hexagon, a fix's triangle,
- * a VFR waypoint's green one, the VOR's blue ident tag and the airspace's
- * dark altitude tab, the last two stretched to their text.
+ * VFR Terms and Symbols, Airports) as ForeFlight rings them, the VOR's
+ * hexagon, a fix's blue four-point star, a VFR waypoint's green triangle,
+ * the VOR's blue ident tag and the airspace's dark altitude tab, the last
+ * two stretched to their text, and the special-use areas' hatch.
  */
 object OverlayPictures {
     /** Every picture added to a style being built, before it loads, so no
@@ -37,10 +38,14 @@ object OverlayPictures {
             }
         }
         builder.withImage("nav|vor", vor(density))
-        builder.withImage("nav|fix", triangle(10f, 5f, 1f, 9.4f, 8.8f, 0.6f, Color.WHITE, ink(MapStyle.FIX_INK), 1.2f, density))
+        builder.withImage("nav|fix", star(density))
         builder.withImage("nav|vfr", triangle(12f, 6f, 1f, 11.2f, 10.4f, 0.8f, ink(MapStyle.VFR_GREEN), Color.WHITE, 1.4f, density))
         stretched(builder, MapStyle.NAV_TAG, tag(density), 4f, density)
-        stretched(builder, MapStyle.AIRSPACE_TAB, airspaceTab(density), 4f, density)
+        for (cls in listOf("B", "C", "D")) {
+            stretched(builder, MapStyle.airspaceTab(cls), airspaceTab(ink(MapStyle.AIRSPACE_INK.getValue(cls).colour), density), 4f, density)
+        }
+        builder.withImage(MapStyle.SUA_HATCH_RESTRICTED, hatch(ink(MapStyle.SUA_RESTRICTED_INK), density))
+        builder.withImage(MapStyle.SUA_HATCH_MOA, hatch(ink(MapStyle.SUA_MOA_INK), density))
         for (near in listOf(true, false)) {
             for (hasTrack in listOf(true, false)) {
                 builder.withImage(MapStyle.trafficIconId(near, hasTrack), airplane(near, hasTrack, density))
@@ -89,14 +94,16 @@ object OverlayPictures {
 
     /** How big a field's symbol is drawn by its size (the web's
      *  SECTIONAL_RADIUS): the big fields the biggest. */
-    private val RADIUS = mapOf("large" to 7f, "medium" to 6f, "small" to 5f, "other" to 4.5f)
+    private val RADIUS = mapOf("large" to 8.5f, "medium" to 7.5f, "small" to 6.5f, "other" to 6f)
 
-    /** A field's mark (the web's sectionalAirportSvg): a solid disc, blue
-     *  towered and magenta not, edged in white; a private field the
-     *  guide's small circle with an "R", a military one with an "M", a
-     *  heliport with an "H"; its weather (its METAR's flight category's
-     *  colour, `pip`) a small dot at its lower right, edged in white,
-     *  where it has a report. */
+    /** A field's mark (the web's sectionalAirportSvg), as ForeFlight
+     *  draws it (the owner's screenshot over Madison, 2026-11-08): a ring
+     *  in the airport's ink, blue towered and magenta not, round a white
+     *  disc with a dot of the ink in its middle, inside a white halo; a
+     *  private field the guide's circle with an "R", a military one with
+     *  an "M", a heliport with an "H"; its weather (its METAR's flight
+     *  category's colour, `pip`) a small dot at its lower right, edged in
+     *  white, where it has a report. */
     private fun airport(towered: Boolean, size: String, pip: String, use: String, density: Float): Bitmap {
         val colour = ink(if (towered) MapStyle.BLUE else MapStyle.MAGENTA)
         val letter = when (use) {
@@ -105,24 +112,26 @@ object OverlayPictures {
             "heliport" -> "H"
             else -> null
         }
-        return picture(20f, density, origin = 10f) {
+        val r = if (letter != null) 7f else RADIUS[size] ?: 6f
+        return picture(26f, density, origin = 13f) {
+            // The halo: white, 2.5 dp past the ring.
+            drawCircle(0f, 0f, r + 2.5f, fill(Color.WHITE))
             if (letter != null) {
-                drawCircle(0f, 0f, 5.5f, fill(Color.WHITE))
-                drawCircle(0f, 0f, 5.5f, stroke(colour, 1.6f))
+                drawCircle(0f, 0f, r, stroke(colour, 2f))
                 val type = fill(colour).apply {
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                    textSize = 8f
+                    textSize = 9.5f
                     textAlign = Paint.Align.CENTER
                 }
-                drawText(letter, 0f, 2.9f, type)
+                drawText(letter, 0f, 3.5f, type)
             } else {
-                val r = RADIUS[size] ?: 4.5f
-                drawCircle(0f, 0f, r, fill(colour))
-                drawCircle(0f, 0f, r, stroke(Color.WHITE, 1.5f))
+                drawCircle(0f, 0f, r, stroke(colour, 2.6f))
+                drawCircle(0f, 0f, r * 0.42f, fill(colour))
             }
             if (pip.isNotEmpty()) {
-                drawCircle(5.5f, 5.5f, 3f, fill(ink(pip)))
-                drawCircle(5.5f, 5.5f, 3f, stroke(Color.WHITE, 1.2f))
+                val at = r * 0.78f
+                drawCircle(at, at, 3.4f, fill(ink(pip)))
+                drawCircle(at, at, 3.4f, stroke(Color.WHITE, 1.3f))
             }
         }
     }
@@ -204,10 +213,44 @@ object OverlayPictures {
     }
 
     /** The dark tab an airspace's altitudes sit in, as ForeFlight's: a
-     *  rounded box edged in white. */
-    private fun airspaceTab(density: Float): Bitmap = picture(12f, density) {
-        val box = RectF(0.5f, 0.5f, 11.5f, 11.5f)
-        drawRoundRect(box, 3f, 3f, fill(Color.argb(230, 0x1c, 0x23, 0x30)))
-        drawRoundRect(box, 3f, 3f, stroke(Color.WHITE, 1f))
+     *  rounded box bordered in its class's ink. */
+    private fun airspaceTab(edge: Int, density: Float): Bitmap = picture(12f, density) {
+        val box = RectF(0.75f, 0.75f, 11.25f, 11.25f)
+        drawRoundRect(box, 3f, 3f, fill(Color.argb(235, 0x14, 0x18, 0x1f)))
+        drawRoundRect(box, 3f, 3f, stroke(edge, 1.5f))
+    }
+
+    /** A fix's four-point star, blue with a white rim, as ForeFlight draws
+     *  an enroute fix over the chart (the web's nav|fix). */
+    private fun star(density: Float): Bitmap = picture(20f, density, origin = 10f) {
+        val path = Path().apply {
+            moveTo(0f, -9f)
+            lineTo(2.2f, -2.2f)
+            lineTo(9f, 0f)
+            lineTo(2.2f, 2.2f)
+            lineTo(0f, 9f)
+            lineTo(-2.2f, 2.2f)
+            lineTo(-9f, 0f)
+            lineTo(-2.2f, -2.2f)
+            close()
+        }
+        drawPath(path, fill(ink(MapStyle.FIX_BLUE)))
+        drawPath(path, stroke(Color.WHITE, 1.2f))
+    }
+
+    /** One tick of a special-use area's hatch (the web's SUA_PICTURES): a
+     *  short diagonal stroke in the area's ink on a faint wash of it, 7 by
+     *  10 dp, repeated along the band by its line-pattern. */
+    private fun hatch(colour: Int, density: Float): Bitmap {
+        val bitmap = Bitmap.createBitmap(Math.round(7 * density), Math.round(10 * density), Bitmap.Config.ARGB_8888)
+        bitmap.density = Math.round(density * 160)
+        Canvas(bitmap).apply {
+            scale(density, density)
+            drawRect(0f, 0f, 7f, 10f, fill(Color.argb(36, Color.red(colour), Color.green(colour), Color.blue(colour))))
+            drawLine(1.5f, 9.5f, 5.5f, 0.5f, stroke(Color.argb(230, Color.red(colour), Color.green(colour), Color.blue(colour)), 1.3f).apply {
+                strokeCap = Paint.Cap.ROUND
+            })
+        }
+        return bitmap
     }
 }

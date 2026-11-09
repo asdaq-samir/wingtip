@@ -211,6 +211,8 @@ struct FlownSegment: Codable, Equatable, Sendable {
 struct LostCommsAnswer: Codable, Equatable, Sendable {
     let vfr: String
     let routes: [LostCommsRoute]
+    /// 91.185(c)(2), the altitude rule, in words.
+    var altitude: String?
     let segments: [FlownSegment]
     let leave: String
 }

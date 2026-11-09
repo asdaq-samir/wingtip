@@ -11,6 +11,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import app.wingtipmaps.gateway.assistant.model.AssistantChangesWords;
 import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.dto.CurrencyDto;
+import app.wingtipmaps.gateway.dto.EndorsementKindDto;
 import app.wingtipmaps.gateway.dto.ExperienceItemDto;
 import app.wingtipmaps.gateway.dto.ReviewCheckDto;
 import java.io.IOException;
@@ -26,6 +27,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -254,6 +257,51 @@ public class PlannerClient {
         return read(post("/api/pilot/endorsements", body, "the endorsements"), Endorsements.class, "the endorsements");
     }
 
+    /**
+     * AC 61-65K's endorsements a student meets, in order, word for word
+     * (GET /api/pilot/endorsement-kinds, the engine's endorsement_kinds):
+     * the catalogue the Checkride page lists, a student records from paper
+     * and an instructor signs from. The planner's answer has
+     * EndorsementKindDto's members.
+     *
+     * @throws Unavailable when the planner cannot be reached or refuses
+     */
+    public List<EndorsementKindDto> endorsementKinds() {
+        HttpRequest request = HttpRequest.newBuilder(URI.create(plannerBaseUrl + "/api/pilot/endorsement-kinds"))
+                .GET()
+                .timeout(RULE_TIMEOUT)
+                .build();
+        return List.of(read(sendAgainOnce(request, "the endorsements' words"), EndorsementKindDto[].class, "the endorsements' words"));
+    }
+
+    /** The endorsement of {@code code} in the catalogue, if there is one. */
+    public Optional<EndorsementKindDto> endorsementKind(String code) {
+        return endorsementKinds().stream().filter(k -> k.code().equals(code)).findFirst();
+    }
+
+    /** An endorsement made ready to sign (the engine's endorsement_fill):
+     *  each field it takes, tidied, "" where not given; the labels of the
+     *  required ones still empty; and the words as they are signed. */
+    public record Filled(Map<String, String> fields, List<String> missing, String text) {
+    }
+
+    /**
+     * An endorsement of a code {@link #endorsementKinds} lists, filled in
+     * with the student's name and the instructor's fields (POST
+     * /api/pilot/endorsement-fill).
+     *
+     * @throws Unavailable when the planner cannot be reached or refuses,
+     *     a code it does not know among them
+     */
+    public Filled fill(String code, String student, Map<String, String> fields) {
+        ObjectNode body = DATES.createObjectNode();
+        body.put("code", code);
+        body.put("student", student);
+        ObjectNode given = body.putObject("fields");
+        (fields == null ? Map.<String, String>of() : fields).forEach((k, v) -> given.put(k, v == null ? "" : v));
+        return read(post("/api/pilot/endorsement-fill", body, "the endorsement's words"), Filled.class, "the endorsement's words");
+    }
+
     /** A VOR check's figures as the engine judges them: the largest error
      *  91.171 allows for its kind, whether it was within, and its last
      *  good day (30 days on). */
@@ -307,6 +355,10 @@ public class PlannerClient {
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .timeout(RULE_TIMEOUT)
                 .build();
+        return sendAgainOnce(request, what);
+    }
+
+    private String sendAgainOnce(HttpRequest request, String what) {
         try {
             return send(request, "the planner", what);
         } catch (Unavailable unreached) {

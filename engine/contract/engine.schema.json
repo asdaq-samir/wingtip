@@ -276,6 +276,255 @@
       ],
       "additionalProperties": false
     },
+    "procedure_arc": {
+      "description": "An RF leg's arc round its centre fix, or an AF (DME arc) leg's round its navaid (ARINC 424 5.21): points from start to end, turning right (clockwise) or left, one every five degrees, at the centre's distance from the end.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedureArcInput",
+          "type": "object",
+          "properties": {
+            "center": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "start": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "end": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "turn": {
+              "type": "string",
+              "enum": [
+                "R",
+                "L"
+              ]
+            }
+          },
+          "required": [
+            "center",
+            "start",
+            "end",
+            "turn"
+          ]
+        },
+        "answer": {
+          "title": "ProcedureArcAnswer",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "[lat, lon]"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "procedure_hold": {
+      "description": "A CIFP hold's racetrack (HA, HF, HM) at its fix, inbound on the true course to the fix, turning right or left, with standard-rate turns at a light airplane's 120 kt (AIM 5-3-8): the fix, the turn out, the outbound leg, the turn in, and back to the fix.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedureHoldInput",
+          "type": "object",
+          "properties": {
+            "fix": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "inbound_deg": {
+              "type": "number"
+            },
+            "turn": {
+              "type": "string",
+              "enum": [
+                "R",
+                "L"
+              ]
+            },
+            "leg_nm": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "fix",
+            "inbound_deg",
+            "turn",
+            "leg_nm"
+          ]
+        },
+        "answer": {
+          "title": "ProcedureHoldAnswer",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "[lat, lon]"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "procedure_turn": {
+      "description": "A 45°/180° procedure turn at its fix (AIM 5-4-9): 4 nm out on the final's reciprocal, 2 nm on the barb's true course, a standard-rate 180° turn at 120 kt toward the final's side, back to meet the final within 10 nm, and in to the fix.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedureTurnInput",
+          "type": "object",
+          "properties": {
+            "fix": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "inbound_deg": {
+              "type": "number"
+            },
+            "pt_course_deg": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "fix",
+            "inbound_deg",
+            "pt_course_deg"
+          ]
+        },
+        "answer": {
+          "title": "ProcedureTurnAnswer",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "[lat, lon]"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "procedure_climb_nm": {
+      "description": "How far a leg flown to an altitude (CA, VA, FA) is drawn, nm: from the altitude known at its start at 200 ft a nm (FAA Order 8260.3), within 1 to 15; 2 nm where either is not known or it is no climb.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedureClimbNmInput",
+          "type": "object",
+          "properties": {
+            "altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "known_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": []
+        },
+        "answer": {
+          "title": "ProcedureClimbNmAnswer",
+          "type": "number"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "procedure_hold_leg_nm": {
+      "description": "A hold's leg, nm: a timed leg flown at 120 kt (AIM 5-3-8 j.4), else the distance the CIFP codes; null with neither.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedureHoldLegNmInput",
+          "type": "object",
+          "properties": {
+            "minutes": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "distance_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": []
+        },
+        "answer": {
+          "title": "ProcedureHoldLegNmAnswer",
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "lost_comms": {
       "description": "The planner's /api/lost-comms answer (14 CFR 91.185): VFR's words, the routes in the rule's order (c)(1), each segment's altitude (c)(2) and when to leave the clearance limit (c)(3).",
       "type": "object",
@@ -380,6 +629,10 @@
                 ]
               }
             },
+            "altitude": {
+              "type": "string",
+              "description": "91.185(c)(2), the altitude rule, in words."
+            },
             "segments": {
               "type": "array",
               "items": {
@@ -422,6 +675,7 @@
           "required": [
             "vfr",
             "routes",
+            "altitude",
             "segments",
             "leave"
           ]
@@ -1421,6 +1675,40 @@
       ],
       "additionalProperties": false
     },
+    "checklist_phases": {
+      "description": "The headings a checklist can start from, with nothing under them: a pilot's operating handbook's Normal Procedures (GAMA Specification No. 1, Section 4) or Emergency Procedures (Section 3), in its order; the items are the pilot's, from their own airplane's handbook (FAA-H-8083-3C, chapter 2).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ChecklistPhasesInput",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "normal",
+                "emergency"
+              ]
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        },
+        "answer": {
+          "title": "ChecklistPhasesAnswer",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "csv_rows": {
       "description": "A CSV file's rows of fields.",
       "type": "object",
@@ -1852,6 +2140,243 @@
           "type": "array",
           "items": {
             "type": "string"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "endorsement_kinds": {
+      "description": "The endorsements a student meets on the way to a private pilot certificate, in the order they meet them: AC 61-65K appendix A's sample for each (November 2025), word for word, with the 14 CFR section it answers. A template names the student {student} and each blank by its field's key.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "EndorsementKindsInput",
+          "type": "object",
+          "properties": {}
+        },
+        "answer": {
+          "title": "EndorsementKindsAnswer",
+          "type": "array",
+          "items": {
+            "title": "EndorsementKind",
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "paragraph": {
+                "type": "string",
+                "description": "AC 61-65K's paragraph, \"A.10\"."
+              },
+              "rule": {
+                "type": "string",
+                "description": "The 14 CFR section it answers, \"61.93(c)(3)\"."
+              },
+              "label": {
+                "type": "string"
+              },
+              "template": {
+                "type": "string",
+                "description": "The sample's words, {student} and each field's {key} in them."
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "title": "EndorsementField",
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "example": {
+                      "type": "string"
+                    },
+                    "required": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "label",
+                    "example",
+                    "required"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "code",
+              "paragraph",
+              "rule",
+              "label",
+              "template",
+              "fields"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "endorsement_fill": {
+      "description": "An endorsement filled in to sign (AC 61-65K appendix A): the fields it takes, each tidied to single spaces and \"\" where not given, any it does not take left out; the labels of the required ones still empty; and its words with the student and the fields in, as endorsement_render fills them. Null for a code no endorsement has.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "EndorsementFillInput",
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "student": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "fields": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Words by field name."
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "code"
+          ]
+        },
+        "answer": {
+          "title": "EndorsementFillAnswer",
+          "anyOf": [
+            {
+              "title": "EndorsementFilled",
+              "type": "object",
+              "properties": {
+                "fields": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "fields",
+                "missing",
+                "text"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "solo_xc_determinations": {
+      "description": "14 CFR 61.93(d)(1)-(3): what an instructor must determine of a solo cross-country themselves before endorsing it (AC 61-65K A.10); (4) and (5) the record answers (endorsement_records).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "SoloXcDeterminationsInput",
+          "type": "object",
+          "properties": {}
+        },
+        "answer": {
+          "title": "SoloXcDeterminationsAnswer",
+          "type": "array",
+          "items": {
+            "title": "SoloXcDetermination",
+            "type": "object",
+            "properties": {
+              "rule": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "rule",
+              "label"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "passenger_briefing": {
+      "description": "The passengers' briefing in the order of the FAA's SAFETY briefing (FAA Safety Briefing, Jan/Feb 2007 and Jul/Aug 2014): 14 CFR 91.107(a)(1)'s belts and (a)(2), (3)'s fastened for taxi, takeoff and landing, the rest the Private Pilot ACS's PA.II.B.S2 guidance, each with where it comes from.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "PassengerBriefingInput",
+          "type": "object",
+          "properties": {}
+        },
+        "answer": {
+          "title": "PassengerBriefingAnswer",
+          "type": "array",
+          "items": {
+            "title": "PassengerItem",
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "rule": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "title",
+              "rule"
+            ],
+            "additionalProperties": false
           }
         }
       },
@@ -8068,6 +8593,39 @@
       ],
       "additionalProperties": false
     },
+    "traffic_reach": {
+      "description": "How far round an airport its traffic is asked for, nm: around_nm, about the field (its pattern and one joining it, past 91.117(b)'s 4 nm), and relation_nm, the reach of an airplane inbound or departing, the figures field_relation judges by.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TrafficReachInput",
+          "type": "object",
+          "properties": {}
+        },
+        "answer": {
+          "title": "TrafficReachAnswer",
+          "type": "object",
+          "properties": {
+            "around_nm": {
+              "type": "number"
+            },
+            "relation_nm": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "around_nm",
+            "relation_nm"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "faa_words": {
       "description": "The FAA's capitals in sentence case, its codes kept (AIM 3-2-1's \"Class B\"): one string from text, or each of texts as a list (a null row answers \"\").",
       "type": "object",
@@ -12177,6 +12735,40 @@
             "y",
             "on_page"
           ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "diagram_fix_usable": {
+      "description": "Whether own ship is drawn on the airport diagram: a fix no older than 3 s (AC 120-76D 11.17.2.3) and good to 30 m or better (11.17.2.4); a negative accuracy, none known, never.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "DiagramFixUsableInput",
+          "type": "object",
+          "properties": {
+            "age_s": {
+              "type": "number",
+              "description": "The fix's age, s."
+            },
+            "accuracy_m": {
+              "type": "number",
+              "description": "Its horizontal accuracy, m."
+            }
+          },
+          "required": [
+            "age_s",
+            "accuracy_m"
+          ],
+          "additionalProperties": false
+        },
+        "answer": {
+          "title": "DiagramFixUsableAnswer",
+          "type": "boolean"
         }
       },
       "required": [
@@ -17144,6 +17736,106 @@
       ],
       "additionalProperties": false
     },
+    "filed_endurance": {
+      "description": "Item 19's endurance in whole minutes: the fuel aboard at the cruise burn, to the minute below (AIM Appendix 4); null where the burn is not a positive figure.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FiledEnduranceInput",
+          "type": "object",
+          "properties": {
+            "fuel_gal": {
+              "type": "number"
+            },
+            "burn_gph": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "fuel_gal",
+            "burn_gph"
+          ]
+        },
+        "answer": {
+          "title": "FiledEnduranceAnswer",
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "filed_dof": {
+      "description": "Item 18's date of flight, DOF/YYMMDD, where the flight is not on the UTC day it is filed (AIM Appendix 4, TBL 4-1); null on the same day.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FiledDofInput",
+          "type": "object",
+          "properties": {
+            "depart": {
+              "type": "string",
+              "description": "ISO, UTC."
+            },
+            "today": {
+              "type": "string",
+              "description": "ISO, UTC."
+            }
+          },
+          "required": [
+            "depart",
+            "today"
+          ]
+        },
+        "answer": {
+          "title": "FiledDofAnswer",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "filed_rnav": {
+      "description": "Whether item 15's route takes a T or Q route, an RNAV route (AIM 5-3-4), which asks for G and R in item 10a and PBN/C2 in item 18 where the airplane has them (AIM Appendix 4, TBL 4-13).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FiledRnavInput",
+          "type": "object",
+          "properties": {
+            "airways": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "airways"
+          ]
+        },
+        "answer": {
+          "title": "FiledRnavAnswer",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "filed_route": {
       "description": "Item 15's route between the departure and the destination (AIM Appendix 4: \"DALL3 EIC V18 MEI LGC4\", \"FLACK DCT IRW\"): airways between the fixes they are joined and left at, DCT between two fixes flown direct, a departure procedure first with its transition's fix, an arrival last after its transition's fix; DCT alone for a flight direct. `airways` names which of the stops are airways.",
       "type": "object",
@@ -19701,6 +20393,11 @@
     "holding",
     "holding_leg_minutes",
     "hold_entry",
+    "procedure_arc",
+    "procedure_hold",
+    "procedure_turn",
+    "procedure_climb_nm",
+    "procedure_hold_leg_nm",
     "lost_comms",
     "diversion",
     "wind_triangle",
@@ -19712,6 +20409,7 @@
     "debrief_marked",
     "checklist_read",
     "checklist_write",
+    "checklist_phases",
     "csv_rows",
     "logbook_csv_read",
     "logbook_csv_write",
@@ -19720,6 +20418,10 @@
     "endorsements_in_force",
     "endorsement_render",
     "acs_codes",
+    "endorsement_kinds",
+    "endorsement_fill",
+    "solo_xc_determinations",
+    "passenger_briefing",
     "pilot_currency",
     "pilot_experience",
     "read_clearance",
@@ -19825,6 +20527,7 @@
     "traffic_matches",
     "n_number",
     "registered_profile",
+    "traffic_reach",
     "faa_words",
     "title_case",
     "place_name",
@@ -19898,6 +20601,7 @@
     "diagram_labels",
     "diagram_graticule",
     "diagram_point",
+    "diagram_fix_usable",
     "strip_fuel",
     "fuel_in_tanks",
     "fuel_estimate",
@@ -19977,6 +20681,9 @@
     "filed_duration",
     "filed_wake",
     "filed_zzzz",
+    "filed_endurance",
+    "filed_dof",
+    "filed_rnav",
     "filed_route",
     "route_position",
     "planning_figures",
@@ -23716,6 +24423,9 @@
           "type": "number"
         },
         "magnetic_heading_deg": {
+          "type": "number"
+        },
+        "magnetic_course_deg": {
           "type": "number"
         },
         "groundspeed_kt": {

@@ -10,7 +10,7 @@ import { sectionalAirportSvg, TOWERED_BLUE, UNTOWERED_MAGENTA } from "../airport
 import { colourOf } from "../flightCategory";
 import { overlaySource } from "../overlayTiles";
 import { SLOTS, drawSvg, slotId, type DrawnImage, type Slot, type Stretch } from "./glLayer";
-import { AIRSPACE_TAB, OVERLAY_SOURCE, airspaceLayers, glZoom } from "./glStyle";
+import { AIRSPACE_INK, OVERLAY_SOURCE, SUA_INK, SUA_LAYERS, airspaceLayers, airspaceTab, glZoom, specialUseLayers, suaHatch } from "./glStyle";
 import { GL_FONT_BOLD, LABEL_HALO } from "./layers/common";
 
 export { OVERLAY_SOURCE };
@@ -31,8 +31,11 @@ export { OVERLAY_SOURCE };
 
 // ---- The marks' pictures --------------------------------------------------
 
-/** The chart's own ink for a fix. */
+/** The chart's own ink for a fix's ident. */
 export const FIX_INK = "#1c1a17";
+/** A fix's star, ForeFlight's blue (the owner's screenshot over Lake
+ *  Michigan, 2026-11-08), the Class B's. */
+export const FIX_BLUE = "#2f8cff";
 /** A VFR waypoint's ink on the WebGL map: ForeFlight's green triangle, at
  *  the owner's ask (2026-11-07, from its screenshots), where the
  *  sectional prints a magenta flag (Chart User's Guide, VFR waypoints). */
@@ -40,24 +43,36 @@ export const VFR_GREEN = "#148a3b";
 
 type Picture = [id: string, svg: () => string, stretch?: Stretch];
 
-/** The navaids' pictures: the VOR's hexagon, a fix's
- *  triangle, a VFR waypoint's green one (FAA Aeronautical Chart User's
- *  Guide, Radio Aids to Navigation; VFR waypoints), and the VOR's blue
- *  ident box, stretched to its ident. */
+/** The navaids' pictures: the VOR's hexagon (FAA Aeronautical Chart
+ *  User's Guide, Radio Aids to Navigation), a fix's four-point star as
+ *  ForeFlight draws an enroute fix over the chart (blue, a white rim:
+ *  the owner's screenshot over Lake Michigan, 2026-11-08), a VFR
+ *  waypoint's green triangle (the owner's pick, 2026-11-07), and the
+ *  VOR's blue ident box, stretched to its ident. */
 export const NAVAID_PICTURES: Picture[] = [
   ["nav|vor", () => `<svg width="16" height="16" viewBox="0 0 16 16"><polygon points="15,8 11.5,14.06 4.5,14.06 1,8 4.5,1.94 11.5,1.94" fill="#fff" stroke="${BLUE}" stroke-width="2"/><circle cx="8" cy="8" r="1.6" fill="${BLUE}"/></svg>`],
-  ["nav|fix", () => `<svg width="10" height="10" viewBox="0 0 10 10"><polygon points="5,1 9.4,8.8 0.6,8.8" fill="#fff" stroke="${FIX_INK}" stroke-width="1.2" stroke-linejoin="round"/></svg>`],
+  ["nav|fix", () => `<svg width="20" height="20" viewBox="-10 -10 20 20"><path d="M0 -9L2.2 -2.2L9 0L2.2 2.2L0 9L-2.2 2.2L-9 0L-2.2 -2.2Z" fill="${FIX_BLUE}" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>`],
   ["nav|vfr", () => `<svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,1 11.2,10.4 0.8,10.4" fill="${VFR_GREEN}" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>`],
   ["nav|tag", () => `<svg width="12" height="12" viewBox="0 0 12 12"><rect width="12" height="12" rx="3" fill="${BLUE}"/></svg>`, { inset: 4 }],
 ];
 
 /** The dark tab an airspace's altitudes sit in, as ForeFlight's: a
- *  rounded box its corners kept as drawn, stretched to the text. */
-export const AIRSPACE_TAB_PICTURE: Picture = [
-  AIRSPACE_TAB,
-  () => `<svg width="12" height="12" viewBox="0 0 12 12"><rect x="0.5" y="0.5" width="11" height="11" rx="3" fill="#1c2330" fill-opacity="0.9" stroke="#fff" stroke-width="1"/></svg>`,
+ *  rounded box bordered in its class's ink, its corners kept as drawn,
+ *  stretched to the text. */
+export const AIRSPACE_TAB_PICTURES: Picture[] = (["B", "C", "D"] as const).map(c => [
+  airspaceTab(c),
+  () => `<svg width="12" height="12" viewBox="0 0 12 12"><rect x="0.75" y="0.75" width="10.5" height="10.5" rx="3" fill="#14181f" fill-opacity="0.92" stroke="${AIRSPACE_INK[c].colour}" stroke-width="1.5"/></svg>`,
   { inset: 4 },
-];
+]);
+
+/** A special-use area's hatch, one tick of it: a short diagonal stroke
+ *  in the area's ink on a faint wash of it, repeated along the band
+ *  (specialUseLayers' line-pattern), as ForeFlight and the sectional
+ *  hatch the inside of the boundary. */
+export const SUA_PICTURES: Picture[] = (Object.keys(SUA_INK) as (keyof typeof SUA_INK)[]).map(ink => [
+  suaHatch(ink),
+  () => `<svg width="7" height="10" viewBox="0 0 7 10"><rect width="7" height="10" fill="${SUA_INK[ink]}" fill-opacity="0.14"/><path d="M1.5 9.5L5.5 0.5" stroke="${SUA_INK[ink]}" stroke-width="1.3" stroke-linecap="round" stroke-opacity="0.9"/></svg>`,
+]);
 
 export type AirportSize = "large" | "medium" | "small" | "other";
 export type AirportUse = "military" | "private" | "heliport" | null;
@@ -88,7 +103,7 @@ let drawn: Promise<Map<string, DrawnImage>> | null = null;
  *  as a tile first asks for one (synchronously, so no symbol is laid out
  *  without its picture). */
 export function overlayPictures(): Promise<Map<string, DrawnImage>> {
-  drawn ??= Promise.all([...airportPictures(), ...NAVAID_PICTURES, AIRSPACE_TAB_PICTURE].map(([id, svg, stretch]) =>
+  drawn ??= Promise.all([...airportPictures(), ...NAVAID_PICTURES, ...AIRSPACE_TAB_PICTURES, ...SUA_PICTURES].map(([id, svg, stretch]) =>
     drawSvg(svg(), stretch).then(d => [id, d] as const),
   )).then(all => new Map(all.filter((e): e is readonly [string, DrawnImage] => !!e[1])));
   return drawn;
@@ -156,7 +171,7 @@ export function airportMarksLayer(from: { source: string; "source-layer"?: strin
       "text-font": GL_FONT_BOLD,
       "text-size": ["interpolate", ["linear"], ["zoom"], glZoom(AIRPORTS_FARTHEST_ZOOM), 10, glZoom(10), 12, glZoom(13), 13],
       "text-anchor": "left",
-      "text-offset": [0.9, 0],
+      "text-offset": [1.15, 0],
       // The ident gives way, the mark stays: a busy area keeps its fields.
       "text-optional": true,
       "text-padding": 1,
@@ -248,7 +263,9 @@ function runwayLayers(): LayerSpecification[] {
 }
 
 /** The ids of the layers each setting turns off (applyOverlayFilters). */
-export const AIRSPACE_TILE_LAYERS = ["airspace-D", "airspace-C", "airspace-B", "airspace-labels"];
+export const AIRSPACE_TILE_LAYERS = [
+  ...["D", "C", "B"].flatMap(c => [`airspace-${c}-band`, `airspace-${c}`]), "airspace-labels", ...SUA_LAYERS,
+];
 export const NAVAID_TILE_LAYERS = ["navaids", "navaids-idents", "fixes", "fixes-idents"];
 export const WAYPOINT_TILE_LAYERS = ["vfr-waypoints", "vfr-waypoints-idents"];
 
@@ -260,7 +277,8 @@ export function overlayStyle(tiles: OverlayTiles, origin?: string): { source: So
   const from = (layer: string) => ({ source: OVERLAY_SOURCE, "source-layer": layer });
   const lines: LayerSpecification[] = [
     ...(has.has("runways") ? runwayLayers() : []),
-    ...(has.has("airspace") ? airspaceLayers(GL_FONT_BOLD) : []),
+    ...(has.has("special_use") ? specialUseLayers() : []),
+    ...(has.has("airspace") ? airspaceLayers(GL_FONT_BOLD, has.has("airspace_labels")) : []),
   ];
   const marks: LayerSpecification[] = [
     ...(has.has("navaids") ? navaidMarks("navaids", from("navaids"), "vor", { filter: ["in", ["get", "kind"], ["literal", VOR_KINDS]], minzoom: glZoom(VOR_ZOOM) }) : []),
@@ -290,11 +308,11 @@ export function addOverlays(map: MlMap, tiles: OverlayTiles, origin?: string) {
 
 // ---- What changes over them ----------------------------------------------
 
-interface Changes { airports: string[]; waypoints: string[]; weather: Map<string, string> }
+interface Changes { airports: string[]; waypoints: string[]; weather: Map<string, string>; selected: string | null }
 const changes = new WeakMap<MlMap, Changes>();
 const changesOf = (map: MlMap) => {
   let kept = changes.get(map);
-  if (!kept) changes.set(map, kept = { airports: [], waypoints: [], weather: new Map() });
+  if (!kept) changes.set(map, kept = { airports: [], waypoints: [], weather: new Map(), selected: null });
   return kept;
 };
 
@@ -333,6 +351,21 @@ export function setOverlayExclusion(map: MlMap, kind: "airports" | "waypoints", 
   if (sorted.join() === own[kind].join()) return;
   own[kind] = sorted;
   applyOverlayFilters(map);
+}
+
+/** The field whose card is open: its ident left off the tile layer,
+ *  which the ring's own layer writes larger (AirportsGl). */
+export function setSelectedAirport(map: MlMap, ident: string | null) {
+  const own = changesOf(map);
+  if (own.selected === ident || !map.style || !map.getLayer("airports")) return;
+  own.selected = ident;
+  map.setLayoutProperty("airports", "text-field", selectedIdentLeftOut(ident));
+}
+
+/** The tile airports' idents, the open card's field's left out: the
+ *  selected layer writes it larger (AirportsGl's SELECTED_IDENT). */
+export function selectedIdentLeftOut(ident: string | null): ExpressionSpecification {
+  return ident ? ["case", ["==", ["get", "ident"], ident], "", ["get", "ident"]] : ["get", "ident"];
 }
 
 /** Each field's weather pip from its METAR (its flight category's colour,

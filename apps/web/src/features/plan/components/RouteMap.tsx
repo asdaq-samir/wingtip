@@ -15,13 +15,14 @@ import type { RouteWay } from "../../../lib/map/routeWays";
 import { checkpointColour } from "../../../lib/map/chartColors";
 import { useInkLook } from "../../../lib/brand";
 import { MapCard } from "../../../lib/map/MapCard";
-import GlRouteMap, { type GlCandidate, type GlCheckpoint, type GlEndpoint } from "../../../lib/map/gl/GlRouteMap";
+import GlRouteMap, { type GlCandidate, type GlCheckpoint, type GlEndpoint, type GlLeg } from "../../../lib/map/gl/GlRouteMap";
 import { usePreferences } from "../../../lib/preferences";
 import type { StopKind } from "../../../lib/stopKinds";
 import type { StopPin } from "../../../lib/map/stopPins";
 import { inkOn } from "../../../lib/scoreScale";
 import { feet } from "../../../lib/units";
 import { scoreColor } from "../format";
+import type { RouteLeg } from "./navlog/rows";
 
 const NO_PATTERNS: TrafficPattern[] = [];
 const NO_POINTS: { lat: number; lon: number }[] = [];
@@ -29,6 +30,7 @@ const NO_POINTS_AT: { ident: string; lat: number; lon: number }[] = [];
 const NO_STOP_FIELDS: StopFieldPin[] = [];
 const NO_PROCEDURES: ProcedureDrawing[] = [];
 const NO_CROSSINGS: Record<string, number> = {};
+const NO_LEGS: RouteLeg[] = [];
 
 /** A field of the map's Stops (StopsCard) pinned while the sheet is open:
  *  the kinds it has, in a row's order (lib/stopKinds). */
@@ -96,6 +98,10 @@ interface Props {
   /** The one of them shown (FPL's Routes' card picked), drawn the stronger. */
   wayShown?: string | null;
   onPickWay?: (key: string) => void;
+  /** The route's legs, row to row of the nav log (routeLegs), a tap on
+   *  the course opening the nearest one's sheet (RouteLegCard). */
+  routeLegs?: RouteLeg[];
+  onSelectLeg?: (key: string) => void;
 }
 
 
@@ -248,7 +254,7 @@ export default memo(function RouteMap({
   course, candidates, selected, focus, onSelectCandidate, onSelectPoint,
   airportWeather, place, start = null, onSelectPlace, legs, heldPoint, onHoldPoint, nearest = null, patterns = NO_PATTERNS, patternFocus = null,
   procedures = NO_PROCEDURES, procedureFocus = null, procedureCover, crossings = NO_CROSSINGS, directs = "", onProcedureFix, fuelStops = NO_POINTS_AT,
-  stopFields = NO_STOP_FIELDS, onPickStopField, ways, wayShown = null, onPickWay,
+  stopFields = NO_STOP_FIELDS, onPickStopField, ways, wayShown = null, onPickWay, routeLegs = NO_LEGS, onSelectLeg,
 }: Props) {
   const focusZoom = course?.max_zoom ?? 12;
   // The pattern just picked, its corners and its entry, to bring in.
@@ -321,6 +327,8 @@ export default memo(function RouteMap({
     colour: chipColourOf(weatherOf(a.ident, airportWeather)),
     select: () => (a.kind === "fix" ? onSelectPoint(a.lat, a.lon) : onSelectPlace(a.ident)),
   }))), [course, airportWeather, onSelectPoint, onSelectPlace, showClassB, classBAirports]);
+  // The legs' ends, for the tap on the course to find the nearest leg.
+  const glLegs = useMemo<GlLeg[]>(() => routeLegs.map(l => ({ key: l.key, from: l.from, to: l.to })), [routeLegs]);
   // The chart alone while there is no route, for the Class B chips' sheets.
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
 
@@ -334,7 +342,7 @@ export default memo(function RouteMap({
       procedures={procedures} focusedProcedure={focusedProcedure} procedureFocus={procedureFocus} procedureCover={procedureCover}
       crossings={crossings} directs={directs} onProcedureFix={onProcedureFix}
       fuelStops={fuelStops} stopFields={stopFields} onPickStopField={onPickStopField}
-      ways={ways} wayShown={wayShown} onPickWay={onPickWay}
+      ways={ways} wayShown={wayShown} onPickWay={onPickWay} routeLegs={glLegs} onSelectLeg={onSelectLeg}
     />
   );
 });

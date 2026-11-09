@@ -9,12 +9,10 @@ import { nmAway } from "../../../lib/useAway";
 import { usePreferences } from "../../../lib/preferences";
 import { grouped } from "../../../lib/units";
 import { airportQuery } from "../../../lib/queryClient";
+import { callEngine } from "../../../lib/engine/engine";
 
 const NONE: TrafficAircraft[] = [];
 
-/** How far round an airport its traffic is asked for, nm (the engine's
- *  RELATION_NM, an inbound airplane's reach). */
-const AIRPORT_TRAFFIC_NM = 40;
 /** Asked again this often, ms: adsb.lol's pace, a region's (wingtip.traffic). */
 const FILTER_REFRESH_MS = 10_000;
 
@@ -74,7 +72,9 @@ export function useFilteredAircraft(seen: TrafficAircraft[], from: LatLon | null
   // the map's own where it is the map.
   const center = filter.place === "airport" ? (field ? { lat: field.lat, lon: field.lon } : null)
     : filter.place === "near" ? from : null;
-  const radius = filter.place === "airport" ? AIRPORT_TRAFFIC_NM : filter.nearNm;
+  // Round an airport, the engine's reach for an airplane inbound or
+  // departing (`traffic_reach`, the figure field_relation judges by).
+  const radius = filter.place === "airport" ? callEngine("traffic_reach", {}).relation_nm : filter.nearNm;
   const { data: around } = useQuery({
     queryKey: ["trafficFilter", center ? Math.round(center.lat * 20) / 20 : null, center ? Math.round(center.lon * 20) / 20 : null, radius],
     queryFn: () => api.traffic({ lat: center!.lat, lon: center!.lon, radius }), enabled: !!center,

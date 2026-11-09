@@ -52,6 +52,11 @@ WORDS_MAX_TOKENS = 4096
 #: passage: a METAR or a NOTAM is a line or two, a TAF a few hundred
 #: characters. A longer one is cut here; the pilot reads it whole.
 SOURCE_CHARS = 4000
+#: The most sources, and the most characters of them all, one call reads:
+#: the planner's asks are bounded, but the model is billed by what it reads,
+#: so what is past either is dropped (the assistant's MOST_CHARS pattern).
+MOST_SOURCES = 40
+MOST_MATERIAL_CHARS = 24_000
 log = logging.getLogger(__name__)
 
 SYSTEM = (
@@ -119,10 +124,14 @@ class WordsUnavailable(Exception):
 def _material(ask: str, sources: list[Source]) -> str:
     """The sources as blocks the model is told to rely on, as the mock
     oral gives its passages, and the ask after them."""
-    blocks = "\n".join(
-        f'<source id="{html.escape(s.id)}" label="{html.escape(s.label)}">\n{s.text[:SOURCE_CHARS]}\n</source>'
-        for s in sources
-    )
+    kept, used = [], 0
+    for s in sources[:MOST_SOURCES]:
+        text = s.text[:SOURCE_CHARS]
+        if used + len(text) > MOST_MATERIAL_CHARS:
+            break
+        used += len(text)
+        kept.append(f'<source id="{html.escape(s.id)}" label="{html.escape(s.label)}">\n{text}\n</source>')
+    blocks = "\n".join(kept)
     return f"<material>\n{blocks}\n</material>\n\n{ask}"
 
 

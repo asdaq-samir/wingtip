@@ -13,6 +13,46 @@
 use super::js;
 use crate::json;
 
+/// The headings a list can start from, with nothing under them: the order
+/// of a pilot's operating handbook's Normal Procedures (GAMA Specification
+/// No. 1, Section 4), each phase a checklist is run at, as the FAA's
+/// Airplane Flying Handbook (FAA-H-8083-3C, chapter 2) has a pilot fly by
+/// checklist from preflight to securing. The items are the pilot's, from
+/// their own airplane's handbook. The web's lib/checklists, the iPhone's
+/// Checklists.swift and Android's Checklists.kt each kept a copy (#482).
+pub const NORMAL_PHASES: [&str; 13] = [
+    "Preflight inspection",
+    "Before starting engine",
+    "Starting engine",
+    "Before takeoff",
+    "Takeoff",
+    "Climb",
+    "Cruise",
+    "Descent",
+    "Before landing",
+    "Landing",
+    "After landing",
+    "Shutdown",
+    "Securing the airplane",
+];
+
+/// The emergencies a handbook's Emergency Procedures cover (GAMA
+/// Specification No. 1, Section 3), in its order.
+pub const EMERGENCY_PHASES: [&str; 12] = [
+    "Engine failure on the takeoff roll",
+    "Engine failure right after takeoff",
+    "Engine failure in flight",
+    "Emergency landing without engine power",
+    "Precautionary landing with engine power",
+    "Ditching",
+    "Engine fire during start",
+    "Engine fire in flight",
+    "Electrical fire in flight",
+    "Cabin fire",
+    "Electrical power failure",
+    "Inadvertent icing",
+];
+
 pub struct Item {
     pub challenge: String,
     pub response: Option<String>,

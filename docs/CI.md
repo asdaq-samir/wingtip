@@ -109,6 +109,20 @@ On the Mac, a run like that goes through `scripts/dev/one-at-a-time.sh
 24 GB Mac, 2026-11-08) and waits while macOS says memory is short; the
 quick checks before a push are `scripts/dev/check.sh <area>`.
 
+## Rules boundary
+
+Every aviation rule or figure is the engine's (CLAUDE.md, issue #482).
+`rules-boundary` ("Rules boundary"), on every run and one of the jobs "CI
+passed" waits on, runs `scripts/ci/rules_boundary.py`: in the web app, the
+phones, the gateway and the planner's app it finds a constant set to a
+number with a regulatory source cited beside it or in the comment above
+(14 CFR, a part 61/91/71/73/95/97 section, the AIM, an AC, the ACS, an
+FAA Order), and an engine rule's name defined again. What is there and is
+not a rule -- the owner's FL-045 formatting, a display span -- is listed
+in `scripts/ci/rules_boundary_allow.txt` as a count per file with why. A
+file past its count fails: move the rule into the engine and ask it by
+name, or list the file with its reason. `--list` prints every hit.
+
 ## API compatibility
 
 The iPhone app in the App Store keeps calling the servers for months

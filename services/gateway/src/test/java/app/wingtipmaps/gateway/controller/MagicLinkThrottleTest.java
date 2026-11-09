@@ -61,6 +61,16 @@ class MagicLinkThrottleTest {
     @Autowired
     private WebApplicationContext context;
 
+    @org.junit.jupiter.api.BeforeEach
+    void theBalancerIsATrustedProxy() {
+        SlidingWindowLimiter.trustProxies("10.0.0.0/8");
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void defaultProxies() {
+        SlidingWindowLimiter.trustProxies(null);
+    }
+
     /** Through the filter `forward-headers-strategy: framework` installs,
      *  as the deployed app is -- which makes getRemoteAddr() the first
      *  X-Forwarded-For entry. */

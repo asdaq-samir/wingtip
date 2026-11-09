@@ -37,7 +37,7 @@ class MapParityTest {
     private val template = TileTemplate("2025-10-30", 3, null, "sec", scale = 2)
     private val tiles = OverlayTiles(
         builtAt = 0.0, bytes = 1, cycle = "2025-10-30",
-        layers = listOf("airspace", "airports", "navaids", "fixes", "runways").map { OverlayTilesLayer(1, it) },
+        layers = listOf("airspace", "airspace_labels", "special_use", "airports", "navaids", "fixes", "runways").map { OverlayTilesLayer(1, it) },
         maxZoom = 12, minZoom = 4, name = "2025-10-30-v3-0", toleranceM = 15.0, version = 3,
     )
 

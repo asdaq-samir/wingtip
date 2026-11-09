@@ -1,12 +1,15 @@
 package app.wingtipmaps.android.briefing
 
 import app.wingtipmaps.android.checklist.TextStore
+import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.strip.StripData
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /**
  * The passengers' briefing, ticked off for the flight before engine
@@ -27,22 +30,15 @@ import java.util.Locale
  * carries.
  */
 object PassengerBriefing {
-    data class Item(val key: String, val title: String, val source: String)
+    @Serializable
+    data class Item(val key: String, val title: String, @SerialName("rule") val source: String)
 
-    private const val SAFETY = "FAA Safety Briefing, \"Passenger SAFETY briefing\""
+    @Serializable
+    private class NoAsk
 
-    val ITEMS: List<Item> = listOf(
-        Item("pax-belts", "How to fasten and unfasten their seat belts and shoulder harnesses", "14 CFR 91.107(a)(1)"),
-        Item("pax-fastened", "Belts fastened to taxi, take off and land, seats locked", "14 CFR 91.107(a)(2), (3)"),
-        Item("pax-air", "Air vents and heat, and to say if they feel unwell", SAFETY),
-        Item("pax-fire", "The fire extinguisher: where it is and how it works", SAFETY),
-        Item(
-            "pax-exits", "The doors, how to get out, the survival kit, and clear of the propeller",
-            "$SAFETY; Private Pilot ACS PA.II.B.S2",
-        ),
-        Item("pax-traffic", "Point out traffic; quiet while the pilot is on the radio and close to the ground", SAFETY),
-        Item("pax-questions", "Their questions", SAFETY),
-    )
+    /** The items and their sources, the engine's (`passenger_briefing`),
+     *  as the web and the iPhone list them. */
+    val ITEMS: List<Item> by lazy { runCatching { Engine.call<NoAsk, List<Item>>("passenger_briefing", NoAsk()) }.getOrDefault(emptyList()) }
 
     private val CLOCK = DateTimeFormatter.ofPattern("HH:mm", Locale.US)
     private val ZULU = DateTimeFormatter.ofPattern("HHmm'Z'", Locale.US).withZone(ZoneOffset.UTC)
