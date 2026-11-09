@@ -157,11 +157,16 @@ owner, 2026-11-03):
   `?place=`, `?flight=`) opens in the app as a `PendingCommand`, and a GPX
   or KML track from Files or Mail is flown again on the map (the document
   types in project.yml). The sign-in link stays `Session.open`'s.
-- **A Live Activity** (`Wingtip/FlightActivity.swift`, the
-  `WingtipWidgets` extension, `Wingtip/Shared/FlightActivityAttributes`):
+- **A Live Activity** (`Wingtip/Activity/`, `WingtipWidgets/FlightActivityWidget.swift`,
+  `Wingtip/Shared/FlightActivityAttributes` and `FlightActivityLines`):
   a flight in progress on the Lock Screen and in the Dynamic Island with
-  the next checkpoint, the ETA and the fuel, from the dry run or own ship
-  under way with a routed plan.
+  the next fix and the time to it, the ETA, the planned fuel left (only
+  with an airplane picked), the frequency ATC last handed us and the
+  copilot's message, from the app's in-flight models (`InFlight`'s
+  engine answer, `Copilot`, `AtcCopilot`: `FlightActivityContent`). It
+  starts with the dry run or own ship under way with a routed plan, or
+  from the Control Center control, and ends five minutes after landing.
+  Every word is written by `Format`, compiled into the extension.
 - **In flight** (#218, the owner's option A of 2026-11-08):
   `Wingtip/InFlight.swift` is the view model each fix (own ship's or the
   dry run's) is asked of the engine through once -- `in_flight`,

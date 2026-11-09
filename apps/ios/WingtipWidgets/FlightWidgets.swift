@@ -157,7 +157,7 @@ private struct LockLine: View {
             }
             .font(.headline)
             .widgetAccentable()
-            Text("\(VerdictMark.word(flight.verdict)) · \(flight.eteMin.map(minutesWords) ?? "—")")
+            Text("\(VerdictMark.word(flight.verdict)) · \(flight.eteMin.map(Format.duration) ?? "—")")
                 .font(.subheadline.monospacedDigit())
                 .lineLimit(1)
             Text(FlightWords.weather(flight))
@@ -288,7 +288,7 @@ enum FlightWords {
     static func figures(_ flight: WidgetSnapshot) -> String {
         var parts: [String] = []
         if let nm = flight.distanceNm { parts.append("\(Int(nm.rounded())) nm") }
-        if let minutes = flight.eteMin { parts.append(minutesWords(minutes)) }
+        if let minutes = flight.eteMin { parts.append(Format.duration(minutes)) }
         if let gal = flight.fuelGal { parts.append(String(format: "%.1f gal", gal)) }
         return parts.isEmpty ? "Planning…" : parts.joined(separator: " · ")
     }
