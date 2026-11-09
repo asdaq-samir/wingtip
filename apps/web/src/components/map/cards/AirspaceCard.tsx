@@ -8,7 +8,7 @@ import { MapCard } from "../../../lib/map/cards/MapCard";
 import { Button } from "../../ui/button";
 import { ListGroup, ListRow } from "../../GroupedList";
 import { callTypes, entryRules } from "../../../lib/airspaceRules";
-import { mhzText } from "../../../lib/frequencies";
+import FrequencyButton from "../../FrequencyButton";
 import { airportQuery } from "../../../lib/queryClient";
 import { usePointActions } from "../../../lib/map/cards/pointActions";
 
@@ -116,7 +116,7 @@ function AirspaceCall({ volume }: { volume: AirspaceVolume }) {
           <ListRow
             key={`${f.frequency_mhz}-${i}`}
             title={<span className={TEXT.detail}>{f.description ?? f.type}</span>}
-            value={<span className="font-semibold text-foreground tabular-nums">{mhzText(f.frequency_mhz!)}</span>}
+            value={<FrequencyButton mhz={f.frequency_mhz!} name={f.description ?? f.type ?? undefined} />}
           />
         ))}
       </ListGroup>

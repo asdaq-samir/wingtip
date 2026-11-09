@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import { CloudSun, Headset, Radar, Radio, RadioTower, TowerControl } from "lucide-react";
 import { ListRow } from "../../../components/GroupedList";
 import { RowBadge } from "../../../components/RowBadge";
-import { frequencyLine, mhzText, type FrequencyKind } from "../../../lib/frequencies";
+import FrequencyButton from "../../../components/FrequencyButton";
+import { frequencyLine, type FrequencyKind } from "../../../lib/frequencies";
 import { BADGE } from "../../../lib/rowBadges";
 
 const GLYPH: Record<FrequencyKind, ReactNode> = {
@@ -16,8 +17,9 @@ const GLYPH: Record<FrequencyKind, ReactNode> = {
 
 /**
  * A field's frequency as a row: named in words (TWR is "Tower"), a glyph
- * by its kind, and the frequency as pilots write it at the right in the
- * text's own colour, as Nearest has a field's distance -- the pilot's ask
+ * by its kind, and the frequency as pilots write it at the right, tinted
+ * as a tap copies it (FrequencyButton), where Nearest has a field's
+ * distance -- the pilot's ask
  * for every card to read as Nearest's does. An airport's card and the
  * Brief's airport sections list them alike: those were the card's old
  * rows, the FAA's type in words over its description and the figure in
@@ -40,14 +42,14 @@ export function FrequencyRow({
       media={<RowBadge colour={BADGE[line.kind]}>{GLYPH[line.kind]}</RowBadge>}
       title={line.name}
       description={line.detail ?? undefined}
-      value={mhz != null ? <Mhz mhz={mhz} /> : "—"}
+      value={mhz != null ? <Mhz mhz={mhz} name={line.name} /> : "—"}
       data-testid={testId}
     />
   );
 }
 
-/** A frequency at a row's right, as pilots write it and in the text's own
- *  colour: the radio calls' were a bare figure in grey. */
-export function Mhz({ mhz }: { mhz: number }) {
-  return <span className="font-semibold text-foreground">{mhzText(mhz)}</span>;
+/** A frequency at a row's right, as pilots write it, a tap copying it
+ *  (FrequencyButton): the radio calls' were a bare figure in grey. */
+export function Mhz({ mhz, name }: { mhz: number; name?: string }) {
+  return <FrequencyButton mhz={mhz} name={name} />;
 }

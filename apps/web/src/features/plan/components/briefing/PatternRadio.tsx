@@ -149,7 +149,7 @@ function CallRow({ call }: { call: RadioCall }) {
           {call.note && <span className="block pt-0.5">{call.note}</span>}
         </>
       }
-      value={call.mhz != null ? <Mhz mhz={call.mhz} /> : undefined}
+      value={call.mhz != null ? <Mhz mhz={call.mhz} name={call.to} /> : undefined}
       data-testid="radio-call"
     />
   );

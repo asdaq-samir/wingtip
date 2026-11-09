@@ -1,7 +1,7 @@
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Input } from "../../components/ui/input";
-import { mhzText } from "../../lib/frequencies";
+import FrequencyButton from "../../components/FrequencyButton";
 import { TEXT } from "../../lib/text";
 import type { EmergencyModel } from "./useEmergency";
 
@@ -30,7 +30,7 @@ export default function ActionsList({ vm }: { vm: EmergencyModel }) {
             title={c.label}
             description={c.why}
             data-testid="emergency-channel"
-            value={c.mhz != null ? <span className="font-semibold tabular-nums">{mhzText(c.mhz)}</span> : undefined}
+            value={c.mhz != null ? <FrequencyButton mhz={c.mhz} name={c.label} /> : undefined}
           />
         ))}
       </ListGroup>
