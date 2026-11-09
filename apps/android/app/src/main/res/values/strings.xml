@@ -48,6 +48,7 @@
     <string name="said_note">Note</string>
     <string name="said_open">Open</string>
     <string name="said_open_leg">Open the leg</string>
+    <string name="said_open_nav_log">Open the nav log</string>
     <string name="said_map">Chart</string>
     <plurals name="said_map_fields">
         <item quantity="one">Chart, %1$d field in view. An action opens it.</item>

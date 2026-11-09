@@ -1,5 +1,6 @@
 package app.wingtipmaps.android
 
+import app.wingtipmaps.android.navigation.generated.Screen
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -26,6 +27,22 @@ class LinksTest {
     @Test
     fun theSignInLinkGivesItsToken() {
         assertEquals(Links.SignIn("abc123"), Links.parse("https://wingtipmaps.app/api/auth/magic-link/verify?token=abc123"))
+    }
+
+    @Test
+    fun aScreenOpensByItsNameFromTheSiteOrTheAppsScheme() {
+        assertEquals(Links.Open(Screen.LOGBOOK), Links.parse("https://wingtipmaps.app/app/plan?open=logbook"))
+        assertEquals(Links.Open(Screen.NAVLOG), Links.parse("wingtipmaps://plan?open=NAVLOG"))
+        assertNull(Links.parse("wingtipmaps://elsewhere?open=logbook"))
+        assertNull(Links.parse("https://wingtipmaps.app/app/plan?open=nowhere"))
+    }
+
+    @Test
+    fun aScreenBesideARouteOpensOnceTheRouteIsIn() {
+        assertEquals(
+            Links.Route("C81", "KDLH", emptyList(), Screen.BRIEF),
+            Links.parse("https://wingtipmaps.app/app/plan?dep=C81&dest=KDLH&open=brief"),
+        )
     }
 
     @Test

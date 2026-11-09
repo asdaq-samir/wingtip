@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
@@ -34,6 +36,8 @@ import app.wingtipmaps.android.engine.generated.stripFuel
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
+import app.wingtipmaps.android.navigation.ScreenRequests
+import app.wingtipmaps.android.navigation.generated.Screen
 
 /**
  * The flight's figures in one line -- To, Dist, ETE, Fuel -- what the
@@ -85,8 +89,12 @@ fun FiguresStrip(state: Plan.State) {
     // At 150 % type and more four figures do not fit across a phone: two
     // rows of two, so no figure is cut.
     val rows = if (largeType()) figures.chunked(2) else listOf(figures)
+    // The figures open the nav log they add up, the FPL tab's legs (tap
+    // what you see, docs/navigation.md).
+    val openNavLog = stringResource(R.string.said_open_nav_log)
     Column(
-        Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs),
+        Modifier.fillMaxWidth().clickable(enabled = state.routed, role = Role.Button, onClickLabel = openNavLog) { ScreenRequests.ask(Screen.NAVLOG) }
+            .padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs),
         verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
     ) {
         rows.forEach { row ->
