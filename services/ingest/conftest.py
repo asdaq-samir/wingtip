@@ -12,6 +12,8 @@ def _own_store_and_settings(monkeypatch, tmp_path):
     """The live store in the test's own folder, never the data folder's."""
     store.reset()
     monkeypatch.setattr(store, "STORE", tmp_path / "live.sqlite")
+    # The health check reads the store's path from the settings.
+    monkeypatch.setenv("LIVE_STORE", str(tmp_path / "live.sqlite"))
     get_settings.cache_clear()
     wingtip_settings.cache_clear()
     yield

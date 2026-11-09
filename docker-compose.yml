@@ -314,7 +314,10 @@ services:
       SWIM_QUEUE_TFMS: ${SWIM_QUEUE_TFMS:-}
     healthcheck:
       <<: *python-healthcheck
-      # Its beat in the live store, written every ten seconds (ingest.health).
+      # Its beat in the live store, written every ten seconds (ingest.health),
+      # so looked at every thirty, as the image's own HEALTHCHECK does: each
+      # check is a Python started afresh.
+      interval: 30s
       test: ["CMD", "python", "-m", "ingest.health"]
 
   # Every Claude call the app makes (services/assistant, issue #535): the

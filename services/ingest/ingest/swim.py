@@ -160,9 +160,13 @@ FACILITY_SPAN_NM = 200.0
 #: How far past a view's edge its airplanes are still kept, nm: about a
 #: minute of a fast airplane's flying, so one about to come in is there.
 VIEW_MARGIN_NM = 10.0
-_FIRST_PLACE = re.compile(r"<lat>(-?[\d.]+)</lat><lon>(-?[\d.]+)</lon>")
+_FIRST_PLACE = re.compile(rb"<lat>(-?[\d.]+)</lat><lon>(-?[\d.]+)</lon>")
 #: A track's Mode S address as the message writes it, either case.
-_ADDRESS = re.compile(r"<acAddress>\s*([0-9A-Fa-f]{6})\s*</acAddress>")
+_ADDRESS = re.compile(rb"<acAddress>\s*([0-9A-Fa-f]{6})\s*</acAddress>")
+
+
+def _bytes(data: bytes | str) -> bytes:
+    return data.encode("utf-8", "replace") if isinstance(data, str) else data
 
 
 def _nm(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -177,8 +181,8 @@ def _in_view(lat: float, lon: float, views, margin: float) -> bool:
 
 
 def raw(message) -> bytes | str:
-    """A message's bytes as they came, for a handler that looks in them
-    before it decodes them (RAW); its text where the client has no bytes."""
+    """A message's bytes as they came, handed on so a handler looks in them
+    before it decodes them; its text where the client has no bytes."""
     try:
         payload = message.get_payload_as_bytes()
     except Exception:  # noqa: BLE001 -- the client's error for a payload of the other kind
@@ -187,7 +191,7 @@ def raw(message) -> bytes | str:
 
 
 
-def _names_one(text: str, followed) -> bool:
+def _names_one(data: bytes | str, followed) -> bool:
     """Whether a radar message has a track of a followed airplane: its
     addresses read in one pass. A search of the whole message for each
     followed address, in both cases, was a third of the radar thread's
@@ -195,45 +199,42 @@ def _names_one(text: str, followed) -> bool:
     2026-11-06), and grew with each one; this is a thirteenth of it for
     a message of 20 tracks (12 against 158 us in the planner's image)
     and a fiftieth for one of 100."""
-    return bool(followed) and any(a.lower() in followed for a in _ADDRESS.findall(text))
+    return bool(followed) and any(a.decode("ascii").lower() in followed for a in _ADDRESS.findall(_bytes(data)))
 
 
-def select(text: str, views, followed) -> list[tuple[dict, float]]:
+def select(data: bytes | str, views, followed) -> list[tuple[dict, float]]:
     """A radar message's tracks worth keeping: the airplanes round the
     places the map shows traffic (`views`, each (lat, lon, radius nm)), and
     the followed ones (`followed`, their addresses) wherever they are. A
     message from a facility far from every view and naming no followed
     airplane is not parsed at all, which is most of them: the country's
     tracks, parsed as they come, took the planner's time from the planning
-    a pilot waits on."""
-    if "TATrackAndFlightPlan" not in text[:300]:
+    a pilot waits on. Looked at in its bytes, and decoded only to be parsed."""
+    data = _bytes(data)
+    if b"TATrackAndFlightPlan" not in data[:300]:
         return []
-    first = _FIRST_PLACE.search(text)
+    first = _FIRST_PLACE.search(data)
     near = first is not None and _in_view(float(first[1]), float(first[2]), views, FACILITY_SPAN_NM)
-    if not near and not _names_one(text, followed):
+    if not near and not _names_one(data, followed):
         return []
     return [
-        (plane, at) for plane, at in tracks(text)
+        (plane, at) for plane, at in tracks(data.decode("utf-8", "replace"))
         if plane["hex"] in followed or _in_view(plane["lat"], plane["lon"], views, VIEW_MARGIN_NM)
     ]
 
 
-#: The feeds whose messages are handed on as their bytes
-#: (wingtip.filed_routes.heard looks in them before it decodes them).
-RAW = {"TFMS"}
-#: What a feed's message must hold to be worth handing on: TFMS's flight
+#: What a kind of message must hold to be worth handing on: TFMS's flight
 #: plans and amendments with a route of flight ("routeOfFlight",
 #: "newRouteOfFlight"), the only ones wingtip.filed_routes keeps. The rest
-#: of TFMS, the country's tracks, is acknowledged and dropped unread.
-WORTH_SENDING = {"TFMS": b"outeOfFlight"}
+#: of its flight data, the country's tracks, is acknowledged and dropped
+#: undecoded.
+WORTH_SENDING = {("TFMS", "flightData"): b"outeOfFlight", ("TFMS", "tfmDataService"): b"outeOfFlight"}
 
 
-def worth_sending(feed: str, payload: bytes | str) -> bool:
-    """Whether a message of `feed` is handed on at all."""
-    worth = WORTH_SENDING.get(feed)
-    if worth is None:
-        return True
-    return worth in (payload if isinstance(payload, (bytes, bytearray)) else payload.encode("utf-8", "replace"))
+def worth_sending(feed: str, name: str, payload: bytes | str) -> bool:
+    """Whether a message of `feed` and kind `name` is handed on at all."""
+    worth = WORTH_SENDING.get((feed, name))
+    return worth is None or worth in _bytes(payload)
 
 
 #: Each feed's messages read so far, what they gave (tracks, NOTAMs,
@@ -248,17 +249,40 @@ WANTED: list = [([], set())]
 WANTED_EVERY_S = 1.0
 
 
-def _radar(text: str) -> int:
+def _radar(data: bytes | str) -> int:
     """A radar message's tracks round the places the map shows traffic,
     and the followed ones wherever they are, into the store."""
-    found = select(text, *WANTED[0])
+    found = select(data, *WANTED[0])
     for plane, at in found:
         traffic.heard_elsewhere(plane, at)
     return len(found)
 
 
-#: What each feed's messages are handed to; each gives how many items it kept.
-HANDLERS = {"STDDS": _radar, "FNS": notams.heard, "TFMS": filed_routes.heard}
+def text(handler):
+    """A handler that reads text, handed a message's bytes decoded."""
+    def handle_text(payload: bytes | str) -> int:
+        return handler(payload.decode("utf-8", "replace") if isinstance(payload, (bytes, bytearray)) else payload)
+    handle_text.reads = handler
+    return handle_text
+
+
+#: What each feed's messages are handed to, by their kind (topic_kind,
+#: else kind), "*" for every kind of the feed; each gives how many items
+#: it kept. A kind with no handler is counted and acknowledged unread: its
+#: payload is never fetched from the client, let alone decoded.
+HANDLERS: dict[str, dict] = {
+    "STDDS": {"TATrackAndFlightPlan": _radar},
+    "FNS": {"*": text(notams.heard)},
+    # TFMS's flight data, by its topic's kind or, where a message comes
+    # with no topic, its root element.
+    "TFMS": {"flightData": filed_routes.heard, "tfmDataService": filed_routes.heard},
+}
+
+
+def handler_for(feed: str, name: str):
+    """The handler a message of this kind is handed to, or None."""
+    handlers = HANDLERS.get(feed, {})
+    return handlers.get(name) or handlers.get("*")
 
 
 #: A message's first element's name, its namespace prefix left off:
@@ -267,23 +291,71 @@ _ROOT = re.compile(rb"<(?![?!])(?:[\w.-]+:)?([\w.-]+)")
 
 
 def kind(payload: bytes | str) -> str:
-    """What sort of message this is, by its first element: counted per
-    feed (STATE's "kinds"), so what each queue carries besides what is
-    kept -- TFMS's flow information, STDDS's other systems -- shows in the
-    store before a reader for it is written (#489)."""
-    head = payload[:400] if isinstance(payload, (bytes, bytearray)) else payload[:400].encode("utf-8", "replace")
-    found = _ROOT.search(head)
+    """What sort of message this is, by its first element: how a message
+    that came with no topic is counted and handed on (topic_kind)."""
+    found = _ROOT.search(_bytes(payload[:400]))
     return found[1].decode("ascii", "replace") if found else "?"
 
 
+#: STDDS's topics, "<system>/<sendTo>/<blockAtFAA>/<msgType>/<place>/<TRACON>"
+#: ("TAIS/all/false/FP/FSD/R90", "APDS/all/false/RR/KACY/N90": SWIM STDDS's
+#: topic scheme, as the owner's queue carried it on 2026-11-09), named by
+#: the root element each type's messages have. TDES's other types (GR, ID,
+#: PD, RD...) are TDLS's clearances (TDLSCSPMessage).
+STDDS_KINDS = {
+    "TAIS/FP": "TATrackAndFlightPlan",
+    "TAIS/ST": "TAStatus",
+    "APDS/RR": "RVRDataUpdateMessage",
+    "TDES/DD": "DATISData",
+    "TDES/DE": "TowerDepartureEventMessage",
+}
+
+
+def topic_kind(feed: str, topic: str | None) -> str | None:
+    """What sort of message this is, from the topic the broker routed it
+    by, without its payload, which is fetched from the client only where
+    a handler wants that kind (handle). None where the topic does not say;
+    the message is then known by its first element (kind)."""
+    parts = (topic or "").split("/")
+    if feed == "STDDS" and len(parts) >= 4:
+        name = f"{parts[0]}/{parts[3]}"
+        return STDDS_KINDS.get(name) or ("TDLSCSPMessage" if parts[0] == "TDES" else name)
+    if feed == "TFMS" and parts[0] == "TFMSR14Flow":
+        # "TFMSR14Flow/FlowInformation/ALL/A/sensReason/GADV": the flow
+        # message's type is the topic's last word.
+        return f"flow {parts[-1]}"
+    if feed == "TFMS" and parts[0] == "TFMSR14":
+        return "flightData"
+    return None
+
+
+def _topic(message) -> str | None:
+    """The topic a message came by; None where the client gives none."""
+    try:
+        return message.get_destination_name()
+    except Exception:  # noqa: BLE001 -- a message with no destination, or a test's
+        return None
+
+
 def handle(feed: str, message) -> None:
-    """One message handed to its feed's handler where it is worth it, and counted."""
-    payload = raw(message) if feed in RAW else body(message)
+    """One message counted by its kind and handed to that kind's handler,
+    where it has one. Its kind is read from its topic, and its payload
+    fetched only for a handler: a third of STDDS (TAIS's status messages)
+    and most of TFMS's flow messages (their flight lists) are wanted by
+    none. The kinds counted show in the feed's beat what each queue
+    carries, kept or not (#489)."""
     state = STATE[feed]
-    if worth_sending(feed, payload):
-        state["items"] += HANDLERS[feed](payload)
+    name = topic_kind(feed, _topic(message))
+    payload = None
+    if name is None:
+        payload = raw(message)
+        name = kind(payload)
+    handler = handler_for(feed, name)
+    if handler is not None:
+        payload = raw(message) if payload is None else payload
+        if worth_sending(feed, name, payload):
+            state["items"] += handler(payload)
     kinds = state.setdefault("kinds", {})
-    name = kind(payload)
     # A bounded count: a queue sends a handful of kinds.
     if name in kinds or len(kinds) < 50:
         kinds[name] = kinds.get(name, 0) + 1
