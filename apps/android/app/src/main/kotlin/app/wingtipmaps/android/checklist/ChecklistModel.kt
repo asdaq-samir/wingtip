@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.update
  * The checklist screen's state: which airplane's list is shown, normal
  * or emergency, run through or being written, and the items ticked.
  * One per activity, so a list half run is still ticked when it is opened
- * again from another place (the airplane screen, the EMER button); the
+ * again from another place (the airplane screen); the
  * ticks last while the app runs, as a paper checklist's finger does,
  * and Start over clears them.
  */

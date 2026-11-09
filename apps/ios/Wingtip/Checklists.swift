@@ -3,7 +3,7 @@ import Observation
 
 /// The two lists an airplane's checklist is kept as, as a flight manual
 /// sets them apart: its normal procedures, and its emergency procedures,
-/// which the map's EMER button opens in one tap.
+/// which the airplane's screen opens.
 enum ChecklistKind: String, CaseIterable, Sendable {
     case normal, emergency
 

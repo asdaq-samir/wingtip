@@ -219,10 +219,8 @@ Specification No. 1, Sections 4 and 3; `ChecklistPhases`, the same lists
 as the web's and Android's), never a manufacturer's words. Each is
 edited as text and run with its items ticked, a section's "n of m" by its
 title, and Start Over (`Views/ChecklistViews.swift`, `ChecklistModel`).
-They open from the Aircraft tab and from each of the pilot's airplanes,
-and the emergency list from the map's EMER button, under the location
-arrow and Ask at its top right, as a sheet in one tap (`FlightUI.emergency`,
-presented by `FlightSheets`, over a card already up where there is one).
+They open from the Aircraft tab and from each of the pilot's airplanes;
+the map has no emergency button (the owner, 2026-11-08).
 The watch is sent the normal list.
 
 The Brief's Passenger Briefing (#223, `Wingtip/Passengers.swift`,

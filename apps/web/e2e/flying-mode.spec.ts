@@ -52,19 +52,6 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   }
   await expect(page.getByTestId("map-settings-button")).toHaveCount(0);
 
-  // EMER, under the stack at the same 60 points, opens the airplane's
-  // emergency checklists in one tap (#220).
-  const emer = page.getByTestId("flying-emergency");
-  await expect(emer).toBeVisible();
-  const emerBox = (await emer.boundingBox())!;
-  expect(Math.round(emerBox.width)).toBe(FLYING_PX);
-  await emer.click();
-  const sheet = page.getByTestId("emergency-checklists");
-  await expect(sheet.getByTestId("checklist")).toHaveAttribute("data-kind", "emergency");
-  await expect(sheet).toContainText("No emergency checklist yet");
-  await page.keyboard.press("Escape");
-  await expect(sheet).toHaveCount(0);
-
   // The dry run closed from the Profile: on the ground at once, everything
   // back -- the small buttons, and at half the route's box and the tabs.
   await grabberTo(page, "half");
@@ -73,15 +60,6 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   await expect(head).toHaveCount(0);
   await expect(page.getByTestId("flying-nearest")).toHaveCount(0);
   await expect(page.getByTestId("map-settings-button")).toBeVisible();
-  // EMER stays on the ground, small, last of the map's buttons, as the
-  // iPhone has it (the owner, 2026-11-08), and opens the same lists.
-  const groundEmer = page.getByTestId("map-emergency");
-  await expect(groundEmer).toBeVisible();
-  expect(Math.round((await groundEmer.boundingBox())!.width)).toBeLessThan(FLYING_PX);
-  await groundEmer.click();
-  await expect(page.getByTestId("emergency-checklists").getByTestId("checklist")).toHaveAttribute("data-kind", "emergency");
-  await page.keyboard.press("Escape");
-  await expect(page.getByTestId("emergency-checklists")).toHaveCount(0);
   const mic = (await page.locator("[data-map-food]").getByTestId("radio-button").boundingBox())!;
   expect(Math.round(mic.width)).toBeLessThan(FLYING_PX);
   await closeProfile(page);

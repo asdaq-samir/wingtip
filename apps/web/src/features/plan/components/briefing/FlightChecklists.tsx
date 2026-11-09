@@ -7,8 +7,7 @@ import ChecklistPage from "../../../pilot/ChecklistPage";
  * The Brief's Checklists: the flight's airplane's own, normal and
  * emergency, kept in this browser (lib/checklists) -- for any airplane
  * the plan flies, a stock profile or a tail as well as the pilot's own
- * (whose page in Setup's Airplanes opens the same lists). In the air the
- * map's EMER opens the emergency list in one tap (MapControls).
+ * (whose page in Setup's Airplanes opens the same lists).
  */
 export default function FlightChecklists() {
   const aircraft = usePreferences(s => s.aircraft);

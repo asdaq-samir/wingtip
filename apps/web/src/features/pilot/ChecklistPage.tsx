@@ -22,8 +22,7 @@ const KINDS = [
  * to copy, so an empty list offers the phases' headings alone to write
  * under. The ticks are this run's, kept on the page until Start over.
  *
- * `kind` is where it opens: the map's EMER in flight opens on the
- * emergency list, one tap from the chart.
+ * `kind` is where it opens, the normal list by default.
  */
 export default function ChecklistPage({ airplane, name, kind: opening = "normal" }: {
   /** The airplane's aircraftKey (lib/aircraftChoice). */

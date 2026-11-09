@@ -17,12 +17,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -48,8 +46,6 @@ import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.Links
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.Session
-import app.wingtipmaps.android.checklist.ChecklistKind
-import app.wingtipmaps.android.checklist.ChecklistScreen
 import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.OwnShip
@@ -158,7 +154,6 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     var ownShipOn by rememberSaveable { mutableStateOf(false) }
     var following by rememberSaveable { mutableStateOf(false) }
     var asking by rememberSaveable { mutableStateOf(false) }
-    var emergency by rememberSaveable { mutableStateOf(false) }
     // Under way: own ship on and at flying speed (the engine's
     // `underway`), when the strip turns to the airplane.
     val flying = ownShipOn && OwnShip.underway(fix?.groundspeedKt)
@@ -316,10 +311,6 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             )
             MapButtons(
                 ownShip = ownShipMode, onOwnShip = onOwnShip, onAsk = onAsk, modifier = Modifier.align(Alignment.TopEnd),
-                // On the ground as in the air, as the iPhone has it (the
-                // owner, 2026-11-08): an engine fire during start is one of
-                // the emergencies.
-                onEmergency = { emergency = true },
             )
             // What is ahead and the flight's instruments, at the top left of
             // the buttons where nothing else was (#218).
@@ -345,16 +336,6 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
                     modifier = Modifier.align(Alignment.TopStart),
                 )
             }
-        }
-    }
-    // The current airplane's emergency checklists, over either layout,
-    // from EMER on the map.
-    if (emergency) {
-        ModalBottomSheet(
-            onDismissRequest = { emergency = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        ) {
-            ChecklistScreen(airplane = state.aircraft, kind = ChecklistKind.EMERGENCY)
         }
     }
     // Nearest, from the instruments bar: a field tapped opens its card in

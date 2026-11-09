@@ -21,10 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 /**
@@ -39,8 +35,7 @@ enum class OwnShipMode { OFF, READING, FOLLOWING }
  * The buttons over the map, under the status bar at the right, as the
  * iOS app's MapButtons: the location arrow, and under it the sparkle
  * that opens Ask (AskScreen), a question about the flight put to the
- * assistant. EMER under them opens the airplane's emergency checklists in
- * one tap (#220), on the ground as in the air, as the iPhone's does. A tonal icon button is Material's own
+ * assistant. A tonal icon button is Material's own
  * 40-dp control with its 48-dp touch target, so nothing is grown to be
  * tappable.
  */
@@ -50,7 +45,6 @@ fun MapButtons(
     onOwnShip: () -> Unit,
     onAsk: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    onEmergency: (() -> Unit)? = null,
 ) {
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Column(modifier.padding(top = top + 8.dp, end = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -79,21 +73,6 @@ fun MapButtons(
                 colors = IconButtonDefaults.filledTonalIconButtonColors(contentColor = MaterialTheme.colorScheme.primary),
             ) {
                 Icon(Icons.Filled.AutoAwesome, contentDescription = "Ask about this flight")
-            }
-        }
-        // Always there, last, as the iPhone's is (the owner, 2026-11-08);
-        // null only where a caller has no checklists to open. Its letters
-        // in the error colour, so it is found without reading.
-        if (onEmergency != null) {
-            FilledTonalIconButton(
-                onClick = onEmergency,
-                colors = IconButtonDefaults.filledTonalIconButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                modifier = Modifier.semantics { contentDescription = "Emergency checklists" },
-            ) {
-                Text(
-                    "EMER", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clearAndSetSemantics {},
-                )
             }
         }
     }
