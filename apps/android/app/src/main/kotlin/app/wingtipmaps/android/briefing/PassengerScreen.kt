@@ -33,6 +33,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.ui.ProblemLine
+import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.ui.SectionTitle
+import app.wingtipmaps.android.ui.WingtipIcons
+import app.wingtipmaps.android.R
+import androidx.compose.ui.res.stringResource
 
 /**
  * The passenger briefing (PassengerModel): the items ticked off for this
@@ -52,12 +57,12 @@ fun PassengerScreen(plan: Plan, modifier: Modifier = Modifier) {
     val done = items.count { it.key in state.ticked }
 
     Column(
-        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg),
+        verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
     ) {
         Text(
-            "Brief Your Passengers · $done of ${items.size}",
-            style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() },
+            stringResource(R.string.passengers_briefed, done, items.size),
+            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         ProblemLine(state.problem)
         items.forEach { item ->
@@ -70,7 +75,7 @@ fun PassengerScreen(plan: Plan, modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxWidth().toggleable(value = on, role = Role.Checkbox, onValueChange = { model.tick(item.key) }),
             )
         }
-        Text("The Flight", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 8.dp).semantics { heading() })
+        SectionTitle(stringResource(R.string.the_flight))
         val message = model.message(planState, state)
         if (message == null) {
             Text("Plan a route first, and the flight is written here to send.", style = MaterialTheme.typography.bodyLarge)
@@ -86,10 +91,10 @@ fun PassengerScreen(plan: Plan, modifier: Modifier = Modifier) {
                     context.startActivity(Intent.createChooser(send, "Send the flight"))
                 },
                 contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
-                modifier = Modifier.padding(bottom = 24.dp),
+                modifier = Modifier.padding(bottom = WingtipSpace.Xl),
             ) {
-                Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                Text("Share")
+                Icon(WingtipIcons.share, contentDescription = null, modifier = Modifier.padding(end = WingtipSpace.Sm))
+                Text(stringResource(R.string.share))
             }
         }
     }

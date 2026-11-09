@@ -56,6 +56,9 @@ import app.wingtipmaps.android.api.AssistantContext
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.api.AssistantTurn
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.R
+import androidx.compose.ui.res.stringResource
+import app.wingtipmaps.android.design.generated.WingtipSpace
 
 /** What a pilot asks first, offered while there is nothing to read. */
 val askSuggestions = listOf(
@@ -73,13 +76,11 @@ val askSuggestions = listOf(
  * while the assistant looks something up its own words for that stand
  * under the last bubble, and the answer's text appends as it streams.
  * Phase 0 has no speech path on Android, so a question is typed. Shown
- * full-screen (or in a bottom sheet) from the sparkle button beside the
- * map's buttons, which RootScreen's owner places:
- * `AskScreen(plan, session, ownShip, onClose = { ... })`.
+ * in the one sheet (WingtipSheet), titled Ask with its close, from the
+ * sparkle button beside the map's buttons.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, onClose: () -> Unit, client: AssistantClient = viewModel()) {
+fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantClient = viewModel()) {
     val conversation by client.conversation.collectAsStateWithLifecycle()
     val planState by plan.state.collectAsStateWithLifecycle()
     val pilot by session.pilot.collectAsStateWithLifecycle()
@@ -112,17 +113,11 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, onClose: () -> Uni
     DisposableEffect(Unit) { onDispose { client.cancel() } }
 
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = { Text("Ask") },
-            actions = {
-                IconButton(onClick = onClose) { Icon(Icons.Filled.Close, contentDescription = "Close") }
-            },
-        )
         LazyColumn(
             state = list,
             modifier = Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(WingtipSpace.Lg),
+            verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md),
         ) {
             if (conversation.turns.isEmpty()) {
                 item { Suggestions(onAsk = ::send) }
@@ -132,47 +127,39 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, onClose: () -> Uni
             }
             conversation.status?.let { status ->
                 item(key = "status") {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+                        CircularProgressIndicator(Modifier.size(WingtipSpace.Lg))
                         Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
         }
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm),
             verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
         ) {
             OutlinedTextField(
                 value = question, onValueChange = { question = it }, modifier = Modifier.weight(1f),
-                placeholder = { Text("Ask about the flight") }, maxLines = 4,
+                placeholder = { Text(stringResource(R.string.ask_about_flight)) }, maxLines = 4,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = { send(question) }),
             )
             IconButton(onClick = { send(question) }, enabled = question.isNotBlank()) {
-                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = MaterialTheme.colorScheme.primary)
+                Icon(WingtipIcons.send, contentDescription = stringResource(R.string.send), tint = MaterialTheme.colorScheme.primary)
             }
         }
     }
 
-    source?.let { shown ->
-        ModalBottomSheet(onDismissRequest = { source = null }) {
-            Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(shown.label, style = MaterialTheme.typography.titleMedium)
-                // A fixed-width face, so a METAR's groups line up as pilots read them.
-                Text(shown.text, style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace)
-            }
-        }
-    }
+    source?.let { shown -> SourceSheet(shown, onClose = { source = null }) }
 }
 
 @Composable
 private fun Suggestions(onAsk: (String) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Ask about the flight", style = MaterialTheme.typography.titleMedium)
+    Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+        SectionTitle(stringResource(R.string.ask_about_flight))
         Text(
-            "The figures are the planner's; the assistant puts them in words and shows what it read.",
+            stringResource(R.string.ask_help),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         askSuggestions.forEach { words ->
@@ -189,7 +176,7 @@ private fun TurnBubble(turn: AssistantTurn, onSource: (AssistantSource) -> Unit)
     Column(
         Modifier.fillMaxWidth(),
         horizontalAlignment = if (mine) Alignment.End else Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
     ) {
         if (turn.content.isNotEmpty()) {
             Box(
@@ -197,9 +184,9 @@ private fun TurnBubble(turn: AssistantTurn, onSource: (AssistantSource) -> Unit)
                     .widthIn(max = 320.dp)
                     .background(
                         if (mine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                        RoundedCornerShape(16.dp),
+                        MaterialTheme.shapes.large,
                     )
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .padding(horizontal = WingtipSpace.Md, vertical = WingtipSpace.Sm)
                     .semantics { contentDescription = (if (mine) "You asked: " else "The assistant: ") + turn.content },
             ) {
                 Text(
@@ -209,7 +196,7 @@ private fun TurnBubble(turn: AssistantTurn, onSource: (AssistantSource) -> Unit)
             }
         }
         if (turn.sources.isNotEmpty()) {
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                 turn.sources.forEach { source ->
                     AssistChip(
                         onClick = { onSource(source) },

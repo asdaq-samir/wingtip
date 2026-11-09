@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.ui.ProblemLine
+import app.wingtipmaps.android.design.generated.WingtipSpace
 
 /**
  * An airplane's checklists (ChecklistModel): normal or emergency picked
@@ -51,8 +52,7 @@ fun ChecklistScreen(airplane: String, kind: ChecklistKind, modifier: Modifier = 
     val state by model.state.collectAsStateWithLifecycle()
     LaunchedEffect(airplane, kind) { model.show(airplane, kind) }
 
-    Column(modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Checklists · ${airplane.uppercase()}", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+    Column(modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
             ChecklistKind.entries.forEachIndexed { i, k ->
                 SegmentedButton(
