@@ -247,6 +247,13 @@ export type NarrativeMessage = Assistant["NarrativeMessage"];
  *  Brief's NOTAMs that matter, POST /api/words/notams/ranked). */
 export type RankedNotams = Assistant["RankedNotams"];
 export type RankedNotam = Assistant["RankedLine"];
+/** A trip in the pilot's words worked into a proposal (POST
+ *  /api/trip-plan): the ask, one line of its stream, the proposal and a
+ *  leg of it, which the FPL loads on the pilot's tap. */
+export type TripAsk = Assistant["TripAsk"];
+export type TripMessage = Assistant["TripMessage"];
+export type TripProposal = Assistant["TripProposal"];
+export type TripLeg = Assistant["TripLeg"];
 export type CheckpointNoteSaved = Schemas["CheckpointNoteSaved"];
 
 /** What the nav log stream's "altitude" message carries -- the generated

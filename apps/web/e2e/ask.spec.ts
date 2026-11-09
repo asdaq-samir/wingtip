@@ -123,3 +123,34 @@ test("the route's AI button opens the AI brief, its Ask at its foot, and the men
   await expect(panel.getByTestId("brief-card")).toBeVisible();
   await expect(panel.getByTestId("ask-field")).toBeAttached({ timeout: slow(10000) });
 });
+
+test("Plan a trip proposes a trip from the pilot's words, and Use loads it into the route", async ({ page }) => {
+  await mockAi(page, []);
+  const leg = (kind: string, dep: string, dest: string, depart: string) => ({
+    kind, change: { dep, dest, stops: ["KUES"], altitude_ft: 4500, depart }, altitude_ft: 4500, distance_nm: 113, ete_min: 74, fuel_gal: 11.2,
+    arrive: null, depart_local: "", arrive_local: null, window: null, airspace: [], cautions: [], sources: [],
+  });
+  const lines = [
+    { type: "tool", name: "route_options", label: "The ways to KOSH" },
+    { type: "text", text: "Through Waukesha keeps you clear of the Chicago Class B." },
+    { type: "plan", proposal: { legs: [leg("outbound", "C81", "KOSH", "2030-11-16T14:00:00Z")], rationale: "",
+      unmet: ["The app has no fuel prices: no fuel price feed is read, so a price limit cannot be applied."] } },
+    { type: "sources", sources: [] },
+    { type: "done" },
+  ];
+  await page.route(url => url.pathname === "/api/planner/trip-plan", route => route.fulfill({
+    status: 200, contentType: "application/x-ndjson", body: lines.map(l => JSON.stringify(l)).join("\n") + "\n" }));
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openBrief(page);
+  const panel = sideDrawer(page);
+  await panel.getByTestId("ask-plan-trip").click({ timeout: slow(30000) });
+  await panel.getByTestId("trip-field").fill("VFR to Oshkosh Saturday morning, fuel stop under $6");
+  await panel.getByTestId("trip-send").click();
+  await expect(panel.getByTestId("trip-route")).toHaveText("C81 → KUES → KOSH", { timeout: slow(15000) });
+  await expect(panel.getByTestId("trip-unmet")).toContainText("no fuel prices");
+  // Nothing applied until the tap.
+  await expect(page).toHaveURL(/dest=KDLH/);
+  await panel.getByTestId("trip-use").click();
+  await expect(page).toHaveURL(/dest=KOSH/, { timeout: slow(15000) });
+});

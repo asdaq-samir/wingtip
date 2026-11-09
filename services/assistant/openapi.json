@@ -1233,7 +1233,7 @@
         "type": "object"
       },
       "Source": {
-        "description": "The raw thing a sentence can rest on, as the pilot can read it: a\nMETAR or a NOTAM as sent, a TAF line, a hazard's words, a finding's\nline, a debrief figure's line. `id` is what a sentence cites\n(\"metar:KDLH\", \"finding:fuel\"); `label` is its heading on screen.",
+        "description": "A raw thing a sentence can rest on, shown to the pilot as sent.",
         "properties": {
           "id": {
             "title": "Id",
@@ -1254,6 +1254,417 @@
           "text"
         ],
         "title": "Source",
+        "type": "object"
+      },
+      "TripAsk": {
+        "description": "A trip in the pilot's own words (\"VFR to Oshkosh Saturday morning,\nstay out of the Chicago Class B, back by 5\"), the plan and record the\napp has (the assistant's Context: the departure where the words leave\nit out, the airplane, the minimums) and the pilot's time zone (IANA),\nwhich \"Saturday\" and \"by 5\" are read in.",
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Context"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "text": {
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Text",
+            "type": "string"
+          },
+          "time_zone": {
+            "default": "America/Chicago",
+            "maxLength": 64,
+            "title": "Time Zone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "TripAsk",
+        "type": "object"
+      },
+      "TripChange": {
+        "description": "A leg as the app loads it into the FPL: the same fields as the\nassistant's proposed change (useAsk's AssistantChange), all of them.",
+        "properties": {
+          "altitude_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Altitude Ft"
+          },
+          "dep": {
+            "title": "Dep",
+            "type": "string"
+          },
+          "depart": {
+            "title": "Depart",
+            "type": "string"
+          },
+          "dest": {
+            "title": "Dest",
+            "type": "string"
+          },
+          "stops": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Stops",
+            "type": "array"
+          }
+        },
+        "required": [
+          "dep",
+          "dest",
+          "stops",
+          "depart"
+        ],
+        "title": "TripChange",
+        "type": "object"
+      },
+      "TripDone": {
+        "properties": {
+          "type": {
+            "const": "done",
+            "default": "done",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "title": "TripDone",
+        "type": "object"
+      },
+      "TripError": {
+        "properties": {
+          "type": {
+            "const": "error",
+            "default": "error",
+            "title": "Type",
+            "type": "string"
+          },
+          "words": {
+            "title": "Words",
+            "type": "string"
+          }
+        },
+        "required": [
+          "words"
+        ],
+        "title": "TripError",
+        "type": "object"
+      },
+      "TripLeg": {
+        "description": "One leg of the proposal: the route and time the pilot loads\n(`change`), and its figures, each the planner's: the altitude the plan\nchose or was asked, the distance, time and fuel of its nav log, the\narrival (the departure and the plan's ETE), the go window the\ndeparture is in (None where the window was not asked or the time is\noutside it), the airspace it passes, the plan's cautions, and the ids\nof the sources they rest on.",
+        "properties": {
+          "airspace": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Airspace",
+            "type": "array"
+          },
+          "altitude_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altitude Ft"
+          },
+          "arrive": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrive"
+          },
+          "arrive_local": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrive Local"
+          },
+          "cautions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Cautions",
+            "type": "array"
+          },
+          "change": {
+            "$ref": "#/components/schemas/TripChange"
+          },
+          "depart_local": {
+            "title": "Depart Local",
+            "type": "string"
+          },
+          "distance_nm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Nm"
+          },
+          "ete_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ete Min"
+          },
+          "fuel_gal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuel Gal"
+          },
+          "kind": {
+            "enum": [
+              "outbound",
+              "return"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TripWindow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "change",
+          "altitude_ft",
+          "distance_nm",
+          "ete_min",
+          "fuel_gal",
+          "arrive",
+          "depart_local",
+          "arrive_local",
+          "window",
+          "airspace",
+          "cautions",
+          "sources"
+        ],
+        "title": "TripLeg",
+        "type": "object"
+      },
+      "TripMessage": {
+        "discriminator": {
+          "mapping": {
+            "done": "#/components/schemas/TripDone",
+            "error": "#/components/schemas/TripError",
+            "plan": "#/components/schemas/TripPlanned",
+            "sources": "#/components/schemas/TripSources",
+            "text": "#/components/schemas/TripText",
+            "tool": "#/components/schemas/TripTool"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TripTool"
+          },
+          {
+            "$ref": "#/components/schemas/TripText"
+          },
+          {
+            "$ref": "#/components/schemas/TripPlanned"
+          },
+          {
+            "$ref": "#/components/schemas/TripSources"
+          },
+          {
+            "$ref": "#/components/schemas/TripDone"
+          },
+          {
+            "$ref": "#/components/schemas/TripError"
+          }
+        ]
+      },
+      "TripPlanned": {
+        "properties": {
+          "proposal": {
+            "$ref": "#/components/schemas/TripProposal"
+          },
+          "type": {
+            "const": "plan",
+            "default": "plan",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal"
+        ],
+        "title": "TripPlanned",
+        "type": "object"
+      },
+      "TripProposal": {
+        "description": "The trip proposed: its legs (the return where asked), the model's\nshort reason for it, and every constraint it could not meet, in plain\nwords -- the model's and the planner's checks' (a deadline missed, a\nClass B still crossed, a price the app cannot know). Nothing is\napplied until the pilot taps Use.",
+        "properties": {
+          "legs": {
+            "items": {
+              "$ref": "#/components/schemas/TripLeg"
+            },
+            "title": "Legs",
+            "type": "array"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "unmet": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unmet",
+            "type": "array"
+          }
+        },
+        "required": [
+          "legs",
+          "rationale",
+          "unmet"
+        ],
+        "title": "TripProposal",
+        "type": "object"
+      },
+      "TripSources": {
+        "properties": {
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/Source"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "type": {
+            "const": "sources",
+            "default": "sources",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sources"
+        ],
+        "title": "TripSources",
+        "type": "object"
+      },
+      "TripText": {
+        "properties": {
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "type": {
+            "const": "text",
+            "default": "text",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "TripText",
+        "type": "object"
+      },
+      "TripTool": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "const": "tool",
+            "default": "tool",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "label"
+        ],
+        "title": "TripTool",
+        "type": "object"
+      },
+      "TripWindow": {
+        "description": "The run of go hours (the planner's departure window) the departure\nfalls in: its first and last departure hour, UTC.",
+        "properties": {
+          "hours": {
+            "title": "Hours",
+            "type": "integer"
+          },
+          "last": {
+            "title": "Last",
+            "type": "string"
+          },
+          "start": {
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "last",
+          "hours"
+        ],
+        "title": "TripWindow",
         "type": "object"
       },
       "Turn": {
@@ -1616,6 +2027,49 @@
         "x-gateway": {
           "access": "developer",
           "paid": "ORAL"
+        }
+      }
+    },
+    "/api/trip-plan": {
+      "post": {
+        "description": "A trip in the pilot's words worked out into a proposal (TripMessage\nlines): `tool` as each is asked, `text` as the reason comes, `plan`\nwith the proposal (its legs as the FPL loads them, their figures and\nsources, the constraints not met), `sources`, then `done`; or `error`\nin words. Nothing is applied: the pilot taps Use in the app.",
+        "operationId": "trip_plan_api_trip_plan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TripAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "application/x-ndjson": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Trip Plan",
+        "x-gateway": {
+          "access": "signed-in",
+          "bodyLimit": 32768,
+          "paid": "ASSISTANT"
         }
       }
     },

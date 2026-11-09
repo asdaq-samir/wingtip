@@ -54,10 +54,7 @@ struct ASSentence: Codable, Equatable, Sendable {
     var text: String
 }
 
-/// The raw thing a sentence can rest on, as the pilot can read it: a
-/// METAR or a NOTAM as sent, a TAF line, a hazard's words, a finding's
-/// line, a debrief figure's line. `id` is what a sentence cites
-/// ("metar:KDLH", "finding:fuel"); `label` is its heading on screen.
+/// A raw thing a sentence can rest on, shown to the pilot as sent.
 // MARK: - ASSource
 struct ASSource: Codable, Equatable, Sendable {
     var id, label, text: String
@@ -352,6 +349,111 @@ struct ASRankedLine: Codable, Equatable, Sendable {
     var tied, top: Bool
     var why: String
     var worded: Bool
+}
+
+/// A trip in the pilot's own words ("VFR to Oshkosh Saturday morning,
+/// stay out of the Chicago Class B, back by 5"), the plan and record the
+/// app has (the assistant's Context: the departure where the words leave
+/// it out, the airplane, the minimums) and the pilot's time zone (IANA),
+/// which "Saturday" and "by 5" are read in.
+// MARK: - ASTripAsk
+struct ASTripAsk: Codable, Equatable, Sendable {
+    var context: ASContext?
+    var text: String
+    var timeZone: String?
+}
+
+// MARK: - ASTripDone
+struct ASTripDone: Codable, Equatable, Sendable {
+    var type: String?
+}
+
+// MARK: - ASTripError
+struct ASTripError: Codable, Equatable, Sendable {
+    var type: String?
+    var words: String
+}
+
+// MARK: - ASTripMessage
+struct ASTripMessage: Codable, Equatable, Sendable {
+    var label, name, type, text: String?
+    var proposal: ASTripProposal?
+    var sources: [ASSource]?
+    var words: String?
+}
+
+/// The trip proposed: its legs (the return where asked), the model's
+/// short reason for it, and every constraint it could not meet, in plain
+/// words -- the model's and the planner's checks' (a deadline missed, a
+/// Class B still crossed, a price the app cannot know). Nothing is
+/// applied until the pilot taps Use.
+// MARK: - ASTripProposal
+struct ASTripProposal: Codable, Equatable, Sendable {
+    var legs: [ASTripLeg]
+    var rationale: String
+    var unmet: [String]
+}
+
+/// One leg of the proposal: the route and time the pilot loads
+/// (`change`), and its figures, each the planner's: the altitude the plan
+/// chose or was asked, the distance, time and fuel of its nav log, the
+/// arrival (the departure and the plan's ETE), the go window the
+/// departure is in (None where the window was not asked or the time is
+/// outside it), the airspace it passes, the plan's cautions, and the ids
+/// of the sources they rest on.
+// MARK: - ASTripLeg
+struct ASTripLeg: Codable, Equatable, Sendable {
+    var airspace: [String]
+    var altitudeFt: Double?
+    var arrive, arriveLocal: String?
+    var cautions: [String]
+    var change: ASTripChange
+    var departLocal: String
+    var distanceNm, eteMin, fuelGal: Double?
+    var kind: String
+    var sources: [String]
+    var window: ASTripWindow?
+}
+
+/// A leg as the app loads it into the FPL: the same fields as the
+/// assistant's proposed change (useAsk's AssistantChange), all of them.
+// MARK: - ASTripChange
+struct ASTripChange: Codable, Equatable, Sendable {
+    var altitudeFt: Double?
+    var dep, depart, dest: String
+    var stops: [String]
+}
+
+/// The run of go hours (the planner's departure window) the departure
+/// falls in: its first and last departure hour, UTC.
+// MARK: - ASTripWindow
+struct ASTripWindow: Codable, Equatable, Sendable {
+    var hours: Int
+    var last, start: String
+}
+
+// MARK: - ASTripPlanned
+struct ASTripPlanned: Codable, Equatable, Sendable {
+    var proposal: ASTripProposal
+    var type: String?
+}
+
+// MARK: - ASTripSources
+struct ASTripSources: Codable, Equatable, Sendable {
+    var sources: [ASSource]
+    var type: String?
+}
+
+// MARK: - ASTripText
+struct ASTripText: Codable, Equatable, Sendable {
+    var text: String
+    var type: String?
+}
+
+// MARK: - ASTripTool
+struct ASTripTool: Codable, Equatable, Sendable {
+    var label, name: String
+    var type: String?
 }
 
 /// A words endpoint's answer: the sentences that passed the check, the
