@@ -124,13 +124,36 @@ object Planner {
 
     /** The nav log for a route, line by line as the planner sends them
      *  (/api/navlog), under the flight rules picked (the planner's
-     *  altitudes by 14 CFR 91.159 or 91.179); a line of a kind the app has no use for is left out. */
-    fun navlog(dep: String, dest: String, stops: List<String>, aircraft: String, holds: List<String> = emptyList(), rules: String = "vfr"): Flow<NavLogMessage> =
-        lines(
-            "/api/navlog",
-            route(dep, dest, stops) + ("aircraft" to aircraft(aircraft)) + ("holds" to holds.joinToString(",").ifEmpty { null }) + ("rules" to rules),
-        )
-            .mapNotNull { NavLog.decode(it) }
+     *  altitudes by 14 CFR 91.159 or 91.179, or the pilot's own
+     *  `altitudeFt` on every leg), leaving at `depart` (ISO 8601) or now;
+     *  a line of a kind the app has no use for is left out. */
+    fun navlog(
+        dep: String,
+        dest: String,
+        stops: List<String>,
+        aircraft: String,
+        holds: List<String> = emptyList(),
+        rules: String = "vfr",
+        altitudeFt: Double? = null,
+        depart: String? = null,
+    ): Flow<NavLogMessage> =
+        lines("/api/navlog", navlogQuery(dep, dest, stops, aircraft, holds, rules, altitudeFt, depart)).mapNotNull { NavLog.decode(it) }
+
+    /** The nav log's question: the route, the airplane, the holds, the
+     *  rules, and the pilot's own altitude and departure time where set
+     *  (left out otherwise, for the planner's pick and its now). */
+    fun navlogQuery(
+        dep: String,
+        dest: String,
+        stops: List<String>,
+        aircraft: String,
+        holds: List<String> = emptyList(),
+        rules: String = "vfr",
+        altitudeFt: Double? = null,
+        depart: String? = null,
+    ): Map<String, String?> =
+        route(dep, dest, stops) + ("aircraft" to aircraft(aircraft)) + ("holds" to holds.joinToString(",").ifEmpty { null }) + ("rules" to rules) +
+            ("altitude_ft" to altitudeFt?.let { Math.round(it).toString() }) + ("depart" to depart)
 
     /** The Brief's Go / No-Go for the route (POST /api/go-no-go): the
      *  planner plans and briefs it and works the verdict out with the
