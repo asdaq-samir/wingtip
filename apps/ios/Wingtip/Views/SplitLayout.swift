@@ -205,6 +205,7 @@ struct SplitLayout<Map: View>: View {
             case .airplane(let hex): AirplaneCard(hex: hex).id(hex)
             case .hold(let fix): HoldSheet(fix: fix).id(fix)
             case .flown(let id, let title): FlownTrackView(flight: id, title: title).id(id)
+            case .leg(let index): RouteLegSheet(index: index).id(index)
             case nil: EmptyView()
             }
         case nil:

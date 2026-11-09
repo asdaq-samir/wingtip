@@ -8,7 +8,10 @@ import SwiftUI
 struct AirportCard: View {
     let ident: String
     @Environment(Plan.self) private var plan
+    @Environment(Verdict.self) private var verdict
     @State private var place: AirportPlace?
+    /// The field's live reports (D-ATIS, RVR, programs), the tabs' own.
+    @State private var live = AirportLive()
     @State private var problem: String?
     @State private var notFound = false
     @State private var photos: AirportPhotos?
@@ -76,8 +79,12 @@ struct AirportCard: View {
                 }
             }
         }
+        .environment(live)
         .fullScreenCover(item: $shown) { PictureViewer(picture: $0) }
         .refreshable { await load() }
+        // The live reports, asked again while the card is open; the RVR
+        // judged against the pilot's own visibility minimum.
+        .task(id: "\(ident)|\(verdict.minimums.visibilitySm ?? -1)") { await live.watch(ident, minimumSm: verdict.minimums.visibilitySm) }
         .task(id: ident) {
             async let pictures = try? Planner.photos(ident)
             await load()
@@ -267,6 +274,7 @@ struct AirportInfoTab: View {
     let place: AirportPlace
 
     var body: some View {
+        FlowProgramsSection()
         Section(place.airspaceClass.map { "Frequencies (Class \($0))" } ?? "Frequencies") {
             if place.frequencies.isEmpty { Text("None listed").foregroundStyle(.secondary) }
             ForEach(Array(place.frequencies.enumerated()), id: \.offset) { _, f in FrequencyRowView(frequency: f) }
@@ -341,6 +349,7 @@ struct AirportWeatherTab: View {
                 figure("cloud", "Ceiling", modelled.ceilingFt.map { Format.altitude($0) } ?? "None", spoken: modelled.ceilingFt.map(SpokenFigures.feet))
             }
         }
+        DigitalAtisSections()
         AtisSection()
         if place.metar == nil, let nearby = place.nearbyMetar {
             Section(title: "Nearest Report, \(Format.distance(nearby.distanceNm)) \(AirportWords.compassPoint(Double(nearby.bearingDeg)))") {
@@ -450,6 +459,7 @@ struct AirportRunwaysTab: View {
             if place.runways.isEmpty { Text("No runways listed").foregroundStyle(.secondary) }
             ForEach(Array(place.runways.enumerated()), id: \.offset) { _, runway in RunwayRowView(runway: runway) }
         }
+        RvrSection()
     }
 }
 
@@ -609,15 +619,15 @@ private enum PreviewData {
 }
 
 #Preview("AirportInfoTab") {
-    List { AirportInfoTab(place: PreviewData.place) }
+    List { AirportInfoTab(place: PreviewData.place) }.environment(AirportLive())
 }
 
 #Preview("AirportWeatherTab") {
-    List { AirportWeatherTab(place: PreviewData.place) }
+    List { AirportWeatherTab(place: PreviewData.place) }.environment(AirportLive())
 }
 
 #Preview("AirportRunwaysTab") {
-    List { AirportRunwaysTab(place: PreviewData.place) }
+    List { AirportRunwaysTab(place: PreviewData.place) }.environment(AirportLive())
 }
 
 #Preview("AirportChartsTab") {

@@ -8,6 +8,7 @@
  */
 import { ApiError, csrfHeaders, failIfNotOk } from "./client";
 import type { Source } from "./assistant";
+import { requestIdHeaders } from "./requestId";
 
 export type { Source };
 
@@ -68,7 +69,7 @@ export interface RiskWordsRequest {
 async function postJson<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
   const res = await fetch(path, {
     method: "POST", signal, body: JSON.stringify(body),
-    headers: { "Content-Type": "application/json", ...csrfHeaders("POST") },
+    headers: { "Content-Type": "application/json", ...csrfHeaders("POST"), ...requestIdHeaders() },
   });
   // A billed Claude call needs a session, and Spring's 401 carries no body.
   if (res.status === 401) throw new ApiError("Sign in for the words", 401);

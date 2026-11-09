@@ -14,6 +14,9 @@ struct FlightLayer {
     /// The glide ring about own ship (InFlight, the engine's glide_ring),
     /// its outline; empty with none.
     var glide: [CLLocationCoordinate2D] = []
+    /// The emergency assistant's line from the airplane to the field
+    /// picked (Emergency), while it is open; empty otherwise.
+    var emergency: [CLLocationCoordinate2D] = []
     var onTraffic: ((TrafficAircraft) -> Void)?
     /// The pilot dragged the map off the airplane followed.
     var onDragged: (() -> Void)?
@@ -29,6 +32,9 @@ final class CasingPolyline: MKPolyline {}
 
 /// The still-air glide ring about own ship, dashed as the web app's.
 final class GlidePolyline: MKPolyline {}
+
+/// The emergency assistant's line to the field picked.
+final class EmergencyPolyline: MKPolyline {}
 
 /// The ring round the airplane tracked, as the web app's TrafficLayer
 /// draws it.
@@ -66,6 +72,8 @@ final class FlightMapLayer: NSObject {
     private var centred: CLLocationCoordinate2D?
     private var glideLine: GlidePolyline?
     private var glideDrawn: [CLLocationCoordinate2D] = []
+    private var emergencyLine: EmergencyPolyline?
+    private var emergencyDrawn: [CLLocationCoordinate2D] = []
     private weak var map: MKMapView?
 
     func attach(_ map: MKMapView) {
@@ -94,6 +102,19 @@ final class FlightMapLayer: NSObject {
         draw("past", next.past, on: map, fit: true)
         draw("flown", next.flown, on: map, fit: true)
         drawGlide(next.glide, on: map)
+        drawEmergency(next.emergency, on: map)
+    }
+
+    /// The line to the field picked, drawn again only where it moved.
+    private func drawEmergency(_ path: [CLLocationCoordinate2D], on map: MKMapView) {
+        guard !ChartMap.samePath(path, emergencyDrawn) else { return }
+        emergencyDrawn = path
+        if let emergencyLine { map.removeOverlay(emergencyLine) }
+        emergencyLine = nil
+        guard path.count >= 2 else { return }
+        let line = EmergencyPolyline(coordinates: path, count: path.count)
+        map.addOverlay(line, level: .aboveLabels)
+        emergencyLine = line
     }
 
     /// The glide ring, drawn again only where it moved.
@@ -139,6 +160,14 @@ final class FlightMapLayer: NSObject {
             renderer.strokeColor = UIColor.systemBlue.withAlphaComponent(0.85)
             renderer.lineWidth = 2
             renderer.lineDashPattern = [8, 6]
+            return renderer
+        }
+        if let line = overlay as? EmergencyPolyline {
+            // In the problem's red, solid: the way to the field picked.
+            let renderer = MKPolylineRenderer(polyline: line)
+            renderer.strokeColor = UIColor(WingtipInk.problem)
+            renderer.lineWidth = 4
+            renderer.lineCap = .round
             return renderer
         }
         if let casing = overlay as? CasingPolyline {

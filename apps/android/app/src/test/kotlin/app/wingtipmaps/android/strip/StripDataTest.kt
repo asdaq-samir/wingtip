@@ -63,7 +63,8 @@ class StripDataTest {
         assertNull(StripData.headLine(Plan.State()))
         assertEquals("MH 318 · 24.0 nm", StripData.legFigures(state.legs[0]))
         assertEquals("MH 360 · 24.0 nm", StripData.legFigures(state.legs[0].copy(magneticHeadingDeg = 359.6)))
-        assertEquals("MH — · 24.0 nm", StripData.legFigures(state.legs[0].copy(magneticHeadingDeg = null)))
+        // No airplane: the magnetic course, not a dash (decision 0011).
+        assertEquals("MC 318 · 24.0 nm", StripData.legFigures(state.legs[0].copy(magneticHeadingDeg = null)))
         val utc = ZoneId.of("UTC")
         assertEquals("15:15", StripData.timeAt(1_762_265_400_000L, 65.0, utc))
         assertNull(StripData.timeAt(0L, null, utc))

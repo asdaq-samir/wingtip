@@ -61,6 +61,12 @@ struct ChecklistView: View {
                     }
                 }
                 Section {
+                    // The emergency checklist's way to the assistant: the
+                    // best fields, this list at the emergency, the MAYDAY.
+                    if model.kind == .emergency {
+                        Button("Emergency Assistant", systemImage: "exclamationmark.triangle.fill") { Emergency.shared.open = .checklist }
+                            .foregroundStyle(WingtipInk.problem)
+                    }
                     if !model.checklist.sections.isEmpty {
                         Button("Start Over") { model.startOver() }.disabled(model.ticked.isEmpty)
                     }

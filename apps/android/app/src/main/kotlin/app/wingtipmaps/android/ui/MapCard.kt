@@ -1,5 +1,8 @@
 package app.wingtipmaps.android.ui
 
+import app.wingtipmaps.android.live.DepartureLine
+import app.wingtipmaps.android.live.SpecialUseRows
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,6 +61,8 @@ fun MapCardSheet(pick: MapPick, plan: Plan, onClose: () -> Unit) {
         is MapPick.Vor -> pick.ident
         is MapPick.Point -> pick.ident
         is MapPick.Plane -> pick.hex.uppercase()
+        // A leg's sheet is its own (RouteLegHost), never a card.
+        is MapPick.RouteLeg -> ""
     }
     val actions = rememberRouteActions(plan)
     // An action that changes the route closes the card, so the route is
@@ -76,6 +81,7 @@ fun MapCardSheet(pick: MapPick, plan: Plan, onClose: () -> Unit) {
                 is MapPick.Airspace -> {
                     AirspaceCard(pick)
                     PointActions(CardKind.POINT, pick, actions, act)
+                    SpecialUseRows(pick.lat, pick.lon)
                 }
                 is MapPick.Vor -> {
                     VorCard(pick)
@@ -86,6 +92,7 @@ fun MapCardSheet(pick: MapPick, plan: Plan, onClose: () -> Unit) {
                     PointActions(CardKind.NAVAID, pick, actions, act)
                 }
                 is MapPick.Plane -> PlaneCard(pick.hex)
+                is MapPick.RouteLeg -> {}
             }
         }
     }
@@ -177,6 +184,8 @@ private fun PlaneCard(hex: String) {
     plane.altitudeFt?.let { Fact(stringResource(R.string.fact_altitude), Format.altitude(it)) }
     plane.speedKt?.let { Fact(stringResource(R.string.fact_ground_speed), Format.speed(it)) }
     plane.trackDeg?.let { Fact(stringResource(R.string.fact_track), "${Format.heading(it)} true") }
+    // The tower's departure event, where TDES sent one.
+    DepartureLine(plane.callsign ?: plane.registration)
     HorizontalDivider()
     val isTracked = tracked == hex.lowercase()
     OutlinedButton(onClick = { tracking.track(if (isTracked) null else hex, plane) }, modifier = Modifier.fillMaxWidth()) {

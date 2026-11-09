@@ -27,7 +27,7 @@ import logging
 import anthropic
 from fastapi import APIRouter, HTTPException
 
-from . import references
+from . import references, tracing
 from .gateway import gateway
 from .schemas import OralGrade, OralGradeRequest, OralQuestion, OralQuestionRequest
 from .settings import get_settings
@@ -115,11 +115,13 @@ def _forced(tool: dict, content: str, max_tokens: int) -> dict:
     Asked for in words, with the tool the only one offered: the most
     capable models take no forced tool_choice."""
     try:
-        resp = anthropic.Anthropic().messages.create(
-            model=ORAL_MODEL, max_tokens=max_tokens, system=SYSTEM,
-            tools=[tool], tool_choice={"type": "auto"},
-            messages=[{"role": "user", "content": f"{content}\n\nAnswer by calling the {tool['name']} tool."}],
-        )
+        with tracing.claude_call("oral", ORAL_MODEL) as used:
+            resp = anthropic.Anthropic().messages.create(
+                model=ORAL_MODEL, max_tokens=max_tokens, system=SYSTEM,
+                tools=[tool], tool_choice={"type": "auto"},
+                messages=[{"role": "user", "content": f"{content}\n\nAnswer by calling the {tool['name']} tool."}],
+            )
+            used.add(resp)
     except anthropic.AnthropicError as err:
         # No key, a refused one, no network, a limit: the examiner is out,
         # whichever it was, and the page says which.

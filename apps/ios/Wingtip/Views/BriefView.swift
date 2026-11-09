@@ -17,6 +17,10 @@ struct BriefView: View {
     /// iPhone's; written again as the briefing changes.
     @State private var weatherWords: SaidWords?
     @State private var writingWords = false
+    /// The AWC's forecast icing on each leg (ForecastIcing).
+    @State private var icing = ForecastIcing()
+    /// "When should I go?" (DepartureWindow).
+    @State private var window = DepartureWindow()
 
     /// The first of the weather's parts the Brief has, where the weather's
     /// finding opens: VFR not recommended, the hazards, the G-AIRMETs, else
@@ -43,6 +47,7 @@ struct BriefView: View {
                     GoNoGoSection { anchor in
                         if reduceMotion { reader.scrollTo(anchor, anchor: .top) } else { withAnimation { reader.scrollTo(anchor, anchor: .top) } }
                     }
+                    DepartureWindowSection(model: window, signedIn: session.signedIn, airplane: plan.aircraft != "none")
                 }
                 if let briefing = plan.briefing {
                     let weatherAt = weatherPart(briefing)
@@ -131,6 +136,7 @@ struct BriefView: View {
                         }
                     }
                     FieldsBelowVfrSection(fields: briefing.fieldsBelowVfr ?? [])
+                    ForecastIcingSection(model: icing, legs: plan.legs)
                     Section(title: "Forecast Along the Route") {
                         LabeledContent("Lowest ceiling", value: Format.altitude(briefing.forecast.minCeilingFt))
                             .id(rowId("forecast", 0, anchorAt: weatherAt, anchor: VerdictTarget.weatherAnchor))
@@ -189,8 +195,15 @@ struct BriefView: View {
                 await plan.brief(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: plan.totals?.eteMin)
             }
         }
+        // The forecast icing, asked once the briefing has the nav log's legs.
+        .task(id: ForecastIcing.query(briefing: plan.briefing, legs: plan.legs)) { await icing.refresh(briefing: plan.briefing, legs: plan.legs) }
         // Asked again whenever the plan or what the pilot set changes.
         .task(id: verdict.key(for: plan)) { await verdict.refresh(plan: plan, signedIn: session.signedIn) }
+        // The hours to go, asked again as the Go / No-Go's question changes.
+        .task(id: "\(verdict.key(for: plan))|\(session.signedIn)") {
+            guard session.signedIn, plan.routed else { return }
+            await window.refresh(try? DepartureWindow.ask(verdict.ask(for: plan), airplane: plan.aircraft != "none"))
+        }
         // The words for the briefing on the page, written again when it
         // changes; the figures stay as they are while they are written.
         .task(id: plan.briefing) {

@@ -156,7 +156,7 @@ object StripData {
         if (!state.routed) return null
         return listOfNotNull(
             routeName(state.dep, state.dest, state.stops),
-            state.aircraft.uppercase(),
+            state.aircraft.uppercase().ifEmpty { null },
             state.legs.firstOrNull()?.altitudeFt?.let(Format::cruiseAltitude),
             "leaving now",
         ).joinToString(" · ")
@@ -170,9 +170,13 @@ object StripData {
 
     /** The checkpoint row's figures, "MH 318 · 24.0 nm". The heading needs
      *  the airplane's airspeed against the wind: with no airplane chosen the
-     *  planner sends none, and the row writes a dash, "MH — · 24.0 nm". */
-    fun legFigures(leg: Leg): String =
-        "MH ${leg.magneticHeadingDeg?.let(Format::headingFigures) ?: Format.NONE} · ${Format.distance(leg.distanceNm)}"
+     *  planner sends none, and the row writes the leg's magnetic course,
+     *  "MC 312 · 24.0 nm" (decision 0011). */
+    fun legFigures(leg: Leg): String {
+        val heading = leg.magneticHeadingDeg
+        val first = if (heading != null) "MH ${Format.headingFigures(heading)}" else "MC ${Format.headingFigures(leg.magneticCourseDeg)}"
+        return "$first · ${Format.distance(leg.distanceNm)}"
+    }
 
     /** The screens the field's chips offer, each handled as typed: how a
      *  pilot finds the rest without tabs (the web's stripSuggestions). */

@@ -13,12 +13,15 @@ final class FlightUI {
         case airplane(String)
         case hold(String)
         case flown(Int, String)
+        /// A leg of the route tapped on the map, by its index (RouteLegSheet).
+        case leg(Int)
 
         var id: String {
             switch self {
             case .airplane(let hex): return "airplane:\(hex)"
             case .hold(let fix): return "hold:\(fix)"
             case .flown(let id, _): return "flown:\(id)"
+            case .leg(let index): return "leg:\(index)"
             }
         }
     }
@@ -40,9 +43,11 @@ final class FlightUI {
 struct FlightSheets: ViewModifier {
     /// On iPad the inspector holds them (SplitLayout), not a sheet.
     @Environment(\.splitLayout) private var split
+    @Environment(Plan.self) private var plan
 
     func body(content: Content) -> some View {
         @Bindable var ui = FlightUI.shared
+        @Bindable var emergency = Emergency.shared
         content
             .sheet(item: split ? .constant(nil) : $ui.card, onDismiss: {
                 // Its card put away, the airplane is no longer tracked.
@@ -53,12 +58,20 @@ struct FlightSheets: ViewModifier {
                     case .airplane(let hex): AirplaneCard(hex: hex)
                     case .hold(let fix): HoldSheet(fix: fix)
                     case .flown(let id, let title): FlownTrackView(flight: id, title: title)
+                    case .leg(let index): RouteLegSheet(index: index)
                     }
                 }
                 .presentationDetents([.medium, .large])
                 .presentationBackgroundInteraction(.enabled(upThrough: .medium))
             }
             .modifier(PointAlerts())
+            // The emergency assistant, from the instruments bar, the pilot's
+            // words or the emergency checklist; no map button (decision 0010).
+            .sheet(item: $emergency.open) { _ in
+                EmergencySheet(airplane: LocalChecklists.airplane(of: plan))
+                    .presentationDetents([.medium, .large])
+                    .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            }
     }
 }
 

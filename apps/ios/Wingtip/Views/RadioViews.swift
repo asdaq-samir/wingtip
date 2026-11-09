@@ -89,6 +89,11 @@ struct RadioCallBanner: View {
                 }
                 .buttonStyle(.borderless).accessibilityLabel("Put away")
             }
+            // The ATC copilot's reading of it, where it is on: each item
+            // the engine read (atc_call), and the readback checked.
+            if let card = AtcCopilot.shared.card(for: call.id) {
+                AtcCardRows(card: card, tail: plan.tail)
+            }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: WingtipSpace.sm) {
                     if let direct, ownShip.fix != nil {

@@ -64,6 +64,14 @@
             </intent-filter>
         </activity>
 
+        <!-- Google's Map Tiles key for this app (build.gradle.kts's
+             GOOGLE_MAPS_ANDROID_KEY), where Google's own libraries look for
+             one; empty until the owner adds it. CloseMap reads the same
+             key from BuildConfig. -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${googleMapsAndroidKey}" />
+
         <!-- The foreground service that keeps the fixes coming with the
              screen off while the airplane is flying (flight/OwnShip.kt);
              started and stopped by OwnShip as the airplane reaches and

@@ -112,6 +112,12 @@
         </dependency>
         <!-- oidcLogin() and csrf() request post-processors, so the
              security rules are tested as rules rather than trusted. -->
+        <!-- SimpleTracer, for the tracing package's tests. -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-test</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>

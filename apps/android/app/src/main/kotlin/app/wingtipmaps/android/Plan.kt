@@ -28,6 +28,7 @@ import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.route.RouteEdits
 
 /**
  * The route being planned and what the planner has said of it so far: the
@@ -42,9 +43,10 @@ class Plan(app: Application) : AndroidViewModel(app) {
         val dep: String = "",
         val dest: String = "",
         val stops: List<String> = emptyList(),
-        /** The planner's aircraft profile; the airplane by N-number is a
-         *  later phase. */
-        val aircraft: String = "c172",
+        /** The planner's aircraft profile; "" for none, the default:
+         *  no airplane is ever assumed (decision 0011), and the figures
+         *  that need one are left out until one is chosen. */
+        val aircraft: String = "",
         /** The holds the pilot put on the route, as the planner reads them
          *  (the engine's hold_write: "VPBNG/090/30:270:R:1M:2T"). */
         val holds: List<String> = emptyList(),
@@ -56,8 +58,15 @@ class Plan(app: Application) : AndroidViewModel(app) {
         /** Why there is no plan, in the planner's words; null when there is. */
         val problem: String? = null,
         val planning: Boolean = false,
+        /** The point a Route Leg's Direct flies to, and the route as it was
+         *  before, for its Cancel (the web's `direct` and `was`). */
+        val direct: String? = null,
+        val was: RouteEdits.Route? = null,
     ) {
         val routed: Boolean get() = dep.isNotEmpty() && dest.isNotEmpty()
+
+        /** An airplane is chosen: time, fuel and groundspeed can be had. */
+        val airplane: Boolean get() = aircraft.isNotEmpty()
     }
 
     private val prefs = app.getSharedPreferences("plan", Context.MODE_PRIVATE)
@@ -80,9 +89,32 @@ class Plan(app: Application) : AndroidViewModel(app) {
                 dep = dep.trim().uppercase(),
                 dest = dest.trim().uppercase(),
                 stops = stops.map { s -> s.trim().uppercase() }.filter { s -> s.isNotEmpty() },
+                direct = null, was = null,
             )
         }
         plan()
+    }
+
+    /** A Route Leg's Direct: from the airplane (else the departure) to the
+     *  leg's end and on (RouteEdits.direct), the route kept for Cancel. */
+    fun directToStop(ident: String, at: OwnShip.Fix?) {
+        val s = _state.value
+        val was = s.was ?: RouteEdits.Route(s.dep, s.stops, s.dest)
+        val next = RouteEdits.direct(was, ident, at?.let(::positionIdent)) ?: return
+        plan(next.dep, next.dest, next.stops)
+        _state.update { it.copy(direct = ident, was = was) }
+    }
+
+    /** Cancel Direct: the route as it was before it. */
+    fun cancelDirect() {
+        val was = _state.value.was ?: return
+        plan(was.dep, was.dest, was.stops)
+    }
+
+    /** A Route Leg's Remove: the stop taken out of the route. */
+    fun removeStop(ident: String) {
+        val s = _state.value
+        plan(s.dep, s.dest, RouteEdits.without(s.stops, ident))
     }
 
     /** One of the planner's airplane types picked; the route, where there

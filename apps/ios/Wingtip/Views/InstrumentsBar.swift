@@ -60,6 +60,16 @@ struct InstrumentsBar: View {
                     .buttonStyle(.bordered)
                     .controlSize(.large)
                     .accessibilityHint("The nearest fields, with Divert")
+                    // Flying mode's way to the emergency assistant, the
+                    // web's FlyingHead Emergency (not a map button,
+                    // docs/decisions/0010).
+                    Button(role: .destructive) { Emergency.shared.open = .flying } label: {
+                        Label("Emergency", systemImage: "exclamationmark.triangle.fill")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                    .accessibilityHint("The best fields within a glide, the emergency checklist and the MAYDAY")
                     Spacer(minLength: 0)
                     // The planning aid's words, where the figures are (the
                     // web's planningAid, README's "A planning aid").

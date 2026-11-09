@@ -12,6 +12,7 @@ struct RootView: View {
     @Environment(OwnShip.self) private var ownShip
     @Environment(DryRun.self) private var dryRun
     @Environment(Traffic.self) private var traffic
+    @Environment(Verdict.self) private var verdict
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.undoManager) private var undoManager
@@ -64,6 +65,7 @@ struct RootView: View {
             trackedHex: tracking.hex, tracked: tracking.latest, follow: tracking.follow,
             path: tracking.path, past: tracking.past, flown: tracking.flown,
             glide: InFlight.shared.glide?.coordinates ?? [],
+            emergency: Emergency.shared.line(from: dryRun.fix ?? ownShip.fix),
             onTraffic: { plane in
                 Tracking.shared.track(plane.hex, plane: plane)
                 FlightUI.shared.card = .airplane(plane.hex.lowercased())
@@ -172,6 +174,13 @@ struct RootView: View {
                     plan.drop(ident, at: at, then: action == .directTo ? .direct : .add, from: action == .directTo ? dryRun.fix ?? ownShip.fix : nil)
                 } : nil
             ),
+            // A tap on the course opens its nearest leg's sheet, that leg
+            // cased in green while it is open (RouteLegSheet).
+            routeLegs: RouteLegInput(
+                legs: plan.course != nil ? RouteLegModel.mapLegs(plan) : [],
+                selected: { if case .leg(let index) = FlightUI.shared.card { return index }; return nil }(),
+                onSelect: { index in FlightUI.shared.card = .leg(index) }
+            ),
             hazardLegs: plan.hazardLegs,
             bottomInset: mapInset,
             onReveal: { withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) { mapShown = true } }
@@ -193,6 +202,8 @@ struct RootView: View {
         .overlay(alignment: .top) {
             VStack(spacing: WingtipSpace.sm) {
                 AlertsBanner(alerts: ownShip.ahead)
+                // The in-flight copilot's one message, under what is ahead.
+                CopilotBanner()
                 // The radio, while the app listens or a call to us waits.
                 RadioOverlay()
                 // The flight's instruments, at flying speed (#218).
@@ -222,8 +233,23 @@ struct RootView: View {
         // The airplane tracked, its reports from the map's answers and its
         // own; the watches set; the alerts ahead said aloud where asked.
         .task { await Tracking.shared.run() }
+        // The in-flight copilot looks again every few seconds while flying
+        // with a route (Copilot): own ship's fix or the dry run's.
+        .task {
+            while !Task.isCancelled {
+                await Copilot.shared.look(fix: dryRun.fix ?? ownShip.fix, flying: InFlight.shared.underway, plan: plan,
+                                          ahead: ownShip.ahead, minimums: verdict.minimums)
+                try? await Task.sleep(for: .seconds(3))
+            }
+        }
         .onChange(of: traffic.planes) { _, planes in Tracking.shared.heard(planes) }
         .onChange(of: ownShip.ahead) { _, alerts in SpokenAlerts.shared.hear(alerts) }
+        // The ATC copilot: each settled transmission read, and the radio
+        // listened to while flying where the pilot turned it on.
+        .onChange(of: ClearanceListener.shared.heard) { _, heard in AtcCopilot.shared.observe(heard, tail: plan.tail) }
+        .task(id: "\(InFlight.shared.underway)|\(plan.tail ?? "")|\(AtcCopilot.shared.mode.rawValue)") {
+            await AtcCopilot.shared.follow(flying: InFlight.shared.underway, tail: plan.tail)
+        }
         // Each fix, own ship's or the dry run's airplane, asked of the
         // engine once for the instruments, the strip and the glide ring
         // (InFlight); again when the route changes under it.
