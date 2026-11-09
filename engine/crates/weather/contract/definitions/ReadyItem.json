@@ -41,6 +41,7 @@
         "save_plan",
         "allow_location",
         "connect_receiver",
+        "keep_for_air",
         null
       ],
       "description": "What the app does in place for it; null where nothing on the device fixes it."

@@ -73,6 +73,10 @@ extension RootView {
             FlightUI.shared.card = .airplane(hex)
         case .open(let screen):
             openScreen(screen)
+        case .sharedFlight(let link):
+            // Shown, not planned: the pilot's own plan stays until they
+            // tap Use This Plan.
+            SharedFlightModel.shared.open(link)
         case .track(let url):
             // A GPX or KML file handed over from Files or Mail: its track
             // flown again on the map (Replay), at the replay's pace, as a

@@ -455,5 +455,27 @@
     <string name="ready_fewer">Fewer</string>
     <string name="ready_next_cycle">Next FAA data cycle %1$s begins %2$s</string>
     <string name="ready_fly_anyway">Fly Anyway</string>
+    <!-- Keep for the Air on the flight plan (KeepForAirModel): the route's answers, plan, packs and charts in one tap. -->
+    <string name="keep_for_air">Keep for the Air</string>
+    <string name="keeping_for_air">Keeping for the Air…</string>
+    <string name="kept_for_air">Kept for the Air: %1$s MB</string>
     <string name="ready_airplane_line">Its fuel, performance and loading come from its own figures; none is assumed.</string>
+    <!-- A flight shared by link (design/screens.json `shared`). -->
+    <string name="shared_flight">Shared Flight</string>
+    <string name="shared_use">Use This Plan</string>
+    <string name="shared_reading">Reading the flight…</string>
+    <string name="shared_gone">This flight is no longer shared.</string>
+    <string name="shared_route">Route</string>
+    <string name="shared_altitude">Altitude</string>
+    <string name="shared_departs">Departs</string>
+    <string name="shared_departs_now">About now</string>
+    <string name="shared_airplane">Airplane type</string>
+    <string name="shared_airplane_note">Planned with your own airplane when you use it.</string>
+    <string name="shared_rules">Flight rules</string>
+    <string name="shared_tail">N-number</string>
+    <string name="shared_nav_log">Nav Log</string>
+    <string name="shared_totals">%1$s · %2$s · %3$s</string>
+    <string name="share_route">Share the Route</string>
+    <string name="share_include_tail">Include N-number %1$s</string>
+    <string name="share_send">Share the flight</string>
 </resources>

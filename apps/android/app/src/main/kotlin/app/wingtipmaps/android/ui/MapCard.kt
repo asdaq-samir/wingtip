@@ -48,6 +48,7 @@ import app.wingtipmaps.android.live.DepartureLine
 import app.wingtipmaps.android.live.SpecialUseRows
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapStyle
+import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 import kotlinx.coroutines.launch
 
@@ -169,16 +170,19 @@ internal fun ink(hex: String) = Color(hex.toColorInt())
  *  actions; its skeleton while it comes. */
 @Composable
 private fun AirportCard(ident: String, asked: Int, actions: RouteActions, act: (CardAction, () -> Unit) -> Unit) {
-    val place by produceState<Result<AirportPlace>?>(null, ident, asked) {
+    // Kept for the air as it comes, and the kept card with its age where
+    // the network fails (KeptForAir).
+    val place by produceState<Result<KeptForAir.Had<AirportPlace>>?>(null, ident, asked) {
         value = null
-        value = runCatching { Planner.place(ident) }
+        value = runCatching { KeptForAir.had(KeptForAir.AIRPORTS, ident.uppercase(), AirportPlace.serializer()) { Planner.place(ident) } }
     }
     when (val got = place) {
         null -> Skeleton(rows = 4)
         else -> got.fold(
-            { field ->
+            { had ->
+                val field = had.value
                 CardActionRow(CardKind.AIRPORT, can = { actions.canAirport(it, field) }, onAction = { a -> act(a) { actions.airport(a, field) } })
-                PlaceCard(field)
+                PlaceCard(field, keptAtMs = had.fetchedAtMs.takeIf { had.kept })
             },
             { ProblemLine(it.message) },
         )

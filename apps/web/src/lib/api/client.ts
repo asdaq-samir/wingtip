@@ -254,7 +254,7 @@ const assistant = createClient<AssistantPaths>({ baseUrl: "", Request: GatewayRe
 assistant.use(csrfAndFailures);
 
 /** The Spring Boot endpoints, on this same origin. */
-const gateway = createClient<GatewayPaths>({ baseUrl: "" });
+export const gateway = createClient<GatewayPaths>({ baseUrl: "" });
 gateway.use(csrfAndFailures);
 
 /** A schema's shape as openapi-fetch hands it back: every fixed-length
@@ -266,7 +266,7 @@ type Widened<T> = T extends readonly (infer E)[] ? Widened<E>[] : T extends obje
  *  same schema with its tuples restored. Checked, not merely cast: the
  *  call's own response type must be `T` widened, so naming the wrong
  *  schema, or a field the schema has since lost, is a compile error. */
-const data = <T>(result: { data?: Widened<T> }): T => result.data as T;
+export const data = <T>(result: { data?: Widened<T> }): T => result.data as T;
 
 /**
  * Newline-delimited JSON, one line at a time as the bytes arrive: the

@@ -25,6 +25,8 @@ object ReadyFacts {
         val briefAtMs: Long? = null,
         val device: EngineContract.ReadyToFlyInputDevice? = null,
         val receiver: EngineContract.ReadyToFlyInputReceiver? = null,
+        /** What Keep for the Air holds for the route (KeepForAir.status). */
+        val kept: EngineContract.ReadyToFlyInputKept? = null,
     )
 
     /** A field's weather as the planner's card gave it: the METAR's
@@ -53,6 +55,7 @@ object ReadyFacts {
         briefing = EngineContract.ReadyToFlyInputBriefing(fetchedAt = local.briefAtMs?.let { (it / 1000).toDouble() }),
         fields = fields.map { EngineContract.ReadyToFlyInputFieldsItem(ident = it.ident, role = it.role, metarObserved = it.metarObservedS, taf = it.taf) },
         notams = EngineContract.ReadyToFlyInputNotams(fetchedAt = notamsAtMs?.let { (it / 1000).toDouble() }),
+        kept = if (plan.routed) local.kept else null,
         device = local.device,
         receiver = local.receiver,
     )

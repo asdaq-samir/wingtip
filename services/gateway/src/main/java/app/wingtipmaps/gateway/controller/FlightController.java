@@ -1,16 +1,17 @@
 package app.wingtipmaps.gateway.controller;
 
 import app.wingtipmaps.gateway.domain.Flight;
-import app.wingtipmaps.gateway.domain.FlightCheckpoint;
 import app.wingtipmaps.gateway.domain.PaidFeature;
 import app.wingtipmaps.gateway.dto.FlightCheckpointDto;
 import app.wingtipmaps.gateway.dto.FlightDto;
+import app.wingtipmaps.gateway.dto.FlightShareDto;
 import app.wingtipmaps.gateway.dto.FlightSummaryDto;
 import app.wingtipmaps.gateway.dto.RiskAssessmentDto;
 import app.wingtipmaps.gateway.dto.SaveFlightRequest;
 import app.wingtipmaps.gateway.dto.TrackDto;
 import app.wingtipmaps.gateway.dto.UpdateFlightRequest;
 import app.wingtipmaps.gateway.service.FlightService;
+import app.wingtipmaps.gateway.service.FlightShareService;
 import app.wingtipmaps.gateway.service.PilotService;
 import app.wingtipmaps.gateway.service.SubscriptionService;
 import jakarta.validation.Valid;
@@ -37,21 +38,32 @@ public class FlightController {
     private final FlightService flightService;
     private final PilotService pilots;
     private final SubscriptionService subscriptions;
+    private final FlightShareService shares;
 
-    public FlightController(FlightService flightService, PilotService pilots, SubscriptionService subscriptions) {
+    public FlightController(
+            FlightService flightService,
+            PilotService pilots,
+            SubscriptionService subscriptions,
+            FlightShareService shares) {
         this.flightService = flightService;
         this.pilots = pilots;
         this.subscriptions = subscriptions;
+        this.shares = shares;
     }
 
+    /** The pilot's flights, each with its link where it is shared, so the
+     *  list's menu can say Share or Stop Sharing. */
     @GetMapping
     public ResponseEntity<List<FlightSummaryDto>> list(Authentication authentication) {
-        return PilotResponses.withPilot(
-                pilots,
-                authentication,
-                pilot -> ResponseEntity.ok(flightService.list(pilot).stream()
-                        .map(FlightSummaryDto::of)
-                        .toList()));
+        return PilotResponses.withPilot(pilots, authentication, pilot -> {
+            List<Flight> theirs = flightService.list(pilot);
+            var shared = shares.sharesOf(theirs);
+            String origin = FlightShareController.origin();
+            return ResponseEntity.ok(theirs.stream()
+                    .map(f -> FlightSummaryDto.of(
+                            f, shared.containsKey(f.getId()) ? FlightShareDto.of(shared.get(f.getId()), origin) : null))
+                    .toList());
+        });
     }
 
     @PostMapping
@@ -77,7 +89,13 @@ public class FlightController {
         return PilotResponses.found(
                 pilots,
                 authentication,
-                pilot -> flightService.update(pilot, id, request).map(FlightSummaryDto::of));
+                pilot -> flightService
+                        .update(pilot, id, request)
+                        .map(f -> FlightSummaryDto.of(
+                                f,
+                                shares.shareOf(f.getId())
+                                        .map(s -> FlightShareDto.of(s, FlightShareController.origin()))
+                                        .orElse(null))));
     }
 
     /** The flight's track, where the pilot saved one to their account. */
@@ -117,9 +135,8 @@ public class FlightController {
     }
 
     private static FlightDto toDto(Flight f) {
-        List<FlightCheckpointDto> checkpoints = f.getCheckpoints().stream()
-                .map(FlightController::toCheckpointDto)
-                .toList();
+        List<FlightCheckpointDto> checkpoints =
+                f.getCheckpoints().stream().map(FlightCheckpointDto::of).toList();
         return new FlightDto(
                 f.getId(),
                 f.getDepartureIdent(),
@@ -138,22 +155,5 @@ public class FlightController {
                 f.getPicks(),
                 f.getName(),
                 f.getNotes());
-    }
-
-    private static FlightCheckpointDto toCheckpointDto(FlightCheckpoint c) {
-        return new FlightCheckpointDto(
-                c.getSequenceNo(),
-                c.getName(),
-                c.getCategory(),
-                c.getLat(),
-                c.getLon(),
-                c.getAlongTrackNm(),
-                c.getLegDistanceNm(),
-                c.getTrueCourseDeg(),
-                c.getMagneticHeadingDeg(),
-                c.getGroundspeedKt(),
-                c.getEteMin(),
-                c.getFuelGal(),
-                c.getAltitudeFt());
     }
 }

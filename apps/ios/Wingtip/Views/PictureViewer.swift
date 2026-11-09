@@ -11,7 +11,12 @@ enum PictureCache {
 
     static func image(_ path: String) async throws -> UIImage {
         if let image = kept.object(forKey: path as NSString) { return image }
-        let data = try await Planner.picture(path)
+        let data: Data
+        do { data = try await Planner.picture(path) } catch {
+            // A plate's page or a diagram Keep for the Air kept, with no signal.
+            guard KeptForAir.fallsBack(error), let onPhone = KeptForAir.picture(path) else { throw error }
+            data = onPhone
+        }
         guard let image = UIImage(data: data) else { throw Planner.Failure(status: 200, detail: "The picture could not be read.") }
         kept.setObject(image, forKey: path as NSString)
         return image
@@ -60,6 +65,8 @@ struct ShownPicture: Identifiable {
     let id = UUID()
     let title: String
     var credit: String?
+    /// The kept answer it is drawn from, for its age with no signal.
+    var kept: (kind: KeptForAir.Kind, key: String)?
     let load: () async throws -> [UIImage]
 
     /// The planner's pictures by their paths.
@@ -71,8 +78,8 @@ struct ShownPicture: Identifiable {
     /// planner (/api/faa-chart): a plate, the diagram, the Chart
     /// Supplement's pages for the field.
     static func faaChart(_ title: String, url: String, airport: String) -> ShownPicture {
-        ShownPicture(title: title) {
-            let pages = try await Planner.faaChart(url: url, airport: airport)
+        ShownPicture(title: title, kept: (.plates, "\(airport)|\(url)")) {
+            let pages = try await KeptForAir.answer(.plates, key: "\(airport)|\(url)") { try await Planner.faaChart(url: url, airport: airport) }.value
             guard !pages.isEmpty else { throw Planner.Failure(status: 404, detail: "The FAA's chart has no page for \(airport).") }
             return try await PictureCache.images(pages.map(\.path))
         }
@@ -108,6 +115,13 @@ struct PictureViewer: View {
             .navigationTitle(picture.title)
             .navigationBarTitleDisplayMode(.inline)
             .closeButton { dismiss() }
+            .safeAreaInset(edge: .top) {
+                if let kept = picture.kept, images != nil, KeptShown.shared.at(kept.kind, key: kept.key) != nil {
+                    KeptAgeLine(kind: kept.kind, key: kept.key)
+                        .padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xs)
+                        .floatingGlass(in: Capsule(), material: .thinMaterial)
+                }
+            }
             .safeAreaInset(edge: .bottom) {
                 if let credit = picture.credit, images != nil {
                     Text(credit).font(.caption2).foregroundStyle(.secondary)

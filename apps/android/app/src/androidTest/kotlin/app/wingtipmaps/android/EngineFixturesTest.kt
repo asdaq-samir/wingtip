@@ -71,7 +71,8 @@ private fun difference(got: JsonElement?, want: JsonElement?, path: String = "$"
  * Each fixture is asked by the rule names the phones call: read_atis,
  * checklist_read and checklist_write, read_clearance, cleared_route,
  * our_call, direct_of, hold_read, hold_write, holding_leg_minutes,
- * logbook_csv_read and logbook_csv_write, readback_check, traffic_marks.
+ * logbook_csv_read and logbook_csv_write, readback_check, traffic_marks,
+ * kept_age.
  */
 @RunWith(AndroidJUnit4::class)
 class EngineFixturesTest {
@@ -240,6 +241,17 @@ class EngineFixturesTest {
             val got = ask("traffic_marks", "own_ft" to c["ownFt"], "planes" to JsonArray(listOf(c.getValue("plane"))))
             val want = JsonArray(listOf(JsonObject(mapOf("label" to c.getValue("label"), "near" to c.getValue("near")))))
             check(got, want, "${c["plane"]} against ${c["ownFt"]}")
+        }
+        done()
+    }
+
+    @Test
+    fun aKeptAnswersAgeReadsThroughTheBridge() {
+        val all = fixture("keptAge.json").cases("cases")
+        assertTrue(all.isNotEmpty())
+        for (c in all) {
+            val got = ask("kept_age", *c.getValue("input").jsonObject.entries.map { it.key to it.value }.toTypedArray()) as? JsonObject
+            for ((key, want) in c.getValue("expected").jsonObject) check(got?.get(key), want, "${c["why"]}: $key")
         }
         done()
     }

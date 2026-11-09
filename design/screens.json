@@ -11,7 +11,13 @@
     { "key": "dest", "about": "The route's destination, an ident." },
     { "key": "stops", "about": "The points between, idents comma-separated." },
     { "key": "place", "about": "A field's card, by its ident." },
-    { "key": "flight", "about": "An airplane tracked, by its ICAO address (six hex digits)." }
+    { "key": "flight", "about": "An airplane tracked, by its ICAO address (six hex digits)." },
+    { "key": "altitude_ft", "about": "A shared plan's cruise altitude, feet MSL." },
+    { "key": "depart", "about": "A shared plan's departure time, an ISO 8601 instant in UTC; none for about now." },
+    { "key": "type", "about": "A shared plan's airplane type, its designator (C172); shown, never assumed: the receiver flies their own." },
+    { "key": "rules", "about": "A shared plan's flight rules, vfr or ifr." },
+    { "key": "tail", "about": "A shared plan's N-number, only where its pilot chose to send it." },
+    { "key": "share", "about": "A saved flight shared by its pilot, by its token (GET /api/shared-flights/{token}); read-only, until they stop sharing it." }
   ],
   "screens": [
     { "id": "fpl", "title": "FPL", "about": "The route, its altitude and its figures: the FPL tab.", "platforms": ["web", "ios", "android"] },
@@ -34,6 +40,7 @@
     { "id": "guide", "title": "Guide", "about": "How the app works, and the practice drills.", "platforms": ["web", "ios"] },
     { "id": "downloads", "title": "Downloads", "about": "Charts kept for flying with no signal.", "platforms": ["ios", "android"] },
     { "id": "passengers", "title": "Passenger Briefing", "about": "The passenger briefing.", "platforms": ["ios", "android"] },
+    { "id": "shared", "title": "Shared Flight", "about": "A flight another pilot sent: its plan shown first, with Use This Plan and Not Now, the receiver's own plan kept until they choose. Its keys are the plan's (dep, dest, stops, altitude_ft, depart, type, rules, tail) or a saved flight's share.", "platforms": ["web", "ios", "android"] },
     { "id": "about", "title": "About", "about": "The build, the data's cycles, the credits and the legal pages.", "platforms": ["web", "ios", "android"] }
   ]
 }

@@ -1331,6 +1331,25 @@
         "required" : [ "connected", "provider" ],
         "type" : "object"
       },
+      "FlightShareDto" : {
+        "properties" : {
+          "includeTail" : {
+            "type" : "boolean"
+          },
+          "sharedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "token" : {
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "includeTail", "sharedAt", "token", "url" ],
+        "type" : "object"
+      },
       "FlightSummaryDto" : {
         "properties" : {
           "aircraftTailNumber" : {
@@ -1377,6 +1396,13 @@
               "type" : "null"
             } ]
           },
+          "share" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/FlightShareDto"
+            }, {
+              "type" : "null"
+            } ]
+          },
           "stops" : {
             "items" : {
               "type" : "string"
@@ -1396,7 +1422,7 @@
             "type" : [ "number", "null" ]
           }
         },
-        "required" : [ "aircraftTailNumber", "altitudes", "createdAt", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "id", "name", "notes", "picks", "plannedFor", "risk", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
+        "required" : [ "aircraftTailNumber", "altitudes", "createdAt", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "id", "name", "notes", "picks", "plannedFor", "risk", "share", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
         "type" : "object"
       },
       "FlightWatchDto" : {
@@ -2390,6 +2416,75 @@
           }
         },
         "required" : [ "aircraftId", "altitudes", "checkpoints", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "picks", "plannedFor", "risk", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
+        "type" : "object"
+      },
+      "ShareFlightRequest" : {
+        "properties" : {
+          "includeTail" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "includeTail" ],
+        "type" : "object"
+      },
+      "SharedFlightDto" : {
+        "properties" : {
+          "aircraftTailNumber" : {
+            "type" : [ "string", "null" ]
+          },
+          "aircraftType" : {
+            "type" : [ "string", "null" ]
+          },
+          "altitudes" : {
+            "type" : [ "string", "null" ]
+          },
+          "checkpoints" : {
+            "items" : {
+              "$ref" : "#/components/schemas/FlightCheckpointDto"
+            },
+            "type" : "array"
+          },
+          "cruiseAltitudeFt" : {
+            "format" : "int32",
+            "type" : [ "integer", "null" ]
+          },
+          "departureIdent" : {
+            "type" : "string"
+          },
+          "destinationIdent" : {
+            "type" : "string"
+          },
+          "picks" : {
+            "type" : [ "string", "null" ]
+          },
+          "plannedFor" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "sharedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "stops" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "totalDistanceNm" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "totalEteMin" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "totalFuelGal" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          }
+        },
+        "required" : [ "aircraftTailNumber", "aircraftType", "altitudes", "checkpoints", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "picks", "plannedFor", "sharedAt", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
         "type" : "object"
       },
       "SignRequest" : {
@@ -3922,6 +4017,60 @@
         "tags" : [ "flight-controller" ]
       }
     },
+    "/api/flights/{id}/share" : {
+      "delete" : {
+        "operationId" : "stop_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "flight-share-controller" ]
+      },
+      "post" : {
+        "operationId" : "share",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ShareFlightRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FlightShareDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "flight-share-controller" ]
+      }
+    },
     "/api/flights/{id}/track" : {
       "delete" : {
         "operationId" : "deleteTrack",
@@ -4871,6 +5020,32 @@
         },
         "summary" : "Any planner POST",
         "tags" : [ "Planner" ]
+      }
+    },
+    "/api/shared-flights/{token}" : {
+      "get" : {
+        "operationId" : "shared",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SharedFlightDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "flight-share-controller" ]
       }
     },
     "/api/speed" : {

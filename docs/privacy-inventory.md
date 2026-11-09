@@ -6,7 +6,7 @@ to the site), App Store Connect's App Privacy answers,
 Google Play's Data safety form and the iOS app's privacy manifest
 (`PrivacyInfo.xcprivacy`). Change it
 whenever the code changes what leaves a device or what the server keeps.
-Last checked against the code on 2026-11-09.
+Last checked against the code on 2026-11-09 (shared flights added).
 
 "Collected" is App Store Connect's meaning: sent off the device and kept
 longer than it takes to answer the request.
@@ -19,6 +19,7 @@ longer than it takes to answer the request.
 | Contact Info, Name | The name Google or Apple gives at sign-in (otherwise the address); the name as on their pilot certificate, where they give it for endorsements | Yes | App Functionality | `pilots` |
 | Identifiers, User ID | The account's id; Google's and Apple's subject for that sign-in | Yes | App Functionality | `pilots`, the session |
 | User Content, Other | Aircraft (tail number, type, performance, the last VOR check, the inspections' and tests' dates and its hours, whether it is flown for hire, its ADs and other due items, and its squawks; its checklists stay on the device, `lib/checklists`, and are forgotten there on sign-out), saved flights and their nav logs, the logbook (its instrument approaches, holding and tracking among it), endorsements and currency dates (the instrument proficiency check's too), checkpoint notes a pilot writes for themselves; a flight instructor's certificate number and its date, the instructors a student asks in by address, the saved flights a student puts to them, and the endorsements signed in the app | Yes | App Functionality | Postgres; notes in the planner's `data/labels` |
+| User Content, Other | A saved flight a pilot shares by link: the share's random token, whether its N-number goes with it, and when it was shared; whoever has the link reads the flight's route, stops, altitudes, departure time, airplane type, picks and nav log, never the pilot's name, address, notes, risk assessment or the flight's own name, and the N-number only where the pilot turned it on (`SharedFlightDto`). Read-only, until the pilot stops sharing it (Stop Sharing, which deletes the row) or deletes the flight | Yes | App Functionality (sending a plan to another pilot or an instructor) | `flight_shares` (Postgres) |
 | Location, Precise | A flight's track, when a pilot saves it to a flight | Yes | App Functionality | `flight_tracks` |
 | Purchases, Purchase History | The subscription: when the free month started and ends, and a paid plan's term, its store and the store's own id for it | Yes | App Functionality (the paid features) | `subscriptions` |
 | Usage Data, Product Interaction | How many of each Claude-written feature (the written briefing, checkpoint descriptions, the mock oral) a pilot used this month, a count, for its monthly cap | Yes | App Functionality (the cap) | `paid_feature_uses` |
@@ -55,6 +56,14 @@ longer than it takes to answer the request.
   (`Records/Records.swift`); Apple's, not ours.
 - **A route's airports and stops**, to plan it. Kept only as a pilot's
   saved flight (above).
+- **A plan shared as a plain link** (Share link on the route, a saved
+  flight's swipe): the route, stops, altitude, departure time, airplane
+  type and rules are in the link itself (`lib/sharedFlight`, the phones'
+  `SharedFlightLink` and `SharedPlan`), sent by the pilot's own share
+  sheet to whoever they choose; the N-number only where they tick it.
+  Nothing of it is stored on a server. Opened, the link's page is served
+  with the route in its preview's title (`SharePreviewController`), and
+  the receiver's app plans nothing until they choose Use This Plan.
 
 ## Who else receives what
 

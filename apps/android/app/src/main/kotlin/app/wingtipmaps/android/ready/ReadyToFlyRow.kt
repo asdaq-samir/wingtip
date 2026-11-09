@@ -40,6 +40,8 @@ import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.offline.KeptAgeLine
+import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.offline.OfflineStore
 import app.wingtipmaps.android.receiver.Receiver
 import app.wingtipmaps.android.strip.FindingIcon
@@ -82,7 +84,11 @@ fun ReadyToFlyRow(plan: Plan, onSetRoute: (() -> Unit)?, model: ReadyToFlyModel 
             Icon(if (unfolded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         }
         if (unfolded) {
-            answer.items.forEach { ReadyItemRow(it, if (it.key == "notams") state.notams else emptyList()) }
+            answer.items.forEach { item ->
+                ReadyItemRow(item, if (item.key == "notams") state.notams else emptyList())
+                // The NOTAMs kept for the air, shown with no signal: how old.
+                if (item.key == "notams") KeptAgeLine(KeptForAir.NOTAMS, state.notamsKeptAtMs)
+            }
             Text(
                 stringResource(R.string.ready_next_cycle, answer.nextCycleIdent, dayWords(answer.nextCycle)),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,

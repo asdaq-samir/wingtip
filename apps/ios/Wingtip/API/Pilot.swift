@@ -64,4 +64,23 @@ extension Gateway {
     static func deleteFlight(_ id: Int) async throws {
         try await send("DELETE", "/api/flights/\(id)")
     }
+
+    /// One of the pilot's flights shared by link (POST /api/flights/{id}/share),
+    /// its N-number with it only where `includeTail`; the same link while it
+    /// stays shared.
+    static func shareFlight(_ id: Int, includeTail: Bool) async throws -> GWFlightShareDto {
+        try await send(GWFlightShareDto.self, "POST", "/api/flights/\(id)/share", json: GWShareFlightRequest(includeTail: includeTail))
+    }
+
+    /// Stops sharing it (DELETE /api/flights/{id}/share): its link answers
+    /// "no longer shared" for everyone it went to.
+    static func stopSharing(_ id: Int) async throws {
+        try await send("DELETE", "/api/flights/\(id)/share")
+    }
+
+    /// A flight another pilot shared, read by its token, signed in or not;
+    /// nil where it is not (or no longer) shared.
+    static func sharedFlight(_ token: String) async throws -> GWSharedFlightDto? {
+        try await read(GWSharedFlightDto.self, "/api/shared-flights/\(token)", none: [404])
+    }
 }

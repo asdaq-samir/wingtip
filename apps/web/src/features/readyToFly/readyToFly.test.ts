@@ -19,6 +19,7 @@ function parts(over: Partial<ReadyParts> = {}): ReadyParts {
     briefing: null,
     alternate: null,
     notamsAtMs: null,
+    kept: null,
     device: { batteryPct: null, charging: null, location: null },
     ...over,
   };
@@ -56,6 +57,12 @@ describe("ready to fly's facts", () => {
   test("the packs' edition is the planner's own data, which the web cannot update", () => {
     const input = readyInput(parts({ cycles: [{ key: "nasr", effective: "2026-10-29" } as ReadyParts["cycles"][number]] }));
     expect(input.packs).toEqual({ edition: "2026-10-29", can_update: false });
+  });
+
+  test("what Keep for the Air holds is sent as it is, and none where nothing can be kept", () => {
+    const kept = { on_board: ["briefing" as const], missing: ["plates" as const], size_mb: 2 };
+    expect(readyInput(parts({ kept })).kept).toEqual(kept);
+    expect(readyInput(parts()).kept).toBeNull();
   });
 });
 

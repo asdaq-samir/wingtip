@@ -1,0 +1,80 @@
+{
+  "x-call": "wingtip_weather::ready::kept::call",
+  "description": "A kept answer's age, as the apps show it with no signal (\"Fetched 42 min ago\"), and whether it is past the freshness ready_to_fly holds it to: the briefing, the plan's nav log, the Go / No-Go and the weather loop for an hour (the app's choice, at AIM 7-1-28's hourly METAR), METARs and TAFs for the routine report's hour (AIM 7-1-28), the NOTAMs for an hour (14 CFR 91.103, AIM 5-1-3; the age the app's choice), and the airport cards and plates for the AIRAC cycle they came in (FAA 28 and 56 Day Product Schedule). A caution at worst: the answer is still shown.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "KeptAgeInput",
+      "type": "object",
+      "properties": {
+        "now": {
+          "type": "number",
+          "description": "Unix seconds, UTC: the engine has no clock."
+        },
+        "fetched_at": {
+          "type": "number",
+          "description": "When the network gave the kept answer, Unix seconds."
+        },
+        "kind": {
+          "$ref": "#/definitions/KeptKind"
+        }
+      },
+      "required": [
+        "now",
+        "fetched_at",
+        "kind"
+      ]
+    },
+    "answer": {
+      "title": "KeptAgeAnswer",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "$ref": "#/definitions/KeptKind"
+        },
+        "age_min": {
+          "type": "number"
+        },
+        "line": {
+          "type": "string",
+          "description": "\"Fetched 42 min ago\"."
+        },
+        "finding": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "caution"
+          ],
+          "description": "Caution once past its freshness: the line drawn in the caution colour."
+        },
+        "fresh_min": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "How long it is fresh, minutes; null for the kinds kept for their AIRAC cycle."
+        },
+        "detail": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "age_min",
+        "line",
+        "finding",
+        "fresh_min",
+        "detail",
+        "source"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

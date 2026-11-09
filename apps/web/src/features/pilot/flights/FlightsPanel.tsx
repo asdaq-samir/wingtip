@@ -1,4 +1,4 @@
-import { Pencil, Route, Share, Trash2 } from "lucide-react";
+import { Link2Off, Pencil, Route, Share, Trash2 } from "lucide-react";
 import { cn } from "cn";
 import EmptyState from "../../../components/EmptyState";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
@@ -8,20 +8,35 @@ import QueryState from "../../../components/QueryState";
 import RowMenu from "../../../components/RowMenu";
 import { SwipeToDelete } from "../../../components/SwipeToDelete";
 import { useConfirm } from "../../../components/useConfirm";
-import { describeError } from "../../../lib/api/client";
 import type { FlightSummary } from "../../../lib/api/types";
 import { planHrefOf } from "../../../lib/flightLink";
+import { sharedPlanLink } from "../../../lib/sharedFlight";
 import { feet, nm } from "../../../lib/format";
 import { LEVEL_TONE, riskLine, type RiskLevel } from "../../../lib/frat";
 import { routeName } from "../../../lib/identSchema";
-import { showError } from "../../../lib/problems";
-import { cancelled, shareOrCopy } from "../../../lib/share";
 import FlightPage from "../FlightPage";
 import FlightFields from "./FlightFields";
 import { flightTitle } from "./flightEdit";
 import { useSavedFlights, type SavedFlightsModel } from "./useSavedFlights";
 
-const shareOf = (f: FlightSummary) => ({ title: flightTitle(f), url: new URL(`/app${planHrefOf(f)}`, location.origin).toString() });
+// A swipe's Share: the plan in the link itself, opened as a preview
+// (lib/sharedFlight); the menu's is the saved flight's own, which can be stopped.
+const shareOf = (f: FlightSummary) => ({
+  title: flightTitle(f),
+  url: sharedPlanLink(
+    {
+      dep: f.departureIdent,
+      dest: f.destinationIdent,
+      stops: f.stops,
+      altitudeFt: f.cruiseAltitudeFt ?? null,
+      depart: null,
+      type: null,
+      rules: null,
+      tail: null,
+    },
+    location.origin,
+  ),
+});
 
 /** A saved flight's row: its name (its route where it has none) and
  *  tail, then the route under a name, the figures, the risk it was saved
@@ -110,16 +125,22 @@ function SavedFlightRow({ f, vm, askDelete }: { f: FlightSummary; vm: SavedFligh
             // Its fields take the focus, as a question does: opened once
             // the menu has closed and let go of it (RowMenu's `asks`).
             { label: "Edit", icon: <Pencil />, asks: true, testId: "saved-flight-edit", onSelect: () => vm.startChange(f.id) },
-            {
-              label: "Share",
-              icon: <Share />,
-              testId: "saved-flight-share",
-              onSelect: () => {
-                shareOrCopy(shareOf(f)).catch((err) => {
-                  if (!cancelled(err)) showError("Not shared", describeError(err));
-                });
-              },
-            },
+            // A link that opens it read-only, until Stop Sharing; the
+            // N-number only where the pilot picks Share with it.
+            { label: "Share", icon: <Share />, testId: "saved-flight-share", onSelect: () => void vm.shareFlight(f, false) },
+            ...(f.aircraftTailNumber
+              ? [
+                  {
+                    label: `Share with ${f.aircraftTailNumber}`,
+                    icon: <Share />,
+                    testId: "saved-flight-share-tail",
+                    onSelect: () => void vm.shareFlight(f, true),
+                  },
+                ]
+              : []),
+            ...(f.share
+              ? [{ label: "Stop Sharing", icon: <Link2Off />, testId: "saved-flight-stop-sharing", onSelect: () => void vm.stopSharing(f) }]
+              : []),
             { label: "Remove", icon: <Trash2 />, destructive: true, asks: true, onSelect: ask, testId: "saved-flight-delete" },
           ]}
         >

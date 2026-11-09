@@ -228,7 +228,7 @@ const KEPT_FOR_MS = 30 * 24 * 3600 * 1000;
 
 /**
  * The keeps that finished, by key and when, remembered per browser: with
- * Keep Charts Offline on, a route opened again -- a reload, a saved
+ * Keep for the Air on, a route opened again -- a reload, a saved
  * flight -- is not downloaded again while its tiles are still held.
  */
 export const useKeptCharts = create<{ kept: Record<string, number> }>()(persist(() => ({ kept: {} }), { name: "wingtip.kept-charts" }));

@@ -58,10 +58,8 @@ class Plan(app: Application) : AndroidViewModel(app) {
         val course: Course? = null,
         val legs: List<Leg> = emptyList(),
         val totals: NavLogTotals? = null,
-        /** What the planner is doing now, in its words; null when done. */
-        val stage: String? = null,
-        /** Why there is no plan, in the planner's words; null when there is. */
-        val problem: String? = null,
+        val stage: String? = null, // what the planner is doing now, in its words
+        val problem: String? = null, // why there is no plan, in the planner's words
         val planning: Boolean = false,
         /** The point a Route Leg's Direct flies to, and the route as it was
          *  before, for its Cancel (the web's `direct` and `was`). */
@@ -80,6 +78,10 @@ class Plan(app: Application) : AndroidViewModel(app) {
          *  the type's: OwnAirplanes.applicable), its figures over the
          *  type's book, or the whole of an airplane of no stock type. */
         val own: OwnRecord? = null,
+        /** When the nav log shown was planned (epoch ms), and whether it is
+         *  the one kept for the air, shown with its age (KeptAgeLine). */
+        val plannedAtMs: Long? = null,
+        val kept: Boolean = false,
     ) {
         val routed: Boolean get() = dep.isNotEmpty() && dest.isNotEmpty()
 
@@ -240,7 +242,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
                             _state.update { it.copy(legs = fresh.toList()) }
                         }
                         is NavLogMessage.Done -> {
-                            _state.update { it.copy(legs = fresh.toList(), totals = message.totals, stage = null) }
+                            _state.update { it.copy(legs = fresh.toList(), totals = message.totals, stage = null, plannedAtMs = System.currentTimeMillis(), kept = false) }
                             keep()
                             keepForTheAir()
                             holdWhenPlanned()
@@ -329,7 +331,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
     private fun keep() {
         val s = _state.value
         if (!s.routed || s.course == null || s.totals == null) return
-        store.write(KeptPlan.Kept(s.dep, s.dest, s.stops, s.aircraft, s.course, s.legs, s.totals, s.altitudeFt, s.depart))
+        store.write(KeptPlan.Kept(s.dep, s.dest, s.stops, s.aircraft, s.course, s.legs, s.totals, s.altitudeFt, s.depart, s.plannedAtMs))
     }
 
     /** The plan on the page kept now, whole, for the next launch with no
@@ -344,13 +346,9 @@ class Plan(app: Application) : AndroidViewModel(app) {
         return kept.dep == s.dep && kept.dest == s.dest && kept.stops == s.stops && kept.aircraft == s.aircraft && kept.totals != null
     }
 
-    /** The cycle packs of the regions the route crosses (CyclePacks),
-     *  fetched once the route is planned, so the airspace there, what is
-     *  ahead in the air and a clearance's places are answered with no
-     *  connection: the iOS app's Plan.keepForTheAir does the same. A job
-     *  of its own, so a re-plan does not cut it short, and the next
-     *  route's keep replaces one still running (the files are each
-     *  written whole, so nothing is left half kept). */
+    /** The cycle packs of the regions the route crosses (CyclePacks), once
+     *  it is planned, so its airspace is answered with no connection (iOS's
+     *  Plan.keepForTheAir). A job of its own: the next route's replaces it. */
     private fun keepForTheAir() {
         val line = _state.value.course?.courseLine ?: return
         val packs = CyclePacks.of(getApplication<Application>())
@@ -367,7 +365,8 @@ class Plan(app: Application) : AndroidViewModel(app) {
         val kept = store.read() ?: return
         _state.update {
             it.copy(dep = kept.dep, dest = kept.dest, stops = kept.stops, aircraft = kept.aircraft,
-                course = kept.course, legs = kept.legs, totals = kept.totals, altitudeFt = kept.altitudeFt, depart = kept.depart)
+                course = kept.course, legs = kept.legs, totals = kept.totals, altitudeFt = kept.altitudeFt, depart = kept.depart,
+                plannedAtMs = kept.plannedAtMs, kept = true)
         }
         plan()
     }

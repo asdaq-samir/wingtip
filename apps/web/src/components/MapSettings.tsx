@@ -300,7 +300,7 @@ export default function MapSettings() {
           2026-10-27). */}
       <ListGroup title="Offline">
         <SwitchRow
-          title="Keep Charts Offline"
+          title="Keep for the Air"
           on={prefs.keepOffline && keepingAvailable()}
           onChange={prefs.setKeepOffline}
           disabled={!keepingAvailable()}

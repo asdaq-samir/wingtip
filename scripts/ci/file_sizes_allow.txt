@@ -65,7 +65,7 @@ apps/web/src/features/plan/hooks/useFlightBriefing.ts 571
 apps/web/src/features/plan/hooks/usePlan.ts 589
 apps/web/src/features/plan/hooks/usePlanWorkspace.ts 1249
 apps/web/src/features/plan/hooks/useProceduresRoute.ts 667
-apps/web/src/features/shell/MapPage.tsx 483
+apps/web/src/features/shell/MapPage.tsx 482
 apps/web/src/lib/api/client.ts 1193
 apps/web/src/lib/audioInput.test.ts 632
 apps/web/src/lib/audioInput.ts 592

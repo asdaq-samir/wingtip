@@ -1,0 +1,15 @@
+{
+  "title": "KeptKind",
+  "type": "string",
+  "enum": [
+    "briefing",
+    "weather",
+    "notams",
+    "airports",
+    "plates",
+    "plan",
+    "go_no_go",
+    "weather_loop"
+  ],
+  "description": "A kind of answer the apps keep for the air: the briefing, the route's METARs and TAFs, the ranked NOTAMs, the route's airport cards, the destination's and alternate's plates, the plan with its nav log, the Go / No-Go and the weather loop's frame list."
+}

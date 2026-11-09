@@ -32,6 +32,8 @@ import app.wingtipmaps.android.design.RefreshBox
 import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.offline.KeptAgeLine
+import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.strip.FindingIcon
 import app.wingtipmaps.android.strip.findingSaid
 import app.wingtipmaps.android.strip.words
@@ -74,6 +76,8 @@ fun BriefSheet(model: BriefModel, plan: Plan.State, signedIn: Boolean, onClose: 
                         )
                     }
                 }
+                // The brief kept for the air, shown with no signal: how old.
+                KeptAgeLine(KeptForAir.GO_NO_GO, state.keptAtMs)
                 // "When should I go?": the hours across, under the verdict.
                 DepartureWindowStrip(plan, signedIn)
                 state.risk?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
