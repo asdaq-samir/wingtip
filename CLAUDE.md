@@ -277,7 +277,10 @@ Guidelines first.
 - Hit areas are 44 points, but controls never grow to get there: a
   pseudo-element (`after:absolute after:-inset-…`) makes the area, and
   rows sit at `gap-2` so the areas meet.
-- Stock components (shadcn/ui, Radix) over hand-rolled ones.
+- Stock components over hand-rolled ones, on every platform (shadcn/ui and
+  Radix on the web, SwiftUI, Material 3): the platform's own component even
+  when it is only in a release candidate, never a copy of our own; bump to
+  stable when it ships (the owner, 2026-11-09).
 - Tappable things are the blue tint; type sizes come from `lib/text.ts`.
 - Every colour, type role, spacing, corner, material, motion and tap
   target is a token in `design/tokens.json`, generated into each app by
