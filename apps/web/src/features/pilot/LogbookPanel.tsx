@@ -61,6 +61,8 @@ const BLANK: LogbookEntryRequest = {
   dayLandings: 1, nightLandings: 0, remarks: "",
   dualHours: 0, soloHours: 0, instrumentHours: 0, toweredLandings: 0, distanceNm: 0, longestLegNm: 0,
   approaches: 0, holding: false, tracking: false,
+  // Typed in, not drawn from a track (features/logbook-auto).
+  airHours: 0, touchAndGoes: 0, fromTrack: false, flightId: null,
 };
 
 /** One entry's form: a paper logbook's columns. */

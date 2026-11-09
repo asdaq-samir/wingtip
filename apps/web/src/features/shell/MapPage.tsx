@@ -14,6 +14,7 @@ import { useWarmAirportIndex } from "../../lib/airportIndex";
 import LinkSignIn from "../pilot/LinkSignIn";
 import TvLink from "../pilot/TvLink";
 import EmergencyHost from "../emergency/EmergencyHost";
+import { AutoLogbookHost } from "../logbook-auto";
 import PlanWorkspace from "../plan/PlanWorkspace";
 import { BootMap } from "../plan/routeMapChunk";
 import type { WorkspacePieces } from "./workspace";
@@ -266,6 +267,8 @@ export default function MapPage({ mode }: { mode: Mode }) {
           <TvLink />
           {/* The emergency assistant, opened from flying mode, the pilot's words or the checklists (features/emergency). */}
           <EmergencyHost />
+          {/* A flight ended on own ship's GPS, offered for the logbook (features/logbook-auto). */}
+          <AutoLogbookHost />
           {/* Dev mode's refusal: someone it is not for, on the dev page,
               is taken to the map (the switch itself is in the settings). */}
           <DevGuard />
