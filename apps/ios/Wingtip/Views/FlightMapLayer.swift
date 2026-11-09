@@ -1,4 +1,4 @@
-import MapKit
+@preconcurrency import MapKit
 import UIKit
 
 /// What the map draws of the airplanes tracked and the flights flown, and

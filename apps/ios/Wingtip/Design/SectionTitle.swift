@@ -22,6 +22,7 @@ struct SectionTitle: View {
 
 extension Section where Parent == SectionTitle, Footer == EmptyView, Content: View {
     /// A section headed by its SectionTitle.
+    @MainActor
     init(title: String, @ViewBuilder content: () -> Content) {
         self.init(content: content, header: { SectionTitle(title) })
     }
