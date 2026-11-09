@@ -1194,8 +1194,11 @@ object EngineContract {
         val aglFt: Double,
         @SerialName("still_air_nm")
         val stillAirNm: Double,
+        /**
+         * The true airspeed at best glide; null with no best-glide speed.
+         */
         @SerialName("tas_kt")
-        val tasKt: Double,
+        val tasKt: Double? = null,
         /**
          * The ground the glide reaches every 10 degrees, wind corrected, [lat, lon].
          */
@@ -1256,8 +1259,11 @@ object EngineContract {
      */
     @Serializable
     data class BestFieldsInputAirplaneGlide(
+        /**
+         * The POH's best-glide speed, indicated; null or missing where the profile has none (a pilot's own airplane given its glide ratio alone): the reach is then worked only in still air: with a wind aloft it is not (a headwind's loss cannot be worked without the airspeed), and the fields are ranked as with no glide.
+         */
         @SerialName("best_glide_kias")
-        val bestGlideKias: Double,
+        val bestGlideKias: Double? = null,
         val ratio: Double,
     )
 

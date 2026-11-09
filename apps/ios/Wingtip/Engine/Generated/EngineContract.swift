@@ -1253,7 +1253,8 @@ enum EngineContract {
         var nmPer1000Ft: Double
         var aglFt: Double
         var stillAirNm: Double
-        var tasKt: Double
+        /// The true airspeed at best glide; null with no best-glide speed.
+        var tasKt: Double?
         /// The ground the glide reaches every 10 degrees, wind corrected, [lat, lon].
         var ring: [[Double]]
 
@@ -1320,7 +1321,8 @@ enum EngineContract {
 
     /// The POH's best-glide speed and glide ratio (Section 3).
     struct BestFieldsInputAirplaneGlide: Codable, Equatable, Sendable {
-        var bestGlideKias: Double
+        /// The POH's best-glide speed, indicated; null or missing where the profile has none (a pilot's own airplane given its glide ratio alone): the reach is then worked only in still air: with a wind aloft it is not (a headwind's loss cannot be worked without the airspeed), and the fields are ranked as with no glide.
+        var bestGlideKias: Double?
         var ratio: Double
 
         enum CodingKeys: String, CodingKey {

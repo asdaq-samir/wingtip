@@ -1176,7 +1176,7 @@ export interface EngineContract {
     answer: BelowVfrMinimumsAnswer;
   };
   /**
-   * The best fields to land at from where the airplane is, ranked with their reasons: in "glide" mode (the engine stopped) by reach first -- over the field at pattern height, reachable lower, beyond -- with the airplane's best-glide figures and the wind aloft, then the runway against the POH and the distance; in "diversion" mode by the runway and the weather, then the time. With no glide figures the glide is not guessed: nearest first, needs_airplane true. Nothing is left out for a limitation; it is said and ranked lower.
+   * The best fields to land at from where the airplane is, ranked with their reasons: in "glide" mode (the engine stopped) by reach first -- over the field at pattern height, reachable lower, beyond -- with the airplane's best-glide figures and the wind aloft, then the runway against the POH and the distance; in "diversion" mode by the runway and the weather, then the time. With no glide figures the glide is not guessed: nearest first, needs_airplane true. Nothing is left out for a limitation; it is said and ranked lower. A glide ratio with no best-glide speed gives a reach only with no wind aloft: a headwind's loss needs the glide's airspeed, and a still-air reach into one would be too far.
    */
   best_fields: {
     input: BestFieldsInput;
@@ -3906,7 +3906,10 @@ export interface BestFieldsInput {
      * The POH's best-glide speed and glide ratio (Section 3).
      */
     glide?: {
-      best_glide_kias: number;
+      /**
+       * The POH's best-glide speed, indicated; null or missing where the profile has none (a pilot's own airplane given its glide ratio alone): the reach is then worked only in still air: with a wind aloft it is not (a headwind's loss cannot be worked without the airspeed), and the fields are ranked as with no glide.
+       */
+      best_glide_kias?: number | null;
       ratio: number;
     } | null;
     landing?: ShortFieldTable | null;
@@ -4017,7 +4020,10 @@ export interface BestFieldsAnswer {
     nm_per_1000_ft: number;
     agl_ft: number;
     still_air_nm: number;
-    tas_kt: number;
+    /**
+     * The true airspeed at best glide; null with no best-glide speed.
+     */
+    tas_kt: number | null;
     /**
      * The ground the glide reaches every 10 degrees, wind corrected, [lat, lon].
      */
