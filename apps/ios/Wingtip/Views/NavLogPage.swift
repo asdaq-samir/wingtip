@@ -23,6 +23,8 @@ struct NavLogPage: View {
             }
         }
         .navigationTitle("Nav Log")
+        // A long list: its rows soften under the bar and the tab bar.
+        .glassScrollEdges()
     }
 }
 

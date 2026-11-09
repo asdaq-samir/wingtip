@@ -307,6 +307,9 @@ struct SheetView: View {
                 SetupView().clearOfTabBar(!split)
             }
         }
+        // The bar folds to the tab up while the nav log, the Brief or the
+        // logbook scrolls down, and comes back on the way up (iOS 26).
+        .tabBarMinimizesOnScroll()
         // The pill shows the flight's figures where the tab's own content
         // would be out of sight anyway, over the tab bar.
         .overlay(alignment: .top) {
