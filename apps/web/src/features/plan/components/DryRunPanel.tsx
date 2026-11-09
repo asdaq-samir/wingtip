@@ -15,6 +15,7 @@ import FlightLine from "./FlightLine";
 import { dryRunFlown, runNmAt, type DryRun, type Flown } from "./navlog/dryRun";
 import type { RouteEnds } from "./navlog/rows";
 import { loadFlightChart } from "./loadFlightChart";
+import { ForecastStrip, ForecastToggle } from "../forecastRun/ForecastStrip";
 
 const FlightChart = lazy(loadFlightChart);
 
@@ -139,6 +140,7 @@ export function DryRunControls({
         >
           <Mountain className="size-5" />
         </RoundButton>
+        <ForecastToggle />
         <RoundButton label={playing ? "Pause" : "Play"} onClick={playing ? pausePastFlight : playPastFlight} data-testid="dry-run-play">
           {playing ? <Pause className="size-5" /> : <Play className="size-5" />}
         </RoundButton>
@@ -221,6 +223,8 @@ export function DryRunControls({
           data-testid="dry-run-scrub"
         />
       </div>
+      {/* Forecast mode's strip under the chart (forecastRun). */}
+      <ForecastStrip run={run} ends={ends} />
     </div>
   );
 }

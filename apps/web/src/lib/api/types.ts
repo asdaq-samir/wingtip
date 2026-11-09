@@ -171,6 +171,9 @@ export type WeatherMap = Schemas["WeatherMap"];
 /** The radar and satellite loop (wingtip.weather_loop). */
 export type WeatherLoop = Schemas["WeatherLoop"];
 export type LoopFrame = Schemas["LoopFrame"];
+/** The dry run against the forecast (wingtip.forecast_run). */
+export type ForecastRunAsk = Schemas["ForecastRunAsk"];
+export type ForecastRun = Schemas["ForecastRun"];
 export type WeatherArea = Schemas["WeatherArea"];
 export type MapPirep = Schemas["MapPirep"];
 export type StationWind = Schemas["StationWind"];

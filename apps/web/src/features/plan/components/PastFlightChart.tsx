@@ -228,9 +228,9 @@ const MARK_OFF_PX = 12;
 /** A figure's width, in pixels a character, for its box: 13-pixel
  *  semibold figures, tabular. */
 const MARK_CHAR_PX = 7.6;
-/** The controls' corner over the chart, in pixels (DryRunControls): a
+/** The controls' corner over the chart, in pixels (DryRunControls, the forecast switch among them): a
  *  figure that would sit under them goes under its trace instead. */
-const CONTROLS_PX = { width: 150, height: 44 };
+const CONTROLS_PX = { width: 194, height: 44 };
 
 /**
  * The dry run's height and ground speed where it is, each a dot on its

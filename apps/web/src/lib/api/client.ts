@@ -239,7 +239,7 @@ export class GatewayRequest extends Request {
   }
 }
 
-const planner = createClient<paths>({ baseUrl: "", Request: GatewayRequest });
+export const planner = createClient<paths>({ baseUrl: "", Request: GatewayRequest });
 
 /** A logbook entry's columns kept of one drawn from the app's own track
  *  (features/logbook-auto), which a typed or imported entry has none of. */
@@ -266,7 +266,7 @@ type Widened<T> = T extends readonly (infer E)[] ? Widened<E>[] : T extends obje
  *  same schema with its tuples restored. Checked, not merely cast: the
  *  call's own response type must be `T` widened, so naming the wrong
  *  schema, or a field the schema has since lost, is a compile error. */
-const data = <T>(result: { data?: Widened<T> }): T => result.data as T;
+export const data = <T>(result: { data?: Widened<T> }): T => result.data as T;
 
 /**
  * Newline-delimited JSON, one line at a time as the bytes arrive: the
