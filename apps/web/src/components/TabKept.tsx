@@ -8,6 +8,12 @@ import { cn } from "cn";
  * inert and not laid out (index.css's tab-away), its layout kept for its
  * return, as PanelTabs keeps the Brief's pages; not under React's
  * Activity, whose effects stopped and started again on every return.
+ * Measured again on React 19.3 (2026-11-09, a production build at CPU 4x,
+ * FPL, Airport and Airplane tapped in turn, 36 taps each way): tap to
+ * frame 14.6-14.8 ms either way on tabs with no route, no long task in
+ * either; Activity's hidden mode is display: none, which with a route
+ * lays the Nav Log out again on each return (0.6 s, PanelTabs) and stops
+ * and starts its effects (0.5 s), so this stays.
  */
 export default function TabKept({ away, children }: { away: boolean; children: ReactNode }) {
   return (
