@@ -1946,6 +1946,65 @@ class Obstacles(BaseModel):
     obstacles: Annotated[list[Obstacle] | None, Field(title='Obstacles')] = None
 
 
+class OfflineArchive(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    archive: Annotated[str | None, Field(title='Archive')] = None
+    bytes: Annotated[int | None, Field(title='Bytes')] = None
+    exact: Annotated[bool | None, Field(title='Exact')] = None
+    kind: Annotated[str | None, Field(title='Kind')] = None
+    scale: Annotated[int | None, Field(title='Scale')] = None
+    tiles: Annotated[int | None, Field(title='Tiles')] = None
+    url: Annotated[str | None, Field(title='Url')] = None
+
+
+class OfflineBox(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    id: Annotated[str | None, Field(title='Id')] = None
+
+
+class OfflineOverlay(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    bytes: Annotated[int | None, Field(title='Bytes')] = None
+    name: Annotated[str | None, Field(title='Name')] = None
+
+
+class OfflinePack(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    bytes: Annotated[int | None, Field(title='Bytes')] = None
+    name: Annotated[str | None, Field(title='Name')] = None
+    url: Annotated[str | None, Field(title='Url')] = None
+
+
+class OfflineRegion(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    boxes: Annotated[list[list[float]] | None, Field(title='Boxes')] = None
+    group: Annotated[str | None, Field(title='Group')] = None
+    id: Annotated[str | None, Field(title='Id')] = None
+    name: Annotated[str | None, Field(title='Name')] = None
+    sizes: Annotated[dict[str, int] | None, Field(title='Sizes')] = None
+
+
+class OfflineRegionFiles(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    archives: Annotated[list[OfflineArchive] | None, Field(title='Archives')] = None
+    cycle: Annotated[str | None, Field(title='Cycle')] = None
+    expires: Annotated[str | None, Field(title='Expires')] = None
+    packs: Annotated[list[OfflinePack] | None, Field(title='Packs')] = None
+    region: OfflineRegion | None = None
+
+
 class OnRoute(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -3986,6 +4045,19 @@ class NotamsRanked(BaseModel):
     notams: Annotated[list[RankedNotam] | None, Field(title='Notams')] = None
     top: Annotated[int | None, Field(title='Top')] = None
     unchecked: Annotated[list[str] | None, Field(title='Unchecked')] = []
+
+
+class OfflineCatalog(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    archives: Annotated[list[str] | None, Field(title='Archives')] = None
+    cycle: Annotated[str | None, Field(title='Cycle')] = None
+    expires: Annotated[str | None, Field(title='Expires')] = None
+    next_cycle: Annotated[str | None, Field(title='Next Cycle')] = None
+    next_effective: Annotated[str | None, Field(title='Next Effective')] = None
+    overlay: OfflineOverlay | None = None
+    regions: Annotated[list[OfflineRegion] | None, Field(title='Regions')] = None
 
 
 class OverlayTiles(BaseModel):

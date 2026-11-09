@@ -1,0 +1,58 @@
+{
+  "x-call": "wingtip_receiver::calls::call",
+  "description": "FIS-B NEXRAD to draw (products 63 and 64, AIM 4-5-9): for each level 1 to 7, rectangles [south, west, north, east], the regional product's where sent and the CONUS product's elsewhere, with the newest block's time. Not for avoiding weather close in.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ReceiverNexradInput",
+      "type": "object",
+      "properties": {
+        "picture": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ReceiverPicture"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The last answer, or null at first."
+        }
+      }
+    },
+    "answer": {
+      "title": "ReceiverNexradAnswer",
+      "type": "object",
+      "properties": {
+        "levels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReceiverNexradLevel"
+          }
+        },
+        "time": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "at": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "levels",
+        "time",
+        "at"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

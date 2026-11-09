@@ -1,0 +1,46 @@
+{
+  "title": "ReceiverBlock",
+  "description": "A FIS-B NEXRAD block (products 63 regional and 64 CONUS): 32 bins across and 4 down, north row first, each a level 0 to 7.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "number"
+    },
+    "regional": {
+      "type": "boolean"
+    },
+    "north": {
+      "type": "number"
+    },
+    "west": {
+      "type": "number"
+    },
+    "south": {
+      "type": "number"
+    },
+    "east": {
+      "type": "number"
+    },
+    "bins": {
+      "type": "string",
+      "description": "128 digits 0 to 7, row by row from the north-west."
+    },
+    "time": {
+      "type": "string"
+    },
+    "at": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "id",
+    "regional",
+    "north",
+    "west",
+    "south",
+    "east",
+    "bins",
+    "time",
+    "at"
+  ]
+}

@@ -3169,6 +3169,76 @@ struct APIObstacle: Codable, Equatable, Sendable {
     var type: String
 }
 
+/// A box drawn on the map as a region id, snapped outward to the half
+/// degree (wingtip.offline_regions.box_id).
+// MARK: - APIOfflineBox
+struct APIOfflineBox: Codable, Equatable, Sendable {
+    var id: String
+}
+
+/// What can be kept: the cycle the map draws, the day it is replaced,
+/// the next cycle where it is here ahead of its date, the archives each
+/// cycle has (a kind and a density: "sec", "sec@2x"), the overlays and
+/// the regions.
+// MARK: - APIOfflineCatalog
+struct APIOfflineCatalog: Codable, Equatable, Sendable {
+    var archives: [String]
+    var cycle: String
+    var expires, nextCycle, nextEffective: String?
+    var overlay: APIOfflineOverlay?
+    var regions: [APIOfflineRegion]
+}
+
+/// The map's overlays of the cycle, the whole country in one archive
+/// (/api/overlay-tiles/{name}.pmtiles), kept with any region.
+// MARK: - APIOfflineOverlay
+struct APIOfflineOverlay: Codable, Equatable, Sendable {
+    var bytes: Int
+    var name: String
+}
+
+/// A place to keep: a sectional sheet's coverage, a state, or a box
+/// drawn on the map. `sizes` are the bytes of each of its archives
+/// already worked out ("sec", "sec@2x", "tac" ...); the rest come with
+/// the region's own answer.
+// MARK: - APIOfflineRegion
+struct APIOfflineRegion: Codable, Equatable, Sendable {
+    var boxes: [[Double]]
+    var group, id, name: String
+    var sizes: [String: Int]
+}
+
+/// Everything a phone fetches to keep a region of a cycle: an archive
+/// per kind and density with tiles there, and the cycle packs it touches.
+// MARK: - APIOfflineRegionFiles
+struct APIOfflineRegionFiles: Codable, Equatable, Sendable {
+    var archives: [APIOfflineArchive]
+    var cycle: String
+    var expires: String?
+    var packs: [APIOfflinePack]
+    var region: APIOfflineRegion
+}
+
+/// One archive of a region: its kind and density, how many tiles and
+/// bytes it holds (`exact` once cut, else from the directory, within a
+/// few KB), and its address under the planner.
+// MARK: - APIOfflineArchive
+struct APIOfflineArchive: Codable, Equatable, Sendable {
+    var archive: String
+    var bytes: Int
+    var exact: Bool
+    var kind: String
+    var scale, tiles: Int
+    var url: String
+}
+
+/// A cycle pack the region touches (/api/cycle-pack/{cycle}/{name}.pack).
+// MARK: - APIOfflinePack
+struct APIOfflinePack: Codable, Equatable, Sendable {
+    var bytes: Int
+    var name, url: String
+}
+
 /// The map's FAA overlays as vector tiles (wingtip.vector_tiles): one
 /// PMTiles archive of the cycle, fetched in byte ranges at
 /// /api/overlay-tiles/{name}.pmtiles; its zooms, and how far its lines

@@ -135,6 +135,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.okhttp)
+    implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.maplibre)
     implementation(libs.material)
     // The flight pieces: own ship's fixes, the records store, the traffic

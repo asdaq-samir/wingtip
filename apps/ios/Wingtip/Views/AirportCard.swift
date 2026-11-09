@@ -334,8 +334,7 @@ struct AirportWeatherTab: View {
                 // The report as sent, never reworded.
                 if let raw = metar.raw { Text(raw).font(.footnote.monospaced()).textSelection(.enabled) }
             } else {
-                Text(place.weatherUnavailable == true ? "The weather service could not be reached" : "No weather station reports from this field")
-                    .foregroundStyle(.secondary)
+                ReceiverReportRows(ident: place.ident, otherwise: place.weatherUnavailable == true ? "The weather service could not be reached" : "No weather station reports from this field")
             }
         }
         // The National Weather Service's Gridded LAMP at the field for the

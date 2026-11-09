@@ -3,6 +3,7 @@ package app.wingtipmaps.android.ui
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -21,6 +22,7 @@ import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.atc.AtcCopilotHost
 import app.wingtipmaps.android.copilot.CopilotBanner
+import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.emergency.EmergencyModel
 import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.flight.Geo
@@ -38,6 +40,8 @@ import app.wingtipmaps.android.map.MapRest
 import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.map.MapWeather
 import app.wingtipmaps.android.map.TrafficDrawing
+import app.wingtipmaps.android.receiver.Receiver
+import app.wingtipmaps.android.receiver.ReceiverChip
 import app.wingtipmaps.android.route.RouteLegModel
 import app.wingtipmaps.android.route.RoutePoints
 
@@ -88,6 +92,9 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         val heard = heardAtMs ?: System.currentTimeMillis()
         planes.mapIndexed { i, p -> TrafficDrawing.Target(p, marks.getOrNull(i), heard - ((p.seenS ?: 0.0) * 1000).toLong()) }
     }
+    // The cockpit's ADS-B receiver, listened for from the first map on
+    // (Receiver: once a second while its setting is Auto).
+    LaunchedEffect(Unit) { Receiver.of(context).start() }
     // Asked every five seconds while the map is shown and traffic is on.
     DisposableEffect(trafficOn) {
         if (trafficOn) traffic.start()
@@ -157,6 +164,8 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         )
         MapLoading(shown = !revealed, bottomInset = covered, problem = if (info == null) chartProblem else null, modifier = Modifier.fillMaxSize())
         MapButtons(ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk, modifier = Modifier.align(Alignment.TopEnd))
+        // The receiver heard: "Stratux · 12 targets · GPS".
+        ReceiverChip(Modifier.align(Alignment.TopCenter).padding(top = WingtipSpace.Sm))
         if (ownShip.on && !approximate && !denied) {
             // What is ahead and the flight's instruments, at the top left of
             // the buttons where nothing else was (#218).

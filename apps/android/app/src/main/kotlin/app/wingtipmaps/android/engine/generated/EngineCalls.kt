@@ -1453,6 +1453,30 @@ fun Engine.readbackCheck(cleared: String, said: String, tail: String? = null): R
     rule("readback_check", EngineContract.ReadbackCheckInput(cleared = cleared, said = said, tail = tail))
 
 /**
+ * FIS-B NEXRAD to draw (products 63 and 64, AIM 4-5-9): for each level 1 to 7, rectangles [south, west, north, east], the regional product's where sent and the CONUS product's elsewhere, with the newest block's time. Not for avoiding weather close in.
+ */
+fun Engine.receiverNexrad(picture: EngineContract.ReceiverPicture? = null): Result<EngineContract.ReceiverNexradAnswer> =
+    rule("receiver_nexrad", EngineContract.ReceiverNexradInput(picture = picture))
+
+/**
+ * A portable ADS-B receiver's GDL 90 bytes (Garmin 560-1058-00 Rev A; ForeFlight's ID message) read into what it has said: its state, own ship, the traffic it hears (AIM 4-5-7, 4-5-8) and the FIS-B products it is sent (AIM 4-5-9), each dropped once it is no longer heard. Traffic is for seeing, not avoiding (AIM 4-5-7).
+ */
+fun Engine.receiverRead(data: String? = null, at: Double, picture: EngineContract.ReceiverPicture? = null): Result<EngineContract.ReceiverPicture> =
+    rule("receiver_read", EngineContract.ReceiverReadInput(data = data, at = at, picture = picture))
+
+/**
+ * A field's latest METAR (or SPECI) and TAF sent over FIS-B (AIM 4-5-9), as sent, with when; the K of a contiguous-states ICAO identifier matched either way (ORD, KORD).
+ */
+fun Engine.receiverReports(picture: EngineContract.ReceiverPicture? = null, ident: String): Result<EngineContract.ReceiverReportsAnswer> =
+    rule("receiver_reports", EngineContract.ReceiverReportsInput(picture = picture, ident = ident))
+
+/**
+ * The traffic to draw: the receiver's own targets, their pressure altitudes put on own ship's scale by own ship's height less its pressure altitude, then the internet's airplanes the receiver does not hear (by ICAO address), never own ship.
+ */
+fun Engine.receiverTraffic(picture: EngineContract.ReceiverPicture? = null, internet: List<EngineContract.HeardPlane>? = null, ownFt: Double? = null, at: Double): Result<List<EngineContract.HeardPlane>> =
+    rule("receiver_traffic", EngineContract.ReceiverTrafficInput(picture = picture, internet = internet, ownFt = ownFt, at = at))
+
+/**
  * The phone pack's region holding a point, "n40w088": a square of 4 degrees named by its south-west corner.
  */
 fun Engine.regionOf(lat: Double, lon: Double): Result<String> =
