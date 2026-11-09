@@ -77,33 +77,37 @@ fun CopilotBanner(plan: Plan.State, flying: Boolean, fix: OwnShip.Fix?, ahead: L
         else -> MaterialTheme.colorScheme.onSurface
     }
     Surface(shape = MaterialTheme.shapes.large, tonalElevation = 3.dp, shadowElevation = 2.dp) {
-        Row(
-            Modifier.fillMaxWidth().animateContentSize().padding(start = WingtipSpace.Md, end = WingtipSpace.Xs, top = WingtipSpace.Xs, bottom = WingtipSpace.Xs)
-                .semantics { liveRegion = if (shown.level == "warning") LiveRegionMode.Assertive else LiveRegionMode.Polite },
-            verticalAlignment = if (open) Alignment.Top else Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
-        ) {
-            Icon(
-                when (shown.level) { "warning" -> Icons.Filled.Warning; "caution" -> Icons.Filled.Error; else -> Icons.Filled.Info },
-                // The level said, not only drawn in its colour.
-                contentDescription = stringResource(when (shown.level) { "warning" -> R.string.said_warning; "caution" -> R.string.said_caution; else -> R.string.said_note }),
-                tint = ink, modifier = if (open) Modifier.padding(top = WingtipSpace.Md) else Modifier,
-            )
-            // The line opens to its why: a button that says so, and whether
-            // it is open, to TalkBack.
-            val state = stringResource(if (open) R.string.said_expanded else R.string.said_collapsed)
-            Column(
-                Modifier.weight(1f).clickable(role = Role.Button, onClickLabel = stringResource(R.string.said_show_why)) { open = !open }
-                    .semantics { stateDescription = state }.padding(vertical = WingtipSpace.Sm),
-                verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
+        Column {
+            Row(
+                Modifier.fillMaxWidth().animateContentSize().padding(start = WingtipSpace.Md, end = WingtipSpace.Xs, top = WingtipSpace.Xs, bottom = WingtipSpace.Xs)
+                    .semantics { liveRegion = if (shown.level == "warning") LiveRegionMode.Assertive else LiveRegionMode.Polite },
+                verticalAlignment = if (open) Alignment.Top else Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
             ) {
-                Text(shown.title, color = ink, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium, maxLines = if (open) Int.MAX_VALUE else 2, overflow = TextOverflow.Ellipsis)
-                if (open) {
-                    shown.detail.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
-                    shown.sources.forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                Icon(
+                    when (shown.level) { "warning" -> Icons.Filled.Warning; "caution" -> Icons.Filled.Error; else -> Icons.Filled.Info },
+                    // The level said, not only drawn in its colour.
+                    contentDescription = stringResource(when (shown.level) { "warning" -> R.string.said_warning; "caution" -> R.string.said_caution; else -> R.string.said_note }),
+                    tint = ink, modifier = if (open) Modifier.padding(top = WingtipSpace.Md) else Modifier,
+                )
+                // The line opens to its why: a button that says so, and whether
+                // it is open, to TalkBack.
+                val state = stringResource(if (open) R.string.said_expanded else R.string.said_collapsed)
+                Column(
+                    Modifier.weight(1f).clickable(role = Role.Button, onClickLabel = stringResource(R.string.said_show_why)) { open = !open }
+                        .semantics { stateDescription = state }.padding(vertical = WingtipSpace.Sm),
+                    verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
+                ) {
+                    Text(shown.title, color = ink, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium, maxLines = if (open) Int.MAX_VALUE else 2, overflow = TextOverflow.Ellipsis)
+                    if (open) {
+                        shown.detail.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+                        shown.sources.forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    }
                 }
+                TextButton(onClick = { model.dismiss(); open = false }) { Text(stringResource(R.string.ok)) }
             }
-            TextButton(onClick = { model.dismiss(); open = false }) { Text(stringResource(R.string.ok)) }
+            // Opened, what it is about and its one fix (AlertFixes.copilot).
+            if (open) CopilotFixButtons(shown, fix)
         }
     }
 }

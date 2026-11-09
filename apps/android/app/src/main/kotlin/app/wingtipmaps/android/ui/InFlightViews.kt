@@ -27,6 +27,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +52,7 @@ import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.glideReaches
+import app.wingtipmaps.android.flight.AheadSheet
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.format.Format
@@ -100,9 +102,13 @@ fun AlertsBanner(alerts: List<AheadAlert>) {
     // A new alert first in line is felt as it appears.
     val haptics = rememberHaptics()
     LaunchedEffect(first.name, first.level) { haptics.tap(WingtipHaptic.WARNING) }
+    // A tap opens every alert ahead in full, each with its fix (AheadSheet).
+    var open by rememberSaveable { mutableStateOf(false) }
+    if (open) AheadSheet(alerts, onClose = { open = false })
     Surface(color = if (danger) LocalWingtipPalette.current.destructive else LocalWingtipPalette.current.caution, contentColor = Color.White, shape = MaterialTheme.shapes.medium) {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)
+            Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = stringResource(R.string.said_show_ahead)) { open = true }
+                .padding(horizontal = 12.dp, vertical = 8.dp)
                 .semantics(mergeDescendants = true) {},
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
