@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, useEffectEvent } from "react";
 import { RefreshCw } from "lucide-react";
 import { Spinner } from "./ui/spinner";
 import { SIZE } from "../lib/tokens";
@@ -27,10 +27,7 @@ export default function PullToRefresh({
   const [pull, setPull] = useState(0);
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
-  const refresh = useRef(onRefresh);
-  useEffect(() => {
-    refresh.current = onRefresh;
-  });
+  const refresh = useEffectEvent(onRefresh);
 
   useEffect(() => {
     const el = ref.current;
@@ -71,7 +68,7 @@ export default function PullToRefresh({
       if (!go) return;
       busyRef.current = true;
       setBusy(true);
-      void refresh.current().finally(() => {
+      void refresh().finally(() => {
         busyRef.current = false;
         setBusy(false);
       });

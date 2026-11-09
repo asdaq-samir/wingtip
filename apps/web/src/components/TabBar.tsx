@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, type ReactNode } from "react";
+import { useContext, useEffect, useRef, type ReactNode, useEffectEvent } from "react";
 import { ChevronDown, Share } from "lucide-react";
 import { GearGlyph, type TabGlyph } from "../lib/glyphs/tabGlyphs";
 import CloseButton from "./CloseButton";
@@ -292,10 +292,7 @@ export default function TabBar<T extends string>({
   // a strip -- which keeps the wheel, nor over a field or the map. One step
   // a gesture: a trackpad's flick sends a run of events, and the next step
   // waits for a pause in them.
-  const sizeNow = useRef(size);
-  useEffect(() => {
-    sizeNow.current = size;
-  });
+  const sizeNow = useEffectEvent(() => size);
   useEffect(() => {
     const panel = bar.current?.closest<HTMLElement>("[data-slot=map-panel]");
     if (!panel) return;
@@ -340,7 +337,7 @@ export default function TabBar<T extends string>({
       if (Math.abs(sum.x) >= 60 && Math.abs(sum.x) > 2 * Math.abs(sum.y)) {
         step.current(sum.x > 0 ? 1 : -1);
       } else if (Math.abs(sum.y) >= 60 && Math.abs(sum.y) > Math.abs(sum.x)) {
-        const sheet = sizeNow.current;
+        const sheet = sizeNow();
         if (!sheet) return;
         if (sum.y > 0 && sheet.size !== "full") sheet.to(sheet.size === "peek" ? "half" : "full");
         else if (sum.y < 0 && sheet.size !== "peek") sheet.to(sheet.size === "full" ? "half" : "peek");

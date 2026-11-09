@@ -5,7 +5,7 @@
  * or its Back does, before the panel is lowered. A card over a list (an
  * airport's over Nearest's) is closed first, then the list.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useEffectEvent } from "react";
 import { create } from "zustand";
 
 /** The cards of the route whose Share is a menu of the route's things,
@@ -100,25 +100,17 @@ export function closeTopCard(): boolean {
  * the pill (PhotoHead), and what the pill shows of it (`pill`).
  */
 export function useHeldCard(onClose: () => void, onShare?: CardShare, picture = false, pill?: PillHead) {
-  const close = useRef(onClose);
-  const share = useRef(onShare);
-  useEffect(() => {
-    close.current = onClose;
-    share.current = onShare;
+  // The caller's latest, read as the card is closed or shared.
+  const close = useEffectEvent(onClose);
+  const share = useEffectEvent(() => {
+    if (typeof onShare === "function") onShare();
   });
   const shares = typeof onShare === "string" ? onShare : !!onShare;
   const held = useRef<OpenCard | null>(null);
   useEffect(() => {
     const entry: OpenCard = {
-      close: () => close.current(),
-      share:
-        typeof shares === "string"
-          ? shares
-          : shares
-            ? () => {
-                if (typeof share.current === "function") share.current();
-              }
-            : undefined,
+      close: () => close(),
+      share: typeof shares === "string" ? shares : shares ? () => share() : undefined,
       picture,
     };
     held.current = entry;

@@ -1,4 +1,14 @@
-import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type ReactNode,
+  useEffectEvent,
+} from "react";
 import { cn } from "cn";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../components/ui/tabs";
 import { SectionsOpen } from "../../../../components/sectionLayout";
@@ -133,11 +143,8 @@ export default function PanelTabs({
   // A page opened from the overview is what the close, a swipe back and a
   // device's Back take away first, back to the overview.
   const paged = !!Overview && tab !== null;
-  const back = useRef(() => choose(null));
-  useEffect(() => {
-    back.current = () => choose(null);
-  });
-  useEffect(() => (paged ? holdOpenCard({ close: () => back.current(), inBar: false }) : undefined), [paged]);
+  const back = useEffectEvent(() => choose(null));
+  useEffect(() => (paged ? holdOpenCard({ close: () => back(), inBar: false }) : undefined), [paged]);
   const goTo = useCallback(
     (next: PanelTab, section?: string) => {
       if (section === LEGS) {

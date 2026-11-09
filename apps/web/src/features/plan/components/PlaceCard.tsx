@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, useEffectEvent } from "react";
 import { usePrefetchQuery, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { Star } from "lucide-react";
 import { ACTION } from "../../../lib/cardActions";
@@ -212,16 +212,14 @@ export default function PlaceCard({
   // Opened on its approaches (the route's Approaches): the panel all the
   // way up and, once the answer is in and the panel has risen, Charts open
   // on the approaches.
-  // The callbacks the page's, made again at each of its draws: read
-  // through a ref, so the panel rising draws nothing that restarts this.
+  // The callbacks the page's, made again at each of its draws: effect
+  // events, so the panel rising draws nothing that restarts this.
   const placeIn = !!place;
-  const calls = useRef({ onExpand, onStarted });
-  useEffect(() => {
-    calls.current = { onExpand, onStarted };
-  });
+  const expand = useEffectEvent(() => onExpand());
+  const started = useEffectEvent(() => onStarted?.());
   useEffect(() => {
     if (startOn !== "approaches" || !placeIn) return;
-    calls.current.onExpand();
+    expand();
     // The card may already be open on another tab (it does not remount),
     // and an inactive tab's groups are not drawn: switch, and look a frame
     // or so after it has drawn.
@@ -233,7 +231,7 @@ export default function PlaceCard({
           ?.closest('[data-testid="place-card"]')
           ?.querySelector('[data-chart-group="Approaches"]')
           ?.scrollIntoView({ block: "start", behavior: "smooth" });
-        calls.current.onStarted?.();
+        started();
       }, 50);
     }, RISEN_MS);
     return () => {

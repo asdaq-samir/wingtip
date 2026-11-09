@@ -9,6 +9,7 @@ import {
   useState,
   type CSSProperties,
   type ReactNode,
+  useEffectEvent,
 } from "react";
 import { showError } from "../../lib/problems";
 import { patched, useSearchParamsNow } from "../../lib/useSearchParamsNow";
@@ -424,10 +425,8 @@ function ConsoleLayer({
   children: ReactNode;
 }) {
   const layer = useRef<HTMLElement>(null);
-  const close = useRef(onClose);
-  useEffect(() => {
-    close.current = onClose;
-  });
+  // The caller's close at the key, not the one it opened with.
+  const close = useEffectEvent(onClose);
   useEffect(() => {
     const node = layer.current;
     if (!node || !shown) return;
@@ -436,7 +435,7 @@ function ConsoleLayer({
       // which prevents the default.
       if (event.key !== "Escape" || event.defaultPrevented) return;
       event.preventDefault();
-      close.current();
+      close();
     };
     // On the layer first, ahead of the panel's own Escape; on the document
     // too, for when a tap on the map or on the panel's bare parts has
