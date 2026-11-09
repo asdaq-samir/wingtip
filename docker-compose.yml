@@ -306,6 +306,7 @@ services:
       # the jaeger service below); unset, the planner sends none and loads
       # none of OpenTelemetry (app.tracing, wingtip.tracing).
       OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
+      TRACING: ${TRACING:-}
       OTEL_SERVICE_NAME: planner
     healthcheck:
       <<: *python-healthcheck
@@ -364,6 +365,7 @@ services:
       # Traces to Jaeger with TRACING=1 (the jaeger service below); unset,
       # it sends none and loads none of OpenTelemetry (wingtip.tracing).
       OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
+      TRACING: ${TRACING:-}
       OTEL_SERVICE_NAME: ingest
     healthcheck:
       <<: *python-healthcheck
@@ -409,6 +411,7 @@ services:
       # Traces to Jaeger with TRACING=1 (the jaeger service below); unset,
       # it sends none and loads none of OpenTelemetry (app.tracing).
       OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
+      TRACING: ${TRACING:-}
       OTEL_SERVICE_NAME: assistant
     healthcheck:
       <<: *python-healthcheck
@@ -439,6 +442,7 @@ services:
       # Traces to Jaeger with TRACING=1 (the jaeger service below); unset,
       # it sends none and loads none of OpenTelemetry (wingtip.tracing).
       OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
+      TRACING: ${TRACING:-}
       OTEL_SERVICE_NAME: weather
     # Python, the engine, and a GLMP issue's two grids at their largest
     # while it reads them: well under this, which keeps it from crowding

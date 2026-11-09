@@ -46,6 +46,8 @@ def instrument(app) -> bool:
     """Instruments `app`, requests and httpx when an OTLP endpoint is set;
     False, and nothing done, when it is not."""
     endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT")
+    if os.environ.get("TRACING", "1").strip().lower() in ("0", "false", "no", "off"):
+        endpoint = None  # TRACING=0 turns it off even where compose set the endpoint
     if not endpoint:
         return False
     from opentelemetry import trace

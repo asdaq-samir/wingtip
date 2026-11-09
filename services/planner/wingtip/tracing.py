@@ -26,6 +26,7 @@ planner: the FastAPI app and the page's request id)."""
 from __future__ import annotations
 
 import logging
+import os
 from contextlib import nullcontext
 
 from .config import get_settings
@@ -47,7 +48,9 @@ def start(service_name: str | None = None) -> bool:
     settings = get_settings()
     if _tracer is not None:
         return True
-    if not settings.otel_exporter_otlp_endpoint:
+    # TRACING=0 (or false/no/off) turns it off even where compose set the
+    # endpoint, since compose can only tell TRACING set from unset.
+    if not settings.otel_exporter_otlp_endpoint or os.environ.get("TRACING", "1").strip().lower() in ("0", "false", "no", "off"):
         return False
     from opentelemetry import trace
     from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter

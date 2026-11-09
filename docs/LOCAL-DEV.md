@@ -211,9 +211,10 @@ TRACING=1 docker compose --profile tracing up -d   # jaeger, and the services ag
 open http://localhost:16686                        # Jaeger's UI
 ```
 
-`TRACING` must be unset, not `0`, to turn it off again (compose can only
-tell set from unset), then `docker compose up -d` brings the services
-back without it.
+`TRACING=0` (or unsetting it) turns it off again: each service reads
+`TRACING` itself, so `0`, `false`, `no` or `off` win even though compose
+still passes the endpoint; `docker compose up -d` brings the services back
+without it.
 
 What each service sends, over OTLP/HTTP to `jaeger:4318` on the compose
 network:
