@@ -49,6 +49,13 @@ struct ChartInk: Equatable, Sendable {
     /// The scheme for the appearance.
     static func scheme(dark: Bool) -> ChartInk { dark ? night : light }
 
+    /// The same inks with the picked look's tint (Look): the brand's blue
+    /// unless the pilot picked Glass Cockpit or Chart Ink in Setup.
+    func tinted(_ tint: Color) -> ChartInk {
+        ChartInk(paper: paper, card: card, magenta: magenta, brown: brown, field: field, flown: flown, tint: tint,
+                 caution: caution, go: go, stop: stop, ink: ink, muted: muted, night: night)
+    }
+
     /// A finding's colour on the strip: go, caution, no-go; the rest muted.
     func finding(_ finding: String) -> Color {
         switch finding {
@@ -106,9 +113,11 @@ extension EnvironmentValues {
 /// for every control under it.
 private struct ChartInkTheme: ViewModifier {
     @Environment(\.colorScheme) private var scheme
+    @AppStorage(Look.key) private var look = Look.standard.rawValue
 
     func body(content: Content) -> some View {
-        let ink = ChartInk.scheme(dark: scheme == .dark)
+        let dark = scheme == .dark
+        let ink = ChartInk.scheme(dark: dark).tinted(Color(uiColor: (Look(rawValue: look) ?? .standard).tint(dark: dark)))
         content
             .environment(\.chartInk, ink)
             .tint(ink.tint)

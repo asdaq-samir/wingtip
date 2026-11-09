@@ -17,6 +17,8 @@ struct SetupView: View {
     @AppStorage(ChartNight.key) private var chartNight = ChartNight.dimmed.rawValue
     /// The screen's layout, the tabs or the strip (RootView).
     @AppStorage("layout") private var layoutName = "tabs"
+    /// The app's look, Wingtip's own unless another is picked (Look).
+    @AppStorage(Look.key) private var look = Look.standard.rawValue
 
     var body: some View {
         NavigationStack {
@@ -71,6 +73,14 @@ struct SetupView: View {
                         Text("Strip").tag("strip")
                     }
                     .pickerStyle(.segmented)
+                }
+                // The look: the brand's by default, Glass Cockpit and Chart
+                // Ink kept to pick (the owner, 2026-11-09); a menu, as a
+                // discrete setting is (docs/decisions/0017).
+                Section(title: "Look") {
+                    Picker("Look", selection: $look) {
+                        ForEach(Look.allCases) { Text($0.label).tag($0.rawValue) }
+                    }
                 }
                 Section(title: "Chart") {
                     // The white paper chart dimmed in dark appearance, so it

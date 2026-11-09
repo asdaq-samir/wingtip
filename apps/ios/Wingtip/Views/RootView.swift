@@ -115,6 +115,8 @@ struct RootView: View {
             }
         }
         .onChange(of: tab) { _, now in sceneTab = now.rawValue }
+        // The picked look's tint, the brand's blue by default (Look).
+        .lookTint()
     }
 
     /// A field or a point opened from the map: in the Airport tab, half
