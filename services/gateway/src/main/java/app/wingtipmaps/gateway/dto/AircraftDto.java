@@ -59,7 +59,10 @@ public record AircraftDto(
                 description = "Its handbook figures as its pilot confirmed them from a photographed page: the engine "
                         + "contract's HandbookFigures, in the app's units; null until then")
         @Nullable
-        HandbookFigures handbook) {
+        HandbookFigures handbook,
+
+        @Schema(description = "Its own handbook figures as its pilot gave them; each null where not given")
+        OwnFigures figures) {
 
     @Schema(description = "A VOR check for IFR (14 CFR 91.171)")
     public record VorCheckDto(

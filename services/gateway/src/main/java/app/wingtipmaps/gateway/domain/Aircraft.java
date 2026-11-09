@@ -85,6 +85,18 @@ public class Aircraft {
 
     private Double usableFuelGal;
 
+    /** Its own handbook figures (V37): the service ceiling, the sea-level
+     *  best rate of climb, the start and taxi fuel, the still-air glide
+     *  ratio, and the basic empty weight and moment. Each null where its
+     *  pilot has not given it: missing then, never another airplane's. */
+    private Double serviceCeilingFt;
+
+    private Double climbRateFpm;
+    private Double taxiFuelGal;
+    private Double glideRatio;
+    private Double emptyWeightLb;
+    private Double emptyMomentLbIn;
+
     @Column(nullable = false)
     private Instant createdAt;
 
@@ -193,14 +205,31 @@ public class Aircraft {
         return this;
     }
 
-    /** Its flight plan's items 10a, 10b and 19 A/, all at once, as the
-     *  airplane's form saves them; null for one not said. */
+    /** Its own handbook figures, all six at once; null for one not given. */
+    public Aircraft keepFigures(
+            Double serviceCeilingFt,
+            Double climbRateFpm,
+            Double taxiFuelGal,
+            Double glideRatio,
+            Double emptyWeightLb,
+            Double emptyMomentLbIn) {
+        this.serviceCeilingFt = serviceCeilingFt;
+        this.climbRateFpm = climbRateFpm;
+        this.taxiFuelGal = taxiFuelGal;
+        this.glideRatio = glideRatio;
+        this.emptyWeightLb = emptyWeightLb;
+        this.emptyMomentLbIn = emptyMomentLbIn;
+        return this;
+    }
+
     /** Its handbook figures, as confirmed; null takes them away. */
     public Aircraft keepHandbook(Map<String, Object> figures) {
         this.handbook = figures;
         return this;
     }
 
+    /** Its flight plan's items 10a, 10b and 19 A/, all at once, as the
+     *  airplane's form saves them; null for one not said. */
     public Aircraft describeForFlightPlan(String equipment, String surveillance, String colour) {
         this.equipment = equipment;
         this.surveillance = surveillance;
