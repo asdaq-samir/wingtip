@@ -9,7 +9,7 @@ import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { lengthCode, lengthOfCode, lengthWords, type Hold } from "../../../lib/routeHolds";
 import { legMinutes } from "../../../lib/holdEntry";
-import { bearing } from "../../../lib/units";
+import { bearing } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";
 
 /** The point a hold is being set at: its ident, the hold there now, the

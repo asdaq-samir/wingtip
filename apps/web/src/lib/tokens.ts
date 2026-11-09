@@ -34,6 +34,14 @@ export const CATEGORY: Record<string, string> = {
   LIFR: "#a371f7",
 };
 
+/** Each category as a chip's fill under white words: the map's colour, or a deeper one where that is under 4.5:1 (LIFR). */
+export const CATEGORY_CHIP: Record<string, string> = {
+  VFR: "#1a7f37",
+  MVFR: "#1f6feb",
+  IFR: "#b3261e",
+  LIFR: "#7e3fb8",
+};
+
 /** A field with no report: unknown, not fine. */
 export const CATEGORY_UNKNOWN = "#8fa3b0";
 
@@ -56,12 +64,12 @@ export const INK = {
 export const TYPE_CLASS = {
   hero: "text-[1.75rem] leading-[2.125rem]",
   card: "text-[1.375rem] leading-[1.75rem]",
-  heading: "text-lg pointer-coarse:text-[1.25rem] pointer-coarse:leading-[1.5625rem]",
+  heading: "text-[1.25rem] leading-[1.5625rem]",
   title: "text-base pointer-coarse:text-[1.0625rem]",
-  row: "text-sm pointer-coarse:text-[1.0625rem]",
-  prose: "text-sm pointer-coarse:text-[0.9375rem]",
-  detail: "text-xs pointer-coarse:text-[0.9375rem]",
-  note: "text-xs pointer-coarse:text-[0.8125rem]",
+  row: "text-base pointer-coarse:text-[1.0625rem]",
+  prose: "text-base pointer-coarse:text-[0.9375rem]",
+  detail: "text-sm pointer-coarse:text-[0.9375rem]",
+  note: "text-[0.8125rem] leading-[1.125rem]",
   tab: "text-[0.8125rem] leading-[1.0625rem]",
   tabBar: "text-[0.75rem] leading-[1rem]",
   caption: "text-[0.6875rem] leading-[0.8125rem]",
@@ -121,3 +129,12 @@ export const SPACE = {
 
 /** The least hit area, in points (Apple's HIG). */
 export const TAP_TARGET = 44;
+
+/** Sizes, in points: a chip's height, the map panel's widths and the desktop's least width. */
+export const SIZE = {
+  tapTarget: 44,
+  chip: 32,
+  panel: 384,
+  panelWide: 448,
+  desktop: 1024,
+} as const;

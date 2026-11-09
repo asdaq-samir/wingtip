@@ -1,5 +1,5 @@
 import { callEngine } from "../engine/engine";
-import { CATEGORY, CATEGORY_UNKNOWN } from "../tokens";
+import { CATEGORY, CATEGORY_CHIP, CATEGORY_UNKNOWN } from "../tokens";
 
 /** The FAA's own categories, in the colours a pilot already reads them
  *  in: green good, blue marginal, red instrument, magenta worse than
@@ -37,6 +37,14 @@ export function categoryOf(ceilingFt: number | null | undefined, visibilitySm: n
 
 export function colourOf(category: string | null | undefined): string {
   return (category && CATEGORY_COLOURS[category]) || UNKNOWN_COLOUR;
+}
+
+/** A category as the fill of a chip that has its name in words on it:
+ *  the map's colour, or a deeper one where white words would read under
+ *  4.5:1 on it (LIFR's #7E3FB8, 6.4:1, where the map's #A371F7 is
+ *  3.35:1; design/tokens.json color.category.lifr-chip). */
+export function chipFillOf(category: string | null | undefined): string {
+  return (category && CATEGORY_CHIP[category]) || UNKNOWN_COLOUR;
 }
 
 /** A chip's colour for what is known of a field's weather: its category

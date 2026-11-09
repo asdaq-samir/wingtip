@@ -1,6 +1,6 @@
 import type { ProcedureFix } from "../api/types";
 import { altitudeLines, decorationOf, speedWords } from "../procedures";
-import { altFt } from "../units";
+import { altFt } from "../format";
 import { BADGE } from "../rowBadges";
 import { MAP_BLUE } from "./chartColors";
 import { divIcon, made } from "./icons";

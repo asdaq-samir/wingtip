@@ -1,6 +1,6 @@
 import { useAirplaneChosen } from "../../../lib/preferences";
 import { useState } from "react";
-import { zoneName } from "../../../lib/clock";
+import { zoneName } from "../../../lib/format";
 import { cn } from "cn";
 import type { Totals } from "../../../lib/api/types";
 import { FLYING_FIGURE, GROUP_HEADING, GROW_FIGURE, TEXT } from "../../../lib/text";

@@ -53,7 +53,9 @@ test("a point held on the chart goes into the route as the pilot's own point off
   const open = async () => {
     await page.goto("/app/plan?dep=C81&dest=KDLH&at=42.35,-88.55");
     const card = page.getByTestId("airspace-card");
-    await expect(card.getByTestId("airspace-where")).toContainText("VPBNG/280/20 · 20 nm on 280° from VPBNG", { timeout: slow(30000) });
+    // Named off the fix, the name the card's own; the line says where.
+    await expect(card.getByTestId("airspace-name")).toHaveText("VPBNG/280/20", { timeout: slow(30000) });
+    await expect(card.getByTestId("airspace-where")).toContainText("20 nm on 280° from VPBNG");
     return card;
   };
   // Added: in the stops, the card put away.

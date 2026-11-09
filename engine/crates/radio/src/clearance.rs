@@ -140,7 +140,7 @@ fn airway_letter(w: &str) -> Option<char> {
     })
 }
 
-fn is_ascii_digits(w: &str) -> bool {
+pub(crate) fn is_ascii_digits(w: &str) -> bool {
     !w.is_empty() && w.bytes().all(|b| b.is_ascii_digit())
 }
 
@@ -212,6 +212,35 @@ fn words_of(text: &str) -> Vec<String> {
         }
     }
     out
+}
+
+/// The text in the phrases a recognizer's commas and semicolons mark
+/// ("left two seven zero, three thousand"), a thousands comma ("3,000")
+/// no break: figures in two phrases are two figures, where `tokens` reads
+/// figures said in a row as one, as a recognizer that writes no commas
+/// gives them.
+pub fn phrases(text: &str) -> Vec<String> {
+    let chars: Vec<char> = text.chars().collect();
+    let mut out = Vec::new();
+    let mut now = String::new();
+    for (i, &c) in chars.iter().enumerate() {
+        let thousands = c == ','
+            && i > 0
+            && chars[i - 1].is_ascii_digit()
+            && chars.get(i + 1..i + 4).is_some_and(|s| s.iter().all(|d| d.is_ascii_digit()));
+        if (c == ',' || c == ';') && !thousands {
+            out.push(std::mem::take(&mut now));
+        } else {
+            now.push(c);
+        }
+    }
+    out.push(now);
+    out.into_iter().filter(|p| !p.trim().is_empty()).collect()
+}
+
+/// The figures said in `text`, phrase by phrase (`phrases`), in order.
+pub fn figures_by_phrase(text: &str) -> Vec<String> {
+    phrases(text).iter().flat_map(|p| tokens(p)).filter_map(|t| t.num).collect()
 }
 
 /// The words, with each run of figures one number: "one two five point
@@ -770,75 +799,10 @@ pub fn cleared_route(c: &Clearance, found: &FoundPlaces, planned: &Route) -> (Ro
     (Route { dep: planned.dep.clone(), stops: kept, dest }, typed)
 }
 
-// --- calls to us (lib/heardCall) ---------------------------------------
+// --- calls to us (lib/heardCall): callsign.rs ------------------------
 
-/// Words said in place of the N (AIM 4-2-4 b), the common ones; "Tango"
-/// for an air taxi.
-const TYPE_WORDS: &[&str] = &[
-    "cessna", "skyhawk", "skylane", "skylark", "centurion", "cardinal", "caravan", "citation", "piper", "cherokee", "warrior", "archer",
-    "arrow", "dakota", "lance", "saratoga", "seneca", "seminole", "aztec", "navajo", "malibu", "cub", "cirrus", "mooney", "bonanza", "baron",
-    "beech", "beechcraft", "king", "diamond", "katana", "grumman", "tiger", "cheetah", "yankee", "experimental", "lancair", "glasair", "vans",
-    "rv", "sport", "helicopter", "robinson", "tango", "november",
-];
-
-/// How far into a transmission our call sign may begin: a controller says
-/// it first; a pilot's readback ends with it.
-const CALL_WITHIN: usize = 3;
-
-fn mark(w: &str) -> Option<String> {
-    if let Some(l) = letter(w) {
-        return Some(l.to_string());
-    }
-    if let Some(d) = digit(w) {
-        return Some(d.to_string());
-    }
-    let alnum = w.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit());
-    (is_ascii_digits(w) || (alnum && w.bytes().any(|b| b.is_ascii_digit()))).then(|| w.to_uppercase())
-}
-
-/// Whether the transmission is said to the airplane `tail` ("N123AB"), in
-/// the forms AIM 4-2-4 lets its call sign take: the registration whole,
-/// with its N or a type's name in its place, or the prefix and its last
-/// three; never a longer call sign that ends the same (AIM 4-2-4 a.1).
-pub fn our_call(text: &str, tail: &str) -> bool {
-    let full = tail.trim().to_uppercase();
-    if !(2..=7).contains(&full.len()) || !full.bytes().all(|b| b.is_ascii_alphanumeric()) {
-        return false;
-    }
-    let body = full.strip_prefix('N').unwrap_or(&full).to_owned();
-    let last = body[body.len().saturating_sub(3)..].to_owned();
-    let lower = text.to_lowercase().replace("x-ray", "xray").replace("x ray", "xray");
-    let words: Vec<String> = lower
-        .split(|c: char| !c.is_ascii_alphanumeric())
-        .filter(|w| !w.is_empty())
-        .map(str::to_owned)
-        .collect();
-    let mut i = 0;
-    while i < words.len() {
-        if mark(&words[i]).is_none() {
-            i += 1;
-            continue;
-        }
-        let mut run = String::new();
-        let mut j = i;
-        while let Some(m) = words.get(j).and_then(|w| mark(w)) {
-            run.push_str(&m);
-            j += 1;
-        }
-        let before = if i > 0 { Some(words[i - 1].as_str()) } else { None };
-        if i <= CALL_WITHIN
-            && (run == full
-                || run == format!("N{body}")
-                || run == body
-                || run == format!("N{last}")
-                || (run == last && before.is_some_and(|b| TYPE_WORDS.contains(&b))))
-        {
-            return true;
-        }
-        i = j;
-    }
-    false
-}
+pub use crate::callsign::our_call;
+use crate::callsign::{CALL_WITHIN, TYPE_WORDS};
 
 const AFTER_DIRECT: &[&str] = &[
     "then", "climb", "maintain", "descend", "contact", "squawk", "expect", "cross", "at", "and", "when", "resume", "report", "cleared",

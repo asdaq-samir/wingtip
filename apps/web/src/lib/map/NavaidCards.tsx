@@ -1,9 +1,10 @@
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
-import { declinationOf, fixRadialDistance, hoursOf, morseOf, radialOf, serviceVolume, threeFigures } from "../navaid";
+import { declinationOf, fixRadialDistance, hoursOf, morseOf, radialOf, serviceVolume } from "../navaid";
+import { threeFigures } from "../format";
 import { TEXT } from "../text";
-import { feet } from "../units";
+import { feet } from "../format";
 import { useOwnFix } from "./ownShip";
 import { PointActions } from "./PointCardActions";
 import type { FixPin, VorPin } from "./overlayTypes";

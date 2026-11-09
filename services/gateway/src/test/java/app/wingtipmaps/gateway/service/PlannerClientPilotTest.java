@@ -120,6 +120,17 @@ class PlannerClientPilotTest {
         assertThat(asked.get(0).get("today").asText()).isEqualTo("2026-10-15");
     }
 
+    /** The generated types read a field left out as null; one the planner
+     *  always sends is then not its answer, rather than a 0 or a crash. */
+    @Test
+    void anAnswerMissingAFieldItAlwaysSendsIsUnavailable() {
+        answer = """
+                [{"key": "total", "rule": "61.109(a)", "label": "Flight time", "need": 40.0, "unit": "h", "met": false}]
+                """;
+        assertThatThrownBy(() -> client().experience(logbook(), LocalDate.of(2026, 10, 15)))
+                .isInstanceOf(PlannerClient.Unavailable.class).hasMessageContaining("was not its answer");
+    }
+
     @Test
     void aPlannerThatRefusesIsUnavailable() {
         status = 422;

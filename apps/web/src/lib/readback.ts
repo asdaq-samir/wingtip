@@ -1,10 +1,11 @@
 /**
  * The pilot's readback of a clearance checked against it (AIM 4-4-7 b:
  * pilots read back "those parts of ATC clearances and instructions
- * containing altitude assignments, vectors, or runway assignments", and
- * 4-4-7 b.3 the altimeter, frequencies and codes): the limit, the places
- * of the route, the altitude to maintain and the one to expect, the
- * frequency and the squawk. The check is the shared engine's
+ * containing altitude assignments, vectors, or runway assignments", b.1
+ * with the aircraft identification, b.2 in the order given; the rest --
+ * the limit, the route, the frequency, the squawk -- as good practice,
+ * each answer item marked `required` where 4-4-7 b asks it). The check
+ * is the shared engine's
  * (engine/crates/radio/src/readback.rs, the rule readback_check), held to
  * fixtures/readbacks.json as this module's test is; what was missed or
  * said differently is shown as a warning line in the microphone's pill
@@ -23,6 +24,10 @@ export type ReadbackItem = EngineAnswer<"readback_check">["items"][number];
 export const READBACK_PARTS: { item: ReadbackItem["item"]; name: string }[] = [
   { item: "limit", name: "limit" }, { item: "route", name: "route" }, { item: "altitude", name: "altitude" },
   { item: "expect", name: "expected altitude" }, { item: "frequency", name: "frequency" }, { item: "squawk", name: "squawk" },
+  // An instruction's (the ATC copilot's, features/atc), and the readback's own.
+  { item: "heading", name: "heading" }, { item: "runway", name: "runway" }, { item: "approach", name: "approach" },
+  { item: "hold", name: "hold" }, { item: "direct", name: "direct" }, { item: "altimeter", name: "altimeter" },
+  { item: "call sign", name: "call sign" }, { item: "order", name: "order" },
 ];
 
 /** The parts a clearance has, for the tick to name and the count to go by. */
@@ -73,6 +78,6 @@ export const altitudeWords = (ft: number) => callEngine("altitude_said", { ft })
  *  missed or had differently (none where it matches), and the warning
  *  line for them: "Readback complete.", or "Readback: altitude 4,000 ft
  *  said, 5,000 ft cleared; squawk 4512 not read back." */
-export function readbackCheck(cleared: string, said: string): EngineAnswer<"readback_check"> {
-  return callEngine("readback_check", { cleared, said });
+export function readbackCheck(cleared: string, said: string, tail: string | null = null): EngineAnswer<"readback_check"> {
+  return callEngine("readback_check", { cleared, said, tail });
 }

@@ -4,7 +4,6 @@ import { Mail } from "lucide-react";
 import { cn } from "cn";
 import AppleLogo from "../../components/icons/AppleLogo";
 import GoogleLogo from "../../components/icons/GoogleLogo";
-import IconButton from "../../components/IconButton";
 import { Button } from "../../components/ui/button";
 import SheetDialog from "../../components/SheetDialog";
 import { Input } from "../../components/ui/input";
@@ -145,17 +144,18 @@ export default function SignInModal({ plain = false, inline = false }: {
               value={email}
               onChange={e => setEmail(e.target.value)}
             />
-            {/* A spinner in place of the envelope while the link is on
-                its way: disabled alone looked like nothing happened. */}
-            <IconButton
+            {/* Its word on it, where a grey envelope alone read as nothing
+                to tap (the UI audit, 2026-11-09); a spinner in place of
+                the envelope while the link is on its way. */}
+            <Button
               type="submit"
-              variant="default"
               disabled={magicLink.isPending || !trimmedEmail}
               aria-busy={magicLink.isPending}
-              label="Send sign-in link"
+              className="h-auto shrink-0"
             >
-              {magicLink.isPending ? <Spinner className="size-5" role="presentation" aria-label={undefined} aria-hidden /> : <Mail className="size-5" />}
-            </IconButton>
+              {magicLink.isPending ? <Spinner className="size-4" role="presentation" aria-label={undefined} aria-hidden /> : <Mail className="size-4" aria-hidden="true" />}
+              Send Link
+            </Button>
           </div>
           {linkFailure && <p className={`text-destructive ${TEXT.prose}`} role="alert" data-testid="sign-in-error">{linkFailure}</p>}
         </form>

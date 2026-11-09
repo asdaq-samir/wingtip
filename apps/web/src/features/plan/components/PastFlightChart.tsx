@@ -3,8 +3,8 @@ import { Area, ComposedChart, Line, ReferenceArea, XAxis, YAxis, usePlotArea, us
 import { ChartContainer, type ChartConfig } from "../../../components/ui/chart";
 import { usePastFlight } from "../../../lib/map/pastFlight";
 import type { PastFlightPoint, RouteProfile } from "../../../lib/api/types";
-import { clockTime } from "../../../lib/clock";
-import { altFt, grouped } from "../../../lib/units";
+import { clockTime } from "../../../lib/format";
+import { altFt, grouped } from "../../../lib/format";
 import { when } from "./pastFlightFormat";
 import { distanceTicks } from "./distanceTicks";
 import { TRACES } from "./flightTraces";

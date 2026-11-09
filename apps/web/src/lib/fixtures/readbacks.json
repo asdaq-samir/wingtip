@@ -17,8 +17,18 @@
       "name": "an altitude said differently and a code missed",
       "said": "cleared to Duluth via radar vectors Gopher then as filed, climb and maintain four thousand, expect seven thousand, one two five point three five, Skyhawk three alpha bravo",
       "items": [
-        { "item": "altitude", "cleared": "5,000 ft", "said": "4,000 ft" },
-        { "item": "squawk", "cleared": "4512", "said": null }
+        {
+          "item": "altitude",
+          "cleared": "5,000 ft",
+          "said": "4,000 ft",
+          "required": true
+        },
+        {
+          "item": "squawk",
+          "cleared": "4512",
+          "said": null,
+          "required": false
+        }
       ],
       "words": "Readback: altitude 4,000 ft said, 5,000 ft cleared; squawk 4512 not read back."
     },
@@ -26,8 +36,18 @@
       "name": "a place of the route and the limit missed",
       "said": "climb and maintain five thousand, expect seven thousand, one two five point three five, squawk four five one two",
       "items": [
-        { "item": "limit", "cleared": "duluth airport", "said": null },
-        { "item": "route", "cleared": "gopher", "said": null }
+        {
+          "item": "limit",
+          "cleared": "duluth airport",
+          "said": null,
+          "required": false
+        },
+        {
+          "item": "route",
+          "cleared": "gopher",
+          "said": null,
+          "required": false
+        }
       ],
       "words": "Readback: cleared to duluth airport not read back; route gopher not read back."
     }
@@ -35,8 +55,21 @@
   "flightLevel": {
     "cleared": "cleared direct kilo delta lima hotel, climb and maintain flight level two one zero",
     "cases": [
-      { "said": "direct kilo delta lima hotel, flight level two one zero", "items": [] },
-      { "said": "direct kilo delta lima hotel, climb and maintain flight level two three zero", "items": [{ "item": "altitude", "cleared": "FL210", "said": "FL230" }] }
+      {
+        "said": "direct kilo delta lima hotel, flight level two one zero",
+        "items": []
+      },
+      {
+        "said": "direct kilo delta lima hotel, climb and maintain flight level two three zero",
+        "items": [
+          {
+            "item": "altitude",
+            "cleared": "FL210",
+            "said": "FL230",
+            "required": true
+          }
+        ]
+      }
     ]
   }
 }

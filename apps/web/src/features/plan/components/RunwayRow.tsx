@@ -7,7 +7,7 @@ import { runwayNumber } from "../../../lib/pattern";
 import { RowBadge } from "../../../components/RowBadge";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
-import { grouped } from "../../../lib/units";
+import { grouped } from "../../../lib/format";
 import { runwayCrosswindKt } from "../../../lib/wind";
 
 /** A runway drawn on its badge, laid along its true heading as the

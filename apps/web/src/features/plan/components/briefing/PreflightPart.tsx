@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "cn";
 import AccordionSection from "../../../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
-import { GROUP_HEADING } from "../../../../lib/text";
+import SectionTitle from "../../../../components/SectionTitle";
 import type { NavLogAltitude, Totals } from "../../../../lib/api/types";
 import type { FlightBriefing } from "../../hooks/useFlightBriefing";
 import { ceilingAndVisibility } from "../../format";
@@ -59,7 +59,7 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart, narr
           paperwork, the passengers -- a row each, at the owner's pick
           of the redesign: they were laid open, ten screens of them
           under the Go / No-Go. */}
-      <h3 className={cn("mt-2 px-1 print:hidden", GROUP_HEADING)}>Before you go</h3>
+      <SectionTitle className="mt-2 px-1 print:hidden">Before You Go</SectionTitle>
       <SectionsOpen.Provider value={printing}>
       <Accordion type="multiple" value={folds} onValueChange={setFolds} data-testid="before-you-go">
       {narrative}

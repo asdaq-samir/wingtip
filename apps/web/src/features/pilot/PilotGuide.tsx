@@ -11,7 +11,7 @@ import LostCommsPage from "./LostCommsPage";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { cruiseReferenceFt } from "../../lib/performance";
 import { TEXT } from "../../lib/text";
-import { altFt } from "../../lib/units";
+import { altFt } from "../../lib/format";
 import { scoreColor } from "../plan/format";
 
 const BUCKETS: [string, string][] = [

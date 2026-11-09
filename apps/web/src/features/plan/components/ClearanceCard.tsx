@@ -1,3 +1,4 @@
+import { threeFigures } from "../../../lib/format";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Mic, Square, TriangleAlert } from "lucide-react";
@@ -59,7 +60,7 @@ function RouteWords({ items, asFiled, found }: { items: ClearedItem[]; asFiled: 
   let run = 0;
   for (const [i, item] of items.entries()) {
     if (item.kind === "vectors") parts.push("Radar vectors");
-    else if (item.kind === "heading") parts.push(`Heading ${String(item.degrees).padStart(3, "0")}`);
+    else if (item.kind === "heading") parts.push(`Heading ${threeFigures(item.degrees)}`);
     else if (item.kind === "airway") parts.push(item.ident);
     else if (item.kind === "places") {
       const places = found?.route?.[run++] ?? [{ said: item.said, sure: true, ident: item.said.toUpperCase() }];

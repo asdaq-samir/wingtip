@@ -14,7 +14,7 @@ web file it mirrors, and the tests are the web's cases.
 - `minimums`, `icing`, `frat`, `runways`, `weight_balance`,
   `pass_times`: what each finding is worked out from.
 - `words`: how figures and the FAA's words are written, as the web's
-  lib/units, lib/advisories and features/plan/format write them.
+  lib/format, lib/advisories and features/plan/format write them.
 
 app.routers.gonogo assembles their inputs from the planner's own plan and
 briefing, and POST /api/go-no-go answers with them."""

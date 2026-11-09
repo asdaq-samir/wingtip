@@ -1,7 +1,7 @@
 import { useAirplaneChosen } from "../../../../lib/preferences";
 import { Fragment, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "cn";
-import { zoneName } from "../../../../lib/clock";
+import { zoneName } from "../../../../lib/format";
 import { placeName } from "../../../../lib/radio";
 import { TEXT } from "../../../../lib/text";
 import { altFt, bearing, etaAt, one, windAloft } from "../../format";

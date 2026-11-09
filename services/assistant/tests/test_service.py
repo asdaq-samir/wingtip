@@ -1,11 +1,8 @@
 """The service itself: its health answer, its settings, its committed
-OpenAPI document (what apps/web/ builds its assistant types from), and
-the planner client's reading of the planner's refusals."""
+OpenAPI document (what apps/web/ builds its assistant types from)."""
 import pytest
-import requests
 from fastapi.testclient import TestClient
 
-from app import planner
 from app.main import app
 from app.openapi import OPENAPI_PATH, render
 from app.settings import get_settings
@@ -37,43 +34,3 @@ def test_the_assistant_fallback_is_on_only_for_one(monkeypatch, value, on):
 def test_the_planner_url_loses_its_slash(monkeypatch):
     monkeypatch.setenv("PLANNER_URL", " http://planner:8000/ ")
     assert get_settings().planner_url == "http://planner:8000"
-
-
-class _Response:
-    def __init__(self, status, body):
-        self.status_code, self._body = status, body
-
-    def json(self):
-        if isinstance(self._body, Exception):
-            raise self._body
-        return self._body
-
-
-def test_the_planners_refusal_comes_back_in_its_own_words(monkeypatch):
-    # The real client (planner.get and post are the tests' stand-ins,
-    # conftest), over a stand-in for requests.
-    asked = {}
-
-    def request(method, url, params=None, json=None, headers=None, timeout=None):
-        asked.update(method=method, url=url, params=params)
-        return _Response(404, {"detail": "No US airport goes by 'ZZZZ'."})
-
-    monkeypatch.setattr(planner.requests, "request", request)
-    with pytest.raises(planner.PlannerError) as err:
-        planner._call("GET", "/api/airport/ZZZZ", params={"depart": None, "stops": ""})
-    assert (err.value.status, err.value.detail) == (404, "No US airport goes by 'ZZZZ'.")
-    # What is not given is left out of the query, as the planner reads an absent field.
-    assert asked["params"] == {} and asked["url"].endswith("/api/airport/ZZZZ")
-
-    monkeypatch.setattr(planner.requests, "request", lambda *a, **k: _Response(422, {"detail": [
-        {"loc": ["query", "dep"], "msg": "Field required"}]}))
-    with pytest.raises(planner.PlannerError, match="dep: Field required"):
-        planner._call("GET", "/api/plan")
-
-    def down(*args, **kwargs):
-        raise requests.ConnectionError("refused")
-
-    monkeypatch.setattr(planner.requests, "request", down)
-    with pytest.raises(planner.PlannerError) as err:
-        planner._call("POST", "/api/go-no-go", json={})
-    assert err.value.status == 502

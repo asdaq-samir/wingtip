@@ -1,6 +1,6 @@
 import type { AltitudeSegment } from "../../../lib/api/types";
 import type { VerdictItem } from "../../../lib/verdict";
-import { grouped } from "../../../lib/units";
+import { grouped } from "../../../lib/format";
 
 /**
  * What the planner's screen says of the plan in words, worked out from

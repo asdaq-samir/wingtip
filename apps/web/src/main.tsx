@@ -9,6 +9,7 @@ import { ThemeProvider } from "next-themes";
 import { chartQuery, courseQuery, overlayTilesQuery, queryClient } from "./lib/queryClient";
 import { routeOf, stopsOf } from "./lib/identSchema";
 import AppToaster from "./components/AppToaster";
+import DoneNotes from "./components/DoneNotes";
 import { BrandLook } from "./lib/brand";
 import ErrorAlert from "./components/ErrorAlert";
 import PageError from "./components/PageError";
@@ -220,6 +221,7 @@ const render = () => ReactDOM.createRoot(document.getElementById("root")!, {
       <TooltipProvider>
         <RouterProvider router={router} />
         <AppToaster />
+        <DoneNotes />
         {/* Inside the provider too: its close is the app's CloseButton,
             whose Tooltip outside one threw and blanked the page the
             first time an alert opened on a phone. */}

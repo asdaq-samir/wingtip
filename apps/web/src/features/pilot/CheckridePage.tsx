@@ -20,7 +20,7 @@ import { GoodTo, SignedRow } from "./Endorsements";
 import ConsoleClose from "../../components/ConsoleClose";
 import { dueWords, lessonStatus } from "../../lib/assignedLessons";
 import { lessonHref } from "../../lib/lessonLink";
-import { localDay } from "../../lib/clock";
+import { localDay } from "../../lib/format";
 
 function amount(item: ExperienceItem): string {
   if (item.unit === "h") return `${item.have.toFixed(1)} of ${item.need} h`;

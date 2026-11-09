@@ -2,7 +2,7 @@ import AccordionSection from "../../../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import type { Totals } from "../../../../lib/api/types";
 import { routeName } from "../../../../lib/identSchema";
-import { nm } from "../../../../lib/units";
+import { nm } from "../../../../lib/format";
 import { one } from "../../format";
 
 /**

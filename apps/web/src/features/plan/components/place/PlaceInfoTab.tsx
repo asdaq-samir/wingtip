@@ -11,7 +11,7 @@ import { ctafOf, frequencyOf, mhzText } from "../../../../lib/frequencies";
 import { BADGE } from "../../../../lib/rowBadges";
 import { fuelNames } from "../../../../lib/stopServices";
 import { TEXT } from "../../../../lib/text";
-import { feet } from "../../../../lib/units";
+import { feet } from "../../../../lib/format";
 import { FrequencyRow } from "../FrequencyRow";
 import { StopServices } from "../StopServices";
 import { mapsLink } from "./mapsLink";

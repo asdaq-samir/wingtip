@@ -3,7 +3,7 @@ import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { RowBadge } from "../../../../components/RowBadge";
 import type { AirportPlace } from "../../../../lib/api/types";
 import { BADGE } from "../../../../lib/rowBadges";
-import { feet } from "../../../../lib/units";
+import { feet } from "../../../../lib/format";
 import { RvrRows } from "../LiveAirportRows";
 import { RunwayRow } from "../RunwayRow";
 

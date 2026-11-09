@@ -1,5 +1,5 @@
 //! How a figure is written in the pages' words, as the web app writes it
-//! (lib/units, features/plan/format) and app.gonogo.words has it:
+//! (lib/format, features/plan/format) and app.gonogo.words has it:
 //! JavaScript's rounding and its numbers in text, not Rust's or Python's,
 //! so a figure reads the same on every screen.
 
@@ -94,7 +94,7 @@ pub fn to_fixed(n: f64, digits: usize) -> String {
 }
 
 /// A whole number with a comma between each three figures, "12,500", as
-/// the FAA writes altitudes (lib/units grouped): rounded on the
+/// the FAA writes altitudes (lib/format grouped): rounded on the
 /// magnitude, halves away from zero.
 pub fn grouped(n: f64) -> String {
     let magnitude = js_round_f(n.abs());
@@ -115,23 +115,23 @@ pub fn grouped(n: f64) -> String {
     }
 }
 
-/// "12,500"; an em dash for none (lib/units altFt).
+/// "12,500"; an em dash for none (lib/format altFt).
 pub fn alt_ft(ft: Option<f64>) -> String {
     ft.map_or_else(|| "—".to_owned(), grouped)
 }
 
-/// The same with its unit, "12,500 ft" (lib/units feet).
+/// The same with its unit, "12,500 ft" (lib/format feet).
 pub fn feet(ft: f64) -> String {
     format!("{} ft", grouped(ft))
 }
 
-/// Pounds, "2,550 lb" (lib/units pounds).
+/// Pounds, "2,550 lb" (lib/format pounds).
 pub fn pounds(lb: f64) -> String {
     format!("{} lb", grouped(lb))
 }
 
 /// A cruising altitude as the owner asked it written, hundreds of feet in
-/// three figures: "FL-045" for 4,500 ft, "FL-___" with none yet (lib/units
+/// three figures: "FL-045" for 4,500 ft, "FL-___" with none yet (lib/format
 /// flightLevel; the owner, 2026-10-27: "make it in the format FL-***", and
 /// 2026-11-04: "FL should have three underscores").
 /// The figures padded as String(n).padStart(3, "0") pads them, a minus
@@ -154,7 +154,7 @@ pub fn ceiling_and_visibility(ceiling_ft: Option<f64>, visibility_sm: Option<f64
     format!("{ceiling} · {visibility}")
 }
 
-/// A direction as a pilot writes it, "005°", north "360°" (lib/units
+/// A direction as a pilot writes it, "005°", north "360°" (lib/format
 /// bearing).
 pub fn bearing(deg: f64) -> String {
     let whole = js_round(deg).rem_euclid(360);
@@ -162,7 +162,7 @@ pub fn bearing(deg: f64) -> String {
 }
 
 /// A correction signed, "+8°", "−3°" (a minus sign, not a hyphen), none
-/// "0°" (lib/units windCorrection).
+/// "0°" (lib/format windCorrection).
 pub fn wind_correction(deg: f64) -> String {
     let shown = js_round(deg.abs());
     let sign = if shown == 0 { "" } else if deg > 0.0 { "+" } else { "−" };

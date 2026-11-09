@@ -106,6 +106,13 @@ body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-f
   opacity: 0;
   pointer-events: none;
 }
+/* And the map's credits with them: riding on a sheet all the way up they
+   sat under the status bar, a line of small print over the clock (the
+   UI audit, 2026-11-09). They show again with the map. */
+body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right) {
+  opacity: 0;
+  pointer-events: none;
+}
 
 /* iOS's leading on a touch screen: each text style's line is its size
    and five points -- 13/18, 15/20, 16/21, 17/22, 20/25, within a point

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { normalizeDeg } from "../../../../lib/geo";
 import { sameField } from "../../../../lib/procedures";
-import { altFt } from "../../../../lib/units";
+import { altFt } from "../../../../lib/format";
 import { isFixIdent } from "../../../../lib/identSchema";
 import { PointFigures, PointMenu } from "../PointControls";
 import { legOf, type NavLogRow } from "../navlog/rows";

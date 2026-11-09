@@ -5,3 +5,7 @@ pytest
 pytest-randomly==5.0.0   # every run in a new random order, --randomly-seed=N repeats one (docs/CI.md, "Flaky tests")
 httpx   # fastapi.testclient.TestClient's transport
 ruff
+# app/generated held to what it is generated from (tests/test_generated.py,
+# scripts/build/assistant_client.py): pinned, its output being what is
+# committed.
+datamodel-code-generator==0.91.0

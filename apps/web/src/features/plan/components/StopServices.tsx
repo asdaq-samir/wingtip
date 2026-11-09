@@ -13,7 +13,7 @@ import { awayWords, fuelNames, glanceOf, type GlanceItem, type Glanceable } from
 import { servicesQuery } from "../../../lib/queryClient";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
-import { duration } from "../../../lib/clock";
+import { duration } from "../../../lib/format";
 
 const GLANCE_ICONS: Record<GlanceItem["key"], ReactNode> = {
   fuel: <Fuel />, food: <Utensils />, bed: <BedDouble />, car: <CarFront />,

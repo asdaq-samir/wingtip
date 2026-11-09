@@ -63,6 +63,75 @@ export type DirectOfAnswer = string | null;
 export type CallPatternAnswer = string | null;
 export type TokensAnswer = HeardToken[];
 export type PlaceWordsAnswer = string;
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "AtcItem".
+ */
+export type AtcItem =
+  | {
+      kind: "altitude";
+      ft: number;
+      verb: "climb" | "descend" | "maintain" | "cruise";
+      limit: string | null;
+    }
+  | {
+      kind: "expect";
+      ft: number;
+      min: number | null;
+    }
+  | {
+      kind: "heading";
+      deg: number | null;
+      turn: "left" | "right" | null;
+      by_deg: number | null;
+    }
+  | {
+      kind: "direct";
+      said: string;
+    }
+  | {
+      kind: "route";
+      limit: string | null;
+      places: string[];
+      as_filed: boolean;
+    }
+  | {
+      kind: "class_b";
+    }
+  | {
+      kind: "hold";
+      fix: string;
+      direction: string | null;
+      on: "radial" | "course" | "bearing" | "track" | null;
+      on_deg: number | null;
+      turns: "left" | "right" | null;
+      published: boolean;
+      efc: string | null;
+    }
+  | {
+      kind: "frequency";
+      mhz: string;
+      facility: string | null;
+    }
+  | {
+      kind: "squawk";
+      code: string;
+    }
+  | {
+      kind: "altimeter";
+      inhg: string;
+    }
+  | {
+      kind: "approach";
+      name: string;
+      runway: string | null;
+      cleared: boolean;
+    }
+  | {
+      kind: "runway";
+      runway: string;
+      what: "land" | "takeoff" | "option" | "hold short" | "line up and wait" | null;
+    };
 export type MagneticVariationAnswer = number;
 export type AirspaceColumnAnswer = AirspaceBand[];
 export type ModeCVeilAnswer = {
@@ -878,7 +947,7 @@ export interface EngineContract {
     answer: DiversionAnswer;
   };
   /**
-   * The wind triangle for a true course: the correction (+ right), the true heading and the ground speed; null where no heading holds the course.
+   * The wind triangle for a true course: the correction (+ right), the true heading and the ground speed; null where no heading holds the course (the wind triangle, FAA-H-8083-25C ch. 16).
    */
   wind_triangle: {
     input: WindTriangleInput;
@@ -1130,7 +1199,14 @@ export interface EngineContract {
     answer: PlaceWordsAnswer;
   };
   /**
-   * A readback against the clearance heard (AIM 4-4-7): what was missed or said otherwise, and the warning line.
+   * A transmission heard by the ATC copilot: who said it, by our call sign's place (AIM 4-2-3 c, 4-2-4), and its items in the order said (AIM 4-4-7 b.2).
+   */
+  atc_call: {
+    input: AtcCallInput;
+    answer: AtcCallAnswer;
+  };
+  /**
+   * A readback against the clearance or instruction heard (AIM 4-4-7 b): what was missed or said otherwise, each marked where 4-4-7 b asks it be read back, and the warning line; with `tail`, the call sign too (4-4-7 b.1).
    */
   readback_check: {
     input: ReadbackCheckInput;
@@ -1326,21 +1402,21 @@ export interface EngineContract {
     answer: WordsToFixedAnswer;
   };
   /**
-   * A whole number with a comma between each three figures, "12,500" (lib/units grouped).
+   * A whole number with a comma between each three figures, "12,500" (lib/format grouped).
    */
   words_grouped: {
     input: WordsGroupedInput;
     answer: WordsGroupedAnswer;
   };
   /**
-   * An altitude grouped, "12,500"; an em dash for none (lib/units altFt).
+   * An altitude grouped, "12,500"; an em dash for none (lib/format altFt).
    */
   words_alt_ft: {
     input: WordsAltFtInput;
     answer: WordsAltFtAnswer;
   };
   /**
-   * A cruising altitude in hundreds of feet, "FL-045"; "FL-___" for none (lib/units flightLevel).
+   * A cruising altitude in hundreds of feet, "FL-045"; "FL-___" for none (lib/format flightLevel).
    */
   words_flight_level: {
     input: WordsFlightLevelInput;
@@ -1578,7 +1654,7 @@ export interface EngineContract {
     answer: GonogoSuaWhenAnswer;
   };
   /**
-   * A wind's head- and crosswind on a heading: a tailwind negative, a crosswind from the right positive.
+   * A wind's head- and crosswind on a heading: a tailwind negative, a crosswind from the right positive (the crosswind component chart's figures, FAA-H-8083-25C ch. 11).
    */
   wind_components: {
     input: WindComponentsInput;
@@ -2502,7 +2578,7 @@ export interface EngineContract {
     answer: TemperatureAtAnswer;
   };
   /**
-   * The service ceiling on the day: the book's service ceiling, a density altitude, found as an altitude in the forecast's temperatures (wingtip_flight::performance::altitude_at_density_altitude) to the nearest 100 ft; the book figure where the profile is empty.
+   * The service ceiling on the day: the book's service ceiling, a density altitude (where the best climb has fallen to 100 fpm, FAA-H-8083-25C ch. 11), found as an altitude in the forecast's temperatures (wingtip_flight::performance::altitude_at_density_altitude) to the nearest 100 ft; the book figure where the profile is empty.
    */
   service_ceiling_on_the_day: {
     input: ServiceCeilingOnTheDayInput;
@@ -4313,15 +4389,43 @@ export interface HeardToken {
 export interface PlaceWordsInput {
   tokens: HeardToken[];
 }
+export interface AtcCallInput {
+  text: string;
+  tail?: string | null;
+  prior?: {
+    text: string;
+    ago_s: number;
+  } | null;
+}
+export interface AtcCallAnswer {
+  who: "to_us" | "from_us" | "other";
+  items: AtcItem[];
+}
 export interface ReadbackCheckInput {
   cleared: string;
   said: string;
+  tail?: string | null;
 }
 export interface ReadbackCheckAnswer {
   items: {
-    item: "limit" | "route" | "altitude" | "expect" | "frequency" | "squawk";
+    item:
+      | "limit"
+      | "route"
+      | "altitude"
+      | "expect"
+      | "frequency"
+      | "squawk"
+      | "heading"
+      | "runway"
+      | "approach"
+      | "hold"
+      | "direct"
+      | "altimeter"
+      | "call sign"
+      | "order";
     cleared: string;
     said: string | null;
+    required: boolean;
   }[];
   words: string;
 }

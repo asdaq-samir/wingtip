@@ -3,7 +3,7 @@ import type { AheadAlert } from "../api/types";
 import { usePreferences } from "../preferences";
 import { say } from "../speech";
 import { alertTitle, alertWhen, type Ahead } from "./ahead";
-import { grouped } from "../units";
+import { grouped } from "../format";
 
 /**
  * The alerts ahead (lib/map/ahead) said aloud, at the pilot's ask, as a

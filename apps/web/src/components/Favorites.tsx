@@ -10,7 +10,7 @@ import { useAirspace } from "../lib/useAirspace";
 import { holdOpenCard } from "../lib/openCards";
 import { useSwipeRow } from "./swipeRow";
 import { useAway } from "../lib/useAway";
-import { TEXT } from "../lib/text";
+import { SECTION_TITLE, TEXT } from "../lib/text";
 import { Button } from "./ui/button";
 import PullDown from "./PullDown";
 import IconButton from "./IconButton";
@@ -287,7 +287,7 @@ export function SmallTile({ mark, title, detail, label, onClick, testId, wide = 
   return (
     <button
       type="button" onClick={onClick} data-testid={testId} aria-label={label}
-      className={cn(wide ? "w-24" : "w-[4.5rem]", "flex shrink-0 flex-col items-center gap-1.5 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring")}
+      className={cn(wide ? "w-24" : "w-[4.5rem]", "flex shrink-0 flex-col items-center gap-1.5 rounded-xl outline-none hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-ring")}
     >
       {mark}
       <span className={cn("w-full truncate text-center font-medium text-foreground", TEXT.detail)}>{title}</span>
@@ -319,12 +319,11 @@ export function PillSection({ title, onMore, beside, right, children, testId }: 
   children: ReactNode;
   testId?: string;
 }) {
-  // The full card's Favorites' size, which the owner liked ("I liked the
-  // font style of Favorites from the full card earlier"), the title's 17
-  // -- not bold, not capitals ("Section labels don't need to be bold or
-  // all caps") -- in the text's own colour, or the tint where it opens
-  // more ("for clickable sections you can make them blue").
-  const heading = cn("font-medium text-foreground", TEXT.title);
+  // Every section's title (lib/text SECTION_TITLE) -- not bold, not
+  // capitals ("Section labels don't need to be bold or all caps") -- in
+  // the text's own colour, or the tint where it opens more ("for
+  // clickable sections you can make them blue").
+  const heading = SECTION_TITLE;
   return (
     // Eight under the title, so its 44-point hit area (index.css) stays
     // its own over the tiles' (the iOS audit's P1).
@@ -560,10 +559,13 @@ export function FavoriteStrip({ home, favorites, onOpen, onAddHome, onAddFavorit
         onClick={home ? () => onOpen(home) : onAddHome} testId="pill-home"
       />
       {favorites.map(a => <SmallAirportTile key={a.ident} airport={a} detail={away(a)} onClick={() => onOpen(a)} />)}
-      <SmallTile
-        mark={<SmallMark icon={<Plus />} className="bg-foreground/8 text-tint" />} title="Add" label="Add a Favorite"
-        onClick={onAddFavorite} testId="pill-favorite-add"
-      />
+      {/* One Add at a time, as Airplane's strip (AircraftFavoriteStrip). */}
+      {(home || favorites.length > 0) && (
+        <SmallTile
+          mark={<SmallMark icon={<Plus />} className="bg-foreground/8 text-tint" />} title="Add" label="Add a Favorite"
+          onClick={onAddFavorite} testId="pill-favorite-add"
+        />
+      )}
     </PillStrip>
   );
 }

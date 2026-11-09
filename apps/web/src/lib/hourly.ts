@@ -1,8 +1,8 @@
 import type { Metar } from "./api/types";
 import { callEngine } from "./engine/engine";
 import { categoryOf } from "./map/flightCategory";
-import { clockTime } from "./clock";
-import { altFt } from "./units";
+import { clockTime } from "./format";
+import { altFt } from "./format";
 
 /**
  * A field's weather hour by hour, as Apple's Weather lays out its hourly

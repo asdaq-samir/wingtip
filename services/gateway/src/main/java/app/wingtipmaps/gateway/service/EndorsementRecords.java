@@ -7,6 +7,7 @@ import app.wingtipmaps.gateway.domain.SignedEndorsement;
 import app.wingtipmaps.gateway.dto.CrossCountryReviewDto;
 import app.wingtipmaps.gateway.dto.FlightSummaryDto;
 import app.wingtipmaps.gateway.dto.ReviewCheckDto;
+import app.wingtipmaps.gateway.planner.model.PlannerHeldEndorsement;
 import app.wingtipmaps.gateway.dto.SignedEndorsementDto;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -31,10 +32,10 @@ final class EndorsementRecords {
 
     /** The endorsements a student holds, recorded from paper and signed in
      *  the app, a voided one not held, as the engine reads them. */
-    static List<PlannerClient.Held> held(List<Endorsement> recorded, List<SignedEndorsement> signed) {
+    static List<PlannerHeldEndorsement> held(List<Endorsement> recorded, List<SignedEndorsement> signed) {
         return Stream.concat(
-                recorded.stream().map(e -> new PlannerClient.Held(e.getKey().code(), e.getEndorsedOn(), null)),
-                signed.stream().filter(e -> !e.isVoided()).map(e -> new PlannerClient.Held(e.getCode(), e.getSignedOn(), e.getFields().get("mm"))))
+                recorded.stream().map(e -> PlannerClient.held(e.getKey().code(), e.getEndorsedOn(), null)),
+                signed.stream().filter(e -> !e.isVoided()).map(e -> PlannerClient.held(e.getCode(), e.getSignedOn(), e.getFields().get("mm"))))
                 .toList();
     }
 
@@ -42,7 +43,7 @@ final class EndorsementRecords {
      *  (null for one that does not run out); none asked of none. */
     static List<LocalDate> untilOf(PlannerClient planner, List<SignedEndorsement> signed) {
         return signed.isEmpty() ? List.of() : planner.endorsements(
-                signed.stream().map(e -> new PlannerClient.Held(e.getCode(), e.getSignedOn(), null)).toList(), null).until();
+                signed.stream().map(e -> PlannerClient.held(e.getCode(), e.getSignedOn(), null)).toList(), null).getUntil();
     }
 
     /** The signed endorsements as they are sent, each with its last good day. */
@@ -65,7 +66,7 @@ final class EndorsementRecords {
      * the instructor's own to determine, and the sheet asks it of them.
      */
     static List<ReviewCheckDto> checks(PlannerClient planner, LocalDate flightOn, List<Endorsement> recorded, List<SignedEndorsement> signed) {
-        return planner.endorsements(held(recorded, signed), flightOn).checks();
+        return planner.endorsements(held(recorded, signed), flightOn).getChecks().stream().map(PlannerClient::checkOf).toList();
     }
 
     /** The name an endorsement gives a pilot: theirs as their certificate

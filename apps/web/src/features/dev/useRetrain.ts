@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "../../lib/toast";
+import { done } from "../../lib/doneNote";
 import { api } from "../../lib/api/client";
 import { statusQuery } from "../../lib/queryClient";
 import type { Status } from "../../lib/api/types";
@@ -31,8 +31,8 @@ export function useRetrain() {
   const start = useMutation({
     mutationFn: api.retrain,
     onSuccess: () => {
-      toast.success("Retrain Started", {
-        description: "Follow it in Performance",
+      done("Retrain Started", {
+        detail: "Follow it in Performance",
       });
       // Returned, so the mutation stays pending until the snapshot shows
       // the run: Retrain was enabled again in between, for a second press.

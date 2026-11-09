@@ -7,7 +7,8 @@ import { cn } from "cn";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemSeparator, ItemTitle } from "./ui/item";
 import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
-import { GROUP_HEADING, TEXT } from "../lib/text";
+import { TEXT } from "../lib/text";
+import SectionTitle from "./SectionTitle";
 
 /**
  * The app's grouped lists, the way iOS lays out Settings and a
@@ -36,7 +37,7 @@ export function ListGroup({ title, badge, action, footer, children, className }:
       {title && (
         <div className="flex items-end justify-between gap-2">
           <div className="flex items-center gap-2 px-1 pb-1.5">
-            <h3 id={id} className={GROUP_HEADING}>{title}</h3>
+            <SectionTitle id={id}>{title}</SectionTitle>
             {badge}
           </div>
           {action}

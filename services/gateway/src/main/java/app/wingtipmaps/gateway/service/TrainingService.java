@@ -80,7 +80,7 @@ public class TrainingService {
                 .map(r -> EndorsementRecords.dto(planner, r, EndorsementRecords.checks(planner, r.getFlightOn(), paper, theirs))).toList();
         // Each paper endorsement's last good day, the engine's, in order.
         List<LocalDate> paperUntil = paper.isEmpty() ? List.of() : planner.endorsements(paper.stream()
-                .map(e -> new PlannerClient.Held(e.getKey().code(), e.getEndorsedOn(), null)).toList(), null).until();
+                .map(e -> PlannerClient.held(e.getKey().code(), e.getEndorsedOn(), null)).toList(), null).getUntil();
         return new TrainingDto(planner.experience(entries, today), codesOf(pilot),
                 java.util.stream.IntStream.range(0, paper.size()).mapToObj(i -> new EndorsementDto(paper.get(i).getKey().code(),
                         paper.get(i).getEndorsedOn(), paperUntil.get(i))).toList(),

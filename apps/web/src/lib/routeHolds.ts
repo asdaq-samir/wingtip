@@ -18,7 +18,7 @@ export interface Hold {
 
 import type { RouteHold as EngineHold, RouteHoldIn } from "./engine/contract";
 import { callEngine } from "./engine/engine";
-import { bearing } from "./units";
+import { bearing } from "./format";
 
 // A hold as the engine reads and writes it (engine/crates/route/src/route, the
 // planner's wingtip.holds too) is the contract's RouteHold: flat, the legs

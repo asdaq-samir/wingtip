@@ -27,12 +27,12 @@ import { askAssistant, type AssistantChange, type AssistantContext, type Assista
 import { describeError } from "../../../../lib/api/client";
 import type { Currency } from "../../../../lib/api/types";
 import { useBriefPlan } from "../../../../lib/briefPlan";
-import { clockTime, localDay } from "../../../../lib/clock";
+import { clockTime, localDay } from "../../../../lib/format";
 import { useOwnShip } from "../../../../lib/map/ownShip";
 import { usePreferences } from "../../../../lib/preferences";
 import { currencyQuery, queryClient } from "../../../../lib/queryClient";
 import { speak } from "../../../../lib/speech";
-import { feet } from "../../../../lib/units";
+import { feet } from "../../../../lib/format";
 
 /** A change the assistant proposed, as its chip shows it: the words on
  *  the chip (actionLabel), the word once applied (doneLabel), and whether

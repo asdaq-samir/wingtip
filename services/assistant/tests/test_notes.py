@@ -11,8 +11,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import notes
+from app.generated.planner_models import NoteToWrite
 from app.main import app
-from app.planner import PlannerError
+from app.generated.planner_client import PlannerError
 
 client = TestClient(app)
 
@@ -37,7 +38,7 @@ def test_a_saved_note_is_kept_and_a_missing_one_written_and_seeded(monkeypatch, 
                         {"departure_ident": "C81", "checkpoints": [{**CHECKPOINT, "saved": "Mine: the island"}, SECOND]})
     fake_planner.answer("/api/checkpoint-notes/seed", lambda body: {"description": body["description"], "written": True})
     asked = []
-    monkeypatch.setattr(notes, "_describe_checkpoint", lambda cp, dep, prev, nxt: asked.append((cp["name"], dep, prev, nxt)) or "Generated")
+    monkeypatch.setattr(notes, "_describe_checkpoint", lambda cp, dep, prev, nxt: asked.append((cp.name, dep, prev, nxt)) or "Generated")
 
     lines = _generate({"X-Pilot-Id": "42"})
 
@@ -89,7 +90,7 @@ def _claude_replies(monkeypatch, blocks, stop_reason):
 def test_a_note_is_the_text_block_after_the_thinking(monkeypatch):
     _claude_replies(monkeypatch, [SimpleNamespace(type="thinking", thinking=""),
                                   SimpleNamespace(type="text", text=" Look for the lake south of the highway. ")], "end_turn")
-    assert notes._describe_checkpoint(CHECKPOINT, "C81", None, None) == "Look for the lake south of the highway."
+    assert notes._describe_checkpoint(NoteToWrite(**CHECKPOINT), "C81", None, None) == "Look for the lake south of the highway."
 
 
 def test_a_note_cut_off_at_the_cap_is_refused_rather_than_saved(monkeypatch):
@@ -97,4 +98,4 @@ def test_a_note_cut_off_at_the_cap_is_refused_rather_than_saved(monkeypatch):
     worse than the row's own "no note" and a pilot's edit."""
     _claude_replies(monkeypatch, [SimpleNamespace(type="text", text="Look for the lake south of")], "max_tokens")
     with pytest.raises(RuntimeError, match="max_tokens"):
-        notes._describe_checkpoint(CHECKPOINT, "C81", None, None)
+        notes._describe_checkpoint(NoteToWrite(**CHECKPOINT), "C81", None, None)

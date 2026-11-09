@@ -9,6 +9,7 @@ import app.wingtipmaps.gateway.domain.SignedEndorsement;
 import app.wingtipmaps.gateway.dto.AskReviewRequest;
 import app.wingtipmaps.gateway.dto.CrossCountryReviewDto;
 import app.wingtipmaps.gateway.dto.EndorsementKindDto;
+import app.wingtipmaps.gateway.planner.model.PlannerEndorsementFilled;
 import app.wingtipmaps.gateway.dto.InstructorDto;
 import app.wingtipmaps.gateway.dto.InstructorRequest;
 import app.wingtipmaps.gateway.dto.SignRequest;
@@ -271,13 +272,13 @@ public class InstructorService {
         // (endorsement_kinds, endorsement_fill), asked through the planner.
         EndorsementKindDto kind = planner.endorsementKind(request.code())
                 .orElseThrow(() -> new Refused(HttpStatus.BAD_REQUEST, "No such endorsement: " + request.code() + "."));
-        PlannerClient.Filled filled = planner.fill(kind.code(), student.getFullName(), request.fields());
-        Map<String, String> fields = filled.fields();
-        List<String> missing = filled.missing();
+        PlannerEndorsementFilled filled = planner.fill(kind.code(), student.getFullName(), request.fields());
+        Map<String, String> fields = filled.getFields();
+        List<String> missing = filled.getMissing();
         if (!missing.isEmpty()) {
             throw new Refused(HttpStatus.BAD_REQUEST, "Fill in " + String.join(", ", missing).toLowerCase(Locale.ROOT) + ".");
         }
-        String text = filled.text();
+        String text = filled.getText();
         if (!text.equals(request.text().replaceAll("\\s+", " ").strip())) {
             throw new Refused(HttpStatus.CONFLICT, "The words have changed since you read them: read them again before signing.");
         }
@@ -371,7 +372,7 @@ public class InstructorService {
                 l.getInstructor().getId()).stream().filter(r -> !r.isAnswered()).count() : 0;
         return new StudentDto(l.getId(), student.getId(), EndorsementRecords.nameOf(student), student.getEmail(), l.getAskedAt(),
                 l.isAccepted(), (int) experience.stream().filter(i -> i.met()).count(), experience.size(),
-                planner.endorsements(EndorsementRecords.held(paper, theirs), null).soloUntil(), waiting);
+                planner.endorsements(EndorsementRecords.held(paper, theirs), null).getSoloUntil(), waiting);
     }
 
     /** A link ended, by either: the reviews still waiting between the two

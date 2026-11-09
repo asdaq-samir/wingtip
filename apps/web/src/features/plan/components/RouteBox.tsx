@@ -27,7 +27,7 @@ import { useAirspace } from "../../../lib/useAirspace";
 import { airportMarkSvg } from "../../../lib/map/airportMark";
 import { colourOf } from "../../../lib/map/flightCategory";
 import { WAYPOINT_MAGENTA } from "../../../lib/map/chartColors";
-import { altFt, bearing, flightLevel } from "../../../lib/units";
+import { altFt, bearing, flightLevel } from "../../../lib/format";
 import { sameField, TYPED_PROCEDURE, type TypedProcedure } from "../../../lib/procedures";
 import { TEXT } from "../../../lib/text";
 import PointAltitudeDialog, { type EditedPoint, type PointAltitude } from "./PointAltitudeDialog";

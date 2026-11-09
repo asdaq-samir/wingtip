@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, type Dispatch, type SetStateAction } from "react";
 import type { RouteChip, RouteOptions } from "../../../lib/api/types";
-import { duration } from "../../../lib/clock";
+import { duration } from "../../../lib/format";
 import type { RouteWay } from "../../../lib/map/routeWays";
 import { useRouteLineOpen } from "../../../lib/routeLine";
 import { gridScale, sameStops, wayTime } from "../../../lib/routeWays";

@@ -7,6 +7,8 @@ import app.wingtipmaps.gateway.dto.DueItemDto;
 import app.wingtipmaps.gateway.dto.DueItemRequest;
 import app.wingtipmaps.gateway.service.DueItemService;
 import app.wingtipmaps.gateway.dto.InspectionsRequest;
+import app.wingtipmaps.gateway.planner.model.PlannerInspections;
+import app.wingtipmaps.gateway.planner.model.PlannerVorCheckOutput;
 import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.dto.SquawkDto;
 import app.wingtipmaps.gateway.dto.SquawkRequest;
@@ -148,7 +150,7 @@ public class AircraftController {
     }
 
     private AircraftDto toDto(Aircraft a) {
-        PlannerClient.Inspections due = dueOf(a);
+        PlannerInspections due = dueOf(a);
         return new AircraftDto(a.getId(), a.getTailNumber(), a.getTypeDesignator(), a.getCruiseTasKt(),
                 a.getFuelBurnGph(), a.getCruisePowerPct(), a.getClimbTasKt(), a.getClimbFuelBurnGph(), a.getUsableFuelGal(),
                 a.getCreatedAt(), vorCheckOf(a, due), inspectionsOf(a, due), a.getId() == null ? List.of() : squawks.open(a.getId()),
@@ -160,28 +162,28 @@ public class AircraftController {
      *  check's standing: the engine's (inspections_due, through the
      *  planner: 14 CFR 91.409(a), (b), 91.207(d), 91.411(a), 91.413(a),
      *  91.171). */
-    private PlannerClient.Inspections dueOf(Aircraft a) {
+    private PlannerInspections dueOf(Aircraft a) {
         return planner.inspections(a.getAnnualOn(), a.getEltInspectedOn(), a.getStaticCheckOn(), a.getTransponderCheckOn(),
                 a.getHundredHourAtHours(), a.getVorCheckOn(), a.getVorCheckKind() == null ? null : a.getVorCheckKind().name(),
                 a.getVorCheckErrorDeg());
     }
 
-    static AircraftDto.InspectionsDto inspectionsOf(Aircraft a, PlannerClient.Inspections due) {
+    static AircraftDto.InspectionsDto inspectionsOf(Aircraft a, PlannerInspections due) {
         return new AircraftDto.InspectionsDto(
-                a.getAnnualOn(), due.annualUntil(),
-                a.getHundredHourAtHours(), a.getHoursNow(), due.hundredHourDueAtHours(),
-                a.getStaticCheckOn(), due.staticCheckUntil(),
-                a.getTransponderCheckOn(), due.transponderCheckUntil(),
-                a.getEltInspectedOn(), due.eltUntil(),
+                a.getAnnualOn(), due.getAnnualUntil(),
+                a.getHundredHourAtHours(), a.getHoursNow(), PlannerClient.number(due.getHundredHourDueAtHours()),
+                a.getStaticCheckOn(), due.getStaticCheckUntil(),
+                a.getTransponderCheckOn(), due.getTransponderCheckUntil(),
+                a.getEltInspectedOn(), due.getEltUntil(),
                 a.getEltBatteryDueOn(), a.isForHire());
     }
 
-    static AircraftDto.VorCheckDto vorCheckOf(Aircraft a, PlannerClient.Inspections due) {
-        PlannerClient.VorCheckDue vor = due.vorCheck();
+    static AircraftDto.VorCheckDto vorCheckOf(Aircraft a, PlannerInspections due) {
+        PlannerVorCheckOutput vor = due.getVorCheck();
         if (vor == null || a.getVorCheckOn() == null || a.getVorCheckKind() == null || a.getVorCheckErrorDeg() == null) {
             return null;
         }
         return new AircraftDto.VorCheckDto(a.getVorCheckOn(), a.getVorCheckKind(), a.getVorCheckPlace(),
-                a.getVorCheckErrorDeg(), vor.limitDeg(), vor.within(), vor.until());
+                a.getVorCheckErrorDeg(), vor.getLimitDeg().doubleValue(), vor.getWithin(), vor.getUntil());
     }
 }

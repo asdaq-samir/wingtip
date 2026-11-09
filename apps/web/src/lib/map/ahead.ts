@@ -6,7 +6,7 @@ import type { AheadAlert } from "../api/types";
 import { faaWords } from "../advisories";
 import { shortAirspaceName } from "../airspace";
 import { usePreferences } from "../preferences";
-import { altFt } from "../units";
+import { altFt } from "../format";
 import { underway } from "./glide";
 import { useOwnShip, type Fix } from "./ownShip";
 

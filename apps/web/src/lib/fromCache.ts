@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { ago } from "./clock";
+import { ago } from "./format";
 
 /**
  * Answers the service worker gave from its cache because the network did

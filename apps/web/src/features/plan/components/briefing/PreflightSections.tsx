@@ -12,7 +12,7 @@ import { FINDING_TONE } from "../../../../lib/findings";
 import FindingIcon from "../../../../components/FindingIcon";
 import { windOnRunway } from "../../format";
 import { TEXT } from "../../../../lib/text";
-import { altFt, pounds } from "../../../../lib/units";
+import { altFt, pounds } from "../../../../lib/format";
 import { useLoad } from "../../hooks/useLoad";
 import { armText } from "../../../../lib/weightBalance";
 import { phasesOf, type Phase } from "./sections";

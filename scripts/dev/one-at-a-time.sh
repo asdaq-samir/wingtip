@@ -5,7 +5,8 @@
 # load to 9 to 11 and their tests timed out (2026-10-15), so there was one
 # turn. The Mac mini (12 cores, Docker given 16 GB) runs a few at once: the
 # owner asked to make full use of it (2026-11-06), so there are
-# ONE_AT_A_TIME_SLOTS turns: 2 by default, since three at once with Xcode or
+# ONE_AT_A_TIME_SLOTS turns: 3 while the live stack is down and 2 while it
+# is up (below); it was 2 always, since three at once with Xcode or
 # Gradle on the host swapped the 24 GB Mac (12 GB of it Docker's) and cost
 # more time than they saved (2026-11-08). A speed measurement needs a quiet
 # machine: `--alone` waits until no other turn is held and then holds them
@@ -51,9 +52,31 @@ esac
 # -- the whole Mac's queue stood still for 25 minutes (2026-11-09).
 if [ -n "${ONE_AT_A_TIME_HELD:-}" ]; then exec "$@"; fi
 lock=${ONE_AT_A_TIME_LOCK:-/tmp/flight-plan-heavy.lock}
-slots=${ONE_AT_A_TIME_SLOTS:-2}
+# The owner's own settings, read on every call so a change reaches runs
+# already waiting in other worktrees' copies of this script too:
+# ~/.config/wingtip/one-at-a-time, lines like ONE_AT_A_TIME_SLOTS=3.
+conf=${ONE_AT_A_TIME_CONF:-$HOME/.config/wingtip/one-at-a-time}
+# shellcheck disable=SC1090
+[ -f "$conf" ] && . "$conf"
+# Turns at once: three while the owner's live stack (compose project
+# wingtip) is down, two while it is up -- it holds some 4.5 GB the builds
+# would otherwise have (the owner, 2026-11-09: "use the Mac effectively";
+# "because the stack is not live"). The free-memory check below still holds
+# every turn back while memory is short, so a third turn only starts when
+# there is room.
+if [ -z "${ONE_AT_A_TIME_SLOTS:-}" ]; then
+  if PATH="$PATH:$HOME/.docker/bin" docker ps -q -f name=^wingtip-planner-1$ 2>/dev/null | grep -q .; then
+    ONE_AT_A_TIME_SLOTS=2
+  else
+    ONE_AT_A_TIME_SLOTS=3
+  fi
+fi
+slots=$ONE_AT_A_TIME_SLOTS
 free_min=${ONE_AT_A_TIME_FREE_MIN:-20}
-swap_max=${ONE_AT_A_TIME_SWAP_MAX_MB:-4096}
+# Off by default: macOS keeps swap in use long after the pressure has
+# passed, and a swap ceiling held every turn for an hour with 39 % of memory
+# free (2026-11-09). The free-memory check is the live signal.
+swap_max=${ONE_AT_A_TIME_SWAP_MAX_MB:-0}
 # At most this long in line, in seconds: a turn held longer than a suite
 # and its reruns take is something wrong to look at, not to wait out.
 wait_max=${ONE_AT_A_TIME_WAIT:-2700}

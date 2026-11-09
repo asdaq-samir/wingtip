@@ -22230,6 +22230,94 @@
         }
       }
     },
+    "/api/engine/{name}": {
+      "post": {
+        "description": "The engine's rule `name` on the input given, its answer as the\nengine gives it (the contract's `answer` for the name). An input not\nof the rule's shape is a 422 with the engine's words.",
+        "operationId": "engine_rule_api_engine__name__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "enum": [
+                "holding",
+                "holding_leg_minutes",
+                "wind_triangle",
+                "pilot_currency",
+                "magnetic_variation",
+                "vfr_basic_minimums",
+                "reserve_min",
+                "isa_temp_c",
+                "pressure_altitude_ft",
+                "lowest_vfr_cruising_altitude",
+                "distance_nm",
+                "gonogo_density_altitude",
+                "wind_components",
+                "pattern_altitude",
+                "flight_category",
+                "airspace_entry_rules",
+                "approach_descent_fpm",
+                "approach_category",
+                "glide_range",
+                "glide_reaches",
+                "fuel_estimate",
+                "squawk_meaning",
+                "service_ceiling_on_the_day",
+                "legal_cruising_altitudes",
+                "highest_under_clouds_ft",
+                "cloud_clearance_at_ft",
+                "vfr_minimums",
+                "altitude_limits",
+                "altitude_allowed",
+                "filed_endurance",
+                "vor_check_limit_deg",
+                "ifr_alternate_destination",
+                "ifr_alternate_check",
+                "below_vfr_minimums"
+              ],
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Given",
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Engine Rule Api Engine  Name  Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Engine Rule",
+        "x-internal": "assistant"
+      }
+    },
     "/api/faa-chart": {
       "get": {
         "description": "The pages of one of the FAA's charts in force -- by its address on\naeronav.faa.gov, as a card lists it (`procedures`, the Chart\nSupplement's) -- for the app to show them itself rather than leave for\nthe FAA's site: every page of an approach or a departure, of one of\nthe FAA's booklets (a region's takeoff minimums) the pages naming\n`airport`, of a Chart Supplement entry each of its pages. 404 for any\nother address; 502 while the FAA cannot be reached, which the edge\ndoes not keep as it keeps a 404.",

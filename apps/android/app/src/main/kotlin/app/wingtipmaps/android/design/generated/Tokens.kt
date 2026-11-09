@@ -91,8 +91,12 @@ object WingtipColors {
         const val MVFR_HEX = "#1f6feb"
         val Ifr = Color(0xFFB3261E)
         const val IFR_HEX = "#b3261e"
+        /** The pip and the mark on the map. */
         val Lifr = Color(0xFFA371F7)
         const val LIFR_HEX = "#a371f7"
+        /** LIFR as a chip's fill under white words: #a371f7 is 3.35:1 under white, this 6.4:1 (WCAG 1.4.3; the UI audit, 2026-11-09). */
+        val LifrChip = Color(0xFF7E3FB8)
+        const val LIFR_CHIP_HEX = "#7e3fb8"
         val Unknown = Color(0xFF8FA3B0)
         const val UNKNOWN_HEX = "#8fa3b0"
     }
@@ -194,7 +198,7 @@ object WingtipPalettes {
         secondary = Color(0xFFF5F5F5),
         secondaryForeground = Color(0xFF171717),
         muted = Color(0xFFF5F5F5),
-        mutedForeground = Color(0xFF737373),
+        mutedForeground = Color(0xFF696969),
         accent = Color(0xFFF5F5F5),
         accentForeground = Color(0xFF171717),
         destructive = Color(0xFFE7000B),
@@ -228,7 +232,7 @@ object WingtipPalettes {
         primary = Color(0xFF006DDE),
         primaryForeground = Color(0xFFFAFAFA),
         tint = Color(0xFF57A8FF),
-        tintShade = Color(0xFF6BB5FF),
+        tintShade = Color(0xFF57A8FF),
         sheet = Color(0xFF0B1422),
         airspaceBlueInk = Color(0xFF8CB8F2),
         airspaceMagentaInk = Color(0xFFF0A0CF),
@@ -272,10 +276,10 @@ object WingtipPalettes {
         cardForeground = Color(0xFF000000),
         popover = Color(0xFFFFFFFF),
         popoverForeground = Color(0xFF000000),
-        primary = Color(0xFF0040C0),
+        primary = Color(0xFF0047A0),
         primaryForeground = Color(0xFFFFFFFF),
-        tint = Color(0xFF0040C0),
-        tintShade = Color(0xFF0040C0),
+        tint = Color(0xFF0047A0),
+        tintShade = Color(0xFF0047A0),
         sheet = Color(0xFFFFFFFF),
         airspaceBlueInk = Color(0xFF1D559C),
         airspaceMagentaInk = Color(0xFF962568),
@@ -335,7 +339,7 @@ object WingtipPalettes {
         secondary = Color(0xFFF5F5F5),
         secondaryForeground = Color(0xFF171717),
         muted = Color(0xFFF5F5F5),
-        mutedForeground = Color(0xFF737373),
+        mutedForeground = Color(0xFF696969),
         accent = Color(0xFFF5F5F5),
         accentForeground = Color(0xFF171717),
         destructive = Color(0xFFE7000B),
@@ -548,4 +552,7 @@ object WingtipMotion {
 object WingtipSize {
     val TapTarget = 48.dp
     val Chip = 32.dp
+    val Panel = 384.dp
+    val PanelWide = 448.dp
+    val Desktop = 1024.dp
 }

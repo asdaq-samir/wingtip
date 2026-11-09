@@ -4,7 +4,7 @@ import { ListChoices, ListGroup, ListRow } from "../../components/GroupedList";
 import QueryState from "../../components/QueryState";
 import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
-import { threeFigures } from "../../lib/navaid";
+import { threeFigures } from "../../lib/format";
 import type { EmergencyModel } from "./useEmergency";
 
 /**

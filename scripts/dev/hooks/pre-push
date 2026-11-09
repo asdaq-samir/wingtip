@@ -81,9 +81,20 @@ note() { echo "pre-push: $*"; }
 fail() { echo "pre-push: $* failed"; failed=1; }
 if [ -n "$note_tree" ]; then note "checking the $note_tree"; fi
 
+# Which parts the push touches is scripts/areas.yml's (the table check.sh and
+# CI's changes filter read too), from the pushed tree's own copy. The quick
+# checks below are the web's and the engine's; ruff goes by .py files.
+if command -v python3 >/dev/null; then
+  areas=$(python3 "$here/scripts/areas.py" areas <<<"$changed") || { note "areas.yml unreadable, no quick check run"; areas=""; }
+else
+  note "no python3 here: the web and engine checks are left to CI"
+  areas=""
+fi
+has_area() { grep -qx "$1" <<<"$areas"; }
+
 # --- web: tsc over the project, ESLint over the files changed ---------------
 web_files=$(grep -E '^apps/web/.*\.(ts|tsx|js|jsx|mjs|cjs)$' <<<"$changed" | grep -v '^apps/web/src/lib/engine/pkg/' || true)
-if grep -qE '^apps/web/' <<<"$changed"; then
+if has_area web; then
   lint=()
   while IFS= read -r f; do [ -n "$f" ] && lint+=("${f#apps/web/}"); done <<<"$web_files"
   # The API and engine types are generated, not committed: tsc needs them.
@@ -155,7 +166,7 @@ if [ -n "$py_files" ]; then
 fi
 
 # --- engine: cargo check over the crates CI tests ---------------------------
-if grep -qE '^engine/' <<<"$changed"; then
+if has_area engine; then
   if command -v cargo >/dev/null && cargo --version >/dev/null 2>&1; then
     # CI's own crate list (ci.yml's test job), so this checks what CI tests;
     # a target directory per worktree, keyed by its path. One shared by every

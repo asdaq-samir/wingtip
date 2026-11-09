@@ -7,6 +7,8 @@ import app.wingtipmaps.gateway.domain.AircraftDueItem;
 import app.wingtipmaps.gateway.domain.DueItemKind;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.PaperworkDto;
+import app.wingtipmaps.gateway.planner.model.PlannerInspections;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -30,8 +32,8 @@ class PaperworkListTest {
     /** As the engine answers for the airplane above: the annual through 30
      *  November 2026 (91.409(a)), the transponder through 31 January 2027
      *  (91.413(a)), the 100-hour at 2350 hours. */
-    private static final PlannerClient.Inspections DUE = new PlannerClient.Inspections(
-            LocalDate.of(2026, 11, 30), null, null, LocalDate.of(2027, 1, 31), 2350.0, null);
+    private static final PlannerInspections DUE = new PlannerInspections().annualUntil(LocalDate.of(2026, 11, 30))
+            .transponderCheckUntil(LocalDate.of(2027, 1, 31)).hundredHourDueAtHours(new BigDecimal("2350.0"));
 
     @Test
     void eachRecordedInspectionWithItsRuleAndThe100HourOnlyForHire() {

@@ -5,7 +5,7 @@ import type { Course } from "../api/types";
 import { usePreferences } from "../preferences";
 import { keep, keepKey, keepingAvailable, keptAlready, stopKeeping, useKeepJob } from "./keepRoute";
 import { chartPair } from "./tiles";
-import { grouped } from "../units";
+import { grouped } from "../format";
 
 /**
  * Keep Charts Offline, a setting under Map: while it is on, each route

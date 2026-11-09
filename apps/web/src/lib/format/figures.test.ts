@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { altFt, feet, gal, grouped, magneticVariation, nm, windCorrection } from "./units";
+import { altFt, bearing, feet, gal, grouped, magneticVariation, nm, windCorrection } from "./figures";
 
 describe("figures written as the FAA writes them", () => {
   it("puts a comma between each three figures, rounded to a whole number", () => {
@@ -41,5 +41,12 @@ describe("figures written as the FAA writes them", () => {
     expect(gal(12.34)).toBe("12.3 gal");
     expect(nm(null)).toBe("—");
     expect(gal(undefined)).toBe("—");
+  });
+});
+
+describe("a course with no figure", () => {
+  it("is an em dash, never NaN°", () => {
+    expect(bearing(Number.NaN)).toBe("—");
+    expect(bearing(Infinity)).toBe("—");
   });
 });

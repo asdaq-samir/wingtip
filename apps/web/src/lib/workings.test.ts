@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { Leg } from "./api/types";
-import { bearing } from "./units";
+import { bearing } from "./format";
 import { checks, workingsOf } from "./workings";
 
 // C81 to the first checkpoint, as the planner flew it: west-northwest

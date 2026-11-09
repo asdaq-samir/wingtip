@@ -5,7 +5,7 @@ import AfterPaint from "../../../../components/AfterPaint";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { titleCase } from "../../../../lib/advisories";
 import { routeProfileQuery } from "../../../../lib/queryClient";
-import { altFt } from "../../../../lib/units";
+import { altFt } from "../../../../lib/format";
 import { planProfile } from "./profile";
 import type { NavLogRow, RouteEnds } from "./rows";
 

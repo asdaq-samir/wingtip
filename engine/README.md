@@ -51,7 +51,7 @@ workspace.
 | `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), performance (the airplane's cruise and climbs in the day's air), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items), sun (1.1's night and 61.57(b)'s night-passenger period), vfr (91.155's minimums, one copy) | nothing |
 | `weather` | metar, taf, winds, forecast, validity, notam, tfr, cycles, rvr (RVR against a minimum, 91.175(h)'s table) | core, flight |
 | `procedures` | figures (debrief, diversion, holding, lost comms, words) | core, flight |
-| `radio` | clearance, readback, atis, datis (a digital ATIS as the tower's data link writes it), mayday (the distress call, AIM 6-3-2) | core, flight, weather, procedures |
+| `radio` | clearance, callsign (our call sign and where it was said, AIM 4-2-3 c, 4-2-4), instruction (an instruction heard in flight read into its items), readback (AIM 4-4-7 b), atc (the ATC copilot's `atc_call` and `readback_check`, its own block in call.rs), atis, datis (a digital ATIS as the tower's data link writes it), mayday (the distress call, AIM 6-3-2) | core, flight, weather, procedures |
 | `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109, records: endorsements' days, 61.93(d), inspections and 91.171), autolog (a logbook entry drawn from a flown track: 1.1, 61.1(b), 61.57), aircraft | core, flight, procedures, route (without its options) |
 | `brief` | gonogo, runway, alternates (91.169's IFR alternate), fields (the best fields to land at: a glide or a diversion) | core, flight, procedures |
 | `route` | route (and its options: route options' grid and ways, fuel stops, the way round high ground, Class B detours), motion (with along: where the airplane is on the route), approach, navlog | core, flight, weather, procedures |
@@ -143,6 +143,12 @@ A rule goes in this way, each step in the same pull request:
    web, the phones and the planner are held to the same examples.
 6. `scripts/build/build-engine-wasm.sh`, and the `.wasm` committed; the
    planner's image rebuilt for the Python side.
+7. Where it is a figure a pilot asks about (an altitude, a wind, a
+   reserve, minimums, currency), `"x-tool": true` on its entry, and
+   `scripts/build/assistant-client.sh`: the assistant then has it as a tool,
+   asked through the planner's `POST /api/engine/{name}` (#569), with
+   no other code. Its description is what the model reads, so it names
+   its CFR, AIM or handbook source.
 
 Then the callers switch to the name and the old copy is deleted.
 

@@ -9,13 +9,13 @@ import RoundButton from "../../../components/RoundButton";
 import { RowBadge } from "../../../components/RowBadge";
 import Segmented from "../../../components/Segmented";
 import type { PastFlightPoint, PastFlights, PastFlightSummary } from "../../../lib/api/types";
-import { clockTime } from "../../../lib/clock";
+import { clockTime } from "../../../lib/format";
 import { compassPoint } from "../../../lib/compass";
 import { distanceNm } from "../../../lib/geo";
 import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, stopPastFlight, usePastFlight } from "../../../lib/map/pastFlight";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
-import { altFt, bearing, grouped } from "../../../lib/units";
+import { altFt, bearing, grouped } from "../../../lib/format";
 import { dayOf, lasted, legOf, statusOf, when } from "./pastFlightFormat";
 import { pastFlightsQuery } from "./pastFlightsQuery";
 

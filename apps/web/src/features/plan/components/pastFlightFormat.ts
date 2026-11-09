@@ -1,10 +1,10 @@
 import type { PastFlightSummary } from "../../../lib/api/types";
-import { clockTime, duration } from "../../../lib/clock";
+import { clockTime, duration } from "../../../lib/format";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** "Sat 11 Oct", this device's day, written by hand as lib/clock writes times. */
+/** "Sat 11 Oct", this device's day, written by hand as lib/format writes times. */
 export const dayOf = (at: Date) => `${DAYS[at.getDay()]} ${at.getDate()} ${MONTHS[at.getMonth()]}`;
 
 /** A time from the planner, seconds since 1970, as a Date. */

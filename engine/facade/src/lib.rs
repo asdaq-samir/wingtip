@@ -83,7 +83,7 @@ pub use wingtip_flight::{filing, flight, limits, performance, sun};
 // The in-flight copilot (copilot_watch).
 pub use wingtip_inflight as inflight;
 pub use wingtip_pilot::{aircraft, autolog, pilot};
-pub use wingtip_radio::{atis, clearance, datis, mayday, readback};
+pub use wingtip_radio::{atc, atis, callsign, clearance, datis, instruction, mayday, readback};
 pub use wingtip_route::{approach, motion, navlog, route};
 pub use wingtip_weather::{cycles, forecast, metar, notam, rvr, taf, tfr, validity, winds};
 pub use wingtip_wording::wording;

@@ -450,7 +450,7 @@ export default function TabBar<T extends string>({ tabs, tab, over, title: given
               // which the plain tint clears by 4.6:1 at best where WCAG
               // 1.4.3 asks 4.5:1 of 13-point text: the tint's deeper step
               // (--tint-shade) is 5.5:1 and 5.0:1.
-              current ? "text-tint [--tint:var(--tint-shade)]" : "text-foreground/80 hover:text-foreground",
+              current ? "text-tint [--tint:var(--tint-shade)]" : "text-foreground/80 hover:bg-foreground/5 hover:text-foreground",
             )}
           >
             {/* A capsule round the glyph and its word with room on every

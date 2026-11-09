@@ -6,6 +6,7 @@
   "properties": {
     "holding": {
       "description": "The planner's /api/holding answer (AIM 5-3-8): the entry and its steps, the other entry near a sector's edge, and the legs in the wind where a true airspeed, wind and altitude are all given.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -206,6 +207,7 @@
     },
     "holding_leg_minutes": {
       "description": "The inbound leg's minutes (AIM 5-3-8 j.4(a)): 1 at or below 14,000 ft MSL, 1.5 above.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -924,7 +926,8 @@
       "additionalProperties": false
     },
     "wind_triangle": {
-      "description": "The wind triangle for a true course: the correction (+ right), the true heading and the ground speed; null where no heading holds the course.",
+      "description": "The wind triangle for a true course: the correction (+ right), the true heading and the ground speed; null where no heading holds the course (the wind triangle, FAA-H-8083-25C ch. 16).",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -2388,6 +2391,7 @@
     },
     "pilot_currency": {
       "description": "Where the pilot stands on a day, from the logbook and the dates they give: passengers by day (14 CFR 61.57(a)) and at night (61.57(b)), the flight review (61.56(c)), the medical, the logbook's totals and instrument currency (61.57(c)(1), (d)). The gateway's CurrencyDto.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -3867,8 +3871,78 @@
       ],
       "additionalProperties": false
     },
+    "atc_call": {
+      "description": "A transmission heard by the ATC copilot: who said it, by our call sign's place (AIM 4-2-3 c, 4-2-4), and its items in the order said (AIM 4-4-7 b.2).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AtcCallInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "tail": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "prior": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "ago_s": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "text",
+                "ago_s"
+              ]
+            }
+          },
+          "required": [
+            "text"
+          ]
+        },
+        "answer": {
+          "title": "AtcCallAnswer",
+          "type": "object",
+          "properties": {
+            "who": {
+              "enum": [
+                "to_us",
+                "from_us",
+                "other"
+              ]
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AtcItem"
+              }
+            }
+          },
+          "required": [
+            "who",
+            "items"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "readback_check": {
-      "description": "A readback against the clearance heard (AIM 4-4-7): what was missed or said otherwise, and the warning line.",
+      "description": "A readback against the clearance or instruction heard (AIM 4-4-7 b): what was missed or said otherwise, each marked where 4-4-7 b asks it be read back, and the warning line; with `tail`, the call sign too (4-4-7 b.1).",
       "type": "object",
       "properties": {
         "input": {
@@ -3880,6 +3954,12 @@
             },
             "said": {
               "type": "string"
+            },
+            "tail": {
+              "type": [
+                "string",
+                "null"
+              ]
             }
           },
           "required": [
@@ -3903,7 +3983,15 @@
                       "altitude",
                       "expect",
                       "frequency",
-                      "squawk"
+                      "squawk",
+                      "heading",
+                      "runway",
+                      "approach",
+                      "hold",
+                      "direct",
+                      "altimeter",
+                      "call sign",
+                      "order"
                     ]
                   },
                   "cleared": {
@@ -3914,12 +4002,16 @@
                       "string",
                       "null"
                     ]
+                  },
+                  "required": {
+                    "type": "boolean"
                   }
                 },
                 "required": [
                   "item",
                   "cleared",
-                  "said"
+                  "said",
+                  "required"
                 ]
               }
             },
@@ -3941,6 +4033,7 @@
     },
     "magnetic_variation": {
       "description": "Magnetic variation, degrees east (west negative), the World Magnetic Model's (WMM) at a place and day, as wingtip.magnetic works it out.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -4805,6 +4898,7 @@
     },
     "vfr_basic_minimums": {
       "description": "The surface-area minimums (14 CFR 91.155(c), (d)), which the planner holds every route to: no VFR under a 1,000 ft ceiling or in under 3 statute miles within a surface area of controlled airspace. Not the least VFR ever asks (Class G at or below 1,200 ft above the surface by day: 1 sm and clear of clouds, 91.155(a)).",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -4838,6 +4932,7 @@
     },
     "reserve_min": {
       "description": "The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -4871,6 +4966,7 @@
     },
     "isa_temp_c": {
       "description": "A standard day's temperature at a pressure altitude (ICAO Doc 7488).",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -4956,6 +5052,7 @@
     },
     "pressure_altitude_ft": {
       "description": "Pressure altitude from a field's elevation and its altimeter setting, a thousand feet an inch from 29.92 (PHAK ch. 4).",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -5014,6 +5111,7 @@
     },
     "lowest_vfr_cruising_altitude": {
       "description": "The lowest VFR cruising altitude at or above a floor for a magnetic course: odd thousands plus 500 eastbound, even westbound (14 CFR 91.159(a)).",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -5045,6 +5143,7 @@
     },
     "distance_nm": {
       "description": "The geodesic distance between two points on the WGS 84 ellipsoid, nm.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -5222,7 +5321,7 @@
       "additionalProperties": false
     },
     "words_grouped": {
-      "description": "A whole number with a comma between each three figures, \"12,500\" (lib/units grouped).",
+      "description": "A whole number with a comma between each three figures, \"12,500\" (lib/format grouped).",
       "type": "object",
       "properties": {
         "input": {
@@ -5249,7 +5348,7 @@
       "additionalProperties": false
     },
     "words_alt_ft": {
-      "description": "An altitude grouped, \"12,500\"; an em dash for none (lib/units altFt).",
+      "description": "An altitude grouped, \"12,500\"; an em dash for none (lib/format altFt).",
       "type": "object",
       "properties": {
         "input": {
@@ -5276,7 +5375,7 @@
       "additionalProperties": false
     },
     "words_flight_level": {
-      "description": "A cruising altitude in hundreds of feet, \"FL-045\"; \"FL-___\" for none (lib/units flightLevel).",
+      "description": "A cruising altitude in hundreds of feet, \"FL-045\"; \"FL-___\" for none (lib/format flightLevel).",
       "type": "object",
       "properties": {
         "input": {
@@ -6516,6 +6615,7 @@
     },
     "gonogo_density_altitude": {
       "description": "Density altitude, ft, from pressure altitude and temperature (PHAK ch. 4).",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -7435,7 +7535,8 @@
       "additionalProperties": false
     },
     "wind_components": {
-      "description": "A wind's head- and crosswind on a heading: a tailwind negative, a crosswind from the right positive.",
+      "description": "A wind's head- and crosswind on a heading: a tailwind negative, a crosswind from the right positive (the crosswind component chart's figures, FAA-H-8083-25C ch. 11).",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -8157,6 +8258,7 @@
     },
     "pattern_altitude": {
       "description": "A field's traffic pattern altitude: the published height, else 1,000 ft above the field (AC 90-66C).",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -8717,6 +8819,7 @@
     },
     "flight_category": {
       "description": "A field's flight category (AIM 7-1-7); with no visibility, LIFR only under a 500 ft ceiling and else null.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -9540,6 +9643,7 @@
     },
     "airspace_entry_rules": {
       "description": "A Class B, C or D's entry, equipment and speed rules (14 CFR 91.117, 91.129-91.131, 91.215, 91.225), each with its cite, and whom to call. Any other one-letter class answers no rules.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -11034,6 +11138,7 @@
     },
     "approach_descent_fpm": {
       "description": "The descent rate on the path, ft/min (the TPP's rate of descent table).",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -11092,6 +11197,7 @@
     },
     "approach_category": {
       "description": "The approach category (14 CFR 97.3) from VREF, or 1.3 VSO, or null with neither.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -12142,6 +12248,7 @@
     },
     "glide_range": {
       "description": "Still-air glide range, nm (1.5 nm per 1,000 ft, the C172S POH figure 3-1), or null on the ground or with no height.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -12184,6 +12291,7 @@
     },
     "glide_reaches": {
       "description": "Whether a field distance_nm off is within still-air glide, arriving at pattern height (AC 90-66C's 1,000 ft).",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -13579,6 +13687,7 @@
     },
     "fuel_estimate": {
       "description": "The figures from the airplane's book alone, before the nav log's: at cruise speed with no wind the minutes over the distance, the fuel at the cruise burn over them, and the fuel required, that with the start and taxi allowance (the Cessna 172S handbook's 1.4 gal, the planner's default) and 45 minutes' reserve at the cruise burn, the most the rules ask (14 CFR 91.151(a)(2), 91.167(a)(3)), so an estimate is never short. Null where the book gives no speed, or no burn for the fuel.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -13825,6 +13934,7 @@
     },
     "squawk_meaning": {
       "description": "What a squawk says, where it says more than a code: 7500 unlawful interference (AIM 6-3-4), 7600 two-way radio failure (AIM 6-4-2), 7700 an emergency (AIM 6-2-2); null for any other.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -14713,7 +14823,8 @@
       "additionalProperties": false
     },
     "service_ceiling_on_the_day": {
-      "description": "The service ceiling on the day: the book's service ceiling, a density altitude, found as an altitude in the forecast's temperatures (wingtip_flight::performance::altitude_at_density_altitude) to the nearest 100 ft; the book figure where the profile is empty.",
+      "description": "The service ceiling on the day: the book's service ceiling, a density altitude (where the best climb has fallen to 100 fpm, FAA-H-8083-25C ch. 11), found as an altitude in the forecast's temperatures (wingtip_flight::performance::altitude_at_density_altitude) to the nearest 100 ft; the book figure where the profile is empty.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -14873,6 +14984,7 @@
     },
     "legal_cruising_altitudes": {
       "description": "Every legal cruising altitude for a magnetic course from the floor up to the ceiling, ascending: under VFR 14 CFR 91.159(a)'s thousands plus 500 under Class A (71.33), and every 500 ft up to rule_from_ft (3,000 ft over the lowest ground); under IFR 91.179(b)'s thousands (FAA Order JO 7110.65 TBL 4-5-1) to FL410.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -14968,6 +15080,7 @@
     },
     "highest_under_clouds_ft": {
       "description": "The highest altitude that keeps 14 CFR 91.155(a)'s distance below a cloud base (MSL): 500 ft under it, 1,000 ft at or above 10,000 ft MSL.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -14995,6 +15108,7 @@
     },
     "cloud_clearance_at_ft": {
       "description": "The distance 14 CFR 91.155(a) keeps below the clouds at an altitude: 1,000 ft at or above 10,000 ft MSL, 500 ft below.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -18226,6 +18340,7 @@
     },
     "vfr_minimums": {
       "description": "14 CFR 91.155(a)'s basic VFR weather minimums for a class at an altitude MSL (the height above the ground counts in Class G alone, 1,200 ft its line, and is taken as above it where not given): the day's and the night's, or null in Class A, which is flown under IFR (91.135) and begins at 18,000 ft MSL whatever class is asked (71.33).",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -18313,6 +18428,7 @@
     },
     "altitude_limits": {
       "description": "The altitudes a flight may be planned at: no lower than 500 ft (14 CFR 91.119(c)), VFR up to 17,500 ft (91.159(a)'s highest under Class A, which begins at 18,000 ft MSL, 71.33(a), and takes IFR only, 91.135), IFR up to FL410 (the highest 91.179(b)(4) names); flight levels from 18,000 ft (91.121(a)(2)); 91.159's cruising altitudes 500 ft apart.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -18365,6 +18481,7 @@
     },
     "altitude_allowed": {
       "description": "Whether an altitude asked for may be planned: at least 500 ft (91.119(c)), under Class A for VFR (any figure under 18,000 ft MSL, 71.33(a), 91.135), at most FL410 for IFR (91.179(b)(4)).",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -18593,6 +18710,7 @@
     },
     "filed_endurance": {
       "description": "Item 19's endurance in whole minutes: the fuel aboard at the cruise burn, to the minute below (AIM Appendix 4); null where the burn is not a positive figure.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -19255,6 +19373,7 @@
     },
     "vor_check_limit_deg": {
       "description": "The largest bearing error 14 CFR 91.171 allows for a kind of VOR check: 4 degrees for a test signal (VOT or a repair station's, (b)(1)), a surface checkpoint ((b)(2)) and one receiver against the other ((c)); 6 for an airborne checkpoint ((b)(3)) and a radial along an airway ((b)(4)).",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -19476,6 +19595,7 @@
     },
     "ifr_alternate_destination": {
       "description": "Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast an hour either side of the ETA under 2,000 ft and 3 sm, TEMPO and PROB included; no TAF needs one.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -19539,6 +19659,7 @@
     },
     "ifr_alternate_check": {
       "description": "Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach, 800 and 2 without; `good` null where the pilot has to look (its own minimums, no approach, no TAF).",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -21212,6 +21333,7 @@
     },
     "below_vfr_minimums": {
       "description": "Whether a ceiling or a visibility is under 14 CFR 91.155(c), (d)'s basic VFR minimums (1,000 ft, 3 sm); a missing figure is below nothing.",
+      "x-tool": true,
       "type": "object",
       "properties": {
         "input": {
@@ -22400,6 +22522,7 @@
     "call_pattern",
     "tokens",
     "place_words",
+    "atc_call",
     "readback_check",
     "magnetic_variation",
     "data_cycle",
@@ -28555,6 +28678,326 @@
         "sources",
         "elsewhere",
         "alternative"
+      ]
+    },
+    "AtcItem": {
+      "title": "AtcItem",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "altitude"
+            },
+            "ft": {
+              "type": "integer"
+            },
+            "verb": {
+              "enum": [
+                "climb",
+                "descend",
+                "maintain",
+                "cruise"
+              ]
+            },
+            "limit": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "ft",
+            "verb",
+            "limit"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "expect"
+            },
+            "ft": {
+              "type": "integer"
+            },
+            "min": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "ft",
+            "min"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "heading"
+            },
+            "deg": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "turn": {
+              "enum": [
+                "left",
+                "right",
+                null
+              ]
+            },
+            "by_deg": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "deg",
+            "turn",
+            "by_deg"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "direct"
+            },
+            "said": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "said"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "route"
+            },
+            "limit": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "places": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "as_filed": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "limit",
+            "places",
+            "as_filed"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "class_b"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "hold"
+            },
+            "fix": {
+              "type": "string"
+            },
+            "direction": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "on": {
+              "enum": [
+                "radial",
+                "course",
+                "bearing",
+                "track",
+                null
+              ]
+            },
+            "on_deg": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "turns": {
+              "enum": [
+                "left",
+                "right",
+                null
+              ]
+            },
+            "published": {
+              "type": "boolean"
+            },
+            "efc": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "fix",
+            "direction",
+            "on",
+            "on_deg",
+            "turns",
+            "published",
+            "efc"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "frequency"
+            },
+            "mhz": {
+              "type": "string"
+            },
+            "facility": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "mhz",
+            "facility"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "squawk"
+            },
+            "code": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "code"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "altimeter"
+            },
+            "inhg": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "inhg"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "approach"
+            },
+            "name": {
+              "type": "string"
+            },
+            "runway": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "cleared": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "name",
+            "runway",
+            "cleared"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "runway"
+            },
+            "runway": {
+              "type": "string"
+            },
+            "what": {
+              "enum": [
+                "land",
+                "takeoff",
+                "option",
+                "hold short",
+                "line up and wait",
+                null
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "runway",
+            "what"
+          ],
+          "additionalProperties": false
+        }
       ]
     },
     "LogbookTrackField": {

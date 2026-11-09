@@ -61,7 +61,10 @@ enum WingtipColor {
         static let vfr = rgb(0x1A7F37)
         static let mvfr = rgb(0x1F6FEB)
         static let ifr = rgb(0xB3261E)
+        /// The pip and the mark on the map.
         static let lifr = rgb(0xA371F7)
+        /// LIFR as a chip's fill under white words: #a371f7 is 3.35:1 under white, this 6.4:1 (WCAG 1.4.3; the UI audit, 2026-11-09).
+        static let lifrChip = rgb(0x7E3FB8)
         static let unknown = rgb(0x8FA3B0)
     }
     enum Brand {
@@ -155,7 +158,7 @@ struct WingtipPalette: Sendable {
         secondary: rgb(0xF5F5F5),
         secondaryForeground: rgb(0x171717),
         muted: rgb(0xF5F5F5),
-        mutedForeground: rgb(0x737373),
+        mutedForeground: rgb(0x696969),
         accent: rgb(0xF5F5F5),
         accentForeground: rgb(0x171717),
         destructive: rgb(0xE7000B),
@@ -189,7 +192,7 @@ struct WingtipPalette: Sendable {
         primary: rgb(0x006DDE),
         primaryForeground: rgb(0xFAFAFA),
         tint: rgb(0x57A8FF),
-        tintShade: rgb(0x6BB5FF),
+        tintShade: rgb(0x57A8FF),
         sheet: rgb(0x0B1422),
         airspaceBlueInk: rgb(0x8CB8F2),
         airspaceMagentaInk: rgb(0xF0A0CF),
@@ -233,10 +236,10 @@ struct WingtipPalette: Sendable {
         cardForeground: rgb(0x000000),
         popover: rgb(0xFFFFFF),
         popoverForeground: rgb(0x000000),
-        primary: rgb(0x0040C0),
+        primary: rgb(0x0047A0),
         primaryForeground: rgb(0xFFFFFF),
-        tint: rgb(0x0040C0),
-        tintShade: rgb(0x0040C0),
+        tint: rgb(0x0047A0),
+        tintShade: rgb(0x0047A0),
         sheet: rgb(0xFFFFFF),
         airspaceBlueInk: rgb(0x1D559C),
         airspaceMagentaInk: rgb(0x962568),
@@ -296,7 +299,7 @@ struct WingtipPalette: Sendable {
         secondary: rgb(0xF5F5F5),
         secondaryForeground: rgb(0x171717),
         muted: rgb(0xF5F5F5),
-        mutedForeground: rgb(0x737373),
+        mutedForeground: rgb(0x696969),
         accent: rgb(0xF5F5F5),
         accentForeground: rgb(0x171717),
         destructive: rgb(0xE7000B),
@@ -467,17 +470,17 @@ enum WingtipType {
     static let hero: Font = Font.system(.title, weight: .bold)
     /// A card's name: an airport's, the airspace's, Nearest's (iOS Title 2).
     static let card: Font = Font.system(.title2, weight: .bold)
-    /// A section's title in the panel's tabs (iOS Title 3); 18 with a mouse.
+    /// A section's title in the panel's tabs (iOS Title 3), 20 with a mouse too (decision 0021).
     static let heading: Font = Font.system(.title3, weight: .semibold)
     /// A drawer's or a sheet's own title, as a navigation bar's (iOS Headline); 16 with a mouse.
     static let title: Font = Font.system(.headline, weight: .semibold)
-    /// A row's name and its value, the body (iOS Body); 14 with a mouse.
+    /// A row's name and its value, the body (iOS Body); 16 with a mouse, a desktop's body size (it was 14, and the desktop panel read small: the UI audit, 2026-11-09).
     static let row: Font = Font.system(.body, weight: .regular)
-    /// What is read rather than scanned: a summary, a paragraph (iOS Subheadline); 14 with a mouse.
+    /// What is read rather than scanned: a summary, a paragraph (iOS Subheadline); 16 with a mouse.
     static let prose: Font = Font.system(.subheadline, weight: .regular)
-    /// The line under a row's name (iOS Subheadline); 12 with a mouse.
+    /// The line under a row's name (iOS Subheadline); 14 with a mouse.
     static let detail: Font = Font.system(.subheadline, weight: .regular)
-    /// A section's line of help, a group's heading, a key (iOS Footnote); 12 with a mouse.
+    /// A section's line of help, a group's heading, a key (iOS Footnote); 13 with a mouse too, the least a desktop's words are.
     static let note: Font = Font.system(.footnote, weight: .regular)
     /// The panel's tabs' words (iOS Footnote).
     static let tab: Font = Font.system(.footnote, weight: .regular)
@@ -526,5 +529,8 @@ enum WingtipMotion {
 enum WingtipSize {
     static let tapTarget: CGFloat = 44
     static let chip: CGFloat = 32
+    static let panel: CGFloat = 384
+    static let panelWide: CGFloat = 448
+    static let desktop: CGFloat = 1024
     static let glassBlur: CGFloat = 15
 }

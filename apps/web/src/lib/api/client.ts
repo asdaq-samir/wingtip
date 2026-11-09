@@ -239,8 +239,18 @@ export function describeError(err: unknown, fallback = "request failed"): string
     return "No answer in time";
   }
   const firstLine = err instanceof Error ? err.message.split("\n")[0] : undefined;
+  // An answer with no words of its own but HTTP's reason ("Not Found",
+  // "Bad Gateway"), which the Brief printed raw ("Words unavailable: Not
+  // Found", the UI audit, 2026-11-09): said as what it means to a pilot.
+  if (err instanceof ApiError && firstLine && BARE_REASON.test(firstLine)) {
+    return err.status === 404 ? "Not available yet" : err.status >= 500 ? "The planner is not answering; try again in a moment" : fallback;
+  }
   return firstLine || fallback;
 }
+
+/** HTTP's own reason phrases (RFC 9110, section 15), which say nothing a
+ *  pilot can act on. */
+const BARE_REASON = /^(Not Found|Bad Request|Internal Server Error|Bad Gateway|Service Unavailable|Gateway Time-?out|Unprocessable (Entity|Content)|Forbidden|Unauthorized|Method Not Allowed|Conflict)$/i;
 
 /** Whether the planner could not find a point of the route: its 404,
  *  which names the ident in quotes ("No airport goes by 'KZZZ'."). The

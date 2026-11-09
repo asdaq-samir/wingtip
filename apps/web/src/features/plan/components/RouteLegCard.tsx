@@ -6,9 +6,9 @@ import DirectToIcon from "../../../components/DirectToIcon";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent } from "../../../components/ResponsivePopover";
 import { Badge } from "../../../components/ui/badge";
-import { threeFigures } from "../../../lib/navaid";
+import { threeFigures } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";
-import { nm } from "../../../lib/units";
+import { nm } from "../../../lib/format";
 
 /** A leg of the route the pilot tapped on the map, as its sheet shows it
  *  (usePlanWorkspace's openLeg): its ends, the engine's figures, whether

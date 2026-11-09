@@ -2,7 +2,7 @@ import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import FindingIcon from "../../../../components/FindingIcon";
 import { TEXT } from "../../../../lib/text";
-import { feetRange } from "../../../../lib/units";
+import { feetRange } from "../../../../lib/format";
 import type { Leg } from "../../../../lib/api/types";
 import type { FlightBriefing } from "../../hooks/useFlightBriefing";
 import { severityWord } from "../../hooks/useIcingForecast";

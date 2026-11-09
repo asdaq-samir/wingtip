@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import { BrainCircuit, ExternalLink, RefreshCw } from "lucide-react";
-import { toast } from "../../lib/toast";
+import { done } from "../../lib/doneNote";
 import { showError } from "../../lib/problems";
 import { Bar, BarChart, Cell, LabelList, XAxis, YAxis } from "recharts";
 import { cn } from "cn";
@@ -18,8 +18,8 @@ import RatingGuide from "../chart-labels/components/RatingGuide";
 import { TEXT } from "../../lib/text";
 import { useRetrain } from "./useRetrain";
 import SpeedPage from "./SpeedPage";
-import { grouped } from "../../lib/units";
-import { ago } from "../../lib/clock";
+import { grouped } from "../../lib/format";
+import { ago } from "../../lib/format";
 import { WINDS_MODELLED } from "../../lib/windsAloft";
 
 const mae = (n: number) => n.toFixed(4);
@@ -30,7 +30,7 @@ const DATE = new Intl.DateTimeFormat();
 /** A date and a time, for the registry's versions. */
 const WHEN = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
 
-/** "just now", "12m ago", "3h 5m ago" (lib/clock ago), or the date past
+/** "just now", "12m ago", "3h 5m ago" (lib/format ago), or the date past
  *  two days -- for a timestamp that may be missing altogether. */
 function agoOrDate(iso: string | null | undefined): string {
   if (!iso) return "never";
@@ -479,7 +479,7 @@ function StackLink({ link }: { link: { label: string; href: string; service?: st
         if (tab) tab.opener = null;
         start.mutate(link.service!, {
           onSuccess: () => {
-            toast.success(`${(link.service ?? "").replace(/^./, c => c.toUpperCase())} Started`);
+            done(`${(link.service ?? "").replace(/^./, c => c.toUpperCase())} Started`);
             // So the control goes back to being a plain link rather
             // than still offering to start what is now running.
             void queryClient.invalidateQueries({ queryKey: ["devServices"] });
@@ -676,7 +676,7 @@ function SystemTab({ status, failed, onRefresh, refreshing }: {
   const refreshCharts = useMutation({
     mutationFn: api.refreshCharts,
     onSuccess: r => {
-      toast.success(r.started ? `Fetching Charts ${r.current_cycle}` : "Charts Already Fetching");
+      done(r.started ? `Fetching Charts ${r.current_cycle}` : "Charts Already Fetching");
       void queryClient.invalidateQueries({ queryKey: ["status"] });
     },
   });

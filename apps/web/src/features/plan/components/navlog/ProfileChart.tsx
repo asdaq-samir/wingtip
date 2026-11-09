@@ -3,7 +3,7 @@ import { Area, ComposedChart, Line, ReferenceArea, ReferenceDot, XAxis, YAxis } 
 import { ChartContainer, type ChartConfig } from "../../../../components/ui/chart";
 import ChartTick from "../../../../components/chartTick";
 import type { RouteProfile } from "../../../../lib/api/types";
-import { altFt } from "../../../../lib/units";
+import { altFt } from "../../../../lib/format";
 import { AIRSPACE, ceilingOverFloor, ceilings, type planProfile } from "./profile";
 
 const config = {

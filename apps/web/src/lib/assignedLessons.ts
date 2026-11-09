@@ -39,7 +39,7 @@ export function lessonStatus(lesson: Pick<ApproachLesson, "status" | "quizAnswer
 
 /** "Due 8 Nov 2026", or "Overdue since 8 Nov 2026" while its quiz is not
  *  all answered past that day; none without a day. `today` the pilot's
- *  own, as lib/clock's localDay writes it. */
+ *  own, as lib/format's localDay writes it. */
 export function dueWords(lesson: Pick<ApproachLesson, "dueOn" | "quizAnswers" | "quizOf">, today: string): string | null {
   if (!lesson.dueOn) return null;
   const score = quizScore(lesson);

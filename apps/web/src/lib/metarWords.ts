@@ -1,5 +1,5 @@
 import type { Metar } from "./api/types";
-import { grouped } from "./units";
+import { grouped, reportedDirection } from "./format";
 
 /**
  * A field's METAR as a briefer says it over the phone (lib/speech), for
@@ -13,7 +13,7 @@ export function metarWords(name: string, m: Metar): string {
   const wind = m.wind_speed_kt;
   if (wind === null || wind === undefined || wind === 0) parts.push("wind calm");
   else {
-    const from = m.wind_dir_true_deg === null || m.wind_dir_true_deg === undefined ? "variable" : String(m.wind_dir_true_deg).padStart(3, "0");
+    const from = m.wind_dir_true_deg === null || m.wind_dir_true_deg === undefined ? "variable" : reportedDirection(m.wind_dir_true_deg);
     parts.push(`wind ${from} at ${wind}${m.wind_gust_kt ? ` gusting ${m.wind_gust_kt}` : ""} knots`);
   }
   if (m.visibility_sm !== null && m.visibility_sm !== undefined) {

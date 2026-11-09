@@ -1,6 +1,6 @@
 import { faaWords, placeWords } from "../advisories";
 import type { AirspaceVolume } from "./overlayTypes";
-import { altFt } from "../units";
+import { altFt } from "../format";
 
 /** The figures of a volume's card (AirspaceCard), as the pilot reads
  *  them: its name, floor, ceiling and hours. */

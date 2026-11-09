@@ -1,0 +1,234 @@
+# The one source for "which checks does a changed path need". Three things
+# read it: scripts/dev/check.sh (all-changed, --areas), scripts/dev/hooks/pre-push
+# (which quick checks to run), and .github/workflows/ci.yml, whose
+# dorny/paths-filter block `python3 scripts/areas.py write` generates from it
+# (CI's "areas" step fails when the committed block is stale). Read through
+# scripts/areas.py, a small parser for exactly this layout: two-space
+# indents, `key: value`, `key:` then a nested block or `- item` lines,
+# full-line comments only.
+#
+# areas: one per check.sh area, in the order check.sh lists and runs them.
+#   ci:     the CI filter name (ci.yml's `changes` job) the area's paths feed;
+#           areas that share a name (py, jobs and engine run in test-root)
+#           have their paths joined there.
+#   check:  what the area runs, as CLAUDE.md's table says (check.sh's run_area
+#           is the code).
+#   paths:  globs: `**` any depth, `*` within one directory (as micromatch,
+#           which paths-filter uses). A path in any of them is in the area.
+# ci_only: CI filters with no local check: what rebuilds an image, and the
+#   run-everything and API-compat ones.
+areas:
+  web:
+    ci: test-web
+    check: npm run types && npx tsc --noEmit && npx eslint . && npx vitest run
+    paths:
+      - apps/web/**
+      - services/planner/openapi.json
+      - services/assistant/openapi.json
+      - services/gateway/openapi.json
+      - engine/contract/**
+      # The phones' models of the API documents, checked there.
+      - scripts/build/api-models-apps.*
+      # The design tokens and every app's generated copy, checked there.
+      - design/**
+      - scripts/build/design-tokens.sh
+      - scripts/build/design_tokens.py
+      - apps/ios/Wingtip/Design/Generated/**
+      - apps/ios/Wingtip/Assets.xcassets/AccentColor.colorset/**
+      - apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/**
+      - apps/ios/Wingtip/API/Generated/**
+      - apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated/**
+  py:
+    ci: test-root
+    check: ruff check wingtip tests_wingtip && pytest tests_wingtip/ (services/planner)
+    paths:
+      - services/planner/wingtip/**
+      - engine/**
+      - scripts/build/build-engine-wasm.sh
+      - apps/web/src/lib/engine/wingtip-engine.wasm
+      - services/planner/tests_wingtip/**
+      - services/planner/requirements*.txt
+      - ml/requirements-*.txt
+      - services/jobs/*/requirements.txt
+      - services/planner/pyproject.toml
+      - services/planner/conftest.py
+      - services/planner/pytest_guards.py
+      # the shared fixtures the engine's rules are tested against
+      - apps/web/src/lib/fixtures/**
+      # test_dockerfiles.py: every image's Dockerfile, the base they are
+      # built FROM, and the compose file that builds it
+      - services/*/Dockerfile
+      - services/jobs/*/Dockerfile
+      - services/Dockerfile.base
+      - ml/Dockerfile.*
+      - docker-compose.yml
+      # test_dev_services_sidecar.py
+      - infra/dev-services/**
+      # test_check_script.py reads the areas
+      - scripts/areas.yml
+      - scripts/areas.py
+      - scripts/dev/check.sh
+  planner:
+    ci: test-planner
+    check: ruff check app tests && pytest tests/ (services/planner)
+    paths:
+      - services/planner/**
+      - engine/**
+  ingest:
+    ci: test-ingest
+    check: the ingest service's ruff and pytest, in Docker
+    paths:
+      # ingest runs wingtip's code (the stores, the traffic package).
+      - services/ingest/**
+      - services/planner/wingtip/**
+      - services/planner/requirements-wingtip.txt
+      - engine/**
+  assistant:
+    ci: test-assistant
+    check: the assistant's ruff and pytest, in Docker
+    paths:
+      - services/assistant/**
+      - .ruff.toml
+      # the assistant's generated planner client and engine-rule tools
+      # come from these (scripts/build/assistant_client.py, --check in its suite)
+      - services/planner/openapi.json
+      - services/planner/app/generated/**
+      - engine/contract/**
+      - scripts/build/assistant*
+  weather:
+    ci: test-weather
+    check: the weather service's ruff and pytest, in Docker
+    paths:
+      # imports wingtip (its store and readers) and the engine
+      - services/weather/**
+      - services/planner/wingtip/**
+      - services/planner/requirements-wingtip.txt
+      - services/planner/pytest_guards.py
+      - engine/**
+  jobs:
+    ci: test-root
+    check: the jobs' ruff and pytest (services/jobs/charts/tests), in Docker
+    paths:
+      - services/jobs/**
+      - services/planner/wingtip/**
+      - services/planner/requirements-wingtip*.txt
+      - services/planner/pytest_guards.py
+      - engine/**
+  engine:
+    ci: test-root
+    check: cargo test --profile ci (ci.yml's line)
+    paths:
+      - engine/**
+      - apps/web/src/lib/fixtures/**
+      - services/planner/tests_wingtip/fixtures/native/**
+  java:
+    ci: test-gateway
+    check: mvn -B test (services/gateway; needs Docker)
+    paths:
+      - services/gateway/**
+      # the routes the proxy forwards, and the answers PlannerClient reads,
+      # are generated from these (UpstreamRoutes)
+      - services/assistant/openapi.json
+      - services/planner/openapi.json
+  ios:
+    ci: ios
+    check: xcodegen, then xcodebuild test on the newest iPhone simulator
+    paths:
+      - apps/ios/**
+      - engine/**
+      - apps/web/src/lib/fixtures/**
+      - apps/web/src/lib/acs.json
+      - services/planner/tests_wingtip/fixtures/native/**
+      - scripts/build/api-models-apps.*
+      - design/**
+      - .github/workflows/native-ios-test.yml
+  android:
+    ci: android
+    check: ./gradlew testDebugUnitTest lintDebug assembleDebug (apps/android)
+    paths:
+      - apps/android/**
+      - engine/**
+      - apps/web/src/lib/fixtures/**
+      - scripts/build/api-models-apps.*
+      - design/**
+      - .github/workflows/native-android-build.yml
+ci_only:
+  # A change here can change what any job does: all of them.
+  global:
+    - .github/workflows/ci.yml
+    - .github/ci-images.hcl
+    - .dockerignore
+    - services/planner/pyproject.toml
+    - .ruff.toml
+    # Every Python suite's conftest and guards, as pyproject.toml is its settings.
+    - services/planner/conftest.py
+    - services/planner/pytest_guards.py
+    - scripts/areas.yml
+    - scripts/areas.py
+  # The APIs the phones call, for api-compat.
+  api:
+    - services/planner/openapi.json
+    - services/assistant/openapi.json
+    - services/gateway/openapi.json
+    - .github/api-breaks.txt
+  # The production stack's own files.
+  infra:
+    - infra/cloudformation/**
+    - infra/server/**
+    - infra/docker-compose.prod.yml
+  # Javadoc and the API reference; each Python suite's job makes its pdoc.
+  docs:
+    - services/gateway/**
+    - services/planner/openapi.json
+    - services/assistant/openapi.json
+    - scripts/build/api-reference.sh
+  # The images, each by what its Dockerfile reads: the base
+  # (services/Dockerfile.base, wingtip's requirements and engine/)
+  # for every one built FROM it.
+  base:
+    - services/Dockerfile.base
+    - services/planner/requirements-wingtip.txt
+    - engine/**
+  ml:
+    - ml/Dockerfile.ml
+    - services/Dockerfile.base
+    - ml/requirements-ml*.txt
+    - services/planner/wingtip/**
+    - engine/**
+  retrain:
+    - services/jobs/retrain/**
+    - services/Dockerfile.base
+    - services/planner/requirements-wingtip.txt
+    - services/planner/wingtip/**
+    - engine/**
+  charts:
+    - services/jobs/charts/**
+    - services/Dockerfile.base
+    - services/planner/requirements-wingtip*.txt
+    - services/planner/wingtip/**
+    - engine/**
+  planner:
+    - services/planner/**
+    - services/Dockerfile.base
+    - engine/**
+  ingest:
+    - services/ingest/**
+    - services/planner/wingtip/**
+  assistant:
+    - services/assistant/**
+    - services/Dockerfile.base
+  weather:
+    - services/weather/**
+    - services/Dockerfile.base
+    - services/planner/wingtip/**
+    - services/planner/requirements-wingtip.txt
+    - engine/**
+  # apps/web/** rather than the files the Dockerfile copies: a file left off
+  # a hand-made list would leave the image stale, and a change the image does
+  # not read (a spec) is a cache hit.
+  gateway:
+    - apps/web/**
+    - services/gateway/**
+    - services/planner/openapi.json
+    - services/assistant/openapi.json
+    - engine/contract/**

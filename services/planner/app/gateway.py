@@ -70,3 +70,8 @@ SHARED = gateway("public", cache=True)
 PUBLIC_READ_BY_POST = gateway("public", csrf=False)
 #: The developer's: the model's training and the stack's own state.
 DEVELOPER = gateway("developer")
+#: Asked by the assistant service alone, on the stack's own network: no
+#: ``x-gateway``, so the gateway never forwards it and no browser or
+#: phone reaches it; ``x-internal`` says who does, for a reader of the
+#: document.
+INTERNAL_ASSISTANT = {"x-internal": "assistant"}

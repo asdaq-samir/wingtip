@@ -238,8 +238,11 @@ rest run every night (docs/CI.md). Tag a test `@smoke` only when it is the
 one that proves a journey end to end.
 On the owner's Mac run only the specs a change touches, and every browser
 run, test suite, image build and measurement through
-`scripts/dev/one-at-a-time.sh "<label>" <command>`: up to two run at once on
-the Mac mini, each waiting while memory is short (three swapped it), and a
+`scripts/dev/one-at-a-time.sh "<label>" <command>`: three run at once on
+the Mac mini while the owner's live stack is down and two while it is up,
+each waiting while free memory is short (the owner: "use the Mac
+effectively", 2026-11-09); `~/.config/wingtip/one-at-a-time` overrides it.
+Never wrap `scripts/dev/check.sh` in it (check.sh takes its own turns). And a
 speed measurement takes `--alone`, the whole machine (the `checks` skill).
 A quick check -- one type check, lint or unit run of a minute or two --
 runs outside it, so it isn't stuck behind long builds.
