@@ -66,10 +66,10 @@ pub fn read(p: &[u8]) -> Option<Uplink> {
         if end > data.len() {
             break;
         }
-        if kind == FISB {
-            if let Some(apdu) = apdu(&data[at + 2..end]) {
-                apdus.push(apdu);
-            }
+        if kind == FISB
+            && let Some(apdu) = apdu(&data[at + 2..end])
+        {
+            apdus.push(apdu);
         }
         at = end;
     }

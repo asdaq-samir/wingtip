@@ -206,7 +206,7 @@ mod tests {
         let mut table = Vec::new();
         let start = HEADER + ENTRY * sections.len();
         for (name, data) in &sections {
-            while (start + body.len()) % 8 != 0 {
+            while !(start + body.len()).is_multiple_of(8) {
                 body.push(0);
             }
             let mut n = [0u8; 16];

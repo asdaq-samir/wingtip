@@ -172,16 +172,14 @@ fn weather_message(f: &Flight, field: &Field, alternate: bool) -> Option<Message
         String::new(),
     );
     m.detail.extend(why);
-    if !alternate {
-        if let Some(p) = fields::alternative(a, &f.fields, &f.candidates, false, &[field.ident.as_str()]) {
-            title.push_str(&format!("; {}", alternative_words(&p)));
-            say.push_str(&format!(" {}.", alternative_words(&p)));
-            m.detail.push(format!("Best alternative: {}", alternative_detail(&p)));
-            if let Some(raw) = &p.field.raw {
-                m.sources.push(format!("METAR {raw}"));
-            }
-            m.alternative = Some(fields::to_value(&p));
+    if !alternate && let Some(p) = fields::alternative(a, &f.fields, &f.candidates, false, &[field.ident.as_str()]) {
+        title.push_str(&format!("; {}", alternative_words(&p)));
+        say.push_str(&format!(" {}.", alternative_words(&p)));
+        m.detail.push(format!("Best alternative: {}", alternative_detail(&p)));
+        if let Some(raw) = &p.field.raw {
+            m.sources.push(format!("METAR {raw}"));
         }
+        m.alternative = Some(fields::to_value(&p));
     }
     if let Some(raw) = &field.raw {
         m.sources.insert(0, format!("METAR {raw}"));

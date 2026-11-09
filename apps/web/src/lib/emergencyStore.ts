@@ -2,8 +2,9 @@ import { create } from "zustand";
 
 /** Where the emergency assistant was opened from: the flying mode's
  *  Emergency, the pilot's own words ("mayday", "engine failure",
- *  "emergency", components/pilotCommand), or the emergency checklists. */
-type EmergencyFrom = "flying" | "voice" | "checklist";
+ *  "emergency", components/pilotCommand), the emergency checklists, or a
+ *  link (`open=emergency`, features/plan/hooks/useOpenScreen). */
+type EmergencyFrom = "flying" | "voice" | "checklist" | "link";
 
 /**
  * Whether the emergency assistant is open, and from where: one place any

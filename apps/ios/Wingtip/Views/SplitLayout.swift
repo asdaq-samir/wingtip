@@ -62,9 +62,27 @@ extension EnvironmentValues {
     @Entry var splitLayout = false
     /// Opens a card in the inspector; nil on the iPhone, where it is
     /// pushed in the tab.
-    @Entry var openCard: ((SideCard) -> Void)? = nil
+    var openCard: (@MainActor (SideCard) -> Void)? {
+        get { self[OpenCardKey.self] }
+        set { self[OpenCardKey.self] = newValue }
+    }
     /// Closes the inspector's card; nil on the iPhone.
-    @Entry var closeCard: (() -> Void)? = nil
+    var closeCard: (@MainActor () -> Void)? {
+        get { self[CloseCardKey.self] }
+        set { self[CloseCardKey.self] = newValue }
+    }
+}
+
+// Keys of their own rather than @Entry, whose macro warns of any closure
+// it stores (one cannot be compared, so a new one invalidates its
+// readers): the iPad's layout sets these, read by a link and a close
+// button, as OneField's openStripScreen is, and they behave as before.
+private struct OpenCardKey: EnvironmentKey {
+    static let defaultValue: (@MainActor (SideCard) -> Void)? = nil
+}
+
+private struct CloseCardKey: EnvironmentKey {
+    static let defaultValue: (@MainActor () -> Void)? = nil
 }
 
 /// A link to a second-level card: pushed in its tab on the iPhone, opened

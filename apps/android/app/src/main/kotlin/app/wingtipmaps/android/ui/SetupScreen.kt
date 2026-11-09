@@ -25,6 +25,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,6 +58,8 @@ import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.logbook.LogbookScreen
 import app.wingtipmaps.android.map.MapLayersStore
+import app.wingtipmaps.android.navigation.ScreenRequests
+import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.offline.DownloadsScreen
 import app.wingtipmaps.android.pilot.MinimumsRows
 import app.wingtipmaps.android.receiver.ReceiverSettingRows
@@ -84,6 +87,19 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
     var logbook by rememberSaveable { mutableStateOf(false) }
     var about by rememberSaveable { mutableStateOf(false) }
     var downloads by rememberSaveable { mutableStateOf(false) }
+    // A page of Setup's asked for by its name (OpenScreen): the Coach is
+    // the Logbook's, which takes it once open.
+    val wanted by ScreenRequests.wanted.collectAsStateWithLifecycle()
+    LaunchedEffect(wanted) {
+        if (wanted == Screen.COACH) logbook = true
+        when (ScreenRequests.take(setOf(Screen.LOGBOOK, Screen.DOWNLOADS, Screen.PASSENGERS, Screen.ABOUT))) {
+            Screen.LOGBOOK -> logbook = true
+            Screen.DOWNLOADS -> downloads = true
+            Screen.PASSENGERS -> briefing = true
+            Screen.ABOUT -> about = true
+            else -> {}
+        }
+    }
     val pilot by session.pilot.collectAsStateWithLifecycle()
     val loaded by session.loaded.collectAsStateWithLifecycle()
     val problem by session.problem.collectAsStateWithLifecycle()

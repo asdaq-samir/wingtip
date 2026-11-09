@@ -15,7 +15,7 @@ struct FPLView: View {
 
     enum Field { case dep, dest, altitude }
     /// FPL's own pages.
-    enum Page: String { case profile, brief, navLog = "navlog", flights, airplane }
+    enum Page: String { case profile, brief, navLog = "navlog", flights, airplane, passengers }
     @State private var altitude = ""
     /// The fields' widths follow the type size, so an ident still fits at
     /// the larger sizes.
@@ -173,6 +173,7 @@ struct FPLView: View {
                     case .flights: FlightsView()
                     case .navLog: NavLogPage()
                     case .airplane: AircraftView()
+                    case .passengers: PassengerBriefingView(flight: PassengerBriefingModel.flight(idents: plan.idents))
                     case nil: FlightPage(name: page)
                     }
                 }
@@ -183,6 +184,14 @@ struct FPLView: View {
             }
             // The Brief asked for by Siri (BriefFlightIntent): its page.
             .onChange(of: BriefAsk.shared.wanted, initial: true) { _, now in if now, BriefAsk.shared.take() { open(.brief) } }
+            // A screen of FPL's asked for by its name (a link, the strip's
+            // distance; RootView.openScreen): its page, on top of FPL.
+            .onChange(of: ScreenAsk.shared.wanted, initial: true) { _, _ in
+                if let screen = ScreenAsk.shared.take([.brief, .navlog, .profile, .flights, .passengers]), let page = Page(rawValue: screen.rawValue) {
+                    path = NavigationPath()
+                    open(page)
+                }
+            }
         }
     }
 

@@ -80,10 +80,10 @@ fn nearest(places: &[Place], needs: Needs) -> Option<(&Place, Option<String>)> {
         Needs::Lighted => p.lighted,
         Needs::Approach | Needs::Glidepath => !p.approaches.is_empty(),
     };
-    if let Needs::Glidepath = needs {
-        if let Some(p) = places.iter().find(|p| p.approaches.iter().any(|a| a.1)) {
-            return Some((p, p.approaches.iter().find(|a| a.1).map(|a| a.0.clone())));
-        }
+    if let Needs::Glidepath = needs
+        && let Some(p) = places.iter().find(|p| p.approaches.iter().any(|a| a.1))
+    {
+        return Some((p, p.approaches.iter().find(|a| a.1).map(|a| a.0.clone())));
     }
     let p = places.iter().find(first)?;
     let approach = match needs {

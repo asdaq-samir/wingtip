@@ -39,12 +39,17 @@ import app.wingtipmaps.android.design.SharedAxisContent
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.emergency.EmergencyHost
+import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.logbook.AutoLogbookHost
 import app.wingtipmaps.android.map.MapPick
+import app.wingtipmaps.android.navigation.ScreenRequests
+import app.wingtipmaps.android.navigation.generated.Screen
+import app.wingtipmaps.android.ready.ReadyToFlyHost
 import app.wingtipmaps.android.route.RouteLegHost
 import app.wingtipmaps.android.route.RouteLegModel
 import app.wingtipmaps.android.strip.StripLayout
+import app.wingtipmaps.android.strip.StripModel
 import app.wingtipmaps.android.ui.sheet.DockedSheet
 import app.wingtipmaps.android.ui.sheet.SheetStop
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
@@ -105,10 +110,35 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             is Links.Route -> {
                 plan.plan(opened.dep, opened.dest, opened.stops)
                 tab = Tabs.FPL.ordinal
+                opened.then?.let(ScreenRequests::ask)
             }
+            is Links.Open -> ScreenRequests.ask(opened.screen)
             is Links.SignIn -> {}
         }
         onHandled()
+    }
+
+    // A screen asked for by its name -- a link, a figure tapped -- on its
+    // tab, or over the map; a tab's own page left for that tab (OpenScreen).
+    val strip: StripModel = viewModel()
+    var briefOpen by rememberSaveable { mutableStateOf(false) }
+    val wanted by ScreenRequests.wanted.collectAsStateWithLifecycle()
+    LaunchedEffect(wanted, layout) {
+        val screen = wanted ?: return@LaunchedEffect
+        if (layout == LayoutPreference.STRIP) {
+            OpenScreen.overOf(screen)?.let(strip::open)
+        } else {
+            OpenScreen.tabOf(screen)?.let { tab = it.ordinal }
+        }
+        if (screen in OpenScreen.pages) return@LaunchedEffect
+        ScreenRequests.take(setOf(screen))
+        when (screen) {
+            Screen.BRIEF -> briefOpen = true
+            Screen.ASK -> asking = true
+            Screen.NEAREST -> nearestOpen = true
+            Screen.EMERGENCY -> EmergencyOpen.open(EmergencyOpen.From.LINK)
+            else -> if (sheet.stop == SheetStop.PILL) sheet.moveTo(SheetStop.HALF)
+        }
     }
 
     // A tapped field opens in the Airport tab, the sheet raised a stop to
@@ -196,11 +226,26 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             onClose = { nearestOpen = false },
         )
     }
+    // The Brief by its name, in the tabs as the strip has it (BriefSheet).
+    if (briefOpen) {
+        val brief: BriefModel = viewModel()
+        val planState by plan.state.collectAsStateWithLifecycle()
+        val pilot by session.pilot.collectAsStateWithLifecycle()
+        LaunchedEffect(planState.totals, planState.planning) { brief.brief(planState) }
+        BriefSheet(brief, planState, signedIn = pilot != null, onClose = { briefOpen = false })
+    }
     picked?.let { pick -> MapCardSheet(pick, plan, onClose = { picked = null }) }
     RouteLegHost(plan, ownShipOn = ownShip.on, model = legs)
     EmergencyHost(plan, ownShip)
     // An airplane's profile, over whatever it was opened from.
     AirplaneProfileHost(plan, session)
+    // Ready to fly once a flight, as own ship comes on on the ground with
+    // something to fix; a route is typed in FPL (the strip's field has no
+    // tab to open, its Plan the Route is plain text there).
+    ReadyToFlyHost(
+        plan, ownShipOn = ownShip.on, underway = inFlight.underway,
+        onSetRoute = if (layout == LayoutPreference.STRIP) null else ({ tab = Tabs.FPL.ordinal }),
+    )
     // A flight recorded and ended, offered for the logbook.
     AutoLogbookHost(plan, session)
     // The welcome, once per install: at its end the sheet comes up a stop

@@ -4,7 +4,10 @@ import UIKit
 /// The planner's pictures kept for the session, so a card opened again,
 /// or the full-screen view of a thumbnail, does not ask a second time.
 enum PictureCache {
-    private static let kept = NSCache<NSString, UIImage>()
+    // NSCache is thread-safe (Apple's documentation: its objects may be
+    // added, removed and read from any thread without locking), and
+    // UIImage is immutable, so one shared cache read from any task is safe.
+    private nonisolated(unsafe) static let kept = NSCache<NSString, UIImage>()
 
     static func image(_ path: String) async throws -> UIImage {
         if let image = kept.object(forKey: path as NSString) { return image }

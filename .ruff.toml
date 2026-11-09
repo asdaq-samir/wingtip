@@ -5,12 +5,25 @@
 # from each file for the nearest settings.
 line-length = 140
 extend-exclude = ["*.ipynb"]
+# The pyupgrade rules below rewrite what Python 3.13 has replaced. The
+# images and CI run 3.15 (services/Dockerfile.base), but at 3.14 or later
+# the formatter writes `except A, B:` (PEP 758) for `except (A, B):`, which
+# reflows 42 files for no reader's gain, and the scripts the Mac runs with
+# its own older python3 (scripts/areas.py, scripts/ci) would not parse.
+target-version = "py313"
 
 [lint]
-# Default (E/F: pyflakes + pycodestyle errors) is enough for CI to catch
-# real bugs (unused imports, undefined names, syntax issues) without also
-# relitigating this codebase's existing style choices on day one of CI.
-select = ["E", "F"]
+# E/F (pyflakes and pycodestyle's errors) catch real bugs: unused imports,
+# undefined names, syntax issues. W adds pycodestyle's warnings, and UP
+# (pyupgrade) the spellings a newer Python deprecates or makes needless:
+# typing's aliases of collections.abc, lru_cache(maxsize=None). No warning is
+# let stand (the owner, 2026-11-09).
+select = ["E", "F", "W", "UP"]
+# Two of pyupgrade's rewrites are style, not deprecation, and would churn
+# some 250 lines in files other branches are editing: timezone.utc for
+# datetime.UTC (UP017; both are current) and %-formatting for f-strings
+# (UP031).
+ignore = ["UP017", "UP031"]
 
 [format]
 # `ruff format` (scripts/dev/format.sh python, the version it pins) over

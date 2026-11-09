@@ -75,10 +75,10 @@ pub fn way(
     let weight: Vec<f64> = (0..n)
         .map(|i| {
             let mut w = 1.0 + grid.dear[i] + if grid.marginal[i] >= 0 { marginal_cost } else { 0.0 } + water_cost * grid.offshore[i];
-            if let Some(cc) = closed_cost {
-                if grid.closed[i] >= 0 {
-                    w += cc;
-                }
+            if let Some(cc) = closed_cost
+                && grid.closed[i] >= 0
+            {
+                w += cc;
             }
             w
         })

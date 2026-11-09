@@ -4,6 +4,8 @@ import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.generated.DepartureWindow
 import app.wingtipmaps.android.api.generated.DepartureWindowAsk
 import app.wingtipmaps.android.api.generated.IcingForecast
+import app.wingtipmaps.android.api.generated.NotamsRanked
+import app.wingtipmaps.android.api.generated.NotamsRankedAsk
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 
@@ -25,3 +27,9 @@ suspend fun Planner.icingRoute(fixes: String, altFt: String, legMin: String, gro
  *  departure_window over the planner's briefing of each. */
 suspend fun Planner.departureWindow(ask: DepartureWindowAsk): DepartureWindow =
     Gateway.json.decodeFromString(Gateway.send("POST", Config.plannerPath("/api/departure-window"), Gateway.json.encodeToString(ask)))
+
+/** The flight's NOTAMs and TFRs, those that bear on it first (POST
+ *  /api/notams/ranked, the engine's notams_ranked over the FAA's feed):
+ *  Ready to fly's Get NOTAMs, the ranking the engine's. */
+suspend fun Planner.notamsRanked(ask: NotamsRankedAsk): NotamsRanked =
+    Gateway.json.decodeFromString(Gateway.send("POST", Config.plannerPath("/api/notams/ranked"), Gateway.json.encodeToString(ask)))

@@ -23,6 +23,7 @@ extension RootView {
     /// field's card.
     func apply(_ command: PendingCommand.Command?) async {
         guard let command else { return }
+        defer { if let next = PendingCommand.shared.takeThen() { openScreen(next) } }
         switch command {
         case .planTo(let ident):
             await route(to: ident)
@@ -70,6 +71,8 @@ extension RootView {
             // The airplane's card, tracked from its next report on.
             Tracking.shared.track(hex)
             FlightUI.shared.card = .airplane(hex)
+        case .open(let screen):
+            openScreen(screen)
         case .track(let url):
             // A GPX or KML file handed over from Files or Mail: its track
             // flown again on the map (Replay), at the replay's pace, as a

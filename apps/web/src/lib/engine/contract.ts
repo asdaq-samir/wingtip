@@ -2618,6 +2618,13 @@ export interface EngineContract {
     answer: ReadbackCheckAnswer;
   };
   /**
+   * Ready to fly: whether the device holds what the flight needs before it loses the signal -- the route's charts kept and of the 56-day edition in force, the cycle packs of the AIRAC cycle in force (FAA 28 and 56 Day Product Schedule; 14 CFR 91.103), a weather briefing under an hour old (the app's choice, at AIM 7-1-28's hourly METAR), each field's METAR in force and its TAF, the route's NOTAMs under an hour old (91.103, AIM 5-1-3; the age the app's choice), the plan's route, airplane and altitude (none assumed), the plan saved, location allowed, the battery at half or charging (the app's choice) and an ADS-B receiver where the pilot uses one. A caution at worst, never a stop; one line and at most three actions, the most pressing first.
+   */
+  ready_to_fly: {
+    input: ReadyToFlyInput;
+    answer: ReadyToFlyAnswer;
+  };
+  /**
    * FIS-B NEXRAD to draw (products 63 and 64, AIM 4-5-9): for each level 1 to 7, rectangles [south, west, north, east], the regional product's where sent and the CONUS product's elsewhere, with the newest block's time. Not for avoiding weather close in.
    */
   receiver_nexrad: {
@@ -8680,6 +8687,123 @@ export interface ReadbackCheckAnswer {
     required: boolean;
   }[];
   words: string;
+}
+export interface ReadyToFlyInput {
+  /**
+   * Unix seconds, UTC: the engine has no clock.
+   */
+  now: number;
+  /**
+   * The flight plan: a route, the airplane's name and the cruise altitude, null where not set.
+   */
+  plan?: {
+    route?: boolean;
+    airplane?: string | null;
+    altitude_ft?: number | null;
+  };
+  /**
+   * The route's offline chart tiles: kept or not, the kept edition's effective date (YYYY-MM-DD) and the download's size. Null leaves the item out.
+   */
+  charts?: {
+    kept?: boolean;
+    /**
+     * False where the platform cannot keep tiles (a browser with no service worker).
+     */
+    can_keep?: boolean;
+    edition?: string | null;
+    download_mb?: number | null;
+  } | null;
+  /**
+   * The cycle packs (airports, airspace, procedures): the AIRAC edition held (YYYY-MM-DD), null where none is. Null leaves the item out.
+   */
+  packs?: {
+    edition?: string | null;
+    can_update?: boolean;
+  } | null;
+  briefing?: {
+    fetched_at?: number | null;
+  } | null;
+  /**
+   * The departure, destination and alternate: each METAR's observed time (Unix seconds) and whether a TAF is in.
+   */
+  fields?: {
+    ident: string;
+    role?: "departure" | "destination" | "alternate";
+    metar_observed?: number | null;
+    taf?: boolean;
+  }[];
+  notams?: {
+    fetched_at?: number | null;
+  } | null;
+  /**
+   * What the platform tells: a member null or missing leaves its item out.
+   */
+  device?: {
+    battery_pct?: number | null;
+    charging?: boolean | null;
+    location?: "granted" | "denied" | "prompt" | null;
+    plan_saved?: boolean | null;
+  } | null;
+  receiver?: {
+    used?: boolean;
+    connected?: boolean;
+  } | null;
+}
+export interface ReadyToFlyAnswer {
+  ready: boolean;
+  finding: "ok" | "caution";
+  line: string;
+  /**
+   * @maxItems 3
+   */
+  actions: [] | [ReadyItem] | [ReadyItem, ReadyItem] | [ReadyItem, ReadyItem, ReadyItem];
+  items: ReadyItem[];
+  /**
+   * YYYY-MM-DD: the next AIRAC cycle's first day.
+   */
+  next_cycle: string;
+  next_cycle_ident: string;
+  briefing_age_min: number | null;
+}
+/**
+ * One thing ready_to_fly checked: whether it is fine, a line to act on and the fix done in place.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ReadyItem".
+ */
+export interface ReadyItem {
+  /**
+   * route, airplane, altitude, charts, packs, briefing, fields, notams, saved, location, battery or receiver.
+   */
+  key: string;
+  /**
+   * Never a stop: warn, never limit.
+   */
+  finding: "ok" | "caution";
+  /**
+   * One line a pilot acts on.
+   */
+  line: string;
+  detail: string;
+  /**
+   * Where its limit comes from: the FAA schedule, the CFR section, the AIM paragraph, or the app's choice.
+   */
+  source: string;
+  /**
+   * What the app does in place for it; null where nothing on the device fixes it.
+   */
+  fix:
+    | "set_route"
+    | "pick_airplane"
+    | "set_altitude"
+    | "download_charts"
+    | "update_packs"
+    | "refresh_weather"
+    | "fetch_notams"
+    | "save_plan"
+    | "allow_location"
+    | "connect_receiver"
+    | null;
 }
 export interface ReceiverNexradInput {
   /**

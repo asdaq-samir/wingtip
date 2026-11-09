@@ -202,15 +202,15 @@ pub fn read(text: &str) -> Vec<Item> {
             if let Some(inhg) = n.and_then(altimeter_of) {
                 said.push((i, Item::Altimeter { inhg }));
             }
-        } else if let Some(kind) = approach_kind(w) {
-            if let Some((item, used, runway_k)) = approach_at(&toks, i, kind) {
-                if let Some(k) = runway_k {
-                    used_runway_at.push(k);
-                }
-                said.push((approach_start(&toks, i), item));
-                i += used;
-                continue;
+        } else if let Some(kind) = approach_kind(w)
+            && let Some((item, used, runway_k)) = approach_at(&toks, i, kind)
+        {
+            if let Some(k) = runway_k {
+                used_runway_at.push(k);
             }
+            said.push((approach_start(&toks, i), item));
+            i += used;
+            continue;
         }
         i += 1;
     }

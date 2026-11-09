@@ -55,6 +55,8 @@ final class Plan {
     /// same route (a new altitude, a procedure) does not ask again.
     private var routesAskedFor: String?
     private(set) var briefingProblem: String?
+    /// When the briefing on the page was fetched, for ready_to_fly's age.
+    private(set) var briefedAt: Date?
     /// The legs a hazard tapped in the Brief is on, shown on the map
     /// (BriefLegs.swift); nil when none is.
     var hazardLegs: HazardLegs?
@@ -96,7 +98,7 @@ final class Plan {
         guard routed, course != nil, totals != nil else { return }
         Kept(dep: dep, dest: dest, stops: stops, aircraft: aircraft, tail: tail, ownAltitudeFt: ownAltitudeFt, altitudeChoice: altitudeChoice,
              course: course, checkpoints: checkpoints, profile: profile, altitude: altitude, legs: legs, totals: totals,
-             briefing: briefing, plannedAt: plannedAt ?? Date()).save()
+             briefing: briefing, briefedAt: briefedAt, plannedAt: plannedAt ?? Date()).save()
         PlanHistory.planned(routeState, at: plannedAt ?? Date())
     }
 
@@ -111,7 +113,7 @@ final class Plan {
         figures = OwnFigureStore.load(OwnFigureStore.name(tail: tail, aircraft: aircraft))
         ownAltitudeFt = kept.ownAltitudeFt; altitudeChoice = kept.altitudeChoice
         course = kept.course; checkpoints = kept.checkpoints; profile = kept.profile; altitude = kept.altitude
-        legs = kept.legs; totals = kept.totals; altitudeFt = kept.altitude?.altitudeFt; briefing = kept.briefing
+        legs = kept.legs; totals = kept.totals; altitudeFt = kept.altitude?.altitudeFt; briefing = kept.briefing; briefedAt = kept.briefedAt
         plannedAt = kept.plannedAt
         remembering = false
         plan()
@@ -136,7 +138,7 @@ final class Plan {
     /// What the planner said of the route, gone with it.
     private func forgetPlanned() {
         running?.cancel()
-        course = nil; checkpoints = []; profile = nil; altitude = nil; briefing = nil; briefingProblem = nil; hazardLegs = nil
+        course = nil; checkpoints = []; profile = nil; altitude = nil; briefing = nil; briefedAt = nil; briefingProblem = nil; hazardLegs = nil
         legs = []; totals = nil; altitudeFt = nil; stage = nil; problem = nil; planning = false; plannedAt = nil
         Kept.forget()
     }
@@ -286,6 +288,7 @@ final class Plan {
         let legs = BriefLegs.query(course: course, checkpoints: checkpoints, legs: self.legs)
         do {
             briefing = try await Planner.briefing(dep: dep, dest: dest, stops: stops, eteMin: eteMin, legs: legs)
+            briefedAt = Date()
             briefingProblem = nil
             keep()
         } catch {

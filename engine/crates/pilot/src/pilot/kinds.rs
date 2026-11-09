@@ -222,7 +222,7 @@ pub fn fill(
         }
     }
     let value = |key: &str| fields.iter().find(|(k, _)| *k == key).map(|(_, v)| v.clone());
-    let missing = kind.fields.iter().filter(|f| f.required && value(f.key).map_or(true, |v| v.is_empty())).map(|f| f.label).collect();
+    let missing = kind.fields.iter().filter(|f| f.required && value(f.key).is_none_or(|v| v.is_empty())).map(|f| f.label).collect();
     let text = render(kind.template, student, &value);
     (fields, missing, text)
 }

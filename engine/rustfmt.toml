@@ -10,3 +10,7 @@ max_width = 140
 use_small_heuristics = "Max"
 fn_params_layout = "Compressed"
 short_array_element_width_threshold = 80
+# The crates moved to edition 2024 (2026-11-09), but rustfmt keeps the 2021
+# style: 2024's sorts every `use` list anew (version sorting), 248 hunks
+# across files other branches are editing, for no change a reader needs.
+style_edition = "2021"

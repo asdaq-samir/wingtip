@@ -124,7 +124,7 @@ enum Planner {
     /// An answer streamed a line at a time (newline-delimited JSON: the
     /// nav log, the checkpoints' notes), each line read by `decode`; nil
     /// skips a line.
-    static func lines<T>(_ make: @escaping () async throws -> URLRequest, _ decode: @escaping (Data) throws -> T?) -> AsyncThrowingStream<T, any Error> {
+    static func lines<T: Sendable>(_ make: @escaping @Sendable () async throws -> URLRequest, _ decode: @escaping @Sendable (Data) throws -> T?) -> AsyncThrowingStream<T, any Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {

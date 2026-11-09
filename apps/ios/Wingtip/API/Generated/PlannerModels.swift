@@ -2652,7 +2652,7 @@ struct APINavLogAltitude: Codable, Equatable, Sendable {
 /// fields rather than guessing at a dict. The three figures after the
 /// name are required when a stock profile is loaded (REQUIRED_FIELDS in
 /// wingtip.aircraft); a pilot's own airplane of no stock type ("own",
-/// wingtip.planning.OWN_AIRPLANE) has its record's alone, and no service
+/// wingtip.aircraft.OWN_AIRPLANE) has its record's alone, and no service
 /// ceiling where the record gives none. A figure left out is missing,
 /// and each rule that needs it says so. `extra="allow"` keeps a field a
 /// newer profile adds on its way through.

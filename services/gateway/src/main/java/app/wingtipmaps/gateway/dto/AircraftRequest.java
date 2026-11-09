@@ -69,8 +69,9 @@ public record AircraftRequest(
         @Size(max = 40, message = "colour must be at most 40 characters") @Nullable
         String colour,
 
-        @Schema(description = "Its own handbook figures, all at once (null in it clears one); left out, they stay as "
-                + "they were")
+        @Schema(
+                description = "Its own handbook figures, all at once (null in it clears one); left out, they stay as "
+                        + "they were")
         @Valid
         @Nullable
         OwnFigures figures) {}

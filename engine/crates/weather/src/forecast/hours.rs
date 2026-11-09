@@ -101,11 +101,10 @@ fn hour_at(t: &Taf, at: i64) -> Option<Hour> {
     if at < t.valid_from || at >= t.valid_to {
         return None;
     }
-    let prevailing = t.periods.iter().filter(|p| prevails(p) && p.from <= at && at < p.to).last()?;
+    let prevailing = t.periods.iter().rfind(|p| prevails(p) && p.from <= at && at < p.to)?;
     let mut figs = figures(prevailing, None);
     let becoming = prevailing.change == "BECMG" && prevailing.by.is_some_and(|by| at < by);
-    let before =
-        becoming.then(|| t.periods.iter().filter(|p| prevails(p) && p.from < prevailing.from).last()).flatten().map(|p| figures(p, None));
+    let before = becoming.then(|| t.periods.iter().rfind(|p| prevails(p) && p.from < prevailing.from)).flatten().map(|p| figures(p, None));
     let supplemental: Vec<Group> = t
         .periods
         .iter()
@@ -113,11 +112,11 @@ fn hour_at(t: &Taf, at: i64) -> Option<Hour> {
         .map(|p| Group { figures: held(&figures(p, Some(prevailing))), chance: p.probability.is_some() })
         .collect();
     let read = hour(&held(&figs), becoming, before.as_ref().map(held).as_ref(), &supplemental);
-    if read.before_worse {
-        if let Some(was) = before {
-            // The weather before, with the new group's wind.
-            figs = Hour { wind: figs.wind, ..was };
-        }
+    if read.before_worse
+        && let Some(was) = before
+    {
+        // The weather before, with the new group's wind.
+        figs = Hour { wind: figs.wind, ..was };
     }
     Some(Hour {
         at_ms: at as f64 * 1000.0,
@@ -136,7 +135,7 @@ fn now_of(m: &Value, now_ms: f64) -> Hour {
     let read = m
         .get("raw")
         .and_then(Value::as_str)
-        .and_then(|raw| metar::parse(&raw.split_whitespace().collect::<Vec<_>>().join(" ").trim_end_matches('=')));
+        .and_then(|raw| metar::parse(raw.split_whitespace().collect::<Vec<_>>().join(" ").trim_end_matches('=')));
     let (sky, precip) = match &read {
         Some(r) => (Some(sky_of(&r.layers)), precip_of(&r.weather)),
         None => (num("ceiling_ft").map(|_| "cloudy"), None),

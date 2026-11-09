@@ -23,6 +23,8 @@ struct Kept: Codable, Equatable, Sendable {
     var legs: [Leg] = []
     var totals: Totals?
     var briefing: Briefing?
+    /// When the briefing was fetched; none in a plan kept before it was.
+    var briefedAt: Date?
     var plannedAt: Date
 
     static let file = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]

@@ -49,17 +49,18 @@ public class AircraftService {
             String surveillance,
             String colour,
             OwnFigures figures) {
-        return aircraft.save(keep(new Aircraft(
-                        pilot,
-                        tailNumber,
-                        typeDesignator,
-                        cruiseTasKt,
-                        fuelBurnGph,
-                        cruisePowerPct,
-                        climbTasKt,
-                        climbFuelBurnGph,
-                        usableFuelGal)
-                .describeForFlightPlan(Typed.code(equipment), Typed.code(surveillance), Typed.words(colour)),
+        return aircraft.save(keep(
+                new Aircraft(
+                                pilot,
+                                tailNumber,
+                                typeDesignator,
+                                cruiseTasKt,
+                                fuelBurnGph,
+                                cruisePowerPct,
+                                climbTasKt,
+                                climbFuelBurnGph,
+                                usableFuelGal)
+                        .describeForFlightPlan(Typed.code(equipment), Typed.code(surveillance), Typed.words(colour)),
                 figures));
     }
 
@@ -82,16 +83,18 @@ public class AircraftService {
             String colour,
             OwnFigures figures) {
         return get(pilot, id)
-                .map(a -> aircraft.save(keep(a.update(
-                                tailNumber,
-                                typeDesignator,
-                                cruiseTasKt,
-                                fuelBurnGph,
-                                cruisePowerPct,
-                                climbTasKt,
-                                climbFuelBurnGph,
-                                usableFuelGal)
-                        .describeForFlightPlan(Typed.code(equipment), Typed.code(surveillance), Typed.words(colour)),
+                .map(a -> aircraft.save(keep(
+                        a.update(
+                                        tailNumber,
+                                        typeDesignator,
+                                        cruiseTasKt,
+                                        fuelBurnGph,
+                                        cruisePowerPct,
+                                        climbTasKt,
+                                        climbFuelBurnGph,
+                                        usableFuelGal)
+                                .describeForFlightPlan(
+                                        Typed.code(equipment), Typed.code(surveillance), Typed.words(colour)),
                         figures)));
     }
 

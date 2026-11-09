@@ -45,7 +45,7 @@ def test_the_image_is_built_from_the_base(path):
     # binaries are copied on; the image itself is the last FROM.
     stages = froms((ROOT / path).read_text())
     assert stages[-1] == "wingtip-base"
-    assert all(f.startswith("python:3.14-slim@sha256:") for f in stages[:-1])
+    assert all(f.startswith("python:3.15-slim@sha256:") for f in stages[:-1])
 
 
 @pytest.mark.parametrize("path", IMAGES)
@@ -57,7 +57,7 @@ def test_the_image_does_not_build_the_engine_again(path):
 def test_the_base_installs_the_requirements_and_the_wheel():
     text = (ROOT / BASE).read_text()
     assert len(froms(text)) == 2
-    assert all(f.startswith("python:3.14-slim@sha256:") for f in froms(text))
+    assert all(f.startswith("python:3.15-slim@sha256:") for f in froms(text))
     assert "maturin build" in text
     assert "pip install -r /tmp/wingtip-requirements.txt" in text
     assert "--mount=type=bind,from=native,source=/wheels,target=/tmp/wheels" in text

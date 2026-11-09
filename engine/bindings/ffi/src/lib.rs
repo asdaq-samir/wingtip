@@ -9,10 +9,12 @@ use wingtip_engine::{ahead, clearance::Route, pack::Pack, pack_query, spoken, vi
 /// SAFETY: the caller passes `len` readable bytes at `ptr` (or a null
 /// pointer and 0), alive for the call.
 unsafe fn bytes<'a>(ptr: *const u8, len: usize) -> &'a [u8] {
-    if ptr.is_null() || len == 0 {
-        &[]
-    } else {
-        std::slice::from_raw_parts(ptr, len)
+    unsafe {
+        if ptr.is_null() || len == 0 {
+            &[]
+        } else {
+            std::slice::from_raw_parts(ptr, len)
+        }
     }
 }
 
@@ -26,15 +28,17 @@ fn give(s: String) -> *mut c_char {
 /// SAFETY: `ptrs` and `lens` are null or hold `count` entries, each
 /// readable for its length, alive for the call.
 unsafe fn packs<'a>(ptrs: *const *const u8, lens: *const usize, count: usize) -> Vec<Pack<'a>> {
-    let mut out = Vec::new();
-    if !ptrs.is_null() && !lens.is_null() {
-        for i in 0..count {
-            if let Ok(p) = Pack::read(bytes(*ptrs.add(i), *lens.add(i))) {
-                out.push(p);
+    unsafe {
+        let mut out = Vec::new();
+        if !ptrs.is_null() && !lens.is_null() {
+            for i in 0..count {
+                if let Ok(p) = Pack::read(bytes(*ptrs.add(i), *lens.add(i))) {
+                    out.push(p);
+                }
             }
         }
+        out
     }
-    out
 }
 
 /// The planner's AirspaceAt for the point as JSON, from a phone's pack:
@@ -45,28 +49,32 @@ unsafe fn packs<'a>(ptrs: *const *const u8, lens: *const usize, count: usize) ->
 ///
 /// # Safety
 /// `ptr` and `len` as for every function here.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn wt_airspace_at(ptr: *const u8, len: usize, lat: f64, lon: f64, ground_ft: f64) -> *mut c_char {
-    let ground = if ground_ft.is_finite() { Some(ground_ft) } else { None };
-    let data = bytes(ptr, len);
-    let answer = if data.is_empty() {
-        pack_query::airspace_at(None, lat, lon, ground)
-    } else {
-        let Ok(pack) = Pack::read(data) else { return std::ptr::null_mut() };
-        pack_query::airspace_at(Some(&pack), lat, lon, ground)
-    };
-    answer.map(give).unwrap_or(std::ptr::null_mut())
+    unsafe {
+        let ground = if ground_ft.is_finite() { Some(ground_ft) } else { None };
+        let data = bytes(ptr, len);
+        let answer = if data.is_empty() {
+            pack_query::airspace_at(None, lat, lon, ground)
+        } else {
+            let Ok(pack) = Pack::read(data) else { return std::ptr::null_mut() };
+            pack_query::airspace_at(Some(&pack), lat, lon, ground)
+        };
+        answer.map(give).unwrap_or(std::ptr::null_mut())
+    }
 }
 
 /// 1 where every byte is as written, 0 where not, -1 where it is no pack.
 ///
 /// # Safety
 /// As above.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn wt_pack_verify(ptr: *const u8, len: usize) -> i32 {
-    match Pack::read(bytes(ptr, len)) {
-        Ok(pack) => pack.verify() as i32,
-        Err(_) => -1,
+    unsafe {
+        match Pack::read(bytes(ptr, len)) {
+            Ok(pack) => pack.verify() as i32,
+            Err(_) => -1,
+        }
     }
 }
 
@@ -74,11 +82,13 @@ pub unsafe extern "C" fn wt_pack_verify(ptr: *const u8, len: usize) -> i32 {
 ///
 /// # Safety
 /// As above.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn wt_pack_cycle(ptr: *const u8, len: usize) -> *mut c_char {
-    match Pack::read(bytes(ptr, len)) {
-        Ok(pack) => give(pack.cycle),
-        Err(_) => std::ptr::null_mut(),
+    unsafe {
+        match Pack::read(bytes(ptr, len)) {
+            Ok(pack) => give(pack.cycle),
+            Err(_) => std::ptr::null_mut(),
+        }
     }
 }
 
@@ -86,10 +96,12 @@ pub unsafe extern "C" fn wt_pack_cycle(ptr: *const u8, len: usize) -> *mut c_cha
 ///
 /// SAFETY: `s` is null or a NUL-terminated string alive for the call.
 unsafe fn text<'a>(s: *const c_char) -> Option<&'a str> {
-    if s.is_null() {
-        None
-    } else {
-        CStr::from_ptr(s).to_str().ok()
+    unsafe {
+        if s.is_null() {
+            None
+        } else {
+            CStr::from_ptr(s).to_str().ok()
+        }
     }
 }
 
@@ -106,41 +118,45 @@ unsafe fn text<'a>(s: *const c_char) -> Option<&'a str> {
 /// The strings are null or NUL-terminated; `packs` and `lens` hold
 /// `count` entries, each pack readable for its length; `near_lat` and
 /// `near_lon` hold `near_count` each. All alive for the call.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn wt_clearance_hear(
     heard: *const c_char, tail: *const c_char, packs: *const *const u8, lens: *const usize, count: usize, near_lat: *const f64,
     near_lon: *const f64, near_count: usize, dep: *const c_char, stops: *const c_char, dest: *const c_char,
 ) -> *mut c_char {
-    let Some(heard) = text(heard) else { return std::ptr::null_mut() };
-    let mut places = Vec::new();
-    if !packs.is_null() && !lens.is_null() {
-        for i in 0..count {
-            if let Ok(pack) = Pack::read(bytes(*packs.add(i), *lens.add(i))) {
-                places.extend(spoken::places_of(&pack));
+    unsafe {
+        let Some(heard) = text(heard) else { return std::ptr::null_mut() };
+        let mut places = Vec::new();
+        if !packs.is_null() && !lens.is_null() {
+            for i in 0..count {
+                if let Ok(pack) = Pack::read(bytes(*packs.add(i), *lens.add(i))) {
+                    places.extend(spoken::places_of(&pack));
+                }
             }
         }
+        let near: Vec<(f64, f64)> = if near_lat.is_null() || near_lon.is_null() {
+            Vec::new()
+        } else {
+            (0..near_count).map(|i| (*near_lat.add(i), *near_lon.add(i))).collect()
+        };
+        let planned = Route {
+            dep: text(dep).unwrap_or("").to_owned(),
+            stops: text(stops).unwrap_or("").split(',').filter(|s| !s.is_empty()).map(str::to_owned).collect(),
+            dest: text(dest).unwrap_or("").to_owned(),
+        };
+        give(spoken::hear(heard, text(tail), places, &near, &planned))
     }
-    let near: Vec<(f64, f64)> = if near_lat.is_null() || near_lon.is_null() {
-        Vec::new()
-    } else {
-        (0..near_count).map(|i| (*near_lat.add(i), *near_lon.add(i))).collect()
-    };
-    let planned = Route {
-        dep: text(dep).unwrap_or("").to_owned(),
-        stops: text(stops).unwrap_or("").split(',').filter(|s| !s.is_empty()).map(str::to_owned).collect(),
-        dest: text(dest).unwrap_or("").to_owned(),
-    };
-    give(spoken::hear(heard, text(tail), places, &near, &planned))
 }
 
 /// A string one of these returned, given back.
 ///
 /// # Safety
 /// `s` is null or a string from this library, given back once.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn wt_string_free(s: *mut c_char) {
-    if !s.is_null() {
-        drop(CString::from_raw(s));
+    unsafe {
+        if !s.is_null() {
+            drop(CString::from_raw(s));
+        }
     }
 }
 
@@ -155,16 +171,18 @@ pub unsafe extern "C" fn wt_string_free(s: *mut c_char) {
 /// # Safety
 /// `ptrs` and `lens` hold `count` entries, each as for every function
 /// here; `tfrs` NULL or a NUL-terminated string.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn wt_ahead(
     ptrs: *const *const u8, lens: *const usize, count: usize, lat: f64, lon: f64, track_deg: f64, gs_kt: f64, alt_ft: f64, vs_fpm: f64,
     now: i64, tfrs: *const c_char, tfrs_at: i64,
 ) -> *mut c_char {
-    let packs = packs(ptrs, lens, count);
-    let lines = if tfrs.is_null() { None } else { CStr::from_ptr(tfrs).to_str().ok() };
-    let alt = (!alt_ft.is_nan()).then_some(alt_ft);
-    let at = (tfrs_at != i64::MIN).then_some(tfrs_at);
-    give(ahead::ahead(&packs, lat, lon, track_deg, gs_kt, alt, vs_fpm, now, lines, at))
+    unsafe {
+        let packs = packs(ptrs, lens, count);
+        let lines = if tfrs.is_null() { None } else { CStr::from_ptr(tfrs).to_str().ok() };
+        let alt = (!alt_ft.is_nan()).then_some(alt_ft);
+        let at = (tfrs_at != i64::MIN).then_some(tfrs_at);
+        give(ahead::ahead(&packs, lat, lon, track_deg, gs_kt, alt, vs_fpm, now, lines, at))
+    }
 }
 
 // The map's view with no network (wingtip_engine::view): the airspace,
@@ -180,11 +198,11 @@ pub unsafe extern "C" fn wt_ahead(
 ///
 /// # Safety
 /// `ptrs` and `lens` hold `count` entries, each as for every function here.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn wt_airspace_in_view(
     ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64, north: f64, east: f64,
 ) -> *mut c_char {
-    give(view::airspace_in_view(&packs(ptrs, lens, count), south, west, north, east))
+    unsafe { give(view::airspace_in_view(&packs(ptrs, lens, count), south, west, north, east)) }
 }
 
 /// The planner's AirportsInView: the landing fields inside the box, the
@@ -193,11 +211,11 @@ pub unsafe extern "C" fn wt_airspace_in_view(
 ///
 /// # Safety
 /// As above.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn wt_airports_in_view(
     ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64, north: f64, east: f64,
 ) -> *mut c_char {
-    give(view::airports_in_view(&packs(ptrs, lens, count), south, west, north, east))
+    unsafe { give(view::airports_in_view(&packs(ptrs, lens, count), south, west, north, east)) }
 }
 
 /// The planner's NavaidsInView: the VORs inside the box by ident, at most
@@ -205,11 +223,11 @@ pub unsafe extern "C" fn wt_airports_in_view(
 ///
 /// # Safety
 /// As above.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn wt_navaids_in_view(
     ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64, north: f64, east: f64,
 ) -> *mut c_char {
-    give(view::navaids_in_view(&packs(ptrs, lens, count), south, west, north, east))
+    unsafe { give(view::navaids_in_view(&packs(ptrs, lens, count), south, west, north, east)) }
 }
 
 /// The special-use areas reaching into the box, the MOAs and alert areas
@@ -218,11 +236,11 @@ pub unsafe extern "C" fn wt_navaids_in_view(
 ///
 /// # Safety
 /// As above.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn wt_special_use_in_view(
     ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64, north: f64, east: f64,
 ) -> *mut c_char {
-    give(view_marks::special_use_in_view(&packs(ptrs, lens, count), south, west, north, east))
+    unsafe { give(view_marks::special_use_in_view(&packs(ptrs, lens, count), south, west, north, east)) }
 }
 
 /// The Enroute Low chart's fixes and the charted VFR waypoints inside the
@@ -230,11 +248,11 @@ pub unsafe extern "C" fn wt_special_use_in_view(
 ///
 /// # Safety
 /// As above.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn wt_fixes_in_view(
     ptrs: *const *const u8, lens: *const usize, count: usize, south: f64, west: f64, north: f64, east: f64,
 ) -> *mut c_char {
-    give(view_marks::fixes_in_view(&packs(ptrs, lens, count), south, west, north, east))
+    unsafe { give(view_marks::fixes_in_view(&packs(ptrs, lens, count), south, west, north, east)) }
 }
 
 /// Status and answer of wt_call: `ok` 1 with the rule's answer as JSON in
@@ -253,15 +271,17 @@ pub struct WtCalled {
 ///
 /// # Safety
 /// `name` and `input` are NULL or NUL-terminated UTF-8.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn wt_call(name: *const c_char, input: *const c_char) -> WtCalled {
-    let read = |p: *const c_char| if p.is_null() { None } else { CStr::from_ptr(p).to_str().ok() };
-    let answer = match (read(name), read(input)) {
-        (Some(name), Some(input)) => wingtip_engine::call::call(name, input),
-        _ => Err("wt_call: the name and the input are NUL-terminated UTF-8".to_owned()),
-    };
-    match answer {
-        Ok(text) => WtCalled { ok: 1, text: give(text) },
-        Err(why) => WtCalled { ok: 0, text: give(why) },
+    unsafe {
+        let read = |p: *const c_char| if p.is_null() { None } else { CStr::from_ptr(p).to_str().ok() };
+        let answer = match (read(name), read(input)) {
+            (Some(name), Some(input)) => wingtip_engine::call::call(name, input),
+            _ => Err("wt_call: the name and the input are NUL-terminated UTF-8".to_owned()),
+        };
+        match answer {
+            Ok(text) => WtCalled { ok: 1, text: give(text) },
+            Err(why) => WtCalled { ok: 0, text: give(why) },
+        }
     }
 }

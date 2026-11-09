@@ -55,11 +55,11 @@ fn guess_newline(input: &[u16]) -> Vec<u16> {
     let mut kept = Vec::with_capacity(head.len());
     let mut i = 0;
     while i < head.len() {
-        if head[i] == QUOTE {
-            if let Some(close) = index_of(head, &[QUOTE], i + 1) {
-                i = close + 1;
-                continue;
-            }
+        if head[i] == QUOTE
+            && let Some(close) = index_of(head, &[QUOTE], i + 1)
+        {
+            i = close + 1;
+            continue;
         }
         kept.push(head[i]);
         i += 1;
@@ -172,13 +172,13 @@ fn parse_with(input: &[u16], delim: u16, newline: &[u16], preview: Option<usize>
             continue;
         }
 
-        if let Some(d) = next_delim {
-            if next_newline.is_none_or(|n| d < n) {
-                row.push(text(&input[cursor..d]));
-                cursor = d + 1;
-                next_delim = index_of(input, &delim_s, cursor);
-                continue;
-            }
+        if let Some(d) = next_delim
+            && next_newline.is_none_or(|n| d < n)
+        {
+            row.push(text(&input[cursor..d]));
+            cursor = d + 1;
+            next_delim = index_of(input, &delim_s, cursor);
+            continue;
         }
         if let Some(n) = next_newline {
             row.push(text(&input[cursor..n]));

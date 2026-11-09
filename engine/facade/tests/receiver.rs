@@ -34,7 +34,7 @@ fn contract() -> &'static jsonschema::Validator {
 fn ask(name: &str, input: Value) -> Value {
     let answer: Value = serde_json::from_str(&call(name, &input.to_string()).unwrap_or_else(|e| panic!("{name}: {e}"))).unwrap();
     let asked = json!({ name: { "input": input, "answer": answer } });
-    let errors: Vec<String> = contract().iter_errors(&asked).map(|e| format!("{e} at {}", e.instance_path)).collect();
+    let errors: Vec<String> = contract().iter_errors(&asked).map(|e| format!("{e} at {}", e.instance_path())).collect();
     assert!(errors.is_empty(), "{name}: not of the contract's shape:\n{}", errors.join("\n"));
     answer
 }

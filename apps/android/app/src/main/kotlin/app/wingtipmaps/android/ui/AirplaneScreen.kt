@@ -24,6 +24,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +52,9 @@ import app.wingtipmaps.android.checklist.ChecklistScreen
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.documents.AddFromPhotoRow
 import app.wingtipmaps.android.documents.HandbookPhotoSheet
+import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.navigation.ScreenRequests
+import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 import kotlinx.coroutines.CancellationException
@@ -97,6 +101,13 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
     var checklist by remember { mutableStateOf<ChecklistKind?>(null) }
     var photo by remember { mutableStateOf(false) }
     val airplane = rememberAirplaneNow(plan)
+    // The checklist asked for by its name (OpenScreen); with no airplane
+    // picked there is none, and the tab says to pick one.
+    val wanted by ScreenRequests.wanted.collectAsStateWithLifecycle()
+    LaunchedEffect(wanted, state.airplane) {
+        if (state.airplane && ScreenRequests.take(setOf(Screen.CHECKLISTS)) != null) checklist = ChecklistKind.NORMAL
+    }
+    val picked = profiles.firstOrNull { it.name == state.aircraft }
 
     Column(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
         AirplanePicker(profiles, selected = state.aircraft, onPick = plan::setAircraft)

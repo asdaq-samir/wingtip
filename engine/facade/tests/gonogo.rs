@@ -497,8 +497,8 @@ fn squawk(text: &str, inoperative: bool, deferred_for: Option<&str>) -> Squawk {
 fn an_inoperative_item_not_deferred_for_this_kind_of_flight_stops_it_other_squawks_are_a_caution() {
     let light = squawk("Landing light out", true, Some("VFR_DAY"));
     let keys_of = |f: Vec<frat::Factor>| f.into_iter().map(|f| f.key).collect::<Vec<_>>();
-    assert_eq!(keys_of(frat::squawk_factors(&[light.clone()], false, false)), ["squawks"]);
-    let night = frat::squawk_factors(&[light.clone()], true, false);
+    assert_eq!(keys_of(frat::squawk_factors(std::slice::from_ref(&light), false, false)), ["squawks"]);
+    let night = frat::squawk_factors(std::slice::from_ref(&light), true, false);
     assert_eq!((night[0].key.as_str(), night[0].stop, night[0].why.as_deref()), ("inoperative", true, Some("91.213(d)")));
     assert_eq!(frat::squawk_factors(&[light], false, true)[0].label, "Inoperative and not deferred for this flight: Landing light out");
     assert_eq!(keys_of(frat::squawk_factors(&[squawk("Landing light out", true, Some("ALL"))], true, true)), ["squawks"]);

@@ -7856,6 +7856,152 @@ enum EngineContract {
         var text: String
     }
 
+    /// One thing ready_to_fly checked: whether it is fine, a line to act on and the fix done in place.
+    struct ReadyItem: Codable, Equatable, Sendable {
+        /// route, airplane, altitude, charts, packs, briefing, fields, notams, saved, location, battery or receiver.
+        var key: String
+        /// Never a stop: warn, never limit.
+        var finding: String
+        /// One line a pilot acts on.
+        var line: String
+        var detail: String
+        /// Where its limit comes from: the FAA schedule, the CFR section, the AIM paragraph, or the app's choice.
+        var source: String
+        /// What the app does in place for it; null where nothing on the device fixes it.
+        var fix: String?
+    }
+
+    struct ReadyToFlyAnswer: Codable, Equatable, Sendable {
+        var ready: Bool
+        var finding: String
+        var line: String
+        var actions: [EngineContract.ReadyItem]
+        var items: [EngineContract.ReadyItem]
+        /// YYYY-MM-DD: the next AIRAC cycle's first day.
+        var nextCycle: String
+        var nextCycleIdent: String
+        var briefingAgeMin: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case ready
+            case finding
+            case line
+            case actions
+            case items
+            case nextCycle = "next_cycle"
+            case nextCycleIdent = "next_cycle_ident"
+            case briefingAgeMin = "briefing_age_min"
+        }
+    }
+
+    struct ReadyToFlyInput: Codable, Equatable, Sendable {
+        /// Unix seconds, UTC: the engine has no clock.
+        var now: Double
+        /// The flight plan: a route, the airplane's name and the cruise altitude, null where not set.
+        var plan: EngineContract.ReadyToFlyInputPlan?
+        /// The route's offline chart tiles: kept or not, the kept edition's effective date (YYYY-MM-DD) and the download's size. Null leaves the item out.
+        var charts: EngineContract.ReadyToFlyInputCharts?
+        /// The cycle packs (airports, airspace, procedures): the AIRAC edition held (YYYY-MM-DD), null where none is. Null leaves the item out.
+        var packs: EngineContract.ReadyToFlyInputPacks?
+        var briefing: EngineContract.ReadyToFlyInputBriefing?
+        /// The departure, destination and alternate: each METAR's observed time (Unix seconds) and whether a TAF is in.
+        var fields: [EngineContract.ReadyToFlyInputFieldsItem]?
+        var notams: EngineContract.ReadyToFlyInputNotams?
+        /// What the platform tells: a member null or missing leaves its item out.
+        var device: EngineContract.ReadyToFlyInputDevice?
+        var receiver: EngineContract.ReadyToFlyInputReceiver?
+    }
+
+    struct ReadyToFlyInputBriefing: Codable, Equatable, Sendable {
+        var fetchedAt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case fetchedAt = "fetched_at"
+        }
+    }
+
+    /// The route's offline chart tiles: kept or not, the kept edition's effective date (YYYY-MM-DD) and the download's size. Null leaves the item out.
+    struct ReadyToFlyInputCharts: Codable, Equatable, Sendable {
+        var kept: Bool?
+        /// False where the platform cannot keep tiles (a browser with no service worker).
+        var canKeep: Bool?
+        var edition: String?
+        var downloadMb: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case kept
+            case canKeep = "can_keep"
+            case edition
+            case downloadMb = "download_mb"
+        }
+    }
+
+    /// What the platform tells: a member null or missing leaves its item out.
+    struct ReadyToFlyInputDevice: Codable, Equatable, Sendable {
+        var batteryPct: Double?
+        var charging: Bool?
+        var location: String?
+        var planSaved: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case batteryPct = "battery_pct"
+            case charging
+            case location
+            case planSaved = "plan_saved"
+        }
+    }
+
+    struct ReadyToFlyInputFieldsItem: Codable, Equatable, Sendable {
+        var ident: String
+        var role: String?
+        var metarObserved: Double?
+        var taf: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case role
+            case metarObserved = "metar_observed"
+            case taf
+        }
+    }
+
+    struct ReadyToFlyInputNotams: Codable, Equatable, Sendable {
+        var fetchedAt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case fetchedAt = "fetched_at"
+        }
+    }
+
+    /// The cycle packs (airports, airspace, procedures): the AIRAC edition held (YYYY-MM-DD), null where none is. Null leaves the item out.
+    struct ReadyToFlyInputPacks: Codable, Equatable, Sendable {
+        var edition: String?
+        var canUpdate: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case edition
+            case canUpdate = "can_update"
+        }
+    }
+
+    /// The flight plan: a route, the airplane's name and the cruise altitude, null where not set.
+    struct ReadyToFlyInputPlan: Codable, Equatable, Sendable {
+        var route: Bool?
+        var airplane: String?
+        var altitudeFt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case route
+            case airplane
+            case altitudeFt = "altitude_ft"
+        }
+    }
+
+    struct ReadyToFlyInputReceiver: Codable, Equatable, Sendable {
+        var used: Bool?
+        var connected: Bool?
+    }
+
     /// A FIS-B NEXRAD block (products 63 regional and 64 CONUS): 32 bins across and 4 down, north row first, each a level 0 to 7.
     struct ReceiverBlock: Codable, Equatable, Sendable {
         var id: Double

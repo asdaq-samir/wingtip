@@ -88,7 +88,7 @@ fn set(profile: &mut Value, path: &[&str], value: f64) {
 /// gave one that differs from the book's (one they left as the book's is
 /// still the book's), else the handbook page's likewise, else the book's.
 fn pick(book: Option<f64>, handbook: Option<f64>, own: Option<f64>) -> (Option<f64>, Option<&'static str>) {
-    let differs = |x: f64| book.map_or(true, |b| (b - x).abs() > 1e-9);
+    let differs = |x: f64| book.is_none_or(|b| (b - x).abs() > 1e-9);
     match (own, handbook, book) {
         (Some(o), _, _) if differs(o) => (Some(o), Some("pilot")),
         (_, Some(h), _) if differs(h) => (Some(h), Some("handbook")),

@@ -31,9 +31,21 @@ final class PendingCommand {
         case aircraft(hex: String)
         /// A track file (GPX, KML) opened in the app, flown again on the map.
         case track(URL)
+        /// One of the app's screens by its name (design/screens.json), as a
+        /// link's `open=` names it.
+        case open(Screen)
     }
 
     var command: Command?
+    /// The screen a link named beside its route (`?dep=C81&dest=KDLH&open=brief`),
+    /// opened once the command is done.
+    var then: Screen?
+
+    /// The screen to open after the command, and none left.
+    func takeThen() -> Screen? {
+        defer { then = nil }
+        return then
+    }
 
     /// The command, and none left: taken once by whoever does it.
     func take() -> Command? {

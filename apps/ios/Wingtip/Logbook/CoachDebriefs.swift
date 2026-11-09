@@ -5,9 +5,10 @@ import Foundation
 /// year with a track saved to the account, the newest six, debriefed
 /// against its plan by the planner (POST /api/debrief, the engine's
 /// debrief: its legs and its pattern entries, ACS PA.VI.A and PA.III.B),
-/// trimmed to what the engine's proficiency_plan reads. Nothing is judged
-/// here: the engine finds what is weak in them. Approaches flown are the
-/// web's alone for now: the iPhone draws no approach debrief yet.
+/// trimmed to what the engine's proficiency_plan reads, and each approach
+/// it flew into its destination debriefed against the procedure by the
+/// engine's approach_find (CoachApproaches). Nothing is judged here: the
+/// engine finds what is weak in them.
 enum CoachDebriefs {
     /// The newest flights looked at: a few weeks' flying, each asking for
     /// its track and its plan.
@@ -44,16 +45,19 @@ enum CoachDebriefs {
     }
 
     /// The debriefs of the pilot's newest flights with a track, newest
-    /// first; a flight whose track or plan cannot be had is left out.
-    static func fetch() async -> [CoachDebrief] {
+    /// first, each flight's approaches after it; a flight whose track or
+    /// plan cannot be had is left out.
+    @Sendable static func fetch() async -> [CoachDebrief] {
         guard let flights = try? await Gateway.flights() else { return [] }
         var out: [CoachDebrief] = []
         for summary in recent(flights) {
             guard let track = try? await Gateway.track(summary.id), let first = track.points.first,
-                  let flight = try? await Gateway.flightDetail(summary.id),
-                  let answer = try? await Planner.debrief(checkpoints: flight.checkpoints, points: track.points) else { continue }
+                  let flight = try? await Gateway.flightDetail(summary.id) else { continue }
             let place = "\(flight.departureIdent)-\(flight.destinationIdent)"
-            if let d = trimmed(answer, place: place, flownOn: day(ofMs: first.t)) { out.append(d) }
+            let flownOn = day(ofMs: first.t)
+            if let answer = try? await Planner.debrief(checkpoints: flight.checkpoints, points: track.points),
+               let d = trimmed(answer, place: place, flownOn: flownOn) { out.append(d) }
+            out += await CoachApproaches.fetch(destination: flight.destinationIdent, track: track, flownOn: flownOn)
         }
         return out
     }

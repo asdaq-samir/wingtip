@@ -28,7 +28,7 @@ struct RootView: View {
     /// strip; the owner's pick of 2026-11-04). The same key as the web's
     /// preference; a `-layout strip` launch argument sets it for CI's
     /// pictures.
-    @AppStorage("layout") private var layoutName = "tabs"
+    @AppStorage("layout") var layoutName = "tabs"
     @State var tab: Tabs = Tabs(rawValue: UserDefaults.standard.string(forKey: "tab") ?? "") ?? .fpl
     @State private var airports: [String] = []
     @State private var following = false
@@ -43,7 +43,7 @@ struct RootView: View {
     /// Ask (AskView) up: a sheet over the tabs' sheet on the iPhone, so the
     /// system presents it, since one view presents one sheet at a time;
     /// over the map on the iPad.
-    @State private var asking = false
+    @State var asking = false
     /// The iPad's inspector card (SplitLayout).
     @State var sideCard: SideCard?
     /// What Siri or a Shortcut asked for (the App Intents), done here once
@@ -104,6 +104,8 @@ struct RootView: View {
                         // The welcome, once per install, over the planner's sheet;
                         // its flight shown half way up on FPL (WelcomeHost).
                         .modifier(WelcomeHost(opened: { tab = .fpl; detent = .medium }))
+                        // Ready to fly over a dry run's or a flight's start (ReadyToFlyHost).
+                        .modifier(ReadyToFlyHost())
                         // The sheet settling at a size, felt (WingtipHaptic.detent).
                         .sensoryFeedback(WingtipHaptic.detent, trigger: detent) { _, _ in !reduceMotion }
                     }
@@ -111,6 +113,7 @@ struct RootView: View {
                 SplitLayout(map: map, tab: $tab, airports: $airports, card: $sideCard)
                     .sheet(isPresented: $asking) { AskView() }
                     .modifier(WelcomeHost(opened: { tab = .fpl }))
+                    .modifier(ReadyToFlyHost())
             }
         }
         // The scene's tab kept and brought back (SceneStorage); a launch

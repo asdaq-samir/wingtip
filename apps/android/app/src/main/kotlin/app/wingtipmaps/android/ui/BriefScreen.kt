@@ -42,10 +42,11 @@ import app.wingtipmaps.android.ui.sheet.WingtipSheet
  * colour, then each finding -- the weather, the airspace, the altitude,
  * the fuel, the runways, the loading, the risk -- with its glyph and its
  * line, as the web's Brief opens (decision 0012). The planner's and the
- * engine's words throughout (BriefModel).
+ * engine's words throughout (BriefModel). Ready to fly heads it, given
+ * by the layout as `ready`, since its fixes need the plan itself.
  */
 @Composable
-fun BriefSheet(model: BriefModel, plan: Plan.State, signedIn: Boolean, onClose: () -> Unit) {
+fun BriefSheet(model: BriefModel, plan: Plan.State, signedIn: Boolean, onClose: () -> Unit, ready: @Composable () -> Unit = {}) {
     val state by model.state.collectAsStateWithLifecycle()
     WingtipSheet(title = stringResource(R.string.brief), onClose = onClose, full = true) {
         // A pull asks the planner again, the weather in it being live; the
@@ -55,6 +56,9 @@ fun BriefSheet(model: BriefModel, plan: Plan.State, signedIn: Boolean, onClose: 
                 Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
                 verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
             ) {
+                // Ready to fly first: what to fix on the phone while there
+                // is still a signal (ReadyToFlyRow).
+                ready()
                 if (state.loading) Skeleton(rows = 4)
                 ProblemLine(state.problem)
                 state.verdict?.let { verdict ->

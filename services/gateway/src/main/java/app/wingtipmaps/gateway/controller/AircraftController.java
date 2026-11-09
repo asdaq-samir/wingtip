@@ -127,7 +127,9 @@ public class AircraftController {
     public ResponseEntity<AircraftDto> figures(
             Authentication authentication, @PathVariable Long id, @Valid @RequestBody OwnFigures request) {
         return PilotResponses.found(
-                pilots, authentication, pilot -> aircraftService.addFigures(pilot, id, request).map(this::toDto));
+                pilots,
+                authentication,
+                pilot -> aircraftService.addFigures(pilot, id, request).map(this::toDto));
     }
 
     /** The airplane's VOR check for IFR, recorded (14 CFR 91.171(d)). */

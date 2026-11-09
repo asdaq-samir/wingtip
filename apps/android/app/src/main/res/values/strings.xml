@@ -48,6 +48,7 @@
     <string name="said_note">Note</string>
     <string name="said_open">Open</string>
     <string name="said_open_leg">Open the leg</string>
+    <string name="said_open_nav_log">Open the nav log</string>
     <string name="said_map">Chart</string>
     <plurals name="said_map_fields">
         <item quantity="one">Chart, %1$d field in view. An action opens it.</item>
@@ -441,4 +442,10 @@
     <string name="trip_use">Use this plan</string>
     <string name="trip_use_return">Use return leg</string>
     <string name="trip_loaded">Loaded</string>
+    <!-- Ready to fly (ready/): the engine's own lines are shown as sent. -->
+    <string name="ready_all">All Checks</string>
+    <string name="ready_fewer">Fewer</string>
+    <string name="ready_next_cycle">Next FAA data cycle %1$s begins %2$s</string>
+    <string name="ready_fly_anyway">Fly Anyway</string>
+    <string name="ready_airplane_line">Its fuel, performance and loading come from its own figures; none is assumed.</string>
 </resources>

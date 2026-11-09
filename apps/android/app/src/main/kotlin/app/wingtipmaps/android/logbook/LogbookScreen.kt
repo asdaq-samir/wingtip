@@ -11,6 +11,7 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,6 +30,8 @@ import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.documents.AddFromPhotoRow
 import app.wingtipmaps.android.documents.LogbookPhotoSheet
+import app.wingtipmaps.android.navigation.ScreenRequests
+import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
@@ -45,6 +48,9 @@ fun LogbookScreen(model: LogbookModel = viewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     var photo by remember { mutableStateOf(false) }
     var coach by rememberSaveable { mutableStateOf(false) }
+    // The Coach asked for by its name (OpenScreen), once the Logbook is open.
+    val wanted by ScreenRequests.wanted.collectAsStateWithLifecycle()
+    LaunchedEffect(wanted) { if (ScreenRequests.take(setOf(Screen.COACH)) != null) coach = true }
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg)) {
         item {
             if (state.loading) Skeleton(rows = 4)

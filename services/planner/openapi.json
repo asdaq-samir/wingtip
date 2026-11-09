@@ -204,7 +204,7 @@
       },
       "AircraftProfile": {
         "additionalProperties": true,
-        "description": "The aircraft's name plus its performance profile -- every field a\ndata/aircraft/*.json file carries, declared, so a page reads them as\nfields rather than guessing at a dict. The three figures after the\nname are required when a stock profile is loaded (REQUIRED_FIELDS in\nwingtip.aircraft); a pilot's own airplane of no stock type (\"own\",\nwingtip.planning.OWN_AIRPLANE) has its record's alone, and no service\nceiling where the record gives none. A figure left out is missing,\nand each rule that needs it says so. `extra=\"allow\"` keeps a field a\nnewer profile adds on its way through.",
+        "description": "The aircraft's name plus its performance profile -- every field a\ndata/aircraft/*.json file carries, declared, so a page reads them as\nfields rather than guessing at a dict. The three figures after the\nname are required when a stock profile is loaded (REQUIRED_FIELDS in\nwingtip.aircraft); a pilot's own airplane of no stock type (\"own\",\nwingtip.aircraft.OWN_AIRPLANE) has its record's alone, and no service\nceiling where the record gives none. A figure left out is missing,\nand each rule that needs it says so. `extra=\"allow\"` keeps a field a\nnewer profile adds on its way through.",
         "properties": {
           "climb_fuel_burn_gph": {
             "anyOf": [
