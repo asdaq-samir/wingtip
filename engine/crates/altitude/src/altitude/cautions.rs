@@ -209,13 +209,30 @@ pub fn own_altitude(selection: &Value, legs: &[Value], profile: Option<&Value>) 
         } else {
             found.extend(floor(segment, alt));
             // 91.159(a): more than 3,000 ft above the surface, odd thousands
-            // plus 500 eastbound, even thousands plus 500 westbound.
+            // plus 500 eastbound (a magnetic course of 0-179), even thousands
+            // plus 500 westbound (180-359). Said once for the route, naming
+            // the legal altitudes either side of the one set, not once per
+            // leg with each leg's own height of the rule: six amber lines
+            // "Westbound above 3,670 / 3,662 / 3,817 ... ft" pushed the
+            // Profile's graph under the fold (the FPL audit's A8,
+            // 2026-11-08). The words name the rule's own height, 3,000 ft
+            // above the ground, which each leg's figure is.
             if let (Some(rule_from), Some(east)) = (num(segment, "hemispheric_rule_from_ft"), east) {
-                if alt > rule_from && (alt - if east { 1500.0 } else { 500.0 }).rem_euclid(2000.0) != 0.0 {
+                let base = if east { 1500.0 } else { 500.0 };
+                if alt > rule_from && (alt - base).rem_euclid(2000.0) != 0.0 {
+                    let below = ((alt - base) / 2000.0).floor() * 2000.0 + base;
+                    let floor_ft = num(segment, "floor_ft").unwrap_or(0.0);
+                    // A VFR cruise under Class A (71.33: 18,000 ft MSL),
+                    // and not under the ground's own floor (91.119).
+                    let legal: Vec<String> = [below, below + 2000.0]
+                        .into_iter()
+                        .filter(|ft| *ft >= floor_ft && *ft < CLASS_A_FLOOR_FT)
+                        .map(grouped)
+                        .collect();
+                    let fly = if legal.is_empty() { String::new() } else { format!(": fly {} ft", legal.join(" or ")) };
                     found.push(format!(
-                        "{} above {} ft flies {} thousands plus 500 (14 CFR 91.159)",
+                        "{} more than 3,000 ft above the ground flies {} thousands plus 500{fly} (14 CFR 91.159)",
                         if east { "Eastbound" } else { "Westbound" },
-                        grouped(rule_from),
                         if east { "odd" } else { "even" }
                     ));
                 }
@@ -267,5 +284,26 @@ mod tests {
             floor(&seg, 1500.0).unwrap(),
             "300 ft under the 1,800 ft 14 CFR 91.119(b) asks where a congested area could not be ruled out: 1,000 ft over the highest obstacle within 2,000 ft, here an 800 ft antenna"
         );
+    }
+
+    /// 91.159(a)(2): "On a magnetic course of 180 degrees through 359
+    /// degrees, any even thousand foot MSL altitude + 500 feet (such as
+    /// 4,500, 6,500, or 8,500)", more than 3,000 ft above the surface.
+    /// Legs whose own height of the rule differs (the FPL audit's six
+    /// lines) give one line, naming 4,500 and 6,500 for 5,500 set.
+    #[test]
+    fn the_hemispheric_rule_is_one_line_naming_the_legal_altitudes() {
+        let selection = |east: bool| {
+            let segs: Vec<String> = [3670, 3662, 3817].iter().map(|from| format!(r#"{{"floor_ft": 2600, "eastbound": {east}, "hemispheric_rule_from_ft": {from}}}"#)).collect();
+            v(&format!(r#"{{"segments": [{}]}}"#, segs.join(",")))
+        };
+        let legs = vec![v(r#"{"altitude_ft": 5500}"#); 3];
+        let west = own_altitude(&selection(false), &legs, None).unwrap();
+        assert_eq!(west.reasons, vec!["Westbound more than 3,000 ft above the ground flies even thousands plus 500: fly 4,500 or 6,500 ft (14 CFR 91.159)"]);
+        // 5,500 is (a)(1)'s own eastbound: nothing to say.
+        assert!(own_altitude(&selection(true), &legs, None).is_none());
+        // Under the rule's height (3,000 ft above the surface), any altitude.
+        let low = vec![v(r#"{"altitude_ft": 3500}"#); 3];
+        assert!(own_altitude(&selection(false), &low, None).is_none());
     }
 }

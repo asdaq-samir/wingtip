@@ -74,7 +74,7 @@
         "to_ident": "VPBNG",
         "altitude_ft": 5500,
         "reasons": [
-          "Westbound above 3,800 ft flies even thousands plus 500 (14 CFR 91.159)"
+          "Westbound more than 3,000 ft above the ground flies even thousands plus 500: fly 4,500 or 6,500 ft (14 CFR 91.159)"
         ]
       }
     },
@@ -530,7 +530,7 @@
         "to_ident": "B",
         "altitude_ft": 18500,
         "reasons": [
-          "Eastbound above 9,000 ft flies odd thousands plus 500 (14 CFR 91.159)",
+          "Eastbound more than 3,000 ft above the ground flies odd thousands plus 500: fly 17,500 ft (14 CFR 91.159)",
           "At or over 18,000 ft MSL: Class A, flown under IFR with a clearance alone (14 CFR 71.33, 91.135)"
         ]
       }
