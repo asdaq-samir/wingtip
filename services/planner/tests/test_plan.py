@@ -357,7 +357,7 @@ def test_plan_without_winds_is_a_502(monkeypatch):
 
 
 def test_each_outcome_of_the_altitude_resolver(monkeypatch, altitude):
-    from wingtip.planning import aircraft_profile
+    from wingtip.aircraft import aircraft_profile
     from app.router_basics import load_route
     from wingtip.flight_plan import Flown, NoWinds, resolve_altitude
 
@@ -705,7 +705,7 @@ def test_under_ifr_the_fuel_on_to_the_alternate_is_flown_before_the_reserve(mess
 def test_an_airplanes_own_ceiling_is_flown_over_its_profiles():
     """The pilot's own service ceiling for their N-number (the owner's
     "give users a way to change these specs"): the profile's otherwise."""
-    from wingtip.planning import aircraft_profile
+    from wingtip.aircraft import aircraft_profile
 
     assert aircraft_profile("pa28140cruiser")["service_ceiling_ft"] == 10950
     assert aircraft_profile("pa28140cruiser", service_ceiling_ft=14300)["service_ceiling_ft"] == 14300

@@ -34,7 +34,10 @@ struct RouteBoxRow: View {
     /// cleared, the planner's again.
     private var airplane: some View {
         HStack(spacing: WingtipSpace.sm) {
-            if let name = plan.airplaneName {
+            if let tail = plan.tail {
+                // The N-number opens its profile (the owner, 2026-11-09).
+                TailButton(tail: tail) { Text(tail).font(WingtipType.row.monospaced()) }
+            } else if let name = plan.airplaneName {
                 Text(name).font(WingtipType.row.monospaced())
             } else {
                 // No airplane picked: the chip asks for one, tinted as a

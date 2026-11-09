@@ -12,13 +12,15 @@ import kotlinx.serialization.decodeFromString
 
 /** What the emergency assistant ranks (/api/emergency/fields): the fields
  *  round a position with their runways, METARs, frequencies and phone,
- *  the modelled wind at the altitude, and the stock profile's glide
- *  (none for no airplane: the glide is not guessed). */
-suspend fun Planner.emergencyFields(lat: Double, lon: Double, altitudeFt: Double?, aircraft: String?): EmergencyFields =
+ *  the modelled wind at the altitude, and the airplane's glide -- its
+ *  stock profile's, or "own" with the pilot's `glideRatio` alone, the
+ *  pilot's ratio over a stock type's too (none for no airplane: the glide
+ *  is not guessed). */
+suspend fun Planner.emergencyFields(lat: Double, lon: Double, altitudeFt: Double?, aircraft: String?, glideRatio: Double? = null): EmergencyFields =
     Gateway.json.decodeFromString(
         fetch(
             "/api/emergency/fields",
-            mapOf("lat" to lat.toString(), "lon" to lon.toString(), "altitude_ft" to altitudeFt?.toString(), "aircraft" to aircraft?.ifEmpty { null }),
+            mapOf("lat" to lat.toString(), "lon" to lon.toString(), "altitude_ft" to altitudeFt?.toString(), "aircraft" to aircraft?.ifEmpty { null }, "glide_ratio" to glideRatio?.toString()),
             timeoutMs = IN_FLIGHT_MS,
         ),
     )

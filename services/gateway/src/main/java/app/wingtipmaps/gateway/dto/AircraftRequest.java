@@ -1,5 +1,7 @@
 package app.wingtipmaps.gateway.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -19,7 +21,10 @@ import org.jspecify.annotations.Nullable;
  *  AIM Appendix 4 writes them): item 10a's equipment is letters and
  *  figures, since TBL 4-2's codes include E1 to E3, J1 to J7, M1 to M3
  *  and P1 to P9; item 10b's surveillance at most 20 of them (TBL 4-3);
- *  item 19's colour and markings plain words. Blank is none. */
+ *  item 19's colour and markings plain words. Blank is none.
+ *
+ *  <p>Its own handbook figures (OwnFigures) go with the rest; left out
+ *  altogether, as a client from before them sends, they stay as they were. */
 public record AircraftRequest(
         @NotBlank(message = "tailNumber is required")
         @Size(max = 16, message = "tailNumber must be at most 16 characters")
@@ -62,4 +67,11 @@ public record AircraftRequest(
         String surveillance,
 
         @Size(max = 40, message = "colour must be at most 40 characters") @Nullable
-        String colour) {}
+        String colour,
+
+        @Schema(
+                description = "Its own handbook figures, all at once (null in it clears one); left out, they stay as "
+                        + "they were")
+        @Valid
+        @Nullable
+        OwnFigures figures) {}

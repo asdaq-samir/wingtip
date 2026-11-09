@@ -110,7 +110,7 @@ final class Plan {
         guard !CommandLine.arguments.contains("-fresh"), let kept = Kept.load() else { return }
         dep = kept.dep; dest = kept.dest; stops = kept.stops
         (aircraft, tail) = Self.airplane(kept: kept)
-        figures = tail.map { TailFigures.load($0) } ?? Figures()
+        figures = OwnFigureStore.load(OwnFigureStore.name(tail: tail, aircraft: aircraft))
         ownAltitudeFt = kept.ownAltitudeFt; altitudeChoice = kept.altitudeChoice
         course = kept.course; checkpoints = kept.checkpoints; profile = kept.profile; altitude = kept.altitude
         legs = kept.legs; totals = kept.totals; altitudeFt = kept.altitude?.altitudeFt; briefing = kept.briefing; briefedAt = kept.briefedAt
@@ -249,9 +249,9 @@ final class Plan {
 
     /// The ways to fly the route as the pilot typed it, for the route
     /// line's chips: asked for once per route, whichever way is flown.
-    private func findRoutes(dep: String, dest: String, stops: [String], aircraft: String?, asked: String) async {
+    private func findRoutes(dep: String, dest: String, stops: [String], aircraft: String?, figures: Figures, asked: String) async {
         do {
-            let found = try await Planner.routeOptions(dep: dep, dest: dest, stops: stops, aircraft: aircraft)
+            let found = try await Planner.routeOptions(dep: dep, dest: dest, stops: stops, aircraft: aircraft, figures: figures)
             guard routesAskedFor == asked else { return }
             routes = found
         } catch {
@@ -324,7 +324,7 @@ final class Plan {
             routesAskedFor = asked
             routes = nil; routesProblem = nil
             let typed = typedStops
-            Task { [weak self] in await self?.findRoutes(dep: dep, dest: dest, stops: typed, aircraft: aircraft, asked: asked) }
+            Task { [weak self] in await self?.findRoutes(dep: dep, dest: dest, stops: typed, aircraft: aircraft, figures: figures, asked: asked) }
         }
         planning = true
         problem = nil

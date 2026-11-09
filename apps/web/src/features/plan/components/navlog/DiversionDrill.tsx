@@ -15,7 +15,7 @@ import { bearing, grouped, windCorrection } from "../../../../lib/format";
 import { FINDING_TONE } from "../../../../lib/findings";
 import { typedNumber, written } from "./workings";
 import { nearestQuery } from "../../../../lib/queryClient";
-import { NotInProfile } from "../briefing/NotInProfile";
+import { AskFigure } from "../../../../components/airplane/AskFigure";
 
 /** The diversion worked out, step by step, once checked. */
 function Answer({ ident, d }: { ident: string; d: Diversion }) {
@@ -101,7 +101,7 @@ export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: stri
           {leg.tas_kt == null ? (
             // No airplane: its heading, ground speed, time and fuel are all
             // worked at an airplane's speed and burn, and none is assumed.
-            <NotInProfile what="The diversion" testId="diversion-needs-airplane" />
+            <AskFigure figure="legs" what="The diversion" testId="diversion-needs-airplane" />
           ) : started == null ? (
             <>
               <p className={TEXT.prose}>

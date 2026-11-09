@@ -2,7 +2,10 @@ import { ListGroup, ListRow } from "../../../components/GroupedList";
 import type { Totals } from "../../../lib/api/types";
 import { one } from "../format";
 import { gal } from "../../../lib/format";
-import { requestAirplanePick } from "../../../lib/pickAirplane";
+import { AskFigure } from "../../../components/airplane/AskFigure";
+import { tailOf } from "../../../lib/aircraftChoice";
+import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
+import { usePreferences } from "../../../lib/preferences";
 
 /** The reserve's rule, as the planner chose it (wingtip.navlog.fuel_plan). */
 function reserveRule(totals: Totals): string {
@@ -34,6 +37,8 @@ export default function FuelBreakdown({
   short?: { name: string; shortGal: number }[];
 }) {
   const short = totals.fuel_margin_gal != null && totals.fuel_margin_gal < 0 ? -totals.fuel_margin_gal : null;
+  // The airplane's figures open its profile, on the figure (lib/airplane).
+  const tail = usePreferences((p) => tailOf(p.aircraft));
   return (
     <div className="flex flex-col gap-3" data-testid="fuel-breakdown">
       {shortOnes.some((f) => f.name) && (
@@ -55,16 +60,15 @@ export default function FuelBreakdown({
         />
         {totals.taxi_gal == null && totals.fuel_required_gal != null ? (
           // The airplane's own allowance only, never another's (the owner,
-          // 2026-11-09): its profile has none, so the fuel required leaves it out.
+          // 2026-11-09): it has none, so the fuel required leaves it out, and
+          // it is asked for under the list (AskFigure).
+          <ListRow title="Start, taxi and takeoff" description="Not counted" value="—" data-testid="fuel-taxi-missing" />
+        ) : (
           <ListRow
             title="Start, taxi and takeoff"
-            description="Not in this airplane's profile, and not counted: add it to the airplane"
-            value="—"
-            onClick={requestAirplanePick}
-            data-testid="fuel-taxi-missing"
+            value={gal(totals.taxi_gal)}
+            onClick={tail ? () => openAirplaneProfile(tail, "taxi_fuel_gal") : undefined}
           />
-        ) : (
-          <ListRow title="Start, taxi and takeoff" value={gal(totals.taxi_gal)} />
         )}
         {totals.alternate && (
           <ListRow
@@ -79,6 +83,9 @@ export default function FuelBreakdown({
           value={<span className="font-semibold text-foreground">{gal(totals.fuel_required_gal)}</span>}
         />
       </ListGroup>
+      {totals.taxi_gal == null && totals.fuel_required_gal != null && (
+        <AskFigure figure="fuel_totals" what="The fuel required" testId="fuel-taxi-ask" />
+      )}
       {burnt != null && totals.fuel_required_gal != null && (
         <ListGroup>
           <ListRow title="Burnt so far" value={gal(burnt)} />

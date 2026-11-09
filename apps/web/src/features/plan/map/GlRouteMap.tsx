@@ -11,6 +11,7 @@ import { AirspaceGl } from "../../../components/map/layers/AirspaceGl";
 import { LandWaterGl, OverlayGl } from "../../../lib/map/gl/layers/BaseGl";
 import { ChartGl } from "../../../lib/map/gl/layers/ChartGl";
 import { EmergencyGl } from "./layers/EmergencyGl";
+import { GlideRingGl } from "./layers/GlideRingGl";
 import { AheadGl, ClassBGl } from "./layers/MarksGl";
 import { NavaidsGl, WaypointsGl } from "../../../components/map/layers/NavaidsGl";
 import { OwnShipGl } from "../../../lib/map/gl/layers/OwnShipGl";
@@ -187,6 +188,8 @@ function Layers(p: GlRouteMapProps) {
       <OwnTrailGl />
       {/* The emergency assistant's glide ring and line (features/emergency). */}
       <EmergencyGl />
+      {/* The glide ring the pilot turned on in the Map menu, none in an emergency (EmergencyGl's then). */}
+      <GlideRingGl />
       <OwnShipGl />
       <AheadGl />
       <TrafficGl />

@@ -165,7 +165,7 @@ struct AirplaneCard: View {
                 Section(title: "Airplane") {
                     if let model = detail?.description { LabeledContent("Model", value: FlightWords.nameCase(model)) }
                     if let op = detail?.operator { LabeledContent("Operator", value: FlightWords.nameCase(op)) }
-                    LabeledContent("Registration", value: detail?.registration ?? plane?.registration ?? "—")
+                    LabeledContent("Registration") { RegistrationText(detail?.registration ?? plane?.registration) }
                     LabeledContent("Type", value: [detail?.type ?? plane?.type, detail?.year].compactMap { $0 }.joined(separator: " · ").nonEmpty ?? "—")
                     LabeledContent("ICAO address", value: hex.uppercased())
                     LabeledContent("Callsign", value: plane?.callsign ?? "—")

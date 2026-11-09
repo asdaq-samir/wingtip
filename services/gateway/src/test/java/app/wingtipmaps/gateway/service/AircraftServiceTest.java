@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 
 import app.wingtipmaps.gateway.domain.Aircraft;
 import app.wingtipmaps.gateway.domain.Pilot;
+import app.wingtipmaps.gateway.dto.OwnFigures;
 import app.wingtipmaps.gateway.repository.AircraftRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -48,7 +49,7 @@ class AircraftServiceTest {
         given(aircraftRepository.findByIdAndPilotId(1L, stranger.getId())).willReturn(Optional.empty());
 
         Optional<Aircraft> result = aircraftService.update(
-                stranger, 1L, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null, null);
+                stranger, 1L, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null, null, null);
 
         assertThat(result).isEmpty();
         verify(aircraftRepository, never()).save(any());
@@ -73,7 +74,8 @@ class AircraftServiceTest {
                 48.0,
                 " sdfgry ",
                 "b1",
-                "  White   blue stripes ");
+                "  White   blue stripes ",
+                new OwnFigures(13000.0, 650.0, 1.1, 8.5, 1500.0, 57000.0));
 
         assertThat(result).isPresent();
         assertThat(result.get().getTailNumber()).isEqualTo("N54321");
@@ -85,6 +87,51 @@ class AircraftServiceTest {
         assertThat(result.get().getEquipment()).isEqualTo("SDFGRY");
         assertThat(result.get().getSurveillance()).isEqualTo("B1");
         assertThat(result.get().getColour()).isEqualTo("White blue stripes");
+        assertThat(result.get().getServiceCeilingFt()).isEqualTo(13000.0);
+        assertThat(result.get().getEmptyMomentLbIn()).isEqualTo(57000.0);
+    }
+
+    /** Figures left out of the form, as a client from before them sends,
+     *  keep the airplane's own as they were. */
+    @Test
+    void anUpdateWithNoFiguresKeepsTheAirplanesOwn() {
+        Aircraft existing = new Aircraft(owner, "N12345", "XYZ1", 110.0, 8.5, null, null, null, null)
+                .keepFigures(12000.0, 600.0, null, 9.0, null, null);
+        given(aircraftRepository.findByIdAndPilotId(1L, owner.getId())).willReturn(Optional.of(existing));
+        given(aircraftRepository.save(existing)).willReturn(existing);
+
+        Aircraft saved = aircraftService
+                .update(owner, 1L, "N12345", "XYZ1", 110.0, 8.5, null, null, null, null, null, null, null, null)
+                .orElseThrow();
+
+        assertThat(saved.getServiceCeilingFt()).isEqualTo(12000.0);
+        assertThat(saved.getGlideRatio()).isEqualTo(9.0);
+    }
+
+    /** An inline ask saves one figure, the rest as they were. */
+    @Test
+    void addingAFigureKeepsTheRest() {
+        Aircraft existing = new Aircraft(owner, "N12345", "XYZ1", 110.0, 8.5, null, null, null, null)
+                .keepFigures(12000.0, 600.0, null, 9.0, null, null);
+        given(aircraftRepository.findByIdAndPilotId(1L, owner.getId())).willReturn(Optional.of(existing));
+        given(aircraftRepository.save(existing)).willReturn(existing);
+
+        Aircraft saved = aircraftService
+                .addFigures(owner, 1L, new OwnFigures(null, null, 1.2, null, null, null))
+                .orElseThrow();
+
+        assertThat(saved.getTaxiFuelGal()).isEqualTo(1.2);
+        assertThat(saved.getServiceCeilingFt()).isEqualTo(12000.0);
+        assertThat(saved.getClimbRateFpm()).isEqualTo(600.0);
+        assertThat(saved.getGlideRatio()).isEqualTo(9.0);
+    }
+
+    @Test
+    void addingFiguresToAnotherPilotsAirplaneSavesNothing() {
+        given(aircraftRepository.findByIdAndPilotId(1L, stranger.getId())).willReturn(Optional.empty());
+
+        assertThat(aircraftService.addFigures(stranger, 1L, OwnFigures.NONE)).isEmpty();
+        verify(aircraftRepository, never()).save(any());
     }
 
     /** A flight plan item left blank is none, not an empty string the
@@ -97,7 +144,7 @@ class AircraftServiceTest {
         given(aircraftRepository.save(existing)).willReturn(existing);
 
         Aircraft saved = aircraftService
-                .update(owner, 1L, "N12345", "C172", 110.0, 8.5, null, null, null, null, " ", "", null)
+                .update(owner, 1L, "N12345", "C172", 110.0, 8.5, null, null, null, null, " ", "", null, null)
                 .orElseThrow();
 
         assertThat(saved.getEquipment()).isNull();

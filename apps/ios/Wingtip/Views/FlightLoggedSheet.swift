@@ -167,7 +167,7 @@ struct AutoLogbookHost: ViewModifier {
                 FlightLoggedSheet(model: model, signedIn: session.signedIn) { verdict.logbookChanged() }
             }
             .task(id: "\(model.recorder.endedAt ?? 0)|\(session.signedIn)") {
-                await model.draw(signedIn: session.signedIn, tail: plan.tail, type: plan.airplaneChosen ? plan.aircraft.uppercased() : nil)
+                await model.draw(signedIn: session.signedIn, tail: plan.tail, type: plan.stockType)
             }
     }
 }

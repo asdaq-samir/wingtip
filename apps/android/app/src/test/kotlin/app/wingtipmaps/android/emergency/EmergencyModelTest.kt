@@ -59,7 +59,7 @@ class EmergencyModelTest {
         var asks = 0
         var askedAircraft: String? = "?"
         val rules = Rules()
-        val model = EmergencyModel({ _, _, alt, aircraft -> asks++; askedAircraft = aircraft; assertEquals(4500.0, alt!!, 0.0); EmergencyFields(fields = listOf(field("KUGN", 6.2, 30.0), field("C81", 3.4, 45.0))) }, rules)
+        val model = EmergencyModel({ _, _, alt, aircraft, _ -> asks++; askedAircraft = aircraft; assertEquals(4500.0, alt!!, 0.0); EmergencyFields(fields = listOf(field("KUGN", 6.2, 30.0), field("C81", 3.4, 45.0))) }, rules)
         model.start(aircraft = "c172", airplaneName = "C172", callsign = null, checklist = "# x")
         model.took(fix, trackMagDeg = 304.0)
         val s = model.state.value
@@ -88,7 +88,7 @@ class EmergencyModelTest {
     @Test
     fun noAirplaneAndNoChecklistAreSaidNotGuessed() {
         var askedAircraft: String? = "?"
-        val model = EmergencyModel({ _, _, _, aircraft -> askedAircraft = aircraft; EmergencyFields(fields = listOf(field("C81", 3.4, 45.0))) }, Rules())
+        val model = EmergencyModel({ _, _, _, aircraft, _ -> askedAircraft = aircraft; EmergencyFields(fields = listOf(field("C81", 3.4, 45.0))) }, Rules())
         model.start(aircraft = "", airplaneName = null, callsign = null, checklist = "")
         model.took(fix, trackMagDeg = null)
         assertNull(askedAircraft)

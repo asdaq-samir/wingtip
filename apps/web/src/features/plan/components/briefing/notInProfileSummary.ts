@@ -1,8 +1,12 @@
-import { useAirplaneChosen } from "../../../../lib/preferences";
+import { tailOf } from "../../../../lib/aircraftChoice";
+import { usePreferences } from "../../../../lib/preferences";
 
-/** A section's summary where its figures are an airplane's and there are
- *  none (NotInProfile): no airplane picked, or not in the picked one's
- *  profile. */
+/** A section's summary where its figures are an airplane's and it has
+ *  none (AskFigure, which asks for them in the section): no airplane
+ *  picked, or one whose figures lack what the section needs. */
 export function useNotInProfileSummary(): string {
-  return useAirplaneChosen() ? "Not in this airplane's profile" : "Needs an airplane";
+  const aircraft = usePreferences((s) => s.aircraft);
+  if (aircraft.none) return "Needs an airplane";
+  const tail = tailOf(aircraft);
+  return tail ? `Needs ${tail}'s figures` : "Needs the airplane's figures";
 }

@@ -37,11 +37,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-/** The HTTP contract: signed out is 401 (not a redirect a fetch() would
- *  silently follow), a bad body is 400, a good one is 200. {@link AircraftService}
- *  and {@link PilotService} are both mocked -- pilot-scoping itself lives
- *  in {@code AircraftRepository#findByIdAndPilotId} and is exercised by
- *  actually running the app, not re-proven with a mock here. */
+/** The HTTP contract: signed out is 401 (not a redirect a fetch() would follow), a bad body
+ *  400, a good one 200; the services mocked, pilot-scoping being the repository's. */
 @WebMvcTest(AircraftController.class)
 @Import(app.wingtipmaps.gateway.security.SecurityConfig.class)
 class AircraftControllerTest {
@@ -168,6 +165,7 @@ class AircraftControllerTest {
                         any(),
                         any(),
                         any(),
+                        any(),
                         any()))
                 .willReturn(sampleAircraft());
 
@@ -198,6 +196,7 @@ class AircraftControllerTest {
                         eq(74.0),
                         eq(11.0),
                         eq(40.0),
+                        any(),
                         any(),
                         any(),
                         any()))
@@ -233,7 +232,8 @@ class AircraftControllerTest {
                         any(),
                         eq("SDFGRY"),
                         eq("B1"),
-                        eq("White blue stripes")))
+                        eq("White blue stripes"),
+                        any()))
                 .willReturn(sampleAircraft().describeForFlightPlan("SDFGRY", "B1", "White blue stripes"));
 
         mockMvc.perform(post("/api/aircraft")

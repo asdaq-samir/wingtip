@@ -20,15 +20,6 @@ struct PickAirplaneRow: View {
     }
 }
 
-/// A figure the picked airplane's profile does not give: said as missing,
-/// never filled with another airplane's (the owner, 2026-11-09).
-enum MissingFigure {
-    /// "Not in this airplane's profile", with what to add.
-    static func line(_ what: String) -> String {
-        "\(what): not in this airplane's profile"
-    }
-}
-
 #Preview("PickAirplaneRow") {
     List { PickAirplaneRow(detail: "Its glide and landing figures rank the fields") }
         .environment(Plan())

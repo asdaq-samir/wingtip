@@ -114,7 +114,8 @@ class GoNoGoAsk(BaseModel):
     altitude_ft: float | None = None
     altitude_nearest: bool = False
     altitude_choice: AltitudeChoice = "fastest"
-    #: A stock profile's name; none for no airplane picked (PlanQuery's).
+    #: A stock profile's name, "own" for a pilot's own airplane of no
+    #: stock type; none for no airplane picked (PlanQuery's).
     aircraft: str | None = None
     cruise_tas_kt: float | None = Field(default=None, gt=0, le=1000)
     fuel_burn_gph: float | None = None
@@ -123,6 +124,10 @@ class GoNoGoAsk(BaseModel):
     climb_fuel_burn_gph: float | None = None
     cruise_power_pct: float | None = Field(default=None, ge=40, le=100)
     service_ceiling_ft: float | None = Field(default=None, ge=1000, le=30000)
+    #: As PlanQuery's: its own climb rate, start and taxi fuel and glide.
+    climb_rate_fpm: float | None = Field(default=None, gt=0, le=5000)
+    taxi_fuel_gal: float | None = Field(default=None, ge=0, le=50)
+    glide_ratio: float | None = Field(default=None, gt=1, le=80)
     #: When the flight leaves (UTC when naive); now when not given.
     depart: datetime | None = None
     class_b_clearance: bool = False

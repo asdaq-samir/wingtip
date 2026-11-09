@@ -40,7 +40,7 @@ struct LoadingView: View {
 
     var body: some View {
         Form {
-            if let loading = verdict.answer?.loading, let load = verdict.load(for: plan.aircraft) ?? verdict.answer?.balance?.load {
+            if let loading = verdict.answer?.loading, let load = verdict.load(for: plan.loadKey) ?? verdict.answer?.balance?.load {
                 Section(title: "The Airplane") {
                     figure("Empty weight", unit: "lb", value: load.emptyWeightLb) { var l = load; l.emptyWeightLb = $0; save(l) }
                     figure("Empty arm", unit: "in", value: load.emptyArmIn) { var l = load; l.emptyArmIn = $0; save(l) }
@@ -71,11 +71,11 @@ struct LoadingView: View {
                         }
                     }
                 }
-            } else if !plan.airplaneChosen {
-                // No airplane: no loading is assumed (the owner, 2026-11-09).
-                PickAirplaneRow(detail: "Its weight and balance is worked out from its POH's loading")
-            } else if verdict.answer != nil {
-                Text(MissingFigure.line("The loading") + ": its POH's empty weight, stations and envelope are needed for the weight and balance.")
+            } else if !plan.airplaneChosen || verdict.answer != nil {
+                // No airplane: no loading is assumed; one without its
+                // loading, empty weight or moment: each asked for in place
+                // (the owner, 2026-11-09; FAA-H-8083-1B).
+                AskFigureRow(needs: [.weightBalance], pickDetail: "Its weight and balance is worked out from its POH's loading")
             } else {
                 ProgressView()
             }
@@ -85,7 +85,7 @@ struct LoadingView: View {
         .task(id: verdict.key(for: plan)) { await verdict.refresh(plan: plan, signedIn: session.signedIn) }
     }
 
-    private func save(_ load: AirplaneLoad) { verdict.setLoad(load, for: plan.aircraft) }
+    private func save(_ load: AirplaneLoad) { verdict.setLoad(load, for: plan.loadKey) }
 
     /// One figure the pilot types, its unit beside it.
     private func figure(_ title: String, unit: String, value: Double, note: String? = nil, set: @escaping (Double) -> Void) -> some View {

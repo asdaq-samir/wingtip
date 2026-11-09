@@ -79,7 +79,7 @@ const publish: Plugin = {
   },
 };
 
-// The page reader's files (features/plan/lib/readPage), from node_modules into the
+// The page reader's files (features/airplane/lib/readPage), from node_modules into the
 // build's tesseract/ under their own names, where tesseract.js asks for
 // them: its worker, its engine for each kind of WebAssembly a browser has
 // (it picks one), and its English (the integer "best" model, 2.9 MB).

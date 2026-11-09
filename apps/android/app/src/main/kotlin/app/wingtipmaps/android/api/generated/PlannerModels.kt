@@ -58,15 +58,18 @@ data class AircraftProfileSummary (
 )
 
 /**
- * The POH's best-glide speed and glide ratio (Section 3).
+ * The POH's best-glide speed and glide ratio (Section 3). A pilot's
+ * own airplane of no stock type has its glide ratio alone, as its pilot
+ * gave it: no best-glide speed (none is taken from another airplane) and
+ * its source the pilot.
  */
 @Serializable
 data class GlideFigures (
     @SerialName("best_glide_kias")
-    val bestGlideKias: Double,
+    val bestGlideKias: Double? = null,
 
     val ratio: Double,
-    val source: String
+    val source: String? = null
 )
 
 @Serializable
@@ -2359,6 +2362,9 @@ data class DepartureWindowAsk (
     @SerialName("climb_fuel_burn_gph")
     val climbFuelBurnGph: Double? = null,
 
+    @SerialName("climb_rate_fpm")
+    val climbRateFpm: Double? = null,
+
     @SerialName("climb_tas_kt")
     val climbTasKt: Double? = null,
 
@@ -2378,6 +2384,9 @@ data class DepartureWindowAsk (
 
     @SerialName("fuel_burn_gph")
     val fuelBurnGph: Double? = null,
+
+    @SerialName("glide_ratio")
+    val glideRatio: Double? = null,
 
     val ground: String? = null,
     val holds: String? = null,
@@ -2401,6 +2410,10 @@ data class DepartureWindowAsk (
 
     val start: String? = null,
     val stops: String? = null,
+
+    @SerialName("taxi_fuel_gal")
+    val taxiFuelGal: Double? = null,
+
     val ticked: List<String>? = null,
 
     @SerialName("usable_fuel_gal")
@@ -3538,6 +3551,9 @@ data class GoNoGoAsk (
     @SerialName("climb_fuel_burn_gph")
     val climbFuelBurnGph: Double? = null,
 
+    @SerialName("climb_rate_fpm")
+    val climbRateFpm: Double? = null,
+
     @SerialName("climb_tas_kt")
     val climbTasKt: Double? = null,
 
@@ -3557,6 +3573,9 @@ data class GoNoGoAsk (
 
     @SerialName("fuel_burn_gph")
     val fuelBurnGph: Double? = null,
+
+    @SerialName("glide_ratio")
+    val glideRatio: Double? = null,
 
     val ground: String? = null,
     val holds: String? = null,
@@ -3578,6 +3597,10 @@ data class GoNoGoAsk (
     val serviceCeilingFt: Double? = null,
 
     val stops: String? = null,
+
+    @SerialName("taxi_fuel_gal")
+    val taxiFuelGal: Double? = null,
+
     val ticked: List<String>? = null,
 
     @SerialName("usable_fuel_gal")
@@ -4287,10 +4310,12 @@ data class NavLogAltitude (
  * The aircraft's name plus its performance profile -- every field a
  * data/aircraft/\*.json file carries, declared, so a page reads them as
  * fields rather than guessing at a dict. The three figures after the
- * name are required when a profile is loaded (REQUIRED_FIELDS in
- * wingtip.aircraft); the rest fall back to defaults in wingtip.navlog when a
- * profile leaves them out. `extra="allow"` keeps a field a newer
- * profile adds on its way through.
+ * name are required when a stock profile is loaded (REQUIRED_FIELDS in
+ * wingtip.aircraft); a pilot's own airplane of no stock type ("own",
+ * wingtip.aircraft.OWN_AIRPLANE) has its record's alone, and no service
+ * ceiling where the record gives none. A figure left out is missing,
+ * and each rule that needs it says so. `extra="allow"` keeps a field a
+ * newer profile adds on its way through.
  */
 @Serializable
 data class AircraftProfile (
@@ -4322,12 +4347,16 @@ data class AircraftProfile (
     val pressurized: Boolean? = null,
 
     @SerialName("service_ceiling_ft")
-    val serviceCeilingFt: Double,
+    val serviceCeilingFt: Double? = null,
 
     @SerialName("supplemental_oxygen")
     val supplementalOxygen: Boolean? = null,
 
     val takeoff: ShortField? = null,
+
+    @SerialName("taxi_fuel_gal")
+    val taxiFuelGal: Double? = null,
+
     val type: String? = null,
 
     @SerialName("usable_fuel_gal")

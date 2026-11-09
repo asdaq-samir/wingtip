@@ -18,6 +18,7 @@ struct StripHead: View {
     /// A finding's row, or the verdict, tapped: the Brief.
     let onBrief: () -> Void
     let onFile: () -> Void
+    @State private var profile: ProfileAsk?
 
     private var line: String {
         StripData.headLine(dep: plan.dep, dest: plan.dest, stops: plan.stops, airplane: plan.airplaneName ?? "",
@@ -81,16 +82,31 @@ struct StripHead: View {
             } else {
                 Text("Reading the brief…").font(ChartInk.heading).foregroundStyle(ink.muted)
             }
-            Text(line)
-                .condensedCaps()
-                .foregroundStyle(ink.magenta)
-                .lineLimit(size.isAccessibilitySize ? nil : 1)
-                .accessibilityLabel(StripData.spokenHeadLine(dep: plan.dep, dest: plan.dest, stops: plan.stops, airplane: plan.airplaneName ?? "",
-                                                             cruiseFt: plan.ownAltitudeFt ?? plan.altitudeFt, departAt: nil))
+            // The line names the N-number, which opens its profile (the
+            // owner, 2026-11-09); in the chart's magenta, as the route is.
+            Group {
+                if let tail = plan.tail {
+                    Button { profile = ProfileAsk(tail: tail) } label: { lineText }
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Opens \(tail)'s profile")
+                } else {
+                    lineText
+                }
+            }
+            .accessibilityLabel(StripData.spokenHeadLine(dep: plan.dep, dest: plan.dest, stops: plan.stops, airplane: plan.airplaneName ?? "",
+                                                         cruiseFt: plan.ownAltitudeFt ?? plan.altitudeFt, departAt: nil))
+            .airplaneProfile($profile)
         }
         .padding(WingtipSpace.lg)
         .frame(maxWidth: .infinity, minHeight: 112, alignment: .bottomLeading)
         .inkCard()
+    }
+
+    private var lineText: some View {
+        Text(line)
+            .condensedCaps()
+            .foregroundStyle(ink.magenta)
+            .lineLimit(size.isAccessibilitySize ? nil : 1)
     }
 
     /// The route's menu: Share (its own menu, the web's ShareMenu), File,

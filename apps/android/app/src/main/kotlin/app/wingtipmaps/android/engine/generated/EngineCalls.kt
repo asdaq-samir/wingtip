@@ -31,6 +31,18 @@ fun Engine.airborneNow(before: Boolean? = null, airborne: Boolean? = null, arriv
     rule("airborne_now", EngineContract.AirborneNowInput(before = before, airborne = airborne, arrived = arrived, heardS = heardS))
 
 /**
+ * An airplane's figures, each with where it comes from: its pilot's own where they differ from the book's ("pilot"), else its photographed handbook page's ("handbook"), else its type's stock profile's ("book"); a figure none has is null, never another airplane's (the owner, 2026-11-09). The empty weight and moment are the pilot's alone (a stock profile's are its handbook's sample airplane's). `profile` is the book's with the picked figures over it, the airplane every other rule takes; null with no book, handbook or own figures (no airplane).
+ */
+fun Engine.airplaneFigures(book: Map<String, JsonElement>? = null, handbook: Map<String, JsonElement>? = null, own: Map<String, JsonElement>? = null): Result<EngineContract.AirplaneFiguresAnswer> =
+    rule("airplane_figures", EngineContract.AirplaneFiguresInput(book = book, handbook = handbook, own = own))
+
+/**
+ * The inputs a figure needs that the airplane's profile lacks, by name, so the app asks for them where the figure would be (the owner, 2026-11-09): the legs their cruise speed and burn; the fuel totals also the start, taxi and takeoff allowance; the glide its glide ratio; the climb its climb speed, sea-level rate and service ceiling; a weight and balance its loading envelope and its own empty weight and moment; takeoff and landing their charts. ["airplane"] with no airplane.
+ */
+fun Engine.airplaneNeeds(profile: Map<String, JsonElement>? = null, figure: String): Result<EngineContract.AirplaneNeedsAnswer> =
+    rule("airplane_needs", EngineContract.AirplaneNeedsInput(profile = profile, figure = figure))
+
+/**
  * The airspace over a point in bands, from the ground to FL600 (14 CFR 71.33, 71.71): a B, C or D where it is drawn, the most restrictive where they overlap, E from its floor or 14,500 ft, G under it all, A from 18,000 ft, split where 91.155's minimums, 91.117's speed or 91.215's transponder rule changes. The volumes are the caller's, read from the NASR shapefile or a cycle pack.
  */
 fun Engine.airspaceColumn(groundFt: Double? = null, inVeil: Boolean? = null, volumes: List<EngineContract.AirspaceColumnInputVolumesItem>): Result<List<EngineContract.AirspaceBand>> =
@@ -241,7 +253,7 @@ fun Engine.belowVfrMinimums(ceilingFt: Double? = null, visibilitySm: Double? = n
     rule("below_vfr_minimums", EngineContract.BelowVfrMinimumsInput(ceilingFt = ceilingFt, visibilitySm = visibilitySm))
 
 /**
- * The best fields to land at from where the airplane is, ranked with their reasons: in "glide" mode (the engine stopped) by reach first -- over the field at pattern height, reachable lower, beyond -- with the airplane's best-glide figures and the wind aloft, then the runway against the POH and the distance; in "diversion" mode by the runway and the weather, then the time. With no glide figures the glide is not guessed: nearest first, needs_airplane true. Nothing is left out for a limitation; it is said and ranked lower.
+ * The best fields to land at from where the airplane is, ranked with their reasons: in "glide" mode (the engine stopped) by reach first -- over the field at pattern height, reachable lower, beyond -- with the airplane's best-glide figures and the wind aloft, then the runway against the POH and the distance; in "diversion" mode by the runway and the weather, then the time. With no glide figures the glide is not guessed: nearest first, needs_airplane true. Nothing is left out for a limitation; it is said and ranked lower. A glide ratio with no best-glide speed gives a reach only with no wind aloft: a headwind's loss needs the glide's airspeed, and a still-air reach into one would be too far.
  */
 fun Engine.bestFields(mode: String? = null, at: EngineContract.BestFieldsInputAt, altitudeFt: Double? = null, speedKt: Double? = null, wind: EngineContract.BestFieldsInputWind? = null, variationDeg: Double? = null, airplane: EngineContract.BestFieldsInputAirplane? = null, fields: List<EngineContract.BestFieldsInputFieldsItem>, limit: Double? = null): Result<EngineContract.BestFieldsAnswer> =
     rule("best_fields", EngineContract.BestFieldsInput(mode = mode, at = at, altitudeFt = altitudeFt, speedKt = speedKt, wind = wind, variationDeg = variationDeg, airplane = airplane, fields = fields, limit = limit))

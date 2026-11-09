@@ -50,7 +50,7 @@ export function useAircraftPick() {
   // picker: flown on its type's stock profile, named by its N-number.
   const pickTail = useCallback(
     (tail: string, profile: string) => {
-      // With the figures the pilot set for it, where they have (AirplaneFigures).
+      // With the figures the pilot set for it on this device, where they have (features/airplane).
       // No stock profile (its type not known yet, or none): its N-number alone.
       const label = profile ? `${tail} · ${profile.toUpperCase()}` : tail;
       setAircraft({ profile, label, tail, ...usePreferences.getState().tailFigures[tail] });

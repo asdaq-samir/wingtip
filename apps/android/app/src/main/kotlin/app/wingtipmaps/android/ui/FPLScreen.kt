@@ -41,6 +41,9 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.airplane.AirplaneNow
+import app.wingtipmaps.android.airplane.AskFigures
+import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.NavLogTotals
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -107,7 +110,7 @@ fun FPLScreen(plan: Plan) {
             state.totals?.let { totals ->
                 item {
                     Spacer(Modifier.height(WingtipSpace.Sm))
-                    TotalsRows(totals)
+                    TotalsRows(totals, rememberAirplaneNow(plan))
                 }
             }
         }
@@ -171,7 +174,7 @@ private fun LegRow(leg: Leg, onOpen: () -> Unit) {
 
 /** The flight's totals, and the fuel the planner holds it to. */
 @Composable
-private fun TotalsRows(totals: NavLogTotals) {
+private fun TotalsRows(totals: NavLogTotals, airplane: AirplaneNow) {
     val warn = (totals.fuelMarginGal ?: 0.0) < 0
     Row(Modifier.fillMaxWidth()) {
         Figure(stringResource(R.string.figure_dist), Format.distance(totals.distanceNm), said = stringResource(R.string.leg_distance) + ", " + Spoken.distance(totals.distanceNm))
@@ -184,11 +187,7 @@ private fun TotalsRows(totals: NavLogTotals) {
     if (warn) ProblemLine(stringResource(R.string.under_reserve), Modifier.padding(top = WingtipSpace.Xs))
     // An airplane whose profile has no start, taxi and takeoff allowance:
     // the planner leaves it out of the fuel required rather than take a
-    // stock airplane's (the owner, 2026-11-09), and the pilot is told.
-    if (totals.fuelRequiredGal != null && totals.taxiGal == null) {
-        Text(
-            stringResource(R.string.taxi_not_in_profile), style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = WingtipSpace.Xs),
-        )
-    }
+    // stock airplane's (the owner, 2026-11-09), and the pilot is asked for
+    // it here, the totals worked out again once it is given.
+    if (totals.fuelRequiredGal != null) AskFigures(airplane, "fuel_totals", Modifier.padding(top = WingtipSpace.Xs))
 }

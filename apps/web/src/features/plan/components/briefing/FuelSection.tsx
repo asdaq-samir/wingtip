@@ -55,7 +55,7 @@ export default function FuelSection({ totals }: { totals: Totals | null }) {
             description={`${
               totals.taxi_gal != null
                 ? `With ${one(totals.taxi_gal)} gal to start, taxi and take off`
-                : "Start and taxi not counted, not in this airplane's profile"
+                : "Start and taxi not counted: the airplane has no figure for it"
             }, ${
               totals.alternate
                 ? `${one(totals.alternate.fuel_gal)} gal on to ${totals.alternate.ident}${totals.alternate.still_air ? " in still air" : ""}, `

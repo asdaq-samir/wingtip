@@ -58,10 +58,10 @@ interface EmergencyRules {
 
 /** Where the fields come from: the planner, a fake in the tests. */
 fun interface EmergencySource {
-    suspend fun fields(lat: Double, lon: Double, altitudeFt: Double?, aircraft: String?): EmergencyFields
+    suspend fun fields(lat: Double, lon: Double, altitudeFt: Double?, aircraft: String?, glideRatio: Double?): EmergencyFields
 }
 
-val PlannerEmergency = EmergencySource { lat, lon, alt, aircraft -> Planner.emergencyFields(lat, lon, alt, aircraft) }
+val PlannerEmergency = EmergencySource { lat, lon, alt, aircraft, glide -> Planner.emergencyFields(lat, lon, alt, aircraft, glide) }
 
 object EngineEmergency : EmergencyRules {
     /** The planner's shapes into the contract's, member by member by
@@ -75,6 +75,9 @@ object EngineEmergency : EmergencyRules {
         val variation = Engine.magneticVariation(fix.lat, fix.lon, date = today).getOrNull()
         val airplane = data.airplane?.let {
             EngineContract.BestFieldsInputAirplane(
+                // A pilot's own airplane of no stock type has its glide ratio
+                // alone, no best-glide speed (none taken from another
+                // airplane): best_fields then works the reach in still air only.
                 glide = it.glide?.let { g -> EngineContract.BestFieldsInputAirplaneGlide(g.bestGlideKias, g.ratio) },
                 landing = it.landing?.let { l -> recast<_, EngineContract.ShortFieldTable>(l) },
                 crosswind = it.crosswind?.let { c -> EngineContract.BestFieldsInputAirplaneCrosswind(c.demonstratedKt) },

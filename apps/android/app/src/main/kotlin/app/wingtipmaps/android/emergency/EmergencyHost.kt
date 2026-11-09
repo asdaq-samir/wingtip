@@ -7,6 +7,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.airplane.AirplaneNow
+import app.wingtipmaps.android.airplane.AskFigures
+import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.checklist.ChecklistKind
 import app.wingtipmaps.android.checklist.ChecklistStore
 import app.wingtipmaps.android.flight.InFlight
@@ -29,15 +32,20 @@ fun EmergencyHost(plan: Plan, ownShip: OwnShipControl, model: EmergencyModel = v
     val fix by ownShip.ownShip.fix.collectAsStateWithLifecycle()
     val inFlight by InFlight.shared.state.collectAsStateWithLifecycle()
     val state by model.state.collectAsStateWithLifecycle()
-    // No airplane chosen: no glide is guessed (decision 0011).
-    val airplane = planned.aircraft.ifEmpty { null }
-    LaunchedEffect(from, airplane) {
-        val text = airplane?.let { ChecklistStore.of(context).text(it, ChecklistKind.EMERGENCY) }.orEmpty()
-        model.start(airplane, airplane?.uppercase(), callsign = null, checklist = text)
+    // No airplane chosen: no glide is guessed (decision 0011). An own
+    // airplane of no stock type glides at its pilot's ratio alone.
+    val now = rememberAirplaneNow(plan)
+    val airplane = AirplaneNow.plannerName(planned.aircraft, planned.own)
+    LaunchedEffect(from, airplane, now.glideRatio) {
+        val text = planned.aircraft.ifEmpty { null }?.let { ChecklistStore.of(context).text(it, ChecklistKind.EMERGENCY) }.orEmpty()
+        model.start(airplane, planned.aircraft.ifEmpty { null }?.uppercase() ?: now.name, callsign = null, checklist = text, glideRatio = now.glideRatio)
     }
     // The airplane's track magnetic, the engine's, where it flies a route.
     LaunchedEffect(fix, ownShip.on) { model.took(if (ownShip.on) fix else null, inFlight.progress?.trackMagDeg) }
-    EmergencySheet(state, model, onShowPosition = { if (!ownShip.on) ownShip.tap() }, onClose = EmergencyOpen::close) {
+    EmergencySheet(
+        state, model, onShowPosition = { if (!ownShip.on) ownShip.tap() }, onClose = EmergencyOpen::close,
+        askGlide = { AskFigures(now, "glide") },
+    ) {
         // The Airplane tab's own picker, here so the emergency stays open.
         val types by airplanes.profiles.collectAsStateWithLifecycle()
         AirplanePicker(types, selected = planned.aircraft, onPick = plan::setAircraft)

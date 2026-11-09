@@ -1,0 +1,67 @@
+import SwiftUI
+
+/// The airplanes' figures kept in step with who is signed in, on the root
+/// view: the types' books once a launch, the pilot's records as they sign
+/// in or out (the N-number flown taking its record's figures), and at
+/// sign-in the figures kept on this device while signed out offered to the
+/// account, as the owner asked (2026-11-09).
+struct AirplaneHost: ViewModifier {
+    @Environment(Plan.self) private var plan
+    @Environment(Session.self) private var session
+    /// The N-numbers whose figures this device kept, offered at sign-in.
+    @State private var offered: [String: Figures] = [:]
+    @State private var problem: String?
+
+    func body(content: Content) -> some View {
+        content
+            .task { await Airplanes.shared.loadBooks() }
+            .task(id: session.signedIn) {
+                await Airplanes.shared.loadRecords(signedIn: session.signedIn)
+                plan.took(records: Airplanes.shared.records)
+                if session.signedIn { offered = OwnFigureStore.tails() }
+            }
+            .alert(Self.title(offered), isPresented: Binding(get: { !offered.isEmpty }, set: { if !$0 { offered = [:] } })) {
+                Button("Save to Account") { Task { await keep() } }
+                Button("Keep on This iPhone", role: .cancel) { offered = [:] }
+            } message: {
+                Text("You set figures for \(offered.keys.sorted().joined(separator: ", ")) while signed out. Save them with your airplanes?")
+            }
+            .alert("Figures Not Saved", isPresented: Binding(get: { problem != nil }, set: { if !$0 { problem = nil } })) {
+                Button("OK", role: .cancel) { problem = nil }
+            } message: {
+                Text(problem ?? "")
+            }
+    }
+
+    static func title(_ offered: [String: Figures]) -> String {
+        offered.count == 1 ? "Save \(offered.keys.first ?? "")'s Figures?" : "Save Your Airplanes' Figures?"
+    }
+
+    /// Each N-number's figures saved to the account over its record's, or
+    /// as a new record from its type's book; the device's copy forgotten
+    /// once the account has them.
+    private func keep() async {
+        let tails = offered
+        offered = [:]
+        var failed: [String] = []
+        for (tail, figures) in tails.sorted(by: { $0.key < $1.key }) {
+            let record = Airplanes.shared.record(tail)
+            // Over the record's own, the device's where they differ.
+            var merged = record.map(Figures.init) ?? Figures()
+            for figure in OwnFigure.allCases { if let v = figures[figure] { merged[figure] = v } }
+            // A new record starts from its registered type's book, where the
+            // planner has one.
+            let registered = record == nil ? try? await Planner.registered(tail) : nil
+            let stock = registered.flatMap { try? Registered.profile(manufacturer: $0.manufacturer, model: $0.model, year: $0.year) }
+            let aircraft = plan.tail?.uppercased() == tail ? plan.aircraft : (stock ?? Plan.ownAirplane)
+            do {
+                let (saved, kept) = try await Airplanes.shared.save(merged, tail: tail, aircraft: aircraft, type: nil, signedIn: true)
+                if case .device(let why) = kept { failed.append(why ?? tail) } else { OwnFigureStore.forget(tail) }
+                plan.took(saved, for: tail)
+            } catch {
+                failed.append("\(tail): \(error.localizedDescription)")
+            }
+        }
+        if !failed.isEmpty { problem = failed.joined(separator: "\n") }
+    }
+}

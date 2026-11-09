@@ -1,0 +1,112 @@
+import Foundation
+
+/// The pilot's own figures for the airplane flown: its record's on the
+/// gateway, or kept on this device while signed out (OwnFigureStore). Each
+/// is flown over its type's book figure, and for an airplane of no stock
+/// type they are its figures alone (the planner's aircraft "own"); one not
+/// given is nil, never another airplane's (the owner, 2026-11-09).
+struct Figures: Codable, Equatable, Sendable {
+    var cruiseTasKt: Double?
+    var fuelBurnGph: Double?
+    var usableFuelGal: Double?
+    var cruisePowerPct: Double?
+    var climbTasKt: Double?
+    var climbFuelBurnGph: Double?
+    var serviceCeilingFt: Double?
+    var climbRateFpm: Double?
+    var taxiFuelGal: Double?
+    var glideRatio: Double?
+    var emptyWeightLb: Double?
+    var emptyMomentLbIn: Double?
+
+    init(cruiseTasKt: Double? = nil, fuelBurnGph: Double? = nil, usableFuelGal: Double? = nil, cruisePowerPct: Double? = nil, climbTasKt: Double? = nil,
+         climbFuelBurnGph: Double? = nil, serviceCeilingFt: Double? = nil, climbRateFpm: Double? = nil, taxiFuelGal: Double? = nil, glideRatio: Double? = nil,
+         emptyWeightLb: Double? = nil, emptyMomentLbIn: Double? = nil) {
+        self.cruiseTasKt = cruiseTasKt; self.fuelBurnGph = fuelBurnGph; self.usableFuelGal = usableFuelGal
+        self.cruisePowerPct = cruisePowerPct; self.climbTasKt = climbTasKt; self.climbFuelBurnGph = climbFuelBurnGph
+        self.serviceCeilingFt = serviceCeilingFt; self.climbRateFpm = climbRateFpm; self.taxiFuelGal = taxiFuelGal
+        self.glideRatio = glideRatio; self.emptyWeightLb = emptyWeightLb; self.emptyMomentLbIn = emptyMomentLbIn
+    }
+
+    /// The pilot's airplane record's figures, every one it keeps.
+    init(_ own: OwnAircraftRecord) {
+        let f = own.figures
+        self.init(cruiseTasKt: own.cruiseTasKt, fuelBurnGph: own.fuelBurnGph, usableFuelGal: own.usableFuelGal, cruisePowerPct: own.cruisePowerPct,
+                  climbTasKt: own.climbTasKt, climbFuelBurnGph: own.climbFuelBurnGph, serviceCeilingFt: f.serviceCeilingFt, climbRateFpm: f.climbRateFpm,
+                  taxiFuelGal: f.taxiFuelGal, glideRatio: f.glideRatio, emptyWeightLb: f.emptyWeightLb, emptyMomentLbIn: f.emptyMomentLbIn)
+    }
+
+    /// The figures off the engine's airplane_figures answer, each its
+    /// value whatever its source: the book's under the pilot's.
+    init(_ answer: EngineContract.AirplaneFiguresAnswer) {
+        self.init()
+        for item in answer.figures {
+            if let figure = OwnFigure(rawValue: item.key) { self[figure] = item.value }
+        }
+    }
+
+    subscript(_ figure: OwnFigure) -> Double? {
+        get {
+            switch figure {
+            case .cruiseTasKt: cruiseTasKt
+            case .fuelBurnGph: fuelBurnGph
+            case .cruisePowerPct: cruisePowerPct
+            case .usableFuelGal: usableFuelGal
+            case .climbTasKt: climbTasKt
+            case .climbFuelBurnGph: climbFuelBurnGph
+            case .climbRateFpm: climbRateFpm
+            case .serviceCeilingFt: serviceCeilingFt
+            case .taxiFuelGal: taxiFuelGal
+            case .glideRatio: glideRatio
+            case .emptyWeightLb: emptyWeightLb
+            case .emptyMomentLbIn: emptyMomentLbIn
+            }
+        }
+        set {
+            switch figure {
+            case .cruiseTasKt: cruiseTasKt = newValue
+            case .fuelBurnGph: fuelBurnGph = newValue
+            case .cruisePowerPct: cruisePowerPct = newValue
+            case .usableFuelGal: usableFuelGal = newValue
+            case .climbTasKt: climbTasKt = newValue
+            case .climbFuelBurnGph: climbFuelBurnGph = newValue
+            case .climbRateFpm: climbRateFpm = newValue
+            case .serviceCeilingFt: serviceCeilingFt = newValue
+            case .taxiFuelGal: taxiFuelGal = newValue
+            case .glideRatio: glideRatio = newValue
+            case .emptyWeightLb: emptyWeightLb = newValue
+            case .emptyMomentLbIn: emptyMomentLbIn = newValue
+            }
+        }
+    }
+
+    var isEmpty: Bool { self == Figures() }
+
+    /// Whether the planner can fly an airplane of no stock type on them:
+    /// its cruise speed and burn are the two it requires (the planner's
+    /// wingtip.planning.OWN_AIRPLANE).
+    var flyable: Bool { cruiseTasKt != nil && fuelBurnGph != nil }
+
+    /// The nav log's, the route options' and the Go / No-Go's query for
+    /// them, only the ones set (the planner's PlanQuery); the empty weight
+    /// and moment are the loading's, not the plan's.
+    var query: [String: String?] {
+        var out: [String: String?] = [:]
+        for figure in OwnFigure.allCases where figure != .emptyWeightLb && figure != .emptyMomentLbIn {
+            out[figure.rawValue] = self[figure].map { String($0) }
+        }
+        return out
+    }
+
+    /// airplane_figures' `own`: every figure by its key, null where not given.
+    var engine: [String: JSONValue] {
+        Dictionary(uniqueKeysWithValues: OwnFigure.allCases.map { ($0.rawValue, self[$0].map(JSONValue.number) ?? .null) })
+    }
+
+    /// The gateway's OwnFigures: those six of them, nil left out (which
+    /// the whole airplane's PUT reads as cleared).
+    var gateway: GWOwnFigures {
+        GWOwnFigures(climbRateFpm: climbRateFpm, emptyMomentLbIn: emptyMomentLbIn, emptyWeightLb: emptyWeightLb, glideRatio: glideRatio,
+                     serviceCeilingFt: serviceCeilingFt, taxiFuelGal: taxiFuelGal)
+    }
+}

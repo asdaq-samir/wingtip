@@ -1,6 +1,6 @@
 /**
  * The planning figures in a handbook's specifications page, from the text
- * read off a photo of it (features/plan/lib/readPage): the page's own lines, each a label
+ * read off a photo of it (features/airplane/lib/readPage): the page's own lines, each a label
  * and its figure ("Service Ceiling (ft) 14,300", "SERVICE CEILING ....
  * 13,500 FT."), as Piper's and Cessna's handbooks print them. Each figure
  * comes with the line it was read from, for the pilot to check against the

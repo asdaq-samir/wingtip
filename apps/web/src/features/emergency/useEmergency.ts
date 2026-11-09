@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api/client";
+import { plannerAircraft } from "../../lib/api/airplaneQuery";
 import { aircraftKey, shortName } from "../../lib/aircraftChoice";
 import { checklistOf } from "../../lib/checklist";
 import { checklistText, useChecklists } from "../../lib/checklists";
@@ -32,18 +33,19 @@ export function useEmergency() {
   const showPosition = useOwnShip((s) => s.setEnabled);
   const aircraft = usePreferences((s) => s.aircraft);
   const stations = usePointActions((s) => s.stations);
-  // A stock profile's figures alone, and only the airplane's own: none for
-  // no airplane, or an own airplane of no stock type (aircraftChoice's
-  // `unmatched`), whose base is another airplane's.
-  const profile = aircraft.none || aircraft.unmatched || !aircraft.profile ? null : aircraft.profile;
+  // The airplane as the planner takes it (a stock profile, or "own" on its
+  // record's figures alone) and its own glide ratio over its type's: none
+  // for no airplane, never another airplane's (the owner, 2026-11-09).
+  const profile = plannerAircraft(aircraft) ?? null;
+  const glideRatio = aircraft.glideRatio ?? null;
   const chosen = !aircraft.none;
   // Asked again as the airplane moves on and comes down, not at each fix.
   const lat = fix ? at(fix.lat) : 0;
   const lon = fix ? at(fix.lon) : 0;
   const altitude = fix?.altitudeFt != null ? Math.round(fix.altitudeFt / 500) * 500 : null;
   const asked = useQuery({
-    queryKey: ["emergency", lat, lon, altitude, profile],
-    queryFn: () => api.emergencyFields(lat, lon, altitude, profile),
+    queryKey: ["emergency", lat, lon, altitude, profile, glideRatio],
+    queryFn: () => api.emergencyFields(lat, lon, altitude, profile, glideRatio),
     enabled: !!open && !!fix,
     staleTime: 60_000,
     placeholderData: (previous) => previous,

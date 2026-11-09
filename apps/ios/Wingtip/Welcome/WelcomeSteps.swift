@@ -32,7 +32,7 @@ struct WelcomeAirplaneStep: View {
                         .disabled((try? Registered.isNNumber(model.typedTail.uppercased())) != true)
                 }
                 if let tail = plan.tail, !model.own.contains(where: { $0.tailNumber == tail }) {
-                    WelcomeChoice(title: tail, detail: plan.airplaneChosen ? plan.aircraft.uppercased() : nil, picked: true) {}
+                    WelcomeChoice(title: tail, detail: plan.stockType, picked: true) {}
                 }
             }
             .padding(.top, WingtipSpace.sm)

@@ -87,8 +87,7 @@ struct LogbookView: View {
                     if let entries {
                         if entries.isEmpty { Text("No flights logged yet: the plus logs one.").foregroundStyle(.secondary) }
                         ForEach(entries) { e in
-                            Button { editing = Editing(id: e.id, entry: LogbookEntryRequest(e)) } label: { row(e) }
-                                .foregroundStyle(.primary)
+                            LogbookRow(entry: e) { editing = Editing(id: e.id, entry: LogbookEntryRequest(e)) }
                                 .swipeActions {
                                     Button("Delete", role: .destructive) { toDelete = e }
                                 }
@@ -178,20 +177,6 @@ struct LogbookView: View {
         Button(sending ? "Importing…" : "Import \(n) Flight\(n == 1 ? "" : "s")") { Task { await send(read) } }
             .disabled(sending || n == 0)
         Button("Cancel", role: .cancel) { preview = nil }
-    }
-
-    private func row(_ e: LogbookEntry) -> some View {
-        let landings = e.dayLandings + e.nightLandings
-        return VStack(alignment: .leading, spacing: 2) {
-            HStack {
-                Text(Day.said(e.flownOn) + (e.route.map { " · \($0)" } ?? "")).font(.headline)
-                Spacer()
-                Text(Format.hours(e.totalHours)).font(.subheadline.monospacedDigit())
-            }
-            Text(([e.aircraft, e.aircraftType, "\(landings) landing\(landings == 1 ? "" : "s")", e.remarks].compactMap { $0 }.filter { !$0.isEmpty })
-                .joined(separator: " · "))
-                .font(.footnote).foregroundStyle(.secondary)
-        }
     }
 
     // From the logbook and the dates the pilot gives, no one's sign-off:

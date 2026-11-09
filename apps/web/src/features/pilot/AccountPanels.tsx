@@ -627,8 +627,7 @@ export function AircraftPanel() {
     });
   };
 
-  // The confirmed figures put in the form's fields, for the pilot to see
-  // and save; the rest of the page's figures go with that save.
+  // The confirmed figures put in the form's fields to see and save; the rest of the page's go with that save.
   const fromPhoto = ({ handbook: figures, profile }: ConfirmedHandbook) => {
     const fill = (name: keyof AircraftFormValues, v: number | null | undefined) => {
       if (v != null) setValue(name, String(Math.round(v * 10) / 10), { shouldDirty: true, shouldValidate: true });
@@ -657,6 +656,7 @@ export function AircraftPanel() {
         equipment: values.equipment.trim() || null,
         surveillance: values.surveillance.trim() || null,
         colour: values.colour.trim() || null,
+        figures: null, // its own figures as they are: the airplane's profile sets them (features/airplane)
       },
     });
 

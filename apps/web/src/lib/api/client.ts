@@ -4,6 +4,7 @@ import type { paths as AssistantPaths } from "./assistant-schema";
 import type { paths as GatewayPaths } from "./gateway-schema";
 import { noteAnswer } from "../fromCache";
 import { REQUEST_ID_HEADER, newRequestId } from "./requestId";
+import { airplaneQuery } from "./airplaneQuery";
 import type { AirportAtis, AirportRvr, CopilotAround, DepartureEvents, FlowAtAirports, ItwsAlerts, SaaStatuses } from "./types";
 import type {
   Aircraft,
@@ -13,6 +14,7 @@ import type {
   AircraftChoice,
   AircraftProfiles,
   AircraftRequest,
+  OwnFigures,
   AirportPhotos,
   AirportPlace,
   AirportSearch,
@@ -395,7 +397,6 @@ const stopsParam = (stops?: string[]) => (stops?.length ? stops.join(",") : unde
  *  figures, and null for every one that needs an airplane -- rather than
  *  the stock profile it was asked with before (the owner, 2026-11-09:
  *  "don't assume"). */
-const plannerAircraft = (aircraft?: AircraftChoice) => (aircraft?.none || !aircraft?.profile ? undefined : aircraft.profile);
 
 /** The airport index's shape (wingtip.airports.search_index), in its address
  *  so a day's copy in the browser of an older shape is not read as this
@@ -462,14 +463,7 @@ export const api = {
           // Picked on the wheel: each leg at its nearest legal altitude.
           altitude_nearest: altitudeFt && altitudeNearest ? true : undefined,
           altitude_choice: altitudeChoice && altitudeChoice !== "fastest" ? altitudeChoice : undefined,
-          aircraft: plannerAircraft(aircraft),
-          cruise_tas_kt: aircraft?.cruiseTasKt,
-          fuel_burn_gph: aircraft?.fuelBurnGph,
-          usable_fuel_gal: aircraft?.usableFuelGal,
-          climb_tas_kt: aircraft?.climbTasKt,
-          climb_fuel_burn_gph: aircraft?.climbFuelBurnGph,
-          cruise_power_pct: aircraft?.cruisePowerPct,
-          service_ceiling_ft: aircraft?.serviceCeilingFt,
+          ...airplaneQuery(aircraft),
           depart: depart || undefined,
           class_b_clearance: classBClearance || undefined,
           altitudes: altitudes || undefined,
@@ -526,12 +520,14 @@ export const api = {
       .GET("/api/airports/nearest", { params: { query: { lat, lon, limit: 10 } } })
       .then(data<NearestAirports>)
       .then((r) => r.airports),
-  /** What the emergency assistant ranks (features/emergency/emergency): the fields round
-   *  own ship, the wind at its altitude and the stock profile's glide. */
-  emergencyFields: (lat: number, lon: number, altitudeFt: number | null, aircraft: string | null) =>
+  /** What the emergency assistant ranks (features/emergency/emergency): the fields round own ship,
+   *  the wind at its altitude and the airplane's glide (its own ratio over its type's, or "own"'s alone). */
+  emergencyFields: (lat: number, lon: number, altitudeFt: number | null, aircraft: string | null, glideRatio: number | null) =>
     planner
       .GET("/api/emergency/fields", {
-        params: { query: { lat, lon, altitude_ft: altitudeFt ?? undefined, aircraft: aircraft ?? undefined } },
+        params: {
+          query: { lat, lon, altitude_ft: altitudeFt ?? undefined, aircraft: aircraft ?? undefined, glide_ratio: glideRatio ?? undefined },
+        },
       })
       .then(data<EmergencyFields>),
   /** The fields round a position with fuel, food, repair or a flight
@@ -588,14 +584,7 @@ export const api = {
             dep: ident,
             dest: ident,
             duration_min: durationMin,
-            aircraft: plannerAircraft(aircraft),
-            cruise_tas_kt: aircraft?.cruiseTasKt,
-            fuel_burn_gph: aircraft?.fuelBurnGph,
-            usable_fuel_gal: aircraft?.usableFuelGal,
-            climb_tas_kt: aircraft?.climbTasKt,
-            climb_fuel_burn_gph: aircraft?.climbFuelBurnGph,
-            cruise_power_pct: aircraft?.cruisePowerPct,
-            service_ceiling_ft: aircraft?.serviceCeilingFt,
+            ...airplaneQuery(aircraft),
             depart: depart || undefined,
             rules: rules === "ifr" ? rules : undefined,
           },
@@ -802,11 +791,7 @@ export const api = {
             dep,
             dest,
             stops: stops || undefined,
-            aircraft: plannerAircraft(aircraft),
-            cruise_tas_kt: aircraft?.cruiseTasKt,
-            fuel_burn_gph: aircraft?.fuelBurnGph,
-            usable_fuel_gal: aircraft?.usableFuelGal,
-            service_ceiling_ft: aircraft?.serviceCeilingFt,
+            ...airplaneQuery(aircraft),
             depart: depart || undefined,
             min_ceiling_ft: minimums.ceilingFt ?? undefined,
             min_visibility_sm: minimums.visibilitySm ?? undefined,
@@ -1055,6 +1040,9 @@ export const api = {
      *  91.411, 91.413, 91.207). */
     inspections: (id: number, request: InspectionsRequest) =>
       gateway.PUT("/api/aircraft/{id}/inspections", { params: { path: { id } }, body: request }).then(data<Aircraft>),
+    /** Its own handbook figures, only those given added (an inline ask's Save, lib/airplane). */
+    figures: (id: number, figures: OwnFigures) =>
+      gateway.PUT("/api/aircraft/{id}/figures", { params: { path: { id } }, body: figures }).then(data<Aircraft>),
     /** Its squawks, newest first; one written, changed or fixed, or taken out. */
     squawks: (id: number) => gateway.GET("/api/aircraft/{id}/squawks", { params: { path: { id } } }).then(data<Squawk[]>),
     addSquawk: (id: number, squawk: SquawkRequest) =>

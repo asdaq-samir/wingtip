@@ -5,6 +5,7 @@ import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.domain.VorCheck;
 import app.wingtipmaps.gateway.dto.HandbookFigures;
 import app.wingtipmaps.gateway.dto.InspectionsRequest;
+import app.wingtipmaps.gateway.dto.OwnFigures;
 import app.wingtipmaps.gateway.repository.AircraftRepository;
 import java.time.LocalDate;
 import java.util.List;
@@ -46,18 +47,21 @@ public class AircraftService {
             Double usableFuelGal,
             String equipment,
             String surveillance,
-            String colour) {
-        return aircraft.save(new Aircraft(
-                        pilot,
-                        tailNumber,
-                        typeDesignator,
-                        cruiseTasKt,
-                        fuelBurnGph,
-                        cruisePowerPct,
-                        climbTasKt,
-                        climbFuelBurnGph,
-                        usableFuelGal)
-                .describeForFlightPlan(Typed.code(equipment), Typed.code(surveillance), Typed.words(colour)));
+            String colour,
+            OwnFigures figures) {
+        return aircraft.save(keep(
+                new Aircraft(
+                                pilot,
+                                tailNumber,
+                                typeDesignator,
+                                cruiseTasKt,
+                                fuelBurnGph,
+                                cruisePowerPct,
+                                climbTasKt,
+                                climbFuelBurnGph,
+                                usableFuelGal)
+                        .describeForFlightPlan(Typed.code(equipment), Typed.code(surveillance), Typed.words(colour)),
+                figures));
     }
 
     /** Empty when no such aircraft exists for this pilot -- not
@@ -76,18 +80,54 @@ public class AircraftService {
             Double usableFuelGal,
             String equipment,
             String surveillance,
-            String colour) {
+            String colour,
+            OwnFigures figures) {
         return get(pilot, id)
-                .map(a -> aircraft.save(a.update(
-                                tailNumber,
-                                typeDesignator,
-                                cruiseTasKt,
-                                fuelBurnGph,
-                                cruisePowerPct,
-                                climbTasKt,
-                                climbFuelBurnGph,
-                                usableFuelGal)
-                        .describeForFlightPlan(Typed.code(equipment), Typed.code(surveillance), Typed.words(colour))));
+                .map(a -> aircraft.save(keep(
+                        a.update(
+                                        tailNumber,
+                                        typeDesignator,
+                                        cruiseTasKt,
+                                        fuelBurnGph,
+                                        cruisePowerPct,
+                                        climbTasKt,
+                                        climbFuelBurnGph,
+                                        usableFuelGal)
+                                .describeForFlightPlan(
+                                        Typed.code(equipment), Typed.code(surveillance), Typed.words(colour)),
+                        figures)));
+    }
+
+    /** The figures given added to its own, the rest as they were: what an
+     *  inline ask saves, one figure at a time (PUT /api/aircraft/{id}/figures). */
+    public Optional<Aircraft> addFigures(Pilot pilot, Long id, OwnFigures given) {
+        return get(pilot, id).map(a -> aircraft.save(keep(a, figuresOf(a).with(given))));
+    }
+
+    /** Its own handbook figures as kept. */
+    public static OwnFigures figuresOf(Aircraft a) {
+        return new OwnFigures(
+                a.getServiceCeilingFt(),
+                a.getClimbRateFpm(),
+                a.getTaxiFuelGal(),
+                a.getGlideRatio(),
+                a.getEmptyWeightLb(),
+                a.getEmptyMomentLbIn());
+    }
+
+    /** `a` with `figures` kept, all six; null figures, as a client from
+     *  before them sends, leaves its own as they were. */
+    private static Aircraft keep(Aircraft a, OwnFigures figures) {
+        if (figures == null) {
+            return a;
+        }
+        return a.keepFigures(
+                figures.serviceCeilingFt(),
+                figures.climbRateFpm(),
+                figures.taxiFuelGal(),
+                figures.glideRatio(),
+                figures.emptyWeightLb(),
+                figures.emptyMomentLbIn());
     }
 
     /** The airplane's VOR check for IFR, as the pilot records it (14 CFR 91.171(d)). */

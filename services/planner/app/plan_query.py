@@ -15,7 +15,7 @@ from wingtip import flight_plan as fp
 # As vfr_holds: PlanQuery's own `holds` is the address's.
 from wingtip import holds as vfr_holds
 from wingtip.engine import ask as engine
-from wingtip.planning import aircraft_profile
+from wingtip.aircraft import aircraft_profile
 
 from . import foreflight
 from .checkpoint_scoring import route_checkpoints
@@ -31,6 +31,14 @@ CruisePower = Annotated[float | None, Query(ge=40, le=100)]
 #: An airplane's own service ceiling, ft, as the pilot sets it for their
 #: N-number: from a powered glider's to past a piston single's highest.
 ServiceCeiling = Annotated[float | None, Query(ge=1000, le=30000)]
+#: An airplane's own sea-level best rate of climb, fpm, from its
+#: handbook: above zero, and under any piston single's or twin's.
+ClimbRate = Annotated[float | None, Query(gt=0, le=5000)]
+#: Its own fuel for start, taxi and takeoff, gal, from its handbook.
+TaxiFuel = Annotated[float | None, Query(ge=0, le=50)]
+#: Its own still-air glide ratio, from its handbook's Section 3: a
+#: light airplane's is about 7 to 12 to 1, a glider's past 40.
+GlideRatio = Annotated[float | None, Query(gt=1, le=80)]
 
 
 @dataclass
@@ -53,7 +61,9 @@ class PlanQuery:
     #: not, with its cautions.
     altitude_nearest: bool = False
     altitude_choice: AltitudeChoice = "fastest"
-    #: A stock profile's name; none asked, no airplane is picked: the
+    #: A stock profile's name, or "own" (wingtip.aircraft.OWN_AIRPLANE)
+    #: for a pilot's own airplane of no stock type, flown on the figures
+    #: below alone; none asked, no airplane is picked: the
     #: plan is the route's own figures (its course, miles, legs,
     #: checkpoints, altitudes, weather and airspace) and none that needs an
     #: airplane (times, ground speeds, fuel, the tops of climb and
@@ -72,6 +82,11 @@ class PlanQuery:
     #: set one for their N-number (the owner's "give users a way to change
     #: these specs for their n-number").
     service_ceiling_ft: ServiceCeiling = None
+    #: Its own sea-level climb rate, start and taxi fuel and glide ratio,
+    #: from its handbook, where the pilot's record has them.
+    climb_rate_fpm: ClimbRate = None
+    taxi_fuel_gal: TaxiFuel = None
+    glide_ratio: GlideRatio = None
     depart: datetime | None = None
     #: The pilot will have a Class B clearance: its shelves are no
     #: ceiling, and the route is planned through it (wingtip.altitude).
@@ -146,6 +161,9 @@ class PlanQuery:
             self.climb_fuel_burn_gph,
             self.cruise_power_pct,
             self.service_ceiling_ft,
+            self.climb_rate_fpm,
+            self.taxi_fuel_gal,
+            self.glide_ratio,
         )
 
     @property

@@ -217,8 +217,10 @@ enum Planner {
 
     /// The ways to fly a route (/api/route-options): the planner's grid
     /// search round what the direct line meets.
-    static func routeOptions(dep: String, dest: String, stops: [String], aircraft: String?) async throws -> RouteOptions {
-        try await fetch(RouteOptions.self, "/api/route-options", route(dep, dest, stops).merging(["aircraft": aircraft]) { $1 })
+    static func routeOptions(dep: String, dest: String, stops: [String], aircraft: String?, figures: Figures = Figures()) async throws -> RouteOptions {
+        // The pilot's own figures with it, which an own airplane of no
+        // stock type flies on alone (the planner's aircraft "own").
+        try await fetch(RouteOptions.self, "/api/route-options", figures.query.merging(route(dep, dest, stops).merging(["aircraft": aircraft]) { $1 }) { $1 })
     }
 
     /// A field's procedures (/api/airport/{ident}/procedures).
