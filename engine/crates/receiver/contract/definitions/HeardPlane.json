@@ -1,0 +1,93 @@
+{
+  "title": "HeardPlane",
+  "description": "An airplane as the map's traffic draws it, the planner's TrafficAircraft (wingtip.traffic): who, where, how high, its track, speed and climb, how old.",
+  "type": "object",
+  "properties": {
+    "hex": {
+      "type": "string"
+    },
+    "callsign": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "registration": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "type": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "category": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "altitude_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "pressure_altitude": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "track_deg": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "speed_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "vertical_fpm": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "squawk": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "emergency": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "seen_s": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "hex",
+    "lat",
+    "lon"
+  ]
+}

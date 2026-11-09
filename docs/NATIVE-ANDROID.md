@@ -309,7 +309,19 @@ A field's card has Diagram with Your Position (`ui/DiagramOwnShip.kt`):
 the FAA's PDF drawn by PdfRenderer, own ship placed by the diagram's own
 latitude and longitude marks, read with Android 15's PDF text (SDK
 extension 13); an older Android shows the diagram without the airplane
-and says why. FIS-B weather from ADS-B In is still to come.
+and says why.
+
+A cockpit ADS-B receiver (`receiver/`): a Stratux, Sentry, Garmin GDL
+39/52 or uAvionix receiver's GDL 90 on UDP port 4000, gathered by a
+`DatagramSocket` with the Wi-Fi's multicast lock (`ReceiverSocket`) and
+read by the engine once a second (`receiver_read`); a foreground service
+of the connected-device type (`ReceiverService`) keeps it going with the
+screen off while a receiver is heard. Its traffic is drawn ahead of the
+internet's (`receiver_traffic`, through `Traffic`), a chip on the map
+names it, a field's FIS-B METAR and TAF show on its card with no report
+from the weather service (`receiver_reports`), and FIS-B NEXRAD is drawn
+over the chart (`receiver_nexrad`, `map/NexradLayer.kt`). Setup's Map
+section has ADS-B Receiver: Auto or Off.
 
 Still to come: the tile store and the route's tiles for the air, the
 briefing, the checkpoints and the side view, the altitude wheel, the

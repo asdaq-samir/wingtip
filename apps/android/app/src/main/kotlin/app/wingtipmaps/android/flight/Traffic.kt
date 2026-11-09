@@ -5,7 +5,6 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
-import app.wingtipmaps.android.settings
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.TrafficAircraft
 import app.wingtipmaps.android.api.name
@@ -15,6 +14,9 @@ import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.ownShipHex
 import app.wingtipmaps.android.engine.generated.trafficMarks
 import app.wingtipmaps.android.notify.Notifications
+import app.wingtipmaps.android.receiver.Receiver
+import app.wingtipmaps.android.settings
+import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +27,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 /**
  * The traffic layer's switch, kept in the app's settings file under
@@ -98,6 +99,12 @@ class Traffic private constructor(private val context: Context, private val tick
     var mapCentre: Pair<Double, Double>? = null
     var mapRadiusNm = 30.0
 
+    /** The internet's airplanes at the last answer, none once it fails;
+     *  drawn after the cockpit receiver's own (Receiver.traffic). */
+    private var internet: List<TrafficAircraft> = emptyList()
+    /** Own ship's fix at the last answer, for the receiver's heights. */
+    private var lastFix: OwnShip.Fix? = null
+
     /** The airplanes near own ship at the last answer, each told once. */
     private var nearHexes: Set<String> = emptySet()
     private var every: Ticker.Registration? = null
@@ -114,6 +121,8 @@ class Traffic private constructor(private val context: Context, private val tick
      *  clock, about own ship where there is a fix (its height tells which
      *  airplanes are near), else about the middle of the map. */
     fun start() {
+        // The receiver's airplanes merged as each second's bytes are read.
+        Receiver.of(context).onRead = { if (on.value) publish(lastFix, tell = false) }
         if (every == null) every = ticker.every(EVERY_MS) { ask(OwnShip.of(context).fix.value) }
     }
 
@@ -125,6 +134,7 @@ class Traffic private constructor(private val context: Context, private val tick
     /** One answer about a point, where traffic is on and there is one. */
     private suspend fun ask(fix: OwnShip.Fix?) {
         if (!on.value) return
+        lastFix = fix
         val at = fix?.let { it.lat to it.lon } ?: mapCentre ?: return
         val radius = mapRadiusNm.coerceIn(10.0, 60.0)
         val answer = try {
@@ -132,6 +142,9 @@ class Traffic private constructor(private val context: Context, private val tick
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            // No signal: the receiver's airplanes alone.
+            internet = emptyList()
+            publish(fix, tell = true)
             return
         }
         if (!on.value) return
@@ -140,17 +153,32 @@ class Traffic private constructor(private val context: Context, private val tick
         // Own ship's own transponder, heard by the receivers on the ground,
         // is not traffic to itself (the engine's `own_ship_hex`).
         val own = ownShipHex(heard.map { it.copy(seenS = (it.seenS ?: 0.0) + age) }, fix)
-        val planes = heard.filter { it.hex != own.getOrNull() }
+        internet = heard.filter { it.hex != own.getOrNull() }
+        _source.value = answer.source
+        _heardAtMs.value = System.currentTimeMillis() - (age * 1000).toLong()
+        publish(fix, tell = true, ownProblem = own.exceptionOrNull())
+    }
+
+    /** The airplanes drawn -- the receiver's first, then the internet's it
+     *  does not hear -- with their marks; told to Tracking and, at each
+     *  answer, the near ones told. A receiver airplane's `seen_s` is its
+     *  age now; the screen dates every airplane from heardAtMs, the
+     *  internet answer's time, so it is given against that time instead. */
+    private fun publish(fix: OwnShip.Fix?, tell: Boolean, ownProblem: Throwable? = null) {
+        val nowMs = System.currentTimeMillis()
+        if (internet.isEmpty()) _heardAtMs.value = nowMs
+        val since = (nowMs - (_heardAtMs.value ?: nowMs)) / 1000.0
+        val relayed = internet.toHashSet()
+        val planes = Receiver.of(context).traffic(internet, fix?.altitudeFt, nowMs)
+            .map { if (it in relayed) it else it.copy(seenS = (it.seenS ?: 0.0) - since) }
         val marks = marks(planes, fix?.altitudeFt)
         _planes.value = planes
         // A mark the engine could not give is blank, not near: the airplane
         // is still drawn, and the card says why it has no mark.
         _marks.value = marks.getOrElse { planes.map { Mark("", false) } }
-        _problem.value = (own.exceptionOrNull() ?: marks.exceptionOrNull())?.let { "The traffic rules failed: ${it.message}" }
-        _source.value = answer.source
-        _heardAtMs.value = System.currentTimeMillis() - (age * 1000).toLong()
+        _problem.value = (ownProblem ?: marks.exceptionOrNull())?.let { "The traffic rules failed: ${it.message}" }
         Tracking.of(context).heard(planes)
-        tellNear(fix, planes, _marks.value)
+        if (tell) tellNear(fix, planes, _marks.value)
     }
 
     /** The airplanes near own ship (the engine's `traffic_marks`, the

@@ -36,6 +36,20 @@ enum WingtipColor {
         static let airspaceMagenta = rgb(0xE02AD8)
         /// The dark tab an airspace's altitudes sit in, at 90%.
         static let airspaceTab = rgb(0x1C2330)
+        /// FIS-B NEXRAD's levels (DO-358B; 0 is none) drawn from light green through yellow and red to magenta, as radar pictures run from the faintest returns to the strongest. Level 1, the faintest.
+        static let nexrad1 = rgb(0x9BE59B)
+        /// NEXRAD level 2.
+        static let nexrad2 = rgb(0x34C759)
+        /// NEXRAD level 3.
+        static let nexrad3 = rgb(0xFFD60A)
+        /// NEXRAD level 4.
+        static let nexrad4 = rgb(0xFF9F0A)
+        /// NEXRAD level 5.
+        static let nexrad5 = rgb(0xFF3B30)
+        /// NEXRAD level 6.
+        static let nexrad6 = rgb(0xB0001E)
+        /// NEXRAD level 7, the strongest.
+        static let nexrad7 = rgb(0xD62AD8)
         /// Prohibited, restricted, warning and alert areas (special-use airspace, FAA Order JO 7400.10): the orange-brown hatch.
         static let specialUse = rgb(0xE0662A)
         /// A fix's and a runway number's dark ink.

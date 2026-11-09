@@ -1,0 +1,46 @@
+{
+  "x-call": "wingtip_receiver::calls::call",
+  "description": "A portable ADS-B receiver's GDL 90 bytes (Garmin 560-1058-00 Rev A; ForeFlight's ID message) read into what it has said: its state, own ship, the traffic it hears (AIM 4-5-7, 4-5-8) and the FIS-B products it is sent (AIM 4-5-9), each dropped once it is no longer heard. Traffic is for seeing, not avoiding (AIM 4-5-7).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ReceiverReadInput",
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The bytes received since the last read (whole UDP datagrams), Base64 (RFC 4648)."
+        },
+        "at": {
+          "type": "number",
+          "description": "Now, Unix s: when the bytes came."
+        },
+        "picture": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ReceiverPicture"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The last answer, or null at first."
+        }
+      },
+      "required": [
+        "at"
+      ]
+    },
+    "answer": {
+      "$ref": "#/definitions/ReceiverPicture"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

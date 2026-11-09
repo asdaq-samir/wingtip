@@ -35,6 +35,7 @@ import app.wingtipmaps.android.api.AirportSuggestion
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.live.LiveAirportRows
+import app.wingtipmaps.android.receiver.ReceiverReports
 
 /**
  * The Airport tab: a field found by ident or name, and its card -- the
@@ -119,7 +120,11 @@ fun PlaceCard(place: AirportPlace) {
             }
             Text(metar.raw, style = MaterialTheme.typography.bodyMedium)
         } else {
-            Text(stringResource(R.string.no_weather_report), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // With no report from the weather service (no signal, or none
+            // at the field), what the cockpit receiver heard over FIS-B.
+            ReceiverReports(place.ident) {
+                Text(stringResource(R.string.no_weather_report), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         // What SWIM says now: the D-ATIS, the RVR, a ground stop or delay.
         LiveAirportRows(place.ident)

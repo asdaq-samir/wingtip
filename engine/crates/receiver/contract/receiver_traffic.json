@@ -1,0 +1,56 @@
+{
+  "x-call": "wingtip_receiver::calls::call",
+  "description": "The traffic to draw: the receiver's own targets, their pressure altitudes put on own ship's scale by own ship's height less its pressure altitude, then the internet's airplanes the receiver does not hear (by ICAO address), never own ship.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ReceiverTrafficInput",
+      "type": "object",
+      "properties": {
+        "picture": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ReceiverPicture"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The last answer, or null at first."
+        },
+        "internet": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HeardPlane"
+          }
+        },
+        "own_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Own ship's height MSL from the phone's GPS, ft, where known."
+        },
+        "at": {
+          "type": "number",
+          "description": "Now, Unix s."
+        }
+      },
+      "required": [
+        "at"
+      ]
+    },
+    "answer": {
+      "title": "ReceiverTrafficAnswer",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/HeardPlane"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -51,6 +51,9 @@ struct WingtipApp: App {
                 // Group only as they change, on the same clock.
                 .task { await Ticker.shared.run(every: 15) { WidgetFeed.shared.update(plan: plan, verdict: verdict) } }
                 .task { await WatchLink.shared.run(plan: plan, ownShip: ownShip) }
+                // The cockpit's ADS-B receiver on the Wi-Fi, read once a
+                // second while the setting is Auto (Receiver).
+                .task { await Receiver.shared.run() }
                 // A link opens the app (Associated Domains): a route, a
                 // field or an airplane shared from the site, or a track
                 // file from Files or Mail, is a command RootView does
