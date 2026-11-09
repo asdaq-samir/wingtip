@@ -16,6 +16,9 @@ import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Request
+import app.wingtipmaps.android.api.generated.GoNoGo
+import app.wingtipmaps.android.api.generated.GoNoGoAsk
+import kotlinx.serialization.encodeToString
 
 /**
  * The planner, through the gateway's proxy (`/api/planner/…`,
@@ -115,6 +118,13 @@ object Planner {
 
     /** The nav log for a route, line by line as the planner sends them
      *  (/api/navlog); a line of a kind the app has no use for is left out. */
-    fun navlog(dep: String, dest: String, stops: List<String>, aircraft: String): Flow<NavLogMessage> =
-        lines("/api/navlog", route(dep, dest, stops) + ("aircraft" to aircraft)).mapNotNull { NavLog.decode(it) }
+    fun navlog(dep: String, dest: String, stops: List<String>, aircraft: String, holds: List<String> = emptyList()): Flow<NavLogMessage> =
+        lines("/api/navlog", route(dep, dest, stops) + ("aircraft" to aircraft) + ("holds" to holds.joinToString(",").ifEmpty { null }))
+            .mapNotNull { NavLog.decode(it) }
+
+    /** The Brief's Go / No-Go for the route (POST /api/go-no-go): the
+     *  planner plans and briefs it and works the verdict out with the
+     *  engine, as the web's Brief has it. */
+    suspend fun goNoGo(ask: GoNoGoAsk): GoNoGo =
+        Gateway.json.decodeFromString(Gateway.send("POST", Config.plannerPath("/api/go-no-go"), Gateway.json.encodeToString(ask)))
 }
