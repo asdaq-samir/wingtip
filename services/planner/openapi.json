@@ -5544,6 +5544,140 @@
         "title": "DiversionSolved",
         "type": "object"
       },
+      "EndorsementField": {
+        "description": "A blank in an endorsement's words, as the instructor's sheet asks for it.",
+        "properties": {
+          "example": {
+            "title": "Example",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "example",
+          "required"
+        ],
+        "title": "EndorsementField",
+        "type": "object"
+      },
+      "EndorsementFillAsk": {
+        "description": "An endorsement to sign: its code, the student's name as on their\ncertificate, and the fields the instructor gave.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "fields": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Fields",
+            "type": "object"
+          },
+          "student": {
+            "default": "",
+            "title": "Student",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "EndorsementFillAsk",
+        "type": "object"
+      },
+      "EndorsementFilled": {
+        "description": "The endorsement made ready to sign (the engine's endorsement_fill).",
+        "properties": {
+          "fields": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Each field it takes, tidied to single spaces, \"\" where not given.",
+            "title": "Fields",
+            "type": "object"
+          },
+          "missing": {
+            "description": "The labels of the required fields still empty.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "text": {
+            "description": "Its words with the student and the fields in, as they are signed.",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fields",
+          "missing",
+          "text"
+        ],
+        "title": "EndorsementFilled",
+        "type": "object"
+      },
+      "EndorsementKind": {
+        "description": "One of the student endorsements (the engine's endorsement_kinds):\nits code, AC 61-65K's paragraph, the 14 CFR section it answers, its\nname, and the sample's words with the blanks the instructor fills.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/EndorsementField"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "paragraph": {
+            "description": "AC 61-65K's paragraph, \"A.10\".",
+            "title": "Paragraph",
+            "type": "string"
+          },
+          "rule": {
+            "description": "The 14 CFR section it answers, \"61.93(c)(3)\".",
+            "title": "Rule",
+            "type": "string"
+          },
+          "template": {
+            "description": "The sample's words, {student} and each field's {key} in them.",
+            "title": "Template",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "paragraph",
+          "rule",
+          "label",
+          "template",
+          "fields"
+        ],
+        "title": "EndorsementKind",
+        "type": "object"
+      },
       "Endorsements": {
         "description": "What the endorsements say (the engine's endorsement_records).",
         "properties": {
@@ -7147,7 +7281,7 @@
         "type": "object"
       },
       "HeldEndorsement": {
-        "description": "An endorsement the student holds: its code (AC 61-65K's, as the\ngateway's EndorsementKind names it), the day it was given, and the make\nand model it names where it says.",
+        "description": "An endorsement the student holds: its code (AC 61-65K's, as the\nengine's endorsement_kinds names it), the day it was given, and the make\nand model it names where it says.",
         "properties": {
           "code": {
             "title": "Code",
@@ -19893,6 +20027,68 @@
           }
         },
         "summary": "Currency"
+      }
+    },
+    "/api/pilot/endorsement-fill": {
+      "post": {
+        "description": "An endorsement's fields, what is still missing and its words as\nthey will be signed; 404 for a code no endorsement has.",
+        "operationId": "endorsement_fill_api_pilot_endorsement_fill_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndorsementFillAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndorsementFilled"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Endorsement Fill"
+      }
+    },
+    "/api/pilot/endorsement-kinds": {
+      "get": {
+        "description": "AC 61-65K's endorsements a student meets on the way to a private\npilot certificate, in the order they meet them, word for word.",
+        "operationId": "endorsement_kinds_api_pilot_endorsement_kinds_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EndorsementKind"
+                  },
+                  "title": "Response Endorsement Kinds Api Pilot Endorsement Kinds Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Endorsement Kinds"
       }
     },
     "/api/pilot/endorsements": {

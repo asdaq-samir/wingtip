@@ -1,5 +1,5 @@
 {
-  "about": "What a pilot's and an airplane's records say, the engine's endorsement_records and inspections_due, which the gateway asks through the planner (POST /api/pilot/endorsements, /api/aircraft/inspections): a solo endorsement good for 90 days (14 CFR 61.87(n), (p)), 61.93(d)(4) and (5) for a solo cross-country, and the inspections in calendar months (91.409(a) and 91.207(d) 12, 91.411(a) and 91.413(a) 24: to the last day of the Nth month after), the 100-hour 100 hours on (91.409(b)) and a VOR check good 30 days within 4 or 6 degrees (91.171). The boundaries: a flight on the 90th day after the endorsement and the day after; an annual on the 5th and on the last day of a month; a check on 29 February. Also the turnaround and the cruise reference (planning_figures) and the E6B's tolerances (workings_right).",
+  "about": "What a pilot's and an airplane's records say, the engine's endorsement_records and inspections_due, which the gateway asks through the planner (POST /api/pilot/endorsements, /api/aircraft/inspections): a solo endorsement good for 90 days (14 CFR 61.87(n), (p)), 61.93(d)(4) and (5) for a solo cross-country, and the inspections in calendar months (91.409(a) and 91.207(d) 12, 91.411(a) and 91.413(a) 24: to the last day of the Nth month after), the 100-hour 100 hours on (91.409(b)) and a VOR check good 30 days within 4 or 6 degrees (91.171). The boundaries: a flight on the 90th day after the endorsement and the day after; an annual on the 5th and on the last day of a month; a check on 29 February. Also the turnaround and the cruise reference (planning_figures) and the E6B's tolerances (workings_right). And AC 61-65K's student endorsements filled in to sign (endorsement_fill, the gateway's EndorsementKind before #482): A.10's words with its blanks filled and no conditions leaving nothing, a blank's spaces closed up and a field it does not take left out; A.8's conditions, which its words lead into, missing; a code no endorsement has is null.",
   "endorsements": [
     {
       "name": "solo current on its 90th day",
@@ -231,6 +231,65 @@
     {
       "kind": "DUAL",
       "limit_deg": 4
+    }
+  ],
+  "fills": [
+    {
+      "name": "A.10 filled, no conditions",
+      "input": {
+        "code": "solo-xc-flight",
+        "student": "Avery B. Student",
+        "fields": {
+          "from": "KUGN",
+          "to": "KUGN",
+          "via": "KRFD,  KJVL",
+          "landings": "KRFD, KJVL and KUGN",
+          "mm": "Cessna 172",
+          "date": "10-14-2026",
+          "extra": "x"
+        }
+      },
+      "answer": {
+        "fields": {
+          "from": "KUGN",
+          "to": "KUGN",
+          "via": "KRFD, KJVL",
+          "landings": "KRFD, KJVL and KUGN",
+          "mm": "Cessna 172",
+          "date": "10-14-2026",
+          "conditions": ""
+        },
+        "missing": [],
+        "text": "I have reviewed the cross-country planning of Avery B. Student. I find the planning and preparation to be correct to make the solo flight from KUGN to KUGN via KRFD, KJVL with landings at KRFD, KJVL and KUGN in a Cessna 172 aircraft on 10-14-2026."
+      }
+    },
+    {
+      "name": "A.8 without its conditions",
+      "input": {
+        "code": "solo-25nm",
+        "student": "Avery B. Student",
+        "fields": {
+          "airport": "KENW"
+        }
+      },
+      "answer": {
+        "fields": {
+          "airport": "KENW",
+          "conditions": ""
+        },
+        "missing": [
+          "Conditions"
+        ],
+        "text": "I certify that Avery B. Student has received the required training of 14 CFR § 61.93(b)(1). I have determined that they are proficient to practice solo takeoffs and landings at KENW. The takeoffs and landings at KENW are subject to the following conditions:"
+      }
+    },
+    {
+      "name": "no such endorsement",
+      "input": {
+        "code": "solo-forever",
+        "student": "Avery B. Student"
+      },
+      "answer": null
     }
   ]
 }

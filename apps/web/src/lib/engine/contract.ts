@@ -18,6 +18,8 @@ export type EndorsementLapseAnswer = string | null;
 export type EndorsementsInForceAnswer = [string, number][];
 export type EndorsementRenderAnswer = string;
 export type AcsCodesAnswer = string[];
+export type EndorsementKindsAnswer = EndorsementKind[];
+export type EndorsementFillAnswer = EndorsementFilled | null;
 export type PilotExperienceAnswer = ExperienceItem[];
 /**
  * This interface was referenced by `EngineContract`'s JSON-Schema
@@ -930,6 +932,20 @@ export interface EngineContract {
   acs_codes: {
     input: AcsCodesInput;
     answer: AcsCodesAnswer;
+  };
+  /**
+   * The endorsements a student meets on the way to a private pilot certificate, in the order they meet them: AC 61-65K appendix A's sample for each (November 2025), word for word, with the 14 CFR section it answers. A template names the student {student} and each blank by its field's key.
+   */
+  endorsement_kinds: {
+    input: EndorsementKindsInput;
+    answer: EndorsementKindsAnswer;
+  };
+  /**
+   * An endorsement filled in to sign (AC 61-65K appendix A): the fields it takes, each tidied to single spaces and "" where not given, any it does not take left out; the labels of the required ones still empty; and its words with the student and the fields in, as endorsement_render fills them. Null for a code no endorsement has.
+   */
+  endorsement_fill: {
+    input: EndorsementFillInput;
+    answer: EndorsementFillAnswer;
   };
   /**
    * Where the pilot stands on a day, from the logbook and the dates they give: passengers by day (14 CFR 61.57(a)) and at night (61.57(b)), the flight review (61.56(c)), the medical, the logbook's totals and instrument currency (61.57(c)(1), (d)). The gateway's CurrencyDto.
@@ -3340,6 +3356,44 @@ export interface EndorsementRenderInput {
   } | null;
 }
 export interface AcsCodesInput {
+  text: string;
+}
+export interface EndorsementKindsInput {}
+export interface EndorsementKind {
+  code: string;
+  /**
+   * AC 61-65K's paragraph, "A.10".
+   */
+  paragraph: string;
+  /**
+   * The 14 CFR section it answers, "61.93(c)(3)".
+   */
+  rule: string;
+  label: string;
+  /**
+   * The sample's words, {student} and each field's {key} in them.
+   */
+  template: string;
+  fields: EndorsementField[];
+}
+export interface EndorsementField {
+  key: string;
+  label: string;
+  example: string;
+  required: boolean;
+}
+export interface EndorsementFillInput {
+  code: string;
+  student?: string | null;
+  fields?: {
+    [k: string]: string;
+  } | null;
+}
+export interface EndorsementFilled {
+  fields: {
+    [k: string]: string;
+  };
+  missing: string[];
   text: string;
 }
 export interface PilotCurrencyInput {

@@ -85,13 +85,19 @@ public class TrainingService {
                 java.util.stream.IntStream.range(0, paper.size()).mapToObj(i -> new EndorsementDto(paper.get(i).getKey().code(),
                         paper.get(i).getEndorsedOn(), paperUntil.get(i))).toList(),
                 EndorsementRecords.dtos(planner, theirs),
-                InstructorService.kinds(), pilot.getFullName(), instructors, asked, lessons.lessonsOf(pilot, instructor));
+                planner.endorsementKinds(), pilot.getFullName(), instructors, asked, lessons.lessonsOf(pilot, instructor));
     }
 
     @Transactional
     public Pilot setKnowledgeTestCodes(Pilot pilot, List<String> codes) {
         pilot.setKnowledgeTestCodes(codes.isEmpty() ? null : String.join(" ", codes.stream().distinct().toList()));
         return pilots.save(pilot);
+    }
+
+    /** Whether {@code code} is one of AC 61-65K's endorsements, as the
+     *  engine's catalogue has them (asked through the planner). */
+    public boolean isEndorsement(String code) {
+        return planner.endorsementKind(code).isPresent();
     }
 
     @Transactional

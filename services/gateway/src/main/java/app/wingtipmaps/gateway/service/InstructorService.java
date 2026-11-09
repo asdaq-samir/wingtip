@@ -2,7 +2,6 @@ package app.wingtipmaps.gateway.service;
 
 import app.wingtipmaps.gateway.domain.CrossCountryReview;
 import app.wingtipmaps.gateway.domain.Endorsement;
-import app.wingtipmaps.gateway.domain.EndorsementKind;
 import app.wingtipmaps.gateway.domain.Flight;
 import app.wingtipmaps.gateway.domain.InstructorLink;
 import app.wingtipmaps.gateway.domain.Pilot;
@@ -29,7 +28,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
@@ -248,6 +246,12 @@ public class InstructorService {
         return links.findByStudentIdAndInstructorId(studentId, instructor.getId()).map(l -> (Pilot) Hibernate.unproxy(l.getStudent()));
     }
 
+    /** The code of AC 61-65K A.10's endorsement, a solo cross-country's
+     *  planning reviewed (14 CFR 61.93(c)(3)): the one that answers a
+     *  review a student put to the instructor. A record's key, the
+     *  engine's catalogue (endorsement_kinds) gives its words. */
+    static final String SOLO_XC_FLIGHT = "solo-xc-flight";
+
     /** The endorsement signed, and the student and the instructor emailed it. */
     @Transactional
     public SignedEndorsement sign(Pilot instructor, Pilot student, SignRequest request, Instant now) {
@@ -263,14 +267,17 @@ public class InstructorService {
         if (student.getFullName() == null || student.getFullName().isBlank()) {
             throw new Refused(HttpStatus.CONFLICT, "The student has not given their name as on their certificate yet.");
         }
-        EndorsementKind kind = EndorsementKind.of(request.code())
+        // AC 61-65K's words and the fields they take are the engine's
+        // (endorsement_kinds, endorsement_fill), asked through the planner.
+        EndorsementKindDto kind = planner.endorsementKind(request.code())
                 .orElseThrow(() -> new Refused(HttpStatus.BAD_REQUEST, "No such endorsement: " + request.code() + "."));
-        Map<String, String> fields = kind.fieldsFrom(request.fields());
-        List<String> missing = kind.missing(fields);
+        PlannerClient.Filled filled = planner.fill(kind.code(), student.getFullName(), request.fields());
+        Map<String, String> fields = filled.fields();
+        List<String> missing = filled.missing();
         if (!missing.isEmpty()) {
             throw new Refused(HttpStatus.BAD_REQUEST, "Fill in " + String.join(", ", missing).toLowerCase(Locale.ROOT) + ".");
         }
-        String text = kind.render(student.getFullName(), fields);
+        String text = filled.text();
         if (!text.equals(request.text().replaceAll("\\s+", " ").strip())) {
             throw new Refused(HttpStatus.CONFLICT, "The words have changed since you read them: read them again before signing.");
         }
@@ -279,21 +286,21 @@ public class InstructorService {
             review = reviews.findById(request.reviewId())
                     .filter(r -> r.getStudent().getId().equals(student.getId()) && r.getInstructor().getId().equals(instructor.getId()))
                     .orElseThrow(() -> new Refused(HttpStatus.NOT_FOUND, "No such review."));
-            if (review.isAnswered() || kind != EndorsementKind.SOLO_XC_FLIGHT) {
+            if (review.isAnswered() || !SOLO_XC_FLIGHT.equals(kind.code())) {
                 throw new Refused(HttpStatus.CONFLICT, "That review has been answered.");
             }
         }
         String signature = signatureLine(instructor, request.signedOn());
-        SignedEndorsement endorsement = signed.save(new SignedEndorsement(student, instructor, kind.code, student.getFullName(),
+        SignedEndorsement endorsement = signed.save(new SignedEndorsement(student, instructor, kind.code(), student.getFullName(),
                 fields, text, signature, request.signedOn(), now, digest(text, signature, now)));
         if (review != null) {
             review.endorsed(endorsement, now);
         }
-        String said = kind.label + " (AC 61-65K " + kind.paragraph + ", 14 CFR " + kind.rule + ")\n\n" + text + "\n\n" + signature;
-        send(student.getEmail(), "Endorsed: " + kind.label,
+        String said = kind.label() + " (AC 61-65K " + kind.paragraph() + ", 14 CFR " + kind.rule() + ")\n\n" + text + "\n\n" + signature;
+        send(student.getEmail(), "Endorsed: " + kind.label(),
                 EndorsementRecords.nameOf(instructor) + " has signed this endorsement for you in Wingtip Maps:\n\n" + said
                         + "\n\nIt is on your Checkride page, under Logbook." + openLine());
-        send(instructor.getEmail(), "You signed: " + kind.label + " for " + student.getFullName(),
+        send(instructor.getEmail(), "You signed: " + kind.label() + " for " + student.getFullName(),
                 "You signed this endorsement in Wingtip Maps, kept with your students' records (14 CFR 61.189):\n\n" + said);
         return endorsement;
     }
@@ -308,7 +315,7 @@ public class InstructorService {
                 .map(e -> {
                     e.voidAt(now);
                     if (e.getStudent() != null) {
-                        send(e.getStudent().getEmail(), "Voided: " + EndorsementKind.of(e.getCode()).map(k -> k.label).orElse(e.getCode()),
+                        send(e.getStudent().getEmail(), "Voided: " + planner.endorsementKind(e.getCode()).map(EndorsementKindDto::label).orElse(e.getCode()),
                                 EndorsementRecords.nameOf(instructor) + " has voided this endorsement of " + e.getSignedOn()
                                         .format(EndorsementRecords.DAY) + ":\n\n" + e.getText() + "\n\n" + e.getSignature());
                     }
@@ -343,11 +350,7 @@ public class InstructorService {
         return new InstructorDto(pilot.getFullName(), pilot.getInstructorCertificate(), pilot.getInstructorUntil(),
                 pilot.getInstructorUntilKind(), students, asking, waiting,
                 EndorsementRecords.dtos(planner, signed.findByInstructorIdAndSignedAtAfterOrderBySignedAtDesc(pilot.getId(), since)),
-                kinds());
-    }
-
-    static List<EndorsementKindDto> kinds() {
-        return Arrays.stream(EndorsementKind.values()).map(EndorsementKindDto::of).toList();
+                planner.endorsementKinds());
     }
 
     /** A review as its instructor or student reads it, with what the

@@ -98,6 +98,11 @@ fn what_the_records_say() {
     for case in f["workings"].as_array().unwrap() {
         assert_eq!(ask("workings_right", json!({ "key": case["key"], "typed": case["typed"], "answer": case["answer"] })), case["right"], "{case}");
     }
+    for case in f["fills"].as_array().unwrap() {
+        assert_same(&ask("endorsement_fill", case["input"].clone()), &case["answer"], &case["name"]);
+    }
+    let kinds = ask("endorsement_kinds", json!({}));
+    assert_eq!(kinds.as_array().map(Vec::len), Some(15), "AC 61-65K's samples a student meets");
 }
 
 #[test]

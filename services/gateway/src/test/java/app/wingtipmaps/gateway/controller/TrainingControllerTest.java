@@ -106,6 +106,7 @@ class TrainingControllerTest {
     @Test
     void endorse_setsTheDay_andWithdrawAnUnknownOneIs404() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(PILOT));
+        given(training.isEndorsement("solo-xc-training")).willReturn(true);
         given(training.training(eq(PILOT), any(), any())).willReturn(RECORD);
         mockMvc.perform(put("/api/training/endorsements/solo-xc-training").with(oidcLogin()).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content("{\"endorsedOn\": \"2026-10-01\"}"))

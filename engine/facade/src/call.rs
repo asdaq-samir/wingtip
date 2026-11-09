@@ -173,6 +173,12 @@
 //! - `endorsement_render`: an endorsement's words as they will be signed,
 //!   from `{"template", "student", "fields"?: {name: text}}`;
 //! - `acs_codes`: the ACS codes in pasted text, each once, from `{"text"}`;
+//! - `endorsement_kinds`: AC 61-65K's student endorsements, each `{"code",
+//!   "paragraph", "rule", "label", "template", "fields": [{"key",
+//!   "label", "example", "required"}]}`, from `{}`;
+//! - `endorsement_fill`: one filled in to sign, `{"fields", "missing",
+//!   "text"}` or null for no such code, from `{"code", "student"?,
+//!   "fields"?}`;
 //! - `pilot_currency`: where the pilot stands on a day, the gateway's
 //!   CurrencyDto (14 CFR 61.56(c), 61.57(a)-(d)), from `{"entries":
 //!   [LogbookEntry], "flight_review_on"?, "medical_expires_on"?,
@@ -1027,6 +1033,9 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         // What is ahead of own ship from the planner's data (ahead.rs).
         _ if crate::ahead::NAMES.contains(&name) => crate::ahead::call(name, ask.v),
         _ if crate::pilot::records::NAMES.contains(&name) => crate::pilot::records::call(name, ask.v),
+        // AC 61-65K's endorsements and their words filled in (kinds.rs),
+        // the gateway's EndorsementKind before #482.
+        _ if crate::pilot::kinds::NAMES.contains(&name) => crate::pilot::kinds::call(name, ask.v),
         _ if crate::wording::NAMES.contains(&name) => crate::wording::answer(name, ask.v),
         // A field's weather (forecast::calls), the traffic list's filters and
         // the registry's airplanes (aircraft::calls).

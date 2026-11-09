@@ -100,6 +100,19 @@ class InstructorFlowTest {
                     held.stream().anyMatch(h -> List.of("solo-first", "solo-90").contains(h.code())) ? SOLO_UNTIL : null,
                     flightOn == null ? List.of() : CHECKS);
         });
+        // AC 61-65K's words are the engine's (kinds.rs, records.json's
+        // fills); here every code is one, its words standing in for them.
+        org.mockito.BDDMockito.given(planner.endorsementKind(any())).willAnswer(ask -> java.util.Optional.of(
+                new app.wingtipmaps.gateway.dto.EndorsementKindDto(ask.getArgument(0), "A.10", "61.93(c)(3)", "An endorsement", "",
+                        List.of())));
+        org.mockito.BDDMockito.given(planner.fill(any(), any(), any())).willAnswer(ask ->
+                new PlannerClient.Filled(ask.getArgument(2), List.of(), words(ask.getArgument(0), ask.getArgument(1))));
+    }
+
+    /** The words the engine's stand-in gives an endorsement of `code`. */
+    static String words(String code, String student) {
+        return code.equals("solo-xc-flight") ? "I have reviewed the cross-country planning of " + student + "."
+                : "I certify that " + student + " has received the training of " + code + ".";
     }
 
     private static final Instant NOW = Instant.parse("2026-10-13T18:00:00Z");
@@ -128,7 +141,7 @@ class InstructorFlowTest {
     private SignRequest soloXc(Pilot student, Long reviewId) {
         Map<String, String> fields = Map.of("from", "KUGN", "to", "KUGN", "via", "KRFD", "landings", "KRFD and KUGN",
                 "mm", "Cessna 172", "date", "10-14-2026", "conditions", "");
-        String text = app.wingtipmaps.gateway.domain.EndorsementKind.SOLO_XC_FLIGHT.render(student.getFullName(), fields);
+        String text = words("solo-xc-flight", student.getFullName());
         return new SignRequest("solo-xc-flight", fields, text, TODAY, reviewId);
     }
 
@@ -211,9 +224,8 @@ class InstructorFlowTest {
     }
 
     private SignRequest soloEndorsement(Pilot student, String code) {
-        var kind = app.wingtipmaps.gateway.domain.EndorsementKind.of(code).orElseThrow();
         Map<String, String> fields = Map.of("mm", "Cessna 172");
-        return new SignRequest(code, fields, kind.render(student.getFullName(), fields), TODAY, null);
+        return new SignRequest(code, fields, words(code, student.getFullName()), TODAY, null);
     }
 
     /** 61.189(b), (c): the instructor keeps their record of what they

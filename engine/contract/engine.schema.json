@@ -1861,6 +1861,165 @@
       ],
       "additionalProperties": false
     },
+    "endorsement_kinds": {
+      "description": "The endorsements a student meets on the way to a private pilot certificate, in the order they meet them: AC 61-65K appendix A's sample for each (November 2025), word for word, with the 14 CFR section it answers. A template names the student {student} and each blank by its field's key.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "EndorsementKindsInput",
+          "type": "object",
+          "properties": {}
+        },
+        "answer": {
+          "title": "EndorsementKindsAnswer",
+          "type": "array",
+          "items": {
+            "title": "EndorsementKind",
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "paragraph": {
+                "type": "string",
+                "description": "AC 61-65K's paragraph, \"A.10\"."
+              },
+              "rule": {
+                "type": "string",
+                "description": "The 14 CFR section it answers, \"61.93(c)(3)\"."
+              },
+              "label": {
+                "type": "string"
+              },
+              "template": {
+                "type": "string",
+                "description": "The sample's words, {student} and each field's {key} in them."
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "title": "EndorsementField",
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "example": {
+                      "type": "string"
+                    },
+                    "required": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "label",
+                    "example",
+                    "required"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "code",
+              "paragraph",
+              "rule",
+              "label",
+              "template",
+              "fields"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "endorsement_fill": {
+      "description": "An endorsement filled in to sign (AC 61-65K appendix A): the fields it takes, each tidied to single spaces and \"\" where not given, any it does not take left out; the labels of the required ones still empty; and its words with the student and the fields in, as endorsement_render fills them. Null for a code no endorsement has.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "EndorsementFillInput",
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "student": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "fields": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Words by field name."
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "code"
+          ]
+        },
+        "answer": {
+          "title": "EndorsementFillAnswer",
+          "anyOf": [
+            {
+              "title": "EndorsementFilled",
+              "type": "object",
+              "properties": {
+                "fields": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "fields",
+                "missing",
+                "text"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "pilot_currency": {
       "description": "Where the pilot stands on a day, from the logbook and the dates they give: passengers by day (14 CFR 61.57(a)) and at night (61.57(b)), the flight review (61.56(c)), the medical, the logbook's totals and instrument currency (61.57(c)(1), (d)). The gateway's CurrencyDto.",
       "type": "object",
@@ -19399,6 +19558,8 @@
     "endorsements_in_force",
     "endorsement_render",
     "acs_codes",
+    "endorsement_kinds",
+    "endorsement_fill",
     "pilot_currency",
     "pilot_experience",
     "read_clearance",

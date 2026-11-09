@@ -76,6 +76,7 @@ fn code_names() -> BTreeSet<String> {
         include_str!("../../crates/airspace/src/drills.rs"),
         include_str!("../../crates/airspace/src/ahead.rs"),
         include_str!("../../crates/pilot/src/pilot/records.rs"),
+        include_str!("../../crates/pilot/src/pilot/kinds.rs"),
         include_str!("../../crates/weather/src/forecast/calls.rs"),
         include_str!("../../crates/altitude/src/altitude/calls.rs"),
         include_str!("../../crates/brief/src/alternates.rs"),
@@ -238,6 +239,10 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     for case in records["workings"].as_array().unwrap() {
         c.ask("workings_right", json!({ "key": case["key"], "typed": case["typed"], "answer": case["answer"] }));
     }
+    for case in records["fills"].as_array().unwrap() {
+        c.ask("endorsement_fill", case["input"].clone());
+    }
+    c.ask("endorsement_kinds", json!({}));
     for case in fixture("routePosition.json")["cases"].as_array().unwrap() {
         c.ask("route_position", case["input"].clone());
     }
