@@ -132,9 +132,9 @@ run_swift() {
 
 run_kotlin() {
   local kt="" jbr
-  # A Java for ktlint: JAVA_HOME's, else the PATH's, else the JetBrains
-  # runtime Android Studio's Gradle uses on the Mac (check.sh's pick).
-  jbr=$(ls -d "$HOME"/Library/Java/JavaVirtualMachines/jbr-21*/Contents/Home 2>/dev/null | tail -1)
+  # A Java for ktlint: JAVA_HOME's, else the PATH's, else the JDK 25 the
+  # Android build runs on (check.sh's pick).
+  jbr=$(ls -d "$HOME"/Library/Java/JavaVirtualMachines/*25*/Contents/Home "$HOME"/.gradle/jdks/*25*/*/Contents/Home 2>/dev/null | tail -1)
   if [ -n "${JAVA_HOME:-}" ]; then PATH=$JAVA_HOME/bin:$PATH
   elif ! java -version >/dev/null 2>&1 && [ -n "$jbr" ]; then PATH=$jbr/bin:$PATH
   fi
