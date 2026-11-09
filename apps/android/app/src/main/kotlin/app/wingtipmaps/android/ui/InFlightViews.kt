@@ -68,10 +68,12 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
  * nothing else was drawn. Nothing moves for them.
  */
 @Composable
-fun InFlightTop(state: InFlight.State, ahead: List<AheadAlert>, onNearest: () -> Unit, modifier: Modifier = Modifier) {
+fun InFlightTop(state: InFlight.State, ahead: List<AheadAlert>, onNearest: () -> Unit, modifier: Modifier = Modifier, copilot: @Composable () -> Unit = {}) {
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Column(modifier.padding(top = top + 8.dp, start = 8.dp, end = 64.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         AlertsBanner(ahead)
+        // The copilot's one message, under what is ahead (CopilotBanner).
+        copilot()
         InstrumentsBar(state, onNearest)
         // A rule of the engine that failed for this fix, in its words.
         state.problem?.let { ProblemLine(it) }

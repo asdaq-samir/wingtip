@@ -44,6 +44,8 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.briefing.PassengerScreen
+import app.wingtipmaps.android.copilot.CopilotMode
+import app.wingtipmaps.android.copilot.CopilotSetting
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.Traffic
@@ -121,6 +123,15 @@ fun SetupScreen(session: Session) {
         val spoken = remember(context) { SpokenAlerts.of(context) }
         val spokenOn by spoken.on.collectAsStateWithLifecycle()
         SwitchRow(stringResource(R.string.speak_alerts), spokenOn, spoken::setOn)
+        // The in-flight copilot: off, shown, or shown and said (a setting
+        // of three is a segmented control, decision 0017).
+        SectionTitle(stringResource(R.string.copilot))
+        val copilot = remember(context) { CopilotSetting.of(context) }
+        val copilotMode by copilot.mode.collectAsStateWithLifecycle()
+        Segmented(
+            listOf(CopilotMode.OFF to stringResource(R.string.copilot_off), CopilotMode.ON to stringResource(R.string.copilot_on), CopilotMode.SPOKEN to stringResource(R.string.copilot_spoken)),
+            selected = copilotMode, onPick = copilot::set,
+        )
 
         // The passenger briefing for the planned flight (#223), where the
         // field's "passenger briefing" opens Setup.

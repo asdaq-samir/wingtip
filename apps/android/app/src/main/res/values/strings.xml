@@ -208,4 +208,11 @@
     <string name="emergency_call_field">Call %1$s</string>
     <string name="emergency_call_field_line">The airport\'s phone, as the FAA lists it</string>
     <string name="emergency_call_911">Call 911</string>
+
+    <!-- The in-flight copilot (copilot/). -->
+    <string name="copilot">Copilot</string>
+    <string name="copilot_off">Off</string>
+    <string name="copilot_on">On</string>
+    <string name="copilot_spoken">Spoken</string>
+    <string name="ok">OK</string>
 </resources>
