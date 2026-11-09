@@ -75,10 +75,14 @@ final class FlightMapLayer: NSObject {
     private var emergencyLine: EmergencyPolyline?
     private var emergencyDrawn: [CLLocationCoordinate2D] = []
     private weak var map: MKMapView?
+    /// FIS-B's NEXRAD from the cockpit's receiver, under the flights.
+    private var nexrad: NexradMapLayer?
 
     func attach(_ map: MKMapView) {
         self.map = map
         map.register(TrackedRingView.self, forAnnotationViewWithReuseIdentifier: TrackedRingView.reuse)
+        nexrad = MainActor.assumeIsolated { NexradMapLayer() }
+        if let nexrad { MainActor.assumeIsolated { nexrad.attach(map) } }
     }
 
     func update(_ map: MKMapView, _ next: FlightLayer) {
@@ -153,6 +157,7 @@ final class FlightMapLayer: NSObject {
     }
 
     func renderer(for overlay: any MKOverlay) -> MKOverlayRenderer? {
+        if let nexrad, let renderer = MainActor.assumeIsolated({ nexrad.renderer(for: overlay) }) { return renderer }
         if let ring = overlay as? GlidePolyline {
             // Dashed in the tint, as the web app's ring: what the airplane
             // reaches in still air, not a boundary to fly by.

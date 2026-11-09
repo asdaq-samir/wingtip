@@ -223,15 +223,11 @@ struct RootView: View {
             VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                 if dryRun.fix != nil { DryRunControls() }
                 WatchBanner()
-                // The licence's credit, beside the traffic it covers.
-                if traffic.on, !traffic.planes.isEmpty {
-                    Text(Traffic.credit(traffic.source)).font(.caption2).padding(.horizontal, WingtipSpace.sm).padding(.vertical, 2)
-                        .floatingGlass(in: Capsule(), material: .thinMaterial)
-                    if let problem = traffic.marksProblem {
-                        Text(problem).font(.caption2).foregroundStyle(.orange).padding(.horizontal, WingtipSpace.sm).padding(.vertical, 2)
-                            .floatingGlass(in: Capsule(), material: .thinMaterial)
-                    }
-                }
+                // The cockpit's ADS-B receiver heard, then the licence's
+                // credit beside the internet's traffic it covers.
+                ReceiverChip()
+                if traffic.credited { MapChip(Traffic.credit(traffic.source)) }
+                if traffic.on, !traffic.planes.isEmpty, let problem = traffic.marksProblem { MapChip(problem, colour: .orange) }
             }
             .padding(.leading, WingtipSpace.md).padding(.top, WingtipSpace.md)
         }

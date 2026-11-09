@@ -5,7 +5,6 @@ import { useVerdict, verdictLine } from "../../../../lib/verdict";
 import { contextNow } from "../../../../lib/ask/useAsk";
 import type { PanelTab } from "../navlog/panelTab";
 import WordsSection from "../../../../components/WordsSection";
-import { notamCredit, notamNone } from "./briefingWords";
 import { wordsState } from "../../../../lib/wordsState";
 
 /** The words are asked once for a route and its time, and kept: not on
@@ -17,13 +16,13 @@ const KEPT_MS = 10 * 60_000;
 type OpenSection = (tab: PanelTab, section: string) => void;
 
 /**
- * The Brief's three readings in words (WordsSection), under its verdict:
+ * The Brief's two readings in words (WordsSection), under its verdict:
  * the risk picture -- the Go / No-Go read against the pilot's own
- * minimums and currency -- then, after the glance cards, the NOTAMs that
- * matter and the weather in words. Each is one billed call for a route
+ * minimums and currency -- then, after the glance cards, the weather in
+ * words (the NOTAMs that matter are features/notamRanking's). Each is one billed call for a route
  * and its time (react-query, keyed by them), and each title opens the
- * list it was written from: the Risk Assessment, the TFRs (the NOTAMs
- * the Brief has in full) and the weather along the route.
+ * list it was written from: the Risk Assessment and the weather along
+ * the route.
  */
 export function RiskWords({ open }: { open: OpenSection }) {
   const plan = useBriefPlan();
@@ -42,20 +41,6 @@ export function RiskWords({ open }: { open: OpenSection }) {
   });
   if (!plan.routed) return null;
   return <WordsSection title="Risk picture" testId="brief-risk-words" onMore={() => open("preflight", "Risk Assessment")} state={wordsState(query)} />;
-}
-
-export function NotamWords({ open }: { open: OpenSection }) {
-  const plan = useBriefPlan();
-  const query = useQuery({
-    queryKey: ["words", "notams", routeKeyOf(plan)],
-    queryFn: ({ signal }) => words.notams({ dep: plan.dep, dest: plan.dest, stops: plan.stops, depart: plan.depart || null }, signal),
-    enabled: plan.routed && !!plan.dep && !!plan.dest, staleTime: KEPT_MS, meta: { silent: true },
-  });
-  if (!plan.routed) return null;
-  // The Brief lists no NOTAMs in full but the TFRs, which are NOTAMs: the
-  // title opens those.
-  return <WordsSection title="NOTAMs that matter" testId="brief-notam-words" onMore={() => open("preflight", "TFRs & Special Use")} state={wordsState(query)}
-    credit={notamCredit(query.data?.coverage_since)} empty={notamNone(query.data?.coverage_since)} />;
 }
 
 export function WeatherWords({ open }: { open: OpenSection }) {

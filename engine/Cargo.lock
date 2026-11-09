@@ -1105,6 +1105,7 @@ dependencies = [
  "wingtip-pilot",
  "wingtip-procedures",
  "wingtip-radio",
+ "wingtip-receiver",
  "wingtip-route",
  "wingtip-weather",
  "wingtip-wording",
@@ -1158,6 +1159,13 @@ dependencies = [
  "wingtip-flight",
  "wingtip-procedures",
  "wingtip-weather",
+]
+
+[[package]]
+name = "wingtip-receiver"
+version = "0.1.0"
+dependencies = [
+ "wingtip-core",
 ]
 
 [[package]]

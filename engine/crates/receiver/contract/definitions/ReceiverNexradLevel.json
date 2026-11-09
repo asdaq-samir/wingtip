@@ -1,0 +1,26 @@
+{
+  "title": "ReceiverNexradLevel",
+  "description": "One NEXRAD level's rectangles, [south, west, north, east] degrees each.",
+  "type": "object",
+  "properties": {
+    "level": {
+      "type": "number",
+      "description": "1 to 7, DO-358B's levels (0 is none)."
+    },
+    "rects": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "minItems": 4,
+        "maxItems": 4
+      }
+    }
+  },
+  "required": [
+    "level",
+    "rects"
+  ]
+}
