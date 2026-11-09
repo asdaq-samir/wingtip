@@ -80,10 +80,10 @@ fun DownloadsScreen(model: DownloadsModel = viewModel()) {
             for (kind in DownloadsModel.KINDS_IN_ORDER) {
                 val on = kind in picked
                 ListItem(
-                    headlineContent = { Text(kindLabel(kind)) },
                     trailingContent = { Switch(checked = on, onCheckedChange = null) },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     modifier = Modifier.fillMaxWidth().toggleable(value = on, role = Role.Switch) { model.setPicked(kind, it) },
+                    content = { Text(kindLabel(kind)) },
                 )
             }
             // A discrete setting of two: a segmented control (decision 0017).
@@ -93,9 +93,9 @@ fun DownloadsScreen(model: DownloadsModel = viewModel()) {
                 onPick = model::setScale,
             )
             ListItem(
-                headlineContent = { Text(stringResource(R.string.offline_pick_map)) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { map = true },
+                content = { Text(stringResource(R.string.offline_pick_map)) },
             )
             OutlinedTextField(search, { search = it }, Modifier.fillMaxWidth(), singleLine = true,
                 label = { Text(stringResource(R.string.offline_search)) })
@@ -107,10 +107,10 @@ fun DownloadsScreen(model: DownloadsModel = viewModel()) {
                 key = { "$group/${it.id}" }) { region ->
                 val size = if (region.id in busy) stringResource(R.string.offline_asking) else bytes(DownloadsModel.size(region, archives)) ?: sizing
                 ListItem(
-                    headlineContent = { Text(region.name) },
                     trailingContent = { Text(size, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     modifier = Modifier.fillMaxWidth().clickable(enabled = archives.isNotEmpty() && region.id !in busy, role = Role.Button) { asking = region.id },
+                    content = { Text(region.name) },
                 )
             }
         }
@@ -167,9 +167,9 @@ private fun KeptRow(
 @Composable
 private fun Row2(label: String, value: String) {
     ListItem(
-        headlineContent = { Text(label) },
         trailingContent = { Text(value, color = MaterialTheme.colorScheme.onSurfaceVariant) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        content = { Text(label) },
     )
 }
 

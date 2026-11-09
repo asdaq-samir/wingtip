@@ -3,6 +3,7 @@ package app.wingtipmaps.android.design
 import androidx.activity.BackEventCompat
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
@@ -55,7 +56,7 @@ fun rememberPredictiveBack(enabled: Boolean, onBack: () -> Unit): PredictiveBack
             held = 0f
         }
     }
-    val progress = animateFloatAsState(held, ExpressiveMotion.current.fastSpatialSpec(), label = "predictiveBack")
+    val progress = animateFloatAsState(held, MaterialTheme.motionScheme.fastSpatialSpec(), label = "predictiveBack")
     val still = rememberReduceMotion()
     return remember(progress, edge, still) { PredictiveBackState(progress, edge, still) }
 }

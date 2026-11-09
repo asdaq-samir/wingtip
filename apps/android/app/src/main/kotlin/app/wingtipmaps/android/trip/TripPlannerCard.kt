@@ -32,7 +32,7 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.assistant.Context
 import app.wingtipmaps.android.api.generated.assistant.Source
 import app.wingtipmaps.android.api.generated.assistant.TripLeg
-import app.wingtipmaps.android.design.LoadingIndicator
+import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.ui.ProblemLine
@@ -73,7 +73,7 @@ fun TripPlannerCard(
         }
         state.status?.let { status ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-                LoadingIndicator(Modifier.size(WingtipSpace.Lg))
+                Loading(Modifier.size(WingtipSpace.Lg))
                 Text("$status…", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }

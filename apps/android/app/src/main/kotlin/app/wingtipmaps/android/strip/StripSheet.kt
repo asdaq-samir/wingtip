@@ -34,7 +34,7 @@ import app.wingtipmaps.android.api.AssistantClient
 import app.wingtipmaps.android.api.AssistantContext
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.api.AssistantTurn
-import app.wingtipmaps.android.design.LoadingIndicator
+import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.predictiveBack
@@ -192,7 +192,7 @@ fun StripLayout(
                 state.stage?.let { stage ->
                     item(key = "stage") {
                         Row(Modifier.padding(horizontal = WingtipSpace.Lg), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-                            LoadingIndicator(Modifier.size(WingtipSpace.Lg))
+                            Loading(Modifier.size(WingtipSpace.Lg))
                             Text(stage, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }

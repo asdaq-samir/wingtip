@@ -83,9 +83,9 @@ fun RouteLegSheet(leg: RouteLegModel.View, onDirect: () -> Unit, onRemove: () ->
 @Composable
 private fun Fact(name: String, value: String, said: String) {
     ListItem(
-        headlineContent = { Text(name) },
         trailingContent = { Text(value, style = MaterialTheme.typography.bodyLarge) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.clearAndSetSemantics { contentDescription = "$name, $said" },
+        content = { Text(name) },
     )
 }

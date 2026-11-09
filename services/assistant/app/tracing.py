@@ -1,9 +1,8 @@
 """Traces of the assistant, when there is somewhere to send them: with
 OTEL_EXPORTER_OTLP_ENDPOINT set (docker-compose sets it to Jaeger's with
 TRACING=1), every request it answers is a span under the gateway's, each
-call to the planner (requests) and to Anthropic's API (httpx, the SDK's
-client) one under it with the traceparent passed on, and each Claude
-call a span of its own (`claude_call`) with the model and the tokens it
+call to the planner (requests) one under it with the traceparent passed
+on, and each Claude call a span of its own (`claude_call`) with the model and the tokens it
 used -- never the prompt or the answer, which are the pilot's. Log lines
 written inside a span end with its trace_id and span_id.
 
@@ -44,7 +43,7 @@ def _tag_request_id(span, scope: dict) -> None:
 
 
 def instrument(app) -> bool:
-    """Instruments `app`, requests and httpx when an OTLP endpoint is set;
+    """Instruments `app` and requests when an OTLP endpoint is set;
     False, and nothing done, when it is not."""
     endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT")
     if os.environ.get("TRACING", "1").strip().lower() in ("0", "false", "no", "off"):
@@ -54,7 +53,6 @@ def instrument(app) -> bool:
     from opentelemetry import trace
     from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
     from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-    from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
     from opentelemetry.instrumentation.requests import RequestsInstrumentor
     from opentelemetry.sdk.resources import Resource
     from opentelemetry.sdk.trace import TracerProvider
@@ -67,7 +65,6 @@ def instrument(app) -> bool:
     use(trace.get_tracer("wingtip.assistant"))
     FastAPIInstrumentor.instrument_app(app, server_request_hook=_tag_request_id, excluded_urls=HEALTH_CHECK)
     RequestsInstrumentor().instrument()
-    HTTPXClientInstrumentor().instrument()
     log.info("tracing %s to %s", name, endpoint)
     return True
 
@@ -121,7 +118,7 @@ def claude_call(feature: str, model: str, *, current: bool = True):
     (the narrative, the assistant): Starlette steps a generator in a
     fresh copy of the context each time, so a span made current in one
     step cannot be let go of in another; it is still a child of the
-    request's span, and Anthropic's HTTP call is its sibling."""
+    request's span."""
     if _tracer is None:
         yield Usage()
         return

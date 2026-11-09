@@ -53,9 +53,9 @@ internal fun EmergencyChecklist(state: EmergencyModel.State, onSection: (Int) ->
     if (section == null || shown == null) {
         SectionTitle(stringResource(R.string.checklists))
         ListItem(
-            headlineContent = { Text(stringResource(R.string.emergency_no_checklist, state.airplaneName ?: stringResource(R.string.this_airplane))) },
             supportingContent = { Text(stringResource(R.string.emergency_no_checklist_line)) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            content = { Text(stringResource(R.string.emergency_no_checklist, state.airplaneName ?: stringResource(R.string.this_airplane))) },
         )
         return
     }
@@ -76,10 +76,10 @@ internal fun EmergencyChecklist(state: EmergencyModel.State, onSection: (Int) ->
         val done = key in state.ticked
         ListItem(
             leadingContent = { Checkbox(checked = done, onCheckedChange = null) },
-            headlineContent = { Text(item.challenge, color = if (done) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface) },
             trailingContent = item.response?.let { r -> { Text(r, fontWeight = FontWeight.SemiBold) } },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             modifier = Modifier.toggleable(value = done, role = Role.Checkbox) { onTick(key) },
+            content = { Text(item.challenge, color = if (done) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface) },
         )
     }
 }
@@ -107,9 +107,9 @@ internal fun ActionsList(state: EmergencyModel.State, onSouls: (String) -> Unit,
                 FrequencyRow(c.label, Format.frequency(mhz), c.why)
             } else {
                 ListItem(
-                    headlineContent = { Text(c.label) },
                     supportingContent = { Text(c.why) },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    content = { Text(c.label) },
                 )
             }
         }
@@ -149,9 +149,9 @@ internal fun ActionsList(state: EmergencyModel.State, onSouls: (String) -> Unit,
 @Composable
 private fun Plain(title: String, line: String?, bold: Boolean = false, tint: Boolean = false, onClick: (() -> Unit)? = null) {
     ListItem(
-        headlineContent = { Text(title, fontWeight = if (bold) FontWeight.SemiBold else null, color = if (tint) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface) },
         supportingContent = line?.let { { Text(it) } },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = if (onClick != null) Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick) else Modifier.fillMaxWidth(),
+        content = { Text(title, fontWeight = if (bold) FontWeight.SemiBold else null, color = if (tint) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface) },
     )
 }

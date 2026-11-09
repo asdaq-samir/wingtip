@@ -47,7 +47,6 @@ fun IcingRows(plan: Plan.State, model: IcingModel = viewModel()) {
             state.rows.forEach { row ->
                 ListItem(
                     leadingContent = { FindingIcon(row.finding) },
-                    headlineContent = { Text(row.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     supportingContent = {
                         Column {
                             Text(row.value)
@@ -55,6 +54,7 @@ fun IcingRows(plan: Plan.State, model: IcingModel = viewModel()) {
                         }
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    content = { Text(row.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 )
             }
             state.credit?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }

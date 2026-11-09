@@ -58,9 +58,11 @@ def test_the_shared_fixtures_reach_wingtips_tests_the_engine_and_the_phones():
 
 
 def test_each_app_is_its_own_area():
-    assert areas("services/gateway/pom.xml") == ["java"]
+    # The pom and the Gradle build carry .tool-versions' Java and Gradle,
+    # which the arch area's toolchain.sh --check holds them to.
+    assert areas("services/gateway/pom.xml") == ["java", "arch"]
     assert areas("apps/ios/Wingtip/App.swift") == ["ios", "arch"]
-    assert areas("apps/android/app/build.gradle.kts") == ["android"]
+    assert areas("apps/android/app/build.gradle.kts") == ["android", "arch"]
     assert areas("apps/site/src/index.html") == ["site"]
 
 
@@ -70,8 +72,10 @@ def test_the_sites_sources_reach_it():
     assert areas("design/tokens.json") == ["web", "ios", "android", "site"]
 
 
-def test_words_alone_check_nothing():
-    assert areas("README.md", "docs/CI.md", ".claude/skills/checks/SKILL.md") == []
+def test_words_alone_check_only_the_versions_they_name():
+    # The docs' prose names the toolchain's versions, which toolchain.sh
+    # --check (the arch area) holds to .tool-versions; nothing else runs.
+    assert areas("README.md", "docs/CI.md", ".claude/skills/checks/SKILL.md") == ["arch"]
 
 
 def test_each_area_once_in_one_order():

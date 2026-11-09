@@ -52,7 +52,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.graphics.createBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.wingtipmaps.android.design.LoadingIndicator
+import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.predictiveBack
 import app.wingtipmaps.android.design.rememberPredictiveBack
@@ -137,7 +137,7 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
                     when {
                         shown != null -> DiagramWithOwnShip(shown, fix)
                         problem != null -> ProblemLine(problem)
-                        else -> LoadingIndicator()
+                        else -> Loading()
                     }
                 }
                 page?.let {

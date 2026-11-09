@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import time
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -24,24 +25,28 @@ with charts.refresh_lock() as got:
 """
 
 
-def _hold_in_another_process(tiles, seconds):
+@contextmanager
+def _held_in_another_process(tiles, seconds):
+    """The lock held by a child for `seconds`, or until the block ends,
+    when it is killed and reaped, and its pipe closed (Popen's own exit):
+    a pipe left open was a ResourceWarning, an error under the suite's
+    warnings filter, whenever the collector got to it."""
     env = {**os.environ, "PYTHONPATH": str(Path(charts.__file__).resolve().parents[1])}
-    child = subprocess.Popen([sys.executable, "-c", _HOLD, str(tiles), str(seconds)], stdout=subprocess.PIPE, text=True, env=env)
-    assert child.stdout.readline().strip() == "held"
-    return child
+    with subprocess.Popen([sys.executable, "-c", _HOLD, str(tiles), str(seconds)], stdout=subprocess.PIPE, text=True, env=env) as child:
+        try:
+            assert child.stdout.readline().strip() == "held"
+            yield child
+        finally:
+            child.kill()
 
 
 def test_a_refresh_or_pyramid_finding_the_lock_held_leaves_it_to_the_running_one(tmp_path, monkeypatch):
     monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
     monkeypatch.setattr(charts, "refresh", lambda **kw: pytest.fail("refreshed beside a running one"))
     monkeypatch.setattr(charts, "render_pyramid", lambda *a, **kw: pytest.fail("rendered beside a running one"))
-    child = _hold_in_another_process(tmp_path / "tiles", 30)
-    try:
+    with _held_in_another_process(tmp_path / "tiles", 30):
         assert cli.main(["refresh", "--bucket", ""]) == 0
         assert cli.main(["pyramid", "--kind", "sec"]) == 1
-    finally:
-        child.kill()
-        child.wait()
 
 
 def test_unmask_waits_for_a_running_refresh(tmp_path, monkeypatch):
@@ -50,10 +55,10 @@ def test_unmask_waits_for_a_running_refresh(tmp_path, monkeypatch):
     monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
     ran = []
     monkeypatch.setattr(charts, "unmask_prepared", lambda cycle, workers, again: ran.append(time.monotonic()) or {})
-    child = _hold_in_another_process(tmp_path / "tiles", 1.5)
-    started = time.monotonic()
-    assert cli.main(["unmask", "--cycle", "09-03-2026"]) == 0
-    child.wait()
+    with _held_in_another_process(tmp_path / "tiles", 1.5) as child:
+        started = time.monotonic()
+        assert cli.main(["unmask", "--cycle", "09-03-2026"]) == 0
+        child.wait()
     assert ran and ran[0] - started >= 1.0
 
 
@@ -64,10 +69,10 @@ def test_publish_waits_for_a_running_refresh(tmp_path, monkeypatch):
     monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
     ran = []
     monkeypatch.setattr(charts, "publish", lambda cycle, bucket: ran.append(time.monotonic()) or 0)
-    child = _hold_in_another_process(tmp_path / "tiles", 1.5)
-    started = time.monotonic()
-    assert cli.main(["publish", "--cycle", "09-03-2026", "--bucket", "charts-bucket"]) == 0
-    child.wait()
+    with _held_in_another_process(tmp_path / "tiles", 1.5) as child:
+        started = time.monotonic()
+        assert cli.main(["publish", "--cycle", "09-03-2026", "--bucket", "charts-bucket"]) == 0
+        child.wait()
     assert ran and ran[0] - started >= 1.0
 
 

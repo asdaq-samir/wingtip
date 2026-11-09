@@ -86,10 +86,10 @@ private fun FieldsList(state: EmergencyModel.State, onPick: (String) -> Unit, on
     if (state.fix == null) {
         SectionTitle(stringResource(R.string.best_fields))
         ListItem(
-            headlineContent = { Text(stringResource(R.string.show_my_position), color = MaterialTheme.colorScheme.primary) },
             supportingContent = { Text(stringResource(R.string.show_my_position_line)) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             modifier = Modifier.clickable(role = Role.Button, onClick = onShowPosition),
+            content = { Text(stringResource(R.string.show_my_position), color = MaterialTheme.colorScheme.primary) },
         )
         return
     }
@@ -125,12 +125,6 @@ private fun FieldRow(f: EngineContract.BestField, picked: Boolean, onPick: () ->
     val said = (listOf(f.ident, f.name, fieldWords(f)) + f.reasons.map { it.text }).joinToString(", ")
     ListItem(
         leadingContent = { RadioButton(selected = picked, onClick = null) },
-        headlineContent = {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
-                Text(f.ident, fontWeight = FontWeight.SemiBold)
-                Text(f.name, modifier = Modifier.weight(1f), maxLines = if (largeType()) 3 else 1)
-            }
-        },
         supportingContent = {
             Column {
                 f.reasons.forEachIndexed { i, r ->
@@ -155,5 +149,11 @@ private fun FieldRow(f: EngineContract.BestField, picked: Boolean, onPick: () ->
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.selectable(selected = picked, role = Role.RadioButton, onClick = onPick).clearAndSetSemantics { contentDescription = said },
+        content = {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
+                Text(f.ident, fontWeight = FontWeight.SemiBold)
+                Text(f.name, modifier = Modifier.weight(1f), maxLines = if (largeType()) 3 else 1)
+            }
+        },
     )
 }

@@ -14,6 +14,7 @@ town are given here, not the street.
 
 from __future__ import annotations
 
+import contextlib
 import csv
 import io
 import logging
@@ -351,7 +352,10 @@ def lookup(hex_id: str | None = None, n_number: str | None = None, directory: Pa
     if not db_path.exists():
         return None
     n = (n_number or "").strip().upper().replace("-", "")
-    with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as db:
+    # closing(): sqlite3's own `with` commits or rolls back but never
+    # closes, and each lookup left a connection for the collector (a
+    # ResourceWarning since Python 3.13).
+    with contextlib.closing(sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)) as db:
         db.row_factory = sqlite3.Row
         row = None
         # adsb.lol marks a TIS-B / ADS-R pseudo-address with "~": it is not a

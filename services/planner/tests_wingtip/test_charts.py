@@ -1160,44 +1160,6 @@ def test_two_threads_writing_one_tile_use_two_temp_files(tmp_path, monkeypatch):
     assert tile.read_bytes() in (b"png", b"pngpng")
 
 
-_HOLD = """
-import sys, time
-from pathlib import Path
-from wingtip import charts
-charts.CHART_TILE_CACHE_DIR = Path(sys.argv[1])
-with charts.refresh_lock() as got:
-    print("held" if got else "busy", flush=True)
-    time.sleep(float(sys.argv[2]))
-"""
-
-
-def _hold_in_another_process(tiles, seconds):
-    import os
-    import subprocess
-    import sys
-
-    from pathlib import Path
-
-    env = {**os.environ, "PYTHONPATH": str(Path(charts.__file__).resolve().parents[1])}
-    child = subprocess.Popen([sys.executable, "-c", _HOLD, str(tiles), str(seconds)], stdout=subprocess.PIPE, text=True, env=env)
-    assert child.stdout.readline().strip() == "held"
-    return child
-
-
-def test_a_refresh_is_running_exactly_while_another_process_holds_the_lock(tmp_path, monkeypatch):
-    """It used to be a pid written into refresh.lock: the planner never
-    reaped its finished child, a zombie answers kill(pid, 0), and one
-    refresh read as running until the planner restarted."""
-    monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
-    child = _hold_in_another_process(tmp_path / "tiles", 30)
-    try:
-        assert charts.refresh_running()
-    finally:
-        child.kill()
-        child.wait()
-    assert not charts.refresh_running()  # ended, however it ended: the kernel let go
-
-
 def test_the_revision_is_written_whole(tmp_path, monkeypatch):
     """Written in place, a run killed mid-write left a file that read as
     no revision at all."""

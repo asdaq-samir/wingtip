@@ -8,7 +8,7 @@ cite its session, and the model out of reach leaves the plan without
 words."""
 
 import anthropic
-import httpx
+import httpx2 as httpx
 import pytest
 from fastapi.testclient import TestClient
 

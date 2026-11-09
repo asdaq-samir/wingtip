@@ -93,10 +93,13 @@ def test_the_diagram_is_drawn_once_a_cycle_by_either_ident_and_kept(monkeypatch,
 
     assert publications.airport_diagram_cycle("KDLH", on) == "2610"
     path = publications.airport_diagram_png("KDLH", "2610", on)
-    image = Image.open(path)
+    # Read and closed at once: a file Pillow was left holding was a
+    # ResourceWarning, an error under the suite's warnings filter.
+    with Image.open(path) as image:
+        mode, size = image.mode, image.size
     # Grey, DIAGRAM_SCALE times the PDF's points.
     scale = publications.DIAGRAM_SCALE
-    assert (image.mode, image.size) == ("L", (396 * scale, 594 * scale))
+    assert (mode, size) == ("L", (396 * scale, 594 * scale))
     assert publications.airport_diagram_png("DLH", "2610", on) == path
     assert asked == ["https://aeronav.faa.gov/d-tpp/2610/00125AD.PDF"]
 
@@ -189,7 +192,8 @@ def test_a_booklets_pages_are_the_ones_naming_the_field_and_a_charts_its_own(mon
     assert [p["page"] for p in publications.chart_pages("https://aeronav.faa.gov/d-tpp/2610/00245IL19.PDF", "KMSN", on)] == [1, 2, 3]
     # Drawn, a page at a time, and kept.
     path = publications.chart_page_png("dtpp", "2610", "EC3TO.PDF", 3, on)
-    assert Image.open(path).size == (387 * scale, 594 * scale)
+    with Image.open(path) as image:
+        assert image.size == (387 * scale, 594 * scale)
     assert publications.chart_page_png("dtpp", "2610", "EC3TO.PDF", 9, on) is None
 
 

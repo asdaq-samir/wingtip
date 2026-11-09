@@ -23,7 +23,7 @@ import androidx.compose.ui.res.stringResource
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.api.AssistantTurn
-import app.wingtipmaps.android.design.LoadingIndicator
+import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.WingtipIcons
@@ -58,7 +58,7 @@ internal fun AnswerCard(
             }
             if (status != null) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-                    LoadingIndicator(Modifier.size(WingtipSpace.Lg))
+                    Loading(Modifier.size(WingtipSpace.Lg))
                     Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }

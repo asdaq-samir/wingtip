@@ -87,9 +87,9 @@ internal fun AirspaceCard(volume: MapPick.Airspace) {
         SectionTitle(stringResource(R.string.to_enter))
         for (r in rules.rules) {
             ListItem(
-                headlineContent = { Text(r.rule, style = MaterialTheme.typography.bodyMedium) },
                 supportingContent = { Text(r.cite) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                content = { Text(r.rule, style = MaterialTheme.typography.bodyMedium) },
             )
         }
     }
@@ -123,11 +123,11 @@ internal fun VorCard(vor: MapPick.Vor) {
     morseAsked.exceptionOrNull()?.let { ProblemLine("The identifier's Morse failed: ${it.message}") }
     morseAsked.getOrNull()?.let { morse ->
         ListItem(
-            headlineContent = { Text(stringResource(R.string.fact_identifier)) },
             trailingContent = {
                 Text(morse, fontWeight = FontWeight.SemiBold, modifier = Modifier.semantics { contentDescription = vor.ident.toList().joinToString(" ") })
             },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            content = { Text(stringResource(R.string.fact_identifier)) },
         )
     }
     vor.channel?.let { Fact(stringResource(R.string.fact_dme_channel), it) }

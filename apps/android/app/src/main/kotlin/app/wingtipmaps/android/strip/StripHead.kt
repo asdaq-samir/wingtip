@@ -148,13 +148,13 @@ fun StripHead(
             val said = "${findingSaid(action.finding)}: ${action.line}"
             StripCard(onClick = { onAction(action) }, modifier = Modifier.fillMaxWidth()) {
                 ListItem(
-                    headlineContent = { Text(action.line, style = MaterialTheme.typography.bodyLarge) },
                     leadingContent = { FindingIcon(action.finding, Modifier.size(20.dp)) },
                     trailingContent = {
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     modifier = Modifier.clearAndSetSemantics { contentDescription = said },
+                    content = { Text(action.line, style = MaterialTheme.typography.bodyLarge) },
                 )
             }
         }

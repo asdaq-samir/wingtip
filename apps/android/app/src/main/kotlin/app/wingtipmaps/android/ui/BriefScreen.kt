@@ -82,11 +82,11 @@ fun BriefSheet(model: BriefModel, plan: Plan.State, signedIn: Boolean, onClose: 
                     // The finding said first, as its glyph shows it.
                     val said = "${findingSaid(BriefModel.finding(item.finding))}: ${item.label}. ${item.detail}"
                     ListItem(
-                        headlineContent = { Text(item.label) },
                         supportingContent = { Text(item.detail) },
                         leadingContent = { FindingIcon(BriefModel.finding(item.finding)) },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         modifier = Modifier.clearAndSetSemantics { contentDescription = said },
+                        content = { Text(item.label) },
                     )
                 }
                 // In the weather's adverse conditions: the forecast icing a leg.

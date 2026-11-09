@@ -39,10 +39,10 @@ fun UndoRow(words: String, key: Any, onUndo: () -> Unit, onDone: () -> Unit, mod
     }
     ListItem(
         leadingContent = { Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-        headlineContent = { Text(words, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         trailingContent = { TextButton(onClick = onUndo) { Text(stringResource(R.string.undo), fontWeight = FontWeight.SemiBold) } },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = modifier.fillMaxWidth(),
+        content = { Text(words, maxLines = 1, overflow = TextOverflow.Ellipsis) },
     )
 }
 

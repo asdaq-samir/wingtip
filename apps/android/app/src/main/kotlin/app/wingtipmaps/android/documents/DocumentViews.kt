@@ -24,7 +24,7 @@ import androidx.compose.ui.semantics.Role
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.assistant.DocumentFlag
 import app.wingtipmaps.android.api.generated.assistant.DocumentRead
-import app.wingtipmaps.android.design.LoadingIndicator
+import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.LocalInk
@@ -34,11 +34,11 @@ import app.wingtipmaps.android.ui.LocalInk
 @Composable
 fun AddFromPhotoRow(line: String, title: String = stringResource(R.string.add_from_photo), onOpen: () -> Unit) {
     ListItem(
-        headlineContent = { Text(title) },
         supportingContent = { Text(line, color = MaterialTheme.colorScheme.onSurfaceVariant) },
         leadingContent = { Icon(Icons.Outlined.DocumentScanner, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onOpen),
+        content = { Text(title) },
     )
 }
 
@@ -46,7 +46,7 @@ fun AddFromPhotoRow(line: String, title: String = stringResource(R.string.add_fr
 @Composable
 fun ReadingLine() {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-        LoadingIndicator(Modifier.size(WingtipSize.Chip))
+        Loading(Modifier.size(WingtipSize.Chip))
         Text(stringResource(R.string.reading_page), style = MaterialTheme.typography.bodyMedium)
     }
 }
@@ -95,10 +95,10 @@ fun ConfirmRow(
 ) {
     ListItem(
         overlineContent = overline?.let { { Text(it) } },
-        headlineContent = { Text(title) },
         supportingContent = { Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) { body() } },
         trailingContent = { Checkbox(checked = checked, onCheckedChange = null, enabled = enabled) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().toggleable(value = checked, enabled = enabled, role = Role.Checkbox, onValueChange = { onToggle() }),
+        content = { Text(title) },
     )
 }

@@ -105,6 +105,20 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
   rules. Material's own components over hand-rolled ones -- the bottom
   sheet, the tab row, the exposed dropdown -- so touch targets, type and
   motion are the platform's. A discrete setting is a menu, not a slider.
+- Material 3 Expressive is Google's own, from Material 3
+  **1.5.0-rc01**, a release candidate taken off the Compose BOM (the
+  owner, 2026-11-09: "Avoid building our own and let's use rc01"; the
+  BOM's 1.4.0 keeps Expressive internal). Only `material3` leaves the
+  BOM: it needs Compose 1.12.0, which the BOM's 1.12.1 already is.
+  The theme is `MaterialExpressiveTheme` with `MotionScheme.expressive()`,
+  so every stock component moves on its springs, and Remove animations
+  stills them through Compose's animator duration scale; the choice
+  rows are the connected button group's `ToggleButton`s, the map's
+  buttons a `VerticalFloatingToolbar`, a spinner the `LoadingIndicator`
+  (still `@ExperimentalMaterial3ExpressiveApi`, opted into in
+  `design/Loading.kt` alone), a press the stock buttons' `shapes`, and
+  the emphasized type roles the tokens' (scripts/build/design-tokens.sh).
+  Bump to 1.5.0 stable when it is released.
   Wingtip's own colours, not the wallpaper's: Material You stays off,
   the brand's blue is the tint (design/tokens.json, the owner's
   2026-11-09 decision), and the type roles are Material 3's sizes

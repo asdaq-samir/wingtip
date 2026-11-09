@@ -49,7 +49,6 @@ private fun AheadRow(alert: AheadAlert, onClose: () -> Unit) {
         (alert.ceilingFt ?: alert.topFt)?.let { top -> stringResource(R.string.ahead_floor_top, Format.altitude(floor), Format.altitude(top)) }
     }
     ListItem(
-        headlineContent = { Text(alert.name, fontWeight = FontWeight.SemiBold, color = ink) },
         supportingContent = {
             Column {
                 Text(alert.need)
@@ -68,5 +67,6 @@ private fun AheadRow(alert: AheadAlert, onClose: () -> Unit) {
             }
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        content = { Text(alert.name, fontWeight = FontWeight.SemiBold, color = ink) },
     )
 }

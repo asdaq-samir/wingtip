@@ -47,7 +47,6 @@ fun FrequencyRow(name: String, frequency: String, line: String? = null) {
         }
     }
     ListItem(
-        headlineContent = { Text(name) },
         supportingContent = line?.let { { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
@@ -64,6 +63,7 @@ fun FrequencyRow(name: String, frequency: String, line: String? = null) {
             CardIntents.copy(context, name, frequency)
             copied = true
         },
+        content = { Text(name) },
     )
 }
 

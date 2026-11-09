@@ -66,13 +66,13 @@ fun LiveAirportRows(ident: String, model: LiveAirportModel = viewModel()) {
             state.rvr.forEach { r ->
                 ListItem(
                     leadingContent = { Icon(Icons.Filled.Visibility, contentDescription = null) },
-                    headlineContent = { Text(stringResource(R.string.live_rvr_runway, r.runway)) },
                     supportingContent = {
                         if (r.under != null) Text(r.under, color = MaterialTheme.colorScheme.error)
                         else Text(stringResource(R.string.live_rvr_parts))
                     },
                     trailingContent = { Text(r.readings, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold) },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    content = { Text(stringResource(R.string.live_rvr_runway, r.runway)) },
                 )
             }
             Credit(stringResource(R.string.live_rvr_credit))
@@ -89,9 +89,9 @@ private fun BroadcastGroup(b: LiveAirportModel.Broadcast) {
     }
     b.rows.forEach { row ->
         ListItem(
-            headlineContent = { Text(row.label) },
             trailingContent = { Text(row.value, style = MaterialTheme.typography.bodyLarge) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            content = { Text(row.label) },
         )
     }
     TextButton(onClick = { sent = !sent }) {
@@ -107,8 +107,8 @@ private fun BroadcastGroup(b: LiveAirportModel.Broadcast) {
 private fun Row(text: String, bold: Boolean = false, lead: @Composable () -> Unit) {
     ListItem(
         leadingContent = lead,
-        headlineContent = { Text(text, fontWeight = if (bold) FontWeight.SemiBold else null) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        content = { Text(text, fontWeight = if (bold) FontWeight.SemiBold else null) },
     )
 }
 

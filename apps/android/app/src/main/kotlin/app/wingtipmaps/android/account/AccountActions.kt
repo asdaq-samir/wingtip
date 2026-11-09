@@ -30,7 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
-import app.wingtipmaps.android.design.LoadingIndicator
+import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
 
@@ -51,16 +51,16 @@ fun ExportRow(model: ExportModel = viewModel()) {
         }
     }
     ListItem(
-        headlineContent = { Text(stringResource(R.string.export_my_data)) },
         supportingContent = {
             Text(
                 stringResource(if (state.saved) R.string.export_saved else R.string.export_my_data_line),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
-        trailingContent = { if (state.fetching) LoadingIndicator(Modifier.size(WingtipSpace.Xl)) },
+        trailingContent = { if (state.fetching) Loading(Modifier.size(WingtipSpace.Xl)) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, enabled = !state.fetching) { model.fetch() },
+        content = { Text(stringResource(R.string.export_my_data)) },
     )
     ProblemLine(state.problem)
 }

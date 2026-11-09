@@ -50,7 +50,7 @@ import app.wingtipmaps.android.briefing.PassengerScreen
 import app.wingtipmaps.android.copilot.CopilotMode
 import app.wingtipmaps.android.copilot.CopilotSetting
 import app.wingtipmaps.android.design.ChoiceGroup
-import app.wingtipmaps.android.design.LoadingIndicator
+import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.Traffic
@@ -126,7 +126,7 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
         SectionTitle(stringResource(R.string.account))
         val signedIn = pilot
         when {
-            !loaded -> LoadingIndicator(Modifier.size(WingtipSpace.Xl))
+            !loaded -> Loading(Modifier.size(WingtipSpace.Xl))
             signedIn != null -> {
                 Text(signedIn.email, style = MaterialTheme.typography.bodyLarge)
                 OutlinedButton(onClick = { session.signOut(context) }) { Text(stringResource(R.string.sign_out)) }
@@ -151,10 +151,10 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
         // The pilot's logbook and its currency, with their account.
         if (signedIn != null) {
             ListItem(
-                headlineContent = { Text(stringResource(R.string.logbook)) },
                 supportingContent = { Text(stringResource(R.string.logbook_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { logbook = true },
+                content = { Text(stringResource(R.string.logbook)) },
             )
             // The Coach beside the logbook it is made from: two taps, not three.
             ScreenRow(Screen.COACH, R.string.coach, R.string.coach_line)
@@ -187,10 +187,10 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
         SwitchRow(stringResource(R.string.speak_alerts), spokenOn, spoken::setOn)
         // Regions' charts kept for flying with no signal (offline/).
         ListItem(
-            headlineContent = { Text(stringResource(R.string.offline_downloads)) },
             supportingContent = { Text(stringResource(R.string.offline_downloads_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { downloads = true },
+            content = { Text(stringResource(R.string.offline_downloads)) },
         )
         // The in-flight copilot: off, shown, or shown and said (a setting
         // of three is a segmented control, decision 0017).
@@ -213,27 +213,27 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
         // field's "passenger briefing" opens Setup.
         SectionTitle(stringResource(R.string.flight))
         ListItem(
-            headlineContent = { Text(stringResource(R.string.passenger_briefing)) },
             supportingContent = { Text(stringResource(R.string.passenger_briefing_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { briefing = true },
+            content = { Text(stringResource(R.string.passenger_briefing)) },
         )
         // The welcome once more, from its first page (WelcomeHost, over
         // whatever is open): its one home.
         ListItem(
-            headlineContent = { Text(stringResource(R.string.welcome_again)) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { WelcomeMemory.of(context).reset() },
+            content = { Text(stringResource(R.string.welcome_again)) },
         )
         Row(Modifier.fillMaxWidth().padding(top = WingtipSpace.Lg), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(stringResource(R.string.server), style = MaterialTheme.typography.bodyMedium)
             Text(Config.host, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         ListItem(
-            headlineContent = { Text(stringResource(R.string.about)) },
             supportingContent = { Text(stringResource(R.string.about_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { about = true },
+            content = { Text(stringResource(R.string.about)) },
         )
     }
     if (about) {
@@ -290,9 +290,9 @@ private fun MapLayerRows() {
 @Composable
 private fun SwitchRow(title: String, on: Boolean, onChange: (Boolean) -> Unit) {
     ListItem(
-        headlineContent = { Text(title) },
         trailingContent = { Switch(checked = on, onCheckedChange = null) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().toggleable(value = on, role = Role.Switch, onValueChange = onChange),
+        content = { Text(title) },
     )
 }

@@ -13,6 +13,7 @@ import json
 import os
 
 import joblib
+import pandas as pd
 import pytest
 from sklearn.dummy import DummyRegressor
 from sklearn.linear_model import LinearRegression
@@ -32,7 +33,11 @@ def _chart_dir(tmp_path, monkeypatch):
 def _write_chart_model(chart):
     chart.mkdir(parents=True, exist_ok=True)
     # rating = log_area - is_river: a row without is_river reads it as 0.
-    model = LinearRegression().fit([[1.0, 0.0], [2.0, 1.0], [3.0, 0.0]], [1.0, 1.0, 3.0])
+    # Fitted on named columns, as wingtip.chartmodel fits on train[FEATURE_COLS]:
+    # fitted on bare lists, scikit-learn warns at predict that the scorer's
+    # DataFrame has names the model was not fitted with.
+    X = pd.DataFrame([[1.0, 0.0], [2.0, 1.0], [3.0, 0.0]], columns=["log_area", "is_river"])
+    model = LinearRegression().fit(X, [1.0, 1.0, 3.0])
     joblib.dump(model, chart / "model.joblib")
     (chart / "metrics.json").write_text(
         json.dumps(
