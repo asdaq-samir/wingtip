@@ -131,3 +131,22 @@ test("each row's miles over its groundspeed come to its minutes, a pattern's mil
   expect(rows.some(r => /incl\. (departure|pattern)/.test(r.said))).toBe(true);
   await closeNavLog(page);
 });
+
+test("the route's Profile, AI brief and ••• stay on the airplane and altitude's line at the owner's 19.65 px text", async ({ page }) => {
+  // The FPL audit's A3 (2026-11-08): at 19.65 px the three round buttons
+  // wrapped onto a line of their own under N-_____ and FL-0xx.
+  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's panel");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  for (const root of ["17.88px", "19.65px"]) {
+    await page.evaluate(size => { document.documentElement.style.fontSize = size; }, root);
+    const chip = sideDrawer(page).getByTestId("aircraft-select");
+    const actions = sideDrawer(page).getByTestId("route-actions");
+    await expect(actions).toBeVisible({ timeout: slow(30000) });
+    await expect.poll(async () => {
+      const [a, b] = [await chip.boundingBox(), await actions.boundingBox()];
+      return a && b ? Math.abs((a.y + a.height / 2) - (b.y + b.height / 2)) < 8 : false;
+    }, { message: `on one line at ${root}` }).toBe(true);
+  }
+});

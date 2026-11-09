@@ -46,7 +46,13 @@ export function InlineField({ label, testId, widest, tabular = false, placeholde
   button?: ReactNode;
 }) {
   return (
-    <div role="group" aria-label={label} className={cn("grid h-7 items-center rounded-full bg-foreground/8", shrink && "shrink-0", TEXT.row)} data-testid={testId} data-tip={tip}>
+    // A row's size to a finger, but no larger than it is at the owner's
+    // 17.88 px text (19 px): at 19.65 the two chips and the route's three
+    // round buttons came to 10-15 points more than a 390-point phone's
+    // line, and the buttons wrapped onto a line of their own (the FPL
+    // audit's A3; the owner's route-box-buttons rule, 2026-10-24: one line
+    // at their text sizes). The field is 28 tall whatever its text.
+    <div role="group" aria-label={label} className={cn("grid h-7 items-center rounded-full bg-foreground/8", shrink && "shrink-0", TEXT.row, "pointer-coarse:text-[length:min(1.0625rem,19px)]")} data-testid={testId} data-tip={tip}>
       <span aria-hidden="true" className="invisible col-start-1 row-start-1 flex h-0 overflow-hidden">
         <span className={cn("whitespace-pre pr-1.5 pl-2.5 font-semibold", tabular && "tabular-nums")}>{widest}</span>
         <span className={cn(endRoom, "shrink-0")} />
