@@ -140,7 +140,7 @@ struct ChartMap: UIViewRepresentable {
             try? await Task.sleep(for: Self.revealCap)
             coordinator.reveal()
         }
-        context.coordinator.locations.requestWhenInUseAuthorization()
+        if !WelcomeModel.wanted() { context.coordinator.locations.requestWhenInUseAuthorization() } // the welcome asks first
         let flight = FlightMapLayer()
         flight.attach(map)
         context.coordinator.flight = flight

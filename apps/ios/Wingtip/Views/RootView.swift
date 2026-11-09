@@ -102,10 +102,14 @@ struct RootView: View {
                         // on iOS 26; the material on iOS 18 (Design/Glass.swift).
                         .sheetGlass()
                         .interactiveDismissDisabled()
+                        // The welcome, once per install, over the planner's sheet;
+                        // its flight shown half way up on FPL (WelcomeHost).
+                        .modifier(WelcomeHost(opened: { tab = .fpl; detent = .medium }))
                     }
             case .split:
                 SplitLayout(map: map, tab: $tab, airports: $airports, card: $sideCard)
                     .sheet(isPresented: $asking) { AskView() }
+                    .modifier(WelcomeHost(opened: { tab = .fpl }))
             }
         }
         // The scene's tab kept and brought back (SceneStorage); a launch

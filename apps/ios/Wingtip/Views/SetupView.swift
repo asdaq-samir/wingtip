@@ -50,6 +50,8 @@ struct SetupView: View {
                 Section {
                     NavigationLink("Personal Minimums") { MinimumsView().closesBack() }
                     NavigationLink("Guide") { PilotGuideView().closesBack() }
+                    // The first launch's welcome, shown again from here alone.
+                    Button("Show Welcome Again") { WelcomeModel.shared.again() }
                 }
                 Section(title: "Map") {
                     Toggle("Traffic", isOn: Binding(get: { traffic.on }, set: { traffic.on = $0 }))

@@ -300,7 +300,7 @@ final class ClearanceListener {
         input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { buffer, _ in feed.append(buffer) }
     }
 
-    private static func allowed() async -> Bool {
+    static func allowed() async -> Bool {
         let speech = await withCheckedContinuation { (done: CheckedContinuation<Bool, Never>) in
             SFSpeechRecognizer.requestAuthorization { done.resume(returning: $0 == .authorized) }
         }

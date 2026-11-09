@@ -10,6 +10,7 @@ struct ProfileCard: View {
     @Environment(Plan.self) private var plan
     @Environment(DryRun.self) private var dryRun
     @State private var picked: Double?
+    @AppStorage(FlightRules.key) private var rules: FlightRules = .vfr
 
     /// The wheel's rows, highest first: the planner's legal altitudes, the
     /// one flown and every 500 ft from 1,000 ft under Class A (14 CFR
@@ -68,6 +69,13 @@ struct ProfileCard: View {
                 .pickerStyle(.wheel)
                 .frame(height: 160)
                 ProblemLine(wheel, "The wheel's altitudes")
+                // The rules the route is planned under, here as the web's
+                // altitude popover has them (FlightRules); planned again.
+                Picker("Flight Rules", selection: $rules) {
+                    ForEach(FlightRules.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: rules) { _, _ in plan.plan() }
                 if let options = plan.altitude?.options, !options.isEmpty {
                     Picker("Plan", selection: Binding(get: { plan.altitudeChoice ?? (plan.ownAltitudeFt == nil ? "fastest" : "") }, set: { choose($0) })) {
                         ForEach(options.filter { !$0.steps.isEmpty }) { option in
