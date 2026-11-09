@@ -120,7 +120,12 @@ struct StripSheetView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 if let fix = flyingFix {
-                    StripAir(points: points, position: StripData.positionAlong(points, fix: fix.coordinate), fix: fix)
+                    let along = Result { try StripData.positionAlong(points, fix: fix.coordinate) }
+                    StripAir(points: points, position: try? along.get(), fix: fix)
+                    if case .failure(let error) = along {
+                        Text("Your place on the strip couldn't be worked out: \(error.localizedDescription)")
+                            .font(ChartInk.note).foregroundStyle(.orange)
+                    }
                     radio
                 } else {
                     if !client.turns.isEmpty {
@@ -349,7 +354,9 @@ struct StripSheetView: View {
     /// flown as the pilot's own. Nil where the words hold no command; ""
     /// where one was done; else why not.
     private func spoken(_ text: String) async -> String? {
-        if let said = HeardCall.directOf(text) {
+        let direct: String?
+        do { direct = try HeardCall.directOf(text) } catch { return "The words couldn't be read: \(error.localizedDescription)" }
+        if let said = direct {
             guard plan.routed else { return "Direct To needs a route." }
             var near: [(Double, Double)] = []
             if let course = plan.course {
@@ -374,7 +381,7 @@ struct StripSheetView: View {
         }
         let lower = text.lowercased()
         if lower.contains("altitude") || lower.contains("climb") || lower.contains("descend") || lower.contains("maintain"),
-           let ft = Clearance.read(text).maintainFt {
+           let ft = (try? Clearance.read(text))?.maintainFt {
             guard plan.routed else { return "Plan a route first; then say an altitude, \"altitude 5500\"." }
             plan.ownAltitudeFt = Double(ft)
             plan.ownAltitudeLegal = false

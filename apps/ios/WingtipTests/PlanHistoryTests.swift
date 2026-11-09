@@ -12,7 +12,7 @@ struct PlanHistoryTests {
         ProcedurePick(ident: ident, id: id, kind: "IAP", name: id, transition: nil)
     }
 
-    @Test func aClearedRouteComesBackAndGoesAgain() {
+    @Test func aClearedRouteComesBackAndGoesAgain() throws {
         var history = PlanHistory(route)
         let cleared = history.observe(RouteState())
         #expect(cleared.pushed && cleared.note == "Route cleared")
@@ -23,14 +23,14 @@ struct PlanHistoryTests {
         #expect(history.canUndo && !history.canRedo)
     }
 
-    @Test func theSameRouteIsNoStep() {
+    @Test func theSameRouteIsNoStep() throws {
         var history = PlanHistory(route)
         let again = history.observe(route)
         #expect(!again.pushed && again.note == nil)
         #expect(!history.canUndo)
     }
 
-    @Test func aNewChangeDropsWhatWasRedone() {
+    @Test func aNewChangeDropsWhatWasRedone() throws {
         var history = PlanHistory(route)
         var shorter = route
         shorter.stops = ["KJVL"]
@@ -43,13 +43,13 @@ struct PlanHistoryTests {
         #expect(history.undo() == route)
     }
 
-    @Test func itDoesNotGrowWithoutEnd() {
+    @Test func itDoesNotGrowWithoutEnd() throws {
         var history = PlanHistory(RouteState(dep: "A0"))
         for i in 1...(PlanHistory.limit + 10) { _ = history.observe(RouteState(dep: "A\(i)")) }
         #expect(history.past.count == PlanHistory.limit)
     }
 
-    @Test func itSaysWhatWasTakenAway() {
+    @Test func itSaysWhatWasTakenAway() throws {
         var oneLess = route
         oneLess.stops = ["KJVL"]
         #expect(PlanHistory.note(from: route, to: oneLess) == "KRFD removed")
@@ -67,7 +67,7 @@ struct PlanHistoryTests {
         #expect(PlanHistory.note(from: two, to: one) == "Procedure removed")
 
         var held = route
-        held.extras.holds = [Hold(fix: "KJVL", inbound: 90, right: true, legMin: 1, turns: 2)]
+        held.extras.holds = [Hold(fix: "KJVL", inbound: 90, right: true, legMin: 1, legNm: nil, turns: 2, minutes: nil)]
         #expect(PlanHistory.note(from: held, to: route) == "Hold removed")
 
         // Adding is not taking away: no bar, shake still undoes it.

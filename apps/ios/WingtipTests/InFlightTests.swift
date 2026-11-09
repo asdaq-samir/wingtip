@@ -17,7 +17,7 @@ struct InFlightTests {
             "points": [["name": "A", "lat": 42.0, "lon": -88.0], ["name": "B", "lat": 43.0, "lon": -88.0], ["name": "C", "lat": 43.0, "lon": -87.0]],
             "legs": [["distance_nm": 60.0, "fuel_gal": 6.0], ["distance_nm": 44.0, "fuel_gal": 4.4]],
             "fuel_start_gal": 40.0, "now_s": 1_793_620_000.0,
-        ], decoder: Planner.snakeCase)
+        ])
     }
 
     @Test func halfWayUpTheFirstLegTheNextIsItsEnd() throws {
@@ -45,11 +45,11 @@ struct InFlightTests {
         #expect(abs(fpm - 300) < 0.001)
         let ring: InFlight.Glide = try Engine.call("glide_ring", json: [
             "lat": 42.5, "lon": -88.0, "altitude_ft": 4800.0, "speed_kt": 100.0, "terrain_ft": 800.0, "field_ft": 700.0,
-        ], decoder: Planner.snakeCase)
+        ])
         #expect(ring.rangeNm == 6 && ring.groundFt == 800 && ring.coordinates.count == 73)
     }
 
-    @Test func theBarWritesTheFigures() {
+    @Test func theBarWritesTheFigures() throws {
         #expect(InstrumentsBar.verticalSpeed(304) == "+300")
         #expect(InstrumentsBar.verticalSpeed(-447) == "-450")
         #expect(InstrumentsBar.verticalSpeed(nil) == "—")
@@ -65,7 +65,7 @@ struct InFlightTests {
         let g: DiagramPage.Graticule = try Engine.call("diagram_graticule", json: ["labels": [
             ["text": "92°13'W", "x": 363.85, "y": 485.90], ["text": "46°51'N", "x": 69.35, "y": 77.21],
             ["text": "46°50'N", "x": 296.60, "y": 76.58], ["text": "92°12'W", "x": 362.69, "y": 328.17],
-        ]], decoder: Planner.snakeCase)
+        ]])
         #expect(g.latOnX && g.northDeg == 270)
         let page = DiagramPage(image: UIImage(), size: CGSize(width: 387.36, height: 594), graticule: g)
         let fix = OwnShip.Fix(coordinate: CLLocationCoordinate2D(latitude: 46.8417, longitude: -92.1936), altitudeFt: 1428,
@@ -74,7 +74,7 @@ struct InFlightTests {
         #expect(at.onPage && abs(at.x - 183) < 2)
     }
 
-    @Test func ownShipGoesWhenItsFixIsStaleOrCoarse() {
+    @Test func ownShipGoesWhenItsFixIsStaleOrCoarse() throws {
         // AC 120-76D 11.17.2.3 and 11.17.2.4: off within 3 s, none past 30 m.
         let now = Date()
         let fix = { (age: TimeInterval, metres: Double) in

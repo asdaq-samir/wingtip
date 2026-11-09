@@ -24,7 +24,7 @@ struct SetupView: View {
                 Section("Account") {
                     if let pilot = session.pilot {
                         LabeledContent("Signed in as", value: pilot.displayName ?? pilot.email ?? "you")
-                        if let email = pilot.email, pilot.displayName != nil { LabeledContent("Email", value: email) }
+                        LabeledContent("Email", value: pilot.email)
                         NavigationLink("Contact") { ContactView() }
                         Button("Sign Out", role: .destructive) { Task { await session.signOut(); plan.forgetPilot() } }
                         DeleteAccountButton()

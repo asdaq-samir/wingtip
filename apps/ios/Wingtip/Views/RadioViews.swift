@@ -72,8 +72,12 @@ struct RadioCallBanner: View {
     private var listener: ClearanceListener { ClearanceListener.shared }
 
     var body: some View {
-        let clearance = Clearance.read(call.text)
-        let direct = HeardCall.directOf(call.text)
+        // A call the engine cannot read shows as heard, with nothing read
+        // out of it (logged by Engine.rule).
+        let clearance = (try? Clearance.read(call.text)) ?? Clearance()
+        // A call the engine cannot read offers no Direct To (logged by
+        // Engine.rule); the words are still shown as heard.
+        let direct = try? HeardCall.directOf(call.text)
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: "dot.radiowaves.left.and.right").foregroundStyle(Color.accentColor).accessibilityHidden(true)

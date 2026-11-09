@@ -8,7 +8,11 @@ import app.wingtipmaps.android.api.AssistantContext
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.generated.NearestAirports
 import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.ctafOf
+import app.wingtipmaps.android.engine.generated.frequencyOf
 import app.wingtipmaps.android.flight.OwnShip
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,12 +20,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.intOrNull
 
 /**
@@ -174,39 +175,11 @@ class StripModel : ViewModel() {
         return null
     }
 
-    @Serializable
-    private class NearestAnswer(val airports: List<NearestField>)
-
-    @Serializable
-    private class NearestField(val ident: String)
-
     /** The nearest field to a position, the planner's (/api/airports/nearest). */
     private suspend fun nearest(lat: Double, lon: Double): String? {
         val body = Planner.fetch("/api/airports/nearest", mapOf("lat" to lat.toString(), "lon" to lon.toString(), "limit" to "1"))
-        return Gateway.json.decodeFromString<NearestAnswer>(body).airports.firstOrNull()?.ident
+        return Gateway.json.decodeFromString<NearestAirports>(body).airports.firstOrNull()?.ident
     }
-
-    /** The fields the engine reads of a frequency (lib/frequencies' sent). */
-    @Serializable
-    data class SentFrequency(
-        val type: String? = null,
-        val description: String? = null,
-        @SerialName("frequency_mhz") val frequencyMhz: Double? = null,
-    )
-
-    @Serializable
-    private class AirportAnswer(
-        val ident: String,
-        val name: String = "",
-        val towered: Boolean = false,
-        val frequencies: List<SentFrequency> = emptyList(),
-    )
-
-    @Serializable
-    private class FrequencyOfAsk(val frequencies: List<SentFrequency>, val types: List<String>)
-
-    @Serializable
-    private class FrequenciesAsk(val frequencies: List<SentFrequency>)
 
     /** The cards of the route's fields, each asked once. */
     fun loadFields(idents: Collection<String>) {
@@ -215,8 +188,11 @@ class StripModel : ViewModel() {
         viewModelScope.launch {
             for (ident in wanted) {
                 val card = try {
-                    val answer = Gateway.json.decodeFromString<AirportAnswer>(Planner.fetch("/api/airport/$ident"))
-                    FieldCard(answer.ident, answer.name, answer.towered, radioChips(answer.frequencies, answer.towered))
+                    val answer = Planner.place(ident)
+                    val sent = answer.frequencies.map { EngineContract.FieldFrequency(it.type, it.description, it.frequencyMhz) }
+                    val chips = radioChips(sent, answer.towered)
+                    chips.exceptionOrNull()?.let { why -> say("The radio chips for $ident failed: ${why.message}") }
+                    FieldCard(answer.ident, answer.name, answer.towered, chips.getOrDefault(emptyList()))
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
@@ -230,37 +206,34 @@ class StripModel : ViewModel() {
 
     /** The frequency chips a field's card offers, as the web's StripList
      *  radioChips picks them through the engine: its ATIS (or AWOS/ASOS),
-     *  its tower where towered, else its CTAF. */
-    fun radioChips(frequencies: List<SentFrequency>, towered: Boolean): List<RadioChip> {
-        if (frequencies.isEmpty()) return emptyList()
-        return runCatching {
-            val out = mutableListOf<RadioChip>()
-            val atis = frequencyOf(frequencies, listOf("ATIS")) ?: frequencyOf(frequencies, listOf("AWOS", "ASOS"))
-            if (atis?.frequencyMhz != null) {
-                val label = (atis.type ?: "ATIS").uppercase()
-                out += RadioChip(label, "$label ${StripData.mhzText(atis.frequencyMhz)}")
-            }
-            val tower = if (towered) frequencyOf(frequencies, listOf("TWR")) else null
-            if (tower?.frequencyMhz != null) {
-                out += RadioChip("TOWER", "Tower ${StripData.mhzText(tower.frequencyMhz)}")
-            } else {
-                val ctaf = ctafOf(frequencies)
-                if (ctaf?.frequencyMhz != null) out += RadioChip("CTAF", "CTAF ${StripData.mhzText(ctaf.frequencyMhz)}")
-            }
-            out.toList()
-        }.getOrDefault(emptyList())
+     *  its tower where towered, else its CTAF. A failure of the engine's
+     *  rules is the Result's, said under the field by loadFields. */
+    fun radioChips(frequencies: List<EngineContract.FieldFrequency>, towered: Boolean): Result<List<RadioChip>> = runCatching {
+        if (frequencies.isEmpty()) return@runCatching emptyList()
+        val out = mutableListOf<RadioChip>()
+        val atis = frequencyOf(frequencies, listOf("ATIS")) ?: frequencyOf(frequencies, listOf("AWOS", "ASOS"))
+        if (atis?.frequencyMhz != null) {
+            val label = (atis.type ?: "ATIS").uppercase()
+            out += RadioChip(label, "$label ${StripData.mhzText(atis.frequencyMhz)}")
+        }
+        val tower = if (towered) frequencyOf(frequencies, listOf("TWR")) else null
+        if (tower?.frequencyMhz != null) {
+            out += RadioChip("TOWER", "Tower ${StripData.mhzText(tower.frequencyMhz)}")
+        } else {
+            val ctaf = ctafOf(frequencies)
+            if (ctaf?.frequencyMhz != null) out += RadioChip("CTAF", "CTAF ${StripData.mhzText(ctaf.frequencyMhz)}")
+        }
+        out.toList()
     }
 
-    private fun frequencyOf(frequencies: List<SentFrequency>, types: List<String>): SentFrequency? {
-        val at: Int? = Engine.call("frequency_of", FrequencyOfAsk(frequencies, types))
-        return at?.let(frequencies::getOrNull)
-    }
+    private fun frequencyOf(frequencies: List<EngineContract.FieldFrequency>, types: List<String>): EngineContract.FieldFrequency? =
+        Engine.frequencyOf(frequencies, types).getOrThrow()?.let(frequencies::getOrNull)
 
-    private fun ctafOf(frequencies: List<SentFrequency>): SentFrequency? {
-        val answer = Engine.json.decodeFromString<JsonElement>(
-            Engine.callNative("ctaf_of", Engine.json.encodeToString(FrequenciesAsk(frequencies))),
-        )
+    /** The CTAF: the engine answers the index of one of the field's own
+     *  frequencies, or MULTICOM's 122.9 as a frequency of its own. */
+    private fun ctafOf(frequencies: List<EngineContract.FieldFrequency>): EngineContract.FieldFrequency? {
+        val answer = Engine.ctafOf(frequencies).getOrThrow()
         val index = (answer as? JsonPrimitive)?.intOrNull
-        return if (index != null) frequencies.getOrNull(index) else Engine.json.decodeFromString<SentFrequency>(answer.toString())
+        return if (index != null) frequencies.getOrNull(index) else Engine.json.decodeFromJsonElement<EngineContract.FieldFrequency?>(answer)
     }
 }

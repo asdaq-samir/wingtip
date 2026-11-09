@@ -2,14 +2,18 @@ package app.wingtipmaps.android.briefing
 
 import app.wingtipmaps.android.checklist.TextStore
 import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.passengerBriefing
 import app.wingtipmaps.android.strip.StripData
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+
+/** An item of the briefing: its key, its title and where it comes from
+ *  (`rule`), the engine's. */
+typealias PassengerItem = EngineContract.PassengerBriefingAnswerItem
 
 /**
  * The passengers' briefing, ticked off for the flight before engine
@@ -30,15 +34,10 @@ import kotlinx.serialization.Serializable
  * carries.
  */
 object PassengerBriefing {
-    @Serializable
-    data class Item(val key: String, val title: String, @SerialName("rule") val source: String)
-
-    @Serializable
-    private class NoAsk
-
     /** The items and their sources, the engine's (`passenger_briefing`),
-     *  as the web and the iPhone list them. */
-    val ITEMS: List<Item> by lazy { runCatching { Engine.call<NoAsk, List<Item>>("passenger_briefing", NoAsk()) }.getOrDefault(emptyList()) }
+     *  as the web and the iPhone list them; asked once, and a failure the
+     *  model's to show (PassengerModel.State.problem). */
+    val ITEMS: Result<List<PassengerItem>> by lazy { Engine.passengerBriefing() }
 
     private val CLOCK = DateTimeFormatter.ofPattern("HH:mm", Locale.US)
     private val ZULU = DateTimeFormatter.ofPattern("HHmm'Z'", Locale.US).withZone(ZoneOffset.UTC)

@@ -97,7 +97,7 @@ private fun LegRow(leg: Leg) {
             Text(ft(leg.altitudeFt), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Figure("DIST", nm(leg.distanceNm))
-        Figure("MH", degrees(leg.magneticHeadingDeg))
+        Figure("MH", leg.magneticHeadingDeg?.let(::degrees) ?: "—")
         Figure("ETE", leg.eteMin?.let(::hoursMinutes) ?: "—")
     }
 }

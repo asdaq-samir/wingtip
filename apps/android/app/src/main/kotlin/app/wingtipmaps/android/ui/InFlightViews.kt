@@ -42,6 +42,8 @@ import app.wingtipmaps.android.api.NearestAirport
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.nearest
 import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.glideReaches
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.OwnShip
 import kotlinx.coroutines.CancellationException
@@ -65,6 +67,8 @@ fun InFlightTop(state: InFlight.State, ahead: List<AheadAlert>, onNearest: () ->
     Column(modifier.padding(top = top + 8.dp, start = 8.dp, end = 64.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         AlertsBanner(ahead)
         InstrumentsBar(state, onNearest)
+        // A rule of the engine that failed for this fix, in its words.
+        state.problem?.let { ProblemLine(it) }
     }
 }
 
@@ -198,14 +202,14 @@ object InstrumentsWords {
         DateTimeFormatter.ofPattern("HHmm'Z'", Locale.US).withZone(ZoneOffset.UTC).format(Instant.ofEpochMilli((unixS * 1000).toLong()))
 
     /** How far off the course line and which side; null within a tenth. */
-    fun offCourse(p: InFlight.Progress): String? {
+    fun offCourse(p: EngineContract.InFlightAnswer): String? {
         val side = p.offSide ?: return null
         if (p.offNm < 0.1) return null
         return "${nm(p.offNm)} $side of course"
     }
 
     /** The destination's arrival and the fuel the plan leaves there. */
-    fun arrival(dest: InFlight.Waypoint, etaS: Double): String {
+    fun arrival(dest: EngineContract.InFlightAnswerDestination, etaS: Double): String {
         val line = "${dest.name} at ${zulu(etaS)}, ${dest.distanceNm.roundToInt()} nm"
         return dest.fuelLeftGal?.let { "$line, about ${gal(maxOf(0.0, it))} left by the plan" } ?: line
     }
@@ -243,13 +247,14 @@ fun NearestSheet(fix: OwnShip.Fix?, onOpen: (String) -> Unit, onClose: () -> Uni
             }
             LazyColumn {
                 items(fields.orEmpty(), key = { it.ident }) { field ->
-                    val reach = fix != null && glideReaches(fix, field)
+                    // A glide the engine could not judge says so, never "out of reach".
+                    val reach = fix?.let { glideReaches(it, field) }
                     Column(Modifier.fillMaxWidth().clickable { onOpen(field.ident) }.padding(vertical = 10.dp)) {
                         Text("${field.ident}  ${field.name}", style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         val parts = listOfNotNull(
                             "${nm(field.distanceNm)} ${degrees(field.bearingDeg)}T",
                             field.longestRunwayFt?.let { String.format(Locale.US, "%,d ft runway", it) },
-                            if (reach) "within a glide" else null,
+                            reach?.fold({ if (it) "within a glide" else null }, { "glide not worked out" }),
                         )
                         Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -260,17 +265,7 @@ fun NearestSheet(fix: OwnShip.Fix?, onOpen: (String) -> Unit, onClose: () -> Uni
     }
 }
 
-@Serializable
-private class ReachAsk(
-    @SerialName("altitude_ft") val altitudeFt: Double?,
-    @SerialName("speed_kt") val speedKt: Double?,
-    @SerialName("distance_nm") val distanceNm: Double,
-    @SerialName("elevation_ft") val elevationFt: Double?,
-)
-
 /** Whether a field is within a still-air glide at pattern height, by the
  *  engine's glide_reaches over the field's own elevation. */
-fun glideReaches(fix: OwnShip.Fix, field: NearestAirport): Boolean =
-    runCatching {
-        Engine.call<ReachAsk, Boolean>("glide_reaches", ReachAsk(fix.altitudeFt, fix.groundspeedKt, field.distanceNm, field.elevationFt))
-    }.getOrDefault(false)
+fun glideReaches(fix: OwnShip.Fix, field: NearestAirport): Result<Boolean> =
+    Engine.glideReaches(fix.altitudeFt, fix.groundspeedKt, field.distanceNm, field.elevationFt)

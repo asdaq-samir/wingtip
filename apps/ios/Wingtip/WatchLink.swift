@@ -43,7 +43,9 @@ final class WatchLink: NSObject, WCSessionDelegate {
         let text = LocalChecklists.text(for: LocalChecklists.airplane(of: plan), .normal)
         if text != checklistText {
             checklistText = text
-            checklist = text.isEmpty ? nil : ChecklistText.parse(text)
+            // One the engine cannot read is not sent; the phone's own
+            // checklist screen says why (ChecklistModel.problem).
+            checklist = text.isEmpty ? nil : try? ChecklistText.parse(text)
         }
         let fix = ownShip.fix.map {
             WatchFix(lat: $0.coordinate.latitude, lon: $0.coordinate.longitude, altitudeFt: $0.altitudeFt,

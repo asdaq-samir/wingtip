@@ -154,18 +154,15 @@ struct CheckpointNotesView: View {
 
 /// FAA Form 7233-4's items as AIM Appendix 4 writes them: the engine's
 /// (`filed_speed`, `filed_level`, `filed_route`, `filed_duration`), the
-/// very ones the web app's lib/flightPlanForm asks.
+/// very ones the web app's lib/flightPlanForm asks. Each throws where the
+/// engine cannot write the item, and nothing is filed then.
 enum FilingForm {
-    private static func asked(_ name: String, _ input: [String: Any?]) -> String {
-        (try? Engine.call(name, json: input)) ?? ""
-    }
-
     /// Item 15's cruising speed, "N0450".
-    static func cruisingSpeed(_ tasKt: Double) -> String { asked("filed_speed", ["tas_kt": tasKt]) }
+    static func cruisingSpeed(_ tasKt: Double) throws -> String { try Engine.filedSpeed(tasKt: tasKt) }
 
     /// Item 15's level: "F350" at and above 18,000 ft, "A080" below it
     /// (14 CFR 91.121(a)(2)).
-    static func cruisingLevel(_ altitudeFt: Double) -> String { asked("filed_level", ["ft": altitudeFt]) }
+    static func cruisingLevel(_ altitudeFt: Double) throws -> String { try Engine.filedLevel(ft: altitudeFt) }
 
     /// An airway as a route names one: Victor, T, Jet or Q and its number
     /// (the web app's identSchema isAirwayToken).
@@ -175,12 +172,12 @@ enum FilingForm {
 
     /// Item 15's route between the ends ("FLACK DCT IRW", "EIC V18 MEI");
     /// its procedures are not filed from here yet.
-    static func route(_ stops: [String], isAirway: (String) -> Bool = FilingForm.airwayToken) -> String {
-        asked("filed_route", ["stops": stops, "airways": stops.filter(isAirway)])
+    static func route(_ stops: [String], isAirway: (String) -> Bool = FilingForm.airwayToken) throws -> String {
+        try Engine.filedRoute(stops: stops, airways: stops.filter(isAirway))
     }
 
     /// Hours and minutes in four figures, HHMM (items 16 and 19).
-    static func hhmm(_ minutes: Int) -> String { asked("filed_duration", ["minutes": minutes]) }
+    static func hhmm(_ minutes: Int) throws -> String { try Engine.filedDuration(minutes: Double(minutes)) }
 }
 
 /// Filing with Flight Service, where the gateway has it connected, as the
@@ -211,21 +208,23 @@ struct FlightServiceView: View {
                     TextField("Type of aircraft, as C172", text: $aircraftType).textInputAutocapitalization(.characters).autocorrectionDisabled()
                     LabeledContent("Departure", value: plan.dep)
                     DatePicker("Departs", selection: $departs, in: Date()...)
-                    if let request = request() {
+                    let asked = Result { try request() }
+                    if let request = try? asked.get() {
                         LabeledContent("Cruising speed", value: request.cruisingSpeed)
                         LabeledContent("Cruising level", value: request.cruisingLevel)
                         LabeledContent("Route", value: request.route)
-                        LabeledContent("Total EET", value: FilingForm.hhmm(request.eetMinutes))
+                        LabeledContent("Total EET", value: (try? FilingForm.hhmm(request.eetMinutes)) ?? "\(request.eetMinutes) min")
                     }
+                    ProblemLine(asked, "The flight plan's items")
                     LabeledContent("Destination", value: plan.dest)
                     TextField("Endurance, HHMM", text: $endurance).keyboardType(.numberPad)
                     TextField("Persons on board", text: $persons).keyboardType(.numberPad)
                 }
                 Section {
                     Button(reference.map { "Filed: \($0)" } ?? (sending ? "Filing…" : "File with \(status.provider)")) { Task { await file() } }
-                        .disabled(request() == nil || reference != nil || sending)
+                        .disabled((try? request()) == nil || reference != nil || sending)
                     Button("Standard Briefing") { Task { await brief() } }
-                        .disabled(request() == nil || sending)
+                        .disabled((try? request()) == nil || sending)
                     ProblemLine(problem)
                 }
                 if let briefing {
@@ -251,27 +250,24 @@ struct FlightServiceView: View {
     /// The request, where every item it needs is there: the first leg's
     /// speed and level, the planner's time en route rounded up, and the
     /// endurance typed (the pilot's fuel aboard).
-    private func request() -> FlightPlanFilingRequest? {
-        guard plan.routed, let first = plan.legs.first, let ete = plan.totals?.eteMin, !aircraftId.isEmpty, !aircraftType.isEmpty else { return nil }
+    /// Thrown where the engine cannot write an item, which the form says.
+    private func request() throws -> FlightPlanFilingRequest? {
+        guard plan.routed, let first = plan.legs.first, let tas = first.tasKt, let ete = plan.totals?.eteMin, !aircraftId.isEmpty, !aircraftType.isEmpty else { return nil }
         let digits = endurance.filter(\.isNumber)
         guard digits.count == 4, let hours = Int(digits.prefix(2)), let minutes = Int(digits.suffix(2)), minutes < 60 else { return nil }
         let pob = Int(persons.filter(\.isNumber)).flatMap { (1...999).contains($0) ? $0 : nil }
-        return FlightPlanFilingRequest(
-            rules: "VFR", aircraftId: aircraftId.uppercased(), aircraftType: aircraftType.uppercased(), departure: plan.dep,
-            departureTime: ISO8601DateFormatter().string(from: departs), cruisingSpeed: FilingForm.cruisingSpeed(first.tasKt),
-            cruisingLevel: FilingForm.cruisingLevel(first.altitudeFt), route: FilingForm.route(plan.stops), destination: plan.dest,
-            eetMinutes: Int(ete.rounded(.up)), enduranceMinutes: hours * 60 + minutes, personsOnBoard: pob)
+        return FlightPlanFilingRequest(aircraftId: aircraftId.uppercased(), aircraftType: aircraftType.uppercased(), cruisingLevel: try FilingForm.cruisingLevel(first.altitudeFt), cruisingSpeed: try FilingForm.cruisingSpeed(tas), departure: plan.dep, departureTime: ISO8601DateFormatter().string(from: departs), destination: plan.dest, eetMinutes: Int(ete.rounded(.up)), enduranceMinutes: hours * 60 + minutes, personsOnBoard: pob, route: try FilingForm.route(plan.stops), rules: "VFR")
     }
 
     private func file() async {
-        guard let request = request() else { return }
+        guard let request = try? request() else { return }
         sending = true
         do { reference = try await Gateway.file(request); problem = nil } catch { problem = "Not filed: \(error.localizedDescription)" }
         sending = false
     }
 
     private func brief() async {
-        guard let request = request() else { return }
+        guard let request = try? request() else { return }
         sending = true
         do { briefing = try await Gateway.standardBriefing(request); problem = nil } catch { problem = "No briefing: \(error.localizedDescription)" }
         sending = false
@@ -282,7 +278,7 @@ struct FlightServiceView: View {
 /// route, put in from a GPX file (ForeFlight's, Garmin Pilot's, a GPS's),
 /// or taken off. GPS altitude, not what the altimeter read.
 struct FlownTrackView: View {
-    let flight: Int64
+    let flight: Int
     let title: String
     @State private var track: SavedTrack?
     @State private var loaded = false
@@ -360,7 +356,12 @@ struct FlownTrackView: View {
                 guard case .success(let url) = result else { return }
                 let reading = url.startAccessingSecurityScopedResource()
                 defer { if reading { url.stopAccessingSecurityScopedResource() } }
-                guard let data = try? Data(contentsOf: url), let read = GPXTrack.points(data), !read.isEmpty else {
+                let found: [SavedTrackPoint]?
+                do { found = try GPXTrack.points(try Data(contentsOf: url)) } catch {
+                    problem = "The file couldn't be read: \(error.localizedDescription)"
+                    return
+                }
+                guard let read = found, !read.isEmpty else {
                     problem = "No track points with their times in that file."
                     return
                 }
@@ -380,20 +381,26 @@ struct FlownTrackView: View {
 /// (`thin_track`). Nil where the file has no track to use.
 enum GPXTrack {
     /// The engine's points: t in ms since 1970, which it writes as a
-    /// fraction ("1792940400000.0"), so read as one.
-    private struct Point: Codable { let t: Double; let lat: Double; let lon: Double; let altFt: Double? }
+    /// fraction ("1792940400000.0"), so read as one. The contract leaves
+    /// read_track's answer and thin_track's points open, so this shape is
+    /// the app's, read from the engine's JSON.
+    private struct Point: Codable {
+        let t: Double; let lat: Double; let lon: Double; let altFt: Double?
+        enum CodingKeys: String, CodingKey { case t, lat, lon, altFt = "alt_ft" }
+    }
 
     private struct Read: Decodable {
         let points: [Point]?
         let error: String?
     }
 
-    static func points(_ data: Data) -> [SavedTrackPoint]? {
+    /// Nil where the file has no track; thrown where the engine refuses.
+    static func points(_ data: Data) throws -> [SavedTrackPoint]? {
         let text = String(decoding: data, as: UTF8.self)
-        let read: Read? = try? Engine.call("read_track", ["text": text], decoder: Planner.snakeCase)
-        guard let read, read.error == nil, let points = read.points else { return nil }
-        let thinned: [Point]? = try? Engine.call("thin_track", ["points": points], encoder: Planner.snakeEncoder, decoder: Planner.snakeCase)
-        return (thinned ?? points).map { SavedTrackPoint(t: Int64($0.t.rounded()), lat: $0.lat, lon: $0.lon, altFt: $0.altFt) }
+        let read: Read = try Engine.recoded(try Engine.readTrack(text: text))
+        guard read.error == nil, let points = read.points else { return nil }
+        let thinned: [Point] = try Engine.thinTrack(points: try points.map { try Engine.recoded($0) }).map { try Engine.recoded($0) }
+        return thinned.map { SavedTrackPoint(altFt: $0.altFt, lat: $0.lat, lon: $0.lon, t: Int($0.t.rounded())) }
     }
 }
 
@@ -457,7 +464,7 @@ enum RouteShare {
         var items = [URLQueryItem(name: "dep", value: plan.dep), URLQueryItem(name: "dest", value: plan.dest)]
         if !plan.stops.isEmpty { items.append(URLQueryItem(name: "stops", value: plan.stops.joined(separator: ","))) }
         if let feet = plan.ownAltitudeFt { items.append(URLQueryItem(name: "altitude_ft", value: String(Int(feet)))) }
-        if !plan.extras.holds.isEmpty { items.append(URLQueryItem(name: "holds", value: plan.extras.holds.map(\.text).joined(separator: ","))) }
+        if !plan.extras.holds.isEmpty { items.append(URLQueryItem(name: "holds", value: plan.extras.holds.compactMap { try? $0.text() }.joined(separator: ","))) }
         return Config.gateway.appending(path: "/app/plan").appending(queryItems: items)
     }
 
@@ -469,11 +476,13 @@ enum RouteShare {
     static func navLogText(_ plan: Plan) -> String {
         var lines = [plan.idents.joined(separator: " → ")]
         if let totals = plan.totals {
-            lines.append([totals.distanceNm.map(AirportWords.nm), totals.eteMin.map(hoursMinutes),
+            lines.append([AirportWords.nm(totals.distanceNm), totals.eteMin.map(hoursMinutes),
                           totals.fuelGal.map(AirportWords.gal)].compactMap { $0 }.joined(separator: " · "))
         }
         for leg in plan.legs {
-            lines.append(String(format: "%@ → %@  %05.0f ft  MH %03.0f°  %.1f nm  %@  %@", leg.from, leg.to, leg.altitudeFt, leg.magneticHeadingDeg, leg.distanceNm,
+            // No heading without an airplane: the planner sends none.
+            let heading = leg.magneticHeadingDeg.map { String(format: "MH %03.0f°", $0) } ?? ""
+            lines.append(String(format: "%@ → %@  %05.0f ft  %@  %.1f nm  %@  %@", leg.from, leg.to, leg.altitudeFt, heading, leg.distanceNm,
                                 leg.groundspeedKt.map { String(format: "GS %.0f kt", $0) } ?? "", leg.eteMin.map(hoursMinutes) ?? ""))
         }
         return lines.joined(separator: "\n")
@@ -553,10 +562,7 @@ struct Kneeboard: View {
                 Text("Date ________").font(.system(size: 9))
             }
             Rectangle().frame(height: 1.5)
-            Text([aircraft, totals?.distanceNm.map(AirportWords.nm), totals?.eteMin.map(hoursMinutes),
-                  totals?.fuelGal.map(AirportWords.gal),
-                  totals?.fuelRequiredGal.map { "(\(Formats.number($0, decimals: 1)) with reserve)" }].compactMap { $0 }.joined(separator: " · "))
-                .font(.system(size: 9))
+            Text(summary).font(.system(size: 9))
             Grid(alignment: .leading, horizontalSpacing: 6, verticalSpacing: 3) {
                 GridRow {
                     ForEach(["Checkpoint", "Alt", "MH", "Dist", "GS", "ETE", "ETA", "ATA", "Fuel", "Rem"], id: \.self) { Text($0).bold() }
@@ -566,7 +572,7 @@ struct Kneeboard: View {
                     GridRow {
                         Text(leg.to).lineLimit(1)
                         Text(Int(leg.altitudeFt).formatted())
-                        Text(Formats.number(leg.magneticHeadingDeg, decimals: 0).leftPadded(to: 3))
+                        Text(leg.magneticHeadingDeg.map { Formats.number($0, decimals: 0).leftPadded(to: 3) } ?? "")
                         Text(Formats.number(leg.distanceNm, decimals: 1))
                         Text(leg.groundspeedKt.map { Formats.number($0, decimals: 0) } ?? "")
                         Text(leg.eteMin.map { Formats.number($0, decimals: 1) } ?? "")
@@ -588,6 +594,19 @@ struct Kneeboard: View {
         .foregroundStyle(.black)
         .background(.white)
         .environment(\.colorScheme, .light)
+    }
+
+    /// The airplane and the totals it has: with no airplane chosen the
+    /// planner sends the miles alone, and the line leaves the rest out.
+    private var summary: String {
+        let parts: [String?] = [
+            aircraft,
+            totals.map { AirportWords.nm($0.distanceNm) },
+            totals?.eteMin.map(hoursMinutes),
+            totals?.fuelGal.map(AirportWords.gal),
+            totals?.fuelRequiredGal.map { "(\(Formats.number($0, decimals: 1)) with reserve)" },
+        ]
+        return parts.compactMap { $0 }.joined(separator: " · ")
     }
 
     /// The page as a PDF in the temporary folder, for the share sheet.
@@ -662,18 +681,23 @@ struct WatchBanner: View {
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
             .background(.regularMaterial, in: Capsule())
+        } else if let problem = Tracking.shared.watchProblem {
+            // A watch that could not be checked says so where it would
+            // have gone off, rather than staying quiet.
+            Label(problem, systemImage: "exclamationmark.triangle")
+                .font(.subheadline).foregroundStyle(.orange).lineLimit(2)
+                .padding(.horizontal, 12).padding(.vertical, 8)
+                .background(.regularMaterial, in: Capsule())
         }
     }
 }
 
 private enum PreviewData {
     static let legs = [
-        Leg(from: "KDLH", to: "KHIB", distanceNm: 62.4, altitudeFt: 4500, trueCourseDeg: 318, magneticHeadingDeg: 315, wcaDeg: -4,
-            trueHeadingDeg: 314, magneticVariationDeg: -1, climbMin: 6, groundspeedKt: 104, eteMin: 36, fuelGal: 5.1, tasKt: 112),
-        Leg(from: "KHIB", to: "KGPZ", distanceNm: 31.8, altitudeFt: 4500, trueCourseDeg: 296, magneticHeadingDeg: 293, wcaDeg: -4,
-            trueHeadingDeg: 292, magneticVariationDeg: -1, climbMin: 6, groundspeedKt: 106, eteMin: 18, fuelGal: 3.3, tasKt: 112),
+        Leg.preview(from: "KDLH", to: "KHIB", distanceNm: 62.4, altitudeFt: 4500, trueCourseDeg: 318, magneticHeadingDeg: 315, wcaDeg: -4, trueHeadingDeg: 314, magneticVariationDeg: -1, climbMin: 6, groundspeedKt: 104, eteMin: 36, fuelGal: 5.1, tasKt: 112),
+        Leg.preview(from: "KHIB", to: "KGPZ", distanceNm: 31.8, altitudeFt: 4500, trueCourseDeg: 296, magneticHeadingDeg: 293, wcaDeg: -4, trueHeadingDeg: 292, magneticVariationDeg: -1, climbMin: 6, groundspeedKt: 106, eteMin: 18, fuelGal: 3.3, tasKt: 112),
     ]
-    static let totals = Totals(distanceNm: 94.2, eteMin: 54, fuelGal: 8.4, fuelRequiredGal: 12.4, fuelMarginGal: 35.6, usableFuelGal: 48)
+    static let totals = Totals.preview(distanceNm: 94.2, eteMin: 54, fuelGal: 8.4, fuelMarginGal: 35.6, fuelRequiredGal: 12.4, usableFuelGal: 48)
 }
 
 #Preview("DiversionView") {

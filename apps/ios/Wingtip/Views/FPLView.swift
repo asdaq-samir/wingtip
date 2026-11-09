@@ -63,11 +63,12 @@ struct FPLView: View {
                             // The ways round the planner found: a Class B's
                             // waypoint, or the way round high ground.
                             ForEach(problem.detours ?? []) { detour in
+                                let added = "+\(Int(detour.addedNm.rounded())) nm"
+                                let words: String = (detour.via ?? []).isEmpty ? "Fly via \(detour.ident) · \(added)" : "Go Round · \(added)"
                                 Button {
                                     plan.goRound(detour)
                                 } label: {
-                                    Label(detour.via?.isEmpty == false ? "Go Round · +\(Int(detour.addedNm.rounded())) nm" : "Fly via \(detour.ident) · +\(Int(detour.addedNm.rounded())) nm",
-                                          systemImage: "arrow.triangle.turn.up.right.diamond")
+                                    Label(words, systemImage: "arrow.triangle.turn.up.right.diamond")
                                 }
                                 .buttonStyle(.bordered)
                             }
@@ -101,7 +102,7 @@ struct FPLView: View {
                         // The profile, with the altitude's warning tick where
                         // the pilot's own breaks a limit: in the inspector
                         // on the iPad (CardLink), as the brief is.
-                        let cautioned = !(plan.altitude?.cautions.isEmpty ?? true)
+                        let cautioned = !(plan.altitude?.cautions?.isEmpty ?? true)
                         CardLink(.profile) {
                             Image(systemName: cautioned ? "exclamationmark.triangle.fill" : "chart.xyaxis.line")
                                 .foregroundStyle(cautioned ? Color.orange : Color.accentColor)
@@ -145,7 +146,7 @@ struct FPLView: View {
                     Section {
                         HStack {
                             stripFigure("TO", plan.dest)
-                            stripFigure("DIST", totals.distanceNm.map(AirportWords.nm) ?? "—", spoken: totals.distanceNm.map(SpokenFigures.nauticalMiles))
+                            stripFigure("DIST", AirportWords.nm(totals.distanceNm), spoken: SpokenFigures.nauticalMiles(totals.distanceNm))
                             stripFigure("ETE", totals.eteMin.map(hoursMinutes) ?? "—", spoken: totals.eteMin.map(SpokenFigures.minutes))
                             stripFigure("FUEL", totals.fuelGal.map(AirportWords.gal) ?? "—", spoken: totals.fuelGal.map(SpokenFigures.gallons),
                                    warn: (totals.fuelMarginGal ?? 0) < 0)
@@ -236,9 +237,12 @@ struct LegRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(leg.to).font(.headline)
                 HStack(spacing: 10) {
-                    Text(AirportWords.degrees(leg.magneticHeadingDeg))
+                    // No heading without an airplane: the planner sends
+                    // none, and the row shows the figures it has.
+                    if let heading = leg.magneticHeadingDeg { Text(AirportWords.degrees(heading)) }
                     if let gs = leg.groundspeedKt { Text(AirportWords.kt(gs)) }
-                    if let wind = leg.wind, let dir = wind.directionDeg, let kt = wind.speedKt {
+                    if let wind = leg.wind {
+                        let (dir, kt) = (wind.windDirTrueDeg, wind.windSpeedKt)
                         Text(String(format: "%03.0f/%.0f", dir, kt))
                     }
                 }
@@ -264,9 +268,11 @@ struct LegRow: View {
     /// nine zero, ninety-eight knots, wind two seven zero at twelve, twenty
     /// nautical miles, twelve minutes, one point four gallons".
     private var spoken: String {
-        var parts = ["To \(leg.to)", "heading \(SpokenFigures.degrees(leg.magneticHeadingDeg))"]
+        var parts = ["To \(leg.to)"]
+        if let heading = leg.magneticHeadingDeg { parts.append("heading \(SpokenFigures.degrees(heading))") }
         if let gs = leg.groundspeedKt { parts.append(SpokenFigures.knots(gs)) }
-        if let wind = leg.wind, let dir = wind.directionDeg, let kt = wind.speedKt {
+        if let wind = leg.wind {
+            let (dir, kt) = (wind.windDirTrueDeg, wind.windSpeedKt)
             parts.append("wind \(SpokenFigures.digits(String(format: "%03.0f", dir))) at \(SpokenFigures.number(kt))")
         }
         parts.append(SpokenFigures.nauticalMiles(leg.distanceNm))

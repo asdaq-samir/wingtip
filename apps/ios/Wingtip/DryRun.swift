@@ -20,6 +20,8 @@ final class DryRun {
     /// How much faster than real time: 1, 10 or 60.
     var speed = 10.0
     private(set) var fix: OwnShip.Fix?
+    /// Why the engine could not fly the plan, for the dry run's controls.
+    private(set) var problem: String?
 
     /// The flight flown on paper, its reports' times from its start, s.
     private var points: [Replay.Point] = []
@@ -31,7 +33,12 @@ final class DryRun {
     /// The plan flown from its departure; nothing where its rows cannot be
     /// laid out from the legs the nav log has (one still on its way).
     func start(course: Course, checkpoints: [Checkpoint], legs: [Leg]) {
-        guard let run = Self.run(course: course, checkpoints: checkpoints, legs: legs), run.count >= 2 else { return }
+        let flown: [Replay.Point]?
+        do { flown = try Self.run(course: course, checkpoints: checkpoints, legs: legs); problem = nil } catch {
+            problem = "The dry run couldn't be flown: \(error.localizedDescription)"
+            return
+        }
+        guard let run = flown, run.count >= 2 else { return }
         points = run
         flownS = 0
         running = true
@@ -102,16 +109,6 @@ final class DryRun {
         var pattern: Bool?
     }
 
-    private struct Ask: Encodable {
-        let rows: [Row]
-        let startS: Double
-        let line: [[Double]]
-    }
-
-    private struct Answer: Decodable {
-        let points: [PastFlightPoint]
-    }
-
     /// The rows for the legs the nav log has, as BriefLegs lays them out;
     /// nil where they do not make one row a leg.
     static func rows(course: Course, checkpoints: [Checkpoint], legs: [Leg]) -> [Row]? {
@@ -144,11 +141,12 @@ final class DryRun {
     static func arriving(_ leg: Leg) -> (turns: [Row], part: Leg?) {
         typealias On = (kind: String, turn: Turn, eteMin: Double, fuelGal: Double?, tasKt: Double?, groundspeedKt: Double?)
         var on: [On] = []
-        if let t = leg.toc, let along = t.alongNm, let ft = t.altitudeFt, let lat = t.lat, let lon = t.lon, let ete = t.eteMin {
-            on.append(("toc", Turn(alongNm: along, altitudeFt: ft, lat: lat, lon: lon), ete, t.fuelGal, t.tasKt, t.groundspeedKt))
+        if let t = leg.toc {
+            on.append(("toc", Turn(alongNm: t.alongNm, altitudeFt: t.altitudeFt, lat: t.lat, lon: t.lon), t.eteMin, t.fuelGal, t.tasKt, t.groundspeedKt))
         }
-        if let t = leg.tod, let along = t.alongNm, let ft = t.altitudeFt, let lat = t.lat, let lon = t.lon, let ete = t.eteMin {
-            on.append(("tod", Turn(alongNm: along, altitudeFt: ft, lat: lat, lon: lon, toFt: t.toFt, pattern: t.pattern), ete, t.fuelGal, nil, nil))
+        if let t = leg.tod {
+            on.append(("tod", Turn(alongNm: t.alongNm, altitudeFt: t.altitudeFt, lat: t.lat, lon: t.lon, toFt: t.toFt, pattern: t.pattern),
+                       t.eteMin, t.fuelGal, nil, nil))
         }
         guard !on.isEmpty else { return ([], nil) }
         var turns: [Row] = []
@@ -181,15 +179,18 @@ final class DryRun {
     /// hold the field's elevation the whole way, and traffic would be
     /// labelled against that, so the height is left unknown, as the old
     /// run left it.
-    static func run(course: Course, checkpoints: [Checkpoint], legs: [Leg]) -> [Replay.Point]? {
+    /// Nil where the rows do not make one a leg; thrown where the engine
+    /// refuses them, which the dry run says (DryRun.problem).
+    static func run(course: Course, checkpoints: [Checkpoint], legs: [Leg]) throws -> [Replay.Point]? {
         guard let rows = rows(course: course, checkpoints: checkpoints, legs: legs) else { return nil }
-        let ask = Ask(rows: rows, startS: 0, line: course.courseLine)
-        guard let answer: Answer = try? Engine.call("dry_run", ask, encoder: Planner.snakeEncoder, decoder: Planner.snakeCase) else { return nil }
+        // The rows carry the planner's own models (a leg, a checkpoint), in
+        // its snake case, which the contract leaves open: written so, and
+        // read again as the contract's rows.
+        let asked: [EngineContract.NavLogRow] = try Engine.recoded(rows, encoder: Planner.snakeEncoder)
+        let answer = try Engine.dryRun(rows: asked, startS: 0, line: course.courseLine.map { $0.map(JSONValue.number) })
         let heights = rows.contains { $0.kind == "toc" }
-        return Replay.points(answer.points).map { point in
-            var point = point
-            if !heights { point.altFt = nil }
-            return point
+        return answer.points.map {
+            Replay.Point(t: $0.t, lat: $0.lat, lon: $0.lon, altFt: heights ? $0.altFt : nil, gsKt: $0.gsKt, trackDeg: $0.trackDeg)
         }
     }
 }

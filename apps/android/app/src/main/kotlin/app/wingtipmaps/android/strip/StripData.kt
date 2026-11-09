@@ -4,6 +4,8 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.routePosition
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -118,35 +120,14 @@ object StripData {
      * miles), the very answer the iPhone's strip asks -- a glance, not
      * navigation. Null with no fix or no line.
      */
-    fun positionAlong(line: List<List<Double>>, legs: List<Leg>, lat: Double?, lon: Double?): Position? {
-        if (lat == null || lon == null) return null
-        val at: RoutePosition? = Engine.call(
-            "route_position",
-            RoutePositionAsk(LatLon(lat, lon), line.filter { it.size >= 2 }, legs.map { LegMiles(it.distanceNm, it.fuelGal) }),
-        )
-        return at?.let { Position(it.leg, it.legFraction) }
+    fun positionAlong(line: List<List<Double>>, legs: List<Leg>, lat: Double?, lon: Double?): Result<Position?> {
+        if (lat == null || lon == null) return Result.success(null)
+        return Engine.routePosition(
+            at = EngineContract.RoutePositionInputAt(lat, lon),
+            line = line.filter { it.size >= 2 },
+            legs = legs.map { EngineContract.RoutePositionInputLegsItem(it.distanceNm, it.fuelGal) },
+        ).map { at -> at?.let { Position(it.leg.toInt(), it.legFraction) } }
     }
-
-    @Serializable
-    data class LatLon(val lat: Double, val lon: Double)
-
-    @Serializable
-    data class LegMiles(@SerialName("distance_nm") val distanceNm: Double, @SerialName("fuel_gal") val fuelGal: Double?)
-
-    @Serializable
-    data class RoutePositionAsk(val at: LatLon, val line: List<List<Double>>, val legs: List<LegMiles>)
-
-    /** The engine's answer (motion/along.rs). */
-    @Serializable
-    data class RoutePosition(
-        @SerialName("along_nm") val alongNm: Double,
-        @SerialName("left_nm") val leftNm: Double,
-        @SerialName("off_nm") val offNm: Double,
-        @SerialName("on_route") val onRoute: Boolean,
-        val leg: Int,
-        @SerialName("leg_fraction") val legFraction: Double,
-        @SerialName("burnt_gal") val burntGal: Double,
-    )
 
     /** The pilot's initials from their name ("Asdaq Samir" is AS), or the
      *  first letter of their address; none signed out. */
@@ -217,9 +198,13 @@ object StripData {
         state.totals?.fuelGal?.let { String.format(Locale.US, "%.1f gal", it) },
     ).joinToString(" · ")
 
-    /** The checkpoint row's figures, "MH 318 · 24 NM". */
-    fun legFigures(leg: Leg): String =
-        String.format(Locale.US, "MH %03d · %.0f NM", ((leg.magneticHeadingDeg.roundToInt() % 360) + 360) % 360, leg.distanceNm)
+    /** The checkpoint row's figures, "MH 318 · 24 NM". The heading needs
+     *  the airplane's airspeed against the wind: with no airplane chosen the
+     *  planner sends none, and the row writes a dash, "MH — · 24 NM". */
+    fun legFigures(leg: Leg): String {
+        val heading = leg.magneticHeadingDeg?.let { String.format(Locale.US, "%03d", ((it.roundToInt() % 360) + 360) % 360) } ?: "—"
+        return String.format(Locale.US, "MH %s · %.0f NM", heading, leg.distanceNm)
+    }
 
     /** The screens the field's chips offer, each handled as typed: how a
      *  pilot finds the rest without tabs (the web's stripSuggestions). */

@@ -2,6 +2,7 @@ package app.wingtipmaps.android.api
 
 import android.content.Context
 import app.wingtipmaps.android.Config
+import app.wingtipmaps.android.api.generated.gateway.MagicLinkRequest
 import app.wingtipmaps.android.map.CloseMap
 import app.wingtipmaps.android.map.OverlayCache
 import app.wingtipmaps.android.map.OverlayStore
@@ -141,8 +142,6 @@ object Gateway {
     /** The pilot signed in, or null (the gateway's 204) when no one is. */
     suspend fun me(): Pilot? = read("/api/me", none = setOf(204, 401))
 
-    @Serializable
-    private class MagicLinkRequest(val email: String)
 
     /** A sign-in link emailed to the pilot; the gateway answers 202
      *  whether or not the address is known. */

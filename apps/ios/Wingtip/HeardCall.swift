@@ -5,14 +5,14 @@ import Foundation
 /// the same fixture (heardCalls.json): our call sign at its start in the
 /// forms AIM 4-2-4 lets it take, never a longer call sign that ends the
 /// same (AIM 4-2-4 a.1); and where a "direct" sends us.
+/// Each throws where the engine cannot answer; the listener says so.
 enum HeardCall {
-    static func ourCall(_ text: String, tail: String) -> Bool {
-        let ours: Bool? = try? Engine.call("our_call", ["text": text, "tail": tail])
-        return ours ?? false
+    static func ourCall(_ text: String, tail: String) throws -> Bool {
+        try Engine.ourCall(text: text, tail: tail)
     }
 
     /// The place a "direct" sends us to, as words to find, or nil.
-    static func directOf(_ text: String) -> String? {
-        do { return try Engine.call("direct_of", ["text": text]) } catch { return nil }
+    static func directOf(_ text: String) throws -> String? {
+        try Engine.directOf(text: text)
     }
 }

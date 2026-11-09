@@ -4,6 +4,10 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.nearest
 import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.glideRing
+import app.wingtipmaps.android.engine.generated.inFlight
+import app.wingtipmaps.android.engine.generated.verticalSpeed
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -14,8 +18,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 
 /**
  * The flight's instruments in the air (#218, the owner's option A of
@@ -32,57 +34,18 @@ import kotlinx.serialization.Serializable
  * not an approved navigation source (AC 120-76D), and the bar says so.
  */
 class InFlight private constructor() {
-    /** One waypoint ahead, as `in_flight` answers it. */
-    @Serializable
-    data class Waypoint(
-        val index: Int,
-        val name: String,
-        @SerialName("distance_nm") val distanceNm: Double,
-        @SerialName("bearing_deg") val bearingDeg: Double,
-        @SerialName("bearing_mag_deg") val bearingMagDeg: Double? = null,
-        @SerialName("ete_min") val eteMin: Double? = null,
-        @SerialName("eta_s") val etaS: Double? = null,
-        @SerialName("fuel_left_gal") val fuelLeftGal: Double? = null,
-    )
-
-    /** The airplane against its route, as `in_flight` answers it. */
-    @Serializable
-    data class Progress(
-        @SerialName("on_route") val onRoute: Boolean,
-        @SerialName("along_nm") val alongNm: Double,
-        @SerialName("total_nm") val totalNm: Double,
-        @SerialName("left_nm") val leftNm: Double,
-        @SerialName("off_nm") val offNm: Double,
-        @SerialName("off_side") val offSide: String? = null,
-        @SerialName("desired_track_deg") val desiredTrackDeg: Double,
-        @SerialName("desired_track_mag_deg") val desiredTrackMagDeg: Double? = null,
-        @SerialName("track_mag_deg") val trackMagDeg: Double? = null,
-        @SerialName("track_error_deg") val trackErrorDeg: Double? = null,
-        @SerialName("variation_deg") val variationDeg: Double? = null,
-        @SerialName("burnt_gal") val burntGal: Double,
-        val next: Waypoint? = null,
-        val destination: Waypoint? = null,
-    )
-
-    /** The glide ring, as `glide_ring` answers it: its outline as
-     *  latitude and longitude pairs. */
-    @Serializable
-    data class Glide(
-        @SerialName("range_nm") val rangeNm: Double,
-        @SerialName("ground_ft") val groundFt: Double,
-        val ring: List<List<Double>>,
-    )
-
-    /** What the screens read. */
+    /** What the screens read. `problem` is the engine's words where one of
+     *  its rules failed for this fix, shown on the instruments bar, so a
+     *  figure left out is never taken for one the engine had none of. */
     data class State(
         val fix: OwnShip.Fix? = null,
-        val progress: Progress? = null,
+        val progress: EngineContract.InFlightAnswer? = null,
         val verticalFpm: Double? = null,
-        val glide: Glide? = null,
-    ) {
+        val glide: EngineContract.GlideRingAnswer? = null,
         /** At flying speed by the engine's `underway`. */
-        val underway: Boolean get() = OwnShip.underway(fix?.groundspeedKt)
-
+        val underway: Boolean = false,
+        val problem: String? = null,
+    ) {
         /** Flying the route: moving and within the engine's ON_ROUTE_NM of
          *  the line. */
         val onRoute: Boolean get() = progress?.onRoute == true
@@ -122,21 +85,28 @@ class InFlight private constructor() {
             altitudes.removeAll { it.first >= t || it.first < t - 15 }
             altitudes.addLast(t to ft)
         }
-        val vs = try {
-            Engine.call<VerticalSpeedAsk, Double?>("vertical_speed", VerticalSpeedAsk(altitudes.map { Sample(it.first, it.second) }))
-        } catch (e: Exception) {
-            null
-        }
-        val glide = try {
-            Engine.call<GlideAsk, Glide?>(
-                "glide_ring",
-                GlideAsk(fix.lat, fix.lon, fix.altitudeFt, fix.groundspeedKt, terrainFt, fieldFt),
+        val vs = Engine.verticalSpeed(altitudes.map { EngineContract.VerticalSpeedInputSamplesItem(it.first, it.second) })
+        val glide = Engine.glideRing(fix.lat, fix.lon, fix.altitudeFt, fix.groundspeedKt, terrainFt, fieldFt)
+        val progress = progress(fix, plan, nowMs)
+        val underway = OwnShip.underway(fix.groundspeedKt)
+        // The first rule that failed, in the engine's words (Engine.rule
+        // has logged it); the figures it would have given are left out.
+        val failed = listOf("vertical speed" to vs, "glide ring" to glide, "route progress" to progress, "flying speed" to underway)
+            .firstNotNullOfOrNull { (what, r) -> r.exceptionOrNull()?.let { "The $what failed: ${it.message}" } }
+        _state.update {
+            State(
+                fix = fix,
+                progress = progress.getOrNull(),
+                verticalFpm = vs.getOrNull(),
+                glide = glide.getOrNull(),
+                underway = underway.getOrDefault(false),
+                problem = failed,
             )
-        } catch (e: Exception) {
-            null
         }
-        _state.update { State(fix = fix, progress = progress(fix, plan, nowMs), verticalFpm = vs, glide = glide) }
-        if (OwnShip.underway(fix.groundspeedKt)) askField(fix, nowMs)
+        // Where the engine could not say, the field is asked anyway: an
+        // elevation fetched for nothing costs less than a ring on the
+        // wrong ground.
+        if (underway.getOrDefault(true)) askField(fix, nowMs)
     }
 
     /** The nearest field's elevation for the ring's ground, asked at most
@@ -157,46 +127,6 @@ class InFlight private constructor() {
         }
     }
 
-    @Serializable
-    private class Sample(@SerialName("t_s") val tS: Double, @SerialName("altitude_ft") val altitudeFt: Double)
-
-    @Serializable
-    private class VerticalSpeedAsk(val samples: List<Sample>)
-
-    @Serializable
-    private class GlideAsk(
-        val lat: Double,
-        val lon: Double,
-        @SerialName("altitude_ft") val altitudeFt: Double?,
-        @SerialName("speed_kt") val speedKt: Double?,
-        @SerialName("terrain_ft") val terrainFt: Double?,
-        @SerialName("field_ft") val fieldFt: Double?,
-    )
-
-    @Serializable
-    class FixAsk(
-        val lat: Double,
-        val lon: Double,
-        @SerialName("track_deg") val trackDeg: Double?,
-        @SerialName("speed_kt") val speedKt: Double?,
-    )
-
-    @Serializable
-    class PointAsk(val name: String, val lat: Double, val lon: Double)
-
-    @Serializable
-    class LegAsk(@SerialName("distance_nm") val distanceNm: Double, @SerialName("fuel_gal") val fuelGal: Double?)
-
-    @Serializable
-    class InFlightAsk(
-        val fix: FixAsk,
-        val line: List<List<Double>>,
-        val points: List<PointAsk>,
-        val legs: List<LegAsk>,
-        @SerialName("fuel_start_gal") val fuelStartGal: Double?,
-        @SerialName("now_s") val nowS: Double,
-    )
-
     companion object {
         /** How often the nearest field is asked for the ring's ground: a
          *  field's elevation changes slowly as an airplane flies. */
@@ -207,24 +137,19 @@ class InFlight private constructor() {
         /** The engine's `in_flight` for a fix on the plan's route: the
          *  fields in order (the departure, the stops, the destination) are
          *  its waypoints. Null with no route. */
-        fun progress(fix: OwnShip.Fix, plan: Plan.State, nowMs: Long = System.currentTimeMillis()): Progress? {
-            val course = plan.course ?: return null
+        fun progress(fix: OwnShip.Fix, plan: Plan.State, nowMs: Long = System.currentTimeMillis()): Result<EngineContract.InFlightAnswer?> {
+            val course = plan.course ?: return Result.success(null)
             val line = course.courseLine.filter { it.size == 2 }
-            if (line.size < 2) return null
+            if (line.size < 2) return Result.success(null)
             val ends = listOf(course.departure) + course.stops.orEmpty() + listOf(course.destination)
-            val ask = InFlightAsk(
-                fix = FixAsk(fix.lat, fix.lon, fix.trackDeg, fix.groundspeedKt),
+            return Engine.inFlight(
+                fix = EngineContract.InFlightInputFix(fix.lat, fix.lon, fix.trackDeg, fix.groundspeedKt),
                 line = line,
-                points = ends.map { PointAsk(it.ident, it.lat, it.lon) },
-                legs = plan.legs.map { LegAsk(it.distanceNm, it.fuelGal) },
+                points = ends.map { EngineContract.InFlightInputPointsItem(it.ident, it.lat, it.lon) },
+                legs = plan.legs.map { EngineContract.InFlightInputLegsItem(it.distanceNm, it.fuelGal) },
                 fuelStartGal = plan.totals?.usableFuelGal,
                 nowS = nowMs / 1000.0,
             )
-            return try {
-                Engine.call<InFlightAsk, Progress?>("in_flight", ask)
-            } catch (e: Exception) {
-                null
-            }
         }
     }
 }

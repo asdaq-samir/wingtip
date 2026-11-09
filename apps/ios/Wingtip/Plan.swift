@@ -221,15 +221,9 @@ final class Plan {
         let points = legs.enumerated().map { i, leg -> SaveFlightCheckpoint in
             along += leg.distanceNm
             let point = checkpoints.first { ($0.name ?? $0.waypoint ?? "").uppercased() == leg.to.uppercased() }
-            return SaveFlightCheckpoint(
-                sequenceNo: i + 1, name: leg.to, category: point?.category ?? "point",
-                lat: point?.lat ?? course.destination.lat, lon: point?.lon ?? course.destination.lon, alongTrackNm: along,
-                altitudeFt: leg.altitudeFt, legDistanceNm: leg.distanceNm, trueCourseDeg: leg.trueCourseDeg,
-                magneticHeadingDeg: leg.magneticHeadingDeg, groundspeedKt: leg.groundspeedKt, eteMin: leg.eteMin, fuelGal: leg.fuelGal)
+            return SaveFlightCheckpoint(alongTrackNm: along, altitudeFt: leg.altitudeFt, category: point?.category ?? "point", eteMin: leg.eteMin, fuelGal: leg.fuelGal, groundspeedKt: leg.groundspeedKt, lat: point?.lat ?? course.destination.lat, legDistanceNm: leg.distanceNm, lon: point?.lon ?? course.destination.lon, magneticHeadingDeg: leg.magneticHeadingDeg, name: leg.to, sequenceNo: i + 1, trueCourseDeg: leg.trueCourseDeg)
         }
-        return SaveFlightRequest(
-            departureIdent: dep, destinationIdent: dest, stops: stops, cruiseAltitudeFt: altitudeFt.map { Int($0) },
-            totalDistanceNm: totals?.distanceNm, totalEteMin: totals?.eteMin, totalFuelGal: totals?.fuelGal, checkpoints: points)
+        return SaveFlightRequest(checkpoints: points, cruiseAltitudeFt: altitudeFt.map { Int($0) }, departureIdent: dep, destinationIdent: dest, stops: stops, totalDistanceNm: totals?.distanceNm, totalEteMin: totals?.eteMin, totalFuelGal: totals?.fuelGal)
     }
 
     /// A saved flight back on the page: its route, planned again.
@@ -256,7 +250,8 @@ final class Plan {
         } else {
             figures = kept
             if let registered = try? await Planner.registered(tail),
-               let profile = Registered.profile(manufacturer: registered.manufacturer, model: registered.model, year: registered.year) {
+               // A type the engine cannot match keeps the airplane picked (logged by Engine.rule).
+               let profile = try? Registered.profile(manufacturer: registered.manufacturer, model: registered.model, year: registered.year) {
                 aircraft = profile
             }
         }
@@ -328,7 +323,13 @@ final class Plan {
         let dep = dep.uppercased(), dest = dest.uppercased(), stops = stops.map { $0.uppercased() }, aircraft = aircraft
         let own = ownAltitudeFt, legal = ownAltitudeLegal, choice = altitudeChoice, figures = figures
         let picks = procedures.filter { idents.contains($0.ident) }
-        let extra = extras.query(procedures: picks)
+        let extra: [String: String?]
+        do { extra = try extras.query(procedures: picks) } catch {
+            // A hold or a procedure the engine could not write is said, not
+            // left out of a route planned without it.
+            problem = NavLogError(advice: nil, brief: nil, detail: "Your holds and procedures couldn't be written for the planner: \(error.localizedDescription)", reasons: nil)
+            return
+        }
         self.dep = dep; self.dest = dest; self.stops = stops
         remember()
         // A way picked stands while its stops are the route's; a stop
@@ -371,7 +372,7 @@ final class Plan {
                     }
                 }
                 var fresh: [Leg] = []
-                for try await message in NavLog.stream(dep: dep, dest: dest, stops: stops, aircraft: aircraft, figures: figures, altitudeFt: own, nearest: legal, choice: choice, procedures: picks, extra: extra) {
+                for try await message in try NavLog.stream(dep: dep, dest: dest, stops: stops, aircraft: aircraft, figures: figures, altitudeFt: own, nearest: legal, choice: choice, procedures: picks, extra: extra) {
                     guard !Task.isCancelled else { return }
                     switch message {
                     case .stage(let detail): self.stage = detail
@@ -403,7 +404,7 @@ final class Plan {
                     // words said with its time; a planner's own refusal is
                     // said as it is.
                     if self.legs.isEmpty || !(error is URLError) {
-                        self.problem = NavLogError(detail: error.localizedDescription, brief: nil, reasons: nil, advice: nil)
+                        self.problem = NavLogError(advice: nil, brief: nil, detail: error.localizedDescription, reasons: nil)
                     }
                     self.stage = nil
                 }

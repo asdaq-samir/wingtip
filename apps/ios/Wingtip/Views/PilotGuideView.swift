@@ -28,6 +28,7 @@ struct PilotGuideView: View {
                 }
             }
             Section("Practice") {
+                ProblemLine(Drills.decks, "The drills' cards")
                 NavigationLink { DrillView(deck: Drills.lightGun) } label: { row("Light gun signals", "14 CFR 91.125") }
                 NavigationLink { DrillView(deck: Drills.vfrMinimums) } label: { row("VFR weather minimums", "14 CFR 91.155") }
                 NavigationLink { LostCommsView() } label: { row("Lost communications", "14 CFR 91.185: route, altitude, and when to leave") }
@@ -210,19 +211,25 @@ struct LostCommsView: View {
     @State private var leave: String?
 
     var body: some View {
+        let opening = try? LostComms.opening.get()
+        let routes = opening?.routes ?? []
+        let leaving = Result {
+            try LostComms.leaveLimit(approachFix: approachFix, efc: efc.trimmingCharacters(in: .whitespaces), eta: eta.trimmingCharacters(in: .whitespaces))
+        }
         List {
             Section {
-                Text(LostComms.vfr)
+                ProblemLine(LostComms.opening, "The rule's words")
+                Text(opening?.vfr ?? "")
             }
             Section("Route") {
                 Picker("Which applies first", selection: $route) {
-                    ForEach(LostComms.routes, id: \.key) { r in Text(r.label).tag(r.key) }
+                    ForEach(routes, id: \.key) { r in Text(r.label).tag(r.key) }
                 }
                 .pickerStyle(.segmented)
-                Text(LostComms.routes.first { $0.key == route }?.rule ?? "").font(.subheadline)
+                Text(routes.first { $0.key == route }?.rule ?? "").font(.subheadline)
             }
             Section("Altitude") {
-                Text(LostComms.altitude).font(.subheadline)
+                Text(opening?.altitude ?? "").font(.subheadline)
             }
             LostCommsSegmentsSections(leave: $leave, approachFix: approachFix,
                                       efc: efc.trimmingCharacters(in: .whitespaces), eta: eta.trimmingCharacters(in: .whitespaces))
@@ -240,7 +247,8 @@ struct LostCommsView: View {
                     Text("Your ETA")
                     Text("From the filed or amended time en route")
                 }
-                Text(leave ?? LostComms.leaveLimit(approachFix: approachFix, efc: efc.trimmingCharacters(in: .whitespaces), eta: eta.trimmingCharacters(in: .whitespaces)))
+                Text(leave ?? (try? leaving.get()) ?? "")
+                if leave == nil { ProblemLine(leaving, "When to leave the limit") }
             }
         }
         .navigationTitle("Lost Communications")

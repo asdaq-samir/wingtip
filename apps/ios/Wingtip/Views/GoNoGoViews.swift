@@ -151,7 +151,12 @@ struct GoNoGoSection: View {
             defer { writingWords = false }
             let minimums = PersonalMinimums.Key.allCases.compactMap { key in verdict.minimums[key].map { "\(key.title): \(key.words($0))" } }
             let pilot: [String: String]? = minimums.isEmpty ? nil : ["personal minimums": minimums.joined(separator: ", ")]
-            guard let ask = try? WordsAsk(kind: .risk, body: RiskWordsAsk(answer, pilot: pilot), figures: WordsFigures.risk(answer)) else { return }
+            let ask: WordsAsk
+            do { ask = try WordsAsk(kind: .risk, body: try RiskWordsAsk(answer, pilot: pilot), figures: WordsFigures.risk(answer)) } catch {
+                // Said where the words would be, not left blank.
+                riskWords = SaidWords(words: .none("none", "No words: the question could not be written (\(error.localizedDescription))."), origin: .none)
+                return
+            }
             let said = await WordsFor().said(ask)
             guard !Task.isCancelled else { return }
             riskWords = said
@@ -436,16 +441,16 @@ struct RiskView: View {
 
 #Preview("FindingFold") {
     List {
-        FindingFold(item: VerdictItem(key: "balance", label: "Weight & balance", finding: "stop", detail: "The baggage, 170 lb in all, is over its 120 lb", tab: "preflight", section: "Weight & Balance"),
+        FindingFold(item: VerdictItem(detail: "The baggage, 170 lb in all, is over its 120 lb", finding: "stop", key: "balance", label: "Weight & balance", section: "Weight & Balance", tab: "preflight"),
                     words: "Weight & balance: The baggage, 170 lb in all, is over its 120 lb.") { _ in }
     }
 }
 
 #Preview("VerdictRow") {
     List {
-        VerdictRow(item: VerdictItem(key: "weather", label: "Weather", finding: "ok", detail: "VFR along the route, KDLH 10 sm, few at 4,500 ft", tab: "brief"))
-        VerdictRow(item: VerdictItem(key: "fuel", label: "Fuel", finding: "caution", detail: "8.4 gal at landing, 1.9 gal over the reserve", tab: "navlog"))
-        VerdictRow(item: VerdictItem(key: "airspace", label: "Airspace", finding: "stop", detail: "TFR over KHIB until 15:00", tab: "brief"))
+        VerdictRow(item: VerdictItem(detail: "VFR along the route, KDLH 10 sm, few at 4,500 ft", finding: "ok", key: "weather", label: "Weather", tab: "brief"))
+        VerdictRow(item: VerdictItem(detail: "8.4 gal at landing, 1.9 gal over the reserve", finding: "caution", key: "fuel", label: "Fuel", tab: "navlog"))
+        VerdictRow(item: VerdictItem(detail: "TFR over KHIB until 15:00", finding: "stop", key: "airspace", label: "Airspace", tab: "brief"))
     }
 }
 

@@ -19,31 +19,24 @@ import FoundationModels
 /// One figure a sentence can rest on (app.ai_words.Source): its id, as the
 /// planner names them ("metar:KMSN", "taf:KMSN", "hazard:0",
 /// "finding:fuel"), the chip's label and the raw text the chip opens.
-struct WordsSource: Codable, Equatable, Sendable, Identifiable {
-    let id: String
-    let label: String
-    let text: String
-}
+/// Generated from the assistant's OpenAPI document, as the next two are.
+typealias WordsSource = ASSource
+
+extension WordsSource: Identifiable {}
 
 /// One sentence and the ids of the figures it rests on (app.ai_words.Sentence).
-struct WordsSentence: Codable, Equatable, Sendable {
-    let text: String
-    let sources: [String]
-}
+typealias WordsSentence = ASSentence
 
 /// The words endpoints' answer (app.ai_words.WordsAnswer), and the shape the
 /// on-device words take too: the sentences, the most important first;
 /// the sources they cite, in the order given; which model wrote them;
 /// and, with no sentences, why not, in words.
-struct Words: Codable, Equatable, Sendable {
-    var sentences: [WordsSentence]
-    var sources: [WordsSource]
-    var model: String
-    var unavailable: String?
+typealias Words = ASWordsAnswer
 
+extension Words {
     /// No words, and why.
     static func none(_ model: String, _ why: String) -> Words {
-        Words(sentences: [], sources: [], model: model, unavailable: why)
+        Words(model: model, sentences: [], sources: [], unavailable: why)
     }
 
     /// The sentences every one of whose cited ids is a figure given, the
@@ -60,14 +53,14 @@ struct Words: Codable, Equatable, Sendable {
             var ids: [String] = []
             for id in sentence.sources.map({ $0.trimmingCharacters(in: .whitespaces) }) where !id.isEmpty && !ids.contains(id) { ids.append(id) }
             if !text.isEmpty, !ids.isEmpty, ids.allSatisfy(given.contains) {
-                kept.append(WordsSentence(text: text, sources: ids))
+                kept.append(WordsSentence(sources: ids, text: text))
             } else {
                 Log.words.info("dropped a sentence citing \(ids.joined(separator: ","), privacy: .public)")
             }
         }
         kept = Array(kept.prefix(most))
         let cited = Set(kept.flatMap(\.sources))
-        return Words(sentences: kept, sources: sources.filter { cited.contains($0.id) }, model: model, unavailable: nil)
+        return Words(model: model, sentences: kept, sources: sources.filter { cited.contains($0.id) }, unavailable: nil)
     }
 
     /// A cited figure by its id, for a chip.
@@ -247,7 +240,7 @@ struct OnDeviceWords: WordsProvider {
         if #available(iOS 26, *) {
             let session = LanguageModelSession(instructions: Self.instructions(ask.kind))
             let response = try await session.respond(to: Self.prompt(ask.figures), generating: WordsAnswer.self)
-            let sentences = response.content.sentences.map { WordsSentence(text: $0.text, sources: $0.sources) }
+            let sentences = response.content.sentences.map { WordsSentence(sources: $0.sources, text: $0.text) }
             return Words.checked(sentences, sources: ask.figures, model: Self.model, most: 8)
         }
         #endif

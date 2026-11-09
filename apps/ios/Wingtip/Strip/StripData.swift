@@ -101,9 +101,9 @@ enum StripData {
     /// the next checkpoint's own figures are the nav log's. Points with no
     /// position (a checkpoint the chart read has not placed) are left out
     /// of the measuring.
-    static func positionAlong(_ points: [StripPoint], fix: CLLocationCoordinate2D?) -> (leg: Int, along: Double)? {
-        guard let fix, let at = Flight.position(fix, points: points.map(\.coordinate)) else { return nil }
-        return (at.leg, at.legFraction)
+    static func positionAlong(_ points: [StripPoint], fix: CLLocationCoordinate2D?) throws -> (leg: Int, along: Double)? {
+        guard let fix, let at = try Flight.position(fix, points: points.map(\.coordinate)) else { return nil }
+        return (Int(at.leg), at.legFraction)
     }
 
     /// The next point ahead of the airplane: the end of the leg it is on.

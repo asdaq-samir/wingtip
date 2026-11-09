@@ -38,14 +38,14 @@ struct AlertsBanner: View {
 #Preview("AlertsBanner") {
     VStack(spacing: 0) {
         AlertsBanner(alerts: [
-            AheadAlert(id: "sua-R-4305", kind: "sua", level: "stop", name: "R-4305",
-                       need: "Restricted: keep out unless the controlling agency clears you", seconds: 180, distanceNm: 3.4, lat: 46.9, lon: -92.4),
-            AheadAlert(id: "airspace-D-KDLH", kind: "airspace", level: "caution", name: "Duluth Class D",
-                       need: "Two-way radio contact with the tower before entering", seconds: 240, distanceNm: 4.6, lat: 46.84, lon: -92.19, airspaceClass: "D"),
+            AheadAlert(distanceNm: 3.4, id: "sua-R-4305", kind: "sua", lat: 46.9, level: "stop", lon: -92.4, name: "R-4305",
+                       need: "Restricted: keep out unless the controlling agency clears you", seconds: 180),
+            AheadAlert(airspaceClass: "D", distanceNm: 4.6, id: "airspace-D-KDLH", kind: "airspace", lat: 46.84, level: "caution", lon: -92.19,
+                       name: "Duluth Class D", need: "Two-way radio contact with the tower before entering", seconds: 240),
         ])
         AlertsBanner(alerts: [
-            AheadAlert(id: "terrain", kind: "terrain", level: "caution", name: "Terrain",
-                       need: "Within 500 ft of the ground in a minute", seconds: 50, distanceNm: 1.5, lat: 46.9, lon: -92.4, clearanceFt: 420),
+            AheadAlert(clearanceFt: 420, distanceNm: 1.5, id: "terrain", kind: "terrain", lat: 46.9, level: "caution", lon: -92.4, name: "Terrain",
+                       need: "Within 500 ft of the ground in a minute", seconds: 50),
         ])
         Spacer()
     }

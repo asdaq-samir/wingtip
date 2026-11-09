@@ -1,5 +1,7 @@
 package app.wingtipmaps.android.engine
 
+import app.wingtipmaps.android.engine.generated.regionOf
+
 import android.content.Context
 import app.wingtipmaps.android.api.Ahead
 import app.wingtipmaps.android.api.AirspaceAt
@@ -172,7 +174,7 @@ class CyclePacks(private val root: File) {
      *  has nothing drawn in it, and is answered by the rules alone. */
     fun airspaceAt(lat: Double, lon: Double, groundFt: Double? = null): AirspaceAt? {
         val index = index ?: return null
-        val region = Engine.regionOf(lat, lon)
+        val region = Engine.regionOf(lat, lon).getOrThrow()
         val pack = if (index.regions.none { it.name == region }) null else pack(index.cycle, region) ?: return null
         val json = Packs.airspaceAt(pack, lat, lon, groundFt ?: Double.NaN) ?: return null
         return runCatching { Gateway.json.decodeFromString<AirspaceAt>(json) }.getOrNull()
@@ -188,7 +190,7 @@ class CyclePacks(private val root: File) {
         // 200 kt is 17 nm, a quarter of a degree.
         val names = HashSet<String>()
         for (dlat in listOf(-0.3, 0.0, 0.3)) {
-            for (dlon in listOf(-0.3, 0.0, 0.3)) names += Engine.regionOf(lat + dlat, lon + dlon)
+            for (dlon in listOf(-0.3, 0.0, 0.3)) names += Engine.regionOf(lat + dlat, lon + dlon).getOrThrow()
         }
         val packs = packs(names)
         if (packs.isEmpty()) return null
@@ -215,7 +217,7 @@ class CyclePacks(private val root: File) {
             val names = HashSet<String>()
             for ((lat, lon) in samples(line, everyNm = 2.0)) {
                 for (dlat in listOf(-0.1, 0.0, 0.1)) {
-                    for (dlon in listOf(-0.1, 0.0, 0.1)) names += Engine.regionOf(lat + dlat, lon + dlon)
+                    for (dlon in listOf(-0.1, 0.0, 0.1)) names += Engine.regionOf(lat + dlat, lon + dlon).getOrThrow()
                 }
             }
             return names

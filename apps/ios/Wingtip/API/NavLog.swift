@@ -4,8 +4,11 @@ import Foundation
 /// JSON, app.schemas.NavLogMessage): a "stage" line before each slow
 /// piece of work, one "altitude" line once the altitudes are decided,
 /// one "leg" line per leg, then "done" with the totals -- or "error"
-/// where no route can be flown. Decoded by hand: a stream is not an
-/// OpenAPI response.
+/// where no route can be flown. Each line is one of the document's
+/// schemas (NavLogStage, NavLogAltitude, NavLogLeg, NavLogDone,
+/// NavLogError), generated as the rest are; only the choice among them by
+/// `type` is made here, as the document's NavLogMessage is every line's
+/// members at once.
 enum NavLogMessage: Equatable, Sendable {
     case stage(String)
     case altitude(NavLogAltitude)
@@ -17,229 +20,118 @@ enum NavLogMessage: Equatable, Sendable {
 /// The altitude line: which plan is flown, at what, the four plans, the
 /// figures for every legal altitude (the wheel's rows), the pilot's own
 /// altitude's cautions, and the planner's reasoning (the selection).
-struct NavLogAltitude: Codable, Equatable, Sendable {
-    var flown: String?
-    var altitudeFt: Double?
-    var options: [AltitudeOption] = []
-    var altitudeFigures: [AltitudeFigure] = []
-    var cautions: [AltitudeCaution] = []
-    var altitudeSelection: AltitudeSelection?
-}
+typealias NavLogAltitude = APINavLogAltitude
 
 /// One of the planner's four plans (AltitudeOption).
-struct AltitudeOption: Codable, Equatable, Sendable, Identifiable {
-    let kind: String
-    var steps: [AltitudeStep] = []
-    var eteMin: Double?
-    var fuelGal: Double?
-    var tailwindKt: Double?
+typealias AltitudeOption = APIAltitudeOption
 
+extension AltitudeOption: Identifiable {
     var id: String { kind }
     /// The plan's highest altitude, the figure its row shows.
     var altitudeFt: Double? { steps.map(\.altitudeFt).max() }
 }
 
-struct AltitudeStep: Codable, Equatable, Sendable {
-    let from: String
-    let to: String
-    let altitudeFt: Double
-    let distanceNm: Double
-}
+typealias AltitudeStep = APIAltitudeStep
 
 /// The flight's figures at one legal altitude (AltitudeFigure).
-struct AltitudeFigure: Codable, Equatable, Sendable, Identifiable {
-    let altitudeFt: Double
-    var eteMin: Double?
-    var fuelGal: Double?
-    var tailwindKt: Double?
-    var everywhere: Bool = true
+typealias AltitudeFigure = APIAltitudeFigure
 
+extension AltitudeFigure: Identifiable {
     var id: Double { altitudeFt }
 }
 
 /// What is wrong with an altitude the pilot set (AltitudeCaution): a
 /// warning, never a refusal.
-struct AltitudeCaution: Codable, Equatable, Sendable, Identifiable {
-    let fromIdent: String
-    let toIdent: String
-    let altitudeFt: Double
-    let reasons: [String]
+typealias AltitudeCaution = APIAltitudeCaution
 
+extension AltitudeCaution: Identifiable {
     var id: String { "\(fromIdent)-\(toIdent)" }
 }
 
-/// The planner's reasoning for the altitude (AltitudeBreakdown), the
-/// parts the profile shows.
-struct AltitudeSelection: Codable, Equatable, Sendable {
-    var recommendedFt: Double?
-    var candidatesFt: [Double] = []
-    var floorFt: Double?
-    var serviceCeilingFt: Double?
-    var cloudBaseFt: Double?
-    var airspaceCeilingFt: Double?
-    var rules: String?
-}
+/// The planner's reasoning for the altitude (AltitudeBreakdown).
+typealias AltitudeSelection = APIAltitudeBreakdown
 
-/// One leg of the log, with the figures its row shows.
-struct Leg: Codable, Hashable, Sendable, Identifiable {
-    var from: String
-    var to: String
-    var distanceNm: Double
-    var altitudeFt: Double
-    var trueCourseDeg: Double
-    var magneticHeadingDeg: Double
-    var wcaDeg: Double = 0
-    var trueHeadingDeg: Double = 0
-    var magneticVariationDeg: Double = 0
-    var climbMin: Double?
-    var groundspeedKt: Double?
-    var eteMin: Double?
-    var fuelGal: Double?
-    var tasKt: Double
-    var wind: Wind?
-    var toc: TopOfClimb?
-    var tod: TopOfDescent?
-    /// The procedure's path this leg flies, where one was picked.
-    var procedure: LegProcedure?
-    /// Into a stop landed at: the minutes on the ground there before the
-    /// next leg (Leg.ground_min), for the briefing's times.
-    var groundMin: Double?
+/// One leg of the log, with the figures its row shows: its wind the
+/// forecast's from true north (Wind), the procedure's path where one was
+/// picked, where the climb tops out and the descent starts, and into a
+/// stop landed at the minutes on the ground there (ground_min).
+typealias Leg = APILeg
 
+extension Leg: Identifiable, Hashable {
     var id: String { "\(from)-\(to)" }
 
-    struct LegProcedure: Codable, Hashable, Sendable {
-        var path: [[Double]] = []
-        var nm: Double = 0
-        var landing: Bool = false
-    }
-
-    struct Wind: Codable, Hashable, Sendable {
-        var directionDeg: Double?
-        var speedKt: Double?
-    }
-
-    /// Where the climb tops out on the leg (TopOfClimb), and what the
-    /// climb to it takes: the dry run's rows (DryRun.rows) fly the climb
-    /// at its own speeds to its altitude. Optional all, as a plan kept
-    /// from before they were read has only the distance.
-    struct TopOfClimb: Codable, Hashable, Sendable {
-        var alongNm: Double?
-        var eteMin: Double?
-        var fuelGal: Double?
-        var altitudeFt: Double?
-        var lat: Double?
-        var lon: Double?
-        var tasKt: Double?
-        var groundspeedKt: Double?
-    }
-
-    /// Where the descent starts on the leg (TopOfDescent), from what
-    /// altitude to what, and whether to the field's pattern.
-    struct TopOfDescent: Codable, Hashable, Sendable {
-        var alongNm: Double?
-        var eteMin: Double?
-        var fuelGal: Double?
-        var altitudeFt: Double?
-        var lat: Double?
-        var lon: Double?
-        var toFt: Double?
-        var pattern: Bool?
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(from)
+        hasher.combine(to)
+        hasher.combine(distanceNm)
+        hasher.combine(altitudeFt)
     }
 }
 
-/// The flight's totals and its fuel check (navlog.totals, fuel_plan).
-struct Totals: Codable, Equatable, Sendable {
-    var distanceNm: Double?
-    var eteMin: Double?
-    var fuelGal: Double?
-    var fuelRequiredGal: Double?
-    var fuelMarginGal: Double?
-    var usableFuelGal: Double?
-    var night: Bool?
-    /// Where each flight the tanks do not hold could land for fuel, the
-    /// whole chain at once (app.routers.plan.fuel_stops_of).
-    var fuelStops: [FuelStopSuggestion]? = []
-}
+/// The flight's totals and its fuel check (navlog.totals, fuel_plan); its
+/// fuelStops where each flight the tanks do not hold could land for fuel,
+/// the whole chain at once (app.routers.plan.fuel_stops_of).
+typealias Totals = APITotals
 
 /// A field with fuel on the way (FuelStop).
-struct FuelStop: Codable, Equatable, Sendable, Identifiable {
-    let ident: String
-    let name: String
-    let city: String
-    let lat: Double
-    let lon: Double
-    let fromNm: Double
-    let addedNm: Double
-    let landsWithGal: Double
-    let minutes: Double
-    let fuelTypes: String
-    let runwayFt: Int
+typealias FuelStop = APIFuelStop
 
+extension FuelStop: Identifiable {
     var id: String { ident }
 }
 
 /// The stops that take a flight from one landing to the next with the
 /// reserve left (FuelStopSuggestion).
-struct FuelStopSuggestion: Codable, Equatable, Sendable, Identifiable {
-    let departure: String
-    let destination: String
-    let usableGal: Double
-    var reason: String? = "fuel"
-    var stops: [FuelStop] = []
-    var choices: [FuelStop]? = []
+typealias FuelStopSuggestion = APIFuelStopSuggestion
 
+extension FuelStopSuggestion: Identifiable {
     var id: String { "\(departure)-\(destination)" }
 }
 
 /// A way round what stops a route (Detour): a Class B's waypoint, or the
 /// points round high ground (`via`), each before the stop at `stopIndex`.
-struct Detour: Codable, Equatable, Sendable, Identifiable {
-    let ident: String
-    let kind: String
-    let addedNm: Double
-    let stopIndex: Int
-    var description: String?
-    var via: [String]? = []
+typealias Detour = APIDetour
 
+extension Detour: Identifiable {
     var id: String { ident }
 }
 
-struct NavLogError: Codable, Equatable, Sendable {
-    var detail: String
-    var brief: String?
-    var reasons: [String]?
-    var advice: String?
-    var classB: Bool? = false
-    var detours: [Detour]? = []
+typealias NavLogError = APINavLogError
+
+extension NavLogError {
+    /// A problem of the app's own, in the planner's shape.
+    init(detail: String, brief: String?, reasons: [String]?, advice: String?) {
+        self.init(advice: advice, brief: brief, classB: nil, detail: detail, detours: nil, reasons: reasons, retry: nil, type: nil)
+    }
 }
+
 
 enum NavLog {
     /// One line of the stream, or nil for a line of a kind the app has no
     /// use for yet.
     static func decode(line: Data, decoder: JSONDecoder = Planner.snakeCase) throws -> NavLogMessage? {
-        struct Kind: Decodable { let type: String }
-        let kind = try decoder.decode(Kind.self, from: line).type
+        // Every line's `type`, the one member the document's NavLogMessage
+        // gives them all.
+        let kind = try decoder.decode(APINavLogMessage.self, from: line).type
         switch kind {
-        case "stage":
-            struct Stage: Decodable { let detail: String }
-            return .stage(try decoder.decode(Stage.self, from: line).detail)
+        case "stage": return .stage(try decoder.decode(APINavLogStage.self, from: line).detail)
         case "altitude": return .altitude(try decoder.decode(NavLogAltitude.self, from: line))
         case "leg": return .leg(try decoder.decode(Leg.self, from: line))
-        case "done":
-            struct Done: Decodable { let totals: Totals }
-            return .done(try decoder.decode(Done.self, from: line).totals)
+        case "done": return .done(try decoder.decode(APINavLogDone.self, from: line).totals)
         case "error": return .error(try decoder.decode(NavLogError.self, from: line))
         default: return nil
         }
     }
 
     /// The log for a route, line by line as the planner sends them.
-    static func stream(dep: String, dest: String, stops: [String], aircraft: String?, figures: Figures = Figures(), altitudeFt: Double?, nearest: Bool, choice: String?, procedures: [ProcedurePick] = [], extra: [String: String?] = [:]) -> AsyncThrowingStream<NavLogMessage, any Error> {
+    /// Thrown before anything is asked where the engine cannot write the
+    /// procedures picked.
+    static func stream(dep: String, dest: String, stops: [String], aircraft: String?, figures: Figures = Figures(), altitudeFt: Double?, nearest: Bool, choice: String?, procedures: [ProcedurePick] = [], extra: [String: String?] = [:]) throws -> AsyncThrowingStream<NavLogMessage, any Error> {
         var query = figures.query.merging(Planner.route(dep, dest, stops).merging([
             "aircraft": aircraft,
             // The procedures picked, which the legs are flown by and
             // the descents planned to.
-            "procedures": procedures.isEmpty ? nil : ProcedurePick.text(procedures),
+            "procedures": procedures.isEmpty ? nil : try ProcedurePick.text(procedures),
             "altitude_ft": altitudeFt.map { String(Int($0)) },
             // Picked on the wheel: each leg at its nearest legal
             // altitude where the pick is one of the planner's.

@@ -31,8 +31,10 @@ enum AirportWords {
 
     /// A bearing as one of the eight compass points in words,
     /// "northeast": the engine's `compass_word`, the web's and Android's.
+    /// Words only: where the engine refuses (logged by Engine.rule) the
+    /// bearing itself is said, "045°", which is no less true.
     static func compassWord(_ deg: Double) -> String {
-        (try? Engine.call("compass_word", json: ["bearing_deg": deg])) ?? ""
+        (try? Engine.compassWord(bearingDeg: deg)) ?? bearing(deg)
     }
 
     /// The eight points of the compass, for "12 nm NE": the engine's
@@ -45,10 +47,11 @@ enum AirportWords {
     }
 
     /// Whether a wind is calm, a speed of 0 (AIM 7-1-28): the engine's
-    /// `wind_calm`; no speed is not calm.
+    /// `wind_calm`; no speed is not calm. Words only: where the engine
+    /// refuses (logged by Engine.rule) the wind is not called calm, and
+    /// its speed is said as reported.
     static func calm(_ speedKt: Double?) -> Bool {
-        let calm: Bool? = try? Engine.call("wind_calm", json: ["speed_kt": speedKt])
-        return calm == true
+        (try? Engine.windCalm(speedKt: speedKt)) == true
     }
 
     /// "N42°19.0′ W088°05.4′": tenths of a minute first, so 59.96
@@ -142,10 +145,10 @@ enum AirportWords {
     }
 
     /// The runway's number as the sectional prints it: "05" is 5 (the
-    /// engine's `gonogo_runway_number`).
+    /// engine's `gonogo_runway_number`); the ident as published where the
+    /// engine refuses (logged by Engine.rule), which names the same runway.
     static func runwayNumber(_ ident: String) -> String {
-        let number: String? = try? Engine.call("gonogo_runway_number", ["ident": ident])
-        return number ?? ident
+        (try? Engine.gonogoRunwayNumber(ident: ident)) ?? ident
     }
 
     /// A runway's line under its name: surface, lights, closed, and any
@@ -164,8 +167,11 @@ enum AirportWords {
     /// out (wingtip.runway_wind): "Favors 27: 10 kt headwind, 6 kt crosswind
     /// from the right, 9 in the gusts"; a calm one only for a speed of 0
     /// (the engine's `runway_calm`).
+    /// Where the engine refuses (logged by Engine.rule) the wind is said in
+    /// its components, never called calm.
     static func runwayWind(_ wind: RunwayWind) -> String {
-        let calm: Bool? = try? Engine.call("runway_calm", ["wind": wind], encoder: Planner.snakeEncoder)
+        let calm = try? Engine.runwayCalm(wind: .init(end: wind.end, headwindKt: wind.headwindKt, crosswindKt: wind.crosswindKt,
+                                                     gustCrosswindKt: wind.gustCrosswindKt, inUse: nil))
         if calm == true { return "Calm on \(wind.end)" }
         let along = wind.headwindKt >= 0 ? "\(plain(wind.headwindKt)) kt headwind" : "\(plain(-wind.headwindKt)) kt tailwind"
         let kt = abs(wind.crosswindKt)
@@ -183,12 +189,10 @@ enum AirportWords {
     /// row's glyph, and what OurAirports says of it in sentence case where
     /// that adds to the name ("Minneapolis APP/DEP"): the engine's
     /// `frequency_line`. The type as it came where the engine cannot
-    /// answer.
+    /// answer (logged by Engine.rule): the frequency's own code is still true.
     static func frequencyLine(type: String?, description: String?) -> (name: String, kind: FrequencyKind, detail: String?) {
-        struct Line: Decodable { let name: String; let kind: FrequencyKind; let detail: String? }
-        let line: Line? = try? Engine.call("frequency_line", json: ["type": type, "description": description])
-        guard let line else { return (type ?? "Frequency", .other, nil) }
-        return (line.name, line.kind, line.detail)
+        guard let line = try? Engine.frequencyLine(type: type, description: description) else { return (type ?? "Frequency", .other, nil) }
+        return (line.name, FrequencyKind(rawValue: line.kind) ?? .other, line.detail)
     }
 
     /// A frequency as pilots write it: 120.7, 122.95, 124.475.
@@ -205,20 +209,21 @@ enum AirportWords {
     /// NOTAM 4 hours in advance"; a class as the AIM writes it, "Class B"
     /// (AIM 3-2-1). Text with any lower case is someone's own writing and
     /// is left as it is; raw reports never come here. The engine's
-    /// `faa_words`; the text as it came where the engine cannot answer.
+    /// `faa_words`; the text as it came where the engine cannot answer
+    /// (logged by Engine.rule): the FAA's own words, in capitals.
     static func faaWords(_ text: String?) -> String {
         guard let text, !text.isEmpty else { return "" }
-        let words: String? = try? Engine.call("faa_words", ["text": text])
-        return words ?? text
+        if case .string(let words)? = try? Engine.faaWords(text: text) { return words }
+        return text
     }
 
     // MARK: Airspace
 
     /// "CHICAGO, DUPAGE AIRPORT CLASS D" as "Chicago, Dupage Airport":
     /// the engine's `short_airspace_name`.
+    /// The name as the FAA has it where the engine refuses (logged).
     static func shortAirspaceName(_ name: String) -> String {
-        let short: String? = try? Engine.call("short_airspace_name", ["name": name])
-        return short ?? name
+        (try? Engine.shortAirspaceName(name: name)) ?? name
     }
 
     /// 91.155's minimums in a line, as the planner gives them: "3 sm, 500
@@ -242,12 +247,13 @@ enum AirportWords {
     /// them: SFC, a flight level (STD, 14 CFR 1.1), feet AGL or MSL --
     /// "Surface to 18,000 ft", or "the surface" in a sentence's middle.
     /// The engine's `sua_altitudes`.
+    /// Where the engine refuses (logged by Engine.rule), the file's own
+    /// figures and references, "0 SFC to 18000 MSL".
     static func suaAltitudes(_ area: SpecialUse, midSentence: Bool = false) -> String {
-        let words: String? = try? Engine.call("sua_altitudes", json: [
-            "floor_ft": area.floorFt, "floor_ref": area.floorRef, "ceiling_ft": area.ceilingFt, "ceiling_ref": area.ceilingRef,
-            "mid_sentence": midSentence,
-        ])
-        return words ?? ""
+        if let words = try? Engine.suaAltitudes(floorFt: area.floorFt, floorRef: area.floorRef, ceilingFt: area.ceilingFt,
+                                               ceilingRef: area.ceilingRef, midSentence: midSentence) { return words }
+        func raw(_ ft: Double?, _ ref: String?) -> String { [ft.map { grouped($0) }, ref].compactMap { $0 }.joined(separator: " ") }
+        return "\(raw(area.floorFt, area.floorRef)) to \(raw(area.ceilingFt, area.ceilingRef))"
     }
 
     // MARK: Services
@@ -255,9 +261,9 @@ enum AirportWords {
     /// NASR's fuel codes as the pump is labelled: the jet fuels by name,
     /// the rest (100LL, UL94, MOGAS) as the codes they are (the engine's
     /// `fuel_names`).
+    /// The codes as NASR has them where the engine refuses (logged).
     static func fuelNames(_ types: [String]) -> String {
-        let names: String? = try? Engine.call("fuel_names", ["types": types])
-        return names ?? types.joined(separator: ", ")
+        (try? Engine.fuelNames(types: types)) ?? types.joined(separator: ", ")
     }
 
     /// How far a place is from the field: the minutes' walk where it is a

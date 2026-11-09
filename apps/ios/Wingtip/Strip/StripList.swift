@@ -67,7 +67,7 @@ struct StripList: View {
                         Text("\(number.map { "\($0). " } ?? "")\(point.name)")
                             .font(ChartInk.text.weight(.medium)).lineLimit(1)
                         if let leg = point.leg {
-                            Text("MH \(String(format: "%03d", Int(leg.magneticHeadingDeg.rounded()))) · \(Int(leg.distanceNm.rounded())) NM")
+                            Text("MH \(leg.magneticHeadingDeg.map { String(format: "%03d", Int($0.rounded())) } ?? "—") · \(Int(leg.distanceNm.rounded())) NM")
                                 .font(ChartInk.note.monospacedDigit()).foregroundStyle(ink.muted)
                         }
                     }

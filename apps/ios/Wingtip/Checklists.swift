@@ -27,24 +27,25 @@ enum ChecklistPhases {
     /// (GAMA Specification No. 1, Section 4), each phase a checklist is
     /// run at, the engine's (`checklist_phases`); how a checklist is used
     /// is the FAA's Airplane Flying Handbook (FAA-H-8083-3C), chapter 2.
-    static let normal: [String] = (try? Engine.call("checklist_phases", json: ["kind": "normal"])) ?? []
+    /// Asked once; a refusal is kept and said where the list is started.
+    static let normal = Result { try Engine.checklistPhases(kind: "normal") }
 
     /// The emergencies a handbook's Emergency Procedures cover (GAMA
     /// Specification No. 1, Section 3), in its order, the engine's.
-    static let emergency: [String] = (try? Engine.call("checklist_phases", json: ["kind": "emergency"])) ?? []
+    static let emergency = Result { try Engine.checklistPhases(kind: "emergency") }
 
-    static func headings(_ kind: ChecklistKind) -> [String] {
+    static func headings(_ kind: ChecklistKind) throws -> [String] {
         switch kind {
-        case .normal: normal
-        case .emergency: emergency
+        case .normal: try normal.get()
+        case .emergency: try emergency.get()
         }
     }
 
     /// The headings as checklist text, a "#" line each with a blank line
     /// under it to write in. Read as it is, it is no checklist at all: the
     /// engine's reader drops a section with no items.
-    static func text(_ kind: ChecklistKind) -> String {
-        headings(kind).map { "# \($0)\n" }.joined(separator: "\n")
+    static func text(_ kind: ChecklistKind) throws -> String {
+        try headings(kind).map { "# \($0)\n" }.joined(separator: "\n")
     }
 }
 
@@ -97,6 +98,9 @@ final class ChecklistModel {
     private(set) var ticked: Set<String> = []
     /// The text in the editor; nil while the list is run.
     var writing: String?
+    /// What the engine could not do with the text (read it into a list,
+    /// or start it from the phases), for the screen to say.
+    private(set) var problem: String?
 
     init(airplane: String, kind: ChecklistKind, defaults: UserDefaults = .standard) {
         self.airplane = airplane.uppercased()
@@ -104,7 +108,20 @@ final class ChecklistModel {
         self.defaults = defaults
         let text = LocalChecklists.text(for: airplane, kind, in: defaults)
         self.text = text
-        checklist = text.isEmpty ? Checklist(sections: []) : ChecklistText.parse(text)
+        checklist = Checklist(sections: [])
+        read()
+    }
+
+    /// The kept text read into the list; an empty list and the reason
+    /// where the engine cannot read it.
+    private func read() {
+        do {
+            checklist = text.isEmpty ? Checklist(sections: []) : try ChecklistText.parse(text)
+            problem = nil
+        } catch {
+            checklist = Checklist(sections: [])
+            problem = "Your checklist couldn't be read: \(error.localizedDescription)"
+        }
     }
 
     var title: String { "\(airplane) \(kind.title)" }
@@ -130,14 +147,19 @@ final class ChecklistModel {
     /// under; never over what the pilot has written.
     func startFromPhases() {
         guard (writing ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        writing = ChecklistPhases.text(kind)
+        do {
+            writing = try ChecklistPhases.text(kind)
+            problem = nil
+        } catch {
+            problem = "The phases couldn't be listed: \(error.localizedDescription)"
+        }
     }
 
     func save() {
         guard let writing else { return }
         LocalChecklists.save(writing, for: airplane, kind, in: defaults)
         text = LocalChecklists.text(for: airplane, kind, in: defaults)
-        checklist = text.isEmpty ? Checklist(sections: []) : ChecklistText.parse(text)
+        read()
         ticked = []
         self.writing = nil
     }

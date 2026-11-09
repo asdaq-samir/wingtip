@@ -56,8 +56,10 @@ struct TrainingView: View {
     // each again, and the instructor endorses their review (61.39(a)(6)(iii)).
     @ViewBuilder private func knowledgeTest(_ t: Training) -> some View {
         let codes = t.knowledgeTestCodes ?? []
-        let typed = Endorsing.acsCodes(in: pasted)
+        let found = Result { try Endorsing.acsCodes(in: pasted) }
+        let typed = (try? found.get()) ?? []
         Section("Knowledge test") {
+            ProblemLine(found, "The codes in what you pasted")
             if codes.isEmpty { Text("No codes yet").foregroundStyle(.secondary) }
             ForEach(codes, id: \.self) { code in
                 VStack(alignment: .leading, spacing: 2) {
@@ -90,10 +92,13 @@ struct TrainingView: View {
     // AC 61-65K's student endorsements: signed here by the instructor, or
     // the day one was signed in the paper logbook.
     @ViewBuilder private func endorsements(_ t: Training) -> some View {
-        let signed = Endorsing.inForce(t.signed)
+        let inForce = Result { try Endorsing.inForce(t.signed) }
+        let signed = (try? inForce.get()) ?? [:]
         let recorded = Dictionary((t.endorsements ?? []).map { ($0.code, $0) }, uniquingKeysWith: { a, _ in a })
-        if let kinds = t.kinds, !kinds.isEmpty {
+        if !t.kinds.isEmpty {
+            let kinds = t.kinds
             Section("Endorsements") {
+                ProblemLine(inForce, "Which endorsements are in force")
                 ForEach(kinds) { kind in
                     if let e = signed[kind.code] {
                         SignedEndorsementRow(label: kind.label, rule: kind.rule, e: e)
@@ -113,7 +118,7 @@ struct TrainingView: View {
         if !voided.isEmpty {
             Section("Voided") {
                 ForEach(voided) { e in
-                    SignedEndorsementRow(label: t.kinds?.first { $0.code == e.code }?.label ?? e.code, rule: nil, e: e)
+                    SignedEndorsementRow(label: t.kinds.first { $0.code == e.code }?.label ?? e.code, rule: nil, e: e)
                 }
             }
         }
@@ -250,7 +255,7 @@ struct SignedEndorsementRow: View {
         DisclosureGroup {
             VStack(alignment: .leading, spacing: 8) {
                 Text(e.text).textSelection(.enabled)
-                if let signature = e.signature { Text(signature).font(.footnote.monospaced()).foregroundStyle(.secondary) }
+                if !e.signature.isEmpty { Text(e.signature).font(.footnote.monospaced()).foregroundStyle(.secondary) }
             }
             if let onVoid, !e.voided {
                 Button("Void It", role: .destructive, action: onVoid)
@@ -275,8 +280,8 @@ struct ReviewAskView: View {
     var ask: (AskReviewRequest) async -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var flights: [SavedFlight] = []
-    @State private var flightId: Int64?
-    @State private var instructorId: Int64?
+    @State private var flightId: Int?
+    @State private var instructorId: Int?
     @State private var makeModel = ""
     @State private var day = Date()
     @State private var note = ""
@@ -287,16 +292,16 @@ struct ReviewAskView: View {
             Section("Flight") {
                 if flights.isEmpty { Text("Save the planned flight first, from Flights.").foregroundStyle(.secondary) }
                 Picker("Saved flight", selection: $flightId) {
-                    Text("Pick one").tag(Int64?.none)
+                    Text("Pick one").tag(Int?.none)
                     ForEach(flights) { f in
-                        Text(([f.departureIdent] + f.stops + [f.destinationIdent]).joined(separator: " ")).tag(Int64?.some(f.id))
+                        Text(([f.departureIdent] + f.stops + [f.destinationIdent]).joined(separator: " ")).tag(Int?.some(f.id))
                     }
                 }
             }
             Section {
                 if instructors.count > 1 {
                     Picker("Instructor", selection: $instructorId) {
-                        ForEach(instructors) { l in Text(l.name ?? l.email).tag(Int64?.some(l.id)) }
+                        ForEach(instructors) { l in Text(l.name ?? l.email).tag(Int?.some(l.id)) }
                     }
                 }
                 LabeledContent("Make and model") { TextField("Cessna 172", text: $makeModel).multilineTextAlignment(.trailing) }
@@ -331,9 +336,9 @@ struct ReviewAskView: View {
 #Preview("ExperienceSection") {
     List {
         ExperienceSection(items: [
-            ExperienceItem(key: "total", label: "Flight training", rule: "61.109(a): 40 h", unit: "h", have: 32.4, need: 40),
-            ExperienceItem(key: "solo-xc", label: "Solo cross-country", rule: "61.109(a)(5): 5 h", unit: "h", have: 5.2, need: 5, met: true),
-            ExperienceItem(key: "night-landings", label: "Night landings", rule: "61.109(a)(2)(ii): 10", unit: "landings", have: 10, need: 10, met: true),
+            ExperienceItem(have: 32.4, key: "total", label: "Flight training", met: false, need: 40, rule: "61.109(a): 40 h", unit: "h"),
+            ExperienceItem(have: 5.2, key: "solo-xc", label: "Solo cross-country", met: true, need: 5, rule: "61.109(a)(5): 5 h", unit: "h"),
+            ExperienceItem(have: 10, key: "night-landings", label: "Night landings", met: true, need: 10, rule: "61.109(a)(2)(ii): 10", unit: "landings"),
         ])
     }
 }
@@ -347,14 +352,12 @@ struct ReviewAskView: View {
 
 #Preview("SignedEndorsementRow") {
     List {
-        SignedEndorsementRow(label: "Solo flight (first 90 days)", rule: "61.87(n)", e: SignedEndorsement(
-            id: 1, code: "A.4", text: "I certify that Avery B. Student has received the required training of § 61.87 in a Cessna 172.",
-            signedOn: "2026-10-14", until: "2027-01-12", signature: "/s/ Jordan Lee 4123456 CFI exp 2028-03-31"))
+        SignedEndorsementRow(label: "Solo flight (first 90 days)", rule: "61.87(n)", e: SignedEndorsement(code: "A.4", digest: "", fields: [:], id: 1, signature: "/s/ Jordan Lee 4123456 CFI exp 2028-03-31", signedOn: "2026-10-14", studentName: "Avery B. Student", text: "I certify that Avery B. Student has received the required training of § 61.87 in a Cessna 172.", until: "2027-01-12", voided: false))
     }
 }
 
 #Preview("ReviewAskView") {
     NavigationStack {
-        ReviewAskView(instructors: [InstructorLink(id: 7, email: "cfi@example.com", name: "Jordan Lee", accepted: true, certificate: "CFI 4123456")]) { _ in }
+        ReviewAskView(instructors: [InstructorLink(accepted: true, askedAt: "2026-10-01", certificate: "CFI 4123456", email: "cfi@example.com", id: 7, name: "Jordan Lee")]) { _ in }
     }
 }

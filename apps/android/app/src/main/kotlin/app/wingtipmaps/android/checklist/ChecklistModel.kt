@@ -53,7 +53,12 @@ class ChecklistModel(app: Application) : AndroidViewModel(app) {
     fun draft(text: String) = _state.update { it.copy(draft = text) }
 
     /** The phases' headings in the editor, to write the items under. */
-    fun startFromPhases() = _state.update { it.copy(draft = ChecklistPhases.template(it.kind)) }
+    fun startFromPhases() = _state.update { s ->
+        ChecklistPhases.template(s.kind).fold(
+            { s.copy(draft = it) },
+            { s.copy(problem = "The phases' headings could not be had: ${it.message}") },
+        )
+    }
 
     fun cancelEdit() = _state.update { it.copy(mode = Mode.RUN, draft = it.text) }
 
@@ -81,9 +86,5 @@ class ChecklistModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun read(text: String): Pair<List<ChecklistSection>, String?> =
-        try {
-            ChecklistText.read(text) to null
-        } catch (e: Exception) {
-            emptyList<ChecklistSection>() to (e.message ?: "The list could not be read.")
-        }
+        ChecklistText.read(text).fold({ it to null }, { emptyList<ChecklistSection>() to (it.message ?: "The list could not be read.") })
 }

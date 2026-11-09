@@ -13,6 +13,9 @@ struct ChecklistView: View {
 
     var body: some View {
         List {
+            if let problem = model.problem {
+                Text(problem).foregroundStyle(.orange)
+            }
             if let writing = model.writing {
                 Section {
                     TextEditor(text: Binding(get: { writing }, set: { model.writing = $0 }))
