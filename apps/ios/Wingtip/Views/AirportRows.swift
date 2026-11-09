@@ -95,6 +95,8 @@ struct FrequencyRowView: View {
                 // Figure by figure, as a frequency is read on the radio.
                 .accessibilityLabel(frequency.frequencyMhz.map(SpokenFigures.frequency) ?? "no frequency")
         }
+        // Held: Copy (FrequencyActions).
+        .frequencyActions(frequency.frequencyMhz.map(AirportWords.mhz))
     }
 }
 

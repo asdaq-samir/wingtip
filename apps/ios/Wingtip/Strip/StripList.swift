@@ -200,6 +200,7 @@ struct StripFieldCard: View {
                         Button(chip.label) { onOpen(point.name) }
                             .buttonStyle(.inkChip)
                             .accessibilityLabel(chip.words)
+                            .frequencyActions(FrequencyCopy.figure(in: chip.words))
                     }
                     if clearance {
                         Button("Clearance", action: onClearance).buttonStyle(.inkChip).accessibilityLabel("The clearance card")

@@ -116,6 +116,7 @@ struct EmergencyRadioSections: View {
                     CardRow(title: channel.label, detail: channel.why) {
                         if let mhz = channel.mhz { Text(Format.number(mhz, decimals: 3)).fontWeight(.semibold).monospacedDigit() }
                     }
+                    .frequencyActions(channel.mhz.map { Format.number($0, decimals: 3) })
                 }
             }
             Section(title: "MAYDAY") {

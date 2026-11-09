@@ -2,36 +2,49 @@ import SwiftUI
 
 /// What is ahead on the track, over the map as the web app's AlertsBanner
 /// has it: the planner's alerts in its words, the nearest first, red
-/// where it says so and amber otherwise, with the minutes to it.
+/// where it says so and amber otherwise, with the minutes to it. Tapped,
+/// the airspace card where it is (AlertActions); held, each one's.
 struct AlertsBanner: View {
     let alerts: [AheadAlert]
 
     var body: some View {
-        if let first = alerts.sorted(by: { $0.seconds < $1.seconds }).first {
-            HStack(spacing: WingtipSpace.sm) {
-                // The octagon and the triangle tell the two levels apart
-                // without their colours; VoiceOver says the level.
-                let danger = first.level == "stop" || first.level == "danger"
-                Image(systemName: danger ? "exclamationmark.octagon.fill" : "exclamationmark.triangle.fill")
-                    .accessibilityLabel(danger ? "Danger ahead" : "Caution ahead")
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(first.name).font(.subheadline.weight(.semibold)).lineLimit(1)
-                    Text("\(first.need) · \(Format.duration(first.seconds / 60)), \(Format.distance(first.distanceNm))").font(.footnote).lineLimit(1)
-                        .accessibilityLabel("\(first.need), in \(SpokenFigures.minutes(first.seconds / 60)), \(SpokenFigures.nauticalMiles(first.distanceNm))")
+        let sorted = alerts.sorted(by: { $0.seconds < $1.seconds })
+        if let first = sorted.first {
+            Button { AlertActions.open(AlertActions.target(first)) } label: { line(first) }
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens the airspace where it is")
+                .contextMenu {
+                    ForEach(sorted) { alert in
+                        Button(alert.name, systemImage: "info.circle") { AlertActions.open(AlertActions.target(alert)) }
+                    }
                 }
-                Spacer(minLength: 0)
-                if alerts.count > 1 {
-                    Text("+\(alerts.count - 1)").font(.footnote.weight(.semibold))
-                        .accessibilityLabel("and \(alerts.count - 1) more")
-                }
-            }
-            .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
-            .foregroundStyle(.white)
-            .background(first.level == "stop" || first.level == "danger" ? Color.red : Color.orange, in: RoundedRectangle(cornerRadius: 14))
-            .padding(.horizontal, WingtipSpace.md)
-            .padding(.top, WingtipSpace.sm)
-            .accessibilityElement(children: .combine)
         }
+    }
+
+    private func line(_ first: AheadAlert) -> some View {
+        HStack(spacing: WingtipSpace.sm) {
+            // The octagon and the triangle tell the two levels apart
+            // without their colours; VoiceOver says the level.
+            let danger = first.level == "stop" || first.level == "danger"
+            Image(systemName: danger ? "exclamationmark.octagon.fill" : "exclamationmark.triangle.fill")
+                .accessibilityLabel(danger ? "Danger ahead" : "Caution ahead")
+            VStack(alignment: .leading, spacing: 1) {
+                Text(first.name).font(.subheadline.weight(.semibold)).lineLimit(1)
+                Text("\(first.need) · \(Format.duration(first.seconds / 60)), \(Format.distance(first.distanceNm))").font(.footnote).lineLimit(1)
+                    .accessibilityLabel("\(first.need), in \(SpokenFigures.minutes(first.seconds / 60)), \(SpokenFigures.nauticalMiles(first.distanceNm))")
+            }
+            Spacer(minLength: 0)
+            if alerts.count > 1 {
+                Text("+\(alerts.count - 1)").font(.footnote.weight(.semibold))
+                    .accessibilityLabel("and \(alerts.count - 1) more")
+            }
+        }
+        .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
+        .foregroundStyle(.white)
+        .background(first.level == "stop" || first.level == "danger" ? Color.red : Color.orange, in: RoundedRectangle(cornerRadius: 14))
+        .padding(.horizontal, WingtipSpace.md)
+        .padding(.top, WingtipSpace.sm)
+        .accessibilityElement(children: .combine)
     }
 }
 
