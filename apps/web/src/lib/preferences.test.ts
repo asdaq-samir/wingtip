@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_AIRCRAFT, forgetPilot, usePreferences } from "./preferences";
+import { NO_AIRPLANE, forgetPilot, usePreferences } from "./preferences";
 import { NO_MINIMUMS } from "./minimums";
 
 describe("forgetPilot", () => {
@@ -16,7 +16,7 @@ describe("forgetPilot", () => {
     forgetPilot();
     const after = usePreferences.getState();
     expect(after).toMatchObject({
-      minimums: NO_MINIMUMS, loads: {}, aircraft: DEFAULT_AIRCRAFT, homeAirport: null, favoriteAirports: [], recentAirports: [],
+      minimums: NO_MINIMUMS, loads: {}, aircraft: NO_AIRPLANE, homeAirport: null, favoriteAirports: [], recentAirports: [],
       recentRoutes: [], recentAircraft: [], favoriteAircraft: [], myAircraft: null, aircraftAlerts: [],
     });
     expect([after.base, after.traffic]).toEqual(["ifr_low", true]);

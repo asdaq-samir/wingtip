@@ -1,5 +1,5 @@
 import { MutationCache, QueryCache, QueryClient, queryOptions } from "@tanstack/react-query";
-import { ApiError, api, describeError, isDropped } from "./api/client";
+import { ApiError, api, describeError, isDropped, isUnknownPlace } from "./api/client";
 import type { ChartInfo } from "./api/types";
 import { keptStore } from "./storage";
 import { clearProblem, raiseProblem, showError } from "./problems";
@@ -174,11 +174,13 @@ export const capabilitiesQuery = queryOptions({
 });
 
 /** A route's course: its airports, any stops among them, and the line
- *  through them, the same answer for as long as the page is open. No
- *  `meta` -- a course that fails is the page's first news that the
- *  planner is down. */
+ *  through them, the same answer for as long as the page is open. A
+ *  course that fails is the page's first news that the planner is down;
+ *  but a point the planner does not know is said on its pill in the
+ *  route box (usePlan's `unknownPlace`), not as a system problem. */
 export const courseQuery = (dep: string, dest: string, stops: string[] = []) => queryOptions({
   queryKey: ["course", dep, dest, stops.join(",")], queryFn: ({ signal }) => api.course(dep, dest, stops, signal), staleTime: Infinity,
+  meta: { silent: isUnknownPlace },
 });
 
 /** A route's checkpoints off the chart: the planner's, kept until the
@@ -193,6 +195,8 @@ export const courseQuery = (dep: string, dest: string, stops: string[] = []) => 
 export const checkpointsQuery = (dep: string, dest: string, stops: string[] = []) => queryOptions({
   queryKey: ["checkpoints", dep, dest, stops.join(",")],
   queryFn: ({ signal }) => api.checkpoints(dep, dest, stops, signal), staleTime: Infinity,
+  // A point not known, the course's to say (courseQuery).
+  meta: { silent: isUnknownPlace },
 });
 
 /** The route from the side -- the ground under it and the Class B, C and

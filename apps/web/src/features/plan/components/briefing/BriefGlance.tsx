@@ -173,9 +173,9 @@ function InstructorNote() {
  */
 export default function BriefGlance({ onOpen, before: first, afterVerdict, after }: {
   onOpen: (tab: PanelTab) => void;
-  /** Over the verdict, under it, and after the cards: the assistant's
-   *  field, the words and the watch (BriefOverview), round the cards
-   *  without moving them. */
+  /** Under the verdict and its lines, then under that, and after the
+   *  cards: the assistant's field, the words and the watch
+   *  (BriefOverview), round the cards without moving them. */
   before?: ReactNode;
   afterVerdict?: ReactNode;
   after?: ReactNode;
@@ -188,7 +188,6 @@ export default function BriefGlance({ onOpen, before: first, afterVerdict, after
   const enroute = glance?.enroute;
   return (
     <div className="flex flex-col gap-2.5 pt-1 pb-4" data-testid="brief-glance">
-      {first}
       {verdict && (
         <div
           className={cn("flex items-center gap-2.5 rounded-xl px-3.5 py-2.5", MARK_TINT[verdict.finding] ?? "bg-muted")}
@@ -198,8 +197,13 @@ export default function BriefGlance({ onOpen, before: first, afterVerdict, after
           <span className={cn("font-semibold", TEXT.row, FINDING_TONE[verdict.finding])}>{verdict.words}</span>
         </div>
       )}
-      {afterVerdict}
       {lines?.act.map(line => <Line key={line.key} line={line} onOpen={onOpen} />)}
+      {/* The verdict and its lines first, the assistant's field straight
+          under them, at the owner's word ("Verdict first", 2026-11-08):
+          the Brief opened on Ask, the verdict fourth and at 19.65 px half
+          under the fold (the FPL audit's A9). */}
+      {first}
+      {afterVerdict}
       {lines && lines.rest.items.length > 0 && (
         <Collapsible className={CARD} data-testid="brief-rest" data-finding={lines.rest.finding}>
           <CollapsibleTrigger className={cn(TRIGGER, "items-center", TEXT.row)}>

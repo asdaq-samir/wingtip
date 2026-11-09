@@ -133,11 +133,16 @@ const SHEET_BELOW = "[--muted-foreground:oklch(0.5_0_0)] [--tint:var(--tint-shad
  *  the tabs ran into the window's top). */
 const FLOAT_PX = 16;
 
-function insetsOf(s: PanelState, d: Detents, onPhone: boolean, fromBottom: boolean): MapInsets {
+// The screen's top under a sheet from the bottom is the status bar's and
+// the Dynamic Island's (`safeTop`, env(safe-area-inset-top), about 59 pt on
+// an iPhone 16 Pro with viewport-fit=cover): kept out of the map's room, as
+// HIG's layout keeps content inside the safe area, where a fit put KOSH at
+// y = 38 under it (the FPL audit's A11). A sheet from the top covers it.
+function insetsOf(s: PanelState, d: Detents, onPhone: boolean, fromBottom: boolean, safeTop = 0): MapInsets {
   const up = s === "full";
-  if (!onPhone && s !== "peek") return { top: 0, bottom: 0, left: 16 + CARD, out: true, up };
+  if (!onPhone && s !== "peek") return { top: safeTop, bottom: 0, left: 16 + CARD, out: true, up };
   const strip = onPhone ? (s === "peek" ? d.peek : d.half) : d.peek + SHEET_MARGIN + (fromBottom ? 0 : FLOAT_PX);
-  return fromBottom ? { top: 0, bottom: strip, left: 0, out: s !== "peek", up } : { top: strip, bottom: 0, left: 0, out: s !== "peek", up };
+  return fromBottom ? { top: safeTop, bottom: strip, left: 0, out: s !== "peek", up } : { top: strip, bottom: 0, left: 0, out: s !== "peek", up };
 }
 
 /** What a phone's sheet says as it sets off for another size, on its
@@ -348,24 +353,39 @@ export default function MapPanel({ label, top, kept, controls, compact, children
   useLayoutEffect(() => {
     pillLaid.current = atPill && !moving;
   }, [atPill, moving]);
+  // What the pill is made of, which sets its height: the figures, or the
+  // tab bar, or a card's name -- one height kept for each as it is
+  // measured (pillHeights), so a sheet coming down on another tab or
+  // with a card lands at that pill's own height. It landed at the last
+  // one measured, FPL's figures' 62, and then hopped to the tabs' 68 (or
+  // a card's name's 65) as the pill was measured at rest: a second move,
+  // the settle 615-681 ms where it is 260-280 (the FPL audit's B1).
+  const pillKey = [footShown, layer, cardOver, cardsUp, !!bar && barShown, top != null, pictureCard, !!pill, flying].join("|");
+  // The tabs alone, the bar's own fixed 4.25 rem band (below): known
+  // before it is first measured.
+  const tabsAlone = !!bar && barShown && !footShown && !cardsUp && !cardOver && !flying;
+  const [pillHeights, setPillHeights] = useState<Record<string, number>>({});
   useEffect(() => {
     if (!atPill || moving || !headBand) return;
     const measure = () => {
       if (!pillLaid.current || movingRef.current) return;
-      setPillHeight(Math.ceil(headBand.offsetHeight + (footShown && footNode ? footNode.offsetHeight : 0) + pillChrome));
+      const h = Math.ceil(headBand.offsetHeight + (footShown && footNode ? footNode.offsetHeight : 0) + pillChrome);
+      setPillHeight(h);
+      setPillHeights(was => (was[pillKey] === h ? was : { ...was, [pillKey]: h }));
     };
     measure();
     const watch = new ResizeObserver(measure);
     watch.observe(headBand);
     if (footShown && footNode) watch.observe(footNode);
     return () => watch.disconnect();
-  }, [atPill, moving, headBand, footNode, footShown, pillChrome]);
+  }, [atPill, moving, headBand, footNode, footShown, pillChrome, pillKey]);
 
   const footHalf = footHeights.half ?? footHeights.other ?? 0;
   const footFull = footHeights.other ?? footHeights.half ?? 0;
   // Where it comes to rest: the pill, half and all the way up, in px.
   const detents = useMemo<Detents>(() => {
-    const peek = pillHeight ?? Math.round(4.25 * rootPx()) + pillChrome;
+    const tabsPill = Math.round(4.25 * rootPx()) + pillChrome;
+    const peek = pillHeights[pillKey] ?? (tabsAlone ? tabsPill : pillHeight ?? tabsPill);
     const whole = Math.max(peek, room);
     const askedHalf = Math.max(peek, Math.min(Math.round(HALF_REM * rootPx()) + halfChrome, Math.round(whole * HALF_MOST)));
     const body = askedHalf - headHeight - halfChrome - footHalf;
@@ -374,13 +394,13 @@ export default function MapPanel({ label, top, kept, controls, compact, children
     // a fix's card was a line and an empty sheet up to the status bar.
     const full = cardFit === null ? whole : Math.max(Math.min(half, whole), Math.min(whole, headHeight + halfChrome + cardFit));
     return { peek, half: Math.min(half, full), full };
-  }, [pillHeight, pillChrome, room, halfChrome, headHeight, footHalf, cardFit]);
+  }, [pillHeight, pillHeights, pillKey, tabsAlone, pillChrome, room, halfChrome, headHeight, footHalf, cardFit]);
   const detentsRef = useRef(detents);
   const halfBody = Math.max(0, detents.half - headHeight - halfChrome - footHalf);
   const fullBody = Math.max(0, detents.full - headHeight - halfChrome - footFull);
 
   // What it covers of the map where it comes to rest (insetsOf).
-  const insetsFor = useCallback((s: PanelState, d: Detents) => insetsOf(s, d, onPhone, fromBottom), [onPhone, fromBottom]);
+  const insetsFor = useCallback((s: PanelState, d: Detents) => insetsOf(s, d, onPhone, fromBottom, safe.top), [onPhone, fromBottom, safe.top]);
 
   // The parts held in sight, `off` px in from where the popup's free edge
   // is laid out (its full height less its height now): a bottom sheet's

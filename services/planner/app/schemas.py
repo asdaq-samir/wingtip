@@ -2513,7 +2513,7 @@ class RouteOptions(BaseModel):
     current_along: RouteAlong | None = None
     #: The pilot's own route, [[lat, lon]] end to end, for the map.
     current_path: list[list[float]] = []
-    #: FPL's route line, in its order, "None" first; empty where there is
+    #: FPL's route line, in its order, "As typed" first; empty where there is
     #: nothing but the route itself to offer. Web and the native app both
     #: read their words from here.
     chips: list[RouteChip] = []

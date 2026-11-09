@@ -5,9 +5,10 @@ import { NotamWords, RiskWords, WeatherWords } from "./BriefWords";
 import FlightWatch from "./FlightWatch";
 
 /**
- * The Brief as it opens (BriefCard's overview): the assistant's field
- * first -- the Brief is the AI's home -- then the verdict with the risk
- * picture in words under it, the four glance cards (BriefGlance, the
+ * The Brief as it opens (BriefCard's overview): the verdict and its
+ * lines first, at the owner's word ("Verdict first", 2026-11-08), the
+ * assistant's field straight under them -- the Brief is the AI's home --
+ * then the risk picture in words, the four glance cards (BriefGlance, the
  * owner's D′), then the NOTAMs and the weather in words and the flight
  * watch. Nothing of the cards moves: the words and the watch are added
  * round them.

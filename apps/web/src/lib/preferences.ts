@@ -72,8 +72,33 @@ export type FlightRules = "vfr" | "ifr";
  *  from the head. In Setup's Layout. */
 export type RouteEdit = "box" | "folded" | "plan";
 
-/** The stock C172 until a pilot picks one of their own. */
+/** The stock C172: the profile a pilot's own airplane rides on where its
+ *  type has none of its own (aircraftChoice), and what the planner is
+ *  asked with while none is picked (NO_AIRPLANE), whose figures are then
+ *  not shown. */
 export const DEFAULT_AIRCRAFT: AircraftChoice = { profile: "c172", label: "C172 · Cessna 172" };
+
+/** No airplane picked: the planner is asked with the stock profile for the
+ *  route's own figures -- its course, miles, legs, checkpoints, weather,
+ *  airspace and ground, none of which an airplane changes -- and every
+ *  figure that needs one (times, fuel, speeds, tops of climb and descent,
+ *  weight and balance) is left out, not guessed. The owner (2026-11-08):
+ *  "If no airplane is entered, only show the distance and the things you
+ *  can without airplane profile, don't assume." It was a C172 at 40 gal
+ *  usable whose 18.4 gal a pilot could read as their own (the FPL audit's
+ *  A14). */
+export const NO_AIRPLANE: AircraftChoice = { profile: DEFAULT_AIRCRAFT.profile, label: "", none: true };
+
+/** Whether an airplane has been picked: its figures can be shown. */
+export const airplaneChosen = (aircraft: AircraftChoice): boolean => !aircraft.none;
+
+/** airplaneChosen, for a screen: whether to show what needs an airplane. */
+export const useAirplaneChosen = (): boolean => usePreferences(s => airplaneChosen(s.aircraft));
+
+/** The stock C172 as the default kept it, not one a pilot picked. */
+function isStockDefault(a: AircraftChoice | undefined): boolean {
+  return !a || (a.profile === DEFAULT_AIRCRAFT.profile && a.label === DEFAULT_AIRCRAFT.label && !a.tail && a.aircraftId === undefined && a.cruiseTasKt === undefined);
+}
 
 interface Preferences {
   /** The base chart: the sectional, or an IFR enroute chart. */
@@ -312,7 +337,7 @@ export const usePreferences = create<Preferences>()(
       stopKind: "all",
       loads: {}, tailFigures: {},
       keepOffline: false,
-      aircraft: DEFAULT_AIRCRAFT,
+      aircraft: NO_AIRPLANE,
       filters: DEFAULT_FILTERS,
       navBar: null,
       chartNight: "dimmed",
@@ -431,9 +456,12 @@ export const usePreferences = create<Preferences>()(
       // 5: the tabs for everyone, the strip and the field over the tabs
       // taken out of Setup (the owner, 2026-11-04: "I like the tab, I
       // don't want the strip or field, remove it from settings").
-      version: 5,
+      // 6: no airplane, not the stock C172, until one is picked (the
+      // owner, 2026-11-08): the C172 kept as the default is let go.
+      version: 6,
       migrate: (kept, from) => ({
         ...(kept as object),
+        ...(from < 6 && isStockDefault((kept as { aircraft?: AircraftChoice }).aircraft) ? { aircraft: NO_AIRPLANE } : {}),
         ...(from < 1 ? { waypoints: false } : {}),
         ...(from < 2 ? { airspace: true, navaids: true } : {}),
         ...(from < 3 ? { chartLight: "auto" } : {}),
@@ -480,7 +508,7 @@ export interface RecentRoute {
  *  How the map is drawn stays, the device's. */
 export function forgetPilot() {
   usePreferences.setState({
-    minimums: NO_MINIMUMS, routeWeather: "personal", loads: {}, aircraft: DEFAULT_AIRCRAFT, tailFigures: {},
+    minimums: NO_MINIMUMS, routeWeather: "personal", loads: {}, aircraft: NO_AIRPLANE, tailFigures: {},
     recentAirports: [], homeAirport: null, favoriteAirports: [],
     recentAircraft: [], favoriteAircraft: [], myAircraft: null, aircraftAlerts: [], recentRoutes: [],
   });

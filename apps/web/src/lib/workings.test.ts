@@ -26,6 +26,17 @@ describe("a leg worked out", () => {
     expect(w.climb!.min).toBeCloseTo(1.98, 1);
   });
 
+  test("a procedure's minutes are its own row, not the climb's", () => {
+    // The same leg flown out by a pattern departure 3.4 nm and 2.3 min
+    // longer than its line: 14.1 + 2.3 in the log, the climb still 2.
+    const w = workingsOf({
+      ...LEG, ete_min: 16.4, fuel_gal: 2.33,
+      procedure: { path: [], ft: [], nm: 23.4, landing: false, final_at: null, map_at: null, missed: null, more_nm: 3.4, more_min: 2.3, more_gal: 0.33 },
+    } as Leg)!;
+    expect(w.climb!.min).toBeCloseTo(1.98, 1);
+    expect(w.procedure).toMatchObject({ nm: 3.4, min: 2.3, landing: false });
+  });
+
   test("a student's figures are right within an E6B's accuracy, headings round the compass", () => {
     expect(checks("mh", 296, 294)).toBe(true);
     expect(checks("mh", 297, 294)).toBe(false);

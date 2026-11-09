@@ -262,6 +262,22 @@ test("a cleared route's box takes the departure first, then asks for the destina
   await expect(field).toHaveAttribute("placeholder", "Destination");
 });
 
+// Typed a key at a time, as a phone's keyboard sends it, the suggestions
+// change under every key and cmdk kept none highlighted, so Return did
+// nothing (the FPL audit's A1, 2026-11-08): fill's one change hid it.
+test("Return after an ident typed key by key takes the first suggestion", async ({ page }) => {
+  await page.goto("/app/plan");
+  await settle(page);
+  await openPanel(page);
+  const field = sideDrawer(page).getByTestId("route-type");
+  await field.click();
+  await field.pressSequentially("KUGN", { delay: 120 });
+  await expect(page.getByTestId("route-suggestions").getByRole("option").first()).toBeVisible({ timeout: slow(10_000) });
+  await field.press("Enter");
+  await expect(page).toHaveURL(/[?&]dep=KUGN(&|$)/);
+  await expect(field).toHaveValue("");
+});
+
 test("a link with a stop opens on the route through it", { tag: "@smoke" }, async ({ page }) => {
   await recordedStops(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KMSN");

@@ -162,7 +162,9 @@ def get_airport(ident: str, cache_path: Path = DEFAULT_CACHE_PATH) -> dict:
     if at is None and len(ident) == 4 and ident[0] == "K" and ident[1:].isalnum():
         at = rows.get(ident[1:])
     if at is None:
-        raise ValueError(f"Airport identifier {ident!r} not found in OurAirports data")
+        # The pilot's words, which the route box shows on the ident's own
+        # pill (the FPL audit's A2): what it is, not which file it is not in.
+        raise ValueError(f"No airport goes by {ident!r}.")
     row = _read_table(str(path), mtime).iloc[at]
     elevation = row.get("elevation_ft")
     return {

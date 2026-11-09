@@ -1,4 +1,6 @@
+import { useAirplaneChosen } from "../../../lib/preferences";
 import { useState } from "react";
+import { zoneName } from "../../../lib/clock";
 import { cn } from "cn";
 import type { Totals } from "../../../lib/api/types";
 import { FLYING_FIGURE, GROUP_HEADING, GROW_FIGURE, TEXT } from "../../../lib/text";
@@ -88,7 +90,10 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
   const stops = (totals?.hops.length ?? 0) > 0;
   const input = { totals, estimate, local, destination, depart, arrival, toDestination: stops && toDestination, flown };
   const exact = tripFigures(input, false);
-  const rounded = tripFigures(input, true);
+  // A dry run's figures keep the strip's own format, set smaller to fit
+  // rather than rounded ("1.2h", "102 nm" in the run against "1h 14m",
+  // "105.1 nm" in the plan, the FPL audit's A20; the owner's one strip).
+  const rounded = tripFigures(input, !flown);
   // The fuel required tapped, what it is made of (FuelBreakdown), at the
   // owner's ask ("fuel is the fuel required which gives a breakdown when
   // tapped"): once the nav log's figures are in.
@@ -97,7 +102,15 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
   // Each figure on its own: the one too wide for its column rounded, the
   // rest as they are, and set smaller together where that is not enough
   // (useFigureFit).
-  const { room, shown, sized, fitted, probes } = useFigureFit(exact, rounded, valueType, unitType);
+  // No airplane picked: the route's own figures alone, To and Dist --
+  // the time and the fuel are an airplane's, and none is assumed (the
+  // owner, 2026-11-08: "only show the distance and the things you can
+  // without airplane profile, don't assume").
+  const airplane = useAirplaneChosen();
+  const ours = (fs: typeof exact) => (airplane ? fs : fs.filter(f => f.name === "To" || f.name === "Dist"));
+  const { room, shown, sized, fitted, probes } = useFigureFit(ours(exact), ours(rounded), valueType, unitType);
+  // Which figures are buttons (below), each its 44-point area round it.
+  const tapped = (name: string) => (name === "Fuel" && !!breakdown) || (name === "To" && stops && !local) || ((name === "ETE" || name === "ETA") && !local);
   return (
     // What the planner is working on is the toast's (useProgressToast), at
     // the pilot's ask: the strip keeps the figures, as soon as there are
@@ -106,7 +119,7 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
     <div className="relative" data-slot="section-summary" data-tip="flight-line">
       {/* Each figure centred in its column, at the owner's ask ("Can the
           calculations be center aligned?"), as FigureStrip's are. */}
-      <dl className={cn("grid gap-3", shown.length === 3 ? "grid-cols-3" : "grid-cols-4")}>
+      <dl className={cn("grid gap-3", shown.length === 2 ? "grid-cols-2" : shown.length === 3 ? "grid-cols-3" : "grid-cols-4")}>
         {shown.map((f, i) => (
           <div key={f.name} className="min-w-0 text-center">
             {/* Its names and units a grey that reads on the pill's glass
@@ -115,8 +128,13 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
                 start and taxi, the reserve): beside the route's rows' fuel in
                 the tanks, "Fuel" read as the fuel burnt, 16.6 against the 13
                 gone from 40 to 27 (the owner's screenshot, 2026-11-06). */}
-            <dt className={cn(GROUP_HEADING, nameType, "truncate text-foreground/65")}>{f.name === "Fuel" ? "Fuel req" : f.name}</dt>
-            <dd ref={i === 0 ? room : undefined} className={cn(valueType, "truncate font-semibold tabular-nums")} data-testid={f.testId}>
+            <dt className={cn(GROUP_HEADING, nameType, "truncate text-foreground/65")}>{f.name === "Fuel" ? "Fuel req" : f.name === "ETA" ? `ETA ${zoneName()}` : f.name}</dt>
+            {/* Where the figure is a button, the dd does not clip: its
+                44-point area (the button's after) reached past it and was
+                cut off, so a tap 11 points over ETE or Fuel at half landed
+                on the name (the FPL audit's A17). The figure itself is cut
+                short instead (its own truncate). */}
+            <dd ref={i === 0 ? room : undefined} className={cn(valueType, "truncate font-semibold tabular-nums", tapped(f.name) && "overflow-visible")} data-testid={f.testId}>
               {f.name === "Fuel" && breakdown ? (
                 <ResponsivePopover open={breakdownOpen} onOpenChange={setBreakdownOpen}>
                   <ResponsivePopoverTrigger asChild>
@@ -126,11 +144,11 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
                     <button
                       type="button" data-testid="fuel-breakdown-open" data-alert={f.alert || undefined}
                       aria-label={`Fuel required, ${f.value} gallons${f.alert ? ", more than the tanks hold on a flight of the route" : ""}: what it is made of`}
-                      className={cn("relative inline-flex items-baseline after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']", f.alert ? "text-destructive" : "text-tint")}
+                      className={cn("relative inline-flex max-w-full items-baseline after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']", f.alert ? "text-destructive" : "text-tint")}
                     >
                       {/* Short said by a mark too, not the red alone (WCAG 1.4.1). */}
                       {f.alert && <TriangleAlert className="mr-0.5 size-[0.8em] self-center" aria-hidden data-testid="fuel-short-mark" />}
-                      <span style={sized("value")} data-fitted={fitted}>{f.value}</span>
+                      <span className="min-w-0 truncate" style={sized("value")} data-fitted={fitted}>{f.value}</span>
                       {/* Its space a no-break one: a flex item drops a
                           leading plain one, and it read "16.6gal" (the
                           owner's screenshot, 2026-11-06). */}
@@ -157,17 +175,17 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
                 <button
                   type="button" onClick={() => setToDestination(!toDestination)} data-testid="to-toggle"
                   aria-label={`To ${f.value}: show the ${toDestination ? "next stop" : "destination"}`}
-                  className="relative text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
+                  className="relative inline-flex max-w-full text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
                 >
-                  <span style={sized("value")} data-fitted={fitted}>{f.value}</span>
+                  <span className="min-w-0 truncate" style={sized("value")} data-fitted={fitted}>{f.value}</span>
                 </button>
               ) : (f.name === "ETE" || f.name === "ETA") && !local ? (
                 <button
                   type="button" onClick={() => setArrival(!arrival)} data-testid="ete-eta-toggle"
                   aria-label={`${f.name === "ETE" ? "Time en route" : "Arrival"}, ${f.value}: show the ${f.name === "ETE" ? "arrival" : "time en route"}`}
-                  className="relative text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
+                  className="relative inline-flex max-w-full text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
                 >
-                  <span style={sized("value")} data-fitted={fitted}>{f.value}</span>
+                  <span className="min-w-0 truncate" style={sized("value")} data-fitted={fitted}>{f.value}</span>
                 </button>
               ) : (
                 <>

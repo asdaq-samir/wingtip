@@ -86,7 +86,7 @@ const RUNS_ON_PX = 8;
 export default function RouteBox({
   dep, stops, dest, waypoints, airspaceOf, metarColourOf, altitudeAt, onAltitudeChange, onChange, onTypedProcedures, adding, onAddingChange, via,
   procedures = NO_PROCEDURES, onProcedures, onOpenAirport, onClear, directTo = null, onDirectTo, fuelStops = NO_FUEL_STOPS, onKeepFuelStops, onHideFuelStop,
-  footer, addAt = null, onDone,
+  footer, addAt = null, onDone, unknownPoint = null,
 }: RouteParts & {
   /** Which points are waypoints, flown through: in the sectional's magenta. */
   waypoints: Set<string>;
@@ -148,6 +148,12 @@ export default function RouteBox({
    *  folded away (RouteEdit's "folded"): opened from its line, the box
    *  takes the typing at once. */
   onDone?: () => void;
+  /** A point the planner does not know (usePlan's `unknownPlace`): its
+   *  pill in red, a tap on it the search to change it, and a line under
+   *  the box saying so with Remove -- where it happened, not the map's
+   *  problem line (CLAUDE.md, the FPL audit's A2). Its ident null where
+   *  the planner's answer named none. */
+  unknownPoint?: { ident: string | null } | null;
 }) {
   const hasDep = !!dep, hasDest = !!dest;
   const points = [...(hasDep ? [dep] : []), ...stops, ...(hasDest ? [dest] : [])];
@@ -314,7 +320,29 @@ export default function RouteBox({
     if (el && focused && at === null) el.scrollTo({ left: el.scrollWidth, behavior: prefersReducedMotion() ? "auto" : "smooth" });
   }, [pointCount, focused, at]);
   const isRoom = (e: MouseEvent<HTMLDivElement>) => e.target === e.currentTarget || e.target === slide.current;
+  // A finger's 44 points round each pill, as iOS gives a control: the
+  // pills are 28 tall in a row that clips them (it slides sideways), so
+  // their own ::after could not reach, and a tap 8 points over or under
+  // one landed on the box, which started typing a new destination (the
+  // FPL audit's A18). A tap on the box's room, or the footer's, within
+  // 22 points of a pill's middle and across it is that pill's.
+  const pillNear = (e: MouseEvent<HTMLDivElement>): HTMLElement | null => {
+    const el = slide.current;
+    if (!el) return null;
+    for (const pill of el.querySelectorAll<HTMLElement>("[data-point]")) {
+      const r = pill.getBoundingClientRect();
+      if (e.clientX >= r.left && e.clientX <= r.right && Math.abs(e.clientY - (r.top + r.height / 2)) <= 22) return pill;
+    }
+    return null;
+  };
   const toEnd = (e: MouseEvent<HTMLDivElement>) => {
+    const footerRoom = (e.target as HTMLElement).dataset.testid === "route-box-footer";
+    if (!isRoom(e) && !footerRoom) return;
+    const near = pillNear(e);
+    if (near) {
+      near.querySelector<HTMLElement>("button")?.click();
+      return;
+    }
     if (!isRoom(e)) return;
     if (atNow.current === null || (atNow.current === 0 && !hasDep)) {
       field.current?.focus();
@@ -364,7 +392,25 @@ export default function RouteBox({
       // typed, which is nothing, and the box emptied.
       const word = typed.trim().toUpperCase();
       const exact = rows.some(r => r.ident === word);
-      if (open && rows.length > 0 && (answered || !exact)) return;
+      if (open && rows.length > 0 && (answered || !exact)) {
+        // cmdk takes Enter on its highlighted row, but typed key by key,
+        // as a phone's keyboard does, the rows change under it and none
+        // stays highlighted, so Return did nothing (the FPL audit's A1,
+        // 2026-11-08). With none highlighted the first row shown is the
+        // one Return takes, as Maps' search does; its click is its select.
+        // By the suggestions' own popover: cmdk gives its list an id of
+        // its own, so the one asked for (listId) found nothing.
+        const list = document.querySelector('[data-testid="route-suggestions"]');
+        if (list && !list.querySelector("[cmdk-item][data-selected=true]")) {
+          const first = list.querySelector<HTMLElement>("[cmdk-item]:not([data-disabled=true])");
+          if (first) {
+            e.preventDefault();
+            first.click();
+            return;
+          }
+        }
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
       if (typed.trim()) commitTyped();
@@ -537,7 +583,8 @@ export default function RouteBox({
                         altitude={altitudeAt(point, waypoints.has(point))}
                         onEditAltitude={() => setEditing({ ident: point, waypoint: waypoints.has(point), altitude: altitudeAt(point, waypoints.has(point)) })}
                         onRemove={() => remove(i)}
-                        onOpen={onOpenAirport && !waypoints.has(point) && identOf(point) ? () => onOpenAirport(identOf(point)) : undefined}
+                        unknown={unknownPoint?.ident === point}
+                        onOpen={onOpenAirport && !waypoints.has(point) && identOf(point) && unknownPoint?.ident !== point ? () => onOpenAirport(identOf(point)) : undefined}
                         // Flown to: a stop or the destination, not where it starts.
                         direct={directTo !== null && sameField(directTo, point)}
                         onDirect={onDirectTo && i > 0 && hasDep ? () => onDirectTo(directTo !== null && sameField(directTo, point) ? null : point) : undefined}
@@ -640,6 +687,24 @@ export default function RouteBox({
           </AirportResults>
         </PopoverContent>
       </Popover>
+      {unknownPoint && (
+        // Under the box, in the destructive red its pill is drawn in, with
+        // the one thing to do that the pill's tap does not: Remove.
+        <div className="flex items-center gap-2 px-2 pt-1.5" role="alert" data-testid="route-unknown">
+          <TriangleAlert className="size-4 shrink-0 text-destructive" aria-hidden="true" />
+          <p className={cn("min-w-0 flex-1 text-destructive", TEXT.detail)}>
+            {unknownPoint.ident ? `${unknownPoint.ident} isn't an airport or waypoint we know. Tap it to change it.` : "A point of the route isn't an airport or waypoint we know."}
+          </p>
+          {unknownPoint.ident && points.includes(unknownPoint.ident) && (
+            <button
+              type="button" onClick={() => remove(points.indexOf(unknownPoint.ident!))} data-testid="route-unknown-remove"
+              className={cn("relative shrink-0 rounded-full px-1.5 font-semibold text-tint outline-none after:absolute after:-inset-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring", TEXT.detail)}
+            >
+              Remove
+            </button>
+          )}
+        </div>
+      )}
       <PointAltitudeDialog
         point={editing} onClose={() => setEditing(null)}
         onSet={(ident, feet) => { onAltitudeChange(ident, feet); setEditing(null); }}
@@ -736,8 +801,10 @@ function ProcedureChip({ procedure, before = false, onOpen }: {
  *  right-click with a mouse -- or Delete with it focused: a cross on every
  *  pill was a row of targets crowded between them, at the pilot's ask. Any
  *  of them, the ends too (RouteBox's `remove`). */
-function Pill({ id, ident, waypoint, index, role, stopNumber, airspaceOf, metarColourOf, altitude, onChange, onEditAltitude, onRemove, onOpen, direct, onDirect }: {
+function Pill({ id, ident, waypoint, index, role, stopNumber, airspaceOf, metarColourOf, altitude, onChange, onEditAltitude, onRemove, onOpen, direct, onDirect, unknown = false }: {
   id: string; ident: string; waypoint: boolean; index: number; role: "dep" | "stop" | "dest"; stopNumber: number;
+  /** Not a place the planner knows: in red, and invalid to a reader. */
+  unknown?: boolean;
   airspaceOf: (ident: string) => AirspaceClass | undefined;
   metarColourOf: (ident: string) => string | undefined;
   altitude: PointAltitude;
@@ -849,7 +916,8 @@ function Pill({ id, ident, waypoint, index, role, stopNumber, airspaceOf, metarC
         // Five letters wide whatever its ident, the ident centred, so the
         // pills line up (the owner, 2026-11-06: "make the route box a fixed
         // width of 5 letters"); a longer one, a pilot's own point, wider.
-        className={cn("h-7 min-w-[calc(5ch+6px)] rounded-full px-[3px]", TEXT.detail, "font-semibold")} onChange={onChange}
+        className={cn("h-7 min-w-[calc(5ch+6px)] rounded-full px-[3px]", TEXT.detail, "font-semibold", unknown && "text-destructive")} onChange={onChange}
+        invalid={unknown || undefined}
         open={changing} onOpenChange={setChanging} onTap={onOpen}
       />
     </span>

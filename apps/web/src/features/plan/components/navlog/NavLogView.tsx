@@ -25,7 +25,7 @@ import { GROUP_HEADING, TEXT } from "../../../../lib/text";
 import { type Description, descriptionKey } from "../../hooks/useCheckpointNotes";
 import { altFt, bearing, clockTime, etaAt, feetBelowClouds, legsWithoutWind, one, plannedWords, windAloft } from "../../format";
 import type { BriefingPart } from "../briefing/sections";
-import { isLegPoint, legOf, navLogRows, rowPoint, type NavLogRow, type RouteEnds } from "./rows";
+import { flownNmOf, isLegPoint, legOf, navLogRows, rowPoint, type NavLogRow, type RouteEnds } from "./rows";
 import LegWorkings from "./LegWorkings";
 import DiversionDrill from "./DiversionDrill";
 import RouteProfileSection from "./RouteProfileSection";
@@ -493,7 +493,8 @@ export default function NavLogView({
     {
       id: "dist",
       header: () => <Heading name="Dist" unit="nm" spoken="Distance, nautical miles" />,
-      cell: ({ row }) => (legOf(row.original) ? one(legOf(row.original)!.distance_nm) : "—"),
+      // With a procedure's miles where the leg ends (rows' procedureOf).
+      cell: ({ row }) => (legOf(row.original) ? one(flownNmOf(row.original)!) : "—"),
     },
     {
       id: "tc",

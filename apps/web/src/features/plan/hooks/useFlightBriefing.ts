@@ -1,3 +1,4 @@
+import { useAirplaneChosen } from "../../../lib/preferences";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
@@ -291,11 +292,16 @@ export function useFlightBriefing({
   const setItems = useVerdict(v => v.setItems);
   // The alternate is the weather's to say, where the weather says nothing
   // worse: a caution or a stop of its own, opening its section.
-  const items: VerdictItem[] = alternateFound
+  // No airplane picked: the fuel, the runways' distances and crosswind
+  // limits and the weight and balance are an airplane's, and are not
+  // judged on one assumed (the owner, 2026-11-08: "don't assume").
+  const airplane = useAirplaneChosen();
+  const found: VerdictItem[] = alternateFound
     ? verdictFound.map(i => (i.key === "weather" && (i.finding === "ok" || (alternateFound.finding === "stop" && i.finding !== "stop"))
       ? { ...i, ...alternateFound, tab: "arrive", section: "Alternate" } : i))
     : verdictFound;
-  const itemsKey = items.map(i => `${i.key}:${i.finding}:${i.detail}`).join("|");
+  const items = found.filter(i => airplane || !AIRPLANE_ITEMS.includes(i.key));
+  const itemsKey = `${airplane}|` + items.map(i => `${i.key}:${i.finding}:${i.detail}`).join("|");
   useEffect(() => {
     if (publish) setItems(items);
     // Keyed on what they say, not the array made each render.
@@ -413,3 +419,6 @@ export function useFlightBriefing({
 
 /** The briefing's view model, as its parts read it. */
 export type FlightBriefing = ReturnType<typeof useFlightBriefing>;
+
+/** The verdict's items that need an airplane's figures. */
+const AIRPLANE_ITEMS: VerdictItem["key"][] = ["fuel", "runways", "balance"];

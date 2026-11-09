@@ -54,6 +54,11 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
   const count = await lines.count();
   expect(count).toBeGreaterThanOrEqual(1);
   expect(count).toBeLessThanOrEqual(3);
+  // Verdict first, its lines, then Ask straight under them (the owner,
+  // 2026-11-08: "Verdict first"; it opened on Ask, the FPL audit's A9).
+  const top = async (id: string) => (await glance.getByTestId(id).first().boundingBox())!.y;
+  expect(await top("brief-verdict")).toBeLessThan(await lines.last().boundingBox().then(b => b!.y));
+  expect(await lines.last().boundingBox().then(b => b!.y)).toBeLessThan(await top("brief-ask"));
   for (const words of await glance.getByTestId("brief-line-words").allTextContents()) {
     expect(words.length).toBeLessThanOrEqual(140);
     expect(words).not.toMatch(/\. [A-Z]/);

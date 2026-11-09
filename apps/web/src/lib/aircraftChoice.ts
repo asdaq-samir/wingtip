@@ -6,7 +6,7 @@ import { callEngine } from "./engine/engine";
  *  The nav log's picker keys its options on it, and the Library's Aircraft
  *  ticks the one it matches. */
 export function aircraftKey(a: AircraftChoice): string {
-  return a.aircraftId != null ? `mine:${a.aircraftId}` : a.tail ? `tail:${a.tail}` : `profile:${a.profile}`;
+  return a.none ? "none" : a.aircraftId != null ? `mine:${a.aircraftId}` : a.tail ? `tail:${a.tail}` : `profile:${a.profile}`;
 }
 
 /** An N-number as a pilot types one, as 14 CFR 47.15(b) shapes it: N,

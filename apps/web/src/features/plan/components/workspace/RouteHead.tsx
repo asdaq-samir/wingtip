@@ -86,6 +86,7 @@ export default function RouteHead({ vm, controls }: { vm: PlanWorkspaceModel; co
         onOpenAirport={selectPlace}
         directTo={directParam} onDirectTo={directToPoint}
         onClear={clearRoute}
+        unknownPoint={s.unknownPlace}
         footer={controls}
         addAt={addAt}
         // Opened from its folded line: Done folds it again.

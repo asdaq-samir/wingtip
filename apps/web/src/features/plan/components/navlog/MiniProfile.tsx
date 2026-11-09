@@ -6,7 +6,8 @@ import type { Candidate, Leg } from "../../../../lib/api/types";
 import { Skeleton } from "../../../../components/ui/skeleton";
 import { routeProfileQuery } from "../../../../lib/queryClient";
 import { TEXT } from "../../../../lib/text";
-import { altFt } from "../../../../lib/units";
+import { altFt, flightLevel } from "../../../../lib/units";
+import { one } from "../../format";
 import { planProfile } from "./profile";
 import { navLogRows, type RouteEnds } from "./rows";
 const W = 340, H = 64;
@@ -84,6 +85,13 @@ export default memo(function MiniProfile({ ends, selected, legs, onOpen, preview
   const { data: profile } = useQuery(routeProfileQuery(dep, dest, stops));
   const plan = useMemo(() => planProfile(navLogRows(ends, selected, legs)), [ends, selected, legs]);
   const cruise = Math.max(0, ...plan.points.map(p => p.plan_ft));
+  // The miles flown by patterns and procedures past the chart's line,
+  // which the strip's distance (the totals' `procedure_nm`) and the nav
+  // log's rows count and the ground under the line cannot: said at the
+  // axis's end, so its 99 nm and the strip's 105.1 read as one figure
+  // (the FPL audit's A5, 2026-11-08).
+  const procedureNm = legs.reduce((nm, l) => nm + (l.procedure?.more_nm ?? 0), 0);
+  const procedureWord = legs.every(l => !l.procedure || (l.procedure.final_at == null && l.procedure.missed == null)) ? "pattern" : "procedures";
   const look = cn(
     "grid h-24 w-full shrink-0 grid-rows-[1fr_auto] overflow-hidden rounded-xl bg-background/70 px-2 pt-1.5 pb-1",
     "text-muted-foreground tabular-nums", TEXT.caption,
@@ -226,14 +234,18 @@ export default memo(function MiniProfile({ ends, selected, legs, onOpen, preview
           )}
           style={{ top: ruler ? `${(y(preview ?? cruise) / H) * 100}%` : `calc(${(y(preview ?? cruise) / H) * 100}% + 3px)` }} aria-hidden="true" data-testid="mini-profile-cruise"
         >
-          {altFt(preview ?? cruise)} ft
+          {/* The owner's FL-055, as the altitude field and the wheel write it
+              (lib/units flightLevel; the FPL audit's A7); a reader hears the
+              feet in the chart's own label. */}
+          {flightLevel(preview ?? cruise)}
         </span>
       )}
       </span>
       {/* The distance along, in nautical miles, under the chart's start,
           middle and end. */}
       <span className="flex justify-between" aria-hidden="true">
-        <span>0</span><span>{miles(profile.length_nm / 2)}</span><span>{miles(profile.length_nm)} nm</span>
+        <span>0</span><span>{miles(profile.length_nm / 2)}</span>
+        <span data-testid="mini-profile-length">{miles(profile.length_nm)} nm{procedureNm >= 0.5 && ` + ${one(procedureNm)} ${procedureWord}`}</span>
       </span>
     </>
   );

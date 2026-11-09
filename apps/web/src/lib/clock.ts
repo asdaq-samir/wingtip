@@ -19,6 +19,24 @@ export function clockTime(at: Date): string {
   return `${two(at.getHours())}:${two(at.getMinutes())}`;
 }
 
+let zoneFormat: Intl.DateTimeFormat | null = null;
+const zones = new Map<number, string>();
+/** This device's time zone as a clock time is read in it, "CST" (or
+ *  "GMT-6" where the browser has no short name): said beside a clock
+ *  time, which was a bare "03:58" where flight plans and reports use Z
+ *  (the FPL audit's A19). One formatter, made the first time, and one
+ *  answer kept per offset from UTC (see above for what they cost). */
+export function zoneName(at: Date = new Date()): string {
+  const offset = at.getTimezoneOffset();
+  let name = zones.get(offset);
+  if (name === undefined) {
+    zoneFormat ??= new Intl.DateTimeFormat("en-US", { timeZoneName: "short" });
+    name = zoneFormat.formatToParts(at).find(p => p.type === "timeZoneName")?.value ?? "local";
+    zones.set(offset, name);
+  }
+  return name;
+}
+
 /** UTC hours and minutes in four figures, as a flight plan's item 13
  *  takes them: "1505". */
 export function utcFigures(at: Date): string {

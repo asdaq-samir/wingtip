@@ -65,8 +65,19 @@ export function restingAt(detents: Detents, to: number, speed: number): PanelSta
     ...names.filter(s => detents[s] === to),
     ...(over.length ? [nearest(over, to)] : []),
   ];
+  // A flick, however short, goes on to the next size the way it was
+  // thrown, as Apple Maps' sheet does: a 60-point flick from half went all
+  // the way up in two runs of three and back to half in the third (the
+  // FPL audit's B2, 2026-11-08), the throw's fifth of a second not
+  // carrying it past the middle. Still one size at most.
+  if (speed >= FLICK_SPEED && over.length) return nearest(over, to);
+  if (speed <= -FLICK_SPEED && under.length) return nearest(under, to);
   return nearest(reach, aim);
 }
+
+/** Points a millisecond past which a release is a flick (B2's): a
+ *  finger set down and held is far under it, a deliberate throw over. */
+export const FLICK_SPEED = 0.5;
 
 /** How long a settle over `distance` px takes, in seconds: the pill to
  *  half's time over its distance (SHEET_SECONDS over SETTLE_POINTS), the

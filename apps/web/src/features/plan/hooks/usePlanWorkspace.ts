@@ -353,6 +353,8 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     stops: string[]; fuel: string[];
     withFuel: FuelCard | null;
     ownMinutes: number | null; ownGround: number; ownNm: number | null;
+    /** The typed route's fuel burnt, its nav log's (Totals.fuel_gal). */
+    ownGal: number | null;
     /** The ways' stops, as they have been offered from it. */
     ways: string[][];
   }>(null);
@@ -406,6 +408,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   const gridOwnMin = (routeWays?.current_along?.bands ?? []).reduce((sum, b) => sum + b.min, 0);
   const ownMinutes = s.totals?.ete_min ?? (gridOwnMin || null);
   const ownNm = s.totals?.distance_nm ?? s.course?.distance_nm ?? null;
+  const ownGal = s.totals?.fuel_gal ?? null;
   // And its minutes on the ground at the fields it lands at (`ground`,
   // else the owner's 30), as the ways count theirs: the nav log's totals
   // are air time alone, and Your Route read shorter than a way through
@@ -2016,11 +2019,11 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     if (!browsing) {
       setBrowsing({
         key: chosenKey, stops: planned.stops, fuel: (searchParams.get("fuel") ?? "").split(",").filter(Boolean),
-        withFuel: ownWithFuel, ownMinutes, ownGround, ownNm, ways: chips.map(c => c.stops),
+        withFuel: ownWithFuel, ownMinutes, ownGround, ownNm, ownGal, ways: chips.map(c => c.stops),
       });
     }
     setStops(chip.stops, chip.fuel, true);
-  }, [browsing, chips, chosenKey, planned.stops, searchParams, ownWithFuel, ownMinutes, ownGround, ownNm, setStops, setBrowsing]);
+  }, [browsing, chips, chosenKey, planned.stops, searchParams, ownWithFuel, ownMinutes, ownGround, ownNm, ownGal, setStops, setBrowsing]);
   // The rules turned to IFR on a chip: the route as typed is the route
   // (the planner's ways are VFR's).
   useEffect(() => {
@@ -2053,15 +2056,34 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     const minutes = browsing ? browsing.ownMinutes : ownMinutes;
     const ground = browsing ? browsing.ownGround : ownGround;
     const scale = gridScale(routeWays, minutes);
+    const wayOf = (chip: (typeof chips)[number]) => (chip.key === "fuel" ? routeWays?.own : routeWays?.options.find(o => sameStops(o.stops, chip.stops)));
     const timeOf = (chip: (typeof chips)[number]): string | null => {
       if (chip.key === "none") return minutes === null ? null : duration(minutes + ground);
-      const way = chip.key === "fuel" ? routeWays?.own : routeWays?.options.find(o => sameStops(o.stops, chip.stops));
+      const way = wayOf(chip);
       return way ? wayTime(way, scale) : null;
     };
-    return {
-      chips: chips.map(c => ({ key: c.key, label: c.label, warning: warning(c.crosses ?? []), time: timeOf(c) })), picked: lineKey, onPick: applyChip,
+    // Each card's miles and fuel, as ForeFlight's Route Advisor and
+    // Garmin's Routes give them, at the owner's word (2026-11-08): the
+    // route as typed by its own nav log's totals, a way by the planner's
+    // answer for it (RouteOption's distance_nm and fuel_gal), none worked
+    // out here. "None" and "Over Land" at 1h 14m each told a pilot
+    // nothing apart (the FPL audit's A15).
+    const typedNm = browsing ? browsing.ownNm : ownNm;
+    const typedGal = browsing ? browsing.ownGal : ownGal;
+    const figuresOf = (chip: (typeof chips)[number]) => {
+      if (chip.key === "none") return { nm: typedNm, gal: typedGal };
+      const way = wayOf(chip);
+      return { nm: way?.distance_nm ?? null, gal: way?.fuel_gal ?? null };
     };
-  }, [vfrRoute, chips, routeWays, lineKey, applyChip, browsing, ownMinutes, ownGround]);
+    const typed = chips.find(c => c.key === "none");
+    const cards = chips.map(c => ({ key: c.key, label: c.key === "none" ? "As typed" : c.label, warning: warning(c.crosses ?? []), time: timeOf(c), ...figuresOf(c) }))
+      // A way no different from the route as typed -- its time, and its
+      // miles within one -- is not offered beside it (the owner's word on
+      // A15), unless it is the one picked.
+      .filter(card => card.key === "none" || card.key === lineKey || !typed || !(card.time === timeOf(typed) && card.nm != null && typedNm != null && Math.abs(card.nm - typedNm) < 1));
+    if (cards.length < 2) return null;
+    return { chips: cards, picked: lineKey, onPick: applyChip };
+  }, [vfrRoute, chips, routeWays, lineKey, applyChip, browsing, ownMinutes, ownGround, ownNm, ownGal]);
 
   // The chips' ways on the chart beside the course while the line is open,
   // each its time on its chip, the one picked solid (the owner's "I want

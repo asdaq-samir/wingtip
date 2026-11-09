@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { describeError, detailOf, GatewayRequest, ndjson, STREAM_QUIET_MS } from "./client";
+import { ApiError, describeError, detailOf, GatewayRequest, ndjson, STREAM_QUIET_MS, unknownPlaceOf } from "./client";
+
+describe("unknownPlaceOf", () => {
+  test("names the ident a 404 quotes, and nothing for any other failure", () => {
+    expect(unknownPlaceOf(new ApiError("No airport goes by 'KZZZ'.", 404))).toBe("KZZZ");
+    expect(unknownPlaceOf(new ApiError("No airport or waypoint goes by 'vpxyz'.", 404))).toBe("VPXYZ");
+    expect(unknownPlaceOf(new ApiError("planner service unreachable", 502))).toBeNull();
+    expect(unknownPlaceOf(new Error("No airport goes by 'KZZZ'."))).toBeNull();
+  });
+});
 
 describe("GatewayRequest", () => {
   test("the planner's paths go through the gateway, the query and the body as they were", async () => {

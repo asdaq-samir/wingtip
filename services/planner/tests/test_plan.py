@@ -532,7 +532,7 @@ def test_an_altitude_the_pilot_set_is_checked_against_the_band_and_warned_not_re
     # 5,500 westbound, above 3,000 ft over the ground: off the rule.
     assert planning.own_altitude_caution(selection, at(5500.0), ("C81", "VPBNG")) == {
         "from_ident": "C81", "to_ident": "VPBNG", "altitude_ft": 5500.0,
-        "reasons": ["Westbound above 3,800 ft flies even thousands plus 500 (14 CFR 91.159)"],
+        "reasons": ["Westbound more than 3,000 ft above the ground flies even thousands plus 500: fly 4,500 or 6,500 ft (14 CFR 91.159)"],
     }
     # Under the floor: under the rule too, so that alone.
     assert planning.own_altitude_caution(selection, at(3000.0), ("C81", "VPBNG"))["reasons"] == [
