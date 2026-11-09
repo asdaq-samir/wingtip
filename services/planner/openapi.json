@@ -9229,6 +9229,109 @@
         "title": "Forecast",
         "type": "object"
       },
+      "ForecastRun": {
+        "description": "The dry run against the forecast, and the products that could not be had.",
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/RunAlert"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "areas": {
+            "items": {
+              "$ref": "#/components/schemas/RunArea"
+            },
+            "title": "Areas",
+            "type": "array"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/RunFieldForecast"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "legs": {
+            "items": {
+              "$ref": "#/components/schemas/RunLeg"
+            },
+            "title": "Legs",
+            "type": "array"
+          },
+          "samples": {
+            "items": {
+              "$ref": "#/components/schemas/RunSample"
+            },
+            "title": "Samples",
+            "type": "array"
+          },
+          "unavailable": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unavailable",
+            "type": "array"
+          }
+        },
+        "required": [
+          "samples",
+          "legs",
+          "fields",
+          "areas",
+          "alerts",
+          "unavailable"
+        ],
+        "title": "ForecastRun",
+        "type": "object"
+      },
+      "ForecastRunAsk": {
+        "description": "The dry run to play against the forecast.",
+        "properties": {
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/RunField"
+            },
+            "maxItems": 12,
+            "title": "Fields",
+            "type": "array"
+          },
+          "minimums": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunMinimums"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rules": {
+            "default": "VFR",
+            "enum": [
+              "VFR",
+              "IFR"
+            ],
+            "title": "Rules",
+            "type": "string"
+          },
+          "track": {
+            "items": {
+              "$ref": "#/components/schemas/RunPoint"
+            },
+            "maxItems": 600,
+            "minItems": 1,
+            "title": "Track",
+            "type": "array"
+          }
+        },
+        "required": [
+          "track"
+        ],
+        "title": "ForecastRunAsk",
+        "type": "object"
+      },
       "ForecastStation": {
         "description": "A TAF station near the route: the worst it forecasts over the\nwhole flight (`ceiling_ft`, `visibility_sm`, the go/no-go read), and\n-- placed along the route -- when the flight gets there and the worst\nit forecasts within an hour of then, with the TAF as issued.",
         "properties": {
@@ -17830,6 +17933,516 @@
         "title": "RouteTfr",
         "type": "object"
       },
+      "RunAlert": {
+        "description": "What the run is warned of, when and where, its rule and product cited.",
+        "properties": {
+          "kind": {
+            "enum": [
+              "vfr_minimums",
+              "pilot_minimums",
+              "sigmet",
+              "gairmet",
+              "outlook"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "t": {
+            "title": "T",
+            "type": "number"
+          },
+          "words": {
+            "title": "Words",
+            "type": "string"
+          }
+        },
+        "required": [
+          "t",
+          "lat",
+          "lon",
+          "kind",
+          "words",
+          "source"
+        ],
+        "title": "RunAlert",
+        "type": "object"
+      },
+      "RunArea": {
+        "description": "An advisory area the run is in at some time: in words, cited, its\naltitudes (ft MSL), when in force, and its outline ([lat, lon]).",
+        "properties": {
+          "coords": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Coords",
+            "type": "array"
+          },
+          "high_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "High Ft"
+          },
+          "kind": {
+            "enum": [
+              "sigmet",
+              "gairmet",
+              "outlook"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "low_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low Ft"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid To"
+          },
+          "words": {
+            "title": "Words",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "words",
+          "source",
+          "low_ft",
+          "high_ft",
+          "valid_from",
+          "valid_to",
+          "coords"
+        ],
+        "title": "RunArea",
+        "type": "object"
+      },
+      "RunField": {
+        "description": "A field the run takes off from or lands at, and when.",
+        "properties": {
+          "ident": {
+            "maxLength": 8,
+            "minLength": 1,
+            "title": "Ident",
+            "type": "string"
+          },
+          "lat": {
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Lon",
+            "type": "number"
+          },
+          "role": {
+            "enum": [
+              "departure",
+              "stop",
+              "destination"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "t": {
+            "title": "T",
+            "type": "number"
+          }
+        },
+        "required": [
+          "ident",
+          "role",
+          "t",
+          "lat",
+          "lon"
+        ],
+        "title": "RunField",
+        "type": "object"
+      },
+      "RunFieldForecast": {
+        "description": "A field's TAF at the run's time there.",
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "enum": [
+                  "VFR",
+                  "MVFR",
+                  "IFR",
+                  "LIFR"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "ceiling_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ceiling Ft"
+          },
+          "ceiling_unknown": {
+            "title": "Ceiling Unknown",
+            "type": "boolean"
+          },
+          "ident": {
+            "title": "Ident",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "departure",
+              "stop",
+              "destination"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "t": {
+            "title": "T",
+            "type": "number"
+          },
+          "visibility_sm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visibility Sm"
+          }
+        },
+        "required": [
+          "ident",
+          "role",
+          "t",
+          "category",
+          "ceiling_ft",
+          "ceiling_unknown",
+          "visibility_sm",
+          "source"
+        ],
+        "title": "RunFieldForecast",
+        "type": "object"
+      },
+      "RunLeg": {
+        "description": "A leg as flown: its nav log row, when, and its worst forecast category.",
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "enum": [
+                  "VFR",
+                  "MVFR",
+                  "IFR",
+                  "LIFR"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "from_t": {
+            "title": "From T",
+            "type": "number"
+          },
+          "row": {
+            "title": "Row",
+            "type": "integer"
+          },
+          "to_t": {
+            "title": "To T",
+            "type": "number"
+          },
+          "worst_t": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worst T"
+          }
+        },
+        "required": [
+          "row",
+          "from_t",
+          "to_t",
+          "category",
+          "worst_t"
+        ],
+        "title": "RunLeg",
+        "type": "object"
+      },
+      "RunMinimums": {
+        "description": "The pilot's personal minimums, each None until set.",
+        "properties": {
+          "ceiling_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ceiling Ft"
+          },
+          "visibility_sm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visibility Sm"
+          }
+        },
+        "title": "RunMinimums",
+        "type": "object"
+      },
+      "RunPoint": {
+        "description": "A point of the dry run: when (s since 1970), where, how high (ft\nMSL, None on the ground or not known) and the nav log's row it flies to.",
+        "properties": {
+          "alt_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alt Ft"
+          },
+          "lat": {
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Lon",
+            "type": "number"
+          },
+          "row": {
+            "minimum": 0.0,
+            "title": "Row",
+            "type": "integer"
+          },
+          "t": {
+            "title": "T",
+            "type": "number"
+          }
+        },
+        "required": [
+          "t",
+          "lat",
+          "lon",
+          "row"
+        ],
+        "title": "RunPoint",
+        "type": "object"
+      },
+      "RunSample": {
+        "description": "What the airplane meets at a point: the forecast ceiling (ft above\nthe ground) and visibility then and its flight category (AIM 7-1-7),\nwhose forecast it is, the wind aloft at its altitude, and the areas\n(indexes into `areas`) it is in.",
+        "properties": {
+          "areas": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Areas",
+            "type": "array"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "enum": [
+                  "VFR",
+                  "MVFR",
+                  "IFR",
+                  "LIFR"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "ceiling_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ceiling Ft"
+          },
+          "ceiling_unknown": {
+            "title": "Ceiling Unknown",
+            "type": "boolean"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "t": {
+            "title": "T",
+            "type": "number"
+          },
+          "visibility_sm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visibility Sm"
+          },
+          "wind_dir_true_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wind Dir True Deg"
+          },
+          "wind_speed_kt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wind Speed Kt"
+          }
+        },
+        "required": [
+          "t",
+          "lat",
+          "lon",
+          "category",
+          "ceiling_ft",
+          "ceiling_unknown",
+          "visibility_sm",
+          "source",
+          "wind_dir_true_deg",
+          "wind_speed_kt",
+          "areas"
+        ],
+        "title": "RunSample",
+        "type": "object"
+      },
       "Runway": {
         "properties": {
           "closed": {
@@ -24120,6 +24733,49 @@
         "x-gateway": {
           "access": "public",
           "cache": true
+        }
+      }
+    },
+    "/api/forecast/run": {
+      "post": {
+        "description": "The dry run against the forecast for the hours it flies: a product\nthat cannot be had is named in `unavailable`, the rest still read.",
+        "operationId": "forecast_dry_run_api_forecast_run_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForecastRunAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForecastRun"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Forecast Dry Run",
+        "x-gateway": {
+          "access": "public",
+          "csrf": false
         }
       }
     },

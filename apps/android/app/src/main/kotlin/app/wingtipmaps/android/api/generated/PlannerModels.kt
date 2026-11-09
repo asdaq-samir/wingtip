@@ -3342,6 +3342,182 @@ data class FlowProgram (
 )
 
 /**
+ * The dry run against the forecast, and the products that could not be had.
+ */
+@Serializable
+data class ForecastRun (
+    val alerts: List<RunAlert>,
+    val areas: List<RunArea>,
+    val fields: List<RunFieldForecast>,
+    val legs: List<RunLeg>,
+    val samples: List<RunSample>,
+    val unavailable: List<String>
+)
+
+/**
+ * What the run is warned of, when and where, its rule and product cited.
+ */
+@Serializable
+data class RunAlert (
+    val kind: String,
+    val lat: Double,
+    val lon: Double,
+    val source: String,
+    val t: Double,
+    val words: String
+)
+
+/**
+ * An advisory area the run is in at some time: in words, cited, its
+ * altitudes (ft MSL), when in force, and its outline ([lat, lon]).
+ */
+@Serializable
+data class RunArea (
+    val coords: List<List<Double>>,
+
+    @SerialName("high_ft")
+    val highFt: Double? = null,
+
+    val kind: String,
+
+    @SerialName("low_ft")
+    val lowFt: Double? = null,
+
+    val source: String,
+
+    @SerialName("valid_from")
+    val validFrom: Double? = null,
+
+    @SerialName("valid_to")
+    val validTo: Double? = null,
+
+    val words: String
+)
+
+/**
+ * A field's TAF at the run's time there.
+ */
+@Serializable
+data class RunFieldForecast (
+    val category: String? = null,
+
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    @SerialName("ceiling_unknown")
+    val ceilingUnknown: Boolean,
+
+    val ident: String,
+    val role: String,
+    val source: String? = null,
+    val t: Double,
+
+    @SerialName("visibility_sm")
+    val visibilitySm: Double? = null
+)
+
+/**
+ * A leg as flown: its nav log row, when, and its worst forecast category.
+ */
+@Serializable
+data class RunLeg (
+    val category: String? = null,
+
+    @SerialName("from_t")
+    val fromT: Double,
+
+    val row: Int,
+
+    @SerialName("to_t")
+    val toT: Double,
+
+    @SerialName("worst_t")
+    val worstT: Double? = null
+)
+
+/**
+ * What the airplane meets at a point: the forecast ceiling (ft above
+ * the ground) and visibility then and its flight category (AIM 7-1-7),
+ * whose forecast it is, the wind aloft at its altitude, and the areas
+ * (indexes into `areas`) it is in.
+ */
+@Serializable
+data class RunSample (
+    val areas: List<Int>,
+    val category: String? = null,
+
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    @SerialName("ceiling_unknown")
+    val ceilingUnknown: Boolean,
+
+    val lat: Double,
+    val lon: Double,
+    val source: String? = null,
+    val t: Double,
+
+    @SerialName("visibility_sm")
+    val visibilitySm: Double? = null,
+
+    @SerialName("wind_dir_true_deg")
+    val windDirTrueDeg: Double? = null,
+
+    @SerialName("wind_speed_kt")
+    val windSpeedKt: Double? = null
+)
+
+/**
+ * The dry run to play against the forecast.
+ */
+@Serializable
+data class ForecastRunAsk (
+    val fields: List<RunField>? = null,
+    val minimums: RunMinimums? = null,
+    val rules: String? = null,
+    val track: List<RunPoint>
+)
+
+/**
+ * A field the run takes off from or lands at, and when.
+ */
+@Serializable
+data class RunField (
+    val ident: String,
+    val lat: Double,
+    val lon: Double,
+    val role: String,
+    val t: Double
+)
+
+/**
+ * The pilot's personal minimums, each None until set.
+ */
+@Serializable
+data class RunMinimums (
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    @SerialName("visibility_sm")
+    val visibilitySm: Double? = null
+)
+
+/**
+ * A point of the dry run: when (s since 1970), where, how high (ft
+ * MSL, None on the ground or not known) and the nav log's row it flies to.
+ */
+@Serializable
+data class RunPoint (
+    @SerialName("alt_ft")
+    val altFt: Double? = null,
+
+    val lat: Double,
+    val lon: Double,
+    val row: Int,
+    val t: Double
+)
+
+/**
  * The wind a TAF forecasts at a field for a time (wingtip.weather.
  * forecast_wind): its own TAF's, else the nearest station's within 30
  * nm (`ident`, `distance_nm`). From true north; `dir_true_deg` None for
