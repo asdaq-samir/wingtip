@@ -16,6 +16,7 @@ export const SCREENS = {
   favorites: { title: "Favorites" },
   nearest: { title: "Nearest" },
   emergency: { title: "Emergency Assistant" },
+  checklists: { title: "Checklists" },
   airplanes: { title: "Your Airplanes" },
   logbook: { title: "Logbook" },
   coach: { title: "Coach" },

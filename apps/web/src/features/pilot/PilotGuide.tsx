@@ -4,10 +4,9 @@ import { RowBadge } from "../../components/RowBadge";
 import { SETTING_BADGE } from "../../lib/rowBadges";
 import { useTips } from "../../lib/firstRunTips";
 import { cn } from "cn";
-import { ConsolePages, PageRow, StepRow } from "../../components/ConsolePages";
-import DrillPage from "./DrillPage";
-import HoldingPage from "./HoldingPage";
-import LostCommsPage from "./LostCommsPage";
+import { ConsolePages, StepRow } from "../../components/ConsolePages";
+import { PracticeGroup } from "./Practice";
+import { practicePages } from "./practicePages";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { cruiseReferenceFt } from "../../lib/performance";
 import { TEXT } from "../../lib/text";
@@ -40,15 +39,7 @@ function Tip({ title, children }: { title: string; children: ReactNode }) {
  */
 export default function PilotGuide() {
   return (
-    <ConsolePages
-      back="Guide"
-      pages={{
-        "light-gun": { title: "Light gun signals", content: <DrillPage deck="light-gun" /> },
-        "vfr-minimums": { title: "VFR weather minimums", content: <DrillPage deck="vfr-minimums" /> },
-        holding: { title: "Holding entries", content: <HoldingPage /> },
-        "lost-comms": { title: "Lost communications", content: <LostCommsPage /> },
-      }}
-    >
+    <ConsolePages back="Guide" pages={practicePages()}>
       <div className="space-y-6" data-testid="pilot-guide">
         <p className={cn("px-1 text-foreground", TEXT.prose)}>
           Wingtip Maps plans a VFR flight on the FAA sectional: the route, the checkpoints you will see from the air, the nav log and the
@@ -146,12 +137,7 @@ export default function PilotGuide() {
           </Tip>
         </ListGroup>
 
-        <ListGroup title="Practice">
-          <PageRow page="light-gun" title="Light gun signals" description="14 CFR 91.125" />
-          <PageRow page="vfr-minimums" title="VFR weather minimums" description="14 CFR 91.155" />
-          <PageRow page="holding" title="Holding entries" description="AIM 5-3-8: the entry, drawn, and the wind" />
-          <PageRow page="lost-comms" title="Lost communications" description="14 CFR 91.185: route, altitude, and when to leave" />
-        </ListGroup>
+        <PracticeGroup title="Practice" />
       </div>
     </ConsolePages>
   );

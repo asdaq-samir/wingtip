@@ -67,7 +67,7 @@ Android, the address on the web) or `wingtipmaps://plan?open=<id>` from another 
 | `nearest` | Nearest | yes | yes | yes | The fields nearest the airplane. |
 | `ask` | Ask | -- | yes | yes | Ask the assistant about the flight. |
 | `emergency` | Emergency Assistant | yes | yes | yes | The emergency assistant: the nearest fields, the checklist, 7700 and 121.5. |
-| `checklists` | Checklists | -- | yes | yes | The picked airplane's checklists. |
+| `checklists` | Checklists | yes | yes | yes | The picked airplane's checklists. |
 | `airplanes` | Your Airplanes | yes | yes | -- | The pilot's own airplanes, their figures, checklists and squawks. |
 | `logbook` | Logbook | yes | yes | yes | The pilot's logbook and currency. |
 | `coach` | Coach | yes | yes | yes | The training coach. |
