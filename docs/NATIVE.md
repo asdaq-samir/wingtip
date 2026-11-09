@@ -139,13 +139,17 @@ rules (here the engine) for the rest. The app follows that, and these
 pieces close the gaps a review against Apple's guidance found (the
 owner, 2026-11-03):
 
-- **App Intents** (`Wingtip/Intents/`): plan a trip to a place, the
-  nearest airports, the weather at a field and direct to a place, as
-  Siri, Shortcuts and Spotlight phrases (`WingtipShortcuts`). The airport
+- **App Intents** (`Wingtip/Intents/`): plan a trip to a place, brief a
+  flight to one (the Brief opened through `BriefAsk`), the nearest
+  airports, the weather at a field, direct to a place, and start or stop
+  listening to the radio ("start recording"), as Siri, Shortcuts and
+  Spotlight phrases (`WingtipShortcuts`). The fields Siri suggests are
+  indexed in Spotlight (`AirportSpotlight`, an `IndexedEntity`) and open
+  their card (`OpenAirportIntent`). The airport
   is an App Entity (`AirportEntity`: the kept route's, the Favorites and
   the Recents suggested, the planner's search behind them), so "Plan a
   trip to KLAS in Wingtip Maps" goes in one breath. An intent that needs
-  the app sets `PendingCommand`, which `RootView` applies.
+  the app sets `PendingCommand`, which `RootView` applies (`RootView+Commands.swift`).
 - **Home Screen widgets** (`WingtipWidgets/FlightWidgets.swift`,
   `Wingtip/WidgetFeed.swift`, `Wingtip/Shared/WidgetSnapshot.swift`): the
   next flight's route, figures, Go / No-Go and departure weather on the

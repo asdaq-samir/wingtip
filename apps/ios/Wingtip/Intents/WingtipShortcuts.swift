@@ -7,7 +7,7 @@ import AppIntents
 /// Recents: AirportEntityQuery.suggestedEntities), so the app calls
 /// `updateAppShortcutParameters()` when those change. A navaid or a fix
 /// for Direct To is free text, asked for after the phrase. Shown in the
-/// Shortcuts app and Spotlight as well.
+/// Shortcuts app and Spotlight as well. Apple allows ten; these are eight.
 struct WingtipShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
@@ -20,6 +20,17 @@ struct WingtipShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Plan a Trip",
             systemImageName: "airplane"
+        )
+        AppShortcut(
+            intent: BriefFlightIntent(),
+            phrases: [
+                "Brief my flight to \(\.$airport) in \(.applicationName)",
+                "Brief a flight to \(\.$airport) in \(.applicationName)",
+                "Brief me for \(\.$airport) in \(.applicationName)",
+                "Brief my flight in \(.applicationName)",
+            ],
+            shortTitle: "Brief a Flight",
+            systemImageName: "checklist"
         )
         AppShortcut(
             intent: NearestAirportsIntent(),
@@ -57,6 +68,25 @@ struct WingtipShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Direct to a Fix",
             systemImageName: "point.topleft.down.to.point.bottomright.curvepath"
+        )
+        AppShortcut(
+            intent: StartListeningIntent(),
+            phrases: [
+                "Start recording in \(.applicationName)",
+                "Start recording the radio in \(.applicationName)",
+                "Listen to the radio in \(.applicationName)",
+            ],
+            shortTitle: "Start Listening",
+            systemImageName: "mic"
+        )
+        AppShortcut(
+            intent: StopListeningIntent(),
+            phrases: [
+                "Stop recording in \(.applicationName)",
+                "Stop listening to the radio in \(.applicationName)",
+            ],
+            shortTitle: "Stop Listening",
+            systemImageName: "mic.slash"
         )
     }
 }
