@@ -53,20 +53,20 @@ struct BriefView: View {
                                 Label(reason, systemImage: "xmark.octagon.fill").foregroundStyle(.red)
                                     .id(rowId("vnr", i, anchorAt: weatherAt, anchor: VerdictTarget.weatherAnchor))
                             }
-                        } header: { Text("VFR flight not recommended") }
+                        } header: { SectionTitle("VFR Flight Not Recommended") }
                     }
                     if !briefing.weatherUnavailable.isEmpty {
-                        Section("Not available") {
+                        Section(title: "Not Available") {
                             ForEach(briefing.weatherUnavailable, id: \.self) { Text($0).foregroundStyle(.secondary) }
                         }
                     }
                     if !briefing.hazards.isEmpty {
-                        Section("Hazards") {
+                        Section(title: "Hazards") {
                             ForEach(Array(briefing.hazards.enumerated()), id: \.offset) { i, hazard in
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text([hazard.type, hazard.hazard].compactMap { $0 }.joined(separator: " · ")).font(.headline)
                                     if let low = hazard.altitudeLowFt, let high = hazard.altitudeHighFt {
-                                        Text("\(Int(low).formatted()) to \(Int(high).formatted()) ft").font(.footnote).foregroundStyle(.secondary)
+                                        Text(Format.altitudeRange(low, high)).font(.footnote).foregroundStyle(.secondary)
                                     }
                                     if let raw = hazard.raw { Text(raw).font(.footnote.monospaced()).foregroundStyle(.secondary) }
                                 }
@@ -77,12 +77,12 @@ struct BriefView: View {
                         }
                     }
                     if let gairmets = briefing.gairmets, !gairmets.isEmpty {
-                        Section("G-AIRMETs") {
+                        Section(title: "G-AIRMETs") {
                             ForEach(Array(gairmets.enumerated()), id: \.offset) { i, g in
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text([g.hazard, g.severity].compactMap { $0 }.joined(separator: " · ")).font(.headline)
-                                    HStack(spacing: 8) {
-                                        if let low = g.altitudeLowFt, let high = g.altitudeHighFt { Text("\(Int(low).formatted()) to \(Int(high).formatted()) ft") }
+                                    HStack(spacing: WingtipSpace.sm) {
+                                        if let low = g.altitudeLowFt, let high = g.altitudeHighFt { Text(Format.altitudeRange(low, high)) }
                                         if let due = g.dueTo { Text(due) }
                                         if let at = g.validAt { Text(at) }
                                     }
@@ -94,7 +94,7 @@ struct BriefView: View {
                         }
                     }
                     if let tfrs = briefing.tfrs, !tfrs.isEmpty {
-                        Section("TFRs on the way") {
+                        Section(title: "TFRs on the Way") {
                             ForEach(Array(tfrs.enumerated()), id: \.offset) { i, tfr in
                                 VStack(alignment: .leading, spacing: 2) {
                                     HStack {
@@ -102,9 +102,9 @@ struct BriefView: View {
                                         if tfr.crosses { Text("crosses").foregroundStyle(.red).font(.footnote.weight(.semibold)) }
                                         if tfr.activeNow { Text("active now").foregroundStyle(.red).font(.footnote.weight(.semibold)) }
                                     }
-                                    HStack(spacing: 8) {
-                                        Text("\(Formats.nm(tfr.alongTrackNm, decimals: 0)) along")
-                                        if let floor = tfr.floorFt, let ceiling = tfr.ceilingFt { Text("\(Int(floor).formatted()) to \(Int(ceiling).formatted()) ft") }
+                                    HStack(spacing: WingtipSpace.sm) {
+                                        Text("\(Format.distance(tfr.alongTrackNm, decimals: 0)) along")
+                                        if let floor = tfr.floorFt, let ceiling = tfr.ceilingFt { Text(Format.altitudeRange(floor, ceiling)) }
                                         if let effective = tfr.effective { Text("from \(effective)") }
                                     }
                                     .font(.footnote).foregroundStyle(.secondary)
@@ -115,11 +115,11 @@ struct BriefView: View {
                         }
                     }
                     if let pireps = briefing.pireps, !pireps.isEmpty {
-                        Section("Pilot reports") {
+                        Section(title: "Pilot Reports") {
                             ForEach(Array(pireps.enumerated()), id: \.offset) { i, p in
                                 VStack(alignment: .leading, spacing: 2) {
-                                    HStack(spacing: 8) {
-                                        Text("\(Formats.nm(p.alongTrackNm, decimals: 0)) along").font(.headline)
+                                    HStack(spacing: WingtipSpace.sm) {
+                                        Text("\(Format.distance(p.alongTrackNm, decimals: 0)) along").font(.headline)
                                         if let turbulence = p.turbulence { Text("turbulence \(turbulence)") }
                                         if let icing = p.icing { Text("icing \(icing)") }
                                         if p.urgent == true { Text("URGENT").foregroundStyle(.red).bold() }
@@ -131,8 +131,8 @@ struct BriefView: View {
                         }
                     }
                     FieldsBelowVfrSection(fields: briefing.fieldsBelowVfr ?? [])
-                    Section("Forecast along the route") {
-                        LabeledContent("Lowest ceiling", value: briefing.forecast.minCeilingFt.map { "\(Int($0).formatted()) ft" } ?? "—")
+                    Section(title: "Forecast Along the Route") {
+                        LabeledContent("Lowest ceiling", value: Format.altitude(briefing.forecast.minCeilingFt))
                             .id(rowId("forecast", 0, anchorAt: weatherAt, anchor: VerdictTarget.weatherAnchor))
                         LabeledContent("Lowest visibility", value: briefing.forecast.minVisibilitySm.map { String(format: "%g SM", $0) } ?? "—")
                         ForEach(Array(briefing.forecast.stations.enumerated()), id: \.offset) { _, station in
@@ -146,7 +146,7 @@ struct BriefView: View {
                     }
                     let stations = briefing.metars.keys.sorted()
                     if !stations.isEmpty {
-                        Section("METARs") {
+                        Section(title: "METARs") {
                             ForEach(stations, id: \.self) { ident in
                                 VStack(alignment: .leading, spacing: 2) {
                                     HStack {
@@ -172,7 +172,7 @@ struct BriefView: View {
                 if plan.routed {
                     Section {
                         NavigationLink {
-                            PassengerBriefingView(flight: PassengerBriefingModel.flight(idents: plan.idents))
+                            PassengerBriefingView(flight: PassengerBriefingModel.flight(idents: plan.idents)).closesBack()
                         } label: {
                             Label("Passenger Briefing", systemImage: "person.2")
                         }

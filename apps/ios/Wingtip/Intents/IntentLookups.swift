@@ -52,7 +52,7 @@ enum IntentLookups {
     static func metarWords(name: String, _ m: Metar) -> String {
         var parts: [String] = []
         if let wind = m.windSpeedKt, !AirportWords.calm(wind) {
-            let from = m.windDirTrueDeg.map { String(format: "%03d", Int($0.rounded())) } ?? "variable"
+            let from = m.windDirTrueDeg.map(Format.heading) ?? "variable"
             let gust = m.windGustKt.map { " gusting \(plain($0))" } ?? ""
             parts.append("wind \(from) at \(plain(wind))\(gust) knots")
         } else {

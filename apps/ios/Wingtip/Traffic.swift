@@ -98,7 +98,7 @@ final class Traffic {
             }
             let name = plane.callsign ?? plane.registration ?? plane.hex
             let against = plane.altitudeFt.map { ", \(FlightWords.against($0 - ownFt))" } ?? ""
-            let place = "\(Formats.nm(nm, decimals: 0)) \(AirportWords.compassPoint(Flight.bearing(from: fix.coordinate, to: here))) of you"
+            let place = "\(Format.distance(nm, decimals: 0)) \(AirportWords.compassPoint(Flight.bearing(from: fix.coordinate, to: here))) of you"
             Notifications.tell("Traffic near you", "\(name), \(place)\(against)", id: "traffic-\(plane.hex)")
         }
         nearHexes = near

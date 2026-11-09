@@ -43,7 +43,7 @@ extension PersonalMinimums {
         func words(_ value: Double) -> String {
             let n = Int(value.rounded())
             switch self {
-            case .ceilingFt: return "\(AirportWords.grouped(value)) ft"
+            case .ceilingFt: return Format.altitude(value)
             case .visibilitySm: return "\(n) sm"
             case .crosswindKt, .windKt: return "\(n) kt"
             }
@@ -150,7 +150,7 @@ typealias LoadCondition = APILoadCondition
 extension LoadCondition {
     /// "2,407 lb · 41.2 in", as the web's Balance rows.
     var words: String {
-        "\(Formats.grouped(weightLb)) lb · \(Formats.number(armIn, decimals: 1)) in"
+        "\(Format.grouped(weightLb)) lb · \(Format.number(armIn, decimals: 1)) in"
     }
 }
 

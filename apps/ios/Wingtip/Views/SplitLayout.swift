@@ -131,11 +131,11 @@ struct SplitLayout<Map: View>: View {
             map
                 .overlay(alignment: .bottom) {
                     FiguresStrip()
-                        .padding(.vertical, 10)
+                        .padding(.vertical, WingtipSpace.md)
                         .frame(maxWidth: 520)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                        .padding(.bottom, 16)
-                        .padding(.horizontal, 16)
+                        .floatingGlass(in: floatingCard)
+                        .padding(.bottom, WingtipSpace.lg)
+                        .padding(.horizontal, WingtipSpace.lg)
                 }
                 .toolbar(.hidden, for: .navigationBar)
                 .inspector(isPresented: inspectorShown) {
@@ -215,25 +215,22 @@ struct SplitLayout<Map: View>: View {
     /// Each tab's title, as its own stack has it.
     static func title(_ tab: RootView.Tabs) -> String {
         switch tab {
-        case .fpl: "Flight plan"
+        case .fpl: "Flight Plan"
         case .airport: "Airport"
-        case .aircraft: "Aircraft"
+        case .airplane: "Airplane"
         case .setup: "Setup"
         }
     }
 
-    /// FPL's own bar, in the column's: the saved flights (in the
-    /// inspector), and with a route, the stops' Edit, Share and Clear.
-    @ToolbarContentBuilder private var fplItems: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button { card = .flights } label: { Label("Flights", systemImage: "tray.full") }
-        }
-        RouteToolbar(plan: plan)
+    /// FPL's own bar, in the column's: Share, the saved flights (in the
+    /// inspector) and the stops' Edit.
+    private var fplItems: some ToolbarContent {
+        FPLToolbar(plan: plan, flights: { card = .flights })
     }
 
     private var closeItem: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            Button { close() } label: { Image(systemName: "xmark") }.accessibilityLabel("Close")
+            CloseButton { close() }
         }
     }
 }

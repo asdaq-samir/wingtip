@@ -15,7 +15,7 @@ import Foundation
 
 /// The screens the field opens by their word.
 enum FieldScreen: String, CaseIterable, Equatable, Sendable {
-    case airplane, logbook, settings, instructor, brief, nearest, fuel, food, stops
+    case airplane, logbook, setup, instructor, brief, nearest, fuel, food, stops
     case routes, altitude, procedures, navlog, profile, share, file, clearance, dryrun
     case saved, favorites, recents, recentRoutes, radio, map
 }
@@ -40,8 +40,8 @@ enum FieldCommands {
         "airplane": .airplane, "my airplane": .airplane, "plane": .airplane, "aircraft": .airplane, "my aircraft": .airplane,
         "airplanes": .airplane, "weight and balance": .airplane, "w&b": .airplane, "checklist": .airplane, "poh": .airplane,
         "logbook": .logbook, "log book": .logbook, "my logbook": .logbook, "currency": .logbook, "endorsements": .logbook,
-        "settings": .settings, "setup": .settings, "account": .settings, "sign in": .settings, "sign out": .settings,
-        "training": .settings, "pilot guide": .settings, "guide": .settings, "mock oral": .settings, "passenger briefing": .settings,
+        "settings": .setup, "setup": .setup, "account": .setup, "sign in": .setup, "sign out": .setup,
+        "training": .setup, "pilot guide": .setup, "guide": .setup, "mock oral": .setup, "passenger briefing": .setup,
         "instructor": .instructor, "my instructor": .instructor,
         "brief": .brief, "brief me": .brief, "briefing": .brief, "the brief": .brief, "go no go": .brief, "go/no-go": .brief,
         "nearest": .nearest, "nearest airport": .nearest, "nearest airports": .nearest, "nrst": .nearest,

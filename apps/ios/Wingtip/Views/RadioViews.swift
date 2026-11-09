@@ -13,7 +13,7 @@ struct RadioOverlay: View {
     private var listener: ClearanceListener { ClearanceListener.shared }
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: WingtipSpace.sm) {
             if let call = listener.call {
                 RadioCallBanner(call: call)
             }
@@ -22,7 +22,7 @@ struct RadioOverlay: View {
                     listener.sheetText = listener.heard.last(where: \.final)?.text
                     listener.sheetShown = true
                 } label: {
-                    HStack(alignment: .top, spacing: 8) {
+                    HStack(alignment: .top, spacing: WingtipSpace.sm) {
                         // The pulse says it is listening; with Reduce Motion
                         // on the tint and the words say it instead.
                         Image(systemName: "mic.fill").foregroundStyle(listener.listening ? Color.accentColor : .secondary)
@@ -30,7 +30,7 @@ struct RadioOverlay: View {
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
                             if let problem = listener.problem {
-                                Text(problem).foregroundStyle(.orange)
+                                ProblemLine(problem)
                             } else if listener.heard.isEmpty {
                                 Text("Listening to the radio…").foregroundStyle(.secondary)
                             }
@@ -44,15 +44,15 @@ struct RadioOverlay: View {
                         .font(.subheadline)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(.horizontal, 12).padding(.vertical, 8)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22))
+                    .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
+                    .floatingGlass(in: floatingCard)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("What the radio is saying: open the log")
             }
         }
         .frame(maxWidth: 440)
-        .padding(.horizontal, 12)
+        .padding(.horizontal, WingtipSpace.md)
         .onChange(of: plan.tail, initial: true) { _, tail in listener.tail = tail }
     }
 }
@@ -78,8 +78,8 @@ struct RadioCallBanner: View {
         // A call the engine cannot read offers no Direct To (logged by
         // Engine.rule); the words are still shown as heard.
         let direct = try? HeardCall.directOf(call.text)
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .top, spacing: 8) {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+            HStack(alignment: .top, spacing: WingtipSpace.sm) {
                 Image(systemName: "dot.radiowaves.left.and.right").foregroundStyle(Color.accentColor).accessibilityHidden(true)
                 Text(call.text).font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityLabel("A call to you: \(call.text)")
@@ -90,7 +90,7 @@ struct RadioCallBanner: View {
                 .buttonStyle(.borderless).accessibilityLabel("Put away")
             }
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: WingtipSpace.sm) {
                     if let direct, ownShip.fix != nil {
                         Button("Direct To \(direct.capitalized)") { Task { await go(direct) } }.disabled(busy)
                     }
@@ -117,10 +117,10 @@ struct RadioCallBanner: View {
                 .buttonStyle(.bordered)
                 .buttonBorderShape(.capsule)
             }
-            if let problem { Text(problem).font(.footnote).foregroundStyle(.red) }
+            if let problem { ProblemLine(problem) }
         }
-        .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22))
+        .padding(WingtipSpace.md)
+        .floatingGlass(in: floatingCard)
     }
 
     /// Direct to the place said, found near the route and the airplane.

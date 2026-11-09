@@ -26,10 +26,10 @@ struct FlightsView: View {
                 } label: {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(([flight.departureIdent] + flight.stops + [flight.destinationIdent]).joined(separator: " → ")).font(.headline.monospaced())
-                        HStack(spacing: 10) {
-                            if let nm = flight.totalDistanceNm { Text(Formats.nm(nm, decimals: 0)) }
-                            if let min = flight.totalEteMin { Text(hoursMinutes(min)) }
-                            if let gal = flight.totalFuelGal { Text(AirportWords.gal(gal)) }
+                        HStack(spacing: WingtipSpace.md) {
+                            if let nm = flight.totalDistanceNm { Text(Format.distance(nm, decimals: 0)) }
+                            if let min = flight.totalEteMin { Text(Format.duration(min)) }
+                            if let gal = flight.totalFuelGal { Text(Format.fuel(gal)) }
                             if let tail = flight.aircraftTailNumber { Text(tail) }
                         }
                         .font(.footnote).foregroundStyle(.secondary)

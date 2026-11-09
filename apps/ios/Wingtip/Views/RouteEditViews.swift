@@ -214,15 +214,15 @@ struct RoutePointMenu: View {
                 Button {
                     if plan.extras.direct == ident { plan.cancelDirect() } else { plan.directTo(ident, from: dryRun.fix ?? ownShip.fix) }
                 } label: {
-                    Label(plan.extras.direct == ident ? "Fly as Planned" : "Direct To", systemImage: "arrow.up.right")
+                    Label(plan.extras.direct == ident ? "Fly as Planned" : "Direct To", systemImage: WingtipIcon.directTo)
                 }
                 Button { FlightUI.shared.altitudeAt = ident } label: {
-                    Label(plan.extras.altitudes[ident.uppercased()].map { "Set Altitude… (\($0.formatted()) ft)" } ?? "Set Altitude…", systemImage: "arrow.up.and.down")
+                    Label(plan.extras.altitudes[ident.uppercased()].map { "Set Altitude… (\(Format.altitude(Double($0))))" } ?? "Set Altitude…", systemImage: "arrow.up.and.down")
                 }
             }
             Button { FlightUI.shared.fixFrom = ident } label: { Label("Create a Fix from Here…", systemImage: "scope") }
             Button { FlightUI.shared.card = .hold(ident) } label: {
-                Label(plan.hold(at: ident) == nil ? "Hold Here…" : "Change Hold…", systemImage: "repeat")
+                Label(plan.hold(at: ident) == nil ? "Hold Here…" : "Change Hold…", systemImage: WingtipIcon.holdHere)
             }
             if role == .stop {
                 Divider()
@@ -236,11 +236,11 @@ struct RoutePointMenu: View {
                 Text(ident).font(.body.monospaced()).foregroundStyle(.primary)
                 Spacer()
                 if let feet = plan.extras.altitudes[ident.uppercased()] {
-                    Text("\(feet.formatted()) ft").font(.footnote.monospacedDigit()).foregroundStyle(.tint)
+                    Text(Format.altitude(Double(feet))).font(.footnote.monospacedDigit()).foregroundStyle(.tint)
                 }
-                if plan.hold(at: ident) != nil { Image(systemName: "repeat").foregroundStyle(.tint) }
+                if plan.hold(at: ident) != nil { Image(systemName: WingtipIcon.holdHere).foregroundStyle(.tint) }
                 if plan.extras.direct == ident { Image(systemName: "arrow.up.right").foregroundStyle(.tint) }
-                Image(systemName: "ellipsis.circle").foregroundStyle(.tint)
+                Image(systemName: WingtipIcon.more).foregroundStyle(.tint)
             }
         }
         .accessibilityLabel(spoken)
@@ -284,12 +284,12 @@ struct RouteExtrasSection: View {
                     }
                 }
             } header: {
-                Text("Route")
+                SectionTitle("Route")
             }
-            Section("In flight") {
-                NavigationLink(value: "nearest") { Label("Nearest for a diversion", systemImage: "airplane.arrival") }
-                NavigationLink(value: "notes") { Label("Checkpoint notes", systemImage: "text.bubble") }
-                NavigationLink(value: "file") { Label("File flight plan", systemImage: "doc.text") }
+            Section(title: "In Flight") {
+                NavigationLink(value: "nearest") { Label("Nearest for a Diversion", systemImage: WingtipIcon.nearest) }
+                NavigationLink(value: "notes") { Label("Checkpoint Notes", systemImage: "text.bubble") }
+                NavigationLink(value: "file") { Label("File Flight Plan", systemImage: WingtipIcon.send) }
             }
         }
     }
@@ -401,7 +401,7 @@ struct HoldSheet: View {
             .navigationTitle("Hold at \(fix)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { Button { dismiss() } label: { Image(systemName: "xmark") }.accessibilityLabel("Close") }
+                ToolbarItem(placement: .topBarTrailing) { CloseButton { dismiss() } }
             }
             .onAppear(perform: fill)
         }
@@ -466,13 +466,13 @@ struct ProcedureFixesView: View {
                 let direct = plan.extras.procedureDirect["\(ident):\(id)"]
                 Section {
                     ForEach(drawing.fixes.filter { !$0.missed }) { fix in
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                             HStack {
                                 Text(fix.ident).font(.headline.monospaced())
                                 if !fix.roles.isEmpty { Text(fix.roles.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary) }
                                 Spacer()
                                 if let own = plan.extras.crossings[fix.ident.uppercased()] {
-                                    Text("\(own.formatted()) ft").font(.subheadline.monospacedDigit()).foregroundStyle(.tint)
+                                    Text(Format.altitude(Double(own))).font(.subheadline.monospacedDigit()).foregroundStyle(.tint)
                                 } else {
                                     switch Result(catching: { try fix.charted() }) {
                                     case .success(let charted?): Text(charted).font(.subheadline).foregroundStyle(.secondary)

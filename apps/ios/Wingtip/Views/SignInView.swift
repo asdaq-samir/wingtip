@@ -31,7 +31,7 @@ struct SignInView: View {
                     .frame(height: 50)
                     .listRowInsets(EdgeInsets())
                 }
-                Section("Or by email") {
+                Section(title: "Or by Email") {
                     TextField("Email", text: $email)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
@@ -48,12 +48,12 @@ struct SignInView: View {
                     }
                 }
                 if let problem = session.problem {
-                    Section { Text(problem).foregroundStyle(.red).font(.footnote) }
+                    Section { ProblemLine(problem) }
                 }
             }
             .navigationTitle("Sign In")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+            .closeButton { dismiss() }
         }
     }
 }

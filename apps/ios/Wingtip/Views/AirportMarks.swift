@@ -63,19 +63,8 @@ final class AirportAnnotation: NSObject, MKAnnotation {
         return .defaultLow
     }
 
-    /// The web app's flight category colours (lib/map/flightCategory.ts):
-    /// VFR green, MVFR blue, IFR red, LIFR magenta; grey with no report.
-    var colour: UIColor { Self.colour(category) }
-
-    static func colour(_ category: String?) -> UIColor {
-        switch category {
-        case "VFR": return WingtipColor.Category.vfr
-        case "MVFR": return WingtipColor.Category.mvfr
-        case "IFR": return WingtipColor.Category.ifr
-        case "LIFR": return WingtipColor.Category.lifr
-        default: return WingtipColor.Category.unknown
-        }
-    }
+    /// The field's flight category as its pip draws it (FlightCategory).
+    var colour: UIColor { FlightCategory.mark(category) }
 }
 
 /// The mark: the sectional's symbol (SectionalSymbol) with the ident to
@@ -194,7 +183,7 @@ enum SectionalSymbol {
         let key = "\(towered.map { $0 ? "t" : "u" } ?? "-")|\(kind)|\(use ?? "")|\(category ?? "")"
         if let kept = drawn[key] { return kept }
         let ink = SectionalInk.airport(towered: towered)
-        let pip = category.map { AirportAnnotation.colour($0) }
+        let pip = category.map { FlightCategory.mark($0) }
         let box = AirportMarkView.box
         let image = UIGraphicsImageRenderer(size: CGSize(width: box, height: box)).image { context in
             let cg = context.cgContext

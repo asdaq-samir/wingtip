@@ -104,7 +104,7 @@ struct ClearanceSheet: View {
         for item in clearance.route {
             switch item.kind {
             case "vectors": parts.append(Text("Radar vectors"))
-            case "heading": parts.append(Text(String(format: "Heading %03d", item.degrees ?? 0)))
+            case "heading": parts.append(Text("Heading \(Format.heading(Double(item.degrees ?? 0)))"))
             case "airway": parts.append(Text(item.ident ?? ""))
             case "places":
                 let places = found.flatMap { $0.route.flatMap { run < $0.count ? $0[run] : nil } }
@@ -173,7 +173,7 @@ struct ClearanceSheet: View {
                         heardField
                     }
                     if let problem = listener.problem ?? lookupProblem ?? engineProblem {
-                        Text(problem).font(.footnote).foregroundStyle(.red)
+                        ProblemLine(problem)
                     }
                 } header: {
                     // The flight the clearance is for, as the canvas heads it.
@@ -201,9 +201,9 @@ struct ClearanceSheet: View {
                             craft("Transponder", Text(squawk), spoken: SpokenFigures.digits(squawk))
                         }
                     } header: {
-                        Text(heardAt.map { "Heard \(Formats.time($0))" } ?? "Heard")
+                        Text(heardAt.map { "Heard \(Format.time($0))" } ?? "Heard")
                     }
-                    Section("Your read back") {
+                    Section(title: "Your Read Back") {
                         if readback.isEmpty {
                             Text(readingBack ? "Listening for your read back…"
                                  : "Read it back to ATC with Read back again, and it is checked here line by line.")
@@ -244,7 +244,7 @@ struct ClearanceSheet: View {
                         .listRowBackground(difference.same ? nil : Color.orange.opacity(0.12))
                     }
                     Section {
-                        HStack(spacing: 10) {
+                        HStack(spacing: WingtipSpace.md) {
                             Button("Enter the route") { enter() }
                                 .buttonStyle(.borderedProminent)
                                 .disabled(!ready)
@@ -255,8 +255,6 @@ struct ClearanceSheet: View {
                         .frame(maxWidth: .infinity)
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets())
-                    } footer: {
-                        Text("The words are the engine's reading of what was heard (AIM 4-4-3); nothing enters the plan until you tap Enter.")
                     }
                     Section {
                         DisclosureGroup("Transcript", isExpanded: $transcriptOpen) {
@@ -276,7 +274,7 @@ struct ClearanceSheet: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     // Listening goes on with the sheet put away: the
                     // captions over the map carry it, and Stop ends it.
-                    Button("Close") { dismiss() }
+                    CloseButton { dismiss() }
                 }
                 ToolbarItem(placement: .bottomBar) {
                     Button {
@@ -332,7 +330,7 @@ struct ClearanceSheet: View {
     /// The four parts of the step in a row: done in green, the one now in
     /// the tint, the rest to come.
     private var stepsRow: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: WingtipSpace.sm) {
             ForEach(Array(parts.enumerated()), id: \.offset) { i, part in
                 Text("\(i + 1) \(part.name)")
                     .font(.caption)

@@ -48,7 +48,7 @@ struct Hold: Codable, Hashable, Sendable, Identifiable {
         let course = inbound % 360 == 0 ? 360 : inbound % 360
         let leg = legMin.map { "\(Self.figure($0)) min legs" } ?? "\(Self.figure(legNm ?? 4)) nm legs"
         let length = turns.map { "\($0) \($0 == 1 ? "turn" : "turns")" } ?? "\(minutes ?? 10) min"
-        return "\(right ? "Right" : "Left") turns · \(String(format: "%03d", course))° inbound · \(leg) · \(length)"
+        return "\(right ? "Right" : "Left") turns · \(Format.heading(Double(course))) inbound · \(leg) · \(length)"
     }
 
     /// One read back from its text, or nil for one that is not, as the

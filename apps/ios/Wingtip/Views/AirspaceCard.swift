@@ -20,9 +20,9 @@ struct AirspaceCard: View {
     var body: some View {
         List {
             Section {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                     Text(AirportWords.degreesMinutes(lat: lat, lon: lon)
-                         + (here?.groundFt.map { " · ground \(AirportWords.feet($0))" } ?? ""))
+                         + (here?.groundFt.map { " · ground \(Format.altitude($0))" } ?? ""))
                         .monospacedDigit()
                     if let named = here?.point {
                         Text("\(named.ident) · \(named.name)").foregroundStyle(.secondary)
@@ -30,34 +30,31 @@ struct AirspaceCard: View {
                 }
                 // The point into the route, named off its nearest fix
                 // (wingtip.fixes.frd_near), as Maps' dropped pin offers its
-                // directions.
-                // Added where it bends the route least, flown to direct from
-                // where the airplane is, or held at (the web app's
-                // dropIntoRoute), once the route has its course.
+                // directions: a point's card's actions (CardKind.point, the
+                // web's CARD_ACTIONS) -- flown to direct from where the
+                // airplane is, added where it bends the route least, or
+                // held at (the web app's dropIntoRoute), once the route has
+                // its course.
                 if let named = here?.point {
                     let at = CLLocationCoordinate2D(latitude: lat, longitude: lon)
-                    HStack(spacing: 8) {
+                    HStack(spacing: WingtipSpace.sm) {
+                        Button { plan.drop(named.ident, at: at, then: .direct, from: dryRun.fix ?? ownShip.fix) } label: {
+                            CardActionLabel(.directTo)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(plan.course == nil)
                         Button {
                             if plan.course != nil { plan.drop(named.ident, at: at, then: .add, from: nil) } else { plan.stops.append(named.ident); plan.plan() }
                         } label: {
-                            CardActionLabel(title: "Add to Route", systemImage: "plus")
+                            CardActionLabel(.addToRoute)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.bordered)
                         .disabled(!plan.routed)
-                        Button { plan.dest = named.ident; plan.plan() } label: {
-                            CardActionLabel(title: "Fly Here", systemImage: "location.north.line")
-                        }
-                        .buttonStyle(.bordered)
-                        Button { plan.drop(named.ident, at: at, then: .direct, from: dryRun.fix ?? ownShip.fix) } label: {
-                            CardActionLabel(title: "Direct To", systemImage: "arrow.up.right")
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(plan.course == nil)
                         Button {
                             plan.drop(named.ident, at: at, then: .hold, from: nil)
                             FlightUI.shared.card = .hold(named.ident)
                         } label: {
-                            CardActionLabel(title: "Hold", systemImage: "repeat")
+                            CardActionLabel(.holdHere)
                         }
                         .buttonStyle(.bordered)
                         .disabled(plan.course == nil)
@@ -70,7 +67,7 @@ struct AirspaceCard: View {
                 }
             }
             if let here {
-                Section("Airspace here") {
+                Section(title: "Airspace Here") {
                     ForEach(here.bands) { band in BandRow(band: band, ground: here.groundFt) }
                 }
                 if let veil = here.modeCVeil {
@@ -79,12 +76,12 @@ struct AirspaceCard: View {
                         // of an airport in part 91's appendix D, section 1,
                         // from the surface to 10,000 ft MSL.
                         CardRow(badge: RowBadge(systemImage: "dot.radiowaves.left.and.right", colour: Badge.rule), title: "In a Mode C veil",
-                                detail: "\(AirportWords.plain(veil.distanceNm)) nm from \(veil.ident): a transponder with altitude reporting and ADS-B Out from the surface to 10,000 ft (91.215, 91.225).")
+                                detail: "\(Format.distance(veil.distanceNm)) from \(veil.ident): a transponder with altitude reporting and ADS-B Out from the surface to 10,000 ft (91.215, 91.225).")
                     }
                 }
-                Section("Special use") {
+                Section(title: "Special Use") {
                     if here.specialUseUnavailable == true {
-                        Text("The FAA's special-use airspace did not answer. Check the chart.").foregroundStyle(.orange)
+                        ProblemLine("The FAA's special-use airspace did not answer. Check the chart.")
                     } else if (here.specialUse ?? []).isEmpty {
                         Text("None here").foregroundStyle(.secondary)
                     } else {
@@ -96,7 +93,7 @@ struct AirspaceCard: View {
                         }
                     }
                 }
-                Section("TFRs") {
+                Section(title: "TFRs") {
                     if here.tfrsUnavailable == true {
                         Link("tfr.faa.gov did not answer. Check it before flight.", destination: URL(string: "https://tfr.faa.gov")!)
                             .foregroundStyle(.orange)
@@ -115,7 +112,7 @@ struct AirspaceCard: View {
                 }
             } else if let problem {
                 Section {
-                    Text(problem).foregroundStyle(.red)
+                    ProblemLine(problem)
                     Button("Try Again") { Task { await load() } }
                 }
             } else {
@@ -186,7 +183,7 @@ struct BandRow: View {
 
     var body: some View {
         let ink = Self.ink(band.airspaceClass)
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: WingtipSpace.md) {
             Text(band.airspaceClass)
                 .font(.subheadline.weight(.bold))
                 .foregroundStyle(ink.solid ? Color.white : ink.colour)
@@ -194,7 +191,7 @@ struct BandRow: View {
                 .background(ink.solid ? ink.colour : Color.clear, in: RoundedRectangle(cornerRadius: 6))
                 .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(ink.colour, style: StrokeStyle(lineWidth: 2, dash: ink.dashed ? [3, 2] : [])))
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                 Text("Class \(band.airspaceClass)").fontWeight(.semibold)
                     + Text(band.name.map { " · " + AirportWords.shortAirspaceName($0) } ?? "").foregroundStyle(.secondary)
                 Text(AirportWords.bandRange(band, ground: ground)).fontWeight(.semibold).monospacedDigit()

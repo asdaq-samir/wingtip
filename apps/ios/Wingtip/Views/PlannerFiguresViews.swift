@@ -40,20 +40,20 @@ struct DebriefSections: View {
     @State private var problem: String?
 
     var body: some View {
-        Section("Debrief") {
+        Section(title: "Debrief") {
             if let d = answer?.debrief {
                 LabeledContent("Took off", value: Date(timeIntervalSince1970: d.takeoff / 1000).formatted(.dateTime.day().month(.abbreviated).hour().minute()))
                 LabeledContent {
-                    Text(hoursMinutes(d.flownMin)).monospacedDigit()
+                    Text(Format.duration(d.flownMin)).monospacedDigit()
                 } label: {
                     Text("In the air")
-                    if let planned = d.plannedMin { Text("\(hoursMinutes(planned)) planned") }
+                    if let planned = d.plannedMin { Text("\(Format.duration(planned)) planned") }
                 }
                 ForEach(d.notes, id: \.self) { note in Text(note).font(.subheadline).foregroundStyle(.orange) }
             } else if loaded, answer != nil {
                 Text("No flight in this track: it never went faster than taxiing.").foregroundStyle(.secondary)
             } else if let problem {
-                Text(problem).font(.footnote).foregroundStyle(.red)
+                ProblemLine(problem)
             } else {
                 ProgressView("Reading the track…")
             }
@@ -62,9 +62,9 @@ struct DebriefSections: View {
         if let answer, let d = answer.debrief {
             let t = answer.tolerances
             // PA.VI.A's tolerances in the title, as the web page has them.
-            Section("Leg by leg · within \(AirportWords.tenths(t.offRouteNm)) nm, \(AirportWords.tenths(t.altitudeFt)) ft, \(AirportWords.tenths(t.courseDeg))°") {
+            Section(title: "Leg by Leg · Within \(Format.tenths(t.offRouteNm)) nm, \(Format.tenths(t.altitudeFt)) ft, \(Format.tenths(t.courseDeg))°") {
                 ForEach(Array(d.legs.enumerated()), id: \.offset) { _, leg in
-                    HStack(alignment: .top, spacing: 12) {
+                    HStack(alignment: .top, spacing: WingtipSpace.md) {
                         WithinMark(ok: leg.ok)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("\(leg.from) → \(leg.to)")
@@ -74,9 +74,9 @@ struct DebriefSections: View {
                     }
                 }
             }
-            Section("Checkpoints · within \(AirportWords.tenths(t.etaMin)) min") {
+            Section(title: "Checkpoints · Within \(Format.tenths(t.etaMin)) min") {
                 ForEach(Array(d.passes.enumerated()), id: \.offset) { _, pass in
-                    HStack(alignment: .top, spacing: 12) {
+                    HStack(alignment: .top, spacing: WingtipSpace.md) {
                         if let ok = pass.ok { WithinMark(ok: ok) } else { Image(systemName: "circle").foregroundStyle(.secondary).accessibilityHidden(true) }
                         VStack(alignment: .leading, spacing: 2) {
                             Text(pass.name)
@@ -86,15 +86,15 @@ struct DebriefSections: View {
                 }
             }
             if !d.patterns.isEmpty {
-                Section("Into the pattern · within \(AirportWords.tenths(t.patternFt)) ft") {
+                Section(title: "Into the Pattern · Within \(Format.tenths(t.patternFt)) ft") {
                     ForEach(d.patterns, id: \.ident) { entry in
-                        HStack(spacing: 12) {
+                        HStack(spacing: WingtipSpace.md) {
                             WithinMark(ok: entry.ok)
                             LabeledContent {
-                                Text("\(AirportWords.feet(entry.altFt)) (\(FigureWords.signed(entry.offFt, "")))").monospacedDigit()
+                                Text("\(Format.altitude(entry.altFt)) (\(FigureWords.signed(entry.offFt, "")))").monospacedDigit()
                             } label: {
                                 Text(entry.ident)
-                                Text("Pattern altitude \(AirportWords.feet(entry.patternFt))")
+                                Text("Pattern altitude \(Format.altitude(entry.patternFt))")
                             }
                         }
                     }
@@ -120,24 +120,24 @@ struct DebriefSections: View {
             return d.hasAltitude ? "Altitude: no cruise on this leg" : "Altitude: the file has none"
         }
         let worst = leg.worstAltFt.map { ", at most \(FigureWords.signed($0, " ft"))" } ?? ""
-        return "Altitude: \(FigureWords.percent(within)) within \(AirportWords.tenths(t.altitudeFt)) ft of \(AirportWords.feet(leg.plannedAltFt))\(worst)"
+        return "Altitude: \(FigureWords.percent(within)) within \(Format.tenths(t.altitudeFt)) ft of \(Format.altitude(leg.plannedAltFt))\(worst)"
     }
 
     private func courseLine(_ leg: LegGrade, _ t: DebriefTolerances) -> String? {
         guard let within = leg.courseWithin, let course = leg.courseDeg else { return nil }
-        let off = leg.worstOffNm.map { ", at most \(Formats.nm(abs($0))) \($0 >= 0 ? "right" : "left") of the line" } ?? ""
-        return "Course: \(FigureWords.percent(within)) within \(AirportWords.tenths(t.courseDeg))° of \(AirportWords.bearing(course))\(off)"
+        let off = leg.worstOffNm.map { ", at most \(Format.distance(abs($0))) \($0 >= 0 ? "right" : "left") of the line" } ?? ""
+        return "Course: \(FigureWords.percent(within)) within \(Format.tenths(t.courseDeg))° of \(Format.heading(course))\(off)"
     }
 
     private func passLine(_ p: CheckpointPass) -> String {
         var parts: [String] = []
-        if let due = p.dueMin { parts.append("Due \(hoursMinutes(due))") }
+        if let due = p.dueMin { parts.append("Due \(Format.duration(due))") }
         if let passed = p.passedMin {
-            parts.append("\(p.landed ? "landed" : "passed") \(hoursMinutes(passed))\(p.lateMin.map { " (\(FigureWords.signed($0, " min")))" } ?? "")")
+            parts.append("\(p.landed ? "landed" : "passed") \(Format.duration(passed))\(p.lateMin.map { " (\(FigureWords.signed($0, " min")))" } ?? "")")
         } else {
             parts.append("not reached")
         }
-        if !p.landed, let closest = p.closestNm { parts.append("\(Formats.nm(closest)) from it at closest") }
+        if !p.landed, let closest = p.closestNm { parts.append("\(Format.distance(closest)) from it at closest") }
         return parts.joined(separator: " · ")
     }
 }
@@ -184,9 +184,9 @@ struct DiversionDrillView: View {
         List {
             if started == nil {
                 Section {
-                    Text("Where you are, at \(AirportWords.feet(altitudeFt)), the examiner says: divert. Pick a field, and work out the magnetic heading, ground speed, time and fuel to it from the chart and the forecast wind.")
+                    Text("Where you are, at \(Format.altitude(altitudeFt)), the examiner says: divert. Pick a field, and work out the magnetic heading, ground speed, time and fuel to it from the chart and the forecast wind.")
                     Picker("Altitude", selection: $altitudeFt) {
-                        ForEach((try? Self.altitudes.get()) ?? [], id: \.self) { ft in Text(AirportWords.feet(ft)).tag(ft) }
+                        ForEach((try? Self.altitudes.get()) ?? [], id: \.self) { ft in Text(Format.altitude(ft)).tag(ft) }
                     }
                     .pickerStyle(.menu)
                     if case .failure(let error) = Self.altitudes {
@@ -204,7 +204,7 @@ struct DiversionDrillView: View {
                             .monospacedDigit()
                     }
                 }
-                Section("Divert to") {
+                Section(title: "Divert to") {
                     if finding {
                         Text("Finding the nearest fields…").foregroundStyle(.secondary)
                     } else if fields.isEmpty {
@@ -215,7 +215,7 @@ struct DiversionDrillView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("\(field.ident) · \(field.name)").foregroundStyle(.primary)
-                                    Text([field.longestRunwayFt.map { "\($0.formatted()) ft runway" } ?? "no runway length",
+                                    Text([field.longestRunwayFt.map { "\(Format.altitude(Double($0))) runway" } ?? "no runway length",
                                           field.flightCategory ?? "no weather report"].joined(separator: " · "))
                                         .font(.subheadline).foregroundStyle(.secondary)
                                 }
@@ -226,11 +226,11 @@ struct DiversionDrillView: View {
                         .disabled(checked)
                     }
                 }
-                Section("Your estimates") {
+                Section(title: "Your Estimates") {
                     ForEach(Self.estimates, id: \.key) { e in
                         let check = answer?.checks.first { $0.key == e.key }
                         LabeledContent {
-                            HStack(spacing: 6) {
+                            HStack(spacing: WingtipSpace.sm) {
                                 if let ok = check?.reasonable { WithinMark(ok: ok) }
                                 TextField("", text: Binding(get: { typed[e.key] ?? "" }, set: { typed[e.key] = $0 }))
                                     .keyboardType(.decimalPad).multilineTextAlignment(.trailing).monospacedDigit()
@@ -247,7 +247,7 @@ struct DiversionDrillView: View {
                     if let line = answer.problem {
                         Text(line).foregroundStyle(.red)
                     } else {
-                        Section("To \(answer.to), worked out") {
+                        Section(title: "To \(answer.to), Worked Out") {
                             ForEach(answer.steps, id: \.name) { step in LabeledContent(step.name, value: step.value).monospacedDigit() }
                         }
                     }
@@ -340,7 +340,7 @@ struct HoldingView: View {
 
     var body: some View {
         List {
-            Section("The hold") {
+            Section(title: "The Hold") {
                 number("Inbound course", $inbound, "°")
                 Picker("Turns", selection: $turns) {
                     Text("Right").tag("right")
@@ -354,8 +354,8 @@ struct HoldingView: View {
                     HoldDiagram(inbound: i, heading: h, turns: turns, entry: answer.entry, from: answer.approachRelative)
                         .frame(maxWidth: 320).frame(maxWidth: .infinity)
                         .accessibilityElement()
-                        .accessibilityLabel("\(answer.entryName) entry to a hold with \(turns) turns on an inbound course of \(AirportWords.bearing(i)), arriving on a heading of \(AirportWords.bearing(h)).")
-                    VStack(alignment: .leading, spacing: 4) {
+                        .accessibilityLabel("\(answer.entryName) entry to a hold with \(turns) turns on an inbound course of \(Format.heading(i)), arriving on a heading of \(Format.heading(h)).")
+                    VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                         Text("\(answer.entryName) entry").font(.headline)
                         Text(answer.steps).font(.subheadline)
                     }
@@ -371,7 +371,7 @@ struct HoldingView: View {
             // The course and the wind in the same reference: magnetic, as a
             // clearance gives the course (winds aloft are true, so the row
             // says which).
-            Section("In the wind") {
+            Section(title: "In the Wind") {
                 number("True airspeed", $tas, "kt")
                 number("Wind from, magnetic", $windFrom, "°")
                 number("Wind speed", $windKt, "kt")
@@ -379,8 +379,8 @@ struct HoldingView: View {
             }
             if let wind = answer?.wind {
                 Section {
-                    row("Inbound heading", wind.inboundWords, AirportWords.bearing(wind.inbound.heading))
-                    row("Outbound heading", wind.outboundWords, AirportWords.bearing(wind.outbound.heading))
+                    row("Inbound heading", wind.inboundWords, Format.heading(wind.inbound.heading))
+                    row("Outbound heading", wind.outboundWords, Format.heading(wind.outbound.heading))
                     row("Outbound time", wind.timeWords, "\(Int(wind.outboundSec.rounded())) s")
                 }
             } else if let line = answer?.windProblem {
@@ -406,7 +406,7 @@ struct HoldingView: View {
 
     private func number(_ title: String, _ value: Binding<String>, _ unit: String) -> some View {
         LabeledContent(title) {
-            HStack(spacing: 6) {
+            HStack(spacing: WingtipSpace.sm) {
                 TextField("", text: value).keyboardType(.numberPad).multilineTextAlignment(.trailing).monospacedDigit().frame(width: 72)
                 Text(unit).foregroundStyle(.secondary).frame(width: 24, alignment: .leading)
             }
@@ -560,7 +560,7 @@ struct LostCommsSegmentsSections: View {
     static func feet(_ text: String) -> Double? { Double(text.trimmingCharacters(in: .whitespaces)) }
 
     var body: some View {
-        Section("The clearance") {
+        Section(title: "The Clearance") {
             LabeledContent("Assigned") {
                 TextField("", text: $assigned).keyboardType(.numberPad).multilineTextAlignment(.trailing).monospacedDigit().frame(width: 90)
             }
@@ -586,9 +586,9 @@ struct LostCommsSegmentsSections: View {
                 problem = error.localizedDescription
             }
         }
-        Section("The route's segments") {
+        Section(title: "The Route's Segments") {
             ForEach(segments.indices, id: \.self) { i in
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                     HStack {
                         TextField("Segment", text: $segments[i].name)
                         TextField("", text: $minimums[i]).keyboardType(.numberPad).multilineTextAlignment(.trailing).monospacedDigit().frame(width: 80)
@@ -618,7 +618,7 @@ struct LostCommsSegmentsSections: View {
 }
 
 #Preview("WithinMark") {
-    HStack(spacing: 12) {
+    HStack(spacing: WingtipSpace.md) {
         WithinMark(ok: true)
         WithinMark(ok: false)
     }

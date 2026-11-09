@@ -14,7 +14,7 @@ struct ChecklistView: View {
     var body: some View {
         List {
             if let problem = model.problem {
-                Text(problem).foregroundStyle(.orange)
+                ProblemLine(problem)
             }
             if let writing = model.writing {
                 Section {
@@ -22,8 +22,6 @@ struct ChecklistView: View {
                         .font(.body.monospaced())
                         .frame(minHeight: 280)
                         .accessibilityLabel(model.title)
-                } footer: {
-                    Text("# Before takeoff\nFuel selector -- Both\nMixture -- Rich").font(.footnote.monospaced())
                 }
                 Section {
                     // The phases' headings only, to write the airplane's own
@@ -82,12 +80,12 @@ struct ChecklistRows: View {
 
     var body: some View {
         NavigationLink {
-            ChecklistView(airplane: airplane, kind: .normal)
+            ChecklistView(airplane: airplane, kind: .normal).closesBack()
         } label: {
             Label("Checklist", systemImage: "checklist")
         }
         NavigationLink {
-            ChecklistView(airplane: airplane, kind: .emergency)
+            ChecklistView(airplane: airplane, kind: .emergency).closesBack()
         } label: {
             Label("Emergency", systemImage: "exclamationmark.triangle")
         }

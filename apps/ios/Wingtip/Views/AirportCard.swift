@@ -65,7 +65,7 @@ struct AirportCard: View {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if let place {
                     ShareLink(item: URL(string: "https://\(Config.host)/app/plan?place=\(place.ident)")!,
-                              subject: Text(place.name)) { Image(systemName: "square.and.arrow.up") }
+                              subject: Text(place.name)) { Image(systemName: WingtipIcon.share) }
                         .accessibilityLabel("Share")
                     let kept = shelf.isFavorite(place.ident)
                     Button { shelf.toggleFavorite(KeptAirport(place)) } label: {
@@ -110,22 +110,22 @@ struct AirportCard: View {
     /// next stop; Call and Address from the FAA's airport file, greyed
     /// where it lists none.
     private func actions(_ place: AirportPlace) -> some View {
-        HStack(spacing: 8) {
-            Button { plan.dest = place.ident; plan.plan() } label: { CardActionLabel(title: "Fly Here", systemImage: "location.north.line") }
+        HStack(spacing: WingtipSpace.sm) {
+            Button { plan.dest = place.ident; plan.plan() } label: { CardActionLabel(.flyHere) }
                 .buttonStyle(.borderedProminent)
-            Button { plan.stops.append(place.ident); plan.plan() } label: { CardActionLabel(title: "Add Stop", systemImage: "mappin.and.ellipse") }
+            Button { plan.stops.append(place.ident); plan.plan() } label: { CardActionLabel(.addStop) }
                 .buttonStyle(.bordered)
                 .disabled(!plan.routed || plan.idents.contains(place.ident))
             if let phone = place.phone, let call = URL(string: "tel:" + phone.filter { !$0.isWhitespace }) {
-                Link(destination: call) { CardActionLabel(title: "Call", systemImage: "phone") }
+                Link(destination: call) { CardActionLabel(.call) }
                     .buttonStyle(.bordered)
                     .accessibilityLabel("Call \(phone)")
             } else {
-                Button {} label: { CardActionLabel(title: "Call", systemImage: "phone") }
+                Button {} label: { CardActionLabel(.call) }
                     .buttonStyle(.bordered).disabled(true)
                     .accessibilityLabel("Call: no phone listed")
             }
-            Link(destination: Self.mapsLink(place)) { CardActionLabel(title: "Address", systemImage: "map") }
+            Link(destination: Self.mapsLink(place)) { CardActionLabel(.address) }
                 .buttonStyle(.bordered)
                 .accessibilityLabel(place.address.map { "\($0), in Maps" } ?? "Where it is, in Maps")
         }
@@ -173,15 +173,15 @@ struct AirportHead: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .top, spacing: WingtipSpace.md) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                 Text(place.name).font(.title3.weight(.semibold))
                 let region = place.region.map { $0.hasPrefix("US-") ? String($0.dropFirst(3)) : $0 }
                 let whereIs = [place.municipality, region].compactMap { $0 }.joined(separator: ", ")
                 if !whereIs.isEmpty { Text(whereIs).foregroundStyle(.secondary) }
                 if let restriction = Self.restriction(place) { Text(restriction).font(.subheadline).foregroundStyle(.orange) }
-                HStack(spacing: 12) {
-                    if let elevation = place.elevationFt { Text("Elev \(AirportWords.feet(elevation))") }
+                HStack(spacing: WingtipSpace.md) {
+                    if let elevation = place.elevationFt { Text("Elev \(Format.altitude(elevation))") }
                     Text(place.towered ? "Towered" : "Non-towered")
                     if let cls = place.airspaceClass { Text("Class \(cls)") }
                 }
@@ -198,8 +198,8 @@ struct AirportHead: View {
                 }
                 .font(.caption.weight(.bold))
                 .foregroundStyle(.white)
-                .padding(.horizontal, 6).padding(.vertical, 3)
-                .background(Color(uiColor: AirportAnnotation.colour(chip.category)), in: RoundedRectangle(cornerRadius: 6))
+                .padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xs)
+                .background(Color(uiColor: FlightCategory.words(chip.category)), in: RoundedRectangle(cornerRadius: WingtipRadius.cockpit))
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(chip.own ? "Flight category \(chip.category)" : "About \(chip.category), not this field's own report")
             }
@@ -246,8 +246,8 @@ struct AirportPictures: View {
                             .overlay(alignment: .bottomLeading) {
                                 // Its photographer and licence, as Commons' licences ask.
                                 Text(credit).font(.caption2).lineLimit(1)
-                                    .padding(.horizontal, 6).padding(.vertical, 2)
-                                    .background(.thinMaterial, in: Capsule()).padding(6)
+                                    .padding(.horizontal, WingtipSpace.sm).padding(.vertical, 2)
+                                    .floatingGlass(in: Capsule(), material: .thinMaterial).padding(WingtipSpace.sm)
                             }
                     }
                     .accessibilityLabel("\(place.ident) from the ground, full screen")
@@ -277,7 +277,7 @@ struct AirportInfoTab: View {
             }
         }
         if !(place.lighting ?? []).isEmpty || place.standardKeying == true {
-            Section("Lights") {
+            Section(title: "Lights") {
                 ForEach(place.lighting ?? [], id: \.self) { note in
                     CardRow(badge: RowBadge(systemImage: "lightbulb", colour: Badge.lights), title: note)
                 }
@@ -310,7 +310,7 @@ struct AirportWeatherTab: View {
                     figure("wind", "Wind", AirportWords.windLine(dirTrueDeg: metar.windDirTrueDeg, speedKt: metar.windSpeedKt, gustKt: metar.windGustKt))
                 }
                 figure("eye", "Visibility", metar.visibilitySm.map { "\(AirportWords.plain($0)) sm" } ?? "—", spoken: metar.visibilitySm.map(SpokenFigures.statuteMiles))
-                figure("cloud", "Ceiling", metar.ceilingFt.map(AirportWords.feet) ?? "None", spoken: metar.ceilingFt.map(SpokenFigures.feet))
+                figure("cloud", "Ceiling", metar.ceilingFt.map { Format.altitude($0) } ?? "None", spoken: metar.ceilingFt.map(SpokenFigures.feet))
                 if let temp = metar.tempC {
                     CardRow(badge: RowBadge(systemImage: "thermometer.medium", colour: Badge.weather), title: "Temperature",
                             detail: metar.dewpointC.map { "Dew point \(Int($0.rounded())) °C" }) {
@@ -320,8 +320,8 @@ struct AirportWeatherTab: View {
                 }
                 if let altimeter = metar.altimeterInHg {
                     // Read as set on the altimeter: "two niner niner two".
-                    figure("gauge.with.dots.needle.33percent", "Altimeter", "\(Formats.number(altimeter, decimals: 2)) inHg",
-                           spoken: "\(SpokenFigures.digits(Formats.number(altimeter, decimals: 2))) inches")
+                    figure("gauge.with.dots.needle.33percent", "Altimeter", "\(Format.number(altimeter, decimals: 2)) inHg",
+                           spoken: "\(SpokenFigures.digits(Format.number(altimeter, decimals: 2))) inches")
                 }
                 // The report as sent, never reworded.
                 if let raw = metar.raw { Text(raw).font(.footnote.monospaced()).textSelection(.enabled) }
@@ -333,17 +333,17 @@ struct AirportWeatherTab: View {
         // The National Weather Service's Gridded LAMP at the field for the
         // hour (wingtip.glmp): planning guidance from a model, not a report.
         if place.metar == nil, let modelled = place.modelledWeather {
-            Section("Modelled for \(AirportWords.date(modelled.validAt).map(AirportWords.zulu) ?? modelled.validAt)") {
+            Section(title: "Modelled for \(AirportWords.date(modelled.validAt).map(Format.zulu) ?? modelled.validAt)") {
                 figure("cloud.sun", "Flight category", modelled.flightCategory, spoken: SpokenFigures.flightCategory(modelled.flightCategory))
                 // GLMP's most is 10 sm, as a METAR's "10SM" is.
                 figure("eye", "Visibility", modelled.visibilitySm >= 10 ? "10+ sm" : "\(AirportWords.plain(modelled.visibilitySm)) sm",
                        spoken: modelled.visibilitySm >= 10 ? "ten statute miles or more" : SpokenFigures.statuteMiles(modelled.visibilitySm))
-                figure("cloud", "Ceiling", modelled.ceilingFt.map(AirportWords.feet) ?? "None", spoken: modelled.ceilingFt.map(SpokenFigures.feet))
+                figure("cloud", "Ceiling", modelled.ceilingFt.map { Format.altitude($0) } ?? "None", spoken: modelled.ceilingFt.map(SpokenFigures.feet))
             }
         }
         AtisSection()
         if place.metar == nil, let nearby = place.nearbyMetar {
-            Section("Nearest report, \(AirportWords.plain(nearby.distanceNm)) nm \(AirportWords.compassPoint(Double(nearby.bearingDeg)))") {
+            Section(title: "Nearest Report, \(Format.distance(nearby.distanceNm)) \(AirportWords.compassPoint(Double(nearby.bearingDeg)))") {
                 CardRow(title: nearby.ident, detail: nearby.metar.observedAt.flatMap { AirportWords.observed($0) }) {
                     if let category = nearby.metar.flightCategory {
                         Text(category).fontWeight(.semibold).accessibilityLabel(SpokenFigures.flightCategory(category))
@@ -444,7 +444,7 @@ struct AirportRunwaysTab: View {
             if let pattern = place.pattern, let altitude = pattern.altitudeFt {
                 CardRow(badge: RowBadge(systemImage: "arrow.triangle.2.circlepath", colour: Badge.runway), title: "Pattern altitude",
                         detail: pattern.published == true ? "As the FAA publishes it" : "1,000 ft above the field: none published") {
-                    Text(AirportWords.feet(altitude)).fontWeight(.semibold).accessibilityLabel(SpokenFigures.feet(altitude))
+                    Text(Format.altitude(altitude)).fontWeight(.semibold).accessibilityLabel(SpokenFigures.feet(altitude))
                 }
             }
             if place.runways.isEmpty { Text("No runways listed").foregroundStyle(.secondary) }
@@ -501,7 +501,7 @@ struct AirportChartsTab: View {
     var body: some View {
         let charts = place.procedures ?? []
         let sketched = !RunwaySketch.strips(place.runways).isEmpty
-        Section("Airport") {
+        Section(title: "Airport") {
             if let cycle = place.airportDiagramCycle {
                 row("Airport diagram", "map") {
                     shown = .paths("\(place.ident) airport diagram", [Planner.diagramPath(ident: place.ident, cycle: cycle)])

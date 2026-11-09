@@ -54,7 +54,7 @@ enum PassengerBriefing {
     /// The destination's report in plain words: "VFR, no ceiling, 10 sm".
     static func weather(_ metar: Metar?) -> String? {
         guard let metar else { return nil }
-        let ceiling = metar.ceilingFt.map { "ceiling \(Formats.feet($0))" } ?? "no ceiling"
+        let ceiling = metar.ceilingFt.map { "ceiling \(Format.altitude($0))" } ?? "no ceiling"
         let visibility = metar.visibilitySm.map { "\(AirportWords.plain($0)) sm" }
         let words = [metar.flightCategory, ceiling, visibility].compactMap { $0 }
         return words.joined(separator: ", ")
@@ -66,12 +66,12 @@ enum PassengerBriefing {
     /// destination's weather now, where it reports.
     static func message(dep: String, depName: String?, dest: String, destName: String?, departs: Date?,
                         eteMin: Double?, weather: String?, zone: TimeZone = .current) -> String {
-        let flying = eteMin.map(StripData.duration)
+        let flying = eteMin.map(Format.duration)
         // From the exact minutes, as the nav log's arrival is.
         let lands = departs.flatMap { at in eteMin.map { at.addingTimeInterval($0 * 60) } }
         var lines = ["\(place(dep, depName)) to \(place(dest, destName))"]
         if let departs {
-            var line = "Leaving \(clock(departs, in: zone)) (\(AirportWords.zulu(departs)))"
+            var line = "Leaving \(clock(departs, in: zone)) (\(Format.zulu(departs)))"
             if let flying { line += ", about \(flying) in the air" }
             if let lands { line += ", landing about \(clock(lands, in: zone))" }
             lines.append(line + ".")

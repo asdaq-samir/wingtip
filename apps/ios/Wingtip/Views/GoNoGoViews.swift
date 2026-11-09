@@ -119,15 +119,6 @@ struct GoNoGoSection: View {
             } else {
                 ProgressView("Checking the flight…")
             }
-            NavigationLink { MinimumsView() } label: {
-                Label("Personal minimums", systemImage: "slider.horizontal.3")
-            }
-            .task(id: session.signedIn) {
-                // The instructor's name comes with the training (Gateway);
-                // none for a pilot with no instructor, or signed out.
-                guard session.signedIn else { instructor = nil; return }
-                instructor = (try? await Gateway.training())??.instructors.first { $0.accepted }
-            }
             if let instructor {
                 Label {
                     Text("Your instructor, \(instructor.name ?? instructor.email), reviews the flights you put to them from their phone.")
@@ -139,9 +130,15 @@ struct GoNoGoSection: View {
             }
         } header: {
             HStack {
-                Text("Go / No-Go")
+                SectionTitle("Go / No-Go")
                 if verdict.asking, verdict.answer != nil { ProgressView().controlSize(.mini) }
             }
+        }
+        .task(id: session.signedIn) {
+            // The instructor's name comes with the training (Gateway);
+            // none for a pilot with no instructor, or signed out.
+            guard session.signedIn else { instructor = nil; return }
+            instructor = (try? await Gateway.training())??.instructors.first { $0.accepted }
         }
         // The words for the answer on the page; the findings stay as they
         // are while they are written.
@@ -169,9 +166,9 @@ struct GoNoGoSection: View {
         case .section(let anchor)?:
             Button { open(anchor) } label: { content }.buttonStyle(.plain)
         case .loading?:
-            NavigationLink { LoadingView() } label: { content }
+            NavigationLink { LoadingView().closesBack() } label: { content }
         case .risk?:
-            NavigationLink { RiskView() } label: { content }
+            NavigationLink { RiskView().closesBack() } label: { content }
         case nil:
             content
         }
@@ -183,7 +180,7 @@ struct VerdictRow: View {
     let item: VerdictItem
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
+        HStack(alignment: .firstTextBaseline, spacing: WingtipSpace.md) {
             Image(systemName: FindingStyle.symbol(item.finding)).foregroundStyle(FindingStyle.colour(item.finding))
                 .accessibilityLabel(FindingStyle.word(item.finding))
             VStack(alignment: .leading, spacing: 2) {
@@ -209,7 +206,7 @@ struct FindingFold: View {
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                 Text(item.detail).font(.subheadline)
                 Text("In the Brief: \([item.tab.capitalized, item.section].compactMap { $0 }.joined(separator: " · "))")
                     .font(.footnote).foregroundStyle(.secondary)
@@ -218,9 +215,9 @@ struct FindingFold: View {
             case .section(let anchor)?:
                 Button("See the reports") { open(anchor) }
             case .loading?:
-                NavigationLink("See the loading") { LoadingView() }
+                NavigationLink("See the loading") { LoadingView().closesBack() }
             case .risk?:
-                NavigationLink("See the risk assessment") { RiskView() }
+                NavigationLink("See the risk assessment") { RiskView().closesBack() }
             case nil:
                 EmptyView()
             }
@@ -278,11 +275,11 @@ struct LoadingView: View {
     var body: some View {
         Form {
             if let loading = verdict.answer?.loading, let load = verdict.load(for: plan.aircraft) ?? verdict.answer?.balance?.load {
-                Section("The airplane") {
+                Section(title: "The Airplane") {
                     figure("Empty weight", unit: "lb", value: load.emptyWeightLb) { var l = load; l.emptyWeightLb = $0; save(l) }
                     figure("Empty arm", unit: "in", value: load.emptyArmIn) { var l = load; l.emptyArmIn = $0; save(l) }
                 }
-                Section("Loaded") {
+                Section(title: "Loaded") {
                     ForEach(Array(loading.stations.enumerated()), id: \.offset) { i, station in
                         figure(station.name, unit: "lb", value: i < load.stationsLb.count ? load.stationsLb[i] : 0,
                                note: station.maxLb.map { "\(Int($0).formatted()) lb at most" }) { value in
@@ -294,7 +291,7 @@ struct LoadingView: View {
                     figure("Fuel", unit: "gal", value: load.fuelGal, note: "\(loading.fuelMaxGal.formatted()) gal usable") { var l = load; l.fuelGal = $0; save(l) }
                 }
                 if let balance = verdict.answer?.balance {
-                    Section("Balance") {
+                    Section(title: "Balance") {
                         LabeledContent("Takeoff", value: balance.takeoff.words)
                         LabeledContent("Landing", value: balance.landing.words)
                         let problems = balance.problems ?? []
@@ -324,7 +321,7 @@ struct LoadingView: View {
     /// One figure the pilot types, its unit beside it.
     private func figure(_ title: String, unit: String, value: Double, note: String? = nil, set: @escaping (Double) -> Void) -> some View {
         LabeledContent {
-            HStack(spacing: 4) {
+            HStack(spacing: WingtipSpace.xs) {
                 TextField(title, value: Binding(get: { value }, set: { set(max(0, $0)) }), format: .number.precision(.fractionLength(0...2)))
                     .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(maxWidth: fieldWidth)
                 Text(unit).foregroundStyle(.secondary)
@@ -350,7 +347,7 @@ struct RiskView: View {
         List {
             if let risk = verdict.answer?.risk {
                 Section {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                         // The level's mark with its colour, so the line reads
                         // the same to a pilot who does not see the colour.
                         Label(risk.line, systemImage: FindingStyle.symbol(finding(risk.level)))
@@ -361,7 +358,7 @@ struct RiskView: View {
                 }
                 let own = Set((verdict.answer?.selfChecks ?? []).map(\.key))
                 let raised = (risk.factors ?? []).filter { !own.contains($0.key) }
-                Section("From the briefing and your logbook") {
+                Section(title: "From the Briefing and Your Logbook") {
                     if raised.isEmpty {
                         Text("Nothing raised").foregroundStyle(.secondary)
                     } else {

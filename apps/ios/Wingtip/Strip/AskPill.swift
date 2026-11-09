@@ -15,7 +15,7 @@ struct AskPill: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 4) {
+            HStack(spacing: WingtipSpace.xs) {
                 Image(systemName: "sparkle")
                     .font(.caption.weight(.semibold))
                     .accessibilityHidden(true)
@@ -23,7 +23,7 @@ struct AskPill: View {
                     .condensedCaps(.footnote, weight: .semibold)
                     .lineLimit(1)
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, WingtipSpace.md)
             .frame(height: 32)
             .foregroundStyle(on ? Color.white : ink.tint)
             .background(on ? ink.tint : Color.clear, in: Capsule())
@@ -39,7 +39,7 @@ struct AskPill: View {
 }
 
 #Preview("AskPill") {
-    HStack(spacing: 16) {
+    HStack(spacing: WingtipSpace.lg) {
         AskPill(action: {})
         AskPill(on: true, action: {})
     }

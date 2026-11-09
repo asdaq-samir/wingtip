@@ -41,7 +41,7 @@ struct StripSheetView: View {
     /// The pages the stack opens over the strip.
     enum StripPage: Hashable {
         case airport(String)
-        case brief, navlog, profile, airplane, logbook, instructor, settings, clearance, file, flights, procedures
+        case brief, navlog, profile, airplane, logbook, instructor, setup, clearance, file, flights, procedures
         case leg(Leg)
         case list(AirportShelf.Shows)
 
@@ -54,7 +54,7 @@ struct StripSheetView: View {
             case .airplane: return "My airplane"
             case .logbook: return "Logbook"
             case .instructor: return "Instructor"
-            case .settings: return "Settings"
+            case .setup: return "Setup"
             case .clearance: return "Clearance"
             case .file: return "File"
             case .flights: return "Flights"
@@ -82,17 +82,7 @@ struct StripSheetView: View {
                 .navigationDestination(for: StripPage.self) { page in
                     pageView(page)
                         .navigationTitle(page.title)
-                        .navigationBarTitleDisplayMode(.inline)
-                        .navigationBarBackButtonHidden(true)
-                        .toolbar {
-                            ToolbarItem(placement: .topBarTrailing) {
-                                // Back one level, where the way back always is.
-                                Button { if !path.isEmpty { path.removeLast() } } label: {
-                                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
-                                }
-                                .accessibilityLabel("Close")
-                            }
-                        }
+                        .closesBack()
                 }
         }
         .chartInkTheme()
@@ -111,6 +101,14 @@ struct StripSheetView: View {
         // The Go / No-Go for the head, asked as the Brief asks it.
         .task(id: verdict.key(for: plan)) { await verdict.refresh(plan: plan, signedIn: session.signedIn) }
         .onChange(of: plan.tail, initial: true) { _, tail in listener.tail = tail }
+        // "Route cleared · Undo" after the head's Clear Route, as the tabs
+        // have it (UndoBar): the strip's Clear had no way back (the UI
+        // audit, 2026-11-09).
+        .overlay(alignment: .bottom) {
+            UndoBar()
+                .padding(.bottom, WingtipSpace.xxl)
+                .animation(.easeOut(duration: WingtipMotion.sheet), value: plan.undoNote)
+        }
         // An airplane's card, a point pressed on the map, a hold, a flown
         // track, over the strip as over the tabs.
         .modifier(FlightSheets())
@@ -118,7 +116,7 @@ struct StripSheetView: View {
 
     private var home: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: WingtipSpace.md) {
                 if let fix = flyingFix {
                     let along = Result { try StripData.positionAlong(points, fix: fix.coordinate) }
                     StripAir(points: points, position: try? along.get(), fix: fix)
@@ -152,8 +150,8 @@ struct StripSheetView: View {
                     }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 24)
+            .padding(.horizontal, WingtipSpace.lg)
+            .padding(.bottom, WingtipSpace.xl)
         }
         .scrollDismissesKeyboard(.interactively)
         .toolbar(.hidden, for: .navigationBar)
@@ -168,12 +166,12 @@ struct StripSheetView: View {
         VStack(alignment: .leading, spacing: 0) {
             StripFieldRow(text: $text, flying: flyingFix != nil, listening: hearing || listener.hearingOnce, busy: busy,
                           onSubmit: { Task { await run(text) } }, onMic: { Task { await hear() } }, focused: $focused)
-                .padding(.horizontal, 16)
-                .padding(.top, 6)
-                .padding(.bottom, 8)
+                .padding(.horizontal, WingtipSpace.lg)
+                .padding(.top, WingtipSpace.sm)
+                .padding(.bottom, WingtipSpace.sm)
             if let problem {
-                Text(problem).font(ChartInk.note).foregroundStyle(.red)
-                    .padding(.horizontal, 20).padding(.bottom, 6)
+                ProblemLine(problem)
+                    .padding(.horizontal, WingtipSpace.lg).padding(.bottom, WingtipSpace.sm)
                     .accessibilityAddTraits(.isStaticText)
             }
             if focused, text.isEmpty, flyingFix == nil {
@@ -187,15 +185,15 @@ struct StripSheetView: View {
 
     /// The first flight's welcome, the field at the foot being the way in.
     private var welcome: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+            HStack(spacing: WingtipSpace.md) {
                 Image(systemName: "airplane").foregroundStyle(.tint).accessibilityHidden(true)
                 Text("Where to?").font(ChartInk.heading)
             }
             Text("Type or say a field, a town or a route above. Wingtip plans from where you are: the route, the checkpoints you'll see from the air, the nav log and a weather brief, all on one strip.")
                 .font(ChartInk.text)
         }
-        .padding(16)
+        .padding(WingtipSpace.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .inkCard()
         .accessibilityIdentifier("strip-welcome")
@@ -210,13 +208,13 @@ struct StripSheetView: View {
         }
         if listener.listening || listener.problem != nil {
             VStack(alignment: .leading, spacing: 2) {
-                if let problem = listener.problem { Text(problem).foregroundStyle(.orange) }
+                if let problem = listener.problem { ProblemLine(problem) }
                 ForEach(listener.heard.suffix(2)) { t in
                     Text(t.text).lineLimit(2).foregroundStyle(t.forUs ? Color.accentColor : Color.primary)
                 }
             }
             .font(ChartInk.detail)
-            .padding(14)
+            .padding(WingtipSpace.md)
             .frame(maxWidth: .infinity, alignment: .leading)
             .inkCard()
         }
@@ -232,13 +230,13 @@ struct StripSheetView: View {
         case .airplane: AircraftView()
         case .logbook: LogbookView()
         case .instructor: InstructorView()
-        case .settings: SetupView()
+        case .setup: SetupView()
         case .clearance: ClearanceSheet()
         case .file: FlightServiceView()
         case .flights: FlightsView()
         case .procedures:
             List {
-                Section("Procedures") {
+                Section(title: "Procedures") {
                     ProceduresRow(ident: plan.dep, kinds: ["departure"])
                     ForEach(plan.stops + [plan.dest], id: \.self) { field in
                         ProceduresRow(ident: field, kinds: ["arrival", "approach"])
@@ -255,7 +253,7 @@ struct StripSheetView: View {
     /// The nav log as a page: each leg's row (FPL's LegRow) into its detail.
     private var navLog: some View {
         List {
-            Section(plan.altitudeFt.map { "Nav log · \(Int($0).formatted()) ft" } ?? "Nav log") {
+            Section(plan.altitudeFt.map { "Nav Log · \(Format.cruiseAltitude($0))" } ?? "Nav Log") {
                 ForEach(plan.legs) { leg in
                     NavigationLink(value: StripPage.leg(leg)) { LegRow(leg: leg) }
                 }
@@ -425,7 +423,7 @@ struct StripSheetView: View {
         case .airplane: path.append(.airplane); detent = .large
         case .logbook: path.append(.logbook); detent = .large
         case .instructor: path.append(.instructor); detent = .large
-        case .settings: path.append(.settings); detent = .large
+        case .setup: path.append(.setup); detent = .large
         case .brief:
             guard routed else { return "Plan a route first: a field, a town or two idents." }
             path.append(.brief); up()
@@ -472,7 +470,7 @@ struct StripSheetView: View {
             AirportShelf.shared.show(.recents)
             path.append(.list(.recents)); up()
         case .map:
-            return "The map's settings are in Settings."
+            return "The map's settings are in Setup."
         }
         return nil
     }

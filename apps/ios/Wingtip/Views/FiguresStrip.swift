@@ -39,14 +39,14 @@ struct FiguresStrip: View {
         HStack {
             stripFigure("TO", plan.routed ? plan.dest : "—")
             if let flying {
-                stripFigure("DIST", AirportWords.nm(flying.leftNm), spoken: SpokenFigures.nauticalMiles(flying.leftNm))
-                stripFigure("ETE", flying.minutes.map(hoursMinutes) ?? "—", spoken: flying.minutes.map(SpokenFigures.minutes))
-                stripFigure("FUEL", flying.fuelGal.map(AirportWords.gal) ?? "—", spoken: flying.fuelGal.map(SpokenFigures.gallons), warn: warn)
+                stripFigure("DIST", Format.distance(flying.leftNm), spoken: SpokenFigures.nauticalMiles(flying.leftNm))
+                stripFigure("ETE", flying.minutes.map(Format.duration) ?? "—", spoken: flying.minutes.map(SpokenFigures.minutes))
+                stripFigure("FUEL", flying.fuelGal.map { Format.fuel($0) } ?? "—", spoken: flying.fuelGal.map(SpokenFigures.gallons), warn: warn)
             } else {
                 let distance = plan.totals?.distanceNm ?? plan.course?.distanceNm
-                stripFigure("DIST", distance.map(AirportWords.nm) ?? "—", spoken: distance.map(SpokenFigures.nauticalMiles))
-                stripFigure("ETE", plan.totals?.eteMin.map(hoursMinutes) ?? "—", spoken: plan.totals?.eteMin.map(SpokenFigures.minutes))
-                stripFigure("FUEL", fuel.requiredGal.map(AirportWords.gal) ?? (refused ? "?" : "—"),
+                stripFigure("DIST", distance.map { Format.distance($0) } ?? "—", spoken: distance.map(SpokenFigures.nauticalMiles))
+                stripFigure("ETE", plan.totals?.eteMin.map(Format.duration) ?? "—", spoken: plan.totals?.eteMin.map(SpokenFigures.minutes))
+                stripFigure("FUEL", fuel.requiredGal.map { Format.fuel($0) } ?? (refused ? "?" : "—"),
                             spoken: fuel.requiredGal.map(SpokenFigures.gallons) ?? (refused ? "Fuel not worked out" : nil), warn: warn)
             }
         }
@@ -65,7 +65,7 @@ struct FiguresStrip: View {
 func stripFigure(_ name: String, _ value: String, spoken: String? = nil, warn: Bool = false) -> some View {
     VStack(spacing: 2) {
         Text(name).font(.caption2).foregroundStyle(.secondary)
-        HStack(spacing: 3) {
+        HStack(spacing: WingtipSpace.xs) {
             // A mark with the red, for a pilot who does not see the colour
             // (the owner's rule: warn, never limit).
             if warn { Image(systemName: "exclamationmark.triangle.fill").font(.caption2) }
@@ -87,24 +87,6 @@ private func stripFigureName(_ name: String) -> String {
     case "ETE": "Time en route"
     case "FUEL": "Fuel"
     default: name
-    }
-}
-
-/// The route's own bar items, FPL's on the iPhone and in the iPad's
-/// column alike: the stops' Edit, and with a route, Share and Clear.
-struct RouteToolbar: ToolbarContent {
-    let plan: Plan
-
-    var body: some ToolbarContent {
-        if !plan.stops.isEmpty {
-            ToolbarItem(placement: .topBarLeading) { EditButton() }
-        }
-        if plan.routed {
-            ToolbarItem(placement: .topBarTrailing) { ShareMenu() }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Clear", role: .destructive) { plan.clear() }
-            }
-        }
     }
 }
 

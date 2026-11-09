@@ -18,11 +18,11 @@ struct OwnAircraftListView: View {
                 }
                 ForEach(list) { airplane in
                     NavigationLink {
-                        OwnAircraftPage(record: airplane, onChange: { Task { await load() } })
+                        OwnAircraftPage(record: airplane, onChange: { Task { await load() } }).closesBack()
                     } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
-                                HStack(spacing: 6) {
+                                HStack(spacing: WingtipSpace.sm) {
                                     Text(airplane.tailNumber).font(.headline.monospaced())
                                     Text(airplane.typeDesignator).foregroundStyle(.secondary)
                                 }
@@ -80,19 +80,19 @@ struct AircraftFormView: View {
                 field("Tail number", text: $form.tailNumber, placeholder: "N12345", key: "tailNumber", problems: problems, codes: true)
                 field("Type", text: $form.typeDesignator, placeholder: "C172", key: "typeDesignator", problems: problems, codes: true)
             }
-            Section("True airspeed") {
+            Section(title: "True Airspeed") {
                 number("Climb", unit: "kt", text: $form.climbTasKt, placeholder: "74", key: "climbTasKt", problems: problems)
                 number("Cruise", unit: "kt", text: $form.cruiseTasKt, placeholder: "110", key: "cruiseTasKt", problems: problems)
             }
             // Climb left blank climbs at the type's book figures.
-            Section("Fuel burn") {
+            Section(title: "Fuel Burn") {
                 number("Climb", unit: "gph", text: $form.climbFuelBurnGph, placeholder: "11", key: "climbFuelBurnGph", problems: problems)
                 number("Cruise", unit: "gph", text: $form.fuelBurnGph, placeholder: "8.5", key: "fuelBurnGph", problems: problems)
             }
             // The cruise figures are the airplane's at this power at the
             // engine's reference altitude on a standard day, a row of its
             // handbook's cruise table (planning_figures' cruise_reference_ft).
-            Section(Self.cruiseReferenceFt.map { "Cruise figures at \(AirportWords.feet($0)), standard day" } ?? "Cruise figures, standard day") {
+            Section(Self.cruiseReferenceFt.map { "Cruise figures at \(Format.altitude($0)), standard day" } ?? "Cruise figures, standard day") {
                 number("Cruise power", unit: "%", text: $form.cruisePowerPct, placeholder: "65", key: "cruisePowerPct", problems: problems)
             }
             // Without usable fuel the nav log makes no fuel check.
@@ -101,7 +101,7 @@ struct AircraftFormView: View {
             }
             // FAA Form 7233-4's items (AIM Appendix 4): 10a equipment, 10b
             // surveillance, 19 colour and markings.
-            Section("Flight plan") {
+            Section(title: "Flight Plan") {
                 field("Equipment", text: $form.equipment, placeholder: "SDFGRY", key: "equipment", problems: problems, codes: true)
                 field("Surveillance", text: $form.surveillance, placeholder: "B1", key: "surveillance", problems: problems, codes: true)
                 field("Color", text: $form.colour, placeholder: "White, blue stripe", key: "colour", problems: problems, codes: false)
@@ -137,7 +137,7 @@ struct AircraftFormView: View {
     private func number(_ title: String, unit: String, text: Binding<String>, placeholder: String, key: String, problems: [String: String]) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             LabeledContent(title) {
-                HStack(spacing: 4) {
+                HStack(spacing: WingtipSpace.xs) {
                     TextField(placeholder, text: text).multilineTextAlignment(.trailing).keyboardType(.decimalPad)
                     Text(unit).foregroundStyle(.secondary)
                 }
@@ -183,14 +183,14 @@ struct OwnAircraftPage: View {
         List {
             Section {
                 NavigationLink {
-                    AircraftFormView(record: record) { saved in record = saved; onChange() }
+                    AircraftFormView(record: record) { saved in record = saved; onChange() }.closesBack()
                 } label: {
                     LabeledContent("Figures", value: Self.figuresLine(record)).lineLimit(2)
                 }
                 // Its checklists, kept on this device (LocalChecklists).
                 ChecklistRows(airplane: record.tailNumber)
                 NavigationLink {
-                    SquawksView(aircraft: record) { Task { await reload() } }
+                    SquawksView(aircraft: record) { Task { await reload() } }.closesBack()
                 } label: {
                     LabeledContent("Squawks", value: record.openSquawks.isEmpty ? "" : "\(record.openSquawks.count) open")
                 }
@@ -296,11 +296,11 @@ struct InspectionsSection: View {
         // The 100-hour is owed only when the airplane is flown for hire, or
         // for instruction in it by the one who provides it (91.409(b)); the
         // ELT's not on a training flight within 50 nm (91.207(f)).
-        Section("Inspections") {
+        Section(title: "Inspections") {
             ForEach(dated, id: \.title) { d in
                 VStack(alignment: .leading, spacing: 2) {
                     OptionalDayRow(title: d.title, day: Binding(get: { form[keyPath: d.on] }, set: { form[keyPath: d.on] = $0 }), upTo: Date())
-                    HStack(spacing: 4) {
+                    HStack(spacing: WingtipSpace.xs) {
                         Text(d.rule)
                         if d.through != nil { Text("·"); StandingText(through: d.through) }
                     }
@@ -309,7 +309,7 @@ struct InspectionsSection: View {
             }
             VStack(alignment: .leading, spacing: 2) {
                 OptionalDayRow(title: "ELT battery replace by", day: $form.eltBatteryDueOn)
-                HStack(spacing: 4) {
+                HStack(spacing: WingtipSpace.xs) {
                     Text("As marked on the transmitter, 91.207(c)")
                     if let due = record.inspections.eltBatteryDueOn { Text("·"); StandingText(through: due, good: "By", past: "Due since") }
                 }
@@ -345,8 +345,8 @@ struct InspectionsSection: View {
     /// The gateway's due hours, and how many are left by the hours recorded.
     private var hundredHourLine: String {
         guard form.forHire == true, let due = record.inspections.hundredHourDueAtHours else { return "Time in service, at the last annual or 100-hour" }
-        var line = "Due at \(Formats.hours(due))"
-        if let now = record.inspections.hoursNow { line += now < due ? ", \(Formats.hours(due - now)) to go" : ", due now" }
+        var line = "Due at \(Format.hours(due))"
+        if let now = record.inspections.hoursNow { line += now < due ? ", \(Format.hours(due - now)) to go" : ", due now" }
         return line
     }
 
@@ -374,7 +374,7 @@ struct VorCheckSection: View {
     @State private var problem: String?
 
     var body: some View {
-        Section("VOR check") {
+        Section(title: "VOR Check") {
             if let last = record.vorCheck {
                 LabeledContent {
                     if !last.withinLimit {
@@ -395,7 +395,7 @@ struct VorCheckSection: View {
             }
             LabeledContent("Where") { TextField("KDLH VOT", text: $place).multilineTextAlignment(.trailing) }
             LabeledContent("Bearing error") {
-                HStack(spacing: 4) {
+                HStack(spacing: WingtipSpace.xs) {
                     TextField("0", text: $errorText).multilineTextAlignment(.trailing).keyboardType(.numbersAndPunctuation)
                     Text("°").foregroundStyle(.secondary)
                 }
@@ -437,7 +437,7 @@ struct SquawksView: View {
         List {
             if let squawks {
                 let open = squawks.filter { $0.fixedOn == nil }
-                Section("Open") {
+                Section(title: "Open") {
                     if open.isEmpty { Text("None open").foregroundStyle(.secondary) }
                     ForEach(open) { s in
                         Button {
@@ -453,7 +453,7 @@ struct SquawksView: View {
                     }
                 }
                 if let fixing {
-                    Section("Fix: \(fixing.text)") {
+                    Section(title: "Fix: \(fixing.text)") {
                         TextField("What was done, and by whom", text: $fixNote, axis: .vertical).lineLimit(2...5)
                         Button("Fixed Today") { Task { await fix(fixing) } }.disabled(busy)
                         Button("Cancel") { self.fixing = nil }
@@ -463,7 +463,7 @@ struct SquawksView: View {
                 // be deferred for the kinds of flight it is not required for,
                 // removed or deactivated and placarded INOPERATIVE, by a pilot
                 // or a mechanic who finds it no hazard (14 CFR 91.213(d)).
-                Section("Write a squawk") {
+                Section(title: "Write a Squawk") {
                     TextField("What was found", text: $text, axis: .vertical).lineLimit(1...4)
                     DatePicker("Found on", selection: $foundOn, in: ...Date(), displayedComponents: .date)
                     Toggle("Inoperative equipment", isOn: $inoperative)
@@ -478,7 +478,7 @@ struct SquawksView: View {
                 }
                 let fixed = squawks.filter { $0.fixedOn != nil }
                 if !fixed.isEmpty {
-                    Section("Fixed") {
+                    Section(title: "Fixed") {
                         ForEach(fixed) { s in
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(s.text)

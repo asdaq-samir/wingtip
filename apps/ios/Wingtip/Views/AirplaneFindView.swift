@@ -42,8 +42,8 @@ struct AirplaneRow: View {
     static func line(_ plane: TrafficAircraft) -> String {
         var parts: [String] = []
         if let type = plane.type { parts.append(type) }
-        if let ft = plane.altitudeFt { parts.append("\(Int((ft / 100).rounded() * 100).formatted()) ft") }
-        if let kt = plane.speedKt { parts.append("\(Int(kt.rounded())) kt") }
+        if let ft = plane.altitudeFt { parts.append(Format.altitude((ft / 100).rounded() * 100)) }
+        if let kt = plane.speedKt { parts.append(Format.speed(kt)) }
         return parts.joined(separator: " · ")
     }
 }

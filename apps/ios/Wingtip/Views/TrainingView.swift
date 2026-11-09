@@ -58,7 +58,7 @@ struct TrainingView: View {
         let codes = t.knowledgeTestCodes ?? []
         let found = Result { try Endorsing.acsCodes(in: pasted) }
         let typed = (try? found.get()) ?? []
-        Section("Knowledge test") {
+        Section(title: "Knowledge Test") {
             ProblemLine(found, "The codes in what you pasted")
             if codes.isEmpty { Text("No codes yet").foregroundStyle(.secondary) }
             ForEach(codes, id: \.self) { code in
@@ -97,7 +97,7 @@ struct TrainingView: View {
         let recorded = Dictionary((t.endorsements ?? []).map { ($0.code, $0) }, uniquingKeysWith: { a, _ in a })
         if !t.kinds.isEmpty {
             let kinds = t.kinds
-            Section("Endorsements") {
+            Section(title: "Endorsements") {
                 ProblemLine(inForce, "Which endorsements are in force")
                 ForEach(kinds) { kind in
                     if let e = signed[kind.code] {
@@ -116,7 +116,7 @@ struct TrainingView: View {
         }
         let voided = t.signed.filter(\.voided)
         if !voided.isEmpty {
-            Section("Voided") {
+            Section(title: "Voided") {
                 ForEach(voided) { e in
                     SignedEndorsementRow(label: t.kinds.first { $0.code == e.code }?.label ?? e.code, rule: nil, e: e)
                 }
@@ -152,16 +152,16 @@ struct TrainingView: View {
             }
             if !named { Text("Give your name first: your endorsements name you by it").font(.footnote).foregroundStyle(.secondary) }
         } header: {
-            Text("Your instructor")
+            SectionTitle("Your Instructor")
         }
     }
 
     @ViewBuilder private func reviews(_ t: Training) -> some View {
         let taken = t.instructors.filter(\.accepted)
         if !t.reviews.isEmpty || !taken.isEmpty {
-            Section("Solo cross-countries") {
+            Section(title: "Solo Cross-Countries") {
                 ForEach(t.reviews) { review in
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                         Text(Endorsing.route(review)).font(.headline.monospaced())
                         Text("\(Day.said(review.flightOn)) · \(review.makeModel) · \(Endorsing.state(review))").font(.footnote).foregroundStyle(.secondary)
                         ForEach(Array(review.checks.enumerated()), id: \.offset) { _, check in
@@ -174,7 +174,7 @@ struct TrainingView: View {
                 }
                 if !taken.isEmpty {
                     NavigationLink("Ask for a Review") {
-                        ReviewAskView(instructors: taken) { request in await act { try await Gateway.askReview(request) } }
+                        ReviewAskView(instructors: taken) { request in await act { try await Gateway.askReview(request) } }.closesBack()
                     }
                 }
             }
@@ -205,7 +205,7 @@ struct ExperienceSection: View {
 
     static func amount(_ item: ExperienceItem) -> String {
         switch item.unit {
-        case "h": return "\(Formats.number(item.have, decimals: 1)) of \(item.need.formatted()) h"
+        case "h": return "\(Format.number(item.have, decimals: 1)) of \(item.need.formatted()) h"
         case "flights": return item.met ? "Done" : "Not yet"
         default: return "\(item.have.formatted()) of \(item.need.formatted())"
         }
@@ -213,7 +213,7 @@ struct ExperienceSection: View {
 
     var body: some View {
         if !items.isEmpty {
-            Section("Private pilot experience") {
+            Section(title: "Private Pilot Experience") {
                 ForEach(items, id: \.key) { item in
                     LabeledContent {
                         Text(Self.amount(item)).monospacedDigit()
@@ -253,7 +253,7 @@ struct SignedEndorsementRow: View {
 
     var body: some View {
         DisclosureGroup {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                 Text(e.text).textSelection(.enabled)
                 if !e.signature.isEmpty { Text(e.signature).font(.footnote.monospaced()).foregroundStyle(.secondary) }
             }
@@ -289,7 +289,7 @@ struct ReviewAskView: View {
 
     var body: some View {
         Form {
-            Section("Flight") {
+            Section(title: "Flight") {
                 if flights.isEmpty { Text("Save the planned flight first, from Flights.").foregroundStyle(.secondary) }
                 Picker("Saved flight", selection: $flightId) {
                     Text("Pick one").tag(Int?.none)

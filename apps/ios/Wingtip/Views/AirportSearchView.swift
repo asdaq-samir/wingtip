@@ -49,7 +49,7 @@ struct AirportSearchView: View {
                 if query.isEmpty {
                     AirportStrip(nearest: nearest, open: { path.append($0) })
                     if shelf.shows != .nearest, !nearest.isEmpty {
-                        Section("Nearest") {
+                        Section(title: "Nearest") {
                             ForEach(nearest.prefix(5)) { field in
                                 NavigationLink(value: field.ident) { NearestRow(field: field) }
                             }
@@ -59,7 +59,7 @@ struct AirportSearchView: View {
                     ContentUnavailableView.search(text: query)
                 } else {
                     if !found.isEmpty {
-                        Section("Airports") {
+                        Section(title: "Airports") {
                             ForEach(found) { field in
                                 NavigationLink(value: field.ident) {
                                     VStack(alignment: .leading, spacing: 2) {
@@ -77,7 +77,7 @@ struct AirportSearchView: View {
                     // as Maps' search asks where (the web app's Nearest).
                     let towns = places.filter { $0.kind != "airport" }
                     if !towns.isEmpty {
-                        Section("Fields near") {
+                        Section(title: "Fields Near") {
                             ForEach(towns) { place in
                                 NavigationLink(value: AirportRoute.nearFrom(lat: place.lat, lon: place.lon, label: place.label).text) {
                                     Label(place.label, systemImage: place.kind == "address" ? "mappin" : "building.2")
@@ -89,7 +89,7 @@ struct AirportSearchView: View {
             }
             .navigationTitle("Airport")
             .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(for: String.self) { text in AirportDestination(route: AirportRoute(text), nearest: nearest) }
+            .navigationDestination(for: String.self) { text in AirportDestination(route: AirportRoute(text), nearest: nearest).closesBack() }
             .searchable(text: Binding(get: { query }, set: { query = $0 }), prompt: AirportQuery.prompt)
             .textInputAutocapitalization(.characters)
             .autocorrectionDisabled()
@@ -150,25 +150,25 @@ struct AirportStrip: View {
     var body: some View {
         Section {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 12) {
+                HStack(alignment: .top, spacing: WingtipSpace.md) {
                     switch shelf.shows {
                     case .favorites:
                         ForEach(shelf.favorites) { field in tile(field.ident, field.name) }
                     case .recents:
                         ForEach(shelf.recents) { field in tile(field.ident, field.name) }
                     case .nearest:
-                        ForEach(nearest.prefix(12)) { field in tile(field.ident, Formats.nm(field.distanceNm, decimals: 0), category: field.flightCategory) }
+                        ForEach(nearest.prefix(12)) { field in tile(field.ident, Format.distance(field.distanceNm, decimals: 0), category: field.flightCategory) }
                     }
-                    if empty { Text(emptyWords).foregroundStyle(.secondary).padding(.vertical, 12) }
+                    if empty { Text(emptyWords).foregroundStyle(.secondary).padding(.vertical, WingtipSpace.md) }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+                .padding(.horizontal, WingtipSpace.lg)
+                .padding(.vertical, WingtipSpace.sm)
             }
             .listRowInsets(EdgeInsets())
         } header: {
             HStack {
                 Button { open(AirportRoute.list(shelf.shows).text) } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: WingtipSpace.xs) {
                         Text(shelf.shows.title)
                         Image(systemName: "chevron.right").font(.caption.weight(.bold))
                     }
@@ -208,13 +208,13 @@ struct AirportStrip: View {
 
     private func tile(_ ident: String, _ under: String, category: String? = nil) -> some View {
         Button { open(ident) } label: {
-            VStack(spacing: 4) {
+            VStack(spacing: WingtipSpace.xs) {
                 Text(ident)
                     .font(.caption.weight(.bold))
                     .lineLimit(1).minimumScaleFactor(0.7)
                     .frame(width: circle, height: circle)
                     .background(Circle().fill(Color.accentColor.opacity(0.15)))
-                    .overlay(Circle().strokeBorder(category.map { Color(uiColor: AirportAnnotation.colour($0)) } ?? .clear, lineWidth: 3))
+                    .overlay(Circle().strokeBorder(category.map { Color(uiColor: FlightCategory.mark($0)) } ?? .clear, lineWidth: 3))
                 Text(under).font(.caption2).foregroundStyle(.secondary).lineLimit(2).multilineTextAlignment(.center)
             }
             .frame(width: tileWidth)
@@ -277,11 +277,11 @@ struct NearFromView: View {
     var body: some View {
         List {
             if let fields {
-                Section("Nearest \(label)") {
+                Section(title: "Nearest \(label)") {
                     ForEach(fields) { field in NavigationLink(value: field.ident) { NearestRow(field: field) } }
                 }
             } else if let problem {
-                Text(problem).foregroundStyle(.red)
+                ProblemLine(problem)
             } else {
                 ProgressView("Fetching the nearest fields…")
             }
@@ -305,20 +305,20 @@ struct NearestRow: View {
 
     var body: some View {
         let bearing = field.bearingDeg.truncatingRemainder(dividingBy: 360)
-        HStack(spacing: 12) {
-            Circle().strokeBorder(Color(uiColor: AirportAnnotation.colour(field.flightCategory)), lineWidth: 2.5).frame(width: 12, height: 12)
+        HStack(spacing: WingtipSpace.md) {
+            Circle().strokeBorder(Color(uiColor: FlightCategory.mark(field.flightCategory)), lineWidth: 2.5).frame(width: 12, height: 12)
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
+                HStack(spacing: WingtipSpace.sm) {
                     Text(field.ident).font(.headline)
                     if withoutColour, let category = field.flightCategory { Text(category).font(.caption.weight(.semibold)).foregroundStyle(.secondary) }
                 }
-                Text([field.name, field.longestRunwayFt.map { "\($0.formatted()) ft" }].compactMap { $0 }.joined(separator: " · "))
+                Text([field.name, field.longestRunwayFt.map { Format.altitude(Double($0)) }].compactMap { $0 }.joined(separator: " · "))
                     .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
-                Text(Formats.nm(field.distanceNm, decimals: 0)).font(.body.monospacedDigit())
-                Text("\(Formats.degrees(bearing))T").font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
+                Text(Format.distance(field.distanceNm, decimals: 0)).font(.body.monospacedDigit())
+                Text("\(Format.heading(bearing))T").font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
             }
         }
         // One row, read as a pilot would say it: the ident, its weather,

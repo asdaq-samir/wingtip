@@ -40,7 +40,7 @@ struct AirplaneFiguresView: View {
             Section {
                 ForEach(Self.rows, id: \.key) { row in
                     LabeledContent(row.label) {
-                        HStack(spacing: 6) {
+                        HStack(spacing: WingtipSpace.sm) {
                             TextField("—", text: Binding(get: { fields[row.key] ?? "" }, set: { fields[row.key] = $0.filter { $0.isNumber || $0 == "." } }))
                                 .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: fieldWidth)
                             Text(row.unit).foregroundStyle(.secondary).frame(width: unitWidth, alignment: .leading)
@@ -48,7 +48,7 @@ struct AirplaneFiguresView: View {
                     }
                 }
             } header: {
-                Text(plan.tail.map { "Planning figures for \($0)" } ?? "Planning figures")
+                SectionTitle(plan.tail.map { "Planning Figures for \($0)" } ?? "Planning Figures")
             } footer: {
                 if !words.isEmpty {
                     VStack(alignment: .leading, spacing: 2) {
@@ -56,7 +56,7 @@ struct AirplaneFiguresView: View {
                         ForEach(words, id: \.self) { Text($0) }
                     }
                 }
-                if let problem { Text(problem).foregroundStyle(.red) }
+                if let problem { ProblemLine(problem) }
             }
             Section {
                 PhotosPicker(selection: $picked, matching: .images) {
@@ -81,12 +81,12 @@ struct AirplaneFiguresView: View {
                 do {
                     let found = try Handbook.figures(of: try await Handbook.read(image))
                     if found.isEmpty { problem = "No figures were read off that page: take the specifications page, flat and in good light."; return }
-                    if let f = found.cruiseTasKt { fields["cruiseTasKt"] = AirportWords.tenths(f.value) }
-                    if let f = found.cruisePowerPct { fields["cruisePowerPct"] = AirportWords.tenths(f.value) }
-                    if let f = found.fuelBurnGph { fields["fuelBurnGph"] = AirportWords.tenths(f.value) }
-                    if let f = found.usableFuelGal { fields["usableFuelGal"] = AirportWords.tenths(f.value) }
-                    if let f = found.climbTasKt { fields["climbTasKt"] = AirportWords.tenths(f.value) }
-                    if let f = found.serviceCeilingFt { fields["serviceCeilingFt"] = AirportWords.tenths(f.value) }
+                    if let f = found.cruiseTasKt { fields["cruiseTasKt"] = Format.tenths(f.value) }
+                    if let f = found.cruisePowerPct { fields["cruisePowerPct"] = Format.tenths(f.value) }
+                    if let f = found.fuelBurnGph { fields["fuelBurnGph"] = Format.tenths(f.value) }
+                    if let f = found.usableFuelGal { fields["usableFuelGal"] = Format.tenths(f.value) }
+                    if let f = found.climbTasKt { fields["climbTasKt"] = Format.tenths(f.value) }
+                    if let f = found.serviceCeilingFt { fields["serviceCeilingFt"] = Format.tenths(f.value) }
                     words = Array(Set(found.words)).sorted()
                 } catch {
                     problem = "The page could not be read: \(error.localizedDescription)"
@@ -146,7 +146,7 @@ extension Figures {
             ("cruiseTasKt", cruiseTasKt), ("cruisePowerPct", cruisePowerPct), ("fuelBurnGph", fuelBurnGph), ("usableFuelGal", usableFuelGal),
             ("climbTasKt", climbTasKt), ("climbFuelBurnGph", climbFuelBurnGph), ("serviceCeilingFt", serviceCeilingFt),
         ]
-        for (k, v) in pairs { if let v { out[k] = AirportWords.tenths(v) } }
+        for (k, v) in pairs { if let v { out[k] = Format.tenths(v) } }
         return out
     }
 }

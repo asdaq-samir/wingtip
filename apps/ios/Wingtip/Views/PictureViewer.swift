@@ -104,18 +104,13 @@ struct PictureViewer: View {
             }
             .navigationTitle(picture.title)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { dismiss() } label: { Image(systemName: "xmark") }
-                        .accessibilityLabel("Close")
-                }
-            }
+            .closeButton { dismiss() }
             .safeAreaInset(edge: .bottom) {
                 if let credit = picture.credit, images != nil {
                     Text(credit).font(.caption2).foregroundStyle(.secondary)
-                        .padding(.horizontal, 8).padding(.vertical, 4)
-                        .background(.thinMaterial, in: Capsule())
-                        .padding(.bottom, 8)
+                        .padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xs)
+                        .floatingGlass(in: Capsule(), material: .thinMaterial)
+                        .padding(.bottom, WingtipSpace.sm)
                 }
             }
             .task { await load() }

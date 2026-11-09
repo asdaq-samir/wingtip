@@ -48,14 +48,7 @@ struct AskView: View {
             }
             .navigationTitle("Ask")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
-                    }
-                    .accessibilityLabel("Close")
-                }
-            }
+            .closeButton { dismiss() }
             .sheet(item: $source) { source in SourceSheet(source: source) }
             .onDisappear { client.cancel() }
         }
@@ -64,7 +57,7 @@ struct AskView: View {
     private var conversation: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 12) {
+                LazyVStack(alignment: .leading, spacing: WingtipSpace.md) {
                     if client.turns.isEmpty {
                         suggestionsList
                     }
@@ -73,7 +66,7 @@ struct AskView: View {
                             .id(turn.id)
                     }
                     if let status = client.status {
-                        HStack(spacing: 8) {
+                        HStack(spacing: WingtipSpace.sm) {
                             ProgressView().controlSize(.small)
                             Text(status).font(.footnote).foregroundStyle(.secondary)
                         }
@@ -81,7 +74,7 @@ struct AskView: View {
                         .id("status")
                     }
                 }
-                .padding(16)
+                .padding(WingtipSpace.lg)
             }
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: client.turns.last?.content) {
@@ -98,7 +91,7 @@ struct AskView: View {
     }
 
     private var suggestionsList: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
             Text("Ask about the flight")
                 .font(.title3.weight(.semibold))
             Text("The figures are the planner's; the assistant puts them in words and shows what it read.")
@@ -111,18 +104,18 @@ struct AskView: View {
                         Image(systemName: "arrow.up.circle").accessibilityHidden(true)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, WingtipSpace.sm)
                 }
                 .contentShape(Rectangle().inset(by: -6))
                 .accessibilityHint("Asks the assistant")
             }
         }
-        .padding(.bottom, 8)
+        .padding(.bottom, WingtipSpace.sm)
     }
 
     private var composer: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .bottom, spacing: 8) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xs) {
+            HStack(alignment: .bottom, spacing: WingtipSpace.sm) {
                 TextField("Ask about the flight", text: $question, axis: .vertical)
                     .lineLimit(1...4)
                     .textFieldStyle(.roundedBorder)
@@ -152,8 +145,8 @@ struct AskView: View {
             }
             ProblemLine(micProblem)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.horizontal, WingtipSpace.lg)
+        .padding(.vertical, WingtipSpace.sm)
     }
 
     private func send(_ words: String) {
@@ -184,10 +177,10 @@ private struct TurnBubble: View {
     let onSource: (AssistantSource) -> Void
 
     var body: some View {
-        VStack(alignment: turn.role == .user ? .trailing : .leading, spacing: 6) {
+        VStack(alignment: turn.role == .user ? .trailing : .leading, spacing: WingtipSpace.sm) {
             if turn.role == .user {
                 Text(turn.content)
-                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
                     .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, alignment: .trailing)
@@ -196,14 +189,14 @@ private struct TurnBubble: View {
                 if !turn.content.isEmpty {
                     Text(turn.content)
                         .textSelection(.enabled)
-                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
                         .background(.fill.tertiary, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityLabel("The assistant: \(turn.content)")
                 }
                 if !turn.sources.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: WingtipSpace.sm) {
                             ForEach(turn.sources) { source in
                                 Button(source.label) { onSource(source) }
                                     .buttonStyle(.bordered)
@@ -235,18 +228,11 @@ private struct SourceSheet: View {
                     .font(.system(.body, design: .monospaced))
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
+                    .padding(WingtipSpace.lg)
             }
             .navigationTitle(source.label)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
-                    }
-                    .accessibilityLabel("Close")
-                }
-            }
+            .closeButton { dismiss() }
         }
         .presentationDetents([.medium, .large])
     }

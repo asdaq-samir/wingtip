@@ -63,17 +63,17 @@ struct LogbookView: View {
                 currencySection
                 instrumentSection
                 if let currency, currency.flights > 0 {
-                    Section("Totals") {
-                        LabeledContent("Total", value: Formats.hours(currency.totalHours))
-                        LabeledContent("Night", value: Formats.hours(currency.nightHours))
-                        LabeledContent("Cross-country", value: Formats.hours(currency.crossCountryHours))
+                    Section(title: "Totals") {
+                        LabeledContent("Total", value: Format.hours(currency.totalHours))
+                        LabeledContent("Night", value: Format.hours(currency.nightHours))
+                        LabeledContent("Cross-country", value: Format.hours(currency.crossCountryHours))
                         LabeledContent("Landings", value: "\(currency.landings)")
                     }
                 }
                 // A CSV file: ForeFlight's logbook export, or this logbook's
                 // own; a flight already here is not added twice (the gateway's
                 // same day, airplane, route and time).
-                Section("File") {
+                Section(title: "File") {
                     if let imported { Text(imported).font(.footnote).foregroundStyle(.secondary) }
                     if let preview {
                         previewRows(preview.name, preview.read)
@@ -84,7 +84,7 @@ struct LogbookView: View {
                         }
                     }
                 }
-                Section("Flights") {
+                Section(title: "Flights") {
                     if let entries {
                         if entries.isEmpty { Text("No flights logged yet: the plus logs one.").foregroundStyle(.secondary) }
                         ForEach(entries) { e in
@@ -141,7 +141,7 @@ struct LogbookView: View {
     // gateway's list, the one the reminder emails are made from.
     @ViewBuilder private var comingUpSection: some View {
         if let items = paperwork?.items {
-            Section("Coming Up") {
+            Section(title: "Coming Up") {
                 if items.isEmpty {
                     Text("Nothing dated yet: your flight review, medical and airplanes' inspections show here once given.")
                         .foregroundStyle(.secondary)
@@ -166,7 +166,7 @@ struct LogbookView: View {
             .font(.footnote).foregroundStyle(.secondary)
         ForEach(Array(read.entries.prefix(5).enumerated()), id: \.offset) { _, e in
             LabeledContent {
-                Text(Formats.hours(e.totalHours)).monospacedDigit()
+                Text(Format.hours(e.totalHours)).monospacedDigit()
             } label: {
                 Text(Day.said(e.flownOn) + (e.route.map { " · \($0)" } ?? ""))
                 Text([e.aircraft, e.aircraftType].compactMap { $0 }.joined(separator: " · "))
@@ -187,7 +187,7 @@ struct LogbookView: View {
             HStack {
                 Text(Day.said(e.flownOn) + (e.route.map { " · \($0)" } ?? "")).font(.headline)
                 Spacer()
-                Text(Formats.hours(e.totalHours)).font(.subheadline.monospacedDigit())
+                Text(Format.hours(e.totalHours)).font(.subheadline.monospacedDigit())
             }
             Text(([e.aircraft, e.aircraftType, "\(landings) landing\(landings == 1 ? "" : "s")", e.remarks].compactMap { $0 }.filter { !$0.isEmpty })
                 .joined(separator: " · "))
@@ -200,7 +200,7 @@ struct LogbookView: View {
     // in 90 days; (b) at night, to a full stop; 61.56(c) the flight review
     // within 24 calendar months.
     @ViewBuilder private var currencySection: some View {
-        Section("Currency") {
+        Section(title: "Currency") {
             LabeledContent {
                 UntilText(date: currency?.dayPassengersUntil)
             } label: {
@@ -238,7 +238,7 @@ struct LogbookView: View {
     // only an instrument proficiency check restores it (61.57(d)). The
     // gateway counts both.
     @ViewBuilder private var instrumentSection: some View {
-        Section("Instrument") {
+        Section(title: "Instrument") {
             LabeledContent {
                 if let after = currency?.ipcNeededAfter, after < Day.today() {
                     Text("IPC needed").foregroundStyle(.red)
@@ -344,7 +344,7 @@ struct LogbookEntryForm: View {
                 words("Airplane", \.aircraft, placeholder: "N12345", codes: true)
                 words("Type", \.aircraftType, placeholder: "C172", codes: true)
             }
-            Section("Time") {
+            Section(title: "Time") {
                 hours("Total", \.totalHours)
                 hours("Night", \.nightHours)
                 hours("Cross-country", \.crossCountryHours)
@@ -352,21 +352,21 @@ struct LogbookEntryForm: View {
                 hours("Solo", \.soloHours)
                 hours("Sim. instrument", \.instrumentHours)
             }
-            Section("Landings") {
+            Section(title: "Landings") {
                 count("Day", \.dayLandings)
                 count("Night", \.nightLandings)
                 count("Towered", \.toweredLandings)
             }
-            Section("Distance") {
+            Section(title: "Distance") {
                 miles("Distance", \.distanceNm)
                 miles("Longest leg", \.longestLegNm)
             }
-            Section("Instrument") {
+            Section(title: "Instrument") {
                 count("Approaches", \.approaches)
                 Toggle("Holding", isOn: $entry.holding)
                 Toggle("Tracking", isOn: $entry.tracking)
             }
-            Section("Remarks") {
+            Section(title: "Remarks") {
                 TextField("Remarks", text: Binding(get: { entry.remarks ?? "" }, set: { entry.remarks = $0 }), axis: .vertical).lineLimit(1...4)
             }
             ProblemLine(problem)
@@ -399,7 +399,7 @@ struct LogbookEntryForm: View {
 
     private func hours(_ title: String, _ key: WritableKeyPath<LogbookEntryRequest, Double>) -> some View {
         LabeledContent(title) {
-            HStack(spacing: 4) {
+            HStack(spacing: WingtipSpace.xs) {
                 TextField("0", value: Binding(get: { entry[keyPath: key] }, set: { entry[keyPath: key] = max(0, $0) }), format: .number)
                     .multilineTextAlignment(.trailing).keyboardType(.decimalPad)
                 Text("h").foregroundStyle(.secondary)
@@ -409,7 +409,7 @@ struct LogbookEntryForm: View {
 
     private func miles(_ title: String, _ key: WritableKeyPath<LogbookEntryRequest, Double>) -> some View {
         LabeledContent(title) {
-            HStack(spacing: 4) {
+            HStack(spacing: WingtipSpace.xs) {
                 TextField("0", value: Binding(get: { entry[keyPath: key] }, set: { entry[keyPath: key] = max(0, $0) }), format: .number)
                     .multilineTextAlignment(.trailing).keyboardType(.decimalPad)
                 Text("nm").foregroundStyle(.secondary)

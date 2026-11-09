@@ -23,7 +23,7 @@ struct InstructorView: View {
                         if problem == nil { editing = false }
                     }
                 } else {
-                    Section("Your certificate") {
+                    Section(title: "Your Certificate") {
                         LabeledContent {
                             if let until = instructor.until { GoodToText(until: until) }
                         } label: {
@@ -34,7 +34,7 @@ struct InstructorView: View {
                     }
                 }
                 if !instructor.asking.isEmpty {
-                    Section("Asking you") {
+                    Section(title: "Asking You") {
                         ForEach(instructor.asking) { s in
                             LabeledContent {
                                 HStack {
@@ -48,11 +48,11 @@ struct InstructorView: View {
                         }
                     }
                 }
-                Section("Students") {
+                Section(title: "Students") {
                     if instructor.students.isEmpty { Text("None yet").foregroundStyle(.secondary) }
                     ForEach(instructor.students) { s in
                         NavigationLink {
-                            StudentView(row: s, instructor: instructor) { await act { try await Gateway.instructor() } }
+                            StudentView(row: s, instructor: instructor) { await act { try await Gateway.instructor() } }.closesBack()
                         } label: {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(s.name)
@@ -63,7 +63,7 @@ struct InstructorView: View {
                 }
                 if !instructor.signed.isEmpty {
                     // Kept when a student's account goes (61.189).
-                    Section("Signed") {
+                    Section(title: "Signed") {
                         ForEach(instructor.signed) { e in
                             SignedEndorsementRow(label: instructor.kinds.first { $0.code == e.code }?.label ?? e.code, rule: nil, e: e, who: e.studentName) {
                                 Task { await act { try await Gateway.voidEndorsement(e.id) } }
@@ -126,7 +126,7 @@ struct CertificateSection: View {
     }
 
     var body: some View {
-        Section("Your flight instructor certificate") {
+        Section(title: "Your Flight Instructor Certificate") {
             LabeledContent("Name") { TextField("J. J. Jones", text: $fullName).multilineTextAlignment(.trailing) }
             LabeledContent("Certificate") {
                 TextField("987654321CFI", text: $certificate).multilineTextAlignment(.trailing).font(.body.monospaced())
@@ -184,7 +184,7 @@ struct StudentView: View {
                 }
                 endorsements(training, name: name)
                 ExperienceSection(items: training.experience)
-                Section("Knowledge test") {
+                Section(title: "Knowledge Test") {
                     let codes = training.knowledgeTestCodes ?? []
                     if codes.isEmpty { Text("No codes yet").foregroundStyle(.secondary) }
                     ForEach(codes, id: \.self) { code in
@@ -211,7 +211,7 @@ struct StudentView: View {
         let inForce = Result { try Endorsing.inForce(t.signed) }
         let signed = (try? inForce.get()) ?? [:]
         let paper = Dictionary((t.endorsements ?? []).map { ($0.code, $0) }, uniquingKeysWith: { a, _ in a })
-        Section("Endorsements") {
+        Section(title: "Endorsements") {
             ProblemLine(inForce, "Which endorsements are in force")
             if t.fullName == nil { Text("Waiting for their name as on their certificate").foregroundStyle(.secondary) }
             ForEach(t.kinds ?? []) { kind in
@@ -223,6 +223,7 @@ struct StudentView: View {
                             training = next
                             await onChange()
                         }
+                        .closesBack()
                     } label: {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(kind.label)
@@ -257,15 +258,15 @@ struct ReviewSection: View {
     @State private var problem: String?
 
     var body: some View {
-        Section("\(Endorsing.route(review)), \(Day.said(review.flightOn))") {
+        Section(title: "\(Endorsing.route(review)), \(Day.said(review.flightOn))") {
             if let note = review.note { Text("“\(note)”").italic() }
             LabeledContent("Airplane", value: [review.makeModel, review.flight.aircraftTailNumber].compactMap { $0 }.joined(separator: " · "))
             do {
                 let f = review.flight
-                if let ft = f.cruiseAltitudeFt { LabeledContent("Altitude", value: "\(ft.formatted()) ft") }
-                if let nm = f.totalDistanceNm { LabeledContent("Distance", value: Formats.nm(nm, decimals: 0)) }
-                if let min = f.totalEteMin { LabeledContent("Time", value: hoursMinutes(min)) }
-                if let gal = f.totalFuelGal { LabeledContent("Fuel", value: AirportWords.gal(gal)) }
+                if let ft = f.cruiseAltitudeFt { LabeledContent("Altitude", value: Format.altitude(Double(ft))) }
+                if let nm = f.totalDistanceNm { LabeledContent("Distance", value: Format.distance(nm, decimals: 0)) }
+                if let min = f.totalEteMin { LabeledContent("Time", value: Format.duration(min)) }
+                if let gal = f.totalFuelGal { LabeledContent("Fuel", value: Format.fuel(gal)) }
             }
             // 14 CFR 61.93(d)(4) and (5), as the student's record has them.
             ForEach(Array(review.checks.enumerated()), id: \.offset) { _, c in
@@ -278,7 +279,7 @@ struct ReviewSection: View {
             }
             NavigationLink("Endorse This Flight") {
                 SignView(kind: kind, studentId: studentId, studentName: studentName, instructor: instructor,
-                         initial: Endorsing.reviewFields(review), reviewId: review.id) { next in await onDone(next) }
+                         initial: Endorsing.reviewFields(review), reviewId: review.id) { next in await onDone(next) }.closesBack()
             }
             if declining {
                 TextField("Why, and what to change", text: $note, axis: .vertical).lineLimit(2...5)
@@ -341,10 +342,10 @@ struct SignView: View {
                     }
                 }
             } header: {
-                Text("\(kind.paragraph) · \(kind.rule)")
+                SectionTitle("\(kind.paragraph) · \(kind.rule)")
             }
             if crossCountry {
-                Section("Your determination") {
+                Section(title: "Your Determination") {
                     ProblemLine(Endorsing.determinations, "What 61.93(d) asks you to determine")
                     ForEach(determinations, id: \.rule) { d in
                         Toggle(isOn: Binding(get: { determined.contains(d.rule) }, set: { on in if on { determined.insert(d.rule) } else { determined.remove(d.rule) } })) {
@@ -354,7 +355,7 @@ struct SignView: View {
                     }
                 }
             }
-            Section("Instructor's signature") {
+            Section(title: "Instructor's Signature") {
                 Text(text)
                 ProblemLine(rendered, "The endorsement's words")
                 ProblemLine(lapse, "Whether your certificate's date has passed")

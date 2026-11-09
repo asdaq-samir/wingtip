@@ -52,7 +52,7 @@ struct CardRow<Value: View>: View {
     @ViewBuilder var value: () -> Value
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: WingtipSpace.md) {
             if let badge { badge }
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -108,7 +108,7 @@ struct RunwayRowView: View {
 
     var body: some View {
         let heading = (runway.runwayEnds ?? []).compactMap(\.headingTrueDeg).first
-        HStack(spacing: 12) {
+        HStack(spacing: WingtipSpace.md) {
             ZStack {
                 RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Badge.runway)
                 RoundedRectangle(cornerRadius: 1).fill(.white).frame(width: side / 5.6, height: side * 0.64)
@@ -126,7 +126,7 @@ struct RunwayRowView: View {
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 2) {
-                Text(runway.lengthFt.map { "\(AirportWords.grouped(Double($0))) ft" } ?? "—").fontWeight(.semibold).monospacedDigit()
+                Text(Format.altitude(runway.lengthFt.map(Double.init))).fontWeight(.semibold).monospacedDigit()
                     .accessibilityLabel(runway.lengthFt.map { "\(SpokenFigures.feet(Double($0))) long" } ?? "length not listed")
                 if let width = runway.widthFt {
                     Text("\(width) ft wide").font(.footnote).foregroundStyle(.secondary)
@@ -189,15 +189,17 @@ struct RunwaySketch: View {
 /// One of the card's actions, as Maps' place card has them: a glyph over
 /// its name on a rounded pane, the first in the tint.
 struct CardActionLabel: View {
-    let title: String
-    let systemImage: String
+    /// The action, whose one name and glyph every card uses (CardAction).
+    let action: CardAction
+
+    init(_ action: CardAction) { self.action = action }
 
     var body: some View {
-        VStack(spacing: 4) {
-            Image(systemName: systemImage).font(.title3)
-            Text(title).font(.caption.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
+        VStack(spacing: WingtipSpace.xs) {
+            Image(systemName: action.systemImage).font(WingtipType.heading)
+            Text(action.title).font(WingtipType.tabBar.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
         }
-        .frame(maxWidth: .infinity, minHeight: 44)
+        .frame(maxWidth: .infinity, minHeight: WingtipSize.tapTarget)
     }
 }
 
@@ -214,7 +216,7 @@ struct StopServicesSections: View {
     var body: some View {
         Group {
             if let s = services {
-                Section("Fuel") {
+                Section(title: "Fuel") {
                     CardRow(badge: RowBadge(systemImage: "fuelpump", colour: Badge.fuel),
                             title: (s.fuelTypes ?? []).isEmpty ? "None listed" : AirportWords.fuelNames(s.fuelTypes ?? []))
                     // The remarks in plain English as the planner gives
@@ -223,7 +225,7 @@ struct StopServicesSections: View {
                 }
                 let field = onTheField(s)
                 if !field.isEmpty {
-                    Section("On the field") {
+                    Section(title: "On the Field") {
                         ForEach(field, id: \.title) { row in
                             CardRow(badge: RowBadge(systemImage: row.symbol, colour: row.colour), title: row.title, detail: row.detail) {
                                 if let value = row.value { Text(value).foregroundStyle(.secondary) }
@@ -235,15 +237,15 @@ struct StopServicesSections: View {
                 places("Places to stay", s.lodging, "bed.double", Badge.lodging)
                 places("Car rental", s.cars, "car", Badge.car)
                 if s.nearbyUnavailable == true {
-                    Section("Nearby") { Text("Places near the field could not be looked up").foregroundStyle(.secondary) }
+                    Section(title: "Nearby") { Text("Places near the field could not be looked up").foregroundStyle(.secondary) }
                 }
             } else if let problem {
-                Section("Services") {
+                Section(title: "Services") {
                     Text(problem).foregroundStyle(.secondary)
                     Button("Try Again") { Task { await load() } }
                 }
             } else {
-                Section("Services") { ProgressView("Fetching the services…") }
+                Section(title: "Services") { ProgressView("Fetching the services…") }
             }
         }
         .task(id: ident) { await load() }
@@ -304,7 +306,7 @@ private enum PreviewData {
 }
 
 #Preview("RowBadge") {
-    HStack(spacing: 12) {
+    HStack(spacing: WingtipSpace.md) {
         RowBadge(systemImage: "building.columns", colour: Badge.tower)
         RowBadge(systemImage: "cloud.sun", colour: Badge.weather)
         RowBadge(systemImage: "fuelpump", colour: Badge.fuel)
@@ -340,11 +342,11 @@ private enum PreviewData {
 }
 
 #Preview("CardActionLabel") {
-    HStack(spacing: 8) {
-        Button {} label: { CardActionLabel(title: "Fly Here", systemImage: "location.north.line") }.buttonStyle(.borderedProminent)
-        Button {} label: { CardActionLabel(title: "Add Stop", systemImage: "mappin.and.ellipse") }.buttonStyle(.bordered)
-        Button {} label: { CardActionLabel(title: "Call", systemImage: "phone") }.buttonStyle(.bordered)
-        Button {} label: { CardActionLabel(title: "Address", systemImage: "map") }.buttonStyle(.bordered)
+    HStack(spacing: WingtipSpace.sm) {
+        Button {} label: { CardActionLabel(.flyHere) }.buttonStyle(.borderedProminent)
+        Button {} label: { CardActionLabel(.addStop) }.buttonStyle(.bordered)
+        Button {} label: { CardActionLabel(.call) }.buttonStyle(.bordered)
+        Button {} label: { CardActionLabel(.address) }.buttonStyle(.bordered)
     }
     .padding()
 }

@@ -7,34 +7,18 @@ import Foundation
 /// are the shared engine's (crate::wording, crate::runway), one copy with
 /// the web app; the formatting is the app's.
 enum AirportWords {
-    /// A whole number grouped as pilots read it: "10,162", whatever the
-    /// phone's region, as the web app writes it (Formats, whose locale
-    /// is fixed for that).
-    static func grouped(_ n: Double) -> String { Formats.grouped(n) }
-
-    static func feet(_ ft: Double?) -> String { Formats.feet(ft) }
-
     /// A figure as sent, without a ".0" it does not have: 3 and 1.5.
     static func plain(_ x: Double) -> String {
         x == x.rounded() && abs(x) < 1e9 ? String(Int(x)) : String(x)
     }
 
-    /// A figure to a tenth, without a ".0" it does not have: "3", "1.5"
-    /// -- a tolerance, a handbook figure in its field.
-    static func tenths(_ x: Double) -> String { Formats.tenths(x) }
-
-    /// A wind's direction as a pilot writes it: three figures, north 360.
-    static func bearing(_ deg: Double) -> String {
-        let whole = ((Int(deg.rounded()) % 360) + 360) % 360
-        return String(whole == 0 ? 360 : whole).leftPadded(to: 3) + "°"
-    }
 
     /// A bearing as one of the eight compass points in words,
     /// "northeast": the engine's `compass_word`, the web's and Android's.
     /// Words only: where the engine refuses (logged by Engine.rule) the
     /// bearing itself is said, "045°", which is no less true.
     static func compassWord(_ deg: Double) -> String {
-        (try? Engine.compassWord(bearingDeg: deg)) ?? bearing(deg)
+        (try? Engine.compassWord(bearingDeg: deg)) ?? Format.heading(deg)
     }
 
     /// The eight points of the compass, for "12 nm NE": the engine's
@@ -69,18 +53,6 @@ enum AirportWords {
 
     // MARK: The nav log's figures
 
-    /// A distance to a tenth, "12.3 nm", as the nav log gives it.
-    static func nm(_ x: Double) -> String { Formats.nm(x) }
-
-    /// Fuel to a tenth, "8.4 gal".
-    static func gal(_ x: Double) -> String { Formats.gal(x) }
-
-    /// A speed in whole knots, "112 kt".
-    static func kt(_ x: Double) -> String { Formats.kt(x) }
-
-    /// A course or heading as the nav log prints it, three figures, "093°".
-    static func degrees(_ x: Double) -> String { Formats.degrees(x) }
-
     /// A point as the planner, the app's links and Maps take one,
     /// "46.84211,-92.19358": five places, about a metre.
     static func point(_ lat: Double, _ lon: Double) -> String { String(format: "%.5f,%.5f", lat, lon) }
@@ -95,17 +67,9 @@ enum AirportWords {
         // A speed of nothing is calm, as 00000KT codes it (AIM 7-1-28): the
         // engine's `wind_calm`.
         if calm(speedKt) { return "Calm" }
-        let from = dirTrueDeg.map(bearing) ?? "Variable"
+        let from = dirTrueDeg.map(Format.heading) ?? "Variable"
         let gust = gustKt.map { $0 > 0 ? ", gusts \(Int($0.rounded()))" : "" } ?? ""
-        return "\(from) at \(Int(speedKt.rounded())) kt\(gust)"
-    }
-
-    /// A report's time as reports give it: "1255Z".
-    static func zulu(_ date: Date) -> String {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "UTC")!
-        let parts = calendar.dateComponents([.hour, .minute], from: date)
-        return String(parts.hour ?? 0).leftPadded(to: 2) + String(parts.minute ?? 0).leftPadded(to: 2) + "Z"
+        return "\(from) at \(Format.speed(speedKt))\(gust)"
     }
 
     private static let iso = ISO8601DateFormatter()
@@ -128,7 +92,7 @@ enum AirportWords {
         guard let when = date(iso) else { return nil }
         let minutes = max(0, Int((now.timeIntervalSince(when) / 60).rounded()))
         let ago = minutes < 1 ? "just now" : minutes < 90 ? "\(minutes) min ago" : "\(Int((Double(minutes) / 60).rounded())) h ago"
-        return "\(zulu(when)) · \(ago)"
+        return "\(Format.zulu(when)) · \(ago)"
     }
 
     // MARK: Runways
@@ -230,7 +194,7 @@ enum AirportWords {
     /// below, 1,000 above, 2,000 horizontal", or "1 sm, clear of clouds".
     static func minimumsLine(_ m: VfrMinimums) -> String {
         if m.clearOfClouds { return "\(plain(m.visibilitySm)) sm, clear of clouds" }
-        func ft(_ x: Double?) -> String { x.map(grouped) ?? "—" }
+        func ft(_ x: Double?) -> String { x.map(Format.grouped) ?? Format.none }
         let horizontal = m.horizontalFt == 5280 ? "1 sm" : ft(m.horizontalFt)
         return "\(plain(m.visibilitySm)) sm, \(ft(m.belowFt)) below, \(ft(m.aboveFt)) above, \(horizontal) horizontal"
     }
@@ -238,8 +202,8 @@ enum AirportWords {
     /// A band's floor and ceiling: "Surface" where the floor is at or
     /// under the ground there, FL600 for the top of Class A (14 CFR 71.33).
     static func bandRange(_ band: AirspaceBand, ground: Double?) -> String {
-        let bottom = ground.map { band.floorFt <= $0 } == true ? "Surface" : "\(grouped(band.floorFt)) ft"
-        let top = band.ceilingFt >= 60000 ? "FL600" : "\(grouped(band.ceilingFt)) ft MSL"
+        let bottom = ground.map { band.floorFt <= $0 } == true ? "Surface" : Format.altitude(band.floorFt)
+        let top = band.ceilingFt >= 60000 ? "FL600" : "\(Format.altitude(band.ceilingFt)) MSL"
         return "\(bottom) to \(top)"
     }
 
@@ -252,7 +216,7 @@ enum AirportWords {
     static func suaAltitudes(_ area: SpecialUse, midSentence: Bool = false) -> String {
         if let words = try? Engine.suaAltitudes(floorFt: area.floorFt, floorRef: area.floorRef, ceilingFt: area.ceilingFt,
                                                ceilingRef: area.ceilingRef, midSentence: midSentence) { return words }
-        func raw(_ ft: Double?, _ ref: String?) -> String { [ft.map { grouped($0) }, ref].compactMap { $0 }.joined(separator: " ") }
+        func raw(_ ft: Double?, _ ref: String?) -> String { [ft.map { Format.grouped($0) }, ref].compactMap { $0 }.joined(separator: " ") }
         return "\(raw(area.floorFt, area.floorRef)) to \(raw(area.ceilingFt, area.ceilingRef))"
     }
 
@@ -270,6 +234,6 @@ enum AirportWords {
     /// walk, else statute miles.
     static func away(_ place: NearbyPlace) -> String {
         if let walk = place.walkMin { return "\(walk) min walk" }
-        return "\(Formats.number(Double(place.distanceM) / 1609.344, decimals: 1)) mi"
+        return "\(Format.number(Double(place.distanceM) / 1609.344, decimals: 1)) mi"
     }
 }

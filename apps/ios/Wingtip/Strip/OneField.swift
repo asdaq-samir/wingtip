@@ -28,8 +28,8 @@ struct StripFieldRow: View {
     }
 
     var body: some View {
-        HStack(spacing: 10) {
-            HStack(spacing: 8) {
+        HStack(spacing: WingtipSpace.md) {
+            HStack(spacing: WingtipSpace.sm) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(ink.muted)
                     .accessibilityHidden(true)
@@ -65,9 +65,9 @@ struct StripFieldRow: View {
                 .disabled(listening || busy)
                 .accessibilityLabel(listening ? "Listening" : "Say it")
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, WingtipSpace.md)
             .frame(height: 44)
-            .background(.ultraThinMaterial, in: Capsule())
+            .floatingGlass(in: Capsule(), material: .ultraThinMaterial)
             .overlay(Capsule().strokeBorder(ink.ink.opacity(0.08), lineWidth: 1))
             StripProfileMenu()
         }
@@ -98,13 +98,13 @@ struct StripProfileMenu: View {
             Button { open?(.airplane) } label: { Label("My airplane", systemImage: "airplane") }
             Button { open?(.logbook) } label: { Label("Logbook", systemImage: "book") }
             Button { open?(.instructor) } label: { Label("Instructor", systemImage: "graduationcap") }
-            Button { open?(.settings) } label: { Label("Settings", systemImage: "gearshape") }
+            Button { open?(.setup) } label: { Label("Setup", systemImage: WingtipIcon.tabSetup) }
             Divider()
             if session.signedIn {
                 Button { Task { await session.signOut() } } label: { Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right") }
             } else {
                 // The sign-in is Setup's own card (SetupView, its Account group).
-                Button { open?(.settings) } label: { Label("Sign in", systemImage: "person.crop.circle.badge.plus") }
+                Button { open?(.setup) } label: { Label("Sign in", systemImage: "person.crop.circle.badge.plus") }
             }
         } label: {
             ZStack {
@@ -132,12 +132,12 @@ struct StripSuggestions: View {
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: WingtipSpace.sm) {
                 ForEach(suggestions, id: \.self) { words in
                     Button(words) { onPick(words) }.buttonStyle(.inkChip)
                 }
             }
-            .padding(.horizontal, 16).padding(.vertical, 6)
+            .padding(.horizontal, WingtipSpace.lg).padding(.vertical, WingtipSpace.sm)
         }
         .accessibilityIdentifier("strip-suggestions")
     }
@@ -159,8 +159,8 @@ struct StripAnswerCard: View {
     private var answer: AssistantTurn? { client.turns.last { $0.role == .assistant } }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+            HStack(spacing: WingtipSpace.sm) {
                 Text("Ask").font(ChartInk.heading).frame(maxWidth: .infinity, alignment: .leading)
                 if client.answering {
                     Button { client.cancel() } label: { Label("Stop", systemImage: "stop.fill") }
@@ -183,7 +183,7 @@ struct StripAnswerCard: View {
                     .accessibilityLabel("The assistant: \(answer.content)")
             }
             if let status = client.status {
-                HStack(spacing: 8) {
+                HStack(spacing: WingtipSpace.sm) {
                     ProgressView().controlSize(.small)
                     Text(status).font(ChartInk.note).foregroundStyle(ink.muted)
                 }
@@ -191,19 +191,19 @@ struct StripAnswerCard: View {
             }
             if let answer, !answer.sources.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: WingtipSpace.sm) {
                         ForEach(answer.sources) { s in
                             Button(s.label) { source = s }.buttonStyle(.inkChip)
                                 .accessibilityLabel("Source: \(s.label)")
                                 .accessibilityHint("Shows the report as sent")
                         }
                     }
-                    .padding(.vertical, 6)
+                    .padding(.vertical, WingtipSpace.sm)
                 }
             }
             ProblemLine(answer?.problem)
         }
-        .padding(14)
+        .padding(WingtipSpace.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .inkCard()
         .sheet(item: $source) { source in StripSourceSheet(source: source) }
@@ -224,16 +224,11 @@ struct StripSourceSheet: View {
                     .font(.system(.body, design: .monospaced))
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
+                    .padding(WingtipSpace.lg)
             }
             .navigationTitle(source.label)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { dismiss() } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
-                        .accessibilityLabel("Close")
-                }
-            }
+            .closeButton { dismiss() }
         }
         .presentationDetents([.medium, .large])
     }

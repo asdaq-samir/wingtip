@@ -26,7 +26,7 @@ struct DiversionView: View {
             Section(fields.isEmpty ? "" : "Nearest to you") {
                 ForEach(fields) { field in
                     HStack {
-                        NavigationLink { AirportCard(ident: field.ident) } label: { NearestRow(field: field) }
+                        NavigationLink { AirportCard(ident: field.ident).closesBack() } label: { NearestRow(field: field) }
                     }
                     .swipeActions(edge: .leading) {
                         Button("Divert") { divert(field.ident) }.tint(.orange)
@@ -39,7 +39,7 @@ struct DiversionView: View {
             ProblemLine(problem)
             // The checkride's diversion from here, worked by the planner.
             Section {
-                NavigationLink { DiversionDrillView() } label: { Label("Diversion Drill", systemImage: "timer") }
+                NavigationLink { DiversionDrillView().closesBack() } label: { Label("Diversion Drill", systemImage: "timer") }
             }
         }
         .navigationTitle("Nearest")
@@ -80,7 +80,7 @@ struct CheckpointNotesView: View {
                     .disabled(writing || plan.checkpoints.isEmpty)
                 ProblemLine(problem)
             }
-            Section("Checkpoints") {
+            Section(title: "Checkpoints") {
                 if plan.checkpoints.isEmpty { Text("The route's checkpoints come with its plan.").foregroundStyle(.secondary) }
                 ForEach(plan.checkpoints) { point in
                     Button {
@@ -202,7 +202,7 @@ struct FlightServiceView: View {
     var body: some View {
         Form {
             if let status, status.connected, session.signedIn {
-                Section("Flight plan") {
+                Section(title: "Flight Plan") {
                     LabeledContent("Rules", value: "VFR")
                     TextField("Aircraft identification", text: $aircraftId).textInputAutocapitalization(.characters).autocorrectionDisabled()
                     TextField("Type of aircraft, as C172", text: $aircraftType).textInputAutocapitalization(.characters).autocorrectionDisabled()
@@ -228,7 +228,7 @@ struct FlightServiceView: View {
                     ProblemLine(problem)
                 }
                 if let briefing {
-                    Section("Standard briefing") { Text(briefing).font(.footnote.monospaced()).textSelection(.enabled) }
+                    Section(title: "Standard Briefing") { Text(briefing).font(.footnote.monospaced()).textSelection(.enabled) }
                 }
             }
             Section(status?.connected == true ? "Or" : "File it with Flight Service") {
@@ -238,7 +238,7 @@ struct FlightServiceView: View {
                 Link(destination: URL(string: "tel:18009927433")!) { LabeledContent("Flight Service", value: "1-800-WX-BRIEF") }
             }
         }
-        .navigationTitle("File flight plan")
+        .navigationTitle("File Flight Plan")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             status = try? await Gateway.flightService()
@@ -304,7 +304,7 @@ struct FlownTrackView: View {
                         if let first = points.first, let last = points.last {
                             LabeledContent("Flown", value: FlightWords.lasted(last.t - first.t))
                         }
-                        if let top = points.compactMap(\.altFt).max() { LabeledContent("Highest", value: "\(Int(top).formatted()) ft") }
+                        if let top = points.compactMap(\.altFt).max() { LabeledContent("Highest", value: Format.altitude(top)) }
                     }
                     // Its debrief against the flight's nav log, the planner's (POST /api/debrief).
                     DebriefSections(flight: flight, points: track.points)
@@ -345,7 +345,7 @@ struct FlownTrackView: View {
             .toolbar {
                 // The card's own close, whether a sheet (iPhone) or the
                 // inspector (iPad) holds it.
-                ToolbarItem(placement: .topBarTrailing) { Button { FlightUI.shared.card = nil } label: { Image(systemName: "xmark") }.accessibilityLabel("Close") }
+                ToolbarItem(placement: .topBarTrailing) { CloseButton { FlightUI.shared.card = nil } }
             }
             .task {
                 do { track = try await Gateway.track(flight) } catch { problem = error.localizedDescription }
@@ -421,14 +421,14 @@ struct ShareMenu: View {
     var body: some View {
         Menu {
             ShareLink(item: RouteShare.link(plan)) { Label("Share Link", systemImage: "link") }
-            ShareLink(item: RouteShare.navLogText(plan)) { Label("Nav Log as Text", systemImage: "list.number") }
+            ShareLink(item: RouteShare.navLogText(plan)) { Label("Nav Log as Text", systemImage: WingtipIcon.navLog) }
             Button { pdf() } label: { Label("Nav Log as PDF", systemImage: "doc.richtext") }
             // ForeFlight sends the route on to the panel wirelessly (Garmin's
             // Connext, Avidyne, Dynon): the owner's pick (2026-11-02), as most
             // pilots have ForeFlight and not Garmin Pilot.
-            Button { foreflight() } label: { Label("Open in ForeFlight", systemImage: "paperplane") }
+            Button { foreflight() } label: { Label("Open in ForeFlight", systemImage: WingtipIcon.send) }
         } label: {
-            Image(systemName: "square.and.arrow.up")
+            Image(systemName: WingtipIcon.share)
         }
         .accessibilityLabel("Share")
         .disabled(plan.legs.isEmpty)
@@ -476,14 +476,14 @@ enum RouteShare {
     static func navLogText(_ plan: Plan) -> String {
         var lines = [plan.idents.joined(separator: " → ")]
         if let totals = plan.totals {
-            lines.append([AirportWords.nm(totals.distanceNm), totals.eteMin.map(hoursMinutes),
-                          totals.fuelGal.map(AirportWords.gal)].compactMap { $0 }.joined(separator: " · "))
+            lines.append([Format.distance(totals.distanceNm), totals.eteMin.map(Format.duration),
+                          totals.fuelGal.map { Format.fuel($0) }].compactMap { $0 }.joined(separator: " · "))
         }
         for leg in plan.legs {
             // No heading without an airplane: the planner sends none.
-            let heading = leg.magneticHeadingDeg.map { String(format: "MH %03.0f°", $0) } ?? ""
-            lines.append(String(format: "%@ → %@  %05.0f ft  %@  %.1f nm  %@  %@", leg.from, leg.to, leg.altitudeFt, heading, leg.distanceNm,
-                                leg.groundspeedKt.map { String(format: "GS %.0f kt", $0) } ?? "", leg.eteMin.map(hoursMinutes) ?? ""))
+            let heading = leg.magneticHeadingDeg.map { "MH \(Format.heading($0))" }
+            lines.append([("\(leg.from) → \(leg.to)"), Format.altitude(leg.altitudeFt), heading, Format.distance(leg.distanceNm),
+                          leg.groundspeedKt.map { "GS \(Format.speed($0))" }, leg.eteMin.map(Format.navLogTime)].compactMap { $0 }.joined(separator: "  "))
         }
         return lines.joined(separator: "\n")
     }
@@ -555,7 +555,7 @@ struct Kneeboard: View {
     let legs: [Leg]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
             HStack(alignment: .firstTextBaseline) {
                 Text(route).font(.system(size: 15, weight: .bold))
                 Spacer()
@@ -572,24 +572,24 @@ struct Kneeboard: View {
                     GridRow {
                         Text(leg.to).lineLimit(1)
                         Text(Int(leg.altitudeFt).formatted())
-                        Text(leg.magneticHeadingDeg.map { Formats.number($0, decimals: 0).leftPadded(to: 3) } ?? "")
-                        Text(Formats.number(leg.distanceNm, decimals: 1))
-                        Text(leg.groundspeedKt.map { Formats.number($0, decimals: 0) } ?? "")
-                        Text(leg.eteMin.map { Formats.number($0, decimals: 1) } ?? "")
+                        Text(leg.magneticHeadingDeg.map { Format.number($0, decimals: 0).leftPadded(to: 3) } ?? "")
+                        Text(Format.number(leg.distanceNm, decimals: 1))
+                        Text(leg.groundspeedKt.map { Format.number($0, decimals: 0) } ?? "")
+                        Text(leg.eteMin.map { Format.number($0, decimals: 1) } ?? "")
                         Text("")
                         Text("")
-                        Text(leg.fuelGal.map { Formats.number($0, decimals: 1) } ?? "")
+                        Text(leg.fuelGal.map { Format.number($0, decimals: 1) } ?? "")
                         Text("")
                     }
                     Divider().gridCellUnsizedAxes(.horizontal)
                 }
             }
             .font(.system(size: 8.5).monospacedDigit())
-            Text("Squawk ______   Clearance ____________________   Hobbs out ______ in ______").font(.system(size: 9)).padding(.top, 6)
+            Text("Squawk ______   Clearance ____________________   Hobbs out ______ in ______").font(.system(size: 9)).padding(.top, WingtipSpace.sm)
             Spacer(minLength: 0)
             Text("Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight.").font(.system(size: 6.5))
         }
-        .padding(24)
+        .padding(WingtipSpace.xl)
         .frame(width: 396, height: 612, alignment: .topLeading)
         .foregroundStyle(.black)
         .background(.white)
@@ -601,10 +601,10 @@ struct Kneeboard: View {
     private var summary: String {
         let parts: [String?] = [
             aircraft,
-            totals.map { AirportWords.nm($0.distanceNm) },
-            totals?.eteMin.map(hoursMinutes),
-            totals?.fuelGal.map(AirportWords.gal),
-            totals?.fuelRequiredGal.map { "(\(Formats.number($0, decimals: 1)) with reserve)" },
+            totals.map { Format.distance($0.distanceNm) },
+            totals?.eteMin.map(Format.duration),
+            totals?.fuelGal.map { Format.fuel($0) },
+            totals?.fuelRequiredGal.map { "(\(Format.number($0, decimals: 1)) with reserve)" },
         ]
         return parts.compactMap { $0 }.joined(separator: " · ")
     }
@@ -670,7 +670,7 @@ struct ForgetNotesButton: View {
 struct WatchBanner: View {
     var body: some View {
         if let words = Tracking.shared.fired {
-            HStack(spacing: 8) {
+            HStack(spacing: WingtipSpace.sm) {
                 Image(systemName: "bell.fill").accessibilityHidden(true)
                 Text(words).font(.subheadline.weight(.semibold)).lineLimit(2)
                 Button { Tracking.shared.fired = nil } label: {
@@ -679,15 +679,15 @@ struct WatchBanner: View {
                 }
                 .accessibilityLabel("Dismiss")
             }
-            .padding(.horizontal, 12).padding(.vertical, 8)
-            .background(.regularMaterial, in: Capsule())
+            .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
+            .floatingGlass(in: Capsule())
         } else if let problem = Tracking.shared.watchProblem {
             // A watch that could not be checked says so where it would
             // have gone off, rather than staying quiet.
             Label(problem, systemImage: "exclamationmark.triangle")
                 .font(.subheadline).foregroundStyle(.orange).lineLimit(2)
-                .padding(.horizontal, 12).padding(.vertical, 8)
-                .background(.regularMaterial, in: Capsule())
+                .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
+                .floatingGlass(in: Capsule())
         }
     }
 }

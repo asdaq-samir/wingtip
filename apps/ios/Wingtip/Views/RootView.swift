@@ -54,7 +54,7 @@ struct RootView: View {
     @AppStorage(MapExtrasInput.Keys.classB) private var classBOn = false
     @AppStorage(MapExtrasInput.Keys.plates) private var platesOn = true
 
-    enum Tabs: String, Hashable { case fpl, airport, aircraft, setup }
+    enum Tabs: String, Hashable { case fpl, airport, airplane, setup }
 
     /// What the map draws of the airplane tracked and the flights flown,
     /// and its taps for them: an airplane's card, a point pressed.
@@ -96,8 +96,9 @@ struct RootView: View {
                         .onGeometryChange(for: CGFloat.self) { $0.size.height + $0.safeAreaInsets.bottom } action: { sheetHeight = $0 }
                         .presentationDetents([RootView.pill, .medium, .large], selection: $detent)
                         .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-                        .presentationBackground(.regularMaterial)
-                        .presentationCornerRadius(24)
+                        // The system's Liquid Glass sheet and its own corners
+                        // on iOS 26; the material on iOS 18 (Design/Glass.swift).
+                        .sheetGlass()
                         .interactiveDismissDisabled()
                     }
             case .split:
@@ -114,6 +115,8 @@ struct RootView: View {
             }
         }
         .onChange(of: tab) { _, now in sceneTab = now.rawValue }
+        // The picked look's tint, the brand's blue by default (Look).
+        .lookTint()
     }
 
     /// A field or a point opened from the map: in the Airport tab, half
@@ -165,7 +168,9 @@ struct RootView: View {
                 // A finger held on the chart: the airspace there, half way
                 // up, as a field's card opens.
                 onHold: { at in open(AirportRoute.airspace(lat: at.latitude, lon: at.longitude).text) },
-                onWaypointStop: plan.routed ? { (ident: String) in plan.stops.append(ident); plan.plan() } : nil
+                onWaypoint: plan.course != nil ? { (ident: String, at: CLLocationCoordinate2D, action: CardAction) in
+                    plan.drop(ident, at: at, then: action == .directTo ? .direct : .add, from: action == .directTo ? dryRun.fix ?? ownShip.fix : nil)
+                } : nil
             ),
             hazardLegs: plan.hazardLegs,
             bottomInset: mapInset,
@@ -186,7 +191,7 @@ struct RootView: View {
                        ask: layoutName == "strip" ? nil : { asking = true })
         }
         .overlay(alignment: .top) {
-            VStack(spacing: 8) {
+            VStack(spacing: WingtipSpace.sm) {
                 AlertsBanner(alerts: ownShip.ahead)
                 // The radio, while the app listens or a call to us waits.
                 RadioOverlay()
@@ -196,20 +201,20 @@ struct RootView: View {
             .padding(.trailing, 64)
         }
         .overlay(alignment: .topLeading) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                 if dryRun.fix != nil { DryRunControls() }
                 WatchBanner()
                 // The licence's credit, beside the traffic it covers.
                 if traffic.on, !traffic.planes.isEmpty {
-                    Text(Traffic.credit(traffic.source)).font(.caption2).padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(.thinMaterial, in: Capsule())
+                    Text(Traffic.credit(traffic.source)).font(.caption2).padding(.horizontal, WingtipSpace.sm).padding(.vertical, 2)
+                        .floatingGlass(in: Capsule(), material: .thinMaterial)
                     if let problem = traffic.marksProblem {
-                        Text(problem).font(.caption2).foregroundStyle(.orange).padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(.thinMaterial, in: Capsule())
+                        Text(problem).font(.caption2).foregroundStyle(.orange).padding(.horizontal, WingtipSpace.sm).padding(.vertical, 2)
+                            .floatingGlass(in: Capsule(), material: .thinMaterial)
                     }
                 }
             }
-            .padding(.leading, 12).padding(.top, 12)
+            .padding(.leading, WingtipSpace.md).padding(.top, WingtipSpace.md)
         }
         // About own ship's real fix, never the dry run's: the traffic near
         // it is told in a notification (Traffic.tellNear).
@@ -309,10 +314,12 @@ struct RootView: View {
     }
 }
 
-/// The four tabs of the planner, in the sheet: FPL, Airport, Aircraft
+/// The four tabs of the planner, in the sheet: FPL, Airport, Airplane
 /// and Setup.
 struct SheetView: View {
     @Environment(Plan.self) private var plan
+    /// In the iPad's sidebar, whose tab bar is at the top.
+    @Environment(\.splitLayout) private var split
     @Binding var tab: RootView.Tabs
     @Binding var airports: [String]
     /// At the pill: the figures over the tab bar, nothing else.
@@ -323,17 +330,17 @@ struct SheetView: View {
 
     var body: some View {
         TabView(selection: $tab) {
-            Tab("FPL", systemImage: "point.topleft.down.to.point.bottomright.curvepath", value: RootView.Tabs.fpl) {
-                FPLView()
+            Tab("FPL", systemImage: WingtipIcon.tabFPL, value: RootView.Tabs.fpl) {
+                FPLView().clearOfTabBar(!split)
             }
-            Tab("Airport", systemImage: "airplane.departure", value: RootView.Tabs.airport) {
-                AirportSearchView(path: $airports)
+            Tab("Airport", systemImage: WingtipIcon.tabAirport, value: RootView.Tabs.airport) {
+                AirportSearchView(path: $airports).clearOfTabBar(!split)
             }
-            Tab("Aircraft", systemImage: "airplane", value: RootView.Tabs.aircraft) {
-                AircraftView()
+            Tab("Airplane", systemImage: WingtipIcon.tabAirplane, value: RootView.Tabs.airplane) {
+                AircraftView().clearOfTabBar(!split)
             }
-            Tab("Setup", systemImage: "gearshape", value: RootView.Tabs.setup) {
-                SetupView()
+            Tab("Setup", systemImage: WingtipIcon.tabSetup, value: RootView.Tabs.setup) {
+                SetupView().clearOfTabBar(!split)
             }
         }
         // The pill shows the flight's figures where the tab's own content
@@ -341,7 +348,7 @@ struct SheetView: View {
         .overlay(alignment: .top) {
             if pill {
                 FiguresStrip()
-                    .padding(.top, 14)
+                    .padding(.top, WingtipSpace.md)
                     .frame(maxWidth: .infinity)
                     .background(.regularMaterial)
                     .transition(.opacity)
@@ -351,7 +358,7 @@ struct SheetView: View {
         // The Undo bar over the tab bar, where the edit was made.
         .overlay(alignment: .bottom) {
             UndoBar()
-                .padding(.bottom, 60)
+                .padding(.bottom, WingtipSize.tabBar)
                 .animation(.easeOut(duration: 0.25), value: plan.undoNote)
         }
         // An airplane's card, a point pressed on the map, a hold, a flown

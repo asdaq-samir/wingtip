@@ -193,8 +193,8 @@ extension Due {
             default: return d > 1 ? "In \(d) days" : "\(-d) days past"
             }
         }
-        if let h = hoursLeft { return h > 0 ? "\(Formats.hours(h)) to go" : "Due now" }
-        return dueAtHours.map { "At \(Formats.hours($0))" } ?? ""
+        if let h = hoursLeft { return h > 0 ? "\(Format.hours(h)) to go" : "Due now" }
+        return dueAtHours.map { "At \(Format.hours($0))" } ?? ""
     }
 
     /// Past is red, within the reminders' 30 days (or 10 hours) orange,

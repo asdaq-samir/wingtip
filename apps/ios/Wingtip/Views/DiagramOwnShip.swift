@@ -61,19 +61,14 @@ struct DiagramOwnShipView: View {
             }
             .navigationTitle("\(ident) airport diagram")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { dismiss() } label: { Image(systemName: "xmark") }
-                        .accessibilityLabel("Close")
-                }
-            }
+            .closeButton { dismiss() }
             .safeAreaInset(edge: .bottom) {
                 if let diagram {
                     Text(note(diagram))
                         .font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                        .padding(.horizontal, 10).padding(.vertical, 4)
-                        .background(.thinMaterial, in: Capsule())
-                        .padding(.bottom, 8)
+                        .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.xs)
+                        .floatingGlass(in: Capsule(), material: .thinMaterial)
+                        .padding(.bottom, WingtipSpace.sm)
                 }
             }
         }

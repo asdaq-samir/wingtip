@@ -12,7 +12,7 @@ struct UndoBar: View {
 
     var body: some View {
         if let note = plan.undoNote {
-            HStack(spacing: 12) {
+            HStack(spacing: WingtipSpace.md) {
                 Text(note.words)
                     .font(.subheadline)
                     .lineLimit(1)
@@ -22,11 +22,11 @@ struct UndoBar: View {
                     .frame(minWidth: 44, minHeight: 44)
                     .contentShape(Rectangle())
             }
-            .padding(.leading, 16)
-            .padding(.trailing, 8)
-            .background(.thickMaterial, in: Capsule())
+            .padding(.leading, WingtipSpace.lg)
+            .padding(.trailing, WingtipSpace.sm)
+            .floatingGlass(in: Capsule(), material: .thickMaterial)
             .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, WingtipSpace.lg)
             // A slide up from the foot; a fade alone with Reduce Motion on.
             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
             .accessibilityElement(children: .contain)

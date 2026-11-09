@@ -16,32 +16,34 @@ struct MapButtons: View {
     let ask: (() -> Void)?
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: WingtipSpace.md) {
             Button {
                 if routeAway && !following { fitRoute() } else { following.toggle() }
             } label: {
-                Image(systemName: routeAway && !following ? "point.topleft.down.to.point.bottomright.curvepath" : following ? "location.fill" : "location")
+                Image(systemName: routeAway && !following ? WingtipIcon.flightPlan : following ? WingtipIcon.myLocationOn : WingtipIcon.myLocation)
                     // The body style, so the glyph follows Dynamic Type; the
                     // 44-point round button itself does not grow.
                     .font(.body.weight(.medium))
-                    .frame(width: 44, height: 44)
+                    .frame(width: WingtipSize.tapTarget, height: WingtipSize.tapTarget)
             }
             .accessibilityLabel(routeAway && !following ? "Show the whole route" : following ? "Stop following my position" : "My position")
-            .background(.regularMaterial, in: Circle())
+            // Liquid Glass on iOS 26, as Maps' own buttons are; the
+            // material on iOS 18 (Design/Glass.swift).
+            .floatingGlass(in: Circle(), interactive: true)
             .foregroundStyle(.primary)
             if let ask {
                 Button(action: ask) {
-                    Image(systemName: "sparkles")
+                    Image(systemName: WingtipIcon.brief)
                         .font(.body.weight(.medium))
-                        .frame(width: 44, height: 44)
+                        .frame(width: WingtipSize.tapTarget, height: WingtipSize.tapTarget)
                 }
                 .accessibilityLabel("Ask about this flight")
-                .background(.regularMaterial, in: Circle())
+                .floatingGlass(in: Circle(), interactive: true)
                 .foregroundStyle(Color.accentColor)
             }
         }
-        .padding(.trailing, 12)
-        .padding(.top, 12)
+        .padding(.trailing, WingtipSpace.md)
+        .padding(.top, WingtipSpace.md)
     }
 }
 

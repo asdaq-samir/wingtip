@@ -8,7 +8,7 @@ struct AlertsBanner: View {
 
     var body: some View {
         if let first = alerts.sorted(by: { $0.seconds < $1.seconds }).first {
-            HStack(spacing: 8) {
+            HStack(spacing: WingtipSpace.sm) {
                 // The octagon and the triangle tell the two levels apart
                 // without their colours; VoiceOver says the level.
                 let danger = first.level == "stop" || first.level == "danger"
@@ -16,7 +16,7 @@ struct AlertsBanner: View {
                     .accessibilityLabel(danger ? "Danger ahead" : "Caution ahead")
                 VStack(alignment: .leading, spacing: 1) {
                     Text(first.name).font(.subheadline.weight(.semibold)).lineLimit(1)
-                    Text("\(first.need) · \(Formats.minutes(first.seconds / 60)), \(Formats.nm(first.distanceNm))").font(.footnote).lineLimit(1)
+                    Text("\(first.need) · \(Format.duration(first.seconds / 60)), \(Format.distance(first.distanceNm))").font(.footnote).lineLimit(1)
                         .accessibilityLabel("\(first.need), in \(SpokenFigures.minutes(first.seconds / 60)), \(SpokenFigures.nauticalMiles(first.distanceNm))")
                 }
                 Spacer(minLength: 0)
@@ -25,11 +25,11 @@ struct AlertsBanner: View {
                         .accessibilityLabel("and \(alerts.count - 1) more")
                 }
             }
-            .padding(.horizontal, 12).padding(.vertical, 8)
+            .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
             .foregroundStyle(.white)
             .background(first.level == "stop" || first.level == "danger" ? Color.red : Color.orange, in: RoundedRectangle(cornerRadius: 14))
-            .padding(.horizontal, 12)
-            .padding(.top, 8)
+            .padding(.horizontal, WingtipSpace.md)
+            .padding(.top, WingtipSpace.sm)
             .accessibilityElement(children: .combine)
         }
     }

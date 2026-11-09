@@ -19,9 +19,9 @@ struct AircraftView: View {
                 // Any airplane in the air, by its callsign, N-number or
                 // address: its card, tracked on the map.
                 Section {
-                    NavigationLink { TrafficFindView() } label: { Label("Find an Airplane", systemImage: "magnifyingglass") }
+                    NavigationLink { TrafficFindView().closesBack() } label: { Label("Find an Airplane", systemImage: "magnifyingglass") }
                 }
-                Section("Airplane") {
+                Section(title: "Airplane") {
                     HStack {
                         TextField("N-number", text: $typed)
                             .textInputAutocapitalization(.characters).autocorrectionDisabled()
@@ -35,14 +35,14 @@ struct AircraftView: View {
                         LabeledContent("Flying", value: "\(tail) on \(plan.aircraft.uppercased())\(plan.figures.cruiseTasKt == nil ? "" : ", your figures")")
                         // The figures the planner flies it on, the pilot's to
                         // set from the handbook, or read off a photo of it.
-                        NavigationLink("Planning figures") { AirplaneFiguresView() }
+                        NavigationLink("Planning Figures") { AirplaneFiguresView().closesBack() }
                     }
                     // The airplane's checklists, normal and emergency, kept on
                     // this device by its N-number, else by its type.
                     ChecklistRows(airplane: LocalChecklists.airplane(of: plan))
                 }
                 if session.signedIn || !own.isEmpty {
-                    Section("Yours") {
+                    Section(title: "Yours") {
                         ForEach(own) { airplane in
                             Button {
                                 typed = airplane.tailNumber
@@ -51,7 +51,7 @@ struct AircraftView: View {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(airplane.tailNumber).font(.headline.monospaced())
-                                        Text("\(airplane.typeDesignator) · \(Formats.kt(airplane.cruiseTasKt)) · \(Formats.number(airplane.fuelBurnGph, decimals: 1)) gal/h")
+                                        Text("\(airplane.typeDesignator) · \(Format.speed(airplane.cruiseTasKt)) · \(Format.number(airplane.fuelBurnGph, decimals: 1)) gal/h")
                                             .font(.footnote).foregroundStyle(.secondary)
                                     }
                                     Spacer()
@@ -62,10 +62,10 @@ struct AircraftView: View {
                         }
                         // Added, edited and deleted on their own page, with
                         // each one's checklist, squawks and inspections.
-                        NavigationLink("Your Airplanes") { OwnAircraftListView() }
+                        NavigationLink("Your Airplanes") { OwnAircraftListView().closesBack() }
                     }
                 }
-                Section("Types the planner has figures for") {
+                Section(title: "Types the Planner Has Figures for") {
                     if profiles.isEmpty {
                         if let problem { ProblemLine(problem) } else { ProgressView() }
                     }
@@ -73,8 +73,8 @@ struct AircraftView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(profile.type ?? profile.designator ?? profile.name.uppercased()).font(.headline)
-                                Text("\(Formats.kt(profile.cruiseTasKt)) · \(Formats.number(profile.fuelBurnGph, decimals: 1)) gal/h · ceiling \(Formats.feet(profile.serviceCeilingFt))"
-                                     + (profile.usableFuelGal.map { " · \(Formats.gal($0, decimals: 0)) usable" } ?? ""))
+                                Text("\(Format.speed(profile.cruiseTasKt)) · \(Format.number(profile.fuelBurnGph, decimals: 1)) gal/h · ceiling \(Format.altitude(profile.serviceCeilingFt))"
+                                     + (profile.usableFuelGal.map { " · \(Format.fuel($0, decimals: 0)) usable" } ?? ""))
                                     .font(.footnote).foregroundStyle(.secondary)
                             }
                             Spacer()
@@ -84,7 +84,7 @@ struct AircraftView: View {
                     }
                 }
             }
-            .navigationTitle("Aircraft")
+            .navigationTitle("Airplane")
             .navigationBarTitleDisplayMode(.inline)
             .task {
                 do { profiles = try await Planner.aircraftProfiles() } catch { problem = error.localizedDescription }

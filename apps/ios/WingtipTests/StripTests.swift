@@ -37,8 +37,8 @@ struct FieldCommandsTests {
         #expect(FieldCommands.read("brief") == .open(.brief))
         #expect(FieldCommands.read("My airplane") == .open(.airplane))
         #expect(FieldCommands.read("open my logbook") == .open(.logbook))
-        #expect(FieldCommands.read("Settings") == .open(.settings))
-        #expect(FieldCommands.read("setup") == .open(.settings))
+        #expect(FieldCommands.read("Settings") == .open(.setup))
+        #expect(FieldCommands.read("setup") == .open(.setup))
         #expect(FieldCommands.read("instructor") == .open(.instructor))
         #expect(FieldCommands.read("Nearest fuel") == .open(.fuel))
         #expect(FieldCommands.read("nearest") == .open(.nearest))
@@ -158,13 +158,7 @@ struct StripDataTests {
         #expect(StripData.nextPoint(points, position: half)?.name == "KDLH")
     }
 
-    @Test func aDurationIsWrittenAsTheWebWritesEveryOne() throws {
-        #expect(StripData.duration(65) == "1h 5m")
-        #expect(StripData.duration(45) == "45m")
-        #expect(StripData.duration(180) == "3h")
-        #expect(StripData.duration(0) == "0m")
-        // The minutes rounded first: 119.6 is "2h", never "1h 60m".
-        #expect(StripData.duration(119.6) == "2h")
+    @Test func theStripsFiguresAreTheSharedTablesForms() throws {
         #expect(StripData.figures(eteMin: 165, fuelGal: 29.1) == "2h 45m · 29.1 gal")
         #expect(StripData.figures(eteMin: nil, fuelGal: nil) == "")
     }
@@ -172,8 +166,8 @@ struct StripDataTests {
     @Test func theHeadsLineIsTheRouteTheAirplaneTheAltitudeAsFLAndWhen() throws {
         #expect(StripData.routeName(dep: "C81", dest: "KDLH", stops: ["KJVL"]) == "C81 → KJVL → KDLH")
         #expect(StripData.routeName(dep: "KDLH", dest: "KDLH", stops: []) == "KDLH local")
-        #expect(flightLevel(4500) == "FL-045")
-        #expect(flightLevel(10500) == "FL-105")
+        #expect(Format.cruiseAltitude(4500) == "FL-045")
+        #expect(Format.cruiseAltitude(10500) == "FL-105")
         #expect(StripData.headLine(dep: "C81", dest: "KDLH", stops: ["KJVL"], airplane: "C172", cruiseFt: 4500, departAt: nil)
                 == "C81 → KJVL → KDLH · C172 · FL-045 · leaving now")
         #expect(StripData.headLine(dep: "C81", dest: "KDLH", stops: [], airplane: "", cruiseFt: nil, departAt: nil) == "C81 → KDLH · leaving now")

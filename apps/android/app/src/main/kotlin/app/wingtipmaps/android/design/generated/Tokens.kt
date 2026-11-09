@@ -552,6 +552,7 @@ object WingtipMotion {
 object WingtipSize {
     val TapTarget = 48.dp
     val Chip = 32.dp
+    val TabBar = 64.dp
     val Panel = 384.dp
     val PanelWide = 448.dp
     val Desktop = 1024.dp

@@ -131,8 +131,8 @@ struct AirportExtrasTests {
     }
 
     @Test func figuresAndTimes() throws {
-        #expect(AirportWords.grouped(10162) == "10,162" && AirportWords.grouped(1234567) == "1,234,567" && AirportWords.grouped(500) == "500")
-        #expect(AirportWords.feet(1428) == "1,428 ft" && AirportWords.feet(nil) == "—")
+        #expect(Format.grouped(10162) == "10,162" && Format.grouped(1234567) == "1,234,567" && Format.grouped(500) == "500")
+        #expect(Format.altitude(1428) == "1,428 ft" && Format.altitude(nil) == "—")
         #expect(AirportWords.compassPoint(44) == "NE" && AirportWords.compassPoint(350) == "N" && AirportWords.compassPoint(-90) == "W")
         #expect(AirportWords.degreesMinutes(lat: 42.3172, lon: -88.0905) == "N42°19.0′ W088°05.4′")
         // 59.96 minutes is the next degree, never 60.0.
