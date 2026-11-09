@@ -171,6 +171,10 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     }
     c.ask("call_pattern", json!({ "tail": heard["tail"] }));
 
+    for case in fixture("departureWindow.json")["cases"].as_array().unwrap() {
+        c.ask("departure_window", case["input"].clone());
+    }
+
     let readbacks = fixture("readbacks.json");
     for case in readbacks["cases"].as_array().unwrap() {
         c.ask("readback_check", json!({ "cleared": readbacks["cleared"], "said": case["said"] }));

@@ -1,0 +1,1796 @@
+{
+  "_note": "departure_window (engine/crates/brief/src/gonogo/window.rs): each case's input, and the answer checked by hand against the Go / No-Go's rules, the sun's times at Waukegan and Oshkosh and the ranking the module states.",
+  "cases": [
+    {
+      "name": "KUGN to KOSH, the morning of 10 November 2026",
+      "input": {
+        "start": [
+          42.4222,
+          -87.8679
+        ],
+        "end": [
+          43.9844,
+          -88.557
+        ],
+        "airplane": true,
+        "minimums": {
+          "ceiling_ft": 3000,
+          "visibility_sm": 5
+        },
+        "risk": {
+          "ifr": false,
+          "day": "2026-11-10",
+          "ticked": {},
+          "currency": {
+            "flights": 40,
+            "total_hours": 180,
+            "day_passengers_until": "2027-01-20",
+            "night_passengers_until": "2026-10-01",
+            "flight_review_until": "2027-06-30"
+          }
+        },
+        "hours": [
+          {
+            "depart_s": 1794308400,
+            "reaches": true,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": 800,
+            "visibility_sm": 2,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [
+                  "KOSH forecast 800 ft overcast, 2 sm"
+                ],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "800 ft and 2 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": false
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": 21.4,
+                "required_gal": 13.1,
+                "reserve_min": 30,
+                "ifr": false
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": null
+          },
+          {
+            "depart_s": 1794312000,
+            "reaches": true,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": 2500,
+            "visibility_sm": 5,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [
+                  "G-AIRMET Sierra (IFR)"
+                ],
+                "unchecked": [],
+                "worst": "2,500 ft and 5 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": false
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": 21.4,
+                "required_gal": 13.1,
+                "reserve_min": 30,
+                "ifr": false
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": null
+          },
+          {
+            "depart_s": 1794315600,
+            "reaches": true,
+            "ete_min": 57.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": 3500,
+            "visibility_sm": 6,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "3,500 ft and 6 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": false
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": 21.4,
+                "required_gal": 13.1,
+                "reserve_min": 30,
+                "ifr": false
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": null
+          },
+          {
+            "depart_s": 1794319200,
+            "reaches": true,
+            "ete_min": 55.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": 4500,
+            "visibility_sm": 6,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "4,500 ft and 6 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": false
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": 21.4,
+                "required_gal": 13.1,
+                "reserve_min": 30,
+                "ifr": false
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": null
+          },
+          {
+            "depart_s": 1794322800,
+            "reaches": true,
+            "ete_min": 56.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": 5000,
+            "visibility_sm": 6,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "5,000 ft and 6 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": false
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": 21.4,
+                "required_gal": 13.1,
+                "reserve_min": 30,
+                "ifr": false
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": null
+          },
+          {
+            "depart_s": 1794326400,
+            "reaches": true,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": 2800,
+            "visibility_sm": 6,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [
+                  "KOSH forecast 2,800 ft broken, under your 3,000 ft"
+                ],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "2,800 ft and 6 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": false
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": 21.4,
+                "required_gal": 13.1,
+                "reserve_min": 30,
+                "ifr": false
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": null
+          },
+          {
+            "depart_s": 1794330000,
+            "reaches": true,
+            "ete_min": 54.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": null,
+            "visibility_sm": 6,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "no ceiling and 6 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": false
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": 21.4,
+                "required_gal": 13.1,
+                "reserve_min": 30,
+                "ifr": false
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": null
+          },
+          {
+            "depart_s": 1794333600,
+            "reaches": true,
+            "ete_min": 54.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": null,
+            "visibility_sm": 6,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "no ceiling and 6 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": false
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": 21.4,
+                "required_gal": 13.1,
+                "reserve_min": 30,
+                "ifr": false
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": null
+          },
+          {
+            "depart_s": 1794337200,
+            "reaches": false,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": null,
+            "visibility_sm": null,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": null,
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": false
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": 21.4,
+                "required_gal": 13.1,
+                "reserve_min": 30,
+                "ifr": false
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": null
+          }
+        ]
+      },
+      "answer": {
+        "hours": [
+          {
+            "depart_s": 1794308400.0,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "margin": 0.27,
+            "night": true,
+            "night_passengers": true,
+            "reasons": [
+              {
+                "detail": "VFR not recommended: KOSH forecast 800 ft overcast, 2 sm",
+                "finding": "stop",
+                "key": "weather",
+                "label": "Weather",
+                "section": "Adverse Conditions",
+                "tab": "enroute"
+              },
+              {
+                "detail": "High \u00b7 18 points",
+                "finding": "stop",
+                "key": "risk",
+                "label": "Risk",
+                "section": "Risk Assessment",
+                "tab": "preflight"
+              }
+            ],
+            "verdict": "no-go"
+          },
+          {
+            "depart_s": 1794312000.0,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "margin": 0.83,
+            "night": true,
+            "night_passengers": false,
+            "reasons": [
+              {
+                "detail": "G-AIRMET Sierra (IFR) along the route",
+                "finding": "caution",
+                "key": "weather",
+                "label": "Weather",
+                "section": "Adverse Conditions",
+                "tab": "enroute"
+              }
+            ],
+            "verdict": "caution"
+          },
+          {
+            "depart_s": 1794315600.0,
+            "ete_min": 57.0,
+            "fuel_gal": 11.6,
+            "margin": 1.17,
+            "night": false,
+            "night_passengers": false,
+            "reasons": [
+              {
+                "detail": "No hazards; at worst 3,500 ft and 6 sm",
+                "finding": "ok",
+                "key": "weather",
+                "label": "Weather",
+                "section": "Adverse Conditions",
+                "tab": "enroute"
+              }
+            ],
+            "verdict": "go"
+          },
+          {
+            "depart_s": 1794319200.0,
+            "ete_min": 55.0,
+            "fuel_gal": 11.6,
+            "margin": 1.2,
+            "night": false,
+            "night_passengers": false,
+            "reasons": [
+              {
+                "detail": "No hazards; at worst 4,500 ft and 6 sm",
+                "finding": "ok",
+                "key": "weather",
+                "label": "Weather",
+                "section": "Adverse Conditions",
+                "tab": "enroute"
+              }
+            ],
+            "verdict": "go"
+          },
+          {
+            "depart_s": 1794322800.0,
+            "ete_min": 56.0,
+            "fuel_gal": 11.6,
+            "margin": 1.2,
+            "night": false,
+            "night_passengers": false,
+            "reasons": [
+              {
+                "detail": "No hazards; at worst 5,000 ft and 6 sm",
+                "finding": "ok",
+                "key": "weather",
+                "label": "Weather",
+                "section": "Adverse Conditions",
+                "tab": "enroute"
+              }
+            ],
+            "verdict": "go"
+          },
+          {
+            "depart_s": 1794326400.0,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "margin": 0.93,
+            "night": false,
+            "night_passengers": false,
+            "reasons": [
+              {
+                "detail": "Under your minimums: KOSH forecast 2,800 ft broken, under your 3,000 ft",
+                "finding": "stop",
+                "key": "weather",
+                "label": "Weather",
+                "section": "Adverse Conditions",
+                "tab": "enroute"
+              },
+              {
+                "detail": "High \u00b7 12 points",
+                "finding": "stop",
+                "key": "risk",
+                "label": "Risk",
+                "section": "Risk Assessment",
+                "tab": "preflight"
+              }
+            ],
+            "verdict": "no-go"
+          },
+          {
+            "depart_s": 1794330000.0,
+            "ete_min": 54.0,
+            "fuel_gal": 11.6,
+            "margin": 1.2,
+            "night": false,
+            "night_passengers": false,
+            "reasons": [
+              {
+                "detail": "No hazards; at worst no ceiling and 6 sm",
+                "finding": "ok",
+                "key": "weather",
+                "label": "Weather",
+                "section": "Adverse Conditions",
+                "tab": "enroute"
+              }
+            ],
+            "verdict": "go"
+          },
+          {
+            "depart_s": 1794333600.0,
+            "ete_min": 54.0,
+            "fuel_gal": 11.6,
+            "margin": 1.2,
+            "night": false,
+            "night_passengers": false,
+            "reasons": [
+              {
+                "detail": "No hazards; at worst no ceiling and 6 sm",
+                "finding": "ok",
+                "key": "weather",
+                "label": "Weather",
+                "section": "Adverse Conditions",
+                "tab": "enroute"
+              }
+            ],
+            "verdict": "go"
+          },
+          {
+            "depart_s": 1794337200.0,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "margin": null,
+            "night": false,
+            "night_passengers": false,
+            "reasons": [
+              {
+                "detail": "The forecasts do not reach this flight",
+                "finding": "unknown",
+                "key": "weather",
+                "label": "Weather",
+                "section": "Adverse Conditions",
+                "tab": "enroute"
+              }
+            ],
+            "verdict": "unknown"
+          }
+        ],
+        "windows": [
+          {
+            "ete_min": 54.0,
+            "from_s": 1794330000.0,
+            "hours": 2,
+            "last_s": 1794333600.0,
+            "margin": 1.2,
+            "quickest_s": 1794330000.0
+          },
+          {
+            "ete_min": 55.0,
+            "from_s": 1794315600.0,
+            "hours": 3,
+            "last_s": 1794322800.0,
+            "margin": 1.17,
+            "quickest_s": 1794319200.0
+          }
+        ]
+      }
+    },
+    {
+      "name": "KUGN to KOSH into the evening: night, and 61.57(b)'s passenger period, with night passenger currency lapsed",
+      "input": {
+        "start": [
+          42.4222,
+          -87.8679
+        ],
+        "end": [
+          43.9844,
+          -88.557
+        ],
+        "airplane": true,
+        "minimums": null,
+        "risk": {
+          "ifr": false,
+          "day": "2026-11-10",
+          "ticked": {},
+          "currency": {
+            "flights": 40,
+            "total_hours": 180,
+            "day_passengers_until": "2027-01-20",
+            "night_passengers_until": "2026-10-01",
+            "flight_review_until": "2027-06-30"
+          }
+        },
+        "hours": [
+          {
+            "depart_s": 1794344400,
+            "reaches": true,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": null,
+            "visibility_sm": 10,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "no ceiling and 10 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": false
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": 21.4,
+                "required_gal": 13.1,
+                "reserve_min": 30,
+                "ifr": false
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": null
+          },
+          {
+            "depart_s": 1794348000,
+            "reaches": true,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": null,
+            "visibility_sm": 10,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "no ceiling and 10 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": false
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": 21.4,
+                "required_gal": 13.1,
+                "reserve_min": 30,
+                "ifr": false
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": null
+          },
+          {
+            "depart_s": 1794351600,
+            "reaches": true,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": null,
+            "visibility_sm": 10,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "no ceiling and 10 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": false
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": 21.4,
+                "required_gal": 13.1,
+                "reserve_min": 30,
+                "ifr": false
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": null
+          },
+          {
+            "depart_s": 1794355200,
+            "reaches": true,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": null,
+            "visibility_sm": 10,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "no ceiling and 10 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": false
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": 21.4,
+                "required_gal": 13.1,
+                "reserve_min": 30,
+                "ifr": false
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": null
+          },
+          {
+            "depart_s": 1794358800,
+            "reaches": true,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": null,
+            "visibility_sm": 10,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "no ceiling and 10 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": false
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": 21.4,
+                "required_gal": 13.1,
+                "reserve_min": 30,
+                "ifr": false
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": null
+          }
+        ]
+      },
+      "answer": {
+        "hours": [
+          {
+            "depart_s": 1794344400.0,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "margin": 3.0,
+            "night": false,
+            "night_passengers": false,
+            "reasons": [
+              {
+                "detail": "No hazards; at worst no ceiling and 10 sm",
+                "finding": "ok",
+                "key": "weather",
+                "label": "Weather",
+                "section": "Adverse Conditions",
+                "tab": "enroute"
+              }
+            ],
+            "verdict": "go"
+          },
+          {
+            "depart_s": 1794348000.0,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "margin": 3.0,
+            "night": false,
+            "night_passengers": false,
+            "reasons": [
+              {
+                "detail": "No hazards; at worst no ceiling and 10 sm",
+                "finding": "ok",
+                "key": "weather",
+                "label": "Weather",
+                "section": "Adverse Conditions",
+                "tab": "enroute"
+              }
+            ],
+            "verdict": "go"
+          },
+          {
+            "depart_s": 1794351600.0,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "margin": 3.0,
+            "night": true,
+            "night_passengers": true,
+            "reasons": [
+              {
+                "detail": "Raised \u00b7 6 points",
+                "finding": "caution",
+                "key": "risk",
+                "label": "Risk",
+                "section": "Risk Assessment",
+                "tab": "preflight"
+              }
+            ],
+            "verdict": "caution"
+          },
+          {
+            "depart_s": 1794355200.0,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "margin": 3.0,
+            "night": true,
+            "night_passengers": true,
+            "reasons": [
+              {
+                "detail": "Raised \u00b7 6 points",
+                "finding": "caution",
+                "key": "risk",
+                "label": "Risk",
+                "section": "Risk Assessment",
+                "tab": "preflight"
+              }
+            ],
+            "verdict": "caution"
+          },
+          {
+            "depart_s": 1794358800.0,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "margin": 3.0,
+            "night": true,
+            "night_passengers": true,
+            "reasons": [
+              {
+                "detail": "Raised \u00b7 6 points",
+                "finding": "caution",
+                "key": "risk",
+                "label": "Risk",
+                "section": "Risk Assessment",
+                "tab": "preflight"
+              }
+            ],
+            "verdict": "caution"
+          }
+        ],
+        "windows": [
+          {
+            "ete_min": 58.0,
+            "from_s": 1794344400.0,
+            "hours": 2,
+            "last_s": 1794348000.0,
+            "margin": 3.0,
+            "quickest_s": 1794344400.0
+          }
+        ]
+      }
+    },
+    {
+      "name": "No airplane picked: weather and daylight alone",
+      "input": {
+        "start": [
+          42.4222,
+          -87.8679
+        ],
+        "end": [
+          43.9844,
+          -88.557
+        ],
+        "airplane": false,
+        "minimums": null,
+        "risk": {
+          "ifr": false,
+          "day": "2026-11-10",
+          "ticked": {},
+          "currency": {
+            "flights": 40,
+            "total_hours": 180,
+            "day_passengers_until": "2027-01-20",
+            "night_passengers_until": "2026-10-01",
+            "flight_review_until": "2027-06-30"
+          }
+        },
+        "hours": [
+          {
+            "depart_s": 1794315600,
+            "reaches": true,
+            "ete_min": 57.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": 3500,
+            "visibility_sm": 6,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "3,500 ft and 6 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": false
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": -3.0,
+                "required_gal": 13.1,
+                "reserve_min": 30,
+                "ifr": false
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [
+                  "KUGN"
+                ],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": null
+          },
+          {
+            "depart_s": 1794319200,
+            "reaches": true,
+            "ete_min": 55.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": 4500,
+            "visibility_sm": 6,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "4,500 ft and 6 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": false
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": -3.0,
+                "required_gal": 13.1,
+                "reserve_min": 30,
+                "ifr": false
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [
+                  "KUGN"
+                ],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": null
+          },
+          {
+            "depart_s": 1794322800,
+            "reaches": true,
+            "ete_min": 56.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": 5000,
+            "visibility_sm": 6,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "5,000 ft and 6 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": false
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": -3.0,
+                "required_gal": 13.1,
+                "reserve_min": 30,
+                "ifr": false
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [
+                  "KUGN"
+                ],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": null
+          }
+        ]
+      },
+      "answer": {
+        "hours": [
+          {
+            "depart_s": 1794315600.0,
+            "ete_min": null,
+            "fuel_gal": null,
+            "margin": 2.0,
+            "night": false,
+            "night_passengers": false,
+            "reasons": [
+              {
+                "detail": "No hazards; at worst 3,500 ft and 6 sm",
+                "finding": "ok",
+                "key": "weather",
+                "label": "Weather",
+                "section": "Adverse Conditions",
+                "tab": "enroute"
+              }
+            ],
+            "verdict": "go"
+          },
+          {
+            "depart_s": 1794319200.0,
+            "ete_min": null,
+            "fuel_gal": null,
+            "margin": 2.0,
+            "night": false,
+            "night_passengers": false,
+            "reasons": [
+              {
+                "detail": "No hazards; at worst 4,500 ft and 6 sm",
+                "finding": "ok",
+                "key": "weather",
+                "label": "Weather",
+                "section": "Adverse Conditions",
+                "tab": "enroute"
+              }
+            ],
+            "verdict": "go"
+          },
+          {
+            "depart_s": 1794322800.0,
+            "ete_min": null,
+            "fuel_gal": null,
+            "margin": 2.0,
+            "night": false,
+            "night_passengers": false,
+            "reasons": [
+              {
+                "detail": "No hazards; at worst 5,000 ft and 6 sm",
+                "finding": "ok",
+                "key": "weather",
+                "label": "Weather",
+                "section": "Adverse Conditions",
+                "tab": "enroute"
+              }
+            ],
+            "verdict": "go"
+          }
+        ],
+        "windows": [
+          {
+            "ete_min": null,
+            "from_s": 1794315600.0,
+            "hours": 3,
+            "last_s": 1794322800.0,
+            "margin": 2.0,
+            "quickest_s": 1794315600.0
+          }
+        ]
+      }
+    },
+    {
+      "name": "IFR: the alternate's say each hour",
+      "input": {
+        "start": [
+          42.4222,
+          -87.8679
+        ],
+        "end": [
+          43.9844,
+          -88.557
+        ],
+        "airplane": true,
+        "minimums": null,
+        "risk": {
+          "ifr": true,
+          "day": "2026-11-10",
+          "ticked": {},
+          "currency": {
+            "flights": 40,
+            "total_hours": 180,
+            "day_passengers_until": "2027-01-20",
+            "night_passengers_until": "2026-10-01",
+            "flight_review_until": "2027-06-30",
+            "instrument_current_until": "2027-02-28"
+          }
+        },
+        "hours": [
+          {
+            "depart_s": 1794319200,
+            "reaches": true,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": 900,
+            "visibility_sm": 3,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "900 ft and 3 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": true
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": 9.0,
+                "required_gal": 21.0,
+                "reserve_min": 45,
+                "ifr": true
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": {
+              "destination": {
+                "required": true
+              },
+              "alternate": null
+            }
+          },
+          {
+            "depart_s": 1794322800,
+            "reaches": true,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": 1500,
+            "visibility_sm": 4,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "1,500 ft and 4 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": true
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": 9.0,
+                "required_gal": 21.0,
+                "reserve_min": 45,
+                "ifr": true
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": {
+              "destination": {
+                "required": true
+              },
+              "alternate": {
+                "ident": "KGRB",
+                "good": false,
+                "reasons": []
+              }
+            }
+          },
+          {
+            "depart_s": 1794326400,
+            "reaches": true,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "ground_min": 0,
+            "ceiling_ft": 3000,
+            "visibility_sm": 6,
+            "verdict": {
+              "weather": {
+                "pending": false,
+                "failed": null,
+                "vfr_not_recommended": [],
+                "under_minimums": [],
+                "icing": null,
+                "hazards": [],
+                "unchecked": [],
+                "worst": "3,000 ft and 6 sm",
+                "terminal_alerts": [],
+                "flow_programs": [],
+                "ifr": true
+              },
+              "airspace": {
+                "pending": false,
+                "unchecked": false,
+                "in_force": [],
+                "near": 0,
+                "special_use": []
+              },
+              "altitude": {
+                "pending": false,
+                "problem": null,
+                "cautions": [],
+                "flown": "4,500 ft \u00b7 Fastest plan"
+              },
+              "fuel": {
+                "pending": false,
+                "margin_gal": 9.0,
+                "required_gal": 21.0,
+                "reserve_min": 45,
+                "ifr": true
+              },
+              "runways": {
+                "pending": false,
+                "worked": true,
+                "short": [],
+                "crosswind": [],
+                "beyond": [],
+                "unchecked": []
+              },
+              "balance": {
+                "pending": false,
+                "worked": true,
+                "problems": [],
+                "takeoff": "2,250 lb at 41.2 in"
+              }
+            },
+            "alternate": {
+              "destination": {
+                "required": false
+              },
+              "alternate": null
+            }
+          }
+        ]
+      },
+      "answer": {
+        "hours": [
+          {
+            "depart_s": 1794319200.0,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "margin": 0.9,
+            "night": false,
+            "night_passengers": false,
+            "reasons": [
+              {
+                "detail": "An alternate is required (14 CFR 91.169): file one in Weather",
+                "finding": "caution",
+                "key": "weather",
+                "label": "Weather",
+                "section": "Alternate",
+                "tab": "arrive"
+              }
+            ],
+            "verdict": "caution"
+          },
+          {
+            "depart_s": 1794322800.0,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "margin": 1.33,
+            "night": false,
+            "night_passengers": false,
+            "reasons": [
+              {
+                "detail": "KGRB is under its alternate minimums at the ETA there",
+                "finding": "stop",
+                "key": "weather",
+                "label": "Weather",
+                "section": "Alternate",
+                "tab": "arrive"
+              }
+            ],
+            "verdict": "no-go"
+          },
+          {
+            "depart_s": 1794326400.0,
+            "ete_min": 58.0,
+            "fuel_gal": 11.6,
+            "margin": 2.0,
+            "night": false,
+            "night_passengers": false,
+            "reasons": [
+              {
+                "detail": "No hazards; at worst 3,000 ft and 6 sm",
+                "finding": "ok",
+                "key": "weather",
+                "label": "Weather",
+                "section": "Adverse Conditions",
+                "tab": "enroute"
+              }
+            ],
+            "verdict": "go"
+          }
+        ],
+        "windows": [
+          {
+            "ete_min": 58.0,
+            "from_s": 1794326400.0,
+            "hours": 1,
+            "last_s": 1794326400.0,
+            "margin": 2.0,
+            "quickest_s": 1794326400.0
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -151,7 +151,20 @@
 //!   (microseconds since 1970); `gonogo_sua_when` from `{"times_of_use"?,
 //!   "utc": [day, minute], "local"?: [day, minute]}` (day 0 Sunday; the
 //!   host works the clocks out in the area's own time zone, which the
-//!   engine has no database of).
+//!   engine has no database of);
+//! - `departure_window` ("When should I go?", gonogo::window): the Go /
+//!   No-Go for each departure hour the forecasts reach, from `{"start",
+//!   "end": [lat, lon], "airplane", "minimums"?: {"ceiling_ft"?,
+//!   "visibility_sm"?}, "risk"?: a FratInput (its briefing and nav log
+//!   members each hour's), "hours": [{"depart_s", "reaches", "ete_min"?,
+//!   "fuel_gal"?, "ground_min"?, "ceiling_ft"?, "visibility_sm"?,
+//!   "verdict": a VerdictInput, "alternate"?: /api/alternate's answer}]}`;
+//!   `{"hours": [{"depart_s", "verdict": "go" | "caution" | "no-go" |
+//!   "unknown", "reasons": [item], "ete_min", "fuel_gal", "night",
+//!   "night_passengers", "margin"}], "windows": [{"from_s", "last_s",
+//!   "hours", "margin", "ete_min", "quickest_s"}]}`, the best window
+//!   first. Each hour's night (14 CFR 1.1, 61.57(b)) is the sun's, and
+//!   its risk the assessment's with it.
 //! - `checklist_read`: a checklist typed as text read into its sections,
 //!   `{"sections": [{"title", "items": [{"challenge",
 //!   "response"}]}]}`, from `{"text"}`;

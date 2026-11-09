@@ -124,6 +124,11 @@ export type OralQuestion = Assistant["OralQuestion"];
 export type OralQuestionRequest = Assistant["OralQuestionRequest"];
 export type ClearanceAsk = Schemas["ClearanceAsk"];
 export type ClearancePlaces = Schemas["ClearancePlaces"];
+/** "When should I go?": the hours and the windows (app.window). */
+export type DepartureWindowAsk = Schemas["DepartureWindowAsk"];
+export type DepartureWindow = Schemas["DepartureWindow"];
+export type WindowHour = Schemas["WindowHour"];
+export type DepartureWindowRun = Schemas["Window"];
 export type ClearanceWords = Schemas["ClearanceWords"];
 export type OralGrade = Assistant["OralGrade"];
 export type OralGradeRequest = Assistant["OralGradeRequest"];

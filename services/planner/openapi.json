@@ -5137,6 +5137,343 @@
         "title": "DepartureEvents",
         "type": "object"
       },
+      "DepartureWindow": {
+        "properties": {
+          "airplane": {
+            "title": "Airplane",
+            "type": "boolean"
+          },
+          "forecast_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecast Until"
+          },
+          "hours": {
+            "items": {
+              "$ref": "#/components/schemas/WindowHour"
+            },
+            "title": "Hours",
+            "type": "array"
+          },
+          "windows": {
+            "items": {
+              "$ref": "#/components/schemas/Window"
+            },
+            "title": "Windows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "hours",
+          "windows",
+          "airplane",
+          "forecast_until"
+        ],
+        "title": "DepartureWindow",
+        "type": "object"
+      },
+      "DepartureWindowAsk": {
+        "description": "The Go / No-Go's ask, its `depart` unused: each hour is a departure.",
+        "properties": {
+          "aircraft": {
+            "default": "c172",
+            "title": "Aircraft",
+            "type": "string"
+          },
+          "airplane": {
+            "default": true,
+            "title": "Airplane",
+            "type": "boolean"
+          },
+          "alternate": {
+            "default": "",
+            "title": "Alternate",
+            "type": "string"
+          },
+          "altitude_choice": {
+            "default": "fastest",
+            "enum": [
+              "lowest",
+              "highest",
+              "fastest",
+              "economical"
+            ],
+            "title": "Altitude Choice",
+            "type": "string"
+          },
+          "altitude_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altitude Ft"
+          },
+          "altitude_nearest": {
+            "default": false,
+            "title": "Altitude Nearest",
+            "type": "boolean"
+          },
+          "altitudes": {
+            "default": "",
+            "title": "Altitudes",
+            "type": "string"
+          },
+          "checkpoints": {
+            "default": true,
+            "title": "Checkpoints",
+            "type": "boolean"
+          },
+          "class_b_clearance": {
+            "default": false,
+            "title": "Class B Clearance",
+            "type": "boolean"
+          },
+          "climb_fuel_burn_gph": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Climb Fuel Burn Gph"
+          },
+          "climb_tas_kt": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1000.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Climb Tas Kt"
+          },
+          "crossings": {
+            "default": "",
+            "title": "Crossings",
+            "type": "string"
+          },
+          "cruise_power_pct": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 40.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cruise Power Pct"
+          },
+          "cruise_tas_kt": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1000.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cruise Tas Kt"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PilotCurrency"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "day": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "dep": {
+            "title": "Dep",
+            "type": "string"
+          },
+          "depart": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depart"
+          },
+          "dest": {
+            "title": "Dest",
+            "type": "string"
+          },
+          "fuel_burn_gph": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuel Burn Gph"
+          },
+          "ground": {
+            "default": "",
+            "title": "Ground",
+            "type": "string"
+          },
+          "holds": {
+            "default": "",
+            "title": "Holds",
+            "type": "string"
+          },
+          "hours": {
+            "default": 48,
+            "maximum": 48.0,
+            "minimum": 1.0,
+            "title": "Hours",
+            "type": "integer"
+          },
+          "load": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AirplaneLoad"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "minimums": {
+            "$ref": "#/components/schemas/PersonalMinimums",
+            "default": {}
+          },
+          "own_airplane": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OwnAirplane"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "procedures": {
+            "default": "",
+            "title": "Procedures",
+            "type": "string"
+          },
+          "rules": {
+            "default": "vfr",
+            "enum": [
+              "vfr",
+              "ifr"
+            ],
+            "title": "Rules",
+            "type": "string"
+          },
+          "runway_picks": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunwayPicks"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "runways": {
+            "default": "",
+            "title": "Runways",
+            "type": "string"
+          },
+          "service_ceiling_ft": {
+            "anyOf": [
+              {
+                "maximum": 30000.0,
+                "minimum": 1000.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Ceiling Ft"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "stops": {
+            "default": "",
+            "title": "Stops",
+            "type": "string"
+          },
+          "ticked": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Ticked",
+            "type": "array"
+          },
+          "usable_fuel_gal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usable Fuel Gal"
+          }
+        },
+        "required": [
+          "dep",
+          "dest"
+        ],
+        "title": "DepartureWindowAsk",
+        "type": "object"
+      },
       "DestinationCheck": {
         "description": "The destination against 14 CFR 91.169(b)'s \"1-2-3\": an instrument\napproach published, and its TAF an hour either side of the ETA a\nceiling of 2,000 ft or more and 3 sm or more -- else an alternate is\n`required`, `reasons` saying why (wingtip.alternates).",
         "properties": {
@@ -17150,6 +17487,142 @@
         "title": "Wind",
         "type": "object"
       },
+      "Window": {
+        "description": "A run of go hours: its first and last departure hour, how many, its\nleast margin and its shortest ETE, and the hour that has it.",
+        "properties": {
+          "ete_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ete Min"
+          },
+          "hours": {
+            "title": "Hours",
+            "type": "integer"
+          },
+          "last": {
+            "format": "date-time",
+            "title": "Last",
+            "type": "string"
+          },
+          "margin": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin"
+          },
+          "quickest": {
+            "format": "date-time",
+            "title": "Quickest",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "last",
+          "hours",
+          "margin",
+          "ete_min",
+          "quickest"
+        ],
+        "title": "Window",
+        "type": "object"
+      },
+      "WindowHour": {
+        "description": "One departure hour: go, caution, no-go or not known, the findings\nthat decide it, and its time and fuel with an airplane.",
+        "properties": {
+          "depart": {
+            "format": "date-time",
+            "title": "Depart",
+            "type": "string"
+          },
+          "ete_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ete Min"
+          },
+          "fuel_gal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuel Gal"
+          },
+          "margin": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin"
+          },
+          "night": {
+            "title": "Night",
+            "type": "boolean"
+          },
+          "night_passengers": {
+            "title": "Night Passengers",
+            "type": "boolean"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/VerdictItem"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "verdict": {
+            "enum": [
+              "go",
+              "caution",
+              "no-go",
+              "unknown"
+            ],
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "depart",
+          "verdict",
+          "reasons",
+          "ete_min",
+          "fuel_gal",
+          "night",
+          "night_passengers",
+          "margin"
+        ],
+        "title": "WindowHour",
+        "type": "object"
+      },
       "WindsPeriod": {
         "description": "The period of the winds and temperatures aloft a plan flies: the\nGFS model's (fetched by services/weather, read from wingtip.weather_store), since the FB ended with the NAM (NWS\nService Change Notice 26-47). Valid at `valid_at`, for use from\n`use_from` to `use_to` (FAA Order JO 7110.10 TBL 9-3-1's windows round\nthe forecast hour), ISO UTC; `run` the GFS run and `forecast_hour` the\nhour of it read; `modelled` always true now.",
         "properties": {
@@ -19452,6 +19925,48 @@
         "x-gateway": {
           "access": "public",
           "csrf": false
+        }
+      }
+    },
+    "/api/departure-window": {
+      "post": {
+        "description": "Each departure hour from `start` (the next whole hour), for up to\n`hours` hours or until the TAFs along the route end: go, caution, no-go\nor not known by the Brief's own Go / No-Go for a flight leaving then --\nthe weather along the route and at the fields (TAFs, G-AIRMETs,\nSIGMETs), the pilot's minimums, the TFRs and special-use areas then,\nthe winds aloft's time and fuel, the night (14 CFR 1.1) and 61.57(b)'s\npassenger period, the runways and loading, the risk assessment and,\nunder IFR, the alternate (91.169) -- with the one or two findings that\ndecide it; and the runs of go hours, the most margin over the minimums\nfirst, then the shortest ETE. With no airplane (`airplane` false) only\nthe weather, the airspace, the altitude and the daylight are judged.",
+        "operationId": "departure_window_api_departure_window_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartureWindowAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartureWindow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Departure Window",
+        "x-gateway": {
+          "access": "signed-in"
         }
       }
     },
