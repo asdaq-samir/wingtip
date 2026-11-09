@@ -50,6 +50,7 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.map.MapLayersStore
+import app.wingtipmaps.android.pilot.MinimumsRows
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
 /**
@@ -114,6 +115,10 @@ fun SetupScreen(session: Session) {
         // What falls due, the pilot's and their airplanes': under the
         // account it belongs to.
         signedIn?.let { ComingUpSection(signedInAs = it.email ?: it.displayName ?: "") }
+        // The pilot's own minimums, kept on this phone (no sign-in), as
+        // the web keeps them with the pilot's own things.
+        SectionTitle(stringResource(R.string.personal_minimums))
+        MinimumsRows()
 
         SectionTitle(stringResource(R.string.map))
         MapLayerRows()

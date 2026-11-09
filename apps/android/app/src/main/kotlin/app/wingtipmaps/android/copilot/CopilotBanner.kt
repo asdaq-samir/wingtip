@@ -40,6 +40,8 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AheadAlert
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.pilot.MinimumsStore
+import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.ui.LocalInk
 
 /**
@@ -55,8 +57,10 @@ fun CopilotBanner(plan: Plan.State, flying: Boolean, fix: OwnShip.Fix?, ahead: L
     val context = LocalContext.current
     val setting = remember(context) { CopilotSetting.of(context) }
     val mode by setting.mode.collectAsStateWithLifecycle()
-    val flight = remember(plan.course, plan.totals, plan.legs, plan.dest) { CopilotFlight.of(plan) }
-    LaunchedEffect(mode, flying, fix, flight, ahead) { model.look(mode, flying, fix, flight, ahead, setting) }
+    val passengers by remember(context) { FlightChoices.of(context) }.passengers.collectAsStateWithLifecycle()
+    val minimums by remember(context) { MinimumsStore.of(context) }.minimums.collectAsStateWithLifecycle()
+    val flight = remember(plan.course, plan.totals, plan.legs, plan.dest, plan.rules, passengers) { CopilotFlight.of(plan, passengers) }
+    LaunchedEffect(mode, flying, fix, flight, ahead, minimums) { model.look(mode, flying, fix, flight, ahead, setting, minimums.forCopilot) }
     val message by model.message.collectAsStateWithLifecycle()
     val shown = message?.takeIf { !it.elsewhere && mode != CopilotMode.OFF && flying } ?: return
     var open by rememberSaveable(shown.id) { mutableStateOf(false) }

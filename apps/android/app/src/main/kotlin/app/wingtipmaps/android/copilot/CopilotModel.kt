@@ -49,7 +49,10 @@ class CopilotModel(
      * seconds. Off, or not flying, it says nothing, and the next flight
      * starts afresh.
      */
-    fun look(mode: CopilotMode, flying: Boolean, fix: OwnShip.Fix?, flight: CopilotFlight?, ahead: List<AheadAlert>, voice: CopilotVoice?, nowMs: Long = System.currentTimeMillis()) {
+    fun look(
+        mode: CopilotMode, flying: Boolean, fix: OwnShip.Fix?, flight: CopilotFlight?, ahead: List<AheadAlert>, voice: CopilotVoice?,
+        minimums: EngineContract.CopilotWatchInputMinimums? = null, nowMs: Long = System.currentTimeMillis(),
+    ) {
         if (mode == CopilotMode.OFF || !flying || fix == null || flight == null) {
             reset()
             return
@@ -62,7 +65,7 @@ class CopilotModel(
         if (lookedAtMs?.let { nowMs - it < LOOK_MS } == true) return
         lookedAtMs = nowMs
         val got = around ?: return
-        val answer = rules.watch(input(fix, flight, got, along, ahead)) ?: return
+        val answer = rules.watch(input(fix, flight, got, along, ahead, minimums)) ?: return
         val first = answer.messages.firstOrNull { it.id !in dismissed }
         val shown = _message.value
         if (shown?.id != first?.id || shown?.title != first?.title) _message.value = first
@@ -102,7 +105,10 @@ class CopilotModel(
         }
     }
 
-    private fun input(fix: OwnShip.Fix, flight: CopilotFlight, got: CopilotAround, along: Along?, ahead: List<AheadAlert>): EngineContract.CopilotWatchInput {
+    private fun input(
+        fix: OwnShip.Fix, flight: CopilotFlight, got: CopilotAround, along: Along?, ahead: List<AheadAlert>,
+        minimums: EngineContract.CopilotWatchInputMinimums?,
+    ): EngineContract.CopilotWatchInput {
         val hours = max(0L, fix.atMs - (startedAtMs ?: fix.atMs)) / 3_600_000.0
         val fuel = flight.fuelGal
         val burn = flight.burnGph
@@ -111,6 +117,9 @@ class CopilotModel(
             own = EngineContract.CopilotWatchInputOwn(fix.lat, fix.lon, fix.trackDeg, fix.groundspeedKt),
             fields = CopilotShapes.fields(got, firstSeen),
             rules = flight.rules,
+            // The pilot's own minimums (Setup) and whether anyone is aboard
+            // (the Airplane tab), as the web's copilotInput passes them.
+            minimums = minimums, passengers = flight.passengers,
             fuelGal = if (fuel != null && burn != null) max(0.0, fuel - burn * hours) else null,
             burnGph = burn, tasKt = flight.tasKt, dest = flight.dest, alternate = flight.alternate,
             remainingNm = along?.leftNm, plannedGsKt = flight.plannedGsKt,

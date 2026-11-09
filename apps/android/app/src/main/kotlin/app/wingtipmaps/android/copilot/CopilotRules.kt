@@ -27,21 +27,25 @@ data class CopilotFlight(
     val burnGph: Double?,
     /** The fuel on board at the start: the airplane's usable fuel. */
     val fuelGal: Double?,
+    /** Anyone but the pilot aboard (FlightChoices), for 61.57(b)'s
+     *  passengers at night. */
+    val passengers: Boolean = false,
 ) {
     companion object {
-        /** The plan's flight, once its nav log is whole; the phone's plan
-         *  has no flight rules or alternate of its own yet: VFR, none. */
-        fun of(plan: Plan.State): CopilotFlight? {
+        /** The plan's flight, once its nav log is whole, under the rules
+         *  it was planned by; the phone's plan has no alternate yet. */
+        fun of(plan: Plan.State, passengers: Boolean = false): CopilotFlight? {
             val course = plan.course ?: return null
             if (!plan.routed || course.courseLine.size < 2) return null
             val totals = plan.totals
             val ete = totals?.eteMin
             return CopilotFlight(
-                dest = plan.dest, alternate = null, rules = totals?.rules?.uppercase() ?: "VFR", line = course.courseLine,
+                dest = plan.dest, alternate = null, rules = plan.rules.uppercase(), line = course.courseLine,
                 plannedGsKt = if (totals != null && ete != null && ete > 0) totals.distanceNm / (ete / 60) else null,
                 tasKt = plan.legs.firstNotNullOfOrNull { it.tasKt },
                 burnGph = plan.legs.firstNotNullOfOrNull { it.fuelBurnGph },
                 fuelGal = totals?.usableFuelGal,
+                passengers = passengers,
             )
         }
     }

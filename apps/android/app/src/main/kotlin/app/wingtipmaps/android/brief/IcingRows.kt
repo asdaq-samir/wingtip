@@ -34,7 +34,10 @@ import app.wingtipmaps.android.ui.SectionTitle
 fun IcingRows(plan: Plan.State, model: IcingModel = viewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     val points = remember(plan.course) { RoutePoints.of(plan.course) }
-    LaunchedEffect(points, plan.legs, plan.planning) { if (!plan.planning) model.brief(points, plan.legs) }
+    // Under IFR only, as the web's useIcingForecast: a VFR flight keeps
+    // its distance from cloud (14 CFR 91.155), where the icing is met.
+    val ifr = plan.rules == "ifr"
+    LaunchedEffect(points, plan.legs, plan.planning, ifr) { if (!plan.planning) model.brief(if (ifr) points else emptyList(), plan.legs) }
     when {
         state.unchecked -> Text(stringResource(R.string.icing_unchecked), color = LocalInk.current.cautionInk, style = MaterialTheme.typography.bodyMedium)
         state.loading -> {

@@ -29,6 +29,7 @@ import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.route.RouteEdits
+import app.wingtipmaps.android.plan.FlightChoices
 
 /**
  * The route being planned and what the planner has said of it so far: the
@@ -62,6 +63,8 @@ class Plan(app: Application) : AndroidViewModel(app) {
          *  before, for its Cancel (the web's `direct` and `was`). */
         val direct: String? = null,
         val was: RouteEdits.Route? = null,
+        /** The flight rules it was planned under (FlightChoices), "vfr" or "ifr". */
+        val rules: String = "vfr",
     ) {
         val routed: Boolean get() = dep.isNotEmpty() && dest.isNotEmpty()
 
@@ -127,6 +130,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
     /** Plans the route as entered: the course first, for the map, then the
      *  nav log streamed in. */
     fun plan() {
+        _state.update { it.copy(rules = FlightChoices.of(getApplication()).rules.value.word) }
         val asked = _state.value
         if (!asked.routed) return
         running?.cancel()
@@ -136,7 +140,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
                 val course = Planner.course(asked.dep, asked.dest, asked.stops)
                 _state.update { it.copy(course = course) }
                 val fresh = mutableListOf<Leg>()
-                Planner.navlog(asked.dep, asked.dest, asked.stops, asked.aircraft, asked.holds).collect { message ->
+                Planner.navlog(asked.dep, asked.dest, asked.stops, asked.aircraft, asked.holds, asked.rules).collect { message ->
                     when (message) {
                         is NavLogMessage.Stage -> _state.update { it.copy(stage = message.detail) }
                         is NavLogMessage.Altitude -> {}

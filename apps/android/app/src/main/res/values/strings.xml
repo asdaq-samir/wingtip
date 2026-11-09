@@ -227,4 +227,12 @@
     <string name="when_to_go_none">No TAF along the route reaches past the next hour.</string>
     <string name="when_to_go_no_go">No hour with nothing against it before %1$s.</string>
     <string name="when_to_go_leaving">%1$s leaving %2$s</string>
+    <!-- The pilot's personal minimums (pilot/) and the flight's choices (plan/). -->
+    <string name="personal_minimums">Personal Minimums</string>
+    <string name="minimum_off">Off</string>
+    <string name="minimum_ceiling">Ceiling</string>
+    <string name="minimum_visibility">Visibility</string>
+    <string name="minimum_crosswind">Crosswind</string>
+    <string name="minimum_wind">Wind, with Gusts</string>
+    <string name="passengers_aboard">Passengers Aboard</string>
 </resources>

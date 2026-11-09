@@ -38,6 +38,12 @@ import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.NavLogTotals
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.plan.FlightChoices
+import app.wingtipmaps.android.plan.FlightRules
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.ui.platform.LocalContext
 
 /**
  * The flight plan: the route typed, planned, and the nav log's legs as
@@ -81,6 +87,7 @@ fun FPLScreen(plan: Plan) {
             if (state.planning) CircularProgressIndicator(Modifier.size(WingtipSpace.Xl))
             state.stage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
+        FlightRulesRow(onChanged = { if (state.routed) plan.plan() })
         ProblemLine(state.problem)
         LazyColumn(Modifier.weight(1f)) {
             itemsIndexed(state.legs) { i, leg ->
@@ -96,6 +103,34 @@ fun FPLScreen(plan: Plan) {
         }
     }
     open?.let { i -> state.legs.getOrNull(i)?.let { LegSheet(number = null, leg = it, onClose = { open = null }) } }
+}
+
+/**
+ * The flight rules the route is planned and briefed under, VFR or IFR
+ * (the web's Flight Rules in FPL's profile card): a choice of two is a
+ * segmented control (decision 0017). A change plans the route again,
+ * since the planner picks the altitudes by them (14 CFR 91.159 for VFR,
+ * 91.179 for IFR).
+ */
+@Composable
+private fun FlightRulesRow(onChanged: () -> Unit) {
+    val context = LocalContext.current
+    val choices = remember(context) { FlightChoices.of(context) }
+    val rules by choices.rules.collectAsStateWithLifecycle()
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        FlightRules.entries.forEachIndexed { i, r ->
+            SegmentedButton(
+                selected = rules == r,
+                onClick = {
+                    if (rules != r) {
+                        choices.setRules(r)
+                        onChanged()
+                    }
+                },
+                shape = SegmentedButtonDefaults.itemShape(index = i, count = FlightRules.entries.size),
+            ) { Text(r.name, maxLines = 1) }
+        }
+    }
 }
 
 /** One leg's row: to where at what cruise altitude, how far, the

@@ -26,6 +26,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.pilot.MinimumsStore
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import app.wingtipmaps.android.ui.SectionTitle
 
 /**
@@ -38,6 +42,11 @@ import app.wingtipmaps.android.ui.SectionTitle
 @Composable
 fun LiveAirportRows(ident: String, model: LiveAirportModel = viewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
+    // The pilot's own visibility minimum (Setup), which each runway's RVR
+    // is judged against (rvr_check, 14 CFR 91.175(h)(2)).
+    val context = LocalContext.current
+    val minimums by remember(context) { MinimumsStore.of(context) }.minimums.collectAsStateWithLifecycle()
+    LaunchedEffect(minimums.visibilitySm) { model.judgeAgainst(minimums.visibilitySm) }
     DisposableEffect(ident) {
         model.watch(ident)
         onDispose { model.stop() }

@@ -17,7 +17,7 @@ import org.junit.Test
 class CopilotModelTest {
     @get:Rule val main = MainRule()
 
-    private val flight = CopilotFlight("KMSN", null, "VFR", listOf(listOf(41.9, -88.2), listOf(43.1, -89.3)), 110.0, 115.0, 8.0, 40.0)
+    private val flight = CopilotFlight("KMSN", null, "VFR", listOf(listOf(41.9, -88.2), listOf(43.1, -89.3)), 110.0, 115.0, 8.0, 40.0, passengers = true)
     private val fix = OwnShip.Fix(42.0, -88.4, 4500.0, 320.0, 110.0, 5.0, atMs = 1_000_000L)
 
     private class Voice : CopilotVoice {
@@ -47,7 +47,7 @@ class CopilotModelTest {
         val rules = Rules()
         val voice = Voice()
         val model = CopilotModel({ _, _, dest, _, path -> asks++; assertEquals("KMSN", dest); assertEquals("42.0,-88.4;43.1,-89.3", path); around }, rules)
-        model.look(CopilotMode.SPOKEN, flying = true, fix = fix, flight = flight, ahead = emptyList(), voice = voice, nowMs = 0)
+        model.look(CopilotMode.SPOKEN, flying = true, fix = fix, flight = flight, ahead = emptyList(), voice = voice, minimums = EngineContract.CopilotWatchInputMinimums(ceilingFt = 3000.0, visibilitySm = 5.0), nowMs = 0)
         assertEquals(1, asks)
         assertEquals("KMSN", model.message.value!!.id)
         assertEquals(listOf("!KMSN went IFR"), voice.said)
@@ -55,11 +55,15 @@ class CopilotModelTest {
         assertEquals("VFR", input.fields.single().plannedCategory)
         assertEquals(70.0, input.remainingNm!!, 0.0)
         assertEquals(40.0, input.fuelGal!!, 0.0)
+        // The pilot's minimums and the passengers aboard go to the engine.
+        assertEquals(3000.0, input.minimums!!.ceilingFt!!, 0.0)
+        assertEquals(5.0, input.minimums!!.visibilitySm!!, 0.0)
+        assertEquals(true, input.passengers)
         // Looked at again soon after: not said again.
-        model.look(CopilotMode.SPOKEN, true, fix.copy(atMs = 1_000_000L + 4_000), flight, emptyList(), voice, nowMs = 4_000)
+        model.look(CopilotMode.SPOKEN, true, fix.copy(atMs = 1_000_000L + 4_000), flight, emptyList(), voice, nowMs = 4_000L)
         assertEquals(1, voice.said.size)
         model.dismiss()
-        model.look(CopilotMode.SPOKEN, true, fix.copy(atMs = 1_000_000L + 8_000), flight, emptyList(), voice, nowMs = 8_000)
+        model.look(CopilotMode.SPOKEN, true, fix.copy(atMs = 1_000_000L + 8_000), flight, emptyList(), voice, nowMs = 8_000L)
         assertEquals("KJVL", model.message.value!!.id)
         assertEquals(1, asks)
     }

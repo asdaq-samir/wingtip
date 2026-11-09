@@ -42,8 +42,19 @@ class LiveAirportModel(
     private var watching: Job? = null
 
     /** The pilot's own visibility minimum, statute miles, where one is
-     *  set; the phone has none yet, so RVR is shown and not judged. */
+     *  set (Setup's personal minimums); none, RVR is shown, not judged. */
     var minimumSm: Double? = null
+        private set
+    private var lastRvr: AirportRvr? = null
+
+    /** A minimum picked or put off: the rows judged again from the
+     *  readings already in, with no new ask. */
+    fun judgeAgainst(sm: Double?) {
+        if (sm == minimumSm) return
+        minimumSm = sm
+        val rvr = lastRvr ?: return
+        _state.update { it.copy(rvr = rvrRows(rvr)) }
+    }
 
     /** The field's reports, asked now and each minute while it is shown;
      *  another field's replace them. */
@@ -68,7 +79,7 @@ class LiveAirportModel(
 
     private suspend fun refresh(field: String) {
         val atis = quietly { source.atis(field) }?.broadcasts?.map(::broadcast)
-        val rvr = quietly { source.rvr(field) }?.let(::rvrRows)
+        val rvr = quietly { source.rvr(field) }?.also { lastRvr = it }?.let(::rvrRows)
         val programs = quietly { source.flow(listOf(field)) }?.programs?.mapNotNull(LiveWords::programLine)
         _state.update {
             if (it.ident != field) it

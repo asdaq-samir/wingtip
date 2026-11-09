@@ -122,9 +122,13 @@ object Planner {
         Gateway.json.decodeFromString(fetch("/api/course", route(dep, dest, stops)))
 
     /** The nav log for a route, line by line as the planner sends them
-     *  (/api/navlog); a line of a kind the app has no use for is left out. */
-    fun navlog(dep: String, dest: String, stops: List<String>, aircraft: String, holds: List<String> = emptyList()): Flow<NavLogMessage> =
-        lines("/api/navlog", route(dep, dest, stops) + ("aircraft" to aircraft.ifEmpty { NO_AIRPLANE }) + ("holds" to holds.joinToString(",").ifEmpty { null }))
+     *  (/api/navlog), under the flight rules picked (the planner's
+     *  altitudes by 14 CFR 91.159 or 91.179); a line of a kind the app has no use for is left out. */
+    fun navlog(dep: String, dest: String, stops: List<String>, aircraft: String, holds: List<String> = emptyList(), rules: String = "vfr"): Flow<NavLogMessage> =
+        lines(
+            "/api/navlog",
+            route(dep, dest, stops) + ("aircraft" to aircraft.ifEmpty { NO_AIRPLANE }) + ("holds" to holds.joinToString(",").ifEmpty { null }) + ("rules" to rules),
+        )
             .mapNotNull { NavLog.decode(it) }
 
     /** The Brief's Go / No-Go for the route (POST /api/go-no-go): the

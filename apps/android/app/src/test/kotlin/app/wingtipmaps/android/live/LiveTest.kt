@@ -62,8 +62,10 @@ class LiveTest {
     @Test
     fun theDigitalAtisIsReadIntoItsFigures() {
         val model = LiveAirportModel(Fake(), Rules)
-        model.minimumSm = 0.5
         model.watch("kord")
+        // Setup's minimum picked after the readings are in: judged again.
+        assertEquals(null, model.state.value.rvr.single().under)
+        model.judgeAgainst(0.5)
         val s = model.state.value
         model.stop()
         assertEquals("KORD", s.ident)
