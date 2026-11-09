@@ -156,9 +156,15 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { logbook = true },
             )
+            // The Coach beside the logbook it is made from: two taps, not three.
+            ScreenRow(Screen.COACH, R.string.coach, R.string.coach_line)
             // Everything the account holds, as a file the pilot keeps.
             ExportRow()
         }
+        // The airplane's checklists and the emergency assistant, signed in
+        // or not, two taps from the map (docs/navigation.md's gaps 1 and 2).
+        ScreenRow(Screen.CHECKLISTS, R.string.checklists, R.string.checklists_line)
+        EmergencyAssistantRow()
         // The pilot's own minimums, kept on this phone (no sign-in), as
         // the web keeps them with the pilot's own things.
         SectionTitle(stringResource(R.string.personal_minimums))

@@ -111,6 +111,8 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
         AddFromPhotoRow(stringResource(R.string.photo_line_airplane)) { photo = true }
         if (!state.airplane) {
             Text(stringResource(R.string.no_airplane_line), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // The emergency assistant needs no airplane picked.
+            EmergencyAssistantRow()
             return@Column
         }
         // The airplane's own checklists (#220), kept on this phone: the
@@ -127,6 +129,8 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
                 modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { checklist = kind },
             )
         }
+        // Under the checklists, as the emergency checklist has it: 2 taps.
+        EmergencyAssistantRow()
     }
     if (photo) HandbookPhotoSheet(type = state.aircraft, onClose = { photo = false })
     checklist?.let { kind ->
