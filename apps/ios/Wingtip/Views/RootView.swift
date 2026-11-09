@@ -64,6 +64,7 @@ struct RootView: View {
             trackedHex: tracking.hex, tracked: tracking.latest, follow: tracking.follow,
             path: tracking.path, past: tracking.past, flown: tracking.flown,
             glide: InFlight.shared.glide?.coordinates ?? [],
+            emergency: Emergency.shared.line(from: dryRun.fix ?? ownShip.fix),
             onTraffic: { plane in
                 Tracking.shared.track(plane.hex, plane: plane)
                 FlightUI.shared.card = .airplane(plane.hex.lowercased())

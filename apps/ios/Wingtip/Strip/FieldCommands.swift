@@ -18,6 +18,8 @@ enum FieldScreen: String, CaseIterable, Equatable, Sendable {
     case airplane, logbook, setup, instructor, brief, nearest, fuel, food, stops
     case routes, altitude, procedures, navlog, profile, share, file, clearance, dryrun
     case saved, favorites, recents, recentRoutes, radio, map
+    /// The emergency assistant (Emergency), by the pilot's words.
+    case emergency
 }
 
 enum FieldCommand: Equatable, Sendable {
@@ -69,6 +71,9 @@ enum FieldCommands {
     /// Words that only ask for a screen, taken off its front, the longer
     /// first so "show me" is not left as "me".
     private static let filler = Rx(#"^(?:please\s+)?(?:let me see|show me|give me|take me to|go to|open|show|get|see|the|my)\s+"#)
+
+    /// The words that open the emergency assistant wherever they are said.
+    static let emergency = Rx(#"\b(?:mayday|emergency|engine\s+fail\w*)\b"#)
 
     /// A word that makes a line a question for the assistant, not a place.
     private static let questionWords: Set<String> = [
@@ -186,6 +191,9 @@ enum FieldCommands {
     static func read(_ text: String) -> FieldCommand? {
         let line = text.trimmed
         if line.isEmpty { return nil }
+        // "Mayday", "emergency", "engine failure" anywhere in the line: the
+        // emergency assistant before anything else (the web's pilotCommand).
+        if emergency.matches(line) { return .open(.emergency) }
         if let screen = screenOf(line) { return .open(screen) }
         if let field = fieldOf(line) { return .field(field) }
         if let route = routeOf(line) { return .route(dep: route.dep, stops: route.stops, dest: route.dest) }

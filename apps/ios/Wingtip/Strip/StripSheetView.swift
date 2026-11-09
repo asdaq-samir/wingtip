@@ -471,6 +471,8 @@ struct StripSheetView: View {
             path.append(.list(.recents)); up()
         case .map:
             return "The map's settings are in Setup."
+        case .emergency:
+            Emergency.shared.open = .voice
         }
         return nil
     }

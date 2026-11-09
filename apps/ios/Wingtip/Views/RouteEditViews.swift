@@ -43,9 +43,11 @@ final class FlightUI {
 struct FlightSheets: ViewModifier {
     /// On iPad the inspector holds them (SplitLayout), not a sheet.
     @Environment(\.splitLayout) private var split
+    @Environment(Plan.self) private var plan
 
     func body(content: Content) -> some View {
         @Bindable var ui = FlightUI.shared
+        @Bindable var emergency = Emergency.shared
         content
             .sheet(item: split ? .constant(nil) : $ui.card, onDismiss: {
                 // Its card put away, the airplane is no longer tracked.
@@ -63,6 +65,13 @@ struct FlightSheets: ViewModifier {
                 .presentationBackgroundInteraction(.enabled(upThrough: .medium))
             }
             .modifier(PointAlerts())
+            // The emergency assistant, from the instruments bar, the pilot's
+            // words or the emergency checklist; no map button (decision 0010).
+            .sheet(item: $emergency.open) { _ in
+                EmergencySheet(airplane: LocalChecklists.airplane(of: plan))
+                    .presentationDetents([.medium, .large])
+                    .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            }
     }
 }
 
