@@ -169,7 +169,10 @@ owner, 2026-11-03):
   copilot's message, from the app's in-flight models (`InFlight`'s
   engine answer, `Copilot`, `AtcCopilot`: `FlightActivityContent`). It
   starts with the dry run or own ship under way with a routed plan, or
-  from the Control Center control, and ends five minutes after landing.
+  from the Control Center control (iOS 18's Start Flight toggle,
+  `WingtipWidgets/FlightControl.swift` with `Shared/FlightControlIntent.swift`,
+  a LiveActivityIntent run in the app by `Activity/FlightSwitch.swift`
+  from the route kept on the phone), and ends five minutes after landing.
   Every word is written by `Format`, compiled into the extension.
 - **In flight** (#218, the owner's option A of 2026-11-08):
   `Wingtip/InFlight.swift` is the view model each fix (own ship's or the

@@ -22,7 +22,7 @@ final class FlightActivity {
     /// The least time between two updates of the figures alone.
     static let updateEvery: TimeInterval = 30
     /// How long a shown state stays current before the system dims it.
-    static let staleAfter: TimeInterval = 2 * 60
+    nonisolated static let staleAfter: TimeInterval = 2 * 60
 
     private var activity: Activity<FlightActivityAttributes>?
     private var last: FlightActivityAttributes.ContentState?
@@ -40,6 +40,8 @@ final class FlightActivity {
         // An activity the control started while the app was not running
         // (FlightControlIntent) is taken up rather than started twice.
         activity = Activity<FlightActivityAttributes>.activities.first
+        // The control shows what is so, should iOS have ended one meanwhile.
+        FlightControlState.write(running: activity != nil)
     }
 
     // MARK: - Started and stopped
@@ -99,17 +101,17 @@ final class FlightActivity {
         last = nil
         lastFlying = nil
         told()
-        // By its id, so the activity itself is not sent across to the task.
+        // By its id, found again off the main actor, so the activity
+        // itself is never sent across to the task.
         let id = activity.id
-        Task {
-            guard let running = Self.activity(id) else { return }
-            await running.end(running.content, dismissalPolicy: .default)
-        }
+        Task { await Self.finish(id) }
     }
 
     /// The control's state kept in the App Group and the control drawn
     /// again, so Control Center shows whether a flight is running.
     private func told() {
+        FlightControlState.write(running: running)
+        ControlCenter.shared.reloadControls(ofKind: FlightControlState.kind)
     }
 
     // MARK: - Followed
@@ -161,13 +163,17 @@ final class FlightActivity {
         guard let activity, FlightActivityContent.due(state, after: last, every: Self.updateEvery) else { return }
         last = state
         let id = activity.id
-        Task {
-            await Self.activity(id)?.update(ActivityContent(state: state, staleDate: state.updatedAt.addingTimeInterval(Self.staleAfter)))
-        }
+        Task { await Self.send(state, to: id) }
     }
 
-    private static func activity(_ id: String) -> Activity<FlightActivityAttributes>? {
-        Activity<FlightActivityAttributes>.activities.first { $0.id == id }
+    private nonisolated static func finish(_ id: String) async {
+        guard let found = Activity<FlightActivityAttributes>.activities.first(where: { $0.id == id }) else { return }
+        await found.end(found.content, dismissalPolicy: .default)
+    }
+
+    private nonisolated static func send(_ state: FlightActivityAttributes.ContentState, to id: String) async {
+        guard let found = Activity<FlightActivityAttributes>.activities.first(where: { $0.id == id }) else { return }
+        await found.update(ActivityContent(state: state, staleDate: state.updatedAt.addingTimeInterval(staleAfter)))
     }
 }
 #endif

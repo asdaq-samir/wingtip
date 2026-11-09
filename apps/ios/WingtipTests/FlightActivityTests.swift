@@ -92,6 +92,24 @@ final class FlightActivityTests: XCTestCase {
         XCTAssertNil(FlightActivityContent.frequency(in: [newer]))
     }
 
+    func testControlStateIsKeptInTheAppGroupsDefaults() throws {
+        let store = try XCTUnwrap(UserDefaults(suiteName: "FlightActivityTests"))
+        store.removePersistentDomain(forName: "FlightActivityTests")
+        XCTAssertFalse(FlightControlState.read(from: store))
+        FlightControlState.write(running: true, to: store)
+        XCTAssertTrue(FlightControlState.read(from: store))
+        FlightControlState.write(running: false, to: store)
+        XCTAssertFalse(FlightControlState.read(from: store))
+    }
+
+    func testStartFlightWithNoRouteSaysWhy() async {
+        XCTAssertFalse(FlightActivity.shared.startByPilot(kept: nil))
+        XCTAssertEqual(FlightActivity.shared.problem, "Plan a route first, then start the flight.")
+        // Stopping with nothing running is no problem.
+        let stopped = await FlightSwitch.set(false)
+        XCTAssertNil(stopped)
+    }
+
     func testUpdatesAreDueOnChangeOrEveryThirtySeconds() {
         let first = FlightActivityContent.state(inputs(progress: progress()))
         XCTAssertTrue(FlightActivityContent.due(first, after: nil, every: 30))
