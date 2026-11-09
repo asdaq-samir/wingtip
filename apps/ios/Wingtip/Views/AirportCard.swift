@@ -39,7 +39,7 @@ struct AirportCard: View {
                     Picker("Section", selection: $tab) {
                         ForEach(CardTab.allCases) { Text($0.rawValue).tag($0) }
                     }
-                    .pickerStyle(.segmented)
+                    .tabsPicker()
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets())
                 }
@@ -65,7 +65,7 @@ struct AirportCard: View {
         .navigationTitle(ident)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .pinnedTrailing) {
                 if let place {
                     ShareLink(item: URL(string: "https://\(Config.host)/app/plan?place=\(place.ident)")!,
                               subject: Text(place.name)) { Image(systemName: WingtipIcon.share) }

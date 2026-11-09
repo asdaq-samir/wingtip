@@ -135,7 +135,7 @@ struct AskView: View {
             HStack(alignment: .bottom, spacing: WingtipSpace.sm) {
                 TextField("Ask about the flight", text: $question, axis: .vertical)
                     .lineLimit(1...4)
-                    .textFieldStyle(.roundedBorder)
+                    .borderedField()
                     .submitLabel(.send)
                     .focused($typing)
                     .onSubmit { send(question) }

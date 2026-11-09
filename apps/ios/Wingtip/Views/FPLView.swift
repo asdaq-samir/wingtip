@@ -200,7 +200,7 @@ struct FPLView: View {
 
     private func routeField(_ label: String, text: Binding<String>, field: Field) -> some View {
         TextField(label, text: text)
-            .textFieldStyle(.roundedBorder)
+            .borderedField()
             .textInputAutocapitalization(.characters)
             .autocorrectionDisabled()
             .font(WingtipType.row.monospaced())
