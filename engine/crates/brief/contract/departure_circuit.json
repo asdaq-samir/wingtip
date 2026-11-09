@@ -1,0 +1,82 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "The departure's circuit and the course out, or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DepartureCircuitInput",
+      "type": "object",
+      "properties": {
+        "runway": {
+          "$ref": "#/definitions/CircuitRunwayIn"
+        },
+        "end_ident": {
+          "type": "string"
+        },
+        "toward": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lat, lon]",
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "additionalItems": false
+        }
+      },
+      "required": [
+        "runway",
+        "end_ident",
+        "toward"
+      ]
+    },
+    "answer": {
+      "title": "DepartureCircuitAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "[lat, lon]",
+                "items": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "additionalItems": false
+              }
+            },
+            "exit_deg": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "points",
+            "exit_deg"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,150 @@
+{
+  "x-call": "crate::call::rule",
+  "description": "A logbook CSV (ForeFlight's export or this logbook's own) read into the gateway's LogbookEntryRequest entries, camelCase, and the lines skipped with why; landings as 14 CFR 61.57(a) and (b) count them.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "LogbookCsvReadInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "LogbookCsvReadAnswer",
+      "type": "object",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "flownOn": {
+                "type": "string"
+              },
+              "aircraft": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "aircraftType": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "route": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "totalHours": {
+                "type": "number"
+              },
+              "nightHours": {
+                "type": "number"
+              },
+              "crossCountryHours": {
+                "type": "number"
+              },
+              "dayLandings": {
+                "type": "number"
+              },
+              "nightLandings": {
+                "type": "number"
+              },
+              "remarks": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "dualHours": {
+                "type": "number"
+              },
+              "soloHours": {
+                "type": "number"
+              },
+              "instrumentHours": {
+                "type": "number"
+              },
+              "toweredLandings": {
+                "type": "number"
+              },
+              "distanceNm": {
+                "type": "number"
+              },
+              "longestLegNm": {
+                "type": "number"
+              },
+              "approaches": {
+                "type": "number"
+              },
+              "holding": {
+                "type": "boolean"
+              },
+              "tracking": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "flownOn",
+              "aircraft",
+              "aircraftType",
+              "route",
+              "totalHours",
+              "nightHours",
+              "crossCountryHours",
+              "dayLandings",
+              "nightLandings",
+              "remarks",
+              "dualHours",
+              "soloHours",
+              "instrumentHours",
+              "toweredLandings",
+              "distanceNm",
+              "longestLegNm",
+              "approaches",
+              "holding",
+              "tracking"
+            ]
+          }
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "line": {
+                "type": "integer"
+              },
+              "reason": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "line",
+              "reason"
+            ]
+          }
+        }
+      },
+      "required": [
+        "entries",
+        "skipped"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

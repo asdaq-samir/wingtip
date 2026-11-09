@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_route::approach::calls::call",
+  "description": "The missed approach in the plate's words, or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ApproachMissedWordsInput",
+      "type": "object",
+      "properties": {
+        "legs": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/ApproachMissedLeg"
+          }
+        }
+      }
+    },
+    "answer": {
+      "title": "ApproachMissedWordsAnswer",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -7,7 +7,7 @@ import { zuluTime } from "../lib/format";
 import { useMinuteClock } from "../lib/useMinuteClock";
 import { cycleWarning, dayWords } from "../lib/dataCycles";
 import { savedWords, useSaved } from "../lib/fromCache";
-import { ageWords, mapAgesQuery, useLayerAges } from "../lib/map/layerAges";
+import { ageWords, mapAgesQuery, useLayerAges } from "../lib/map/sources/layerAges";
 import { TEXT } from "../lib/text";
 
 /**

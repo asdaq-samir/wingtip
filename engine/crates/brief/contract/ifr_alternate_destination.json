@@ -1,0 +1,65 @@
+{
+  "x-call": "wingtip_brief::alternates::call",
+  "description": "Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast an hour either side of the ETA under 2,000 ft and 3 sm, TEMPO and PROB included; no TAF needs one.",
+  "x-tool": true,
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "IfrAlternateDestinationInput",
+      "$ref": "#/definitions/IfrAlternateIn"
+    },
+    "answer": {
+      "title": "IfrAlternateDestinationAnswer",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "approach": {
+          "type": "boolean"
+        },
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "taf": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "ident",
+        "approach",
+        "ceiling_ft",
+        "visibility_sm",
+        "taf",
+        "required",
+        "reasons"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -21,7 +21,7 @@
  * held for nothing. Nothing heard is sent anywhere or saved: the level is
  * a number for the bars, gone as it is drawn.
  *
- * Imported by lib/atcListening, lib/atis and the card's ListenThrough, all
+ * Imported by lib/atcListening, features/plan/lib/atis and the card's ListenThrough, all
  * chunks of their own, never by lib/listen, which the first load carries.
  * Every browser call is feature-tested and caught; where nothing can be
  * picked -- Chrome for Android, whose recognizer opens the microphone itself and whose

@@ -260,7 +260,7 @@ the SAFETY briefing's seven items for the planned flight, each with its
 source under it (14 CFR 91.107(a) for the belts, the FAASTeam's
 "Passenger SAFETY briefing" and the Private Pilot ACS PA.II.B.S2 for the
 rest), ticked and kept for that flight. Under them, the flight in a few
-lines as the web's lib/passengers writes it -- the route, leaving now in
+lines as the web's features/plan/components/briefing/passengers writes it -- the route, leaving now in
 local time and Z, about how long in the air, the landing time, the
 destination's weather in words from the planner's airport card -- and
 Share, Android's share sheet (ACTION_SEND). The live shareable track

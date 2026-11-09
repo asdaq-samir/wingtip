@@ -5,8 +5,8 @@ import { N_NUMBER, shortName } from "../../../lib/aircraftChoice";
 import { useAtcRadio, useRadioActions } from "../../../lib/atcRadio";
 import { bestStopIndex } from "../../../lib/geo";
 import { MAX_STOPS } from "../../../lib/identSchema";
-import { usePointActions } from "../../../lib/map/pointActions";
-import { useOwnShip } from "../../../lib/map/ownShip";
+import { usePointActions } from "../../../lib/map/cards/pointActions";
+import { useOwnShip } from "../../../lib/map/position/ownShip";
 import type { TypedProcedure } from "../../../lib/procedures";
 import type { RouteParts } from "../components/RouteBox";
 import type { PlannedRoute } from "./planAddress";
@@ -18,7 +18,7 @@ type RouteEdits = ReturnType<typeof useRouteEdits>;
 /**
  * What the map's cards and the radio do to the route (usePlanWorkspace),
  * registered while the workspace is up: the VOR and fix cards' Add to
- * Route, Direct To and Avoid Class B (lib/map/pointActions), and the
+ * Route, Direct To and Avoid Class B (lib/map/cards/pointActions), and the
  * radio's calls to us and a clearance read back (lib/atcRadio).
  */
 export function useMapActions({
@@ -49,7 +49,7 @@ export function useMapActions({
     setStops(stops);
   }, [course, planned.stops, setStops]);
   // The map's VOR and fix cards' Add to Route and Direct To, while there
-  // is a route (lib/map/pointActions).
+  // is a route (lib/map/cards/pointActions).
   const hasFix = useOwnShip(st => st.enabled && st.fix !== null);
   useEffect(() => {
     const routed = !!course && planned.stops.length < MAX_STOPS;

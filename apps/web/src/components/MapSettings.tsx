@@ -1,26 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
-import { editionOf } from "../lib/chartEdition";
+import { editionOf } from "./chartEdition";
 import { ListGroup, ListRow } from "./GroupedList";
 import PullDown from "./PullDown";
 import Segmented from "./Segmented";
 import SwitchRow from "./SwitchRow";
 import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
-import { clearOwnTrail, useOwnTrail } from "../lib/map/ownTrail";
+import { clearOwnTrail, useOwnTrail } from "../lib/map/position/ownTrail";
 import { BASE_CHARTS, usePreferences, type BaseChart, type ChartLight, type ChartNight, type MapOverlay, type OverlayStrength, type Terrain } from "../lib/preferences";
-import { useShownOverlay } from "../lib/map/useShownOverlay";
-import { USGS_URL } from "../lib/map/imagery";
-import { useGoogleSession } from "../lib/map/googleSession";
-import { OWN_SHIP_LOOKS, ownShipSvg, type OwnShipLook } from "../lib/map/ownShipLook";
-import { tileUrl } from "../lib/map/tiles";
+import { useShownOverlay } from "../lib/map/sources/useShownOverlay";
+import { USGS_URL } from "../lib/map/sources/imagery";
+import { useGoogleSession } from "../lib/map/sources/googleSession";
+import { OWN_SHIP_LOOKS, ownShipSvg, type OwnShipLook } from "../lib/map/position/ownShipLook";
+import { tileUrl } from "../lib/map/sources/tiles";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
 import SectionTitle from "./SectionTitle";
 import { chartQuery, googleMapsQuery } from "../lib/queryClient";
-import { useDataCycles, useLayerAges } from "../lib/map/layerAges";
+import { useDataCycles, useLayerAges } from "../lib/map/sources/layerAges";
 import { cycleWarning } from "../lib/dataCycles";
-import { keepingAvailable } from "../lib/map/keepRoute";
-import { ALERT_MODES, useAlertMode, type AlertMode } from "../lib/alertMode";
-import { COPILOT_MODES, useCopilotMode, type CopilotMode } from "../lib/copilot/mode";
+import { keepingAvailable } from "../lib/map/route/keepRoute";
+import { ALERT_MODES, useAlertMode, type AlertMode } from "./alertMode";
+import { COPILOT_MODES, useCopilotMode, type CopilotMode } from "./copilotMode";
 import { ATC_LISTEN_MODES, setAtcListen, useAtcListen, type AtcListen } from "../lib/atc/listenSetting";
 
 /**
@@ -142,7 +142,7 @@ export default function MapSettings() {
             service's permission. A joint-use field is drawn either way. */}
         <SwitchRow title="Military Fields" on={prefs.military} onChange={prefs.setMilitary} testId="military-toggle" />
       </ListGroup>
-      {/* The in-flight alerts, off, shown or said aloud (lib/alertMode),
+      {/* The in-flight alerts, off, shown or said aloud (components/alertMode),
           here from Setup's tiles since the owner's ask ("alerts can go to
           overlay settings", 2026-11-05): a pick of three, segmented. */}
       <ListGroup title="Alerts">
@@ -230,7 +230,7 @@ export default function MapSettings() {
         />
       </ListGroup>
       {/* Where the map's data comes from, and when the weather layers' is
-          from (lib/map/layerAges): the METARs behind the airports'
+          from (lib/map/sources/layerAges): the METARs behind the airports'
           colours and the TFRs as the planner fetched them, the traffic as
           the map last heard it. */}
       <ListGroup title="Sources">

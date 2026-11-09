@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../lib/api/client";
 import type { Alternates } from "../../../lib/api/types";
-import { useSearchParam } from "../../../lib/useSearchParam";
+import { useSearchParam } from "../lib/useSearchParam";
 
 export interface AlternateWhere {
   /** The destination, its ident. */

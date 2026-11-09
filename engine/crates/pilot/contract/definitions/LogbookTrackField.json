@@ -1,0 +1,34 @@
+{
+  "title": "LogbookTrackField",
+  "type": "object",
+  "properties": {
+    "ident": {
+      "type": "string"
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "elevation_ft": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "NASR's elevation, ft MSL."
+    },
+    "towered": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "A control tower (NASR APT_BASE TWR_TYPE_CODE)."
+    }
+  },
+  "required": [
+    "ident",
+    "lat",
+    "lon"
+  ]
+}

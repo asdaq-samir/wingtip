@@ -107,7 +107,7 @@ test("a pinch brings in the airports of each level it passes, before the fingers
   const before = await idents();
   // Two fingers spreading from 60 to 180 points apart: three times as
   // close, a level and a half in. Each 6 points out at a step, so the
-  // second step is past the ruler's 10 (lib/map/ruler's STILL_PX): at 3 a
+  // second step is past the ruler's 10 (lib/map/ruler/ruler's STILL_PX): at 3 a
   // step, on a busy runner the fourth came after the ruler's 400 ms hold,
   // the ruler came up and took the pinch (MapRuler), and the map stayed
   // at 7 (run 41014180625; here, the fourth move at 476 ms).

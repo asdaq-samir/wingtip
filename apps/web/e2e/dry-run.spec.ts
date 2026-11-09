@@ -3,7 +3,7 @@ import { chartZoom, grabberTo, openPanel, openProfile, closeProfile, settle, set
 
 /**
  * The planned flight's dry run flies own ship, as if a pilot were flying
- * the route (lib/map/ownShip's simulateFix): the location arrow on, own
+ * the route (lib/map/position/ownShip's simulateFix): the location arrow on, own
  * ship moving along the course with the plan's heading, and put back as
  * the pilot had it -- here off, no GPS asked -- when the run is closed;
  * nothing of it kept as where the pilot has flown (ownTrail).

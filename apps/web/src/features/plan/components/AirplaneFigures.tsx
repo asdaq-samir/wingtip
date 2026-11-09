@@ -7,10 +7,10 @@ import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { shortName } from "../../../lib/aircraftChoice";
 import type { AircraftChoice } from "../../../lib/api/types";
-import { figuresOfPage } from "../../../lib/handbookText";
+import { figuresOfPage } from "../lib/handbookText";
 import { usePreferences, type TailFigures } from "../../../lib/preferences";
 import { aircraftProfilesQuery } from "../../../lib/queryClient";
-import { readPage } from "../../../lib/readPage";
+import { readPage } from "../lib/readPage";
 import { TEXT } from "../../../lib/text";
 
 /** The figures a pilot may set for their N-number, in the order a

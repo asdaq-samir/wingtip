@@ -12,7 +12,7 @@
  * reader for the web app, the planner and the phones, held to
  * fixtures/clearances.json as this module's tests are. What stays here
  * is the tokenizer and the place words, which the pilot's own commands
- * (lib/pilotCommand) and the readback check (lib/readback) read with.
+ * (components/pilotCommand) and the readback check (lib/readback) read with.
  */
 import type { ClearanceFound, ClearanceFoundProcedure, ClearanceItem, ClearanceRoute, HeardToken } from "./engine/contract";
 import { callEngine, type EngineAnswer } from "./engine/engine";
@@ -34,7 +34,7 @@ export type Token = HeardToken;
  *  zero" the words and 210 (AIM 4-2-8, 4-2-9), as the shared engine's
  *  tokenizer reads them (clearance.rs tokens, the rule `tokens`): the
  *  clearance reader's own words, which the pilot's commands
- *  (lib/pilotCommand) are read with too. */
+ *  (components/pilotCommand) are read with too. */
 export function tokens(text: string): Token[] {
   return callEngine("tokens", { text });
 }

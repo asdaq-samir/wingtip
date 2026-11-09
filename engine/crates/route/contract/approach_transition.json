@@ -1,0 +1,65 @@
+{
+  "x-call": "wingtip_route::approach::calls::call",
+  "description": "The transition's debrief, or null, from the vectors' debrief's figures.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ApproachTransitionInput",
+      "type": "object",
+      "properties": {
+        "drawings": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/ProcedureDrawing"
+          }
+        },
+        "points": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/TrackPoint"
+          }
+        },
+        "faf_at": {
+          "type": "number",
+          "description": "ms."
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minimums_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "faf_at",
+        "passed"
+      ]
+    },
+    "answer": {
+      "title": "ApproachTransitionAnswer",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ApproachDebrief"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

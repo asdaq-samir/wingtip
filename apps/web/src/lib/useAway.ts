@@ -1,6 +1,6 @@
 import { compassPoint } from "./compass";
 import { bearingDeg, distanceNm, type LatLon } from "./geo";
-import { useOwnFix } from "./map/ownShip";
+import { useOwnFix } from "./map/position/ownShip";
 import type { RecentAirport } from "./preferences";
 
 /** How far, as a figure: to a tenth under 10 nm, where a few tenths are

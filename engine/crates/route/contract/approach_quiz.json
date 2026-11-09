@@ -1,0 +1,67 @@
+{
+  "x-call": "wingtip_route::approach::calls::call",
+  "description": "The approach asked back as a quiz; answer is the index of the right choice.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ApproachQuizInput",
+      "type": "object",
+      "properties": {
+        "drawing": {
+          "$ref": "#/definitions/ProcedureDrawing"
+        },
+        "gs_kt": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "drawing",
+        "gs_kt"
+      ]
+    },
+    "answer": {
+      "title": "ApproachQuizAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "answer": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "explain": {
+            "type": "string"
+          },
+          "focus": {
+            "$ref": "#/definitions/LessonFocus"
+          }
+        },
+        "required": [
+          "key",
+          "prompt",
+          "choices",
+          "answer",
+          "explain",
+          "focus"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

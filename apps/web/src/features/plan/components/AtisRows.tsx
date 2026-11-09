@@ -8,11 +8,11 @@ import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
 import { canListen } from "../../../lib/listen";
 import { chosenOutside, heardThrough, lostWords, useAtcRadio } from "../../../lib/atcRadio";
-import { atisRows, glanceWords, heardAny, hearAtis, readAtis, type AtisReading } from "../../../lib/atis";
+import { atisRows, glanceWords, heardAny, hearAtis, readAtis, type AtisReading } from "../lib/atis";
 
 /**
  * Listen to ATIS, on the field card's Weather tab under the report: a
- * tap hears one broadcast through the microphone (lib/atis's hearAtis,
+ * tap hears one broadcast through the microphone (features/plan/lib/atis's hearAtis,
  * the same recognizer as the radio's), the engine reads it, and what
  * matters at the hold-short line is one line -- the runway in use and
  * the altimeter -- with the figures in a short table under it and the

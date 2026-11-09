@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import type { Candidate, Course } from "../../../lib/api/types";
 import type { RouteCard } from "../../../lib/openCards";
 import { foreflightRoute, type PlanPoint } from "../../../lib/flightPlanFiles";
-import { markPackSent, openInForeFlight, packOrigin, packPath, packSent } from "../../../lib/foreflightPack";
+import { markPackSent, openInForeFlight, packOrigin, packPath, packSent } from "../lib/foreflightPack";
 import { routeName } from "../../../lib/identSchema";
 import { showError } from "../../../lib/problems";
 import { cancelled, shareOrCopy } from "../../../lib/share";
@@ -109,7 +109,7 @@ export default function ShareMenu({
 
 
   // The checkpoints as a ForeFlight content pack, built by the planner
-  // (lib/foreflightPack): each a waypoint with its own page, and the course
+  // (features/plan/lib/foreflightPack): each a waypoint with its own page, and the course
   // drawn on its map, for ForeFlight's own link or to download.
   const packHref = selected.length ? packPath(planned.dep, planned.dest, planned.stops) : null;
   // Open in ForeFlight is one button for the two hand-offs ForeFlight
@@ -215,7 +215,7 @@ export default function ShareMenu({
           {card === "navlog" && !local && (
             <DropdownMenuItem
               disabled={!routed} data-testid="print-kneeboard"
-              onSelect={() => setTimeout(() => void import("../../../lib/printKneeboard").then(m => m.printKneeboard()), 150)}
+              onSelect={() => setTimeout(() => void import("../lib/printKneeboard").then(m => m.printKneeboard()), 150)}
             >
               <Printer />Print the nav log
             </DropdownMenuItem>

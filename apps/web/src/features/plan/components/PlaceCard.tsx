@@ -5,7 +5,7 @@ import { ACTION } from "../../../lib/cardActions";
 import { FAVORITE_STAR_ON } from "../../../components/mapChrome";
 import { cn } from "cn";
 import { useKeptAirport, usePreferences } from "../../../lib/preferences";
-import { useOwnShip } from "../../../lib/map/ownShip";
+import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { shareOrCopy } from "../../../lib/share";
 import { CardHead, PanelCard } from "../../../components/PanelCard";
 import { PhotoHead, type HeadSlide } from "../../../components/PhotoHead";
@@ -13,25 +13,25 @@ import RoundButton from "../../../components/RoundButton";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { CardTabBar, CardTabPanel } from "../../../components/CardTabs";
 import { Tabs } from "../../../components/ui/tabs";
-import { useCardTab } from "../../../lib/cardTab";
+import { useCardTab } from "../lib/cardTab";
 import { CardAction as Action } from "../../../components/CardAction";
 import { ApiError } from "../../../lib/api/client";
 import type { AirportPin, AirportPlace, ClassBAirport } from "../../../lib/api/types";
 import { compassPoint } from "../../../lib/compass";
 import { distanceNm, type LatLon } from "../../../lib/geo";
 import { awayFrom } from "../../../lib/useAway";
-import { chipFillOf } from "../../../lib/map/flightCategory";
+import { chipFillOf } from "../../../lib/map/marks/flightCategory";
 import { inkOn } from "../../../lib/scoreScale";
 import { feet, miles } from "../../../lib/format";
 import { reportedWind, windLine } from "../format";
 import { FaaChart } from "./AirportDiagram";
 import { RunwaySketch } from "./RunwaySketch";
-import { runwaysLeftOut, stripsOf } from "../../../lib/runwaySketch";
+import { runwaysLeftOut, stripsOf } from "../lib/runwaySketch";
 import { TEXT } from "../../../lib/text";
 import { diagramRunwaysPicture } from "../../../lib/diagram";
 import { ago } from "../../../lib/format";
 import { useMinuteClock } from "../../../lib/useMinuteClock";
-import { arrivalHour, hoursOf, sentenceOf } from "../../../lib/hourly";
+import { arrivalHour, hoursOf, sentenceOf } from "../lib/hourly";
 import { sameField } from "../../../lib/procedures";
 import { airportQuery, photosQuery, servicesQuery } from "../../../lib/queryClient";
 import { StopStrip, type SuggestedStop } from "./StopServices";
@@ -269,7 +269,7 @@ export default function PlaceCard({ ident, from, onClose, onFlyHere, onAddStop, 
     <span
       // The words in whichever ink reads on the colour (inkOn), as the
       // map's chips are: white on a field's no-report grey was 2.6:1. The
-      // FAA's colours for the categories (lib/map/flightCategory).
+      // FAA's colours for the categories (lib/map/marks/flightCategory).
       className={cn("flex h-[1.625rem] shrink-0 items-center rounded-full px-2.5 font-bold whitespace-nowrap", TEXT.detail)}
       style={{ backgroundColor: chipColour, color: inkOn(chipColour) }}
       data-testid="place-category"
@@ -297,7 +297,7 @@ export default function PlaceCard({ ident, from, onClose, onFlyHere, onAddStop, 
   const weatherAge = metar ? ageOf(metar.observed_at) : nearby ? ageOf(nearby.metar.observed_at) : null;
   // And hour by hour, as Apple's Weather has it (the owner's pick, G1):
   // Now from the report, each hour after it from the field's own TAF,
-  // and a sentence of what they say, written from them (lib/hourly). Read
+  // and a sentence of what they say, written from them (features/plan/lib/hourly). Read
   // again each minute, as the hours move on.
   const tafText = place?.taf ?? null;
   const now = useMinuteClock();

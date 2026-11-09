@@ -1,0 +1,56 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "What the IFR alternate comes to for the Go / No-Go (14 CFR 91.169(a)(2), (b)): a stop where the one filed will not do, a caution where one is needed and none is filed or it is the pilot's to check; null where none is needed.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoAlternateFindingInput",
+      "type": "object",
+      "properties": {
+        "data": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GonogoAlternateData"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "/api/alternate's answer."
+        }
+      }
+    },
+    "answer": {
+      "title": "GonogoAlternateFindingAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "finding": {
+              "type": "string",
+              "enum": [
+                "stop",
+                "caution"
+              ]
+            },
+            "detail": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "finding",
+            "detail"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,5 +1,5 @@
 {
-  "about": "Flash-card drills: the light gun signals (14 CFR 91.125) and the basic VFR weather minimums (91.155) in the regulation's words, and Leitner's boxes. Times in ms since 1970. Web: lib/drills.ts. iOS: Drills in PilotLogic.swift.",
+  "about": "Flash-card drills: the light gun signals (14 CFR 91.125) and the basic VFR weather minimums (91.155) in the regulation's words, and Leitner's boxes. Times in ms since 1970. Web: features/pilot/drills.ts. iOS: Drills in PilotLogic.swift.",
   "intervalDays": [
     0,
     1,

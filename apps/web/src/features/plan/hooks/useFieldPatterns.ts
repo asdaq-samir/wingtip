@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { FitInputs, ProcedureAirport } from "../components/ProceduresRoute";
 import { sameField } from "../../../lib/procedures";
 import { departurePattern, trafficPattern, type TrafficPattern } from "../../../lib/trafficPattern";
-import { runwayNumber } from "../../../lib/pattern";
+import { runwayNumber } from "../lib/pattern";
 import type { PlannedRoute } from "./planAddress";
 import type { PlanAnswer, PlanCourse } from "./planTypes";
 import { useLoad } from "./useLoad";
@@ -51,7 +51,7 @@ export function useFieldPatterns({ planned, briefing, course, nav, fuelGal, pick
     }));
   }, [planned.dep, planned.dest, planned.stops, briefed, course]);
   // The airplane's figures and weights each runway's fit is worked from
-  // (lib/runwayFit), the Brief's own load (useLoad).
+  // (features/plan/components/procedures/runwayFit), the Brief's own load (useLoad).
   const fitAircraft = nav?.aircraft ?? null;
   const { result: fitLoad } = useLoad(fitAircraft, fuelGal);
   const takeoffLb = fitLoad?.takeoff.weightLb ?? null, landingLb = fitLoad?.landing.weightLb ?? null;

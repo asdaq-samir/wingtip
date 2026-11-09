@@ -1,0 +1,142 @@
+{
+  "description": "A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.",
+  "type": "object",
+  "properties": {
+    "floor_ft": {
+      "type": "number"
+    },
+    "ceiling_ft": {
+      "type": "number"
+    },
+    "class": {
+      "type": "string",
+      "enum": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "G"
+      ]
+    },
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "minimums": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "day": {
+          "type": "object",
+          "properties": {
+            "visibility_sm": {
+              "type": "number"
+            },
+            "clear_of_clouds": {
+              "type": "boolean"
+            },
+            "below_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "above_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "horizontal_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "visibility_sm",
+            "clear_of_clouds",
+            "below_ft",
+            "above_ft",
+            "horizontal_ft"
+          ],
+          "additionalProperties": false
+        },
+        "night": {
+          "type": "object",
+          "properties": {
+            "visibility_sm": {
+              "type": "number"
+            },
+            "clear_of_clouds": {
+              "type": "boolean"
+            },
+            "below_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "above_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "horizontal_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "visibility_sm",
+            "clear_of_clouds",
+            "below_ft",
+            "above_ft",
+            "horizontal_ft"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "day",
+        "night"
+      ],
+      "additionalProperties": false
+    },
+    "entry": {
+      "type": "string"
+    },
+    "equipment": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "speed_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "floor_ft",
+    "ceiling_ft",
+    "class",
+    "name",
+    "minimums",
+    "entry",
+    "equipment",
+    "speed_kt"
+  ],
+  "additionalProperties": false
+}

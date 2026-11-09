@@ -330,7 +330,7 @@ class PlannerProxyControllerTest {
     void aChartTileKeepsItsUpstreamCacheControl() throws Exception {
         responseHeaders.put("Cache-Control", "public, max-age=604800");
 
-        // The URL the map actually asks for (apps/web/src/lib/map/tiles.ts),
+        // The URL the map actually asks for (apps/web/src/lib/map/sources/tiles.ts),
         // which upstream is /api/chart-tile/... -- the rule is written
         // against the upstream path, not the browser's.
         MvcResult started = mockMvc.perform(get("/api/planner/chart-tile/sectional/10/262/380.png"))

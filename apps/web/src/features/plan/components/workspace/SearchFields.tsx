@@ -1,12 +1,12 @@
 import { MapPin } from "lucide-react";
-import { useTabSearch } from "../../../../lib/tabSearch";
+import { useTabSearch } from "../../lib/tabSearch";
 import { SearchField } from "../../../../components/PanelCapsule";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 
 /**
  * The tab's head (PlanWorkspace's `head`) where it is not FPL's: Aircraft's
  * field, Nearest's, or Airport's search bar, what is typed kept in the view
- * model and lib/tabSearch. One SearchField in the one place whichever it
+ * model and features/plan/lib/tabSearch. One SearchField in the one place whichever it
  * is, as before, so a switch between them changes its props and keeps the
  * field itself.
  */

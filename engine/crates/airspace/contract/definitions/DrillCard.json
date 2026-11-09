@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "prompt": {
+      "type": "string"
+    },
+    "answer": {
+      "type": "string"
+    },
+    "detail": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "colours": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "green",
+          "red",
+          "white"
+        ]
+      }
+    },
+    "flashing": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "id",
+    "prompt",
+    "answer",
+    "detail",
+    "colours",
+    "flashing"
+  ],
+  "additionalProperties": false
+}

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { SetURLSearchParams } from "react-router-dom";
-import { FIELD_LIST_KEYS, fieldListParams, fieldListsOf, prunedFieldLists } from "../../../lib/fieldLists";
+import { FIELD_LIST_KEYS, fieldListParams, fieldListsOf, prunedFieldLists } from "../lib/fieldLists";
 import { identOf } from "../../../lib/identSchema";
 import { sameField } from "../../../lib/procedures";
 import { airportQuery } from "../../../lib/queryClient";
@@ -40,7 +40,7 @@ export function useRouteTidy({ planned, searchParams, setSearchParams }: {
   }, [depNamed, destNamed, typedDep, typedDest, setSearchParams]);
   // Whatever changed the route -- a stop added from a card, the Class B
   // detour taken out, a link opened with picks for fields it no longer
-  // has -- the picks at fields it no longer has go (lib/fieldLists), as
+  // has -- the picks at fields it no longer has go (features/plan/lib/fieldLists), as
   // setRoute takes them in the same change. Not while a Direct to holds the
   // route (`was`): Cancel brings the route back, with its picks.
   const stops = planned.stops;

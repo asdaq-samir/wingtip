@@ -1,0 +1,94 @@
+{
+  "x-call": "wingtip_pilot::aircraft::calls::call",
+  "description": "Whether an airplane is around a field, inbound to it or departing it.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FieldRelationInput",
+      "type": "object",
+      "properties": {
+        "plane": {
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "track_deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "vertical_fpm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        },
+        "field": {
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "elevation_ft": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon",
+            "elevation_ft"
+          ]
+        }
+      },
+      "required": [
+        "plane",
+        "field"
+      ]
+    },
+    "answer": {
+      "title": "FieldRelationAnswer",
+      "type": "object",
+      "properties": {
+        "around": {
+          "type": "boolean"
+        },
+        "inbound": {
+          "type": "boolean"
+        },
+        "departing": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "around",
+        "inbound",
+        "departing"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

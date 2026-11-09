@@ -1,0 +1,25 @@
+{
+  "title": "ApproachFinding",
+  "type": "object",
+  "properties": {
+    "tone": {
+      "enum": [
+        "stop",
+        "caution",
+        "ok",
+        "info"
+      ]
+    },
+    "text": {
+      "type": "string"
+    },
+    "minimums": {
+      "type": "boolean",
+      "description": "The minimums' finding, put in again as the pilot types theirs; written only when true."
+    }
+  },
+  "required": [
+    "tone",
+    "text"
+  ]
+}

@@ -1,0 +1,137 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "Whether a watched airplane's alert goes off now: takes off, lands, or comes within limit_nm of a place.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AlertFiresInput",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "takeoff",
+            "land",
+            "near"
+          ]
+        },
+        "before_airborne": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "was_inside": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "airborne": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "arrived": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "plane": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "lat",
+                "lon"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "to": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "lat",
+                "lon"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "limit_nm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind"
+      ]
+    },
+    "answer": {
+      "title": "AlertFiresAnswer",
+      "type": "object",
+      "properties": {
+        "fires": {
+          "type": "boolean"
+        },
+        "inside": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Near something: whether it is that near now; null for the others."
+        },
+        "nm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "bearing_deg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "True bearing from the place to the airplane."
+        }
+      },
+      "required": [
+        "fires",
+        "inside",
+        "nm",
+        "bearing_deg"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

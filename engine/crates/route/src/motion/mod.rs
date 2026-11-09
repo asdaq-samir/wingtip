@@ -84,10 +84,10 @@ pub(crate) fn present(v: &Value, key: &str) -> bool {
     !matches!(v.get(key), None | Some(Value::Null) | Some(Value::Bool(false)))
 }
 
-/// The rules of this module by name (crate::call), None for a name not
-/// one of them.
-pub fn call(name: &str, v: &Value) -> Option<Result<String, String>> {
-    Some(match name {
+/// The rules of this module by name, as their contract files
+/// (crates/route/contract) name it to the dispatcher.
+pub fn call(name: &str, v: &Value) -> Result<String, String> {
+    match name {
         "traffic_marks" => traffic::marks_rule(v),
         "own_ship_hex" => traffic::own_ship_hex_rule(v),
         "closest_approach" => traffic::closest_approach_rule(v),
@@ -110,6 +110,6 @@ pub fn call(name: &str, v: &Value) -> Option<Result<String, String>> {
         "diagram_point" => diagram::point_rule(v),
         "diagram_fix_usable" => diagram::fix_usable_rule(v),
         "terrain_view_bands" => terrain_view::bands_rule(v),
-        _ => return None,
-    })
+        _ => Err(format!("the engine has no rule called {name:?}")),
+    }
 }

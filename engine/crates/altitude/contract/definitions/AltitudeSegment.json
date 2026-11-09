@@ -1,0 +1,123 @@
+{
+  "type": "object",
+  "properties": {
+    "from_nm": {
+      "type": "number"
+    },
+    "to_nm": {
+      "type": "number"
+    },
+    "floor_ft": {
+      "type": "number"
+    },
+    "airspace_ceiling_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "service_ceiling_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "cloud_base_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "cloud_station": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "cloud_ceiling_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "cloud_clearance_kept": {
+      "type": "boolean"
+    },
+    "band_ceiling_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "course_magnetic_deg": {
+      "type": "number"
+    },
+    "eastbound": {
+      "type": "boolean"
+    },
+    "hemispheric_rule_from_ft": {
+      "type": "number"
+    },
+    "candidates_ft": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "tight": {
+      "type": "boolean"
+    },
+    "highest_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "highest_is_obstacle": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "obstacle_type": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "obstacle_clearance_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "congested": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "mountainous": {
+      "type": "boolean"
+    },
+    "airway": {
+      "type": [
+        "object",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "from_nm",
+    "to_nm",
+    "floor_ft",
+    "service_ceiling_ft",
+    "cloud_clearance_kept",
+    "course_magnetic_deg",
+    "eastbound",
+    "hemispheric_rule_from_ft",
+    "candidates_ft",
+    "tight"
+  ],
+  "description": "One leg's band: its floor (91.119 under VFR, 91.177(a) under IFR), the ceilings over it, its legal altitudes by its own magnetic course, and what its floor was found from."
+}

@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "The crosswind a wind is judged by, steady or in the gusts, whichever is more, unsigned.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "WindSteadyOrGustInput",
+      "type": "object",
+      "properties": {
+        "steady_kt": {
+          "type": "number"
+        },
+        "gust_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "steady_kt"
+      ]
+    },
+    "answer": {
+      "title": "WindSteadyOrGustAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,88 @@
+{
+  "x-call": "wingtip_altitude::altitude::calls::call",
+  "description": "Why no plan has an altitude, in a pilot's words: where it fails, the reasons there, what to do, whether Class B is what stops it, and all of it as one message.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NoAltitudeInput",
+      "type": "object",
+      "properties": {
+        "selection": {
+          "type": "object"
+        },
+        "between": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "via": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "ident": {
+              "type": "string"
+            },
+            "added_nm": {
+              "type": "number"
+            }
+          }
+        },
+        "where": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "selection"
+      ]
+    },
+    "answer": {
+      "title": "NoAltitudeAnswer",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "brief": {
+          "type": "string"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "advice": {
+          "type": "string"
+        },
+        "class_b": {
+          "type": "boolean"
+        },
+        "detail": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "brief",
+        "reasons",
+        "advice",
+        "class_b",
+        "detail"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

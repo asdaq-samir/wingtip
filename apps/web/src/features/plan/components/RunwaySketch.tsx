@@ -2,7 +2,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Runway } from "../../../lib/api/types";
 import { TEXT_POINTS } from "../../../lib/text";
 import { FT_PER_NM } from "../../../lib/geo";
-import { numberHalfWidth, numbersOf, stripsOf } from "../../../lib/runwaySketch";
+import { numberHalfWidth, numbersOf, stripsOf } from "../lib/runwaySketch";
 
 /** Round the runways, in the box's own points: the strips' half width and
  *  a little air. */

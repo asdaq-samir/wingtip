@@ -1,0 +1,88 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "Where a point on the ground is on an airport diagram's page by its graticule, points from the top left, and whether it is on the page.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DiagramPointInput",
+      "type": "object",
+      "properties": {
+        "graticule": {
+          "type": "object",
+          "properties": {
+            "lat_on_x": {
+              "type": "boolean"
+            },
+            "a": {
+              "type": "number"
+            },
+            "b": {
+              "type": "number"
+            },
+            "c": {
+              "type": "number"
+            },
+            "d": {
+              "type": "number"
+            },
+            "north_deg": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat_on_x",
+            "a",
+            "b",
+            "c",
+            "d",
+            "north_deg"
+          ]
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "graticule",
+        "lat",
+        "lon",
+        "width",
+        "height"
+      ]
+    },
+    "answer": {
+      "title": "DiagramPointAnswer",
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "on_page": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "on_page"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

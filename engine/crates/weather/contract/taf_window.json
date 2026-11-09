@@ -1,0 +1,85 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (AC 00-45H).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TafWindowInput",
+      "type": "object",
+      "properties": {
+        "fcsts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TafPeriod"
+          }
+        },
+        "start": {
+          "type": "number"
+        },
+        "end": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "fcsts",
+        "start"
+      ]
+    },
+    "answer": {
+      "title": "TafWindowAnswer",
+      "type": "object",
+      "properties": {
+        "periods": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TafPeriod"
+          }
+        },
+        "worst": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/WeatherWorst"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "current": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TafPeriod"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "prevailing": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TafPeriod"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "periods",
+        "worst",
+        "current",
+        "prevailing"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,16 +1,16 @@
 import AccordionSection from "../../../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { cancelled, shareOrCopy, useCopied } from "../../../../lib/share";
-import { passengerItems } from "../../../../lib/passengers";
-import { usePreflight, useTicked } from "../../../../lib/preflight";
+import { passengerItems } from "./passengers";
+import { usePreflight, useTicked } from "./preflight";
 import { showError } from "../../../../lib/problems";
 
 /**
  * The Brief's Passengers: the briefing 14 CFR 91.107 asks of the pilot in
  * command before every takeoff, and good practice besides, ticked off for
- * this flight as the preflight action is (lib/preflight's ticks, its own
+ * this flight as the preflight action is (features/plan/components/briefing/preflight's ticks, its own
  * keys); then the flight in a few lines, sent to the passengers from the
- * share sheet (lib/passengers).
+ * share sheet (features/plan/components/briefing/passengers).
  */
 export default function PassengerBriefing({ flight, message }: { flight: string; message: string }) {
   const ticked = useTicked(flight);
@@ -30,7 +30,7 @@ export default function PassengerBriefing({ flight, message }: { flight: string;
       <div className="space-y-4" data-testid="passengers">
         {/* 91.107 asks the first two of the pilot in command before every
             takeoff; the rest is the FAA's SAFETY briefing, each row's
-            source under it (lib/passengers). */}
+            source under it (features/plan/components/briefing/passengers). */}
         <ListGroup title={`Brief them · ${done} of ${PASSENGER_ITEMS.length}`}>
           {PASSENGER_ITEMS.map(item => (
             <ListRow

@@ -42,7 +42,7 @@ export interface VerdictInput {
     vfrNotRecommended: string[];
     /** Under the pilot's own minimums (lib/minimums). */
     underMinimums: string[];
-    /** Under IFR, icing possible at an altitude flown (lib/icing), in a
+    /** Under IFR, icing possible at an altitude flown (features/plan/lib/icing), in a
      *  line. */
     icing?: string | null;
     /** The SIGMETs and G-AIRMETs along the route, by name. */
@@ -68,7 +68,7 @@ export interface VerdictInput {
     /** TFRs near the route that are not. */
     near: number;
     /** Special-use areas the legs cross, as their times of use read for
-     *  the pass (lib/passTimes), or as SFDPS says they are now
+     *  the pass (features/plan/lib/passTimes), or as SFDPS says they are now
      *  (active-now, cold-now: lib/liveReports). */
     specialUse: { name: string; when: "active" | "not-scheduled" | "by-notam" | "unknown" | "active-now" | "cold-now" }[];
   };

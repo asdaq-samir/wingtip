@@ -8,9 +8,6 @@
 use crate::json::{self, Value};
 use crate::rules::{self, Rule, CLASS_A_FLOOR_FT, G_LOW_AGL_FT, TEN_THOUSAND_FT};
 
-/// The names this module answers.
-pub const NAMES: [&str; 2] = ["vfr_minimums", "drill_decks"];
-
 /// 14 CFR 91.125's table, word for word: each colour and type of signal,
 /// what it means to an aircraft on the surface and to one in flight. The
 /// flight column's notes are 91.125(a)'s own (flashing green: "to be

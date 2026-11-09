@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "The Aviation Weather Center's national metars cache file (XML) read into the shape the weather store keeps: {ident: report}, the newest per station: its text, time, flight category (only what the visibility settles where the ceiling is not known), ceiling (14 CFR 1.1), visibility, wind, altimeter, temperature and dewpoint, and where it is.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AwcMetarsReadInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "AwcMetarsReadAnswer",
+      "type": "object"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,174 @@
+{
+  "x-call": "wingtip_radio::mayday::call",
+  "description": "The distress call in AIM 6-3-2(a)(3)'s order, filled from what the app knows, each part it does not know a blank in brackets and listed in missing; the code (7700, AIM 6-2-2; an assigned code kept while talking to ATC, 6-3-2(a)(2)); and the frequencies to call on: the one in use, the nearest approach or departure control and tower the app lists, then 121.5 MHz.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "MaydayCallInput",
+      "type": "object",
+      "properties": {
+        "station": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "callsign": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "airplane_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nature": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "weather": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "intentions": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "position": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "As a controller gives it: \"BAE 245° 12 nm\"."
+        },
+        "heading_mag_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "souls": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "frequencies": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "mhz": {
+                "type": "number"
+              },
+              "distance_nm": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "ident",
+              "kind",
+              "mhz",
+              "distance_nm"
+            ]
+          }
+        }
+      }
+    },
+    "answer": {
+      "title": "MaydayCallAnswer",
+      "type": "object",
+      "properties": {
+        "lines": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "words": {
+          "type": "string"
+        },
+        "missing": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "squawk": {
+          "type": "string"
+        },
+        "squawk_words": {
+          "type": "string"
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "mhz": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "why": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "label",
+              "mhz",
+              "why"
+            ]
+          }
+        }
+      },
+      "required": [
+        "lines",
+        "words",
+        "missing",
+        "squawk",
+        "squawk_words",
+        "channels"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -17,7 +17,7 @@
  * - the pattern "entered at a 45° angle to the downwind leg" abeam
  *   midfield (AIM 4-3-3, AC 90-66C 11.3), from the pattern's side;
  * - left traffic unless the FAA says right (14 CFR 91.126(b)(1)),
- *   lib/pattern's patternSideDeg.
+ *   features/plan/lib/pattern's patternSideDeg.
  *
  * A sketch of the pattern to fly by, not a procedure: the size of a
  * pattern is the pilot's, flown as the field and its traffic need.

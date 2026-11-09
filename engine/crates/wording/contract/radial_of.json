@@ -1,0 +1,57 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "The radial from a VOR a point is on, the course to the station and the distance, or null where the station has no magnetic variation.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RadialOfInput",
+      "type": "object",
+      "properties": {
+        "station": {
+          "$ref": "#/definitions/WordingStation"
+        },
+        "at": {
+          "$ref": "#/definitions/WordingLatLon"
+        }
+      },
+      "required": [
+        "station",
+        "at"
+      ]
+    },
+    "answer": {
+      "title": "RadialOfAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "radial": {
+              "type": "number",
+              "description": "Magnetic degrees from the station."
+            },
+            "to_course": {
+              "type": "number",
+              "description": "Magnetic degrees to the station."
+            },
+            "nm": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "radial",
+            "to_course",
+            "nm"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

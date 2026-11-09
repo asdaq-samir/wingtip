@@ -1,21 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { create } from "zustand";
 import { useQueries } from "@tanstack/react-query";
-import { useWindPicks } from "../../../lib/windPicks";
+import { useWindPicks } from "../lib/windPicks";
 import { api } from "../../../lib/api/client";
 import { zuluTime } from "../../../lib/format";
 import { useMinuteClock } from "../../../lib/useMinuteClock";
 import type { AircraftProfile, Detour, ProcedureList, ProcedureSummary, Runway } from "../../../lib/api/types";
 import { normalizeDeg } from "../../../lib/geo";
-import { windPick, type WindPick } from "../../../lib/pattern";
+import { windPick, type WindPick } from "../lib/pattern";
 import { airportQuery, plateQuery } from "../../../lib/queryClient";
 import { approachRunway, sameField, type BranchFix, type PickedProcedure } from "../../../lib/procedures";
-import { useOwnShip } from "../../../lib/map/ownShip";
+import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { reportedWind, type ReportedWind } from "../format";
 import type { EditedPoint, PointAltitude } from "../components/PointAltitudeDialog";
 import type { HoldAt } from "../components/HoldSheet";
 import { useFuelStops } from "./useFuelStops";
-import type { Hold } from "../../../lib/routeHolds";
+import type { Hold } from "../lib/routeHolds";
 import { legOf, type NavLogRow } from "../components/navlog/rows";
 import { callEngine } from "../../../lib/engine/engine";
 import type { Landing } from "../components/procedures/PatternChips";
@@ -77,7 +77,7 @@ export interface ProcedureAirport {
   elevationFt: number | null;
 }
 
-/** What a runway's fit is worked from (lib/runwayFit): the airplane's
+/** What a runway's fit is worked from (features/plan/components/procedures/runwayFit): the airplane's
  *  POH figures and its takeoff and landing weights (useLoad). */
 export interface FitInputs {
   aircraft: AircraftProfile;
@@ -87,7 +87,7 @@ export interface FitInputs {
 
 /** Where the procedures sheet is open: a field's kind of procedure, and
  *  one to open the page of as the list comes in, asked for by voice
- *  (lib/pilotCommand: "the ILS one nine right at Milwaukee") -- the
+ *  (components/pilotCommand: "the ILS one nine right at Milwaukee") -- the
  *  approach as the FAA's names start ("ILS", "RNAV (GPS)") and its
  *  runway ("19R"), or any runway's. */
 export type ProceduresAt = { ident: string; kind: Kind; pick?: { approach: string; runway: string | null } | null } | null;
@@ -190,7 +190,7 @@ export interface ProceduresRouteProps {
   /** The pilot's own point off one of the route's, flown over after it
    *  (FixFromDialog): "VPBNG/090/30". */
   onCreateFix: (after: string, ident: string) => void;
-  /** The pilot's holds (lib/routeHolds), each its own row after its point, and
+  /** The pilot's holds (features/plan/lib/routeHolds), each its own row after its point, and
    *  one set, changed or (null) taken off (HoldSheet). */
   holds: Hold[];
   onHoldSet: (fix: string, hold: Hold | null) => void;
@@ -446,7 +446,7 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
         || !free("takeoff", takeoffs.get(a.ident)) ? [] : [`takeoff:${a.ident}:${wind.ident}`]),
     ];
   }).join(",");
-  // Save waits while a field's wind is still coming (lib/windPicks): its
+  // Save waits while a field's wind is still coming (features/plan/lib/windPicks): its
   // runway is picked into it as it comes, and the route planned again.
   const windComing = airports.some((_, i) => (forecastFor[i] != null ? forecasts[i]?.isPending : cards[i]?.isPending) ?? false);
   useEffect(() => { useWindPicks.setState({ pending: windComing }); }, [windComing]);

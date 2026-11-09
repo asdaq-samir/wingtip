@@ -83,7 +83,7 @@ export const words = {
   weather: (request: WeatherWordsRequest, signal?: AbortSignal) => postJson<WordsAnswer>("/api/planner/words/weather", request, signal),
   /** The Go / No-Go read against the pilot's own minimums and currency. */
   risk: (request: RiskWordsRequest, signal?: AbortSignal) => postJson<WordsAnswer>("/api/planner/words/risk", request, signal),
-  /** What a flown flight says to practise next (lib/debrief's answer). */
+  /** What a flown flight says to practise next (features/pilot/debrief's answer). */
   debrief: (debrief: unknown, signal?: AbortSignal) => postJson<DebriefWordsAnswer>("/api/planner/words/debrief", { debrief }, signal),
 };
 

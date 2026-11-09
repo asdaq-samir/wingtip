@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_pilot::aircraft::calls::call",
+  "description": "Whether text is a US registration, an N-number (14 CFR 47.15(b)).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NNumberInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "NNumberAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -2,7 +2,7 @@ import type { Map as MlMap, SymbolLayerSpecification } from "maplibre-gl";
 import { describe, expect, it, vi } from "vitest";
 import type { OverlayTiles } from "../../api/types";
 import { usePreferences } from "../../preferences";
-import { OVERLAY_LAYERS } from "../overlayTiles";
+import { OVERLAY_LAYERS } from "../sources/overlayTiles";
 import { AIRSPACE_TILE_LAYERS, applyOverlayFilters, overlayStyle, setAirportWeather, setOverlayExclusion, setSelectedAirport, volumeOfTile, vorOfTile } from "./glOverlays";
 import { airspaceText, glZoom } from "./glStyle";
 

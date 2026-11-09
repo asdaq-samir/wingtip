@@ -15,7 +15,7 @@ import {
 import type { AircraftProfile, ProcedureDrawing, QuizAnswer } from "../../../lib/api/types";
 import { noteAt } from "../../../lib/assignedLessons";
 import { bearingDeg } from "../../../lib/geo";
-import { NO_FOCUS, endLessonMap, useLessonMap } from "../../../lib/map/lessonMap";
+import { NO_FOCUS, endLessonMap, useLessonMap } from "../../../lib/map/route/lessonMap";
 import type { PickedProcedure } from "../../../lib/procedures";
 import { airportQuery, procedureQuery } from "../../../lib/queryClient";
 import { FINDING_TONE } from "../../../lib/findings";

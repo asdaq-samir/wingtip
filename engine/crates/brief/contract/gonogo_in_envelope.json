@@ -1,0 +1,53 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "Whether an arm and weight are within the CG envelope.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoInEnvelopeInput",
+      "type": "object",
+      "properties": {
+        "envelope": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "additionalItems": false
+          },
+          "description": "[arm in, weight lb] points."
+        },
+        "arm": {
+          "type": "number"
+        },
+        "weight": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "arm",
+        "weight"
+      ]
+    },
+    "answer": {
+      "title": "GonogoInEnvelopeAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_route::approach::calls::call",
+  "description": "A descent rate rounded as the lesson says it.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ApproachRoundedFpmInput",
+      "type": "object",
+      "properties": {
+        "fpm": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "fpm"
+      ]
+    },
+    "answer": {
+      "title": "ApproachRoundedFpmAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

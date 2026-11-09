@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm, useWatch, type UseFormRegisterReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { numberOrNull, optionalHours, pastDay, requiredPastDay, textOrNull, z } from "../../lib/formSchema";
+import { numberOrNull, optionalHours, pastDay, requiredPastDay, textOrNull, z } from "./formSchema";
 import { done } from "../../lib/doneNote";
 import { Info, Plus, Route, Share, Trash2 } from "lucide-react";
 import EmptyState from "../../components/EmptyState";
@@ -44,7 +44,7 @@ import QueryState from "../../components/QueryState";
 import { SwipeToDelete } from "../../components/SwipeToDelete";
 import { callEngine } from "../../lib/engine/engine";
 import TogglePill from "../../components/TogglePill";
-import { daysBetween, daysWords, dueTone } from "../../lib/paperwork";
+import { daysBetween, daysWords, dueTone } from "./paperwork";
 import DueItemsGroup from "./DueItemsGroup";
 
 // Mirrors services/gateway's own AircraftRequest validation
@@ -228,7 +228,7 @@ const inspectionsSchema = z.object({
 type InspectionsValues = z.infer<typeof inspectionsSchema>;
 
 /** How a last good day stands today: in green to it, red past it, and the
- *  days left to it -- amber within the reminders' 30 (lib/paperwork). */
+ *  days left to it -- amber within the reminders' 30 (features/pilot/paperwork). */
 function Standing({ through, testId }: { through: string | null | undefined; testId: string }) {
   if (!through) return null;
   const today = localDay();

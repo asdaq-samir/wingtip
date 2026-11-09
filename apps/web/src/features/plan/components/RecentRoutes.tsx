@@ -9,7 +9,7 @@ import { recentHrefOf } from "../../../lib/flightLink";
 import { placeOfPoint } from "../../../lib/identSchema";
 import { recentRouteKey, usePreferences, type RecentRoute } from "../../../lib/preferences";
 import { TEXT } from "../../../lib/text";
-import { whenGroups } from "../../../lib/whenGroups";
+import { whenGroups } from "../lib/whenGroups";
 import RowMenu from "../../../components/RowMenu";
 import { cancelled, shareOrCopy } from "../../../lib/share";
 import { showError } from "../../../lib/problems";

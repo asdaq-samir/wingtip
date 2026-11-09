@@ -1,0 +1,51 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "The POH's short-field distances at a pressure altitude, temperature, weight and headwind (14 CFR 91.103(b)).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoShortFieldInput",
+      "type": "object",
+      "properties": {
+        "table": {
+          "$ref": "#/definitions/ShortFieldTable"
+        },
+        "pressure_alt_ft": {
+          "type": "number"
+        },
+        "temp_c": {
+          "type": "number"
+        },
+        "weight_lb": {
+          "type": "number"
+        },
+        "headwind_kt": {
+          "type": "number",
+          "description": "A tailwind negative."
+        },
+        "grass": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+        }
+      },
+      "required": [
+        "table",
+        "pressure_alt_ft",
+        "temp_c",
+        "weight_lb",
+        "headwind_kt"
+      ]
+    },
+    "answer": {
+      "$ref": "#/definitions/GonogoDistances"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

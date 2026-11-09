@@ -1,9 +1,9 @@
 import { useEffect } from "react";
-import type { FixPin, VorPin } from "../../overlayTypes";
+import type { FixPin, VorPin } from "../../sources/overlayTypes";
 import { usePreferences } from "../../../preferences";
-import { FixCard, VorCard } from "../../NavaidCards";
-import { usePointActions } from "../../pointActions";
-import { WaypointCard, type Waypoint } from "../../WaypointCard";
+import { FixCard, VorCard } from "../../cards/NavaidCards";
+import { usePointActions } from "../../cards/pointActions";
+import { WaypointCard, type Waypoint } from "../../cards/WaypointCard";
 import { useGlMap, useGlTap } from "../glLayer";
 import { OVERLAY_SOURCE, pointOf, setOverlayExclusion, vorOfTile } from "../glOverlays";
 import { useGlProbe } from "../useGlProbe";

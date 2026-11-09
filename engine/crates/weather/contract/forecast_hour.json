@@ -1,0 +1,33 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, AC 00-45H).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ForecastHourInput",
+      "type": "object",
+      "properties": {
+        "hours_ahead": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "ForecastHourAnswer",
+      "type": "string",
+      "enum": [
+        "06",
+        "12",
+        "24"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

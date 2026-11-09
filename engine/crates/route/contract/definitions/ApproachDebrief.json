@@ -1,0 +1,375 @@
+{
+  "title": "ApproachDebrief",
+  "type": "object",
+  "properties": {
+    "airport": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "transition": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "guidance": {
+      "enum": [
+        "localizer",
+        "gps",
+        "other"
+      ]
+    },
+    "faf_at": {
+      "type": "number",
+      "description": "When the track crossed the final approach fix inbound, ms."
+    },
+    "fit_nm": {
+      "type": "number",
+      "description": "How far off the final it flew on average, nm."
+    },
+    "glidepath_fit_ft": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "How far off the glidepath on average, ft, where there is one."
+    },
+    "crossings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ident": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "min_ft": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "max_ft": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "t": {
+            "type": "number"
+          },
+          "alt_ft": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "under_ft": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Its furthest under its minimum on the way to it, ft (+ under)."
+          }
+        },
+        "required": [
+          "ident",
+          "roles",
+          "min_ft",
+          "max_ft",
+          "t",
+          "alt_ft",
+          "under_ft"
+        ]
+      },
+      "description": "The fixes passed in order (AIM 5-4-5), the missed approach's left out."
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ApproachFinding"
+      }
+    },
+    "lowest_ft": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "The lowest after the final approach fix, before the missed approach point (14 CFR 91.175(c), (e))."
+    },
+    "plan": {
+      "type": "object",
+      "properties": {
+        "inbound": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "[lat, lon], degrees.",
+            "items": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "additionalItems": false
+          }
+        },
+        "missed": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon], degrees.",
+              "items": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "additionalItems": false
+            }
+          }
+        },
+        "fixes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "roles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "ident",
+              "lat",
+              "lon",
+              "roles"
+            ]
+          }
+        },
+        "track": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "off": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "lat",
+              "lon",
+              "off"
+            ]
+          }
+        }
+      },
+      "required": [
+        "inbound",
+        "missed",
+        "fixes",
+        "track"
+      ]
+    },
+    "profile": {
+      "type": "object",
+      "properties": {
+        "track": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "to_go_nm": {
+                "type": "number"
+              },
+              "alt_ft": {
+                "type": "number"
+              },
+              "off": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "to_go_nm",
+              "alt_ft",
+              "off"
+            ]
+          }
+        },
+        "fixes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "to_go_nm": {
+                "type": "number"
+              },
+              "min_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "max_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "ident",
+              "to_go_nm",
+              "min_ft",
+              "max_ft"
+            ]
+          }
+        },
+        "glidepath": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "from_nm": {
+                  "type": "number"
+                },
+                "from_ft": {
+                  "type": "number"
+                },
+                "to_nm": {
+                  "type": "number"
+                },
+                "to_ft": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "from_nm",
+                "from_ft",
+                "to_nm",
+                "to_ft"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "track",
+        "fixes",
+        "glidepath"
+      ]
+    },
+    "outcome": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "landed",
+            "missed",
+            "unknown"
+          ]
+        },
+        "seconds_after_map": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "seconds_after_map"
+      ]
+    },
+    "has_altitude": {
+      "type": "boolean"
+    },
+    "also_fits": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Approaches whose final the track fitted as well, by name."
+    },
+    "way_in": {
+      "type": "object",
+      "properties": {
+        "fixes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "fixes",
+        "passed"
+      ]
+    }
+  },
+  "required": [
+    "airport",
+    "id",
+    "name",
+    "transition",
+    "guidance",
+    "faf_at",
+    "fit_nm",
+    "glidepath_fit_ft",
+    "crossings",
+    "findings",
+    "lowest_ft",
+    "plan",
+    "profile",
+    "outcome",
+    "has_altitude",
+    "also_fits",
+    "way_in"
+  ],
+  "description": "One attempt at an approach debriefed (the web's ApproachDebrief, snake_case): off the course past full scale (AIM 1-1-9, 1-1-17), each fix's crossing (AIM 5-4-5), the lowest against the pilot's minimums (14 CFR 91.175(c), (e))."
+}

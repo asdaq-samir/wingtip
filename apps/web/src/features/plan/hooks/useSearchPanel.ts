@@ -4,7 +4,7 @@ import type { PanelState } from "../../../components/mapChrome";
 import { identOf } from "../../../lib/identSchema";
 import { usePreferences, type RecentAirport } from "../../../lib/preferences";
 import { airportQuery, queryClient } from "../../../lib/queryClient";
-import { useTabSearch } from "../../../lib/tabSearch";
+import { useTabSearch } from "../lib/tabSearch";
 import { useAirportSearch } from "../../../lib/useAirportSearch";
 import { patched } from "../../../lib/useSearchParamsNow";
 import type { PanelTab } from "./useTabCards";
@@ -12,7 +12,7 @@ import type { PanelTab } from "./useTabCards";
 /**
  * The search bars of the planner's tabs (usePlanWorkspace): Airport's,
  * which opens a field's card or makes it Home or a Favorite; Aircraft's
- * and Nearest's, whose text lives in lib/tabSearch; the Adds that focus
+ * and Nearest's, whose text lives in features/plan/lib/tabSearch; the Adds that focus
  * them without moving the panel; and Favorites brought in by a link.
  */
 export function useSearchPanel({ tab, selectPlace, listAway, panel, setPanel, searchParams, setSearchParams }: {
@@ -80,7 +80,7 @@ export function useSearchPanel({ tab, selectPlace, listAway, panel, setPanel, se
   const upAsTyped = (typed: string) => { if (typed && panel === "peek") setPanel("full"); };
 
   // Aircraft's and Nearest's fields, the search bar's shape (SearchField) in
-  // the same place, what is typed kept in lib/tabSearch for their lists.
+  // the same place, what is typed kept in features/plan/lib/tabSearch for their lists.
   const aircraftTyped = useTabSearch(t => t.aircraft);
   const pickingMine = useTabSearch(t => t.pickingMine);
   const pickingFavorite = useTabSearch(t => t.pickingFavorite);

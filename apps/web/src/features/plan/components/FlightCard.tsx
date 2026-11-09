@@ -13,12 +13,12 @@ import { RowBadge } from "../../../components/RowBadge";
 import { Toggle as TogglePrimitive } from "radix-ui";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
 import { bearingDeg, distanceNm } from "../../../lib/geo";
-import { useOwnFix, type Fix } from "../../../lib/map/ownShip";
-import { carriedOn, closestApproach, nearInHeight } from "../../../lib/map/traffic";
-import { useTracking } from "../../../lib/map/tracking";
+import { useOwnFix, type Fix } from "../../../lib/map/position/ownShip";
+import { carriedOn, closestApproach, nearInHeight } from "../map/traffic";
+import { useTracking } from "../../../lib/map/position/tracking";
 import { alertsLine } from "../../../lib/aircraftAlerts";
 import type { AircraftRegistration, TrafficAircraft } from "../../../lib/api/types";
-import { planePhotoQuery } from "../../../lib/planePhoto";
+import { planePhotoQuery } from "../lib/planePhoto";
 import { airportQuery, flightQuery, routeQuery } from "../../../lib/queryClient";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
@@ -27,7 +27,7 @@ import { awayFrom, nmAway } from "../../../lib/useAway";
 import { clockTime } from "../../../lib/format";
 import AircraftAlertMenu from "./AircraftAlertMenu";
 import AirplaneSketch from "./AirplaneSketch";
-import { squawkMeaning } from "../../../lib/squawks";
+import { squawkMeaning } from "../lib/squawks";
 import PastFlights from "./PastFlights";
 import { lasted, shortWhen, when } from "./pastFlightFormat";
 import { pastFlightQuery, pastFlightsQuery } from "./pastFlightsQuery";
@@ -36,7 +36,7 @@ import { AirplaneFigures } from "./AirplaneFigures";
 import { shareOrCopy } from "../../../lib/share";
 import { aircraftKind } from "../../../lib/aircraftKind";
 import { departuresQuery } from "../../../lib/liveReports";
-import { departureLine } from "../../../lib/departureWords";
+import { departureLine } from "../lib/departureWords";
 
 /** A link to the airplane on the planner, shared where the phone can,
  *  copied where it cannot. */
@@ -464,7 +464,7 @@ export default function FlightCard({ hex, onClose, onOpenPast, onOpenAirport }: 
             )}
             <ListRow title="ICAO address" value={<span className={cn("font-semibold text-foreground uppercase tabular-nums", TEXT.row)}>{hex}</span>} />
             <ListRow title="Callsign" value={<span className="font-semibold text-foreground">{plane?.callsign ?? "—"}</span>} />
-            {/* The tower's departure event, where TDES sent one (lib/departureWords). */}
+            {/* The tower's departure event, where TDES sent one (features/plan/lib/departureWords). */}
             {towerLine && <ListRow title="Tower" description={towerLine} data-testid="flight-tower" />}
           </ListGroup>
         </PillSection>

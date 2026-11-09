@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { loadDeclination, type Declination } from "../../../magnetic";
-import { PINCHED_LEVELS, RulerDrawing } from "../../RulerDrawing";
-import { placed } from "../../rulerPlaced";
+import { PINCHED_LEVELS, RulerDrawing } from "../../ruler/RulerDrawing";
+import { placed } from "../../ruler/rulerPlaced";
 import { useCruiseTas } from "../../useCruiseTas";
-import { HOLD_MS, heldStill } from "../../ruler";
+import { HOLD_MS, heldStill } from "../../ruler/ruler";
 import { useGlMap } from "../glLayer";
 
 type XY = { x: number; y: number };

@@ -9,7 +9,7 @@ import { ListChoices, ListGroup, ListRow } from "../../../components/GroupedList
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../../components/ResponsivePopover";
 import { Switch } from "../../../components/ui/switch";
 import type { ProcedureList, ProcedureSummary } from "../../../lib/api/types";
-import { runwayNumber } from "../../../lib/pattern";
+import { runwayNumber } from "../lib/pattern";
 import { usePreferences } from "../../../lib/preferences";
 import { transitionWords, type PickedProcedure } from "../../../lib/procedures";
 import { TEXT } from "../../../lib/text";

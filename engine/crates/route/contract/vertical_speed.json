@@ -1,0 +1,48 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "The vertical speed in feet a minute from GPS altitudes: the least-squares slope of the last 10 seconds of samples; null with fewer than three of them or under 2 seconds.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "VerticalSpeedInput",
+      "type": "object",
+      "properties": {
+        "samples": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "t_s": {
+                "type": "number"
+              },
+              "altitude_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "t_s"
+            ]
+          }
+        }
+      },
+      "required": [
+        "samples"
+      ]
+    },
+    "answer": {
+      "title": "VerticalSpeedAnswer",
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

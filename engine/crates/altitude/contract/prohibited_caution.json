@@ -1,0 +1,31 @@
+{
+  "x-call": "wingtip_altitude::altitude::calls::call",
+  "description": "Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ProhibitedCautionInput",
+      "type": "object",
+      "properties": {
+        "selection": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "selection"
+      ]
+    },
+    "answer": {
+      "title": "ProhibitedCautionAnswer",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

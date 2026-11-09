@@ -11,14 +11,14 @@ import type { NearestAirport, PlaceFound } from "../../../lib/api/types";
 import { compassPoint, saidPoint } from "../../../lib/compass";
 import { nmAway, nmFigure } from "../../../lib/useAway";
 import { mhzText } from "../../../lib/frequencies";
-import { chipFillOf, colourOf } from "../../../lib/map/flightCategory";
-import { glideRangeNm, reachesField, underway } from "../../../lib/map/glide";
-import { airportMarkSvg } from "../../../lib/map/airportMark";
-import { positionNow, useOwnShip, useOwnFix } from "../../../lib/map/ownShip";
+import { chipFillOf, colourOf } from "../../../lib/map/marks/flightCategory";
+import { glideRangeNm, reachesField, underway } from "../../../lib/map/position/glide";
+import { airportMarkSvg } from "../../../lib/map/marks/airportMark";
+import { positionNow, useOwnShip, useOwnFix } from "../../../lib/map/position/ownShip";
 import { nearestQuery } from "../../../lib/queryClient";
 import { inkOn } from "../../../lib/scoreScale";
 import { TEXT } from "../../../lib/text";
-import { useTabSearch } from "../../../lib/tabSearch";
+import { useTabSearch } from "../lib/tabSearch";
 import { altFt } from "../../../lib/format";
 import { FINDING_TONE } from "../../../lib/findings";
 
@@ -36,7 +36,7 @@ const TYPING_MS = 250;
  * Where Nearest is from: the pilot's position until a place is typed --
  * a town, a street address, an airport -- at the pilot's ask, as Maps'
  * search asks where. Typed in Nearest's field, in the panel's head
- * (PlanWorkspace, lib/tabSearch), which reads "Current position" until
+ * (PlanWorkspace, features/plan/lib/tabSearch), which reads "Current position" until
  * then; what answers comes up here, at the top of the list, and the
  * field's clear goes back to the position.
  */
@@ -186,7 +186,7 @@ function NearestRow({ field, ahead, reach, onOpen }: {
  * where it was a sheet of its own over the panel: the ten fields nearest
  * own ship, how far and which way, the longest runway, and -- in the
  * air, with the GPS's altitude -- which are within a still-air glide
- * (lib/map/glide), the ring the map draws round own ship. Or nearest a
+ * (lib/map/position/glide), the ring the map draws round own ship. Or nearest a
  * place typed in its field (NearField), at the pilot's ask: a town, an
  * address, an airport. A tap on one opens its card over this one, and
  * its close comes back here. With no position yet, it offers to show it.

@@ -1,0 +1,43 @@
+{
+  "x-call": "wingtip_pilot::aircraft::calls::call",
+  "description": "An ADS-B emitter category's name in DO-260B's words (GDL 90 Table 11): A1 to A7 and B1, B2; null for one not sent and for the rest.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "EmitterCategoryInput",
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "EmitterCategoryAnswer",
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "light",
+        "small",
+        "large",
+        "high_vortex_large",
+        "heavy",
+        "high_performance",
+        "rotorcraft",
+        "glider",
+        "lighter_than_air",
+        null
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

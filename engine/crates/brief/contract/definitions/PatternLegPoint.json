@@ -1,0 +1,17 @@
+{
+  "title": "PatternLegPoint",
+  "type": "object",
+  "properties": {
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "lat",
+    "lon"
+  ],
+  "description": "A point, degrees."
+}

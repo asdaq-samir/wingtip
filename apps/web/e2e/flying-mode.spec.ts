@@ -4,7 +4,7 @@ import { closeProfile, grabberTo, openPanel, openProfile, settle, sideDrawer, sl
 /**
  * Flying mode (useFlyingMode), the canvas's Flying screen: once own ship
  * is underway with a route -- here the planned flight's dry run, which
- * flies own ship (lib/map/ownShip's simulateFix) -- the next checkpoint is
+ * flies own ship (lib/map/position/ownShip's simulateFix) -- the next checkpoint is
  * over the map (FlyingHead), the map's buttons are 60 points with words
  * (MapControls), and the route's box and the tab bar are put away
  * (MapPanel's `flying`); the dry run closed, own ship is off and the

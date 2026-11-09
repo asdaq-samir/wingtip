@@ -1,0 +1,81 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "How to join the pattern for an end, coming on a course (AC 90-66C 11.3).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "PatternEntryInput",
+      "type": "object",
+      "properties": {
+        "end": {
+          "type": "object",
+          "properties": {
+            "ident": {
+              "type": "string"
+            },
+            "heading_true_deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "traffic": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "\"right\" for right traffic; anything else, or none, is left (14 CFR 91.126(b)(1))."
+            }
+          },
+          "required": [
+            "ident"
+          ]
+        },
+        "course_deg": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "end",
+        "course_deg"
+      ]
+    },
+    "answer": {
+      "title": "PatternEntryAnswer",
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "enum": [
+            "north",
+            "northeast",
+            "east",
+            "southeast",
+            "south",
+            "southwest",
+            "west",
+            "northwest"
+          ],
+          "description": "Where the airplane comes from."
+        },
+        "pattern_side": {
+          "type": "boolean",
+          "description": "Whether it comes from the pattern's side."
+        },
+        "words": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "pattern_side",
+        "words"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,7 +1,7 @@
 import { Suspense, lazy, type ReactNode, type ComponentProps } from "react";
 import { cn } from "cn";
 import type { LatLon } from "../../../../lib/geo";
-import { pickKeptAircraft } from "../../../../lib/tabSearch";
+import { pickKeptAircraft } from "../../lib/tabSearch";
 import { MAX_STOPS, routeName } from "../../../../lib/identSchema";
 import type { FlightRules } from "../../../../lib/preferences";
 import Segmented from "../../../../components/Segmented";

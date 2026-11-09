@@ -1,0 +1,16 @@
+{
+  "title": "WordingLatLon",
+  "type": "object",
+  "properties": {
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "lat",
+    "lon"
+  ]
+}

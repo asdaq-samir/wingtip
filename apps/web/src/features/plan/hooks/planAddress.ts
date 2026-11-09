@@ -1,5 +1,5 @@
 import type { AltitudeChoice, FuelStopSuggestion } from "../../../lib/api/types";
-import { fieldListParams, fieldListsOf, renamedFieldLists } from "../../../lib/fieldLists";
+import { fieldListParams, fieldListsOf, renamedFieldLists } from "../lib/fieldLists";
 import { positionIdent, stopsOf } from "../../../lib/identSchema";
 import { proceduresOf, proceduresParam, sameField } from "../../../lib/procedures";
 import { patternsOf } from "../../../lib/trafficPattern";
@@ -76,7 +76,7 @@ export function directToPatch(prev: URLSearchParams, ident: string | null, fix: 
 }
 
 /** The address with a field's ident changed everywhere it is named: the
- *  route's ends and every list of picks by field (lib/fieldLists), so a
+ *  route's ends and every list of picks by field (features/plan/lib/fieldLists), so a
  *  pick made under "ORD" -- a runway, a procedure, an altitude, a time on
  *  the ground, a hold -- stays with KORD. */
 export function renamed(params: URLSearchParams, from: string, to: string): URLSearchParams {

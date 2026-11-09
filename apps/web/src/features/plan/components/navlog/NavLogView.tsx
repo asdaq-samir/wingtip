@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-table";
 import { NoteRow, SelectableRow } from "../../../../components/SelectableRows";
 import PanelTabs from "./PanelTabs";
-import { usePrinting } from "../../../../lib/usePrinting";
+import { usePrinting } from "../../lib/usePrinting";
 import { LEGS, type PanelTab } from "./panelTab";
 import { SectionPane } from "../../../../components/SectionPane";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
@@ -30,7 +30,7 @@ import LegWorkings from "./LegWorkings";
 import DiversionDrill from "./DiversionDrill";
 import RouteProfileSection from "./RouteProfileSection";
 import { dryRunRow, type DryRun } from "./dryRun";
-import { DRY_RUN, usePastFlight } from "../../../../lib/map/pastFlight";
+import { DRY_RUN, usePastFlight } from "../../map/pastFlight";
 import { PointMark } from "./PointMark";
 import { NavLogList } from "./NavLogList";
 import { Spinner } from "../../../../components/ui/spinner";

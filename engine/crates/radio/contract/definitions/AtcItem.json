@@ -1,0 +1,320 @@
+{
+  "title": "AtcItem",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "altitude"
+        },
+        "ft": {
+          "type": "integer"
+        },
+        "verb": {
+          "enum": [
+            "climb",
+            "descend",
+            "maintain",
+            "cruise"
+          ]
+        },
+        "limit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "ft",
+        "verb",
+        "limit"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "expect"
+        },
+        "ft": {
+          "type": "integer"
+        },
+        "min": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "ft",
+        "min"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "heading"
+        },
+        "deg": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "turn": {
+          "enum": [
+            "left",
+            "right",
+            null
+          ]
+        },
+        "by_deg": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "deg",
+        "turn",
+        "by_deg"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "direct"
+        },
+        "said": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "said"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "route"
+        },
+        "limit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "places": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "as_filed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "limit",
+        "places",
+        "as_filed"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "class_b"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "hold"
+        },
+        "fix": {
+          "type": "string"
+        },
+        "direction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "on": {
+          "enum": [
+            "radial",
+            "course",
+            "bearing",
+            "track",
+            null
+          ]
+        },
+        "on_deg": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "turns": {
+          "enum": [
+            "left",
+            "right",
+            null
+          ]
+        },
+        "published": {
+          "type": "boolean"
+        },
+        "efc": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "fix",
+        "direction",
+        "on",
+        "on_deg",
+        "turns",
+        "published",
+        "efc"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "frequency"
+        },
+        "mhz": {
+          "type": "string"
+        },
+        "facility": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "mhz",
+        "facility"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "squawk"
+        },
+        "code": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "code"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "altimeter"
+        },
+        "inhg": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "inhg"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "approach"
+        },
+        "name": {
+          "type": "string"
+        },
+        "runway": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cleared": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "runway",
+        "cleared"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "runway"
+        },
+        "runway": {
+          "type": "string"
+        },
+        "what": {
+          "enum": [
+            "land",
+            "takeoff",
+            "option",
+            "hold short",
+            "line up and wait",
+            null
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "runway",
+        "what"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

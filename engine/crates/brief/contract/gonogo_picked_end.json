@@ -1,0 +1,46 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "The end the pilot picked at a field, for a takeoff or a landing, or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoPickedEndInput",
+      "type": "object",
+      "properties": {
+        "picks": {
+          "$ref": "#/definitions/GonogoPicks"
+        },
+        "ident": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "description": "\"takeoff\" or anything else for a landing."
+        },
+        "departure": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+        }
+      },
+      "required": [
+        "ident",
+        "kind"
+      ]
+    },
+    "answer": {
+      "title": "GonogoPickedEndAnswer",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

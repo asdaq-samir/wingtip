@@ -8,7 +8,7 @@ import { ToggleGroupItem } from "../../../../components/ui/toggle-group";
 import { api } from "../../../../lib/api/client";
 import type { ProcedureDrawing, ProcedureList, ProcedureSummary } from "../../../../lib/api/types";
 import { distanceNm } from "../../../../lib/geo";
-import { runwayNumber, type WindPick } from "../../../../lib/pattern";
+import { runwayNumber, type WindPick } from "../../lib/pattern";
 import { transitionWords, type PickedProcedure } from "../../../../lib/procedures";
 import { TEXT } from "../../../../lib/text";
 import { altFt } from "../../../../lib/format";

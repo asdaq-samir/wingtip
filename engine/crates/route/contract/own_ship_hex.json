@@ -1,0 +1,44 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "Which airplane heard is own ship's own transponder: its hex, or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "OwnShipHexInput",
+      "type": "object",
+      "properties": {
+        "planes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TrafficPlane"
+          }
+        },
+        "fix": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/OwnShipFix"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "planes"
+      ]
+    },
+    "answer": {
+      "title": "OwnShipHexAnswer",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

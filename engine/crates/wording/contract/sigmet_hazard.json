@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "A SIGMET's hazard in words.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "SigmetHazardInput",
+      "type": "object",
+      "properties": {
+        "hazard": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kind": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "SigmetHazardAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

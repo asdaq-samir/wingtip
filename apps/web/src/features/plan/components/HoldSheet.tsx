@@ -7,7 +7,7 @@ import PullDown from "../../../components/PullDown";
 import Segmented from "../../../components/Segmented";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
-import { lengthCode, lengthOfCode, lengthWords, type Hold } from "../../../lib/routeHolds";
+import { lengthCode, lengthOfCode, lengthWords, type Hold } from "../lib/routeHolds";
 import { legMinutes } from "../../../lib/holdEntry";
 import { bearing } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";

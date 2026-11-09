@@ -1,0 +1,31 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "A navaid's hours as filed (\"24\" is \"Continuous\"), or null where none are filed.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavaidHoursInput",
+      "type": "object",
+      "properties": {
+        "hours": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "NavaidHoursAnswer",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,21 @@
+{
+  "x-call": "wingtip_brief::alternates::call",
+  "description": "Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach, 800 and 2 without; `good` null where the pilot has to look (its own minimums, no approach, no TAF).",
+  "x-tool": true,
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "IfrAlternateCheckInput",
+      "$ref": "#/definitions/IfrAlternateIn"
+    },
+    "answer": {
+      "title": "IfrAlternateCheckAnswer",
+      "$ref": "#/definitions/IfrAlternateCheck"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

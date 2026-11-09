@@ -1,4 +1,4 @@
-import { runwayNumber } from "../../../../lib/pattern";
+import { runwayNumber } from "../../lib/pattern";
 import { altFt } from "../../../../lib/format";
 import type { ProcedureAirport, ProcedureKind } from "../../hooks/useProceduresRoute";
 import type { Landing } from "./PatternChips";

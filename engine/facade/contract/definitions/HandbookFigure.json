@@ -1,0 +1,17 @@
+{
+  "title": "HandbookFigure",
+  "type": "object",
+  "properties": {
+    "value": {
+      "type": "number"
+    },
+    "words": {
+      "type": "string",
+      "description": "The words on the page the figure was read from."
+    }
+  },
+  "required": [
+    "value",
+    "words"
+  ]
+}

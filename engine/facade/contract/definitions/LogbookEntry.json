@@ -1,0 +1,99 @@
+{
+  "type": "object",
+  "description": "The gateway's LogbookEntry, camelCase: the columns the currency and 61.109 rules read. A column missing or null is none of it.",
+  "properties": {
+    "flownOn": {
+      "type": "string",
+      "description": "YYYY-MM-DD."
+    },
+    "totalHours": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "nightHours": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "crossCountryHours": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "dayLandings": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Every landing, by day or at night (61.57(a))."
+    },
+    "nightLandings": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Landings to a full stop at night (61.57(b))."
+    },
+    "dualHours": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "soloHours": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "instrumentHours": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "toweredLandings": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "distanceNm": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "longestLegNm": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "approaches": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "holding": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "tracking": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "flownOn"
+  ]
+}

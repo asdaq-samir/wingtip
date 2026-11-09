@@ -1,0 +1,54 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "A special-use area's limits in words, STD a flight level (14 CFR 1.1).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "SuaAltitudesInput",
+      "type": "object",
+      "properties": {
+        "floor_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "floor_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "MSL, AGL, SFC or STD."
+        },
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ceiling_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mid_sentence": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Written to go inside a sentence."
+        }
+      }
+    },
+    "answer": {
+      "title": "SuaAltitudesAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

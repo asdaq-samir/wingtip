@@ -1,0 +1,60 @@
+{
+  "x-call": "wingtip_route::navlog::calls::call",
+  "description": "The altitudes each leg's plans may fly, held under 12,500 ft (14 CFR 91.211) where a leg has a choice and the airplane carries no oxygen: the ones the planner looks the air up at. Null where a leg has none.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavLogCandidatesInput",
+      "type": "object",
+      "properties": {
+        "segments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogSegment"
+          }
+        },
+        "legs": {
+          "type": "number"
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: \"don't assume\")."
+        }
+      },
+      "required": [
+        "segments",
+        "legs",
+        "profile"
+      ]
+    },
+    "answer": {
+      "title": "NavLogCandidatesAnswer",
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

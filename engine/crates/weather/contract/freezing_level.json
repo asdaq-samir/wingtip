@@ -1,0 +1,53 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "Where a temperature profile crosses 0 C, by linear interpolation; at_or_below where it is already freezing at the lowest level; null where it stays above freezing.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FreezingLevelInput",
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "description": "[[altitude_ft, temp_c], ...]"
+        }
+      }
+    },
+    "answer": {
+      "title": "FreezingLevelAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "ft": {
+              "type": "number"
+            },
+            "at_or_below": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "ft",
+            "at_or_below"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

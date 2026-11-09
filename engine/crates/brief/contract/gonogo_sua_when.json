@@ -1,0 +1,74 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "A special-use area's times of use read for the pass. The host works the clocks out in the area's own time zone.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoSuaWhenInput",
+      "type": "object",
+      "properties": {
+        "times_of_use": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "utc": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[day 0-6 (0 Sunday), minute of the day], UTC.",
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "additionalItems": false
+        },
+        "local": {
+          "anyOf": [
+            {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "additionalItems": false
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The same in the area's own zone; null where not known."
+        }
+      },
+      "required": [
+        "utc"
+      ]
+    },
+    "answer": {
+      "title": "GonogoSuaWhenAnswer",
+      "type": "string",
+      "enum": [
+        "active",
+        "not-scheduled",
+        "by-notam",
+        "unknown"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

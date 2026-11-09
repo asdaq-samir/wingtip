@@ -211,7 +211,7 @@ test("plan page: the nav log is computed for an airplane the pilot picks in its 
   // Remembered per browser: the same airplane with the plan opened
   // again from its address -- on which the drawer is already open, since
   // the address kept it all the way up. (A reload forgets the route:
-  // lib/freshLoad.)
+  // features/shell/freshLoad.)
   await grabberTo(page, "full");
   await page.goto(page.url());
   await settle(page);

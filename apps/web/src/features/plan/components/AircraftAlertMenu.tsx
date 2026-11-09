@@ -6,7 +6,7 @@ import {
   DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
 import { alertsLine, NEAR_AIRPORT_NM, NEAR_ME_DEFAULT_NM, NEAR_ME_NM, type AircraftAlert, type AircraftAlertKind } from "../../../lib/aircraftAlerts";
-import { useOwnShip } from "../../../lib/map/ownShip";
+import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { usePreferences } from "../../../lib/preferences";
 import { primeSpeech } from "../../../lib/speech";
 import { TEXT } from "../../../lib/text";

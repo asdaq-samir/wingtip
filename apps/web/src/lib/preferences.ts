@@ -12,7 +12,7 @@ export type RouteWeather = "personal" | "legal";
 import { sameField } from "./procedures";
 import type { StopPick } from "./stopKinds";
 import type { Load } from "./weightBalance";
-import type { OwnShipLook } from "./map/ownShipLook";
+import type { OwnShipLook } from "./map/position/ownShipLook";
 
 /**
  * Everything remembered per browser, in one zustand store persisted to
@@ -136,11 +136,11 @@ interface Preferences {
    *  by default: a pilot must know of every one near the route. */
   tfrs: boolean;
   /** Whether what is ahead of own ship in the air is said over the map
-   *  (lib/map/ahead): airspace, special-use areas and TFRs the track goes
+   *  (lib/map/position/ahead): airspace, special-use areas and TFRs the track goes
    *  into, and the ground or an obstacle it comes near. On by default. */
   alerts: boolean;
   /** Whether those alerts are said aloud as each comes ahead
-   *  (lib/map/speak). Off by default: a phone that starts talking
+   *  (components/speak). Off by default: a phone that starts talking
    *  unasked is a surprise; turned on, it says so. */
   speakAlerts: boolean;
   /** The in-flight copilot (features/copilot): off, its one message shown,
@@ -206,7 +206,7 @@ interface Preferences {
   terrain: Terrain;
   /** The app's look: its tint, its typeface and its corners (lib/brand). */
   brand: Brand;
-  /** How own ship is drawn on the chart (lib/map/ownShipLook). */
+  /** How own ship is drawn on the chart (lib/map/position/ownShipLook). */
   ownShipLook: OwnShipLook;
   /** The flight rules every route is planned under, kept: a pilot who
    *  files IFR files it flight after flight. */

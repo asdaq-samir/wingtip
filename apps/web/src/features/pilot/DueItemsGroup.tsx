@@ -12,7 +12,7 @@ import { api } from "../../lib/api/client";
 import type { Aircraft, DueItem, DueItemRequest } from "../../lib/api/types";
 import { localDay } from "../../lib/format";
 import { FINDING_TONE } from "../../lib/findings";
-import { daysBetween, dueTone, whenWords } from "../../lib/paperwork";
+import { daysBetween, dueTone, whenWords } from "./paperwork";
 import { done } from "../../lib/doneNote";
 
 const KINDS: { value: DueItemRequest["kind"]; label: string }[] = [

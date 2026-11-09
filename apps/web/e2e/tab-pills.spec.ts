@@ -215,7 +215,7 @@ test("a list in full keeps its place as a card does: another tab and back, Setup
   await expect(list).toBeVisible();
   // A link to it -- the address as it is -- lands on the list all the way
   // up, as a link to a card does. A reload starts clean, as before
-  // (lib/freshLoad): the owner's fresh start, as Maps opens.
+  // (features/shell/freshLoad): the owner's fresh start, as Maps opens.
   await page.goto(page.url());
   await settle(page);
   await expect(list).toBeVisible();

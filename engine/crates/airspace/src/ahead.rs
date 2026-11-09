@@ -778,9 +778,6 @@ fn to_json(alerts: &[Alert], unavailable: &[&str], tfrs_at: Option<i64>, ground:
 // swath's points for the ground -- and `alerts_ahead` then says what is
 // ahead.
 
-/// The names this module answers.
-pub const NAMES: [&str; 2] = ["ahead_frame", "alerts_ahead"];
-
 type R<T> = Result<T, String>;
 
 fn num_of(name: &str, v: &Value, key: &str) -> R<f64> {

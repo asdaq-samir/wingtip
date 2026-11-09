@@ -5,7 +5,7 @@ import AccordionSection from "../../../../components/AccordionSection";
 import FieldHit from "../../../../components/FieldHit";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { Input } from "../../../../components/ui/input";
-import { formText, personsOnBoard, withPersonsOnBoard, type FlightPlanForm } from "../../../../lib/flightPlanForm";
+import { formText, personsOnBoard, withPersonsOnBoard, type FlightPlanForm } from "../../lib/flightPlanForm";
 import { showError } from "../../../../lib/problems";
 import { useCopied } from "../../../../lib/share";
 import { api, describeError } from "../../../../lib/api/client";
@@ -14,7 +14,7 @@ import { pilotQuery } from "../../../../lib/queryClient";
 
 /**
  * The Brief tab's Flight Plan: the FAA's form (FAA Form 7233-4) filled in
- * from the plan, a flight to a group (lib/flightPlanForm), to copy into a
+ * from the plan, a flight to a group (features/plan/lib/flightPlanForm), to copy into a
  * filing service or read to Flight Service. Filing itself is theirs:
  * 1800wxbrief.com and Flight Service are the FAA's, at no charge, and
  * ForeFlight and Garmin Pilot file through them: Open in 1800wxbrief

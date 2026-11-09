@@ -1,0 +1,75 @@
+{
+  "title": "CopilotMessage",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "The same while what it says is; speak a message once by it."
+    },
+    "kind": {
+      "enum": [
+        "ahead",
+        "itws",
+        "fuel",
+        "weather",
+        "tfr",
+        "convective",
+        "sua",
+        "night",
+        "groundspeed"
+      ]
+    },
+    "level": {
+      "enum": [
+        "warning",
+        "caution",
+        "advisory"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "description": "The banner's line."
+    },
+    "say": {
+      "type": "string",
+      "description": "The words spoken."
+    },
+    "detail": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "elsewhere": {
+      "type": "boolean",
+      "description": "Drawn by the alerts-ahead banner, not the copilot's."
+    },
+    "alternative": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/CopilotAlternative"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "kind",
+    "level",
+    "title",
+    "say",
+    "detail",
+    "sources",
+    "elsewhere",
+    "alternative"
+  ]
+}

@@ -33,7 +33,7 @@ use crate::figures::glide::Glide;
 use crate::runway::performance::{EndFit, FieldReport, FitWind, ShortField};
 use crate::runway::pick::Runway;
 
-pub use calls::{call, NAMES};
+pub use calls::call;
 pub use rank::best_fields;
 
 /// What the fields are ranked for.

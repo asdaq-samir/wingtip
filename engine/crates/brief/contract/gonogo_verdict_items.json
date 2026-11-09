@@ -1,0 +1,22 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "Each tab's finding, in the order a pilot goes through them (AIM 7-1-5(b)), each with where it is shown in full.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "$ref": "#/definitions/VerdictInput"
+    },
+    "answer": {
+      "title": "GonogoVerdictItemsAnswer",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/GonogoItem"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,8 +1,8 @@
 import { Route } from "lucide-react";
 import { ListRow } from "../../../../components/GroupedList";
 import type { Briefing, OnRoute } from "../../../../lib/api/types";
-import { legLines, onRouteLine } from "../../../../lib/onRoute";
-import { useLegHighlight } from "../../../../lib/map/legHighlight";
+import { legLines, onRouteLine } from "../../lib/onRoute";
+import { useLegHighlight } from "../../map/legHighlight";
 
 /**
  * Under a hazard's row in the Brief, where and when the flight meets it

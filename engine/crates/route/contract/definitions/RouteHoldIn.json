@@ -1,0 +1,41 @@
+{
+  "title": "RouteHoldIn",
+  "description": "A hold as the engine takes one: exactly one of leg_min and leg_nm, and (to write it) exactly one of whole turns and minutes.",
+  "type": "object",
+  "properties": {
+    "fix": {
+      "type": "string"
+    },
+    "inbound": {
+      "type": "number",
+      "description": "Magnetic degrees."
+    },
+    "right": {
+      "type": "boolean"
+    },
+    "leg_min": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "leg_nm": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "turns": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "minutes": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  }
+}

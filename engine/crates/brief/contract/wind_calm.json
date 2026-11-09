@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "Whether a wind is calm, a speed of 0 (AIM 7-1-28); no speed is not calm.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "WindCalmInput",
+      "type": "object",
+      "properties": {
+        "speed_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "WindCalmAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

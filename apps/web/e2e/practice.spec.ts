@@ -3,8 +3,8 @@ import { consoleSheet, openConsole, showTabs, consolePage } from "./helpers";
 
 /**
  * The pilot console's Practice pages (the Guide tab): the flash-card
- * drills (lib/drills), the holding entries (lib/holdEntry) and the
- * lost-comms rules (lib/lostComms). Nothing here asks a server.
+ * drills (features/pilot/drills), the holding entries (lib/holdEntry) and the
+ * lost-comms rules (features/pilot/lostComms). Nothing here asks a server.
  */
 async function practicePage(page: Page, name: string) {
   await page.goto("/app/plan");

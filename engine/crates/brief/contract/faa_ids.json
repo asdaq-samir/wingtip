@@ -1,0 +1,31 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "The FAA identifiers an airport may go by in NASR (KSTL and STL).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FaaIdsInput",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ident"
+      ]
+    },
+    "answer": {
+      "title": "FaaIdsAnswer",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

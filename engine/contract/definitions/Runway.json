@@ -1,0 +1,59 @@
+{
+  "title": "Runway",
+  "type": "object",
+  "properties": {
+    "closed": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+    },
+    "surface": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "length_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "runway_ends": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "ident": {
+            "type": "string"
+          },
+          "heading_true_deg": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "ident"
+        ]
+      }
+    },
+    "wind": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/GonogoRunwayWind"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "description": "A runway as the planner sends one."
+}

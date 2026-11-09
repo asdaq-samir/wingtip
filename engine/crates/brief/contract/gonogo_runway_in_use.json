@@ -1,0 +1,30 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "The runway end a pilot would take off from and land on: the one most nearly into the wind (AC 90-66C 11.5), else the most used runway's first end.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoRunwayInUseInput",
+      "type": "object",
+      "properties": {
+        "runways": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/Runway"
+          }
+        }
+      }
+    },
+    "answer": {
+      "$ref": "#/definitions/GonogoFlown"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

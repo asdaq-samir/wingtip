@@ -33,7 +33,7 @@ import type { Flown } from "./navlog/dryRun";
  * is ever said short of what it is. Where a rounded one still does not
  * fit (Chicago to Las Vegas, over 1,300 nm, its distance, time and fuel
  * cut to "131…", "≈12.…" and "≈10…" on an iPhone set to a larger text
- * size, which the app follows (lib/dynamicType), 2026-10-11), the four
+ * size, which the app follows (features/shell/dynamicType), 2026-10-11), the four
  * are set smaller together, figures and units, as iOS shrinks a label to
  * fit its width (UILabel's adjustsFontSizeToFitWidth), down to three
  * quarters -- 15 points at the default size, the body's -- and only past

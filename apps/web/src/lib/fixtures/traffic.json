@@ -1,5 +1,5 @@
 {
-  "about": "Traffic's label under an airplane on the map, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft (the VFR cruising altitudes' spacing, 14 CFR 91.159). The hundreds cut toward own ship, never away (the owner's conservative pick, 2026-10-28). Web: lib/map/traffic.ts. iOS: Traffic.label and Traffic.near.",
+  "about": "Traffic's label under an airplane on the map, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft (the VFR cruising altitudes' spacing, 14 CFR 91.159). The hundreds cut toward own ship, never away (the owner's conservative pick, 2026-10-28). Web: features/plan/map/traffic.ts. iOS: Traffic.label and Traffic.near.",
   "cases": [
     {
       "plane": {

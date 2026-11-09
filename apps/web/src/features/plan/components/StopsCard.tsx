@@ -16,7 +16,7 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { PhotoSlide } from "../../../components/PictureSlides";
 import { kindLines, kindsOf, PICK_ORDER, STOP_KINDS, STOP_RADII, whereWords, type StopPick } from "../../../lib/stopKinds";
 import { prefersReducedMotion } from "../../../lib/motion";
-import { useStopsAlong } from "../../../lib/stopsAlong";
+import { useStopsAlong } from "../lib/stopsAlong";
 import { TEXT } from "../../../lib/text";
 import { Spinner } from "../../../components/ui/spinner";
 

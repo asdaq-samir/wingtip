@@ -138,7 +138,7 @@ export type OralGradeRequest = Assistant["OralGradeRequest"];
 export type OralCitation = Assistant["OralCitation"];
 export type AirportPin = Schemas["AirportPin"];
 export type AirportsInView = Schemas["AirportsInView"];
-/** The cycle's overlay tiles' archive (lib/map/overlayTiles). */
+/** The cycle's overlay tiles' archive (lib/map/sources/overlayTiles). */
 export type OverlayTiles = Schemas["OverlayTiles"];
 export type ModelComparisonEntry = Schemas["ModelComparisonEntry"];
 export type ModelComparison = Schemas["ModelComparison"];
@@ -158,7 +158,7 @@ export type Tfr = Schemas["Tfr"];
 export type Tfrs = Schemas["Tfrs"];
 /** The fields nearest a position: how far, which way, the longest runway. */
 export type NearestAirports = Schemas["NearestAirports"];
-/** The emergency assistant's fields, wind aloft and airplane (lib/emergency). */
+/** The emergency assistant's fields, wind aloft and airplane (features/emergency/emergency). */
 export type EmergencyFields = Schemas["EmergencyFields"];
 /** The map's Stops: the fields with fuel, food, repair or a flight school. */
 export type StopFields = Schemas["StopFields"];
