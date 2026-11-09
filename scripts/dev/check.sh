@@ -215,6 +215,8 @@ run_area() {
     weather) run_py services/weather requirements-dev.txt 3.14 app tests ;;
     jobs) run_py services/jobs requirements-dev-jobs.txt 3.14 charts charts/tests ;;
     engine)
+      # The crates' layering, as engine/README.md's table gives it (seconds).
+      python3 "$here/scripts/ci/engine_layers.py"
       # CI's own cargo test line (ci.yml's test job), so the crates tested
       # here are always the ones tested there.
       local cmd

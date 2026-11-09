@@ -121,9 +121,10 @@ areas:
       - engine/**
   engine:
     ci: test-root
-    check: cargo test --profile ci (ci.yml's line)
+    check: scripts/ci/engine_layers.py, then cargo test --profile ci (ci.yml's line)
     paths:
       - engine/**
+      - scripts/ci/engine_layers.py
       - apps/web/src/lib/fixtures/**
       - services/planner/tests_wingtip/fixtures/native/**
   java:

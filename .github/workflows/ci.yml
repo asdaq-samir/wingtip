@@ -126,6 +126,8 @@ jobs:
       # the facade's and each of its crates' (engine/crates), and that the
       # committed engine/contract/engine.schema.json is the one the rules'
       # contract files give (wingtip-contract-gen).
+      # The crates use only the crates engine/README.md's table says they use.
+      - run: python3 scripts/ci/engine_layers.py
       - run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine -p wingtip-core -p wingtip-flight -p wingtip-weather -p wingtip-procedures -p wingtip-radio -p wingtip-airspace -p wingtip-wording -p wingtip-brief -p wingtip-route -p wingtip-pilot -p wingtip-altitude -p wingtip-contract-gen
       # The web app's copy of the engine (apps/web/src/lib/engine), committed
       # because the web build has no Rust: built again in the script's
@@ -596,6 +598,7 @@ jobs:
                 - services/planner/.importlinter
                 - services/jobs/**
                 - services/planner/requirements-wingtip*.txt
+                - scripts/ci/engine_layers.py
                 - services/planner/tests_wingtip/fixtures/native/**
               test-planner:
                 - services/planner/**

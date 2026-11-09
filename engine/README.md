@@ -43,7 +43,12 @@ the Go / No-Go) and a build or a test can take one area alone
 (`cargo test -p wingtip-weather`). The layers come from the modules'
 own uses of each other when the engine was one crate; two that use each
 other share a crate. Like the engine, none has a dependency outside the
-workspace.
+workspace. The table below is held to the crates' Cargo.toml files by
+`scripts/ci/engine_layers.py` (CI's test job and check.sh's engine area):
+a crate's wingtip-* dependencies must be its "Uses" exactly, "route
+(without its options)" with route's default features off, and a binding
+reaches the crates through the facade alone. A new dependency changes the
+table, and its why below, in the same commit.
 
 | Crate | Modules | Uses |
 |---|---|---|
