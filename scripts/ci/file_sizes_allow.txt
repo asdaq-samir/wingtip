@@ -20,7 +20,7 @@ apps/ios/Wingtip/Views/InstructorView.swift 413
 apps/ios/Wingtip/Views/LogbookViews.swift 448
 apps/ios/Wingtip/Views/OwnAircraftViews.swift 578
 apps/ios/Wingtip/Views/PlannerFiguresViews.swift 650
-apps/ios/Wingtip/Views/RouteEditViews.swift 519
+apps/ios/Wingtip/Views/RouteEditViews.swift 456
 apps/web/e2e/dry-run.spec.ts 462
 apps/web/e2e/helpers.ts 841
 apps/web/e2e/ifr.spec.ts 442

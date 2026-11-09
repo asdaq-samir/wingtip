@@ -12,6 +12,8 @@ struct AircraftView: View {
     @State private var own: [OwnAircraftRecord] = []
     @State private var typed = ""
     @State private var problem: String?
+    /// Your Airplanes pushed when asked for by name (RootView.openScreen).
+    @State private var ownShown = false
 
     var body: some View {
         NavigationStack {
@@ -100,6 +102,10 @@ struct AircraftView: View {
             }
             .navigationTitle("Airplane")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(isPresented: $ownShown) { OwnAircraftListView().closesBack() }
+            .onChange(of: ScreenAsk.shared.wanted, initial: true) { _, _ in
+                if ScreenAsk.shared.take([.airplanes]) != nil { ownShown = true }
+            }
             .task {
                 do { profiles = try await Planner.aircraftProfiles() } catch { problem = error.localizedDescription }
             }

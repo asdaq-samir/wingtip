@@ -28,7 +28,7 @@ struct RootView: View {
     /// strip; the owner's pick of 2026-11-04). The same key as the web's
     /// preference; a `-layout strip` launch argument sets it for CI's
     /// pictures.
-    @AppStorage("layout") private var layoutName = "tabs"
+    @AppStorage("layout") var layoutName = "tabs"
     @State var tab: Tabs = Tabs(rawValue: UserDefaults.standard.string(forKey: "tab") ?? "") ?? .fpl
     @State private var airports: [String] = []
     @State private var following = false
@@ -43,7 +43,7 @@ struct RootView: View {
     /// Ask (AskView) up: a sheet over the tabs' sheet on the iPhone, so the
     /// system presents it, since one view presents one sheet at a time;
     /// over the map on the iPad.
-    @State private var asking = false
+    @State var asking = false
     /// The iPad's inspector card (SplitLayout).
     @State var sideCard: SideCard?
     /// What Siri or a Shortcut asked for (the App Intents), done here once

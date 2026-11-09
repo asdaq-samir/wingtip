@@ -4,7 +4,9 @@ import Foundation
 /// addresses (universal links, the associated domain in project.yml) as
 /// the web app's ShareMenu, AirportCard and AirplaneCard write them --
 /// `/app/plan?dep=C81&stops=KJVL&dest=KDLH` a route shared, `?place=KDLH`
-/// a field's card, `?flight=a1b2c3` an airplane tracked -- and a track
+/// a field's card, `?flight=a1b2c3` an airplane tracked, `?open=logbook`
+/// one of the app's screens (design/screens.json; the same from the app's
+/// own wingtipmaps://plan?open=logbook) -- and a track
 /// file (GPX, KML) handed over from Files or Mail, which the app is a
 /// viewer of (CFBundleDocumentTypes). The sign-in link is not one of
 /// these: Session.open takes it. The answer is a PendingCommand, done by
@@ -17,9 +19,7 @@ enum Links {
         if url.isFileURL {
             return trackExtensions.contains(url.pathExtension.lowercased()) ? .track(url) : nil
         }
-        guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }
-        let query = Dictionary(parts.queryItems?.map { ($0.name, $0.value ?? "") } ?? [], uniquingKeysWith: { _, last in last })
-        guard parts.path.hasSuffix("/app/plan") else { return nil }
+        guard let query = query(of: url) else { return nil }
         if let place = ident(query["place"]) { return .weather(ident: place) }
         if let hex = query["flight"]?.trimmingCharacters(in: .whitespaces).lowercased(), !hex.isEmpty { return .aircraft(hex: hex) }
         // The route as the web app's URL has it: idents, the stops
@@ -29,8 +29,24 @@ enum Links {
         switch (ident(query["dep"]), ident(query["dest"])) {
         case (let dep?, let dest?): return .planRoute(dep: dep, stops: stops, dest: dest)
         case (nil, let dest?): return .planTo(ident: dest)
-        default: return nil
+        default: return screen(for: url).map { .open($0) }
         }
+    }
+
+    /// The screen a link names (`open=`, design/screens.json): alone, the
+    /// command; beside a route, opened once the route is in.
+    static func screen(for url: URL) -> Screen? {
+        query(of: url)?[Screen.linkKey].flatMap { Screen(rawValue: $0.lowercased()) }
+    }
+
+    /// The link's keys, where it is the planner's address: the site's
+    /// (`https://<host>/app/plan?...`) or the app's own scheme
+    /// (`wingtipmaps://plan?...`).
+    private static func query(of url: URL) -> [String: String]? {
+        guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }
+        let ours = parts.scheme == Screen.scheme ? parts.host == Screen.schemeHost : parts.path.hasSuffix(Screen.linkPath)
+        guard ours else { return nil }
+        return Dictionary(parts.queryItems?.map { ($0.name, $0.value ?? "") } ?? [], uniquingKeysWith: { _, last in last })
     }
 
     /// An ident as the planner takes one: letters and figures, upper case.

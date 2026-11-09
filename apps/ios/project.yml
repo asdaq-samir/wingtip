@@ -118,6 +118,12 @@ targets:
         # where it lies, so it is opened as a copy, not in place (what iOS
         # did with the key unset; set to say so, as the build asks).
         LSSupportsOpeningDocumentsInPlace: false
+        # The app's own scheme, wingtipmaps://plan?open=<screen>, for a
+        # Shortcut or another app to open a screen (design/screens.json);
+        # the site's address opens the same screens as a universal link.
+        CFBundleURLTypes:
+          - CFBundleURLName: app.wingtipmaps.screens
+            CFBundleURLSchemes: [wingtipmaps]
         CFBundleDocumentTypes:
           - CFBundleTypeName: GPS Exchange Format
             CFBundleTypeRole: Viewer

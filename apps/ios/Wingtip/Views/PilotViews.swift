@@ -11,6 +11,8 @@ struct FlightsView: View {
     @State private var flights: [SavedFlight] = []
     @State private var problem: String?
     @State private var saving = false
+    /// The flight just deleted, kept back until its Undo is gone.
+    @State private var removed: (flight: SavedFlight, at: Int)?
 
     var body: some View {
         List {
@@ -19,13 +21,19 @@ struct FlightsView: View {
             } else if flights.isEmpty {
                 ContentUnavailableView("No saved flights", systemImage: "tray", description: Text("Save the plan on the page with the button above."))
             }
+            if let removed {
+                UndoRow(words: "Removed \(Self.route(removed.flight))", undo: {
+                    flights.insert(removed.flight, at: min(removed.at, flights.count))
+                    self.removed = nil
+                }, done: { keep(removed.flight) })
+            }
             ForEach(flights) { flight in
                 Button {
                     plan.open(flight)
                     if let closeCard { closeCard() } else { dismiss() }
                 } label: {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(([flight.departureIdent] + flight.stops + [flight.destinationIdent]).joined(separator: " → ")).font(.headline.monospaced())
+                        Text(Self.route(flight)).font(.headline.monospaced())
                         HStack(spacing: WingtipSpace.md) {
                             if let nm = flight.totalDistanceNm { Text(Format.distance(nm, decimals: 0)) }
                             if let min = flight.totalEteMin { Text(Format.duration(min)) }
@@ -37,20 +45,20 @@ struct FlightsView: View {
                 }
                 .foregroundStyle(.primary)
                 // Its flown track: the profile, on the map, from a GPX file.
+                // Its flown track a swipe away as well as held (its
+                // replay, its profile and its debrief), and Delete with its Undo.
                 .contextMenu {
-                    Button {
-                        FlightUI.shared.card = .flown(flight.id, ([flight.departureIdent] + flight.stops + [flight.destinationIdent]).joined(separator: " → "))
-                    } label: { Label("Flown Track", systemImage: "point.topleft.down.to.point.bottomright.curvepath") }
+                    flownTrack(flight)
+                    Button("Delete", systemImage: "trash", role: .destructive) { delete(flight) }
                 }
-            }
-            .onDelete { at in
-                let gone = at.map { flights[$0] }
-                flights.remove(atOffsets: at)
-                Task { for flight in gone { try? await Gateway.deleteFlight(flight.id) } }
+                .swipeActions(edge: .leading) { flownTrack(flight).tint(.accentColor) }
+                .swipeActions(edge: .trailing) {
+                    Button("Delete", systemImage: "trash", role: .destructive) { delete(flight) }
+                }
             }
             ProblemLine(problem)
         }
-        .navigationTitle("Flights")
+        .navigationTitle("Saved Flights")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -69,6 +77,8 @@ struct FlightsView: View {
         .task(id: session.signedIn) {
             do { flights = try await Gateway.flights() } catch { problem = error.localizedDescription }
         }
+        // Left with an Undo still up: the delete kept.
+        .onDisappear { if let removed { keep(removed.flight) } }
     }
 }
 
@@ -76,4 +86,30 @@ struct FlightsView: View {
     NavigationStack { FlightsView() }
         .environment(Plan())
         .environment(Session())
+}
+
+extension FlightsView {
+    static func route(_ flight: SavedFlight) -> String {
+        ([flight.departureIdent] + flight.stops + [flight.destinationIdent]).joined(separator: " → ")
+    }
+
+    func flownTrack(_ flight: SavedFlight) -> some View {
+        Button { FlightUI.shared.card = .flown(flight.id, Self.route(flight)) } label: {
+            Label("Flown Track", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
+        }
+    }
+
+    /// Taken off the list at once, deleted once its Undo is gone: an Undo
+    /// puts it back with nothing asked of the gateway.
+    func delete(_ flight: SavedFlight) {
+        if let removed { keep(removed.flight) }
+        guard let at = flights.firstIndex(where: { $0.id == flight.id }) else { return }
+        flights.remove(at: at)
+        removed = (flight, at)
+    }
+
+    func keep(_ flight: SavedFlight) {
+        if removed?.flight.id == flight.id { removed = nil }
+        Task { try? await Gateway.deleteFlight(flight.id) }
+    }
 }
