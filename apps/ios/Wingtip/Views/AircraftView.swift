@@ -28,7 +28,7 @@ struct AircraftView: View {
                             .font(.body.monospaced())
                             .onSubmit(fly)
                         Button("Fly") { fly() }
-                            .buttonStyle(.borderedProminent)
+                            .buttonStyle(ProminentButtonStyle())
                             .disabled((try? Registered.isNNumber(typed.uppercased())) != true)
                     }
                     // No airplane: the route's own figures alone, none
