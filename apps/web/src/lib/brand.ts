@@ -3,13 +3,15 @@ import { usePreferences, type Brand } from "./preferences";
 
 const INK: Brand = "ink";
 
-/** The looks, as Settings lists them: the Glass Cockpit, from the
- *  owner's brand canvas (2026-10-26), and Chart ink, the app in the FAA
- *  sectional's own ink (2026-11-04: "let's try it") -- the two the owner
- *  kept ("Only keep the glass cockpit and chart ink", 2026-11-04). Their
- *  colours are tokens on <html data-brand> (index.css); their typefaces
- *  load here. */
+/** The looks, as Setup's Theme lists them: Wingtip, the brand's own
+ *  blue and the default (the owner, 2026-11-09: "the Wingtip brand look is
+ *  the default on all three apps"); the Glass Cockpit, from the owner's
+ *  brand canvas (2026-10-26); and Chart ink, the app in the FAA
+ *  sectional's own ink (2026-11-04). Their colours are tokens on <html
+ *  data-brand> (design/tokens.json's color.look); their typefaces load
+ *  here. */
 export const BRANDS: { value: Brand; label: string }[] = [
+  { value: "wingtip", label: "Wingtip" },
   { value: "cockpit", label: "Glass Cockpit" },
   { value: INK, label: "Chart ink" },
 ];
@@ -19,6 +21,7 @@ export const BRANDS: { value: Brand; label: string }[] = [
  *  picked: Chart ink's Barlow Condensed for a figure's label, an ident
  *  and a word button (index.css --display, lib/text's label and word). */
 const FONTS: Record<Brand, () => Promise<unknown>> = {
+  wingtip: () => Promise.resolve(),
   cockpit: () => Promise.resolve(),
   ink: () => Promise.all([
     import("@fontsource/barlow-condensed/latin-600.css"), import("@fontsource/barlow-condensed/latin-700.css"),

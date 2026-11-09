@@ -22,3 +22,13 @@ describe("forgetPilot", () => {
     expect([after.base, after.traffic]).toEqual(["ifr_low", true]);
   });
 });
+
+describe("the look", () => {
+  it("is the Wingtip look for a new pilot and for one who had the old default, keeping Chart ink", async () => {
+    expect(usePreferences.getInitialState().brand).toBe("wingtip");
+    const migrate = usePreferences.persist.getOptions().migrate!;
+    expect(await migrate({ brand: "cockpit" }, 6)).toMatchObject({ brand: "wingtip" });
+    expect(await migrate({ brand: "ink" }, 6)).toMatchObject({ brand: "ink" });
+    expect(await migrate({ brand: "windsock" }, 3)).toMatchObject({ brand: "wingtip" });
+  });
+});

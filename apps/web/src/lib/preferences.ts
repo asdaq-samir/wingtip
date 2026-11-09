@@ -57,10 +57,11 @@ export type ChartLight = "auto" | "on" | "off";
  *  printed, its relief shaded over it, or the relief stood up in 3D, the
  *  map tilted with two fingers. */
 export type Terrain = "flat" | "shaded" | "3d";
-/** The app's look (lib/brand): Glass Cockpit or Chart ink, the two the
- *  owner kept (2026-11-04: "Only keep the glass cockpit and chart ink");
- *  Sectional, Windsock and Clear Sky are gone. */
-export type Brand = "cockpit" | "ink";
+/** The app's look (lib/brand): Wingtip, the brand's blue and the
+ *  default (the owner, 2026-11-09), or Glass Cockpit or Chart ink, the two
+ *  kept as choices (2026-11-04); Sectional, Windsock and Clear Sky are
+ *  gone. */
+export type Brand = "wingtip" | "cockpit" | "ink";
 /** The flight rules a route is planned under (the altitude's popover):
  *  VFR, or IFR -- its minimum altitudes, its thousands by direction of
  *  flight and its 45-minute reserve (the planner's wingtip.ifr). */
@@ -357,7 +358,7 @@ export const usePreferences = create<Preferences>()(
       chartLight: "auto",
       // Flat, as the chart is printed, until the pilot asks for relief.
       terrain: "flat",
-      brand: "cockpit",
+      brand: "wingtip",
       // A plane, at the owner's ask, where it was the arrow.
       ownShipLook: "single",
       flightRules: "vfr",
@@ -475,14 +476,17 @@ export const usePreferences = create<Preferences>()(
       // don't want the strip or field, remove it from settings").
       // 6: no airplane, not the stock C172, until one is picked (the
       // owner, 2026-11-08): the C172 kept as the default is let go.
-      version: 6,
+      // 7: the Wingtip look for every browser, the default now (the
+      // owner, 2026-11-09); Glass Cockpit was the default before, so a
+      // browser that has it never picked it.
+      version: 7,
       migrate: (kept, from) => ({
         ...(kept as object),
         ...(from < 6 && isStockDefault((kept as { aircraft?: AircraftChoice }).aircraft) ? { aircraft: NO_AIRPLANE } : {}),
         ...(from < 1 ? { waypoints: false } : {}),
         ...(from < 2 ? { airspace: true, navaids: true } : {}),
         ...(from < 3 ? { chartLight: "auto" } : {}),
-        ...(from < 4 && !["cockpit", "ink"].includes((kept as { brand?: string }).brand ?? "") ? { brand: "cockpit" } : {}),
+        ...(from < 7 && (kept as { brand?: string }).brand !== "ink" ? { brand: "wingtip" } : {}),
       }) as Preferences,
       // The functions are not state; only the values are written.
       partialize: s => ({

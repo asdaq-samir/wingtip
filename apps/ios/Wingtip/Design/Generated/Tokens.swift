@@ -61,7 +61,10 @@ enum WingtipColor {
         static let vfr = rgb(0x1A7F37)
         static let mvfr = rgb(0x1F6FEB)
         static let ifr = rgb(0xB3261E)
+        /// The pip and the mark on the map.
         static let lifr = rgb(0xA371F7)
+        /// LIFR as a chip's fill under white words: #a371f7 is 3.35:1 under white, this 6.4:1 (WCAG 1.4.3; the UI audit, 2026-11-09).
+        static let lifrChip = rgb(0x7E3FB8)
         static let unknown = rgb(0x8FA3B0)
     }
     enum Brand {
@@ -155,7 +158,7 @@ struct WingtipPalette: Sendable {
         secondary: rgb(0xF5F5F5),
         secondaryForeground: rgb(0x171717),
         muted: rgb(0xF5F5F5),
-        mutedForeground: rgb(0x737373),
+        mutedForeground: rgb(0x696969),
         accent: rgb(0xF5F5F5),
         accentForeground: rgb(0x171717),
         destructive: rgb(0xE7000B),
@@ -189,7 +192,7 @@ struct WingtipPalette: Sendable {
         primary: rgb(0x006DDE),
         primaryForeground: rgb(0xFAFAFA),
         tint: rgb(0x57A8FF),
-        tintShade: rgb(0x6BB5FF),
+        tintShade: rgb(0x57A8FF),
         sheet: rgb(0x0B1422),
         airspaceBlueInk: rgb(0x8CB8F2),
         airspaceMagentaInk: rgb(0xF0A0CF),
@@ -233,10 +236,10 @@ struct WingtipPalette: Sendable {
         cardForeground: rgb(0x000000),
         popover: rgb(0xFFFFFF),
         popoverForeground: rgb(0x000000),
-        primary: rgb(0x0040C0),
+        primary: rgb(0x0047A0),
         primaryForeground: rgb(0xFFFFFF),
-        tint: rgb(0x0040C0),
-        tintShade: rgb(0x0040C0),
+        tint: rgb(0x0047A0),
+        tintShade: rgb(0x0047A0),
         sheet: rgb(0xFFFFFF),
         airspaceBlueInk: rgb(0x1D559C),
         airspaceMagentaInk: rgb(0x962568),
@@ -296,7 +299,7 @@ struct WingtipPalette: Sendable {
         secondary: rgb(0xF5F5F5),
         secondaryForeground: rgb(0x171717),
         muted: rgb(0xF5F5F5),
-        mutedForeground: rgb(0x737373),
+        mutedForeground: rgb(0x696969),
         accent: rgb(0xF5F5F5),
         accentForeground: rgb(0x171717),
         destructive: rgb(0xE7000B),

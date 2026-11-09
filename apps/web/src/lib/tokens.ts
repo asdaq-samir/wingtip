@@ -34,6 +34,14 @@ export const CATEGORY: Record<string, string> = {
   LIFR: "#a371f7",
 };
 
+/** Each category as a chip's fill under white words: the map's colour, or a deeper one where that is under 4.5:1 (LIFR). */
+export const CATEGORY_CHIP: Record<string, string> = {
+  VFR: "#1a7f37",
+  MVFR: "#1f6feb",
+  IFR: "#b3261e",
+  LIFR: "#7e3fb8",
+};
+
 /** A field with no report: unknown, not fine. */
 export const CATEGORY_UNKNOWN = "#8fa3b0";
 
