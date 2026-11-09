@@ -159,6 +159,14 @@ class Settings(BaseSettings):
     charts_refresh_window: str = "01:00-06:00"
     #: How many render processes the charts job's run of a cycle gets (compose passes it to both).
     charts_refresh_workers: int = 1
+    #: Whether the planner starts the charts job's `next` run, which draws the
+    #: FAA's next chart cycle ahead of its effective date into a folder the
+    #: map does not serve until that date (wingtip.chart_next): on for a
+    #: machine of one's own, 0 in production (the AWS task draws each cycle)
+    #: and in CI. Its own switch, not CHARTS_AUTO_REFRESH's.
+    charts_cycle_auto: bool = True
+    #: How many days before the next cycle's effective date its staging may start.
+    charts_cycle_lead_days: int = 7
     #: Whether the chart model reads tiles in the planner's own process pool.
     chart_reads_in_process: bool = True
     #: The OTLP collector traces go to; None sends none (app.tracing).
@@ -174,7 +182,8 @@ class Settings(BaseSettings):
 
     read_switches = field_validator(
         "charts_fetch_for_tiles", "adsbfi_open_data", "registry_refresh", "cycle_pack", "landmarks_build",
-        "charts_auto_refresh", "faa_data_auto_refresh", "chart_reads_in_process", mode="before")(_switch)
+        "charts_auto_refresh", "faa_data_auto_refresh", "chart_reads_in_process", "charts_cycle_auto",
+        mode="before")(_switch)
 
     @field_validator("chart_tiles_url", "dev_services_url", mode="before")
     @classmethod

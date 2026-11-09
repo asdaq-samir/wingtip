@@ -767,7 +767,7 @@ CI job breakdown is in the [Appendix](#appendix).
 | `docker compose run --rm retrain engineer-features` | Runs `pipeline.engineer_features()` | — |
 | `docker compose run --rm retrain retrain` | Runs `pipeline.retrain()` | — |
 | `docker compose run --rm --entrypoint python retrain -m wingtip.model_registry evaluate` | Runs `evaluate`/`promote` | — |
-| `docker compose run --rm retrain` | The whole training run, every stage in order (`pipeline.run()`); each model promoted only if it beats the one serving. The console's Retrain starts the same thing as the `retrain` container (`docker compose create retrain charts charts-overlays` once) | — |
+| `docker compose run --rm retrain` | The whole training run, every stage in order (`pipeline.run()`); each model promoted only if it beats the one serving. The console's Retrain starts the same thing as the `retrain` container (`docker compose create retrain charts charts-overlays charts-next` once) | — |
 | `docker compose run --rm charts` | The charts job: the overlay tiles where due, then the FAA's current chart cycle fetched, rendered and packed where due | — |
 | `docker compose run --rm charts overlays` | The overlay tiles alone, where the cycle pack has none | — |
 | `docker compose run --rm charts pack` | Every finished kind's loose tiles into its archives: the one-off conversion of a cycle drawn before there were archives | — |

@@ -3454,6 +3454,16 @@
             "title": "Cycle",
             "type": "string"
           },
+          "next": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NextCycle"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "prepared": {
             "additionalProperties": {
               "type": "integer"
@@ -10803,6 +10813,75 @@
           "airports"
         ],
         "title": "NearestAirports",
+        "type": "object"
+      },
+      "NextCycle": {
+        "description": "The FAA's next chart cycle, staged ahead of its date by the charts\njob's `next` run (wingtip.chart_next): its folder name and effective\ndate, the day staging may start (`lead_days` before), whether the\nplanner starts it (CHARTS_CYCLE_AUTO), and what the job last said --\n`state` one of waiting, not_published, no_turn, staging, staged,\nfailed, swapped -- with when, and how far its pyramid has got.",
+        "properties": {
+          "auto": {
+            "title": "Auto",
+            "type": "boolean"
+          },
+          "cycle": {
+            "title": "Cycle",
+            "type": "string"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "effective": {
+            "title": "Effective",
+            "type": "string"
+          },
+          "lead_days": {
+            "title": "Lead Days",
+            "type": "integer"
+          },
+          "progress": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PyramidProgress"
+            },
+            "default": {},
+            "title": "Progress",
+            "type": "object"
+          },
+          "stage_from": {
+            "title": "Stage From",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "required": [
+          "cycle",
+          "effective",
+          "stage_from",
+          "lead_days",
+          "auto",
+          "state"
+        ],
+        "title": "NextCycle",
         "type": "object"
       },
       "NoteSeeded": {

@@ -575,6 +575,12 @@ const DATASET_NAMES: Record<string, string> = {
   "winds-24": `Winds aloft, ${WINDS_MODELLED}, 24 h`,
 };
 
+/** How the next chart cycle's staging reads at a glance: done green, a
+ *  failure red, the rest neither. */
+const NEXT_TONE: Record<string, Tone> = {
+  staged: "up", swapped: "up", failed: "down",
+};
+
 /** The FAA charts on disk and the tile pyramid rendered from them, the
  *  System tab's Charts page:
  *  the cycles and the render as rows, then a row per chart kind with
@@ -609,6 +615,27 @@ function ChartsSection({ charts, onRefresh, refreshing }: {
           onClick={onRefresh} disabled={refreshing || charts.refresh_running}
         />
       </ListGroup>
+      {/* The FAA's next cycle, drawn before its date by the charts job's
+          `next` run (wingtip.chart_next) and taken by the map at 0901Z
+          on it: when, whether the planner starts it, and what the job
+          last said. */}
+      {charts.next && (
+        <ListGroup title="Next cycle">
+          <ListRow title={`Cycle ${charts.next.cycle}`} value={`takes effect ${charts.next.effective}`} />
+          <ListRow
+            title="Staging" data-testid="charts-next-state"
+            description={`${charts.next.detail ?? ""}${charts.next.updated_at ? ` · ${agoOrDate(charts.next.updated_at)}` : ""}`}
+            value={<StatusBadge tone={NEXT_TONE[charts.next.state] ?? "checking"}>{charts.next.state.replace("_", " ")}</StatusBadge>}
+          />
+          <ListRow
+            title="Starts"
+            value={charts.next.auto ? `${charts.next.stage_from}, ${charts.next.lead_days} days ahead` : "off (CHARTS_CYCLE_AUTO=0)"}
+          />
+          {Object.keys(charts.next.progress ?? {}).length > 0 && kinds.map(k => (
+            <ListRow key={k} title={CHART_KIND_LABELS[k]} description={progress(charts.next?.progress?.[k])} />
+          ))}
+        </ListGroup>
+      )}
       <ListGroup title="Chart kinds">
         {kinds.map(k => (
           <ListRow

@@ -46,7 +46,7 @@ The planner starts them by itself through the dev-services sidecar,
 which can start a container but never create one, so make them once:
 
 ```bash
-docker compose create retrain charts charts-overlays
+docker compose create retrain charts charts-overlays charts-next
 ```
 
 Then the developer console's Retrain starts `retrain`, its chart
@@ -54,7 +54,18 @@ Then the developer console's Retrain starts `retrain`, its chart
 (`app/chart_refresh.py`) starts `charts` when a new chart cycle is due
 and the night's window (`CHARTS_REFRESH_WINDOW`, 01:00-06:00) is open,
 and `charts-overlays` whenever its cycle pack has no overlay tiles.
-`CHARTS_AUTO_REFRESH=0` turns that off. `CHARTS_REFRESH_WORKERS` (in
+`CHARTS_AUTO_REFRESH=0` turns that off. The same check starts
+`charts-next` (`python -m charts next`: `charts/next_cycle.py`, by
+`wingtip.chart_next`'s dates; the check is `app.chart_cycle`) from
+`CHARTS_CYCLE_LEAD_DAYS` (7) days before the FAA's next 56-day cycle: it
+fetches, renders and packs that cycle into its own folder while the
+current one serves, and the map goes over to it at 0901Z on its
+effective date (`charts.in_force`); the next run after deletes the old
+cycle. It waits for a turn among the Mac's heavy work, through
+`scripts/dev/one-at-a-time.sh`'s lock in `/tmp` (`charts/turn.py`).
+`CHARTS_CYCLE_AUTO=0` turns that off (production and CI have it off: the
+AWS task draws each cycle). Its state is the console's Charts page and
+`/api/status`'s `charts.next`. `CHARTS_REFRESH_WORKERS` (in
 `.env`, 1 by default) is how many render processes a cycle gets.
 
 ### The chart tiles as archives

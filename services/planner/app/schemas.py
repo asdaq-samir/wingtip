@@ -2729,6 +2729,9 @@ class ChartsStatus(BaseModel):
     # on its clock, blank for any time) and with how many processes.
     refresh_window: str = ""
     refresh_workers: int = 1
+    # The next cycle, drawn before its date (app.chart_cycle); None where
+    # it could not be worked out.
+    next: "NextCycle | None" = None
 
 
 class ChartRefreshStarted(BaseModel):
@@ -3316,3 +3319,10 @@ class DepartureEvent(BaseModel):
 
 class DepartureEvents(BaseModel):
     events: list[DepartureEvent]
+
+
+# Kept in their own modules and named here only where a model above holds
+# them: imported last, as each imports what it needs from this one.
+from .chart_cycle.schemas import NextCycle  # noqa: E402
+
+ChartsStatus.model_rebuild()

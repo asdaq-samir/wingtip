@@ -104,6 +104,10 @@ services:
       # agrees to it (wingtip.traffic).
       ADSBFI_OPEN_DATA: "0"
       CHARTS_AUTO_REFRESH: "0"
+      # Nor the next cycle staged ahead of its date (wingtip.chart_next):
+      # the scheduled Fargate task draws and publishes each cycle, and
+      # this server has no charts-next or sidecar to start one.
+      CHARTS_CYCLE_AUTO: "0"
       # But the NASR files (airports, frequencies, navaids, Class B/C/D)
       # and the obstacle file are fetched again as each new edition comes
       # out (app.main check_faa_editions): their own switch, on.
