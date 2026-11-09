@@ -56,10 +56,9 @@ def _hold(h: dict) -> Hold:
     )
 
 
-def _figures(hold: Hold | None, tas_kt: float) -> dict:
-    """The engine's figures of a hold at `tas_kt` (holds::lap_minutes,
-    held_minutes, turn_radius_nm)."""
-    legs = {"leg_min": 1} if hold is None else {
+def _figures(hold: Hold, tas_kt: float) -> dict:
+    """The engine's figures of a hold at `tas_kt` (hold_figures)."""
+    legs = {
         "leg_min": hold.leg_min, "leg_nm": None if hold.leg_min is not None else (hold.leg_nm or 0),
         "turns": hold.turns, "minutes": hold.minutes,
     }
@@ -82,39 +81,7 @@ def entry(arrival_deg: float, inbound_deg: float, right: bool) -> str:
         {"arrival_deg": arrival_deg, "inbound_deg": inbound_deg, "turns": "right" if right else "left"})))
 
 
-def default_leg_min(altitude_ft: float | None) -> float:
-    """The inbound leg's minutes where the pilot gave none: a minute at or
-    below 14,000 ft MSL, a minute and a half above (AIM 5-3-8 j.4(a)), the
-    engine's rule."""
-    return json.loads(wingtip_native.call("holding_leg_minutes", json.dumps({"altitude_ft": altitude_ft})))
-
-
-def turn_radius_nm(tas_kt: float) -> float:
-    """A standard-rate turn's radius at `tas_kt`: half a circle in a minute
-    flies TAS/60 nm, so the radius is TAS/(60 pi) -- 0.64 nm at 120 kt.
-    The engine's figure."""
-    return _figures(None, tas_kt)["turn_radius_nm"]
-
-
-def lap_minutes(hold: Hold, tas_kt: float) -> float:
-    """One turn round the racetrack, min: its two legs and its two 180
-    degree turns at standard rate (a minute each, FAA-H-8083-15B ch. 7). A
-    distance leg is flown at `tas_kt`. The engine's figure."""
-    return _figures(hold, tas_kt)["lap_min"]
-
-
 def held_minutes(hold: Hold, tas_kt: float) -> float:
     """How long the hold is flown, min: its turns round the racetrack, or
     the minutes given. The engine's figure."""
     return _figures(hold, tas_kt)["held_min"]
-
-
-def racetrack(fix: tuple[float, float], inbound_true_deg: float, right: bool, tas_kt: float, leg_nm: float,
-              steps: int = 12) -> list[list[float]]:
-    """One turn round the racetrack from the fix, [lat, lon] pairs: the
-    turn at the fix toward the holding side, the outbound leg, the turn
-    back, and the inbound leg to the fix again. True degrees. The engine's
-    (wingtip_route::navlog::holds::racetrack, navlog_racetrack)."""
-    return json.loads(wingtip_native.call("navlog_racetrack", json.dumps({
-        "fix": {"lat": fix[0], "lon": fix[1]}, "inbound_true_deg": inbound_true_deg, "right": right, "tas_kt": tas_kt,
-        "leg_nm": leg_nm, "steps": steps})))

@@ -97,20 +97,9 @@ def glide_nm(height_ft: float, speed_kt: float) -> float:
     return float(answer) if answer is not None else 0.0
 
 
-def out_of_glide(lat0: float, lon0: float, rows: int, cols: int, cell_deg: float, *,
-                 height_ft: float, speed_kt: float) -> np.ndarray:
-    """For each cell of a grid (its south-west corner at lat0, lon0, `rows`
-    by `cols` cells of `cell_deg`), the share of it, 0 to 1, over water
-    farther from dry land than an airplane `height_ft` over the water at
-    `speed_kt` glides (glide_nm), read every STEP_DEG.
-
-    A WaterUnavailable where the land and lakes could not be had."""
-    return cell_shares(out_of_glide_samples(lat0, lon0, rows, cols, cell_deg, height_ft=height_ft, speed_kt=speed_kt),
-                       rows, cols)
-
-
 def cell_shares(far: np.ndarray, rows: int, cols: int) -> np.ndarray:
-    """out_of_glide_samples' answer as each cell's share out of glide, 0 to 1."""
+    """out_of_glide_samples' answer as each cell's share out of glide, 0 to 1:
+    a cell's share of water farther from dry land than the airplane glides."""
     per = far.shape[0] // rows
     return far.reshape(rows, per, cols, per).mean(axis=(1, 3))
 

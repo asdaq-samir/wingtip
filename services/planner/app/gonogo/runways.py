@@ -12,12 +12,6 @@ fields it answers by index are put back here as the dicts they were."""
 from . import ask
 
 
-def density_altitude_ft(pressure_alt_ft: float, temp_c: float) -> float:
-    """Density altitude in the engine's standard atmosphere, the one the
-    nav log's cruise and climb are flown in (FAA-H-8083-25C, chapter 11)."""
-    return ask("gonogo_density_altitude", pressure_alt_ft=pressure_alt_ft, temp_c=temp_c)
-
-
 def _flown(runways: list[dict], found: dict | None) -> dict | None:
     if found is None:
         return None
@@ -30,12 +24,6 @@ def runway_in_use(runways: list[dict]) -> dict | None:
     runwayInUse): most nearly into the wind (AC 90-66C 11.5), else the
     most used runway's first end."""
     return _flown(runways, ask("gonogo_runway_in_use", runways=runways))
-
-
-def runway_flown(runways: list[dict], picked: str | None) -> dict | None:
-    """The runway end flown at a field (lib/pattern runwayFlown): the
-    pilot's pick where they made one, else runway_in_use."""
-    return _flown(runways, ask("gonogo_runway_flown", runways=runways, picked=picked))
 
 
 def runway_checks(aircraft: dict | None, briefing: dict | None, fields: list[dict] | None,
