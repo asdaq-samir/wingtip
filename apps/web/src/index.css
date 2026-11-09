@@ -5,6 +5,8 @@
 /* The design tokens: every colour, the corners, the motion, by theme and
    look, generated from design/tokens.json (scripts/build/design-tokens.sh). */
 @import "./styles/tokens.css";
+/* How it feels: type, states, depth and the small motions (feel.css). */
+@import "./styles/feel.css";
 
 @custom-variant dark (&:is(.dark *));
 /* Reduce Transparency, or Increase Contrast, asked for on the device
@@ -708,14 +710,11 @@ body[data-map-sheet][data-map-panel="full"] [data-sonner-toast][data-type="loadi
   background-color: color-mix(in oklab, var(--background) var(--glass-fill, var(--glass-fill-light)), transparent);
   -webkit-backdrop-filter: blur(var(--glass-blur));
   backdrop-filter: blur(var(--glass-blur));
-  box-shadow:
-    0 0 0 0.5px rgb(0 0 0 / 0.08),
-    0 2px 12px rgb(0 0 0 / 0.12);
+  /* A hairline, a contact shade and a soft one (feel.css's float),
+     deeper at night. */
+  box-shadow: var(--depth-float);
   &:is(.dark *) {
     background-color: color-mix(in oklab, var(--popover) var(--glass-fill, var(--glass-fill-dark)), transparent);
-    box-shadow:
-      0 0 0 0.5px rgb(255 255 255 / 0.08),
-      0 2px 12px rgb(0 0 0 / 0.45);
   }
   /* Solid under Reduce Transparency or Increase Contrast (the solid
      variant above): the page's own ground, nothing of the chart through

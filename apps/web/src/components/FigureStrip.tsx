@@ -46,7 +46,7 @@ export default function FigureStrip({
             {/* Its names and units a grey that reads on the pill's glass. */}
             <dt className={cn(nameType, "truncate text-foreground/65")}>{f.name}</dt>
             <dd ref={i === 0 ? room : undefined} className={cn(valueType, "truncate tabular-nums")} data-testid={f.testId}>
-              <span style={sized("value")} data-fitted={fitted}>
+              <span key={f.value} className="figure-roll" style={sized("value")} data-fitted={fitted}>
                 {f.value}
               </span>
               {f.unit && (

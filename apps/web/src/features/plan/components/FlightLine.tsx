@@ -189,7 +189,7 @@ export default function FlightLine({
                     >
                       {/* Short said by a mark too, not the red alone (WCAG 1.4.1). */}
                       {f.alert && <TriangleAlert className="mr-0.5 size-[0.8em] self-center" aria-hidden data-testid="fuel-short-mark" />}
-                      <span className="min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
+                      <span key={f.value} className="figure-roll min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
                         {f.value}
                       </span>
                       {/* Its space a no-break one: a flex item drops a
@@ -232,7 +232,7 @@ export default function FlightLine({
                   aria-label={`${f.said}: show the ${toDestination ? "next stop" : "destination"}`}
                   className="relative inline-flex max-w-full text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
                 >
-                  <span className="min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
+                  <span key={f.value} className="figure-roll min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
                     {f.value}
                   </span>
                 </button>
@@ -246,7 +246,7 @@ export default function FlightLine({
                   aria-label={`${f.said}: open the nav log`}
                   className="relative inline-flex max-w-full items-baseline text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
                 >
-                  <span className="min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
+                  <span key={f.value} className="figure-roll min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
                     {f.value}
                   </span>
                   {f.unit && (
@@ -264,13 +264,13 @@ export default function FlightLine({
                   aria-label={`${f.said}: show the ${f.name === "ETE" ? "arrival" : "time en route"}`}
                   className="relative inline-flex max-w-full text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
                 >
-                  <span className="min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
+                  <span key={f.value} className="figure-roll min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
                     {f.value}
                   </span>
                 </button>
               ) : (
                 <>
-                  <span aria-hidden style={sized("value")} data-fitted={fitted}>
+                  <span key={f.value} aria-hidden className="figure-roll" style={sized("value")} data-fitted={fitted}>
                     {f.value}
                   </span>
                   {f.unit && (

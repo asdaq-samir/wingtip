@@ -3,7 +3,7 @@ import { Camera } from "lucide-react";
 import { cn } from "cn";
 import SheetDialog from "../../components/SheetDialog";
 import { Button } from "../../components/ui/button";
-import { Spinner } from "../../components/ui/spinner";
+import SkeletonLines from "../../components/SkeletonLines";
 import { FINDING_TONE } from "../../lib/findings";
 import { FLAG_FINDING, type FlagLevel } from "../../lib/documentPhoto";
 import { TEXT } from "../../lib/text";
@@ -80,9 +80,12 @@ export default function PhotoSheet({
         <Camera aria-hidden="true" /> {answer ? "Another Photo" : "Take or Choose a Photo"}
       </Button>
       {photo.reading && (
-        <p role="status" className={cn("flex items-center gap-2", TEXT.prose)}>
-          <Spinner /> Reading the page…
-        </p>
+        <>
+          <p role="status" className={cn("text-muted-foreground", TEXT.prose)}>
+            Reading the page…
+          </p>
+          <SkeletonLines lines={4} />
+        </>
       )}
       {photo.readError && (
         <p role="alert" className={cn(FINDING_TONE.stop, TEXT.prose)}>

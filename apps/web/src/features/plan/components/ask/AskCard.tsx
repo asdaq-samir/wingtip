@@ -6,7 +6,7 @@ import { PillSection } from "../../../../components/Favorites";
 import { PANEL_FIELD } from "../../../../components/panelField";
 import { Button } from "../../../../components/ui/button";
 import { Input } from "../../../../components/ui/input";
-import { Spinner } from "../../../../components/ui/spinner";
+import SkeletonLines from "../../../../components/SkeletonLines";
 import { useAtcRadio } from "../../../../lib/atcRadio";
 import { useCanListen } from "../../../../lib/speechLocal";
 import { TEXT } from "../../../../lib/text";
@@ -37,11 +37,12 @@ function Turn({ turn }: { turn: AskTurn }) {
         {turn.question}
       </p>
       {turn.status && (
-        <p className={cn("flex items-center gap-2 text-muted-foreground", TEXT.note)} role="status" data-testid="ask-status">
-          <Spinner aria-hidden />
+        <p className={cn("appear text-muted-foreground", TEXT.note)} role="status" data-testid="ask-status">
           {turn.status}…
         </p>
       )}
+      {/* The answer's shape where it will be, until its first words. */}
+      {turn.status && !turn.answer && <SkeletonLines className="w-4/5 self-start rounded-2xl rounded-bl-md bg-card px-3.5 py-3" />}
       {/* The answer as the assistant's own message: a white card at the
           left with its chips inside, as the canvas's Ask screen (7) has
           it, facing the pilot's blue one. */}

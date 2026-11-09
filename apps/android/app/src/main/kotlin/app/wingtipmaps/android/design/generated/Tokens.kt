@@ -240,7 +240,7 @@ object WingtipPalettes {
         destructiveInk = Color(0xFFC10007),
         border = Color(0xFFE5E5E5),
         input = Color(0xFF8F8F8F),
-        ring = Color(0xFF737373),
+        ring = Color(0xFF0066CC),
         chart1 = Color(0xFFD4D4D4),
         chart2 = Color(0xFF737373),
         chart3 = Color(0xFF525252),
@@ -287,7 +287,7 @@ object WingtipPalettes {
         destructiveInk = Color(0xFFFF7979),
         border = Color(0x1AFFFFFF),
         input = Color(0x26FFFFFF),
-        ring = Color(0xFFA9B8CA),
+        ring = Color(0xFF57A8FF),
         chart1 = Color(0xFFD4D4D4),
         chart2 = Color(0xFF737373),
         chart3 = Color(0xFF525252),
@@ -334,7 +334,7 @@ object WingtipPalettes {
         destructiveInk = Color(0xFF9C1C15),
         border = Color(0xFF000000),
         input = Color(0xFF333333),
-        ring = Color(0xFF333333),
+        ring = Color(0xFF0047A0),
         chart1 = Color(0xFFD4D4D4),
         chart2 = Color(0xFF737373),
         chart3 = Color(0xFF525252),
@@ -381,7 +381,7 @@ object WingtipPalettes {
         destructiveInk = Color(0xFFC10007),
         border = Color(0xFFE5E5E5),
         input = Color(0xFF8F8F8F),
-        ring = Color(0xFF737373),
+        ring = Color(0xFF00707E),
         chart1 = Color(0xFFD4D4D4),
         chart2 = Color(0xFF737373),
         chart3 = Color(0xFF525252),
@@ -428,7 +428,7 @@ object WingtipPalettes {
         destructiveInk = Color(0xFFFF7979),
         border = Color(0x1AFFFFFF),
         input = Color(0x26FFFFFF),
-        ring = Color(0xFFA9B8CA),
+        ring = Color(0xFF46D3E6),
         chart1 = Color(0xFFD4D4D4),
         chart2 = Color(0xFF737373),
         chart3 = Color(0xFF525252),
@@ -475,7 +475,7 @@ object WingtipPalettes {
         destructiveInk = Color(0xFFC10007),
         border = Color(0xFFE2D8C4),
         input = Color(0xFF8F8F8F),
-        ring = Color(0xFF737373),
+        ring = Color(0xFF0066CC),
         chart1 = Color(0xFFD4D4D4),
         chart2 = Color(0xFF737373),
         chart3 = Color(0xFF525252),
@@ -522,7 +522,7 @@ object WingtipPalettes {
         destructiveInk = Color(0xFFFF7979),
         border = Color(0x1AFFFFFF),
         input = Color(0x26FFFFFF),
-        ring = Color(0xFFA9B8CA),
+        ring = Color(0xFF5AC8FA),
         chart1 = Color(0xFFD4D4D4),
         chart2 = Color(0xFF737373),
         chart3 = Color(0xFF525252),
@@ -584,6 +584,7 @@ object WingtipMotion {
     const val QUICK_MS = 150
     const val PAGE_MS = 250
     const val SKELETON_PULSE_MS = 1500
+    const val PRESS_MS = 100
 }
 
 /** The taps felt on a key action, as View.performHapticFeedback's constants; one

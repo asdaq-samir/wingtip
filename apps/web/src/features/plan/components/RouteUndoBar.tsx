@@ -16,7 +16,7 @@ export default function RouteUndoBar() {
   const undo = useRouteUndo((s) => s.undo);
   if (!note || !undo) return null;
   return (
-    <div className="pt-2" data-testid="route-undo">
+    <div className="appear pt-2" data-testid="route-undo">
       <ListGroup>
         {/* A new change is a new bar, its time from the start. */}
         <UndoRow key={at} said={note} onUndo={undo} onDone={dismissRouteUndo} testId="route-undo-row" />
