@@ -1,6 +1,6 @@
 # ingest's suite: wingtip's own list (what the base image installs), ingest's, and the tools.
 -r ../planner/requirements-wingtip.txt
 -r requirements.txt
-pytest
+pytest==9.2.0
 pytest-randomly==5.1.0   # every run in a new random order, --randomly-seed=N repeats one (docs/CI.md, "Flaky tests")
 ruff==0.17.4
