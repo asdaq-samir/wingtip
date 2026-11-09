@@ -14,6 +14,7 @@ import { mhzText } from "../../../lib/frequencies";
 import { chipFillOf, colourOf } from "../../../lib/map/marks/flightCategory";
 import { glideRangeNm, reachesField, underway } from "../../../lib/map/position/glide";
 import { useGlideRatio } from "../../../lib/map/position/useGlideRatio";
+import { AskFigure } from "../../../components/airplane/AskFigure";
 import { airportMarkSvg } from "../../../lib/map/marks/airportMark";
 import { positionNow, useOwnShip, useOwnFix } from "../../../lib/map/position/ownShip";
 import { nearestQuery } from "../../../lib/queryClient";
@@ -316,6 +317,9 @@ export default function NearestCard({
             )}
           </ListGroup>
         )}
+        {/* In the air with an airplane of no glide ratio: asked for in
+            place, the fields listed nearest first meanwhile (AskFigure). */}
+        {!from && ratio == null && underway(fix) && <AskFigure figure="glide" what="The glide" testId="nearest-glide-ask" />}
       </div>
     </PanelCard>
   );

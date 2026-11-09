@@ -6,6 +6,7 @@ import { callEngine } from "../../lib/engine/engine";
 import { useEngineReady } from "../../lib/engine/useEngineReady";
 import { useOwnShip } from "../../lib/map/position/ownShip";
 import { airplaneChosen, usePreferences } from "../../lib/preferences";
+import { typeOf } from "../../lib/aircraftChoice";
 import { flightsQuery, pilotQuery } from "../../lib/queryClient";
 import { entryRequest, flightEnded, likelyFlight, type Edits } from "./draftEntry";
 import { asked, forget, record, recorded } from "./recorder";
@@ -66,7 +67,7 @@ export function useAutoLogbook() {
   const ask = {
     points,
     aircraft: airplaneChosen(aircraft) ? (aircraft.tail ?? null) : null,
-    aircraftType: airplaneChosen(aircraft) ? aircraft.profile.toUpperCase() : null,
+    aircraftType: typeOf(aircraft),
     // The pilot's clock, for the day the flight is logged on.
     utcOffsetMin: -new Date().getTimezoneOffset(),
     picked: null,

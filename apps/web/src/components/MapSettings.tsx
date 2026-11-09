@@ -4,6 +4,7 @@ import { ListGroup, ListRow } from "./GroupedList";
 import PullDown from "./PullDown";
 import Segmented from "./Segmented";
 import SwitchRow from "./SwitchRow";
+import GlideRingRow from "./GlideRingRow";
 import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 import { clearOwnTrail, useOwnTrail } from "../lib/map/position/ownTrail";
 import {
@@ -192,8 +193,7 @@ export default function MapSettings() {
             options={ALERT_MODES}
           />
         </ListRow>
-        {/* The in-flight copilot (features/copilot), off, shown or said
-            aloud, beside the alerts as the same kind of choice. */}
+        {/* The in-flight copilot (features/copilot), off, shown or said aloud, as the alerts are. */}
         <ListRow title="Copilot">
           <Segmented
             label="Copilot"
@@ -267,8 +267,7 @@ export default function MapSettings() {
             ]}
           />
         </ListRow>
-        {/* Own ship on the chart, a plane or the arrow, at the owner's ask:
-            a menu, each with its picture. */}
+        {/* Own ship on the chart, a plane or the arrow, at the owner's ask: a menu, each with its picture. */}
         <ListRow title="You on the Map">
           <PullDown<OwnShipLook>
             label="You on the map"
@@ -288,8 +287,9 @@ export default function MapSettings() {
             }))}
           />
         </ListRow>
-        {/* Own ship's path flown (OwnTrailGl), put away here: it starts
-            again by itself with the next flight. */}
+        {/* The glide ring about own ship, off unless turned on (GlideRingGl; the owner, 2026-11-09). */}
+        <GlideRingRow />
+        {/* Own ship's path flown (OwnTrailGl), put away here: it starts again with the next flight. */}
         <ListRow title="Clear Your Path" disabled={!trailed} onClick={clearOwnTrail} data-testid="own-trail-clear" />
       </ListGroup>
       {/* The base chart along each route loaded, held for the air

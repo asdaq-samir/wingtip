@@ -16,7 +16,7 @@ import { altFt, pounds } from "../../../../lib/format";
 import { useLoad } from "../../hooks/useLoad";
 import { armText } from "../../../../lib/weightBalance";
 import { phasesOf, type Phase } from "./sections";
-import { NotInProfile } from "./NotInProfile";
+import { AskFigure } from "../../../../components/airplane/AskFigure";
 import { useNotInProfileSummary } from "./notInProfileSummary";
 
 /** The envelope's picture: Recharts, loaded with the section. */
@@ -68,7 +68,7 @@ function NumberField({
  * empty weight and arm, each station's load and the fuel, and the
  * weight and centre of gravity at takeoff and at landing -- the trip's
  * fuel burned -- against the most it may weigh and its envelope. For an
- * airplane whose profile has its POH's loading; none else (NotInProfile).
+ * airplane whose profile has its POH's loading; none else, the figures it lacks asked for (AskFigure).
  */
 export function WeightBalanceSection({
   aircraft,
@@ -96,7 +96,7 @@ export function WeightBalanceSection({
       }
     >
       {!loading || !load || !result ? (
-        <NotInProfile what="The loading" testId="wb-not-in-profile" />
+        <AskFigure figure="weight_balance" what="The weight and balance" tables={aircraft} testId="wb-not-in-profile" />
       ) : (
         <div className="space-y-4" data-testid="weight-balance">
           {/* From its own weight and balance record; the POH's sample airplane until set. */}
@@ -252,7 +252,7 @@ export function TakeoffLandingSection({
       }
     >
       {!takeoffTable || !landingTable ? (
-        <NotInProfile what="The takeoff and landing distances" testId="tl-not-in-profile" />
+        <AskFigure figure="takeoff_landing" what="The takeoff and landing distances" tables={aircraft} testId="tl-not-in-profile" />
       ) : !briefing ? (
         <p className="text-muted-foreground" role="status">
           Waiting on the runways and the weather at each field…
