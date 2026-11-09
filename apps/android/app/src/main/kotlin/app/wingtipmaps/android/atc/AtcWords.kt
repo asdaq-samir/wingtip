@@ -1,7 +1,6 @@
 package app.wingtipmaps.android.atc
 
 import app.wingtipmaps.android.engine.generated.EngineContract
-import kotlin.math.roundToInt
 
 /** What a tap can do with an item on this phone: fly direct (the plan's
  *  Direct To), or keep the next frequency or the code in sight. */
@@ -17,7 +16,7 @@ enum class ItemAction { DIRECT, FREQUENCY, SQUAWK }
  */
 object AtcWords {
     private fun capital(words: String) = words.replaceFirstChar { it.uppercase() }
-    private fun three(deg: Double) = deg.roundToInt().toString().padStart(3, '0')
+    private fun three(deg: Int) = deg.toString().padStart(3, '0')
 
     /** The eight points a hold is said from, as a chart abbreviates them. */
     private val POINTS = mapOf(
@@ -30,12 +29,12 @@ object AtcWords {
     )
 
     fun itemWords(item: AtcItem, altitude: (Double) -> String): String {
-        val alt = { ft: Double? -> ft?.let(altitude).orEmpty() }
+        val alt = { ft: Int? -> ft?.let { altitude(it.toDouble()) }.orEmpty() }
         return when (item.kind) {
             "altitude" -> "${capital(item.verb ?: "maintain")}${item.limit?.let { " $it" }.orEmpty()} ${alt(item.ft)}"
-            "expect" -> "Expect ${alt(item.ft)}" + (item.min?.let { " ${it.roundToInt()} min after departure" }.orEmpty())
+            "expect" -> "Expect ${alt(item.ft)}" + (item.min?.let { " $it min after departure" }.orEmpty())
             "heading" -> when {
-                item.byDeg != null -> listOfNotNull("Turn", item.turn, "${item.byDeg.roundToInt()}°").joinToString(" ")
+                item.byDeg != null -> listOfNotNull("Turn", item.turn, "${item.byDeg}°").joinToString(" ")
                 item.deg == null -> "Runway heading"
                 else -> "${item.turn?.let { "${capital(it)} heading" } ?: "Heading"} ${three(item.deg)}"
             }

@@ -13,7 +13,7 @@ class AtcWordsTest {
     /** The engine's altitude_said for these, "3,000 ft" (AIM 4-2-9). */
     private val said = { ft: Double -> String.format(java.util.Locale.US, "%,d ft", ft.toLong()) }
 
-    private fun items(json: String) = AtcItem.items(Json.parseToJsonElement(json).jsonArray)
+    private fun items(json: String) = atcItems(Json.parseToJsonElement(json).jsonArray)
 
     @Test
     fun itemsAreWrittenAsAtcSaysThem() {

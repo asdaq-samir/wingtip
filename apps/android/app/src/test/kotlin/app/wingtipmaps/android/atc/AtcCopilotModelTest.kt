@@ -39,7 +39,7 @@ class AtcCopilotModelTest {
             priors += prior
             return when {
                 text.startsWith("Cessna one two three") -> EngineContract.AtcCallAnswer(
-                    "to_us", Json.parseToJsonElement("""[{"kind":"direct","said":"gopher"},{"kind":"squawk","code":"4512"}]""").jsonArray,
+                    "to_us", atcItems(Json.parseToJsonElement("""[{"kind":"direct","said":"gopher"},{"kind":"squawk","code":"4512"}]""").jsonArray),
                 )
                 text.endsWith("three alpha bravo") -> EngineContract.AtcCallAnswer("from_us", emptyList())
                 else -> EngineContract.AtcCallAnswer("other", emptyList())

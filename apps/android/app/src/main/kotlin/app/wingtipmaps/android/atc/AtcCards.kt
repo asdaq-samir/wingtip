@@ -71,7 +71,7 @@ object AtcCards {
         val prior = open?.let { EngineContract.AtcCallInputPrior(it.text, (heard.atMs - it.atMs) / 1000.0) }
         val answer = rules.call(heard.text, tail, prior) ?: return cards
         if (answer.who == "to_us") {
-            return (listOf(AtcCard(heard.id, heard.text, heard.atMs, AtcItem.items(answer.items))) + cards).take(KEPT)
+            return (listOf(AtcCard(heard.id, heard.text, heard.atMs, answer.items)) + cards).take(KEPT)
         }
         if (open != null && (answer.who == "from_us" || open.awaiting)) return listOf(readBack(open, heard.text, tail, rules)) + cards.drop(1)
         return cards
