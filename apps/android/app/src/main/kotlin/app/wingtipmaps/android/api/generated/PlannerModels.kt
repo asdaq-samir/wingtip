@@ -1592,6 +1592,12 @@ data class CoachDebrief (
     val legs: List<CoachLeg>? = null,
     val patterns: List<CoachPattern>? = null,
     val place: String? = null,
+
+    /**
+     * An approach's procedure as the chart names it ("ILS Y RWY 08").
+     */
+    val procedure: String? = null,
+
     val profile: List<CoachProfilePoint>? = null
 )
 
@@ -6143,6 +6149,12 @@ data class CoachEvidence (
 
     val id: String,
     val place: String,
+
+    /**
+     * The approach procedure flown ("ILS Y RWY 08"), where the line is an approach's.
+     */
+    val procedure: String? = null,
+
     val text: String
 )
 

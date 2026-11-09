@@ -33,12 +33,13 @@ object CoachApproaches {
      *  one needs no native library). */
     private val drawingJson = Json { ignoreUnknownKeys = true }
 
-    /** An approach debriefed, trimmed: its profile and findings (the result
+    /** An approach debriefed, trimmed: its procedure as the chart names it
+     *  ("ILS Y RWY 08"), its profile and findings (the result
      *  among them, in the engine's words), and the field's elevation for
      *  the 500 ft gate (AC 61-98D 2.1.4); a null elevation leaves the gate
      *  unchecked, never assumed. */
     fun trimmed(a: EngineContract.ApproachDebrief, elevationFt: Double?, flownOn: String): CoachDebrief = CoachDebrief(
-        kind = "approach", flownOn = flownOn, place = a.airport, elevationFt = elevationFt, legs = emptyList(), patterns = emptyList(),
+        kind = "approach", flownOn = flownOn, place = a.airport, procedure = a.name, elevationFt = elevationFt, legs = emptyList(), patterns = emptyList(),
         profile = a.profile.track.map { CoachProfilePoint(altFt = it.altFt, off = it.off, toGoNm = it.toGoNm) },
         findings = a.findings.map { CoachFinding(text = it.text, tone = it.tone) },
     )

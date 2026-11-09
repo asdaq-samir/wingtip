@@ -983,6 +983,8 @@ struct APICoachDebrief: Codable, Equatable, Sendable {
     var legs: [APICoachLeg]?
     var patterns: [APICoachPattern]?
     var place: String?
+    /// An approach's procedure as the chart names it ("ILS Y RWY 08").
+    var procedure: String?
     var profile: [APICoachProfilePoint]?
 }
 
@@ -3676,6 +3678,8 @@ struct APICoachDue: Codable, Equatable, Sendable {
 // MARK: - APICoachEvidence
 struct APICoachEvidence: Codable, Equatable, Sendable {
     var area, flownOn, id, place: String
+    /// The approach procedure flown ("ILS Y RWY 08"), where the line is an approach's.
+    var procedure: String?
     var text: String
 }
 

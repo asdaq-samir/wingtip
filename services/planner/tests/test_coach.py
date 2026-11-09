@@ -73,6 +73,22 @@ def test_the_sources_say_the_plan_with_ids_its_sessions_cite(places):
         assert all(why in lines for why in s["why"]), s
 
 
+def test_an_approachs_evidence_and_its_line_name_the_procedure(places):
+    places["places"] = []
+    approach = {
+        "kind": "approach",
+        "flown_on": "2026-11-01",
+        "place": "KMSN",
+        "procedure": "ILS Y RWY 08",
+        "elevation_ft": 887,
+        "profile": [{"to_go_nm": 1.0, "alt_ft": 1200, "off": True}],
+    }
+    plan = client.post("/api/pilot/coach", json={"today": "2026-11-09", "entries": [], "debriefs": [approach]}).json()
+    assert [(e["place"], e["procedure"]) for e in plan["evidence"]] == [("KMSN", "ILS Y RWY 08")]
+    lines = {s["id"]: s["text"] for s in client.post("/api/words/coach/sources", json=plan).json()["sources"]}
+    assert lines["ev:1"].startswith("2026-11-01 at KMSN, ILS Y RWY 08: ")
+
+
 def test_a_bad_debrief_is_a_422(places):
     places["places"] = []
     bad = {"today": "2026-11-09", "entries": [], "debriefs": [{"kind": "loop", "flown_on": "2026-11-01"}]}

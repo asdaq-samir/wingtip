@@ -77,7 +77,7 @@ struct CoachView: View {
                 ForEach(plan.weakAreas, id: \.key) { w in
                     DisclosureGroup {
                         ForEach(plan.evidence.filter { w.evidence.contains($0.id) }, id: \.id) { e in
-                            Text("\(Day.said(e.flownOn)) at \(e.place): \(e.text)").font(WingtipType.detail).foregroundStyle(.secondary)
+                            Text(CoachModel.evidenceLine(e)).font(WingtipType.detail).foregroundStyle(.secondary)
                         }
                     } label: {
                         Text("\(w.label) · \(w.evidence.count) · ACS \(w.acs.joined(separator: ", "))")
