@@ -70,6 +70,7 @@ pub fn draft_json(d: &Draft) -> String {
     num(&mut out, "crossCountryHours", e.cross_country_hours);
     num(&mut out, "dayLandings", e.day_landings as f64);
     num(&mut out, "nightLandings", e.night_landings as f64);
+    num(&mut out, "touchAndGoes", e.touch_and_goes as f64);
     num(&mut out, "toweredLandings", e.towered_landings as f64);
     num(&mut out, "distanceNm", e.distance_nm);
     num(&mut out, "longestLegNm", e.longest_leg_nm);

@@ -48,6 +48,7 @@ fn the_c81_to_kdlh_flight_is_logged_as_flown() {
     assert_eq!(e["dayLandings"], 1.0);
     assert_eq!(e["nightLandings"], 1.0);
     assert_eq!(e["toweredLandings"], 1.0);
+    assert_eq!(e["touchAndGoes"], 1.0);
     let kinds: Vec<&str> = d["landings"].as_array().unwrap().iter().map(|l| l["kind"].as_str().unwrap()).collect();
     assert_eq!(kinds, ["touch_and_go", "full_stop"]);
     let (tg, stop) = (&d["landings"][0], &d["landings"][1]);

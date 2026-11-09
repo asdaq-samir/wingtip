@@ -78,6 +78,8 @@ pub struct Entry {
     pub cross_country_hours: f64,
     pub day_landings: i64,
     pub night_landings: i64,
+    /// Of the day landings, the touch-and-goes.
+    pub touch_and_goes: i64,
     pub towered_landings: i64,
     pub distance_nm: f64,
     pub longest_leg_nm: f64,
@@ -192,6 +194,7 @@ pub fn draft(points: &[Point], ask: &Ask) -> Draft {
     // Landings: 61.57(a) counts every one, (b) full stops in its period.
     let night_landings = landings.iter().filter(|l| l.counts_night).count() as i64;
     let day_landings = landings.len() as i64 - night_landings;
+    let touch_and_goes = landings.iter().filter(|l| l.kind == "touch_and_go").count() as i64;
     for l in &landings {
         let at = l.field.clone().unwrap_or_else(|| "no field".to_owned());
         let how = if l.kind == "full_stop" { "to a full stop" } else { "a touch-and-go" };
@@ -315,6 +318,7 @@ pub fn draft(points: &[Point], ask: &Ask) -> Draft {
         cross_country_hours: tenth(cross_country),
         day_landings,
         night_landings,
+        touch_and_goes,
         towered_landings: towered,
         distance_nm: distance.round(),
         longest_leg_nm: longest.round(),

@@ -2824,6 +2824,10 @@
                   "type": "number",
                   "description": "To a full stop in 61.57(b)'s period."
                 },
+                "touchAndGoes": {
+                  "type": "number",
+                  "description": "Of the day landings, the touch-and-goes (61.57(a) counts them, (b) does not)."
+                },
                 "toweredLandings": {
                   "type": "number"
                 },
@@ -2858,6 +2862,7 @@
                 "crossCountryHours",
                 "dayLandings",
                 "nightLandings",
+                "touchAndGoes",
                 "toweredLandings",
                 "distanceNm",
                 "longestLegNm",
