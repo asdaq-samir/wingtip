@@ -1,6 +1,7 @@
 import type { Where } from "./verdict";
 import { clockTime, duration, zuluTime } from "./clock";
 import { placeOfPoint } from "./identSchema";
+import { callEngine } from "./engine/engine";
 
 /**
  * The passengers' briefing on the Brief, ticked off before engine start,
@@ -13,9 +14,10 @@ import { placeOfPoint } from "./identSchema";
  * land ((a)(2), (3)). The rest is what the Private Pilot ACS (FAA-S-ACS-6C)
  * asks of a passenger briefing in task PA.II.B, skill S2 -- doors,
  * passenger conduct, sterile aircraft, propeller avoidance, emergency
- * procedures -- and is cited as guidance, not as a regulation. The iPhone
- * (Passengers.swift) and Android (briefing/PassengerBriefing.kt) list the
- * same items under the same keys.
+ * procedures -- and is cited as guidance, not as a regulation. The items and their sources are
+ * the engine's (`passenger_briefing`, brief's passengers.rs), which the
+ * iPhone (Passengers.swift) and Android (briefing/PassengerBriefing.kt)
+ * ask too, under the same keys.
  */
 export interface PassengerItem extends Partial<Where> {
   key: string;
@@ -24,17 +26,10 @@ export interface PassengerItem extends Partial<Where> {
   rule: string;
 }
 
-const SAFETY = "FAA Safety Briefing, Passenger SAFETY briefing";
-
-export const PASSENGER_ITEMS: PassengerItem[] = [
-  { key: "pax-belts", title: "How to fasten and unfasten their seat belts and shoulder harnesses", rule: "14 CFR 91.107(a)(1)" },
-  { key: "pax-fastened", title: "Belts fastened to taxi, take off and land, seats locked", rule: "14 CFR 91.107(a)(2), (3)" },
-  { key: "pax-air", title: "Air vents and heat, and to say if they feel unwell", rule: SAFETY },
-  { key: "pax-fire", title: "The fire extinguisher: where it is and how it works", rule: SAFETY },
-  { key: "pax-exits", title: "The doors, how to get out, the survival kit, and clear of the propeller", rule: `${SAFETY}; ACS PA.II.B.S2` },
-  { key: "pax-traffic", title: "Point out traffic; quiet while the pilot is on the radio and close to the ground", rule: `${SAFETY}; ACS PA.II.B.S2` },
-  { key: "pax-questions", title: "Their questions", rule: SAFETY },
-];
+/** The briefing's items in its order, the engine's. */
+export function passengerItems(): PassengerItem[] {
+  return callEngine("passenger_briefing", {});
+}
 
 /** The flight in a few lines for the passengers, to send them: where to,
  *  when it leaves and lands (this device's clock, and UTC), and the

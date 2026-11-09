@@ -117,6 +117,17 @@ class EngineTest {
         assertEquals(c.heard, c.clearance["maintainFt"]?.jsonPrimitive?.doubleOrNull, read["maintainFt"]?.jsonPrimitive?.doubleOrNull)
     }
 
+    /** The passengers' briefing, the engine's (passenger_briefing):
+     *  14 CFR 91.107(a)'s two first, each with its source. */
+    @Test
+    fun thePassengerBriefingIsTheEnginesEachWithItsSource() {
+        val items = app.wingtipmaps.android.briefing.PassengerBriefing.ITEMS
+        assertEquals(listOf("pax-belts", "pax-fastened", "pax-air", "pax-fire", "pax-exits", "pax-traffic", "pax-questions"), items.map { it.key })
+        assertEquals("14 CFR 91.107(a)(1)", items[0].source)
+        assertEquals("14 CFR 91.107(a)(2), (3)", items[1].source)
+        assertTrue(items.first { it.key == "pax-exits" }.source.contains("PA.II.B.S2"))
+    }
+
     @Test
     fun aNameTheEngineHasNoRuleForIsRefusedInItsOwnWords() {
         try {

@@ -8480,6 +8480,11 @@
       "LostComms": {
         "description": "91.185: VFR's words, the routes in the rule's order, each segment's\naltitude and why, and when to leave the clearance limit.",
         "properties": {
+          "altitude": {
+            "description": "91.185(c)(2), the altitude rule, in words.",
+            "title": "Altitude",
+            "type": "string"
+          },
           "leave": {
             "title": "Leave",
             "type": "string"
@@ -8506,6 +8511,7 @@
         "required": [
           "vfr",
           "routes",
+          "altitude",
           "segments",
           "leave"
         ],

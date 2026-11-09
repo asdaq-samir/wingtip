@@ -32,6 +32,21 @@ use crate::json::{self, Value};
 /// planner's own check, wingtip.publications `_graticule`).
 pub const SCALE_TOLERANCE: f64 = 0.15;
 
+/// Own ship comes off the diagram once its fix is older than this, s: AC
+/// 120-76D 11.17.2.3, "removed ... within 3 seconds" of the position
+/// going stale.
+pub const FIX_STALE_S: f64 = 3.0;
+/// And is not drawn where the fix is coarser than this, m: AC 120-76D
+/// 11.17.2.4's 30 m (the airport moving map's own-ship accuracy).
+pub const FIX_WORST_M: f64 = 30.0;
+
+/// Whether a fix `age_s` old and good to `accuracy_m` may be drawn on the
+/// diagram: no older than FIX_STALE_S and no coarser than FIX_WORST_M, a
+/// negative accuracy (none known) never.
+pub fn fix_usable(age_s: f64, accuracy_m: f64) -> bool {
+    age_s <= FIX_STALE_S && (0.0..=FIX_WORST_M).contains(&accuracy_m)
+}
+
 /// One label as written: degrees, minutes and its letter.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Label {
@@ -264,6 +279,13 @@ pub(super) fn graticule_rule(v: &Value) -> Result<String, String> {
         None => out.push_str("null"),
     }
     Ok(out)
+}
+
+/// `diagram_fix_usable`: whether own ship is drawn, from `{"age_s",
+/// "accuracy_m"}` (AC 120-76D 11.17.2.3, 11.17.2.4).
+pub(super) fn fix_usable_rule(v: &Value) -> Result<String, String> {
+    let n = "diagram_fix_usable";
+    Ok(fix_usable(num(n, v, "age_s")?, num(n, v, "accuracy_m")?).to_string())
 }
 
 /// `diagram_point`: `{"x", "y", "on_page"}`, from `{"graticule", "lat",

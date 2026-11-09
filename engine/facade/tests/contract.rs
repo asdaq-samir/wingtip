@@ -77,6 +77,7 @@ fn code_names() -> BTreeSet<String> {
         include_str!("../../crates/airspace/src/ahead.rs"),
         include_str!("../../crates/pilot/src/pilot/records.rs"),
         include_str!("../../crates/pilot/src/pilot/kinds.rs"),
+        include_str!("../../crates/brief/src/passengers.rs"),
         include_str!("../../crates/weather/src/forecast/calls.rs"),
         include_str!("../../crates/altitude/src/altitude/calls.rs"),
         include_str!("../../crates/brief/src/alternates.rs"),
@@ -225,6 +226,15 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         c.ask("filed_route", json!({ "stops": case["stops"], "airways": case["airways"] }));
     }
     c.ask("filed_zzzz", json!({ "ident": "C81" }));
+    for case in filing["endurance"].as_array().unwrap() {
+        c.ask("filed_endurance", json!({ "fuel_gal": case["fuelGal"], "burn_gph": case["burnGph"] }));
+    }
+    for case in filing["dateOfFlight"].as_array().unwrap() {
+        c.ask("filed_dof", json!({ "depart": case["depart"], "today": case["today"] }));
+    }
+    for case in filing["rnav"].as_array().unwrap() {
+        c.ask("filed_rnav", json!({ "airways": case["airways"] }));
+    }
     let records = fixture("records.json");
     for case in records["endorsements"].as_array().unwrap() {
         c.ask("endorsement_records", case["input"].clone());
@@ -579,6 +589,12 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     for case in web["soloStanding"].as_array().unwrap() {
         c.ask("solo_standing", json!({ "until": case["until"], "today": case["today"] }));
     }
+    c.ask("passenger_briefing", json!({}));
+    c.ask("solo_xc_determinations", json!({}));
+    for case in web["diagramFix"].as_array().unwrap() {
+        c.ask("diagram_fix_usable", json!({ "age_s": case["age_s"], "accuracy_m": case["accuracy_m"] }));
+    }
+    c.ask("traffic_reach", json!({}));
 
     // Night, the checkpoints and 91.155's basic minimums (planning.json).
     let planning = fixture("planning.json");

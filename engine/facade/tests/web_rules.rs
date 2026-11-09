@@ -66,6 +66,23 @@ fn the_radio_calls_word_for_word() {
     }
 }
 
+/// #482 phase 0's copies the apps kept, answered by the engine.
+#[test]
+fn the_lists_and_figures_the_apps_kept() {
+    let f = fixture();
+    assert_eq!(ask("passenger_briefing", json!({})), f["passengerBriefing"]);
+    assert_eq!(ask("solo_xc_determinations", json!({})), f["soloXcDeterminations"]);
+    for case in f["diagramFix"].as_array().unwrap() {
+        let got = ask("diagram_fix_usable", json!({ "age_s": case["age_s"], "accuracy_m": case["accuracy_m"] }));
+        assert_eq!(got, case["usable"], "{case}");
+    }
+    let reach = ask("traffic_reach", json!({}));
+    assert_eq!(reach["around_nm"].as_f64(), f["trafficReach"]["around_nm"].as_f64());
+    assert_eq!(reach["relation_nm"].as_f64(), f["trafficReach"]["relation_nm"].as_f64());
+    let lost = ask("lost_comms", json!({ "segments": [] }));
+    assert_eq!(lost["altitude"], f["lostCommsAltitude"]);
+}
+
 #[test]
 fn a_solo_endorsement_lapsing_within_a_week() {
     for case in fixture()["soloStanding"].as_array().unwrap() {

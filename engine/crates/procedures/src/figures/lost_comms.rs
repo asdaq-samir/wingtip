@@ -110,6 +110,10 @@ pub fn fly_words(fly: Option<(f64, Because)>) -> String {
     }
 }
 
+/// 91.185(c)(2): the altitude rule, in words.
+pub const ALTITUDE_WORDS: &str = "On each segment, the highest of the altitude assigned in the last clearance, the minimum altitude for IFR \
+                                  operations, and the altitude ATC said to expect in a further clearance.";
+
 /// 91.185(c)(3): when to leave the clearance limit, in words. `efc` and
 /// `eta` as the pilot wrote them, empty where not given.
 pub fn leave_limit(approach_fix: bool, efc: &str, eta: &str) -> String {
@@ -160,7 +164,9 @@ pub fn lost_comms_json(segments: &[(String, Option<f64>)], assigned_ft: Option<f
         json::string(&mut out, rule);
         out.push('}');
     }
-    out.push_str("],\"segments\":[");
+    out.push_str("],\"altitude\":");
+    json::string(&mut out, ALTITUDE_WORDS);
+    out.push_str(",\"segments\":[");
     for (i, f) in segment_altitudes(&named, assigned_ft, expected_ft, expected_from).iter().enumerate() {
         if i > 0 {
             out.push(',');

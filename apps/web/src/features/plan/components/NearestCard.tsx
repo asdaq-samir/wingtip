@@ -12,7 +12,7 @@ import { compassPoint, saidPoint } from "../../../lib/compass";
 import { nmAway, nmFigure } from "../../../lib/useAway";
 import { mhzText } from "../../../lib/frequencies";
 import { colourOf } from "../../../lib/map/flightCategory";
-import { glideRangeNm, reachesField } from "../../../lib/map/glide";
+import { glideRangeNm, reachesField, underway } from "../../../lib/map/glide";
 import { airportMarkSvg } from "../../../lib/map/airportMark";
 import { positionNow, useOwnShip, useOwnFix } from "../../../lib/map/ownShip";
 import { nearestQuery } from "../../../lib/queryClient";
@@ -108,10 +108,6 @@ function NearAnswers({ from, onFrom }: { from: NearFrom | null; onFrom: (from: N
     </div>
   );
 }
-
-/** Faster than this over the ground, the airplane is going somewhere and
- *  its GPS track is steady enough to point the rows' arrows from. */
-const MOVING_KT = 30;
 
 /**
  * One field of Nearest's, at the pilot's ask for a list that reads as an
@@ -220,7 +216,9 @@ export default function NearestCard({ onOpen, from, onFrom, onBack }: {
   const glide = !from && fix ? glideRangeNm(fix, data?.[0]?.elevation_ft) : null;
   // The arrows from the airplane's track, where it is moving and the list
   // is from where it is.
-  const ahead = !from && fix?.headingDeg != null && (fix.speedKt ?? 0) >= MOVING_KT ? fix.headingDeg : null;
+  // Underway (the engine's, its flying speed): the GPS track is steady
+  // enough to point the rows' arrows from.
+  const ahead = !from && fix?.headingDeg != null && underway(fix) ? fix.headingDeg : null;
   return (
     <PanelCard testId="nearest-card">
       <ListPageHead title="Nearest" backLabel="Back to the search" onBack={onBack} testId="nearest-page" />

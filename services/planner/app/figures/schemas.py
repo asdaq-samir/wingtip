@@ -286,5 +286,6 @@ class LostComms(BaseModel):
 
     vfr: str
     routes: list[LostCommsRoute]
+    altitude: str = Field(description="91.185(c)(2), the altitude rule, in words.")
     segments: list[FlownSegment]
     leave: str

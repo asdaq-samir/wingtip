@@ -224,7 +224,16 @@ pub fn fill(kind: &Kind, student: &str, given: &dyn Fn(&str) -> Option<String>) 
     (fields, missing, text)
 }
 
-pub const NAMES: [&str; 2] = ["endorsement_kinds", "endorsement_fill"];
+/// 14 CFR 61.93(d)(1)-(3): what the instructor must determine of a solo
+/// cross-country themselves before endorsing it (A.10); (4) and (5), the
+/// student's endorsements, the record answers (records.rs's checks).
+pub const DETERMINATIONS: [(&str, &str); 3] = [
+    ("61.93(d)(1)", "The student's cross-country planning is correct for the flight"),
+    ("61.93(d)(2)", "The current and forecast weather allow it to be completed under VFR"),
+    ("61.93(d)(3)", "The student is proficient to conduct it safely"),
+];
+
+pub const NAMES: [&str; 3] = ["endorsement_kinds", "endorsement_fill", "solo_xc_determinations"];
 
 fn kind_json(out: &mut String, k: &Kind) {
     out.push_str("{\"code\":");
@@ -305,6 +314,22 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
             out.push_str("],\"text\":");
             json::string(&mut out, &text);
             out.push('}');
+            Ok(out)
+        }
+        // `{}`: `[{"rule", "label"}]`, 61.93(d)(1)-(3).
+        "solo_xc_determinations" => {
+            let mut out = String::from("[");
+            for (i, (rule, label)) in DETERMINATIONS.iter().enumerate() {
+                if i > 0 {
+                    out.push(',');
+                }
+                out.push_str("{\"rule\":");
+                json::string(&mut out, rule);
+                out.push_str(",\"label\":");
+                json::string(&mut out, label);
+                out.push('}');
+            }
+            out.push(']');
             Ok(out)
         }
         _ => Err(format!("the engine has no rule called {name:?}")),

@@ -1,7 +1,7 @@
 import AccordionSection from "../../../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { cancelled, shareOrCopy, useCopied } from "../../../../lib/share";
-import { PASSENGER_ITEMS } from "../../../../lib/passengers";
+import { passengerItems } from "../../../../lib/passengers";
 import { usePreflight, useTicked } from "../../../../lib/preflight";
 import { showError } from "../../../../lib/problems";
 
@@ -23,6 +23,7 @@ export default function PassengerBriefing({ flight, message }: { flight: string;
       if (!cancelled(err)) showError("Could not send the flight", (err as Error).message);
     }
   };
+  const PASSENGER_ITEMS = passengerItems();
   const done = PASSENGER_ITEMS.filter(i => ticked[i.key]).length;
   return (
     <AccordionSection title="Passengers">

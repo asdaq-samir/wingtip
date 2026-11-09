@@ -120,6 +120,15 @@ fn the_filing_forms_items() {
     for c in f["route"].as_array().unwrap() {
         assert_eq!(ask("filed_route", json!({ "stops": c["stops"], "airways": c["airways"] })), c["item"]);
     }
+    for c in f["endurance"].as_array().unwrap() {
+        assert_eq!(ask("filed_endurance", json!({ "fuel_gal": c["fuelGal"], "burn_gph": c["burnGph"] })).as_f64(), c["minutes"].as_f64(), "{c}");
+    }
+    for c in f["dateOfFlight"].as_array().unwrap() {
+        assert_eq!(ask("filed_dof", json!({ "depart": c["depart"], "today": c["today"] })), c["item"], "{c}");
+    }
+    for c in f["rnav"].as_array().unwrap() {
+        assert_eq!(ask("filed_rnav", json!({ "airways": c["airways"] })), c["rnav"], "{c}");
+    }
     assert_eq!(ask("filed_wake", json!({ "max_takeoff_lb": 2550 })), json!("L"));
     assert_eq!(ask("filed_zzzz", json!({ "ident": "C81" })), json!(true));
 }
