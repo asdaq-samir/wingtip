@@ -46,6 +46,52 @@
       "why": "No route yet: the plan's three asks lead, nothing of a route is judged",
       "input": { "now": 1794247200, "plan": { "route": false, "airplane": null, "altitude_ft": null } },
       "expected": { "ready": false, "finding": "caution", "actions": ["route", "airplane", "altitude"], "keys": ["route", "airplane", "altitude"] }
+    },
+    {
+      "why": "Keep for the Air holds all of the route's answers: on board, nothing to do",
+      "input": {
+        "now": 1794247200,
+        "plan": { "route": true, "airplane": "N123AB", "altitude_ft": 5500 },
+        "charts": { "kept": true, "can_keep": true, "edition": "2026-10-29", "download_mb": 120 },
+        "packs": { "edition": "2026-10-29" },
+        "briefing": { "fetched_at": 1794246000 },
+        "fields": [
+          { "ident": "KOSH", "role": "departure", "metar_observed": 1794245400, "taf": true },
+          { "ident": "KMSN", "role": "destination", "metar_observed": 1794245400, "taf": true }
+        ],
+        "notams": { "fetched_at": 1794246000 },
+        "kept": {
+          "on_board": ["briefing", "weather", "notams", "airports", "plates", "plan", "go_no_go", "weather_loop"],
+          "missing": [],
+          "size_mb": 3.4
+        },
+        "device": { "battery_pct": 80, "charging": false, "location": "granted", "plan_saved": true }
+      },
+      "expected": { "ready": true, "finding": "ok", "actions": [], "kept": "Kept for the air, 3 MB" }
+    },
+    {
+      "why": "NOTAMs and plates not kept yet: Keep for the Air is the fix, its size said",
+      "input": {
+        "now": 1794247200,
+        "plan": { "route": true, "airplane": "N123AB", "altitude_ft": 5500 },
+        "charts": { "kept": true, "can_keep": true, "edition": "2026-10-29", "download_mb": 120 },
+        "packs": { "edition": "2026-10-29" },
+        "briefing": { "fetched_at": 1794246000 },
+        "fields": [
+          { "ident": "KOSH", "role": "departure", "metar_observed": 1794245400, "taf": true },
+          { "ident": "KMSN", "role": "destination", "metar_observed": 1794245400, "taf": true }
+        ],
+        "notams": { "fetched_at": 1794246000 },
+        "kept": { "on_board": ["briefing", "plan"], "missing": ["notams", "plates"], "size_mb": 2.2 },
+        "device": { "battery_pct": 80, "charging": false, "location": "granted", "plan_saved": true }
+      },
+      "expected": {
+        "ready": false,
+        "finding": "caution",
+        "actions": ["kept"],
+        "kept": "Keep NOTAMs and plates for the air, 2 MB",
+        "fixes": { "kept": "keep_for_air" }
+      }
     }
   ]
 }

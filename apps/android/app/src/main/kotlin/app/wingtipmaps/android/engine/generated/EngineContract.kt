@@ -5149,6 +5149,42 @@ object EngineContract {
     )
 
     @Serializable
+    data class KeptAgeAnswer(
+        val kind: String,
+        @SerialName("age_min")
+        val ageMin: Double,
+        /**
+         * "Fetched 42 min ago".
+         */
+        val line: String,
+        /**
+         * Caution once past its freshness: the line drawn in the caution colour.
+         */
+        val finding: String,
+        /**
+         * How long it is fresh, minutes; null for the kinds kept for their AIRAC cycle.
+         */
+        @SerialName("fresh_min")
+        val freshMin: Double? = null,
+        val detail: String,
+        val source: String,
+    )
+
+    @Serializable
+    data class KeptAgeInput(
+        /**
+         * Unix seconds, UTC: the engine has no clock.
+         */
+        val now: Double,
+        /**
+         * When the network gave the kept answer, Unix seconds.
+         */
+        @SerialName("fetched_at")
+        val fetchedAt: Double,
+        val kind: String,
+    )
+
+    @Serializable
     data class KneeboardRadioInput(
         val frequencies: List<EngineContract.FieldFrequency>,
     )
@@ -7783,6 +7819,10 @@ object EngineContract {
         val fields: List<EngineContract.ReadyToFlyInputFieldsItem>? = null,
         val notams: EngineContract.ReadyToFlyInputNotams? = null,
         /**
+         * What Keep for the Air holds for the route beside its charts. Null leaves the item out.
+         */
+        val kept: EngineContract.ReadyToFlyInputKept? = null,
+        /**
          * What the platform tells: a member null or missing leaves its item out.
          */
         val device: EngineContract.ReadyToFlyInputDevice? = null,
@@ -7831,6 +7871,27 @@ object EngineContract {
         @SerialName("metar_observed")
         val metarObserved: Double? = null,
         val taf: Boolean? = null,
+    )
+
+    /**
+     * What Keep for the Air holds for the route beside its charts. Null leaves the item out.
+     */
+    @Serializable
+    data class ReadyToFlyInputKept(
+        /**
+         * The kinds kept on the device for this route.
+         */
+        @SerialName("on_board")
+        val onBoard: List<String>? = null,
+        /**
+         * The kinds the route has and the device does not yet.
+         */
+        val missing: List<String>? = null,
+        /**
+         * What Keep for the Air downloads or holds for them, megabytes.
+         */
+        @SerialName("size_mb")
+        val sizeMb: Double? = null,
     )
 
     @Serializable

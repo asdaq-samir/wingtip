@@ -30,7 +30,7 @@ fn each_case_reads_as_the_fixture_says() {
         }
         let actions: Vec<&Value> = answer["actions"].as_array().unwrap().iter().map(|a| &a["key"]).collect();
         assert_eq!(json!(actions), want["actions"], "{why}");
-        for key in ["charts", "briefing"] {
+        for key in ["charts", "briefing", "kept"] {
             if let Some(line) = want.get(key) {
                 assert_eq!(&find(&answer, key)["line"], line, "{why}");
             }

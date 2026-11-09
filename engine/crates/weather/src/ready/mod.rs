@@ -26,6 +26,10 @@
 //! - NOTAMs: fetched for the route (91.103's "all available information";
 //!   AIM 5-1-3 says NOTAMs are part of a preflight briefing) and fresh for
 //!   an hour, the app's choice: a NOTAM may be issued at any time.
+//! - What Keep for the Air holds for the route (`kept`): the briefing,
+//!   METARs and TAFs, NOTAMs, airport cards, plates, the plan and its nav
+//!   log, the Go / No-Go and the weather loop, on board or not; their ages
+//!   are held to the limits above by `kept_age` (ready/kept.rs).
 //! - The battery: half charged or more, or charging, the app's choice; no
 //!   regulation sets one for a Part 91 pilot's own device.
 
@@ -34,7 +38,8 @@ use crate::json::{self, Value};
 use crate::validity::ROUTINE_INTERVAL_S;
 
 mod checks;
-use checks::{device_items, notam_item, weather_items};
+pub mod kept;
+use checks::{device_items, list, notam_item, weather_items};
 
 type R<T> = Result<T, String>;
 
@@ -233,6 +238,7 @@ pub fn items(v: &Value) -> R<(Vec<Item>, Option<i64>, i64)> {
         out.extend(pack_item(get(v, "packs"), today)?);
         age = weather_items(v, now, &mut out);
         out.push(notam_item(get(v, "notams"), now));
+        out.extend(kept::kept_item(get(v, "kept")));
     } else {
         out.extend(pack_item(get(v, "packs"), today)?);
     }
