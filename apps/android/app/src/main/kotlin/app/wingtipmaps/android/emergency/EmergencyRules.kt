@@ -75,11 +75,10 @@ object EngineEmergency : EmergencyRules {
         val variation = Engine.magneticVariation(fix.lat, fix.lon, date = today).getOrNull()
         val airplane = data.airplane?.let {
             EngineContract.BestFieldsInputAirplane(
-                // best_fields works the glide over the ground at the best-glide
-                // speed (the POH's Section 3); a pilot's own airplane of no
-                // stock type has its ratio alone and no speed, and none is
-                // taken from another airplane, so its fields go nearest first.
-                glide = it.glide?.let { g -> g.bestGlideKias?.let { kias -> EngineContract.BestFieldsInputAirplaneGlide(kias, g.ratio) } },
+                // A pilot's own airplane of no stock type has its glide ratio
+                // alone, no best-glide speed (none taken from another
+                // airplane): best_fields then works the reach in still air only.
+                glide = it.glide?.let { g -> EngineContract.BestFieldsInputAirplaneGlide(g.bestGlideKias, g.ratio) },
                 landing = it.landing?.let { l -> recast<_, EngineContract.ShortFieldTable>(l) },
                 crosswind = it.crosswind?.let { c -> EngineContract.BestFieldsInputAirplaneCrosswind(c.demonstratedKt) },
                 cruiseTasKt = it.cruiseTasKt,

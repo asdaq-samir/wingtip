@@ -107,7 +107,6 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
     LaunchedEffect(wanted, state.airplane) {
         if (state.airplane && ScreenRequests.take(setOf(Screen.CHECKLISTS)) != null) checklist = ChecklistKind.NORMAL
     }
-    val picked = profiles.firstOrNull { it.name == state.aircraft }
 
     Column(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
         AirplanePicker(profiles, selected = state.aircraft, onPick = plan::setAircraft)
