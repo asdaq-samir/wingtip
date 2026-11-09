@@ -2292,7 +2292,7 @@ export interface EngineContract {
     answer: DiagramFixUsableAnswer;
   };
   /**
-   * The pilot's-eye view's colours for the ground under an airplane at `altitude_ft` MSL: amber from `caution_from_ft` (1,000 ft below it), red from `warning_from_ft` (its own altitude), feet MSL; the owner's bands, as the cockpit's terrain pages colour the ground. A picture of the plan, not terrain clearance (no TAWS, TSO-C151; nothing of 14 CFR 91.119 or 91.177).
+   * The pilot's-eye view's colours for the ground under an airplane at `altitude_ft` MSL: amber from `caution_from_ft` (1,000 ft below it), red from `warning_from_ft` (its own altitude), feet MSL; the owner's bands, no regulation's. A picture of the plan, not terrain clearance (no TAWS, TSO-C151; nothing of 14 CFR 91.119 or 91.177).
    */
   terrain_view_bands: {
     input: TerrainViewBandsInput;

@@ -1,12 +1,10 @@
 //! The pilot's-eye view's colours for the ground (the web's
 //! lib/map/gl/terrain): from the airplane's altitude, where the ground
-//! turns amber and where red, as the cockpit's terrain pages colour it.
+//! turns amber and where red.
 //!
-//! The bands are the owner's (2026-11-09): amber for the ground within
-//! 1,000 ft below the airplane, red for the ground at or above it. Garmin's
-//! G1000 terrain page draws yellow from 1,000 ft below too; its red starts
-//! 100 ft below, where this view's starts at the airplane's own altitude.
-//! It is a picture of the plan over the ground, not terrain clearance: no
+//! The bands are the owner's (2026-11-09), no regulation's: amber for the
+//! ground within 1,000 ft below the airplane, red for the ground at or
+//! above it. It is a picture of the plan over the ground, not terrain clearance: no
 //! TAWS (TSO-C151), and nothing of 14 CFR 91.119 or 91.177's minimums,
 //! which the plan's own altitudes answer (crate altitude's floors).
 
