@@ -91,6 +91,41 @@ struct DeleteAccountButton: View {
     }
 }
 
+/// Export My Data: everything the gateway keeps of the pilot fetched as
+/// one JSON file (DataExport) and handed to iOS's share sheet, to save to
+/// Files, AirDrop or mail, as the privacy policy promises.
+struct ExportDataButton: View {
+    @State private var exporting = false
+    @State private var file: URL?
+    @State private var problem: String?
+
+    var body: some View {
+        Button {
+            exporting = true
+            Task {
+                do {
+                    file = try await DataExport.fetch()
+                    problem = nil
+                } catch {
+                    problem = "Your data could not be exported: \(error.localizedDescription)"
+                }
+                exporting = false
+            }
+        } label: {
+            HStack {
+                Text("Export My Data")
+                Spacer()
+                if exporting { ProgressView() }
+            }
+        }
+        .disabled(exporting)
+        .sheet(isPresented: Binding(get: { file != nil }, set: { if !$0 { file = nil } })) {
+            if let file { ActivityView(items: [file]).presentationDetents([.medium, .large]) }
+        }
+        ProblemLine(problem)
+    }
+}
+
 #Preview("ContactView") {
     NavigationStack { ContactView() }
         .environment(Session())

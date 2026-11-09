@@ -2,7 +2,8 @@ import { test, expect } from "@playwright/test";
 import { noTips, openConsole, openSetup, showTabs, consolePage } from "./helpers";
 
 /**
- * The privacy policy, terms and support pages (public/*.html): served
+ * The privacy policy, terms and support pages (public/*.html, written
+ * from docs/legal by scripts/build/legal_pages.py): served
  * as plain HTML that needs no JavaScript, for App Store Connect's URLs,
  * and linked from Settings and from the sign-in dialog (Apple's Review
  * Guidelines 1.5 and 5.1.1(i)).

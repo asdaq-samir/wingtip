@@ -16,6 +16,12 @@ public interface FlightRepository extends JpaRepository<Flight, Long> {
     List<Flight> findByPilotIdOrderByCreatedAtDesc(Long pilotId);
 
     /** Scoped by pilot for the same reason as {@code AircraftRepository}:
-     *  a flight is private to the person who planned it. */
+     *  a flight is private to the person who planned it. Its aircraft
+     *  fetched with it, as the list's are: the answer reads the tail
+     *  number after the transaction has closed (open-in-view is off), so
+     *  a flight with an airplane failed to read (found by the export's
+     *  test, AccountDeletionTest). Its nav log named too: a fetch graph
+     *  makes lazy whatever it leaves out, the eager checkpoints included. */
+    @EntityGraph(attributePaths = {"aircraft", "checkpoints"})
     Optional<Flight> findByIdAndPilotId(Long id, Long pilotId);
 }

@@ -6,33 +6,40 @@
 <meta name="color-scheme" content="light dark">
 <title>Support — Wingtip Maps</title>
 <link rel="icon" href="/app/favicon.svg" type="image/svg+xml">
+<!-- Written by scripts/build/legal_pages.py from docs/legal/support.md: edit that, then run it. -->
 <style>
-  :root { --fg: #111; --muted: #555; --bg: #fff; --tint: #0a60d0; --rule: #ddd; }
+  :root { --fg: #111; --muted: #555; --bg: #fff; --tint: #0066cc; --rule: #ddd; }
   @media (prefers-color-scheme: dark) { :root { --fg: #f2f2f2; --muted: #aaa; --bg: #000; --tint: #4da3ff; --rule: #333; } }
   body { margin: 0 auto; max-width: 40rem; padding: 1.5rem 1.25rem 3rem; font: 17px/1.5 -apple-system, system-ui, "Segoe UI", sans-serif; color: var(--fg); background: var(--bg); }
   h1 { font-size: 1.75rem; margin: 0 0 .25rem; }
   h2 { font-size: 1.15rem; margin: 2rem 0 .25rem; }
+  h3 { font-size: 1rem; margin: 1.5rem 0 .25rem; }
   p, li { margin: .5rem 0; }
   a { color: var(--tint); }
-  .meta { color: var(--muted); font-size: .9rem; }
+  em:first-child:last-child { color: var(--muted); font-size: .9rem; }
+  blockquote { margin: 1rem 0; padding-left: 1rem; border-left: 3px solid var(--rule); }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  th, td { text-align: left; vertical-align: top; padding: .4rem .5rem .4rem 0; border-bottom: 1px solid var(--rule); }
   nav { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--rule); font-size: .95rem; }
   nav a { margin-right: 1rem; }
 </style>
 </head>
 <body>
 <h1>Support</h1>
-<p class="meta">Wingtip Maps</p>
-<p>For help, a bug or a question, open an issue on our GitHub page:</p>
-<p><a href="https://github.com/asdaq-samir/wingtip/issues">github.com/asdaq-samir/wingtip/issues</a></p>
+<p><em>Draft for the owner to review.</em></p>
+<p>For help, a bug or a question, open an issue on our GitHub page: <a href="https://github.com/asdaq-samir/wingtip/issues">github.com/asdaq-samir/wingtip/issues</a>.</p>
 <p>Issues there are public, so do not put your email address, a tail number or anything else you want private in one.</p>
-<h2>Deleting your account</h2>
-<p>An issue is public and cannot show that the account is yours, so we do not delete anything because of one. Open an issue that says only that you want your account deleted, and leave out your email address. We will send a message to the email address of the account asking you to confirm, and delete the account and its data only when you answer from that address. Deleting it from the app is coming.</p>
+<h2>Your data</h2>
+<ul>
+<li><strong>A copy of it:</strong> Setup, under your account, <em>Export My Data</em>.</li>
+<li><strong>Deleting your account:</strong> Setup, under your account, <em>Delete Account</em>. It removes your account and everything we keep for it, on every device, at once. What that covers is in the <a href="/privacy">Privacy policy</a>.</li>
+</ul>
 <p>A security problem is not for a public issue: use GitHub's private vulnerability report on the same repository.</p>
-<p>See also the <a href="/app/privacy.html">Privacy policy</a> and the <a href="/app/terms.html">Terms of use</a>.</p>
+<p>See also the <a href="/privacy">Privacy policy</a> and the <a href="/terms">Terms of use</a>.</p>
 <nav>
-<a href="/app/privacy.html">Privacy policy</a>
-<a href="/app/terms.html">Terms of use</a>
-<a href="/app/support.html">Support</a>
+<a href="/privacy">Privacy policy</a>
+<a href="/terms">Terms of use</a>
+<a href="/support">Support</a>
 <a href="/app/plan">Back to the app</a>
 </nav>
 </body>
