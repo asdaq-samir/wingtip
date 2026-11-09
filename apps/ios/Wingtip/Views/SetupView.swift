@@ -63,6 +63,11 @@ struct SetupView: View {
                     // How old each weather layer's data is.
                     LayerAgesRows()
                 }
+                // The in-flight copilot, off, shown or said aloud, beside the
+                // alerts as the same kind of choice (the web's Alerts group).
+                Section(title: "Alerts") {
+                    LabeledContent("Copilot") { CopilotModePicker().fixedSize() }
+                }
                 // The tabs, or the strip: one field and the flight as one
                 // strip (StripSheetView), the owner's pick of 2026-11-04,
                 // tried beside the tabs; a segmented control, as a setting

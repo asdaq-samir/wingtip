@@ -12,6 +12,7 @@ struct RootView: View {
     @Environment(OwnShip.self) private var ownShip
     @Environment(DryRun.self) private var dryRun
     @Environment(Traffic.self) private var traffic
+    @Environment(Verdict.self) private var verdict
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.undoManager) private var undoManager
@@ -201,6 +202,8 @@ struct RootView: View {
         .overlay(alignment: .top) {
             VStack(spacing: WingtipSpace.sm) {
                 AlertsBanner(alerts: ownShip.ahead)
+                // The in-flight copilot's one message, under what is ahead.
+                CopilotBanner()
                 // The radio, while the app listens or a call to us waits.
                 RadioOverlay()
                 // The flight's instruments, at flying speed (#218).
@@ -230,6 +233,15 @@ struct RootView: View {
         // The airplane tracked, its reports from the map's answers and its
         // own; the watches set; the alerts ahead said aloud where asked.
         .task { await Tracking.shared.run() }
+        // The in-flight copilot looks again every few seconds while flying
+        // with a route (Copilot): own ship's fix or the dry run's.
+        .task {
+            while !Task.isCancelled {
+                await Copilot.shared.look(fix: dryRun.fix ?? ownShip.fix, flying: InFlight.shared.underway, plan: plan,
+                                          ahead: ownShip.ahead, minimums: verdict.minimums)
+                try? await Task.sleep(for: .seconds(3))
+            }
+        }
         .onChange(of: traffic.planes) { _, planes in Tracking.shared.heard(planes) }
         .onChange(of: ownShip.ahead) { _, alerts in SpokenAlerts.shared.hear(alerts) }
         // Each fix, own ship's or the dry run's airplane, asked of the
