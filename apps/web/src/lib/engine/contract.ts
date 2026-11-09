@@ -20,6 +20,8 @@ export type EndorsementRenderAnswer = string;
 export type AcsCodesAnswer = string[];
 export type EndorsementKindsAnswer = EndorsementKind[];
 export type EndorsementFillAnswer = EndorsementFilled | null;
+export type SoloXcDeterminationsAnswer = SoloXcDetermination[];
+export type PassengerBriefingAnswer = PassengerItem[];
 export type PilotExperienceAnswer = ExperienceItem[];
 /**
  * This interface was referenced by `EngineContract`'s JSON-Schema
@@ -629,6 +631,7 @@ export type DiagramGraticuleAnswer = {
   d: number;
   north_deg: number;
 } | null;
+export type DiagramFixUsableAnswer = boolean;
 export type FuelInTanksAnswer = ({
   gal: number;
   low: boolean;
@@ -724,6 +727,9 @@ export type FiledSpeedAnswer = string;
 export type FiledDurationAnswer = string;
 export type FiledWakeAnswer = string | null;
 export type FiledZzzzAnswer = boolean;
+export type FiledEnduranceAnswer = number | null;
+export type FiledDofAnswer = string | null;
+export type FiledRnavAnswer = boolean;
 export type FiledRouteAnswer = string;
 export type RoutePositionAnswer = {
   along_nm: number;
@@ -946,6 +952,20 @@ export interface EngineContract {
   endorsement_fill: {
     input: EndorsementFillInput;
     answer: EndorsementFillAnswer;
+  };
+  /**
+   * 14 CFR 61.93(d)(1)-(3): what an instructor must determine of a solo cross-country themselves before endorsing it (AC 61-65K A.10); (4) and (5) the record answers (endorsement_records).
+   */
+  solo_xc_determinations: {
+    input: SoloXcDeterminationsInput;
+    answer: SoloXcDeterminationsAnswer;
+  };
+  /**
+   * The passengers' briefing in the order of the FAA's SAFETY briefing (FAA Safety Briefing, Jan/Feb 2007 and Jul/Aug 2014): 14 CFR 91.107(a)(1)'s belts and (a)(2), (3)'s fastened for taxi, takeoff and landing, the rest the Private Pilot ACS's PA.II.B.S2 guidance, each with where it comes from.
+   */
+  passenger_briefing: {
+    input: PassengerBriefingInput;
+    answer: PassengerBriefingAnswer;
   };
   /**
    * Where the pilot stands on a day, from the logbook and the dates they give: passengers by day (14 CFR 61.57(a)) and at night (61.57(b)), the flight review (61.56(c)), the medical, the logbook's totals and instrument currency (61.57(c)(1), (d)). The gateway's CurrencyDto.
@@ -1683,6 +1703,13 @@ export interface EngineContract {
     answer: RegisteredProfileAnswer;
   };
   /**
+   * How far round an airport its traffic is asked for, nm: around_nm, about the field (its pattern and one joining it, past 91.117(b)'s 4 nm), and relation_nm, the reach of an airplane inbound or departing, the figures field_relation judges by.
+   */
+  traffic_reach: {
+    input: TrafficReachInput;
+    answer: TrafficReachAnswer;
+  };
+  /**
    * The FAA's capitals in sentence case, its codes kept (AIM 3-2-1's "Class B"): one string from text, or each of texts as a list (a null row answers "").
    */
   faa_words: {
@@ -2192,6 +2219,13 @@ export interface EngineContract {
   diagram_point: {
     input: DiagramPointInput;
     answer: DiagramPointAnswer;
+  };
+  /**
+   * Whether own ship is drawn on the airport diagram: a fix no older than 3 s (AC 120-76D 11.17.2.3) and good to 30 m or better (11.17.2.4); a negative accuracy, none known, never.
+   */
+  diagram_fix_usable: {
+    input: DiagramFixUsableInput;
+    answer: DiagramFixUsableAnswer;
   };
   /**
    * The fuel figure in the strip at the sheet's foot, web, iPhone and Android alike: the fuel required to the landing of hop `hop` (the first where the route has stops, the tanks filled at each; the whole route's where it has none), less what a flight under way has burnt, never below nothing; and the flights the tanks fall short on, a fuel margin under nothing (14 CFR 91.151, 91.167).
@@ -2747,6 +2781,27 @@ export interface EngineContract {
     answer: FiledZzzzAnswer;
   };
   /**
+   * Item 19's endurance in whole minutes: the fuel aboard at the cruise burn, to the minute below (AIM Appendix 4); null where the burn is not a positive figure.
+   */
+  filed_endurance: {
+    input: FiledEnduranceInput;
+    answer: FiledEnduranceAnswer;
+  };
+  /**
+   * Item 18's date of flight, DOF/YYMMDD, where the flight is not on the UTC day it is filed (AIM Appendix 4, TBL 4-1); null on the same day.
+   */
+  filed_dof: {
+    input: FiledDofInput;
+    answer: FiledDofAnswer;
+  };
+  /**
+   * Whether item 15's route takes a T or Q route, an RNAV route (AIM 5-3-4), which asks for G and R in item 10a and PBN/C2 in item 18 where the airplane has them (AIM Appendix 4, TBL 4-13).
+   */
+  filed_rnav: {
+    input: FiledRnavInput;
+    answer: FiledRnavAnswer;
+  };
+  /**
    * Item 15's route between the departure and the destination (AIM Appendix 4: "DALL3 EIC V18 MEI LGC4", "FLACK DCT IRW"): airways between the fixes they are joined and left at, DCT between two fixes flown direct, a departure procedure first with its transition's fix, an arrival last after its transition's fix; DCT alone for a flight direct. `airways` names which of the stops are airways.
    */
   filed_route: {
@@ -3040,6 +3095,10 @@ export interface LostCommsAnswer {
     label: string;
     rule: string;
   }[];
+  /**
+   * 91.185(c)(2), the altitude rule, in words.
+   */
+  altitude: string;
   segments: {
     /**
      * "Segment" where none is given.
@@ -3402,6 +3461,17 @@ export interface EndorsementFilled {
   };
   missing: string[];
   text: string;
+}
+export interface SoloXcDeterminationsInput {}
+export interface SoloXcDetermination {
+  rule: string;
+  label: string;
+}
+export interface PassengerBriefingInput {}
+export interface PassengerItem {
+  key: string;
+  title: string;
+  rule: string;
 }
 export interface PilotCurrencyInput {
   entries: LogbookEntry[];
@@ -5053,6 +5123,11 @@ export interface RegisteredProfileInput {
   model?: string | null;
   year?: number | null;
 }
+export interface TrafficReachInput {}
+export interface TrafficReachAnswer {
+  around_nm: number;
+  relation_nm: number;
+}
 export interface FaaWordsInput {
   text?: string | null;
   /**
@@ -5922,6 +5997,16 @@ export interface DiagramPointAnswer {
   x: number;
   y: number;
   on_page: boolean;
+}
+export interface DiagramFixUsableInput {
+  /**
+   * The fix's age, s.
+   */
+  age_s: number;
+  /**
+   * Its horizontal accuracy, m.
+   */
+  accuracy_m: number;
 }
 export interface StripFuelInput {
   fuel_required_gal?: number | null;
@@ -7440,6 +7525,23 @@ export interface FiledWakeInput {
 }
 export interface FiledZzzzInput {
   ident: string;
+}
+export interface FiledEnduranceInput {
+  fuel_gal: number;
+  burn_gph: number;
+}
+export interface FiledDofInput {
+  /**
+   * ISO, UTC.
+   */
+  depart: string;
+  /**
+   * ISO, UTC.
+   */
+  today: string;
+}
+export interface FiledRnavInput {
+  airways: string[];
 }
 export interface FiledRouteInput {
   stops: string[];
