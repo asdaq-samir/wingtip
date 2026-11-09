@@ -342,7 +342,10 @@ jobs:
   # The assistant service's suite (services/assistant): every Claude call,
   # the model and the planner stood in for. Its own small dependency set
   # (requirements-dev.txt), no engine, no reference data: it imports
-  # nothing of wingtip.
+  # nothing of wingtip. Its planner client and its rule tools are
+  # generated (scripts/build/assistant_client.py), from the planner's
+  # openapi.json and the engine's contract: the committed files must be
+  # what those make.
   test-assistant:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
@@ -357,6 +360,8 @@ jobs:
           python-version: "3.14"
       - run: pip install uv
       - run: uv pip install --system -r requirements-dev.txt
+      - name: Generated code matches its sources
+        run: python ../../scripts/build/assistant_client.py --check
       - run: ruff check app tests
       - run: pytest tests/ -v
 
@@ -588,6 +593,9 @@ jobs:
                 - services/assistant/**
                 - .ruff.toml
                 - services/planner/openapi.json
+                - services/planner/app/generated/**
+                - engine/contract/**
+                - scripts/build/assistant*
               test-weather:
                 - services/weather/**
                 - services/planner/wingtip/**

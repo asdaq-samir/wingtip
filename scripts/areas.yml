@@ -89,9 +89,12 @@ areas:
     paths:
       - services/assistant/**
       - .ruff.toml
-      # the planner calls the assistant makes are checked against it
-      # (tests/test_planner_contract.py)
+      # the assistant's generated planner client and engine-rule tools
+      # come from these (scripts/build/assistant_client.py, --check in its suite)
       - services/planner/openapi.json
+      - services/planner/app/generated/**
+      - engine/contract/**
+      - scripts/build/assistant*
   weather:
     ci: test-weather
     check: the weather service's ruff and pytest, in Docker

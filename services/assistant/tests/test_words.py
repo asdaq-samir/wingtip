@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 
 from app import words
 from app.main import app
-from app.planner import PlannerError
+from app.generated.planner_client import PlannerError
 
 client = TestClient(app)
 REAL_SAID = words._said

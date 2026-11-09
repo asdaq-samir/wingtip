@@ -30,7 +30,8 @@ import anthropic
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel, Field
 
-from . import planner
+from .generated import planner_client as planner
+from .generated.planner_models import WordsSources
 from .gateway import gateway
 from .settings import get_settings
 
@@ -263,19 +264,24 @@ class ChangesWords(WordsAnswer):
     changed: bool
 
 
-def sources_for(kind: str, ask: dict) -> dict:
+#: Each reading's sources at the planner (POST /api/words/{kind}/sources).
+SOURCES = {"notams": planner.notam_sources, "weather": planner.weather_sources, "risk": planner.risk_sources,
+           "debrief": planner.debrief_sources, "changes": planner.changes_sources}
+
+
+def sources_for(kind: str, ask: dict) -> WordsSources:
     """The planner's sources for a reading of `kind`, from the body the
-    app sent, passed on whole: {"sources": [...], and what else the kind
-    carries}. The planner's refusal (a 422 for a debrief that never flew,
+    app sent, passed on whole: the sources, and what else the kind
+    carries. The planner's refusal (a 422 for a debrief that never flew,
     a 502 for a briefing it could not have) is this answer's."""
     try:
-        return planner.post(f"/api/words/{kind}/sources", ask)
+        return SOURCES[kind](body=ask)
     except planner.PlannerError as err:
         raise HTTPException(err.status, err.detail) from err
 
 
-def _sources(found: dict) -> list[Source]:
-    return [Source.model_validate(s) for s in found.get("sources") or []]
+def _sources(found: WordsSources) -> list[Source]:
+    return [Source(id=s.id or "", label=s.label or "", text=s.text or "") for s in found.sources or []]
 
 
 #: The body each reading takes, as the planner's own sources endpoint
@@ -295,9 +301,9 @@ def notam_words(ask: dict = ASK) -> NotamWords:
     route lands at and the TFRs near it, from the planner. With no NOTAM
     and no TFR there is nothing to say and no call."""
     found = sources_for("notams", ask)
-    coverage = found.get("coverage_since")
+    coverage = found.coverage_since
     words = say(NOTAMS_ASK, _sources(found), most=MOST_SENTENCES, coverage_since=coverage)
-    return NotamWords(**words.model_dump(), coverage_since=coverage, unchecked=found.get("unchecked") or [])
+    return NotamWords(**words.model_dump(), coverage_since=coverage, unchecked=found.unchecked or [])
 
 
 @router.post("/api/words/weather", openapi_extra=WORDS)

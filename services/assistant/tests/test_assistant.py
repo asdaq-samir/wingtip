@@ -9,10 +9,10 @@ import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
-from app import assistant
+from app import assistant, rule_tools
 from app.assistant import AssistantAsk, Context, OwnShip, Toolbox, Turn
 from app.main import app
-from app.planner import PlannerError
+from app.generated.planner_client import PlannerError
 
 client = TestClient(app)
 
@@ -64,10 +64,14 @@ def test_a_conversation_not_ending_on_the_pilot_is_refused():
     assert err.value.status_code == 422
 
 
-def test_the_tools_are_the_planners_ten_by_name():
+def test_the_tools_are_the_planners_nine_and_the_engines_rules_by_name():
     box = Toolbox(Context(dep="C81", dest="KDLH", stops=["KJVL"]))
-    assert sorted(box.by_name) == ["airport", "briefing_for", "divert", "find_place", "go_no_go", "hold_entry",
-                                   "nearest_airports", "plan_flight", "propose_change", "weather_at"]
+    hand = ["airport", "briefing_for", "divert", "find_place", "go_no_go", "nearest_airports", "plan_flight",
+            "propose_change", "weather_at"]
+    assert sorted(t.name for t in box.tools[:len(hand)]) == hand
+    assert sorted(t.name for t in box.tools[len(hand):]) == sorted(rule_tools.NAMES)
+    # No rule's name takes a hand tool's: each name is one tool.
+    assert len(box.by_name) == len(box.tools)
     # The plan's route fills what the question left out.
     assert box.route("", "", "") == ("C81", "KDLH", "KJVL")
     assert box.route("kjvl", "", "") == ("KJVL", "KDLH", "KJVL")
@@ -109,7 +113,7 @@ def test_the_weather_tool_keeps_the_metar_as_sent_as_a_source(fake_planner):
 def test_a_tfr_and_a_runway_are_read_by_the_planners_own_field_names(fake_planner):
     # The briefing's Tfr has notam_id and the fields read from the NOTAM,
     # no text of it; a runway is named by its ends (openapi.json).
-    tfr = {"notam_id": "5/1234", "title": "Security", "kind": "SECURITY", "floor_ft": 0, "floor_ref": "SFC",
+    tfr = {"notam_id": "5/1234", "title": "Security", "kind": "SECURITY", "floor_ft": 0, "floor_ref": "AGL",
            "ceiling_ft": 3000, "ceiling_ref": "MSL", "effective": "2026-11-09T12:00:00Z", "expires": None,
            "active_now": True, "crosses": True, "along_track_nm": 12.0}
     fake_planner.answer("/api/briefing", {"tfrs": [tfr], "hazards": [], "metars": {}})
@@ -117,7 +121,7 @@ def test_a_tfr_and_a_runway_are_read_by_the_planners_own_field_names(fake_planne
     answer = json.loads(box.by_name["briefing_for"].call({}))
     assert answer["tfrs"][0]["notam_id"] == "5/1234" and answer["tfrs"][0]["crosses"] is True
     assert box.sources[0].label == "TFR 5/1234"
-    assert box.sources[0].text == "Security; SECURITY; 0 ft SFC to 3000 ft MSL; 2026-11-09T12:00:00Z"
+    assert box.sources[0].text == "Security; SECURITY; 0 ft AGL to 3000 ft MSL; 2026-11-09T12:00:00Z"
     fake_planner.answer("/api/airport/KDLH", {"ident": "KDLH", "name": "Duluth Intl", "elevation_ft": 1428.0,
                                               "runways": [{"ends": "09/27", "length_ft": 10162}]})
     box = Toolbox()
@@ -150,7 +154,7 @@ def test_the_plan_tool_asks_the_planners_plan_with_the_plans_own_fields(fake_pla
 
 
 def test_the_go_no_go_tool_sends_the_pilots_own_minimums_in_the_asks_shape(fake_planner):
-    fake_planner.answer("/api/go-no-go", lambda body: {"line": {"finding": "go", "words": "Go"}, "items": [], "risk": None})
+    fake_planner.answer("/api/go-no-go", lambda body: {"line": {"finding": "ok", "words": "Go"}, "items": [], "risk": None})
     box = Toolbox(Context(dep="C81", dest="KDLH", pilot={"personal_minimums": {"ceiling_ft": 3000}, "currency": ["Night not current"]}))
     box.by_name["go_no_go"].call({})
     body = fake_planner.calls[0][2]
