@@ -28,6 +28,7 @@ import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.holdingLegMinutes
 import app.wingtipmaps.android.route.RouteEdits
 import app.wingtipmaps.android.plan.FlightChoices
 
@@ -213,9 +214,12 @@ class Plan(app: Application) : AndroidViewModel(app) {
 
     /** Hold Here: a hold at the point, put on the route first where it is
      *  not on it, then set on the course flown into it once the log says
-     *  what that is. The standard pattern: right turns and one-minute legs
-     *  at or below 14,000 ft MSL (AIM 5-3-8 j.2 and j.5(a)), one turn,
-     *  which the pilot changes on the web's hold sheet. */
+     *  what that is, as the web's and the iPhone's hold sheets set one:
+     *  the standard pattern's right turns (AIM 5-3-8 j.2), the inbound
+     *  leg's time at the leg's altitude -- "At or below 14,000 feet MSL: 1
+     *  minute. Above 14,000 feet MSL: 1 1/2 minutes" (AIM 5-3-8 j.4(a)),
+     *  the engine's holding_leg_minutes -- and two turns. Its entry,
+     *  minutes and fuel are the planner's, from the engine's hold rules. */
     fun holdHere(point: ChartPoint) {
         holdAt = point.ident
         if (_state.value.legs.any { it.to.equals(point.ident, ignoreCase = true) }) holdWhenPlanned() else addToRoute(point)
@@ -225,8 +229,10 @@ class Plan(app: Application) : AndroidViewModel(app) {
         val fix = holdAt ?: return
         val leg = _state.value.legs.firstOrNull { it.to.equals(fix, ignoreCase = true) } ?: return
         holdAt = null
-        val hold = EngineContract.RouteHoldIn(fix = fix, inbound = leg.magneticCourseDeg, right = true, legMin = 1.0, turns = 1.0)
-        Engine.rule<EngineContract.HoldWriteInput, String>("hold_write", EngineContract.HoldWriteInput(hold)).fold(
+        Engine.holdingLegMinutes(leg.altitudeFt).mapCatching { legMin ->
+            val hold = EngineContract.RouteHoldIn(fix = fix, inbound = leg.magneticCourseDeg, right = true, legMin = legMin, turns = HOLD_TURNS)
+            Engine.rule<EngineContract.HoldWriteInput, String>("hold_write", EngineContract.HoldWriteInput(hold)).getOrThrow()
+        }.fold(
             { text ->
                 _state.update { s -> s.copy(holds = s.holds.filterNot { it.startsWith("$fix/", ignoreCase = true) } + text) }
                 plan()
@@ -293,6 +299,9 @@ class Plan(app: Application) : AndroidViewModel(app) {
 
     companion object {
         private const val KEY = "kept"
+        /** A hold's length where the pilot sets none: two turns, as the
+         *  web's and the iPhone's hold sheets begin. */
+        private const val HOLD_TURNS = 2.0
 
         /** The airplane's position as the planner reads a place for a
          *  route's end ("@41.8800,-87.6300,4500"), its altitude to the
