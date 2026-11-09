@@ -52,7 +52,7 @@ Run the checks for the part you changed, from that directory:
 
 | Changed | Run |
 |---|---|
-| `apps/web/` | `npm run types && npx tsc --noEmit && npx eslint . && npx vitest run` |
+| `apps/web/` | `npm run types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx vitest run` |
 | `services/planner/` (app) | `ruff check app tests && pytest tests/` (in `services/planner`) |
 | `services/planner/wingtip`, `tests_wingtip/` | `ruff check wingtip tests_wingtip && pytest tests_wingtip/` (in `services/planner`) |
 | `engine/` | `maturin build -m engine/bindings/py/Cargo.toml`, install the wheel, then `pytest tests_wingtip/test_native.py` (in `services/planner`) |

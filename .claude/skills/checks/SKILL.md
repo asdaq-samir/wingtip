@@ -42,7 +42,7 @@ The commands below are what it runs, for reading a failure or running one by han
 
 **Web.** These are CI's steps; node 26 matches `apps/web/.nvmrc`.
 ```sh
-docker run --rm -v "$PWD":/repo -w /repo/apps/web node:26-slim sh -c 'npm run -s types && npx tsc --noEmit && npx eslint . && npx vitest run'
+docker run --rm -v "$PWD":/repo -w /repo/apps/web node:26-slim sh -c 'npm run -s types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx vitest run'
 ```
 
 **Python.** This mirrors CI: Python 3.14, the suite's requirements installed with uv, and a cache volume that brings a repeat run down to under a minute. Both suites run from `-w /repo/services/planner`: `requirements-dev-wingtip.txt` with `ruff check wingtip tests_wingtip && pytest tests_wingtip/`, or `requirements-dev.txt` with `ruff check app tests && pytest tests/`.

@@ -76,7 +76,7 @@ apps/web/src/lib/map/gl/glStyle.ts 577
 apps/web/src/lib/map/gl/layers/RouteExtrasGl.tsx 495
 apps/web/src/lib/preferences.ts 629
 apps/web/src/lib/queryClient.ts 469
-apps/web/vite.config.ts 484
+apps/web/vite.config.ts 473
 engine/crates/airspace/src/ahead.rs 1070
 engine/crates/airspace/src/rules.rs 558
 engine/crates/airspace/src/spoken.rs 560

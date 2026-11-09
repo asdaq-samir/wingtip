@@ -253,7 +253,7 @@ jobs:
         working-directory: .
         run: scripts/build/app-icons.sh --check
       - run: npx tsc --noEmit
-      - run: npx eslint .
+      - run: npx eslint . --max-warnings 0
       # The TypeScript, CSS, JSON and Markdown, and the build scripts'
       # JavaScript, as Prettier writes them (.prettierrc.yaml).
       - run: npm run format:check

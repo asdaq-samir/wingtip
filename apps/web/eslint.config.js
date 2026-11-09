@@ -12,6 +12,10 @@ import tseslint from "typescript-eslint";
 import boundaries from "./eslint/boundaries.js";
 
 export default defineConfig(
+  // No warnings (the owner's rule): a disable comment that disables
+  // nothing is an error, and the lint runs with --max-warnings 0, so a
+  // rule a plugin's preset sets to "warn" fails it too.
+  { linterOptions: { reportUnusedDisableDirectives: "error" } },
   {
     ignores: [
       "dist",
@@ -34,7 +38,7 @@ export default defineConfig(
     languageOptions: { ecmaVersion: 2022, globals: globals.browser },
     plugins: { "react-refresh": reactRefresh },
     rules: {
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "react-refresh/only-export-components": ["error", { allowConstantExport: true }],
       // Test/setup files intentionally export non-component helpers
       // alongside components; the rule above is for app source only.
 
