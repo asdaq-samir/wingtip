@@ -12,6 +12,7 @@ import type { AirspaceClass } from "../preferences";
 import { inkOn } from "../scoreScale";
 import { AIRPORT_MARK, airportMarkSvg, text } from "./airportMark";
 import { MAP_BLUE, WAYPOINT_MAGENTA } from "./chartColors";
+import { CHART } from "../tokens";
 
 /** An icon made once for the same arguments and handed out again after:
  *  a marker's element is made again only when its icon is a new object
@@ -225,7 +226,7 @@ export const trafficIcon = made((
       `</svg>` +
       (label || callsign
         ? `<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-[#1f2933]/80 px-1 text-center text-[11px] font-bold leading-[14px] text-white tabular-nums"` +
-          ` style="top:${tracked ? TRAFFIC_MARK + 6 : TRAFFIC_MARK}px;color:${text(colour === TRAFFIC_COLOURS.near ? "#fcd34d" : "#ffffff")}">` +
+          ` style="top:${tracked ? TRAFFIC_MARK + 6 : TRAFFIC_MARK}px;color:${text(colour === TRAFFIC_COLOURS.near ? CHART.trafficNearText : "#ffffff")}">` +
           `${text(label)}${callsign ? `${label ? "<br>" : ""}<span class="font-semibold text-white/85">${text(callsign)}</span>` : ""}</span>`
         : ""),
   });
@@ -233,4 +234,4 @@ export const trafficIcon = made((
 
 /** Traffic's colours: within 1,000 ft of own ship's height amber, the
  *  rest the ADS-B displays' cyan. */
-export const TRAFFIC_COLOURS = { near: "#f59e0b", far: "#06b6d4" } as const;
+export const TRAFFIC_COLOURS = { near: CHART.trafficNear, far: CHART.trafficFar } as const;

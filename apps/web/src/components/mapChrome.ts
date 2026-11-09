@@ -1,6 +1,7 @@
 import { createContext } from "react";
 import { create } from "zustand";
 import { TEXT } from "../lib/text";
+import { MOTION } from "../lib/tokens";
 
 /**
  * What the map's chrome shares -- the panel over it (MapPanel), its
@@ -113,7 +114,7 @@ export const GLASS_SHEET = "bg-[var(--sheet)] shadow-[0_-1px_12px_rgb(0_0_0/0.12
  *  and this curve is 98% of the way at 89% of its time -- 0.27 s here.
  *  It was 0.45 s. The map's own move to a route as the sheet settles
  *  (GlMapShell) takes it too, so the two arrive together. */
-export const SHEET_SECONDS = 0.3;
+export const SHEET_SECONDS = MOTION.sheet;
 /** How far the sheet goes in SHEET_SECONDS: the pill to half on an iPhone
  *  16 Pro, the move the owner likes ("Pill to half card and back eases
  *  nicely but to/from full card snaps very quickly"). A longer move takes
@@ -121,17 +122,17 @@ export const SHEET_SECONDS = 0.3;
  *  no longer than 0.35 s, as Maps' takes no longer for a longer move
  *  (half to all the way up, 546 points, took 0.75 s before). */
 export const SETTLE_POINTS = 273;
-export const SETTLE_LEAST = 0.22;
-export const SETTLE_MOST = 0.35;
+export const SETTLE_LEAST = MOTION.sheetLeast;
+export const SETTLE_MOST = MOTION.sheetMost;
 
 /** The same corners as a class, for every sheet drawn with classes: a
  *  phone's floating sheet (PhoneSheetContent). Written out whole, as
  *  Tailwind finds a class only as it is written. */
-export const SHEET_CORNERS = "rounded-[36px]";
+export const SHEET_CORNERS = "rounded-[var(--radius-sheet)]";
 /** A box in the middle of the screen from `md` up, an iOS alert's corners
  *  (the sheets audit's D3, 2026-10-17): the dialogs and alerts. On a
  *  phone each is a sheet, with the sheet's corners. */
-export const DIALOG_CORNERS = "rounded-[28px]";
+export const DIALOG_CORNERS = "rounded-[var(--radius-dialog)]";
 /** What is behind every sheet and dialog, one dimming for all of them (the
  *  sheet consolidation, 2026-10-27): the page a tenth darker and lightly
  *  blurred, half in the dark theme, where the dialogs dimmed it a fifth

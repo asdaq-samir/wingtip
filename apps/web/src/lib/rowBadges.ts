@@ -2,10 +2,10 @@
  *  on every card. Not the weather's colours (lib/map/flightCategory), so
  *  a badge is never read as a flight category. */
 export const BADGE = {
-  tower: "#2465b8",
+  tower: CHART.towered,
   ground: "#0f766e",
   weather: "#0284c7",
-  approach: "#5b5bd6",
+  approach: CHART.procedure,
   traffic: "#c2410c",
   other: "#6b7280",
   runway: "#3f4652",
@@ -19,6 +19,7 @@ export const BADGE = {
   food: "#be185d",
   lodging: "#7e3fb8",
 } as const;
+import { CHART } from "./tokens";
 
 /** The consoles' rows -- the settings, the Personal tab's pages -- each
  *  in a colour of its own, as iOS's Settings leads every row with one,

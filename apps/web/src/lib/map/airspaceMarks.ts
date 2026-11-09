@@ -1,6 +1,7 @@
 /** A line's look: its ink, width and dash (the card's swatch). */
 export interface LineLook { color: string; weight: number; dashArray?: string }
 import type { AirspaceVolume } from "./overlayTypes";
+import { CHART } from "../tokens";
 
 type Class = AirspaceVolume["airspace_class"];
 
@@ -8,8 +9,8 @@ type Class = AirspaceVolume["airspace_class"];
  *  over the same sectional (the owner's screenshot, 2026-10-30): a light
  *  sky blue and a clear magenta, which stand off the chart's darker
  *  printed blue they lie on, where a line in that blue sank into it. */
-const AIRSPACE_BLUE = "#4b9df8";
-const AIRSPACE_MAGENTA = "#c43fc0";
+const AIRSPACE_BLUE = CHART.airspaceBlue;
+const AIRSPACE_MAGENTA = CHART.airspaceMagenta;
 
 /**
  * The airspace's lines as the sectional draws them (FAA Aeronautical

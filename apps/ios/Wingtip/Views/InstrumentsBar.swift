@@ -56,7 +56,6 @@ struct InstrumentsBar: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.large)
-                    .tint(.blue)
                     .accessibilityHint("The nearest fields, with Divert")
                     Spacer(minLength: 0)
                     // The planning aid's words, where the figures are (the

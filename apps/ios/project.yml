@@ -153,6 +153,9 @@ targets:
         TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # The tint of everything tappable (Color.accentColor, every control):
+        # design/tokens.json's, generated into Assets.xcassets/AccentColor.
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_USER_SCRIPT_SANDBOXING: NO
   # The Live Activity (WingtipWidgets/WingtipWidgets.swift): a flight in
   # progress on the Lock Screen and in the Dynamic Island, drawn by this
@@ -165,6 +168,9 @@ targets:
       - path: WingtipWidgets
         excludes: ["Info.plist", "WingtipWidgets.entitlements"]
       - path: Wingtip/Shared
+      # The design tokens (scripts/build/design-tokens.sh): the flight
+      # categories' colours, the same as the app's.
+      - path: Wingtip/Design/Generated/Tokens.swift
     entitlements:
       path: WingtipWidgets/WingtipWidgets.entitlements
       properties:

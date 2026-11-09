@@ -358,7 +358,7 @@ struct ChartMap: UIViewRepresentable {
             guard shade != self.shade else { return }
             self.shade = shade
             tiles?.shade = shade
-            courseRenderer?.strokeColor = NightPalette.course(night: shade > 0)
+            courseRenderer?.strokeColor = NightPalette.course
             edgeRenderer?.strokeColor = NightPalette.routeEdge(night: shade > 0)
             edgeRenderer?.setNeedsDisplay()
             courseRenderer?.setNeedsDisplay()
@@ -408,7 +408,7 @@ struct ChartMap: UIViewRepresentable {
                 // A procedure's path in the chart's procedure violet, as
                 // the web app draws a picked one.
                 let renderer = MKPolylineRenderer(polyline: procedure)
-                renderer.strokeColor = UIColor(red: 0.36, green: 0.36, blue: 0.84, alpha: 1)
+                renderer.strokeColor = WingtipColor.Chart.procedure
                 renderer.lineWidth = 3
                 renderer.lineJoin = .round
                 return renderer
@@ -417,7 +417,7 @@ struct ChartMap: UIViewRepresentable {
                 // The web app's magenta course line, the night's lighter
                 // one over a dimmed chart.
                 let renderer = MKPolylineRenderer(polyline: line)
-                renderer.strokeColor = NightPalette.course(night: shade > 0)
+                renderer.strokeColor = NightPalette.course
                 courseRenderer = renderer
                 renderer.lineWidth = Self.courseWidth
                 renderer.lineJoin = .round

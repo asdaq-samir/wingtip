@@ -42,8 +42,8 @@ struct MapLoading: View {
 /// ring turns by `angle`; the airplane does not.
 struct WingtipMark: View {
     var angle: Double = 0
-    private static let ring = Color(UIColor(light: UIColor(hex: 0xA3266F), dark: UIColor(hex: 0xE37BB5)))
-    private static let plane = Color(UIColor(light: UIColor(hex: 0x14284B), dark: .white))
+    private static let ring = Color(UIColor(light: WingtipColor.Brand.markRing, dark: WingtipColor.Brand.markRingNight))
+    private static let plane = Color(UIColor(light: WingtipColor.Brand.markPlane, dark: .white))
 
     var body: some View {
         GeometryReader { proxy in

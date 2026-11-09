@@ -58,12 +58,12 @@ fun ComingUpSection(signedInAs: String) {
     }
 }
 
-/** Red past, orange within the window, green further off: the iPhone's
- *  system colours, as the web's finding tones are. */
+/** Red past, amber within the window, green further off: the palette's
+ *  error, caution and go, as the web's finding tones are. */
 @Composable
 private fun toneColor(tone: Paperwork.Tone): Color = when (tone) {
     Paperwork.Tone.PAST -> MaterialTheme.colorScheme.error
-    Paperwork.Tone.SOON -> Color(0xFFFF9500)
-    Paperwork.Tone.FINE -> Color(0xFF34C759)
+    Paperwork.Tone.SOON -> LocalWingtipPalette.current.caution
+    Paperwork.Tone.FINE -> LocalWingtipPalette.current.go
     Paperwork.Tone.UNKNOWN -> MaterialTheme.colorScheme.onSurfaceVariant
 }

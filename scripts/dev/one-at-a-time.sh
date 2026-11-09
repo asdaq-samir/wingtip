@@ -45,6 +45,11 @@ case "$label" in
     fi ;;
 esac
 [ $# -gt 0 ] || { echo "one-at-a-time: no command to run after the label" >&2; echo "$usage" >&2; exit 64; }
+# Already inside a turn (check.sh, run by one-at-a-time.sh, asks for its
+# own turn per area): run at once. Waiting there held one slot while asking
+# for another, and with two slots every runner waited on another for ever
+# -- the whole Mac's queue stood still for 25 minutes (2026-11-09).
+if [ -n "${ONE_AT_A_TIME_HELD:-}" ]; then exec "$@"; fi
 lock=${ONE_AT_A_TIME_LOCK:-/tmp/flight-plan-heavy.lock}
 slots=${ONE_AT_A_TIME_SLOTS:-2}
 free_min=${ONE_AT_A_TIME_FREE_MIN:-20}
@@ -172,4 +177,5 @@ while ! { short=""; first_in_line && short=$(memory_short) && [ -z "$short" ] &&
   sleep 5
 done
 rm -f "$ticket"
+export ONE_AT_A_TIME_HELD="$label"
 "$@"

@@ -27,10 +27,10 @@ enum SectionalInk {
     /// useAirspace BLUE and MAGENTA): "Airports having control towers are
     /// shown in blue, all others in magenta" (FAA Aeronautical Chart
     /// User's Guide, VFR Terms and Symbols, Airports).
-    static let blue = UIColor(hex: 0x2465B8)
-    static let magenta = UIColor(hex: 0xC0309F)
+    static let blue = WingtipColor.Chart.towered
+    static let magenta = WingtipColor.Chart.untowered
     /// A field whose tower is not known yet (web airportMark UNKNOWN_GREY).
-    static let unknown = UIColor(hex: 0x6B7280)
+    static let unknown = WingtipColor.Chart.fieldUnknown
 
     static func airport(towered: Bool?) -> UIColor {
         switch towered {
@@ -44,17 +44,17 @@ enum SectionalInk {
     /// (glStyle AIRSPACE_INK): Class B solid blue, C solid magenta, D
     /// dashed blue, as the sectional codes them (Chart User's Guide,
     /// Airspace).
-    static let airspaceBlue = UIColor(hex: 0x2F8CFF)
-    static let airspaceMagenta = UIColor(hex: 0xE02AD8)
+    static let airspaceBlue = WingtipColor.Chart.airspaceBlue
+    static let airspaceMagenta = WingtipColor.Chart.airspaceMagenta
     /// The dark tab an airspace's altitudes sit in.
-    static let tab = UIColor(hex: 0x1C2330).withAlphaComponent(0.9)
+    static let tab = WingtipColor.Chart.airspaceTab.withAlphaComponent(0.9)
     /// A runway's surface and the halo of its numbers (glOverlays'
     /// runwayLayers: ForeFlight's dark grey over its street map).
-    static let runway = UIColor(hex: 0x4A4F57)
+    static let runway = WingtipColor.Chart.runwayHard
     /// A soft runway's (turf, grass, dirt, gravel): the web's olive for
     /// a runway that is not hard (glOverlays' runway-surface fill).
-    static let softRunway = UIColor(hex: 0x7D8A6A)
-    static let runwayHalo = UIColor(hex: 0x1C1A17)
+    static let softRunway = WingtipColor.Chart.runwaySoft
+    static let runwayHalo = WingtipColor.Chart.fixInk
 }
 
 // MARK: - What the planner and the packs answer

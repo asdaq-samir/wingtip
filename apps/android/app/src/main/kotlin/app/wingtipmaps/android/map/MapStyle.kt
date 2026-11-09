@@ -16,6 +16,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
+import app.wingtipmaps.android.design.generated.WingtipColors
 
 /**
  * The map's style as the web's MapLibre GL map has it
@@ -106,16 +107,16 @@ object MapStyle {
      *  MAGENTA): "Airports having control towers are shown in blue, all
      *  others in magenta" (FAA Aeronautical Chart User's Guide, VFR Terms
      *  and Symbols, Airports). */
-    const val BLUE = "#2465b8"
-    const val MAGENTA = "#c0309f"
+    const val BLUE = WingtipColors.Chart.TOWERED_HEX
+    const val MAGENTA = WingtipColors.Chart.UNTOWERED_HEX
     /** The chart's own ink for a fix's ident (the web's FIX_INK). */
-    const val FIX_INK = "#1c1a17"
+    const val FIX_INK = WingtipColors.Chart.FIX_INK_HEX
     /** A fix's four-point star, ForeFlight's blue (the web's FIX_BLUE). */
-    const val FIX_BLUE = "#2f8cff"
+    const val FIX_BLUE = WingtipColors.Chart.AIRSPACE_BLUE_HEX
     /** A VFR waypoint's ink: ForeFlight's green triangle at the owner's
      *  ask (2026-11-07), where the sectional prints a magenta flag (Chart
      *  User's Guide, VFR waypoints). */
-    const val VFR_GREEN = "#148a3b"
+    const val VFR_GREEN = WingtipColors.Chart.VFR_GREEN_HEX
 
     /** An airspace class's line (the web's AIRSPACE_INK): the sectional's
      *  symbology (Chart User's Guide, VFR Terms and Symbols, Airspace) --
@@ -125,10 +126,10 @@ object MapStyle {
     data class Ink(val colour: String, val width: Float, val dash: List<Double>? = null, val band: Double = 0.3)
 
     val AIRSPACE_INK: Map<String, Ink> = mapOf(
-        "B" to Ink("#2f8cff", 4f),
-        "C" to Ink("#e02ad8", 4f),
+        "B" to Ink(WingtipColors.Chart.AIRSPACE_BLUE_HEX, 4f),
+        "C" to Ink(WingtipColors.Chart.AIRSPACE_MAGENTA_HEX, 4f),
         // A dash of 10 and a gap of 5, in MapLibre's units, the line's width.
-        "D" to Ink("#2f8cff", 3.5f, listOf(10 / 3.5, 5 / 3.5), band = 0.22),
+        "D" to Ink(WingtipColors.Chart.AIRSPACE_BLUE_HEX, 3.5f, listOf(10 / 3.5, 5 / 3.5), band = 0.22),
     )
 
     /** From which Leaflet zoom each class is drawn, the web's
@@ -169,10 +170,10 @@ object MapStyle {
      *  category itself is the planner's, worked out by the engine
      *  (`flight_category`, AIM 7-1-7); only its colour is the app's. */
     val CATEGORY_COLOURS: Map<String, String> = linkedMapOf(
-        "VFR" to "#1a7f37",
-        "MVFR" to "#1f6feb",
-        "IFR" to "#b3261e",
-        "LIFR" to "#a371f7",
+        "VFR" to WingtipColors.Category.VFR_HEX,
+        "MVFR" to WingtipColors.Category.MVFR_HEX,
+        "IFR" to WingtipColors.Category.IFR_HEX,
+        "LIFR" to WingtipColors.Category.LIFR_HEX,
     )
 
     /** The pips a field can wear: none, or a category's colour. */
@@ -459,7 +460,7 @@ object MapStyle {
      *  2026-11-08): restricted, prohibited, warning and danger areas
      *  orange-brown, MOAs and alert areas magenta. By the FAA's TYPE_CODE
      *  (wingtip.sua TYPES). */
-    const val SUA_RESTRICTED_INK = "#e0662a"
+    const val SUA_RESTRICTED_INK = WingtipColors.Chart.SPECIAL_USE_HEX
     val SUA_MOA_INK = AIRSPACE_INK.getValue("C").colour
     private val SUA_RESTRICTED = listOf("P", "R", "W", "D")
     private val SUA_MOA = listOf("MOA", "A")
@@ -524,7 +525,7 @@ object MapStyle {
             put("minzoom", RUNWAYS_FROM)
             put("filter", e("==", e("get", "part"), "surface"))
             putJsonObject("paint") {
-                put("fill-color", e("case", e("==", e("get", "hard"), true), "#4a4f57", "#7d8a6a"))
+                put("fill-color", e("case", e("==", e("get", "hard"), true), WingtipColors.Chart.RUNWAY_HARD_HEX, WingtipColors.Chart.RUNWAY_SOFT_HEX))
                 put("fill-outline-color", "#ffffff")
                 put("fill-opacity", 0.95)
             }
@@ -708,10 +709,10 @@ object MapStyle {
      *  own ship's height amber (the engine's `traffic_marks` `near`), the
      *  rest the ADS-B displays' cyan; a near airplane's height in a paler
      *  amber on its dark tag. The tracked one's ring is the blue tint. */
-    const val TRAFFIC_NEAR = "#f59e0b"
-    const val TRAFFIC_FAR = "#06b6d4"
-    const val TRAFFIC_NEAR_TEXT = "#fcd34d"
-    const val TINT = "#007aff"
+    const val TRAFFIC_NEAR = WingtipColors.Chart.TRAFFIC_NEAR_HEX
+    const val TRAFFIC_FAR = WingtipColors.Chart.TRAFFIC_FAR_HEX
+    const val TRAFFIC_NEAR_TEXT = WingtipColors.Chart.TRAFFIC_NEAR_TEXT_HEX
+    const val TINT = WingtipColors.Chart.MAP_BLUE_HEX
 
     /** An airplane's picture: a chevron turned to its track, or a dot
      *  where it sends none, amber or cyan. */

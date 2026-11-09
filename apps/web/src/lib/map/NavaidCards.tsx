@@ -12,6 +12,7 @@ import { degreesMinutes } from "../coords";
 import { BLUE } from "../useAirspace";
 import { nmAway, useAwayWords } from "../useAway";
 import { PointWhere } from "./PointWhere";
+import { CHART } from "../tokens";
 
 /**
  * The cards a tap on a VOR or a low enroute chart fix opens (the map
@@ -37,7 +38,7 @@ const TRIANGLE = (
  *  the VOR's the map's own blue (airspaceMarks' vorIcon), where the card's
  *  was a shade deeper (the owner's pick, 2026-11-03). */
 const VOR_BLUE = BLUE;
-const FIX_INK = "#1c1a17";
+const FIX_INK = CHART.fixInk;
 
 /** Made only once it is opened, so only an open card hears own ship. */
 export function VorCard({ vor }: { vor: VorPin }) {
