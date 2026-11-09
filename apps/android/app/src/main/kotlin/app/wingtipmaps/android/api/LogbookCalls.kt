@@ -28,3 +28,12 @@ suspend fun Gateway.addLogbook(entry: LogbookEntryRequest): LogbookEntryDto =
 
 /** What the logbook says of the pilot's currency; null signed out. */
 suspend fun Gateway.currency(): CurrencyDto? = read("/api/logbook/currency")
+
+/** An entry changed in its row (PUT /api/logbook/{id}): the gateway's copy. */
+suspend fun Gateway.updateLogbook(id: Long, entry: LogbookEntryRequest): LogbookEntryDto =
+    json.decodeFromString(send("PUT", "/api/logbook/$id", json = json.encodeToString(entry)))
+
+/** An entry deleted (DELETE /api/logbook/{id}), once its Undo has gone. */
+suspend fun Gateway.deleteLogbook(id: Long) {
+    send("DELETE", "/api/logbook/$id")
+}
