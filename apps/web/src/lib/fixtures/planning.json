@@ -1,13 +1,5 @@
 {
   "_note": "The planner's rules of #482's phase 1 that the engine took over in claude/engine-phase1c: night and civil twilight (14 CFR 1.1, NOAA's solar calculation, against astral 3's figures, which wingtip.sun gave, within two minutes), the nav log's checkpoint pick (wingtip.checkpoints' tests) and 91.155(c), (d)'s basic minimums. engine/facade/tests/planning.rs holds the engine to it. Times are UNIX seconds, UTC.",
-  "twilight": [
-    { "place": "Chicago", "lat": 41.88, "lon": -87.63, "day_s": 1774008000, "dawn_s": 1774005934, "dusk_s": 1774052989 },
-    { "place": "Denver", "lat": 39.74, "lon": -104.99, "day_s": 1797854400, "dawn_s": 1797860806, "dusk_s": 1797898145 },
-    { "place": "Anchorage", "lat": 61.22, "lon": -149.9, "day_s": 1797854400, "dawn_s": 1797876683, "dusk_s": 1797903834 },
-    { "place": "Honolulu", "lat": 21.32, "lon": -157.92, "day_s": 1783166400, "dawn_s": 1783178964, "dusk_s": 1783230175 },
-    { "place": "Svalbard in January", "lat": 78.2, "lon": 15.6, "day_s": 1768478400, "night_all_day": true },
-    { "place": "Svalbard in July", "lat": 78.2, "lon": 15.6, "day_s": 1784073600, "night_all_day": false }
-  ],
   "night": [
     { "why": "noon CDT", "lat": 41.88, "lon": -87.63, "at_s": 1790096400, "night": false },
     { "why": "03:00 CDT", "lat": 41.88, "lon": -87.63, "at_s": 1790064000, "night": true },

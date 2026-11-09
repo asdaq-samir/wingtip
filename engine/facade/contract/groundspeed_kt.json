@@ -21,7 +21,7 @@
         },
         "wca_deg": {
           "type": "number",
-          "description": "The wind correction angle (wind_correction_deg)."
+          "description": "The wind correction angle."
         }
       },
       "required": [

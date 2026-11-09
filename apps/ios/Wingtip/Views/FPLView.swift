@@ -169,6 +169,8 @@ struct FPLView: View {
             .sheet(isPresented: Binding(get: { ClearanceListener.shared.sheetShown }, set: { ClearanceListener.shared.sheetShown = $0 })) {
                 ClearanceSheet().presentationDetents([.medium, .large])
             }
+            // The Brief asked for by Siri (BriefFlightIntent): its page.
+            .onChange(of: BriefAsk.shared.wanted, initial: true) { _, now in if now, BriefAsk.shared.take() { open(.brief) } }
         }
     }
 

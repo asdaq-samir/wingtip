@@ -1,7 +1,5 @@
 import { describe, expect, test } from "vitest";
 import type { Inspections, Squawk } from "./api/types";
-import { inspectionsInput, riskFactor, squawksInput } from "./airworthiness";
-import { callEngine } from "./engine/engine";
 import { assess, type FratInput } from "./frat";
 
 /** Each recorded, each good on 5 October 2026. */
@@ -16,12 +14,10 @@ const GOOD: Inspections = {
 const DAY = "2026-10-05";
 
 // The engine's rules for the inspections (14 CFR 91.207, 91.409, 91.411,
-// 91.413) and the squawks (91.213(d)), through the .wasm as lib/frat asks
-// them: the web's one check of these two names (frat.rs holds the rules).
-const inspectionFactors = (i: Inspections, day: string, ifr: boolean) =>
-  callEngine("gonogo_inspection_factors", { inspections: inspectionsInput(i), day, ifr }).map(riskFactor);
-const squawkFactors = (open: Squawk[], night: boolean, ifr: boolean) =>
-  callEngine("gonogo_squawk_factors", { squawks: squawksInput(open), night, ifr }).map(riskFactor);
+// 91.413) and the squawks (91.213(d)), through lib/frat's assessment, the
+// one way the web asks them (frat.rs holds the rules).
+const inspectionFactors = (i: Inspections, day: string, ifr: boolean) => assess({ ...QUIET, day, ifr, inspections: i }).factors.filter(f => f.key !== "night");
+const squawkFactors = (open: Squawk[], night: boolean, ifr: boolean) => assess({ ...QUIET, night, ifr, squawks: open }).factors.filter(f => f.key !== "night");
 const keys = (i: Inspections, ifr = false) => inspectionFactors(i, DAY, ifr).map(f => f.key);
 
 describe("the airplane's inspections, on the day", () => {

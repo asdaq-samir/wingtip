@@ -133,24 +133,6 @@ fn sun_day(lat: f64, lon: f64, noon_s: f64, depression: f64) -> Result<(f64, f64
     Ok((end(-1.0)?, end(1.0)?))
 }
 
-/// Dawn and dusk (the beginning of morning and the end of evening civil
-/// twilight, UNIX seconds) of the civil day whose solar noon falls nearest
-/// to noon UTC on the day `day_s` lies in; `None` for each in a polar day,
-/// with `night_all_day` saying which kind.
-pub struct Twilight {
-    pub dawn_s: Option<f64>,
-    pub dusk_s: Option<f64>,
-    pub night_all_day: Option<bool>,
-}
-
-pub fn civil_twilight(lat: f64, lon: f64, day_s: f64) -> Twilight {
-    let noon = solar_noon(lon, (day_s / DAY_S).floor() * DAY_S + DAY_S / 2.0);
-    match civil_day(lat, lon, noon) {
-        Ok((dawn, dusk)) => Twilight { dawn_s: Some(dawn), dusk_s: Some(dusk), night_all_day: None },
-        Err(night) => Twilight { dawn_s: None, dusk_s: None, night_all_day: Some(night) },
-    }
-}
-
 /// Whether an instant (UNIX seconds) is night at a point (14 CFR 1.1):
 /// outside the civil twilight of the civil day round it.
 pub fn is_night(lat: f64, lon: f64, at_s: f64) -> bool {
@@ -235,9 +217,9 @@ mod tests {
     fn chicago_civil_twilight_on_the_equinox_within_two_minutes_of_astral() {
         // astral 3 (what wingtip.sun asked), Chicago 41.88 N 87.63 W,
         // 2026-03-20: dawn 11:25:34 UTC, dusk 00:29:50 UTC on the 21st.
-        let t = civil_twilight(41.88, -87.63, utc(2026, 3, 20, 12, 0));
-        assert!((t.dawn_s.unwrap() - 1_774_005_934.0).abs() <= 120.0);
-        assert!((t.dusk_s.unwrap() - 1_774_052_989.0).abs() <= 120.0);
+        let (dawn, dusk) = civil_day(41.88, -87.63, solar_noon(-87.63, utc(2026, 3, 20, 12, 0))).unwrap();
+        assert!((dawn - 1_774_005_934.0).abs() <= 120.0);
+        assert!((dusk - 1_774_052_989.0).abs() <= 120.0);
         assert_eq!(utc(2026, 3, 20, 0, 0), 1_773_964_800.0);
     }
 
@@ -257,7 +239,7 @@ mod tests {
         // December solstice and never goes that far down at the June one.
         assert!(is_night(85.0, 0.0, utc(2026, 12, 21, 12, 0)));
         assert!(!is_night(85.0, 0.0, utc(2026, 6, 21, 0, 0)));
-        assert_eq!(civil_twilight(85.0, 0.0, utc(2026, 12, 21, 0, 0)).night_all_day, Some(true));
+        assert_eq!(civil_day(85.0, 0.0, solar_noon(0.0, utc(2026, 12, 21, 12, 0))), Err(true));
     }
 
     #[test]

@@ -171,6 +171,10 @@ targets:
       # The design tokens (scripts/build/design-tokens.sh): the flight
       # categories' colours, the same as the app's.
       - path: Wingtip/Design/Generated/Tokens.swift
+      # The tokens' inks as SwiftUI colours, and every figure written as
+      # the app writes it (formats.json): the Live Activity's words.
+      - path: Wingtip/Design/Ink.swift
+      - path: Wingtip/Format/Format.swift
     entitlements:
       path: WingtipWidgets/WingtipWidgets.entitlements
       properties:

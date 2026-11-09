@@ -650,49 +650,6 @@
       "answer": null
     }
   ],
-  "oxygen": [
-    {
-      "highest_ft": 12500,
-      "answer": []
-    },
-    {
-      "highest_ft": 13500,
-      "answer": [
-        "Over 12,500 ft MSL: oxygen for the crew for any of it past 30 minutes (14 CFR 91.211(a)(1))"
-      ]
-    },
-    {
-      "highest_ft": 14000,
-      "answer": [
-        "Over 12,500 ft MSL: oxygen for the crew for any of it past 30 minutes (14 CFR 91.211(a)(1))"
-      ]
-    },
-    {
-      "highest_ft": 14500,
-      "answer": [
-        "Over 14,000 ft MSL: oxygen for the crew the whole time there (14 CFR 91.211(a)(2))"
-      ]
-    },
-    {
-      "highest_ft": 15000,
-      "answer": [
-        "Over 14,000 ft MSL: oxygen for the crew the whole time there (14 CFR 91.211(a)(2))"
-      ]
-    },
-    {
-      "highest_ft": 15500,
-      "answer": [
-        "Over 15,000 ft MSL: oxygen for the crew the whole time there and for every occupant (14 CFR 91.211(a)(2), (3))"
-      ]
-    },
-    {
-      "highest_ft": 15500,
-      "profile": {
-        "pressurized": true
-      },
-      "answer": []
-    }
-  ],
   "prohibited": [
     {
       "selection": {

@@ -6,20 +6,18 @@
 
 apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/ChartMap.kt 752
 apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/MapStyle.kt 848
-apps/ios/Wingtip/Strip/StripSheetView.swift 479
+apps/ios/Wingtip/Strip/StripSheetView.swift 478
 apps/ios/Wingtip/Tiles/ChartTileOverlay.swift 420
 apps/ios/Wingtip/Views/AirplaneCard.swift 554
 apps/ios/Wingtip/Views/AirportCard.swift 636
 apps/ios/Wingtip/Views/ChartMap.swift 760
 apps/ios/Wingtip/Views/ChartOverlays.swift 879
 apps/ios/Wingtip/Views/ClearanceSheet.swift 422
-apps/ios/Wingtip/Views/GoNoGoViews.swift 457
 apps/ios/Wingtip/Views/InFlightViews.swift 657
 apps/ios/Wingtip/Views/InstructorView.swift 413
 apps/ios/Wingtip/Views/LogbookViews.swift 448
 apps/ios/Wingtip/Views/OwnAircraftViews.swift 578
 apps/ios/Wingtip/Views/PlannerFiguresViews.swift 650
-apps/ios/Wingtip/Views/RootView.swift 419
 apps/ios/Wingtip/Views/RouteEditViews.swift 519
 apps/web/e2e/helpers.ts 765
 apps/web/e2e/ios/metrics.ts 634

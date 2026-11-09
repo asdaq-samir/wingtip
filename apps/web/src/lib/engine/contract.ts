@@ -13,8 +13,6 @@ export type AirwayFloorFtAnswer = number | null;
 export type AheadPolygons = [number, number][][][];
 export type AltitudeAllowedAnswer = boolean;
 export type AltitudeAnywayAnswer = number | null;
-export type AltitudeBandAnswer = "low" | "mid" | "high" | "flight-levels" | null;
-export type AltitudeBlockedAnswer = boolean;
 export type AltitudeSaidAnswer = string;
 export type AltitudeWheelAnswer = number[];
 export type ApproachAlongNmAnswer = number;
@@ -25,7 +23,6 @@ export type ApproachBriefAnswer = {
   lines: string[];
   focus: LessonFocus;
 }[];
-export type ApproachBriefFrequenciesAnswer = string[];
 export type ApproachCategoryAnswer = "A" | "B" | "C" | "D" | "E" | null;
 export type ApproachCoachingAnswer = {
   key: string;
@@ -42,15 +39,12 @@ export type ApproachCoachingAnswer = {
 export type ApproachDebriefAnswer = ApproachDebrief | null;
 export type ApproachDescentFpmAnswer = number;
 export type ApproachFindAnswer = ApproachDebrief[];
-export type ApproachFixNameAnswer = string;
 export type ApproachGuidanceAnswer = "localizer" | "gps" | "other";
 export type ApproachLessonPathAnswer = {
   lat: number;
   lon: number;
 }[];
 export type ApproachMinimumsAnswer = ApproachFinding[];
-export type ApproachMinimumsKindAnswer = "DA" | "MDA" | "DA or MDA";
-export type ApproachMissedWordsAnswer = string | null;
 export type ApproachPathBetweenAnswer = {
   lat: number;
   lon: number;
@@ -63,7 +57,6 @@ export type ApproachQuizAnswer = {
   explain: string;
   focus: LessonFocus;
 }[];
-export type ApproachRoundedFpmAnswer = number;
 export type ApproachTransitionAnswer = ApproachDebrief | null;
 export type ArrivalCircuitAnswer = {
   points: [number, number][];
@@ -238,8 +231,6 @@ export type GonogoInspections = {
   hundred_hour_due_at_hours?: number | null;
   hours_now?: number | null;
 } | null;
-export type DescentAltitudeAnswer = number;
-export type DescentFtPerNmAnswer = number;
 export type DiagramFixUsableAnswer = boolean;
 export type DiagramGraticuleAnswer = {
   lat_on_x: boolean;
@@ -321,14 +312,9 @@ export type GlideRingAnswer = {
   ground_ft: number;
   ring: [number, number][];
 } | null;
-export type GlidepathFtAnswer = number;
 export type GonogoAlternateFindingAnswer = {
   finding: "stop" | "caution";
   detail: string;
-} | null;
-export type GonogoBestCrosswindAnswer = {
-  end: string | null;
-  kt: number;
 } | null;
 export type GonogoDensityAltitudeAnswer = number;
 export type GonogoHazardWindowAnswer = "before" | "during" | "after" | null;
@@ -343,8 +329,6 @@ export type GonogoIcingAnswer = {
   line: string;
 } | null;
 export type GonogoIcingLineAnswer = string;
-export type GonogoInEnvelopeAnswer = boolean;
-export type GonogoInspectionFactorsAnswer = GonogoFactor[];
 export type GonogoPassMinutesAnswer = number | null;
 /**
  * The pilot's picked runway ends, landing (pattern) and takeoff.
@@ -451,7 +435,6 @@ export type GonogoFlown = {
 export type GonogoRunwayNumberAnswer = string;
 export type GonogoSelfChecksAnswer = GonogoFactor[];
 export type GonogoSoftSurfaceAnswer = boolean;
-export type GonogoSquawkFactorsAnswer = GonogoFactor[];
 export type GonogoSuaWhenAnswer = "active" | "not-scheduled" | "by-notam" | "unknown";
 export type GonogoTfrWhenAnswer = "before" | "after" | "in-force";
 export type GonogoUnderMinimumsAnswer = string[];
@@ -521,21 +504,18 @@ export type InFlightAnswer = {
   } | null;
 } | null;
 export type IsEastboundAnswer = boolean;
-export type IsNightAnswer = boolean;
 export type IsaTempCAnswer = number;
 export type KneeboardRadioAnswer = [string, number][];
 export type LegalCruisingAltitudesAnswer = number[];
 export type LogbookCsvWriteAnswer = string;
 export type LowestVfrCruisingAltitudeAnswer = number;
 export type MagneticVariationAnswer = number;
-export type MetarReadAnswer = {} | null;
 export type ModeCVeilAnswer = {
   ident: string;
   name: string | null;
   distance_nm: number;
 } | null;
 export type MorseAnswer = string;
-export type MountainousAtAnswer = boolean;
 export type NNumberAnswer = boolean;
 export type NavaidHoursAnswer = string | null;
 export type NavLogApproachEndAnswer = {
@@ -555,29 +535,10 @@ export type NavLogJoinFiguresAnswer = NavLogFigure[];
 export type NavLogJoinPlansAnswer = NavLogPlan[];
 export type NavLogLegsAnswer = NavLogLeg[];
 export type NavLogLegsAtAnswer = NavLogLeg[];
-export type NavLogRacetrackAnswer = [number, number][];
 export type NavLogWithClimbsAnswer = NavLogLeg[];
 export type NavLogWithDescentsAnswer = NavLogLeg[];
 export type NightAtEitherEndAnswer = boolean;
 export type NightOnTheWayAnswer = boolean;
-export type NotamTextAnswer =
-  | {
-      id: string;
-      icao_id: string | null;
-      names: string | null;
-      type: string | null;
-      location: string | null;
-      icao_location: string | null;
-      classification: string | null;
-      issued: string | null;
-      starts: string | null;
-      ends: string | null;
-      estimated: boolean;
-      schedule: string | null;
-      text: string;
-      raw: string;
-    }[]
-  | null;
 export type NotamsFnsAnswer = {
   id: string;
   icao_id: string | null;
@@ -594,7 +555,6 @@ export type NotamsFnsAnswer = {
   text: string;
   raw: string;
 }[];
-export type OperatorOfAnswer = string | null;
 export type OurCallAnswer = boolean;
 export type OwnAltitudeCautionAnswer = {
   from_ident: string;
@@ -603,7 +563,6 @@ export type OwnAltitudeCautionAnswer = {
   reasons: string[];
 } | null;
 export type OwnShipHexAnswer = string | null;
-export type OxygenCautionAnswer = string[];
 export type PassengerBriefingAnswer = PassengerItem[];
 export type PassengerNightAnswer = boolean;
 export type PassengerNightOnTheWayAnswer = boolean;
@@ -711,7 +670,6 @@ export type ReadTrackAnswer =
     };
 export type RegionOfAnswer = string;
 export type RegisteredProfileAnswer = string | null;
-export type ReportFlightCategoryAnswer = "VFR" | "MVFR" | "IFR" | "LIFR" | null;
 export type ReserveMinAnswer = number;
 export type RoutePositionAnswer = {
   along_nm: number;
@@ -793,11 +751,9 @@ export type SigmetsAlongRouteAnswer = {}[];
 export type SoloXcDeterminationsAnswer = SoloXcDetermination[];
 export type SquawkMeaningAnswer = "hijack" | "lost radio" | "emergency" | null;
 export type SuaAltitudesAnswer = string;
-export type TafReadAnswer = {} | null;
 export type TemperatureAtAnswer = number | null;
 export type TfrDetailReadAnswer = {} | null;
 export type ThinTrackAnswer = unknown[];
-export type TightCruisingAltitudeAnswer = number | null;
 export type TitleCaseAnswer = string | string[];
 export type TokensAnswer = HeardToken[];
 export type TrafficKindAnswer = "light" | "small" | "large" | "helicopter" | "other";
@@ -829,7 +785,6 @@ export type WeatherHeldUntilAnswer = number | null;
 export type WeatherInForceAnswer = boolean;
 export type WindAtAltitudeAnswer = WindAloft | null | (WindAloft | null)[];
 export type WindCalmAnswer = boolean;
-export type WindCorrectionDegAnswer = number;
 export type WindPickAnswer = {
   /**
    * The end as painted, "" where none is.
@@ -862,7 +817,6 @@ export type WindTriangleAnswer = {
   th: number;
   gs: number;
 } | null;
-export type WindsReadAnswer = {} | null;
 export type WordsAltFtAnswer = string;
 export type WordsCeilingAndVisibilityAnswer = string;
 export type WordsFlightLevelAnswer = string;
@@ -947,20 +901,6 @@ export interface EngineContract {
     answer: AltitudeAnywayAnswer;
   };
   /**
-   * An altitude's band: low below 3,000 ft, mid to 10,000, high to 18,000, flight levels from 18,000 MSL (14 CFR 71.33(a)); null for none.
-   */
-  altitude_band: {
-    input: AltitudeBandInput;
-    answer: AltitudeBandAnswer;
-  };
-  /**
-   * Whether a cruising altitude enters a prohibited area (14 CFR 73.83) between its floor and ceiling, an AGL ceiling or none taken as unlimited.
-   */
-  altitude_blocked: {
-    input: AltitudeBlockedInput;
-    answer: AltitudeBlockedAnswer;
-  };
-  /**
    * The altitudes a flight may be planned at: no lower than 500 ft (14 CFR 91.119(c)), VFR up to 17,500 ft (91.159(a)'s highest under Class A, which begins at 18,000 ft MSL, 71.33(a), and takes IFR only, 91.135), IFR up to FL410 (the highest 91.179(b)(4) names); flight levels from 18,000 ft (91.121(a)(2)); 91.159's cruising altitudes 500 ft apart.
    */
   altitude_limits: {
@@ -1010,13 +950,6 @@ export interface EngineContract {
     answer: ApproachBriefAnswer;
   };
   /**
-   * The frequencies an approach brief says.
-   */
-  approach_brief_frequencies: {
-    input: ApproachBriefFrequenciesInput;
-    answer: ApproachBriefFrequenciesAnswer;
-  };
-  /**
    * The approach category (14 CFR 97.3) from VREF, or 1.3 VSO, or null with neither.
    */
   approach_category: {
@@ -1052,13 +985,6 @@ export interface EngineContract {
     answer: ApproachFindAnswer;
   };
   /**
-   * A fix as said aloud: a runway's threshold ("RW08") by its runway.
-   */
-  approach_fix_name: {
-    input: ApproachFixNameInput;
-    answer: ApproachFixNameAnswer;
-  };
-  /**
    * How the approach is flown, by its CIFP id (ARINC 424-18 5.10): "localizer", "gps" or "other".
    */
   approach_guidance: {
@@ -1080,20 +1006,6 @@ export interface EngineContract {
     answer: ApproachMinimumsAnswer;
   };
   /**
-   * Which minimums an approach is flown to, by its name (AIM 5-4-5, FAA-H-8083-16B ch. 4).
-   */
-  approach_minimums_kind: {
-    input: ApproachMinimumsKindInput;
-    answer: ApproachMinimumsKindAnswer;
-  };
-  /**
-   * The missed approach in the plate's words, or null.
-   */
-  approach_missed_words: {
-    input: ApproachMissedWordsInput;
-    answer: ApproachMissedWordsAnswer;
-  };
-  /**
    * The part of a path between two places on it.
    */
   approach_path_between: {
@@ -1113,13 +1025,6 @@ export interface EngineContract {
   approach_quiz: {
     input: ApproachQuizInput;
     answer: ApproachQuizAnswer;
-  };
-  /**
-   * A descent rate rounded as the lesson says it.
-   */
-  approach_rounded_fpm: {
-    input: ApproachRoundedFpmInput;
-    answer: ApproachRoundedFpmAnswer;
   };
   /**
    * The transition's debrief, or null, from the vectors' debrief's figures.
@@ -1255,13 +1160,6 @@ export interface EngineContract {
     answer: CheckpointsSelectAnswer;
   };
   /**
-   * Dawn and dusk (the beginning of morning and the end of evening civil twilight, 14 CFR 1.1) of the civil day whose solar noon falls on the UTC day `day_s` lies in; null each in a polar day, `night_all_day` then saying which kind.
-   */
-  civil_twilight: {
-    input: CivilTwilightInput;
-    answer: CivilTwilightAnswer;
-  };
-  /**
    * Named fixes to fly through so neither leg comes within a mile of the Class B whose floor is under below_ft (route/options/classb.rs): those adding the least distance first, a VFR waypoint before a GPS fix that saves under 10 nm, at most 5, none adding over 40 nm.
    */
   class_b_detours: {
@@ -1393,20 +1291,6 @@ export interface EngineContract {
   departure_window: {
     input: DepartureWindowInput;
     answer: DepartureWindowAnswer;
-  };
-  /**
-   * About where a three-to-one descent (333 ft/nm, as the nav log descends) to pattern altitude has the airplane nm_out from the field, feet MSL to the hundred, no higher than the cruise; the cruise where no pattern altitude is known.
-   */
-  descent_altitude: {
-    input: DescentAltitudeInput;
-    answer: DescentAltitudeAnswer;
-  };
-  /**
-   * The planned descent: 1,000 ft for every 3 nm, about a 3 degree path (AIM 2-1-2), feet a nautical mile.
-   */
-  descent_ft_per_nm: {
-    input: DescentFtPerNmInput;
-    answer: DescentFtPerNmAnswer;
   };
   /**
    * Whether own ship is drawn on the airport diagram: a fix no older than 3 s (AC 120-76D 11.17.2.3) and good to 30 m or better (11.17.2.4); a negative accuracy, none known, never.
@@ -1773,13 +1657,6 @@ export interface EngineContract {
     answer: GlideRingAnswer;
   };
   /**
-   * The glidepath's height, ft MSL, nm_out from the runway.
-   */
-  glidepath_ft: {
-    input: GlidepathFtInput;
-    answer: GlidepathFtAnswer;
-  };
-  /**
    * What the IFR alternate comes to for the Go / No-Go (14 CFR 91.169(a)(2), (b)): a stop where the one filed will not do, a caution where one is needed and none is filed or it is the pilot's to check; null where none is needed.
    */
   gonogo_alternate_finding: {
@@ -1792,13 +1669,6 @@ export interface EngineContract {
   gonogo_balance: {
     input: GonogoBalanceInput;
     answer: GonogoBalanceAnswer;
-  };
-  /**
-   * The least crosswind of the open runways' (gusts' where more), or the whole reported wind where no runway has components; null with none.
-   */
-  gonogo_best_crosswind: {
-    input: GonogoBestCrosswindInput;
-    answer: GonogoBestCrosswindAnswer;
   };
   /**
    * The load a profile starts with: its sample empty weight and arm, stations empty, the fuel given.
@@ -1822,13 +1692,6 @@ export interface EngineContract {
     answer: GonogoEndDistanceAnswer;
   };
   /**
-   * A field's pressure altitude and temperature, from its elevation and the reported altimeter and temperature, standard where not reported.
-   */
-  gonogo_field_air: {
-    input: GonogoFieldAirInput;
-    answer: GonogoFieldAirAnswer;
-  };
-  /**
    * Whether a flight in a hazard from `enter` to `leave` is there while it is valid: "before" it starts, "after" it ends, else "during", its window widened by `margin_min` either way (30, PASS_MARGIN_MIN, where missing: an ETA is an estimate); null where it gives no window.
    */
   gonogo_hazard_window: {
@@ -1848,20 +1711,6 @@ export interface EngineContract {
   gonogo_icing_line: {
     input: GonogoIcingLineInput;
     answer: GonogoIcingLineAnswer;
-  };
-  /**
-   * Whether an arm and weight are within the CG envelope.
-   */
-  gonogo_in_envelope: {
-    input: GonogoInEnvelopeInput;
-    answer: GonogoInEnvelopeAnswer;
-  };
-  /**
-   * The airplane's recorded inspections past their day, as factors: annual (14 CFR 91.409(a)), ELT (91.207(c), (d)), altimeter and static (91.411(a)), transponder (91.413(a)), 100-hour (91.409(b)).
-   */
-  gonogo_inspection_factors: {
-    input: GonogoInspectionFactorsInput;
-    answer: GonogoInspectionFactorsAnswer;
   };
   /**
    * Minutes after departure the flight passes a point along the route, or null.
@@ -1927,25 +1776,11 @@ export interface EngineContract {
     answer: GonogoSelfChecksAnswer;
   };
   /**
-   * The POH's short-field distances at a pressure altitude, temperature, weight and headwind (14 CFR 91.103(b)).
-   */
-  gonogo_short_field: {
-    input: GonogoShortFieldInput;
-    answer: GonogoDistances;
-  };
-  /**
    * Whether a runway's surface is grass, turf, dirt or gravel.
    */
   gonogo_soft_surface: {
     input: GonogoSoftSurfaceInput;
     answer: GonogoSoftSurfaceAnswer;
-  };
-  /**
-   * The airplane's open squawks as risk factors.
-   */
-  gonogo_squawk_factors: {
-    input: GonogoSquawkFactorsInput;
-    answer: GonogoSquawkFactorsAnswer;
   };
   /**
    * A special-use area's times of use read for the pass. The host works the clocks out in the area's own time zone.
@@ -2151,13 +1986,6 @@ export interface EngineContract {
     answer: IsEastboundAnswer;
   };
   /**
-   * Whether an instant is night at a point (14 CFR 1.1: outside civil twilight, the sun's centre six degrees below the horizon), by NOAA's solar calculation; a polar day is night or day all day.
-   */
-  is_night: {
-    input: IsNightInput;
-    answer: IsNightAnswer;
-  };
-  /**
    * A standard day's temperature at a pressure altitude (ICAO Doc 7488).
    */
   isa_temp_c: {
@@ -2235,13 +2063,6 @@ export interface EngineContract {
     answer: MaydayCallAnswer;
   };
   /**
-   * A METAR or SPECI as sent, read into the planner's metar dict (AC 00-45H); null where the station and time cannot be read.
-   */
-  metar_read: {
-    input: MetarReadInput;
-    answer: MetarReadAnswer;
-  };
-  /**
    * The nearest Mode C veil airport (14 CFR part 91 appendix D section 1) within 30 nm of a point (91.215(b)(2), 91.225(d)(2)), the distance to a tenth; null outside every veil. An airport with no place is passed over.
    */
   mode_c_veil: {
@@ -2254,13 +2075,6 @@ export interface EngineContract {
   morse: {
     input: MorseInput;
     answer: MorseAnswer;
-  };
-  /**
-   * Whether a point is in a designated mountainous area (14 CFR Part 95 subpart B, 95.11 to 95.21).
-   */
-  mountainous_at: {
-    input: MountainousAtInput;
-    answer: MountainousAtAnswer;
   };
   /**
    * Whether text is a US registration, an N-number (14 CFR 47.15(b)).
@@ -2361,13 +2175,6 @@ export interface EngineContract {
     answer: NavLogPlansAnswer;
   };
   /**
-   * One turn round a hold's racetrack from the fix, [lat, lon] pairs: standard-rate turns (3 degrees a second) and legs of leg_nm, true degrees.
-   */
-  navlog_racetrack: {
-    input: NavLogRacetrackInput;
-    answer: NavLogRacetrackAnswer;
-  };
-  /**
    * The legs' totals: miles (procedures' miles more included), time and fuel (null while a leg is unflyable), unflyable legs and legs with no winds aloft.
    */
   navlog_totals: {
@@ -2410,25 +2217,11 @@ export interface EngineContract {
     answer: NoAltitudeAnswer;
   };
   /**
-   * A NOTAM's number, place and times from its text as sent, the domestic form (FAA JO 7930.2) or the ICAO one (Annex 15), as a list of one; null where it is neither.
-   */
-  notam_text: {
-    input: NotamTextInput;
-    answer: NotamTextAnswer;
-  };
-  /**
    * The NOTAMs of one FAA NOTAM System (FNS) message, AIXM 5.1, as wingtip.notams keeps them: each by its domestic place and number, else its place and ICAO number; `ends` the sooner of its own end and its feature lifetime's. None where the message is not XML.
    */
   notams_fns: {
     input: NotamsFnsInput;
     answer: NotamsFnsAnswer;
-  };
-  /**
-   * The operator's ICAO three-letter designator from an airline's callsign, or null.
-   */
-  operator_of: {
-    input: OperatorOfInput;
-    answer: OperatorOfAnswer;
   };
   /**
    * Whether a transmission is said to the airplane `tail` (AIM 4-2-4).
@@ -2450,13 +2243,6 @@ export interface EngineContract {
   own_ship_hex: {
     input: OwnShipHexInput;
     answer: OwnShipHexAnswer;
-  };
-  /**
-   * What 14 CFR 91.211(a) asks of a flight up to an altitude in an unpressurised airplane: over 12,500 ft MSL the crew past 30 minutes, over 14,000 the crew throughout, over 15,000 every occupant. Empty where the profile carries oxygen or is pressurised.
-   */
-  oxygen_caution: {
-    input: OxygenCautionInput;
-    answer: OxygenCautionAnswer;
   };
   /**
    * The passengers' briefing in the order of the FAA's SAFETY briefing (FAA Safety Briefing, Jan/Feb 2007 and Jul/Aug 2014): 14 CFR 91.107(a)(1)'s belts and (a)(2), (3)'s fastened for taxi, takeoff and landing, the rest the Private Pilot ACS's PA.II.B.S2 guidance, each with where it comes from.
@@ -2732,13 +2518,6 @@ export interface EngineContract {
     answer: RegisteredProfileAnswer;
   };
   /**
-   * A report's flight category (AC 00-45H, AIM 7-1-7), metar::flight_category_of, the same rule as flight_category: LIFR under 500 ft or a mile, IFR under 1,000 ft or 3, MVFR to 3,000 ft or 5, else VFR, no ceiling no limit; with no visibility only a ceiling under 500 ft settles it (LIFR), else null; with ceiling_unknown (a ceiling reported with no height) LIFR under a mile's visibility, else null.
-   */
-  report_flight_category: {
-    input: ReportFlightCategoryInput;
-    answer: ReportFlightCategoryAnswer;
-  };
-  /**
    * The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).
    */
   reserve_min: {
@@ -2807,13 +2586,6 @@ export interface EngineContract {
   runway_ends_traffic: {
     input: RunwayEndsTrafficInput;
     answer: RunwayEndsTrafficAnswer;
-  };
-  /**
-   * The end the wind favours, the planner's RunwayWind, or null.
-   */
-  runway_favoured_end: {
-    input: RunwayFavouredEndInput;
-    answer: RunwayWindOut;
   };
   /**
    * Each runway's favoured end, the planner's RunwayWind or null.
@@ -2886,13 +2658,6 @@ export interface EngineContract {
     answer: SigmetsAlongRouteAnswer;
   };
   /**
-   * A report's ceiling as ceiling_ft finds it, and whether it is not known: the lowest broken, overcast or obscured layer sent with no height ("OVC///", the AWC's layer with no base) leaves it unknown, not absent (14 CFR 1.1).
-   */
-  sky_ceiling: {
-    input: SkyCeilingInput;
-    answer: SkyCeilingAnswer;
-  };
-  /**
    * A student's 61.87(n) solo endorsement on the instructor's list: the days to its last good day and its standing, caution within 7 days (the owner's choice).
    */
   solo_standing: {
@@ -2926,13 +2691,6 @@ export interface EngineContract {
   sua_altitudes: {
     input: SuaAltitudesInput;
     answer: SuaAltitudesAnswer;
-  };
-  /**
-   * A TAF as sent, read into the planner's TAF dict (AC 00-45H), its day-and-hour times placed nearest `near` (Unix seconds); null where it cannot be read.
-   */
-  taf_read: {
-    input: TafReadInput;
-    answer: TafReadAnswer;
   };
   /**
    * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (AC 00-45H).
@@ -2989,13 +2747,6 @@ export interface EngineContract {
   thin_track: {
     input: ThinTrackInput;
     answer: ThinTrackAnswer;
-  };
-  /**
-   * Where no 500 ft step fits under a ceiling, the highest whole hundred under it that clears the floor, below where 14 CFR 91.159 begins; null where nothing fits.
-   */
-  tight_cruising_altitude: {
-    input: TightCruisingAltitudeInput;
-    answer: TightCruisingAltitudeAnswer;
   };
   /**
    * The FAA's capitals in title case, from text, or each of texts as a list (a null row answers "").
@@ -3145,13 +2896,6 @@ export interface EngineContract {
     answer: WindComponentsAnswer;
   };
   /**
-   * The nav log's wind correction angle, degrees, + right (the E6B's wind triangle); a crosswind past the airspeed held at 90.
-   */
-  wind_correction_deg: {
-    input: WindCorrectionDegInput;
-    answer: WindCorrectionDegAnswer;
-  };
-  /**
    * The wind a field's runways are chosen by (lib/pattern WindPick, AC 90-66C 11.5), or null with no wind to go by.
    */
   wind_pick: {
@@ -3171,13 +2915,6 @@ export interface EngineContract {
   wind_triangle: {
     input: WindTriangleInput;
     answer: WindTriangleAnswer;
-  };
-  /**
-   * The winds and temperatures aloft forecast (FB) as sent, read into the planner's stations and its FOR USE window (AC 00-45H), its days placed by `now` (Unix seconds); null where it cannot be read.
-   */
-  winds_read: {
-    input: WindsReadInput;
-    answer: WindsReadAnswer;
   };
   /**
    * An altitude grouped, "12,500"; an em dash for none (lib/format altFt).
@@ -3497,18 +3234,6 @@ export interface AltitudeAllowedInput {
 export interface AltitudeAnywayInput {
   selection: {};
 }
-export interface AltitudeBandInput {
-  altitude_ft?: number | null;
-}
-export interface AltitudeBlockedInput {
-  altitude_ft: number;
-  areas?: {
-    type?: string | null;
-    floor_ft?: number | null;
-    ceiling_ft?: number | null;
-    ceiling_ref?: string | null;
-  }[];
-}
 export interface AltitudeLimitsInput {
   ifr?: boolean | null;
 }
@@ -3705,9 +3430,6 @@ export interface LessonFocus {
   fix: string | null;
   segment: "transition" | "final" | "missed" | null;
 }
-export interface ApproachBriefFrequenciesInput {
-  frequencies?: FieldFrequency[] | null;
-}
 export interface ApproachCategoryInput {
   vref_kt?: number | null;
   vso_kt?: number | null;
@@ -3836,9 +3558,6 @@ export interface ApproachFindInput {
   picked?: string | null;
   minimums_ft?: number | null;
 }
-export interface ApproachFixNameInput {
-  ident?: string | null;
-}
 export interface ApproachGuidanceInput {
   id?: string | null;
 }
@@ -3856,12 +3575,6 @@ export interface ApproachMinimumsInput {
   lowest_ft?: number | null;
   outcome: "landed" | "missed" | "unknown";
   minimums_ft?: number | null;
-}
-export interface ApproachMinimumsKindInput {
-  name?: string | null;
-}
-export interface ApproachMissedWordsInput {
-  legs?: ApproachMissedLeg[] | null;
 }
 export interface ApproachPathBetweenInput {
   path?:
@@ -3904,9 +3617,6 @@ export interface ApproachProfileAnswer {
 export interface ApproachQuizInput {
   drawing: ProcedureDrawing;
   gs_kt: number;
-}
-export interface ApproachRoundedFpmInput {
-  fpm: number;
 }
 export interface ApproachTransitionInput {
   drawings?: ProcedureDrawing[] | null;
@@ -4271,19 +3981,6 @@ export interface CheckpointsSelectInput {
    */
   min_score?: number | null;
   length_nm?: number | null;
-}
-export interface CivilTwilightInput {
-  lat: number;
-  lon: number;
-  /**
-   * Any instant of the UTC day, UNIX seconds.
-   */
-  day_s: number;
-}
-export interface CivilTwilightAnswer {
-  dawn_s: number | null;
-  dusk_s: number | null;
-  night_all_day: boolean | null;
 }
 export interface ClassBDetoursInput {
   /**
@@ -5151,12 +4848,6 @@ export interface DepartureWindowRun {
    */
   quickest_s: number;
 }
-export interface DescentAltitudeInput {
-  cruise_ft: number;
-  pattern_ft?: number | null;
-  nm_out: number;
-}
-export interface DescentFtPerNmInput {}
 export interface DiagramFixUsableInput {
   /**
    * The fix's age, s.
@@ -5857,10 +5548,6 @@ export interface GlideRingInput {
   terrain_ft?: number | null;
   field_ft?: number | null;
 }
-export interface GlidepathFtInput {
-  runway_path: ApproachRunwayPath;
-  nm_out: number;
-}
 export interface GonogoAlternateFindingInput {
   /**
    * /api/alternate's answer.
@@ -5940,21 +5627,6 @@ export interface GonogoBalanceAnswer {
    */
   takeoff_words: string;
 }
-export interface GonogoBestCrosswindInput {
-  runways?:
-    | {
-        /**
-         * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-         */
-        closed?: boolean | null;
-        wind?: GonogoRunwayWind | null;
-      }[]
-    | null;
-  reported?: {
-    speed_kt?: number | null;
-    gust_kt?: number | null;
-  } | null;
-}
 export interface GonogoDefaultLoadInput {
   loading: GonogoLoading;
   fuel_gal: number;
@@ -5991,15 +5663,6 @@ export interface GonogoEndDistanceAnswer {
    */
   caveats: string[];
   over: boolean;
-}
-export interface GonogoFieldAirInput {
-  elevation_ft: number;
-  altimeter_in_hg?: number | null;
-  temp_c?: number | null;
-}
-export interface GonogoFieldAirAnswer {
-  pressure_alt_ft: number;
-  temp_c: number;
 }
 export interface GonogoHazardWindowInput {
   enter: number;
@@ -6041,52 +5704,6 @@ export interface GonogoIcingLineInput {
     reports?: number | null;
   };
 }
-export interface GonogoInEnvelopeInput {
-  /**
-   * [arm in, weight lb] points.
-   */
-  envelope?: [number, number][] | null;
-  arm: number;
-  weight: number;
-}
-export interface GonogoInspectionFactorsInput {
-  inspections?: GonogoInspections;
-  /**
-   * yyyy-mm-dd.
-   */
-  day: string;
-  /**
-   * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-   */
-  ifr?: boolean | null;
-}
-/**
- * One risk factor.
- *
- * This interface was referenced by `EngineContract`'s JSON-Schema
- * via the `definition` "GonogoFactor".
- */
-export interface GonogoFactor {
-  key: string;
-  label: string;
-  /**
-   * The rule or the reason it counts.
-   */
-  why: string | null;
-  points: number;
-  /**
-   * Makes the flight unlawful as planned: high, whatever the points.
-   */
-  stop: boolean;
-  /**
-   * A self check's group; left out for the others.
-   */
-  group?: string;
-  /**
-   * Its mark; null for a self check.
-   */
-  finding: "stop" | "caution" | null;
-}
 export interface GonogoPassMinutesInput {
   legs?:
     | {
@@ -6117,6 +5734,33 @@ export interface GonogoRiskAnswer {
    */
   words: string | null;
   factors: GonogoFactor[];
+}
+/**
+ * One risk factor.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "GonogoFactor".
+ */
+export interface GonogoFactor {
+  key: string;
+  label: string;
+  /**
+   * The rule or the reason it counts.
+   */
+  why: string | null;
+  points: number;
+  /**
+   * Makes the flight unlawful as planned: high, whatever the points.
+   */
+  stop: boolean;
+  /**
+   * A self check's group; left out for the others.
+   */
+  group?: string;
+  /**
+   * Its mark; null for a self check.
+   */
+  finding: "stop" | "caution" | null;
 }
 export interface GonogoRiskLineInput {
   level: string;
@@ -6183,59 +5827,8 @@ export interface GonogoRunwayNumberInput {
   ident: string;
 }
 export interface GonogoSelfChecksInput {}
-export interface GonogoShortFieldInput {
-  table: ShortFieldTable;
-  pressure_alt_ft: number;
-  temp_c: number;
-  weight_lb: number;
-  /**
-   * A tailwind negative.
-   */
-  headwind_kt: number;
-  /**
-   * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-   */
-  grass?: boolean | null;
-}
-/**
- * The POH's short-field distances.
- *
- * This interface was referenced by `EngineContract`'s JSON-Schema
- * via the `definition` "GonogoDistances".
- */
-export interface GonogoDistances {
-  ground_roll_ft: number;
-  /**
-   * Over a 50 ft obstacle.
-   */
-  total_ft: number;
-  /**
-   * What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, or a tailwind past ten.
-   */
-  caveats: string[];
-}
 export interface GonogoSoftSurfaceInput {
   surface?: string | null;
-}
-export interface GonogoSquawkFactorsInput {
-  squawks?:
-    | {
-        text?: string | null;
-        /**
-         * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-         */
-        inoperative?: boolean | null;
-        deferred_for?: string | null;
-      }[]
-    | null;
-  /**
-   * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-   */
-  night?: boolean | null;
-  /**
-   * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-   */
-  ifr?: boolean | null;
 }
 export interface GonogoSuaWhenInput {
   times_of_use?: string | null;
@@ -6350,7 +5943,7 @@ export interface GroundspeedKtInput {
   wind_kt: number;
   tas_kt: number;
   /**
-   * The wind correction angle (wind_correction_deg).
+   * The wind correction angle.
    */
   wca_deg: number;
 }
@@ -6755,17 +6348,6 @@ export interface InspectionsDueAnswer {
 export interface IsEastboundInput {
   magnetic_course_deg: number;
 }
-export interface IsNightInput {
-  lat: number;
-  /**
-   * East positive.
-   */
-  lon: number;
-  /**
-   * UNIX seconds, UTC.
-   */
-  at_s: number;
-}
 export interface IsaTempCInput {
   altitude_ft: number;
 }
@@ -7123,9 +6705,6 @@ export interface MaydayCallAnswer {
     why: string;
   }[];
 }
-export interface MetarReadInput {
-  raw: string;
-}
 export interface ModeCVeilInput {
   lat: number;
   lon: number;
@@ -7138,10 +6717,6 @@ export interface ModeCVeilInput {
 }
 export interface MorseInput {
   ident?: string | null;
-}
-export interface MountainousAtInput {
-  lat: number;
-  lon: number;
 }
 export interface NNumberInput {
   text?: string | null;
@@ -7576,17 +7151,6 @@ export interface NavLogPlansAnswer {
   };
   by_altitude: NavLogFigure[];
 }
-export interface NavLogRacetrackInput {
-  fix: {
-    lat: number;
-    lon: number;
-  };
-  inbound_true_deg: number;
-  right?: boolean | null;
-  tas_kt: number;
-  leg_nm: number;
-  steps?: number | null;
-}
 export interface NavLogTotalsOfInput {
   legs: NavLogLeg[];
 }
@@ -7666,14 +7230,8 @@ export interface NoAltitudeAnswer {
   class_b: boolean;
   detail: string;
 }
-export interface NotamTextInput {
-  text: string;
-}
 export interface NotamsFnsInput {
   text: string;
-}
-export interface OperatorOfInput {
-  callsign?: string | null;
 }
 export interface OurCallInput {
   text: string;
@@ -7702,10 +7260,6 @@ export interface OwnAltitudeCautionInput {
 export interface OwnShipHexInput {
   planes: TrafficPlane[];
   fix?: OwnShipFix | null;
-}
-export interface OxygenCautionInput {
-  highest_ft?: number | null;
-  profile?: {} | null;
 }
 export interface PassengerBriefingInput {}
 export interface PassengerItem {
@@ -8270,11 +7824,6 @@ export interface RegisteredProfileInput {
   model?: string | null;
   year?: number | null;
 }
-export interface ReportFlightCategoryInput {
-  ceiling_ft?: number | null;
-  ceiling_unknown?: boolean | null;
-  visibility_sm?: number | null;
-}
 export interface ReserveMinInput {
   ifr?: boolean | null;
   night?: boolean | null;
@@ -8605,12 +8154,6 @@ export interface RunwayEndsTrafficInput {
    */
   right?: string[] | null;
 }
-export interface RunwayFavouredEndInput {
-  ends?: EndHeadings;
-  metar?: MetarWindIn;
-  variation_deg: number;
-  recent?: RecentWindIn;
-}
 export interface RunwayWithWindsInput {
   runways?:
     | {
@@ -8803,19 +8346,6 @@ export interface SigmetsAlongRouteInput {
   corridor_nm?: number | null;
   now: number;
 }
-export interface SkyCeilingInput {
-  layers?:
-    | {
-        cover?: string | null;
-        base_ft?: number | null;
-      }[]
-    | null;
-  vert_vis_ft?: number | null;
-}
-export interface SkyCeilingAnswer {
-  ceiling_ft: number | null;
-  ceiling_unknown: boolean;
-}
 export interface SoloStandingInput {
   /**
    * The last day it is good, YYYY-MM-DD; null for none on record.
@@ -8878,17 +8408,13 @@ export interface SuaAltitudesInput {
    */
   mid_sentence?: boolean | null;
 }
-export interface TafReadInput {
-  raw: string;
-  near: number;
-}
 export interface TafWindowInput {
   fcsts: TafPeriod[];
   start: number;
   end?: number | null;
 }
 /**
- * One period of a TAF as the weather store keeps it (awc_tafs_read; taf_read's fcsts): Unix seconds, the change group ("", FM, BECMG, TEMPO, PROB), the wind from true north, and the ceiling (14 CFR 1.1) and visibility (statute miles).
+ * One period of a TAF as the weather store keeps it (awc_tafs_read): Unix seconds, the change group ("", FM, BECMG, TEMPO, PROB), the wind from true north, and the ceiling (14 CFR 1.1) and visibility (statute miles).
  *
  * This interface was referenced by `EngineContract`'s JSON-Schema
  * via the `definition` "TafPeriod".
@@ -9026,11 +8552,6 @@ export interface TfrDetailReadInput {
 export interface ThinTrackInput {
   points: unknown[];
   most?: number | null;
-}
-export interface TightCruisingAltitudeInput {
-  floor_ft: number;
-  ceiling_ft?: number | null;
-  rule_from_ft?: number | null;
 }
 export interface TitleCaseInput {
   text?: string | null;
@@ -9234,12 +8755,6 @@ export interface WindComponentsAnswer {
   headwind_kt: number;
   crosswind_kt: number;
 }
-export interface WindCorrectionDegInput {
-  true_course_deg: number;
-  wind_from_deg: number;
-  wind_kt: number;
-  tas_kt: number;
-}
 export interface WindPickInput {
   runways?: Runway[] | null;
   /**
@@ -9266,10 +8781,6 @@ export interface WindTriangleInput {
   tas: number;
   wind_from_deg: number;
   wind_kt: number;
-}
-export interface WindsReadInput {
-  text: string;
-  now: number;
 }
 export interface WordsAltFtInput {
   ft?: number | null;
@@ -9301,6 +8812,23 @@ export interface WorkingsRightInput {
   key: "wca" | "th" | "mh" | "gs" | "ete" | "fuel";
   typed: number;
   answer: number;
+}
+/**
+ * The POH's short-field distances.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "GonogoDistances".
+ */
+export interface GonogoDistances {
+  ground_roll_ft: number;
+  /**
+   * Over a 50 ft obstacle.
+   */
+  total_ft: number;
+  /**
+   * What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, or a tailwind past ten.
+   */
+  caveats: string[];
 }
 /**
  * This interface was referenced by `EngineContract`'s JSON-Schema

@@ -60,39 +60,6 @@ fn iso_minute(text: &str) -> Option<String> {
     tail_ok.then(|| format!("{}:00Z", &t[..16]))
 }
 
-fn is_icao_number(w: &str) -> bool {
-    let b = w.as_bytes();
-    b.len() == 8 && b[0].is_ascii_uppercase() && b[1..5].iter().all(u8::is_ascii_digit) && b[5] == b'/' && b[6..].iter().all(u8::is_ascii_digit)
-}
-
-/// "A1234/26 NOTAMR A1200/26": the number, and the one it replaces or
-/// cancels -- the first such anywhere in the text.
-fn icao_id(text: &str) -> Option<(String, Option<String>)> {
-    let words: Vec<&str> = text.split_whitespace().collect();
-    for (i, w) in words.iter().enumerate() {
-        if is_icao_number(w) && matches!(words.get(i + 1), Some(&"NOTAMN" | &"NOTAMR" | &"NOTAMC")) {
-            let names = words.get(i + 2).filter(|n| is_icao_number(n)).map(|n| n.to_string());
-            return Some((w.to_string(), names));
-        }
-    }
-    None
-}
-
-/// "!ORD 10/709": the domestic number's location and number.
-fn domestic_id(text: &str) -> Option<(String, String)> {
-    let rest = text.strip_prefix('!')?;
-    let mut words = rest.split_whitespace();
-    let place = words.next()?;
-    if !place.chars().all(|c| c.is_alphanumeric() || c == '_') {
-        return None;
-    }
-    let number = words.next()?;
-    let (m, n) = number.split_once('/')?;
-    let n: String = n.chars().take_while(char::is_ascii_digit).take(4).collect();
-    let ok = (1..=2).contains(&m.len()) && m.bytes().all(|b| b.is_ascii_digit()) && !n.is_empty();
-    ok.then(|| (place.to_string(), format!("{m}/{n}")))
-}
-
 fn some(s: &str) -> Option<String> {
     let s = s.trim();
     (!s.is_empty()).then(|| s.to_string())
@@ -266,56 +233,6 @@ pub fn from_fns(text: &str) -> Vec<Notam> {
     out
 }
 
-/// A NOTAM's number, place and times from its text as sent: the domestic
-/// form's "!LOC N/NNN PLACE ... YYMMDDHHMM-YYMMDDHHMM[EST]" (or -PERM),
-/// or the ICAO form's number, A) place and B) and C) times. None where
-/// it is neither.
-pub fn from_text(raw: &str) -> Option<Notam> {
-    let raw = raw.trim();
-    let yy = |t: &str| -> (Option<String>, bool) {
-        if t.len() >= 10 && t.as_bytes()[..10].iter().all(u8::is_ascii_digit) {
-            utc12(&format!("20{t}"))
-        } else {
-            (None, false)
-        }
-    };
-    let words: Vec<&str> = raw.split_whitespace().collect();
-    // A military NOTAM's domestic form carries an ICAO-style number
-    // ("!KEDG M0061/26 EDG ..."): the number is its name.
-    let military = raw.starts_with('!') && words.get(1).is_some_and(|w| is_icao_number(w));
-    let domestic = domestic_id(raw).map(|(place, n)| format!("{place} {n}"));
-    if domestic.is_some() || military {
-        let location = words.get(2).map(|w| w.to_string());
-        let (mut starts, mut ends, mut estimated) = (None, None, false);
-        // Its times, the last "YYMMDDHHMM-YYMMDDHHMM" group: a NOTAM in
-        // parts ends "END PART 2 OF 2" after them.
-        let times = words.iter().rev().find_map(|w| w.split_once('-').filter(|(a, b)| {
-            a.len() == 10 && a.bytes().all(|c| c.is_ascii_digit()) && (*b == "PERM" || b.get(..10).is_some_and(|d| d.bytes().all(|c| c.is_ascii_digit())))
-        }));
-        if let Some((a, b)) = times {
-            starts = yy(a).0;
-            if b != "PERM" {
-                (ends, estimated) = yy(b);
-            }
-        }
-        let id = domestic.unwrap_or_else(|| words[1].to_string());
-        let icao_id = military.then(|| words[1].to_string());
-        return Some(Notam { id, icao_id, location, starts, ends, estimated, raw: raw.to_string(), ..Default::default() });
-    }
-    let (id, names) = icao_id(raw)?;
-    let after = |tag: &str| words.iter().position(|w| *w == tag).and_then(|i| words.get(i + 1)).copied();
-    let location = after("A)").map(str::to_string);
-    let starts = after("B)").and_then(|t| yy(t).0);
-    let (ends, estimated) = match after("C)") {
-        Some("PERM") | None => (None, false),
-        Some(t) => {
-            let est = t.ends_with("EST") || words.iter().skip_while(|w| **w != "C)").nth(2) == Some(&"EST");
-            (yy(t).0, est)
-        }
-    };
-    Some(Notam { id: id.clone(), icao_id: Some(id), names, location, starts, ends, estimated, raw: raw.to_string(), ..Default::default() })
-}
-
 /// The NOTAMs as wingtip.notams' dicts, JSON.
 pub fn to_json(list: &[Notam]) -> String {
     let mut out = String::from("[");
@@ -345,23 +262,4 @@ pub fn to_json(list: &[Notam]) -> String {
     }
     out.push(']');
     out
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn the_domestic_form() {
-        let n = from_text("!ORD 10/709 ORD RWY 04L/22R CLSD EXC TAX 2610191016-2610201100EST").unwrap();
-        assert_eq!((n.id.as_str(), n.location.as_deref()), ("ORD 10/709", Some("ORD")));
-        assert_eq!((n.starts.as_deref(), n.ends.as_deref(), n.estimated), (Some("2026-10-19T10:16:00Z"), Some("2026-10-20T11:00:00Z"), true));
-        assert_eq!(from_text("!SEA 10/100 S43 TWR 122.3 DECOMMISSIONED 2610211700-PERM").unwrap().ends, None);
-    }
-
-    #[test]
-    fn the_icao_form() {
-        let n = from_text("F3298/26 NOTAMN Q) EDMM/QOLAS/IV/M /E /000/024/4820N01111E001 A) EDMM B) 2610200401 C) 2611032359 E) OBST LGT").unwrap();
-        assert_eq!((n.id.as_str(), n.location.as_deref(), n.ends.as_deref()), ("F3298/26", Some("EDMM"), Some("2026-11-03T23:59:00Z")));
-    }
 }

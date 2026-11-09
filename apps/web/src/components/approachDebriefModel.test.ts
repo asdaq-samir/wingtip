@@ -12,15 +12,20 @@ import KBUR from "../lib/fixtures/approachKbur.json";
 // from the CIFP of 1 Oct 2026 (services/planner/tests_wingtip/cifp, wingtip.procedures.procedure_drawing).
 const drawings = KBUR as unknown as Record<string, ProcedureDrawing>;
 
-// Two of the engine's names only the phones ask, through the .wasm.
-const glidepathFt = (gp: NonNullable<ProcedureDrawing["runway_path"]>, nmOut: number) =>
-  callEngine("glidepath_ft", { runway_path: gp, nm_out: nmOut });
+// The glidepath's height at a distance from its runway: a straight line up
+// from the crossing altitude at its angle, over the curved earth (the
+// engine's approach::debrief::glidepath_ft, which its own tests hold).
+const EARTH_FT = 6_371_000 * 3.28084;
+const glidepathFt = (gp: NonNullable<ProcedureDrawing["runway_path"]>, nmOut: number) => {
+  const d = nmOut * FT_PER_NM;
+  return gp.ft + d * Math.tan(rad(gp.deg)) + (d * d) / (2 * EARTH_FT);
+};
+// One of the engine's names only the phones ask, through the .wasm.
 const guidanceOf = (id: string) => callEngine("approach_guidance", { id });
 const ILS = drawings["I08-Y"]!;
 const ILS_LAX = drawings["I08-Y:LAX"]!;
 const RNAV = drawings["R08-Z"]!;
 const RNAV_MIKEI = drawings["R08-Z:MIKEI"]!;
-const RW08 = { lat: 34.197911, lon: -118.369142 };
 
 type Ll = { lat: number; lon: number };
 const ll = (p: number[]): Ll => ({ lat: p[0]!, lon: p[1]! });
@@ -86,14 +91,6 @@ const onIls = (toGo: number) => Math.min(glidepathFt(gp, toGo), toGo > 11 ? 3700
 const missedAfter = (wait: number) => (s: number) => (s <= wait ? gp.ft : gp.ft + ((s - wait) * 1000) / 60);
 
 describe("the figures it is held to", () => {
-  test("the glidepath's height at the final approach fix is the chart's glide slope altitude there", () => {
-    // ARINC 424-18 5.29 code "I" at BUDDE: 3,000 ft, the glide slope at
-    // 2,753 ft; 3.00° up from RW08's 787 ft (its 727 ft threshold and 60
-    // ft crossing height), over the curve of the earth.
-    const budde = ILS.fixes.find(f => f.ident === "BUDDE")!;
-    expect(Math.abs(glidepathFt(gp, distanceNm(budde, RW08)) - 2753)).toBeLessThan(15);
-  });
-
   test("an approach's guidance is read from its coded identifier", () => {
     expect(guidanceOf("I08-Y")).toBe("localizer");
     expect(guidanceOf("L08-Z")).toBe("localizer");

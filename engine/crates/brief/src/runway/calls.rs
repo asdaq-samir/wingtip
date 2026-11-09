@@ -34,11 +34,6 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             let h = wind::end_heading_true_deg(i.opt_str(v, "ident")?.as_deref(), i.opt_num(v, "heading_true_deg")?, i.num(v, "variation_deg")?);
             Ok(opt_number(h))
         })(),
-        "runway_favoured_end" => (|| {
-            let ends = end_headings(i, v, "ends")?;
-            let found = wind::favoured_end(&ends, reported(i, v, "metar")?.as_ref(), i.num(v, "variation_deg")?, recent(i, v)?);
-            Ok(favoured_json(found.as_ref()))
-        })(),
         "runway_with_winds" => (|| {
             let runways = i.list(v, "runways")?.iter().map(|r| end_headings(i, r, "end_headings")).collect::<R<Vec<_>>>()?;
             let winds = wind::with_winds(&runways, reported(i, v, "metar")?.as_ref(), i.num(v, "variation_deg")?, recent(i, v)?);

@@ -237,15 +237,6 @@ fn answer(name: &str, v: &Value) -> R<String> {
             let at_end = matches!(v.get("at_end"), Some(Value::Bool(true)));
             write(&hold_on_leg(&leg, &before, &hold, place(name, v, "fix")?, num(name, v, "variation_deg")?, at_end)?.value())
         }
-        "navlog_racetrack" => {
-            let right = !matches!(v.get("right"), Some(Value::Bool(false)));
-            let steps = opt_num(name, v, "steps")?.unwrap_or(12.0);
-            if !(1.0..=360.0).contains(&steps) || steps.fract() != 0.0 {
-                return Err(format!("{name}: \"steps\" is a whole number from 1 to 360"));
-            }
-            let path = super::holds::racetrack(place(name, v, "fix")?, num(name, v, "inbound_true_deg")?, right, num(name, v, "tas_kt")?, num(name, v, "leg_nm")?, steps as usize);
-            write(&Value::Array(path.into_iter().map(|(lat, lon)| Value::Array(vec![Value::Number(lat), Value::Number(lon)])).collect()))
-        }
         "navlog_fuel_stop_need" => {
             let totals = Obj::read(name, v.get("totals").unwrap_or(&Value::Null))?;
             let legs = objs(name, v, "legs")?

@@ -10,23 +10,9 @@
     { "input": { "floor_ft": 17500, "ceiling_ft": 23000, "magnetic_course_deg": 90, "rules": "ifr" }, "first": [19000, 21000, 23000] },
     { "input": { "floor_ft": 8100, "ceiling_ft": 8900, "magnetic_course_deg": 90, "rules": "ifr" }, "first": [] }
   ],
-  "tight": [
-    { "input": { "floor_ft": 1800, "ceiling_ft": 1900, "rule_from_ft": 3600 }, "answer": 1800 },
-    { "input": { "floor_ft": 1750, "ceiling_ft": 1950, "rule_from_ft": 3600 }, "answer": 1900 },
-    { "input": { "floor_ft": 1850, "ceiling_ft": 1900, "rule_from_ft": 3600 }, "answer": null },
-    { "input": { "floor_ft": 1800, "rule_from_ft": 3600 }, "answer": null },
-    { "input": { "floor_ft": 3800, "ceiling_ft": 4000, "rule_from_ft": 3600 }, "answer": null }
-  ],
   "underClouds": [
     { "cloud_base_ft": 6000, "answer": 5500 },
     { "cloud_base_ft": 12000, "answer": 11000 }
-  ],
-  "mountainous": [
-    { "place": "Denver", "lat": 39.74, "lon": -105.0, "answer": true },
-    { "place": "Asheville", "lat": 35.6, "lon": -82.55, "answer": true },
-    { "place": "Chicago", "lat": 41.98, "lon": -87.9, "answer": false },
-    { "place": "Sacramento, the Central Valley", "lat": 38.55, "lon": -121.5, "answer": false },
-    { "place": "Albany, the Hudson valley", "lat": 42.75, "lon": -73.8, "answer": false }
   ],
   "anyway": [
     { "selection": { "course_magnetic_deg": 80, "segments": [{ "floor_ft": 14600, "hemispheric_rule_from_ft": 8000 }] }, "answer": 15500 },

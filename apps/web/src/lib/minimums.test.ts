@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Briefing } from "./api/types";
-import { callEngine } from "./engine/engine";
 import { NO_MINIMUMS, underMinimums } from "./minimums";
-
-// The crosswind on the best open runway, as gonogo_under_minimums takes it
-// inside the engine, asked by name through the .wasm.
-const bestCrosswind = (runways: Briefing["airports"][string]["runways"], reported?: { speedKt?: number | null; gustKt?: number | null } | null) =>
-  callEngine("gonogo_best_crosswind", { runways, reported: reported ? { speed_kt: reported.speedKt ?? null, gust_kt: reported.gustKt ?? null } : null });
 
 const briefing = {
   metars: { C81: { ceiling_ft: 2500, visibility_sm: 10, wind_speed_kt: 12, wind_gust_kt: 22 }, KDLH: null },
@@ -25,22 +19,8 @@ describe("personal minimums", () => {
     expect(underMinimums(NO_MINIMUMS, briefing, ["C81", "KDLH"], "KDLH")).toEqual([]);
   });
 
-  it("the best runway is the one with the least crosswind, gusts included", () => {
-    expect(bestCrosswind((briefing.airports.C81!).runways)).toEqual({ end: "36", kt: 13 });
-  });
-
-  it("leaves a closed runway out, whatever its wind", () => {
-    const runways = [
-      { ends: "9/27", closed: true, wind: { end: "27", headwind_kt: 15, crosswind_kt: 0, gust_crosswind_kt: null } },
-      { ends: "18/36", closed: false, wind: { end: "36", headwind_kt: 0, crosswind_kt: -15, gust_crosswind_kt: null } },
-    ] as unknown as Briefing["airports"][string]["runways"];
-    expect(bestCrosswind(runways)).toEqual({ end: "36", kt: 15 });
-  });
-
   it("takes a variable wind, which favours no runway, as all crosswind, gusts included", () => {
     const runways = [{ ends: "18/36", closed: false, wind: null }] as unknown as Briefing["airports"][string]["runways"];
-    expect(bestCrosswind(runways, { speedKt: 15, gustKt: 25 })).toEqual({ end: null, kt: 25 });
-    expect(bestCrosswind(runways, { speedKt: 0, gustKt: null })).toBeNull();
     const vrb = { ...briefing, metars: { C81: { wind_speed_kt: 15, wind_gust_kt: 25 } }, airports: { C81: { runways } } } as unknown as Briefing;
     expect(underMinimums({ ...NO_MINIMUMS, crosswindKt: 15 }, vrb, ["C81"], "KDLH"))
       .toEqual(["C81 variable wind 25 kt, which may all be crosswind, over your 15 kt"]);

@@ -45,15 +45,6 @@ fn the_91_119_floor_by_the_rules_own_figure() {
 }
 
 #[test]
-fn oxygen_by_91_211s_three_heights() {
-    let f = fixture();
-    for case in cases(&f, "oxygen") {
-        let got = ask("oxygen_caution", json!({ "highest_ft": case["highest_ft"], "profile": case.get("profile") }));
-        assert_same(&got, &case["answer"], case);
-    }
-}
-
-#[test]
 fn prohibited_airspace_is_a_warning() {
     let f = fixture();
     for case in cases(&f, "prohibited") {

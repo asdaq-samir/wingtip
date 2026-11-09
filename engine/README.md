@@ -268,8 +268,7 @@ Then the callers switch to the name and the old copy is deleted.
   fixture `altitude.json`.
 - Night, the planning cautions and the IFR alternate are the engine's too
   (#482 phase 1, claude/engine-phase1c): night and civil twilight by
-  NOAA's solar calculation (`crates/flight`'s sun: `is_night`,
-  `night_on_the_way`, 14 CFR 1.1 and 91.151), which the nav log's fuel
+  NOAA's solar calculation (`crates/flight`'s sun: `night_on_the_way`, 14 CFR 1.1 and 91.151), which the nav log's fuel
   plan and route options read; what a pilot's own altitude breaks
   (`crates/altitude`'s cautions: 91.119, 91.131, 91.155, 91.159, 71.33,
   91.211's oxygen, 91.177 and 91.179 under IFR, 73.83) and whether a
@@ -292,9 +291,9 @@ Then the callers switch to the name and the old copy is deleted.
 - The planner's own copies are going (#482 phase 0): the airspace column
   and the Mode C veil (`airspace_column`, `mode_c_veil`), an FNS message's
   NOTAMs (`notams_fns`), a report's ceiling and category (`ceiling_ft`,
-  `report_flight_category`, `vfr_basic_minimums`), a hazard's window
+  `flight_category`, `vfr_basic_minimums`), a hazard's window
   (`gonogo_hazard_window`), the reserve, the atmosphere and the descent
-  (`reserve_min`, `isa_temp_c`, `descent_ft_per_nm` ...) and a figure in
+  (`reserve_min`, `isa_temp_c` ...) and a figure in
   the web's words (`words_*`) are asked by name from wingtip and
   app.gonogo, held to the planner's answers from before the move in
   `apps/web/src/lib/fixtures/plannerRules.json`.

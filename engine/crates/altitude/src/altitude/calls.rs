@@ -4,9 +4,9 @@
 //! engine/contract/engine.schema.json are generated from.
 
 use super::floor::{self, Ground, Obstacle, IFR_OBSTACLE_RADIUS_NM};
-use super::select::{self, Area};
+use super::select;
 use super::words::{self, Via};
-use super::{cautions, clouds, congested, cruising, mountainous};
+use super::{cautions, clouds, congested, cruising};
 use crate::json::{self, Value};
 
 type R<T> = Result<T, String>;
@@ -94,27 +94,12 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                 cruising::legal_vfr(floor, ceiling, course, opt_num(name, v, "rule_from_ft")?)
             }))
         }
-        "tight_cruising_altitude" => Ok(number(cruising::tight(num(name, v, "floor_ft")?, opt_num(name, v, "ceiling_ft")?, opt_num(name, v, "rule_from_ft")?))),
         "highest_under_clouds_ft" => Ok(number(Some(clouds::highest_under_ft(num(name, v, "cloud_base_ft")?)))),
         "cloud_clearance_at_ft" => Ok(number(Some(clouds::clearance_at_ft(num(name, v, "altitude_ft")?)))),
         "congested_points" => congested_points(name, v),
         "altitude_wheel" => Ok(numbers(&cruising::wheel(&nums(name, v, "legal_ft")?, opt_num(name, v, "flown_ft")?))),
         "ifr_obstacle_radius_nm" => Ok(number(Some(IFR_OBSTACLE_RADIUS_NM))),
         "airway_floor_ft" => Ok(number(floor::published(opt_num(name, v, "mea_ft")?, opt_num(name, v, "gnss_mea_ft")?))),
-        "mountainous_at" => Ok(mountainous::at((num(name, v, "lat")?, num(name, v, "lon")?)).to_string()),
-        "altitude_blocked" => {
-            let areas: Vec<Area> = list(name, v, "areas")?
-                .iter()
-                .map(|a| Area {
-                    kind: a.get("type").and_then(Value::as_str).unwrap_or("").to_owned(),
-                    floor_ft: a.get("floor_ft").and_then(Value::as_f64),
-                    ceiling_ft: a.get("ceiling_ft").and_then(Value::as_f64),
-                    ceiling_agl: a.get("ceiling_ref").and_then(Value::as_str) == Some("AGL"),
-                    legs: Vec::new(),
-                })
-                .collect();
-            Ok(select::blocked(num(name, v, "altitude_ft")?, &areas.iter().collect::<Vec<_>>()).to_string())
-        }
         "vfr_floors" => {
             let obstacles: Vec<Obstacle> = list(name, v, "obstacles")?
                 .iter()
@@ -217,10 +202,6 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         "floor_caution" => {
             let segment = v.get("segment").ok_or_else(|| format!("{name}: \"segment\" is missing"))?;
             Ok(written(&cautions::floor(segment, num(name, v, "altitude_ft")?).map_or(Value::Null, Value::String)))
-        }
-        "oxygen_caution" => {
-            let profile = v.get("profile").filter(|p| !matches!(p, Value::Null));
-            Ok(written(&Value::Array(cautions::oxygen(opt_num(name, v, "highest_ft")?, profile).into_iter().map(Value::String).collect())))
         }
         "prohibited_caution" => {
             let selection = v.get("selection").ok_or_else(|| format!("{name}: \"selection\" is missing"))?;

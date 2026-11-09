@@ -425,38 +425,6 @@ enum EngineContract {
         var selection: [String: JSONValue]
     }
 
-    struct AltitudeBandInput: Codable, Equatable, Sendable {
-        var altitudeFt: Double?
-
-        enum CodingKeys: String, CodingKey {
-            case altitudeFt = "altitude_ft"
-        }
-    }
-
-    struct AltitudeBlockedInput: Codable, Equatable, Sendable {
-        var altitudeFt: Double
-        var areas: [EngineContract.AltitudeBlockedInputAreasItem]?
-
-        enum CodingKeys: String, CodingKey {
-            case altitudeFt = "altitude_ft"
-            case areas
-        }
-    }
-
-    struct AltitudeBlockedInputAreasItem: Codable, Equatable, Sendable {
-        var type: String?
-        var floorFt: Double?
-        var ceilingFt: Double?
-        var ceilingRef: String?
-
-        enum CodingKeys: String, CodingKey {
-            case type
-            case floorFt = "floor_ft"
-            case ceilingFt = "ceiling_ft"
-            case ceilingRef = "ceiling_ref"
-        }
-    }
-
     struct AltitudeLimitsAnswer: Codable, Equatable, Sendable {
         var lowestFt: Double
         var highestFt: Double
@@ -595,10 +563,6 @@ enum EngineContract {
         var title: String
         var lines: [String]
         var focus: EngineContract.LessonFocus
-    }
-
-    struct ApproachBriefFrequenciesInput: Codable, Equatable, Sendable {
-        var frequencies: [EngineContract.FieldFrequency]?
     }
 
     struct ApproachBriefInput: Codable, Equatable, Sendable {
@@ -854,10 +818,6 @@ enum EngineContract {
         }
     }
 
-    struct ApproachFixNameInput: Codable, Equatable, Sendable {
-        var ident: String?
-    }
-
     struct ApproachGuidanceInput: Codable, Equatable, Sendable {
         var id: String?
     }
@@ -891,10 +851,6 @@ enum EngineContract {
         var minimums: Bool?
     }
 
-    struct ApproachMinimumsKindInput: Codable, Equatable, Sendable {
-        var name: String?
-    }
-
     /// A missed approach's coded leg (ARINC 424-18 5.21).
     struct ApproachMissedLeg: Codable, Equatable, Sendable {
         /// ARINC 424-18 5.21's path and terminator: "CA", "VI", "CF", "HM" ...
@@ -914,10 +870,6 @@ enum EngineContract {
             case minFt = "min_ft"
             case maxFt = "max_ft"
         }
-    }
-
-    struct ApproachMissedWordsInput: Codable, Equatable, Sendable {
-        var legs: [EngineContract.ApproachMissedLeg]?
     }
 
     struct ApproachPathBetweenAnswerItem: Codable, Equatable, Sendable {
@@ -1003,10 +955,6 @@ enum EngineContract {
             case drawing
             case gsKt = "gs_kt"
         }
-    }
-
-    struct ApproachRoundedFpmInput: Codable, Equatable, Sendable {
-        var fpm: Double
     }
 
     /// The glidepath placed on its runway: its threshold, the height it crosses it at and its angle.
@@ -1569,31 +1517,6 @@ enum EngineContract {
             case traffic
             case lat
             case lon
-        }
-    }
-
-    struct CivilTwilightAnswer: Codable, Equatable, Sendable {
-        var dawnS: Double?
-        var duskS: Double?
-        var nightAllDay: Bool?
-
-        enum CodingKeys: String, CodingKey {
-            case dawnS = "dawn_s"
-            case duskS = "dusk_s"
-            case nightAllDay = "night_all_day"
-        }
-    }
-
-    struct CivilTwilightInput: Codable, Equatable, Sendable {
-        var lat: Double
-        var lon: Double
-        /// Any instant of the UTC day, UNIX seconds.
-        var dayS: Double
-
-        enum CodingKeys: String, CodingKey {
-            case lat
-            case lon
-            case dayS = "day_s"
         }
     }
 
@@ -2404,21 +2327,6 @@ enum EngineContract {
             case ceilingFt = "ceiling_ft"
             case visibilitySm = "visibility_sm"
         }
-    }
-
-    struct DescentAltitudeInput: Codable, Equatable, Sendable {
-        var cruiseFt: Double
-        var patternFt: Double?
-        var nmOut: Double
-
-        enum CodingKeys: String, CodingKey {
-            case cruiseFt = "cruise_ft"
-            case patternFt = "pattern_ft"
-            case nmOut = "nm_out"
-        }
-    }
-
-    struct DescentFtPerNmInput: Codable, Equatable, Sendable {
     }
 
     struct DiagramFixUsableInput: Codable, Equatable, Sendable {
@@ -3373,16 +3281,6 @@ enum EngineContract {
         var severity: String?
     }
 
-    struct GlidepathFtInput: Codable, Equatable, Sendable {
-        var runwayPath: EngineContract.ApproachRunwayPath
-        var nmOut: Double
-
-        enum CodingKeys: String, CodingKey {
-            case runwayPath = "runway_path"
-            case nmOut = "nm_out"
-        }
-    }
-
     struct GlideRangeInput: Codable, Equatable, Sendable {
         var altitudeFt: Double?
         var speedKt: Double?
@@ -3516,32 +3414,6 @@ enum EngineContract {
         }
     }
 
-    struct GonogoBestCrosswindAnswer: Codable, Equatable, Sendable {
-        var end: String?
-        var kt: Double
-    }
-
-    struct GonogoBestCrosswindInput: Codable, Equatable, Sendable {
-        var runways: [EngineContract.GonogoBestCrosswindInputRunwaysItem]?
-        var reported: EngineContract.GonogoBestCrosswindInputReported?
-    }
-
-    struct GonogoBestCrosswindInputReported: Codable, Equatable, Sendable {
-        var speedKt: Double?
-        var gustKt: Double?
-
-        enum CodingKeys: String, CodingKey {
-            case speedKt = "speed_kt"
-            case gustKt = "gust_kt"
-        }
-    }
-
-    struct GonogoBestCrosswindInputRunwaysItem: Codable, Equatable, Sendable {
-        /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-        var closed: Bool?
-        var wind: EngineContract.GonogoRunwayWind?
-    }
-
     struct GonogoDefaultLoadAnswer: Codable, Equatable, Sendable {
         var emptyWeightLb: Double
         var emptyArmIn: Double
@@ -3574,21 +3446,6 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case pressureAltFt = "pressure_alt_ft"
             case tempC = "temp_c"
-        }
-    }
-
-    /// The POH's short-field distances.
-    struct GonogoDistances: Codable, Equatable, Sendable {
-        var groundRollFt: Double
-        /// Over a 50 ft obstacle.
-        var totalFt: Double
-        /// What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, or a tailwind past ten.
-        var caveats: [String]
-
-        enum CodingKeys: String, CodingKey {
-            case groundRollFt = "ground_roll_ft"
-            case totalFt = "total_ft"
-            case caveats
         }
     }
 
@@ -3639,28 +3496,6 @@ enum EngineContract {
         var group: String?
         /// Its mark; null for a self check.
         var finding: String?
-    }
-
-    struct GonogoFieldAirAnswer: Codable, Equatable, Sendable {
-        var pressureAltFt: Double
-        var tempC: Double
-
-        enum CodingKeys: String, CodingKey {
-            case pressureAltFt = "pressure_alt_ft"
-            case tempC = "temp_c"
-        }
-    }
-
-    struct GonogoFieldAirInput: Codable, Equatable, Sendable {
-        var elevationFt: Double
-        var altimeterInHg: Double?
-        var tempC: Double?
-
-        enum CodingKeys: String, CodingKey {
-            case elevationFt = "elevation_ft"
-            case altimeterInHg = "altimeter_in_hg"
-            case tempC = "temp_c"
-        }
     }
 
     struct GonogoFlown: Codable, Equatable, Sendable {
@@ -3758,21 +3593,6 @@ enum EngineContract {
             case atOrBelow = "at_or_below"
             case reports
         }
-    }
-
-    struct GonogoInEnvelopeInput: Codable, Equatable, Sendable {
-        /// [arm in, weight lb] points.
-        var envelope: [[JSONValue]]?
-        var arm: Double
-        var weight: Double
-    }
-
-    struct GonogoInspectionFactorsInput: Codable, Equatable, Sendable {
-        var inspections: EngineContract.GonogoInspections?
-        /// yyyy-mm-dd.
-        var day: String
-        /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-        var ifr: Bool?
     }
 
     struct GonogoInspections: Codable, Equatable, Sendable {
@@ -4199,49 +4019,8 @@ enum EngineContract {
     struct GonogoSelfChecksInput: Codable, Equatable, Sendable {
     }
 
-    struct GonogoShortFieldInput: Codable, Equatable, Sendable {
-        var table: EngineContract.ShortFieldTable
-        var pressureAltFt: Double
-        var tempC: Double
-        var weightLb: Double
-        /// A tailwind negative.
-        var headwindKt: Double
-        /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-        var grass: Bool?
-
-        enum CodingKeys: String, CodingKey {
-            case table
-            case pressureAltFt = "pressure_alt_ft"
-            case tempC = "temp_c"
-            case weightLb = "weight_lb"
-            case headwindKt = "headwind_kt"
-            case grass
-        }
-    }
-
     struct GonogoSoftSurfaceInput: Codable, Equatable, Sendable {
         var surface: String?
-    }
-
-    struct GonogoSquawkFactorsInput: Codable, Equatable, Sendable {
-        var squawks: [EngineContract.GonogoSquawkFactorsInputSquawksItem]?
-        /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-        var night: Bool?
-        /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-        var ifr: Bool?
-    }
-
-    struct GonogoSquawkFactorsInputSquawksItem: Codable, Equatable, Sendable {
-        var text: String?
-        /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
-        var inoperative: Bool?
-        var deferredFor: String?
-
-        enum CodingKeys: String, CodingKey {
-            case text
-            case inoperative
-            case deferredFor = "deferred_for"
-        }
     }
 
     struct GonogoSuaWhenInput: Codable, Equatable, Sendable {
@@ -4365,7 +4144,7 @@ enum EngineContract {
         var windFromDeg: Double
         var windKt: Double
         var tasKt: Double
-        /// The wind correction angle (wind_correction_deg).
+        /// The wind correction angle.
         var wcaDeg: Double
 
         enum CodingKeys: String, CodingKey {
@@ -5017,20 +4796,6 @@ enum EngineContract {
         }
     }
 
-    struct IsNightInput: Codable, Equatable, Sendable {
-        var lat: Double
-        /// East positive.
-        var lon: Double
-        /// UNIX seconds, UTC.
-        var atS: Double
-
-        enum CodingKeys: String, CodingKey {
-            case lat
-            case lon
-            case atS = "at_s"
-        }
-    }
-
     struct KneeboardRadioInput: Codable, Equatable, Sendable {
         var frequencies: [EngineContract.FieldFrequency]
     }
@@ -5500,10 +5265,6 @@ enum EngineContract {
         }
     }
 
-    struct MetarReadInput: Codable, Equatable, Sendable {
-        var raw: String
-    }
-
     /// A METAR's wind; null, missing or empty for none.
     struct MetarWindIn: Codable, Equatable, Sendable {
         var windDirTrueDeg: Double?
@@ -5544,11 +5305,6 @@ enum EngineContract {
 
     struct MorseInput: Codable, Equatable, Sendable {
         var ident: String?
-    }
-
-    struct MountainousAtInput: Codable, Equatable, Sendable {
-        var lat: Double
-        var lon: Double
     }
 
     struct NavaidHoursInput: Codable, Equatable, Sendable {
@@ -6100,29 +5856,6 @@ enum EngineContract {
         }
     }
 
-    struct NavlogRacetrackInput: Codable, Equatable, Sendable {
-        var fix: EngineContract.NavlogRacetrackInputFix
-        var inboundTrueDeg: Double
-        var right: Bool?
-        var tasKt: Double
-        var legNm: Double
-        var steps: Double?
-
-        enum CodingKeys: String, CodingKey {
-            case fix
-            case inboundTrueDeg = "inbound_true_deg"
-            case right
-            case tasKt = "tas_kt"
-            case legNm = "leg_nm"
-            case steps
-        }
-    }
-
-    struct NavlogRacetrackInputFix: Codable, Equatable, Sendable {
-        var lat: Double
-        var lon: Double
-    }
-
     /// A nav log row, the web's NavLogRow: its place is the checkpoint's (cp), the top of climb's or descent's (point) or the airport's.
     struct NavLogRow: Codable, Equatable, Sendable {
         var kind: String
@@ -6398,48 +6131,6 @@ enum EngineContract {
         var text: String
     }
 
-    struct NotamTextAnswerItem: Codable, Equatable, Sendable {
-        var id: String
-        var icaoId: String?
-        var names: String?
-        var type: String?
-        var location: String?
-        var icaoLocation: String?
-        var classification: String?
-        var issued: String?
-        var starts: String?
-        var ends: String?
-        var estimated: Bool
-        var schedule: String?
-        var text: String
-        var raw: String
-
-        enum CodingKeys: String, CodingKey {
-            case id
-            case icaoId = "icao_id"
-            case names
-            case type
-            case location
-            case icaoLocation = "icao_location"
-            case classification
-            case issued
-            case starts
-            case ends
-            case estimated
-            case schedule
-            case text
-            case raw
-        }
-    }
-
-    struct NotamTextInput: Codable, Equatable, Sendable {
-        var text: String
-    }
-
-    struct OperatorOfInput: Codable, Equatable, Sendable {
-        var callsign: String?
-    }
-
     struct OurCallInput: Codable, Equatable, Sendable {
         var text: String
         var tail: String
@@ -6497,16 +6188,6 @@ enum EngineContract {
     struct OwnShipHexInput: Codable, Equatable, Sendable {
         var planes: [EngineContract.TrafficPlane]
         var fix: EngineContract.OwnShipFix?
-    }
-
-    struct OxygenCautionInput: Codable, Equatable, Sendable {
-        var highestFt: Double?
-        var profile: [String: JSONValue]?
-
-        enum CodingKeys: String, CodingKey {
-            case highestFt = "highest_ft"
-            case profile
-        }
     }
 
     struct PassengerBriefingAnswerItem: Codable, Equatable, Sendable {
@@ -7308,18 +6989,6 @@ enum EngineContract {
         var year: Double?
     }
 
-    struct ReportFlightCategoryInput: Codable, Equatable, Sendable {
-        var ceilingFt: Double?
-        var ceilingUnknown: Bool?
-        var visibilitySm: Double?
-
-        enum CodingKeys: String, CodingKey {
-            case ceilingFt = "ceiling_ft"
-            case ceilingUnknown = "ceiling_unknown"
-            case visibilitySm = "visibility_sm"
-        }
-    }
-
     struct ReserveMinInput: Codable, Equatable, Sendable {
         var ifr: Bool?
         var night: Bool?
@@ -7929,20 +7598,6 @@ enum EngineContract {
         }
     }
 
-    struct RunwayFavouredEndInput: Codable, Equatable, Sendable {
-        var ends: [[JSONValue]]??
-        var metar: EngineContract.MetarWindIn?
-        var variationDeg: Double
-        var recent: EngineContract.RecentWindIn?
-
-        enum CodingKeys: String, CodingKey {
-            case ends
-            case metar
-            case variationDeg = "variation_deg"
-            case recent
-        }
-    }
-
     struct RunwayRunwayEndsItem: Codable, Equatable, Sendable {
         var ident: String
         var headingTrueDeg: Double?
@@ -8270,36 +7925,6 @@ enum EngineContract {
         }
     }
 
-    struct SkyCeilingAnswer: Codable, Equatable, Sendable {
-        var ceilingFt: Double?
-        var ceilingUnknown: Bool
-
-        enum CodingKeys: String, CodingKey {
-            case ceilingFt = "ceiling_ft"
-            case ceilingUnknown = "ceiling_unknown"
-        }
-    }
-
-    struct SkyCeilingInput: Codable, Equatable, Sendable {
-        var layers: [EngineContract.SkyCeilingInputLayersItem]?
-        var vertVisFt: Double?
-
-        enum CodingKeys: String, CodingKey {
-            case layers
-            case vertVisFt = "vert_vis_ft"
-        }
-    }
-
-    struct SkyCeilingInputLayersItem: Codable, Equatable, Sendable {
-        var cover: String?
-        var baseFt: Double?
-
-        enum CodingKeys: String, CodingKey {
-            case cover
-            case baseFt = "base_ft"
-        }
-    }
-
     struct SoloStandingAnswer: Codable, Equatable, Sendable {
         var days: Int?
         var standing: String
@@ -8394,7 +8019,7 @@ enum EngineContract {
         }
     }
 
-    /// One period of a TAF as the weather store keeps it (awc_tafs_read; taf_read's fcsts): Unix seconds, the change group ("", FM, BECMG, TEMPO, PROB), the wind from true north, and the ceiling (14 CFR 1.1) and visibility (statute miles).
+    /// One period of a TAF as the weather store keeps it (awc_tafs_read): Unix seconds, the change group ("", FM, BECMG, TEMPO, PROB), the wind from true north, and the ceiling (14 CFR 1.1) and visibility (statute miles).
     struct TafPeriod: Codable, Equatable, Sendable {
         var timeFrom: Double
         var timeTo: Double
@@ -8421,11 +8046,6 @@ enum EngineContract {
             case ceilingUnknown = "ceiling_unknown"
             case wx
         }
-    }
-
-    struct TafReadInput: Codable, Equatable, Sendable {
-        var raw: String
-        var near: Double
     }
 
     struct TafsAlongRouteAnswer: Codable, Equatable, Sendable {
@@ -8576,18 +8196,6 @@ enum EngineContract {
     struct ThinTrackInput: Codable, Equatable, Sendable {
         var points: [JSONValue]
         var most: Int?
-    }
-
-    struct TightCruisingAltitudeInput: Codable, Equatable, Sendable {
-        var floorFt: Double
-        var ceilingFt: Double?
-        var ruleFromFt: Double?
-
-        enum CodingKeys: String, CodingKey {
-            case floorFt = "floor_ft"
-            case ceilingFt = "ceiling_ft"
-            case ruleFromFt = "rule_from_ft"
-        }
     }
 
     struct TitleCaseInput: Codable, Equatable, Sendable {
@@ -9162,20 +8770,6 @@ enum EngineContract {
         }
     }
 
-    struct WindCorrectionDegInput: Codable, Equatable, Sendable {
-        var trueCourseDeg: Double
-        var windFromDeg: Double
-        var windKt: Double
-        var tasKt: Double
-
-        enum CodingKeys: String, CodingKey {
-            case trueCourseDeg = "true_course_deg"
-            case windFromDeg = "wind_from_deg"
-            case windKt = "wind_kt"
-            case tasKt = "tas_kt"
-        }
-    }
-
     struct WindPickAnswer: Codable, Equatable, Sendable {
         /// The end as painted, "" where none is.
         var ident: String
@@ -9239,11 +8833,6 @@ enum EngineContract {
             case speedKt = "speed_kt"
             case gustKt = "gust_kt"
         }
-    }
-
-    struct WindsReadInput: Codable, Equatable, Sendable {
-        var text: String
-        var now: Double
     }
 
     struct WindSteadyOrGustInput: Codable, Equatable, Sendable {

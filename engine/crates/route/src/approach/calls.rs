@@ -5,7 +5,7 @@
 
 use super::debrief::{self, Attempt, Debrief, Finding, Outcome, Tone};
 use super::lesson::{self, Focus, Frequency};
-use super::{list, missed_legs, num, opt_num, opt_str, Drawing, RunwayPath};
+use super::{list, num, opt_num, opt_str, Drawing};
 use crate::figures::debrief::Point;
 use crate::json::{self, Value};
 
@@ -123,11 +123,6 @@ fn number_json(n: f64) -> String {
 pub fn call(name: &str, v: &Value) -> R<String> {
     match name {
         "approach_guidance" => Ok(opt_string_json(Some(debrief::guidance_of(&opt_str(name, v, "id")?.unwrap_or_default()).key()))),
-        "glidepath_ft" => {
-            let gp = v.get("runway_path").ok_or_else(|| format!("{name}: \"runway_path\" is missing"))?;
-            let gp = RunwayPath { lat: num(name, gp, "lat")?, lon: num(name, gp, "lon")?, ft: num(name, gp, "ft")?, deg: num(name, gp, "deg")? };
-            Ok(number_json(debrief::glidepath_ft(&gp, num(name, v, "nm_out")?)))
-        }
         "approach_attempts" => {
             let attempts = debrief::attempts_at(&drawing(name, v)?, &points(name, v)?);
             let parts: Vec<String> = attempts.iter().map(|a| format!("{{\"faf\":{},\"from\":{},\"to\":{}}}", a.faf, a.from, a.to)).collect();
@@ -178,19 +173,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             Ok(out)
         }
         "approach_descent_fpm" => Ok(number_json(lesson::descent_fpm(num(name, v, "gs_kt")?, num(name, v, "angle_deg")?))),
-        "approach_rounded_fpm" => Ok(number_json(lesson::rounded_fpm(num(name, v, "fpm")?))),
         "approach_category" => Ok(opt_string_json(lesson::approach_category(opt_num(name, v, "vref_kt")?, opt_num(name, v, "vso_kt")?))),
-        "approach_minimums_kind" => Ok(opt_string_json(Some(lesson::minimums_kind(&opt_str(name, v, "name")?.unwrap_or_default()).key()))),
-        "approach_fix_name" => Ok(opt_string_json(Some(&lesson::fix_name(&opt_str(name, v, "ident")?.unwrap_or_default())))),
-        "approach_missed_words" => {
-            let legs = missed_legs(name, list(name, v, "legs")?)?;
-            Ok(opt_string_json(lesson::missed_words(&legs).as_deref()))
-        }
-        "approach_brief_frequencies" => {
-            let mut out = String::new();
-            strings_json(&mut out, &lesson::brief_frequencies(&frequencies(name, v)?));
-            Ok(out)
-        }
         "approach_lesson_path" => Ok(places_json(&lesson::lesson_path(&drawing(name, v)?))),
         "approach_path_between" => {
             Ok(places_json(&lesson::path_between(&path(name, v)?, place(name, v.get("a"))?, place(name, v.get("b"))?)))
