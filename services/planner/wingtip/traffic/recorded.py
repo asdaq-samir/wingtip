@@ -3,6 +3,7 @@ flights are recorded from any source, card open or not. Both are kept in the liv
 (wingtip.traffic.store), which the planner and ingest share: the planner records an open card's
 airplane, ingest the followed ones the FAA's radar and adsb.fi hear, and a restart of either loses
 none of it."""
+
 from __future__ import annotations
 
 import re
@@ -55,9 +56,15 @@ def _record(hex_id: str, plane: dict) -> None:
         return
     at = round(_wall() - (plane.get("seen_s") or 0.0), 1)
     point = {
-        "t": at, "lat": plane["lat"], "lon": plane["lon"], "alt_ft": plane.get("altitude_ft"),
-        "gs_kt": plane.get("speed_kt"), "track_deg": plane.get("track_deg"), "vrate_fpm": plane.get("vertical_fpm"),
-        "new_leg": False, "plane": plane,
+        "t": at,
+        "lat": plane["lat"],
+        "lon": plane["lon"],
+        "alt_ft": plane.get("altitude_ft"),
+        "gs_kt": plane.get("speed_kt"),
+        "track_deg": plane.get("track_deg"),
+        "vrate_fpm": plane.get("vertical_fpm"),
+        "new_leg": False,
+        "plane": plane,
     }
     store.record(key, point, at - RECORD_KEEP_S)
 

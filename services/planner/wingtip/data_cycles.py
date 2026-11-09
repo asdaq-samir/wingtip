@@ -14,6 +14,7 @@ still used, and said to be out of date -- to the pilot on the Status page,
 the map's settings and the Brief, to the owner in the log and the Dev
 console's status.
 """
+
 import json
 import logging
 import re
@@ -89,9 +90,17 @@ def entry(key: str, name: str, kind: str, effective: date | None, on: date | Non
     """One data set's line: what it is, the edition held and the engine's
     answer for it."""
     answer = cycle(kind, effective, on)
-    return {"key": key, "name": name, "kind": kind, "edition": effective.isoformat() if effective else None,
-            "effective": answer["effective"], "expires": answer["expires"], "current": answer["current"],
-            "state": answer["state"], "behind": answer["behind"]}
+    return {
+        "key": key,
+        "name": name,
+        "kind": kind,
+        "edition": effective.isoformat() if effective else None,
+        "effective": answer["effective"],
+        "expires": answer["expires"],
+        "current": answer["current"],
+        "state": answer["state"],
+        "behind": answer["behind"],
+    }
 
 
 def _nasr_edition(cache_dir: Path) -> date | None:
@@ -100,8 +109,11 @@ def _nasr_edition(cache_dir: Path) -> date | None:
     enough for the frequencies or the navaids to be wrong."""
     from .faa_data import _effective_date
 
-    days = [nasr_effective(_effective_date(cache_dir / name))
-            for name in ("APT_BASE.csv", "NAV_BASE.csv", "FIX_BASE.csv", "FRQ.csv") if (cache_dir / name).exists()]
+    days = [
+        nasr_effective(_effective_date(cache_dir / name))
+        for name in ("APT_BASE.csv", "NAV_BASE.csv", "FIX_BASE.csv", "FRQ.csv")
+        if (cache_dir / name).exists()
+    ]
     days = [d for d in days if d]
     return min(days) if days else None
 
@@ -132,8 +144,10 @@ def _charts_edition(charts) -> str | None:
         held = charts._serving_cache["value"]
         if charts.CHART_TILES_URL and held:
             return held
-        return next((c for c in charts._cycles_on_disk(charts.CHART_TILE_CACHE_DIR)
-                     if charts.in_force(c) and charts.pyramid_complete(c, ("sec",))), None)
+        return next(
+            (c for c in charts._cycles_on_disk(charts.CHART_TILE_CACHE_DIR) if charts.in_force(c) and charts.pyramid_complete(c, ("sec",))),
+            None,
+        )
     except Exception:  # noqa: BLE001 -- the status of the others is still worth having
         log.warning("chart cycle unknown", exc_info=True)
         return None

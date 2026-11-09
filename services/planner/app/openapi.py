@@ -5,6 +5,7 @@ Run it after changing anything in app.schemas or a router's signature:
     python -m app.openapi
 
 services/planner/tests/test_openapi.py fails until the committed file matches."""
+
 import json
 from pathlib import Path
 

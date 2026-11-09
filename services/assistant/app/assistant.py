@@ -32,6 +32,7 @@ written into the question as material to examine, never as
 instructions. The conversation is the client's to keep: it sends every
 turn each time, appending only, so the cached prefix holds.
 """
+
 from __future__ import annotations
 
 import json
@@ -134,8 +135,9 @@ def proposals(actions: list[dict]) -> list[dict]:
 
 #: What the screen says while a tool runs, from its name and input.
 LABELS = {
-    "plan_flight": lambda i: "Planning " + " to ".join(x for x in (i.get("dep"), i.get("dest")) if x) if i.get("dep") or i.get("dest")
-    else "Planning the route",
+    "plan_flight": lambda i: (
+        "Planning " + " to ".join(x for x in (i.get("dep"), i.get("dest")) if x) if i.get("dep") or i.get("dest") else "Planning the route"
+    ),
     "weather_at": lambda i: f"The weather at {str(i.get('ident', '')).upper()}".strip(),
     "briefing_for": lambda i: "The briefing" + (f" {i['dep']} to {i['dest']}" if i.get("dep") and i.get("dest") else ""),
     "go_no_go": lambda i: "The Go / No-Go",
@@ -173,9 +175,12 @@ def context_block(c: Context | None) -> str:
     parts.append(f"rules: {c.rules.upper()}")
     if c.own_ship:
         o = c.own_ship
-        parts.append(f"own ship: {o.lat:.3f}, {o.lon:.3f}" + (f", {o.altitude_ft:g} ft" if o.altitude_ft is not None else "")
-                     + (f", track {o.track_deg:g}" if o.track_deg is not None else "")
-                     + (f", {o.groundspeed_kt:g} kt" if o.groundspeed_kt is not None else ""))
+        parts.append(
+            f"own ship: {o.lat:.3f}, {o.lon:.3f}"
+            + (f", {o.altitude_ft:g} ft" if o.altitude_ft is not None else "")
+            + (f", track {o.track_deg:g}" if o.track_deg is not None else "")
+            + (f", {o.groundspeed_kt:g} kt" if o.groundspeed_kt is not None else "")
+        )
     if c.pilot:
         parts.append("pilot: " + as_json(c.pilot))
     parts.append(f"now: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H%MZ')}")
@@ -208,10 +213,15 @@ def runner_for(turns: list[dict], box: Toolbox):
     The system prompt is cached: it is the same bytes for every pilot."""
     extra = {"extra_body": {"fallbacks": "default"}, "betas": ["server-side-fallback-2026-07-01"]} if ASSISTANT_FALLBACKS else {}
     return _client().beta.messages.tool_runner(
-        model=ASSISTANT_MODEL, max_tokens=ASSISTANT_MAX_TOKENS,
+        model=ASSISTANT_MODEL,
+        max_tokens=ASSISTANT_MAX_TOKENS,
         system=[{"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}}],
-        tools=box.tools, messages=turns, stream=True, output_config={"effort": ASSISTANT_EFFORT},
-        max_iterations=ASSISTANT_MAX_ITERATIONS, **extra,
+        tools=box.tools,
+        messages=turns,
+        stream=True,
+        output_config={"effort": ASSISTANT_EFFORT},
+        max_iterations=ASSISTANT_MAX_ITERATIONS,
+        **extra,
     )
 
 
@@ -279,8 +289,9 @@ def answer(ask: AssistantAsk, runner=None, box: Toolbox | None = None) -> Iterat
 router = APIRouter()
 
 
-@router.post("/api/assistant", responses={200: {"content": {"application/x-ndjson": {}}}},
-             openapi_extra=gateway("signed-in", paid="ASSISTANT"))
+@router.post(
+    "/api/assistant", responses={200: {"content": {"application/x-ndjson": {}}}}, openapi_extra=gateway("signed-in", paid="ASSISTANT")
+)
 def ask_assistant(ask: AssistantAsk) -> StreamingResponse:
     """The answer as events, one JSON object a line: `tool` (name, label)
     as each is asked, `text` (a piece of the answer) as it comes, `action`
@@ -293,5 +304,6 @@ def ask_assistant(ask: AssistantAsk) -> StreamingResponse:
     # The conversation is checked before the stream opens, so a bad one
     # is a 422 the client reads, not an error event.
     conversation(ask)
-    return StreamingResponse(answer(ask), media_type="application/x-ndjson",
-                             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+    return StreamingResponse(
+        answer(ask), media_type="application/x-ndjson", headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"}
+    )

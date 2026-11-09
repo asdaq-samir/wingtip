@@ -1,6 +1,7 @@
 """wingtip.config.Settings reads the environment as the code always has:
 the tests pin each way a value is read, since the move from os.environ
 was meant to change nothing but where a malformed value fails."""
+
 import pytest
 
 from wingtip.config import SettingsError, get_settings
@@ -21,8 +22,7 @@ def test_every_malformed_variable_is_named(monkeypatch):
 
 
 def test_the_defaults(monkeypatch):
-    for name in ("CHARTS_PREPARE_AT_ONCE", "CHARTS_FETCH_FOR_TILES",
-                 "CHART_TILES_URL", "ADSBX_RAPIDAPI_KEY"):
+    for name in ("CHARTS_PREPARE_AT_ONCE", "CHARTS_FETCH_FOR_TILES", "CHART_TILES_URL", "ADSBX_RAPIDAPI_KEY"):
         monkeypatch.delenv(name, raising=False)
     settings = get_settings()
     assert settings.charts_prepare_at_once == 2

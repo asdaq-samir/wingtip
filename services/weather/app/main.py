@@ -23,6 +23,7 @@ three of its idle turns, or past its own validity; "stale" overall if any
 is. The answer says so rather than failing the container's health, since
 a restart fetches nothing an outage at NOAA would give.
 """
+
 from __future__ import annotations
 
 import json
@@ -75,8 +76,16 @@ PRODUCTS = (
 )
 
 #: What a fetch may fail with: its source, in its own words.
-FAILURES = (fetch.FetchFailed, gfs.ModelWindsUnavailable, glmp.GlmpUnavailable, tfr.TfrUnavailable,
-            radar.RadarUnavailable, ET.ParseError, OSError, ValueError)
+FAILURES = (
+    fetch.FetchFailed,
+    gfs.ModelWindsUnavailable,
+    glmp.GlmpUnavailable,
+    tfr.TfrUnavailable,
+    radar.RadarUnavailable,
+    ET.ParseError,
+    OSError,
+    ValueError,
+)
 
 
 def in_use(now: float | None = None) -> bool:
@@ -97,8 +106,11 @@ class Schedule:
         """The products whose turn has come and that are not being fetched."""
         busy = in_use(now)
         with self.lock:
-            return [p for name, p in self.products.items()
-                    if name not in self.running and now - self.tried.get(name, float("-inf")) >= p.every_s(busy)]
+            return [
+                p
+                for name, p in self.products.items()
+                if name not in self.running and now - self.tried.get(name, float("-inf")) >= p.every_s(busy)
+            ]
 
     def run(self, product: Product) -> None:
         """One product fetched, its failure logged and written beside its copy."""

@@ -1,4 +1,5 @@
 """An airplane's state now, for the alerts a pilot sets on it."""
+
 from __future__ import annotations
 
 from .. import airports
@@ -62,8 +63,11 @@ def status(hex_id: str) -> dict:
         return _recorded_status(hex_id, recorded)
     if trace is None:
         trace = _trace(hex_id)
-    raw = [p for p in (trace or {}).get("trace") or []
-           if isinstance(p, list) and len(p) > 6 and _number(p[1]) is not None and _number(p[2]) is not None]
+    raw = [
+        p
+        for p in (trace or {}).get("trace") or []
+        if isinstance(p, list) and len(p) > 6 and _number(p[1]) is not None and _number(p[2]) is not None
+    ]
     points = _points(trace) if raw else []
     state = {"hex": hex_id, "heard_s": None, "airborne": False, "aircraft": None, "departed": None, "arrived": None}
     if not points:
@@ -76,15 +80,23 @@ def status(hex_id: str) -> dict:
         # The run in the air it is on: back to the stretch on the ground
         # it took off from, readsb's own new leg, or a silence of LEG_GAP_S.
         start = len(points) - 1
-        while (start > 0 and not ground[start - 1] and not points[start]["new_leg"]
-               and points[start]["t"] - points[start - 1]["t"] <= LEG_GAP_S):
+        while (
+            start > 0
+            and not ground[start - 1]
+            and not points[start]["new_leg"]
+            and points[start]["t"] - points[start - 1]["t"] <= LEG_GAP_S
+        ):
             start -= 1
         if start > 0 and ground[start - 1]:
             on = points[start - 1]
             near = airports.nearest(on["lat"], on["lon"], limit=1)
             if near and near[0]["distance_nm"] <= DEPARTED_WITHIN_NM:
-                state["departed"] = {"ident": near[0]["ident"], "name": near[0].get("name"),
-                                     "city": near[0].get("municipality"), "region": near[0].get("region")}
+                state["departed"] = {
+                    "ident": near[0]["ident"],
+                    "name": near[0].get("name"),
+                    "city": near[0].get("municipality"),
+                    "region": near[0].get("region"),
+                }
         else:
             state["departed"] = _field_at(points[start], landing=False)
         state.update(airborne=True, aircraft=aircraft)

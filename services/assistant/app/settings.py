@@ -3,6 +3,7 @@ aside), typed once here: where the planner is, which model each feature
 asks, and where the reference texts are kept. ANTHROPIC_API_KEY is not
 here: the anthropic SDK reads it itself, and this service is the only one
 given it (docker-compose.yml, infra/docker-compose.prod.yml)."""
+
 from __future__ import annotations
 
 import functools

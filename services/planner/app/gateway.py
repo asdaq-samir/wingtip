@@ -32,15 +32,24 @@ a flight). The rest are off unless set:
 
 The assistant (services/assistant/app/gateway.py) has the same helper.
 """
+
 from typing import Literal
 
 Access = Literal["public", "signed-in", "developer"]
 Paid = Literal["NARRATIVE", "CHECKPOINT_NOTES", "ORAL", "ASSISTANT", "WORDS"]
 
 
-def gateway(access: Access, *, cache: bool = False, headers: tuple[str, ...] = (), range: bool = False,  # noqa: A002
-            csrf: bool = True, pilot: bool = False, paid: Paid | None = None,
-            body_limit: int | None = None) -> dict:
+def gateway(
+    access: Access,
+    *,
+    cache: bool = False,
+    headers: tuple[str, ...] = (),
+    range: bool = False,  # noqa: A002
+    csrf: bool = True,
+    pilot: bool = False,
+    paid: Paid | None = None,
+    body_limit: int | None = None,
+) -> dict:
     """The ``openapi_extra`` of a route the gateway forwards."""
     spec: dict = {"access": access}
     if cache:

@@ -1,6 +1,7 @@
 """wingtip.places: a point described by what is there -- the landmark it is
 by, or the town it is near -- from the USGS's place names, as a
 stand-alone VFR waypoint has no name of its own."""
+
 import io
 
 from wingtip import places
@@ -28,9 +29,9 @@ def test_a_waypoint_on_a_landmark_is_by_it_and_one_elsewhere_is_so_far_from_a_to
         ("Old Lake (historical)", "Lake", 42.0781, -87.8636),
     )
 
-    assert places.describe(42.26733888, -88.13105, table) == "by Bangs Lake"           # VPBNG
-    assert places.describe(42.21298888, -87.803625, table) == "by Fort Sheridan"        # VPFTS
-    assert places.describe(42.07806388, -87.86358888, table) == "2 nm W of Glenview"    # VPAON
+    assert places.describe(42.26733888, -88.13105, table) == "by Bangs Lake"  # VPBNG
+    assert places.describe(42.21298888, -87.803625, table) == "by Fort Sheridan"  # VPFTS
+    assert places.describe(42.07806388, -87.86358888, table) == "2 nm W of Glenview"  # VPAON
     assert places.describe(42.2610, -88.1420, table) == "in Wauconda"
 
 

@@ -6,6 +6,7 @@ says -- when it is in force, how high it reaches, why, under which rule
 -- read by the engine (wingtip_engine::tfr). Never fetched from here, so
 neither the map nor a briefing waits on tfr.faa.gov (#535).
 """
+
 from __future__ import annotations
 
 import math
@@ -38,13 +39,21 @@ def _when(tfr: dict, start: datetime, end: datetime) -> str | None:
     is in force only from its effective to its expiry time, as its NOTAM
     gives them (AIM 3-5-3; 14 CFR 91.137-91.145); one with no expiry is
     until further notice, and a time that cannot be read is no time."""
+
     def at(key: str) -> float | None:
         try:
             return datetime.fromisoformat(tfr[key].replace("Z", "+00:00")).timestamp() if tfr.get(key) else None
         except ValueError:
             return None
-    return engine("gonogo_hazard_window", enter=start.timestamp(), leave=end.timestamp(), valid_from=at("effective"),
-                  valid_to=at("expires"), margin_min=0)
+
+    return engine(
+        "gonogo_hazard_window",
+        enter=start.timestamp(),
+        leave=end.timestamp(),
+        valid_from=at("effective"),
+        valid_to=at("expires"),
+        margin_min=0,
+    )
 
 
 def _ended(detail: dict, now: datetime) -> bool:
@@ -112,12 +121,14 @@ def along_route(path: list, start: datetime, end: datetime, near_nm: float = NEA
         if not near.intersects(geometry) or not in_force(tfr, start, end):
             continue
         point = geometry.representative_point()
-        found.append({
-            **tfr,
-            "along_track_nm": round(along_track_distance_nm(point.y, point.x, path[0], path[-1]), 1),
-            "crosses": line.intersects(geometry),
-            "active_now": in_force(tfr, now, now),
-        })
+        found.append(
+            {
+                **tfr,
+                "along_track_nm": round(along_track_distance_nm(point.y, point.x, path[0], path[-1]), 1),
+                "crosses": line.intersects(geometry),
+                "active_now": in_force(tfr, now, now),
+            }
+        )
     return sorted(found, key=lambda t: t["along_track_nm"])
 
 

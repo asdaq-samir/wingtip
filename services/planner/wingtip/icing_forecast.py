@@ -16,6 +16,7 @@ forecast unchecked, never as no icing. Its answer, measured 2026-11-08:
 "sfc_hgt"}`, values level-fastest, and forecast hours 0 to 12 answered
 (15 and later came back empty).
 """
+
 from __future__ import annotations
 
 import threading
@@ -74,13 +75,17 @@ def _section(a: tuple, b: tuple, hour: int, issued: datetime) -> dict | None:
         held = _HELD.get(key)
         if held and time.time() - held[0] < HELD_S:
             return held[1]
-    resp = requests.get(URL.format(issued=issued.strftime("%Y%m%d/%H"), hour=hour, path=path),
-                        headers=REQUEST_HEADERS, timeout=TIMEOUT_S)
+    resp = requests.get(URL.format(issued=issued.strftime("%Y%m%d/%H"), hour=hour, path=path), headers=REQUEST_HEADERS, timeout=TIMEOUT_S)
     resp.raise_for_status()
     body = resp.json()
     values = body.get("values") if isinstance(body, dict) else None
-    shaped = (isinstance(values, list) and values and body.get("data_levels") == len(LEVELS_FT)
-              and isinstance(body.get("width"), int) and len(values) == body["width"] * len(LEVELS_FT))
+    shaped = (
+        isinstance(values, list)
+        and values
+        and body.get("data_levels") == len(LEVELS_FT)
+        and isinstance(body.get("width"), int)
+        and len(values) == body["width"] * len(LEVELS_FT)
+    )
     found = {k: body[k] for k in ("width", "data_levels", "values", "sfc_hgt") if k in body} if shaped else None
     with _LOCK:
         if len(_HELD) > 2000:
@@ -108,8 +113,14 @@ def _leg_section(a: tuple, b: tuple, valid_s: float, now: float) -> tuple[dict |
     return None, True
 
 
-def along(fixes: list[tuple[float, float]], altitudes_ft: list[float], leg_minutes: list[float],
-          ground_minutes: list[float] | None, start: float, now: float | None = None) -> dict:
+def along(
+    fixes: list[tuple[float, float]],
+    altitudes_ft: list[float],
+    leg_minutes: list[float],
+    ground_minutes: list[float] | None,
+    start: float,
+    now: float | None = None,
+) -> dict:
     """The engine's reading of the forecast icing on each leg, from the
     nav log's fixes (one more than its legs), each leg's altitude, its
     ETE and its minutes on the ground after it, the flight leaving at
@@ -130,6 +141,9 @@ def along(fixes: list[tuple[float, float]], altitudes_ft: list[float], leg_minut
     if got and not any(reached for _, reached in got):
         raise IcingForecastUnavailable("aviationweather.gov did not answer for the forecast icing")
     sections = [s for s, _ in got] + [None] * (legs - len(got))
-    answer = engine("icing_forecast_route", levels_ft=LEVELS_FT, legs=[
-        {"altitude_ft": alt, "section": sections[i], "valid_s": middles[i]} for i, alt in enumerate(altitudes_ft)])
+    answer = engine(
+        "icing_forecast_route",
+        levels_ft=LEVELS_FT,
+        legs=[{"altitude_ft": alt, "section": sections[i], "valid_s": middles[i]} for i, alt in enumerate(altitudes_ft)],
+    )
     return {**answer, "issued": _issued(now).isoformat().replace("+00:00", "Z")}

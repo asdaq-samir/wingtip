@@ -3,6 +3,7 @@ data_cycle, from the FAA's 28 and 56 Day Product Schedule), the lead
 before it, the swap at 0901Z on its date, what the planner's check asks
 the job to do, and the job's status read back as the planner reports it.
 The job's run is services/jobs/charts/tests/test_next_cycle.py's."""
+
 from datetime import date, datetime, timezone
 
 import pytest
@@ -30,7 +31,7 @@ def test_staging_starts_lead_days_ahead_by_the_0901z_day():
     assert not chart_next.plan(utc("2026-12-17T09:00")).staging
     assert chart_next.plan(utc("2026-12-17T09:01")).staging
     assert chart_next.plan(utc("2026-12-23T23:59")).staging
-    assert chart_next.plan(utc("2026-11-09T12:00"), lead_days=45).staging        # from 9 Nov
+    assert chart_next.plan(utc("2026-11-09T12:00"), lead_days=45).staging  # from 9 Nov
     assert not chart_next.plan(utc("2026-11-09T12:00"), lead_days=44).staging
 
 
@@ -54,15 +55,16 @@ def test_the_lead_is_held_inside_one_cycle(asked, held):
 
 
 def _plan(staging=True):
-    return chart_next.Plan(in_force=date(2026, 10, 29), next=date(2026, 12, 24),
-                           stage_from=date(2026, 12, 17), lead_days=7, staging=staging)
+    return chart_next.Plan(
+        in_force=date(2026, 10, 29), next=date(2026, 12, 24), stage_from=date(2026, 12, 17), lead_days=7, staging=staging
+    )
 
 
 def test_what_the_planners_check_asks_for():
     now = 1_000_000.0
     assert chart_next.due(_plan(False), None, True, True, False, now) is None
     assert chart_next.due(_plan(), None, True, True, False, now) == "stage"
-    assert chart_next.due(_plan(), None, False, True, False, now) is None            # staged already
+    assert chart_next.due(_plan(), None, False, True, False, now) is None  # staged already
     # After the swap: the old cycle deleted, at any point of the lead.
     assert chart_next.due(_plan(False), None, False, True, True, now) == "prune"
     # Nothing the last run could do: asked again only after RETRY_AFTER_S.
@@ -73,8 +75,7 @@ def test_what_the_planners_check_asks_for():
         # The word of another cycle does not hold this one back.
         assert chart_next.due(_plan(), {**last, "cycle": "10-29-2026"}, True, True, False, now) == "stage"
     # A run that was staging (killed part-way) is started again to resume.
-    assert chart_next.due(_plan(), {"cycle": "12-24-2026", "state": chart_next.STAGING, "at": now}, True, True,
-                          False, now) == "stage"
+    assert chart_next.due(_plan(), {"cycle": "12-24-2026", "state": chart_next.STAGING, "at": now}, True, True, False, now) == "stage"
 
 
 @pytest.fixture
@@ -89,8 +90,17 @@ def disk(tmp_path, monkeypatch):
 
 def _complete(cycle):
     for kind in charts.KINDS:
-        charts._write_pyramid_status(cycle, {"kind": kind, "zooms": [3], "sheets": sorted(charts.COVERAGE[kind]), "finished_at": "t",
-                                             "tiles": 1, "renderer": charts.RENDERER_VERSION})
+        charts._write_pyramid_status(
+            cycle,
+            {
+                "kind": kind,
+                "zooms": [3],
+                "sheets": sorted(charts.COVERAGE[kind]),
+                "finished_at": "t",
+                "tiles": 1,
+                "renderer": charts.RENDERER_VERSION,
+            },
+        )
 
 
 def test_a_staged_cycle_is_not_served_before_its_date(disk, monkeypatch):

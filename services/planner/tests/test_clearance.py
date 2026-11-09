@@ -1,5 +1,6 @@
 """app.routers.clearance: a clearance's places found near the route, and
 the names its recognizer is told to listen for."""
+
 from app.routers import clearance
 from app.schemas.clearance import ClearanceAsk, SpokenProcedureAsk
 
@@ -8,10 +9,14 @@ PLACES = [
     {"ident": "DLH", "name": "Duluth", "what": "navaid", "lat": 46.80, "lon": -92.20},
     {"ident": "PYKLA", "what": "fix", "lat": 46.83, "lon": -91.85},
 ]
-LISTED = {"airport": "KMSP", "cycle": "261029", "procedures": [
-    {"kind": "departure", "id": "BUNYN1", "transitions": ["DLH", "KVUSI"]},
-    {"kind": "arrival", "id": "GEP1", "transitions": ["FAR"]},
-]}
+LISTED = {
+    "airport": "KMSP",
+    "cycle": "261029",
+    "procedures": [
+        {"kind": "departure", "id": "BUNYN1", "transitions": ["DLH", "KVUSI"]},
+        {"kind": "arrival", "id": "GEP1", "transitions": ["FAR"]},
+    ],
+}
 
 
 def _near_route(monkeypatch):
@@ -24,10 +29,15 @@ def _near_route(monkeypatch):
 
 def test_the_limit_route_and_sid_said_are_found_as_idents(monkeypatch):
     _near_route(monkeypatch)
-    found = clearance.clearance_places(ClearanceAsk(
-        near="44.88,-93.22;46.84,-92.19", dep="KMSP", limit="duluth airport", route=["gopher", "pickla wibble"],
-        departure=SpokenProcedureAsk(name="bunyan", number="1", transition="duluth"),
-    ))
+    found = clearance.clearance_places(
+        ClearanceAsk(
+            near="44.88,-93.22;46.84,-92.19",
+            dep="KMSP",
+            limit="duluth airport",
+            route=["gopher", "pickla wibble"],
+            departure=SpokenProcedureAsk(name="bunyan", number="1", transition="duluth"),
+        )
+    )
     assert found["limit"]["ident"] == "KDLH"
     assert [[p["ident"] for p in run] for run in found["route"]] == [["GEP"], ["PYKLA", None]]
     assert found["route"][1][0]["sure"] is False

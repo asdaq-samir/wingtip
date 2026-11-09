@@ -1,6 +1,7 @@
 """The shapes more than one router sends or takes, and those app.main,
 app.figures.schemas and app.gonogo.schemas build on, as Pydantic models.
 A model one router alone uses lives in that router's module here."""
+
 from typing import Literal
 
 from pydantic import BaseModel

@@ -12,6 +12,7 @@ and the METAR and TAF national caches are held by wingtip.weather for
 minutes at a time. Assembling all thirty costs about as much as
 assembling one.
 """
+
 import logging
 import time
 

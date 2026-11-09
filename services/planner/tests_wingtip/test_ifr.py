@@ -3,6 +3,7 @@ the cruising altitudes the direction of flight allows (91.179(b), FAA
 Order JO 7110.65 TBL 4-5-1), and the designated mountainous areas (Part
 95 subpart B). The terrain tiles are made flat here, with what peaks a
 test puts on them, and the obstacles are a real DOF file of a few lines."""
+
 import numpy as np
 import pytest
 
@@ -15,8 +16,9 @@ def cruising(floor_ft, ceiling_ft, course):
     """The engine's IFR cruising altitudes (14 CFR 91.179(b))."""
     return engine("legal_cruising_altitudes", floor_ft=floor_ft, ceiling_ft=ceiling_ft, magnetic_course_deg=course, rules="ifr")
 
-GROUND_M = 300.0   # 984.25 ft
-START = (45.0, -90.0)   # Wisconsin: no mountainous area
+
+GROUND_M = 300.0  # 984.25 ft
+START = (45.0, -90.0)  # Wisconsin: no mountainous area
 END = (45.0, -89.5)
 
 

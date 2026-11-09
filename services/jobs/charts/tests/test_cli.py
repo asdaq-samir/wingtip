@@ -1,6 +1,7 @@
 """The charts job's commands (charts.cli): the runs that write a cycle's
 tiles keep to the refresh lock (wingtip.charts.refresh_lock) another
 process holds, and `run` builds the overlays before the cycle."""
+
 import os
 import subprocess
 import sys
@@ -25,8 +26,7 @@ with charts.refresh_lock() as got:
 
 def _hold_in_another_process(tiles, seconds):
     env = {**os.environ, "PYTHONPATH": str(Path(charts.__file__).resolve().parents[1])}
-    child = subprocess.Popen([sys.executable, "-c", _HOLD, str(tiles), str(seconds)],
-                             stdout=subprocess.PIPE, text=True, env=env)
+    child = subprocess.Popen([sys.executable, "-c", _HOLD, str(tiles), str(seconds)], stdout=subprocess.PIPE, text=True, env=env)
     assert child.stdout.readline().strip() == "held"
     return child
 

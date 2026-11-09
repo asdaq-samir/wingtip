@@ -18,6 +18,7 @@ A tile not in a finished archive is no tile: the pyramid draws every
 tile any sheet's face touches, so its absence means what a `.none`
 marker beside a loose tile means.
 """
+
 from __future__ import annotations
 
 import gzip
@@ -70,13 +71,24 @@ def write(path: Path, tiles: Iterable[tuple[int, int, int, int, Callable[[], byt
     meta = gzip.compress(json.dumps(metadata).encode(), mtime=0)
     first, last = tileid_to_zxy(items[0][0]), tileid_to_zxy(items[-1][0])
     header = {
-        "root_offset": HEADER_BYTES, "root_length": len(root),
-        "metadata_offset": HEADER_BYTES + len(root), "metadata_length": len(meta),
-        "leaf_directory_offset": HEADER_BYTES + len(root) + len(meta), "leaf_directory_length": len(leaves),
-        "tile_data_offset": HEADER_BYTES + len(root) + len(meta) + len(leaves), "tile_data_length": offset,
-        "addressed_tiles_count": len(items), "tile_entries_count": len(items), "tile_contents_count": len(items),
-        "clustered": True, "internal_compression": Compression.GZIP, "tile_compression": Compression.NONE,
-        "tile_type": TileType.PNG, "min_zoom": first[0], "max_zoom": last[0], "center_zoom": first[0],
+        "root_offset": HEADER_BYTES,
+        "root_length": len(root),
+        "metadata_offset": HEADER_BYTES + len(root),
+        "metadata_length": len(meta),
+        "leaf_directory_offset": HEADER_BYTES + len(root) + len(meta),
+        "leaf_directory_length": len(leaves),
+        "tile_data_offset": HEADER_BYTES + len(root) + len(meta) + len(leaves),
+        "tile_data_length": offset,
+        "addressed_tiles_count": len(items),
+        "tile_entries_count": len(items),
+        "tile_contents_count": len(items),
+        "clustered": True,
+        "internal_compression": Compression.GZIP,
+        "tile_compression": Compression.NONE,
+        "tile_type": TileType.PNG,
+        "min_zoom": first[0],
+        "max_zoom": last[0],
+        "center_zoom": first[0],
     }
     part = path.with_name(f"{path.name}.{os.getpid()}.part")
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -149,6 +161,7 @@ class Archive:
     def tiles(self):
         """Every tile, (z, x, y, length, read), in tile-id order: what
         `write` takes, to write the archive again with some replaced."""
+
         def walk(offset, length):
             for entry in self._directory(offset, length):
                 if entry.run_length == 0:
@@ -158,6 +171,7 @@ class Archive:
                 for i in range(entry.run_length):
                     z, x, y = tileid_to_zxy(entry.tile_id + i)
                     yield z, x, y, entry.length, (lambda s=start, n=entry.length: bytes(self.get_bytes(s, n)))
+
         yield from walk(self.header["root_offset"], self.header["root_length"])
 
 
@@ -181,7 +195,7 @@ class _File:
             if key != self.key:
                 with open(self.path, "rb") as f:
                     mapping = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-                self.archive = Archive(lambda offset, length, m=mapping: m[offset:offset + length])
+                self.archive = Archive(lambda offset, length, m=mapping: m[offset : offset + length])
                 self.key = key
             return self.archive
 
@@ -214,7 +228,7 @@ def over_http(url: str, session, timeout: float = 10) -> Archive | None:
         resp.raise_for_status()
         # 206 is the range alone; a server that ignores Range sends 200
         # and the whole file.
-        return resp.content[offset:offset + length] if resp.status_code == 200 else resp.content
+        return resp.content[offset : offset + length] if resp.status_code == 200 else resp.content
 
     try:
         archive = Archive(get_bytes)

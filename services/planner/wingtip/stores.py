@@ -14,6 +14,7 @@ A store first opened at a new path takes the one kept at its old path
 (adopt): the NOTAMs heard since 19 Oct 2026 are the briefing's whole
 record (wingtip.notams.since), and the feed sends none of them again.
 """
+
 from __future__ import annotations
 
 import os

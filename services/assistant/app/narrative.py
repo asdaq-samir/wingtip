@@ -17,6 +17,7 @@ needed a local sentence-transformers model to embed each briefing, and a
 briefing of the route on screen is written from its own figures, not
 from another route's.
 """
+
 from __future__ import annotations
 
 import json
@@ -139,8 +140,12 @@ def briefing_prompt(
 
 def prompt_for(request: NarrativeRequest) -> str:
     return briefing_prompt(
-        request.departure_ident, request.destination_ident, request.altitude_ft,
-        request.altitude_selection, request.leg_dicts(), flown=request.flown,
+        request.departure_ident,
+        request.destination_ident,
+        request.altitude_ft,
+        request.altitude_selection,
+        request.leg_dicts(),
+        flown=request.flown,
     )
 
 
@@ -279,12 +284,15 @@ def stream(request: NarrativeRequest) -> Iterator[str]:
     would take it as whole."""
     parts: list[str] = []
     try:
-        with tracing.claude_call("narrative", NARRATIVE_MODEL, current=False) as used, _client().messages.stream(
-            model=NARRATIVE_MODEL,
-            max_tokens=NARRATIVE_MAX_TOKENS,
-            output_config={"effort": NARRATIVE_EFFORT},
-            messages=[{"role": "user", "content": prompt_for(request)}],
-        ) as said:
+        with (
+            tracing.claude_call("narrative", NARRATIVE_MODEL, current=False) as used,
+            _client().messages.stream(
+                model=NARRATIVE_MODEL,
+                max_tokens=NARRATIVE_MAX_TOKENS,
+                output_config={"effort": NARRATIVE_EFFORT},
+                messages=[{"role": "user", "content": prompt_for(request)}],
+            ) as said,
+        ):
             for text in said.text_stream:
                 parts.append(text)
                 yield _line(NarrativeDelta(text=text))
@@ -314,8 +322,11 @@ router = APIRouter()
 # A long cross-country with every leg field is a few tens of KB (and
 # NarrativeRequest takes MAX_LEGS legs at most); every byte is prompt text
 # a billed call reads, so the gateway forwards 256 KB at most.
-@router.post("/api/briefing/narrative", responses={200: {"content": {"application/x-ndjson": {}}}},
-             openapi_extra=gateway("signed-in", paid="NARRATIVE", body_limit=256 * 1024))
+@router.post(
+    "/api/briefing/narrative",
+    responses={200: {"content": {"application/x-ndjson": {}}}},
+    openapi_extra=gateway("signed-in", paid="NARRATIVE", body_limit=256 * 1024),
+)
 def write_narrative(request: NarrativeRequest) -> StreamingResponse:
     """The narrative as lines of NarrativeMessage: `delta` (a piece of
     the text) as Claude writes it, then `done` with the whole briefing,
@@ -326,5 +337,6 @@ def write_narrative(request: NarrativeRequest) -> StreamingResponse:
     One billed Claude call a narrative; the gateway lets only a
     subscribed, signed-in pilot through, within the month's cap and the
     day's allowance (PlannerProxyController)."""
-    return StreamingResponse(stream(request), media_type="application/x-ndjson",
-                             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+    return StreamingResponse(
+        stream(request), media_type="application/x-ndjson", headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"}
+    )

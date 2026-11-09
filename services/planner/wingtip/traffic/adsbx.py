@@ -1,5 +1,6 @@
 """ADS-B Exchange, the fallback where adsb.lol turns us away, through RapidAPI, within its
 month's requests."""
+
 from __future__ import annotations
 
 import json
@@ -71,8 +72,11 @@ def _adsbx(path: str, search: bool = False) -> list[dict]:
     if not _adsbx_spend(search):
         raise TrafficUnavailable("ADS-B Exchange may not be asked now")
     try:
-        resp = requests.get(ADSBX_URL.format(path=path), timeout=TIMEOUT_S, headers={
-            **HEADERS, "x-rapidapi-key": get_settings().adsbx_rapidapi_key or "", "x-rapidapi-host": ADSBX_HOST})
+        resp = requests.get(
+            ADSBX_URL.format(path=path),
+            timeout=TIMEOUT_S,
+            headers={**HEADERS, "x-rapidapi-key": get_settings().adsbx_rapidapi_key or "", "x-rapidapi-host": ADSBX_HOST},
+        )
         _adsbx_counted(resp.headers)
         resp.raise_for_status()
         entries = resp.json().get("ac") or []

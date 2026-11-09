@@ -27,6 +27,7 @@ engine's (engine/crates/weather/src/forecast, winds.rs; #482 phase 2),
 asked by name through wingtip_native: this module reads the store and
 asks.
 """
+
 import logging
 import time
 from datetime import datetime
@@ -71,8 +72,7 @@ def _fd_stations(fcst_hr: str = "06") -> dict:
     held = _FD.get(fcst_hr)
     if held is not None and held[0] is record:
         return held[1]
-    out = FdStations({code: {int(alt): level for alt, level in levels.items()}
-                      for code, levels in record.data["stations"].items()})
+    out = FdStations({code: {int(alt): level for alt, level in levels.items()} for code, levels in record.data["stations"].items()})
     out.period = record.data["period"]
     out.modelled = True
     _FD[fcst_hr] = (record, out)
@@ -226,10 +226,7 @@ def wind_in_levels(levels: dict, altitude_ft: float) -> dict | None:
 # --- Every product, read from the weather store ---
 
 # Each source as a pilot knows it, for the line said when it cannot be had.
-_PRODUCT_WORDS = {
-    "metars": "METARs", "tafs": "TAFs", "airsigmets": "AIRMETs and SIGMETs", "pireps": "PIREPs",
-    "gairmets": "G-AIRMETs",
-}
+_PRODUCT_WORDS = {"metars": "METARs", "tafs": "TAFs", "airsigmets": "AIRMETs and SIGMETs", "pireps": "PIREPs", "gairmets": "G-AIRMETs"}
 
 #: The reports and advisories, each a cache file of aviationweather.gov's.
 _CACHE_SOURCES = ("metars", "tafs", "airsigmets", "pireps", "gairmets")
@@ -285,22 +282,26 @@ def sources_status() -> list[dict]:
     out = []
     for name in _CACHE_SOURCES:
         record = weather_store.read(name)
-        out.append({
-            "name": _PRODUCT_WORDS.get(name, name),
-            "fetched_at": record.fetched_at if record else None,
-            # No limit (METARs, each carrying its own time) is None.
-            "kept_until": record.until if record else None,
-            "failing": _failing(name, record),
-        })
+        out.append(
+            {
+                "name": _PRODUCT_WORDS.get(name, name),
+                "fetched_at": record.fetched_at if record else None,
+                # No limit (METARs, each carrying its own time) is None.
+                "kept_until": record.until if record else None,
+                "failing": _failing(name, record),
+            }
+        )
     # The winds aloft, the GFS's, each period held to the end of its own window.
     for hr in weather_store.WIND_PERIODS:
         record = weather_store.read(f"winds-{hr}")
-        out.append({
-            "name": f"Winds aloft, modelled (GFS), {int(hr)}-hour",
-            "fetched_at": record.fetched_at if record else None,
-            "kept_until": record.until if record else None,
-            "failing": _failing(f"winds-{hr}", record),
-        })
+        out.append(
+            {
+                "name": f"Winds aloft, modelled (GFS), {int(hr)}-hour",
+                "fetched_at": record.fetched_at if record else None,
+                "kept_until": record.until if record else None,
+                "failing": _failing(f"winds-{hr}", record),
+            }
+        )
     return out
 
 
@@ -397,12 +398,16 @@ def nearest_report(lat: float, lon: float, exclude: str | None = None, within_nm
         return None
     nm, ident, report, bearing = best
     return {
-        "ident": ident, "distance_nm": round(nm, 1), "bearing_deg": round(bearing),
-        "near": nm <= NEAR_REPORT_SM * _NM_PER_SM, "metar": report,
+        "ident": ident,
+        "distance_nm": round(nm, 1),
+        "bearing_deg": round(bearing),
+        "near": nm <= NEAR_REPORT_SM * _NM_PER_SM,
+        "metar": report,
     }
 
 
 # --- Ceiling/visibility, from the TAFs ---
+
 
 def taf_for_idents(idents: list) -> dict:
     """{ident: {...}} for the current forecast period at each ident, or
@@ -438,8 +443,7 @@ def taf_for_idents(idents: list) -> dict:
     return answer
 
 
-def forecast_wind(lat: float, lon: float, at_unix: float, ident: str | None = None,
-                  within_nm: float = NEAREST_REPORT_NM) -> dict | None:
+def forecast_wind(lat: float, lon: float, at_unix: float, ident: str | None = None, within_nm: float = NEAREST_REPORT_NM) -> dict | None:
     """The wind forecast at a field for a time, from its own TAF (`ident`)
     or else the nearest station's within `within_nm` -- the reach the card
     takes a nearby METAR from (nearest_report) -- as {"ident",
@@ -467,9 +471,13 @@ def forecast_wind(lat: float, lon: float, at_unix: float, ident: str | None = No
     if period is None or period.get("wind_speed_kt") is None:
         return None
     return {
-        "ident": station["icaoId"], "distance_nm": round(nm, 1),
-        "dir_true_deg": period.get("wind_dir_true_deg"), "speed_kt": period["wind_speed_kt"],
-        "gust_kt": period.get("wind_gust_kt"), "valid_from": period["timeFrom"], "valid_to": period["timeTo"],
+        "ident": station["icaoId"],
+        "distance_nm": round(nm, 1),
+        "dir_true_deg": period.get("wind_dir_true_deg"),
+        "speed_kt": period["wind_speed_kt"],
+        "gust_kt": period.get("wind_gust_kt"),
+        "valid_from": period["timeFrom"],
+        "valid_to": period["timeTo"],
     }
 
 
@@ -488,7 +496,7 @@ def _worst_in_window(fcsts: list, start: float, end: float) -> dict | None:
 
 
 def ceiling_visibility_along_route(
-    route_start: tuple, route_end: tuple, corridor_buffer_nm: float = 10.0, window: tuple | None = None,
+    route_start: tuple, route_end: tuple, corridor_buffer_nm: float = 10.0, window: tuple | None = None
 ) -> dict:
     """Lowest forecast ceiling/visibility among TAF stations near the
     route, over `window` -- (start, end) in unix seconds, the flight from
@@ -510,8 +518,14 @@ def ceiling_visibility_along_route(
     # to the same box.
     s, w, n, e = corridor_bbox(route_start, route_end, corridor_buffer_nm)
     near = [t for t in _dataset("tafs") if s <= t["lat"] <= n and w <= t["lon"] <= e]
-    return _ask("tafs_along_route", tafs=near, **{"from": list(route_start), "to": list(route_end)},
-                corridor_nm=corridor_buffer_nm, start=start, end=end)
+    return _ask(
+        "tafs_along_route",
+        tafs=near,
+        **{"from": list(route_start), "to": list(route_end)},
+        corridor_nm=corridor_buffer_nm,
+        start=start,
+        end=end,
+    )
 
 
 def tafs_over(windows: dict) -> dict:
@@ -528,13 +542,13 @@ def tafs_over(windows: dict) -> dict:
         window = windows.get(station["icaoId"])
         if window is None:
             continue
-        worst = _worst_in_window(station["fcsts"], *window) or {
-            "ceiling_ft": None, "ceiling_unknown": False, "visibility_sm": None}
+        worst = _worst_in_window(station["fcsts"], *window) or {"ceiling_ft": None, "ceiling_unknown": False, "visibility_sm": None}
         found[station["icaoId"]] = {**worst, "raw": station.get("raw")}
     return found
 
 
 # --- Go/no-go: the basic VFR weather minimums ---
+
 
 def below_vfr_minimums(ceiling_ft: float | None, visibility_sm: float | None) -> bool:
     """Whether either figure is under 14 CFR 91.155(c), (d)'s basic VFR
@@ -547,7 +561,7 @@ def below_vfr_minimums(ceiling_ft: float | None, visibility_sm: float | None) ->
 
 
 def vfr_not_recommended_reasons(idents: list, metars: dict, forecast: dict) -> list[str]:
-    """"VFR flight not recommended" (AIM 7-1-5) as its reasons, in
+    """ "VFR flight not recommended" (AIM 7-1-5) as its reasons, in
     briefing order: the engine's (vfr_not_recommended_reasons) -- either
     end reporting IFR, LIFR or a ceiling of unknown height, then the
     forecast along the route under 14 CFR 91.155's basic minimums or of
@@ -558,17 +572,24 @@ def vfr_not_recommended_reasons(idents: list, metars: dict, forecast: dict) -> l
 
 # --- SIGMET hazards ---
 
+
 def hazards_along_route(route_start: tuple, route_end: tuple, corridor_buffer_nm: float = 25.0) -> list:
     """The SIGMETs in force now whose area the route line crosses: the
     engine's (sigmets_along_route). CONUS AIRMETs gave way to G-AIRMETs in
     January 2025 (gairmet_snapshots_along_route). Each keeps its valid
     times, issue and area ("coords", [[lat, lon]]), for the briefing to say
     where and when the flight meets it."""
-    return _ask("sigmets_along_route", advisories=_dataset("airsigmets"),
-                **{"from": list(route_start), "to": list(route_end)}, corridor_nm=corridor_buffer_nm, now=time.time())
+    return _ask(
+        "sigmets_along_route",
+        advisories=_dataset("airsigmets"),
+        **{"from": list(route_start), "to": list(route_end)},
+        corridor_nm=corridor_buffer_nm,
+        now=time.time(),
+    )
 
 
 # --- PIREPs ---
+
 
 def pireps_along_route(path: list, corridor_nm: float | None = None) -> list:
     """The pilot reports of the last 90 minutes, at or under 18,000 ft,
@@ -577,8 +598,7 @@ def pireps_along_route(path: list, corridor_nm: float | None = None) -> list:
     order: the engine's (pireps_along_route). Each {"observed_at", "lat",
     "lon", "altitude_ft", "aircraft", "urgent", "turbulence", "icing",
     "raw", "along_track_nm"}."""
-    return _ask("pireps_along_route", reports=_dataset("pireps"), path=[list(p) for p in path],
-                corridor_nm=corridor_nm, now=time.time())
+    return _ask("pireps_along_route", reports=_dataset("pireps"), path=[list(p) for p in path], corridor_nm=corridor_nm, now=time.time())
 
 
 def pireps_in_box(box: tuple, now: float | None = None) -> list:

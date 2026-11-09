@@ -3,6 +3,7 @@
 stale only when down), every feed stale when ingest stops beating, the
 weather by the weather service's own answer, and the watch that turns a
 feed stale long enough into an alert, once, and ends it once."""
+
 import requests
 
 from wingtip import feed_health
@@ -21,13 +22,18 @@ def _by_name(lines):
 
 
 def test_busy_feeds_are_stale_on_silence_and_quiet_ones_only_when_down():
-    lines = _by_name(feed_health.swim(_beats(
-        STDDS={"connected": True, "last_at": NOW - 5, "messages": 10},
-        TFMS={"connected": True, "last_at": NOW - 600},
-        FNS={"connected": True, "last_at": NOW - 900},
-        ITWS={"connected": True, "last_at": NOW - 6 * 3600},
-        SFDPS={"connected": False, "error": "Login failure"},
-    ), NOW))
+    lines = _by_name(
+        feed_health.swim(
+            _beats(
+                STDDS={"connected": True, "last_at": NOW - 5, "messages": 10},
+                TFMS={"connected": True, "last_at": NOW - 600},
+                FNS={"connected": True, "last_at": NOW - 900},
+                ITWS={"connected": True, "last_at": NOW - 6 * 3600},
+                SFDPS={"connected": False, "error": "Login failure"},
+            ),
+            NOW,
+        )
+    )
     assert lines["STDDS"]["state"] == "ok"
     assert lines["TFMS"]["state"] == "stale" and "no message for 10 min" in lines["TFMS"]["detail"]
     assert lines["FNS"]["state"] == "ok"
@@ -67,10 +73,12 @@ class _Response:
 
 
 def test_the_weather_by_the_services_own_answer():
-    body = {"products": {
-        "metars": {"fetched_at": NOW - 60, "stale": False},
-        "tafs": {"fetched_at": NOW - 9000, "stale": True, "failing": True, "error": "HTTP 503"},
-    }}
+    body = {
+        "products": {
+            "metars": {"fetched_at": NOW - 60, "stale": False},
+            "tafs": {"fetched_at": NOW - 9000, "stale": True, "failing": True, "error": "HTTP 503"},
+        }
+    }
     lines = _by_name(feed_health.weather_feeds("http://weather:8000", NOW, get=lambda url, **kw: _Response(body)))
     assert lines["metars"]["state"] == "ok"
     assert lines["tafs"]["state"] == "stale" and "HTTP 503" in lines["tafs"]["detail"]
@@ -98,7 +106,7 @@ def test_the_watch_alerts_once_after_the_wait_and_ends_once():
     lines, began, ended = watch.see(stale, NOW + 900)
     assert lines[0]["alerting"] and [b["name"] for b in began] == ["TFMS"]
     lines, began, ended = watch.see(stale, NOW + 960)
-    assert lines[0]["alerting"] and began == []                      # said once
+    assert lines[0]["alerting"] and began == []  # said once
     lines, began, ended = watch.see(fine, NOW + 1000)
     assert lines[0]["stale_since"] is None and [e["name"] for e in ended] == ["TFMS"]
     # Stale again: the wait starts over.

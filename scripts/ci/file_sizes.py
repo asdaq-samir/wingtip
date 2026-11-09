@@ -23,6 +23,7 @@ The standard library only, for the Mac's python3 (3.9) and CI's.
   python3 scripts/ci/file_sizes.py --base origin/main
   python3 scripts/ci/file_sizes.py --write          rewrite the list's counts down
 """
+
 import re
 import subprocess
 import sys
@@ -32,14 +33,15 @@ ROOT = Path(__file__).resolve().parents[2]
 ALLOW = ROOT / "scripts/ci/file_sizes_allow.txt"
 BUDGET = 400
 SUFFIXES = (".ts", ".tsx", ".py", ".rs", ".swift", ".kt", ".java")
-GENERATED = re.compile(
-    r"(^|/)(generated|Generated)/|\.d\.ts$|^apps/web/src/lib/engine/contract\.ts$")
+GENERATED = re.compile(r"(^|/)(generated|Generated)/|\.d\.ts$|^apps/web/src/lib/engine/contract\.ts$")
 HEADER = """\
 # Source files over scripts/ci/file_sizes.py's budget (400 lines) when the
 # budget came in, each at the lines it had then: "<path> <lines>". A file
 # here may not grow past its count, and none is added; split one and lower
 # its count (`python3 scripts/ci/file_sizes.py --write`), and it leaves the
-# list once it is within the budget.
+# list once it is within the budget. The counts raised on 2026-11-09, and
+# the files first listed then, are the formatters' growth (the whole-tree
+# reformat of scripts/dev/format.sh, a commit a language), not new code.
 """
 
 
@@ -77,8 +79,7 @@ def main(argv: list) -> int:
     over = {p: n for p, n in sizes.items() if n > BUDGET}
 
     if "--write" in argv:
-        kept = {p: min(n, allowed[p]) if p in allowed else n for p, n in over.items()
-                if p in allowed or "--seed" in argv}
+        kept = {p: min(n, allowed[p]) if p in allowed else n for p, n in over.items() if p in allowed or "--seed" in argv}
         write_allow(kept)
         print(f"file sizes: {len(kept)} file(s) listed over {BUDGET} lines")
         return 0
@@ -88,8 +89,13 @@ def main(argv: list) -> int:
         if path not in allowed:
             errors.append((path, f"{n} lines, over the {BUDGET}-line budget: split it into files that each do one thing"))
         elif n > allowed[path]:
-            errors.append((path, f"{n} lines, grown past the {allowed[path]} it is allowed (scripts/ci/file_sizes_allow.txt): "
-                                 f"take what grew into a file of its own"))
+            errors.append(
+                (
+                    path,
+                    f"{n} lines, grown past the {allowed[path]} it is allowed (scripts/ci/file_sizes_allow.txt): "
+                    f"take what grew into a file of its own",
+                )
+            )
     for path, count in sorted(allowed.items()):
         n = sizes.get(path, 0)
         if n < count:
@@ -97,16 +103,22 @@ def main(argv: list) -> int:
 
     if "--base" in argv:
         ref = argv[argv.index("--base") + 1]
-        shown = subprocess.run(["git", "-C", str(ROOT), "show", f"{ref}:{ALLOW.relative_to(ROOT).as_posix()}"],
-                               capture_output=True, text=True)
+        shown = subprocess.run(
+            ["git", "-C", str(ROOT), "show", f"{ref}:{ALLOW.relative_to(ROOT).as_posix()}"], capture_output=True, text=True
+        )
         if shown.returncode == 0:
             before = read_allow(shown.stdout)
             for path, count in sorted(allowed.items()):
                 if path not in before:
                     errors.append((path, f"added to scripts/ci/file_sizes_allow.txt against {ref}: the list only shrinks"))
                 elif count > before[path]:
-                    errors.append((path, f"raised from {before[path]} to {count} in scripts/ci/file_sizes_allow.txt "
-                                         f"against {ref}: the list only shrinks"))
+                    errors.append(
+                        (
+                            path,
+                            f"raised from {before[path]} to {count} in scripts/ci/file_sizes_allow.txt "
+                            f"against {ref}: the list only shrinks",
+                        )
+                    )
         else:
             notes.append(f"no scripts/ci/file_sizes_allow.txt at {ref}: the list is not compared")
 

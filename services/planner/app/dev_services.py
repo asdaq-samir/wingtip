@@ -12,6 +12,7 @@ for the console; the sidecar is what enforces the list. It sits on a
 network only this service shares, so nothing else in the stack can ask
 it anything.
 """
+
 import logging
 
 import requests
@@ -25,9 +26,7 @@ log = logging.getLogger(__name__)
 #: The services the console links to, and what it calls them. db and
 #: the gateway are absent on purpose: nothing in the console links to a
 #: database port, and the gateway starting itself is a contradiction.
-STARTABLE = {
-    "ml": "Jupyter (the notebooks)",
-}
+STARTABLE = {"ml": "Jupyter (the notebooks)"}
 
 #: The training run's container (docker-compose.yml's `retrain`): started
 #: by /api/retrain rather than linked to, so not among STARTABLE.

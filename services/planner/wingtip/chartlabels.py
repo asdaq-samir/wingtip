@@ -36,6 +36,7 @@ would in flight"), with 0 meaning "detected but I would not use it".
 Rows are keyed by route and position rather than by an OSM id, because
 there may be no OSM feature involved -- the point is a place on a chart.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -88,11 +89,7 @@ def route_key(dep_ident: str, dest_ident: str) -> str:
 def load_picks(route: str | None = None, path: Path = CHART_PICKS_PATH) -> list:
     """Every pick, or just one route's. Missing file means no picks yet,
     which is the normal state before any labeling has happened."""
-    return read_rows(
-        path, route=route,
-        floats=("lat", "lon", "along_track_nm", "cross_track_nm", "area_m2"),
-        ints=("rating",),
-    )
+    return read_rows(path, route=route, floats=("lat", "lon", "along_track_nm", "cross_track_nm", "area_m2"), ints=("rating",))
 
 
 # There is no find_existing. It answered "is there a pick near this

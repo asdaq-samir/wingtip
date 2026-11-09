@@ -1,5 +1,6 @@
 """/api/dev/services: the console's start buttons, answered by asking the
 dev-services sidecar rather than Docker itself."""
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -54,10 +55,7 @@ def test_an_unknown_service_is_refused_before_the_sidecar_is_asked(monkeypatch):
 
 
 def test_the_sidecars_refusal_is_passed_on(monkeypatch):
-    monkeypatch.setattr(
-        dev_services, "ask",
-        lambda method, path: FakeResponse(409, {"detail": "ml has no container yet"}),
-    )
+    monkeypatch.setattr(dev_services, "ask", lambda method, path: FakeResponse(409, {"detail": "ml has no container yet"}))
 
     resp = client.post("/api/dev/services/ml/start")
 
@@ -75,9 +73,6 @@ def test_a_refusal_with_no_body_still_says_who_refused(monkeypatch):
 
 
 def test_a_start_reports_what_happened(monkeypatch):
-    monkeypatch.setattr(
-        dev_services, "ask",
-        lambda method, path: FakeResponse(200, {"name": "ml", "state": "running", "started": True}),
-    )
+    monkeypatch.setattr(dev_services, "ask", lambda method, path: FakeResponse(200, {"name": "ml", "state": "running", "started": True}))
 
     assert client.post("/api/dev/services/ml/start").json() == {"service": "ml", "state": "running", "started": True}

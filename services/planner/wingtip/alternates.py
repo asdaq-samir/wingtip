@@ -7,6 +7,7 @@ field offered as the alternate (wingtip_brief::alternates:
 `ifr_alternate_destination`, `ifr_alternate_check`,
 `ifr_alternates_ranked`).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -36,11 +37,7 @@ def approaches(ident: str) -> Approaches:
     charts = publications.terminal_charts(ident)
     iaps = [c["name"].upper() for c in charts if c["kind"] == "IAP"]
     page = next((c["url"] for c in charts if c["kind"] == "MIN" and "ALTERNATE" in c["name"].upper()), None)
-    return Approaches(
-        any=bool(iaps),
-        precision=any(name.startswith(("ILS", "GLS", "PAR")) for name in iaps),
-        alternate_minimums_url=page,
-    )
+    return Approaches(any=bool(iaps), precision=any(name.startswith(("ILS", "GLS", "PAR")) for name in iaps), alternate_minimums_url=page)
 
 
 def _forecast(ident: str, start: float, end: float) -> dict | None:
@@ -83,10 +80,7 @@ def nearby(dest: tuple[float, float], dest_ident: str, eta_of, limit: int = 5) -
     own for the pilot to check -- those that will do first, then nearest
     first (the engine's `ifr_alternates_ranked`): `eta_of(lat, lon)` the
     ETA there. Read nearest first until twice `limit` are kept."""
-    stations = [
-        s for s in weather._dataset("tafs")
-        if s["icaoId"] != dest_ident and geo.distance_nm(*dest, s["lat"], s["lon"]) <= NEAR_NM
-    ]
+    stations = [s for s in weather._dataset("tafs") if s["icaoId"] != dest_ident and geo.distance_nm(*dest, s["lat"], s["lon"]) <= NEAR_NM]
     stations.sort(key=lambda s: geo.distance_nm(*dest, s["lat"], s["lon"]))
     kept: list[dict] = []
     for station in stations:

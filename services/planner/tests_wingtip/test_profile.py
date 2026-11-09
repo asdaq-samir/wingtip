@@ -1,4 +1,5 @@
 """A route's side view: the ground and the airspace along it."""
+
 import pytest
 from shapely.geometry import box
 
@@ -16,12 +17,23 @@ def flat_world(monkeypatch):
         if ident not in fields:
             raise ValueError(ident)
         return fields[ident]
+
     monkeypatch.setattr(profile.airports_module, "get_airport", get_airport)
     profile._airport_ident.cache_clear()
-    monkeypatch.setattr(profile, "load_controlled_airspace", lambda shp, bbox: [{
-        "ident": "SMW", "name": "SOMEWHERE CLASS D", "class": "D", "floor_ft_msl": 0.0, "ceiling_ft_msl": 3500.0,
-        "geometry": box(-88.1, 42.4, -87.9, 42.6),
-    }])
+    monkeypatch.setattr(
+        profile,
+        "load_controlled_airspace",
+        lambda shp, bbox: [
+            {
+                "ident": "SMW",
+                "name": "SOMEWHERE CLASS D",
+                "class": "D",
+                "floor_ft_msl": 0.0,
+                "ceiling_ft_msl": 3500.0,
+                "geometry": box(-88.1, 42.4, -87.9, 42.6),
+            }
+        ],
+    )
 
 
 def test_the_ground_every_two_miles_and_the_airspace_where_the_route_is_in_it(flat_world):

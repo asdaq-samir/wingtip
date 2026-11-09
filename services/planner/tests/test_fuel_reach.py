@@ -2,19 +2,28 @@
 flies it -- the engine's navlog_fuel_stop_need, which
 wingtip.flight_plan.fuel_stops_of asks (it was app.routers.plan's
 worst_burn_per_nm and night_on_the_way until 2026-11-09)."""
+
 from datetime import datetime, timezone
 
 from wingtip.engine import ask as engine
 
 #: El Paso to Hartford, 1,670 nm on 40 gallons usable: short.
 START, END = {"lat": 31.8, "lon": -106.4}, {"lat": 41.9, "lon": -72.7}
-SHORT = {"fuel_margin_gal": -80.0, "usable_fuel_gal": 40.0, "distance_nm": 1670.0, "fuel_gal": 120.0, "ete_min": 600.0,
-         "taxi_gal": 1.4, "reserve_gal": 4.5, "rules": "vfr", "night": False}
+SHORT = {
+    "fuel_margin_gal": -80.0,
+    "usable_fuel_gal": 40.0,
+    "distance_nm": 1670.0,
+    "fuel_gal": 120.0,
+    "ete_min": 600.0,
+    "taxi_gal": 1.4,
+    "reserve_gal": 4.5,
+    "rules": "vfr",
+    "night": False,
+}
 
 
 def _need(legs, leave, **totals):
-    return engine("navlog_fuel_stop_need", totals={**SHORT, **totals}, legs=legs, start=START, end=END,
-                  depart_s=leave.timestamp())
+    return engine("navlog_fuel_stop_need", totals={**SHORT, **totals}, legs=legs, start=START, end=END, depart_s=leave.timestamp())
 
 
 def test_the_worst_stretch_not_the_average():

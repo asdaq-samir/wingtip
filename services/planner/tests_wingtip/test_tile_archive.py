@@ -2,6 +2,7 @@
 (wingtip.tile_archive): written whole, packed from a pass's loose files,
 served at the same tile URLs -- from the disk, or from the published copy
 by range requests -- and written again when tiles are drawn again."""
+
 import pytest
 
 from wingtip import charts, tile_archive
@@ -19,7 +20,7 @@ def test_an_archive_holds_what_was_written_and_nothing_else(tmp_path):
     archive = tile_archive.on_disk(path)
     assert archive.get(8, 65, 94) == b"png (8, 65, 94)" and archive.get(9, 130, 189) == b"png (9, 130, 189)"
     assert archive.get(8, 1, 1) is None and not archive.has(8, 1, 1) and archive.has(8, 64, 94)
-    assert archive.get(3, 99, 99) is None   # off the grid: no tile, not an error
+    assert archive.get(3, 99, 99) is None  # off the grid: no tile, not an error
     assert sorted((z, x, y) for z, x, y, _, _ in archive.tiles()) == [(8, 64, 94), (8, 65, 94), (9, 130, 189)]
     assert archive.header["tile_type"] == tile_archive.TileType.PNG
     assert not list(tmp_path.glob("*.part"))
@@ -50,15 +51,25 @@ def cache(tmp_path, monkeypatch):
     (root / "94.png").write_bytes(b"plain")
     (root / "94@2x.png").write_bytes(b"sharp")
     (root / "95.none").touch()
-    charts._write_pyramid_status(CYCLE, {"kind": "sec", "zooms": [8], "sheets": sorted(charts.COVERAGE["sec"]),
-                                         "finished_at": "t", "tiles": 1, "current_pass": None, "scales": [1, 2]})
+    charts._write_pyramid_status(
+        CYCLE,
+        {
+            "kind": "sec",
+            "zooms": [8],
+            "sheets": sorted(charts.COVERAGE["sec"]),
+            "finished_at": "t",
+            "tiles": 1,
+            "current_pass": None,
+            "scales": [1, 2],
+        },
+    )
     return tmp_path / "tiles"
 
 
 def test_a_finished_kind_is_packed_and_served_from_its_archives(cache, monkeypatch):
     assert charts.pack_complete(CYCLE) == {"sec": 2}
     assert sorted(p.name for p in (cache / CYCLE).glob("*.pmtiles")) == ["sec.pmtiles", "sec@2x.pmtiles"]
-    assert not (cache / CYCLE / "sec").exists()          # the loose files, the marker and the folders gone
+    assert not (cache / CYCLE / "sec").exists()  # the loose files, the marker and the folders gone
     monkeypatch.setattr(charts, "rasters_covering", lambda *a, **k: pytest.fail("a packed tile is never drawn"))
     assert charts.tile_png(65, 94, 8, "sec") == b"plain"
     assert charts.tile_png(65, 94, 8, "sec", scale=2) == b"sharp"
@@ -90,7 +101,7 @@ def test_tiles_drawn_again_go_into_the_archive_and_the_revision_moves(cache, mon
     assert charts.rerender_tiles(charts.KINDS["sec"], [wide], CYCLE, workers=0) == 2
     assert charts.tile_png(65, 94, 8, "sec") == b"cleaned"
     assert charts.tile_png(65, 94, 8, "sec", scale=2) == b"cleaned"
-    assert charts.tile_png(66, 94, 8, "sec") is None     # no sheet draws it any more
+    assert charts.tile_png(66, 94, 8, "sec") is None  # no sheet draws it any more
     assert charts.tiles_revision(CYCLE) == 1
 
 
@@ -119,7 +130,7 @@ def test_the_published_archive_is_read_by_range_requests(cache, monkeypatch):
         @property
         def content(self):
             start, end = (int(v) for v in self.headers["Range"].removeprefix("bytes=").split("-"))
-            return body[start:end + 1]
+            return body[start : end + 1]
 
     def get(url, headers=None, **kw):
         asked.append(url)
@@ -129,8 +140,7 @@ def test_the_published_archive_is_read_by_range_requests(cache, monkeypatch):
     assert charts.tile_png(65, 94, 8, "sec") == b"plain"
     assert charts.tile_png(65, 95, 8, "sec") is None
     assert charts.tiles_revision(CYCLE) == 3
-    assert set(asked) == {"https://d123.cloudfront.net/tiles/serving.json",
-                          f"https://d123.cloudfront.net/tiles/{CYCLE}/sec-abc.pmtiles"}
+    assert set(asked) == {"https://d123.cloudfront.net/tiles/serving.json", f"https://d123.cloudfront.net/tiles/{CYCLE}/sec-abc.pmtiles"}
     # The header and directory once; then a tile is one request of its own bytes.
     before = len(asked)
     charts.tile_png(65, 94, 8, "sec")

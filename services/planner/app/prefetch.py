@@ -12,6 +12,7 @@ opens. Each route once in a while, two at a time, on threads of their
 own: a request never waits on it, and what it reads is kept where the
 nav log's own reads find it (the chart's job, shared; the ground's disk
 cache, read once for both callers)."""
+
 import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor

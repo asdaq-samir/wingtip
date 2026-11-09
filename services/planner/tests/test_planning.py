@@ -2,6 +2,7 @@
 corrupt for the next pilot, and SingleFlightTTLCache's actual promise --
 one computation per key, even from several threads at once.
 """
+
 import threading
 import time
 
@@ -178,7 +179,9 @@ def _stuck(pending_stage: str | None = None):
             started.set()
             release.wait(timeout=5)
             return "late"
+
         return compute
+
     make.started = started
     return make, release
 
@@ -265,7 +268,7 @@ def test_a_second_abandoned_computation_is_not_replaced_while_the_first_still_ru
     time.sleep(0.3)
     second_pending: set = set()
     second = threading.Thread(target=lambda: cache.get_or_compute("k", make(second_pending), 0.2, second_pending))
-    second.start()                       # replaces the first, which is abandoned
+    second.start()  # replaces the first, which is abandoned
     time.sleep(0.3)
 
     started = []
@@ -282,8 +285,10 @@ def test_a_second_abandoned_computation_is_not_replaced_while_the_first_still_ru
 
 
 def test_stages_are_named_in_a_pilots_words():
-    assert planning.describe_stages(["weather.freezing_level", "terrain.floor_profile", "weather.hazards_along_route"]) \
+    assert (
+        planning.describe_stages(["weather.freezing_level", "terrain.floor_profile", "weather.hazards_along_route"])
         == "aviationweather.gov and the terrain and obstacles"
+    )
     assert planning.describe_stages([]) == ""
 
 
@@ -296,8 +301,9 @@ def test_the_checkpoints_are_the_charts_own_within_a_mile_of_the_course_scored_b
     from app import chart_model, checkpoint_scoring
 
     def landmark(category, along, cross, score, name=None):
-        return chartvision.Landmark(category, 43.0 + along / 60, -89.0, 0.0, score, 40, name=name,
-                                    extras={"along_track_nm": along, "cross_track_nm": cross})
+        return chartvision.Landmark(
+            category, 43.0 + along / 60, -89.0, 0.0, score, 40, name=name, extras={"along_track_nm": along, "cross_track_nm": cross}
+        )
 
     landmarks = [
         landmark("river", 40.0, 0.2, 4.3),
@@ -310,7 +316,9 @@ def test_the_checkpoints_are_the_charts_own_within_a_mile_of_the_course_scored_b
     checkpoints = checkpoint_scoring.score("C81", "KDLH")
 
     assert [(c["name"], c["category"], c["predicted_score"]) for c in checkpoints] == [
-        ("Wonder Lake", "airport", 3.9), ("River", "river", 0.4)]
+        ("Wonder Lake", "airport", 3.9),
+        ("River", "river", 0.4),
+    ]
 
 
 def test_with_no_chart_model_the_palettes_constants_score_them(monkeypatch):

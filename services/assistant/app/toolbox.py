@@ -10,6 +10,7 @@ finding's line, a plan's totals -- for the screen to show beside the
 answer. Every field read is read by the planner's own name on its own
 model, so a field the planner renames fails here and in the tests, not
 as a quiet None in front of a pilot."""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -76,7 +77,7 @@ def _ident(ident: str) -> str:
 
 
 def _zulu(observed: object) -> str:
-    """"1753Z" from an ISO time, or nothing."""
+    """ "1753Z" from an ISO time, or nothing."""
     if not observed:
         return ""
     try:
@@ -87,21 +88,50 @@ def _zulu(observed: object) -> str:
 
 
 #: The fields of each answer the model is given, by the models' own names.
-LEG_FIELDS = ("from_", "to", "distance_nm", "magnetic_heading_deg", "groundspeed_kt", "ete_min", "fuel_gal",
-              "altitude_ft", "wind")
-TFR_FIELDS = ("notam_id", "title", "kind", "purpose", "floor_ft", "floor_ref", "ceiling_ft", "ceiling_ref",
-              "effective", "expires", "active_now", "crosses", "on_route")
+LEG_FIELDS = ("from_", "to", "distance_nm", "magnetic_heading_deg", "groundspeed_kt", "ete_min", "fuel_gal", "altitude_ft", "wind")
+TFR_FIELDS = (
+    "notam_id",
+    "title",
+    "kind",
+    "purpose",
+    "floor_ft",
+    "floor_ref",
+    "ceiling_ft",
+    "ceiling_ref",
+    "effective",
+    "expires",
+    "active_now",
+    "crosses",
+    "on_route",
+)
 HAZARD_FIELDS = ("type", "hazard", "altitude_low_ft", "altitude_high_ft", "on_route")
 ITEM_FIELDS = ("key", "label", "finding", "detail")
 RISK_FIELDS = ("score", "level", "line", "words", "factors")
-AIRPORT_FIELDS = ("ident", "name", "municipality", "region", "elevation_ft", "kind", "airspace_class", "towered", "private",
-                  "military", "lighting", "radio_notes", "pattern", "runways", "frequencies")
+AIRPORT_FIELDS = (
+    "ident",
+    "name",
+    "municipality",
+    "region",
+    "elevation_ft",
+    "kind",
+    "airspace_class",
+    "towered",
+    "private",
+    "military",
+    "lighting",
+    "radio_notes",
+    "pattern",
+    "runways",
+    "frequencies",
+)
 
 
 def _tfr_line(tfr) -> str:
     """A TFR as its source reads: what it is, its band and its hours."""
+
     def level(ft, ref) -> str:
         return "" if ft is None else f"{ft:g} ft {ref or ''}".strip()
+
     band = " to ".join(x for x in (level(tfr.floor_ft, tfr.floor_ref), level(tfr.ceiling_ft, tfr.ceiling_ref)) if x)
     hours = " to ".join(x for x in (tfr.effective, tfr.expires) if x)
     parts = (tfr.title or tfr.purpose, tfr.kind, band, hours)
@@ -122,10 +152,20 @@ class Toolbox:
         self.sources: list[Source] = []
         #: The changes to the plan proposed, each {"change": {...}, "words": ...}.
         self.actions: list[dict] = []
-        self.tools = [beta_tool(fn) for fn in (
-            self.plan_flight, self.weather_at, self.briefing_for, self.go_no_go, self.airport,
-            self.nearest_airports, self.find_place, self.divert, self.propose_change,
-        )] + rule_tools(self)
+        self.tools = [
+            beta_tool(fn)
+            for fn in (
+                self.plan_flight,
+                self.weather_at,
+                self.briefing_for,
+                self.go_no_go,
+                self.airport,
+                self.nearest_airports,
+                self.find_place,
+                self.divert,
+                self.propose_change,
+            )
+        ] + rule_tools(self)
         self.by_name = {tool.name: tool for tool in self.tools}
 
     def source(self, id: str, label: str, text: str) -> None:
@@ -143,8 +183,16 @@ class Toolbox:
             return when if when.tzinfo else when.replace(tzinfo=timezone.utc)
         return self.context.depart
 
-    def plan_flight(self, dep: str = "", dest: str = "", stops: str = "", aircraft: str = "",
-                    altitude_ft: float | None = None, depart: str | None = None, rules: str = "") -> str:
+    def plan_flight(
+        self,
+        dep: str = "",
+        dest: str = "",
+        stops: str = "",
+        aircraft: str = "",
+        altitude_ft: float | None = None,
+        depart: str | None = None,
+        rules: str = "",
+    ) -> str:
         """Plan the flight as the nav log does: the cruise altitude chosen and why, each leg's distance,
         magnetic heading, groundspeed, time and fuel, the totals, and the cautions. Ask this before any question
         about time, distance, fuel, altitude or arrival.
@@ -161,19 +209,31 @@ class Toolbox:
         try:
             c = self.context
             dep, dest, stops = self.route(dep, dest, stops)
-            planned = planner.plan(dep=dep, dest=dest, stops=stops, aircraft=aircraft or c.aircraft,
-                                   altitude_ft=altitude_ft if altitude_ft is not None else c.altitude_ft,
-                                   depart=_iso(self.depart(depart)), rules=rules or c.rules)  # type: ignore[arg-type]
+            planned = planner.plan(
+                dep=dep,
+                dest=dest,
+                stops=stops,
+                aircraft=aircraft or c.aircraft,
+                altitude_ft=altitude_ft if altitude_ft is not None else c.altitude_ft,
+                depart=_iso(self.depart(depart)),
+                rules=rules or c.rules,
+            )  # type: ignore[arg-type]
         except Exception as err:  # noqa: BLE001 -- the model is told, in the planner's words
             return failed(err)
         totals = planned.totals
-        answer = {"route": f"{dep} {stops} {dest}".replace("  ", " "), "altitude_ft": planned.altitude_ft,
-                  "flown": planned.altitude_choice or "custom", "cautions": planned.altitude_cautions,
-                  "legs": [pick(leg, *LEG_FIELDS) for leg in planned.legs or []],
-                  "totals": pick(totals, "distance_nm", "ete_min", "fuel_gal") if totals else {}}
+        answer = {
+            "route": f"{dep} {stops} {dest}".replace("  ", " "),
+            "altitude_ft": planned.altitude_ft,
+            "flown": planned.altitude_choice or "custom",
+            "cautions": planned.altitude_cautions,
+            "legs": [pick(leg, *LEG_FIELDS) for leg in planned.legs or []],
+            "totals": pick(totals, "distance_nm", "ete_min", "fuel_gal") if totals else {},
+        }
         label = f"The plan {dep} to {dest}" + (f" via {stops}" if stops else "")
-        line = (f"{label}: {totals and totals.distance_nm} nm, {totals and totals.ete_min} min, "
-                f"{totals and totals.fuel_gal} gal at {planned.altitude_ft} ft")
+        line = (
+            f"{label}: {totals and totals.distance_nm} nm, {totals and totals.ete_min} min, "
+            f"{totals and totals.fuel_gal} gal at {planned.altitude_ft} ft"
+        )
         self.source(f"plan:{dep}-{dest}", label, line)
         return as_json(answer)
 
@@ -193,14 +253,12 @@ class Toolbox:
             self.source(f"metar:{place.ident}", f"METAR {place.ident} {_zulu(metar.observed_at)}".strip(), metar.raw)
         elif nearby and nearby.metar and nearby.metar.raw:
             near = nearby.metar
-            self.source(f"metar:{nearby.ident}",
-                        f"METAR {nearby.ident} {_zulu(near.observed_at)} (nearest)".replace("  ", " "), near.raw)
+            self.source(f"metar:{nearby.ident}", f"METAR {nearby.ident} {_zulu(near.observed_at)} (nearest)".replace("  ", " "), near.raw)
         if place.taf:
             self.source(f"taf:{place.ident}", f"TAF {place.ident}", place.taf)
         return as_json(pick(place, "ident", "name", "elevation_ft", "metar", "nearby_metar", "taf", "weather_unavailable"))
 
-    def briefing_for(self, dep: str = "", dest: str = "", stops: str = "", depart: str | None = None,
-                     ete_min: float | None = None) -> str:
+    def briefing_for(self, dep: str = "", dest: str = "", stops: str = "", depart: str | None = None, ete_min: float | None = None) -> str:
         """The flight's briefing for its hours: the hazards (SIGMETs, AIRMETs, G-AIRMETs) and where the route
         meets them, the TFRs, the fields below VFR, "VFR flight not recommended", each field's METAR, and the
         forecast at each field. Ask this for any question about weather along the route or at arrival.
@@ -228,14 +286,24 @@ class Toolbox:
             # The briefing's TFR carries no NOTAM text, only the fields
             # read from it: the source is those, in a line.
             self.source(f"tfr:{n}", f"TFR {t.notam_id or n}", _tfr_line(t)[:2000])
-        answer = {"route": f"{dep} {stops} {dest}".replace("  ", " "),
-                  "hazards": [pick(h, *HAZARD_FIELDS) for h in brief.hazards or []],
-                  "tfrs": [pick(t, *TFR_FIELDS) for t in brief.tfrs or []],
-                  **pick(brief, "fields_below_vfr", "vfr_not_recommended", "metars", "forecast", "weather_unavailable")}
+        answer = {
+            "route": f"{dep} {stops} {dest}".replace("  ", " "),
+            "hazards": [pick(h, *HAZARD_FIELDS) for h in brief.hazards or []],
+            "tfrs": [pick(t, *TFR_FIELDS) for t in brief.tfrs or []],
+            **pick(brief, "fields_below_vfr", "vfr_not_recommended", "metars", "forecast", "weather_unavailable"),
+        }
         return as_json(answer)
 
-    def go_no_go(self, dep: str = "", dest: str = "", stops: str = "", aircraft: str = "", altitude_ft: float | None = None,
-                 depart: str | None = None, rules: str = "") -> str:
+    def go_no_go(
+        self,
+        dep: str = "",
+        dest: str = "",
+        stops: str = "",
+        aircraft: str = "",
+        altitude_ft: float | None = None,
+        depart: str | None = None,
+        rules: str = "",
+    ) -> str:
         """The Go / No-Go verdict for the flight: the line over the findings, each finding (the weather, the
         TFRs, the altitude, the fuel, the runways, the weight and balance, the risk) with its words, and the risk
         assessment's score, level and factors. The pilot's personal minimums in the context are applied.
@@ -252,9 +320,15 @@ class Toolbox:
         try:
             c = self.context
             dep, dest, stops = self.route(dep, dest, stops)
-            fields: dict = {"dep": dep, "dest": dest, "stops": stops, "aircraft": aircraft or c.aircraft or None,
-                            "altitude_ft": altitude_ft if altitude_ft is not None else c.altitude_ft,
-                            "depart": _iso(self.depart(depart)), "rules": rules or c.rules}
+            fields: dict = {
+                "dep": dep,
+                "dest": dest,
+                "stops": stops,
+                "aircraft": aircraft or c.aircraft or None,
+                "altitude_ft": altitude_ft if altitude_ft is not None else c.altitude_ft,
+                "depart": _iso(self.depart(depart)),
+                "rules": rules or c.rules,
+            }
             pilot = c.pilot or {}
             # The pilot's own minimums, loading, ticks and currency as the
             # app keeps them, taken only in the ask's own shapes: the apps
@@ -278,9 +352,12 @@ class Toolbox:
         risk = verdict.risk
         if risk:
             self.source("risk", "Risk assessment", f"{risk.line or ''} {risk.words or ''}".strip())
-        answer = {"line": line, "items": [pick(item, *ITEM_FIELDS) for item in verdict.items or []],
-                  "risk": pick(risk, *RISK_FIELDS) if risk else None,
-                  "balance_problems": verdict.balance.problems if verdict.balance else None}
+        answer = {
+            "line": line,
+            "items": [pick(item, *ITEM_FIELDS) for item in verdict.items or []],
+            "risk": pick(risk, *RISK_FIELDS) if risk else None,
+            "balance_problems": verdict.balance.problems if verdict.balance else None,
+        }
         return as_json(answer)
 
     def airport(self, ident: str) -> str:
@@ -295,8 +372,11 @@ class Toolbox:
         except Exception as err:  # noqa: BLE001
             return failed(err)
         runways = ", ".join(f"{r.ends or ''} {r.length_ft or ''} ft".strip() for r in place.runways or [])
-        self.source(f"airport:{place.ident}", f"{place.ident} {place.name or ''}".strip(),
-                    f"Elevation {place.elevation_ft} ft; Class {place.airspace_class or 'G'}; runways {runways}")
+        self.source(
+            f"airport:{place.ident}",
+            f"{place.ident} {place.name or ''}".strip(),
+            f"Elevation {place.elevation_ft} ft; Class {place.airspace_class or 'G'}; runways {runways}",
+        )
         return as_json(pick(place, *AIRPORT_FIELDS))
 
     def nearest_airports(self, lat: float | None = None, lon: float | None = None, limit: int = 5) -> str:
@@ -312,9 +392,11 @@ class Toolbox:
         if (lat is None or lon is None) and own is None:
             return "Error: no position: the airplane's position is not known and none was given."
         try:
-            found = planner.nearest_airports(lat=lat if lat is not None else own.lat,  # type: ignore[union-attr]
-                                             lon=lon if lon is not None else own.lon,  # type: ignore[union-attr]
-                                             limit=max(1, min(25, int(limit))))
+            found = planner.nearest_airports(
+                lat=lat if lat is not None else own.lat,  # type: ignore[union-attr]
+                lon=lon if lon is not None else own.lon,  # type: ignore[union-attr]
+                limit=max(1, min(25, int(limit))),
+            )
         except Exception as err:  # noqa: BLE001
             return failed(err)
         self.source("nearest", "Nearest airports", as_json(found)[:2000])
@@ -331,8 +413,9 @@ class Toolbox:
         except Exception as err:  # noqa: BLE001
             return failed(err)
 
-    def divert(self, to: str, lat: float | None = None, lon: float | None = None, altitude_ft: float | None = None,
-               aircraft: str = "") -> str:
+    def divert(
+        self, to: str, lat: float | None = None, lon: float | None = None, altitude_ft: float | None = None, aircraft: str = ""
+    ) -> str:
         """A diversion from a point to a field: the heading, distance, time and fuel to it, as the diversion
         drill works them. The airplane's own position and the plan's altitude and airplane when none are given.
 
@@ -348,17 +431,27 @@ class Toolbox:
         if (lat is None or lon is None) and own is None:
             return "Error: no position: the airplane's position is not known and none was given."
         try:
-            answer = planner.diversion(lat=lat if lat is not None else own.lat,  # type: ignore[union-attr]
-                                       lon=lon if lon is not None else own.lon,  # type: ignore[union-attr]
-                                       to=to.strip().upper(), altitude_ft=altitude_ft or c.altitude_ft or 3000.0,
-                                       aircraft=aircraft or c.aircraft)
+            answer = planner.diversion(
+                lat=lat if lat is not None else own.lat,  # type: ignore[union-attr]
+                lon=lon if lon is not None else own.lon,  # type: ignore[union-attr]
+                to=to.strip().upper(),
+                altitude_ft=altitude_ft or c.altitude_ft or 3000.0,
+                aircraft=aircraft or c.aircraft,
+            )
         except Exception as err:  # noqa: BLE001
             return failed(err)
         self.source(f"diversion:{to.upper()}", f"Diversion to {to.upper()}", as_json(answer)[:1500])
         return as_json(answer)
 
-    def propose_change(self, dep: str = "", dest: str = "", stops: str | None = None, altitude_ft: float | None = None,
-                       depart: str | None = None, why: str = "") -> str:
+    def propose_change(
+        self,
+        dep: str = "",
+        dest: str = "",
+        stops: str | None = None,
+        altitude_ft: float | None = None,
+        depart: str | None = None,
+        why: str = "",
+    ) -> str:
         """Propose a change to the pilot's plan -- the departure, the destination, the stops, the cruise altitude,
         the departure time -- for the pilot to confirm in the app; nothing changes until they do. Give only the
         fields that change. This computes nothing: ask plan_flight with the same fields for the changed plan's
@@ -394,8 +487,9 @@ class Toolbox:
             # the point before it, too many stops, and the stops in the
             # planner's own form. With an end still missing, each ident
             # given is checked alone.
-            checked = planner.route_check(dep=change.get("dep", c.dep), dest=change.get("dest", c.dest),
-                                          stops=",".join(change.get("stops", c.stops)))
+            checked = planner.route_check(
+                dep=change.get("dep", c.dep), dest=change.get("dest", c.dest), stops=",".join(change.get("stops", c.stops))
+            )
             if "stops" in change:
                 change["stops"] = list(checked.stops or [])
         except Exception as err:  # noqa: BLE001

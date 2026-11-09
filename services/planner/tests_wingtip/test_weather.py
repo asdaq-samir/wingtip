@@ -7,6 +7,7 @@ the rules read over them.
 Fetching and parsing are the weather service's, tested there
 (services/weather/tests), with the readers here over what it stores.
 """
+
 import time
 from datetime import datetime, timezone
 
@@ -23,6 +24,7 @@ def _store(name: str, data, fetched_at: float = T0200Z, until: float | None = No
 
 
 # --- read from the store, never fetched --------------------------------------
+
 
 def test_a_product_never_stored_is_unavailable_in_a_pilots_words():
     with pytest.raises(WeatherServiceError, match="METARs unavailable"):
@@ -49,8 +51,7 @@ def test_metars_have_no_limit_and_keep_their_own_times(monkeypatch):
     said."""
     _store("metars", {"KORD": {"flight_category": "IFR", "observed_at": "2026-09-20T01:51:00.000Z"}})
     monkeypatch.setattr(weather_store.time, "time", lambda: T0200Z + 6 * 3600)
-    assert metar_for_idents(["KORD", "C81"]) == {
-        "KORD": {"flight_category": "IFR", "observed_at": "2026-09-20T01:51:00.000Z"}, "C81": None}
+    assert metar_for_idents(["KORD", "C81"]) == {"KORD": {"flight_category": "IFR", "observed_at": "2026-09-20T01:51:00.000Z"}, "C81": None}
     assert weather.dataset_status()["metars"] == T0200Z
     assert weather.reporting_idents() == {"KORD"}
 
@@ -63,14 +64,22 @@ def test_a_read_tells_the_service_a_pilot_is_planning(monkeypatch):
 
 
 def test_the_winds_are_the_stored_periods_with_their_levels_by_altitude():
-    period = {"valid_at": "2026-09-20T05:00:00Z", "use_from": "2026-09-20T01:00:00Z", "use_to": "2026-09-20T08:00:00Z",
-              "run": "2026-09-19T18:00:00Z", "forecast_hour": 11}
-    _store("winds-06", {"stations": {"DLH": {"9000": {"wind_dir_true_deg": 270, "wind_speed_kt": 30, "temp_c": -8}}},
-                        "period": period}, until=time.time() + 3600)
+    period = {
+        "valid_at": "2026-09-20T05:00:00Z",
+        "use_from": "2026-09-20T01:00:00Z",
+        "use_to": "2026-09-20T08:00:00Z",
+        "run": "2026-09-19T18:00:00Z",
+        "forecast_hour": 11,
+    }
+    _store(
+        "winds-06",
+        {"stations": {"DLH": {"9000": {"wind_dir_true_deg": 270, "wind_speed_kt": 30, "temp_c": -8}}}, "period": period},
+        until=time.time() + 3600,
+    )
     stations = weather._fd_stations("06")
     assert stations == {"DLH": {9000: {"wind_dir_true_deg": 270, "wind_speed_kt": 30, "temp_c": -8}}}
     assert stations.period == period and stations.modelled
-    assert weather._fd_stations("06") is stations          # made once per copy
+    assert weather._fd_stations("06") is stations  # made once per copy
     assert weather.winds_period("06") == {**period, "modelled": True}
 
 
@@ -143,6 +152,7 @@ def test_a_freezing_level_below_the_lowest_reading_says_so(monkeypatch):
     """Below 0 degC already at 6,000 ft, the winds-aloft product's lowest
     temperature: the freezing level is there or lower, not at 6,000."""
     from wingtip import airports
+
     monkeypatch.setattr(weather, "_fd_stations", lambda fcst_hr: {"DLH": {6000: {"temp_c": -2}, 9000: {"temp_c": -8}}})
     monkeypatch.setattr(weather, "_nearest_station", lambda lat, lon, ids, df: "DLH")
     monkeypatch.setattr(airports, "load_airports", lambda: None)
@@ -152,6 +162,7 @@ def test_a_freezing_level_below_the_lowest_reading_says_so(monkeypatch):
 
 def test_a_freezing_level_between_readings_is_interpolated(monkeypatch):
     from wingtip import airports
+
     monkeypatch.setattr(weather, "_fd_stations", lambda fcst_hr: {"DLH": {6000: {"temp_c": 4}, 9000: {"temp_c": -2}}})
     monkeypatch.setattr(weather, "_nearest_station", lambda lat, lon, ids, df: "DLH")
     monkeypatch.setattr(airports, "load_airports", lambda: None)
@@ -163,8 +174,10 @@ def test_the_temperature_between_two_reports_is_interpolated_and_below_them_laps
     """6,000 ft is the lowest temperature the product gives; under it the
     standard lapse rate (about 2 degC per 1,000 ft) is all there is."""
     from wingtip import airports
-    monkeypatch.setattr(weather, "_fd_stations", lambda fcst_hr: {"DLH": {
-        3000: {"temp_c": None}, 6000: {"temp_c": 4}, 9000: {"temp_c": -2}}})
+
+    monkeypatch.setattr(
+        weather, "_fd_stations", lambda fcst_hr: {"DLH": {3000: {"temp_c": None}, 6000: {"temp_c": 4}, 9000: {"temp_c": -2}}}
+    )
     monkeypatch.setattr(weather, "_nearest_station", lambda lat, lon, ids, df: "DLH")
     monkeypatch.setattr(airports, "load_airports", lambda: None)
     assert weather.temperatures_aloft(46.8, -92.2) == [(6000.0, 4), (9000.0, -2)]
@@ -185,12 +198,42 @@ def test_the_forecast_hour_for_a_departure_ends_where_the_periods_windows_do():
 def test_the_pilot_reports_near_the_route_are_a_light_aeroplanes_not_the_airliners(monkeypatch):
     now = time.time()
     reports = [
-        {"observed_at": "", "observed": now, "lat": 42.5, "lon": -88.1, "altitude_ft": 5500.0, "aircraft": "C172",
-         "urgent": False, "turbulence": "MOD", "icing": "NEG", "raw": "UA /OV ... /TB MOD"},
-        {"observed_at": "", "observed": now, "lat": 42.6, "lon": -88.0, "altitude_ft": 36000.0, "aircraft": "B738",
-         "urgent": False, "turbulence": None, "icing": None, "raw": "UA FL360"},
-        {"observed_at": "", "observed": now, "lat": 42.5, "lon": -80.0, "altitude_ft": 4000.0, "aircraft": None,
-         "urgent": True, "turbulence": None, "icing": None, "raw": "UUA far east"},
+        {
+            "observed_at": "",
+            "observed": now,
+            "lat": 42.5,
+            "lon": -88.1,
+            "altitude_ft": 5500.0,
+            "aircraft": "C172",
+            "urgent": False,
+            "turbulence": "MOD",
+            "icing": "NEG",
+            "raw": "UA /OV ... /TB MOD",
+        },
+        {
+            "observed_at": "",
+            "observed": now,
+            "lat": 42.6,
+            "lon": -88.0,
+            "altitude_ft": 36000.0,
+            "aircraft": "B738",
+            "urgent": False,
+            "turbulence": None,
+            "icing": None,
+            "raw": "UA FL360",
+        },
+        {
+            "observed_at": "",
+            "observed": now,
+            "lat": 42.5,
+            "lon": -80.0,
+            "altitude_ft": 4000.0,
+            "aircraft": None,
+            "urgent": True,
+            "turbulence": None,
+            "icing": None,
+            "raw": "UUA far east",
+        },
     ]
     monkeypatch.setattr(weather, "_dataset", lambda name: reports)
     near = weather.pireps_along_route([(42.0, -88.0), (43.0, -88.0)])
@@ -202,13 +245,21 @@ def test_the_g_airmets_the_route_crosses_are_every_snapshot_with_its_time_and_ar
     square = [[42, -89], [42, -87], [43, -87], [43, -89]]
 
     def icing(valid_at: str, valid: float, top: float) -> dict:
-        return {"hazard": "Icing", "severity": "MOD", "due_to": "ICE", "valid_at": valid_at, "valid": valid,
-                "issued": None, "altitude_low_ft": None, "from_freezing_level": True, "altitude_high_ft": top,
-                "coords": square}
+        return {
+            "hazard": "Icing",
+            "severity": "MOD",
+            "due_to": "ICE",
+            "valid_at": valid_at,
+            "valid": valid,
+            "issued": None,
+            "altitude_low_ft": None,
+            "from_freezing_level": True,
+            "altitude_high_ft": top,
+            "coords": square,
+        }
 
-    start = 1791126000.0                                          # 2026-10-04T15:00:00Z
-    advisories = [icing("2026-10-04T15:00:00.000Z", start, 16000.0),
-                  icing("2026-10-04T18:00:00.000Z", start + 3 * 3600, 18000.0)]
+    start = 1791126000.0  # 2026-10-04T15:00:00Z
+    advisories = [icing("2026-10-04T15:00:00.000Z", start, 16000.0), icing("2026-10-04T18:00:00.000Z", start + 3 * 3600, 18000.0)]
     monkeypatch.setattr(weather, "_dataset", lambda name: advisories)
     # Every snapshot the route crosses, with its time and area, for the
     # briefing to pick the one for when the flight is in it (app.exposure).

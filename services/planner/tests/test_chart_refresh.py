@@ -3,6 +3,7 @@ night-time window -- except on a stack with no complete pyramid at all,
 which renders at once -- the window arithmetic handles one that runs
 past midnight, a request from the Dev console starts at once, and a cycle
 pack with no overlay tiles asks the job for them whenever."""
+
 import time
 
 import pytest
@@ -31,11 +32,11 @@ def started(monkeypatch):
 def test_refresh_window_arithmetic():
     assert chart_refresh.in_window(_clock("02:30"), "01:00-06:00")
     assert not chart_refresh.in_window(_clock("14:00"), "01:00-06:00")
-    assert not chart_refresh.in_window(_clock("06:00"), "01:00-06:00")   # the end is exclusive
-    assert chart_refresh.in_window(_clock("23:30"), "22:00-05:00")       # past midnight
+    assert not chart_refresh.in_window(_clock("06:00"), "01:00-06:00")  # the end is exclusive
+    assert chart_refresh.in_window(_clock("23:30"), "22:00-05:00")  # past midnight
     assert chart_refresh.in_window(_clock("04:59"), "22:00-05:00")
     assert not chart_refresh.in_window(_clock("12:00"), "22:00-05:00")
-    assert chart_refresh.in_window(_clock("12:00"), "")                   # blank: any time
+    assert chart_refresh.in_window(_clock("12:00"), "")  # blank: any time
 
 
 def test_refresh_waits_for_the_window_while_an_older_cycle_serves(monkeypatch, started):
@@ -98,7 +99,7 @@ def test_a_new_cycle_pack_asks_for_its_overlay_tiles_at_any_hour(monkeypatch, st
     monkeypatch.setattr(charts, "refresh_due", lambda: False)
     chart_refresh.maybe_refresh()
     assert started == [chart_refresh.OVERLAYS_SERVICE]
-    monkeypatch.setattr(chart_refresh, "AUTO_REFRESH", False)   # a test stack, or AWS's own schedule
+    monkeypatch.setattr(chart_refresh, "AUTO_REFRESH", False)  # a test stack, or AWS's own schedule
     chart_refresh.ask_for_overlays()
     assert started == [chart_refresh.OVERLAYS_SERVICE]
 
@@ -109,7 +110,7 @@ def test_the_overlays_are_due_until_the_index_names_the_pack(tmp_path, monkeypat
 
     monkeypatch.setattr(vector_tiles, "TILES_DIR", tmp_path)
     monkeypatch.setattr(cycle_pack, "current", lambda pack_dir=None: None)
-    assert not chart_refresh.overlays_due()                    # no pack yet: nothing to build from
+    assert not chart_refresh.overlays_due()  # no pack yet: nothing to build from
     monkeypatch.setattr(cycle_pack, "current", lambda pack_dir=None: Pack())
     assert chart_refresh.overlays_due()
     name = vector_tiles.archive_name(Pack())

@@ -19,6 +19,7 @@ day. GLMP is hourly guidance with no period of validity of its own (NWS
 MDL, Gridded LAMP), so that, not longer, is how old a model run is shown
 as now, its "valid_at" saying how old.
 """
+
 from __future__ import annotations
 
 import logging
@@ -88,8 +89,13 @@ def read_grid(message: bytes) -> tuple[dict, np.ndarray]:
     if len(x) != nx or len(y) != ny or nx < 2 or ny < 2:
         raise ValueError("not a regular projected grid")
     grid = {
-        "x0": float(x[0]), "dx": float(x[1] - x[0]), "y0": float(y[0]), "dy": float(y[1] - y[0]),
-        "nx": int(nx), "ny": int(ny), "proj": str(meta.proj),
+        "x0": float(x[0]),
+        "dx": float(x[1] - x[0]),
+        "y0": float(y[0]),
+        "dy": float(y[1] - y[0]),
+        "nx": int(nx),
+        "ny": int(ny),
+        "proj": str(meta.proj),
         "valid": meta.forecast_date.isoformat().replace("+00:00", "Z"),
     }
     return grid, np.asarray(parsed.data(), dtype=np.float32).reshape(ny, nx)

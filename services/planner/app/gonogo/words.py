@@ -1,6 +1,7 @@
 """How a figure or the FAA's text is written in the Go / No-Go's words, as
 the web app writes them (lib/format, lib/advisories, features/plan/format):
 the verdict's lines are compared word for word with the web's."""
+
 from . import ask
 
 
@@ -33,7 +34,7 @@ def grouped(n: float) -> str:
 
 
 def alt_ft(ft: float | None) -> str:
-    """"12,500"; an em dash for none (lib/format altFt)."""
+    """ "12,500"; an em dash for none (lib/format altFt)."""
     return ask("words_alt_ft", ft=ft)
 
 
@@ -72,7 +73,7 @@ WEATHER_SOURCE_LABEL = {
 
 
 def sigmet_hazard(hazard: str | None, kind: str | None = None) -> str:
-    """"Convective", "Mountain obscuration" (lib/advisories sigmetHazard)."""
+    """ "Convective", "Mountain obscuration" (lib/advisories sigmetHazard)."""
     return ask("sigmet_hazard", hazard=hazard, kind=kind)
 
 

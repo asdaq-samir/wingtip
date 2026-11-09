@@ -18,6 +18,7 @@ The archives must be on this disk: read over HTTP from a published copy
 (CHART_TILES_URL) a tile at a time, a state's cut would take hours, so a
 cloud deployment cuts them in the charts job instead.
 """
+
 from __future__ import annotations
 
 import json
@@ -60,9 +61,12 @@ def _source(cycle: str, kind: charts.ChartKind, scale: int):
 
 def archives_of(cycle: str) -> list[str]:
     """The archives a cycle has on this disk, by name, kind by kind."""
-    return [tile_archive.archive_name(kind.key, scale).removesuffix(".pmtiles")
-            for kind in charts.KINDS.values() for scale in charts.TILE_SCALES
-            if _source(cycle, kind, scale) is not None]
+    return [
+        tile_archive.archive_name(kind.key, scale).removesuffix(".pmtiles")
+        for kind in charts.KINDS.values()
+        for scale in charts.TILE_SCALES
+        if _source(cycle, kind, scale) is not None
+    ]
 
 
 def cycles() -> tuple[str | None, str | None]:
@@ -70,13 +74,17 @@ def cycles() -> tuple[str | None, str | None]:
     ahead of its date (wingtip.chart_next draws it days early): a phone
     can keep the next edition before the changeover and turn over on its
     date. Either is None where no sectional archive of it is on disk."""
+
     def sectional(c):
         return any(_source(c, charts.SECTIONAL, scale) for scale in charts.TILE_SCALES)
 
     now = charts.serving_cycle()
     current = now if sectional(now) else None
-    ahead = [c for c in charts._cycles_on_disk(charts.CHART_TILE_CACHE_DIR)  # noqa: SLF001
-             if not charts.in_force(c) and sectional(c)]
+    ahead = [
+        c
+        for c in charts._cycles_on_disk(charts.CHART_TILE_CACHE_DIR)  # noqa: SLF001
+        if not charts.in_force(c) and sectional(c)
+    ]
     return current, (ahead[-1] if ahead else None)
 
 
@@ -95,7 +103,7 @@ def tiles(region: Region, kind: charts.ChartKind):
     of the region's boxes, in tile-id order."""
     found = set()
     for z in range(kind.min_zoom, kind.max_zoom + 1):
-        n = 2 ** z
+        n = 2**z
         for west, south, east, north in region.boxes:
             x0, y0 = tile_xy(min(85.05, north), west, z)
             x1, y1 = tile_xy(max(-85.05, south), east, z)
@@ -150,8 +158,7 @@ def known_sizes(cycle: str, region: Region) -> dict[str, int]:
     archive name: what the list shows beside a region without waiting."""
     kept = _estimates(cycle)
     prefix = f"{region.id}/"
-    return {key.removeprefix(prefix): value["bytes"] for key, value in kept.items()
-            if key.startswith(prefix) and value["tiles"]}
+    return {key.removeprefix(prefix): value["bytes"] for key, value in kept.items() if key.startswith(prefix) and value["tiles"]}
 
 
 def warm(cycle: str, regions: list[Region]) -> None:
@@ -192,8 +199,11 @@ def packs_for(region: Region, index: dict | None) -> list[dict]:
     with its chart for flying with no signal."""
     if not index:
         return []
-    return [p for p in index["regions"]
-            if any(p["west"] < e and w < p["east"] and p["south"] < n and s < p["north"] for w, s, e, n in region.boxes)]
+    return [
+        p
+        for p in index["regions"]
+        if any(p["west"] < e and w < p["east"] and p["south"] < n and s < p["north"] for w, s, e, n in region.boxes)
+    ]
 
 
 def _estimates_file(cycle: str) -> Path:
@@ -236,10 +246,17 @@ def cut(cycle: str, region: Region, archive: str) -> Path | None:
             return path
         kind, scale = parsed
         held = _held(source, region, kind)
-        metadata = {**charts._archive_metadata(kind, cycle, scale),  # noqa: SLF001 -- the archives' own words
-                    "region": region.id, "region_name": region.name, "bounds": [list(b) for b in region.boxes]}
-        count = tile_archive.write(path, ((z, x, y, length, (lambda o=offset, n=length: bytes(source.get_bytes(o, n))))
-                                          for z, x, y, offset, length in held), metadata)
+        metadata = {
+            **charts._archive_metadata(kind, cycle, scale),  # noqa: SLF001 -- the archives' own words
+            "region": region.id,
+            "region_name": region.name,
+            "bounds": [list(b) for b in region.boxes],
+        }
+        count = tile_archive.write(
+            path,
+            ((z, x, y, length, (lambda o=offset, n=length: bytes(source.get_bytes(o, n)))) for z, x, y, offset, length in held),
+            metadata,
+        )
         if not count:
             return None
         size = path.stat().st_size

@@ -2,6 +2,7 @@
 (wingtip.config.REQUEST_HEADERS, or the FAA's browser-like one where the
 caller passes it), a time-out, retries for a transient failure only, and
 the held copy's validators so an unchanged file is a 304."""
+
 from __future__ import annotations
 
 import requests
@@ -17,8 +18,9 @@ class FetchFailed(RuntimeError):
 RETRIED_CLIENT_ERRORS = (408, 429)
 
 
-def get(url: str, params: dict | None = None, validators: dict | None = None, retries: int = 3,
-        headers: dict | None = None, timeout: float = 30) -> requests.Response:
+def get(
+    url: str, params: dict | None = None, validators: dict | None = None, retries: int = 3, headers: dict | None = None, timeout: float = 30
+) -> requests.Response:
     """A transient blip (a slow query 504ing, seen 2026-09-18) is tried
     again a few seconds later rather than failing the fetch. `validators`,
     the held copy's ETag and Last-Modified, ask for it only if it has

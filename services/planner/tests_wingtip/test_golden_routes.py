@@ -5,6 +5,7 @@ magnetic variation it was given then (services/planner/tests_wingtip/golden/reco
 tests prove each piece by hand; these catch a change in what they add up
 to on a whole route. A change meant to move them is re-recorded, and the
 golden files' diff read before it is committed."""
+
 import json
 from pathlib import Path
 

@@ -1,6 +1,7 @@
 """The guards every suite here shares (services/planner/pytest_guards.py,
 docs/CI.md, "Flaky tests"), and each test's weather store a folder of its
 own, so none writes into data/raw/weather."""
+
 import pytest
 from pytest_guards import _module_doubles_restored, pytest_collection_modifyitems  # noqa: F401
 

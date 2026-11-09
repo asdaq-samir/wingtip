@@ -1,6 +1,7 @@
 """POST /api/departure-window's question and answer: the Go / No-Go's
 question (the route, the airplane and what only the pilot knows) with the
 hours to look at, and each hour's say with the windows, best first."""
+
 from datetime import datetime
 from typing import Literal
 

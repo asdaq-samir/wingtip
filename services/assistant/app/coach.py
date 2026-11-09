@@ -12,6 +12,7 @@ not hold goes too, so no day, hour or altitude on screen is the model's.
 The sessions themselves -- what, where, how long -- are the engine's, and
 the screen shows them as it gave them, the model's line under each.
 """
+
 from __future__ import annotations
 
 import logging
@@ -93,8 +94,13 @@ def _lines(lines: list[SessionLine], sources: list[Source]) -> list[SessionLine]
     out: dict[str, SessionLine] = {}
     for line in lines:
         ids = list(dict.fromkeys(i.strip() for i in line.sources if i.strip()))
-        ok = (line.session in given and line.session.startswith("session:") and line.session in ids
-              and all(i in given for i in ids) and _numbers_held(line.text, [given[i] for i in ids]))
+        ok = (
+            line.session in given
+            and line.session.startswith("session:")
+            and line.session in ids
+            and all(i in given for i in ids)
+            and _numbers_held(line.text, [given[i] for i in ids])
+        )
         if ok and line.session not in out and line.text.strip():
             out[line.session] = SessionLine(session=line.session, text=line.text.strip(), sources=ids)
         elif not ok:
@@ -121,5 +127,10 @@ def coach_words(plan: dict = Body(..., description="The planner's POST /api/pilo
     sentences = _kept(said.sentences, sources)
     lines = _lines(said.session_lines, sources)
     cited = {i for s in sentences for i in s.sources} | {i for line in lines for i in line.sources}
-    return CoachWordsAnswer(sentences=sentences, session_lines=lines, sources=[s for s in sources if s.id in cited],
-                            model=said.model, unavailable=said.unavailable)
+    return CoachWordsAnswer(
+        sentences=sentences,
+        session_lines=lines,
+        sources=[s for s in sources if s.id in cited],
+        model=said.model,
+        unavailable=said.unavailable,
+    )

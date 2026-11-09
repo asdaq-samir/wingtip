@@ -25,6 +25,7 @@ nobody planning, about 300 MB a day.
 What each product's `data` holds is the service's to say
 (services/weather/app); this module only keeps and reads the records.
 """
+
 from __future__ import annotations
 
 import gzip
@@ -50,6 +51,7 @@ ASKED_EVERY_S = 60.0
 
 class Record(NamedTuple):
     """One product as the service last wrote it."""
+
     fetched_at: float
     until: float | None
     data: object
@@ -149,8 +151,7 @@ def _read(name: str) -> Record | None:
         raw = json.loads(gzip.decompress(path.read_bytes()))
     except FileNotFoundError:
         return None
-    record = Record(fetched_at=float(raw["fetched_at"]), until=raw.get("until"), data=raw.get("data"),
-                    meta=raw.get("meta") or {})
+    record = Record(fetched_at=float(raw["fetched_at"]), until=raw.get("until"), data=raw.get("data"), meta=raw.get("meta") or {})
     with _READ_LOCK:
         _READ[str(path)] = (key, record)
     return record

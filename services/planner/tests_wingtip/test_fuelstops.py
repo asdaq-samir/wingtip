@@ -15,11 +15,21 @@ FIGURES = dict(fuel_per_nm=0.1, min_per_nm=0.6, usable_gal=40.0, taxi_gal=1.0, r
 
 
 def fields(*rows) -> pd.DataFrame:
-    return pd.DataFrame([
-        {"ident": ident, "faa_ident": ident, "name": f"{ident} FIELD", "city": "SOMEWHERE", "lat": lat, "lon": lon,
-         "elevation_ft": 500.0, "fuel_types": "100LL"}
-        for ident, lat, lon in rows
-    ])
+    return pd.DataFrame(
+        [
+            {
+                "ident": ident,
+                "faa_ident": ident,
+                "name": f"{ident} FIELD",
+                "city": "SOMEWHERE",
+                "lat": lat,
+                "lon": lon,
+                "elevation_ft": 500.0,
+                "fuel_types": "100LL",
+            }
+            for ident, lat, lon in rows
+        ]
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -72,7 +82,8 @@ def test_two_stops_where_one_is_not_enough():
 
 def test_a_short_runway_and_the_routes_own_fields_are_never_offered():
     stops, choices = fuelstops.suggest(
-        START, END, fields=fields(("SHORT", 0.0, 5.0), ("MINE", 0.0, 4.5), ("OK", 0.0, 5.5)), skip={"MINE"}, **FIGURES)
+        START, END, fields=fields(("SHORT", 0.0, 5.0), ("MINE", 0.0, 4.5), ("OK", 0.0, 5.5)), skip={"MINE"}, **FIGURES
+    )
     assert [s.ident for s in stops] + [c.ident for c in choices] == ["OK"]
 
 
@@ -80,13 +91,13 @@ def test_the_fields_along_each_flight_in_route_order_the_routes_own_left_out():
     found = fuelstops.along(
         [("A", START, (0.0, 5.0)), ("MID", (0.0, 5.0), END)],
         skip={"A", "MID", "B"},
-        fields=fields(("LATE", 0.0, 4.0), ("EARLY", 0.0, 1.0), ("SECOND", 0.1, 7.0), ("OFF", 3.0, 2.0), ("MID", 0.0, 5.0),
-                      ("SHORT", 0.0, 3.0)),
+        fields=fields(
+            ("LATE", 0.0, 4.0), ("EARLY", 0.0, 1.0), ("SECOND", 0.1, 7.0), ("OFF", 3.0, 2.0), ("MID", 0.0, 5.0), ("SHORT", 0.0, 3.0)
+        ),
     )
     # On the first flight in order, then the second's; one far off the line,
     # a short runway and the route's own fields not at all.
-    assert [(f["ident"], f["flight"], f["departure"]) for f in found] == [
-        ("EARLY", 0, "A"), ("LATE", 0, "A"), ("SECOND", 1, "MID")]
+    assert [(f["ident"], f["flight"], f["departure"]) for f in found] == [("EARLY", 0, "A"), ("LATE", 0, "A"), ("SECOND", 1, "MID")]
     assert found[0]["from_nm"] == pytest.approx(60, abs=1) and found[0]["fuel_types"] == ["100LL"]
 
 

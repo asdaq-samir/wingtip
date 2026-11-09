@@ -7,6 +7,7 @@ the airplane gets there. The rules are the engine's
 wingtip_native.call; the times are
 read here, and the time zones are Python's (zoneinfo), which the engine,
 built for the phones as well, does not carry."""
+
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -33,8 +34,9 @@ def pass_time(legs: list[dict], depart: datetime, along_nm: float) -> datetime |
     the legs' times to there, the leg it is in taken pro rata. None where
     a leg before it has no time (it cannot be flown) or there are no
     legs."""
-    minutes = ask("gonogo_pass_minutes", legs=[{"distance_nm": leg["distance_nm"], "ete_min": leg.get("ete_min")} for leg in legs],
-                  along_nm=along_nm)
+    minutes = ask(
+        "gonogo_pass_minutes", legs=[{"distance_nm": leg["distance_nm"], "ete_min": leg.get("ete_min")} for leg in legs], along_nm=along_nm
+    )
     return None if minutes is None else depart + timedelta(minutes=minutes)
 
 
@@ -42,8 +44,10 @@ def tfr_when(t: dict, at: datetime) -> str:
     """A TFR's window against the pass time, widened by the engine's PASS_MARGIN_MIN (30 minutes):
     "before", "after" or "in-force"; one with no start or no end is open
     that way."""
+
     def at_us(key):
         return _us(instant(t[key])) if t.get(key) else None
+
     return ask("gonogo_tfr_when", at_us=_us(at), effective_us=at_us("effective"), expires_us=at_us("expires"))
 
 

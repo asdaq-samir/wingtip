@@ -64,16 +64,18 @@ def _fields_of(path: str, _mtime: float, fuel_only: bool = True) -> pd.DataFrame
     open_public = (df["FACILITY_USE_CODE"] == "PU") & (df["SITE_TYPE_CODE"] == "A") & (df["ARPT_STATUS"].fillna("O") == "O")
     df = df[(sells | (not fuel_only)) & open_public]
     icao = df["ICAO_ID"].fillna("").str.strip()
-    return pd.DataFrame({
-        "ident": np.where(icao != "", icao, df["ARPT_ID"].str.strip()),
-        "faa_ident": df["ARPT_ID"].str.strip(),
-        "name": df["ARPT_NAME"].fillna("").str.strip(),
-        "city": df["CITY"].fillna("").str.strip(),
-        "lat": df["LAT_DECIMAL"].astype(float),
-        "lon": df["LONG_DECIMAL"].astype(float),
-        "elevation_ft": pd.to_numeric(df["ELEV"], errors="coerce"),
-        "fuel_types": df["FUEL_TYPES"].fillna("").str.strip(),
-    }).reset_index(drop=True)
+    return pd.DataFrame(
+        {
+            "ident": np.where(icao != "", icao, df["ARPT_ID"].str.strip()),
+            "faa_ident": df["ARPT_ID"].str.strip(),
+            "name": df["ARPT_NAME"].fillna("").str.strip(),
+            "city": df["CITY"].fillna("").str.strip(),
+            "lat": df["LAT_DECIMAL"].astype(float),
+            "lon": df["LONG_DECIMAL"].astype(float),
+            "elevation_ft": pd.to_numeric(df["ELEV"], errors="coerce"),
+            "fuel_types": df["FUEL_TYPES"].fillna("").str.strip(),
+        }
+    ).reset_index(drop=True)
 
 
 def fields_with_fuel(cache_dir=DEFAULT_FAA_CACHE_DIR) -> pd.DataFrame:
@@ -119,15 +121,45 @@ def _table(fields: pd.DataFrame) -> list[dict]:
     faa = fields["faa_ident"] if "faa_ident" in fields else fields["ident"]
     runway = np.maximum(runway_of(fields["ident"]), runway_of(faa))
     elevation = pd.to_numeric(fields["elevation_ft"], errors="coerce") if "elevation_ft" in fields else pd.Series([np.nan] * len(fields))
-    return [{"ident": str(i), "faa_ident": str(f), "name": str(n), "city": str(c), "lat": float(la), "lon": float(lo),
-             "elevation_ft": None if pd.isna(e) else float(e), "fuel_types": str(t or ""), "runway_ft": int(r)}
-            for i, f, n, c, la, lo, e, t, r in zip(fields["ident"], faa, fields["name"], fields.get("city", fields["name"]),
-                                                   fields["lat"], fields["lon"], elevation, fields["fuel_types"], runway)]
+    return [
+        {
+            "ident": str(i),
+            "faa_ident": str(f),
+            "name": str(n),
+            "city": str(c),
+            "lat": float(la),
+            "lon": float(lo),
+            "elevation_ft": None if pd.isna(e) else float(e),
+            "fuel_types": str(t or ""),
+            "runway_ft": int(r),
+        }
+        for i, f, n, c, la, lo, e, t, r in zip(
+            fields["ident"],
+            faa,
+            fields["name"],
+            fields.get("city", fields["name"]),
+            fields["lat"],
+            fields["lon"],
+            elevation,
+            fields["fuel_types"],
+            runway,
+        )
+    ]
 
 
-def suggest(start: tuple, end: tuple, *, fuel_per_nm: float, min_per_nm: float, usable_gal: float,
-            taxi_gal: float, reserve_gal: float, ground_min: float = 30.0, skip: set | None = None,
-            fields: pd.DataFrame | None = None) -> tuple[list[FuelStop], list[FuelStop]]:
+def suggest(
+    start: tuple,
+    end: tuple,
+    *,
+    fuel_per_nm: float,
+    min_per_nm: float,
+    usable_gal: float,
+    taxi_gal: float,
+    reserve_gal: float,
+    ground_min: float = 30.0,
+    skip: set | None = None,
+    fields: pd.DataFrame | None = None,
+) -> tuple[list[FuelStop], list[FuelStop]]:
     """The stops that take a flight from `start` to `end` (lat, lon) with
     the reserve left on every landing -- the tanks filled at each -- and
     other fields the first could be: ([], []) where none is needed or no
@@ -135,14 +167,23 @@ def suggest(start: tuple, end: tuple, *, fuel_per_nm: float, min_per_nm: float, 
     first stop nearest the line among those as quick, then the one whose
     landings keep the most fuel."""
     fields = fields_with_fuel() if fields is None else fields
-    found = engine("fuel_stops", start=list(start), end=list(end), fuel_per_nm=fuel_per_nm, min_per_nm=min_per_nm,
-                   usable_gal=usable_gal, taxi_gal=taxi_gal, reserve_gal=reserve_gal, ground_min=ground_min,
-                   skip=sorted(skip or ()), fields=_table(fields))
+    found = engine(
+        "fuel_stops",
+        start=list(start),
+        end=list(end),
+        fuel_per_nm=fuel_per_nm,
+        min_per_nm=min_per_nm,
+        usable_gal=usable_gal,
+        taxi_gal=taxi_gal,
+        reserve_gal=reserve_gal,
+        ground_min=ground_min,
+        skip=sorted(skip or ()),
+        fields=_table(fields),
+    )
     return [FuelStop(**s) for s in found["stops"]], [FuelStop(**c) for c in found["choices"]]
 
 
-def along(flights: list[tuple[str, tuple, tuple]], skip: set | None = None,
-          fields: pd.DataFrame | None = None) -> list[dict]:
+def along(flights: list[tuple[str, tuple, tuple]], skip: set | None = None, fields: pd.DataFrame | None = None) -> list[dict]:
     """The public fields on a long enough paved runway no more than
     30 nm off each flight's straight line ((departure ident, start,
     end) for each), at the owner's ask for the food, fuel and rest stops
@@ -152,5 +193,9 @@ def along(flights: list[tuple[str, tuple, tuple]], skip: set | None = None,
     order. A field near two flights is listed on the first; the forty
     nearest the line kept (the engine's fields_along)."""
     fields = public_fields() if fields is None else fields
-    return engine("fields_along", flights=[{"departure": d, "start": list(a), "end": list(b)} for d, a, b in flights],
-                  skip=sorted(skip or ()), fields=_table(fields))
+    return engine(
+        "fields_along",
+        flights=[{"departure": d, "start": list(a), "end": list(b)} for d, a, b in flights],
+        skip=sorted(skip or ()),
+        fields=_table(fields),
+    )

@@ -10,6 +10,7 @@ Every route here is a billed Claude call, so each says which paid
 feature it is (the gateway's PaidFeature): the gateway checks the
 pilot's subscription and the day's allowance before it asks.
 """
+
 from typing import Literal
 
 Access = Literal["public", "signed-in", "developer"]

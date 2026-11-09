@@ -2,6 +2,7 @@
 Airspace card): the classes from the ground up, the Mode C veil, the
 special-use areas and the TFRs there; and what is ahead of own ship in
 the air (the map's alerts)."""
+
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
@@ -33,9 +34,7 @@ def _ground_ft(lat: float, lon: float) -> float | None:
 
 
 @router.get("/api/airspace/at", response_model=AirspaceAt, response_model_by_alias=True, openapi_extra=PUBLIC)
-def airspace_at_point(
-    lat: float = Query(ge=-90, le=90), lon: float = Query(ge=-180, le=180),
-) -> AirspaceAt:
+def airspace_at_point(lat: float = Query(ge=-90, le=90), lon: float = Query(ge=-180, le=180)) -> AirspaceAt:
     """The airspace over a point, from the ground to FL600, in bands
     (wingtip.airspace_at): each class's floor and ceiling in feet MSL, its
     VFR weather minimums by day and by night (91.155), what it takes to
@@ -69,15 +68,23 @@ def airspace_at_point(
         log.warning("fixes near (%s, %s) not read: %s", lat, lon, err)
         near = None
     return AirspaceAt(
-        lat=lat, lon=lon, ground_ft=ground_ft, bands=bands, mode_c_veil=veil,
-        special_use=special_use, special_use_unavailable=special_use_unavailable,
-        tfrs=tfrs, tfrs_unavailable=tfrs_unavailable, point=PointOffFix(**near) if near else None,
+        lat=lat,
+        lon=lon,
+        ground_ft=ground_ft,
+        bands=bands,
+        mode_c_veil=veil,
+        special_use=special_use,
+        special_use_unavailable=special_use_unavailable,
+        tfrs=tfrs,
+        tfrs_unavailable=tfrs_unavailable,
+        point=PointOffFix(**near) if near else None,
     )
 
 
 @router.get("/api/airspace/ahead", response_model=AlertsAhead, response_model_by_alias=True, openapi_extra=PUBLIC)
 def airspace_ahead(
-    lat: float = Query(ge=-90, le=90), lon: float = Query(ge=-180, le=180),
+    lat: float = Query(ge=-90, le=90),
+    lon: float = Query(ge=-180, le=180),
     track: float = Query(ge=0, le=360, description="True track over the ground, degrees"),
     gs: float = Query(ge=0, le=1000, description="Ground speed, knots"),
     alt: float | None = Query(default=None, ge=-2000, le=60000, description="GPS altitude, feet MSL"),
@@ -89,10 +96,13 @@ def airspace_ahead(
     the next minute. Nothing under 40 kt, on the ground. Advisory, from
     the phone's GPS: not a TAWS."""
     found = alerts.ahead(
-        lat, lon, track % 360, gs, alt, vs,
+        lat,
+        lon,
+        track % 360,
+        gs,
+        alt,
+        vs,
         shp_path=airspace.ensure_class_airspace_shapefile(altitude.DEFAULT_FAA_CACHE_DIR),
         faa_cache_dir=altitude.DEFAULT_FAA_CACHE_DIR,
     )
     return AlertsAhead(**found)
-
-

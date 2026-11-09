@@ -18,6 +18,7 @@ pilot's own off the nearest fix (wingtip.fixes.frd_near).
 It only suggests: the route through the fields is planned as any route
 is, its floor read along each leg at full resolution (wingtip.terrain).
 """
+
 from __future__ import annotations
 
 import threading
@@ -35,7 +36,7 @@ ZOOM = 6
 
 def heights_ft(lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
     """The ground's height at each point, feet, from the terrain tiles."""
-    n = 2 ** ZOOM
+    n = 2**ZOOM
     fx = (lons + 180.0) / 360.0 * n
     fy = (1.0 - np.arcsinh(np.tan(np.radians(lats))) / np.pi) / 2.0 * n
     tx, ty = np.floor(fx).astype(int), np.floor(fy).astype(int)
@@ -90,10 +91,17 @@ def _way_round(start: tuple, end: tuple, ceiling_ft: float, fields=None) -> list
     table = fields if fields is not None else fuelstops.fields_with_fuel()
     s, w, n, e = frame["data_box"]
     near = table[(table["lat"] >= s) & (table["lat"] <= n) & (table["lon"] >= w) & (table["lon"] <= e)]
-    stones = engine("terrain_way_round", start=list(start), end=list(end), ceiling_ft=ceiling_ft,
-                    terrain_ft=np.rint(heights).astype(int).ravel().tolist(),
-                    fields=[{"ident": str(r["ident"]), "name": str(r["name"]), "lat": float(r["lat"]), "lon": float(r["lon"])}
-                            for r in near.to_dict("records")])
+    stones = engine(
+        "terrain_way_round",
+        start=list(start),
+        end=list(end),
+        ceiling_ft=ceiling_ft,
+        terrain_ft=np.rint(heights).astype(int).ravel().tolist(),
+        fields=[
+            {"ident": str(r["ident"]), "name": str(r["name"]), "lat": float(r["lat"]), "lon": float(r["lon"])}
+            for r in near.to_dict("records")
+        ],
+    )
     if stones is None:
         return None
     out = []

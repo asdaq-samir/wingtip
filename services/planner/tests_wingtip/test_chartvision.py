@@ -48,8 +48,7 @@ def test_corridor_tiles_have_no_gap_along_the_route():
     """A skipped tile would silently lose every landmark inside it."""
     tiles = set(corridor_tiles((42.32, -88.07), (46.84, -92.20), half_width_nm=2.0))
     for x, y in tiles:
-        neighbours = [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1),
-                      (x + 1, y + 1), (x - 1, y - 1), (x + 1, y - 1), (x - 1, y + 1)]
+        neighbours = [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1), (x + 1, y + 1), (x - 1, y - 1), (x + 1, y - 1), (x - 1, y + 1)]
         assert any(n in tiles for n in neighbours), f"tile {(x, y)} is isolated"
 
 
@@ -226,13 +225,13 @@ def test_a_block_with_no_sheet_over_it_is_never_read():
     from wingtip.chartvision import _has_chart
 
     zoom = 9
-    n = 2 ** zoom
+    n = 2**zoom
 
     def tile_of(lat, lon):
         import math
+
         r = math.radians(lat)
-        return (int((lon + 180) / 360 * n),
-                int((1 - math.log(math.tan(r) + 1 / math.cos(r)) / math.pi) / 2 * n))
+        return (int((lon + 180) / 360 * n), int((1 - math.log(math.tan(r) + 1 / math.cos(r)) / math.pi) / 2 * n))
 
     # Chicago: squarely inside a sectional.
     assert _has_chart([tile_of(41.98, -87.91)], zoom) is True
@@ -250,13 +249,13 @@ def test_a_block_straddling_the_edge_is_still_read():
     from wingtip.chartvision import _has_chart
 
     zoom = 9
-    n = 2 ** zoom
+    n = 2**zoom
 
     def tile_of(lat, lon):
         import math
+
         r = math.radians(lat)
-        return (int((lon + 180) / 360 * n),
-                int((1 - math.log(math.tan(r) + 1 / math.cos(r)) / math.pi) / 2 * n))
+        return (int((lon + 180) / 360 * n), int((1 - math.log(math.tan(r) + 1 / math.cos(r)) / math.pi) / 2 * n))
 
     straddling = [tile_of(41.98, -87.91), tile_of(45.0, -150.0)]
     assert _has_chart(straddling, zoom) is True
@@ -266,9 +265,9 @@ def test_a_block_straddling_the_edge_is_still_read():
 
 from wingtip.chartvision import detect_landmarks, linear_crossings  # noqa: E402
 
-BACKGROUND = (220, 230, 210)   # the chart's pale green
-RIVER_BLUE = (3, 82, 113)      # sampled on a river a pilot marked by hand
-LAKE_FILL = (190, 223, 238)    # Nepco Lake's tint
+BACKGROUND = (220, 230, 210)  # the chart's pale green
+RIVER_BLUE = (3, 82, 113)  # sampled on a river a pilot marked by hand
+LAKE_FILL = (190, 223, 238)  # Nepco Lake's tint
 
 
 def _chart(width=300, height=200):
@@ -284,7 +283,8 @@ def _rivers(pixels, row=100):
     course = np.column_stack([np.arange(pixels.shape[1], dtype=float), np.full(pixels.shape[1], float(row))])
     return [
         round(latlon_to_global_px(lm.lat, lm.lon)[0])
-        for lm in linear_crossings(mosaic, None, None, course_px=course) if lm.category == "river"
+        for lm in linear_crossings(mosaic, None, None, course_px=course)
+        if lm.category == "river"
     ]
 
 
@@ -300,9 +300,9 @@ def test_a_heavy_blue_symbol_under_the_course_is_not_a_river():
     as a short river, and thick -- thick throughout, so the thin tip of a
     stroke under the course does not pass it."""
     pixels = _chart()
-    pixels[60:140, 140:158] = RIVER_BLUE    # an 80 px stroke 18 thick
+    pixels[60:140, 140:158] = RIVER_BLUE  # an 80 px stroke 18 thick
     pixels[122:140, 140:220] = RIVER_BLUE
-    pixels[97:103, 158:170] = RIVER_BLUE    # and a thin spur off it, under the course
+    pixels[97:103, 158:170] = RIVER_BLUE  # and a thin spur off it, under the course
     assert _rivers(pixels) == []
 
 
@@ -311,7 +311,7 @@ def test_a_number_is_not_a_river_but_a_short_piece_of_one_is():
     # apart on a baseline, 32 px across.
     number = _chart()
     for x in range(140, 172, 3):
-        number[88:102, x:x + 2] = RIVER_BLUE
+        number[88:102, x : x + 2] = RIVER_BLUE
     number[100:102, 140:172] = RIVER_BLUE
     assert _rivers(number) == []
     # A piece of river between two roads drawn over it: short, and a line.
@@ -323,7 +323,7 @@ def test_a_number_is_not_a_river_but_a_short_piece_of_one_is():
 
 def test_a_crossing_beside_a_symbol_is_marked_on_the_river():
     pixels = _chart()
-    pixels[93:107, 136:150] = RIVER_BLUE    # a heavy dot, hit by the same stretch of course
+    pixels[93:107, 136:150] = RIVER_BLUE  # a heavy dot, hit by the same stretch of course
     pixels[20:180, 151:154] = RIVER_BLUE
     (x,) = _rivers(pixels)
     assert 151 <= x <= 153
@@ -331,9 +331,9 @@ def test_a_crossing_beside_a_symbol_is_marked_on_the_river():
 
 def test_a_boxed_label_is_not_water_but_a_lake_is():
     pixels = _chart()
-    pixels[20:44, 20:80] = LAKE_FILL        # a label's box: a rectangle
+    pixels[20:44, 20:80] = LAKE_FILL  # a label's box: a rectangle
     yy, xx = np.mgrid[0:200, 0:300]
-    pixels[(yy - 120) ** 2 + (xx - 200) ** 2 <= 15 ** 2] = LAKE_FILL
+    pixels[(yy - 120) ** 2 + (xx - 200) ** 2 <= 15**2] = LAKE_FILL
     mosaic = Mosaic(pixels=pixels, origin_px=(0, 0), zoom=DEFAULT_ZOOM)
     water = [lm for lm in detect_landmarks(mosaic) if lm.category == "water"]
     (lake,) = water
@@ -342,6 +342,7 @@ def test_a_boxed_label_is_not_water_but_a_lake_is():
 
 
 # --- the chart's latitude and longitude lines are not roads ---
+
 
 def test_a_meridian_and_its_minute_ticks_are_not_a_road_but_a_road_beside_it_is():
     """The sectional draws its latitude and longitude lines every half
@@ -355,10 +356,10 @@ def test_a_meridian_and_its_minute_ticks_are_not_a_road_but_a_road_beside_it_is(
     pixels = _chart()
     origin = (round(x_meridian) - 150, round(y) - 100)
     black = (2, 2, 3)
-    pixels[:, 149:152] = black                     # the meridian at -88.5
-    for row in range(10, 200, 33):                 # its minute ticks
-        pixels[row:row + 2, 130:170] = black
-    pixels[:, 59:62] = black                       # a road, nowhere near one
+    pixels[:, 149:152] = black  # the meridian at -88.5
+    for row in range(10, 200, 33):  # its minute ticks
+        pixels[row : row + 2, 130:170] = black
+    pixels[:, 59:62] = black  # a road, nowhere near one
     mosaic = Mosaic(pixels=pixels, origin_px=origin, zoom=DEFAULT_ZOOM)
     course = np.column_stack([np.arange(origin[0], origin[0] + 300, dtype=float), np.full(300, float(origin[1] + 100))])
 

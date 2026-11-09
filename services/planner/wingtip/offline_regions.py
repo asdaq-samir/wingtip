@@ -15,6 +15,7 @@ own coverage is. The 50 states, DC and Puerto Rico.
 What is kept is the chart as drawn, not a rule: no figure here is an
 aviation one.
 """
+
 from __future__ import annotations
 
 import json
@@ -43,9 +44,9 @@ _BOX_ID = re.compile(r"box_(-?\d+(?:\.\d+)?)_(-?\d+(?:\.\d+)?)_(-?\d+(?:\.\d+)?)
 
 @dataclass(frozen=True)
 class Region:
-    id: str        # what the address takes: "Chicago", "state-WI", "box_-90_41_-87_43"
-    name: str      # what the list says: "Chicago", "Wisconsin"
-    group: str     # "sheet", "state" or "box"
+    id: str  # what the address takes: "Chicago", "state-WI", "box_-90_41_-87_43"
+    name: str  # what the list says: "Chicago", "Wisconsin"
+    group: str  # "sheet", "state" or "box"
     boxes: tuple[Box, ...]
 
 
@@ -65,8 +66,10 @@ def sheets() -> list[Region]:
 
 def states() -> list[Region]:
     """The states, DC and Puerto Rico, by name."""
-    return sorted((Region(f"state-{code}", entry["name"], "state", tuple(tuple(b) for b in entry["boxes"]))
-                   for code, entry in _states().items()), key=lambda r: r.name)
+    return sorted(
+        (Region(f"state-{code}", entry["name"], "state", tuple(tuple(b) for b in entry["boxes"])) for code, entry in _states().items()),
+        key=lambda r: r.name,
+    )
 
 
 def catalog() -> list[Region]:
@@ -76,6 +79,7 @@ def catalog() -> list[Region]:
 
 def box_id(west: float, south: float, east: float, north: float) -> str:
     """A drawn box's id, snapped outward to BOX_GRID."""
+
     def snap(v: float, up: bool) -> float:
         f = math.ceil if up else math.floor
         return f(v / BOX_GRID) * BOX_GRID

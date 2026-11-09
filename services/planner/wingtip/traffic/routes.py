@@ -1,4 +1,5 @@
 """The route a flight number flies."""
+
 from __future__ import annotations
 
 import re
@@ -38,9 +39,15 @@ def _route_airports(callsign: str) -> list[dict] | None:
         else:
             resp.raise_for_status()
             found = [
-                {"ident": a.get("icao") or a.get("iata"), "name": a.get("name"), "location": a.get("location"),
-                 "lat": _number(a.get("lat")), "lon": _number(a.get("lon"))}
-                for a in resp.json().get("_airports") or [] if isinstance(a, dict)
+                {
+                    "ident": a.get("icao") or a.get("iata"),
+                    "name": a.get("name"),
+                    "location": a.get("location"),
+                    "lat": _number(a.get("lat")),
+                    "lon": _number(a.get("lon")),
+                }
+                for a in resp.json().get("_airports") or []
+                if isinstance(a, dict)
             ]
             found = [a for a in found if a["ident"] and a["lat"] is not None and a["lon"] is not None] or None
     except (requests.RequestException, ValueError):

@@ -18,6 +18,7 @@ The ids a sentence cites: "flight:route"; "notam:<id>" ("notam:BJC
 "verdict:line"; "finding:<key>"; "risk:line", "risk:<factor key>";
 "pilot:record"; "time", "leg:<n>", "pass:<n>", "pattern:<ident>",
 "note:<n>", "tolerances"."""
+
 import json
 import re
 import time
@@ -196,7 +197,7 @@ def _meets(on: OnRoute | None) -> str:
 
 
 def _span(starts: str | None, ends: str | None, capital: bool = False) -> str:
-    """"from 2026-10-01T12:00:00Z to 2026-10-02T12:00:00Z", or ", until
+    """ "from 2026-10-01T12:00:00Z to 2026-10-02T12:00:00Z", or ", until
     further notice" where it has no end; "From" at the start of a line."""
     return f"{'From' if capital else 'from'} {starts or 'now'}" + (f" to {ends}" if ends else ", until further notice")
 
@@ -301,13 +302,23 @@ def _briefing_sources(b: Briefing) -> list[Source]:
         names = ", ".join(WEATHER_SOURCE_LABEL.get(w, w) for w in b.weather_unavailable)
         out.append(Source(id=_UNCHECKED_ID, label="Not checked", text=f"Could not be checked, the source did not answer: {names}."))
     if b.vfr_not_recommended:
-        out.append(Source(id="vfr-not-recommended", label="VFR flight not recommended",
-                          text="VFR flight not recommended (AIM 7-1-5): " + "; ".join(b.vfr_not_recommended) + "."))
+        out.append(
+            Source(
+                id="vfr-not-recommended",
+                label="VFR flight not recommended",
+                text="VFR flight not recommended (AIM 7-1-5): " + "; ".join(b.vfr_not_recommended) + ".",
+            )
+        )
     for f in b.fields_below_vfr:
-        out.append(Source(id=f"below-vfr:{f.ident}", label=f"{f.ident} below VFR",
-                          text=f"{f.ident} is below VFR where the flight meets it, by its {f.source}"
-                               f"{' (' + f.flight_category + ')' if f.flight_category else ''}: "
-                               f"{ceiling_and_visibility(f.ceiling_ft, f.visibility_sm)}. {_meets(f.on_route)}"))
+        out.append(
+            Source(
+                id=f"below-vfr:{f.ident}",
+                label=f"{f.ident} below VFR",
+                text=f"{f.ident} is below VFR where the flight meets it, by its {f.source}"
+                f"{' (' + f.flight_category + ')' if f.flight_category else ''}: "
+                f"{ceiling_and_visibility(f.ceiling_ft, f.visibility_sm)}. {_meets(f.on_route)}",
+            )
+        )
     out += [_metar_source(ident, m) for ident, m in b.metars.items()]
     out += [_taf_source(s) for s in b.forecast.stations]
     out += [_hazard_source(h, i) for i, h in enumerate(b.hazards)]
@@ -318,8 +329,13 @@ def _briefing_sources(b: Briefing) -> list[Source]:
             lines.append("Urgent.")
         if p.on_route:
             lines.append(_meets(p.on_route))
-        out.append(Source(id=f"pirep:{i}", label="Pilot report" + (f" at {alt_ft(p.altitude_ft)} ft" if p.altitude_ft is not None else ""),
-                          text=" ".join(lines)))
+        out.append(
+            Source(
+                id=f"pirep:{i}",
+                label="Pilot report" + (f" at {alt_ft(p.altitude_ft)} ft" if p.altitude_ft is not None else ""),
+                text=" ".join(lines),
+            )
+        )
     out += [_tfr_source(t.model_dump()) for t in b.tfrs]
     return out
 
@@ -344,20 +360,28 @@ def _debrief_sources(d: Debrief, t: DebriefTolerances) -> list[Source]:
     leg's altitude and course held, each checkpoint's time, each pattern
     entry, the notes, and the tolerances they are marked against."""
     planned = f" against {num(one(d.planned_min))} min planned" if d.planned_min is not None else ""
-    out = [Source(id="time", label="Time in the air",
-                  text=f"Took off {_z(d.takeoff)}, landed {_z(d.landing)}: {num(one(d.flown_min))} min in the air{planned}.")]
+    out = [
+        Source(
+            id="time",
+            label="Time in the air",
+            text=f"Took off {_z(d.takeoff)}, landed {_z(d.landing)}: {num(one(d.flown_min))} min in the air{planned}.",
+        )
+    ]
     for i, leg in enumerate(d.legs):
         parts = [f"{leg.from_} to {leg.to}:"]
         if leg.planned_alt_ft is not None and leg.altitude_within is not None:
             worst = f", furthest off {_off(leg.worst_alt_ft, 'ft', 'high', 'low')}" if leg.worst_alt_ft is not None else ""
-            parts.append(f"altitude within {num(t.altitude_ft)} ft of {alt_ft(leg.planned_alt_ft)} ft "
-                         f"for {round(leg.altitude_within * 100)}% of the cruise{worst};")
+            parts.append(
+                f"altitude within {num(t.altitude_ft)} ft of {alt_ft(leg.planned_alt_ft)} ft "
+                f"for {round(leg.altitude_within * 100)}% of the cruise{worst};"
+            )
         else:
             parts.append("altitude not graded;")
         if leg.course_deg is not None and leg.course_within is not None:
             off = f", furthest off the line {_off(leg.worst_off_nm, 'nm', 'right', 'left')}" if leg.worst_off_nm is not None else ""
-            parts.append(f"course {num(leg.course_deg)}° held within {num(t.course_deg)}° "
-                         f"for {round(leg.course_within * 100)}% of the way{off};")
+            parts.append(
+                f"course {num(leg.course_deg)}° held within {num(t.course_deg)}° for {round(leg.course_within * 100)}% of the way{off};"
+            )
         else:
             parts.append("course not graded;")
         parts.append("within tolerance." if leg.ok else "outside tolerance.")
@@ -377,14 +401,24 @@ def _debrief_sources(d: Debrief, t: DebriefTolerances) -> list[Source]:
         parts.append("within tolerance." if p.ok else "outside tolerance." if p.ok is False else "time not known.")
         out.append(Source(id=f"pass:{i}", label=f"Checkpoint {p.name}", text=" ".join(parts)))
     for p in d.patterns:
-        out.append(Source(id=f"pattern:{p.ident}", label=f"Pattern at {p.ident}",
-                          text=f"{p.ident}: {alt_ft(p.alt_ft)} ft entering the pattern against {alt_ft(p.pattern_ft)} ft, "
-                               f"{_off(p.off_ft, 'ft', 'high', 'low')}; {'within' if p.ok else 'outside'} tolerance."))
+        out.append(
+            Source(
+                id=f"pattern:{p.ident}",
+                label=f"Pattern at {p.ident}",
+                text=f"{p.ident}: {alt_ft(p.alt_ft)} ft entering the pattern against {alt_ft(p.pattern_ft)} ft, "
+                f"{_off(p.off_ft, 'ft', 'high', 'low')}; {'within' if p.ok else 'outside'} tolerance.",
+            )
+        )
     out += [Source(id=f"note:{i}", label="Note", text=n) for i, n in enumerate(d.notes)]
-    out.append(Source(id="tolerances", label="Tolerances (ACS PA.VI.A and PA.III.B)",
-                      text=f"Altitude within {num(t.altitude_ft)} ft, course within {num(t.course_deg)}°, "
-                           f"off route by {num(t.off_route_nm)} nm at most, each checkpoint within {num(t.eta_min)} min of its "
-                           f"estimate, the pattern altitude within {num(t.pattern_ft)} ft at {num(t.pattern_nm)} nm from the field."))
+    out.append(
+        Source(
+            id="tolerances",
+            label="Tolerances (ACS PA.VI.A and PA.III.B)",
+            text=f"Altitude within {num(t.altitude_ft)} ft, course within {num(t.course_deg)}°, "
+            f"off route by {num(t.off_route_nm)} nm at most, each checkpoint within {num(t.eta_min)} min of its "
+            f"estimate, the pattern altitude within {num(t.pattern_ft)} ft at {num(t.pattern_nm)} nm from the field.",
+        )
+    )
     return out
 
 
@@ -418,8 +452,13 @@ def briefing_changes(then: Briefing, now: Briefing) -> list[Source]:
         a, b = then.metars.get(ident), now.metars.get(ident)
         was, is_ = a.flight_category if a else None, b.flight_category if b else None
         if was != is_:
-            out.append(Source(id=f"metar:{ident}", label=f"{ident} METAR, {was or 'none'} to {is_ or 'none'}",
-                              text=f"Was: {a.raw if a and a.raw else 'no METAR'}\nNow: {b.raw if b and b.raw else 'no METAR'}"))
+            out.append(
+                Source(
+                    id=f"metar:{ident}",
+                    label=f"{ident} METAR, {was or 'none'} to {is_ or 'none'}",
+                    text=f"Was: {a.raw if a and a.raw else 'no METAR'}\nNow: {b.raw if b and b.raw else 'no METAR'}",
+                )
+            )
     then_hazards, now_hazards = {_hazard_key(h) for h in then.hazards}, {_hazard_key(h) for h in now.hazards}
     out += [_hazard_source(h, i) for i, h in enumerate(now.hazards) if _hazard_key(h) not in then_hazards]
     out += [_hazard_source(h, i, gone=True) for i, h in enumerate(then.hazards) if _hazard_key(h) not in now_hazards]
@@ -431,9 +470,14 @@ def briefing_changes(then: Briefing, now: Briefing) -> list[Source]:
     then_below = {(f.ident, f.source) for f in then.fields_below_vfr}
     for f in now.fields_below_vfr:
         if (f.ident, f.source) not in then_below:
-            out.append(Source(id=f"below-vfr:{f.ident}", label=f"{f.ident} newly below VFR",
-                              text=f"{f.ident} is now below VFR where the flight meets it, by its {f.source}: "
-                                   f"{ceiling_and_visibility(f.ceiling_ft, f.visibility_sm)}. {_meets(f.on_route)}"))
+            out.append(
+                Source(
+                    id=f"below-vfr:{f.ident}",
+                    label=f"{f.ident} newly below VFR",
+                    text=f"{f.ident} is now below VFR where the flight meets it, by its {f.source}: "
+                    f"{ceiling_and_visibility(f.ceiling_ft, f.visibility_sm)}. {_meets(f.on_route)}",
+                )
+            )
     then_stations = {s.icaoId: s for s in then.forecast.stations}
     for s in now.forecast.stations:
         before = then_stations.get(s.icaoId)
@@ -445,9 +489,14 @@ def briefing_changes(then: Briefing, now: Briefing) -> list[Source]:
         unknown = lambda x: x.eta_ceiling_unknown if x.eta and before.eta else x.ceiling_unknown  # noqa: E731
         was, is_ = _category(*at(before), unknown(before)), _category(*at(s), unknown(s))
         if was != is_:
-            out.append(Source(id=f"taf:{s.icaoId}", label=f"{s.icaoId} TAF, {was or 'none'} to {is_ or 'none'}",
-                              text=f"Was: {ceiling_and_visibility(*at(before))}\n{before.raw or ''}\n"
-                                   f"Now: {ceiling_and_visibility(*at(s))}\n{s.raw or ''}"))
+            out.append(
+                Source(
+                    id=f"taf:{s.icaoId}",
+                    label=f"{s.icaoId} TAF, {was or 'none'} to {is_ or 'none'}",
+                    text=f"Was: {ceiling_and_visibility(*at(before))}\n{before.raw or ''}\n"
+                    f"Now: {ceiling_and_visibility(*at(s))}\n{s.raw or ''}",
+                )
+            )
     return out
 
 
@@ -498,8 +547,13 @@ def weather_sources(ask: WeatherAsk) -> WordsSources:
     A briefing that cannot be had fails as it does there (a 502)."""
     raw = route_briefing.briefing(ask.dep, ask.dest, ",".join(ask.stops), ask.depart, ask.ete_min, ask.fixes, ask.leg_min)
     b = Briefing.model_validate(raw)
-    flight = _flight_source(ask.dep.upper(), ask.dest.upper(), ask.stops, _start(ask.depart),
-                            ask.ete_min if ask.ete_min is not None else route_briefing.DEFAULT_ETE_MIN)
+    flight = _flight_source(
+        ask.dep.upper(),
+        ask.dest.upper(),
+        ask.stops,
+        _start(ask.depart),
+        ask.ete_min if ask.ete_min is not None else route_briefing.DEFAULT_ETE_MIN,
+    )
     return WordsSources(sources=[flight, *_briefing_sources(b)])
 
 
@@ -514,8 +568,11 @@ def risk_sources(ask: RiskAsk) -> WordsSources:
         sources.append(Source(id="verdict:line", label="Go / No-Go", text=f"{line.finding}: {line.words}"))
     sources += [Source(id=f"finding:{i.key}", label=f"{i.label}: {i.finding}", text=i.detail) for i in v.items]
     if v.risk:
-        sources.append(Source(id="risk:line", label="Risk assessment",
-                              text=f"{v.risk.line}. {v.risk.words} {v.risk.score} points, level {v.risk.level}."))
+        sources.append(
+            Source(
+                id="risk:line", label="Risk assessment", text=f"{v.risk.line}. {v.risk.words} {v.risk.score} points, level {v.risk.level}."
+            )
+        )
         for f in v.risk.factors:
             unlawful = " Makes the flight unlawful as planned." if f.stop else ""
             sources.append(Source(id=f"risk:{f.key}", label=f.label, text=f"{f.why or f.label}. {f.points} points.{unlawful}"))

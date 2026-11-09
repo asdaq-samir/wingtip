@@ -16,6 +16,7 @@ would be worse than none.
 A reference to fly the dry run and the route against, not a chart to
 navigate by: the plate itself, in the d-TPP, is that.
 """
+
 from __future__ import annotations
 
 import io
@@ -103,7 +104,8 @@ class Georeference:
     def __init__(self, box: tuple, lpts: list, gpts: list, projection: dict):
         lcc = pyproj.CRS.from_proj4(
             f"+proj=lcc +lat_0={projection['Latitude_Of_Origin']} +lon_0={projection['Central_Meridian']} "
-            f"+lat_1={projection['Standard_Parallel_1']} +lat_2={projection['Standard_Parallel_2']} +datum=NAD83 +units=m")
+            f"+lat_1={projection['Standard_Parallel_1']} +lat_2={projection['Standard_Parallel_2']} +datum=NAD83 +units=m"
+        )
         self._to = pyproj.Transformer.from_crs("EPSG:4269", lcc, always_xy=True)
         self._back = pyproj.Transformer.from_crs(lcc, "EPSG:4269", always_xy=True)
         left, bottom, right, top = box
@@ -140,12 +142,17 @@ def georeference_of(pdf: bytes) -> Georeference | None:
     at = pdf.find(b"/VP")
     if at < 0:
         return None
-    text = pdf[at:at + 8000].decode("latin-1")
-    viewport = text[:text.find("/Type/Viewport")] if "/Type/Viewport" in text else text
+    text = pdf[at : at + 8000].decode("latin-1")
+    viewport = text[: text.find("/Type/Viewport")] if "/Type/Viewport" in text else text
     box, lpts, gpts = _figures("BBox", viewport), _figures("LPTS", viewport), _figures("GPTS", viewport)
     projection = {k: float(v) for k, v in re.findall(r'PARAMETER\["(\w+)",(-?\d+(?:\.\d+)?)\]', viewport)}
-    if ("Lambert_Conformal_Conic" not in viewport or len(box) != 4 or len(lpts) != 8 or len(gpts) != 8
-            or any(k not in projection for k in LCC_PARAMETERS)):
+    if (
+        "Lambert_Conformal_Conic" not in viewport
+        or len(box) != 4
+        or len(lpts) != 8
+        or len(gpts) != 8
+        or any(k not in projection for k in LCC_PARAMETERS)
+    ):
         return None
     return Georeference(tuple(box), lpts, gpts, projection)
 
@@ -251,15 +258,21 @@ def _plan_view(pdf: bytes, fixes: dict, airport: tuple) -> tuple | None:
         finally:
             document.close()
     # Inside the box's own lines, a point in.
-    crop = image.crop((round((left + 1) * PLATE_SCALE), round((height - top + 1) * PLATE_SCALE),
-                       round((right - 1) * PLATE_SCALE), round((height - bottom - 1) * PLATE_SCALE)))
+    crop = image.crop(
+        (
+            round((left + 1) * PLATE_SCALE),
+            round((height - top + 1) * PLATE_SCALE),
+            round((right - 1) * PLATE_SCALE),
+            round((height - bottom - 1) * PLATE_SCALE),
+        )
+    )
     grey = np.asarray(crop, dtype=np.uint8)
     # Black where the plate is black, clear where it is white, its greys
     # (water, terrain) part clear.
     rgba = np.zeros((*grey.shape, 4), dtype=np.uint8)
     rgba[..., 3] = 255 - grey
     for b_left, b_bottom, b_right, b_top in others:
-        rgba[round((top - b_top) * PLATE_SCALE):, round((b_left - left) * PLATE_SCALE):round((b_right - left) * PLATE_SCALE) + 1, 3] = 0
+        rgba[round((top - b_top) * PLATE_SCALE) :, round((b_left - left) * PLATE_SCALE) : round((b_right - left) * PLATE_SCALE) + 1, 3] = 0
     out = io.BytesIO()
     Image.fromarray(rgba, "RGBA").save(out, "PNG", optimize=True)
     # Its corners as a latitude-longitude box, which the map's picture
@@ -361,8 +374,13 @@ def plate_overlay(ident: str, procedure: str, on: date | None = None) -> dict | 
         except pypdfium2.PdfiumError as err:
             log.warning("No plate for %s %s: %s", ident, procedure, err)
             made = None
-        found = {"cycle": cycle, "name": chart["name"], "placed": made is not None, "fit": PLACING_VERSION,
-                 "circling": made is not None and circling_of(pdf)}
+        found = {
+            "cycle": cycle,
+            "name": chart["name"],
+            "placed": made is not None,
+            "fit": PLACING_VERSION,
+            "circling": made is not None and circling_of(pdf),
+        }
         folder.mkdir(parents=True, exist_ok=True)
         if made is not None:
             picture, corners = made

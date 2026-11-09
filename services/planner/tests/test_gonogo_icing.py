@@ -1,4 +1,5 @@
 """app.gonogo.icing, with apps/web/src/lib/icing.test.ts's cases."""
+
 from app.gonogo.icing import icing_at_altitude, icing_line
 
 
@@ -13,8 +14,9 @@ def pirep(icing):
 def test_a_leg_at_or_above_the_freezing_level_in_cloud_with_the_reports_of_icing_near_the_route():
     found = icing_at_altitude(selection(), [4000, 6000], [pirep("MOD"), pirep("NEG"), pirep("NEGclr"), pirep(None), pirep("LGT-MOD")])
     assert found == {"altitude_ft": 6000, "freezing_level_ft": 5000, "at_or_below": False, "reports": 2}
-    assert icing_line(found) == ("Icing possible at 6,000 ft: the freezing level at 5,000 ft, in cloud; "
-                                 "2 pilot reports of icing near the route")
+    assert icing_line(found) == (
+        "Icing possible at 6,000 ft: the freezing level at 5,000 ft, in cloud; 2 pilot reports of icing near the route"
+    )
     assert icing_at_altitude(selection(), [5000], []) is not None
 
 

@@ -16,6 +16,7 @@ plan, climb from the field and fuel check, the hops planned at once, and
 the nav log runs on through each stop. A route is any object with
 Route's members (app.router_basics.Route): `idents`, `airports`, `hops`,
 `flights`, `start`, `end`, `takes_off`, `lands` and the rest."""
+
 from __future__ import annotations
 
 import logging
@@ -27,16 +28,43 @@ from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 
 from . import (
-    airports, elevation, faa_data, fixes, fuelstops, geo, magnetic, navlog, pattern, places, planning, procedure_paths,
-    runway_wind, terrain_detour, weather,
+    airports,
+    elevation,
+    faa_data,
+    fixes,
+    fuelstops,
+    geo,
+    magnetic,
+    navlog,
+    pattern,
+    places,
+    planning,
+    procedure_paths,
+    runway_wind,
+    terrain_detour,
+    weather,
 )
 from . import holds as vfr_holds
 from .config import DATA_DIR
 from .engine import ask as engine
 from .planning import (
-    COMPUTE_LIMIT_S, StillComputing, alternate_leg, altitude_anyway, altitude_plans, altitude_waiting_on,
-    class_b_detours, class_b_ways, cruise_altitude, flight_totals, flight_window, forecast_hour_for, join_selections,
-    no_altitude, own_altitude_caution, prohibited_caution, route_totals,
+    COMPUTE_LIMIT_S,
+    StillComputing,
+    alternate_leg,
+    altitude_anyway,
+    altitude_plans,
+    altitude_waiting_on,
+    class_b_detours,
+    class_b_ways,
+    cruise_altitude,
+    flight_totals,
+    flight_window,
+    forecast_hour_for,
+    join_selections,
+    no_altitude,
+    own_altitude_caution,
+    prohibited_caution,
+    route_totals,
 )
 from .units import M_TO_FT
 from .weather import WeatherServiceError
@@ -118,6 +146,7 @@ class Flown:
     its `kind`). `legs` of a plan is the planner's cached list: read it,
     never change it. `by_hop`, a route with stops' legs hop by hop (one
     list for a route without), for each hop's totals."""
+
     selection: dict
     options: list
     choice: str | None
@@ -140,6 +169,7 @@ class Flown:
 class Unflyable:
     """Some leg has no legal cruising altitude; the selection says why.
     `between`, the hop of a route with stops it is on."""
+
     selection: dict
     between: tuple[str, str] | None = None
 
@@ -149,6 +179,7 @@ class NoWinds:
     """The winds the legs need could not be read. The selection -- and
     the plans, when it was only a pilot's own altitude that failed --
     still stand, and a caller can report them before the failure."""
+
     selection: dict
     options: list
     error: WeatherServiceError
@@ -156,8 +187,16 @@ class NoWinds:
 
 
 def resolve_altitude(
-    r, fix_list: list, profile: dict | None, aircraft: str, altitude_ft: float | None, choice: str,
-    fcst_hr: str = "06", window: tuple | None = None, class_b_cleared: bool = False, rules: str = "vfr",
+    r,
+    fix_list: list,
+    profile: dict | None,
+    aircraft: str,
+    altitude_ft: float | None,
+    choice: str,
+    fcst_hr: str = "06",
+    window: tuple | None = None,
+    class_b_cleared: bool = False,
+    rules: str = "vfr",
     nearest: bool = False,
 ) -> Flown | Unflyable | NoWinds:
     """What the log flies, decided once for /api/plan and /api/navlog
@@ -170,8 +209,18 @@ def resolve_altitude(
     the altitude is flown where each leg may fly it, else at that leg's
     nearest legal one: the figures the wheel showed for it, and no leg
     under its floor or on the wrong thousands for its course."""
-    selection = cruise_altitude(r.start, r.end, profile, aircraft, fixes=_fixes(fix_list), fcst_hr=fcst_hr, window=window,
-                                class_b_cleared=class_b_cleared, rules=rules, airway=r.dest_airport.get("airway"))
+    selection = cruise_altitude(
+        r.start,
+        r.end,
+        profile,
+        aircraft,
+        fixes=_fixes(fix_list),
+        fcst_hr=fcst_hr,
+        window=window,
+        class_b_cleared=class_b_cleared,
+        rules=rules,
+        airway=r.dest_airport.get("airway"),
+    )
     try:
         plans = altitude_plans(fix_list, selection, profile, aircraft, fcst_hr, departure_elevation(r))
         failure = None
@@ -183,8 +232,12 @@ def resolve_altitude(
         return Flown(selection, options, None, altitude_ft, plans.legs_at(altitude_ft), figures=figures)
     if altitude_ft is not None:
         try:
-            legs = engine("navlog_with_climbs", legs=navlog.legs(fix_list, altitude_ft, profile, fcst_hr),
-                          start_altitude_ft=departure_elevation(r), profile=profile)
+            legs = engine(
+                "navlog_with_climbs",
+                legs=navlog.legs(fix_list, altitude_ft, profile, fcst_hr),
+                start_altitude_ft=departure_elevation(r),
+                profile=profile,
+            )
         except WeatherServiceError as err:
             return NoWinds(selection, options, err, figures)
         caution = own_altitude_caution(selection, legs, (r.dep_ident, r.dest_ident), profile)
@@ -200,16 +253,23 @@ def resolve_altitude(
         if anyway is None:
             return Unflyable(selection)
         try:
-            legs = engine("navlog_with_climbs", legs=navlog.legs(fix_list, anyway, profile, fcst_hr),
-                          start_altitude_ft=departure_elevation(r), profile=profile)
+            legs = engine(
+                "navlog_with_climbs",
+                legs=navlog.legs(fix_list, anyway, profile, fcst_hr),
+                start_altitude_ft=departure_elevation(r),
+                profile=profile,
+            )
         except WeatherServiceError as err:
             return NoWinds(selection, options, err, figures)
         between = (r.dep_ident, r.dest_ident)
         caution = own_altitude_caution(selection, legs, between, profile) or {
-            "from_ident": between[0], "to_ident": between[1], "altitude_ft": anyway, "reasons": []}
+            "from_ident": between[0],
+            "to_ident": between[1],
+            "altitude_ft": anyway,
+            "reasons": [],
+        }
         caution = {**caution, "reasons": [*prohibited_caution(selection), *caution["reasons"]]}
-        return Flown(selection, options, None, anyway, legs, cautions=(caution,) if caution["reasons"] else (),
-                     figures=figures)
+        return Flown(selection, options, None, anyway, legs, cautions=(caution,) if caution["reasons"] else (), figures=figures)
     # With no airplane there is no fastest or most economical plan (the
     # engine's navlog_plans makes the band's two): the lowest is flown.
     choice = choice if choice in plans else "lowest"
@@ -227,6 +287,7 @@ class HopRun:
     the winds forecast period and go/no-go window it is flown in, and the
     departure time its fuel reserve is judged by (None, as the route's,
     when none was given)."""
+
     hop: object
     fixes: list
     fcst_hr: str
@@ -249,8 +310,14 @@ def ground_min_at(ground: dict[str, float] | None, ident: str) -> float:
     return (ground or {}).get(ident.upper(), TURNAROUND_MIN)
 
 
-def hop_runs(r, by_hop: list, depart: datetime | None, profile: dict | None,
-             ground: dict[str, float] | None = None, held: list[vfr_holds.Hold] | None = None) -> list[HopRun]:
+def hop_runs(
+    r,
+    by_hop: list,
+    depart: datetime | None,
+    profile: dict | None,
+    ground: dict[str, float] | None = None,
+    held: list[vfr_holds.Hold] | None = None,
+) -> list[HopRun]:
     """Each hop of `r` ready to plan, `by_hop` its selected checkpoints.
     A hop after the first is flown when the ones before it are done, at
     cruise speed, and after the time on the ground at each stop it lands
@@ -275,16 +342,19 @@ def hop_runs(r, by_hop: list, depart: datetime | None, profile: dict | None,
         if i == 0:
             when = depart
         else:
-            start = datetime.now(timezone.utc) if depart is None else (
-                depart if depart.tzinfo else depart.replace(tzinfo=timezone.utc))
+            start = datetime.now(timezone.utc) if depart is None else (depart if depart.tzinfo else depart.replace(tzinfo=timezone.utc))
             when = start + timedelta(hours=elapsed_h)
-        runs.append(HopRun(
-            hop, navlog.fixes(hop.dep_ident, hop.dest_ident, hop.start, hop.end, selected),
-            forecast_hour_for(when), flight_window(when, hop.length_nm, tas),
-            # A later flight's own time, now's flights' too: its night was
-            # judged at now, as the first's is.
-            when if depart is not None or i > 0 else None,
-        ))
+        runs.append(
+            HopRun(
+                hop,
+                navlog.fixes(hop.dep_ident, hop.dest_ident, hop.start, hop.end, selected),
+                forecast_hour_for(when),
+                flight_window(when, hop.length_nm, tas),
+                # A later flight's own time, now's flights' too: its night was
+                # judged at now, as the first's is.
+                when if depart is not None or i > 0 else None,
+            )
+        )
         if tas is None:
             continue
         elapsed_h += hop.length_nm / tas + holding.get(hop.dep_ident.upper(), 0.0) / 60
@@ -298,8 +368,16 @@ def resolve_run(run: HopRun, asked: Asked) -> Flown | Unflyable | NoWinds:
     into a waypoint with an altitude of its own is flown at it."""
     own = None if run.hop.lands else asked.own_altitudes.get(run.hop.dest_ident)
     return resolve_altitude(
-        run.hop, run.fixes, asked.profile, asked.aircraft_key, asked.altitude_ft if own is None else own,
-        asked.altitude_choice, run.fcst_hr, run.window, asked.class_b_clearance, asked.rules,
+        run.hop,
+        run.fixes,
+        asked.profile,
+        asked.aircraft_key,
+        asked.altitude_ft if own is None else own,
+        asked.altitude_choice,
+        run.fcst_hr,
+        run.window,
+        asked.class_b_clearance,
+        asked.rules,
         nearest=asked.altitude_nearest and own is None,
     )
 
@@ -345,9 +423,14 @@ def join_outcomes(runs: list[HopRun], outcomes: list) -> Flown | Unflyable | NoW
     # into a waypoint at its own altitude (resolve_run) or not.
     planned = next((o for o in outcomes if o.choice is not None), outcomes[0])
     return Flown(
-        selection, options, planned.choice, planned.altitude_ft,
-        [leg for o in outcomes for leg in o.legs], tuple(o.legs for o in outcomes),
-        tuple(c for o in outcomes for c in o.cautions), figures,
+        selection,
+        options,
+        planned.choice,
+        planned.altitude_ft,
+        [leg for o in outcomes for leg in o.legs],
+        tuple(o.legs for o in outcomes),
+        tuple(c for o in outcomes for c in o.cautions),
+        figures,
     )
 
 
@@ -365,8 +448,10 @@ def unflyable_parts(outcome: Unflyable, runs: list[HopRun]) -> tuple[dict, list[
         round_way = terrain_way(outcome.selection, hop)
         if round_way:
             out.append({**round_way, "stop_index": at})
-            why = {**why, "advice": "Go round the high ground by the way suggested, "
-                                    "or set a cruise altitude of your own to plan it anyway."}
+            why = {
+                **why,
+                "advice": "Go round the high ground by the way suggested, or set a cruise altitude of your own to plan it anyway.",
+            }
     return why, out
 
 
@@ -390,7 +475,8 @@ def terrain_way(selection: dict, hop) -> dict | None:
     path = [hop.start, *((p["lat"], p["lon"]) for p in points), hop.end]
     flown = sum(geo.distance_nm(a[0], a[1], b[0], b[1]) for a, b in zip(path, path[1:]))
     return {
-        "ident": points[0]["ident"], "kind": "Around the high ground",
+        "ident": points[0]["ident"],
+        "kind": "Around the high ground",
         "added_nm": round(float(flown - hop.length_nm), 1),
         "description": " · ".join(p["ident"] for p in points),
         "via": [p["ident"] for p in points],
@@ -505,8 +591,14 @@ def _picked(drawn: list[tuple[str, dict]], kind: str, field_: str) -> dict | Non
     return next((d for ident, d in drawn if d.get("kind") == kind and bare_field(ident) == bare_field(field_.upper())), None)
 
 
-def with_procedures(r, runs: list[HopRun], outcome: Flown, drawn: list[tuple[str, dict]],
-                    runways: dict[str, str] | None = None, landings: dict[str, str] | None = None) -> Flown:
+def with_procedures(
+    r,
+    runs: list[HopRun],
+    outcome: Flown,
+    drawn: list[tuple[str, dict]],
+    runways: dict[str, str] | None = None,
+    landings: dict[str, str] | None = None,
+) -> Flown:
     """The legs with the procedures picked flown (`drawn`, Asked.drawn): a
     flight's first leg out of its field by the departure picked there, its
     last into the field it lands at by the arrival and the approach picked
@@ -558,19 +650,21 @@ def with_procedures(r, runs: list[HopRun], outcome: Flown, drawn: list[tuple[str
             first, last = hop == at and i == 0, hop == at + n - 1 and i == len(hops[hop]) - 1
             # Out of the pattern the way to the flight's next field, as the
             # map draws it (web lib/trafficPattern's departurePattern).
-            takeoff = (_circuit_out(flight.dep_ident, flight.dep_airport, leaves_by, flight.end)
-                       if first and leaves_by else None)
-            landing = (_circuit_in(flight.dest_ident, flight.dest_airport, lands_on)
-                       if last and lands_on else None)
-            path = procedure_paths.flown((start["lat"], start["lon"]), (end["lat"], end["lon"]), *picks[:3],
-                                         runway=runways.get(dep_field) if picks[0] else None,
-                                         takeoff_circuit=takeoff, landing_circuit=landing)
+            takeoff = _circuit_out(flight.dep_ident, flight.dep_airport, leaves_by, flight.end) if first and leaves_by else None
+            landing = _circuit_in(flight.dest_ident, flight.dest_airport, lands_on) if last and lands_on else None
+            path = procedure_paths.flown(
+                (start["lat"], start["lon"]),
+                (end["lat"], end["lon"]),
+                *picks[:3],
+                runway=runways.get(dep_field) if picks[0] else None,
+                takeoff_circuit=takeoff,
+                landing_circuit=landing,
+            )
             if path is not None and leg.get("tas_kt") is None:
                 # No airplane: the path and its miles more, flown in no
                 # time and on no fuel anyone knows.
                 more_nm = max(0.0, path["nm"] - leg["distance_nm"])
-                leg["procedure"] = {**path, "nm": round(path["nm"], 1), "more_nm": round(more_nm, 1),
-                                    "more_min": None, "more_gal": None}
+                leg["procedure"] = {**path, "nm": round(path["nm"], 1), "more_nm": round(more_nm, 1), "more_min": None, "more_gal": None}
                 continue
             if path is None or not leg["groundspeed_kt"] or leg["ete_min"] is None:
                 continue
@@ -582,8 +676,13 @@ def with_procedures(r, runs: list[HopRun], outcome: Flown, drawn: list[tuple[str
             leg["ete_min"] = round(leg["ete_min"] + more_min, 1)
             if leg["fuel_gal"] is not None:
                 leg["fuel_gal"] = round(leg["fuel_gal"] + more_gal, 2)
-            leg["procedure"] = {**path, "nm": round(path["nm"], 1), "more_nm": round(more_nm, 1),
-                                "more_min": round(more_min, 1), "more_gal": round(more_gal, 2)}
+            leg["procedure"] = {
+                **path,
+                "nm": round(path["nm"], 1),
+                "more_nm": round(more_nm, 1),
+                "more_min": round(more_min, 1),
+                "more_gal": round(more_gal, 2),
+            }
         at += n
     return replace(outcome, legs=[leg for legs in hops for leg in legs], by_hop=tuple(hops) if outcome.by_hop else ())
 
@@ -622,7 +721,7 @@ def wind_picks(r, outcome: Flown, asked: Asked) -> tuple[dict[str, str], dict[st
         n = len(flight.idents) - 1
         if flight.takes_off:
             wanted_at.append(("leave", flight.dep_ident, flight.dep_airport, leave, t))
-        t = t + timedelta(minutes=sum(leg["ete_min"] or 0 for legs in hops[at:at + n] for leg in legs))
+        t = t + timedelta(minutes=sum(leg["ete_min"] or 0 for legs in hops[at : at + n] for leg in legs))
         if flight.lands:
             wanted_at.append(("land", flight.dest_ident, flight.dest_airport, land, t))
         t = t + timedelta(minutes=ground_min_at(asked.ground, flight.dest_ident))
@@ -728,16 +827,33 @@ def with_holds(r, runs: list[HopRun], outcome: Flown, held: list[vfr_holds.Hold]
         # course is magnetic, the variation at its point east positive. A
         # leg that cannot be flown comes back as it was.
         hops[k][i] = engine(
-            "navlog_hold", leg=hops[k][i], before=before, at_end=at is None,
-            hold={"fix": hold.fix, "inbound": hold.inbound_deg, "right": hold.right, "leg_min": hold.leg_min,
-                  "leg_nm": hold.leg_nm, "turns": hold.turns, "minutes": hold.minutes},
-            fix={"lat": fix["lat"], "lon": fix["lon"]}, variation_deg=magnetic.magnetic_variation_deg(fix["lat"], fix["lon"]),
+            "navlog_hold",
+            leg=hops[k][i],
+            before=before,
+            at_end=at is None,
+            hold={
+                "fix": hold.fix,
+                "inbound": hold.inbound_deg,
+                "right": hold.right,
+                "leg_min": hold.leg_min,
+                "leg_nm": hold.leg_nm,
+                "turns": hold.turns,
+                "minutes": hold.minutes,
+            },
+            fix={"lat": fix["lat"], "lon": fix["lon"]},
+            variation_deg=magnetic.magnetic_variation_deg(fix["lat"], fix["lon"]),
         )
     return replace(outcome, legs=[leg for legs in hops for leg in legs], by_hop=tuple(hops) if outcome.by_hop else ())
 
 
-def flown_legs(r, runs: list[HopRun], outcome: Flown, own: dict[str, float] | None = None,
-               drawn: list[tuple[str, dict]] | None = None, ground: dict[str, float] | None = None) -> list:
+def flown_legs(
+    r,
+    runs: list[HopRun],
+    outcome: Flown,
+    own: dict[str, float] | None = None,
+    drawn: list[tuple[str, dict]] | None = None,
+    ground: dict[str, float] | None = None,
+) -> list:
     """The legs a pilot flies, with each flight's tops of climb and
     descent placed (the engine's navlog_with_descents): from one landing to the next,
     through any waypoints, down to the pattern at the end of each --
@@ -750,8 +866,8 @@ def flown_legs(r, runs: list[HopRun], outcome: Flown, own: dict[str, float] | No
     flights = r.flights
     for k, flight in enumerate(flights):
         hops = len(flight.idents) - 1
-        legs = [leg for i, legs in enumerate(outcome.hop_legs[at:at + hops], start=at) for leg in on_airway(legs, r.airports[i + 1])]
-        fix_list = [fix for j, run in enumerate(runs[at:at + hops]) for fix in (run.fixes if j == 0 else run.fixes[1:])]
+        legs = [leg for i, legs in enumerate(outcome.hop_legs[at : at + hops], start=at) for leg in on_airway(legs, r.airports[i + 1])]
+        fix_list = [fix for j, run in enumerate(runs[at : at + hops]) for fix in (run.fixes if j == 0 else run.fixes[1:])]
         approach = approach_end(flight, drawn or [], legs[-1]["altitude_ft"] if legs else None)
         end = approach or {"end_altitude_ft": pattern_altitude(flight, own)}
         out.extend(engine("navlog_with_descents", legs=legs, fixes=[navlog.engine_fix(f) for f in fix_list], **end))
@@ -783,7 +899,7 @@ def totals_of(r, runs: list[HopRun], outcome: Flown, asked: Asked) -> dict:
     per_flight, flown, at = [], [], 0
     for i, flight in enumerate(r.flights):
         hops = len(flight.idents) - 1
-        legs = [leg for legs in outcome.hop_legs[at:at + hops] for leg in legs]
+        legs = [leg for legs in outcome.hop_legs[at : at + hops] for leg in legs]
         flown.append((legs, runs[at].depart))
         leg_on = None
         if asked.rules == "ifr" and asked.alternate and i == len(r.flights) - 1 and legs:
@@ -815,11 +931,24 @@ def fuel_stops_of(r, per_flight: list[dict], flown: list[tuple[list[dict], datet
         # The engine has no clock: no departure time leaves now.
         depart = planning.now() if depart is None else depart if depart.tzinfo else depart.replace(tzinfo=timezone.utc)
         need = engine(
-            "navlog_fuel_stop_need", totals={k: t.get(k) for k in (
-                "fuel_margin_gal", "usable_fuel_gal", "distance_nm", "fuel_gal", "ete_min", "taxi_gal", "reserve_gal",
-                "rules", "night")},
+            "navlog_fuel_stop_need",
+            totals={
+                k: t.get(k)
+                for k in (
+                    "fuel_margin_gal",
+                    "usable_fuel_gal",
+                    "distance_nm",
+                    "fuel_gal",
+                    "ete_min",
+                    "taxi_gal",
+                    "reserve_gal",
+                    "rules",
+                    "night",
+                )
+            },
             legs=[{"distance_nm": leg.get("distance_nm"), "fuel_gal": leg.get("fuel_gal")} for leg in legs],
-            start={"lat": flight.start[0], "lon": flight.start[1]}, end={"lat": flight.end[0], "lon": flight.end[1]},
+            start={"lat": flight.start[0], "lon": flight.start[1]},
+            end={"lat": flight.end[0], "lon": flight.end[1]},
             depart_s=depart.timestamp(),
         )
         if need is None:
@@ -832,8 +961,16 @@ def fuel_stops_of(r, per_flight: list[dict], flown: list[tuple[list[dict], datet
             log.warning("No fuel stops for %s-%s", flight.dep_ident, flight.dest_ident, exc_info=True)
             continue
         if stops:
-            out.append({"departure": flight.dep_ident, "destination": flight.dest_ident, "usable_gal": need["usable_gal"],
-                        "reason": "fuel", "stops": [s.as_dict() for s in stops], "choices": [c.as_dict() for c in choices]})
+            out.append(
+                {
+                    "departure": flight.dep_ident,
+                    "destination": flight.dest_ident,
+                    "usable_gal": need["usable_gal"],
+                    "reason": "fuel",
+                    "stops": [s.as_dict() for s in stops],
+                    "choices": [c.as_dict() for c in choices],
+                }
+            )
     return out
 
 
@@ -873,12 +1010,20 @@ def waiting_on(run: HopRun, asked: Asked) -> str:
     """What the hop's altitude selection is still waiting on, in words; ""
     when nothing of it is running (wingtip.planning.altitude_waiting_on)."""
     return altitude_waiting_on(
-        run.hop.start, run.hop.end, asked.aircraft_key, _fixes(run.fixes), run.fcst_hr, run.window, asked.class_b_clearance,
-        asked.rules, run.hop.dest_airport.get("airway"))
+        run.hop.start,
+        run.hop.end,
+        asked.aircraft_key,
+        _fixes(run.fixes),
+        run.fcst_hr,
+        run.window,
+        asked.class_b_clearance,
+        asked.rules,
+        run.hop.dest_airport.get("airway"),
+    )
 
 
 def plan_within_limit(
-    r, asked: Asked, pick_checkpoints: Callable[[], tuple],
+    r, asked: Asked, pick_checkpoints: Callable[[], tuple]
 ) -> tuple[list, list, list[HopRun], Flown | NoWinds | Unflyable]:
     """The checkpoints scored and picked (`pick_checkpoints`, the
     caller's chart reader: scored, selected and each hop's selected), each
@@ -894,10 +1039,13 @@ def plan_within_limit(
 
     pool = ThreadPoolExecutor(max_workers=1)
     try:
-        scored, selected, outcome = _result(waited(
-            pool.submit(work), COMPUTE_LIMIT_S,
-            lambda: [stage for run in runs for stage in running_stages(run, asked)] if runs else ["chart"],
-        ))
+        scored, selected, outcome = _result(
+            waited(
+                pool.submit(work),
+                COMPUTE_LIMIT_S,
+                lambda: [stage for run in runs for stage in running_stages(run, asked)] if runs else ["chart"],
+            )
+        )
     finally:
         pool.shutdown(wait=False)
     return scored, selected, runs, outcome

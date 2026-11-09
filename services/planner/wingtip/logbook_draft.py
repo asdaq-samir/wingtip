@@ -15,6 +15,7 @@ the engine never fetches:
   cycle in force on the day flown (procedures.procedure_drawing), for the
   engine to match the track's finals to.
 """
+
 from __future__ import annotations
 
 import logging
@@ -45,7 +46,10 @@ def _fields_near(places: list[dict], within_nm: float) -> list[dict]:
             if f["distance_nm"] > within_nm or f["ident"] in found:
                 continue
             found[f["ident"]] = {
-                "ident": f["ident"], "lat": f["lat"], "lon": f["lon"], "elevation_ft": f.get("elevation_ft"),
+                "ident": f["ident"],
+                "lat": f["lat"],
+                "lon": f["lon"],
+                "elevation_ft": f.get("elevation_ft"),
                 "towered": f["ident"] in towers or (f.get("faa_id") or "") in towers,
             }
     return list(found.values())
@@ -72,8 +76,14 @@ def _approach_drawings(idents: list[str], on: date | None) -> list[dict]:
     return drawings
 
 
-def draft(points: list[dict], *, aircraft: str | None = None, aircraft_type: str | None = None,
-          utc_offset_min: float = 0, picked: str | None = None) -> dict:
+def draft(
+    points: list[dict],
+    *,
+    aircraft: str | None = None,
+    aircraft_type: str | None = None,
+    utc_offset_min: float = 0,
+    picked: str | None = None,
+) -> dict:
     """The draft entry for a flown track (the engine's logbook_from_track
     answer): `points` [{t ms, lat, lon, alt_ft}] in any order."""
     points = sorted(points, key=lambda p: p["t"])
@@ -81,5 +91,13 @@ def draft(points: list[dict], *, aircraft: str | None = None, aircraft_type: str
     fields = _fields_near(looked["places"], looked["within_nm"])
     flown_on = datetime.fromtimestamp(points[0]["t"] / 1000, tz=timezone.utc).date() if points else None
     drawings = _approach_drawings([f["ident"] for f in fields], flown_on)
-    return engine("logbook_from_track", points=points, fields=fields, drawings=drawings, picked=picked,
-                  aircraft=aircraft, aircraft_type=aircraft_type, utc_offset_min=utc_offset_min)
+    return engine(
+        "logbook_from_track",
+        points=points,
+        fields=fields,
+        drawings=drawings,
+        picked=picked,
+        aircraft=aircraft,
+        aircraft_type=aircraft_type,
+        utc_offset_min=utc_offset_min,
+    )

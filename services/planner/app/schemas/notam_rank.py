@@ -1,6 +1,7 @@
 """The shapes app.routers.notam_rank sends and takes, as Pydantic models:
 the engine's `notams_ranked` (engine/contract/engine.schema.json) with
 each NOTAM's text as sent beside it."""
+
 from datetime import datetime
 from typing import Literal
 

@@ -12,6 +12,7 @@ It deliberately stops at the geography. Weather is the planner's to
 attach (services/planner/app/routers/classb.py), because it is live and
 this is not: the shapefile changes every 28 days, a METAR every hour.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -95,8 +96,7 @@ def _class_b_airports_of(shp_path: str, _shp_mtime, cache_path: str, _table_mtim
 def _envelope(group: list) -> tuple:
     """(min_lon, min_lat, max_lon, max_lat) around every shelf."""
     boxes = [p["bbox"] for p in group]
-    return (min(b[0] for b in boxes), min(b[1] for b in boxes),
-            max(b[2] for b in boxes), max(b[3] for b in boxes))
+    return (min(b[0] for b in boxes), min(b[1] for b in boxes), max(b[2] for b in boxes), max(b[3] for b in boxes))
 
 
 def _airport_for(ident: str, group: list, cache_path) -> dict | None:

@@ -1,6 +1,7 @@
 """A region's chart cut out of the cycle's archives for a phone to keep
 (wingtip.offline_charts), and the regions it is cut by
 (wingtip.offline_regions): the sheets, the states, a drawn box."""
+
 import pytest
 
 from wingtip import charts, offline_charts, offline_regions, tile_archive
@@ -45,9 +46,9 @@ def test_a_drawn_box_is_snapped_and_bounded():
     assert offline_regions.box_id(-88.3, 41.6, -87.1, 42.2) == "box_-88.5_41.5_-87_42.5"
     box = offline_regions.find("box_-88.5_41.5_-87_42.5")
     assert box.group == "box" and box.boxes == ((-88.5, 41.5, -87.0, 42.5),)
-    assert offline_regions.find("box_-88.3_41.6_-87.1_42.2") is None   # not snapped: another cut of one box
-    assert offline_regions.find("box_-120_25_-70_49") is None           # the country: too big for a phone at once
-    assert offline_regions.find("box_-87_41.5_-88.5_42.5") is None      # west past east
+    assert offline_regions.find("box_-88.3_41.6_-87.1_42.2") is None  # not snapped: another cut of one box
+    assert offline_regions.find("box_-120_25_-70_49") is None  # the country: too big for a phone at once
+    assert offline_regions.find("box_-87_41.5_-88.5_42.5") is None  # west past east
 
 
 def test_the_tiles_of_a_region_are_those_its_boxes_touch():
@@ -94,8 +95,12 @@ def test_the_cycles_now_and_ahead(cache, monkeypatch):
 
 
 def test_the_packs_a_region_touches():
-    index = {"regions": [{"name": "n40w092", "west": -92, "south": 40, "east": -88, "north": 44},
-                         {"name": "n36w108", "west": -108, "south": 36, "east": -104, "north": 40}]}
+    index = {
+        "regions": [
+            {"name": "n40w092", "west": -92, "south": 40, "east": -88, "north": 44},
+            {"name": "n36w108", "west": -108, "south": 36, "east": -104, "north": 40},
+        ]
+    }
     names = [p["name"] for p in offline_charts.packs_for(offline_regions.find("Chicago"), index)]
     assert names == ["n40w092"]
     assert offline_charts.packs_for(offline_regions.find("Chicago"), None) == []

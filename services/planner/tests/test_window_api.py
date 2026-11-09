@@ -4,6 +4,7 @@ No-Go's own findings for a flight leaving then, an hour hours off on the
 forecast rather than the METAR of now, and the go hours joined into
 windows (the engine's departure_window, apps/web/src/lib/fixtures/
 departureWindow.json)."""
+
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
@@ -24,14 +25,26 @@ C81, KDLH = (42.3244, -88.0741), (46.8421, -92.1936)
 @pytest.fixture
 def stubbed(monkeypatch):
     world = {"reach": NOW + timedelta(hours=10), "asked": [], "plans": 0}
-    route = SimpleNamespace(idents=["C81", "KDLH"], start=C81, end=KDLH,
-                            airports=[{"elevation_ft": 900.0, "lat": C81[0], "lon": C81[1]},
-                                      {"elevation_ft": 1400.0, "lat": KDLH[0], "lon": KDLH[1]}])
+    route = SimpleNamespace(
+        idents=["C81", "KDLH"],
+        start=C81,
+        end=KDLH,
+        airports=[{"elevation_ft": 900.0, "lat": C81[0], "lon": C81[1]}, {"elevation_ft": 1400.0, "lat": KDLH[0], "lon": KDLH[1]}],
+    )
     monkeypatch.setattr(planning, "now", lambda: NOW)
     monkeypatch.setattr(window_hours, "load_route", lambda dep, dest, stops: route)
     monkeypatch.setattr(window_hours.forecast, "taf_reach", lambda path: world["reach"].timestamp())
-    monkeypatch.setattr(window_hours.forecast, "forecast_report", lambda lat, lon, ident, at, latest: {
-        "temp_c": 15, "altimeter_in_hg": 29.92, "wind_dir_true_deg": 270, "wind_speed_kt": 8, "wind_gust_kt": None})
+    monkeypatch.setattr(
+        window_hours.forecast,
+        "forecast_report",
+        lambda lat, lon, ident, at, latest: {
+            "temp_c": 15,
+            "altimeter_in_hg": 29.92,
+            "wind_dir_true_deg": 270,
+            "wind_speed_kt": 8,
+            "wind_gust_kt": None,
+        },
+    )
 
     def plan(q, r):
         world["plans"] += 1
@@ -47,8 +60,9 @@ def stubbed(monkeypatch):
             return briefing(vfr_not_recommended=["C81 reporting IFR"])
         if hour == 12:
             # An hour and a half off: the TAF along the route says 900 ft.
-            return briefing(forecast={"min_ceiling_ft": 900, "min_visibility_sm": 4, "stations": []},
-                            vfr_not_recommended=["C81 reporting IFR"])
+            return briefing(
+                forecast={"min_ceiling_ft": 900, "min_visibility_sm": 4, "stations": []}, vfr_not_recommended=["C81 reporting IFR"]
+            )
         return briefing()
 
     monkeypatch.setattr(flight, "brief_for", brief)

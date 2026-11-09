@@ -3,6 +3,7 @@ contract tags "x-tool": true, asked by name for the assistant's tools
 (issue #569), and "x-assistant": true, its own checks (a photographed
 page's figures), and no other rule; internal, so the gateway never
 forwards it."""
+
 import json
 from pathlib import Path
 from typing import get_args

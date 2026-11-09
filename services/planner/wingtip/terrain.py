@@ -51,6 +51,7 @@ the printed chart figure does. It is what the planner suggests, never a
 limit: a pilot's own altitude under 91.119's minimum is flown with a
 caution (the engine's floor_caution).
 """
+
 import threading
 from pathlib import Path
 
@@ -162,17 +163,23 @@ def floor_profile(
     heights = obstacles["amsl_ft"].to_numpy(dtype=float) if len(obstacles) else np.empty(0)
     return engine(
         "vfr_floors",
-        start=list(route_start), end=list(route_end), breaks_nm=[float(b) for b in breaks_nm],
+        start=list(route_start),
+        end=list(route_end),
+        breaks_nm=[float(b) for b in breaks_nm],
         ground={
             "along_nm": [float(a) for a in sample_along],
             "high_ft": [float(h) for h in terrain_ft],
             "low_ft": [float(h) for h in terrain_low_ft],
-            "congested": [bool(c) for c in over_town[:len(lats)]] if known else None,
+            "congested": [bool(c) for c in over_town[: len(lats)]] if known else None,
         },
         obstacles=[
-            {"lat": float(lat), "lon": float(lon), "amsl_ft": float(ft),
-             "type": kind if isinstance(kind, str) else None,
-             "congested": bool(over_town[len(lats) + i]) if known else None}
+            {
+                "lat": float(lat),
+                "lon": float(lon),
+                "amsl_ft": float(ft),
+                "type": kind if isinstance(kind, str) else None,
+                "congested": bool(over_town[len(lats) + i]) if known else None,
+            }
             for i, (lat, lon, ft, kind) in enumerate(zip(obstacle_lats, obstacle_lons, heights, types))
         ],
     )

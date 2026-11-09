@@ -41,7 +41,7 @@ SCHEME = re.compile(r"^[a-z][a-z0-9+.-]*:", re.I)
 def slug(heading: str) -> str:
     """GitHub's anchor for a heading: its text, lower case, without
     punctuation other than - and _, spaces made hyphens."""
-    text = re.sub(r"<[^>]+>", "", heading)               # inline HTML
+    text = re.sub(r"<[^>]+>", "", heading)  # inline HTML
     text = re.sub(r"!?\[([^\]]*)\]\([^)]*\)", r"\1", text)  # links keep their text
     text = text.replace("`", "").lower()
     out = []
@@ -122,9 +122,7 @@ def check(md: Path) -> list[str]:
 
 
 def tracked_markdown() -> list[Path]:
-    out = subprocess.run(
-        ["git", "ls-files", "-z", "--", "*.md"], cwd=ROOT, check=True, capture_output=True
-    ).stdout.decode()
+    out = subprocess.run(["git", "ls-files", "-z", "--", "*.md"], cwd=ROOT, check=True, capture_output=True).stdout.decode()
     return [ROOT / p for p in out.split("\0") if p and "node_modules/" not in p]
 
 

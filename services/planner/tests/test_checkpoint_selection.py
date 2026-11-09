@@ -2,6 +2,7 @@
 checkpoints_select (route/checkpoints.rs, whose own tests and the shared
 fixture planning.json hold the rule) picks, and the planner's candidates
 come back whole, in route order."""
+
 from app.checkpoint_scoring import select_checkpoints
 
 

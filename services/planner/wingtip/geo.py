@@ -32,6 +32,7 @@ service image.
 Sign convention for cross-track: positive is right of course, negative
 is left. Along-track is negative behind the route start.
 """
+
 import math
 
 import numpy as np
@@ -61,18 +62,14 @@ def _inv(lat1, lon1, lat2, lon2):
     since PROJ requires all four arrays the same length and the usual
     call here is one route start against a whole corridor of points.
     """
-    if isinstance(lat1, _NUMBER) and isinstance(lon1, _NUMBER) \
-            and isinstance(lat2, _NUMBER) and isinstance(lon2, _NUMBER):
+    if isinstance(lat1, _NUMBER) and isinstance(lon1, _NUMBER) and isinstance(lat2, _NUMBER) and isinstance(lon2, _NUMBER):
         azimuth, _, distance = _GEOD.inv(lon1, lat1, lon2, lat2)
         return azimuth % 360.0, distance
 
     shape = np.broadcast_shapes(np.shape(lat1), np.shape(lon1), np.shape(lat2), np.shape(lon2))
     # broadcast_to gives a read-only view and PROJ wants writable,
     # contiguous buffers, so this copies rather than views.
-    lon1, lat1, lon2, lat2 = (
-        np.ascontiguousarray(np.broadcast_to(np.asarray(v, dtype=float), shape))
-        for v in (lon1, lat1, lon2, lat2)
-    )
+    lon1, lat1, lon2, lat2 = (np.ascontiguousarray(np.broadcast_to(np.asarray(v, dtype=float), shape)) for v in (lon1, lat1, lon2, lat2))
     azimuth, _, distance = _GEOD.inv(lon1, lat1, lon2, lat2)
     return np.mod(azimuth, 360.0), distance
 
@@ -215,7 +212,7 @@ def corridor_bbox(route_start: tuple, route_end: tuple, buffer_nm: float) -> tup
 def tile_xy(lat, lon, zoom: int) -> tuple:
     """Where a point falls in the tile grid at `zoom`, as fractional
     (x, y): the tile is their floor, the place within it the rest."""
-    n = 2 ** zoom
+    n = 2**zoom
     x = (lon + 180.0) / 360.0 * n
     y = (1.0 - np.arcsinh(np.tan(np.radians(lat))) / np.pi) / 2.0 * n
     return _plain(x), _plain(y)
@@ -224,7 +221,7 @@ def tile_xy(lat, lon, zoom: int) -> tuple:
 def tile_lat_lon(x, y, zoom: int) -> tuple:
     """The (lat, lon) at fractional tile coordinates (x, y): a tile's
     north-west corner at whole ones."""
-    n = 2 ** zoom
+    n = 2**zoom
     lat = np.degrees(np.arctan(np.sinh(np.pi * (1.0 - 2.0 * y / n))))
     return _plain(lat), _plain(x / n * 360.0 - 180.0)
 
@@ -240,9 +237,7 @@ def tile_lat_lon(x, y, zoom: int) -> tuple:
 def _unit_sphere(lat, lon) -> np.ndarray:
     lat_r = np.radians(np.asarray(lat, dtype=float))
     lon_r = np.radians(np.asarray(lon, dtype=float))
-    return np.column_stack(
-        [np.cos(lat_r) * np.cos(lon_r), np.cos(lat_r) * np.sin(lon_r), np.sin(lat_r)]
-    )
+    return np.column_stack([np.cos(lat_r) * np.cos(lon_r), np.cos(lat_r) * np.sin(lon_r), np.sin(lat_r)])
 
 
 def _chord(distance_nm_: float) -> float:
@@ -309,7 +304,5 @@ def cluster_points(lat, lon, cluster_distance_nm: float) -> np.ndarray:
         return np.empty(0, dtype=int)
 
     pairs = KDTree(xyz).query_pairs(_chord(cluster_distance_nm), output_type="ndarray")
-    graph = coo_matrix(
-        (np.ones(len(pairs)), (pairs[:, 0], pairs[:, 1])), shape=(len(xyz), len(xyz))
-    )
+    graph = coo_matrix((np.ones(len(pairs)), (pairs[:, 0], pairs[:, 1])), shape=(len(xyz), len(xyz)))
     return connected_components(graph, directed=False)[1]

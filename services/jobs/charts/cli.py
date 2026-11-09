@@ -31,6 +31,7 @@ Every one resumes where a stopped one left off. They were
 `python -m wingtip.charts` in the planner's image until the jobs split
 (#535); wingtip.charts keeps the work, this keeps the asking.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -73,8 +74,9 @@ def _overlays() -> int:
 
 
 def main(argv: list | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m charts",
-                                     description="FAA charts: fetch every sheet, render every tile, build the overlays.")
+    parser = argparse.ArgumentParser(
+        prog="python -m charts", description="FAA charts: fetch every sheet, render every tile, build the overlays."
+    )
     sub = parser.add_subparsers(dest="command", required=True)
     for name in ("run", "overlays", "prepare", "pyramid", "refresh", "check", "publish", "unmask", "pack", "next"):
         p = sub.add_parser(name)
@@ -90,21 +92,33 @@ def main(argv: list | None = None) -> int:
         if name == "next":
             # From the memory there is, as a pyramid's (pyramid_workers).
             p.add_argument("--workers", type=int, default=None)
-            p.add_argument("--lead-days", type=int, default=get_settings().charts_cycle_lead_days,
-                           help="how many days before its date the next cycle is staged (CHARTS_CYCLE_LEAD_DAYS)")
+            p.add_argument(
+                "--lead-days",
+                type=int,
+                default=get_settings().charts_cycle_lead_days,
+                help="how many days before its date the next cycle is staged (CHARTS_CYCLE_LEAD_DAYS)",
+            )
         if name == "unmask":
             p.add_argument("--cycle", help="the cycle whose sheets and tiles to clean; the served one by default")
-            p.add_argument("--again", action="store_true",
-                           help="look again at sheets already cleaned, along the borders of what was taken out")
+            p.add_argument(
+                "--again", action="store_true", help="look again at sheets already cleaned, along the borders of what was taken out"
+            )
         if name == "pyramid":
             p.add_argument("--zooms", help="e.g. 5-12; the kind's own range by default")
-            p.add_argument("--scales", default=",".join(map(str, charts.TILE_SCALES)),
-                           help="the densities to draw, e.g. 2 to add the high-density tiles to a finished pyramid")
-            p.add_argument("--tiles-dir", help="render into this folder instead of the tile cache -- a staging "
-                                               "pyramid to swap in whole while the old one keeps serving")
+            p.add_argument(
+                "--scales",
+                default=",".join(map(str, charts.TILE_SCALES)),
+                help="the densities to draw, e.g. 2 to add the high-density tiles to a finished pyramid",
+            )
+            p.add_argument(
+                "--tiles-dir",
+                help="render into this folder instead of the tile cache -- a staging "
+                "pyramid to swap in whole while the old one keeps serving",
+            )
         if name in ("run", "refresh", "publish"):
-            p.add_argument("--bucket", default=CHART_TILES_BUCKET,
-                           help="S3 bucket to publish the complete cycle to (CHART_TILES_BUCKET by default)")
+            p.add_argument(
+                "--bucket", default=CHART_TILES_BUCKET, help="S3 bucket to publish the complete cycle to (CHART_TILES_BUCKET by default)"
+            )
         if name == "publish":
             p.add_argument("--cycle", help="the cycle to publish; the served one by default")
         if name == "pack":
@@ -141,8 +155,7 @@ def _locked(args, parser) -> int:
         wait = args.command in ("unmask", "publish", "pack")
         with charts.refresh_lock(wait=wait) as got:
             if not got:
-                log.info("a refresh, pyramid or unmask is already running on %s; leaving it to that",
-                         charts.CHART_TILE_CACHE_DIR)
+                log.info("a refresh, pyramid or unmask is already running on %s; leaving it to that", charts.CHART_TILE_CACHE_DIR)
                 return 0 if args.command in ("refresh", "next") else 1
             return _run(args, parser)
     return _run(args, parser)
@@ -189,7 +202,8 @@ def _run(args, parser) -> int:
     for key in args.kind:
         kind = charts.KINDS[key]
         scales = tuple(int(s) for s in args.scales.split(",") if int(s) in charts.TILE_SCALES)
-        count = charts.render_pyramid(kind, zooms=zooms and tuple(z for z in zooms if kind.min_zoom <= z <= kind.max_zoom),
-                                      workers=args.workers, scales=scales)
+        count = charts.render_pyramid(
+            kind, zooms=zooms and tuple(z for z in zooms if kind.min_zoom <= z <= kind.max_zoom), workers=args.workers, scales=scales
+        )
         log.info("%s: %d tiles written under %s", key, count, charts.CHART_TILE_CACHE_DIR)
     return 0

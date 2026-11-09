@@ -2,6 +2,7 @@
 through wingtip's own functions, held to the answers its Python gave
 before the move: the shared fixture apps/web/src/lib/fixtures/plannerRules.json,
 which engine/facade/tests/planner_rules.rs holds the engine to by name."""
+
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -54,8 +55,10 @@ def test_a_tfr_is_in_force_when_its_window_meets_the_span():
 def test_the_reserve_is_the_engines():
     profile = {"fuel_burn_gph": 8.0}
     # 91.151(a): 30 minutes by day, 45 at night; 91.167(a)(3): 45 under IFR.
-    assert [engine("navlog_fuel_plan", total_fuel_gal=10.0, profile=profile, night=night, rules=rules)["reserve_gal"]
-            for rules, night in (("vfr", False), ("vfr", None), ("vfr", True), ("ifr", False))] == [4.0, 4.0, 6.0, 6.0]
+    assert [
+        engine("navlog_fuel_plan", total_fuel_gal=10.0, profile=profile, night=night, rules=rules)["reserve_gal"]
+        for rules, night in (("vfr", False), ("vfr", None), ("vfr", True), ("ifr", False))
+    ] == [4.0, 4.0, 6.0, 6.0]
 
 
 def test_the_basic_vfr_minimums_are_the_engines():

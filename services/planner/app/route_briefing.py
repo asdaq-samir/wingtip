@@ -7,6 +7,7 @@ Every piece of the briefing is one quick independent call (hazards,
 forecast, METAR, runways and frequencies), so they run at once: three
 blocking round trips to aviationweather.gov, summed instead of
 overlapped, were why the page was slow to open."""
+
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -73,12 +74,16 @@ def _at_each_place(forecast: dict, path: list, start: float, ete_s: float) -> di
     placed = []
     for station in sorted(stations, key=lambda s: s["along_track_nm"]):
         at = read.get(station["icaoId"]) or {}
-        placed.append({
-            **{k: v for k, v in station.items() if k != "eta_s"},
-            "eta": datetime.fromtimestamp(round(station["eta_s"]), timezone.utc).isoformat().replace("+00:00", "Z"),
-            "eta_ceiling_ft": at.get("ceiling_ft"), "eta_ceiling_unknown": bool(at.get("ceiling_unknown")),
-            "eta_visibility_sm": at.get("visibility_sm"), "raw": at.get("raw"),
-        })
+        placed.append(
+            {
+                **{k: v for k, v in station.items() if k != "eta_s"},
+                "eta": datetime.fromtimestamp(round(station["eta_s"]), timezone.utc).isoformat().replace("+00:00", "Z"),
+                "eta_ceiling_ft": at.get("ceiling_ft"),
+                "eta_ceiling_unknown": bool(at.get("ceiling_unknown")),
+                "eta_visibility_sm": at.get("visibility_sm"),
+                "raw": at.get("raw"),
+            }
+        )
     return {**forecast, "stations": placed}
 
 
@@ -113,8 +118,16 @@ def read_fixes(text: str) -> list[tuple[float, float]] | None:
     return points if len(points) >= 2 else None
 
 
-def briefing(dep: str, dest: str, stops: str = "", depart: datetime | None = None, ete_min: float | None = None,
-             fixes: str = "", leg_min: str = "", ground_min: str = "") -> Briefing:
+def briefing(
+    dep: str,
+    dest: str,
+    stops: str = "",
+    depart: datetime | None = None,
+    ete_min: float | None = None,
+    fixes: str = "",
+    leg_min: str = "",
+    ground_min: str = "",
+) -> Briefing:
     """The route's briefing for the flight's hours, as /api/briefing
     answers it (app.routers.briefing's `briefing` says what is in it)."""
     r = load_route(dep, dest, stops)
@@ -138,13 +151,12 @@ def briefing(dep: str, dest: str, stops: str = "", depart: datetime | None = Non
     # the weather pool had already finished instead of alongside it.
     with ThreadPoolExecutor(max_workers=7) as pool:
         hazards_future = pool.submit(_along_hops, r, lambda a, b: weather.hazards_along_route(a, b))
-        forecast_future = pool.submit(
-            _along_hops, r, lambda a, b: weather.ceiling_visibility_along_route(a, b, window=window))
+        forecast_future = pool.submit(_along_hops, r, lambda a, b: weather.ceiling_visibility_along_route(a, b, window=window))
         metars_future = pool.submit(_metars_by_route_ident, idents, source)
         path = [(a["lat"], a["lon"]) for a in r.airports]
         tfrs_future = pool.submit(
-            tfr.along_route, path,
-            datetime.fromtimestamp(window[0], timezone.utc), datetime.fromtimestamp(window[1], timezone.utc))
+            tfr.along_route, path, datetime.fromtimestamp(window[0], timezone.utc), datetime.fromtimestamp(window[1], timezone.utc)
+        )
         pireps_future = pool.submit(weather.pireps_along_route, path)
         # Every snapshot the route crosses, for each hazard's to be the
         # one valid nearest when the airplane is in it (app.exposure).
@@ -209,20 +221,24 @@ def briefing(dep: str, dest: str, stops: str = "", depart: datetime | None = Non
         "gairmets": exposure.gairmets(legs, gairmets, list(weather.GAIRMET_HAZARDS.values())),
         "vfr_not_recommended": weather.vfr_not_recommended_reasons(list(idents), metars, forecast),
         "fields_below_vfr": exposure.fields_below_vfr(
-            legs, list(idents), r.idents[-1], where, metars, forecast["stations"], weather.below_vfr_minimums),
+            legs, list(idents), r.idents[-1], where, metars, forecast["stations"], weather.below_vfr_minimums
+        ),
         "leg_fixes": [{"lat": lat, "lon": lon} for lat, lon in legs.fixes],
         "legs_from": "navlog" if legs.from_navlog else "route",
         "airports": {
-            ident: {"name": airport_of[ident].get("name"),
-                    "elevation_ft": airport_of[ident].get("elevation_ft"),
-                    "airspace_class": airspace.surface_class_at(*where[ident], shp_path),
-                    "pattern": pattern.pattern_at(ident, airport_of[ident].get("elevation_ft")),
-                    "runways": pattern.with_traffic(
-                        runway_wind.with_winds(runways[ident], metars.get(ident), *where[ident]), ident, *where[ident]),
-                    "frequencies": frequencies[ident],
-                    "airport_diagram_url": publications.airport_diagram_url(ident),
-                    "airport_diagram_cycle": publications.airport_diagram_cycle(ident),
-                    "chart_supplement_url": publications.chart_supplement_url(ident)}
+            ident: {
+                "name": airport_of[ident].get("name"),
+                "elevation_ft": airport_of[ident].get("elevation_ft"),
+                "airspace_class": airspace.surface_class_at(*where[ident], shp_path),
+                "pattern": pattern.pattern_at(ident, airport_of[ident].get("elevation_ft")),
+                "runways": pattern.with_traffic(
+                    runway_wind.with_winds(runways[ident], metars.get(ident), *where[ident]), ident, *where[ident]
+                ),
+                "frequencies": frequencies[ident],
+                "airport_diagram_url": publications.airport_diagram_url(ident),
+                "airport_diagram_cycle": publications.airport_diagram_cycle(ident),
+                "chart_supplement_url": publications.chart_supplement_url(ident),
+            }
             for ident in idents
         },
     }
@@ -255,9 +271,7 @@ def alternate(dest: str, eta: datetime, tas_kt: float = 110.0, alternate: str = 
             }
         ident = dest_airport.get("ident") or dest.upper()
         return Alternates(
-            destination=alternates.destination(ident, arrival),
-            alternate=chosen,
-            suggestions=alternates.nearby(at, ident, eta_at),
+            destination=alternates.destination(ident, arrival), alternate=chosen, suggestions=alternates.nearby(at, ident, eta_at)
         )
     except weather.WeatherServiceError as err:
         raise HTTPException(502, "aviationweather.gov did not answer, so the alternate could not be checked.") from err

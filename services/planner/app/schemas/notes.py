@@ -18,6 +18,7 @@ class CheckpointNoteSaved(BaseModel):
 
 class PilotNotesForgotten(BaseModel):
     """How many of one pilot's own notes went, as their account did."""
+
     removed: int
 
 

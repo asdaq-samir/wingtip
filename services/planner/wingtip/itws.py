@@ -36,6 +36,7 @@ are the feed's own (the FAA's ITWS product set as SWIM publishes it).
 No figure is judged here: what an alert means for a flight is the
 engine's (the Go / No-Go's wind shear finding).
 """
+
 from __future__ import annotations
 
 import re
@@ -97,8 +98,16 @@ def runway_alert(region: str, code: str, value_kt: float | None, first: str, las
     span = _where(first) if first.strip().upper() == last.strip().upper() else f"{_where(first)} to {_where(last)}"
     value = f" {value_kt:.0f} kt" if value_kt else ""
     words = f"Runway {runway} {direction} {kind} alert{value}, {span}".replace("  ", " ")
-    return {"runway": runway, "direction": direction or None, "alert": kind, "code": code.strip(),
-            "value_kt": value_kt, "from": _where(first), "to": _where(last), "words": words}
+    return {
+        "runway": runway,
+        "direction": direction or None,
+        "alert": kind,
+        "code": code.strip(),
+        "value_kt": value_kt,
+        "from": _where(first),
+        "to": _where(last),
+        "words": words,
+    }
 
 
 def alerts(xml: str) -> tuple[str, list[str], float | None, list[dict]]:
@@ -117,8 +126,15 @@ def alerts(xml: str) -> tuple[str, list[str], float | None, list[dict]]:
         for alert in root.iter("ca_rwy_alert"):
             code = _text(alert, "ca_ra_type")
             if code:
-                found.append(runway_alert(_text(alert, "ca_ra_region_id"), code, _number(alert, "ca_ra_value"),
-                                          _text(alert, "ca_ra_first_loc"), _text(alert, "ca_ra_last_loc")))
+                found.append(
+                    runway_alert(
+                        _text(alert, "ca_ra_region_id"),
+                        code,
+                        _number(alert, "ca_ra_value"),
+                        _text(alert, "ca_ra_first_loc"),
+                        _text(alert, "ca_ra_last_loc"),
+                    )
+                )
     elif product in ("9893", "9894"):
         if _text(root, "pmsg_status").upper() == "ON":
             kind = "microburst" if product == "9893" else "wind shear"
@@ -137,8 +153,14 @@ def alerts(xml: str) -> tuple[str, list[str], float | None, list[dict]]:
         for cell in root.iter("ht_cell"):
             words = _text(cell, "htc_msg_text")
             if words:
-                found.append({"alert": "storm cell", "words": f"Storm within 5 nm: {words}",
-                              "lat": _number(cell, "htc_latitude"), "lon": _number(cell, "htc_longitude")})
+                found.append(
+                    {
+                        "alert": "storm cell",
+                        "words": f"Storm within 5 nm: {words}",
+                        "lat": _number(cell, "htc_latitude"),
+                        "lon": _number(cell, "htc_longitude"),
+                    }
+                )
     return product, airports, expires, found
 
 
@@ -154,9 +176,14 @@ def heard(xml: str | bytes, now: float | None = None) -> int:
     for airport in airports:
         key = f"{live_reports.ident(airport)}:{product}"
         if found:
-            live_reports.put(KIND, key, {"airport": airport, "product": product, "name": KEPT[product],
-                                         "alerts": found, "expires": expires},
-                             place=airport, ends=expires, now=now)
+            live_reports.put(
+                KIND,
+                key,
+                {"airport": airport, "product": product, "name": KEPT[product], "alerts": found, "expires": expires},
+                place=airport,
+                ends=expires,
+                now=now,
+            )
         else:
             live_reports.drop(KIND, key)
     return len(found) * len(airports)

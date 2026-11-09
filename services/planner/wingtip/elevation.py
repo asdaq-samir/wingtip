@@ -8,6 +8,7 @@ sequential connection, so lookups are parallelized with a thread pool and
 cached to disk (keyed by lat/lon rounded to ~1m) -- a fresh run over ~230
 candidates takes several minutes the first time and is instant after.
 """
+
 import csv
 import io
 import math
@@ -40,7 +41,9 @@ def _fetch_elevation_m(lat: float, lon: float, retries: int = 3) -> float:
         return float(resp.json()["value"])
 
     return with_retries(
-        attempt, describe=f"EPQS query for ({lat}, {lon})", retries=retries,
+        attempt,
+        describe=f"EPQS query for ({lat}, {lon})",
+        retries=retries,
         transient=(requests.RequestException, KeyError, ValueError, TypeError),
     )
 
@@ -138,9 +141,9 @@ def _fetch_many(keys: list, max_workers: int) -> dict:
 
     if failed:
         points = ", ".join(f"({lat}, {lon})" for lat, lon in failed)
-        raise RuntimeError(
-            f"EPQS elevation lookup failed for {len(failed)} point(s) after retry: {points}"
-        ) from next(iter(failed.values()))
+        raise RuntimeError(f"EPQS elevation lookup failed for {len(failed)} point(s) after retry: {points}") from next(
+            iter(failed.values())
+        )
 
     return results
 
@@ -263,10 +266,7 @@ def get_elevations_m(points: list, cache_path: Path = DEFAULT_CACHE_PATH, max_wo
 
 
 def elevation_prominence_m(
-    candidates: list,
-    radius_nm: float = RING_RADIUS_NM,
-    bearings_deg: tuple = RING_BEARINGS_DEG,
-    cache_path: Path = DEFAULT_CACHE_PATH,
+    candidates: list, radius_nm: float = RING_RADIUS_NM, bearings_deg: tuple = RING_BEARINGS_DEG, cache_path: Path = DEFAULT_CACHE_PATH
 ) -> list:
     """For each (lat, lon) in `candidates`, return elevation at that point
     minus the mean elevation of a ring of points `radius_nm` away in

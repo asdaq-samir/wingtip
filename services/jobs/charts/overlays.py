@@ -46,6 +46,7 @@ charts job's image at a pinned tag) into PMTiles, the single-file archive a
 browser reads by HTTP range requests (protomaps' pmtiles, spec v3). How
 true the lines stay to the FAA's is TOLERANCE_M's comment.
 """
+
 from __future__ import annotations
 
 import csv
@@ -131,8 +132,7 @@ EARTH_M = 6_378_137.0
 ATTRIBUTION = "FAA NASR and special use airspace (ADDS), cycle {cycle}"
 
 #: NASR's SITE_TYPE_CODE (APT_BASE).
-SITE_TYPES = {"A": "airport", "H": "heliport", "C": "seaplane", "G": "gliderport", "U": "ultralight",
-              "B": "balloonport"}
+SITE_TYPES = {"A": "airport", "H": "heliport", "C": "seaplane", "G": "gliderport", "U": "ultralight", "B": "balloonport"}
 #: The runway surfaces the sectional's airport symbol counts as hard
 #: (FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports:
 #: "hard-surfaced runways"), by NASR's SURFACE_TYPE_CODE (APT_RWY):
@@ -169,8 +169,10 @@ def _feature(properties: dict, geometry: str, minzoom: int) -> str:
     `tippecanoe` member; fields with no value left out, as a vector tile
     has no null."""
     props = {k: v for k, v in properties.items() if v is not None and v != ""}
-    return (f'{{"type":"Feature","tippecanoe":{{"minzoom":{minzoom}}},'
-            f'"properties":{json.dumps(props, separators=(",", ":"))},"geometry":{geometry}}}\n')
+    return (
+        f'{{"type":"Feature","tippecanoe":{{"minzoom":{minzoom}}},'
+        f'"properties":{json.dumps(props, separators=(",", ":"))},"geometry":{geometry}}}\n'
+    )
 
 
 def airspace_features(pack, bbox=None):
@@ -186,12 +188,23 @@ def airspace_features(pack, bbox=None):
         volume = cycle_pack._volume_drawn(record, number)
         cls = volume["class"]
         minzoom = AIRSPACE_MIN_ZOOM.get(cls) or CLASS_E_MIN_ZOOM.get(volume["local_type"], CLASS_E_OTHER_MIN_ZOOM)
-        yield _feature({
-            "class": cls, "local_type": volume["local_type"], "name": volume["name"], "ident": volume["ident"],
-            "floor_ft": volume["floor_ft"], "floor_ref": volume["floor_ref"], "ceiling_ft": volume["ceiling_ft"],
-            "ceiling_excluded": volume["ceiling_excluded"], "number": number,
-            "hours_code": volume["hours_code"], "hours_remark": volume["hours_remark"],
-        }, shapely.to_geojson(geometry), minzoom)
+        yield _feature(
+            {
+                "class": cls,
+                "local_type": volume["local_type"],
+                "name": volume["name"],
+                "ident": volume["ident"],
+                "floor_ft": volume["floor_ft"],
+                "floor_ref": volume["floor_ref"],
+                "ceiling_ft": volume["ceiling_ft"],
+                "ceiling_excluded": volume["ceiling_excluded"],
+                "number": number,
+                "hours_code": volume["hours_code"],
+                "hours_remark": volume["hours_remark"],
+            },
+            shapely.to_geojson(geometry),
+            minzoom,
+        )
 
 
 #: The classes whose altitudes the map writes on their rings, as the
@@ -276,10 +289,18 @@ def airspace_label_features(pack, bbox=None):
             continue
         w, s, e, n = bounds[(volume["class"], volume["ident"] or volume["name"])]
         (lon, lat), angle = _label_place(geometry, ((w + e) / 2, (s + n) / 2))
-        yield _feature({
-            "class": volume["class"], "floor_ft": volume["floor_ft"], "ceiling_ft": volume["ceiling_ft"],
-            "ceiling_excluded": volume["ceiling_excluded"], "number": number, "angle": angle,
-        }, json.dumps({"type": "Point", "coordinates": [round(lon, 6), round(lat, 6)]}), AIRSPACE_MIN_ZOOM[volume["class"]])
+        yield _feature(
+            {
+                "class": volume["class"],
+                "floor_ft": volume["floor_ft"],
+                "ceiling_ft": volume["ceiling_ft"],
+                "ceiling_excluded": volume["ceiling_excluded"],
+                "number": number,
+                "angle": angle,
+            },
+            json.dumps({"type": "Point", "coordinates": [round(lon, 6), round(lat, 6)]}),
+            AIRSPACE_MIN_ZOOM[volume["class"]],
+        )
 
 
 def special_use_features(pack, bbox=None):
@@ -295,13 +316,22 @@ def special_use_features(pack, bbox=None):
         if geometry is None or geometry.is_empty or not _meets(geometry.bounds, bbox):
             continue
         area = sua._area(props or {})
-        yield _feature({
-            "type": area["type"], "kind": area["kind"], "name": area["name"],
-            "floor_ft": area["floor_ft"], "floor_ref": area["floor_ref"],
-            "ceiling_ft": area["ceiling_ft"], "ceiling_ref": area["ceiling_ref"],
-            "times_of_use": area["times_of_use"], "time_zone": area["time_zone"],
-            "controlling_agency": area["controlling_agency"],
-        }, shapely.to_geojson(geometry), SPECIAL_USE_MIN_ZOOM)
+        yield _feature(
+            {
+                "type": area["type"],
+                "kind": area["kind"],
+                "name": area["name"],
+                "floor_ft": area["floor_ft"],
+                "floor_ref": area["floor_ref"],
+                "ceiling_ft": area["ceiling_ft"],
+                "ceiling_ref": area["ceiling_ref"],
+                "times_of_use": area["times_of_use"],
+                "time_zone": area["time_zone"],
+                "controlling_agency": area["controlling_agency"],
+            },
+            shapely.to_geojson(geometry),
+            SPECIAL_USE_MIN_ZOOM,
+        )
 
 
 def _rows(path: Path):
@@ -383,18 +413,27 @@ def airport_features(apt_path: Path, rwy_path: Path | None, rwy_end_path: Path |
         ways = runways.get((row.get("SITE_NO") or "").strip(), {})
         military = (row.get("OWNERSHIP_TYPE_CODE") or "").strip() in MILITARY_OWNERS
         rank = airport_rank(site_type, use, towered, ways.get("hard_ft", 0))
-        yield _feature({
-            "ident": icao or faa_id, "faa_id": faa_id, "name": (row.get("ARPT_NAME") or "").strip(),
-            "type": SITE_TYPES.get(site_type, site_type.lower()),
-            "use": {"PU": "public", "PR": "private"}.get(use, use.lower()),
-            # As wingtip.faa_data.military_fields: a field the armed services
-            # own, "joint" where it is open to the public as well.
-            "military": ("joint" if use == "PU" else "military") if military else None,
-            "towered": towered, "elevation_ft": _number(row.get("ELEV")),
-            "longest_ft": ways.get("longest_ft"), "hard_ft": ways.get("hard_ft"),
-            "runway_true": ways.get("runway_true"),
-            "fuel": (row.get("FUEL_TYPES") or "").strip(), "rank": rank,
-        }, f'{{"type":"Point","coordinates":[{lon},{lat}]}}', AIRPORT_MIN_ZOOM[rank])
+        yield _feature(
+            {
+                "ident": icao or faa_id,
+                "faa_id": faa_id,
+                "name": (row.get("ARPT_NAME") or "").strip(),
+                "type": SITE_TYPES.get(site_type, site_type.lower()),
+                "use": {"PU": "public", "PR": "private"}.get(use, use.lower()),
+                # As wingtip.faa_data.military_fields: a field the armed services
+                # own, "joint" where it is open to the public as well.
+                "military": ("joint" if use == "PU" else "military") if military else None,
+                "towered": towered,
+                "elevation_ft": _number(row.get("ELEV")),
+                "longest_ft": ways.get("longest_ft"),
+                "hard_ft": ways.get("hard_ft"),
+                "runway_true": ways.get("runway_true"),
+                "fuel": (row.get("FUEL_TYPES") or "").strip(),
+                "rank": rank,
+            },
+            f'{{"type":"Point","coordinates":[{lon},{lat}]}}',
+            AIRPORT_MIN_ZOOM[rank],
+        )
 
 
 def navaid_features(nav_path: Path, bbox=None, rmk_path: Path | None = None):
@@ -410,12 +449,23 @@ def navaid_features(nav_path: Path, bbox=None, rmk_path: Path | None = None):
             if not _meets((n["lon"], n["lat"], n["lon"], n["lat"]), bbox):
                 continue
             said = fixes.navaid_remarks(n["ident"], n["kind"], rmk_path.parent) if rmk_path is not None else []
-            yield _feature({
-                "ident": n["ident"], "name": n["name"], "kind": n["kind"], "freq": n["freq"], "channel": n["channel"],
-                "service_volume": n["service_volume"], "mag_var": n["mag_var"], "elevation_ft": n["elevation_ft"],
-                "hours": n["hours"], "restricted": n["restricted"], "remarks": "\n".join(said) or None,
-            }, f'{{"type":"Point","coordinates":[{n["lon"]},{n["lat"]}]}}',
-                VOR_MIN_ZOOM if n["kind"] in fixes.VOR_KINDS else NAVAID_MIN_ZOOM)
+            yield _feature(
+                {
+                    "ident": n["ident"],
+                    "name": n["name"],
+                    "kind": n["kind"],
+                    "freq": n["freq"],
+                    "channel": n["channel"],
+                    "service_volume": n["service_volume"],
+                    "mag_var": n["mag_var"],
+                    "elevation_ft": n["elevation_ft"],
+                    "hours": n["hours"],
+                    "restricted": n["restricted"],
+                    "remarks": "\n".join(said) or None,
+                },
+                f'{{"type":"Point","coordinates":[{n["lon"]},{n["lat"]}]}}',
+                VOR_MIN_ZOOM if n["kind"] in fixes.VOR_KINDS else NAVAID_MIN_ZOOM,
+            )
 
 
 def fix_features(fix_path: Path, bbox=None):
@@ -425,10 +475,11 @@ def fix_features(fix_path: Path, bbox=None):
     for f in fixes.read_rows(fix_path):
         if not _meets((f["lon"], f["lat"], f["lon"], f["lat"]), bbox):
             continue
-        yield _feature({
-            "ident": f["ident"], "kind": f["kind"], "vfr": f["vfr"], "enroute_low": f["enroute_low"],
-        }, f'{{"type":"Point","coordinates":[{f["lon"]},{f["lat"]}]}}',
-            CHARTED_FIX_MIN_ZOOM if f["vfr"] or f["enroute_low"] else FIX_MIN_ZOOM)
+        yield _feature(
+            {"ident": f["ident"], "kind": f["kind"], "vfr": f["vfr"], "enroute_low": f["enroute_low"]},
+            f'{{"type":"Point","coordinates":[{f["lon"]},{f["lat"]}]}}',
+            CHARTED_FIX_MIN_ZOOM if f["vfr"] or f["enroute_low"] else FIX_MIN_ZOOM,
+        )
 
 
 def _runway_corners(a, b, width_m: float) -> list[list[float]]:
@@ -485,19 +536,32 @@ def runway_features(rwy_path: Path, rwy_end_path: Path, bbox=None):
         if not _meets(box, bbox):
             continue
         width_ft, surface = widths.get(key, (None, ""))
-        props = {"site_no": key[0], "runway": key[1], "width_ft": width_ft, "surface": surface,
-                 "hard": _hard(surface)}
+        props = {"site_no": key[0], "runway": key[1], "width_ft": width_ft, "surface": surface, "hard": _hard(surface)}
         ring = _runway_corners(a, b, (width_ft or 75) * FT_M)
         yield _feature({**props, "part": "surface"}, json.dumps({"type": "Polygon", "coordinates": [ring]}), RUNWAY_MIN_ZOOM)
-        yield _feature({**props, "part": "centreline"},
-                       json.dumps({"type": "LineString", "coordinates": [list(a), list(b)]}), RUNWAY_MIN_ZOOM)
+        yield _feature(
+            {**props, "part": "centreline"}, json.dumps({"type": "LineString", "coordinates": [list(a), list(b)]}), RUNWAY_MIN_ZOOM
+        )
         for end_id, here, there in ((id_a, a, b), (id_b, b, a)):
-            yield _feature({**props, "part": "end", "end_id": end_id, "heading": _true_bearing(here, there)},
-                           json.dumps({"type": "Point", "coordinates": list(here)}), RUNWAY_MIN_ZOOM)
+            yield _feature(
+                {**props, "part": "end", "end_id": end_id, "heading": _true_bearing(here, there)},
+                json.dumps({"type": "Point", "coordinates": list(here)}),
+                RUNWAY_MIN_ZOOM,
+            )
 
 
-def write_layers(folder: Path, pack, *, apt_path: Path, rwy_path: Path | None, rwy_end_path: Path | None,
-                 nav_path: Path, fix_path: Path, bbox=None, nav_rmk_path: Path | None = None) -> dict[str, int]:
+def write_layers(
+    folder: Path,
+    pack,
+    *,
+    apt_path: Path,
+    rwy_path: Path | None,
+    rwy_end_path: Path | None,
+    nav_path: Path,
+    fix_path: Path,
+    bbox=None,
+    nav_rmk_path: Path | None = None,
+) -> dict[str, int]:
     """Each layer's GeoJSON, a feature a line, into folder/<layer>.geojsonl;
     how many features each holds."""
     sources = {
@@ -527,15 +591,37 @@ def tippecanoe_args(folder: Path, out: Path, cycle: str, tippecanoe: str = TIPPE
     sliver opens between them; each feature an id, for the map's state
     (hover, the one tapped)."""
     args = [
-        tippecanoe, "-o", str(out), "--force", "--quiet",
-        "-Z", str(MIN_ZOOM), "-z", str(MAX_ZOOM), "--full-detail", str(DETAIL), "--low-detail", str(DETAIL),
-        "--simplification", "1",
-        "--no-feature-limit", "--no-tile-size-limit", "--no-tiny-polygon-reduction", "--drop-rate", "1",
-        "--detect-shared-borders", "--generate-ids", "--read-parallel",
-        "--temporary-directory", str(folder),
-        "--name", f"Wingtip FAA overlays {cycle}",
-        "--description", f"Airspace, special use, airports, navaids, fixes and runways, FAA cycle {cycle}",
-        "--attribution", ATTRIBUTION.format(cycle=cycle),
+        tippecanoe,
+        "-o",
+        str(out),
+        "--force",
+        "--quiet",
+        "-Z",
+        str(MIN_ZOOM),
+        "-z",
+        str(MAX_ZOOM),
+        "--full-detail",
+        str(DETAIL),
+        "--low-detail",
+        str(DETAIL),
+        "--simplification",
+        "1",
+        "--no-feature-limit",
+        "--no-tile-size-limit",
+        "--no-tiny-polygon-reduction",
+        "--drop-rate",
+        "1",
+        "--detect-shared-borders",
+        "--generate-ids",
+        "--read-parallel",
+        "--temporary-directory",
+        str(folder),
+        "--name",
+        f"Wingtip FAA overlays {cycle}",
+        "--description",
+        f"Airspace, special use, airports, navaids, fixes and runways, FAA cycle {cycle}",
+        "--attribution",
+        ATTRIBUTION.format(cycle=cycle),
     ]
     for layer in LAYERS:
         args += ["-L", f"{layer}:{folder / f'{layer}.geojsonl'}"]
@@ -571,9 +657,17 @@ def build(pack, cache_dir, out_dir=None, *, bbox=None, tippecanoe: str = TIPPECA
     # is copied over, beside its final name, and renamed into place.
     with tempfile.TemporaryDirectory(prefix="wingtip-overlays-") as tmp:
         folder = Path(tmp)
-        counts = write_layers(folder, pack, apt_path=nasr("APT_BASE.csv"), rwy_path=nasr("APT_RWY.csv"),
-                              rwy_end_path=nasr("APT_RWY_END.csv"), nav_path=nasr("NAV_BASE.csv"),
-                              nav_rmk_path=nasr("NAV_RMK.csv"), fix_path=nasr("FIX_BASE.csv"), bbox=bbox)
+        counts = write_layers(
+            folder,
+            pack,
+            apt_path=nasr("APT_BASE.csv"),
+            rwy_path=nasr("APT_RWY.csv"),
+            rwy_end_path=nasr("APT_RWY_END.csv"),
+            nav_path=nasr("NAV_BASE.csv"),
+            nav_rmk_path=nasr("NAV_RMK.csv"),
+            fix_path=nasr("FIX_BASE.csv"),
+            bbox=bbox,
+        )
         built = folder / "out.pmtiles"
         run = subprocess.run(tippecanoe_args(folder, built, pack.cycle, tippecanoe), capture_output=True, text=True)
         if run.returncode != 0:
@@ -585,8 +679,14 @@ def build(pack, cache_dir, out_dir=None, *, bbox=None, tippecanoe: str = TIPPECA
         finally:
             part.unlink(missing_ok=True)
     index = {
-        "cycle": pack.cycle, "name": name, "version": VERSION, "bytes": path.stat().st_size, "built_at": time.time(),
-        "min_zoom": MIN_ZOOM, "max_zoom": MAX_ZOOM, "tolerance_m": TOLERANCE_M,
+        "cycle": pack.cycle,
+        "name": name,
+        "version": VERSION,
+        "bytes": path.stat().st_size,
+        "built_at": time.time(),
+        "min_zoom": MIN_ZOOM,
+        "max_zoom": MAX_ZOOM,
+        "tolerance_m": TOLERANCE_M,
         "layers": [{"name": layer, "features": counts[layer]} for layer in LAYERS],
     }
     (out_dir / f"{INDEX}.part").write_text(json.dumps(index, separators=(",", ":")))
@@ -594,8 +694,13 @@ def build(pack, cache_dir, out_dir=None, *, bbox=None, tippecanoe: str = TIPPECA
     for old in out_dir.glob("*.pmtiles"):
         if old != path:
             old.unlink(missing_ok=True)
-    log.info("Overlay tiles %s built in %.1f s, %.1f MB: %s", name, time.monotonic() - started,
-             index["bytes"] / 1e6, ", ".join(f"{k} {v}" for k, v in counts.items()))
+    log.info(
+        "Overlay tiles %s built in %.1f s, %.1f MB: %s",
+        name,
+        time.monotonic() - started,
+        index["bytes"] / 1e6,
+        ", ".join(f"{k} {v}" for k, v in counts.items()),
+    )
     return index
 
 

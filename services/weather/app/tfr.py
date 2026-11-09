@@ -20,6 +20,7 @@ The list is stored with no limit of its own: a list kept through an
 outage leaves out, as the planner reads it, any TFR whose NOTAM has
 expired since (wingtip.tfr.all_tfrs).
 """
+
 from __future__ import annotations
 
 import json
@@ -112,18 +113,28 @@ def tfrs(features: list) -> list:
         notam_id = (props.get("NOTAM_KEY") or "").split("-")[0]
         if not notam_id or not feature.get("geometry"):
             continue
-        entry = by_notam.setdefault(notam_id, {
-            "notam_id": notam_id, "title": props.get("TITLE"), "kind": (props.get("LEGAL") or "").title() or None,
-            "state": props.get("STATE"), "modified": props.get("LAST_MODIFICATION_DATETIME") or "", "polygons": [],
-        })
+        entry = by_notam.setdefault(
+            notam_id,
+            {
+                "notam_id": notam_id,
+                "title": props.get("TITLE"),
+                "kind": (props.get("LEGAL") or "").title() or None,
+                "state": props.get("STATE"),
+                "modified": props.get("LAST_MODIFICATION_DATETIME") or "",
+                "polygons": [],
+            },
+        )
         geometry = feature["geometry"]
         entry["polygons"].extend([geometry["coordinates"]] if geometry["type"] == "Polygon" else geometry["coordinates"])
     entries = list(by_notam.values())
     with ThreadPoolExecutor(max_workers=8) as pool:
         details = list(pool.map(lambda e: _detail(e["notam_id"], e["modified"]), entries))
     return [
-        {**{k: v for k, v in e.items() if k not in ("polygons", "modified")},
-         "geometry": {"type": "MultiPolygon", "coordinates": e["polygons"]}, **detail}
+        {
+            **{k: v for k, v in e.items() if k not in ("polygons", "modified")},
+            "geometry": {"type": "MultiPolygon", "coordinates": e["polygons"]},
+            **detail,
+        }
         for e, detail in zip(entries, details)
     ]
 

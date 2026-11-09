@@ -1,5 +1,6 @@
 """The ground the map draws in relief and in 3D, and the obstacles on it
 (wingtip.terrain_view): parsed, asked, answered."""
+
 from typing import Annotated
 
 import requests
@@ -17,9 +18,11 @@ router = APIRouter()
 _TERRAIN_TILE_MAX_AGE_S = 30 * 24 * 3600
 
 
-@router.get("/api/terrain-tile/{z}/{x}/{y}.png",
-            responses={200: {"content": {"image/png": {}}}, 404: {"description": "No terrain tile at that zoom"}},
-            openapi_extra=SHARED)
+@router.get(
+    "/api/terrain-tile/{z}/{x}/{y}.png",
+    responses={200: {"content": {"image/png": {}}}, 404: {"description": "No terrain tile at that zoom"}},
+    openapi_extra=SHARED,
+)
 def terrain_tile(z: int, x: int, y: int) -> Response:
     """The ground's heights for one {z}/{x}/{y} tile as a terrarium PNG:
     the AWS Terrain Tiles (USGS 3DEP, SRTM and, offshore, ETOPO1) the
@@ -32,14 +35,15 @@ def terrain_tile(z: int, x: int, y: int) -> Response:
         raise HTTPException(404, str(err)) from err
     except requests.RequestException as err:
         raise HTTPException(503, "The terrain tile could not be fetched.") from err
-    return Response(content=png, media_type="image/png",
-                    headers={"Cache-Control": f"public, max-age={_TERRAIN_TILE_MAX_AGE_S}"})
+    return Response(content=png, media_type="image/png", headers={"Cache-Control": f"public, max-age={_TERRAIN_TILE_MAX_AGE_S}"})
 
 
 @router.get("/api/terrain/obstacles", response_model=Obstacles, openapi_extra=PUBLIC)
 def obstacles(
-    south: Annotated[float, Query(ge=-90, le=90)], west: Annotated[float, Query(ge=-180, le=180)],
-    north: Annotated[float, Query(ge=-90, le=90)], east: Annotated[float, Query(ge=-180, le=180)],
+    south: Annotated[float, Query(ge=-90, le=90)],
+    west: Annotated[float, Query(ge=-180, le=180)],
+    north: Annotated[float, Query(ge=-90, le=90)],
+    east: Annotated[float, Query(ge=-180, le=180)],
     min_agl_ft: Annotated[int, Query(ge=0, le=2000)] = terrain_view.OBSTACLE_MIN_AGL_FT,
 ) -> Obstacles:
     """The FAA's Digital Obstacle File's obstacles in a box at least

@@ -5,6 +5,7 @@ planner's documented shape is a PlannerError, never a half-read dict; a
 field the toolbox reads is a field of the planner's model it reads it
 from; a parameter the planner does not take is refused at the call; and
 the transport says the planner's refusal in its own words."""
+
 import pytest
 import requests
 
@@ -26,10 +27,17 @@ def test_an_answer_not_of_the_planners_shape_is_a_planner_error(fake_planner):
     assert err.value.status == 502 and "documented shape" in err.value.detail
 
 
-@pytest.mark.parametrize("fields, model", [
-    (toolbox.LEG_FIELDS, m.Leg), (toolbox.TFR_FIELDS, m.RouteTfr), (toolbox.HAZARD_FIELDS, m.Hazard),
-    (toolbox.ITEM_FIELDS, m.VerdictItem), (toolbox.RISK_FIELDS, m.RiskAssessment), (toolbox.AIRPORT_FIELDS, m.AirportPlace),
-])
+@pytest.mark.parametrize(
+    "fields, model",
+    [
+        (toolbox.LEG_FIELDS, m.Leg),
+        (toolbox.TFR_FIELDS, m.RouteTfr),
+        (toolbox.HAZARD_FIELDS, m.Hazard),
+        (toolbox.ITEM_FIELDS, m.VerdictItem),
+        (toolbox.RISK_FIELDS, m.RiskAssessment),
+        (toolbox.AIRPORT_FIELDS, m.AirportPlace),
+    ],
+)
 def test_every_field_the_toolbox_reads_is_one_the_planner_answers(fields, model):
     assert set(fields) <= set(model.model_fields), sorted(set(fields) - set(model.model_fields))
 
@@ -76,8 +84,9 @@ def test_the_planners_refusal_comes_back_in_its_own_words(monkeypatch):
         planner.airport_place(ident="../api/plan")
     assert asked["url"].endswith("/api/airport/..%2Fapi%2Fplan")
 
-    monkeypatch.setattr(planner.requests, "request", lambda *a, **k: _Response(422, {"detail": [
-        {"loc": ["query", "dep"], "msg": "Field required"}]}))
+    monkeypatch.setattr(
+        planner.requests, "request", lambda *a, **k: _Response(422, {"detail": [{"loc": ["query", "dep"], "msg": "Field required"}]})
+    )
     with pytest.raises(PlannerError, match="dep: Field required"):
         planner.plan(dep="", dest="KDLH")
 

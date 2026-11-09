@@ -2,6 +2,7 @@
 lines and the mock oral's shapes, published in openapi.json
 (app.openapi), which the web's types are generated from (npm run types:
 src/lib/api/assistant-schema.d.ts)."""
+
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
@@ -41,9 +42,7 @@ class NoteDone(BaseModel):
     type: Literal["done"] = "done"
 
 
-CheckpointNoteMessage = Annotated[
-    NoteStart | NoteCheckpoint | NoteError | NoteDone, Field(discriminator="type"),
-]
+CheckpointNoteMessage = Annotated[NoteStart | NoteCheckpoint | NoteError | NoteDone, Field(discriminator="type")]
 
 
 # --- /api/briefing/narrative: the Brief's narrative as it is written (app.narrative) ---
@@ -148,7 +147,4 @@ class OralGrade(BaseModel):
 
 # The unions no route returns, published into the OpenAPI components by
 # app.main so apps/web/ gets a TypeScript type for each stream.
-STREAM_MESSAGES = {
-    "CheckpointNoteMessage": CheckpointNoteMessage,
-    "NarrativeMessage": NarrativeMessage,
-}
+STREAM_MESSAGES = {"CheckpointNoteMessage": CheckpointNoteMessage, "NarrativeMessage": NarrativeMessage}

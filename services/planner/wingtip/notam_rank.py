@@ -6,6 +6,7 @@ Class B, C and D airspace it passes (wingtip.airspace) and the time the
 flight is at each field -- and the engine's ranking of them, every NOTAM
 given coming back. The scores are the engine's (crates/weather's
 notam_rank.rs): nothing is weighed here."""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
@@ -36,8 +37,10 @@ def windows(fields: list[tuple[str, str]], depart: datetime, ete_min: float | No
     anywhere between; and the whole flight's, for what is at no field."""
     land = depart + timedelta(minutes=ete_min or DEFAULT_ETE_MIN)
     span = {"dep": (depart, depart), "dest": (land, land), "stop": (depart, land)}
-    out = [{"ident": ident, "role": role, "from": _iso(span[role][0] - MARGIN), "until": _iso(span[role][1] + MARGIN)}
-           for ident, role in fields]
+    out = [
+        {"ident": ident, "role": role, "from": _iso(span[role][0] - MARGIN), "until": _iso(span[role][1] + MARGIN)}
+        for ident, role in fields
+    ]
     return out, {"from": _iso(depart - MARGIN), "until": _iso(land + MARGIN)}
 
 
@@ -64,11 +67,17 @@ def _feet_msl(ft, ref) -> float | None:
 
 
 def _tfr_notam(t: dict) -> dict:
-    return {"id": t["notam_id"], "location": None, "starts": t.get("effective"), "ends": t.get("expires"),
-            "text": f"TFR {t['notam_id']}: {t.get('title') or t.get('purpose') or 'no title'}.",
-            "floor_ft": _feet_msl(t.get("floor_ft"), t.get("floor_ref")),
-            "ceiling_ft": _feet_msl(t.get("ceiling_ft"), t.get("ceiling_ref")), "crosses": bool(t.get("crosses")),
-            "raw": t.get("title") or ""}
+    return {
+        "id": t["notam_id"],
+        "location": None,
+        "starts": t.get("effective"),
+        "ends": t.get("expires"),
+        "text": f"TFR {t['notam_id']}: {t.get('title') or t.get('purpose') or 'no title'}.",
+        "floor_ft": _feet_msl(t.get("floor_ft"), t.get("floor_ref")),
+        "ceiling_ft": _feet_msl(t.get("ceiling_ft"), t.get("ceiling_ref")),
+        "crosses": bool(t.get("crosses")),
+        "raw": t.get("title") or "",
+    }
 
 
 def coverage_since() -> str | None:
@@ -78,8 +87,14 @@ def coverage_since() -> str | None:
     return None if t is None else datetime.fromtimestamp(t, timezone.utc).date().isoformat()
 
 
-def ranked(fields: list[tuple[str, str]], path: list[tuple[float, float]], depart: datetime, ete_min: float | None,
-           cruise_ft: float | None, runways: dict[str, list[str]]) -> dict:
+def ranked(
+    fields: list[tuple[str, str]],
+    path: list[tuple[float, float]],
+    depart: datetime,
+    ete_min: float | None,
+    cruise_ft: float | None,
+    runways: dict[str, list[str]],
+) -> dict:
     """{"ranked": [the engine's item with "raw", "starts", "ends" and
     "kind" (notam, tfr)], "top", "unchecked"}: the route's fields as
     [(ident, role)], its points, its time and altitude, and the runway
@@ -93,13 +108,28 @@ def ranked(fields: list[tuple[str, str]], path: list[tuple[float, float]], depar
         tfrs = tfr.along_route(path, depart - MARGIN, datetime.fromisoformat(flight["until"].replace("Z", "+00:00")))
     except tfr.TfrUnavailable:
         tfrs, unchecked = [], ["tfrs"]
-    given = [{"id": n["id"], "location": n.get("location"), "starts": n.get("starts"), "ends": n.get("ends"),
-              "schedule": n.get("schedule"), "text": n.get("raw") or n.get("text") or "", "raw": n.get("raw") or n.get("text") or "",
-              "kind": "notam"} for n in found]
+    given = [
+        {
+            "id": n["id"],
+            "location": n.get("location"),
+            "starts": n.get("starts"),
+            "ends": n.get("ends"),
+            "schedule": n.get("schedule"),
+            "text": n.get("raw") or n.get("text") or "",
+            "raw": n.get("raw") or n.get("text") or "",
+            "kind": "notam",
+        }
+        for n in found
+    ]
     given += [{**_tfr_notam(t), "kind": "tfr"} for t in tfrs]
     by_id = {n["id"]: n for n in given}
-    asked = {"notams": [{k: v for k, v in n.items() if k not in ("raw", "kind")} for n in given], "fields": timed,
-             **flight, "cruise_ft": cruise_ft, "airspaces": airspaces_on(path) if given else []}
+    asked = {
+        "notams": [{k: v for k, v in n.items() if k not in ("raw", "kind")} for n in given],
+        "fields": timed,
+        **flight,
+        "cruise_ft": cruise_ft,
+        "airspaces": airspaces_on(path) if given else [],
+    }
     answer = engine("notams_ranked", **asked)
     for item in answer["ranked"]:
         n = by_id[item["id"]]

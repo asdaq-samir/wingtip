@@ -14,6 +14,7 @@ there. "Independent" is also why they run concurrently, not one after
 another -- three separate blocking round trips to aviationweather.gov,
 summed instead of overlapped, was the whole reason this page felt slow to
 open even though no single piece actually is."""
+
 import time
 from datetime import datetime, timezone
 
@@ -39,8 +40,7 @@ def map_layer_ages() -> MapLayerAges:
     through an outage, for the pilot's Status page; and each FAA data
     set's edition and whether it is still in its cycle."""
     sources = [
-        {**s, "fetched_at": exposure.iso(s["fetched_at"]), "kept_until": exposure.iso(s["kept_until"])}
-        for s in weather.sources_status()
+        {**s, "fetched_at": exposure.iso(s["fetched_at"]), "kept_until": exposure.iso(s["kept_until"])} for s in weather.sources_status()
     ]
     sources.append({"name": "TFRs", "fetched_at": exposure.iso(tfr.fetched_at()), "kept_until": None, "failing": tfr.failing()})
     return {
@@ -66,8 +66,16 @@ def tfrs() -> Tfrs:
 
 
 @router.get("/api/briefing", openapi_extra=PUBLIC)
-def briefing(dep: str, dest: str, stops: str = "", depart: datetime | None = None, ete_min: float | None = None,
-             fixes: str = "", leg_min: str = "", ground_min: str = "") -> Briefing:
+def briefing(
+    dep: str,
+    dest: str,
+    stops: str = "",
+    depart: datetime | None = None,
+    ete_min: float | None = None,
+    fixes: str = "",
+    leg_min: str = "",
+    ground_min: str = "",
+) -> Briefing:
     """Everything the nav log's own leg math doesn't cover: adverse
     conditions (SIGMET/AIRMET), current conditions (METAR) and
     forecast (TAF-derived ceiling/visibility) along the route, and
@@ -102,8 +110,7 @@ def alternate(dest: str, eta: datetime, tas_kt: float = 110.0, alternate: str = 
 
 
 @router.get("/api/icing/route", openapi_extra=PUBLIC)
-def icing_on_the_route(fixes: str, alt_ft: str, leg_min: str, ground_min: str = "",
-                       depart: datetime | None = None) -> IcingForecast:
+def icing_on_the_route(fixes: str, alt_ft: str, leg_min: str, ground_min: str = "", depart: datetime | None = None) -> IcingForecast:
     """Under IFR, the AWC's forecast icing on each leg at the altitude it
     is flown (wingtip.icing_forecast; AIM 7-1-4, 7-1-19): the nav log's
     `fixes` ("lat,lon;lat,lon", one more than its legs), each leg's

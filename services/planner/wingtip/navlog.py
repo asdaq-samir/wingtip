@@ -10,6 +10,7 @@ there (wingtip.magnetic), since the engine never fetches.
 Compass heading (magnetic corrected for an airplane's compass deviation)
 is not worked: that needs a deviation card the profiles do not carry.
 """
+
 from itertools import pairwise
 
 from .engine import ask as engine
@@ -74,9 +75,15 @@ def leg_from(start: tuple, end: tuple, altitude_ft: float, profile: dict, fcst_h
     """The leg from one (lat, lon) to another (the diversion's), its time
     and fuel null where it cannot be flown."""
     (air,) = leg_air([{"lat": start[0], "lon": start[1]}, {"lat": end[0], "lon": end[1]}], [[altitude_ft]], fcst_hr)
-    return engine("navlog_leg", start={"lat": start[0], "lon": start[1]}, end={"lat": end[0], "lon": end[1]},
-                  altitude_ft=altitude_ft, profile=profile, variation_deg=air["variation_deg"], **{
-                      k: air["at"][0][k] for k in ("wind", "oat_c")})
+    return engine(
+        "navlog_leg",
+        start={"lat": start[0], "lon": start[1]},
+        end={"lat": end[0], "lon": end[1]},
+        altitude_ft=altitude_ft,
+        profile=profile,
+        variation_deg=air["variation_deg"],
+        **{k: air["at"][0][k] for k in ("wind", "oat_c")},
+    )
 
 
 class AltitudePlans(dict):
@@ -91,8 +98,7 @@ class AltitudePlans(dict):
 
 
 def altitude_profiles(
-    fix_list: list, segments: list, aircraft_profile: dict, fcst_hr: str = "06",
-    departure_elevation_ft: float | None = None,
+    fix_list: list, segments: list, aircraft_profile: dict, fcst_hr: str = "06", departure_elevation_ft: float | None = None
 ) -> AltitudePlans:
     """The lowest, highest, fastest and most economical ways to fly the
     fixes over each leg's legal altitudes (`segments`,
@@ -107,8 +113,13 @@ def altitude_profiles(
     candidates = engine("navlog_candidates", segments=given_segments, legs=len(flown) - 1, profile=aircraft_profile)
     if candidates is None:
         return AltitudePlans()
-    given = {"fixes": flown, "segments": given_segments, "profile": aircraft_profile,
-             "departure_elevation_ft": departure_elevation_ft, "air": leg_air(flown, candidates, fcst_hr)}
+    given = {
+        "fixes": flown,
+        "segments": given_segments,
+        "profile": aircraft_profile,
+        "departure_elevation_ft": departure_elevation_ft,
+        "air": leg_air(flown, candidates, fcst_hr),
+    }
     made = engine("navlog_plans", **given)
     plans = AltitudePlans(made["plans"])
     plans.by_altitude = made["by_altitude"]

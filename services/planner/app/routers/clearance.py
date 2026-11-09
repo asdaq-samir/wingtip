@@ -3,6 +3,7 @@ lib/clearance and the app's Clearance read the words the recognizer
 wrote into the clearance's items (AIM 4-4-3), and ask here for the
 idents of the places it named (wingtip.spoken), near the route. Before
 listening, the names the recognizer is told to expect."""
+
 import functools
 import math
 import re
@@ -85,7 +86,7 @@ def _exact(said: str, near: tuple) -> list[dict]:
     by_name = _navaids_by_name()
     for n in (1, 2, 3):
         for i in range(len(words) - n + 1):
-            out += by_name.get(" ".join(words[i:i + n]).upper(), [])
+            out += by_name.get(" ".join(words[i : i + n]).upper(), [])
     for ident in {"".join(words).upper(), *(w.upper() for w in words)}:
         if len(ident) < 2:
             continue
@@ -107,7 +108,7 @@ def _airport(said: str, near: tuple) -> dict | None:
     Seattle–Tacoma International, "city of Colorado Springs" -- is tried
     by fewer of its words, the longest run first."""
     words, _ = spoken.words_of(said)
-    runs = [words[i:i + n] for n in range(len(words), 0, -1) for i in range(len(words) - n + 1)]
+    runs = [words[i : i + n] for n in range(len(words), 0, -1) for i in range(len(words) - n + 1)]
     for run in runs:
         if len(run) == 1 and len(run[0]) < 4:
             continue
@@ -148,7 +149,8 @@ def clearance_places(ask: ClearanceAsk) -> ClearancePlaces:
         limit = limit or {"said": ask.limit}
     route = [spoken.points(phrase, places + _exact(phrase, near)) for phrase in ask.route]
     return {
-        "limit": limit, "route": route,
+        "limit": limit,
+        "route": route,
         "departure": _procedure(ask.dep, ask.departure, "departure", places),
         "arrival": _procedure(ask.dest, ask.arrival, "arrival", places),
     }

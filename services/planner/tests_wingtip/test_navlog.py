@@ -4,6 +4,7 @@ leg's own figures -- the wind triangle, the airplane in the leg's air,
 the fuel plan -- are the engine's and tested there
 (engine/facade/tests/navlog.rs); the winds' interpolation is the
 planner's (wingtip.weather)."""
+
 import pytest
 
 from wingtip.weather import wind_in_levels
@@ -26,6 +27,7 @@ def test_circular_interpolation_normal_case():
 
 def _leg_with_wind(monkeypatch, wind_dir, wind_speed, tas=100.0, oat_c=None, altitude_ft=6000.0):
     from wingtip import navlog
+
     asked = []
 
     def wind(lat, lon, alt, fcst_hr="06"):
@@ -36,7 +38,7 @@ def _leg_with_wind(monkeypatch, wind_dir, wind_speed, tas=100.0, oat_c=None, alt
     monkeypatch.setattr(navlog, "temperature_at_altitude", lambda lat, lon, alt, fcst_hr="06": oat_c)
     monkeypatch.setattr(navlog, "magnetic_variation_deg", lambda lat, lon: 0.0)
     a = {"name": "A", "category": "departure", "lat": 45.0, "lon": -90.0}
-    b = {"name": "B", "category": "destination", "lat": 45.0, "lon": -89.0}   # due east, 090
+    b = {"name": "B", "category": "destination", "lat": 45.0, "lon": -89.0}  # due east, 090
     leg = navlog.legs([a, b], altitude_ft, {"cruise_tas_kt": tas, "fuel_burn_gph": 8.5}, "12")[0]
     # Looked up once, at the leg's midpoint, for the forecast period asked.
     assert asked == [(45.0, -89.5, altitude_ft, "12")]

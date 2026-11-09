@@ -3,6 +3,7 @@ tests read (apps/web/src/lib/fixtures/logbookTrack.json): a C81 to KDLH
 flight with a hold at CHERL, a touch-and-go after civil dusk and a night
 full stop off two ILS RWY 27s. The fields and the CIFP drawings round
 the track are the fixture's, put in for the FAA files this would fetch."""
+
 import json
 from pathlib import Path
 
@@ -35,8 +36,10 @@ def the_fixtures_fields(monkeypatch):
 
 
 def test_the_draft_logs_the_flight_as_flown(the_fixtures_fields):
-    answer = client.post("/api/logbook-draft", json={
-        "points": TRACK["points"], "aircraft": "N3429J", "aircraftType": "C150", "utcOffsetMin": -360, "picked": "I27"})
+    answer = client.post(
+        "/api/logbook-draft",
+        json={"points": TRACK["points"], "aircraft": "N3429J", "aircraftType": "C150", "utcOffsetMin": -360, "picked": "I27"},
+    )
     assert answer.status_code == 200, answer.text
     d = answer.json()
     e = d["entry"]

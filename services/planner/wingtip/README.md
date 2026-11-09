@@ -67,6 +67,7 @@ The bare minimum is one file and no dependencies:
 # geo.py
 import math
 
+
 def distance_nm(lat1, lon1, lat2, lon2):
     """Great-circle distance, spherical Earth."""
     R_NM = 3440.065

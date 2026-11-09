@@ -2,6 +2,7 @@
 stubbed: what the pilot sends -- minimums, the load, the ticks, the
 logbook -- is what the findings are worked out with, as the web's
 FlightBriefingView feeds lib/verdict."""
+
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
@@ -23,26 +24,62 @@ def legs() -> list[dict]:
 
 
 def nav(**over) -> dict:
-    return {"flown": "lowest", "altitude_ft": 5500.0, "selection": {"special_use": []}, "aircraft": PROFILE, "cautions": [],
-            "options": [{"kind": "lowest", "steps": [{"altitude_ft": 5500.0, "to": "KDLH"}]}], **over}
+    return {
+        "flown": "lowest",
+        "altitude_ft": 5500.0,
+        "selection": {"special_use": []},
+        "aircraft": PROFILE,
+        "cautions": [],
+        "options": [{"kind": "lowest", "steps": [{"altitude_ft": 5500.0, "to": "KDLH"}]}],
+        **over,
+    }
 
 
 def totals(**over) -> dict:
-    return {"ete_min": 150.0, "fuel_gal": 24.0, "fuel_required_gal": 30.2, "fuel_margin_gal": 22.8, "reserve_min": 30.0,
-            "night": False, "hops": [], **over}
+    return {
+        "ete_min": 150.0,
+        "fuel_gal": 24.0,
+        "fuel_required_gal": 30.2,
+        "fuel_margin_gal": 22.8,
+        "reserve_min": 30.0,
+        "night": False,
+        "hops": [],
+        **over,
+    }
 
 
 def runways(length: int = 5000) -> list[dict]:
-    return [{"ends": "09/27", "length_ft": length, "surface": "ASP", "closed": False,
-             "runway_ends": [{"ident": "09", "heading_true_deg": 90}, {"ident": "27", "heading_true_deg": 270}],
-             "wind": {"end": "27", "headwind_kt": 5, "crosswind_kt": 2, "gust_crosswind_kt": None}}]
+    return [
+        {
+            "ends": "09/27",
+            "length_ft": length,
+            "surface": "ASP",
+            "closed": False,
+            "runway_ends": [{"ident": "09", "heading_true_deg": 90}, {"ident": "27", "heading_true_deg": 270}],
+            "wind": {"end": "27", "headwind_kt": 5, "crosswind_kt": 2, "gust_crosswind_kt": None},
+        }
+    ]
 
 
 def briefing(**over) -> dict:
     return {
-        "hazards": [], "gairmets": [], "pireps": [], "tfrs": [], "weather_unavailable": [], "vfr_not_recommended": [],
-        "metars": {"C81": {"ceiling_ft": None, "visibility_sm": 10, "wind_speed_kt": 6, "wind_gust_kt": None, "temp_c": 15,
-                           "altimeter_in_hg": 29.92}, "KDLH": None},
+        "hazards": [],
+        "gairmets": [],
+        "pireps": [],
+        "tfrs": [],
+        "weather_unavailable": [],
+        "vfr_not_recommended": [],
+        "metars": {
+            "C81": {
+                "ceiling_ft": None,
+                "visibility_sm": 10,
+                "wind_speed_kt": 6,
+                "wind_gust_kt": None,
+                "temp_c": 15,
+                "altimeter_in_hg": 29.92,
+            },
+            "KDLH": None,
+        },
         "forecast": {"min_ceiling_ft": 3500, "min_visibility_sm": 6, "stations": []},
         "airports": {"C81": {"runways": runways()}, "KDLH": {"runways": runways(9000)}},
         **over,
@@ -100,11 +137,14 @@ def test_a_quiet_flight_with_the_sample_load_and_a_pilot_is_nothing_found_agains
 
 
 def test_what_the_pilot_sends_decides_the_minimums_the_loading_and_the_risk(stubbed):
-    resp = client.post("/api/go-no-go", json=ask(
-        minimums={"ceiling_ft": 5000},
-        load={"empty_weight_lb": 1642, "empty_arm_in": 38.1, "stations_lb": [170, 400, 120, 50], "fuel_gal": 53},
-        ticked=["alcohol"],
-    ))
+    resp = client.post(
+        "/api/go-no-go",
+        json=ask(
+            minimums={"ceiling_ft": 5000},
+            load={"empty_weight_lb": 1642, "empty_arm_in": 38.1, "stations_lb": [170, 400, 120, 50], "fuel_gal": 53},
+            ticked=["alcohol"],
+        ),
+    )
     body = resp.json()
     items = by_key(body)
     assert items["weather"]["finding"] == "stop"
@@ -116,10 +156,12 @@ def test_what_the_pilot_sends_decides_the_minimums_the_loading_and_the_risk(stub
 
 
 def test_a_tfr_crossed_while_in_force_and_one_passed_before_it_starts(stubbed):
-    stubbed["briefing"] = briefing(tfrs=[
-        {"notam_id": "6/1111", "crosses": True, "along_track_nm": 150.0, "effective": "2026-10-06T15:00:00Z", "expires": None},
-        {"notam_id": "6/2222", "crosses": True, "along_track_nm": 10.0, "effective": "2026-10-06T18:00:00Z", "expires": None},
-    ])
+    stubbed["briefing"] = briefing(
+        tfrs=[
+            {"notam_id": "6/1111", "crosses": True, "along_track_nm": 150.0, "effective": "2026-10-06T15:00:00Z", "expires": None},
+            {"notam_id": "6/2222", "crosses": True, "along_track_nm": 10.0, "effective": "2026-10-06T18:00:00Z", "expires": None},
+        ]
+    )
     items = by_key(client.post("/api/go-no-go", json=ask()).json())
     # At 150 nm the flight is there at 15:15Z, in the first one's window.
     assert items["airspace"]["finding"] == "stop"
@@ -137,6 +179,7 @@ def test_a_route_with_no_legal_altitude_is_no_go_and_the_rest_waits_as_on_the_we
 
 def test_a_briefing_that_failed_is_said_as_not_fetched(stubbed):
     from fastapi import HTTPException
+
     stubbed["briefing"] = HTTPException(502, "aviationweather.gov did not answer")
     body = client.post("/api/go-no-go", json=ask()).json()
     items = by_key(body)
@@ -163,12 +206,26 @@ def test_under_ifr_the_alternate_speaks_for_the_weather(stubbed, monkeypatch):
 def test_a_tfr_the_briefing_placed_on_the_legs_is_in_force_by_its_word_the_whole_time_inside_it(stubbed):
     # The web's tfrInForce: on_route.when where the briefing gives it, the
     # pass time only where it does not.
-    stubbed["briefing"] = briefing(tfrs=[
-        {"notam_id": "6/3333", "crosses": True, "along_track_nm": 10.0, "effective": "2026-10-06T18:00:00Z", "expires": None,
-         "on_route": {"when": "during"}},
-        {"notam_id": "6/4444", "crosses": True, "along_track_nm": 150.0, "effective": "2026-10-06T15:00:00Z", "expires": None,
-         "on_route": {"when": "after"}},
-    ])
+    stubbed["briefing"] = briefing(
+        tfrs=[
+            {
+                "notam_id": "6/3333",
+                "crosses": True,
+                "along_track_nm": 10.0,
+                "effective": "2026-10-06T18:00:00Z",
+                "expires": None,
+                "on_route": {"when": "during"},
+            },
+            {
+                "notam_id": "6/4444",
+                "crosses": True,
+                "along_track_nm": 150.0,
+                "effective": "2026-10-06T15:00:00Z",
+                "expires": None,
+                "on_route": {"when": "after"},
+            },
+        ]
+    )
     items = by_key(client.post("/api/go-no-go", json=ask()).json())
     assert items["airspace"]["detail"] == "TFR 6/3333 in force when you get there"
     stubbed["briefing"] = briefing(tfrs=[stubbed["briefing"]["tfrs"][1]])
@@ -212,8 +269,9 @@ def test_what_swim_says_now_at_the_routes_airports_is_said_as_on_the_web(stubbed
     live_reports.reset()
     now = time.time()
     try:
-        live_reports.put("flow", "DLH:ground stop", {"airport": "DLH", "program": "ground stop", "ends": None},
-                         place="DLH", ends=now + 3600)
+        live_reports.put(
+            "flow", "DLH:ground stop", {"airport": "DLH", "program": "ground stop", "ends": None}, place="DLH", ends=now + 3600
+        )
         items = by_key(client.post("/api/go-no-go", json=ask()).json())
         assert items["weather"]["finding"] == "ok"
         # No alternate needed, so the weather's own finding stands.
@@ -221,15 +279,31 @@ def test_what_swim_says_now_at_the_routes_airports_is_said_as_on_the_web(stubbed
         items = by_key(client.post("/api/go-no-go", json=ask(rules="ifr")).json())
         assert (items["weather"]["finding"], items["weather"]["detail"]) == ("caution", "Ground stop at DLH (FAA Command Center)")
         alert = {"alert": "wind shear", "words": "Runway 27 arrival wind shear alert 25 kt, runway"}
-        live_reports.put("itws", "DLH:9840", {"airport": "DLH", "product": "9840", "name": "Configured Alerts Product",
-                                              "alerts": [alert]}, place="DLH", ends=now + 120)
+        live_reports.put(
+            "itws",
+            "DLH:9840",
+            {"airport": "DLH", "product": "9840", "name": "Configured Alerts Product", "alerts": [alert]},
+            place="DLH",
+            ends=now + 120,
+        )
         items = by_key(client.post("/api/go-no-go", json=ask()).json())
-        assert items["weather"] == {**items["weather"], "finding": "caution",
-                                    "detail": "DLH: Runway 27 arrival wind shear alert 25 kt, runway (FAA ITWS, now)"}
-        stubbed["planned"] = flight.Planned(nav=nav(selection={"special_use": [
-            {"name": "R-4401A", "along_track_nm": 100.0, "times_of_use": None, "time_zone": None}]}), legs=legs(), totals=totals())
-        live_reports.put("saa", "R4401A", {"designator": "R4401A", "activations": [
-            {"status": "ACTIVE", "active": True, "starts": None, "ends": None}]}, place="R4401A", ends=now + 3600)
+        assert items["weather"] == {
+            **items["weather"],
+            "finding": "caution",
+            "detail": "DLH: Runway 27 arrival wind shear alert 25 kt, runway (FAA ITWS, now)",
+        }
+        stubbed["planned"] = flight.Planned(
+            nav=nav(selection={"special_use": [{"name": "R-4401A", "along_track_nm": 100.0, "times_of_use": None, "time_zone": None}]}),
+            legs=legs(),
+            totals=totals(),
+        )
+        live_reports.put(
+            "saa",
+            "R4401A",
+            {"designator": "R4401A", "activations": [{"status": "ACTIVE", "active": True, "starts": None, "ends": None}]},
+            place="R4401A",
+            ends=now + 3600,
+        )
         items = by_key(client.post("/api/go-no-go", json=ask(depart=datetime.now(timezone.utc).isoformat())).json())
         assert items["airspace"]["detail"] == "R-4401A active now (FAA SFDPS)"
     finally:

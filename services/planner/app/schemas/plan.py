@@ -1,4 +1,5 @@
 """The shapes app.routers.plan sends and takes, as Pydantic models."""
+
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -885,9 +886,7 @@ class NavLogDone(BaseModel):
     totals: Totals
 
 
-NavLogMessage = Annotated[
-    NavLogStage | NavLogError | NavLogAltitude | NavLogLeg | NavLogDone, Field(discriminator="type"),
-]
+NavLogMessage = Annotated[NavLogStage | NavLogError | NavLogAltitude | NavLogLeg | NavLogDone, Field(discriminator="type")]
 
 
 class RouteChecked(BaseModel):

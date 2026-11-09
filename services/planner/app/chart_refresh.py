@@ -23,6 +23,7 @@ CHARTS_AUTO_REFRESH=0 turns the checks off -- a test stack, or a
 deployment that schedules the job itself (AWS: infra/cloudformation for
 the chart cycle, the server's cron for the overlays).
 """
+
 import logging
 import time
 
@@ -92,12 +93,15 @@ def maybe_refresh() -> None:
         # serving_cycle itself uses -- so the new cycle can wait for the
         # window.
         if charts.pyramid_complete(served, ("sec",)) and not in_window():
-            log.info("chart cycle %s is due; rendering it in the %s window (serving %s until then)",
-                     charts.current_cycle(), CHARTS_REFRESH_WINDOW, served)
+            log.info(
+                "chart cycle %s is due; rendering it in the %s window (serving %s until then)",
+                charts.current_cycle(),
+                CHARTS_REFRESH_WINDOW,
+                served,
+            )
             return
         if dev_services.start(CHARTS_SERVICE):
-            log.info("chart cycle %s is not complete on disk; the charts job is fetching and rendering it",
-                     charts.current_cycle())
+            log.info("chart cycle %s is not complete on disk; the charts job is fetching and rendering it", charts.current_cycle())
     except Exception:  # noqa: BLE001 -- the next hourly check tries again; the map keeps serving what it has
         log.warning("chart cycle check failed", exc_info=True)
 

@@ -8,6 +8,7 @@ engine with the nav log (wingtip_flight::performance, #482 phase 4):
 `performance_cruise` and `performance_climb` by name, the reference
 altitude in `planning_figures`.
 """
+
 from .engine import ask as engine
 
 
@@ -26,4 +27,3 @@ def density_ratio(altitude_ft: float, oat_c: float) -> float:
 def density_altitude_ft(sigma: float) -> float:
     """The altitude at which a standard day's air has density sigma."""
     return engine("density_altitude_ft", sigma=sigma)
-

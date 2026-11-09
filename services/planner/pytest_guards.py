@@ -9,6 +9,7 @@ which undoes itself: #494 found three in services/planner/tests_wingtip/test_tra
 fixture below fails such a test at its own teardown, by name, instead of
 leaving the failure to a stranger on another night's order.
 """
+
 import sys
 
 import pytest
@@ -41,7 +42,8 @@ def pytest_collection_modifyitems(items):
     held = [item for item in items if item.get_closest_marker("order_dependent")]
     if held:
         items[:] = [item for item in items if not item.get_closest_marker("order_dependent")] + sorted(
-            held, key=lambda item: (item.location[0], item.location[1] or 0))
+            held, key=lambda item: (item.location[0], item.location[1] or 0)
+        )
 
 
 @pytest.fixture(autouse=True)
@@ -51,9 +53,15 @@ def _module_doubles_restored():
     # the time this looks.
     before = _callables()
     yield
-    left = sorted(f"{module}.{attr}" for (module, attr), value in before.items()
-                  if module in sys.modules and getattr(sys.modules[module], attr, value) is not value)
+    left = sorted(
+        f"{module}.{attr}"
+        for (module, attr), value in before.items()
+        if module in sys.modules and getattr(sys.modules[module], attr, value) is not value
+    )
     if left:
-        pytest.fail("this test left a module's function replaced: " + ", ".join(left)
-                    + ". Use monkeypatch.setattr (or mock.patch), which puts it back, so the next test gets the real one.",
-                    pytrace=False)
+        pytest.fail(
+            "this test left a module's function replaced: "
+            + ", ".join(left)
+            + ". Use monkeypatch.setattr (or mock.patch), which puts it back, so the next test gets the real one.",
+            pytrace=False,
+        )

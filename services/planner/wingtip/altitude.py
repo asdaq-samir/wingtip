@@ -13,6 +13,7 @@ again past it rather than fly the whole way at the lowest altitude the
 lowest shelf allows -- wingtip.navlog.altitude_profiles turns those per-leg
 bands into the lowest, highest, fastest and economical plans.
 """
+
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -50,6 +51,7 @@ def _timed(label: str, fn, pending: set | None = None):
     so a caller waiting on a slow selection can say which part it is
     waiting on rather than guess.
     """
+
     def wrapped(*args, **kwargs):
         started = time.time()
         if pending is not None:
@@ -60,6 +62,7 @@ def _timed(label: str, fn, pending: set | None = None):
             if pending is not None:
                 pending.discard(label)
             log.info("select_cruise_altitude: %s took %.2fs", label, time.time() - started)
+
     return wrapped
 
 
@@ -147,6 +150,7 @@ def select_cruise_altitude(
     warn, and a nav log refused for it could not be looked at for a
     later departure either.
     """
+
     def timed(label, fn):
         return _timed(label, fn, pending)
 
@@ -173,44 +177,51 @@ def select_cruise_altitude(
     under_ifr = rules == "ifr"
     # On an airway its MEA is the floor (14 CFR 91.177(a)(1)), which the
     # engine takes from the airway itself: no ground or obstacles to read.
-    on_airway = under_ifr and airway is not None and engine(
-        "airway_floor_ft", mea_ft=airway.get("mea_ft"), gnss_mea_ft=airway.get("gnss_mea_ft")) is not None
+    on_airway = (
+        under_ifr
+        and airway is not None
+        and engine("airway_floor_ft", mea_ft=airway.get("mea_ft"), gnss_mea_ft=airway.get("gnss_mea_ft")) is not None
+    )
     with ThreadPoolExecutor(max_workers=5) as pool:
-        floor_future = None if on_airway else pool.submit(
-            timed("ifr.floor_profile", ifr.floor_profile), fixes or [route_start, route_end], faa_cache_dir,
-        ) if under_ifr else pool.submit(
-            timed("terrain.floor_profile", terrain.floor_profile),
-            route_start, route_end, breaks_nm, faa_cache_dir=faa_cache_dir,
+        floor_future = (
+            None
+            if on_airway
+            else pool.submit(timed("ifr.floor_profile", ifr.floor_profile), fixes or [route_start, route_end], faa_cache_dir)
+            if under_ifr
+            else pool.submit(
+                timed("terrain.floor_profile", terrain.floor_profile), route_start, route_end, breaks_nm, faa_cache_dir=faa_cache_dir
+            )
         )
         # The legs flown, or the direct line as the one leg: one path
         # for the Class B rule, where two functions of different shapes
         # used to be chosen between and the answer coerced back. Under
         # IFR no shelf is a ceiling: the clearance takes the flight in.
-        airspace_future = None if class_b_cleared or under_ifr else pool.submit(
-            timed("airspace.airspace_ceiling_profile", airspace.airspace_ceiling_profile),
-            route_start, route_end, fixes or [route_start, route_end], shp_path,
+        airspace_future = (
+            None
+            if class_b_cleared or under_ifr
+            else pool.submit(
+                timed("airspace.airspace_ceiling_profile", airspace.airspace_ceiling_profile),
+                route_start,
+                route_end,
+                fixes or [route_start, route_end],
+                shp_path,
+            )
         )
         # Class C/D along the way are not a ceiling -- two-way comms is
         # all they take -- but a pilot still wants to know they are coming.
         transits_future = pool.submit(
-            timed("airspace.airspace_transits", airspace.airspace_transits), route_start, route_end, shp_path,
-            fixes=fixes,
+            timed("airspace.airspace_transits", airspace.airspace_transits), route_start, route_end, shp_path, fixes=fixes
         )
         # Special-use airspace (prohibited and restricted areas, MOAs):
         # not in the Class B/C/D shapefile, so asked of the FAA's own
         # feature service along the legs.
         sua_future = pool.submit(timed("sua.along_route", sua.along_route), route_start, route_end, fixes)
         variation_future = pool.submit(timed("magnetic_variation_deg", magnetic_variation_deg), mid_lat, mid_lon)
-        freezing_future = pool.submit(
-            timed("weather.freezing_level", weather.freezing_level), mid_lat, mid_lon, fcst_hr,
-        )
+        freezing_future = pool.submit(timed("weather.freezing_level", weather.freezing_level), mid_lat, mid_lon, fcst_hr)
         cv_future = pool.submit(
-            timed("weather.ceiling_visibility_along_route", weather.ceiling_visibility_along_route),
-            route_start, route_end, window=window,
+            timed("weather.ceiling_visibility_along_route", weather.ceiling_visibility_along_route), route_start, route_end, window=window
         )
-        hazards_future = pool.submit(
-            timed("weather.hazards_along_route", weather.hazards_along_route), route_start, route_end,
-        )
+        hazards_future = pool.submit(timed("weather.hazards_along_route", weather.hazards_along_route), route_start, route_end)
 
         # Terrain and airspace are structural safety inputs -- without
         # them there is no floor/ceiling to recommend an altitude from at
@@ -225,8 +236,7 @@ def select_cruise_altitude(
         # icing/ceiling/hazard verdict pretending the missing source
         # means "no concern found."
         floors = floor_future.result() if floor_future else []
-        airspace_ceilings_ft = (
-            airspace_future.result() if airspace_future else [None] * (len(fixes) - 1 if fixes else 1))
+        airspace_ceilings_ft = airspace_future.result() if airspace_future else [None] * (len(fixes) - 1 if fixes else 1)
         transits = transits_future.result()
         # The hemispheric rule is written for magnetic course, and the
         # variation is the World Magnetic Model's (wingtip.magnetic), worked
@@ -260,8 +270,7 @@ def select_cruise_altitude(
     # where the temperatures aloft could not be read with the freezing
     # level (a performance figure, #482 phase 4).
     service_ceilings_ft = [
-        _service_ceiling_ft(aircraft_profile, a, b, fcst_hr, "freezing_level" not in weather_unavailable)
-        for a, b in legs
+        _service_ceiling_ft(aircraft_profile, a, b, fcst_hr, "freezing_level" not in weather_unavailable) for a, b in legs
     ]
     # Each leg's magnetic variation at its midpoint, for its own course:
     # 14 CFR 91.159 goes by the course flown.
@@ -273,20 +282,31 @@ def select_cruise_altitude(
     # (wingtip_engine::altitude), the phones' and the web's same.
     selection = engine(
         "select_cruise_altitude",
-        start=list(route_start), end=list(route_end), fixes=[list(f) for f in fixes] if fixes else None,
-        breaks_nm=breaks_nm, rules="ifr" if under_ifr else "vfr", class_b_cleared=class_b_cleared,
-        floors=floors, airway=airway if on_airway else None, airspace_ceilings_ft=airspace_ceilings_ft,
-        service_ceilings_ft=service_ceilings_ft, variation_deg=variation_deg, leg_variations_deg=leg_variations_deg,
+        start=list(route_start),
+        end=list(route_end),
+        fixes=[list(f) for f in fixes] if fixes else None,
+        breaks_nm=breaks_nm,
+        rules="ifr" if under_ifr else "vfr",
+        class_b_cleared=class_b_cleared,
+        floors=floors,
+        airway=airway if on_airway else None,
+        airspace_ceilings_ft=airspace_ceilings_ft,
+        service_ceilings_ft=service_ceilings_ft,
+        variation_deg=variation_deg,
+        leg_variations_deg=leg_variations_deg,
         stations=[{k: st.get(k) for k in ("icaoId", "lat", "lon", "ceiling_ft", "elevation_ft")} for st in cv["stations"]],
-        min_ceiling_ft=cv["min_ceiling_ft"], special_use=special_use, freezing=freezing,
-        hazards=[{"hazard": h.get("hazard")} for h in hazards], weather_unavailable=weather_unavailable,
+        min_ceiling_ft=cv["min_ceiling_ft"],
+        special_use=special_use,
+        freezing=freezing,
+        hazards=[{"hazard": h.get("hazard")} for h in hazards],
+        weather_unavailable=weather_unavailable,
     )
 
     # None (not False) when ceiling_visibility_along_route itself failed --
     # "unknown" must not read as "confirmed VFR-favorable" to a caller
     # deciding whether to flag the route.
-    low_ceiling_vis = None if "ceiling_visibility" in weather_unavailable else (
-        weather.below_vfr_minimums(cv["min_ceiling_ft"], cv["min_visibility_sm"])
+    low_ceiling_vis = (
+        None if "ceiling_visibility" in weather_unavailable else (weather.below_vfr_minimums(cv["min_ceiling_ft"], cv["min_visibility_sm"]))
     )
 
     log.info("select_cruise_altitude: %.2fs total", time.time() - request_started)

@@ -1,5 +1,6 @@
 """An airplane watched: its track recorded as it is asked for, and the followed airplanes asked
 for in the background."""
+
 from __future__ import annotations
 
 import logging

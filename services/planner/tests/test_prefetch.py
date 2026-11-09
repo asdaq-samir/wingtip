@@ -1,5 +1,6 @@
 """A route's slow parts -- the chart's read, the ground under it -- started
 as its course is asked for (app.prefetch), once a route, off the request."""
+
 from fastapi.testclient import TestClient
 
 from app import prefetch
@@ -41,6 +42,7 @@ def test_the_reads_ahead_are_each_hops_chart_and_ground(monkeypatch):
 def test_a_route_that_does_not_load_reads_nothing(monkeypatch):
     def unknown(*args):
         raise ValueError("no such airport")
+
     monkeypatch.setattr(prefetch, "load_route", unknown)
     monkeypatch.setattr(prefetch.chart_model, "corridor", lambda route, wait, ahead: (_ for _ in ()).throw(AssertionError))
     prefetch._read("ZZZZ", "KDLH", "")

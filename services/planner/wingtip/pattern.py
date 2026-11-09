@@ -18,6 +18,7 @@ wingtip_native.call), the very code the web app's map (lib/trafficPattern,
 lib/pattern) and the phones (wt_call) ask; this reads the FAA's files they
 are fed from and carries the dicts across.
 """
+
 from __future__ import annotations
 
 import csv
@@ -141,8 +142,12 @@ def pattern_at(ident: str, elevation_ft: float | None, cache_dir=FAA_CACHE_DIR) 
 
 def _circuit_runway(runway: dict) -> dict:
     """A runway as the engine draws its pattern: its length and its ends."""
-    return {"length_ft": runway.get("length_ft"), "runway_ends": [
-        {k: e.get(k) for k in ("ident", "heading_true_deg", "traffic", "lat", "lon")} for e in runway.get("runway_ends") or []]}
+    return {
+        "length_ft": runway.get("length_ft"),
+        "runway_ends": [
+            {k: e.get(k) for k in ("ident", "heading_true_deg", "traffic", "lat", "lon")} for e in runway.get("runway_ends") or []
+        ],
+    }
 
 
 def _points(points: list) -> list:

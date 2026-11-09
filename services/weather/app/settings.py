@@ -14,6 +14,7 @@ ten), the GFS's runs every six hours with an hourly forecast step, GLMP's
 issues hourly at half past, tfr.faa.gov's shapes every few minutes, the
 radar mosaic every five minutes.
 """
+
 import functools
 
 from pydantic import ValidationError
@@ -59,6 +60,5 @@ def get_settings() -> Settings:
     try:
         return Settings()
     except ValidationError as err:
-        bad = "; ".join(f"WEATHER_{'_'.join(str(p) for p in e['loc']).upper()}={e.get('input')!r}: {e['msg']}"
-                        for e in err.errors())
+        bad = "; ".join(f"WEATHER_{'_'.join(str(p) for p in e['loc']).upper()}={e.get('input')!r}: {e['msg']}" for e in err.errors())
         raise SettingsError(f"The environment has a malformed setting: {bad}") from None

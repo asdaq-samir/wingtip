@@ -12,6 +12,7 @@ and writes docs/store/screenshots/<size>/<screen>.jpg, and the site's
 hero (apps/site/assets/hero.png: the iPhone's map, rounded, no words). Nothing is drawn
 into a capture: the app's own pixels, scaled, with rounded corners.
 """
+
 from __future__ import annotations
 
 import json
@@ -90,8 +91,8 @@ def frame(capture: Image.Image, spec: dict, caption: dict, t: dict) -> Image.Ima
     radius = round(width * spec["corner"])
     body = Image.new("RGBA", (shot.width + 2 * bezel, shot.height + 2 * bezel), (0, 0, 0, 0))
     ImageDraw.Draw(body).rounded_rectangle(
-        (0, 0, body.width - 1, body.height - 1), radius=radius + bezel, fill="#0b1422", outline="#3a4658",
-        width=max(2, bezel // 6))
+        (0, 0, body.width - 1, body.height - 1), radius=radius + bezel, fill="#0b1422", outline="#3a4658", width=max(2, bezel // 6)
+    )
     body.alpha_composite(round_corners(shot, radius), (bezel, bezel))
     canvas.paste(body, ((W - body.width) // 2, top), body)
     return canvas
@@ -116,8 +117,7 @@ def main(argv: list[str]) -> int:
     if hero.exists():
         shot = Image.open(hero)
         small = shot.resize((660, round(shot.height * 660 / shot.width)), Image.LANCZOS)
-        round_corners(small, round(660 * SIZES["iphone-6.9"]["corner"])).save(
-            ROOT / "apps/site/assets/hero.png", optimize=True)
+        round_corners(small, round(660 * SIZES["iphone-6.9"]["corner"])).save(ROOT / "apps/site/assets/hero.png", optimize=True)
     print(f"framed {made} screenshots")
     return 0
 

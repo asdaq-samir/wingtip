@@ -11,6 +11,7 @@ engine's copilot_watch (engine/crates/inflight), asked by the app with
 its own GPS. Each source that cannot be read is named in `unavailable`
 rather than failing the rest, so the copilot says what it can.
 """
+
 from __future__ import annotations
 
 import logging
@@ -71,9 +72,18 @@ def areas(path: list[tuple[float, float]], now: float) -> tuple[list[dict], list
         for t in tfr.along_route(path, start, end):
             point = shape(t["geometry"]).representative_point()
             detail = t.get("detail") or {}
-            out.append({"kind": "tfr", "id": t.get("notam_id"), "name": t.get("notam_id") or t.get("title"),
-                        "lat": point.y, "lon": point.x, "active": bool(t.get("active_now")),
-                        "starts_s": _unix(detail.get("effective")), "until_s": _unix(detail.get("expires"))})
+            out.append(
+                {
+                    "kind": "tfr",
+                    "id": t.get("notam_id"),
+                    "name": t.get("notam_id") or t.get("title"),
+                    "lat": point.y,
+                    "lon": point.x,
+                    "active": bool(t.get("active_now")),
+                    "starts_s": _unix(detail.get("effective")),
+                    "until_s": _unix(detail.get("expires")),
+                }
+            )
     except tfr.TfrUnavailable as err:
         log.warning("TFRs for the copilot: %s", err)
         unavailable.append("tfr")
@@ -84,9 +94,18 @@ def areas(path: list[tuple[float, float]], now: float) -> tuple[list[dict], list
             word = status.get(a["name"])
             if not word:
                 continue  # SFDPS has said nothing of it: its chart times are the Brief's
-            out.append({"kind": "sua", "id": a["name"], "name": a["name"], "lat": a["lat"], "lon": a["lon"],
-                        "active": word["active"], "starts_s": word["next"] if not word["active"] else None,
-                        "until_s": word["until"] if word["active"] else None})
+            out.append(
+                {
+                    "kind": "sua",
+                    "id": a["name"],
+                    "name": a["name"],
+                    "lat": a["lat"],
+                    "lon": a["lon"],
+                    "active": word["active"],
+                    "starts_s": word["next"] if not word["active"] else None,
+                    "until_s": word["until"] if word["active"] else None,
+                }
+            )
     except sua.SpecialUseUnavailable as err:
         log.warning("special-use areas for the copilot: %s", err)
         unavailable.append("sua")
@@ -95,9 +114,18 @@ def areas(path: list[tuple[float, float]], now: float) -> tuple[list[dict], list
             continue
         point = Polygon([(lon, lat) for lat, lon in h["coords"]]).representative_point()
         starts, until = h.get("valid_from"), h.get("valid_to")
-        out.append({"kind": "sigmet", "id": _sigmet_id(h.get("raw")), "name": _sigmet_id(h.get("raw")),
-                    "lat": point.y, "lon": point.x, "active": starts is None or starts <= now,
-                    "starts_s": starts, "until_s": until})
+        out.append(
+            {
+                "kind": "sigmet",
+                "id": _sigmet_id(h.get("raw")),
+                "name": _sigmet_id(h.get("raw")),
+                "lat": point.y,
+                "lon": point.x,
+                "active": starts is None or starts <= now,
+                "starts_s": starts,
+                "until_s": until,
+            }
+        )
     return out, unavailable
 
 
@@ -114,8 +142,11 @@ def _unix(when: str | float | None) -> float | None:
 def itws_alerts(idents: list[str]) -> list[dict]:
     """ITWS's alerts at these airports, one an alert, as the engine's
     CopilotItws."""
-    return [{"airport": p["airport"], "alert": a.get("alert") or "", "words": a.get("words") or ""}
-            for p in itws.at_airports(idents) for a in p.get("alerts") or []]
+    return [
+        {"airport": p["airport"], "alert": a.get("alert") or "", "words": a.get("words") or ""}
+        for p in itws.at_airports(idents)
+        for a in p.get("alerts") or []
+    ]
 
 
 def around(lat: float, lon: float, dest: str, alternate: str | None, path: list[tuple[float, float]]) -> dict:

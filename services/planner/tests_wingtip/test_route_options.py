@@ -16,17 +16,27 @@ from wingtip import fixes, fuelstops, geo, route_options, sua, terrain_detour, t
 
 # On the equator a degree is about 60 nm either way.
 DEP = {"ident": "AAA", "lat": 0.0, "lon": 0.0}
-DEST = {"ident": "BBB", "lat": 0.0, "lon": 4.0}   # about 240 nm east
-PROFILE = {"cruise_tas_kt": 120.0, "fuel_burn_gph": 10.0, "usable_fuel_gal": 50.0, "taxi_fuel_gal": 1.0,
-           "service_ceiling_ft": 13000.0}
+DEST = {"ident": "BBB", "lat": 0.0, "lon": 4.0}  # about 240 nm east
+PROFILE = {"cruise_tas_kt": 120.0, "fuel_burn_gph": 10.0, "usable_fuel_gal": 50.0, "taxi_fuel_gal": 1.0, "service_ceiling_ft": 13000.0}
 
 
 def fields(*rows) -> pd.DataFrame:
-    return pd.DataFrame([
-        {"ident": ident, "faa_ident": ident, "name": f"{ident} FIELD", "city": "", "lat": lat, "lon": lon,
-         "elevation_ft": 0.0, "fuel_types": "100LL"}
-        for ident, lat, lon in rows
-    ], columns=["ident", "faa_ident", "name", "city", "lat", "lon", "elevation_ft", "fuel_types"])
+    return pd.DataFrame(
+        [
+            {
+                "ident": ident,
+                "faa_ident": ident,
+                "name": f"{ident} FIELD",
+                "city": "",
+                "lat": lat,
+                "lon": lon,
+                "elevation_ft": 0.0,
+                "fuel_types": "100LL",
+            }
+            for ident, lat, lon in rows
+        ],
+        columns=["ident", "faa_ident", "name", "city", "lat", "lon", "elevation_ft", "fuel_types"],
+    )
 
 
 NO_FIELDS = fields()
@@ -35,10 +45,24 @@ NO_FIELDS = fields()
 def taf(ident, lat, lon, ceiling=None, visibility=10.0, wx=""):
     now = time.time()
     # A period as the weather store keeps it, read by the engine (awc_tafs_read).
-    return {"icaoId": ident, "lat": lat, "lon": lon, "elevation_ft": 0, "raw": "", "fcsts": [{
-        "timeFrom": now - 3600, "timeTo": now + 24 * 3600, "change": "", "ceiling_ft": int(ceiling) if ceiling else None,
-        "ceiling_unknown": False, "visibility_sm": visibility, "wx": wx,
-    }]}
+    return {
+        "icaoId": ident,
+        "lat": lat,
+        "lon": lon,
+        "elevation_ft": 0,
+        "raw": "",
+        "fcsts": [
+            {
+                "timeFrom": now - 3600,
+                "timeTo": now + 24 * 3600,
+                "change": "",
+                "ceiling_ft": int(ceiling) if ceiling else None,
+                "ceiling_unknown": False,
+                "visibility_sm": visibility,
+                "wx": wx,
+            }
+        ],
+    }
 
 
 @pytest.fixture
@@ -170,8 +194,14 @@ def test_the_pilots_own_route_is_kept_and_what_it_crosses_said(sky):
 
 
 def test_an_ifr_g_airmet_between_the_fields_is_gone_round(sky):
-    sky["gairmets"].append({"hazard": "IFR conditions", "valid": time.time(), "altitude_low_ft": None,
-                            "coords": [(-0.3, 1.7), (0.3, 1.7), (0.3, 2.3), (-0.3, 2.3)]})
+    sky["gairmets"].append(
+        {
+            "hazard": "IFR conditions",
+            "valid": time.time(),
+            "altitude_low_ft": None,
+            "coords": [(-0.3, 1.7), (0.3, 1.7), (0.3, 2.3), (-0.3, 2.3)],
+        }
+    )
     out = route_options.options(DEP, DEST, PROFILE, fields=NO_FIELDS)
     assert [out["hazards"][i]["name"] for i in out["direct"]] == ["G-AIRMET for IFR conditions"]
     assert out["options"][0]["crosses"] == []
@@ -179,8 +209,7 @@ def test_an_ifr_g_airmet_between_the_fields_is_gone_round(sky):
 
 def test_where_nothing_keeps_clear_the_way_crossing_least_is_offered_with_what_it_crosses(monkeypatch, sky):
     # A wall of high ground across the whole grid, over the airplane's reach.
-    monkeypatch.setattr(terrain_detour, "heights_ft",
-                        lambda lats, lons: np.where(np.abs(lons - 2.0) < 0.3, 20000.0, 0.0))
+    monkeypatch.setattr(terrain_detour, "heights_ft", lambda lats, lons: np.where(np.abs(lons - 2.0) < 0.3, 20000.0, 0.0))
     out = route_options.options(DEP, DEST, PROFILE, fields=NO_FIELDS)
     assert out["options"], "a way is offered all the same"
     crossing = out["options"][0]
@@ -196,7 +225,7 @@ def test_each_way_says_the_weather_it_meets_its_wind_and_its_floor(sky):
     kinds = [b["kind"] for b in fastest["bands"]]
     assert kinds == ["vfr", "mvfr", "vfr"]
     assert sum(b["min"] for b in fastest["bands"]) == pytest.approx(fastest["air_min"], rel=0.05)
-    assert fastest["tail_kt"] == 0.0                       # no wind in this sky
+    assert fastest["tail_kt"] == 0.0  # no wind in this sky
     # Flat ground at sea level: 91.119's 1,000 ft alone, the coarse read's
     # own margin kept by the planner, not told.
     assert fastest["floor_ft"] == 1000
@@ -259,6 +288,7 @@ def test_a_turn_with_no_fix_near_is_a_position_of_the_pilots_own(monkeypatch, sk
 def test_terrain_that_cannot_be_read_is_said_not_fatal(monkeypatch, sky):
     def down(lats, lons):
         raise OSError("tiles unreachable")
+
     monkeypatch.setattr(terrain_detour, "heights_ft", down)
     out = route_options.options(DEP, DEST, PROFILE, fields=NO_FIELDS)
     assert "terrain" in out["unchecked"]
@@ -285,6 +315,7 @@ def test_the_way_over_land_goes_round_a_lake_out_of_glide_of_the_shore(monkeypat
     # keeps within a glide of the shore (the owner's ask, 2026-10-25).
     def lake(lats, lons):
         return (np.abs(np.asarray(lons) - 2.0) < 0.8) & (np.asarray(lats) < 1.2)
+
     monkeypatch.setattr(water, "is_water", lake)
     out = route_options.options(DEP, DEST, PROFILE, fields=NO_FIELDS)
     fastest = next(o for o in out["options"] if "fastest" in o["kinds"])
@@ -297,6 +328,7 @@ def test_the_way_over_land_goes_round_a_lake_out_of_glide_of_the_shore(monkeypat
 def test_water_that_cannot_be_read_is_said_not_fatal(monkeypatch, sky):
     def down(lats, lons):
         raise water.WaterUnavailable("no shores")
+
     monkeypatch.setattr(water, "is_water", down)
     out = route_options.options(DEP, DEST, PROFILE, fields=NO_FIELDS)
     assert "water" in out["unchecked"] and out["options"]
@@ -314,8 +346,8 @@ def test_out_of_glide_is_the_water_beyond_a_glide_of_land():
         stopped = water.cell_shares(water.out_of_glide_samples(0.0, 0.0, 4, 10, 0.25, height_ft=4000.0, speed_kt=0.0), 4, 10)
     finally:
         water.is_water = flat
-    assert share[:, 0].max() == 0.0                      # dry land
-    assert share[:, 4].min() > 0.5 and share[:, 5].min() > 0.5    # the strait's middle
+    assert share[:, 0].max() == 0.0  # dry land
+    assert share[:, 4].min() > 0.5 and share[:, 5].min() > 0.5  # the strait's middle
     assert share.max() <= 1.0
     assert stopped[:, 4].min() == 1.0 and stopped[:, 0].max() == 0.0
 
@@ -327,6 +359,7 @@ def test_the_options_judge_water_from_the_lowest_cruise_and_the_airplanes_speed(
         seen.update(height_ft=height_ft, speed_kt=speed_kt)
         per = int(round(cell / water.STEP_DEG))
         return np.zeros((rows * per, cols * per), dtype=bool)
+
     monkeypatch.setattr(water, "out_of_glide_samples", spy)
     route_options.options(DEP, DEST, PROFILE, fields=NO_FIELDS)
     # The engine's lowest cruise, 2,500 ft (LOWEST_CRUISE_FT).
@@ -354,8 +387,10 @@ def test_a_turn_is_made_at_a_fix_nearby_where_one_keeps_the_way(monkeypatch, sky
     # On the storm's far side of the turn: one nearer it would close the way.
     away = -0.05 if turn[0] < 0 else 0.05
     fix = {"ident": "BUCKY", "lat": turn[0] + away, "lon": turn[1], "kind": "fix"}
+
     def within(south, west, north, east):
         return [fix] if south <= fix["lat"] <= north and west <= fix["lon"] <= east else []
+
     monkeypatch.setattr(fixes, "within", within)
     out = route_options.options(DEP, DEST, PROFILE, fields=NO_FIELDS)
     snapped = out["options"][0]
@@ -373,6 +408,7 @@ def test_a_fix_that_would_take_the_way_into_the_storm_is_not_turned_at(monkeypat
 
     def within(south, west, north, east):
         return [fix] if south <= fix["lat"] <= north and west <= fix["lon"] <= east else []
+
     monkeypatch.setattr(fixes, "within", within)
     out = route_options.options(DEP, DEST, PROFILE, fields=NO_FIELDS)
     assert "STORM" not in out["options"][0]["stops"]
@@ -386,7 +422,7 @@ def test_a_fuel_stop_in_marginal_weather_gives_way_to_one_in_the_clear(sky):
     dest = {"ident": "CCC", "lat": 0.0, "lon": 10.0}
     sky["tafs"].append(taf("WETT", 0.0, 3.0, ceiling=2500))
     table = fields(("WETT", 0.0, 3.0), ("DRYY", 0.0, 3.6), ("MIDD", 0.0, 6.5), ("LATE", 0.0, 7.0))
-    small = {**PROFILE, "usable_fuel_gal": 30.0}       # some 290 nm with the reserve
+    small = {**PROFILE, "usable_fuel_gal": 30.0}  # some 290 nm with the reserve
     out = route_options.options(DEP, dest, small, fields=table)
     fastest = next(o for o in out["options"] if "fastest" in o["kinds"])
     assert "WETT" not in fastest["fuel"] and "DRYY" in fastest["fuel"]
@@ -450,6 +486,7 @@ def test_the_fields_whose_places_to_eat_were_not_read_are_said(sky):
 def test_a_source_not_read_is_said_unchecked(monkeypatch, sky):
     def down(name):
         raise weather.WeatherServiceError("down")
+
     monkeypatch.setattr(weather, "_dataset", down)
     out = route_options.options(DEP, DEST, PROFILE, fields=NO_FIELDS)
     assert {"forecasts and reports", "SIGMETs", "G-AIRMETs"} <= set(out["unchecked"])

@@ -1,5 +1,6 @@
 """wingtip.charts: the FAA chart cycle, the tile grid, finding the chart
 face in a raster, and rendering tiles from more than one sheet."""
+
 import dataclasses
 import datetime as dt
 import io
@@ -80,14 +81,16 @@ def test_coverage_index_is_well_formed():
 
 
 def test_zip_urls_follow_each_kind_and_the_caribbean_exception():
-    assert charts.zip_url(charts.SECTIONAL, "Green_Bay", "09-03-2026") == \
-        "https://aeronav.faa.gov/visual/09-03-2026/sectional-files/Green_Bay.zip"
-    assert charts.zip_url(charts.TAC, "Chicago", "09-03-2026") == \
-        "https://aeronav.faa.gov/visual/09-03-2026/tac-files/Chicago_TAC.zip"
-    assert charts.zip_url(charts.IFR_LOW, "enr_l12", "09-03-2026") == \
-        "https://aeronav.faa.gov/enroute/09-03-2026/enr_l12.zip"
-    assert charts.zip_url(charts.SECTIONAL, "Caribbean_1_VFR", "09-03-2026") == \
-        "https://aeronav.faa.gov/visual/09-03-2026/Caribbean/Caribbean_1_VFR.zip"
+    assert (
+        charts.zip_url(charts.SECTIONAL, "Green_Bay", "09-03-2026")
+        == "https://aeronav.faa.gov/visual/09-03-2026/sectional-files/Green_Bay.zip"
+    )
+    assert charts.zip_url(charts.TAC, "Chicago", "09-03-2026") == "https://aeronav.faa.gov/visual/09-03-2026/tac-files/Chicago_TAC.zip"
+    assert charts.zip_url(charts.IFR_LOW, "enr_l12", "09-03-2026") == "https://aeronav.faa.gov/enroute/09-03-2026/enr_l12.zip"
+    assert (
+        charts.zip_url(charts.SECTIONAL, "Caribbean_1_VFR", "09-03-2026")
+        == "https://aeronav.faa.gov/visual/09-03-2026/Caribbean/Caribbean_1_VFR.zip"
+    )
     assert charts._is_chart_member(charts.SECTIONAL, "Hawaiian_Islands", "Hawaiian Islands SEC.tif")
     assert not charts._is_chart_member(charts.SECTIONAL, "Hawaiian_Islands", "Honolulu Inset SEC.tif")
     assert charts._is_chart_member(charts.SECTIONAL, "Caribbean_1_VFR", "Caribbean 1 VFR Chart.tif")
@@ -96,12 +99,13 @@ def test_zip_urls_follow_each_kind_and_the_caribbean_exception():
     assert not charts._is_chart_member(charts.IFR_LOW, "enr_l34", "ENR_L34_BOST_INSET.tif")
     # The insets are sheets of their own, under the overlay kinds, out
     # of the zips they ride in.
-    assert charts.zip_url(charts.TAC, "Honolulu_Inset", "09-03-2026") == \
-        "https://aeronav.faa.gov/visual/09-03-2026/sectional-files/Hawaiian_Islands.zip"
+    assert (
+        charts.zip_url(charts.TAC, "Honolulu_Inset", "09-03-2026")
+        == "https://aeronav.faa.gov/visual/09-03-2026/sectional-files/Hawaiian_Islands.zip"
+    )
     assert charts._is_chart_member(charts.TAC, "Honolulu_Inset", "Honolulu Inset SEC.tif")
     assert not charts._is_chart_member(charts.TAC, "Honolulu_Inset", "Hawaiian Islands SEC.tif")
-    assert charts.zip_url(charts.IFR_AREA, "enr_a02", "09-03-2026") == \
-        "https://aeronav.faa.gov/enroute/09-03-2026/enr_a02.zip"
+    assert charts.zip_url(charts.IFR_AREA, "enr_a02", "09-03-2026") == "https://aeronav.faa.gov/enroute/09-03-2026/enr_a02.zip"
     assert charts._is_chart_member(charts.IFR_AREA, "enr_a01", "ENR_A01_ATL.tif")
     assert not charts._is_chart_member(charts.IFR_AREA, "enr_a01", "ENR_A01_ATL.htm")
     assert charts.IFR_AREA.over == ("ifr_low", "ifr_high") and charts.TAC.over == ("sec",)
@@ -113,14 +117,14 @@ def test_zip_urls_follow_each_kind_and_the_caribbean_exception():
 def test_snap_pulls_a_sectional_edge_onto_the_quarter_degree():
     assert chart_faces._snap(43.9994) == 44.0
     assert chart_faces._snap(-92.9971) == -93.0
-    assert chart_faces._snap(41.4416) == 41.4416   # a TAC-like edge stays measured
+    assert chart_faces._snap(41.4416) == 41.4416  # a TAC-like edge stays measured
 
 
 PALETTE = {
     0: (255, 255, 255, 255),  # paper
     1: (255, 0, 0, 255),
     2: (0, 0, 255, 255),
-    7: (0, 0, 0, 255),        # ink
+    7: (0, 0, 0, 255),  # ink
     8: (216, 232, 206, 255),  # the sectional's land tint
     3: (184, 168, 168, 255),  # a Class B ring's magenta over the tint ...
     4: (213, 183, 200, 255),  # ... and over paper
@@ -134,8 +138,7 @@ def _palette_raster(path, box_deg, data):
     height, width = data.shape
     transform = from_bounds(*transform_bounds("EPSG:4326", "EPSG:3857", *box_deg), width, height)
     with rasterio.open(
-        path, "w", driver="GTiff", width=width, height=height, count=1, dtype="uint8",
-        crs="EPSG:3857", transform=transform,
+        path, "w", driver="GTiff", width=width, height=height, count=1, dtype="uint8", crs="EPSG:3857", transform=transform
     ) as ds:
         ds.write(data, 1)
         ds.write_colormap(1, PALETTE)
@@ -146,8 +149,7 @@ def _rgb_raster(path, box_deg, rgb):
     height, width = rgb.shape[:2]
     transform = from_bounds(*transform_bounds("EPSG:4326", "EPSG:3857", *box_deg), width, height)
     with rasterio.open(
-        path, "w", driver="GTiff", width=width, height=height, count=3, dtype="uint8",
-        crs="EPSG:3857", transform=transform,
+        path, "w", driver="GTiff", width=width, height=height, count=3, dtype="uint8", crs="EPSG:3857", transform=transform
     ) as ds:
         ds.write(np.moveaxis(rgb, -1, 0))
 
@@ -168,6 +170,7 @@ def test_a_tile_coarser_than_the_sheet_keeps_a_thin_line_as_a_fainter_one(tmp_pa
     data[101, :] = 7
     _palette_raster(tmp_path / "sheet.tif", box, data)
     from rasterio.warp import transform_bounds
+
     bbox = transform_bounds("EPSG:4326", "EPSG:3857", *box)
     rgb, coverage = charts._warp_rgb(tmp_path / "sheet.tif", bbox, 256, 256, 41.05)
     assert rgb.shape == (256, 256, 3)
@@ -184,13 +187,13 @@ def test_a_tile_coarser_than_the_sheet_keeps_a_thin_line_as_a_fainter_one(tmp_pa
 
 def test_render_and_detect_read_three_band_rasters_too(tmp_path):
     box = (-92.0, 40.0, -88.0, 44.0)
-    rgb = np.full((1000, 1000, 3), 255, np.uint8)             # paper
-    rgb[100:900, 250:, :] = (216, 232, 206)                  # a face: tinted
-    rgb[899:901, 250:, :] = 0                                # south neatline
-    rgb[100:900, 249:252, :] = 0                             # west neatline
+    rgb = np.full((1000, 1000, 3), 255, np.uint8)  # paper
+    rgb[100:900, 250:, :] = (216, 232, 206)  # a face: tinted
+    rgb[899:901, 250:, :] = 0  # south neatline
+    rgb[100:900, 249:252, :] = 0  # west neatline
     _rgb_raster(tmp_path / "ifr.tif", box, rgb)
     raster = charts.Raster(tmp_path / "ifr.tif", face=box, envelope=box)
-    tile = charts.render_tile([raster], 63, 94, 8)   # 91.4W to 90W, inside the tinted part
+    tile = charts.render_tile([raster], 63, 94, 8)  # 91.4W to 90W, inside the tinted part
     assert tile is not None and tuple(tile[128, 128]) == (216, 232, 206, 255)
     # An IFR sheet's border is the sheet's own straight rows and
     # columns: the chart area is the widest stretch between ruling
@@ -206,7 +209,7 @@ def test_render_and_detect_read_three_band_rasters_too(tmp_path):
     # Rendered with the whole envelope as its face, the mask alone
     # keeps the legend column west of the border transparent.
     masked = charts.Raster(tmp_path / "ifr.tif", face=box, envelope=box, mask=mask)
-    tile = charts.render_tile([masked], 63, 94, 8)          # 91.4W to 90W
+    tile = charts.render_tile([masked], 63, 94, 8)  # 91.4W to 90W
     west, _, east, _ = charts.tile_bbox_wgs84(63, 94, 8)
     col = int((-91.2 - west) / (east - west) * 256)
     assert tile[128, col, 3] == 0
@@ -225,7 +228,7 @@ def test_a_sheet_across_the_antimeridian_is_measured_unwrapped_and_drawn_in_two(
     into the two boxes the tile arithmetic draws."""
     import rasterio.transform
 
-    left, top = 60_000.0, 5_900_000.0   # UTM 1 metres: 640 km from about 176.6E across 180 to 174W
+    left, top = 60_000.0, 5_900_000.0  # UTM 1 metres: 640 km from about 176.6E across 180 to 174W
     size = 1000
     data = np.zeros((size, size), np.uint8)
     data[80:920, 80:920] = 8
@@ -234,22 +237,30 @@ def test_a_sheet_across_the_antimeridian_is_measured_unwrapped_and_drawn_in_two(
     data[79:82, 80:920] = 7
     data[918:921, 80:920] = 7
     with rasterio.open(
-        tmp_path / "aleut.tif", "w", driver="GTiff", width=size, height=size, count=1, dtype="uint8",
-        crs="EPSG:32601", transform=rasterio.transform.from_origin(left, top, 640, 640),
+        tmp_path / "aleut.tif",
+        "w",
+        driver="GTiff",
+        width=size,
+        height=size,
+        count=1,
+        dtype="uint8",
+        crs="EPSG:32601",
+        transform=rasterio.transform.from_origin(left, top, 640, 640),
     ) as ds:
         ds.write(data, 1)
         ds.write_colormap(1, PALETTE)
 
     envelope, face, _ = chart_faces.detect_face(tmp_path / "aleut.tif", charts.SECTIONAL)
-    assert envelope[0] < 180 < envelope[2] < 200          # unwrapped: east carried on past 180
+    assert envelope[0] < 180 < envelope[2] < 200  # unwrapped: east carried on past 180
     assert envelope[0] < face[0] < face[2] < envelope[2]
     parts = chart_faces.split_antimeridian(face, envelope)
     assert len(parts) == 2
     (east_face, _), (west_face, _) = parts
     assert east_face[2] == 180.0 and west_face[0] == -180.0
     assert east_face[0] == face[0] and west_face[2] == pytest.approx(face[2] - 360.0)
-    assert chart_faces.split_antimeridian((-90.0, 40.0, -88.0, 44.0), (-90.5, 39.5, -87.5, 44.5)) == \
-        [((-90.0, 40.0, -88.0, 44.0), (-90.5, 39.5, -87.5, 44.5))]
+    assert chart_faces.split_antimeridian((-90.0, 40.0, -88.0, 44.0), (-90.5, 39.5, -87.5, 44.5)) == [
+        ((-90.0, 40.0, -88.0, 44.0), (-90.5, 39.5, -87.5, 44.5))
+    ]
 
 
 def test_a_straight_bordered_face_reaches_the_bow_of_its_top_edge(tmp_path):
@@ -272,8 +283,7 @@ def test_a_straight_bordered_face_reaches_the_bow_of_its_top_edge(tmp_path):
     data[19:231, 39:42] = 7
     data[19:231, 958:961] = 7
     with rasterio.open(
-        tmp_path / "conic.tif", "w", driver="GTiff", width=width, height=height, count=1, dtype="uint8",
-        crs=crs, transform=transform,
+        tmp_path / "conic.tif", "w", driver="GTiff", width=width, height=height, count=1, dtype="uint8", crs=crs, transform=transform
     ) as ds:
         ds.write(data, 1)
         ds.write_colormap(1, PALETTE)
@@ -295,8 +305,15 @@ def _rgb_raster_3857(path, bounds_m, rgb):
     """A three-band GeoTIFF over web-mercator metre bounds."""
     height, width = rgb.shape[:2]
     with rasterio.open(
-        path, "w", driver="GTiff", width=width, height=height, count=3, dtype="uint8",
-        crs="EPSG:3857", transform=from_bounds(*bounds_m, width, height),
+        path,
+        "w",
+        driver="GTiff",
+        width=width,
+        height=height,
+        count=3,
+        dtype="uint8",
+        crs="EPSG:3857",
+        transform=from_bounds(*bounds_m, width, height),
     ) as ds:
         ds.write(np.moveaxis(rgb, -1, 0))
 
@@ -316,23 +333,23 @@ def test_two_straight_bordered_sheets_meet_without_daylight(tmp_path):
     a_px = (top - transform_bounds("EPSG:4326", "EPSG:3857", -92.0, 40.0, -88.0, 40.0)[1]) / 1000.0
     a = np.full((1000, 1000, 3), (216, 232, 206), np.uint8)
     a[897:900, :, :] = 0
-    a[900:, :, :] = 255                                     # collar below the line
+    a[900:, :, :] = 255  # collar below the line
     a_bottom = top - 1000 * a_px
     _rgb_raster_3857(tmp_path / "a.tif", (west, a_bottom, east, top), a)
     b_top = top - 900 * a_px
-    b = np.full((1000, 1000, 3), (255, 0, 0), np.uint8)   # a different tint, to tell the two apart
-    b[0:3, :, :] = 0                                        # its north line
+    b = np.full((1000, 1000, 3), (255, 0, 0), np.uint8)  # a different tint, to tell the two apart
+    b[0:3, :, :] = 0  # its north line
     _rgb_raster_3857(tmp_path / "b.tif", (west, bottom, east, b_top), b)
 
     rasters = []
     for name in ("a", "b"):
         envelope, face, mask = chart_faces.detect_face(tmp_path / f"{name}.tif", charts.IFR_LOW)
         rasters.append(charts.Raster(tmp_path / f"{name}.tif", face=face, envelope=envelope, mask=mask))
-    assert rasters[0].face[1] <= rasters[1].face[3]        # the masks meet or overlap
+    assert rasters[0].face[1] <= rasters[1].face[3]  # the masks meet or overlap
 
     seam_lat = rasterio.warp.transform("EPSG:3857", "EPSG:4326", [west], [b_top])[1][0]
     for zoom in (6, 7, 8, 9):
-        n = 2 ** zoom
+        n = 2**zoom
         x = int((-89.0 + 180.0) / 360.0 * n)
         y = int((1.0 - math.log(math.tan(math.radians(seam_lat)) + 1.0 / math.cos(math.radians(seam_lat))) / math.pi) / 2.0 * n)
         tile = charts.render_tile(rasters, x, y, zoom)
@@ -359,12 +376,19 @@ def test_render_leaves_a_sheets_own_leaning_edge_transparent(tmp_path):
 
     # A palette raster in UTM zone 15 (central meridian 93W): at 88W
     # its right edge leans a few degrees off the meridian.
-    left, bottom = 900_000.0, 4_600_000.0   # metres, in the zone's east
+    left, bottom = 900_000.0, 4_600_000.0  # metres, in the zone's east
     size = 800
     data = np.full((size, size), 8, np.uint8)
     with rasterio.open(
-        tmp_path / "utm.tif", "w", driver="GTiff", width=size, height=size, count=1, dtype="uint8",
-        crs="EPSG:32615", transform=rasterio.transform.from_origin(left, bottom + 200_000, 250, 250),
+        tmp_path / "utm.tif",
+        "w",
+        driver="GTiff",
+        width=size,
+        height=size,
+        count=1,
+        dtype="uint8",
+        crs="EPSG:32615",
+        transform=rasterio.transform.from_origin(left, bottom + 200_000, 250, 250),
     ) as ds:
         ds.write(data, 1)
         ds.write_colormap(1, PALETTE)
@@ -404,10 +428,10 @@ def test_render_composites_two_sheets_and_clips_each_to_its_face(tmp_path):
 
     assert tuple(rgba[200, col(-88.3)]) == (255, 0, 0, 255)
     assert tuple(rgba[200, col(-87.7)]) == (0, 0, 255, 255)
-    assert rgba[2, 128, 3] == 0            # north of both faces: transparent
-    assert rgba[200, col(-88.3) - 1:col(-87.7), 3].all()   # nothing missing along the seam
+    assert rgba[2, 128, 3] == 0  # north of both faces: transparent
+    assert rgba[200, col(-88.3) - 1 : col(-87.7), 3].all()  # nothing missing along the seam
 
-    assert charts.render_tile(rasters, 65, 80, 8) is None   # far to the north
+    assert charts.render_tile(rasters, 65, 80, 8) is None  # far to the north
 
 
 def test_detect_face_reads_neatlines_and_where_the_chart_runs_out(tmp_path):
@@ -429,17 +453,17 @@ def test_detect_face_reads_neatlines_and_where_the_chart_runs_out(tmp_path):
         y = transform_bounds("EPSG:4326", "EPSG:3857", box[0], lat, box[2], lat)[1]
         return int((y_top - y) / (y_top - y_bottom) * 2000)
 
-    data[row(43.6):row(41.0), col(-91.0):] = 8               # the face
-    data[row(41.0) - 1:row(41.0) + 2, col(-91.0):] = 7       # south neatline
-    data[row(43.6):row(41.0), col(-91.0) - 1:col(-91.0) + 2] = 7   # west neatline
+    data[row(43.6) : row(41.0), col(-91.0) :] = 8  # the face
+    data[row(41.0) - 1 : row(41.0) + 2, col(-91.0) :] = 7  # south neatline
+    data[row(43.6) : row(41.0), col(-91.0) - 1 : col(-91.0) + 2] = 7  # west neatline
     _palette_raster(tmp_path / "sheet.tif", box, data)
 
     envelope, face, _ = chart_faces.detect_face(tmp_path / "sheet.tif", charts.SECTIONAL)
     assert envelope == pytest.approx(box, abs=1e-3)
     west, south, east, north = face
-    assert west == -91.0 and south == 41.0                    # neatlines, snapped
-    assert -88.35 <= east <= -88.0                            # the sheet's own edge, less the margin
-    assert 43.3 <= north <= 43.55                             # under the boxes, less the margin
+    assert west == -91.0 and south == 41.0  # neatlines, snapped
+    assert -88.35 <= east <= -88.0  # the sheet's own edge, less the margin
+    assert 43.3 <= north <= 43.55  # under the boxes, less the margin
 
     # `python -m wingtip.charts` runs wingtip.charts as __main__, whose SECTIONAL
     # is an equal but different object from the one chart_faces sees:
@@ -495,10 +519,12 @@ def test_render_pyramid_writes_every_tile_of_every_sheet_and_composites_seams(tm
     _palette_raster(tmp_path / "left.tif", left_box, np.full((512, 512), 1, np.uint8))
     _palette_raster(tmp_path / "right.tif", right_box, np.full((512, 512), 2, np.uint8))
     sheets = [
-        charts.Chart(charts.SECTIONAL, "Left", "09-03-2026",
-                     (charts.Raster(tmp_path / "left.tif", face=left_box, envelope=left_box),), "now"),
-        charts.Chart(charts.SECTIONAL, "Right", "09-03-2026",
-                     (charts.Raster(tmp_path / "right.tif", face=right_box, envelope=right_box),), "now"),
+        charts.Chart(
+            charts.SECTIONAL, "Left", "09-03-2026", (charts.Raster(tmp_path / "left.tif", face=left_box, envelope=left_box),), "now"
+        ),
+        charts.Chart(
+            charts.SECTIONAL, "Right", "09-03-2026", (charts.Raster(tmp_path / "right.tif", face=right_box, envelope=right_box),), "now"
+        ),
     ]
     written = charts.render_pyramid(charts.SECTIONAL, zooms=(7, 8), workers=0, charts=sheets)
 
@@ -524,7 +550,7 @@ def test_render_pyramid_writes_every_tile_of_every_sheet_and_composites_seams(tm
     assert record["sheets"] == ["Left", "Right"] and record["finished_at"] and record["tiles"] == written
     assert record["current_pass"] is None
     assert charts.pyramid_complete("09-03-2026", ("sec",))
-    assert not charts.pyramid_complete("09-03-2026")   # no TAC pyramid yet
+    assert not charts.pyramid_complete("09-03-2026")  # no TAC pyramid yet
 
     # A second run finds every tile complete and writes nothing.
     assert charts.render_pyramid(charts.SECTIONAL, zooms=(7, 8), workers=0, charts=sheets) == 0
@@ -532,12 +558,19 @@ def test_render_pyramid_writes_every_tile_of_every_sheet_and_composites_seams(tm
     # Adjacent faces that meet are no gap; a face pulled back is,
     # unless a third sheet lies over the strip between them.
     assert charts.face_gaps(sheets) == []
-    apart = [sheets[0], charts.Chart(charts.SECTIONAL, "Right", "09-03-2026",
-                                     (charts.Raster(tmp_path / "right.tif", face=(-87.9, 41.0, -86.0, 43.0), envelope=right_box),), "now")]
+    apart = [
+        sheets[0],
+        charts.Chart(
+            charts.SECTIONAL,
+            "Right",
+            "09-03-2026",
+            (charts.Raster(tmp_path / "right.tif", face=(-87.9, 41.0, -86.0, 43.0), envelope=right_box),),
+            "now",
+        ),
+    ]
     assert charts.face_gaps(apart) == [("left", "right", 0.1)]
     over = (-88.5, 40.5, -87.5, 43.5)
-    filler = charts.Chart(charts.SECTIONAL, "Over", "09-03-2026",
-                          (charts.Raster(tmp_path / "over.tif", face=over, envelope=over),), "now")
+    filler = charts.Chart(charts.SECTIONAL, "Over", "09-03-2026", (charts.Raster(tmp_path / "over.tif", face=over, envelope=over),), "now")
     assert charts.face_gaps([*apart, filler]) == []
 
 
@@ -553,10 +586,18 @@ def test_serving_cycle_is_the_newest_complete_pyramid(tmp_path, monkeypatch):
     # Nothing on disk: the FAA's current cycle, rendered on demand.
     assert charts.serving_cycle() == "10-29-2026"
 
-    done = {"kind": "sec", "zooms": [3], "started_at": "t", "finished_at": "t", "rasters_total": 1,
-            "rasters_done": 1, "tiles_written": 1, "current": None}
+    done = {
+        "kind": "sec",
+        "zooms": [3],
+        "started_at": "t",
+        "finished_at": "t",
+        "rasters_total": 1,
+        "rasters_done": 1,
+        "tiles_written": 1,
+        "current": None,
+    }
     charts._write_pyramid_status("09-03-2026", done)
-    charts._write_pyramid_status("10-29-2026", {**done, "finished_at": None})   # the new one, still rendering
+    charts._write_pyramid_status("10-29-2026", {**done, "finished_at": None})  # the new one, still rendering
     assert charts.serving_cycle() == "09-03-2026"
     assert charts.refresh_due()
 
@@ -591,13 +632,12 @@ def test_each_kind_goes_over_to_a_new_cycle_as_its_own_pass_finishes(tmp_path, m
     monkeypatch.setattr(charts, "current_cycle", lambda *a, **k: "10-29-2026")
     monkeypatch.setattr(charts, "_serving_cache", {"value": None, "at": 0.0})
     monkeypatch.setattr(charts, "_kind_serving", {})
-    done = {"zooms": [3], "started_at": "t", "finished_at": "t", "rasters_total": 1,
-            "rasters_done": 1, "tiles_written": 1, "current": None}
+    done = {"zooms": [3], "started_at": "t", "finished_at": "t", "rasters_total": 1, "rasters_done": 1, "tiles_written": 1, "current": None}
     monkeypatch.setattr(charts, "COVERAGE", {k: {} for k in charts.KINDS})
     for kind in charts.KINDS:
         charts._write_pyramid_status("09-03-2026", {**done, "kind": kind})
     charts._write_pyramid_status("10-29-2026", {**done, "kind": "sec"})
-    charts._write_pyramid_status("10-29-2026", {**done, "kind": "ifr_low", "finished_at": None})   # still drawing
+    charts._write_pyramid_status("10-29-2026", {**done, "kind": "ifr_low", "finished_at": None})  # still drawing
     assert charts.serving_cycle() == "10-29-2026"
     assert charts.serving_cycle_of("sec") == "10-29-2026"
     assert charts.serving_cycle_of("ifr_low") == "09-03-2026"
@@ -656,8 +696,18 @@ def test_publish_uploads_each_archive_once_and_points_serving_at_them(tmp_path, 
     for key in ("sec/8/65/94.png", "sec/8/65/95.png", "sec/8/65/94@2x.png", "tac/11/522/757.png"):
         (root / key).parent.mkdir(parents=True, exist_ok=True)
         (root / key).write_bytes(b"\x89PNG" + key.encode())
-    charts._write_pyramid_status("09-03-2026", {"kind": "sec", "zooms": [8], "sheets": sorted(charts.COVERAGE["sec"]),
-                                                "finished_at": "t", "tiles": 3, "current_pass": None, "scales": [1, 2]})
+    charts._write_pyramid_status(
+        "09-03-2026",
+        {
+            "kind": "sec",
+            "zooms": [8],
+            "sheets": sorted(charts.COVERAGE["sec"]),
+            "finished_at": "t",
+            "tiles": 3,
+            "current_pass": None,
+            "scales": [1, 2],
+        },
+    )
 
     client = _Bucket()
     assert charts.publish("09-03-2026", "charts-bucket", prefix="tiles", client=client) == 2
@@ -669,7 +719,7 @@ def test_publish_uploads_each_archive_once_and_points_serving_at_them(tmp_path, 
     assert set(names) == {"1", "2"} and names["1"].startswith("sec-") and names["2"].startswith("sec@2x-")
     body, kind, cache = client.objects[("charts-bucket", f"tiles/09-03-2026/{names['1']}")]
     assert (kind, cache) == ("application/vnd.pmtiles", "public, max-age=2419200, immutable")
-    archive = charts.tile_archive.Archive(lambda offset, length: body[offset:offset + length])
+    archive = charts.tile_archive.Archive(lambda offset, length: body[offset : offset + length])
     assert archive.get(8, 65, 95) == b"\x89PNGsec/8/65/95.png" and archive.get(8, 64, 95) is None
 
     # A second run uploads nothing new but refreshes the pointer.
@@ -691,8 +741,19 @@ def test_refresh_prepares_renders_and_prunes_only_when_complete(tmp_path, monkey
 
     def fake_render(kind, workers=2, cycle=None, **kw):
         calls.append(("render", kind.key, cycle))
-        charts._write_pyramid_status(cycle, {"kind": kind.key, "zooms": [], "started_at": "t", "finished_at": "t",
-                                             "rasters_total": 0, "rasters_done": 0, "tiles_written": 0, "current": None})
+        charts._write_pyramid_status(
+            cycle,
+            {
+                "kind": kind.key,
+                "zooms": [],
+                "started_at": "t",
+                "finished_at": "t",
+                "rasters_total": 0,
+                "rasters_done": 0,
+                "tiles_written": 0,
+                "current": None,
+            },
+        )
         return 0
 
     monkeypatch.setattr(charts, "render_pyramid", fake_render)
@@ -700,10 +761,10 @@ def test_refresh_prepares_renders_and_prunes_only_when_complete(tmp_path, monkey
 
     assert charts.refresh(workers=1) == "10-29-2026"
     assert calls == [("prepare", tuple(charts.KINDS), "10-29-2026")] + [("render", k, "10-29-2026") for k in charts.KINDS]
-    assert not (tmp_path / "tiles" / "09-03-2026").exists()   # pruned once the new cycle was complete
+    assert not (tmp_path / "tiles" / "09-03-2026").exists()  # pruned once the new cycle was complete
     calls.clear()
     assert charts.refresh(workers=1) == "10-29-2026"
-    assert calls == []                                        # already complete: nothing to do
+    assert calls == []  # already complete: nothing to do
 
 
 def test_a_refresh_publishing_to_a_bucket_asks_the_bucket_whether_the_cycle_is_done(tmp_path, monkeypatch):
@@ -717,8 +778,19 @@ def test_a_refresh_publishing_to_a_bucket_asks_the_bucket_whether_the_cycle_is_d
     monkeypatch.setattr(charts, "prepare_all", lambda kinds, cycle: calls.append("prepare"))
 
     def fake_render(kind, workers=2, cycle=None, **kw):
-        charts._write_pyramid_status(cycle, {"kind": kind.key, "zooms": [], "started_at": "t", "finished_at": "t",
-                                             "rasters_total": 0, "rasters_done": 0, "tiles_written": 0, "current": None})
+        charts._write_pyramid_status(
+            cycle,
+            {
+                "kind": kind.key,
+                "zooms": [],
+                "started_at": "t",
+                "finished_at": "t",
+                "rasters_total": 0,
+                "rasters_done": 0,
+                "tiles_written": 0,
+                "current": None,
+            },
+        )
         return 0
 
     monkeypatch.setattr(charts, "render_pyramid", fake_render)
@@ -739,9 +811,9 @@ def test_a_refresh_publishing_to_a_bucket_asks_the_bucket_whether_the_cycle_is_d
             return {"Body": io.BytesIO(json.dumps({"cycle": self.cycle}).encode())}
 
     assert charts.refresh(publish_bucket="charts-bucket", client=Bucket("10-29-2026"), prune=False) == "10-29-2026"
-    assert calls == []                                        # published already: nothing drawn
+    assert calls == []  # published already: nothing drawn
 
-    for published in ("09-03-2026", None):                    # the cycle before, or nothing yet
+    for published in ("09-03-2026", None):  # the cycle before, or nothing yet
         monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / f"tiles-{published}")  # a morning's empty disk
         calls.clear()
         charts.refresh(publish_bucket="charts-bucket", client=Bucket(published), prune=False)
@@ -774,7 +846,7 @@ def test_tile_png_caches_the_render_and_remembers_empty_tiles(tmp_path, monkeypa
     assert charts.tile_png(65, 80, 8, "sec") is None
     assert len(calls) == 2
 
-    assert charts.tile_png(65, 94, 20, "sec") is None        # past the chart's own zoom range
+    assert charts.tile_png(65, 94, 20, "sec") is None  # past the chart's own zoom range
 
     image = charts.tile_image(65, 94, 8, "sec")
     assert image is not None and image.mode == "RGB"
@@ -838,15 +910,15 @@ def _masked_sheet(path, box):
     too and are not a masked line: a label box with a border, and a
     dry lake whose width and edges wander."""
     data = np.full((1600, 1600), 8, np.uint8)
-    data[100:1500, 700:736] = 0                       # the band, 36 px wide
-    data[800:803, :] = 7                              # a road across it
-    data[400:420, 710:726] = 7                        # "TAC", lettered in it
-    data[298:390, 98:548] = 7                         # a label box, the shape of the real ones: border ...
-    data[300:388, 100:546] = 0                        # ... and its paper
-    for row in range(200, 1400):                      # a dry lake
+    data[100:1500, 700:736] = 0  # the band, 36 px wide
+    data[800:803, :] = 7  # a road across it
+    data[400:420, 710:726] = 7  # "TAC", lettered in it
+    data[298:390, 98:548] = 7  # a label box, the shape of the real ones: border ...
+    data[300:388, 100:546] = 0  # ... and its paper
+    for row in range(200, 1400):  # a dry lake
         centre = 1250 + int(20 * math.sin(row / 90))
         half = 15 + int(10 * math.sin(row / 37)) + (row * 7919) % 5
-        data[row, centre - half:centre + half] = 0
+        data[row, centre - half : centre + half] = 0
     _palette_raster(path, box, data)
     return data
 
@@ -862,16 +934,16 @@ def test_remove_masked_lines_gives_the_band_its_tint_back_and_nothing_else(tmp_p
         after = src.read(1)
         assert src.colormap(1)[8] == (216, 232, 206, 255)
         assert len(src.overviews(1)) == len(charts._OVERVIEW_LEVELS)
-        coarse = src.read(1, out_shape=(400, 400))   # from the rebuilt overview, not the old one
+        coarse = src.read(1, out_shape=(400, 400))  # from the rebuilt overview, not the old one
     assert (after[100:1500, 700:736][before[100:1500, 700:736] == 0] == 8).all()
-    assert (after[800:803, 690:750] == 7).all()               # the road is still printed across it
-    assert (after[400:420, 710:726] == 7).all()               # and the lettering is still in it
-    assert (after[300:388, 100:546] == 0).all()               # the label box keeps its paper
+    assert (after[800:803, 690:750] == 7).all()  # the road is still printed across it
+    assert (after[400:420, 710:726] == 7).all()  # and the lettering is still in it
+    assert (after[300:388, 100:546] == 0).all()  # the label box keeps its paper
     assert (after[298:390, 98:548] == before[298:390, 98:548]).all()
     lake = before[200:1400, 1150:1350] == 0
-    assert (after[200:1400, 1150:1350][lake] == 0).all()      # and so does the lake
+    assert (after[200:1400, 1150:1350][lake] == 0).all()  # and so does the lake
     assert (after[:, :690] == before[:, :690]).all() and (after[:, 750:] == before[:, 750:]).all()
-    assert (coarse[30:370, 176:183] != 0).all()              # no paper left in the band at zoom-out either
+    assert (coarse[30:370, 176:183] != 0).all()  # no paper left in the band at zoom-out either
 
     assert len(boxes) == 1
     west, south, east, north = boxes[0]
@@ -904,7 +976,7 @@ def test_a_band_takes_the_tint_beside_it_not_the_halo_along_its_edge(tmp_path):
 def test_masked_lines_outside_the_face_are_the_collar_and_are_left_alone(tmp_path):
     path = tmp_path / "sheet.tif"
     before = _masked_sheet(path, (-90.0, 41.0, -88.0, 43.0))
-    assert chart_faces.remove_masked_lines(path, [(-88.9, 41.0, -88.0, 43.0)]) == ()   # the band is west of the face
+    assert chart_faces.remove_masked_lines(path, [(-88.9, 41.0, -88.0, 43.0)]) == ()  # the band is west of the face
     with rasterio.open(path) as src:
         assert (src.read(1) == before).all()
 
@@ -916,23 +988,23 @@ def test_what_was_taken_out_is_recorded_and_unmask_renders_its_tiles_again(tmp_p
     directory = charts._chart_dir(cycle, charts.SECTIONAL, "Sheet")
     directory.mkdir(parents=True)
     _masked_sheet(directory / "sheet.tif", box)
-    sheet = charts.Chart(charts.SECTIONAL, "Sheet", cycle,
-                         (charts.Raster(directory / "sheet.tif", face=box, envelope=box),), "then")
-    charts._write_ready(directory, sheet)   # prepared before masked lines were looked for
+    sheet = charts.Chart(charts.SECTIONAL, "Sheet", cycle, (charts.Raster(directory / "sheet.tif", face=box, envelope=box),), "then")
+    charts._write_ready(directory, sheet)  # prepared before masked lines were looked for
     assert charts._load_ready(directory, charts.SECTIONAL, "Sheet", cycle).rasters[0].masked_lines is None
 
-    x, y = 64, 94   # zoom 8, over the band at about 89.1W
+    x, y = 64, 94  # zoom 8, over the band at about 89.1W
     tile = charts._tile_path(charts.SECTIONAL, cycle, x, y, 8)
     tile.parent.mkdir(parents=True)
     tile.write_bytes(b"old")
-    monkeypatch.setattr(charts, "rasters_covering",
-                        lambda kind, bbox, cycle=None: ([charts._load_ready(directory, kind, "Sheet", cycle).rasters[0]], True))
+    monkeypatch.setattr(
+        charts, "rasters_covering", lambda kind, bbox, cycle=None: ([charts._load_ready(directory, kind, "Sheet", cycle).rasters[0]], True)
+    )
 
     changed = charts.unmask_prepared(cycle, workers=0)
 
     assert len(changed["sec"]) == 1
     assert charts._load_ready(directory, charts.SECTIONAL, "Sheet", cycle).rasters[0].masked_lines == tuple(changed["sec"])
-    assert tile.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"      # rendered again from the cleaned sheet
+    assert tile.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"  # rendered again from the cleaned sheet
     assert charts.tiles_revision(cycle) == 1
 
     # Looked at once, the sheet is not looked at again, and nothing else is rendered.
@@ -964,7 +1036,7 @@ def test_a_tile_is_not_rendered_again_without_every_sheet_it_needs(tmp_path, mon
 def test_a_tile_rendered_on_demand_draws_the_same_sheet_as_the_pyramid(tmp_path, monkeypatch):
     monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
     cycle = "09-03-2026"
-    a_box, b_box = (-90.0, 41.0, -87.5, 43.0), (-88.5, 41.0, -86.0, 43.0)   # overlapping 88.5W to 87.5W
+    a_box, b_box = (-90.0, 41.0, -87.5, 43.0), (-88.5, 41.0, -86.0, 43.0)  # overlapping 88.5W to 87.5W
     _palette_raster(tmp_path / "a.tif", a_box, np.full((512, 512), 1, np.uint8))
     _palette_raster(tmp_path / "b.tif", b_box, np.full((512, 512), 2, np.uint8))
     sheets = {
@@ -975,13 +1047,13 @@ def test_a_tile_rendered_on_demand_draws_the_same_sheet_as_the_pyramid(tmp_path,
     monkeypatch.setitem(charts.COVERAGE, "sec", {"Alpha": a_box, "Bravo": b_box})
     monkeypatch.setattr(charts, "ensure_chart", lambda kind, name, cycle=None, fetch=True: sheets[name])
 
-    x, y = 65, 94   # zoom 8, 88.6W to 87.2W: most of it the overlap
+    x, y = 65, 94  # zoom 8, 88.6W to 87.2W: most of it the overlap
     pyramid = charts._decode_rgba(charts._tile_path(charts.SECTIONAL, cycle, x, y, 8).read_bytes())
     rasters, _ = charts.rasters_covering(charts.SECTIONAL, charts.tile_bbox_wgs84(x, y, 8), cycle)
     on_demand = charts.render_tile(rasters, x, y, 8)
     west, _, east, _ = charts.tile_bbox_wgs84(x, y, 8)
     col = int((-88.0 - west) / (east - west) * 256)
-    assert tuple(pyramid[200, col]) == tuple(on_demand[200, col]) == (0, 0, 255, 255)   # Bravo, both ways
+    assert tuple(pyramid[200, col]) == tuple(on_demand[200, col]) == (0, 0, 255, 255)  # Bravo, both ways
 
 
 def _busy_band_sheet(path, box, clean_ends=True):
@@ -1005,15 +1077,15 @@ def test_a_band_through_somewhere_busy_is_followed_from_its_quiet_stretches(tmp_
     with rasterio.open(path) as src:
         after = src.read(1)
     band = before[100:2300, 380:416] == 0
-    assert (after[100:2300, 380:416][band] == 8).all()        # the busy stretch too
+    assert (after[100:2300, 380:416][band] == 8).all()  # the busy stretch too
     assert (after[900:1400, 380:416][before[900:1400, 380:416] == 7] == 7).all()
 
 
 def test_what_is_left_of_a_band_is_found_along_the_border_of_what_was_taken_out(tmp_path):
     box, path = (-90.0, 40.0, -89.5, 43.0), tmp_path / "sheet.tif"
-    before = _busy_band_sheet(path, box, clean_ends=False)   # cleaned already, all but the busy stretch
-    assert chart_faces.remove_masked_lines(path, [box]) == ()      # on its own it is not a band
-    with rasterio.open(path) as src:   # where the band was taken out, a little wider than it
+    before = _busy_band_sheet(path, box, clean_ends=False)  # cleaned already, all but the busy stretch
+    assert chart_faces.remove_masked_lines(path, [box]) == ()  # on its own it is not a band
+    with rasterio.open(path) as src:  # where the band was taken out, a little wider than it
         (x0, y0), (x1, y1) = src.transform @ (376, 2300), src.transform @ (420, 100)
     taken_out = (transform_bounds("EPSG:3857", "EPSG:4326", x0, y0, x1, y1),)
     assert chart_faces.remove_masked_lines(path, [box], known=taken_out)
@@ -1043,16 +1115,16 @@ def test_a_scans_paper_border_does_not_draw_a_hairline_down_the_seam(tmp_path):
     assert (drawn[:, 1] == 0).all() and (np.abs(drawn[:, 0] + drawn[:, 2] - 255) <= 2).all()
     west, _, east, _ = charts.tile_bbox_wgs84(x0, y0, 10)
     col = lambda lon: int((lon - west) / (east - west) * 256)  # noqa: E731
-    assert tuple(rgba[128, col(-88.05)]) == (255, 0, 0, 255)   # the first sheet, up to its edge
-    assert tuple(rgba[128, col(-87.95)]) == (0, 0, 255, 255)   # its neighbour past it
+    assert tuple(rgba[128, col(-88.05)]) == (255, 0, 0, 255)  # the first sheet, up to its edge
+    assert tuple(rgba[128, col(-87.95)]) == (0, 0, 255, 255)  # its neighbour past it
 
 
 def test_a_band_is_carried_through_the_lettering_up_to_the_sheets_edge(tmp_path):
     box, path = (-90.0, 40.0, -89.5, 42.0), tmp_path / "sheet.tif"
     data = np.full((1600, 800), 8, np.uint8)
-    data[100:1600, 380:416] = 0                                   # runs off the bottom of the raster
+    data[100:1600, 380:416] = 0  # runs off the bottom of the raster
     rows, cols = np.mgrid[1450:1600, 380:416]
-    data[1450:1600, 380:416][((rows // 3 + cols // 3) % 3 != 0)] = 7   # a name lettered over its last stretch
+    data[1450:1600, 380:416][((rows // 3 + cols // 3) % 3 != 0)] = 7  # a name lettered over its last stretch
     _palette_raster(path, box, data)
     assert chart_faces.remove_masked_lines(path, [(-90.0, 39.0, -89.5, 42.0)])
     with rasterio.open(path) as src:
@@ -1073,7 +1145,7 @@ def test_two_threads_writing_one_tile_use_two_temp_files(tmp_path, monkeypatch):
 
     def recording_write(self, data):
         names.append(self.name)
-        barrier.wait(5)            # both temp files exist before either is renamed
+        barrier.wait(5)  # both temp files exist before either is renamed
         return real_write(self, data)
 
     monkeypatch.setattr(type(tmp_path), "write_bytes", recording_write)
@@ -1107,8 +1179,7 @@ def _hold_in_another_process(tiles, seconds):
     from pathlib import Path
 
     env = {**os.environ, "PYTHONPATH": str(Path(charts.__file__).resolve().parents[1])}
-    child = subprocess.Popen([sys.executable, "-c", _HOLD, str(tiles), str(seconds)],
-                             stdout=subprocess.PIPE, text=True, env=env)
+    child = subprocess.Popen([sys.executable, "-c", _HOLD, str(tiles), str(seconds)], stdout=subprocess.PIPE, text=True, env=env)
     assert child.stdout.readline().strip() == "held"
     return child
 
@@ -1124,7 +1195,7 @@ def test_a_refresh_is_running_exactly_while_another_process_holds_the_lock(tmp_p
     finally:
         child.kill()
         child.wait()
-    assert not charts.refresh_running()   # ended, however it ended: the kernel let go
+    assert not charts.refresh_running()  # ended, however it ended: the kernel let go
 
 
 def test_the_revision_is_written_whole(tmp_path, monkeypatch):
@@ -1165,8 +1236,7 @@ def test_a_cycle_missing_a_sheet_is_not_complete_so_nothing_is_published_or_prun
     finished, the cycle read complete with a hole in it, and the same
     refresh pruned the older cycle's copy of that sheet."""
     tmp_path = two_sheet_country
-    charts.render_pyramid(charts.SECTIONAL, zooms=(7,), workers=0, charts=[_sheet(tmp_path, "Left", LEFT, 1)],
-                          cycle="10-29-2026")
+    charts.render_pyramid(charts.SECTIONAL, zooms=(7,), workers=0, charts=[_sheet(tmp_path, "Left", LEFT, 1)], cycle="10-29-2026")
 
     assert not charts.pyramid_complete("10-29-2026", ("sec",))
     assert charts.pyramid_missing("10-29-2026", "sec") == ["Right"]
@@ -1179,7 +1249,7 @@ def test_a_cycle_missing_a_sheet_is_not_complete_so_nothing_is_published_or_prun
     monkeypatch.setattr(charts, "render_pyramid", lambda kind, **kw: 0)
     monkeypatch.setattr(charts, "publish", lambda cycle, bucket, **kw: published.append(cycle))
     monkeypatch.setattr(charts, "prune_cycles", lambda keep: pruned.append(keep))
-    monkeypatch.setattr(charts, "_bucket_cycle", lambda bucket, **kw: None)   # nothing published yet
+    monkeypatch.setattr(charts, "_bucket_cycle", lambda bucket, **kw: None)  # nothing published yet
     charts.refresh(kinds=("sec",), publish_bucket="bucket")
     assert published == [] and pruned == []
 
@@ -1188,9 +1258,13 @@ def test_status_counts_the_prepared_charts_of_each_kind(two_sheet_country):
     """A count per kind, any cycle, from the marker each prepared chart
     leaves: the console shows no more, and loading every chart to count
     it was most of the status endpoint's time."""
-    for cycle, kind, name in [("10-29-2026", "sec", "Left"), ("10-29-2026", "sec", "Right"),
-                              ("10-29-2026", "tac", "Chicago"), ("09-03-2026", "sec", "Left"),
-                              ("10-29-2026", "not_a_kind", "Stray")]:
+    for cycle, kind, name in [
+        ("10-29-2026", "sec", "Left"),
+        ("10-29-2026", "sec", "Right"),
+        ("10-29-2026", "tac", "Chicago"),
+        ("09-03-2026", "sec", "Left"),
+        ("10-29-2026", "not_a_kind", "Stray"),
+    ]:
         directory = charts.CHARTS_DIR / cycle / kind / name
         directory.mkdir(parents=True)
         (directory / charts._READY).write_text("{}")
@@ -1200,9 +1274,13 @@ def test_status_counts_the_prepared_charts_of_each_kind(two_sheet_country):
 
 def test_refresh_renders_only_the_kinds_not_complete(two_sheet_country, monkeypatch):
     tmp_path = two_sheet_country
-    charts.render_pyramid(charts.SECTIONAL, zooms=(7,), workers=0,
-                          charts=[_sheet(tmp_path, "Left", LEFT, 1), _sheet(tmp_path, "Right", RIGHT, 2)],
-                          cycle="10-29-2026")
+    charts.render_pyramid(
+        charts.SECTIONAL,
+        zooms=(7,),
+        workers=0,
+        charts=[_sheet(tmp_path, "Left", LEFT, 1), _sheet(tmp_path, "Right", RIGHT, 2)],
+        cycle="10-29-2026",
+    )
     assert charts.pyramid_complete("10-29-2026", ("sec",))
     rendered, prepared = [], []
     monkeypatch.setattr(charts, "prepare_all", lambda kinds, cycle: prepared.append(kinds))
@@ -1220,8 +1298,9 @@ def test_a_second_pass_never_makes_a_complete_cycle_read_unfinished(two_sheet_co
     sheets = [_sheet(tmp_path, "Left", LEFT, 1), _sheet(tmp_path, "Right", RIGHT, 2)]
     charts.render_pyramid(charts.SECTIONAL, zooms=(7,), workers=0, charts=sheets, cycle="10-29-2026")
     (tmp_path / "tiles" / "09-03-2026").mkdir(parents=True)
-    charts._write_pyramid_status("09-03-2026", {"kind": "sec", "zooms": [7], "sheets": ["Left", "Right"],
-                                                "finished_at": "t", "tiles": 1, "current_pass": None})
+    charts._write_pyramid_status(
+        "09-03-2026", {"kind": "sec", "zooms": [7], "sheets": ["Left", "Right"], "finished_at": "t", "tiles": 1, "current_pass": None}
+    )
 
     seen = []
     real_row = charts._render_row
@@ -1241,8 +1320,22 @@ def test_a_second_pass_never_makes_a_complete_cycle_read_unfinished(two_sheet_co
 def test_a_record_from_before_sheets_were_kept_still_reads_as_complete(two_sheet_country):
     path = two_sheet_country / "tiles" / "10-29-2026" / "pyramid.json"
     path.parent.mkdir(parents=True)
-    path.write_text(json.dumps({"sec": {"kind": "sec", "zooms": [3], "started_at": "t", "finished_at": "t",
-                                        "rasters_total": 2, "rasters_done": 2, "tiles_written": 7, "current": None}}))
+    path.write_text(
+        json.dumps(
+            {
+                "sec": {
+                    "kind": "sec",
+                    "zooms": [3],
+                    "started_at": "t",
+                    "finished_at": "t",
+                    "rasters_total": 2,
+                    "rasters_done": 2,
+                    "tiles_written": 7,
+                    "current": None,
+                }
+            }
+        )
+    )
 
     assert charts.pyramid_complete("10-29-2026", ("sec",))
     assert charts.pyramid_status("10-29-2026")["sec"]["tiles"] == 7
@@ -1275,9 +1368,9 @@ def test_a_seam_tile_is_never_served_half_drawn(two_sheet_country, monkeypatch):
     def row(args):
         if args[0] not in drawn:
             drawn.append(args[0])
-        if len(drawn) == 2 and not between:   # the first sheet drawn, the second not begun
+        if len(drawn) == 2 and not between:  # the first sheet drawn, the second not begun
             between.append((seam.exists(), seam.with_suffix(".partial").exists()))
-            served = charts._decode_rgba(charts.tile_png(65, 94, 8))   # drawn whole, on demand
+            served = charts._decode_rgba(charts.tile_png(65, 94, 8))  # drawn whole, on demand
             between.append((tuple(served[200, col(-88.3)]), tuple(served[200, col(-87.7)])))
         return real_row(args)
 
@@ -1292,11 +1385,15 @@ def test_a_seam_tile_is_never_served_half_drawn(two_sheet_country, monkeypatch):
 
 def test_the_tiles_at_the_edge_of_the_country_are_served_once_the_pass_ends(two_sheet_country):
     tmp_path = two_sheet_country
-    charts.render_pyramid(charts.SECTIONAL, zooms=(8,), workers=0,
-                          charts=[_sheet(tmp_path, "Left", LEFT, 1), _sheet(tmp_path, "Right", RIGHT, 2)],
-                          cycle="10-29-2026")
+    charts.render_pyramid(
+        charts.SECTIONAL,
+        zooms=(8,),
+        workers=0,
+        charts=[_sheet(tmp_path, "Left", LEFT, 1), _sheet(tmp_path, "Right", RIGHT, 2)],
+        cycle="10-29-2026",
+    )
     edge = charts._decode_rgba(charts._tile_path(charts.SECTIONAL, "10-29-2026", 65, 94, 8).read_bytes())
-    assert edge[2, 128, 3] == 0 and edge[200, 128, 3] == 255   # north of 43N is no sheet's
+    assert edge[2, 128, 3] == 0 and edge[200, 128, 3] == 255  # north of 43N is no sheet's
     assert len(list((tmp_path / "tiles").rglob("*.png"))) == 6
     assert not list((tmp_path / "tiles").rglob("*.partial"))
 
@@ -1336,7 +1433,7 @@ def test_a_new_renderer_draws_every_tile_again_and_the_browsers_are_told(two_she
     monkeypatch.setattr(charts, "_render_row", row)
     assert charts.render_pyramid(charts.SECTIONAL, zooms=(8,), workers=0, charts=sheets, cycle=cycle) == 8
 
-    assert set(served) == {cycle}                           # the old tiles served meanwhile
+    assert set(served) == {cycle}  # the old tiles served meanwhile
     record = charts.pyramid_status(cycle)["sec"]
     assert record["renderer"] == charts.RENDERER_VERSION and record["tiles"] == 16
     assert charts.tiles_revision(cycle) == 1
@@ -1367,7 +1464,7 @@ def test_a_pass_under_a_new_renderer_cut_short_is_resumed_not_begun_again(two_sh
     assert charts.pyramid_complete(cycle, ("sec",)) and charts.tiles_revision(cycle) == 0
 
     monkeypatch.setattr(charts, "_render_row", real_row)
-    assert charts.render_pyramid(charts.SECTIONAL, zooms=(8,), workers=0, charts=sheets, cycle=cycle) == 4   # the second's
+    assert charts.render_pyramid(charts.SECTIONAL, zooms=(8,), workers=0, charts=sheets, cycle=cycle) == 4  # the second's
     assert charts.tiles_revision(cycle) == 1
     assert charts.pyramid_status(cycle)["sec"]["renderer"] == charts.RENDERER_VERSION
 
@@ -1394,13 +1491,13 @@ def test_a_band_under_a_class_b_ring_gets_the_rings_colour_back(tmp_path):
         after = src.read(1)
     under = after[700:760, 380:416]
     assert not (under == 4).any() and not (under == 0).any()
-    assert (under == 3).mean() > 0.9                       # the ring runs on across it, unbroken
+    assert (under == 3).mean() > 0.9  # the ring runs on across it, unbroken
     assert (after[100:1600, 380:416][before[100:1600, 380:416] == 0] == 8).all()
 
 
 def test_a_band_is_carried_under_a_ring_too_long_to_bridge_to_the_sheets_edge(tmp_path):
     box, path = (-90.0, 40.0, -89.5, 42.0), tmp_path / "sheet.tif"
-    _ringed_band_sheet(path, box, (1150, 1450))             # and only 150 px of band after it
+    _ringed_band_sheet(path, box, (1150, 1450))  # and only 150 px of band after it
     assert chart_faces.remove_masked_lines(path, [(-90.0, 39.0, -89.5, 42.0)])
     with rasterio.open(path) as src:
         after = src.read(1)
@@ -1409,7 +1506,7 @@ def test_a_band_is_carried_under_a_ring_too_long_to_bridge_to_the_sheets_edge(tm
 
 
 def _tile_at(lat: float, lon: float, zoom: int) -> tuple:
-    n = 2 ** zoom
+    n = 2**zoom
     return int((lon + 180) / 360 * n), int((1 - math.asinh(math.tan(math.radians(lat))) / math.pi) / 2 * n)
 
 
@@ -1420,10 +1517,10 @@ def test_a_tile_finer_than_the_sheet_is_drawn_smooth_and_meets_its_neighbour(tmp
     as the same warp drawn across both: the filter sees past each
     tile's edge, so no line shows between them."""
     rgb = np.full((512, 512, 3), 255, np.uint8)
-    rgb[:, :, 1] = np.linspace(40, 250, 512).astype(np.uint8)[None, :]   # a gradient to see a seam in
-    for k in range(0, 512, 16):                                           # lines two sheet pixels thick
-        rgb[k:k + 2, :, :] = 0
-        rgb[:, k:k + 2, :] = 0
+    rgb[:, :, 1] = np.linspace(40, 250, 512).astype(np.uint8)[None, :]  # a gradient to see a seam in
+    for k in range(0, 512, 16):  # lines two sheet pixels thick
+        rgb[k : k + 2, :, :] = 0
+        rgb[:, k : k + 2, :] = 0
     path = tmp_path / "fine.tif"
     _rgb_raster(path, LEFT, rgb)
     lat = 42.0
@@ -1452,8 +1549,10 @@ def test_smooth_tiles_keep_sheet_seams_whole(tmp_path):
     left, right = tmp_path / "left.tif", tmp_path / "right.tif"
     _palette_raster(left, (-90.0, 41.0, -87.9, 43.0), np.full((512, 512), 1, np.uint8))
     _palette_raster(right, (-88.1, 41.0, -86.0, 43.0), np.full((512, 512), 2, np.uint8))
-    rasters = [charts.Raster(right, face=RIGHT, envelope=(-88.1, 41.0, -86.0, 43.0)),
-               charts.Raster(left, face=LEFT, envelope=(-90.0, 41.0, -87.9, 43.0))]
+    rasters = [
+        charts.Raster(right, face=RIGHT, envelope=(-88.1, 41.0, -86.0, 43.0)),
+        charts.Raster(left, face=LEFT, envelope=(-90.0, 41.0, -87.9, 43.0)),
+    ]
     x, y = _tile_at(42.0, -88.0, 11)
     tile = charts.render_tile(rasters, x, y, 11)
 
@@ -1461,7 +1560,7 @@ def test_smooth_tiles_keep_sheet_seams_whole(tmp_path):
     colours = tile[:, :, :3].astype(int)
     pure = (colours == (255, 0, 0)).all(axis=2) | (colours == (0, 0, 255)).all(axis=2)
     blended = ~pure
-    assert not (colours[blended].sum(axis=1) > 300).any()   # no paper
+    assert not (colours[blended].sum(axis=1) > 300).any()  # no paper
     seam = int(np.argmin(np.abs(charts._tile_lons(x, 11) + 88.0)))
     assert set(np.nonzero(blended)[1].tolist()) <= {seam - 1, seam, seam + 1}
 
@@ -1503,11 +1602,10 @@ def test_the_sharp_tiles_join_a_finished_pyramid_without_touching_its_own(two_sh
 
     monkeypatch.setattr(charts, "TILE_SCALES", (1, 2))
     assert charts.tile_scales("sec") == [1]
-    assert charts.render_pyramid(charts.SECTIONAL, zooms=(8,), workers=0, charts=sheets, cycle="10-29-2026",
-                                 scales=(2,)) == 8
+    assert charts.render_pyramid(charts.SECTIONAL, zooms=(8,), workers=0, charts=sheets, cycle="10-29-2026", scales=(2,)) == 8
     assert {p: p.read_bytes() for p in before} == before
     assert charts.tile_scales("sec") == [1, 2]
-    assert charts.tiles_revision("10-29-2026") == 0   # new names: nothing a browser holds is stale
+    assert charts.tiles_revision("10-29-2026") == 0  # new names: nothing a browser holds is stale
 
 
 def test_a_sharp_tile_is_drawn_on_request_and_a_scale_never_drawn_is_none(two_sheet_country, monkeypatch):
@@ -1546,8 +1644,9 @@ def test_the_published_pointer_says_which_scales_the_map_may_ask_for(tmp_path, m
 
     # And publish writes them there, from each kind's record.
     monkeypatch.setattr(charts, "CHART_TILES_URL", None)
-    charts._write_pyramid_status("12-24-2026", {"kind": "sec", "zooms": [8], "sheets": [], "finished_at": "t",
-                                                "tiles": 0, "current_pass": None, "scales": [1, 2]})
+    charts._write_pyramid_status(
+        "12-24-2026", {"kind": "sec", "zooms": [8], "sheets": [], "finished_at": "t", "tiles": 0, "current_pass": None, "scales": [1, 2]}
+    )
 
     client = _Bucket()
     charts.publish("12-24-2026", "bucket", prefix="tiles", client=client)

@@ -2,14 +2,20 @@
 stubbed: the nav log's fixes, altitudes and times handed on as numbers, the
 engine's answer returned as it is, and the AWC down a 502 the page says
 in its own section, never "no icing"."""
+
 from fastapi.testclient import TestClient
 from wingtip import icing_forecast
 
 from app.main import app
 
 client = TestClient(app)
-PARAMS = {"fixes": "41.9,-87.9;42.5,-89.0;43.1,-90.0", "alt_ft": "8000,9000", "leg_min": "60,60", "ground_min": "30,0",
-          "depart": "2026-11-08T14:20:00Z"}
+PARAMS = {
+    "fixes": "41.9,-87.9;42.5,-89.0;43.1,-90.0",
+    "alt_ft": "8000,9000",
+    "leg_min": "60,60",
+    "ground_min": "30,0",
+    "depart": "2026-11-08T14:20:00Z",
+}
 
 
 def test_the_legs_are_handed_on_and_the_answer_returned(monkeypatch):
@@ -17,11 +23,23 @@ def test_the_legs_are_handed_on_and_the_answer_returned(monkeypatch):
 
     def along(fixes, altitudes, minutes, ground, start):
         asked.update(fixes=fixes, altitudes=altitudes, minutes=minutes, ground=ground, start=start)
-        return {"legs": [{"index": 0, "altitude_ft": 8000, "severity": "light", "share": 0.4,
-                          "layer": {"bottom_ft": 5000, "top_ft": 9000}, "valid_s": 1794195000},
-                         {"index": 1, "altitude_ft": 9000, "severity": None, "share": None, "layer": None, "valid_s": None}],
-                "worst": {"severity": "light", "altitudes_ft": [8000], "legs": [0]}, "unchecked": [1],
-                "line": "Forecast icing, light, at 8,000 ft on leg 1", "issued": "2026-11-08T14:00:00Z"}
+        return {
+            "legs": [
+                {
+                    "index": 0,
+                    "altitude_ft": 8000,
+                    "severity": "light",
+                    "share": 0.4,
+                    "layer": {"bottom_ft": 5000, "top_ft": 9000},
+                    "valid_s": 1794195000,
+                },
+                {"index": 1, "altitude_ft": 9000, "severity": None, "share": None, "layer": None, "valid_s": None},
+            ],
+            "worst": {"severity": "light", "altitudes_ft": [8000], "legs": [0]},
+            "unchecked": [1],
+            "line": "Forecast icing, light, at 8,000 ft on leg 1",
+            "issued": "2026-11-08T14:00:00Z",
+        }
 
     monkeypatch.setattr(icing_forecast, "along", along)
     resp = client.get("/api/icing/route", params=PARAMS)

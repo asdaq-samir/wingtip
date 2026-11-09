@@ -1,6 +1,7 @@
 """A corridor not yet read is read in a process of its own and loaded
 from what it kept (app.chart_model), so the planner's other requests do
 not wait on it."""
+
 import threading
 from collections import deque
 from concurrent.futures import Future
@@ -151,6 +152,7 @@ def test_a_corridor_is_ready_once_read_here_or_kept_on_disk(monkeypatch, tmp_pat
 
 class _Held(_Pool):
     """A pool whose reads end when the test says: each read's future, by key."""
+
     def __init__(self):
         super().__init__()
         self.reads = {}
@@ -261,8 +263,11 @@ def test_a_read_ahead_that_a_request_waits_on_is_never_dropped(monkeypatch, tmp_
 def test_a_request_ahead_gets_the_same_corridor_as_the_pilots(monkeypatch, tmp_path):
     pool = _hop_stubs(monkeypatch, tmp_path, [None, None])
     landmark = {"name": "Lake Koshkonong"}
-    monkeypatch.setattr(chart_model, "detect_job", lambda *a: {
-        "cond": threading.Condition(), "done": True, "error": None, "blocks": [{"landmarks": [landmark]}]})
+    monkeypatch.setattr(
+        chart_model,
+        "detect_job",
+        lambda *a: {"cond": threading.Condition(), "done": True, "error": None, "blocks": [{"landmarks": [landmark]}]},
+    )
     pilots = chart_model.corridor("KORD->KNEW", wait=True)
     monkeypatch.setattr(chart_model, "_READING", {})
     token = chart_model.READ_AHEAD.set(True)

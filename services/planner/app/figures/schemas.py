@@ -1,6 +1,7 @@
 """The questions and answers of the four figures' endpoints (app.figures):
 POST /api/debrief, GET /api/diversion, GET /api/holding and POST
 /api/lost-comms."""
+
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, StringConstraints

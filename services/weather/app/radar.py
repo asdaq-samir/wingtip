@@ -3,6 +3,7 @@ Mesonet's own record of its NEXRAD composite (n0q), which the browser
 draws as tiles itself. Stored ("radar") for the planner's map weather to
 say (wingtip.weather_map.radar_valid). Moved from the planner (#535),
 which asked IEM on the map's way."""
+
 from __future__ import annotations
 
 import time

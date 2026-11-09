@@ -5,6 +5,7 @@ and logbook_read_check's in engine/contract/engine.schema.json), and what
 the engine answered about them (its answers' shapes, which the contract
 states; read into these so the apps get typed models from this service's
 openapi.json)."""
+
 from __future__ import annotations
 
 from typing import Literal
@@ -82,7 +83,8 @@ class HandbookRead(BaseModel):
 
     speed_unit: SpeedUnit | None = Field(None, description="The speeds' unit as printed: KTAS/KIAS are kt, MPH mph.")
     cruise_speed_kind: Literal["tas", "ias", "cas"] | None = Field(
-        None, description="What the cruise table's speeds are: KTAS tas, KIAS ias, KCAS cas.")
+        None, description="What the cruise table's speeds are: KTAS tas, KIAS ias, KCAS cas."
+    )
     distance_unit: Literal["ft", "m"] | None = None
     weight_unit: Literal["lb", "kg"] | None = None
     arm_unit: Literal["in", "cm", "mm"] | None = None
@@ -95,7 +97,8 @@ class HandbookRead(BaseModel):
     landing: list[DistanceRow] = Field(default_factory=list, description="Every row of the landing distance table.")
     empty: Empty | None = None
     max_takeoff_weight: float | None = Field(
-        None, description="Maximum takeoff (or ramp, where only that is printed) weight, in weight_unit.")
+        None, description="Maximum takeoff (or ramp, where only that is printed) weight, in weight_unit."
+    )
     envelope: list[Corner] = Field(default_factory=list, description="The CG envelope's corners, in order going round its outline.")
     fuel: Fuel | None = None
 
@@ -157,7 +160,8 @@ class Unreadable(BaseModel):
     """What the model says besides the figures: what it could not make out."""
 
     notes: list[str] = Field(
-        default_factory=list, description="Each figure or part of the page that could not be read, in a short sentence.")
+        default_factory=list, description="Each figure or part of the page that could not be read, in a short sentence."
+    )
     unreadable: str | None = Field(None, description="Why nothing could be read, where nothing could: not this kind of page, too blurred.")
 
 

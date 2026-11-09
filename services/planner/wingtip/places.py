@@ -17,6 +17,7 @@ towns (`Civil`: "Village of Wauconda"), which are what the chart labels
 Loaded in the background at a service's start; until then, and where
 nothing is near, a point has no description.
 """
+
 from __future__ import annotations
 
 import csv
@@ -38,9 +39,7 @@ from .retry import with_retries
 
 log = logging.getLogger(__name__)
 
-GNIS_URL = (
-    "https://prd-tnm.s3.amazonaws.com/StagedProducts/GeographicNames/DomesticNames/DomesticNames_National_Text.zip"
-)
+GNIS_URL = "https://prd-tnm.s3.amazonaws.com/StagedProducts/GeographicNames/DomesticNames/DomesticNames_National_Text.zip"
 #: The national file boiled down to what describes a point: kind, name,
 #: lat, lon.
 PLACES_PATH = DATA_DIR / "raw" / "gnis" / "places.csv"
@@ -85,7 +84,7 @@ def _row(row: dict) -> tuple[str, str] | None:
         prefix = next((p for p in TOWN_PREFIXES if name.startswith(p)), None)
         if prefix is None or "(historical)" in name:
             return None
-        return "town", name[len(prefix):]
+        return "town", name[len(prefix) :]
     if klass in LANDMARK_CLASSES:
         if "(historical)" in name:
             # A fort that closed is still a place on the chart; a lake
@@ -124,6 +123,7 @@ def prepare(text_lines, out: Path = PLACES_PATH) -> int:
 
 def _download(out: Path = PLACES_PATH) -> None:
     with tempfile.TemporaryFile() as blob:
+
         def fetch():
             with requests.get(GNIS_URL, stream=True, timeout=120) as resp:
                 resp.raise_for_status()
@@ -131,6 +131,7 @@ def _download(out: Path = PLACES_PATH) -> None:
                 blob.truncate()
                 for chunk in resp.iter_content(1 << 20):
                     blob.write(chunk)
+
         with_retries(fetch, describe="USGS GNIS download")
         blob.seek(0)
         with zipfile.ZipFile(blob) as z:
@@ -154,7 +155,9 @@ def _load(path: Path) -> dict:
         lat = np.array([lats[i] for i in index])
         lon = np.array([lons[i] for i in index])
         table[kind] = {
-            "names": [names[i] for i in index], "lat": lat, "lon": lon,
+            "names": [names[i] for i in index],
+            "lat": lat,
+            "lon": lon,
             "tree": KDTree(_unit_sphere(lat, lon)) if index else None,
         }
     return table
@@ -236,4 +239,3 @@ def describe(lat: float, lon: float, table: dict | None = None) -> str | None:
         return f"in {name}"
     heading = _COMPASS[round(bearing_deg(town_lat, town_lon, lat, lon) / 45) % 8]
     return f"{away:.0f} nm {heading} of {name}"
-

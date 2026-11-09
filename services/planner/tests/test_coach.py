@@ -2,6 +2,7 @@
 pilots the engine's own tests read (apps/web/src/lib/fixtures/coach.json):
 the fields near home are the fixture's, put in for the FAA files
 wingtip.coach would read."""
+
 import json
 from pathlib import Path
 
@@ -17,9 +18,16 @@ PILOTS = json.loads((Path(__file__).parents[3] / "apps/web/src/lib/fixtures/coac
 
 def _api_ask(ask: dict) -> dict:
     """The fixture's engine input as the app sends it to the planner."""
-    return {"today": ask["today"], "entries": ask["entries"], "ratings": ask.get("ratings", []), "held": ask.get("held", []),
-            "debriefs": ask.get("debriefs", []), "flightReviewOn": ask.get("flight_review_on"),
-            "medicalExpiresOn": ask.get("medical_expires_on"), "home": "HOME"}
+    return {
+        "today": ask["today"],
+        "entries": ask["entries"],
+        "ratings": ask.get("ratings", []),
+        "held": ask.get("held", []),
+        "debriefs": ask.get("debriefs", []),
+        "flightReviewOn": ask.get("flight_review_on"),
+        "medicalExpiresOn": ask.get("medical_expires_on"),
+        "home": "HOME",
+    }
 
 
 @pytest.fixture
@@ -73,15 +81,26 @@ def test_a_bad_debrief_is_a_422(places):
 
 def test_practice_places_are_the_lighted_fields_and_approaches_near_home(monkeypatch):
     monkeypatch.setattr(coach.airports, "find_place", lambda ident: {"ident": ident, "lat": 43.1, "lon": -89.5})
-    monkeypatch.setattr(coach.airports, "nearest", lambda lat, lon, limit: [
-        {"ident": "C29", "source_ident": "C29", "name": "Morey", "distance_nm": 0.0},
-        {"ident": "KMSN", "source_ident": "KMSN", "name": "Truax", "distance_nm": 7.6},
-        {"ident": "KFAR", "source_ident": "KFAR", "name": "Far", "distance_nm": 41.0},
-    ])
+    monkeypatch.setattr(
+        coach.airports,
+        "nearest",
+        lambda lat, lon, limit: [
+            {"ident": "C29", "source_ident": "C29", "name": "Morey", "distance_nm": 0.0},
+            {"ident": "KMSN", "source_ident": "KMSN", "name": "Truax", "distance_nm": 7.6},
+            {"ident": "KFAR", "source_ident": "KFAR", "name": "Far", "distance_nm": 41.0},
+        ],
+    )
     runways = {"C29": [{"lighted": False, "closed": False}], "KMSN": [{"lighted": True, "closed": False}]}
     monkeypatch.setattr(coach.airports, "get_runways", lambda ident: runways.get(ident, []))
-    procs = {"KMSN": {"procedures": [{"kind": "approach", "name": "ILS OR LOC RWY 36"}, {"kind": "approach", "name": "RNAV (GPS) RWY 18"},
-                                     {"kind": "departure", "name": "MADISON SIX"}]}}
+    procs = {
+        "KMSN": {
+            "procedures": [
+                {"kind": "approach", "name": "ILS OR LOC RWY 36"},
+                {"kind": "approach", "name": "RNAV (GPS) RWY 18"},
+                {"kind": "departure", "name": "MADISON SIX"},
+            ]
+        }
+    }
     monkeypatch.setattr(coach.procedures, "procedures_at", lambda ident: procs.get(ident))
     found = coach.practice_places("C29")
     # KFAR is past the 40 nm a practice field is looked for in.

@@ -13,6 +13,7 @@ nothing, and nothing is sent.
 
 The planner's own tracing is wingtip.tracing; this service ships without
 wingtip, so it has its own, the same few lines."""
+
 from __future__ import annotations
 
 import logging
@@ -100,8 +101,10 @@ class Usage:
             if isinstance(got, int):
                 self.totals[field] = self.totals.get(field, 0) + got
                 self.span.set_attribute(f"gen_ai.usage.{field}", self.totals[field])
-        for attribute, value in (("gen_ai.response.model", getattr(message, "model", None)),
-                                 ("gen_ai.response.finish_reasons", getattr(message, "stop_reason", None))):
+        for attribute, value in (
+            ("gen_ai.response.model", getattr(message, "model", None)),
+            ("gen_ai.response.finish_reasons", getattr(message, "stop_reason", None)),
+        ):
             if isinstance(value, str):
                 self.span.set_attribute(attribute, [value] if attribute.endswith("reasons") else value)
         self.turns += 1
@@ -122,8 +125,7 @@ def claude_call(feature: str, model: str, *, current: bool = True):
     if _tracer is None:
         yield Usage()
         return
-    attributes = {"gen_ai.system": "anthropic", "gen_ai.operation.name": "chat",
-                  "gen_ai.request.model": model, "wingtip.feature": feature}
+    attributes = {"gen_ai.system": "anthropic", "gen_ai.operation.name": "chat", "gen_ai.request.model": model, "wingtip.feature": feature}
     if current:
         with _tracer.start_as_current_span(f"chat {model}", attributes=attributes) as span:
             yield Usage(span)

@@ -11,6 +11,7 @@ photos swipe behind the airport diagram thumbnail", 2026-10-23).
   licence credited. A file kept on Wikipedia alone is fair use, not free,
   and is not shown. About one small field in eight has one.
 """
+
 from __future__ import annotations
 
 import html
@@ -82,10 +83,19 @@ def aerial(ident: str, lat: float, lon: float, ends: list[tuple[float, float]], 
         return path
     west, south, east, north = aerial_box(lat, lon, ends)
     try:
-        response = requests.get(USGS_EXPORT, params={
-            "bbox": f"{west},{south},{east},{north}", "bboxSR": 4326, "imageSR": 3857,
-            "size": f"{AERIAL_PX[0]},{AERIAL_PX[1]}", "format": "jpg", "f": "image",
-        }, headers=HEADERS, timeout=20)
+        response = requests.get(
+            USGS_EXPORT,
+            params={
+                "bbox": f"{west},{south},{east},{north}",
+                "bboxSR": 4326,
+                "imageSR": 3857,
+                "size": f"{AERIAL_PX[0]},{AERIAL_PX[1]}",
+                "format": "jpg",
+                "f": "image",
+            },
+            headers=HEADERS,
+            timeout=20,
+        )
         response.raise_for_status()
     except requests.RequestException as err:
         raise PhotoUnavailable(f"The USGS imagery could not be had for {ident}: {err}") from err
@@ -105,16 +115,38 @@ def _plain(value: str | None) -> str:
 
 def _ask_ground_photo(wikipedia_link: str) -> dict | None:
     title = unquote(wikipedia_link.rstrip("/").rsplit("/", 1)[-1]).replace("_", " ")
-    pages = requests.get(WIKIPEDIA_API, params={
-        "action": "query", "format": "json", "prop": "pageimages", "piprop": "name", "titles": title, "redirects": 1,
-    }, headers=HEADERS, timeout=10).json().get("query", {}).get("pages", {})
+    pages = (
+        requests.get(
+            WIKIPEDIA_API,
+            params={"action": "query", "format": "json", "prop": "pageimages", "piprop": "name", "titles": title, "redirects": 1},
+            headers=HEADERS,
+            timeout=10,
+        )
+        .json()
+        .get("query", {})
+        .get("pages", {})
+    )
     name = next((p.get("pageimage") for p in pages.values() if p.get("pageimage")), None)
     if not name:
         return None
-    files = requests.get(COMMONS_API, params={
-        "action": "query", "format": "json", "titles": f"File:{name}", "prop": "imageinfo",
-        "iiprop": "url|extmetadata", "iiurlwidth": AERIAL_PX[0],
-    }, headers=HEADERS, timeout=10).json().get("query", {}).get("pages", {})
+    files = (
+        requests.get(
+            COMMONS_API,
+            params={
+                "action": "query",
+                "format": "json",
+                "titles": f"File:{name}",
+                "prop": "imageinfo",
+                "iiprop": "url|extmetadata",
+                "iiurlwidth": AERIAL_PX[0],
+            },
+            headers=HEADERS,
+            timeout=10,
+        )
+        .json()
+        .get("query", {})
+        .get("pages", {})
+    )
     for page in files.values():
         # A file not on Commons comes back "missing": Wikipedia's own, fair use.
         info = (page.get("imageinfo") or [None])[0]

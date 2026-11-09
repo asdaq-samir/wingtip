@@ -16,6 +16,7 @@ and the plan is still proposed: the pilot in command decides (14 CFR
 The answer streams as newline-delimited JSON (TripMessage): the tools as
 they are asked, the words as they come, the proposal, the sources, then
 done or an error in words."""
+
 from __future__ import annotations
 
 import json
@@ -107,10 +108,15 @@ def runner_for(turns: list[dict], box: TripToolbox):
     s = get_settings()
     extra = {"extra_body": {"fallbacks": "default"}, "betas": ["server-side-fallback-2026-07-01"]} if s.assistant_fallbacks else {}
     return _client().beta.messages.tool_runner(
-        model=TRIP_MODEL, max_tokens=TRIP_MAX_TOKENS,
+        model=TRIP_MODEL,
+        max_tokens=TRIP_MAX_TOKENS,
         system=[{"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}}],
-        tools=box.tools, messages=turns, stream=True, output_config={"effort": TRIP_EFFORT},
-        max_iterations=TRIP_MAX_ITERATIONS, **extra,
+        tools=box.tools,
+        messages=turns,
+        stream=True,
+        output_config={"effort": TRIP_EFFORT},
+        max_iterations=TRIP_MAX_ITERATIONS,
+        **extra,
     )
 
 
@@ -135,8 +141,11 @@ def plan_trip(ask: TripAsk, runner=None, box: TripToolbox | None = None) -> Iter
                     if getattr(block, "type", None) == "tool_use":
                         yield _line({"type": "tool", "name": block.name, "label": label(block.name, dict(block.input or {}))})
                 if message.stop_reason in ("refusal", "max_tokens"):
-                    words = ("The planner declined this trip." if message.stop_reason == "refusal"
-                             else "The planner ran out of room; describe the trip in fewer words.")
+                    words = (
+                        "The planner declined this trip."
+                        if message.stop_reason == "refusal"
+                        else "The planner ran out of room; describe the trip in fewer words."
+                    )
                     yield _line({"type": "error", "words": words})
                     return
     except ValueError as err:
@@ -159,8 +168,11 @@ def plan_trip(ask: TripAsk, runner=None, box: TripToolbox | None = None) -> Iter
 router = APIRouter()
 
 
-@router.post("/api/trip-plan", responses={200: {"content": {"application/x-ndjson": {}}}},
-             openapi_extra=gateway("signed-in", paid="ASSISTANT", body_limit=32 * 1024))
+@router.post(
+    "/api/trip-plan",
+    responses={200: {"content": {"application/x-ndjson": {}}}},
+    openapi_extra=gateway("signed-in", paid="ASSISTANT", body_limit=32 * 1024),
+)
 def trip_plan(ask: TripAsk) -> StreamingResponse:
     """A trip in the pilot's words worked out into a proposal (TripMessage
     lines): `tool` as each is asked, `text` as the reason comes, `plan`
@@ -171,5 +183,6 @@ def trip_plan(ask: TripAsk) -> StreamingResponse:
         TripToolbox(ask.context, ask.time_zone)
     except (KeyError, ValueError) as err:
         raise HTTPException(422, f"Not a time zone: {ask.time_zone}") from err
-    return StreamingResponse(plan_trip(ask), media_type="application/x-ndjson",
-                             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+    return StreamingResponse(
+        plan_trip(ask), media_type="application/x-ndjson", headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"}
+    )

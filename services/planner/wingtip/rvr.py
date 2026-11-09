@@ -21,6 +21,7 @@ Kept in wingtip.live_reports (kind "rvr"), a report a runway end, until
 RVR_FRESH_S after it was heard: a reading ten minutes old is not RVR now.
 What a reading means against a minimum is the engine's (rvr_check).
 """
+
 from __future__ import annotations
 
 import time
@@ -90,8 +91,14 @@ def heard(xml: str | bytes, now: float | None = None) -> int:
         return 0
     now = time.time() if now is None else now
     for end in ends:
-        live_reports.put(KIND, f"{live_reports.ident(airport)}:{end['runway']}", {"airport": airport, **end},
-                         place=airport, ends=now + RVR_FRESH_S, now=now)
+        live_reports.put(
+            KIND,
+            f"{live_reports.ident(airport)}:{end['runway']}",
+            {"airport": airport, **end},
+            place=airport,
+            ends=now + RVR_FRESH_S,
+            now=now,
+        )
     return len(ends)
 
 

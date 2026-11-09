@@ -1,5 +1,6 @@
 """wingtip.holds: a hold the pilot puts anywhere -- how it is written, the
 entry from the course flown to it, and the racetrack and time it takes."""
+
 import pytest
 from wingtip import holds
 
@@ -13,24 +14,27 @@ def test_a_hold_is_written_as_the_address_has_it():
     assert holds.parse("KMSN") is None
 
 
-@pytest.mark.parametrize("arrival, inbound, right, made", [
-    # Inbound 270 with right turns: the pattern north of the inbound leg,
-    # east of the fix. Flying the inbound course to it, direct.
-    (270, 270, True, "direct"),
-    # Northbound, from the side away from the pattern: a right turn of 90
-    # onto the outbound leg, direct.
-    (0, 270, True, "direct"),
-    # North-east, 135 right of inbound: out 30 into the holding side, a
-    # teardrop.
-    (45, 270, True, "teardrop"),
-    # Southbound, from the pattern's side: out along the inbound course on
-    # the other side, and back round to it, parallel.
-    (180, 270, True, "parallel"),
-    # Left turns, the mirror.
-    (180, 270, False, "direct"),
-    (0, 270, False, "parallel"),
-    (135, 270, False, "teardrop"),
-])
+@pytest.mark.parametrize(
+    "arrival, inbound, right, made",
+    [
+        # Inbound 270 with right turns: the pattern north of the inbound leg,
+        # east of the fix. Flying the inbound course to it, direct.
+        (270, 270, True, "direct"),
+        # Northbound, from the side away from the pattern: a right turn of 90
+        # onto the outbound leg, direct.
+        (0, 270, True, "direct"),
+        # North-east, 135 right of inbound: out 30 into the holding side, a
+        # teardrop.
+        (45, 270, True, "teardrop"),
+        # Southbound, from the pattern's side: out along the inbound course on
+        # the other side, and back round to it, parallel.
+        (180, 270, True, "parallel"),
+        # Left turns, the mirror.
+        (180, 270, False, "direct"),
+        (0, 270, False, "parallel"),
+        (135, 270, False, "teardrop"),
+    ],
+)
 def test_the_entry_is_the_one_aim_5_3_8_gives_for_the_course_flown_to_the_fix(arrival, inbound, right, made):
     assert holds.entry(arrival, inbound, right) == made
 

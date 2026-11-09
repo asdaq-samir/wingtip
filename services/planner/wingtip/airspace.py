@@ -23,6 +23,7 @@ Class-C-to-Class-C route left no legal altitude at all.
 Class E is excluded entirely: VFR overflight needs neither clearance nor
 a radio call, just cloud clearance and visibility minimums.
 """
+
 import pickle
 import struct
 import threading
@@ -103,11 +104,7 @@ def ensure_class_airspace_shapefile(cache_dir) -> Path:
         zip_url = find_download_link(cycle_page, r'href="([^"]*class_airspace_shape_files\.zip)"')
         download_and_extract(zip_url, cache_dir)
         if not _shapefile_is_complete(shp_path):
-            evicted = [
-                shp_path.with_suffix(x).name
-                for x in SHAPEFILE_SUFFIXES
-                if _is_icloud_evicted(shp_path.with_suffix(x))
-            ]
+            evicted = [shp_path.with_suffix(x).name for x in SHAPEFILE_SUFFIXES if _is_icloud_evicted(shp_path.with_suffix(x))]
             if evicted:
                 raise RuntimeError(
                     f"iCloud evicted {', '.join(evicted)} from {shp_path.parent} right after "
@@ -251,11 +248,16 @@ def _read_controlled_cache(shp_path: Path, key: tuple) -> list | None:
         return None
     return [
         {
-            "ident": p.get("ident", ""), "name": p["name"], "class": p["class"],
-            "floor_ft_msl": p["floor_ft_msl"], "ceiling_ft_msl": p.get("ceiling_ft_msl"),
+            "ident": p.get("ident", ""),
+            "name": p["name"],
+            "class": p["class"],
+            "floor_ft_msl": p["floor_ft_msl"],
+            "ceiling_ft_msl": p.get("ceiling_ft_msl"),
             "upper_desc": p.get("upper_desc"),
-            "hours_code": p.get("hours_code"), "hours_remark": p.get("hours_remark"),
-            "bbox": tuple(p["bbox"]), "geometry": from_wkb(p["wkb"]),
+            "hours_code": p.get("hours_code"),
+            "hours_remark": p.get("hours_remark"),
+            "bbox": tuple(p["bbox"]),
+            "geometry": from_wkb(p["wkb"]),
         }
         for p in cached["polygons"]
     ]
@@ -267,11 +269,16 @@ def _write_controlled_cache(shp_path: Path, key: tuple, polygons: list) -> None:
         "key": key,
         "polygons": [
             {
-                "ident": p.get("ident", ""), "name": p["name"], "class": p["class"],
-                "floor_ft_msl": p["floor_ft_msl"], "ceiling_ft_msl": p.get("ceiling_ft_msl"),
+                "ident": p.get("ident", ""),
+                "name": p["name"],
+                "class": p["class"],
+                "floor_ft_msl": p["floor_ft_msl"],
+                "ceiling_ft_msl": p.get("ceiling_ft_msl"),
                 "upper_desc": p.get("upper_desc"),
-                "hours_code": p.get("hours_code"), "hours_remark": p.get("hours_remark"),
-                "bbox": p["bbox"], "wkb": to_wkb(p["geometry"]),
+                "hours_code": p.get("hours_code"),
+                "hours_remark": p.get("hours_remark"),
+                "bbox": p["bbox"],
+                "wkb": to_wkb(p["geometry"]),
             }
             for p in polygons
         ],
@@ -331,11 +338,9 @@ def load_controlled_airspace(shp_path, bbox: tuple) -> list:
     """
     min_lat, min_lon, max_lat, max_lon = bbox
     return [
-        p for p in _load_all_controlled_airspace(shp_path)
-        if not (
-            p["bbox"][3] < min_lat or p["bbox"][1] > max_lat
-            or p["bbox"][2] < min_lon or p["bbox"][0] > max_lon
-        )
+        p
+        for p in _load_all_controlled_airspace(shp_path)
+        if not (p["bbox"][3] < min_lat or p["bbox"][1] > max_lat or p["bbox"][2] < min_lon or p["bbox"][0] > max_lon)
     ]
 
 
@@ -368,7 +373,8 @@ def surface_classes(points: list[tuple[float, float]], shp_path) -> list[str]:
             cls = reaching[j]["class"]
             found[i] = cls if found[i] is None else min(found[i], cls)
     surface_e = [
-        geometry for geometry, (min_lon, min_lat, max_lon, max_lat) in _load_surface_e(shp_path)
+        geometry
+        for geometry, (min_lon, min_lat, max_lon, max_lat) in _load_surface_e(shp_path)
         if not (max_lat < south or min_lat > north or max_lon < west or min_lon > east)
     ]
     in_e = set(STRtree(surface_e).query(where, predicate="within")[0].tolist()) if surface_e else set()
@@ -398,10 +404,7 @@ def own_class_b(polygons: list, start_point, end_point) -> set[str]:
     between them, only the surface area round O'Hare itself being left
     out. A field under a shelf, not in a surface area (Midway under
     Chicago's 3,000), is flown out of under it as before."""
-    return {
-        p["name"] for p in polygons
-        if p["class"] in CLEARANCE_CLASSES and is_own_surface_area(p, start_point, end_point)
-    }
+    return {p["name"] for p in polygons if p["class"] in CLEARANCE_CLASSES and is_own_surface_area(p, start_point, end_point)}
 
 
 def airspace_ceiling_profile(route_start: tuple, route_end: tuple, fixes: list, shp_path) -> list:
@@ -524,9 +527,16 @@ def detour_waypoints(route_start: tuple, route_end: tuple, shp_path, below_ft: f
     lats = [pt[0] for shelf in shelves for ring in shelf["rings"] for pt in ring]
     lons = [pt[1] for shelf in shelves for ring in shelf["rings"] for pt in ring]
     near = fixes.within(min(lats) - 1.0, min(lons) - 1.0, max(lats) + 1.0, max(lons) + 1.0)
-    ways = engine("class_b_detours", start=list(route_start), end=list(route_end), below_ft=below_ft, shelves=shelves,
-                  fixes=[{"ident": f["ident"], "lat": f["lat"], "lon": f["lon"], "vfr": bool(f.get("vfr")), "kind": f.get("kind") or ""}
-                         for f in near])
+    ways = engine(
+        "class_b_detours",
+        start=list(route_start),
+        end=list(route_end),
+        below_ft=below_ft,
+        shelves=shelves,
+        fixes=[
+            {"ident": f["ident"], "lat": f["lat"], "lon": f["lon"], "vfr": bool(f.get("vfr")), "kind": f.get("kind") or ""} for f in near
+        ],
+    )
     with _DETOURS_LOCK:
         _DETOURS[key] = ways
     return ways
@@ -542,8 +552,9 @@ def class_b_entered(route_start: tuple, route_end: tuple, shp_path, altitude_ft:
     start_point, end_point = Point(route_start[1], route_start[0]), Point(route_end[1], route_end[0])
     polygons = load_controlled_airspace(shp_path, corridor_bbox(route_start, route_end, buffer_nm=2.0))
     shelves = _shelves(polygons, own_class_b(polygons, start_point, end_point))
-    return bool(shelves) and engine("class_b_entered", start=list(route_start), end=list(route_end), altitude_ft=altitude_ft,
-                                    shelves=shelves)
+    return bool(shelves) and engine(
+        "class_b_entered", start=list(route_start), end=list(route_end), altitude_ft=altitude_ft, shelves=shelves
+    )
 
 
 def airspace_transits(route_start: tuple, route_end: tuple, shp_path, fixes: list | None = None) -> list:
@@ -586,13 +597,8 @@ def airspace_transits(route_start: tuple, route_end: tuple, shp_path, fixes: lis
                 "name": p["name"],
                 "class": p["class"],
                 "floor_ft_msl": p["floor_ft_msl"],
-                "requires": (
-                    "ATC clearance" if p["class"] in CLEARANCE_CLASSES
-                    else "two-way radio communication"
-                ),
-                "along_track_nm": round(
-                    along_track_distance_nm(centre.y, centre.x, route_start, route_end), 1
-                ),
+                "requires": ("ATC clearance" if p["class"] in CLEARANCE_CLASSES else "two-way radio communication"),
+                "along_track_nm": round(along_track_distance_nm(centre.y, centre.x, route_start, route_end), 1),
             }
         )
     # Deduplicated by name+class: a Bravo is filed as several shelf

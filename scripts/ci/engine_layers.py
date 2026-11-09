@@ -24,6 +24,7 @@ Cargo.toml files are read by a small parser for the sections they have.
 
   python3 scripts/ci/engine_layers.py
 """
+
 import re
 import sys
 from pathlib import Path
@@ -55,10 +56,7 @@ def table():
         elif uses == "all of them":
             rows[name.group(1)] = None
         else:
-            rows[name.group(1)] = {
-                re.sub(r"\s*\(.*\)$", "", u.strip()): "without its options" in u
-                for u in uses.split(",")
-            }
+            rows[name.group(1)] = {re.sub(r"\s*\(.*\)$", "", u.strip()): "without its options" in u for u in uses.split(",")}
     return rows
 
 
@@ -103,10 +101,12 @@ def main():
             if not dep.startswith("wingtip-"):
                 problems.append(f"{where}: {dep} is from outside the workspace (README: none has a dependency outside it)")
                 continue
-            built[dep[len("wingtip-"):]] = "default-features = false" in spec
+            built[dep[len("wingtip-") :]] = "default-features = false" in spec
         for dep in sorted(set(built) - set(wanted)):
-            problems.append(f"{where}: uses wingtip-{dep}, which engine/README.md's table does not give {name}: "
-                            f"a crate uses only the ones under it (move the code down, or change the table and why)")
+            problems.append(
+                f"{where}: uses wingtip-{dep}, which engine/README.md's table does not give {name}: "
+                f"a crate uses only the ones under it (move the code down, or change the table and why)"
+            )
         for dep in sorted(set(wanted) - set(built)):
             problems.append(f"{where}: the README's table says {name} uses {dep}, and Cargo.toml has no wingtip-{dep}")
         for dep in sorted(set(wanted) & set(built)):
@@ -116,8 +116,10 @@ def main():
     for binding in sorted((ENGINE / "bindings").glob("*/Cargo.toml")):
         for dep in dependencies(binding):
             if dep.startswith("wingtip-") and dep != "wingtip-engine":
-                problems.append(f"{binding.relative_to(ROOT).as_posix()}: uses {dep}; a binding reaches the engine "
-                                f"through the facade (wingtip-engine) alone")
+                problems.append(
+                    f"{binding.relative_to(ROOT).as_posix()}: uses {dep}; a binding reaches the engine "
+                    f"through the facade (wingtip-engine) alone"
+                )
     for p in problems:
         print(f"::error::{p}")
     if problems:

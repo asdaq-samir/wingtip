@@ -3,6 +3,7 @@ gazetteer places) and the engine's answer over them, whether a point is
 over a congested area or within 14 CFR 91.119(b)'s "horizontal radius of
 2,000 feet" of one -- here a town of a few streets drawn by hand. The
 rule's own cases are the engine's (apps/web/src/lib/fixtures/congested.json)."""
+
 import math
 
 import numpy as np
@@ -13,8 +14,8 @@ import shapely
 from wingtip import congested
 
 LAT, LON = 45.0, -90.0
-FT_LAT = 1 / congested.FT_PER_DEG_LAT                       # a foot, in degrees of latitude
-FT_LON = FT_LAT / math.cos(math.radians(LAT))               # and of longitude at 45 N
+FT_LAT = 1 / congested.FT_PER_DEG_LAT  # a foot, in degrees of latitude
+FT_LON = FT_LAT / math.cos(math.radians(LAT))  # and of longitude at 45 N
 # A town a mile on a side, its south-west corner at (LAT, LON).
 TOWN = shapely.box(LON, LAT, LON + 5280 * FT_LON, LAT + 5280 * FT_LAT)
 
@@ -128,8 +129,16 @@ def test_the_urban_areas_are_read_from_the_cycle_pack_made_of_their_download(mon
     drawn = congested._urban_areas()
     with shapefile.Writer(str(tmp_path / "empty"), shapeType=shapefile.POLYGON) as w:
         w.field("CLASS", "C")
-    cycle_pack.write(cycle_pack.PACK_DIR, "2026-10-29", shp_path=tmp_path / "empty.shp", sua_held=[], sua_at=0.0,
-                     urban=drawn, urban_path=archive, tables={})
+    cycle_pack.write(
+        cycle_pack.PACK_DIR,
+        "2026-10-29",
+        shp_path=tmp_path / "empty.shp",
+        sua_held=[],
+        sua_at=0.0,
+        urban=drawn,
+        urban_path=archive,
+        tables={},
+    )
     archive.with_suffix(".wkb.pkl").unlink()
     monkeypatch.setattr(shapefile, "Reader", None)  # nor the shapefile, nor its WKB beside it
     assert [a.wkt for a in congested._urban_areas()] == [a.wkt for a in drawn]

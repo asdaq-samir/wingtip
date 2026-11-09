@@ -18,6 +18,7 @@ What it puts together:
 - assets/: whatever is there (the icon and the screenshot, which
   scripts/build/app-icons.sh and the store framer write), copied as is.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -127,11 +128,7 @@ def legal_body(name: str) -> str:
 
 
 def page(layout: str, title: str, description: str, main: str) -> str:
-    return (
-        layout.replace("{{title}}", title)
-        .replace("{{description}}", description)
-        .replace("{{main}}", main)
-    )
+    return layout.replace("{{title}}", title).replace("{{description}}", description).replace("{{main}}", main)
 
 
 def build(out: Path) -> list[Path]:
@@ -162,8 +159,15 @@ def build(out: Path) -> list[Path]:
     )
     for name, title in LEGAL.items():
         write(f"{name}/index.html", page(layout, f"{title} · Wingtip Maps", title, legal_body(name)))
-    write("404.html", page(layout, "Not found · Wingtip Maps", "Not found",
-                           '<article class="prose"><h1>Not found</h1><p><a href="/">Wingtip Maps</a></p></article>'))
+    write(
+        "404.html",
+        page(
+            layout,
+            "Not found · Wingtip Maps",
+            "Not found",
+            '<article class="prose"><h1>Not found</h1><p><a href="/">Wingtip Maps</a></p></article>',
+        ),
+    )
     assets = SITE / "assets"
     if assets.is_dir():
         for src in sorted(assets.iterdir()):

@@ -13,6 +13,7 @@ while warping a tile (read_rgb, without_raster_rim); this calls back into wingti
 kinds and sheets, through the module rather than its names, so either
 can be imported first.
 """
+
 from __future__ import annotations
 
 import logging
@@ -78,9 +79,9 @@ _SNAP_TOLERANCE_DEG = 0.012
 class _Ink:
     crs: object
     transform: object
-    dark: np.ndarray    # pooled: any ink in the block
-    white: np.ndarray   # pooled: fraction of paper in the block
-    tint: np.ndarray    # pooled: fraction of neither
+    dark: np.ndarray  # pooled: any ink in the block
+    white: np.ndarray  # pooled: fraction of paper in the block
+    tint: np.ndarray  # pooled: fraction of neither
     # A sheet across the antimeridian is worked in unwrapped longitudes
     # (east of 180 counted on past it) and samples are wrapped back
     # before they are projected.
@@ -120,9 +121,9 @@ def _ink_maps(src) -> _Ink:
         is_dark = rgb.sum(axis=2) < _DARK_MAX_RGB_SUM
         is_white = rgb.min(axis=2) >= _WHITE_MIN_CHANNEL
         shape = ((r1 - r0) // pool, pool, cols, pool)
-        dark[r0 // pool:r1 // pool] = is_dark.reshape(shape).any(axis=(1, 3))
-        white[r0 // pool:r1 // pool] = is_white.reshape(shape).mean(axis=(1, 3))
-        tint[r0 // pool:r1 // pool] = (~is_dark & ~is_white).reshape(shape).mean(axis=(1, 3))
+        dark[r0 // pool : r1 // pool] = is_dark.reshape(shape).any(axis=(1, 3))
+        white[r0 // pool : r1 // pool] = is_white.reshape(shape).mean(axis=(1, 3))
+        tint[r0 // pool : r1 // pool] = (~is_dark & ~is_white).reshape(shape).mean(axis=(1, 3))
     return _Ink(crs=src.crs, transform=src.transform, dark=dark, white=white, tint=tint)
 
 
@@ -286,18 +287,26 @@ def _straight_face(ink: _Ink, crs, transform, mask_path: Path) -> Box:
     from rasterio.transform import Affine
 
     rows, cols = ink.dark.shape
-    col_continuity = ink.dark[int(rows * 0.2):int(rows * 0.8), :].mean(axis=0)
-    row_continuity = ink.dark[:, int(cols * 0.2):int(cols * 0.8)].mean(axis=1)
+    col_continuity = ink.dark[int(rows * 0.2) : int(rows * 0.8), :].mean(axis=0)
+    row_continuity = ink.dark[:, int(cols * 0.2) : int(cols * 0.8)].mean(axis=1)
     c0, c1 = _widest_gap(col_continuity)
     r0, r1 = _widest_gap(row_continuity)
 
-    r_lo, r_hi = r0, min(r1 + 1, rows)   # pooled rows [r_lo, r_hi): the chart and its ruling lines
+    r_lo, r_hi = r0, min(r1 + 1, rows)  # pooled rows [r_lo, r_hi): the chart and its ruling lines
     c_lo, c_hi = c0, min(c1 + 1, cols)
     inside = np.zeros((rows, cols), dtype=np.uint8)
     inside[r_lo:r_hi, c_lo:c_hi] = 255
     with rasterio.open(
-        mask_path, "w", driver="GTiff", width=cols, height=rows, count=1, dtype="uint8",
-        crs=crs, transform=transform @ Affine.scale(_POOL_PX), compress="deflate",
+        mask_path,
+        "w",
+        driver="GTiff",
+        width=cols,
+        height=rows,
+        count=1,
+        dtype="uint8",
+        crs=crs,
+        transform=transform @ Affine.scale(_POOL_PX),
+        compress="deflate",
     ) as out:
         out.write(inside, 1)
 
@@ -352,8 +361,7 @@ def detect_face(path: Path, kind: ChartKind) -> tuple[Box, Box, Path | None]:
     for i, edge in enumerate("wsen"):
         position, how = _find_edge(ink, envelope, res_m, edge)
         if position is None:
-            log.warning("%s: nothing chart-like near the %s edge; assuming a %.2f-degree collar",
-                        path.name, edge, collar[i])
+            log.warning("%s: nothing chart-like near the %s edge; assuming a %.2f-degree collar", path.name, edge, collar[i])
             face.append(fallback[edge])
             continue
         # By key, not identity: a ChartKind that crossed into a render
@@ -397,11 +405,11 @@ def detect_face(path: Path, kind: ChartKind) -> tuple[Box, Box, Path | None]:
 # ragged edges and no steady width. A sheet with no TAC and no inset
 # finds nothing.
 
-_BAND_BLOCK = 4              # searched at a quarter of the raster's resolution
-_BAND_RUN = 61               # blocks a band stays paper along (about 10 km)
-_BAND_SIDE = 14              # blocks either side of it that must be chart, not paper
-_BAND_MIN_BLOCKS = 100       # blocks (about 17 km) a band runs at the least
-_BAND_BRIDGE = 41            # blocks of lettering or crossing linework a band is joined across
+_BAND_BLOCK = 4  # searched at a quarter of the raster's resolution
+_BAND_RUN = 61  # blocks a band stays paper along (about 10 km)
+_BAND_SIDE = 14  # blocks either side of it that must be chart, not paper
+_BAND_MIN_BLOCKS = 100  # blocks (about 17 km) a band runs at the least
+_BAND_BRIDGE = 41  # blocks of lettering or crossing linework a band is joined across
 _BAND_PAPER_IN, _BAND_PAPER_OUT = 0.55, 0.25
 # Measured across every this many pixels, a band is a strip of paper
 # of steady width, whose edges lie on smooth lines for most of its
@@ -409,11 +417,11 @@ _BAND_PAPER_IN, _BAND_PAPER_OUT = 0.55, 0.25
 # pixels round a TAC, 100 round the Alaska insets); a label box is as
 # wide as that but only a few times longer, with a border inside it.
 _BAND_STEP_PX = 24
-_BAND_CHART_RUN_PX = 10   # not-paper this long across is the chart resuming, not a line over the band
+_BAND_CHART_RUN_PX = 10  # not-paper this long across is the chart resuming, not a line over the band
 _BAND_WIDTH_PX = (18, 120)
 _BAND_WIDTH_SPREAD_PX = 4
 _BAND_MIN_ON_EDGE = 0.3
-_BAND_MAX_EDGE_WOBBLE_PX = 2.5   # the scan's pale edge colours jitter it a pixel or two
+_BAND_MAX_EDGE_WOBBLE_PX = 2.5  # the scan's pale edge colours jitter it a pixel or two
 _BAND_MIN_PAPER = 0.4
 _BAND_BOX_ASPECT = 10
 _BAND_BOX_BORDERED = 0.25
@@ -423,7 +431,7 @@ _BAND_MIN_SECTION_SHARE = 0.3
 # side of a box whose other three are, the rest of a side a crossing
 # broke -- has that for evidence, and is measured again more loosely:
 # busy stretches of chart leave fewer clean cuts across a band.
-_BAND_NEIGHBOUR_BLOCKS = 30   # past the corner square of the widest bands (100 px, round the Alaska insets)
+_BAND_NEIGHBOUR_BLOCKS = 30  # past the corner square of the widest bands (100 px, round the Alaska insets)
 _BAND_LOOSE = {"wobble": 5.0, "on_edge": 0.15, "spread": 12, "paper": 0.3}
 # ... and, beside a band, a run need only be this much paper to be
 # looked at at all: where a band crosses a town, the lettering, the
@@ -468,8 +476,7 @@ def _light(lut: np.ndarray, paper_lut: np.ndarray) -> np.ndarray:
     return ~paper_lut & (lut.astype(int).sum(axis=1) >= _BAND_LIGHT_MIN_SUM)
 
 
-def _background(window: np.ndarray, band: np.ndarray, around: np.ndarray, paper_lut: np.ndarray,
-                light_lut: np.ndarray) -> np.ndarray:
+def _background(window: np.ndarray, band: np.ndarray, around: np.ndarray, paper_lut: np.ndarray, light_lut: np.ndarray) -> np.ndarray:
     """Which pixels of `band` are the band's own background: paper, or a
     light colour the chart `around` it hardly has (see _BAND_UNSEEN_SHARE)."""
     values, counts = np.unique(window[around], return_counts=True)
@@ -523,8 +530,7 @@ def _faces_in_blocks(crs, transform, faces, shape: tuple) -> np.ndarray:
     return rasterize(shapes, out_shape=shape, transform=block).astype(bool)
 
 
-def _band_candidates(paper: np.ndarray, inside: np.ndarray, paper_in: float = _BAND_PAPER_IN,
-                     min_blocks: int = _BAND_MIN_BLOCKS) -> list:
+def _band_candidates(paper: np.ndarray, inside: np.ndarray, paper_in: float = _BAND_PAPER_IN, min_blocks: int = _BAND_MIN_BLOCKS) -> list:
     """(axis, mask, span) for each straight run of paper with chart
     either side, in search blocks: axis 0 runs down the raster, 1
     across it; `mask` is the run within `span`. `paper_in` is how much
@@ -543,7 +549,9 @@ def _band_candidates(paper: np.ndarray, inside: np.ndarray, paper_in: float = _B
             (along >= paper_in)
             & (_shifted(along, _BAND_SIDE, across, 1.0) <= _BAND_PAPER_OUT)
             & (_shifted(along, -_BAND_SIDE, across, 1.0) <= _BAND_PAPER_OUT)
-            & inside & _shifted(inside, _BAND_SIDE, across, False) & _shifted(inside, -_BAND_SIDE, across, False)
+            & inside
+            & _shifted(inside, _BAND_SIDE, across, False)
+            & _shifted(inside, -_BAND_SIDE, across, False)
             # a band, not a line: paper for several blocks across it too
             & (ndi.uniform_filter1d(along, 5, axis=across) >= 0.8 * paper_in)
         )
@@ -556,8 +564,9 @@ def _band_candidates(paper: np.ndarray, inside: np.ndarray, paper_in: float = _B
     return found
 
 
-def _measure_band(data: np.ndarray, paper_lut: np.ndarray, tint_lut: np.ndarray, axis: int, mask: np.ndarray,
-                  span: tuple, loose: bool = False) -> tuple | None:
+def _measure_band(
+    data: np.ndarray, paper_lut: np.ndarray, tint_lut: np.ndarray, axis: int, mask: np.ndarray, span: tuple, loose: bool = False
+) -> tuple | None:
     """A candidate measured at full resolution: (axis, first, last, left
     edge, right edge) -- the run along the raster it covers and its two
     edges as quadratics in the position along it -- when it measures as
@@ -585,8 +594,9 @@ def _measure_band(data: np.ndarray, paper_lut: np.ndarray, tint_lut: np.ndarray,
     b = _BAND_BLOCK
     grid = data if axis == 0 else data.T
     mask = mask if axis == 0 else mask.T
-    (along0, along1), across0 = ((span[0].start, span[0].stop), span[1].start) if axis == 0 else \
-        ((span[1].start, span[1].stop), span[0].start)
+    (along0, along1), across0 = (
+        ((span[0].start, span[0].stop), span[1].start) if axis == 0 else ((span[1].start, span[1].stop), span[0].start)
+    )
     half = 2 * _BAND_SIDE * b
     linework = ~paper_lut & ~tint_lut
     sections, found = 0, []
@@ -597,7 +607,7 @@ def _measure_band(data: np.ndarray, paper_lut: np.ndarray, tint_lut: np.ndarray,
         sections += 1
         centre = int((across0 + blocks.mean()) * b + b // 2)
         lo = max(centre - half, 0)
-        row = grid[pos, lo:min(centre + half, grid.shape[1])]
+        row = grid[pos, lo : min(centre + half, grid.shape[1])]
         on = paper_lut[row]
         c = centre - lo
         start = next((c + d for d in (0, -1, 1, -2, 2, -3, 3) if 0 <= c + d < len(on) and on[c + d]), None)
@@ -616,8 +626,8 @@ def _measure_band(data: np.ndarray, paper_lut: np.ndarray, tint_lut: np.ndarray,
         left, right = edges
         if left is None or right is None:
             continue  # paper as far as the section reaches: not a band
-        bordered = bool(linework[row[max(left - 2, 0):left]].any() and linework[row[right + 1:right + 3]].any())
-        found.append((pos, lo + left, lo + right, float(on[left:right + 1].mean()), bordered))
+        bordered = bool(linework[row[max(left - 2, 0) : left]].any() and linework[row[right + 1 : right + 3]].any())
+        found.append((pos, lo + left, lo + right, float(on[left : right + 1].mean()), bordered))
     if len(found) < max(_BAND_MIN_SECTIONS, _BAND_MIN_SECTION_SHARE * sections):
         return None
     pos, left, right, paper, bordered = (np.array(v) for v in zip(*found))
@@ -674,7 +684,7 @@ def _extend_band(data: np.ndarray, paper_lut: np.ndarray, light_lut: np.ndarray,
         found = edges(pos)
         if found:
             lo, hi = found
-            beside += [grid[pos, max(lo - 60, 0):max(lo - 8, 0)], grid[pos, hi + 8:hi + 60]]
+            beside += [grid[pos, max(lo - 60, 0) : max(lo - 8, 0)], grid[pos, hi + 8 : hi + 60]]
     values, counts = np.unique(np.concatenate(beside), return_counts=True) if beside else ((), ())
     seen = np.zeros(256, bool)
     if len(values):
@@ -689,7 +699,7 @@ def _extend_band(data: np.ndarray, paper_lut: np.ndarray, light_lut: np.ndarray,
             found = edges(pos)
             if found is None:
                 break
-            if background[grid[pos, found[0]:found[1]]].mean() >= _BAND_EXTEND_PAPER:
+            if background[grid[pos, found[0] : found[1]]].mean() >= _BAND_EXTEND_PAPER:
                 end, misses = pos, 0
             else:
                 misses += 1
@@ -708,7 +718,7 @@ def _band_region(shape: tuple, band: tuple) -> tuple:
     reach = int(width) + 8
     along = np.arange(max(first - reach, 0), min(last + _BAND_STEP_PX + reach, along_size))
     lo = np.clip(np.floor(np.polyval(left_fit, along)).astype(int) - 2, 0, across_size)
-    hi = np.clip(np.ceil(np.polyval(right_fit, along)).astype(int) + 3, 0, across_size)   # exclusive
+    hi = np.clip(np.ceil(np.polyval(right_fit, along)).astype(int) + 3, 0, across_size)  # exclusive
     counts = np.maximum(hi - lo, 0)
     along_idx = np.repeat(along, counts)
     across_idx = np.concatenate([np.arange(a, b) for a, b in zip(lo, hi)]) if counts.sum() else np.array([], int)
@@ -736,7 +746,7 @@ def _fill_bands(data: np.ndarray, region: np.ndarray, paper_lut: np.ndarray, lig
             window = data[top:bottom, left:right]
             near = region[top:bottom, left:right]
             core = np.zeros_like(near)
-            core[r0 - top:r1 - top, c0 - left:c1 - left] = True
+            core[r0 - top : r1 - top, c0 - left : c1 - left] = True
             target = _background(window, near & core, ~near, paper_lut, light_lut)
             if not target.any():
                 continue
@@ -803,7 +813,7 @@ def find_masked_lines(data: np.ndarray, lut: np.ndarray, crs, transform, faces: 
         return None
     waiting = _band_candidates(paper, inside, paper_in=_BAND_PAPER_IN_NEAR, min_blocks=_BAND_MIN_BLOCKS_NEAR)
     while waiting:
-        near = ndi.binary_dilation(region[::b, ::b] | anchors, iterations=_BAND_NEIGHBOUR_BLOCKS)[:paper.shape[0], :paper.shape[1]]
+        near = ndi.binary_dilation(region[::b, ::b] | anchors, iterations=_BAND_NEIGHBOUR_BLOCKS)[: paper.shape[0], : paper.shape[1]]
         still, found = [], False
         for axis, mask, span in waiting:
             band = None
@@ -821,7 +831,7 @@ def find_masked_lines(data: np.ndarray, lut: np.ndarray, crs, transform, faces: 
         return None
     # Only inside the face: the collar beyond it is never drawn, and is
     # left as printed.
-    region &= np.repeat(np.repeat(inside, b, axis=0), b, axis=1)[:data.shape[0], :data.shape[1]]
+    region &= np.repeat(np.repeat(inside, b, axis=0), b, axis=1)[: data.shape[0], : data.shape[1]]
     return region
 
 
@@ -864,10 +874,10 @@ def remove_masked_lines(path: Path, faces: list, known: tuple = ()) -> tuple:
         boxes.append(tuple(float(v) for v in transform_bounds(crs, "EPSG:4326", x0, y0, x1, y1, densify_pts=21)))
 
     if not profile.get("tiled"):
-        profile.pop("blockxsize", None)   # a striped file's strips are whole rows; GDAL only warns about it
+        profile.pop("blockxsize", None)  # a striped file's strips are whole rows; GDAL only warns about it
     tmp = path.with_name(f"{path.name}.{os.getpid()}.part")
     with rasterio.open(tmp, "w", **profile) as dst:
-        dst.write_colormap(1, colormap)   # first: GDAL cannot make it a palette image once pixels are written
+        dst.write_colormap(1, colormap)  # first: GDAL cannot make it a palette image once pixels are written
         dst.write(data, 1)
         dst.update_tags(**tags)
         dst.update_tags(1, **band_tags)

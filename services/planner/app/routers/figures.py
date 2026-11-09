@@ -5,6 +5,7 @@ diversion drill, a hold's entry and wind, and lost communications'
 altitudes. The web app works them out with the same engine, in the
 browser (lib/debrief, lib/diversion, lib/holdEntry, lib/lostComms, through
 its WebAssembly)."""
+
 import logging
 from datetime import datetime
 from typing import Annotated, Literal
@@ -40,7 +41,7 @@ def _pattern_altitudes(idents: list[str]) -> dict[str, float]:
             if place is None:
                 continue
             altitude = pattern.pattern_at(place["ident"], place["elevation_ft"])["altitude_ft"]
-        except Exception:   # noqa: BLE001 -- one field's data missing leaves that field ungraded, not the debrief
+        except Exception:  # noqa: BLE001 -- one field's data missing leaves that field ungraded, not the debrief
             log.exception("pattern altitude for %s", ident)
             continue
         if altitude is not None:
@@ -99,14 +100,32 @@ def diversion(
         raise HTTPException(503, "The winds aloft could not be fetched for the diversion.") from err
     # The solution, its steps and the estimates checked, all in the
     # engine's words (wingtip_engine::figures::diversion).
-    worked = engine("diversion", true_course_deg=leg["true_course_deg"], distance_nm=leg["distance_nm"], tas_kt=leg["tas_kt"],
-                    fuel_burn_gph=leg["fuel_burn_gph"], magnetic_variation_deg=leg["magnetic_variation_deg"], wind=leg["wind"],
-                    to=place["ident"], mh=mh, gs=gs, ete=ete, fuel=fuel)
+    worked = engine(
+        "diversion",
+        true_course_deg=leg["true_course_deg"],
+        distance_nm=leg["distance_nm"],
+        tas_kt=leg["tas_kt"],
+        fuel_burn_gph=leg["fuel_burn_gph"],
+        magnetic_variation_deg=leg["magnetic_variation_deg"],
+        wind=leg["wind"],
+        to=place["ident"],
+        mh=mh,
+        gs=gs,
+        ete=ete,
+        fuel=fuel,
+    )
     return Diversion(
-        to=place["ident"], name=place.get("name") or place["ident"], altitude_ft=altitude_ft,
-        tas_kt=leg["tas_kt"], fuel_burn_gph=leg["fuel_burn_gph"], magnetic_variation_deg=leg["magnetic_variation_deg"],
+        to=place["ident"],
+        name=place.get("name") or place["ident"],
+        altitude_ft=altitude_ft,
+        tas_kt=leg["tas_kt"],
+        fuel_burn_gph=leg["fuel_burn_gph"],
+        magnetic_variation_deg=leg["magnetic_variation_deg"],
         wind=leg["wind"] and {"wind_dir_true_deg": leg["wind"]["wind_dir_true_deg"], "wind_speed_kt": leg["wind"]["wind_speed_kt"]},
-        solved=worked["solved"], steps=worked["steps"], problem=worked["problem"], checks=worked["checks"],
+        solved=worked["solved"],
+        steps=worked["steps"],
+        problem=worked["problem"],
+        checks=worked["checks"],
     )
 
 
@@ -128,8 +147,18 @@ def holding(
     reference, magnetic as a clearance gives it) and the altitude, the
     inbound and outbound headings and the outbound time that make the
     inbound leg a minute (a minute and a half above 14,000 ft MSL)."""
-    return Holding.model_validate(engine("holding", inbound=inbound, heading=heading, turns=turns, tas_kt=tas_kt,
-                                         wind_from=wind_from, wind_kt=wind_kt, altitude_ft=altitude_ft))
+    return Holding.model_validate(
+        engine(
+            "holding",
+            inbound=inbound,
+            heading=heading,
+            turns=turns,
+            tas_kt=tas_kt,
+            wind_from=wind_from,
+            wind_kt=wind_kt,
+            altitude_ft=altitude_ft,
+        )
+    )
 
 
 @router.post("/api/lost-comms", openapi_extra=PUBLIC_READ_BY_POST)
@@ -141,6 +170,15 @@ def lost_comms(ask: LostCommsAsk) -> LostComms:
     to leave the clearance limit. A POST for the segments' list; it
     changes nothing."""
     segments = [{"name": s.name or "Segment", "minimum_ft": s.minimum_ft} for s in ask.segments]
-    return LostComms.model_validate(engine(
-        "lost_comms", segments=segments, assigned_ft=ask.assigned_ft, expected_ft=ask.expected_ft, expected_from=ask.expected_from,
-        approach_fix=ask.approach_fix, efc=ask.efc.strip(), eta=ask.eta.strip()))
+    return LostComms.model_validate(
+        engine(
+            "lost_comms",
+            segments=segments,
+            assigned_ft=ask.assigned_ft,
+            expected_ft=ask.expected_ft,
+            expected_from=ask.expected_from,
+            approach_fix=ask.approach_fix,
+            efc=ask.efc.strip(),
+            eta=ask.eta.strip(),
+        )
+    )

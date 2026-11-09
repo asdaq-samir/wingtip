@@ -12,6 +12,7 @@ ECMWF's eccodes 2.49. NOMADS is stubbed. Moved from the planner's tests
 - cig_rows: 100 to 1,200 m, west to east and south to north.
 - vis_10sm: every point 16,128 m, GLMP's most (10 sm).
 """
+
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -47,9 +48,7 @@ def nomads(monkeypatch):
     grids in `grids`; the URLs asked for, in `asked`."""
     monkeypatch.setattr(glmp, "_NOT_UP", {})
     monkeypatch.setattr(planner_glmp, "_HELD", {})
-    state = {"up": {"21"}, "asked": [], "grids": {
-        "cig": _grib("cig_1500ft"), "vis": _grib("vis_10sm"),
-    }}
+    state = {"up": {"21"}, "asked": [], "grids": {"cig": _grib("cig_1500ft"), "vis": _grib("vis_10sm")}}
 
     class Answer:
         def __init__(self, status, content=b""):
@@ -121,9 +120,9 @@ def test_with_nomads_down_the_issue_stored_is_served_while_it_is_one_of_the_last
     """A momentary loss of NOMADS used to leave a field with no modelled
     weather as soon as a newer issue was due; the stored one is served on,
     its valid time said, until it is as old as a late issue may be."""
-    glmp.fetch_latest(NOW)                                  # the 21:30 issue, stored
+    glmp.fetch_latest(NOW)  # the 21:30 issue, stored
     nomads["down"] = True
-    later = NOW.replace(hour=23)                            # 23:40: the 23:30 issue is due
+    later = NOW.replace(hour=23)  # 23:40: the 23:30 issue is due
     with pytest.raises(glmp.GlmpUnavailable):
         glmp.fetch_latest(later)
     assert planner_glmp.at(*_point(1, 1), now=later)["valid_at"] == "2026-10-10T21:00:00Z"
@@ -132,9 +131,9 @@ def test_with_nomads_down_the_issue_stored_is_served_while_it_is_one_of_the_last
 
 
 def test_an_older_issues_grids_are_removed_once_a_newer_one_is_stored(nomads):
-    glmp.fetch_latest(NOW.replace(hour=21, minute=40))     # the 21:30 issue
+    glmp.fetch_latest(NOW.replace(hour=21, minute=40))  # the 21:30 issue
     nomads["up"] = {"22", "21", "20", "19"}
-    glmp.fetch_latest(NOW.replace(hour=23, minute=40))     # the 22:30 one (23:30 not up): 21:30's kept beside it
+    glmp.fetch_latest(NOW.replace(hour=23, minute=40))  # the 22:30 one (23:30 not up): 21:30's kept beside it
     nomads["up"].add("23")
     glmp.fetch_latest(NOW.replace(hour=23, minute=50))
     kept = sorted(p.stem for p in weather_store.store_dir().glob("glmp-*.npy"))

@@ -2,6 +2,7 @@
 Change Notice 26-47): each forecast hour stored for use only in its own
 window, at the FB's old stations. Moved from the planner's tests of
 wingtip.modelwinds (#535); NOMADS is stubbed."""
+
 from datetime import datetime, timedelta, timezone
 
 import numpy as np
@@ -23,8 +24,11 @@ def test_each_period_has_tbl_9_3_1s_window_round_its_forecast_hour():
     # 1400-2100Z, the 12-hour valid 0000Z 2100-0600Z, the 24-hour valid
     # 1200Z 0600-1800Z.
     assert gfs.period_of(RUN, 6, "06") == {
-        "valid_at": "2026-11-07T18:00:00Z", "use_from": "2026-11-07T14:00:00Z", "use_to": "2026-11-07T21:00:00Z",
-        "run": "2026-11-07T12:00:00Z", "forecast_hour": 6,
+        "valid_at": "2026-11-07T18:00:00Z",
+        "use_from": "2026-11-07T14:00:00Z",
+        "use_to": "2026-11-07T21:00:00Z",
+        "run": "2026-11-07T12:00:00Z",
+        "forecast_hour": 6,
     }
     twelve = gfs.period_of(RUN, 12, "12")
     assert (twelve["use_from"], twelve["use_to"]) == ("2026-11-07T21:00:00Z", "2026-11-08T06:00:00Z")
@@ -59,8 +63,7 @@ def _fields(u: float, v: float, temp_k: float) -> dict:
     lats = np.arange(55, 19.75, -0.25)
     lons = np.arange(230, 300.25, 0.25)
     shape = (len(lats), len(lons))
-    heights = {925: 760.0, 850: 1457.0, 700: 3012.0, 600: 4206.0, 500: 5574.0, 400: 7185.0, 300: 9164.0,
-               250: 10363.0, 200: 11784.0}
+    heights = {925: 760.0, 850: 1457.0, 700: 3012.0, 600: 4206.0, 500: 5574.0, 400: 7185.0, 300: 9164.0, 250: 10363.0, 200: 11784.0}
     fields = {}
     for hpa in gfs.LEVELS_HPA:
         fields[("HGT", hpa)] = (lats, lons, np.full(shape, heights[hpa], dtype=np.float32))

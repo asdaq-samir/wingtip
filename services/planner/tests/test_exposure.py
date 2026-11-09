@@ -1,6 +1,7 @@
 """Where and when the flight meets each hazard (app.exposure): the legs,
 the times from the nav log's ETAs, and the hazard's valid window against
 them, on both sides of its edges."""
+
 from datetime import datetime, timezone
 
 import pytest
@@ -90,8 +91,15 @@ def test_a_hazard_with_no_valid_times_has_no_when():
 
 
 def test_a_sigmet_is_told_with_its_place_source_and_times():
-    hazard = {"hazard": "CONVECTIVE", "type": "SIGMET", "raw": "CONVECTIVE SIGMET 45C", "issued": "2026-10-04T13:55:00Z",
-              "valid_from": at(-5), "valid_to": at(10), "coords": [(42.4, -88.5), (42.4, -87.5), (42.6, -87.5), (42.6, -88.5)]}
+    hazard = {
+        "hazard": "CONVECTIVE",
+        "type": "SIGMET",
+        "raw": "CONVECTIVE SIGMET 45C",
+        "issued": "2026-10-04T13:55:00Z",
+        "valid_from": at(-5),
+        "valid_to": at(10),
+        "coords": [(42.4, -88.5), (42.4, -87.5), (42.6, -87.5), (42.6, -88.5)],
+    }
     told = exposure.sigmets(legs(), [hazard])[0]
     assert "coords" not in told and "valid_from" not in told
     on = told["on_route"]
@@ -105,8 +113,10 @@ def test_each_g_airmet_is_the_snapshot_nearest_when_the_airplane_is_in_it():
     """Icing at 12Z, 15Z and 18Z over the second leg, flown 14:30-15:00:
     the 15Z snapshot, not the 12Z one nearest the departure."""
     square = [(43.2, -88.5), (43.2, -87.5), (43.8, -87.5), (43.8, -88.5)]
-    snaps = [{"hazard": "Icing", "valid_at": f"2026-10-04T{h}:00:00Z", "valid": at((int(h) - 14) * 60), "coords": square}
-             for h in ("12", "15", "18")]
+    snaps = [
+        {"hazard": "Icing", "valid_at": f"2026-10-04T{h}:00:00Z", "valid": at((int(h) - 14) * 60), "coords": square}
+        for h in ("12", "15", "18")
+    ]
     told = exposure.gairmets(legs(), snaps, ["Icing"])
     assert [g["valid_at"] for g in told] == ["2026-10-04T15:00:00Z"]
     on = told[0]["on_route"]
@@ -142,10 +152,14 @@ def test_the_fields_below_vfr_are_met_where_the_flight_is_there():
     forecast VFR then is not said."""
     from wingtip.weather import below_vfr_minimums
 
-    metars = {"KAAA": {"flight_category": "VFR"}, "KCCC": {"flight_category": "IFR", "ceiling_ft": 700.0, "visibility_sm": 2.0,
-                                                          "observed_at": "2026-10-04T13:53:00Z"}}
-    stations = [{"icaoId": "KBBB", "lat": 42.5, "lon": -88.0, "eta_ceiling_ft": 800.0, "eta_visibility_sm": 6.0},
-                {"icaoId": "KDDD", "lat": 43.5, "lon": -88.0, "eta_ceiling_ft": 4000.0, "eta_visibility_sm": 6.0}]
+    metars = {
+        "KAAA": {"flight_category": "VFR"},
+        "KCCC": {"flight_category": "IFR", "ceiling_ft": 700.0, "visibility_sm": 2.0, "observed_at": "2026-10-04T13:53:00Z"},
+    }
+    stations = [
+        {"icaoId": "KBBB", "lat": 42.5, "lon": -88.0, "eta_ceiling_ft": 800.0, "eta_visibility_sm": 6.0},
+        {"icaoId": "KDDD", "lat": 43.5, "lon": -88.0, "eta_ceiling_ft": 4000.0, "eta_visibility_sm": 6.0},
+    ]
     where = {"KAAA": FIXES[0], "KCCC": FIXES[-1]}
     found = exposure.fields_below_vfr(legs(), ["KAAA", "KCCC"], "KCCC", where, metars, stations, below_vfr_minimums)
     assert [(f["ident"], f["source"], f["on_route"]["legs"]) for f in found] == [("KBBB", "TAF", [0]), ("KCCC", "METAR", [1])]
@@ -159,16 +173,21 @@ def test_the_maps_layers_say_when_their_data_was_fetched(monkeypatch):
     from app.main import app
 
     monkeypatch.setattr(weather, "dataset_status", lambda: {"metars": T0, "tafs": None})
-    monkeypatch.setattr(weather, "sources_status", lambda: [
-        {"name": "METARs", "fetched_at": T0, "kept_until": None, "failing": False},
-        {"name": "TAFs", "fetched_at": None, "kept_until": None, "failing": True},
-    ])
+    monkeypatch.setattr(
+        weather,
+        "sources_status",
+        lambda: [
+            {"name": "METARs", "fetched_at": T0, "kept_until": None, "failing": False},
+            {"name": "TAFs", "fetched_at": None, "kept_until": None, "failing": True},
+        ],
+    )
     monkeypatch.setattr(tfr, "fetched_at", lambda: None)
     monkeypatch.setattr(tfr, "failing", lambda: False)
     monkeypatch.setattr(data_cycles, "held", lambda: [])
     # And each source kept through an outage, for the pilot's Status page.
     assert TestClient(app).get("/api/map/ages").json() == {
-        "metars_at": "2026-10-04T14:00:00Z", "tfrs_at": None,
+        "metars_at": "2026-10-04T14:00:00Z",
+        "tfrs_at": None,
         "sources": [
             {"name": "METARs", "fetched_at": "2026-10-04T14:00:00Z", "kept_until": None, "failing": False},
             {"name": "TAFs", "fetched_at": None, "kept_until": None, "failing": True},
@@ -196,9 +215,17 @@ def test_the_maps_ages_say_which_faa_data_is_past_its_cycle(monkeypatch):
     ]
     monkeypatch.setattr(data_cycles, "held", lambda: entries)
     got = TestClient(app).get("/api/map/ages").json()["data_cycles"]
-    assert got[0] == {"key": "nasr", "name": "Airports, frequencies and navaids", "kind": "airac", "edition": "2026-10-01",
-                      "effective": "2026-10-01", "expires": "2026-10-29", "current": "2026-10-29", "state": "expired",
-                      "behind": 1}
+    assert got[0] == {
+        "key": "nasr",
+        "name": "Airports, frequencies and navaids",
+        "kind": "airac",
+        "edition": "2026-10-01",
+        "effective": "2026-10-01",
+        "expires": "2026-10-29",
+        "current": "2026-10-29",
+        "state": "expired",
+        "behind": 1,
+    }
     assert got[1]["state"] == "in_force" and got[1]["expires"] == "2026-12-24"
 
 
@@ -212,20 +239,47 @@ def test_the_briefing_places_its_hazards_on_the_nav_logs_legs(monkeypatch):
     from app.main import app
 
     monkeypatch.setattr(weather, "hazards_along_route", lambda start, end: [])
-    monkeypatch.setattr(weather, "ceiling_visibility_along_route", lambda start, end, window=None: (
-        {"min_ceiling_ft": None, "min_visibility_sm": None, "stations": []}))
+    monkeypatch.setattr(
+        weather,
+        "ceiling_visibility_along_route",
+        lambda start, end, window=None: ({"min_ceiling_ft": None, "min_visibility_sm": None, "stations": []}),
+    )
     monkeypatch.setattr(weather, "metar_for_idents", lambda idents: {ident: None for ident in idents})
     monkeypatch.setattr(airports, "get_runways", lambda ident: [])
     monkeypatch.setattr(airports, "get_frequencies", lambda ident: [])
     ring = [[-88.5, 43.4], [-87.5, 43.4], [-87.5, 43.6], [-88.5, 43.6], [-88.5, 43.4]]
-    monkeypatch.setattr(tfr, "along_route", lambda path, start, end: [{
-        "notam_id": "6/6664", "effective": "2026-10-04T15:00:00Z", "expires": "2026-10-04T17:00:00Z",
-        "along_track_nm": 100.0, "crosses": True, "active_now": False,
-        "geometry": {"type": "MultiPolygon", "coordinates": [[ring]]}}])
+    monkeypatch.setattr(
+        tfr,
+        "along_route",
+        lambda path, start, end: [
+            {
+                "notam_id": "6/6664",
+                "effective": "2026-10-04T15:00:00Z",
+                "expires": "2026-10-04T17:00:00Z",
+                "along_track_nm": 100.0,
+                "crosses": True,
+                "active_now": False,
+                "geometry": {"type": "MultiPolygon", "coordinates": [[ring]]},
+            }
+        ],
+    )
 
-    body = TestClient(app).get("/api/briefing", params={
-        "dep": "C81", "dest": "KDLH", "depart": "2026-10-04T14:00:00Z", "ete_min": 60,
-        "fixes": ";".join(f"{lat},{lon}" for lat, lon in FIXES), "leg_min": "30,30", "ground_min": "0,0"}).json()
+    body = (
+        TestClient(app)
+        .get(
+            "/api/briefing",
+            params={
+                "dep": "C81",
+                "dest": "KDLH",
+                "depart": "2026-10-04T14:00:00Z",
+                "ete_min": 60,
+                "fixes": ";".join(f"{lat},{lon}" for lat, lon in FIXES),
+                "leg_min": "30,30",
+                "ground_min": "0,0",
+            },
+        )
+        .json()
+    )
 
     assert body["legs_from"] == "navlog" and [(p["lat"], p["lon"]) for p in body["leg_fixes"]] == FIXES
     on = body["tfrs"][0]["on_route"]

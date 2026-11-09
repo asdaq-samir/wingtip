@@ -16,6 +16,7 @@ The airport diagram is drawn as a picture too (`airport_diagram_png`), for
 the card to show it in the app rather than send the pilot to a PDF: the
 cycle's PDF read once and rendered once, kept on disk for the cycle.
 """
+
 from __future__ import annotations
 
 import io
@@ -83,7 +84,8 @@ def _charts_of(xml_bytes: bytes) -> dict:
     for airport in ET.fromstring(xml_bytes).iter("airport_name"):
         charts = [
             [record.findtext("chart_code") or "", record.findtext("chart_name") or "", record.findtext("pdf_name")]
-            for record in airport.iter("record") if record.findtext("pdf_name")
+            for record in airport.iter("record")
+            if record.findtext("pdf_name")
         ]
         for ident in (airport.get("apt_ident"), airport.get("icao_ident")):
             if ident and charts:
@@ -251,8 +253,8 @@ def _source_of(url: str, on: date | None = None) -> tuple | None:
     the planner reads the FAA's charts and nothing it is pointed at."""
     for source, base, edition in (("dtpp", DTPP_BASE, dtpp_cycle(on)), ("dcs", DCS_BASE, dcs_edition(on))):
         prefix = f"{base}/{edition}/"
-        if url.startswith(prefix) and _PDF_NAME.match(url[len(prefix):]):
-            return source, edition, url[len(prefix):]
+        if url.startswith(prefix) and _PDF_NAME.match(url[len(prefix) :]):
+            return source, edition, url[len(prefix) :]
     return None
 
 
@@ -332,8 +334,16 @@ def _pages_of(source: str, edition: str, pdf: str, ident: str | None) -> tuple |
                 page = document[i]
                 if booklet and (needle is None or needle not in page.get_textpage().get_text_bounded()):
                     continue
-                pages.append({"source": source, "edition": edition, "pdf": pdf, "page": i + 1,
-                              "width": round(page.get_width() * DIAGRAM_SCALE), "height": round(page.get_height() * DIAGRAM_SCALE)})
+                pages.append(
+                    {
+                        "source": source,
+                        "edition": edition,
+                        "pdf": pdf,
+                        "page": i + 1,
+                        "width": round(page.get_width() * DIAGRAM_SCALE),
+                        "height": round(page.get_height() * DIAGRAM_SCALE),
+                    }
+                )
         finally:
             document.close()
     return tuple(pages)
@@ -358,7 +368,7 @@ def chart_pages(url: str, ident: str | None = None, on: date | None = None) -> l
     if source == "dcs" and ident:
         entry = _supplement_pages(ident, edition)
         if name in entry:
-            names = entry[entry.index(name):]
+            names = entry[entry.index(name) :]
     pages = []
     for pdf in names:
         some = _pages_of(source, edition, pdf, ident)
@@ -446,8 +456,12 @@ def _thick_strokes(image) -> tuple | None:
         labels, _ = ndimage.label(ndimage.binary_erosion(dark, structure=np.ones((size, size))))
         long = [s for s in ndimage.find_objects(labels) if max(s[0].stop - s[0].start, s[1].stop - s[1].start) >= 30 * DIAGRAM_SCALE]
         if long:
-            return (min(s[1].start for s in long), min(s[0].start for s in long),
-                    max(s[1].stop for s in long), max(s[0].stop for s in long))
+            return (
+                min(s[1].start for s in long),
+                min(s[0].start for s in long),
+                max(s[1].stop for s in long),
+                max(s[0].stop for s in long),
+            )
     return None
 
 

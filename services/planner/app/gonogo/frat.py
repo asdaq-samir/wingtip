@@ -13,6 +13,7 @@ through wingtip_native.call, as the web app asks them.
 
 Dates are the pilot's days, "yyyy-mm-dd", compared as strings as the web
 compares them."""
+
 from . import ask
 
 #: At these points the assessment is amber, and at these red (the

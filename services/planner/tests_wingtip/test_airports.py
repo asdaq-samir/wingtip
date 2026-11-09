@@ -3,6 +3,7 @@ CSVs shaped like OurAirports' real ones -- no network call, and no
 collision with the real disk cache, since each test gets its own
 tmp_path and _load_table keys its cache on that exact path.
 """
+
 import gzip
 import json
 from pathlib import Path
@@ -12,20 +13,46 @@ import pytest
 
 from wingtip import airports
 from wingtip.airports import (
-    _among, _place_of, _places_of, find_place, get_airport, get_frequencies, get_frequencies_for, get_runways,
-    places_in, search_airports,
+    _among,
+    _place_of,
+    _places_of,
+    find_place,
+    get_airport,
+    get_frequencies,
+    get_frequencies_for,
+    get_runways,
+    places_in,
+    search_airports,
 )
 
 
 @pytest.fixture
 def airports_csv(tmp_path):
     path = tmp_path / "airports.csv"
-    pd.DataFrame([
-        {"ident": "KDLH", "local_code": "DLH", "name": "Duluth Intl", "latitude_deg": 46.8421,
-         "longitude_deg": -92.1936, "elevation_ft": 1428, "municipality": "Duluth", "iso_region": "US-MN"},
-        {"ident": "US-0C81", "local_code": "C81", "name": "C81 Field", "latitude_deg": 42.3172,
-         "longitude_deg": -88.0905, "elevation_ft": 860, "municipality": "Wonder Lake", "iso_region": "US-IL"},
-    ]).to_csv(path, index=False)
+    pd.DataFrame(
+        [
+            {
+                "ident": "KDLH",
+                "local_code": "DLH",
+                "name": "Duluth Intl",
+                "latitude_deg": 46.8421,
+                "longitude_deg": -92.1936,
+                "elevation_ft": 1428,
+                "municipality": "Duluth",
+                "iso_region": "US-MN",
+            },
+            {
+                "ident": "US-0C81",
+                "local_code": "C81",
+                "name": "C81 Field",
+                "latitude_deg": 42.3172,
+                "longitude_deg": -88.0905,
+                "elevation_ft": 860,
+                "municipality": "Wonder Lake",
+                "iso_region": "US-IL",
+            },
+        ]
+    ).to_csv(path, index=False)
     return path
 
 
@@ -38,23 +65,43 @@ def runways_csv(tmp_path):
     # pd.read_csv as an int/float column, silently dropping the leading
     # zero this real OurAirports data actually has; real runways.csv is
     # never purely numeric end to end, so this fixture shouldn't be either.
-    pd.DataFrame([
-        {"airport_ident": "KDLH", "le_ident": "09L", "he_ident": "27R", "length_ft": 10152, "width_ft": 150,
-         "surface": "ASP", "lighted": 1, "closed": 0},
-        {"airport_ident": "KDLH", "le_ident": "03", "he_ident": None, "length_ft": 5001, "width_ft": 100,
-         "surface": "ASP", "lighted": 0, "closed": 0},
-    ]).to_csv(path, index=False)
+    pd.DataFrame(
+        [
+            {
+                "airport_ident": "KDLH",
+                "le_ident": "09L",
+                "he_ident": "27R",
+                "length_ft": 10152,
+                "width_ft": 150,
+                "surface": "ASP",
+                "lighted": 1,
+                "closed": 0,
+            },
+            {
+                "airport_ident": "KDLH",
+                "le_ident": "03",
+                "he_ident": None,
+                "length_ft": 5001,
+                "width_ft": 100,
+                "surface": "ASP",
+                "lighted": 0,
+                "closed": 0,
+            },
+        ]
+    ).to_csv(path, index=False)
     return path
 
 
 @pytest.fixture
 def frequencies_csv(tmp_path):
     path = tmp_path / "frequencies.csv"
-    pd.DataFrame([
-        {"airport_ident": "KDLH", "type": "ATIS", "description": "DULUTH ATIS", "frequency_mhz": 124.15},
-        {"airport_ident": "KDLH", "type": "CTAF", "description": "DULUTH CTAF", "frequency_mhz": 118.3},
-        {"airport_ident": "KDLH", "type": "TWR", "description": "DULUTH TOWER", "frequency_mhz": 118.3},
-    ]).to_csv(path, index=False)
+    pd.DataFrame(
+        [
+            {"airport_ident": "KDLH", "type": "ATIS", "description": "DULUTH ATIS", "frequency_mhz": 124.15},
+            {"airport_ident": "KDLH", "type": "CTAF", "description": "DULUTH CTAF", "frequency_mhz": 118.3},
+            {"airport_ident": "KDLH", "type": "TWR", "description": "DULUTH TOWER", "frequency_mhz": 118.3},
+        ]
+    ).to_csv(path, index=False)
     return path
 
 
@@ -80,8 +127,20 @@ def test_get_airport_takes_the_k_form_of_a_local_code(tmp_path):
     # Lamoni, IA: "LWD" in OurAirports with no ICAO code of its own, and
     # "KLWD" in the FAA's NASR file, which the fuel stops are offered from.
     path = tmp_path / "airports.csv"
-    pd.DataFrame([{"ident": "LWD", "local_code": "LWD", "name": "Lamoni Municipal", "latitude_deg": 40.63, "longitude_deg": -93.90,
-                   "elevation_ft": 1131, "municipality": "Lamoni", "iso_region": "US-IA"}]).to_csv(path, index=False)
+    pd.DataFrame(
+        [
+            {
+                "ident": "LWD",
+                "local_code": "LWD",
+                "name": "Lamoni Municipal",
+                "latitude_deg": 40.63,
+                "longitude_deg": -93.90,
+                "elevation_ft": 1131,
+                "municipality": "Lamoni",
+                "iso_region": "US-IA",
+            }
+        ]
+    ).to_csv(path, index=False)
     assert get_airport("KLWD", cache_path=path)["ident"] == "LWD"
 
 
@@ -110,10 +169,18 @@ def test_get_frequencies_sorts_ctaf_first(frequencies_csv):
 def test_the_faas_frequencies_come_first_with_ourairports_weather_beside_them(frequencies_csv, monkeypatch):
     from wingtip import faa_data
 
-    monkeypatch.setattr(faa_data, "airport_frequencies", lambda ident, cache_dir: [
-        {"type": "ATIS", "description": None, "frequency_mhz": 124.1},
-        {"type": "TWR", "description": "DULUTH", "frequency_mhz": 118.3},
-    ] if ident == "KDLH" else None)
+    monkeypatch.setattr(
+        faa_data,
+        "airport_frequencies",
+        lambda ident, cache_dir: (
+            [
+                {"type": "ATIS", "description": None, "frequency_mhz": 124.1},
+                {"type": "TWR", "description": "DULUTH", "frequency_mhz": 118.3},
+            ]
+            if ident == "KDLH"
+            else None
+        ),
+    )
     frequencies = get_frequencies("KDLH", cache_path=frequencies_csv, faa_cache_dir="faa")
     assert [(f["type"], f["frequency_mhz"]) for f in frequencies] == [("TWR", 118.3), ("ATIS", 124.1)]
     # A field the FAA's file lists nothing for: OurAirports' own.
@@ -186,26 +253,94 @@ def us_airports_csv(tmp_path):
     field, a heliport, a closed field and one abroad."""
     path = tmp_path / "us_airports.csv"
     row = {"municipality": "", "iso_region": "US-MN", "iso_country": "US", "elevation_ft": 1000}
-    pd.DataFrame([
-        {**row, "ident": "KDLH", "icao_code": "KDLH", "local_code": "DLH", "name": "Duluth Intl", "type": "medium_airport",
-         "latitude_deg": 46.8421, "longitude_deg": -92.1936},
-        {**row, "ident": "KC81", "icao_code": None, "local_code": "C81", "name": "Campbell Airport", "type": "small_airport",
-         "latitude_deg": 42.3246, "longitude_deg": -88.0741},
-        {**row, "ident": "KMSP", "icao_code": "KMSP", "local_code": "MSP", "name": "Minneapolis-St Paul", "type": "large_airport",
-         "latitude_deg": 44.8848, "longitude_deg": -93.2223},
-        {**row, "ident": "MN01", "icao_code": None, "local_code": "MN01", "name": "A Helipad", "type": "heliport",
-         "latitude_deg": 46.8, "longitude_deg": -92.2},
-        {**row, "ident": "MN02", "icao_code": None, "local_code": "MN02", "name": "Gone Field", "type": "closed",
-         "latitude_deg": 46.7, "longitude_deg": -92.3},
-        {**row, "ident": "CYQT", "icao_code": "CYQT", "local_code": None, "name": "Thunder Bay", "type": "medium_airport",
-         "latitude_deg": 48.3719, "longitude_deg": -89.3239, "iso_country": "CA"},
-        {**row, "ident": "US-0043", "icao_code": None, "local_code": "C81", "name": "Campbell (old record)", "type": "small_airport",
-         "latitude_deg": 42.3245, "longitude_deg": -88.0742},
-        # A real ICAO code OurAirports left out of icao_code: Chicago
-        # Executive, KPWK in its METAR and on every chart.
-        {**row, "ident": "KPWK", "icao_code": None, "local_code": "PWK", "name": "Chicago Executive", "type": "medium_airport",
-         "iso_region": "US-IL", "latitude_deg": 42.1142, "longitude_deg": -87.9015},
-    ]).to_csv(path, index=False)
+    pd.DataFrame(
+        [
+            {
+                **row,
+                "ident": "KDLH",
+                "icao_code": "KDLH",
+                "local_code": "DLH",
+                "name": "Duluth Intl",
+                "type": "medium_airport",
+                "latitude_deg": 46.8421,
+                "longitude_deg": -92.1936,
+            },
+            {
+                **row,
+                "ident": "KC81",
+                "icao_code": None,
+                "local_code": "C81",
+                "name": "Campbell Airport",
+                "type": "small_airport",
+                "latitude_deg": 42.3246,
+                "longitude_deg": -88.0741,
+            },
+            {
+                **row,
+                "ident": "KMSP",
+                "icao_code": "KMSP",
+                "local_code": "MSP",
+                "name": "Minneapolis-St Paul",
+                "type": "large_airport",
+                "latitude_deg": 44.8848,
+                "longitude_deg": -93.2223,
+            },
+            {
+                **row,
+                "ident": "MN01",
+                "icao_code": None,
+                "local_code": "MN01",
+                "name": "A Helipad",
+                "type": "heliport",
+                "latitude_deg": 46.8,
+                "longitude_deg": -92.2,
+            },
+            {
+                **row,
+                "ident": "MN02",
+                "icao_code": None,
+                "local_code": "MN02",
+                "name": "Gone Field",
+                "type": "closed",
+                "latitude_deg": 46.7,
+                "longitude_deg": -92.3,
+            },
+            {
+                **row,
+                "ident": "CYQT",
+                "icao_code": "CYQT",
+                "local_code": None,
+                "name": "Thunder Bay",
+                "type": "medium_airport",
+                "latitude_deg": 48.3719,
+                "longitude_deg": -89.3239,
+                "iso_country": "CA",
+            },
+            {
+                **row,
+                "ident": "US-0043",
+                "icao_code": None,
+                "local_code": "C81",
+                "name": "Campbell (old record)",
+                "type": "small_airport",
+                "latitude_deg": 42.3245,
+                "longitude_deg": -88.0742,
+            },
+            # A real ICAO code OurAirports left out of icao_code: Chicago
+            # Executive, KPWK in its METAR and on every chart.
+            {
+                **row,
+                "ident": "KPWK",
+                "icao_code": None,
+                "local_code": "PWK",
+                "name": "Chicago Executive",
+                "type": "medium_airport",
+                "iso_region": "US-IL",
+                "latitude_deg": 42.1142,
+                "longitude_deg": -87.9015,
+            },
+        ]
+    ).to_csv(path, index=False)
     return path
 
 
@@ -243,6 +378,7 @@ def test_the_places_in_a_box_are_landing_fields_biggest_first(us_airports_csv):
 
 def test_the_box_helpers_answer_as_isin_and_iterrows_did(us_airports_csv):
     from wingtip.airports import _us_airports
+
     df = _us_airports(us_airports_csv)
     for chosen in ({"KDLH", "nowhere"}, set()):
         assert _among(df["ident"], chosen).tolist() == df["ident"].isin(list(chosen)).tolist()
@@ -280,13 +416,29 @@ def test_the_search_index_holds_every_us_field_the_search_answers_with(us_airpor
 
 def test_a_search_puts_the_bigger_field_first(tmp_path):
     path = tmp_path / "airports.csv"
-    row = {"iso_region": "US-WI", "iso_country": "US", "elevation_ft": 800, "latitude_deg": 44.0, "longitude_deg": -88.5,
-           "local_code": None, "icao_code": None}
-    pd.DataFrame([
-        {**row, "ident": "2WN8", "name": "Oshkosh Sky Ranch Airport", "municipality": "Omro", "type": "small_airport"},
-        {**row, "ident": "KOSH", "icao_code": "KOSH", "local_code": "OSH", "name": "Wittman Regional Airport",
-         "municipality": "Oshkosh", "type": "medium_airport"},
-    ]).to_csv(path, index=False)
+    row = {
+        "iso_region": "US-WI",
+        "iso_country": "US",
+        "elevation_ft": 800,
+        "latitude_deg": 44.0,
+        "longitude_deg": -88.5,
+        "local_code": None,
+        "icao_code": None,
+    }
+    pd.DataFrame(
+        [
+            {**row, "ident": "2WN8", "name": "Oshkosh Sky Ranch Airport", "municipality": "Omro", "type": "small_airport"},
+            {
+                **row,
+                "ident": "KOSH",
+                "icao_code": "KOSH",
+                "local_code": "OSH",
+                "name": "Wittman Regional Airport",
+                "municipality": "Oshkosh",
+                "type": "medium_airport",
+            },
+        ]
+    ).to_csv(path, index=False)
 
     # Wittman is Oshkosh's by its town, and the bigger field.
     assert [a["ident"] for a in search_airports("oshkosh", cache_path=path)] == ["KOSH", "2WN8"]
@@ -310,11 +462,13 @@ def test_the_nearest_fields_are_found_nearest_first_with_how_far_and_which_way(t
 def test_get_airport_takes_the_first_row_when_a_code_is_one_rows_ident_and_anothers_local_code(tmp_path):
     path = tmp_path / "airports.csv"
     base = dict(latitude_deg=40.0, longitude_deg=-90.0, elevation_ft=100, municipality="X", iso_region="US-IL")
-    pd.DataFrame([
-        dict(ident="US-0AB", local_code="ABC", name="Local code first", **base),
-        dict(ident="ABC", local_code=None, name="Ident second", **base),
-        dict(ident=" kxyz ", local_code=None, name="Padded", **base),
-    ]).to_csv(path, index=False)
+    pd.DataFrame(
+        [
+            dict(ident="US-0AB", local_code="ABC", name="Local code first", **base),
+            dict(ident="ABC", local_code=None, name="Ident second", **base),
+            dict(ident=" kxyz ", local_code=None, name="Padded", **base),
+        ]
+    ).to_csv(path, index=False)
     assert get_airport("abc", cache_path=path)["name"] == "Local code first"
     assert get_airport("KXYZ", cache_path=path)["name"] == "Padded"
     with pytest.raises(ValueError):
@@ -324,6 +478,7 @@ def test_get_airport_takes_the_first_row_when_a_code_is_one_rows_ident_and_anoth
 def test_a_table_on_disk_is_read_without_the_lock_or_a_download(airports_csv, monkeypatch):
     def refuse(*a, **k):
         raise AssertionError("touched the lock or the network")
+
     monkeypatch.setattr(airports, "locked", refuse)
     monkeypatch.setattr(airports.requests, "get", refuse)
     assert airports._ensure_cached("http://unused", airports_csv) == airports_csv
@@ -336,14 +491,40 @@ def test_a_search_puts_a_name_that_starts_with_it_and_then_the_nearest_first_amo
     not Campbell Airport (C81)."""
     path = tmp_path / "airports.csv"
     row = {"iso_country": "US", "elevation_ft": 800, "icao_code": None, "type": "small_airport"}
-    pd.DataFrame([
-        {**row, "ident": "06XS", "local_code": "06XS", "name": "Campbell Field", "municipality": "Aubrey", "iso_region": "US-TX",
-         "latitude_deg": 33.3, "longitude_deg": -96.9},
-        {**row, "ident": "1A3", "local_code": "1A3", "name": "Martin Campbell Field", "municipality": "Copperhill", "iso_region": "US-TN",
-         "latitude_deg": 35.0, "longitude_deg": -84.3},
-        {**row, "ident": "KC81", "local_code": "C81", "name": "Campbell Airport", "municipality": "Grayslake", "iso_region": "US-IL",
-         "latitude_deg": 42.32, "longitude_deg": -88.07},
-    ]).to_csv(path, index=False)
+    pd.DataFrame(
+        [
+            {
+                **row,
+                "ident": "06XS",
+                "local_code": "06XS",
+                "name": "Campbell Field",
+                "municipality": "Aubrey",
+                "iso_region": "US-TX",
+                "latitude_deg": 33.3,
+                "longitude_deg": -96.9,
+            },
+            {
+                **row,
+                "ident": "1A3",
+                "local_code": "1A3",
+                "name": "Martin Campbell Field",
+                "municipality": "Copperhill",
+                "iso_region": "US-TN",
+                "latitude_deg": 35.0,
+                "longitude_deg": -84.3,
+            },
+            {
+                **row,
+                "ident": "KC81",
+                "local_code": "C81",
+                "name": "Campbell Airport",
+                "municipality": "Grayslake",
+                "iso_region": "US-IL",
+                "latitude_deg": 42.32,
+                "longitude_deg": -88.07,
+            },
+        ]
+    ).to_csv(path, index=False)
     grayslake = [(42.32, -88.07)]
     # Its name starts with it: before Martin Campbell Field, near or far.
     assert [a["ident"] for a in search_airports("campbell", cache_path=path)] == ["06XS", "C81", "1A3"]
@@ -358,11 +539,9 @@ def test_only_the_fields_the_faa_lists_are_drawn_searched_and_nearest(us_airport
     # airport file beside OurAirports', a field it doesn't list by any of
     # its idents is left out.
     (tmp_path / "faa_nasr").mkdir()
-    pd.DataFrame([
-        {"ARPT_ID": "DLH", "ICAO_ID": "KDLH"},
-        {"ARPT_ID": "C81", "ICAO_ID": None},
-        {"ARPT_ID": "PWK", "ICAO_ID": "KPWK"},
-    ]).to_csv(tmp_path / "faa_nasr" / "APT_BASE.csv", index=False)
+    pd.DataFrame(
+        [{"ARPT_ID": "DLH", "ICAO_ID": "KDLH"}, {"ARPT_ID": "C81", "ICAO_ID": None}, {"ARPT_ID": "PWK", "ICAO_ID": "KPWK"}]
+    ).to_csv(tmp_path / "faa_nasr" / "APT_BASE.csv", index=False)
     everywhere = [p["ident"] for p in places_in(40, -95, 48, -87, cache_path=us_airports_csv)]
     assert sorted(everywhere) == ["C81", "KDLH", "KPWK"]
     assert search_airports("minneapolis", cache_path=us_airports_csv) == []
@@ -422,20 +601,26 @@ def _place_as_before(ident: str, cache_path):
 def test_the_indexed_place_is_the_one_each_column_scan_found(us_airports_csv):
     # C81 is two rows' local code (the old record and its successor), and
     # a missing local code reads "NAN" both ways.
-    asked = ["C81", "kc81", "KC81", " c81 ", "KDLH", "DLH", "PWK", "KPWK", "US-0043", "MN02", "MN01",
-             "CYQT", "NAN", "nan", "", "ZZZZ"]
+    asked = ["C81", "kc81", "KC81", " c81 ", "KDLH", "DLH", "PWK", "KPWK", "US-0043", "MN02", "MN01", "CYQT", "NAN", "nan", "", "ZZZZ"]
     for ident in asked:
         assert find_place(ident, cache_path=us_airports_csv) == _place_as_before(ident, us_airports_csv), ident
 
 
-@pytest.mark.skipif(not (Path(__file__).resolve().parents[3] / "data/raw/airports.csv").exists(),
-                    reason="needs OurAirports' table on disk")
+@pytest.mark.skipif(not (Path(__file__).resolve().parents[3] / "data/raw/airports.csv").exists(), reason="needs OurAirports' table on disk")
 def test_the_indexed_place_matches_on_the_real_table():
     from wingtip.airports import DEFAULT_CACHE_PATH, _us_airports
 
     df = _us_airports(DEFAULT_CACHE_PATH)
     picked = df.sample(150, random_state=91)
-    asked = [*picked["_display_ident"].fillna(""), *picked["ident"].fillna("").str.lower(),
-             *picked["local_code"].fillna(""), "KORD", "C81", "KMKE", "NAN", "NOPE"]
+    asked = [
+        *picked["_display_ident"].fillna(""),
+        *picked["ident"].fillna("").str.lower(),
+        *picked["local_code"].fillna(""),
+        "KORD",
+        "C81",
+        "KMKE",
+        "NAN",
+        "NOPE",
+    ]
     for ident in asked:
         assert find_place(ident) == _place_as_before(ident, DEFAULT_CACHE_PATH), ident

@@ -2,6 +2,7 @@
 checkpoint, the planner's own notes kept, each written note seeded at the
 planner, a failure for every checkpoint said once -- Claude and the
 planner stood in for."""
+
 import json
 from types import SimpleNamespace
 
@@ -17,14 +18,23 @@ from app.generated.planner_client import PlannerError
 
 client = TestClient(app)
 
-CHECKPOINT = {"lat": 45.0, "lon": -90.0, "id": "water@45.00000,-90.00000", "name": "Lake Mary", "category": "water",
-              "along_track_nm": 12.0, "hop_key": "C81->KDLH", "saved": None}
+CHECKPOINT = {
+    "lat": 45.0,
+    "lon": -90.0,
+    "id": "water@45.00000,-90.00000",
+    "name": "Lake Mary",
+    "category": "water",
+    "along_track_nm": 12.0,
+    "hop_key": "C81->KDLH",
+    "saved": None,
+}
 SECOND = {**CHECKPOINT, "lat": 46.0, "id": "town@46", "name": "Ashland", "category": "town", "along_track_nm": 200.0}
 
 
 def _generate(headers=None) -> list[dict]:
-    resp = client.post("/api/checkpoint-notes/generate",
-                       json={"departure_ident": "C81", "destination_ident": "KDLH"}, headers=headers or {})
+    resp = client.post(
+        "/api/checkpoint-notes/generate", json={"departure_ident": "C81", "destination_ident": "KDLH"}, headers=headers or {}
+    )
     assert resp.status_code == 200, resp.text
     return [json.loads(line) for line in resp.text.splitlines() if line]
 
@@ -34,16 +44,21 @@ def test_generation_is_not_reachable_with_a_get():
 
 
 def test_a_saved_note_is_kept_and_a_missing_one_written_and_seeded(monkeypatch, fake_planner):
-    fake_planner.answer("/api/checkpoint-notes/pending",
-                        {"departure_ident": "C81", "checkpoints": [{**CHECKPOINT, "saved": "Mine: the island"}, SECOND]})
+    fake_planner.answer(
+        "/api/checkpoint-notes/pending", {"departure_ident": "C81", "checkpoints": [{**CHECKPOINT, "saved": "Mine: the island"}, SECOND]}
+    )
     fake_planner.answer("/api/checkpoint-notes/seed", lambda body: {"description": body["description"], "written": True})
     asked = []
     monkeypatch.setattr(notes, "_describe_checkpoint", lambda cp, dep, prev, nxt: asked.append((cp.name, dep, prev, nxt)) or "Generated")
 
     lines = _generate({"X-Pilot-Id": "42"})
 
-    assert [(m["type"], m.get("source")) for m in lines] == [("start", None), ("checkpoint", "saved"), ("checkpoint", "generated"),
-                                                             ("done", None)]
+    assert [(m["type"], m.get("source")) for m in lines] == [
+        ("start", None),
+        ("checkpoint", "saved"),
+        ("checkpoint", "generated"),
+        ("done", None),
+    ]
     assert lines[1]["description"] == "Mine: the island" and lines[2]["description"] == "Generated"
     assert asked == [("Ashland", "C81", "Lake Mary", None)]
     # The pilot is named to the planner, whose notes they see first.
@@ -65,8 +80,9 @@ def test_a_refused_key_is_said_once_and_every_checkpoint_still_gets_a_row(monkey
 
     def refused(*args):
         calls.append(1)
-        raise anthropic.AuthenticationError("invalid x-api-key", body=None,
-                                            response=httpx.Response(401, request=httpx.Request("POST", "https://api.anthropic.com")))
+        raise anthropic.AuthenticationError(
+            "invalid x-api-key", body=None, response=httpx.Response(401, request=httpx.Request("POST", "https://api.anthropic.com"))
+        )
 
     monkeypatch.setattr(notes, "_describe_checkpoint", refused)
     lines = _generate()
@@ -88,8 +104,11 @@ def _claude_replies(monkeypatch, blocks, stop_reason):
 
 
 def test_a_note_is_the_text_block_after_the_thinking(monkeypatch):
-    _claude_replies(monkeypatch, [SimpleNamespace(type="thinking", thinking=""),
-                                  SimpleNamespace(type="text", text=" Look for the lake south of the highway. ")], "end_turn")
+    _claude_replies(
+        monkeypatch,
+        [SimpleNamespace(type="thinking", thinking=""), SimpleNamespace(type="text", text=" Look for the lake south of the highway. ")],
+        "end_turn",
+    )
     assert notes._describe_checkpoint(NoteToWrite(**CHECKPOINT), "C81", None, None) == "Look for the lake south of the highway."
 
 

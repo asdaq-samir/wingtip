@@ -16,6 +16,7 @@ Run as `python -m ingest.main`; it ends on SIGTERM (compose's stop). Each
 beat (BEAT_EVERY_S) writes its own and each feed's state to the store,
 which `python -m ingest.health` (the image's health check) reads back.
 """
+
 import logging
 import signal
 import threading

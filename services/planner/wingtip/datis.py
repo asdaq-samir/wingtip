@@ -14,6 +14,7 @@ the engine (read_datis, into the figures read_atis gives the app's
 microphone ATIS), when a pilot asks, so the reading is always the
 engine's of now.
 """
+
 from __future__ import annotations
 
 import json
@@ -68,8 +69,14 @@ def heard(xml: str | bytes, now: float | None = None) -> int:
     if found is None:
         return 0
     now = time.time() if now is None else now
-    live_reports.put(KIND, f"{live_reports.ident(found['airport'])}:{found['which'] or 'both'}", found,
-                     place=found["airport"], ends=now + KEEP_S, now=now)
+    live_reports.put(
+        KIND,
+        f"{live_reports.ident(found['airport'])}:{found['which'] or 'both'}",
+        found,
+        place=found["airport"],
+        ends=now + KEEP_S,
+        now=now,
+    )
     return 1
 
 

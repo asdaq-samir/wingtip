@@ -10,6 +10,7 @@ mail of its own. Until it does, the developer console shows each feed's
 line and its alert, and GET /api/status/feeds answers them for anything
 that polls.
 """
+
 from __future__ import annotations
 
 import logging
@@ -48,8 +49,14 @@ def _iso(unix) -> str | None:
 
 
 def _event(kind: str, line: dict, now: float) -> dict:
-    return {"event": kind, "feed": line["name"], "kind": line["kind"], "detail": line.get("detail"),
-            "stale_since": _iso(line.get("stale_since")), "at": _iso(now)}
+    return {
+        "event": kind,
+        "feed": line["name"],
+        "kind": line["kind"],
+        "detail": line.get("detail"),
+        "stale_since": _iso(line.get("stale_since")),
+        "at": _iso(now),
+    }
 
 
 def _post(event: dict) -> None:
@@ -98,9 +105,10 @@ def snapshot() -> dict:
     if lines is None or time.time() - at > 2 * CHECK_EVERY_S:
         lines, at = check(), time.time()
     return {
-        "checked_at": _iso(at), "alert_after_min": AFTER_MIN, "webhook": bool(WEBHOOK),
-        "feeds": [{**line, "last_at": _iso(line.get("last_at")), "stale_since": _iso(line.get("stale_since"))}
-                  for line in lines],
+        "checked_at": _iso(at),
+        "alert_after_min": AFTER_MIN,
+        "webhook": bool(WEBHOOK),
+        "feeds": [{**line, "last_at": _iso(line.get("last_at")), "stale_since": _iso(line.get("stale_since"))} for line in lines],
     }
 
 

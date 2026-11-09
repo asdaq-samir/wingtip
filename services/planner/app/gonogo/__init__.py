@@ -18,6 +18,7 @@ web file it mirrors, and the tests are the web's cases.
 
 `flight` assembles their inputs from the planner's own plan and
 briefing, and POST /api/go-no-go (app.routers.gonogo) answers with them."""
+
 import json
 
 import wingtip_native

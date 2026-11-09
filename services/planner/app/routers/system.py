@@ -5,6 +5,7 @@ corridors are built and how far their labels have come -- and the one
 pipeline action offered from here, a retrain: the training run
 (`python -m wingtip.pipeline run`) as a container the dev-services
 sidecar starts."""
+
 import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -66,12 +67,14 @@ def _gateway_status() -> tuple[ServiceStatus, ServiceStatus]:
     """The gateway's liveness, and its readiness -- which includes the
     database, so that is the database's row -- each as up only on a
     200: a 503 from the actuator is a running process saying no."""
+
     def ask(path: str) -> ServiceStatus:
         try:
             resp = requests.get(f"{GATEWAY_URL}/actuator/health/{path}", timeout=PROBE_TIMEOUT_S)
             return ServiceStatus(up=resp.ok, detail=f"HTTP {resp.status_code}")
         except requests.RequestException as err:
             return ServiceStatus(up=False, detail=str(err).split("\n")[0][:160])
+
     return ask("liveness"), ask("readiness")
 
 
@@ -91,9 +94,12 @@ def _current_model() -> ModelSnapshot | None:
     if metrics is None:
         return None
     return ModelSnapshot(
-        model_type=metrics.get("model_type"), trained_at=metrics.get("trained_at"),
-        cv_mae=metrics.get("cv_mae"), held_out_mae=metrics.get("held_out_mae"),
-        n_labeled=metrics.get("n_labeled"), n_features=len(metrics.get("feature_cols", [])),
+        model_type=metrics.get("model_type"),
+        trained_at=metrics.get("trained_at"),
+        cv_mae=metrics.get("cv_mae"),
+        held_out_mae=metrics.get("held_out_mae"),
+        n_labeled=metrics.get("n_labeled"),
+        n_features=len(metrics.get("feature_cols", [])),
     )
 
 
@@ -111,17 +117,21 @@ def _versions() -> list[ModelVersion]:
         metrics = _read_metrics(directory)
         if metrics is None:
             continue
-        out.append(ModelVersion(
-            name=directory.name, model_type=metrics.get("model_type"),
-            trained_at=metrics.get("trained_at"), cv_mae=metrics.get("cv_mae"),
-        ))
+        out.append(
+            ModelVersion(
+                name=directory.name,
+                model_type=metrics.get("model_type"),
+                trained_at=metrics.get("trained_at"),
+                cv_mae=metrics.get("cv_mae"),
+            )
+        )
     return out
 
 
 def _corridors() -> list[CorridorStatus]:
     out = []
     for features in sorted(PROCESSED_DIR.glob("features_*.parquet")):
-        slug = features.stem[len("features_"):]
+        slug = features.stem[len("features_") :]
         dep, _, dest = slug.partition("_")
         if not dep or not dest:
             continue
@@ -132,11 +142,16 @@ def _corridors() -> list[CorridorStatus]:
             with candidates.open() as f:
                 n_candidates = max(sum(1 for _ in f) - 1, 0)
         route = chartlabels.route_key(dep, dest)
-        out.append(CorridorStatus(
-            departure_ident=dep, destination_ident=dest, candidates=n_candidates,
-            features_built_at=_mtime(features), labels=chartlabels.summarise(route),
-            notes=checkpoint_notes.places(route),
-        ))
+        out.append(
+            CorridorStatus(
+                departure_ident=dep,
+                destination_ident=dest,
+                candidates=n_candidates,
+                features_built_at=_mtime(features),
+                labels=chartlabels.summarise(route),
+                notes=checkpoint_notes.places(route),
+            )
+        )
     return out
 
 
@@ -170,8 +185,12 @@ def _last_run() -> PipelineRun | None:
     if run is None:
         return None
     return PipelineRun(
-        run_id=run.get("run_id"), state=run.get("state"), stage=run.get("stage"),
-        started_at=run.get("started_at"), finished_at=run.get("finished_at"), error=run.get("error"),
+        run_id=run.get("run_id"),
+        state=run.get("state"),
+        stage=run.get("stage"),
+        started_at=run.get("started_at"),
+        finished_at=run.get("finished_at"),
+        error=run.get("error"),
         stages=[PipelineStage(**s) for s in run.get("stages", []) if isinstance(s, dict) and "name" in s and "state" in s],
     )
 
@@ -229,16 +248,16 @@ def status() -> Status:
         data_cycles.warn_if_out_of_date(cycles)
         return Status(
             checked_at=datetime.now(tz=timezone.utc).isoformat(),
-            services={
-                "gateway": gateway.result()[0],
-                "db": gateway.result()[1],
-            },
+            services={"gateway": gateway.result()[0], "db": gateway.result()[1]},
             faa_files=_faa_files(),
             weather=_weather_datasets(),
-            charts={**charts.status(), "refresh_window": CHARTS_REFRESH_WINDOW, "refresh_workers": CHARTS_REFRESH_WORKERS,
-                    "next": chart_cycle_check.status()},
-            model={"current": _current_model(), "versions": _versions(),
-                   "chart": _chart_model()},
+            charts={
+                **charts.status(),
+                "refresh_window": CHARTS_REFRESH_WINDOW,
+                "refresh_workers": CHARTS_REFRESH_WORKERS,
+                "next": chart_cycle_check.status(),
+            },
+            model={"current": _current_model(), "versions": _versions(), "chart": _chart_model()},
             pipeline=pipeline.result().model_copy(update={"training": _training()}),
             corridors=_corridors(),
             recent_errors=errors.recent(),
@@ -256,8 +275,9 @@ def refresh_charts() -> ChartRefreshStarted:
     without the sidecar the answer says how to run it by hand."""
     started = chart_refresh.refresh_now()
     if started is None:
-        raise HTTPException(501, f"The charts job starts through the dev-services sidecar, which this planner has none of. "
-                                 f"By hand: {CHARTS_BY_HAND}")
+        raise HTTPException(
+            501, f"The charts job starts through the dev-services sidecar, which this planner has none of. By hand: {CHARTS_BY_HAND}"
+        )
     return ChartRefreshStarted(started=started, current_cycle=charts.current_cycle())
 
 

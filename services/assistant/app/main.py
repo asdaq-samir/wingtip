@@ -28,6 +28,7 @@ The browser reaches these only through the gateway, which routes them
 here under the same /api/planner/... addresses the apps have always
 asked (PlannerProxyController), and checks the subscription and the
 day's allowance first."""
+
 import logging
 
 from fastapi import FastAPI
@@ -63,10 +64,18 @@ class Index(BaseModel):
 @app.get("/")
 def index() -> Index:
     s = get_settings()
-    return Index(service="assistant", planner_url=s.planner_url, models={
-        "assistant": s.assistant_model, "oral": s.oral_model, "words": s.words_model,
-        "checkpoint_notes": s.checkpoint_note_model, "narrative": s.narrative_model,
-        "documents": s.documents_model})
+    return Index(
+        service="assistant",
+        planner_url=s.planner_url,
+        models={
+            "assistant": s.assistant_model,
+            "oral": s.oral_model,
+            "words": s.words_model,
+            "checkpoint_notes": s.checkpoint_note_model,
+            "narrative": s.narrative_model,
+            "documents": s.documents_model,
+        },
+    )
 
 
 def _openapi() -> dict:

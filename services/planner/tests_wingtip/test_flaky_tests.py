@@ -1,4 +1,5 @@
 """scripts/ci/flaky_tests.py: what it prints in a public issue is made safe."""
+
 import importlib.util
 from pathlib import Path
 

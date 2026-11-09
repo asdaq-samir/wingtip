@@ -2,6 +2,7 @@
 overlay tiles as wingtip.vector_tiles keeps them, read by a map in byte
 ranges (a PMTiles archive's header, then its directories, then a tile at a
 time), and kept by the browser and the CDN for their cycle."""
+
 import json
 
 from fastapi.testclient import TestClient
@@ -12,9 +13,17 @@ from app.main import app
 client = TestClient(app)
 
 NAME = "2026-10-29-v1-0badf00d"
-INDEX = {"cycle": "2026-10-29", "name": NAME, "version": 1, "bytes": 256, "built_at": 1.0, "min_zoom": 4,
-         "max_zoom": 12, "tolerance_m": 4.1,
-         "layers": [{"name": name, "features": 1} for name in vector_tiles.LAYERS]}
+INDEX = {
+    "cycle": "2026-10-29",
+    "name": NAME,
+    "version": 1,
+    "bytes": 256,
+    "built_at": 1.0,
+    "min_zoom": 4,
+    "max_zoom": 12,
+    "tolerance_m": 4.1,
+    "layers": [{"name": name, "features": 1} for name in vector_tiles.LAYERS],
+}
 DATA = bytes(range(256))
 
 

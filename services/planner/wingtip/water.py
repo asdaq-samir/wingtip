@@ -11,6 +11,7 @@ a lake; "out of glide" where water runs on round it for more than the
 airplane's still-air glide every way, which the engine works out from its
 height over the water (glide_nm).
 """
+
 from __future__ import annotations
 
 import json
@@ -92,8 +93,9 @@ def glide_nm(height_ft: float, speed_kt: float) -> float:
     the same line, flotation gear for a flight for hire beyond power-off
     gliding distance from the shore. 0 where the engine gives no glide (too
     low or too slow to be flying), so all the water is out of reach."""
-    answer = json.loads(wingtip_native.call("glide_range", json.dumps(
-        {"altitude_ft": float(height_ft), "speed_kt": float(speed_kt), "ground_ft": 0.0})))
+    answer = json.loads(
+        wingtip_native.call("glide_range", json.dumps({"altitude_ft": float(height_ft), "speed_kt": float(speed_kt), "ground_ft": 0.0}))
+    )
     return float(answer) if answer is not None else 0.0
 
 
@@ -104,8 +106,9 @@ def cell_shares(far: np.ndarray, rows: int, cols: int) -> np.ndarray:
     return far.reshape(rows, per, cols, per).mean(axis=(1, 3))
 
 
-def out_of_glide_samples(lat0: float, lon0: float, rows: int, cols: int, cell_deg: float, *,
-                         height_ft: float, speed_kt: float) -> np.ndarray:
+def out_of_glide_samples(
+    lat0: float, lon0: float, rows: int, cols: int, cell_deg: float, *, height_ft: float, speed_kt: float
+) -> np.ndarray:
     """The same grid read at every sample, `cell_deg` / STEP_DEG of them a
     cell each way (rows from the south, columns from the west): True where
     the sample is water out of glide of dry land. A cell on a shore is part

@@ -27,6 +27,7 @@ three characters with a letter (waypoint_names). The web app's .fpl
 export (lib/flightPlanFiles) names the same points CP01 on, within
 Garmin's six characters.
 """
+
 from __future__ import annotations
 
 import io
@@ -49,6 +50,7 @@ LOOK_FOR = {
     "road_or_rail": "A road or railway: on the sectional, a line across the course. Note the angle it crosses at.",
     "airport": "An airport: look for its runways.",
 }
+
 
 @dataclass(frozen=True)
 class PackCheckpoint:
@@ -80,8 +82,10 @@ class PackCheckpoint:
 def from_candidates(selected: list[dict]) -> list[PackCheckpoint]:
     """The planner's selected checkpoints (app.checkpoint_scoring.route_checkpoints)
     as the pack takes them."""
-    return [PackCheckpoint(lat=c["lat"], lon=c["lon"], category=c["category"], score=c["predicted_score"],
-                           along_nm=c["along_track_nm"]) for c in selected]
+    return [
+        PackCheckpoint(lat=c["lat"], lon=c["lon"], category=c["category"], score=c["predicted_score"], along_nm=c["along_track_nm"])
+        for c in selected
+    ]
 
 
 def route_idents(route: str) -> list[str]:
@@ -144,10 +148,12 @@ def heading(deg: float) -> str:
 def degrees_minutes(lat: float, lon: float) -> str:
     """Degrees and decimal minutes, as a chart's margins write a
     position: "N42°19.0′ W088°05.4′"."""
+
     def part(value: float, positive: str, negative: str, width: int) -> str:
         whole = int(abs(value))
         minutes = (abs(value) - whole) * 60
         return f"{positive if value >= 0 else negative}{whole:0{width}d}°{minutes:04.1f}′"
+
     return f"{part(lat, 'N', 'S', 2)} {part(lon, 'E', 'W', 3)}"
 
 
@@ -169,24 +175,29 @@ def _page(title: str, dep: str, dest: str, cps: list[PackCheckpoint], i: int) ->
         rows.append(("Time from departure", elapsed(cp.minutes_flown)))
     rows.append(("Position", degrees_minutes(cp.lat, cp.lon)))
     nxt = cps[i + 1] if i + 1 < len(cps) else None
-    return "\n".join([
-        '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">',
-        f"<title>{escape(cp.name)}</title></head>",
-        '<body style="font-family: -apple-system, sans-serif; font-size: 17px; line-height: 1.4; margin: 16px;">',
-        f'<h2 style="margin: 0 0 4px;">{escape(cp.name)}</h2>',
-        f'<p style="margin: 0 0 12px; color: #666;">Checkpoint {i + 1} of {len(cps)}, {escape(title)}</p>',
-        f"<p>{escape(LOOK_FOR.get(cp.category, cp.name + '.'))}</p>",
-        '<table style="border-collapse: collapse;">',
-        *(f'<tr><td style="padding: 4px 16px 4px 0; color: #666;">{escape(k)}</td><td style="padding: 4px 0;">{escape(v)}</td></tr>'
-          for k, v in rows),
-        "</table>",
-        f"<p>Next: {escape(nxt.name)}, {nxt.along_nm - cp.along_nm:.1f} nm on.</p>" if nxt
-        else f"<p>The last checkpoint before {escape(dest)}.</p>",
-        '<p style="color: #666; font-size: 15px;">How easy to spot is Wingtip Maps\' estimate, '
-        "from a model trained on pilots' ratings of what the sectional shows.</p>",
-        "</body></html>",
-        "",
-    ])
+    return "\n".join(
+        [
+            '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">',
+            f"<title>{escape(cp.name)}</title></head>",
+            '<body style="font-family: -apple-system, sans-serif; font-size: 17px; line-height: 1.4; margin: 16px;">',
+            f'<h2 style="margin: 0 0 4px;">{escape(cp.name)}</h2>',
+            f'<p style="margin: 0 0 12px; color: #666;">Checkpoint {i + 1} of {len(cps)}, {escape(title)}</p>',
+            f"<p>{escape(LOOK_FOR.get(cp.category, cp.name + '.'))}</p>",
+            '<table style="border-collapse: collapse;">',
+            *(
+                f'<tr><td style="padding: 4px 16px 4px 0; color: #666;">{escape(k)}</td><td style="padding: 4px 0;">{escape(v)}</td></tr>'
+                for k, v in rows
+            ),
+            "</table>",
+            f"<p>Next: {escape(nxt.name)}, {nxt.along_nm - cp.along_nm:.1f} nm on.</p>"
+            if nxt
+            else f"<p>The last checkpoint before {escape(dest)}.</p>",
+            '<p style="color: #666; font-size: 15px;">How easy to spot is Wingtip Maps\' estimate, '
+            "from a model trained on pilots' ratings of what the sectional shows.</p>",
+            "</body></html>",
+            "",
+        ]
+    )
 
 
 def _coordinates(lat: float, lon: float) -> str:
@@ -235,41 +246,52 @@ def pack_files(idents: list[str], line: list, cps: list[PackCheckpoint], version
     folder = folder_name(idents)
     title = " → ".join(idents)
     files = {
-        f"{folder}/manifest.json": json.dumps({
-            "name": f"Wingtip checkpoints {dep}-{dest}",
-            "abbreviation": f"WT.{short(dep)}{short(dest)}",
-            "version": version,
-            "organizationName": "Wingtip Maps",
-        }, indent=2),
-        f"{folder}/navdata/Checkpoints.kml": "\n".join([
-            '<?xml version="1.0" encoding="UTF-8"?>',
-            '<kml xmlns="http://www.opengis.net/kml/2.2">',
-            "<Document>",
-            f"<name>{escape(title)} checkpoints</name>",
-            *(f"<Placemark><name>{name}</name><description>{escape(description(cp))}</description>"
-              f"<Point><coordinates>{_coordinates(cp.lat, cp.lon)}</coordinates></Point></Placemark>"
-              for name, cp in zip(names, cps)),
-            "</Document>",
-            "</kml>",
-            "",
-        ]),
-        f"{folder}/layers/{short(dep)}-{short(dest)} course.kml": "\n".join([
-            '<?xml version="1.0" encoding="UTF-8"?>',
-            '<kml xmlns="http://www.opengis.net/kml/2.2">',
-            "<Document>",
-            f"<name>{escape(title)}</name>",
-            # KML's colours run alpha, blue, green, red.
-            '<Style id="course"><LineStyle><color>ffff8a1e</color><width>3</width></LineStyle></Style>',
-            '<Style id="label"><IconStyle><scale>0</scale></IconStyle></Style>',
-            f'<Placemark><name>{escape(title)}</name><styleUrl>#course</styleUrl><LineString><coordinates>'
-            f'{" ".join(_coordinates(lat, lon) for lat, lon in line)}</coordinates></LineString></Placemark>',
-            *(f"<Placemark><name>{escape(f'{cp.name} {cp.score:.1f}')}</name><styleUrl>#label</styleUrl>"
-              f"<Point><coordinates>{_coordinates(cp.lat, cp.lon)}</coordinates></Point></Placemark>"
-              for cp in cps),
-            "</Document>",
-            "</kml>",
-            "",
-        ]),
+        f"{folder}/manifest.json": json.dumps(
+            {
+                "name": f"Wingtip checkpoints {dep}-{dest}",
+                "abbreviation": f"WT.{short(dep)}{short(dest)}",
+                "version": version,
+                "organizationName": "Wingtip Maps",
+            },
+            indent=2,
+        ),
+        f"{folder}/navdata/Checkpoints.kml": "\n".join(
+            [
+                '<?xml version="1.0" encoding="UTF-8"?>',
+                '<kml xmlns="http://www.opengis.net/kml/2.2">',
+                "<Document>",
+                f"<name>{escape(title)} checkpoints</name>",
+                *(
+                    f"<Placemark><name>{name}</name><description>{escape(description(cp))}</description>"
+                    f"<Point><coordinates>{_coordinates(cp.lat, cp.lon)}</coordinates></Point></Placemark>"
+                    for name, cp in zip(names, cps)
+                ),
+                "</Document>",
+                "</kml>",
+                "",
+            ]
+        ),
+        f"{folder}/layers/{short(dep)}-{short(dest)} course.kml": "\n".join(
+            [
+                '<?xml version="1.0" encoding="UTF-8"?>',
+                '<kml xmlns="http://www.opengis.net/kml/2.2">',
+                "<Document>",
+                f"<name>{escape(title)}</name>",
+                # KML's colours run alpha, blue, green, red.
+                '<Style id="course"><LineStyle><color>ffff8a1e</color><width>3</width></LineStyle></Style>',
+                '<Style id="label"><IconStyle><scale>0</scale></IconStyle></Style>',
+                f'<Placemark><name>{escape(title)}</name><styleUrl>#course</styleUrl><LineString><coordinates>'
+                f'{" ".join(_coordinates(lat, lon) for lat, lon in line)}</coordinates></LineString></Placemark>',
+                *(
+                    f"<Placemark><name>{escape(f'{cp.name} {cp.score:.1f}')}</name><styleUrl>#label</styleUrl>"
+                    f"<Point><coordinates>{_coordinates(cp.lat, cp.lon)}</coordinates></Point></Placemark>"
+                    for cp in cps
+                ),
+                "</Document>",
+                "</kml>",
+                "",
+            ]
+        ),
     }
     for i, (name, cp) in enumerate(zip(names, cps)):
         files[f"{folder}/navdata/{name}Checkpoint {i + 1} of {len(cps)}, {cp.name}.txt"] = _page(title, dep, dest, cps, i)

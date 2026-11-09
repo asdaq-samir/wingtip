@@ -26,6 +26,7 @@ The reading of each file and how long its copy is held are the engine's
 the planner and the phones read: this module fetches, asks the engine
 (wingtip_native) to read what came, and stores the engine's typed form.
 """
+
 from __future__ import annotations
 
 import gzip
@@ -63,8 +64,11 @@ def _held_until(product: str):
 SOURCES = {
     name: (f"{CACHE_BASE_URL}/{file}.cache.xml.gz", _reader(name), _held_until(name))
     for name, file in (
-        ("metars", "metars"), ("tafs", "tafs"), ("airsigmets", "airsigmets"),
-        ("pireps", "aircraftreports"), ("gairmets", "gairmets"),
+        ("metars", "metars"),
+        ("tafs", "tafs"),
+        ("airsigmets", "airsigmets"),
+        ("pireps", "aircraftreports"),
+        ("gairmets", "gairmets"),
     )
 }
 
@@ -111,4 +115,3 @@ def keep_recent_winds(metars: dict, now: float) -> None:
     oldest = now - RECENT_WIND_HOURS * 3600
     winds = {ident: w for ident, w in winds.items() if w["observed"] >= oldest}
     weather_store.write("recent-winds", winds, fetched_at=now, until=None)
-

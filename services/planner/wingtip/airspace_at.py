@@ -18,6 +18,7 @@ start (2026-11-01). Where the cycle pack (wingtip.cycle_pack) was made from this
 file, a tap asks the engine of the pack instead: the same rings, kept as
 WKB, the boxes and the walk in Rust, and nothing to index at the start.
 """
+
 from __future__ import annotations
 
 import json
@@ -41,9 +42,43 @@ CLASS_A_FLOOR_FT = float(json.loads(wingtip_native.call("altitude_limits", "{}")
 #: the ones they sit under -- a pilot by Leesburg or Galveston was told no
 #: transponder was needed (the aviation check, 2026-10-27).
 MODE_C_VEIL_AIRPORTS = (
-    "KATL", "KBWI", "KBOS", "KADW", "KIAD", "KCLT", "KORD", "KCLE", "KCVG", "KDFW", "KDEN", "KDTW", "PHNL",
-    "KIAH", "KHOU", "KMCI", "KLAS", "KLAX", "KMEM", "KMIA", "KMSP", "KEWR", "KMSY", "KJFK", "KLGA", "KMCO",
-    "KPHL", "KPHX", "KPIT", "KSTL", "KSLC", "KNKX", "KSAN", "KSFO", "KSEA", "KTPA", "KDCA",
+    "KATL",
+    "KBWI",
+    "KBOS",
+    "KADW",
+    "KIAD",
+    "KCLT",
+    "KORD",
+    "KCLE",
+    "KCVG",
+    "KDFW",
+    "KDEN",
+    "KDTW",
+    "PHNL",
+    "KIAH",
+    "KHOU",
+    "KMCI",
+    "KLAS",
+    "KLAX",
+    "KMEM",
+    "KMIA",
+    "KMSP",
+    "KEWR",
+    "KMSY",
+    "KJFK",
+    "KLGA",
+    "KMCO",
+    "KPHL",
+    "KPHX",
+    "KPIT",
+    "KSTL",
+    "KSLC",
+    "KNKX",
+    "KSAN",
+    "KSFO",
+    "KSEA",
+    "KTPA",
+    "KDCA",
 )
 #: The shapefile's UPPER_VAL for "up to but not including Class A".
 _TO_CLASS_A = -9998.0
@@ -148,8 +183,11 @@ def volumes_at(lat: float, lon: float, shp_path) -> list[dict]:
         return [_volume(fields[k]) for k in wingtip_native.pack_holding(pack.mapped, "airspace", float(lon), float(lat))]
     boxes, volumes, mapped = _volumes_index(str(path), path.stat().st_mtime)
     near = np.flatnonzero((boxes[:, 0] <= lon) & (boxes[:, 2] >= lon) & (boxes[:, 1] <= lat) & (boxes[:, 3] >= lat))
-    return [_volume(volumes[k][2]) for k in near
-            if wingtip_native.shape_holds(mapped[volumes[k][0]:volumes[k][0] + volumes[k][1]], float(lon), float(lat))]
+    return [
+        _volume(volumes[k][2])
+        for k in near
+        if wingtip_native.shape_holds(mapped[volumes[k][0] : volumes[k][0] + volumes[k][1]], float(lon), float(lat))
+    ]
 
 
 def column(lat: float, lon: float, ground_ft: float, volumes: list[dict], in_veil: bool = False) -> list[dict]:

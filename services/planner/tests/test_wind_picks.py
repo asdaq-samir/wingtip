@@ -1,6 +1,7 @@
 """The nav log's first plan flies the runways into the wind the page picks
 a moment later (wingtip.flight_plan.wind_picks): a field within the hour by
 its own report, the pilot's picks kept, the rest left for the page."""
+
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
@@ -12,8 +13,15 @@ NOW = datetime(2026, 10, 28, 18, 0, tzinfo=timezone.utc)
 
 
 def _flight(dep, dest, lands=True):
-    return SimpleNamespace(idents=[dep, dest], dep_ident=dep, dest_ident=dest, takes_off=True, lands=lands,
-                           dep_airport={"ident": dep, "lat": 1.0, "lon": 2.0}, dest_airport={"ident": dest, "lat": 3.0, "lon": 4.0})
+    return SimpleNamespace(
+        idents=[dep, dest],
+        dep_ident=dep,
+        dest_ident=dest,
+        takes_off=True,
+        lands=lands,
+        dep_airport={"ident": dep, "lat": 1.0, "lon": 2.0},
+        dest_airport={"ident": dest, "lat": 3.0, "lon": 4.0},
+    )
 
 
 def _stubbed(monkeypatch, favoured, forecast=(), nearby=()):
@@ -23,8 +31,10 @@ def _stubbed(monkeypatch, favoured, forecast=(), nearby=()):
     monkeypatch.setattr(fp.runway_wind, "with_winds", lambda runways, metar, lat, lon: runways)
     monkeypatch.setattr(fp.pattern, "with_traffic", lambda ways, ident, lat, lon: ways)
     monkeypatch.setattr(fp.runway_wind, "runway_in_use", lambda ways: favoured.get(ways[0]))
+
     def picked(ways, wind):
         return wind and (f"{ways[0]}@{wind['at']}" if "at" in wind else f"{ways[0]} by {wind['by']}")
+
     monkeypatch.setattr(fp.runway_wind, "wind_pick", picked)
     monkeypatch.setattr(fp, "_wind_of", lambda report, airport, source: {"by": "KUGN"} if source in nearby else None)
     monkeypatch.setattr(fp.weather, "forecast_wind", lambda lat, lon, at, ident: {"at": at} if ident in forecast else None)
@@ -54,8 +64,10 @@ def test_a_field_reached_after_the_hour_by_its_forecast_then_and_none_with_no_re
     # A departure two hours off: the forecast's at both.
     q = plan_query.PlanQuery(dep="KMSN", dest="KDSM", wind_runways=True, depart=datetime(2026, 10, 28, 20, 0, tzinfo=timezone.utc))
     picks = fp.wind_picks(r, SimpleNamespace(hop_legs=[[{"ete_min": 30}]]), q.asked())
-    assert picks == ({"MSN": f"KMSN@{datetime(2026, 10, 28, 20, 0, tzinfo=timezone.utc).timestamp():.0f}"},
-                     {"DSM": f"KDSM@{datetime(2026, 10, 28, 20, 30, tzinfo=timezone.utc).timestamp():.0f}"})
+    assert picks == (
+        {"MSN": f"KMSN@{datetime(2026, 10, 28, 20, 0, tzinfo=timezone.utc).timestamp():.0f}"},
+        {"DSM": f"KDSM@{datetime(2026, 10, 28, 20, 30, tzinfo=timezone.utc).timestamp():.0f}"},
+    )
     # C81 reports nothing, nor anything near it: none, the page's.
     r = SimpleNamespace(flights=[_flight("C81", "KMSN")])
     q = plan_query.PlanQuery(dep="C81", dest="KMSN", wind_runways=True)

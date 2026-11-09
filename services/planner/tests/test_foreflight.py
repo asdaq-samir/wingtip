@@ -1,6 +1,7 @@
 """The ForeFlight content pack of a route's checkpoints (app.foreflight):
 ForeFlight's waypoint rules, a page named for each waypoint, the course,
 and the ZIP its link downloads."""
+
 import io
 import json
 import re
@@ -21,6 +22,7 @@ def _no_place_names(monkeypatch):
     """Checkpoints by their kind and number, whether or not another test
     loaded the place names; the names' own test sets a table of its own."""
     monkeypatch.setattr(places, "_TABLE", None)
+
 
 P = foreflight.PackCheckpoint
 CHECKPOINTS = [
@@ -59,19 +61,32 @@ def test_one_folder_a_manifest_the_waypoints_a_page_each_named_for_it_and_the_co
     ]
     manifest = json.loads(files["C81-KDLH-checkpoints/manifest.json"])
     assert manifest == {
-        "name": "Wingtip checkpoints C81-KDLH", "abbreviation": "WT.C81DLH", "version": 1.0, "organizationName": "Wingtip Maps",
+        "name": "Wingtip checkpoints C81-KDLH",
+        "abbreviation": "WT.C81DLH",
+        "version": 1.0,
+        "organizationName": "Wingtip Maps",
     }
     waypoints = files["C81-KDLH-checkpoints/navdata/Checkpoints.kml"]
-    assert ("<Placemark><name>C81DLH02</name><description>Lake, 3.2/5, 46 nm</description>"
-            "<Point><coordinates>-88.611600,42.977300,0</coordinates></Point></Placemark>") in waypoints
+    assert (
+        "<Placemark><name>C81DLH02</name><description>Lake, 3.2/5, 46 nm</description>"
+        "<Point><coordinates>-88.611600,42.977300,0</coordinates></Point></Placemark>"
+    ) in waypoints
     assert "-88.090000,42.320000,0 -92.190000,46.840000,0" in files["C81-KDLH-checkpoints/layers/C81-DLH course.kml"]
 
 
 def test_a_page_says_what_to_look_for_the_leg_flown_to_it_where_known_and_what_comes_next():
     files = _files()
     first = files["C81-KDLH-checkpoints/navdata/C81DLH01Checkpoint 1 of 3, Town.txt"]
-    for words in ("Checkpoint 1 of 3, C81 → KDLH", "the yellow of its built-up area", "5.0 of 5", "322°",
-                  "4,500 ft", "0:02", "N42°22.3′ W088°05.6′", "Next: Lake, 42.9 nm on."):
+    for words in (
+        "Checkpoint 1 of 3, C81 → KDLH",
+        "the yellow of its built-up area",
+        "5.0 of 5",
+        "322°",
+        "4,500 ft",
+        "0:02",
+        "N42°22.3′ W088°05.6′",
+        "Next: Lake, 42.9 nm on.",
+    ):
         assert words in first
     last = files["C81-KDLH-checkpoints/navdata/C81DLH03Checkpoint 3 of 3, Road or railway.txt"]
     assert "Magnetic heading" not in last
@@ -147,8 +162,7 @@ def test_its_folders_can_be_opened_and_its_files_read_once_unzipped():
 
 
 def test_a_named_place_is_the_waypoints_name_and_a_name_twice_gets_a_number(tmp_path, monkeypatch):
-    text = ("feature_id|feature_name|feature_class|prim_lat_dec|prim_long_dec\n"
-            "1|Village of Lake Zurich|Civil|42.372|-88.0928\n")
+    text = "feature_id|feature_name|feature_class|prim_lat_dec|prim_long_dec\n1|Village of Lake Zurich|Civil|42.372|-88.0928\n"
     places.prepare(io.StringIO(text), tmp_path / "places.csv")
     monkeypatch.setattr(places, "_TABLE", places._load(tmp_path / "places.csv"))
     cps = [P(42.372, -88.0928, "town", 5, 2.9), P(42.3721, -88.0929, "town", 4, 3.0), P(42.9773, -88.6116, "water", 3.18, 45.8)]
@@ -173,6 +187,7 @@ def test_the_checkpoints_carry_their_names_in_the_pack():
 def test_a_pack_made_later_has_a_higher_version_and_a_near_name_is_short():
     # ForeFlight takes a pack over one of the same name only at a higher version.
     from datetime import datetime, timezone
+
     assert foreflight.version_at(datetime(2026, 10, 6, 14, 38, tzinfo=timezone.utc)) == 20261006.1438
     assert foreflight.version_at(datetime(2026, 10, 6, 14, 39, tzinfo=timezone.utc)) > 20261006.1438
     assert foreflight._waypoint_word("Road or railway near Watertown") == "ROAD_WATERTOWN"
@@ -182,6 +197,7 @@ def test_a_pack_made_later_has_a_higher_version_and_a_near_name_is_short():
 
 def test_a_present_position_is_pos_in_a_waypoint_name():
     assert foreflight.short("@42.2333,-87.9883") == "POS"
-    names = foreflight.waypoint_names("@42.2333,-87.9883", "C29", [
-        foreflight.PackCheckpoint(lat=42.5, lon=-88.5, category="airport", score=4.6, along_nm=33.0)])
+    names = foreflight.waypoint_names(
+        "@42.2333,-87.9883", "C29", [foreflight.PackCheckpoint(lat=42.5, lon=-88.5, category="airport", score=4.6, along_nm=33.0)]
+    )
     assert names == ["POSC2901"]

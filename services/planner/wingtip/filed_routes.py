@@ -10,6 +10,7 @@ The flight plans are IFR's: TFMS has the NAS's flight plans, and a VFR
 flight plan stays with Flight Service. Those are the routes ATC clears and
 pilots fly, the "most flown" the owner asked for.
 """
+
 from __future__ import annotations
 
 import re
@@ -153,10 +154,13 @@ def record(found: list[dict], now: float | None = None) -> int:
         db = _connection()
         if rows:
             # The aircraft kept where an update doesn't repeat it.
-            db.executemany("""
+            db.executemany(
+                """
                 INSERT INTO filings (gufi, dep, dest, stops, aircraft, heard) VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT (gufi) DO UPDATE SET dep = excluded.dep, dest = excluded.dest, stops = excluded.stops,
-                    aircraft = COALESCE(excluded.aircraft, filings.aircraft), heard = excluded.heard""", rows)
+                    aircraft = COALESCE(excluded.aircraft, filings.aircraft), heard = excluded.heard""",
+                rows,
+            )
         if now - _pruned_at > 3600:
             db.execute("DELETE FROM filings WHERE heard < ?", (now - KEEP_S,))
             _pruned_at = now
@@ -185,8 +189,14 @@ def most_filed(dep: str, dest: str, *, limit: int = 3, now: float | None = None)
     if _db is None and not STORE.exists() and not FORMER.exists():
         return []
     with _LOCK:
-        rows = _connection().execute("""
+        rows = (
+            _connection()
+            .execute(
+                """
             SELECT stops, COUNT(*) AS n FROM filings WHERE dep = ? AND dest = ? AND heard >= ?
             GROUP BY stops HAVING n >= ? ORDER BY n DESC, stops LIMIT ?""",
-            (same(dep), same(dest), now - KEEP_S, AT_LEAST, limit)).fetchall()
+                (same(dep), same(dest), now - KEEP_S, AT_LEAST, limit),
+            )
+            .fetchall()
+        )
     return [{"stops": stops.split() if stops else [], "flights": n} for stops, n in rows]

@@ -3,6 +3,7 @@ sources answered from the test's table: a sentence is kept only where
 every id it cites is a source given; the briefer out of reach is an
 answer with no sentences and why; no sources is no call; the planner's
 refusal is the answer's."""
+
 from types import SimpleNamespace
 
 import anthropic
@@ -36,6 +37,7 @@ def canned(monkeypatch, *outputs):
 @pytest.fixture(autouse=True)
 def no_real_model(monkeypatch):
     """No test here may reach the model: a call not canned fails."""
+
     def unexpected(material, output):
         raise AssertionError("the model was asked without a canned answer")
 
@@ -47,11 +49,16 @@ def _response(status: int):
 
 
 def test_a_sentence_citing_a_given_id_is_kept_with_its_source_and_one_citing_an_unknown_id_is_dropped(monkeypatch):
-    calls = canned(monkeypatch, {"sentences": [
-        {"text": "C81 is VFR with 10 sm.", "sources": ["metar:C81"]},
-        {"text": "KDLH is IFR.", "sources": ["metar:C81", "metar:KDLH"]},  # not a source it was given
-        {"text": "The sky is clear.", "sources": []},  # rests on nothing
-    ]})
+    calls = canned(
+        monkeypatch,
+        {
+            "sentences": [
+                {"text": "C81 is VFR with 10 sm.", "sources": ["metar:C81"]},
+                {"text": "KDLH is IFR.", "sources": ["metar:C81", "metar:KDLH"]},  # not a source it was given
+                {"text": "The sky is clear.", "sources": []},  # rests on nothing
+            ]
+        },
+    )
     given = [words.Source(**C81), words.Source(id="taf:KDLH", label="KDLH TAF", text="TAF text")]
 
     answer = words.say("Say it.", given)
@@ -111,9 +118,14 @@ def test_the_notam_words_carry_the_feeds_since_and_what_was_unchecked(monkeypatc
 
 def test_the_notam_prompt_carries_the_coverage_day_and_never_claims_completeness(monkeypatch, fake_planner):
     calls = canned(monkeypatch, {"sentences": [{"text": "Runway 09/27 is closed.", "sources": ["notam:DLH 10/012"]}]})
-    fake_planner.answer("/api/words/notams/sources", {
-        "sources": [{"id": "notam:DLH 10/012", "label": "NOTAM DLH 10/012", "text": "RWY 09/27 CLSD"}],
-        "coverage_since": "2026-10-19", "unchecked": []})
+    fake_planner.answer(
+        "/api/words/notams/sources",
+        {
+            "sources": [{"id": "notam:DLH 10/012", "label": "NOTAM DLH 10/012", "text": "RWY 09/27 CLSD"}],
+            "coverage_since": "2026-10-19",
+            "unchecked": [],
+        },
+    )
     body = client.post("/api/words/notams", json={"dep": "C81", "dest": "KDLH"}).json()
     assert "<coverage>NOTAMs heard from the FAA feed since 2026-10-19.</coverage>" in calls[0]
     assert "Never say there are no NOTAMs" in words.SYSTEM and "none heard since" in words.SYSTEM
@@ -136,8 +148,13 @@ def test_the_changes_make_no_call_when_nothing_changed(monkeypatch, fake_planner
 
 def test_the_debrief_words_carry_the_instructor_note_and_the_planners_422_is_the_answers(monkeypatch, fake_planner):
     fake_planner.answer("/api/words/debrief/sources", {"sources": [{"id": "leg:1", "label": "Leg Lake to B", "text": "300 ft high."}]})
-    canned(monkeypatch, {"sentences": [{"text": "The second leg ran 300 ft high.", "sources": ["leg:1"]}],
-                         "instructor_note": "Altitude on the second leg wants work."})
+    canned(
+        monkeypatch,
+        {
+            "sentences": [{"text": "The second leg ran 300 ft high.", "sources": ["leg:1"]}],
+            "instructor_note": "Altitude on the second leg wants work.",
+        },
+    )
 
     body = client.post("/api/words/debrief", json={"debrief": {"takeoff": 1}}).json()
     assert body["instructor_note"] == "Altitude on the second leg wants work."

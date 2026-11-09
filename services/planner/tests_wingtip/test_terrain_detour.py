@@ -9,8 +9,9 @@ from wingtip import fixes, terrain_detour
 
 
 def _fields(*rows):
-    return pd.DataFrame([{"ident": i, "name": f"{i} FIELD", "lat": la, "lon": lo} for i, la, lo in rows],
-                        columns=["ident", "name", "lat", "lon"])
+    return pd.DataFrame(
+        [{"ident": i, "name": f"{i} FIELD", "lat": la, "lon": lo} for i, la, lo in rows], columns=["ident", "name", "lat", "lon"]
+    )
 
 
 def test_round_a_ridge_by_the_field_at_its_end(monkeypatch):
@@ -19,6 +20,7 @@ def test_round_a_ridge_by_the_field_at_its_end(monkeypatch):
     def heights(lats, lons):
         ridge = (lons > 1.0) & (lons < 2.0) & (lats > -1.0) & (lats < 3.0)
         return np.where(ridge, 12_000.0, 500.0)
+
     monkeypatch.setattr(terrain_detour, "heights_ft", heights)
     fields = _fields(("SOUTH", -1.6, 1.5), ("NORTH", 3.6, 1.5), ("ONRIDGE", 0.0, 1.5))
     way = terrain_detour.way_round((0.0, 0.0), (0.0, 3.0), 10_950, fields=fields)
@@ -35,6 +37,7 @@ def test_a_turn_with_no_field_is_named_off_a_fix_or_the_way_is_none(monkeypatch)
     # a point of the pilot's own; with no fix to name one off, no way.
     def heights(lats, lons):
         return np.where((lons > 1.0) & (lons < 2.0) & (lats > -1.0) & (lats < 3.0), 12_000.0, 500.0)
+
     monkeypatch.setattr(terrain_detour, "heights_ft", heights)
     monkeypatch.setattr(fixes, "frd_near", lambda lat, lon: {"ident": "OWN", "name": "own point"})
     way = terrain_detour.way_round((0.0, 0.0), (0.0, 3.0), 10_950, fields=_fields())

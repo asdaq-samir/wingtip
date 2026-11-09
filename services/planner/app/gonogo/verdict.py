@@ -13,6 +13,7 @@ name through wingtip_native.call, the one copy the planner, the web app
 
 A finding (lib/findings) is "ok", "caution", "stop", "unknown" or
 "pending"; the input is the web's VerdictInput in snake case."""
+
 from . import ask
 
 RISK_FINDING = {"low": "ok", "caution": "caution", "high": "stop"}

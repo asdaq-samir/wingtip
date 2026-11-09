@@ -3,6 +3,7 @@ lib/map/gl/terrain): the terrain tiles the planner reads its floors from
 (wingtip.elevation), for the map's raster-dem source, and the FAA's
 Digital Obstacle File in the view, for the obstacles stood up over that
 ground. app.routers.terrain serves them."""
+
 from . import elevation, faa_data, terrain
 
 #: The finest terrain tile served: the planner's own (TERRAIN_TILE_ZOOM,
@@ -33,13 +34,14 @@ def tile_png(z: int, x: int, y: int) -> bytes:
     """One {z}/{x}/{y} terrain tile as a terrarium PNG, cleaned
     (elevation.terrain_tile_png). Raises NoSuchTile off the grid, and
     requests.RequestException where it cannot be fetched."""
-    if not (0 <= z <= MAX_ZOOM) or not (0 <= x < 2 ** z) or not (0 <= y < 2 ** z):
+    if not (0 <= z <= MAX_ZOOM) or not (0 <= x < 2**z) or not (0 <= y < 2**z):
         raise NoSuchTile(f"terrain tiles exist for zoom 0-{MAX_ZOOM}")
     return elevation.terrain_tile_png(z, x, y)
 
 
-def obstacles_in_box(south: float, west: float, north: float, east: float,
-                     min_agl_ft: float = OBSTACLE_MIN_AGL_FT, faa_cache_dir=None) -> tuple[list[dict], bool]:
+def obstacles_in_box(
+    south: float, west: float, north: float, east: float, min_agl_ft: float = OBSTACLE_MIN_AGL_FT, faa_cache_dir=None
+) -> tuple[list[dict], bool]:
     """The DOF's obstacles in the box at least `min_agl_ft` tall, tallest
     first, at most MAX_OBSTACLES of them: each {lat, lon, agl_ft, amsl_ft,
     type, lit}, and whether some were left out. Raises BoxTooWide, and
@@ -49,6 +51,17 @@ def obstacles_in_box(south: float, west: float, north: float, east: float,
     dof = faa_data.ensure_nasr_file("DOF.DAT", faa_cache_dir or terrain.DEFAULT_FAA_CACHE_DIR)
     found = faa_data.load_obstacles(dof, (south, west, north, east), min_agl_ft=min_agl_ft)
     tallest = found.sort_values("agl_ft", ascending=False).head(MAX_OBSTACLES)
-    return ([{"lat": float(r.lat), "lon": float(r.lon), "agl_ft": round(r.agl_ft), "amsl_ft": round(r.amsl_ft),
-              "type": str(r.type or ""), "lit": bool(r.lit)} for r in tallest.itertuples(index=False)],
-            len(found) > len(tallest))
+    return (
+        [
+            {
+                "lat": float(r.lat),
+                "lon": float(r.lon),
+                "agl_ft": round(r.agl_ft),
+                "amsl_ft": round(r.amsl_ft),
+                "type": str(r.type or ""),
+                "lit": bool(r.lit),
+            }
+            for r in tallest.itertuples(index=False)
+        ],
+        len(found) > len(tallest),
+    )

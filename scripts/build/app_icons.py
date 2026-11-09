@@ -18,6 +18,7 @@ and run the script. `--check` draws everything into memory and fails
 where a committed file differs (CI): PNGs by their pixels, within a step
 of rounding, since two zlib builds pack the same pixels differently.
 """
+
 from __future__ import annotations
 
 import io
@@ -139,24 +140,40 @@ def ios(out: dict, t: dict) -> None:
     out[IOS / "AppIcon.appiconset/AppIcon-dark.png"] = render(svg_text("appicon-dark.svg"), 1024).convert("RGB")
     out[IOS / "AppIcon.appiconset/AppIcon-tinted.png"] = render(svg_text("appicon-tinted.svg"), 1024).convert("L").convert("RGB")
     one = {"idiom": "universal", "platform": "ios", "size": "1024x1024"}
-    out[IOS / "AppIcon.appiconset/Contents.json"] = contents([
-        {"filename": "AppIcon.png", **one},
-        {"appearances": [{"appearance": "luminosity", "value": "dark"}], "filename": "AppIcon-dark.png", **one},
-        {"appearances": [{"appearance": "luminosity", "value": "tinted"}], "filename": "AppIcon-tinted.png", **one},
-    ])
+    out[IOS / "AppIcon.appiconset/Contents.json"] = contents(
+        [
+            {"filename": "AppIcon.png", **one},
+            {"appearances": [{"appearance": "luminosity", "value": "dark"}], "filename": "AppIcon-dark.png", **one},
+            {"appearances": [{"appearance": "luminosity", "value": "tinted"}], "filename": "AppIcon-tinted.png", **one},
+        ]
+    )
     out[WATCH / "Contents.json"] = contents([])
     out[WATCH / "AppIcon.appiconset/AppIcon.png"] = small_icon(t, 1024)
     out[WATCH / "AppIcon.appiconset/Contents.json"] = contents(
-        [{"filename": "AppIcon.png", "idiom": "universal", "platform": "watchos", "size": "1024x1024"}])
+        [{"filename": "AppIcon.png", "idiom": "universal", "platform": "watchos", "size": "1024x1024"}]
+    )
 
     def srgb(hex_: str) -> dict:
-        r, g, b = (int(hex_[i:i + 2], 16) for i in (1, 3, 5))
-        return {"color-space": "srgb", "components": {
-            "red": f"0x{r:02X}", "green": f"0x{g:02X}", "blue": f"0x{b:02X}", "alpha": "1.000"}}
-    out[IOS / "LaunchBackground.colorset/Contents.json"] = json.dumps({"colors": [
-        {"color": srgb(t["launch"]), "idiom": "universal"},
-        {"appearances": [{"appearance": "luminosity", "value": "dark"}], "color": srgb(t["launch-night"]), "idiom": "universal"},
-    ], "info": {"author": "xcode", "version": 1}}, indent=2) + "\n"
+        r, g, b = (int(hex_[i : i + 2], 16) for i in (1, 3, 5))
+        return {"color-space": "srgb", "components": {"red": f"0x{r:02X}", "green": f"0x{g:02X}", "blue": f"0x{b:02X}", "alpha": "1.000"}}
+
+    out[IOS / "LaunchBackground.colorset/Contents.json"] = (
+        json.dumps(
+            {
+                "colors": [
+                    {"color": srgb(t["launch"]), "idiom": "universal"},
+                    {
+                        "appearances": [{"appearance": "luminosity", "value": "dark"}],
+                        "color": srgb(t["launch-night"]),
+                        "idiom": "universal",
+                    },
+                ],
+                "info": {"author": "xcode", "version": 1},
+            },
+            indent=2,
+        )
+        + "\n"
+    )
     # The mark at 120 points, the size Apple's own apps' launch marks are.
     images = []
     for scale in (2, 3):
@@ -251,10 +268,13 @@ def startup_links() -> str:
     lines = []
     for w, h, s in IPHONES:
         for dark in (False, True):
-            media = (f"(device-width: {w}px) and (device-height: {h}px) and (-webkit-device-pixel-ratio: {s})"
-                     f" and (orientation: portrait) and (prefers-color-scheme: {'dark' if dark else 'light'})")
-            lines.append(f'    <link rel="apple-touch-startup-image" media="{media}" '
-                         f'href="/splash/launch-{w}x{h}{"-dark" if dark else ""}.png" />')
+            media = (
+                f"(device-width: {w}px) and (device-height: {h}px) and (-webkit-device-pixel-ratio: {s})"
+                f" and (orientation: portrait) and (prefers-color-scheme: {'dark' if dark else 'light'})"
+            )
+            lines.append(
+                f'    <link rel="apple-touch-startup-image" media="{media}" href="/splash/launch-{w}x{h}{"-dark" if dark else ""}.png" />'
+            )
     return "\n".join(lines)
 
 

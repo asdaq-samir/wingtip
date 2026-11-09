@@ -23,6 +23,7 @@ of tiles; the tiles are not kept), into data/raw/ground_grid. Where it has
 not been built, or a point is outside it, wingtip.terrain reads the tiles as it
 did.
 """
+
 from __future__ import annotations
 
 import io
@@ -81,20 +82,20 @@ _HELD_LOCK = threading.Lock()
 
 
 def _tile_x(lon):
-    return (np.asarray(lon) + 180.0) / 360.0 * 2 ** ZOOM
+    return (np.asarray(lon) + 180.0) / 360.0 * 2**ZOOM
 
 
 def _tile_y(lat):
     lat = np.radians(np.asarray(lat))
-    return (1.0 - np.arcsinh(np.tan(lat)) / np.pi) / 2.0 * 2 ** ZOOM
+    return (1.0 - np.arcsinh(np.tan(lat)) / np.pi) / 2.0 * 2**ZOOM
 
 
 def _lon_of(x):
-    return np.asarray(x) / 2 ** ZOOM * 360.0 - 180.0
+    return np.asarray(x) / 2**ZOOM * 360.0 - 180.0
 
 
 def _lat_of(y):
-    return np.degrees(np.arctan(np.sinh(np.pi * (1.0 - 2.0 * np.asarray(y) / 2 ** ZOOM))))
+    return np.degrees(np.arctan(np.sinh(np.pi * (1.0 - 2.0 * np.asarray(y) / 2**ZOOM))))
 
 
 #: How long "not built" is believed before the files are looked for again,

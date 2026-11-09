@@ -1,6 +1,7 @@
 """Temporary flight restrictions fetched from tfr.faa.gov and stored
 (app.tfr), without the network: the shapes and the NOTAMs' details stubbed
 with the site's own shapes. Moved from the planner's tests (#535)."""
+
 from unittest.mock import Mock
 
 import pytest
@@ -25,10 +26,14 @@ DETAIL = b"""<XNOTAM-Update><Group><Add><Not>
 
 def test_a_notams_detail_is_its_times_rule_purpose_and_altitudes():
     assert tfr.parse_detail(DETAIL) == {
-        "effective": "2026-10-01T16:00:00Z", "expires": "2026-10-15T02:00:00Z",
+        "effective": "2026-10-01T16:00:00Z",
+        "expires": "2026-10-15T02:00:00Z",
         "rule": "relief aircraft operations (91.137(a)(2))",
         "purpose": "To provide a safe environment for fire fighting acft ops",
-        "floor_ft": 0.0, "floor_ref": "MSL", "ceiling_ft": 10000.0, "ceiling_ref": "MSL",
+        "floor_ft": 0.0,
+        "floor_ref": "MSL",
+        "ceiling_ft": 10000.0,
+        "ceiling_ref": "MSL",
     }
 
 
@@ -46,11 +51,15 @@ def _square(lat, lon, half=0.05):
 
 def test_the_list_is_one_tfr_per_notam_with_its_detail_and_stored(monkeypatch):
     features = [
-        {"properties": {"NOTAM_KEY": "6/1-1-FDC-F", "TITLE": "ON IT", "LEGAL": "SECURITY", "LAST_MODIFICATION_DATETIME": "1"},
-         "geometry": {"type": "Polygon", "coordinates": _square(42.5, -88.0)}},
+        {
+            "properties": {"NOTAM_KEY": "6/1-1-FDC-F", "TITLE": "ON IT", "LEGAL": "SECURITY", "LAST_MODIFICATION_DATETIME": "1"},
+            "geometry": {"type": "Polygon", "coordinates": _square(42.5, -88.0)},
+        },
         # A second area of the same NOTAM joins the first.
-        {"properties": {"NOTAM_KEY": "6/1-2-FDC-F", "TITLE": "ON IT", "LEGAL": "SECURITY", "LAST_MODIFICATION_DATETIME": "1"},
-         "geometry": {"type": "Polygon", "coordinates": _square(42.6, -88.0)}},
+        {
+            "properties": {"NOTAM_KEY": "6/1-2-FDC-F", "TITLE": "ON IT", "LEGAL": "SECURITY", "LAST_MODIFICATION_DATETIME": "1"},
+            "geometry": {"type": "Polygon", "coordinates": _square(42.6, -88.0)},
+        },
     ]
     asked = []
 

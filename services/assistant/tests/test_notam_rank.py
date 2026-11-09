@@ -4,6 +4,7 @@ conftest's table, Claude stubbed. The engine's order holds but for a tie
 the model may reorder; a line with a figure its NOTAM does not have is
 the engine's reasons instead; the model out of reach is every line the
 engine's, and the ranking still whole."""
+
 import json
 from pathlib import Path
 
@@ -32,8 +33,11 @@ def test_the_ranking_is_the_engines_with_the_models_lines_and_its_tie(monkeypatc
     asked = []
     fake_planner.answer("/api/notams/ranked", lambda body: asked.append(body) or CASE["planner"])
     material = []
-    monkeypatch.setattr(notam_rank, "_lines", lambda ranked, since: material.append([n.id for n in ranked])
-                        or notam_rank.NotamLines.model_validate(CASE["model"]))
+    monkeypatch.setattr(
+        notam_rank,
+        "_lines",
+        lambda ranked, since: material.append([n.id for n in ranked]) or notam_rank.NotamLines.model_validate(CASE["model"]),
+    )
 
     resp = client.post("/api/words/notams/ranked", json=CASE["ask"])
 
@@ -69,8 +73,9 @@ def test_the_model_out_of_reach_is_every_line_the_engines(monkeypatch, fake_plan
     body = client.post("/api/words/notams/ranked", json=CASE["ask"]).json()
     assert [n["id"] for n in body["notams"]] == [n["id"] for n in CASE["planner"]["notams"]]
     assert not any(n["worded"] for n in body["notams"])
-    assert body["notams"][0]["why"] == ("In force while you are at KOSH; At KOSH, your destination; "
-                                        "Names runway 18/36, the one in use at KOSH; Closes what it names.")
+    assert body["notams"][0]["why"] == (
+        "In force while you are at KOSH; At KOSH, your destination; Names runway 18/36, the one in use at KOSH; Closes what it names."
+    )
     assert body["unavailable"] == "The briefer cannot be reached."
 
 
@@ -90,4 +95,3 @@ def test_nothing_heard_is_no_call(fake_planner):
     fake_planner.answer("/api/notams/ranked", {"notams": [], "top": 0, "coverage_since": "2026-10-19", "unchecked": ["tfrs"]})
     body = client.post("/api/words/notams/ranked", json=CASE["ask"]).json()
     assert body["notams"] == [] and body["unchecked"] == ["tfrs"] and body["unavailable"] is None
-

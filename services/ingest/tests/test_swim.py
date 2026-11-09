@@ -2,6 +2,7 @@
 reads -- the STDDS terminal radar's tracks to wingtip.traffic's live store,
 from a message in the feed's own shape (TATrackAndFlightPlan), FNS's to
 wingtip.notams, TFMS's to wingtip.filed_routes."""
+
 from wingtip import traffic
 
 from ingest import swim
@@ -193,9 +194,11 @@ def test_stdds_rvr_datis_and_departures_and_tfms_programs_have_their_readers():
 
 def test_an_rvr_message_reaches_the_planners_store(monkeypatch):
     monkeypatch.setitem(swim.STATE, "STDDS", {"connected": True, "messages": 0, "items": 0, "last_at": None, "error": None})
-    message = ('<ns2:RVRDataUpdateMessage xmlns:ns2="x"><airport>KACY</airport><runwayData><runwayID><numericRunwayID>13'
-               '</numericRunwayID><runwaySubID> </runwaySubID></runwayID><touchdownVisualRange>24</touchdownVisualRange>'
-               '<rolloutVisualRange>60</rolloutVisualRange></runwayData></ns2:RVRDataUpdateMessage>')
+    message = (
+        '<ns2:RVRDataUpdateMessage xmlns:ns2="x"><airport>KACY</airport><runwayData><runwayID><numericRunwayID>13'
+        '</numericRunwayID><runwaySubID> </runwaySubID></runwayID><touchdownVisualRange>24</touchdownVisualRange>'
+        '<rolloutVisualRange>60</rolloutVisualRange></runwayData></ns2:RVRDataUpdateMessage>'
+    )
     swim.handle("STDDS", _Routed("APDS/all/false/RR/KACY/N90", raw=message.encode()))
     assert swim.STATE["STDDS"]["items"] == 1
     [end] = swim.rvr.at_airport("KACY")

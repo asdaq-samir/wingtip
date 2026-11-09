@@ -1,5 +1,6 @@
 """What every router starts from: the route's idents, the airports
 behind them, and the on-disk paths a corridor's data lives at."""
+
 import logging
 import re
 from dataclasses import dataclass
@@ -56,7 +57,7 @@ DIAGRAM_CACHE = f"public, max-age={28 * 24 * 3600}, immutable"
 
 
 def near_points(near: str) -> tuple:
-    """"42.2,-88.1;46.8,-92.2" as ((42.2, -88.1), (46.8, -92.2)); what is
+    """ "42.2,-88.1;46.8,-92.2" as ((42.2, -88.1), (46.8, -92.2)); what is
     not a pair of numbers left out."""
     points = []
     for pair in near.split(";"):
@@ -235,13 +236,13 @@ class Route:
         out, start = [], 0
         for i, hop in enumerate(self.hops):
             if hop.lands or i == len(self.hops) - 1:
-                out.append(Route(self.idents[start:i + 2], self.airports[start:i + 2]))
+                out.append(Route(self.idents[start : i + 2], self.airports[start : i + 2]))
                 start = i + 1
         return out
 
     @property
     def hops(self) -> list["Route"]:
-        return [Route(self.idents[i:i + 2], self.airports[i:i + 2]) for i in range(len(self.idents) - 1)]
+        return [Route(self.idents[i : i + 2], self.airports[i : i + 2]) for i in range(len(self.idents) - 1)]
 
     @property
     def length_nm(self) -> float:
@@ -256,8 +257,12 @@ class Route:
 
 def _endpoint(ident: str, airport: dict) -> dict:
     return {
-        "ident": ident, "name": airport["name"], "lat": airport["lat"], "lon": airport["lon"],
-        "elevation_ft": airport.get("elevation_ft"), "kind": "fix" if airport.get("fix") else "airport",
+        "ident": ident,
+        "name": airport["name"],
+        "lat": airport["lat"],
+        "lon": airport["lon"],
+        "elevation_ft": airport.get("elevation_ft"),
+        "kind": "fix" if airport.get("fix") else "airport",
     }
 
 
@@ -350,9 +355,12 @@ def _is_place(ident: str) -> bool:
 def _published(segment: "airways.Segment") -> dict:
     """An airway segment's published altitudes, as a hop carries them."""
     return {
-        "id": segment.airway, "from": segment.from_ident,
-        "mea_ft": segment.mea_ft, "gnss_mea_ft": segment.gnss_mea_ft,
-        "moca_ft": segment.moca_ft, "maa_ft": segment.maa_ft,
+        "id": segment.airway,
+        "from": segment.from_ident,
+        "mea_ft": segment.mea_ft,
+        "gnss_mea_ft": segment.gnss_mea_ft,
+        "moca_ft": segment.moca_ft,
+        "maa_ft": segment.maa_ft,
     }
 
 
@@ -375,7 +383,8 @@ def ndjson(lines, on_error) -> StreamingResponse:
     line instead, and the page ends with a message rather than a spinner.
     """
     return StreamingResponse(
-        _ending_in_an_error_line(lines, on_error), media_type="application/x-ndjson",
+        _ending_in_an_error_line(lines, on_error),
+        media_type="application/x-ndjson",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 

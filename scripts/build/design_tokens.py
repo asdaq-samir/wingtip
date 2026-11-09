@@ -244,10 +244,7 @@ def gen_css(tree):
         "/* The ground every look builds on, by day. */\n" + css_block(":root", root),
         "/* Night (the cockpit's navy). */\n" + css_block(".dark", decls("color", "theme", "dark")),
         "/* Wingtip, the default look: the theme's own blue, in the looks' typeface. */\n"
-        + css_block(
-            ':root[data-brand="wingtip"]',
-            [("brand-font", font_stack(tree, "font.brand").rsplit(",", 1)[0])],
-        ),
+        + css_block(':root[data-brand="wingtip"]', [("brand-font", font_stack(tree, "font.brand").rsplit(",", 1)[0])]),
         "/* Glass Cockpit: what can be tapped, the typeface and the corners.\n"
         "   :not(.dark) and .dark each, so a look's day never wins over the night. */\n"
         + css_block(

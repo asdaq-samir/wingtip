@@ -12,6 +12,7 @@ after its leg. A climb is slower than the cruise, so a point early on
 the first leg is reached a little later than this says; the window a
 hazard is compared with is widened by PASS_MARGIN_MIN either way for
 that, which can say "during" when it is not, never the other way."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -66,8 +67,14 @@ class Legs:
     from_navlog: bool
 
     @classmethod
-    def of(cls, fixes: list[tuple[float, float]], depart_s: float, ete_s: float,
-           leg_min: list[float] | None = None, ground_min: list[float] | None = None) -> Legs:
+    def of(
+        cls,
+        fixes: list[tuple[float, float]],
+        depart_s: float,
+        ete_s: float,
+        leg_min: list[float] | None = None,
+        ground_min: list[float] | None = None,
+    ) -> Legs:
         """The legs between `fixes` from `depart_s`: each flown in its own
         `leg_min` (the nav log's ETEs) and followed by its `ground_min` on
         the ground, where they are one a leg; else the whole flight's
@@ -146,18 +153,31 @@ def window_when(enter: float, leave: float, valid_from: float | None, valid_to: 
     return ask("gonogo_hazard_window", enter=enter, leave=leave, valid_from=valid_from, valid_to=valid_to)
 
 
-def on_route(legs: Legs, crossed: list[int], from_nm: float, to_nm: float, *, source: str,
-             valid_from: float | None = None, valid_to: float | None = None, issued: str | None = None) -> dict:
+def on_route(
+    legs: Legs,
+    crossed: list[int],
+    from_nm: float,
+    to_nm: float,
+    *,
+    source: str,
+    valid_from: float | None = None,
+    valid_to: float | None = None,
+    issued: str | None = None,
+) -> dict:
     """The OnRoute of a hazard met on `crossed` legs from `from_nm` to
     `to_nm` along."""
     enter, leave = legs.time_at(from_nm), legs.time_at(to_nm)
     return {
         "legs": sorted(set(crossed)),
-        "from_nm": round(from_nm, 1), "to_nm": round(to_nm, 1),
-        "enter": iso(enter), "leave": iso(leave),
-        "valid_from": iso(valid_from), "valid_to": iso(valid_to),
+        "from_nm": round(from_nm, 1),
+        "to_nm": round(to_nm, 1),
+        "enter": iso(enter),
+        "leave": iso(leave),
+        "valid_from": iso(valid_from),
+        "valid_to": iso(valid_to),
         "when": window_when(enter, leave, valid_from, valid_to),
-        "source": source, "issued": issued,
+        "source": source,
+        "issued": issued,
     }
 
 
@@ -225,10 +245,15 @@ def sigmets(legs: Legs, hazards: list[dict]) -> list[dict]:
     its working keys (area, UNIX times) left off."""
     out = []
     for h in hazards:
-        place = over_area(legs, polygon(h.get("coords")), source=sigmet_source(h),
-                          valid_from=h.get("valid_from"), valid_to=h.get("valid_to"), issued=h.get("issued"))
-        out.append({**{k: v for k, v in h.items() if k not in ("coords", "valid_from", "valid_to", "issued")},
-                    "on_route": place})
+        place = over_area(
+            legs,
+            polygon(h.get("coords")),
+            source=sigmet_source(h),
+            valid_from=h.get("valid_from"),
+            valid_to=h.get("valid_to"),
+            issued=h.get("issued"),
+        )
+        out.append({**{k: v for k, v in h.items() if k not in ("coords", "valid_from", "valid_to", "issued")}, "on_route": place})
     return out
 
 
@@ -239,9 +264,14 @@ def gairmets(legs: Legs, snapshots: list[dict], order: list[str]) -> list[dict]:
     best: dict = {}
     for snap in snapshots:
         valid = snap.get("valid") or _unix(snap.get("valid_at"))
-        place = over_area(legs, polygon(snap.get("coords")), source="G-AIRMET", issued=snap.get("issued"),
-                          valid_from=valid - GAIRMET_HALF_INTERVAL.total_seconds() if valid else None,
-                          valid_to=valid + GAIRMET_HALF_INTERVAL.total_seconds() if valid else None)
+        place = over_area(
+            legs,
+            polygon(snap.get("coords")),
+            source="G-AIRMET",
+            issued=snap.get("issued"),
+            valid_from=valid - GAIRMET_HALF_INTERVAL.total_seconds() if valid else None,
+            valid_to=valid + GAIRMET_HALF_INTERVAL.total_seconds() if valid else None,
+        )
         if place is None or valid is None:
             at = legs.starts[0] if legs.starts else 0.0
         else:
@@ -262,9 +292,17 @@ def tfrs(legs: Legs, found: list[dict]) -> list[dict]:
     or the point nearest it on one it is beside, against its NOTAM's
     times (in force from `effective` to `expires`, open-ended without)."""
     return [
-        {**t, "on_route": over_area(
-            legs, geojson(t.get("geometry")), t.get("along_track_nm"), source="TFR",
-            valid_from=_unix(t.get("effective")), valid_to=_unix(t.get("expires")))}
+        {
+            **t,
+            "on_route": over_area(
+                legs,
+                geojson(t.get("geometry")),
+                t.get("along_track_nm"),
+                source="TFR",
+                valid_from=_unix(t.get("effective")),
+                valid_to=_unix(t.get("expires")),
+            ),
+        }
         for t in found
     ]
 
@@ -273,14 +311,12 @@ def pireps(legs: Legs, found: list[dict]) -> list[dict]:
     """Each pilot report with its `on_route`: abeam where it was made. A
     report has no valid time, only when it was made (`issued`)."""
     return [
-        {**p, "on_route": at_point(legs, p.get("lat"), p.get("lon"), p.get("along_track_nm"),
-                                   source="PIREP", issued=p.get("observed_at"))}
+        {**p, "on_route": at_point(legs, p.get("lat"), p.get("lon"), p.get("along_track_nm"), source="PIREP", issued=p.get("observed_at"))}
         for p in found
     ]
 
 
-def fields_below_vfr(legs: Legs, idents: list[str], destination: str, where: dict, metars: dict,
-                     stations: list[dict], below) -> list[dict]:
+def fields_below_vfr(legs: Legs, idents: list[str], destination: str, where: dict, metars: dict, stations: list[dict], below) -> list[dict]:
     """The fields whose weather is below VFR where the flight meets them:
     each airport flown from or to reporting IFR or LIFR now (its METAR's
     flight category: AIM 7-1-7, IFR a ceiling under 1,000 ft or
@@ -295,19 +331,30 @@ def fields_below_vfr(legs: Legs, idents: list[str], destination: str, where: dic
         if metar.get("flight_category") not in ("IFR", "LIFR"):
             continue
         along = 0.0 if k == 0 else legs.total_nm if ident == destination else legs.along(*where[ident])
-        out.append({
-            "ident": ident, "source": "METAR", "flight_category": metar.get("flight_category"),
-            "ceiling_ft": metar.get("ceiling_ft"), "visibility_sm": metar.get("visibility_sm"),
-            "on_route": on_route(legs, [legs.leg_at(along)], along, along, source="METAR", issued=metar.get("observed_at")),
-        })
+        out.append(
+            {
+                "ident": ident,
+                "source": "METAR",
+                "flight_category": metar.get("flight_category"),
+                "ceiling_ft": metar.get("ceiling_ft"),
+                "visibility_sm": metar.get("visibility_sm"),
+                "on_route": on_route(legs, [legs.leg_at(along)], along, along, source="METAR", issued=metar.get("observed_at")),
+            }
+        )
     for s in stations:
         if not below(s.get("eta_ceiling_ft"), s.get("eta_visibility_sm")):
             continue
         place = at_point(legs, s.get("lat"), s.get("lon"), s.get("along_track_nm"), source="TAF")
         if place is None:
             continue
-        out.append({
-            "ident": s["icaoId"], "source": "TAF", "flight_category": None,
-            "ceiling_ft": s.get("eta_ceiling_ft"), "visibility_sm": s.get("eta_visibility_sm"), "on_route": place,
-        })
+        out.append(
+            {
+                "ident": s["icaoId"],
+                "source": "TAF",
+                "flight_category": None,
+                "ceiling_ft": s.get("eta_ceiling_ft"),
+                "visibility_sm": s.get("eta_visibility_sm"),
+                "on_route": place,
+            }
+        )
     return sorted(out, key=lambda f: f["on_route"]["from_nm"])

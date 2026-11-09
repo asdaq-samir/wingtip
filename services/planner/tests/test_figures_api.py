@@ -3,6 +3,7 @@ data and air stubbed: POST /api/debrief, GET /api/diversion, GET
 /api/holding and POST /api/lost-comms. The rules themselves are the
 engine's, held to the web's cases in engine/facade/tests/figures.rs; these
 hold the endpoints to carrying them across."""
+
 import math
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -17,12 +18,39 @@ client = TestClient(app)
 #: A flight due north along 88 W (apps/web/src/lib/debrief.test.ts's): A at
 #: 42 N, a lake 30 nm on, B 30 nm past it, 18 minutes a leg at 3,500 ft.
 CHECKPOINTS = [
-    {"sequence_no": 0, "name": "A", "category": "departure", "lat": 42, "lon": -88, "along_track_nm": 0,
-     "true_course_deg": None, "ete_min": None, "altitude_ft": None},
-    {"sequence_no": 1, "name": "Lake", "category": "lake", "lat": 42.5, "lon": -88, "along_track_nm": 30,
-     "true_course_deg": 0, "ete_min": 18, "altitude_ft": 3500},
-    {"sequence_no": 2, "name": "B", "category": "destination", "lat": 43, "lon": -88, "along_track_nm": 60,
-     "true_course_deg": 0, "ete_min": 18, "altitude_ft": 3500},
+    {
+        "sequence_no": 0,
+        "name": "A",
+        "category": "departure",
+        "lat": 42,
+        "lon": -88,
+        "along_track_nm": 0,
+        "true_course_deg": None,
+        "ete_min": None,
+        "altitude_ft": None,
+    },
+    {
+        "sequence_no": 1,
+        "name": "Lake",
+        "category": "lake",
+        "lat": 42.5,
+        "lon": -88,
+        "along_track_nm": 30,
+        "true_course_deg": 0,
+        "ete_min": 18,
+        "altitude_ft": 3500,
+    },
+    {
+        "sequence_no": 2,
+        "name": "B",
+        "category": "destination",
+        "lat": 43,
+        "lon": -88,
+        "along_track_nm": 60,
+        "true_course_deg": 0,
+        "ete_min": 18,
+        "altitude_ft": 3500,
+    },
 ]
 
 
@@ -48,11 +76,18 @@ def flown() -> list[dict]:
 
 
 def _places(monkeypatch, elevation=700.0):
-    places = {"B": {"ident": "B", "name": "Bee Field", "lat": 43.0, "lon": -88.0, "elevation_ft": elevation},
-              "KMSN": {"ident": "KMSN", "name": "Dane County Regional", "lat": 43.14, "lon": -89.34, "elevation_ft": 887.0}}
+    places = {
+        "B": {"ident": "B", "name": "Bee Field", "lat": 43.0, "lon": -88.0, "elevation_ft": elevation},
+        "KMSN": {"ident": "KMSN", "name": "Dane County Regional", "lat": 43.14, "lon": -89.34, "elevation_ft": 887.0},
+    }
     monkeypatch.setattr(figures, "airports", SimpleNamespace(find_place=lambda ident: places.get(ident.upper())))
-    monkeypatch.setattr(figures, "pattern", SimpleNamespace(
-        pattern_at=lambda ident, elevation_ft: {"altitude_ft": None if elevation_ft is None else round(elevation_ft + 1000)}))
+    monkeypatch.setattr(
+        figures,
+        "pattern",
+        SimpleNamespace(
+            pattern_at=lambda ident, elevation_ft: {"altitude_ft": None if elevation_ft is None else round(elevation_ft + 1000)}
+        ),
+    )
 
 
 def test_the_debrief_grades_the_track_with_the_fields_pattern_altitudes(monkeypatch):
@@ -61,8 +96,14 @@ def test_the_debrief_grades_the_track_with_the_fields_pattern_altitudes(monkeypa
     assert answer.status_code == 200, answer.text
     body = answer.json()
     d = body["debrief"]
-    assert body["tolerances"] == {"altitude_ft": 200, "course_deg": 15, "off_route_nm": 3, "eta_min": 5,
-                                  "pattern_nm": 1.5, "pattern_ft": 100}
+    assert body["tolerances"] == {
+        "altitude_ft": 200,
+        "course_deg": 15,
+        "off_route_nm": 3,
+        "eta_min": 5,
+        "pattern_nm": 1.5,
+        "pattern_ft": 100,
+    }
     assert [leg["from"] for leg in d["legs"]] == ["A", "Lake"]
     assert [leg["ok"] for leg in d["legs"]] == [True, False]
     assert d["passes"][0]["due_min"] == 18
@@ -83,12 +124,20 @@ def test_the_diversion_in_the_planners_air_with_the_estimates_checked(monkeypatc
 
     def leg(start, end, altitude_ft, profile, fcst_hr):
         asked.update(start=start, end=end, altitude_ft=altitude_ft, tas=profile["cruise_tas_kt"])
-        return {"true_course_deg": 360.0, "distance_nm": 18.0, "tas_kt": 110.0, "fuel_burn_gph": 8.5,
-                "magnetic_variation_deg": -3.0, "wind": {"wind_dir_true_deg": 270.0, "wind_speed_kt": 20.0}}
+        return {
+            "true_course_deg": 360.0,
+            "distance_nm": 18.0,
+            "tas_kt": 110.0,
+            "fuel_burn_gph": 8.5,
+            "magnetic_variation_deg": -3.0,
+            "wind": {"wind_dir_true_deg": 270.0, "wind_speed_kt": 20.0},
+        }
 
     monkeypatch.setattr(figures, "navlog", SimpleNamespace(leg_from=leg))
-    answer = client.get("/api/diversion", params={"lat": 43, "lon": -89, "to": "kmsn", "altitude_ft": 4500, "cruise_tas_kt": 110,
-                                                  "mh": 355, "gs": 95, "fuel": 1.4})
+    answer = client.get(
+        "/api/diversion",
+        params={"lat": 43, "lon": -89, "to": "kmsn", "altitude_ft": 4500, "cruise_tas_kt": 110, "mh": 355, "gs": 95, "fuel": 1.4},
+    )
     assert answer.status_code == 200, answer.text
     d = answer.json()
     assert asked == {"start": (43.0, -89.0), "end": (43.14, -89.34), "altitude_ft": 4500.0, "tas": 110.0}
@@ -107,9 +156,20 @@ def test_the_diversion_in_the_planners_air_with_the_estimates_checked(monkeypatc
 
 def test_a_diversion_no_heading_holds_says_so(monkeypatch):
     _places(monkeypatch)
-    monkeypatch.setattr(figures, "navlog", SimpleNamespace(leg_from=lambda *a: {
-        "true_course_deg": 360.0, "distance_nm": 18.0, "tas_kt": 50.0, "fuel_burn_gph": 5.0, "magnetic_variation_deg": 0.0,
-        "wind": {"wind_dir_true_deg": 270.0, "wind_speed_kt": 60.0}}))
+    monkeypatch.setattr(
+        figures,
+        "navlog",
+        SimpleNamespace(
+            leg_from=lambda *a: {
+                "true_course_deg": 360.0,
+                "distance_nm": 18.0,
+                "tas_kt": 50.0,
+                "fuel_burn_gph": 5.0,
+                "magnetic_variation_deg": 0.0,
+                "wind": {"wind_dir_true_deg": 270.0, "wind_speed_kt": 60.0},
+            }
+        ),
+    )
     d = client.get("/api/diversion", params={"lat": 43, "lon": -89, "to": "KMSN", "altitude_ft": 4500}).json()
     assert d["solved"] is None and d["steps"] == []
     assert d["problem"] == "The wind is too strong for a heading to KMSN to hold."
@@ -117,8 +177,10 @@ def test_a_diversion_no_heading_holds_says_so(monkeypatch):
 
 
 def test_the_holding_entry_and_its_wind():
-    d = client.get("/api/holding", params={"inbound": 360, "heading": 220, "turns": "right", "tas_kt": 100,
-                                           "wind_from": 360, "wind_kt": 20, "altitude_ft": 5000}).json()
+    d = client.get(
+        "/api/holding",
+        params={"inbound": 360, "heading": 220, "turns": "right", "tas_kt": 100, "wind_from": 360, "wind_kt": 20, "altitude_ft": 5000},
+    ).json()
     assert d["entry"] == "parallel" and d["entry_name"] == "Parallel" and d["either"] is None
     assert d["steps"].startswith("At the fix, turn to 180°, parallel to the holding course on the non-holding side, for one minute")
     assert d["approach_relative"] == 40
@@ -126,16 +188,25 @@ def test_the_holding_entry_and_its_wind():
     assert d["wind"]["time_words"] == "So the inbound leg takes a minute at 80 kt; by the rule of a second a knot, 40 s"
     near = client.get("/api/holding", params={"inbound": 360, "heading": 112}).json()
     assert near["entry"] == "teardrop" and near["either_name"] == "Direct" and near["wind"] is None and near["wind_problem"] is None
-    strong = client.get("/api/holding", params={"inbound": 360, "heading": 0, "tas_kt": 50, "wind_from": 90, "wind_kt": 60,
-                                                "altitude_ft": 5000}).json()
+    strong = client.get(
+        "/api/holding", params={"inbound": 360, "heading": 0, "tas_kt": 50, "wind_from": 90, "wind_kt": 60, "altitude_ft": 5000}
+    ).json()
     assert strong["wind"] is None and strong["wind_problem"] == "A wind stronger than the airplane holds no heading."
 
 
 def test_lost_comms_altitudes_and_leaving_the_limit():
-    d = client.post("/api/lost-comms", json={
-        "segments": [{"name": "Departure to SWEDE", "minimum_ft": 2600}, {"name": "SWEDE to RAYMO", "minimum_ft": 5000}, {"name": ""}],
-        "assigned_ft": 4000, "expected_ft": 6000, "expected_from": 1, "approach_fix": False, "efc": "", "eta": " 1435Z ",
-    }).json()
+    d = client.post(
+        "/api/lost-comms",
+        json={
+            "segments": [{"name": "Departure to SWEDE", "minimum_ft": 2600}, {"name": "SWEDE to RAYMO", "minimum_ft": 5000}, {"name": ""}],
+            "assigned_ft": 4000,
+            "expected_ft": 6000,
+            "expected_from": 1,
+            "approach_fix": False,
+            "efc": "",
+            "eta": " 1435Z ",
+        },
+    ).json()
     assert [s["words"] for s in d["segments"]] == ["Fly 4,000 ft: assigned", "Fly 6,000 ft: expected", "Fly 6,000 ft: expected"]
     assert d["segments"][2]["name"] == "Segment"
     assert d["leave"].endswith("estimated time of arrival, 1435Z.")

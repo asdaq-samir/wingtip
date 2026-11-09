@@ -14,6 +14,7 @@ the hops planned at once, and the nav log runs on through each stop.
 The flight is put together by wingtip.flight_plan, its figures the
 engine's: this module reads the request (app.plan_query's PlanQuery,
 refusing what is not one), asks it and answers -- one line at a time for the nav log's stream."""
+
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
@@ -62,10 +63,18 @@ def chart_layers() -> list[ChartLayer]:
     map knows to offer the Chicago TAC over Chicago."""
     return [
         ChartLayer(
-            kind=k.key, label=k.label, min_zoom=k.min_zoom, max_zoom=k.max_zoom, base=k.base, over=list(k.over),
-            cycle=(cycle := charts.serving_cycle_of(k.key)), revision=charts.tiles_revision(cycle),
+            kind=k.key,
+            label=k.label,
+            min_zoom=k.min_zoom,
+            max_zoom=k.max_zoom,
+            base=k.base,
+            over=list(k.over),
+            cycle=(cycle := charts.serving_cycle_of(k.key)),
+            revision=charts.tiles_revision(cycle),
             scales=charts.tile_scales(k.key),
-            sheets=[] if k.base else [
+            sheets=[]
+            if k.base
+            else [
                 ChartSheet(name=name, label=charts.sheet_label(k, name), west=w, south=s, east=e, north=n)
                 for name, (w, s, e, n) in charts.sheets(k)
             ],
@@ -77,7 +86,9 @@ def chart_layers() -> list[ChartLayer]:
 def _chart_info() -> dict:
     cycle = charts.serving_cycle()
     return {
-        "max_zoom": VFR_SECTIONAL_MAX_ZOOM, "min_zoom": VFR_SECTIONAL_MIN_ZOOM, "chart_cycle": cycle,
+        "max_zoom": VFR_SECTIONAL_MAX_ZOOM,
+        "min_zoom": VFR_SECTIONAL_MIN_ZOOM,
+        "chart_cycle": cycle,
         "chart_revision": charts.tiles_revision(cycle),
         "chart_layers": chart_layers(),
     }
@@ -144,8 +155,11 @@ def course(dep: str, dest: str, stops: str = "") -> Course:
     def classed(end: dict) -> dict:
         if end.get("kind", "airport") != "airport":
             return end
-        return {**end, "airspace_class": airspace.surface_class_at(end["lat"], end["lon"], shp),
-                "pattern_altitude_ft": fp.field_pattern_ft(end["ident"], end)}
+        return {
+            **end,
+            "airspace_class": airspace.surface_class_at(end["lat"], end["lon"], shp),
+            "pattern_altitude_ft": fp.field_pattern_ft(end["ident"], end),
+        }
 
     return Course(
         departure=classed(r.departure),
@@ -160,8 +174,13 @@ def course(dep: str, dest: str, stops: str = "") -> Course:
 
 
 async def _read_ahead(
-    ahead: Annotated[bool, Query(description="Asked ahead of the pilot -- a Recent or Saved route planned while "
-                                 "the page is idle: its chart reads wait behind the route on screen's")] = False,
+    ahead: Annotated[
+        bool,
+        Query(
+            description="Asked ahead of the pilot -- a Recent or Saved route planned while "
+            "the page is idle: its chart reads wait behind the route on screen's"
+        ),
+    ] = False,
 ) -> None:
     """The request's chart reads as reads ahead (chart_model.READ_AHEAD).
     Async, so it is set in the request's own context, which the endpoint's
@@ -176,9 +195,7 @@ def checkpoints(dep: str, dest: str, stops: str = "") -> Checkpoints:
     seconds for its first time."""
     r = load_route(dep, dest, stops)
     scored, selected, _ = named_checkpoints(r)
-    return Checkpoints(
-        departure=r.departure, destination=r.destination, stops=r.stops, candidates=scored, selected=selected,
-    )
+    return Checkpoints(departure=r.departure, destination=r.destination, stops=r.stops, candidates=scored, selected=selected)
 
 
 @router.get(
@@ -187,8 +204,7 @@ def checkpoints(dep: str, dest: str, stops: str = "") -> Checkpoints:
     responses={200: {"content": {"application/zip": {}}, "description": "The pack, a ZIP"}},
     # ForeFlight's downloader fetches it in byte ranges and will not
     # install a pack sent without its size; a download shows its name.
-    openapi_extra=gateway("public", range=True,
-                          headers=("Content-Disposition", "Content-Length", "Content-Range", "Accept-Ranges")),
+    openapi_extra=gateway("public", range=True, headers=("Content-Disposition", "Content-Length", "Content-Range", "Accept-Ranges")),
 )
 def foreflight_pack(route: str, file: str, request: Request) -> Response:
     """The route's checkpoints as a ForeFlight content pack (app.foreflight),
@@ -210,10 +226,7 @@ def foreflight_pack(route: str, file: str, request: Request) -> Response:
     _, selected, _ = route_checkpoints(r)
     version = foreflight.version_at(datetime.now(timezone.utc))
     body = foreflight.pack_zip(foreflight.pack_files(list(r.idents), route_line(r), foreflight.from_candidates(selected), version))
-    headers = {
-        "Content-Disposition": f'attachment; filename="{foreflight.file_name(list(r.idents))}"',
-        "Accept-Ranges": "bytes",
-    }
+    headers = {"Content-Disposition": f'attachment; filename="{foreflight.file_name(list(r.idents))}"', "Accept-Ranges": "bytes"}
     try:
         wanted = foreflight.byte_range(request.headers.get("range"), len(body))
     except ValueError:
@@ -222,7 +235,9 @@ def foreflight_pack(route: str, file: str, request: Request) -> Response:
         return Response(body, media_type="application/zip", headers=headers)
     start, end = wanted
     return Response(
-        body[start:end + 1], status_code=206, media_type="application/zip",
+        body[start : end + 1],
+        status_code=206,
+        media_type="application/zip",
         headers={**headers, "Content-Range": f"bytes {start}-{end}/{len(body)}"},
     )
 
@@ -310,10 +325,19 @@ def local_flight(q: Annotated[PlanQuery, Depends()], duration_min: LocalMinutes 
     profile = q.profile()
     fuel = round(profile["fuel_burn_gph"] * duration_min / 60, 1) if profile else None
     depart = planning.now() if q.depart is None else q.depart if q.depart.tzinfo else q.depart.replace(tzinfo=timezone.utc)
-    night = engine("night_at_either_end", start=list(r.start), depart_s=depart.timestamp(), end=list(r.start),
-                   arrive_s=(depart + timedelta(minutes=duration_min)).timestamp())
+    night = engine(
+        "night_at_either_end",
+        start=list(r.start),
+        depart_s=depart.timestamp(),
+        end=list(r.start),
+        arrive_s=(depart + timedelta(minutes=duration_min)).timestamp(),
+    )
     return Totals(
-        distance_nm=0.0, ete_min=duration_min, fuel_gal=fuel, unflyable_legs=0, legs_without_wind=0,
+        distance_nm=0.0,
+        ete_min=duration_min,
+        fuel_gal=fuel,
+        unflyable_legs=0,
+        legs_without_wind=0,
         **engine("navlog_fuel_plan", total_fuel_gal=fuel, profile=profile, night=bool(night), rules=q.rules),
     )
 
@@ -390,10 +414,15 @@ def navlog_stream(q: Annotated[PlanQuery, Depends()]) -> StreamingResponse:
                         outcomes.append(done.value)
                         break
                     named = fp.waiting_on(run, asked)
-                    yield line(NavLogStage(detail=(
-                        f"Altitudes{where}, {elapsed:.0f} s, waiting on {named}…" if named
-                        else f"Altitudes{where}, {elapsed:.0f} s, winds for each plan…"
-                    )))
+                    yield line(
+                        NavLogStage(
+                            detail=(
+                                f"Altitudes{where}, {elapsed:.0f} s, waiting on {named}…"
+                                if named
+                                else f"Altitudes{where}, {elapsed:.0f} s, winds for each plan…"
+                            )
+                        )
+                    )
         finally:
             altitude_pool.shutdown(wait=False)
         outcome = fp.join_outcomes(runs, outcomes)
@@ -401,38 +430,50 @@ def navlog_stream(q: Annotated[PlanQuery, Depends()]) -> StreamingResponse:
         aircraft_line = None if asked.profile is None else {"name": q.aircraft, **asked.profile}
         if isinstance(outcome, fp.Unflyable):
             why, detours = fp.unflyable_parts(outcome, runs)
-            yield line(NavLogError(detail=why["title"], brief=why["brief"], reasons=why["reasons"],
-                                   advice=why["advice"], retry=False,
-                                   class_b=why["class_b"], detours=detours))
+            yield line(
+                NavLogError(
+                    detail=why["title"],
+                    brief=why["brief"],
+                    reasons=why["reasons"],
+                    advice=why["advice"],
+                    retry=False,
+                    class_b=why["class_b"],
+                    detours=detours,
+                )
+            )
             return
         if isinstance(outcome, fp.NoWinds):
             # The selection stands -- terrain, airspace, the legal
             # altitudes -- even though the winds did not come: say what
             # was decided, then what failed.
-            yield line(NavLogAltitude(
-                flown=None,
-                altitude_ft=None,
-                altitude_selection=outcome.selection,
-                options=outcome.options,
-                aircraft=aircraft_line,
-                altitude_figures=list(outcome.figures),
-            ))
+            yield line(
+                NavLogAltitude(
+                    flown=None,
+                    altitude_ft=None,
+                    altitude_selection=outcome.selection,
+                    options=outcome.options,
+                    aircraft=aircraft_line,
+                    altitude_figures=list(outcome.figures),
+                )
+            )
             yield line(NavLogError(detail=str(outcome.error)))
             return
 
         # Before any leg -- the checkpoints already on screen from
         # /api/checkpoints can show their own cruise altitude
         # immediately rather than waiting on the first leg to carry it.
-        yield line(NavLogAltitude(
-            flown=outcome.choice or "custom",
-            altitude_ft=outcome.altitude_ft,
-            altitude_selection=outcome.selection,
-            options=outcome.options,
-            aircraft=aircraft_line,
-            cautions=list(outcome.cautions),
-            class_b_detours=fp.class_b_detours_of(runs, outcome, asked),
-            altitude_figures=list(outcome.figures),
-        ))
+        yield line(
+            NavLogAltitude(
+                flown=outcome.choice or "custom",
+                altitude_ft=outcome.altitude_ft,
+                altitude_selection=outcome.selection,
+                options=outcome.options,
+                aircraft=aircraft_line,
+                cautions=list(outcome.cautions),
+                class_b_detours=fp.class_b_detours_of(runs, outcome, asked),
+                altitude_figures=list(outcome.figures),
+            )
+        )
         outcome, legs = fp.flown_as_picked(r, runs, outcome, asked)
         for leg in legs:
             yield line(NavLogLeg.model_validate(leg))

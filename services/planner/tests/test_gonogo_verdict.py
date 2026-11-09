@@ -1,12 +1,20 @@
 """app.gonogo.verdict, with apps/web/src/lib/verdict.test.ts's cases: the two
 must give the same answers."""
+
 import copy
 
 from app.gonogo.verdict import alternate_finding, verdict_items, verdict_line, with_alternate
 
 QUIET = {
-    "weather": {"pending": False, "failed": None, "vfr_not_recommended": [], "under_minimums": [], "hazards": [], "unchecked": [],
-                "worst": "3,500 ft · 6 sm"},
+    "weather": {
+        "pending": False,
+        "failed": None,
+        "vfr_not_recommended": [],
+        "under_minimums": [],
+        "hazards": [],
+        "unchecked": [],
+        "worst": "3,500 ft · 6 sm",
+    },
     "airspace": {"pending": False, "unchecked": False, "in_force": [], "near": 0, "special_use": []},
     "altitude": {"pending": False, "problem": None, "cautions": [], "flown": "FL055 · Lowest"},
     "fuel": {"pending": False, "margin_gal": 12.4, "required_gal": 27.6, "reserve_min": 30},
@@ -75,8 +83,10 @@ def test_asks_for_another_look_at_hazards_an_area_in_use_a_pilots_own_altitude_a
 
 
 def test_distances_past_the_pohs_tables_are_a_caution_and_a_runway_not_checked_unknown_never_within():
-    assert (finding(quiet(runways={"beyond": ["KLXV"]}), "runways")["finding"],
-            finding(quiet(runways={"unchecked": ["C81"]}), "runways")["finding"]) == ("caution", "unknown")
+    assert (
+        finding(quiet(runways={"beyond": ["KLXV"]}), "runways")["finding"],
+        finding(quiet(runways={"unchecked": ["C81"]}), "runways")["finding"],
+    ) == ("caution", "unknown")
     # A section sent with nothing in it checked nothing.
     assert finding({**quiet(), "weather": {}}, "weather")["finding"] == "unknown"
 

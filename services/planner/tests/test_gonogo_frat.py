@@ -1,5 +1,6 @@
 """app.gonogo.frat, with apps/web/src/lib/frat.test.ts's and
 airworthiness.test.ts's cases."""
+
 from app.gonogo import ask
 
 
@@ -24,13 +25,25 @@ def squawk_factors(open_: list[dict], night: bool, ifr: bool) -> list[dict]:
 
 DAY = "2026-10-05"
 QUIET = {
-    "vfr_not_recommended": False, "under_minimums": [], "tfr_on_route": False, "hazards": 0, "night": False,
-    "fuel_margin_gal": 10, "currency": None, "day": DAY, "ticked": {},
+    "vfr_not_recommended": False,
+    "under_minimums": [],
+    "tfr_on_route": False,
+    "hazards": 0,
+    "night": False,
+    "fuel_margin_gal": 10,
+    "currency": None,
+    "day": DAY,
+    "ticked": {},
 }
 CURRENT = {
-    "day_passengers_until": "2026-12-01", "night_passengers_until": None, "flight_review_until": "2027-06-30",
-    "medical_expires_on": "2028-01-31", "total_hours": 240, "flights": 120,
-    "instrument_current_until": None, "ipc_needed_after": None,
+    "day_passengers_until": "2026-12-01",
+    "night_passengers_until": None,
+    "flight_review_until": "2027-06-30",
+    "medical_expires_on": "2028-01-31",
+    "total_hours": 240,
+    "flights": 120,
+    "instrument_current_until": None,
+    "ipc_needed_after": None,
 }
 
 
@@ -78,9 +91,13 @@ def test_the_logbook_counts_only_where_the_pilot_keeps_one_and_night_landings_on
 
 # Each recorded, each good on 5 October 2026.
 GOOD = {
-    "annual_good_through": "2026-10-31", "hours_now": 1250, "hundred_hour_due_at_hours": 1300.5,
-    "static_check_good_through": "2027-01-31", "transponder_check_good_through": "2027-01-31",
-    "elt_inspection_good_through": "2027-02-28", "elt_battery_due_on": "2028-06-01",
+    "annual_good_through": "2026-10-31",
+    "hours_now": 1250,
+    "hundred_hour_due_at_hours": 1300.5,
+    "static_check_good_through": "2027-01-31",
+    "transponder_check_good_through": "2027-01-31",
+    "elt_inspection_good_through": "2027-02-28",
+    "elt_battery_due_on": "2028-06-01",
 }
 
 

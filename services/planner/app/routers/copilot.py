@@ -3,6 +3,7 @@ airplane with their METARs, the areas on the rest of the route and ITWS's
 alerts at the destination, in one answer for the apps, which ask the
 engine's copilot_watch with it and their own GPS. Its own schemas, here
 beside the route, as the copilot is a part of its own."""
+
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from wingtip import copilot
@@ -70,8 +71,10 @@ def _path(text: str) -> list[tuple[float, float]]:
 
 @router.get("/api/copilot/around", response_model=CopilotAround, openapi_extra=PUBLIC)
 def copilot_around(
-    lat: float = Query(ge=-90, le=90), lon: float = Query(ge=-180, le=180),
-    dest: str = Query(min_length=2, max_length=7), alternate: str | None = Query(None, max_length=7),
+    lat: float = Query(ge=-90, le=90),
+    lon: float = Query(ge=-180, le=180),
+    dest: str = Query(min_length=2, max_length=7),
+    alternate: str | None = Query(None, max_length=7),
     path: str = Query("", description="The rest of the route from the airplane, lat,lon;lat,lon"),
 ) -> CopilotAround:
     """The fields near the airplane and the destination with their

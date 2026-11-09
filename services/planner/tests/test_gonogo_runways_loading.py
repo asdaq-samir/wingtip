@@ -2,6 +2,7 @@
 apps/web/src/lib/weightBalance.test.ts's, runwayCheck.test.ts's and
 runwayFlown.test.ts's cases, on the stock profile itself
 (data/aircraft/c172.json, the 172S's POH figures)."""
+
 import pytest
 from wingtip.aircraft import load_aircraft_profile
 
@@ -50,17 +51,23 @@ def test_takes_turf_grass_dirt_and_gravel_as_soft_and_asphalt_not():
 
 
 def runway(length: int, headwind: float, crosswind: float, **extra) -> dict:
-    return {"ends": "09/27", "length_ft": length, "width_ft": 75, "surface": "ASP", "lighted": True, "closed": False,
-            "runway_ends": [], "wind": {"end": "27", "headwind_kt": headwind, "crosswind_kt": crosswind}, **extra}
+    return {
+        "ends": "09/27",
+        "length_ft": length,
+        "width_ft": 75,
+        "surface": "ASP",
+        "lighted": True,
+        "closed": False,
+        "runway_ends": [],
+        "wind": {"end": "27", "headwind_kt": headwind, "crosswind_kt": crosswind},
+        **extra,
+    }
 
 
 FIELDS = [{"ident": "C81", "elevation_ft": 900}, {"ident": "KDLH", "elevation_ft": 1400}]
 BRIEFING = {
     "metars": {"C81": {"temp_c": 30, "altimeter_in_hg": 29.92}, "KDLH": None},
-    "airports": {
-        "C81": {"runways": [runway(1500, 2, 18)]},
-        "KDLH": {"runways": [runway(9000, 10, 3), runway(12000, 0, 0, closed=True)]},
-    },
+    "airports": {"C81": {"runways": [runway(1500, 2, 18)]}, "KDLH": {"runways": [runway(9000, 10, 3), runway(12000, 0, 0, closed=True)]}},
 }
 
 
@@ -90,10 +97,18 @@ def ends(a: str, b: str) -> list[dict]:
 
 def test_checks_the_runway_the_pilot_picked_whatever_the_wind_with_the_wind_on_the_end_picked():
     # KDLH: a long runway into the wind, and a short one the pilot picked.
-    picked = {**BRIEFING, "airports": {**BRIEFING["airports"], "KDLH": {"runways": [
-        runway(9000, 10, 3, ends="09/27", runway_ends=ends("09", "27")),
-        runway(1200, 8, 0, ends="18/36", runway_ends=ends("18", "36"), wind={"end": "36", "headwind_kt": 8, "crosswind_kt": 0}),
-    ]}}}
+    picked = {
+        **BRIEFING,
+        "airports": {
+            **BRIEFING["airports"],
+            "KDLH": {
+                "runways": [
+                    runway(9000, 10, 3, ends="09/27", runway_ends=ends("09", "27")),
+                    runway(1200, 8, 0, ends="18/36", runway_ends=ends("18", "36"), wind={"end": "36", "headwind_kt": 8, "crosswind_kt": 0}),
+                ]
+            },
+        },
+    }
     into = runway_checks(C172, picked, FIELDS, 2550, 2400)[1]
     assert [into["end"], into["picked"], into["distances"][0]["over"]] == ["27", False, False]
     flown = runway_checks(C172, picked, FIELDS, 2550, 2400, {"pattern": {"KDLH": "18"}, "takeoff": {}})[1]
@@ -135,9 +150,14 @@ def test_picked_end_matches_a_field_as_the_web_does_trimmed_any_case_k_only_befo
 def test_a_variable_wind_with_no_runway_component_is_all_crosswind_gusts_included():
     # runwayCheck.ts: VRB (AIM 7-1-28) gives the runways no wind, and all of
     # it may be across -- past the 172's demonstrated 15 kt, a caution.
-    vrb = {**BRIEFING, "metars": {"C81": {"temp_c": 15, "altimeter_in_hg": 29.92, "wind_dir_true_deg": None, "wind_speed_kt": 12,
-                                          "wind_gust_kt": 22}, "KDLH": None},
-           "airports": {**BRIEFING["airports"], "C81": {"runways": [runway(5000, 0, 0, wind=None)]}}}
+    vrb = {
+        **BRIEFING,
+        "metars": {
+            "C81": {"temp_c": 15, "altimeter_in_hg": 29.92, "wind_dir_true_deg": None, "wind_speed_kt": 12, "wind_gust_kt": 22},
+            "KDLH": None,
+        },
+        "airports": {**BRIEFING["airports"], "C81": {"runways": [runway(5000, 0, 0, wind=None)]}},
+    }
     start = runway_checks(C172, vrb, FIELDS, 2550, 2400)[0]
     assert (start["crosswind_kt"], start["crosswind_over"], start["headwind_kt"]) == (22, True, 0)
     # A wind with a direction gives every runway its components: none here.

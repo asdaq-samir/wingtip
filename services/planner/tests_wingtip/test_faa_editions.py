@@ -1,6 +1,7 @@
 """wingtip.faa_data.refresh_editions: the planner's FAA files fetched again
 when the FAA has a newer edition, a zip's files together, and a file on
 disk of the current cycle left alone."""
+
 from pathlib import Path
 
 import pytest
@@ -22,8 +23,13 @@ def faa(monkeypatch, tmp_path):
     monkeypatch.setattr(faa_data, "find_current_cycle_page", lambda index: CYCLE_PAGE)
 
     def link(page, pattern):
-        name = {"NAV_CSV": "NAV_CSV", "APT_CSV": "APT_CSV", "FIX_CSV": "FIX_CSV", "class_airspace": "class_airspace_shape_files",
-                "DOF_": "DOF_261001"}
+        name = {
+            "NAV_CSV": "NAV_CSV",
+            "APT_CSV": "APT_CSV",
+            "FIX_CSV": "FIX_CSV",
+            "class_airspace": "class_airspace_shape_files",
+            "DOF_": "DOF_261001",
+        }
         key = next(k for k in name if k in pattern)
         return f"https://faa.example/01_Oct_2026_{name[key]}.zip"
 

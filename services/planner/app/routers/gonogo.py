@@ -4,6 +4,7 @@ plans the route and briefs it as /api/navlog and /api/briefing do --
 their caches make a second ask after the nav log quick -- and feeds the
 findings from them and from what only the pilot knows, as the web app's
 FlightBriefingView feeds lib/verdict (app.gonogo)."""
+
 from datetime import timedelta
 
 from fastapi import APIRouter
@@ -37,10 +38,7 @@ def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
     depart = flight.departure_of(q)
     found = flight.findings_for(ask, q, r, planned, briefing, failed, depart)
     assessment = risk_assessment(found.risk_in) if found.risk_in else None
-    items = verdict_items({
-        **found.verdict,
-        "risk": {"level": assessment["level"], "line": assessment["line"]} if assessment else None,
-    })
+    items = verdict_items({**found.verdict, "risk": {"level": assessment["level"], "line": assessment["line"]} if assessment else None})
     # Under IFR, the alternate (14 CFR 91.169), its ETA the nav log's.
     if q.rules == "ifr" and totals and totals.get("ete_min") is not None:
         eta = depart + timedelta(minutes=totals["ete_min"])

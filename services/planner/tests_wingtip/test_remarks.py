@@ -1,5 +1,6 @@
 """wingtip.remarks: an airport's lighting and mic-click remarks, from the
 FAA's own text, in plain English."""
+
 import pytest
 
 from wingtip import faa_data, remarks
@@ -35,8 +36,7 @@ def remarks_csv(tmp_path, monkeypatch):
 
 
 def test_a_remark_reads_in_plain_english_with_the_names_a_pilot_uses_kept():
-    assert remarks.plain("ACTVT REIL RWY 08 & 26; MIRL RWY 08/26 - CTAF.") == \
-        "Activate REIL runway 08 & 26; MIRL runway 08/26 - CTAF."
+    assert remarks.plain("ACTVT REIL RWY 08 & 26; MIRL RWY 08/26 - CTAF.") == "Activate REIL runway 08 & 26; MIRL runway 08/26 - CTAF."
     assert remarks.plain("WX ADZY - CTAF 5 CLICKS OR 815-444-1729.") == "Weather advisory - CTAF 5 clicks or 815-444-1729."
 
 
@@ -60,27 +60,33 @@ def test_the_turf_on_a_runway_of_two_surfaces_is_read_from_its_remarks(remarks_c
     assert remarks.runway_turf("3CK") == {}
 
 
-@pytest.mark.parametrize(("remark", "ends", "turf"), [
-    # A compass point names the end whose threshold lies that way.
-    ("NE 3400 FT ASPH; SW 1200 FT TURF.", "05/23", [{"end": "05", "from_ft": 0, "to_ft": 1200}]),
-    ("581 FT BY 100 FT TURF ON S END.", "18/36", [{"end": "36", "from_ft": 0, "to_ft": 581}]),
-    ("3000 FT X 20 FT CHIP & SEAL W END; 1100 FT GRASS E END.", "08G/26G", [{"end": "26G", "from_ft": 0, "to_ft": 1100}]),
-    ("RWY 09/27 800 FT ASPHALT ON RWY 09 END, 1200 FT TURF ON RWY 27 END..", "09/27", [{"end": "27", "from_ft": 0, "to_ft": 1200}]),
-    ("FIRST 2200 FT RY 15 LENGTH IS CONC; FIRST 300 FT RY 33 LENGTH IS TURF.", "15/33", [{"end": "33", "from_ft": 0, "to_ft": 300}]),
-    # The rest turf after a length paved from one end: from there on.
-    ("RWY 18/36 2000 FT ASPH ON RWY 36 END, REMAINDER TURF.", "18/36", [{"end": "36", "from_ft": 2000, "to_ft": None}]),
-    ("RWY 15/33 2200 FT BY 32 FT ASPH ON NORTH END, REMAINDER TURF.", "15/33", [{"end": "15", "from_ft": 2200, "to_ft": None}]),
-    # No end said, or ends with no number to point by: nothing guessed.
-    ("RWY 09/27 2600 FT X 20 FT ASPH, REMAINDER TURF.", "09/27", []),
-    ("1300 FT ASPH ON  E END, REMAINDER TURF.", "E/W", []),
-])
+@pytest.mark.parametrize(
+    ("remark", "ends", "turf"),
+    [
+        # A compass point names the end whose threshold lies that way.
+        ("NE 3400 FT ASPH; SW 1200 FT TURF.", "05/23", [{"end": "05", "from_ft": 0, "to_ft": 1200}]),
+        ("581 FT BY 100 FT TURF ON S END.", "18/36", [{"end": "36", "from_ft": 0, "to_ft": 581}]),
+        ("3000 FT X 20 FT CHIP & SEAL W END; 1100 FT GRASS E END.", "08G/26G", [{"end": "26G", "from_ft": 0, "to_ft": 1100}]),
+        ("RWY 09/27 800 FT ASPHALT ON RWY 09 END, 1200 FT TURF ON RWY 27 END..", "09/27", [{"end": "27", "from_ft": 0, "to_ft": 1200}]),
+        ("FIRST 2200 FT RY 15 LENGTH IS CONC; FIRST 300 FT RY 33 LENGTH IS TURF.", "15/33", [{"end": "33", "from_ft": 0, "to_ft": 300}]),
+        # The rest turf after a length paved from one end: from there on.
+        ("RWY 18/36 2000 FT ASPH ON RWY 36 END, REMAINDER TURF.", "18/36", [{"end": "36", "from_ft": 2000, "to_ft": None}]),
+        ("RWY 15/33 2200 FT BY 32 FT ASPH ON NORTH END, REMAINDER TURF.", "15/33", [{"end": "15", "from_ft": 2200, "to_ft": None}]),
+        # No end said, or ends with no number to point by: nothing guessed.
+        ("RWY 09/27 2600 FT X 20 FT ASPH, REMAINDER TURF.", "09/27", []),
+        ("1300 FT ASPH ON  E END, REMAINDER TURF.", "E/W", []),
+    ],
+)
 def test_the_wordings_of_a_runways_turf(remark, ends, turf):
     assert remarks._turf_of(remark, ends.split("/")) == turf
 
 
 def test_an_airports_fuel_and_courtesy_car_remarks_in_plain_english(remarks_csv):
     assert remarks.service_notes("K78") == {
-        "fuel": ["24 hour self serve fuel."], "ground": ["Courtesy car available."], "courtesy_car": True}
+        "fuel": ["24 hour self serve fuel."],
+        "ground": ["Courtesy car available."],
+        "courtesy_car": True,
+    }
     # The FAA's own remark on a fuel type, whatever its words.
     assert remarks.service_notes("GCK")["fuel"] == ["For military fuel call 620-275-5055."]
     assert remarks.service_notes("RFD") == {"fuel": [], "ground": [], "courtesy_car": False}
