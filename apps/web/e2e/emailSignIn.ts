@@ -55,7 +55,7 @@ async function linkIn(id: string): Promise<URL> {
  */
 export async function signInByEmail(page: Page, address: string) {
   await openLinkFor(page, address);
-  await page.getByRole("dialog").getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true }).click();
 }
 
 /** Asks for a link for `address` and opens it: the planner, with its
@@ -66,7 +66,7 @@ export async function openLinkFor(page: Page, address: string): Promise<string> 
   if (!(await console.isVisible())) await openConsole(page);
   // The account is Personal's, at the owner's ask (AccountMenu).
   await openAccount(page);
-  await console.getByRole("button", { name: "Sign in" }).click();
+  await console.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByLabel("Email address").fill(address);
   await page.getByRole("button", { name: "Send Link" }).click();
   // The dialog's own status line: a toast is a status too (sonner's),
@@ -80,6 +80,6 @@ export async function openLinkFor(page: Page, address: string): Promise<string> 
   const link = await linkIn(id!);
   const path = link.pathname + link.search;
   await page.goto(path);
-  await expect(page.getByRole("dialog").getByRole("button", { name: "Sign in" })).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
   return path;
 }
