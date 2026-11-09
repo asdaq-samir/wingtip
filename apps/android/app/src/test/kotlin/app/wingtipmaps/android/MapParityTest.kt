@@ -15,9 +15,7 @@ import app.wingtipmaps.android.map.MapWeather
 import app.wingtipmaps.android.map.TrafficDrawing
 import app.wingtipmaps.android.tiles.TileTemplate
 import app.wingtipmaps.android.ui.airspaceHours
-import app.wingtipmaps.android.ui.declinationOf
-import app.wingtipmaps.android.ui.degreesMinutes
-import app.wingtipmaps.android.ui.threeFigures
+import app.wingtipmaps.android.format.Format
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
@@ -141,11 +139,11 @@ class MapParityTest {
 
     @Test
     fun aCardsFiguresAreWrittenAsAChartWritesThem() {
-        assertEquals("360", threeFigures(0.2))
-        assertEquals("045", threeFigures(45.0))
-        assertEquals("2° W", declinationOf(-2.0))
-        assertEquals("3.5° E", declinationOf(3.5))
-        assertEquals("41°52.3′ N 87°37.8′ W", degreesMinutes(41.8717, -87.63))
+        assertEquals("360", Format.headingFigures(0.2))
+        assertEquals("045", Format.headingFigures(45.0))
+        assertEquals("2° W", Format.variation(-2.0))
+        assertEquals("3.5° E", Format.variation(3.5))
+        assertEquals("41°52.3′ N 87°37.8′ W", Format.position(41.8717, -87.63))
         assertEquals("Continuous", airspaceHours("H24", null))
         assertEquals("By NOTAM", airspaceHours("NOTAM", "Legal description references NOTAM."))
         assertNull(airspaceHours(null, null))

@@ -1,52 +1,36 @@
 package app.wingtipmaps.android.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.NavLogTotals
+import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.stripFuel
 import app.wingtipmaps.android.flight.InFlight
-import java.util.Locale
-import kotlin.math.roundToInt
-
-// The figures' formatting, as the iOS app's AirportWords and FPLView
-// write them: the words and the decimals are the app's, the figures
-// themselves the planner's.
-
-/** A distance to a tenth, "12.3 nm". */
-fun nm(x: Double): String = String.format(Locale.US, "%.1f nm", x)
-
-/** Fuel to a tenth, "8.4 gal". */
-fun gal(x: Double): String = String.format(Locale.US, "%.1f gal", x)
-
-/** A speed in whole knots, "112 kt". */
-fun kt(x: Double): String = String.format(Locale.US, "%.0f kt", x)
-
-/** Feet, whole, with a thousands separator: "3,500 ft". */
-fun ft(x: Double): String = String.format(Locale.US, "%,.0f ft", x)
-
-/** A heading or course in three figures, "007°". */
-fun degrees(x: Double): String = String.format(Locale.US, "%03d°", ((x.roundToInt() % 360) + 360) % 360)
-
-/** Minutes as the nav log's "1h 05m". */
-fun hoursMinutes(minutes: Double): String {
-    val whole = minutes.roundToInt()
-    return String.format(Locale.US, "%dh %02dm", whole / 60, whole % 60)
-}
+import app.wingtipmaps.android.format.Format
 
 /**
  * The flight's figures in one line -- To, Dist, ETE, Fuel -- what the
@@ -68,19 +52,18 @@ fun FiguresStrip(state: Plan.State) {
     // A failed rule reads "Failed" in the error colour, never as no fuel
     // required (Engine.rule logs the engine's words).
     val fuel = stripFuel(state.totals, burntGal = progress?.burntGal)
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-        Figure("TO", if (state.routed) state.dest else "—")
+    Row(Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs)) {
+        Figure(stringResource(R.string.figure_to), if (state.routed) state.dest else Format.NONE)
         if (progress != null) {
-            Figure("DIST", nm(progress.destination?.distanceNm ?: progress.leftNm))
-            Figure("ETE", progress.destination?.eteMin?.let(::hoursMinutes) ?: "—")
+            Figure(stringResource(R.string.figure_dist), Format.distance(progress.destination?.distanceNm ?: progress.leftNm))
+            Figure(stringResource(R.string.figure_ete), progress.destination?.eteMin?.let(Format::duration) ?: Format.NONE)
         } else {
-            val distance = state.totals?.distanceNm ?: state.course?.distanceNm
-            Figure("DIST", distance?.let(::nm) ?: "—")
-            Figure("ETE", state.totals?.eteMin?.let(::hoursMinutes) ?: "—")
+            Figure(stringResource(R.string.figure_dist), Format.distance(state.totals?.distanceNm ?: state.course?.distanceNm))
+            Figure(stringResource(R.string.figure_ete), state.totals?.eteMin?.let(Format::duration) ?: Format.NONE)
         }
         fuel.fold(
-            { Figure("FUEL", it.requiredGal?.let(::gal) ?: "—", warn = warn) },
-            { Figure("FUEL", "Failed", warn = true) },
+            { Figure(stringResource(R.string.figure_fuel), Format.fuel(it.requiredGal), warn = warn) },
+            { Figure(stringResource(R.string.figure_fuel), stringResource(R.string.failed), warn = true) },
         )
     }
 }
@@ -90,7 +73,7 @@ fun FiguresStrip(state: Plan.State) {
 fun stripFuel(totals: NavLogTotals?, burntGal: Double? = null): Result<EngineContract.StripFuelAnswer> =
     Engine.stripFuel(fuelRequiredGal = totals?.fuelRequiredGal, fuelMarginGal = totals?.fuelMarginGal, burntGal = burntGal)
 
-/** One figure of the strip, its name over it. */
+/** One figure of a strip, its name over it. */
 @Composable
 fun RowScope.Figure(name: String, value: String, warn: Boolean = false) {
     Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -106,13 +89,20 @@ fun RowScope.Figure(name: String, value: String, warn: Boolean = false) {
 }
 
 /**
- * A problem said where it happened, as the web app's lib/problems says
- * it: the call's own words in the error colour under what failed, and
- * nothing at all without one.
+ * A problem said where it happened, the app's one error style, as the
+ * web app's lib/problems says it: the error glyph and the call's own
+ * words in the error colour under what failed, read out as it appears,
+ * and nothing at all without one.
  */
 @Composable
-fun ProblemLine(problem: String?) {
-    if (problem != null) {
-        Text(problem, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+fun ProblemLine(problem: String?, modifier: Modifier = Modifier) {
+    if (problem.isNullOrEmpty()) return
+    Row(
+        modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(WingtipSpace.Lg + WingtipSpace.Xs))
+        Text(problem, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
     }
 }

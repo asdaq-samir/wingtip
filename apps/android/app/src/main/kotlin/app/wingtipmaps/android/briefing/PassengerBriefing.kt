@@ -10,6 +10,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import app.wingtipmaps.android.format.Format
 
 /** An item of the briefing: its key, its title and where it comes from
  *  (`rule`), the engine's. */
@@ -59,7 +60,7 @@ object PassengerBriefing {
         weather: String?,
         zone: ZoneId = ZoneId.systemDefault(),
     ): String {
-        val flying = eteMin?.let(StripData::duration)
+        val flying = eteMin?.let(Format::duration)
         val lands = if (departMs != null && eteMin != null) departMs + (eteMin * 60_000).toLong() else null
         fun clock(ms: Long) = CLOCK.format(Instant.ofEpochMilli(ms).atZone(zone))
         val leaving = when {
@@ -84,7 +85,7 @@ object PassengerBriefing {
      *  ("VFR, no ceiling · 10 sm"); null with no report. */
     fun weatherWords(category: String?, ceilingFt: Double?, visibilitySm: Double?): String? {
         if (category == null && ceilingFt == null && visibilitySm == null) return null
-        val ceiling = ceilingFt?.let { String.format(Locale.US, "%,.0f ft", it) } ?: "no ceiling"
+        val ceiling = ceilingFt?.let(Format::altitude) ?: "no ceiling"
         val visibility = visibilitySm?.let { "${String.format(Locale.US, "%.2f", it).trimEnd('0').trimEnd('.')} sm" } ?: "—"
         return listOfNotNull(category, "$ceiling · $visibility").joinToString(", ")
     }
