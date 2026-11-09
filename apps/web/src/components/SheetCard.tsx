@@ -1,4 +1,4 @@
-import { isValidElement, useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { isValidElement, useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode, useEffectEvent } from "react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
@@ -113,20 +113,20 @@ export function SheetCard({
   // the card draws no second one (the owner's screenshot, 2026-10-27: two
   // closes over the arrivals).
   const back = isValidElement<{ onClick?: () => void }>(action) && action.type === CloseButton ? action.props.onClick : undefined;
-  // The caller's latest, for what is set up once as it opens.
-  const latest = useRef({ onClose, back });
-  useEffect(() => {
-    latest.current = { onClose, back };
-  });
+  // The caller's latest, for what is set up once as it opens; its raise
+  // is what it opened with.
+  const closeNow = useEffectEvent(() => onClose());
+  const backNow = useEffectEvent(() => (back ?? onClose)());
+  const raiseAtOpen = useEffectEvent(() => raise);
 
   // Open while it is drawn: on the panel's stack (the panel up for it, the
   // tab bar's name), and the top of what the bar's close, a swipe back and
   // a device's Back take away (lib/openCards), as every card's close is.
   useEffect(() => {
-    const close = () => latest.current.onClose();
-    useSheetCards.setState((s) => ({ stack: [...s.stack, { id, raise, close }] }));
+    const close = () => closeNow();
+    useSheetCards.setState((s) => ({ stack: [...s.stack, { id, raise: raiseAtOpen(), close }] }));
     // Back one: a page of the card's first where it has one (`back`).
-    const entry: OpenCard = { close: () => (latest.current.back ?? latest.current.onClose)(), pill: pillGiven.current };
+    const entry: OpenCard = { close: () => backNow(), pill: pillGiven.current };
     held.current = entry;
     const release = holdOpenCard(entry);
     return () => {
@@ -134,8 +134,6 @@ export function SheetCard({
       release();
       useSheetCards.setState((s) => ({ stack: s.stack.filter((entry) => entry.id !== id) }));
     };
-    // Its raise is what it opened with.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
   useEffect(() => {
     useSheetCards.setState((s) => ({

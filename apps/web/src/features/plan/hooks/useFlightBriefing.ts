@@ -1,5 +1,5 @@
 import { useAirplaneChosen } from "../../../lib/preferences";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useEffectEvent } from "react";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { aircraftListQuery, currencyQuery, pilotQuery } from "../../../lib/queryClient";
@@ -288,11 +288,11 @@ export function useFlightBriefing({
       })
     : "";
   const assessmentKey = assessment ? `${assessment.level}:${assessment.score}:${assessment.factors.map((f) => f.key).join(",")}` : "";
-  useEffect(() => {
+  const publishAssessment = useEffectEvent(() => {
     if (publish) setAssessment(assessment);
-    // Keyed on what it says, not the object made each render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assessmentKey, setAssessment, publish]);
+  });
+  // Keyed on what it says, not the object made each render.
+  useEffect(() => publishAssessment(), [assessmentKey, publish]);
   useEffect(
     () => () => {
       if (publish) setAssessment(null);
@@ -386,11 +386,11 @@ export function useFlightBriefing({
     : verdictFound;
   const items = found.filter((i) => airplane || !AIRPLANE_ITEMS.includes(i.key));
   const itemsKey = `${airplane}|` + items.map((i) => `${i.key}:${i.finding}:${i.detail}`).join("|");
-  useEffect(() => {
+  const publishItems = useEffectEvent(() => {
     if (publish) setItems(items);
-    // Keyed on what they say, not the array made each render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemsKey, setItems, publish]);
+  });
+  // Keyed on what they say, not the array made each render.
+  useEffect(() => publishItems(), [itemsKey, publish]);
   useEffect(
     () => () => {
       if (publish) setItems([]);
@@ -476,11 +476,11 @@ export function useFlightBriefing({
     : null;
   const setGlance = useGlance((g) => g.set);
   const glanceKey = glance ? JSON.stringify(glance) : "";
-  useEffect(() => {
+  const publishGlance = useEffectEvent(() => {
     if (publish) setGlance(glance);
-    // Keyed on what it says, not the object made each render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [glanceKey, setGlance, publish]);
+  });
+  // Keyed on what it says, not the object made each render.
+  useEffect(() => publishGlance(), [glanceKey, publish]);
   useEffect(
     () => () => {
       if (publish) setGlance(null);

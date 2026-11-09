@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useEffectEvent } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import {
   altitudesOf,
@@ -425,16 +425,16 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   const aheadKey = nextStops
     ? JSON.stringify([nextStops, planParams.altitudeFt, planParams.altitudeChoice, planParams.depart, aircraft.profile, load])
     : "";
-  useEffect(() => {
+  const prefetchAhead = useEffectEvent(() => {
     if (!nextStops) return;
     const ahead = { ...planParams, stops: nextStops };
     void queryClient.prefetchQuery(courseQuery(ahead.dep, ahead.dest, nextStops));
     if (showWaypoints) void queryClient.prefetchQuery(checkpointsQuery(ahead.dep, ahead.dest, nextStops));
     void queryClient.prefetchQuery(navlogQuery(ahead, showWaypoints));
-    // Keyed on the route and the plan's own choices, not the object made
-    // each render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aheadKey]);
+  });
+  // Keyed on the route and the plan's own choices, not the object made
+  // each render.
+  useEffect(() => prefetchAhead(), [aheadKey]);
   // Add Stop open: from its own button, or from no legal altitude's --
   // "via", its Fly via round a Class B, the ways round suggested.
   const [addingStop, setAddingStop] = useState<false | "stop" | "via">(false);

@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useEffectEvent } from "react";
 import type { SetURLSearchParams } from "react-router-dom";
 import { useConsoleOpen, type PanelState } from "../../../lib/mapChrome";
 import type { TrafficAircraft } from "../../../lib/api/types";
@@ -252,11 +252,11 @@ export function usePanelTabs({
   }
   // Before the frame is drawn: after it, Setup stood a frame over the card
   // just opened, its tab already the card's.
-  useLayoutEffect(() => {
+  const closeConsole = useEffectEvent(() => {
     if ((place || heldPoint || flight) && useConsoleOpen.getState().open) useConsoleOpen.getState().setOpen(false);
-    // Once per card opened, not as the console opens over one already open.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [opened]);
+  });
+  // Once per card opened, not as the console opens over one already open.
+  useLayoutEffect(() => closeConsole(), [opened]);
   // Nearest's list is Airport's (four tabs, at the owner's pick). An
   // airport's card or a point's opened before any tab was picked -- a
   // link, a tap on the chart -- is over FPL, the tab up, its Back to it
