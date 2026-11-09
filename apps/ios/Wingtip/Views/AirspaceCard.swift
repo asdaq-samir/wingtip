@@ -16,6 +16,8 @@ struct AirspaceCard: View {
     @Environment(DryRun.self) private var dryRun
     @State private var here: AirspaceAt?
     @State private var problem: String?
+    /// SFDPS's word on each special-use area now, by its name (/api/live/saa).
+    @State private var saa: [String: SaaStatus] = [:]
 
     var body: some View {
         List {
@@ -90,6 +92,11 @@ struct AirspaceCard: View {
                                     title: "\(AirportWords.faaWords(area.name)) · \(area.kind)",
                                     detail: [AirportWords.suaAltitudes(area), area.timesOfUse.map { AirportWords.faaWords($0) }, area.controllingAgency]
                                         .compactMap { $0 }.joined(separator: " · "))
+                            // SFDPS's word on it now, where it has one (LiveWords.saaWords).
+                            if let status = LiveWords.saaWords(saa[area.name]) {
+                                Text(status).font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(saa[area.name]?.active == true ? WingtipInk.caution : Color.primary)
+                            }
                         }
                     }
                 }
@@ -121,7 +128,16 @@ struct AirspaceCard: View {
         }
         .navigationTitle("Airspace")
         .navigationBarTitleDisplayMode(.inline)
-        .task(id: "\(lat),\(lon)") { await load() }
+        .task(id: "\(lat),\(lon)") {
+            await load()
+            // Each area's status from SFDPS, asked again each minute while
+            // the card is open (the web's saaQuery); none said where it fails.
+            let names = (here?.specialUse ?? []).map(\.name)
+            while !names.isEmpty, !Task.isCancelled {
+                if let found = try? await Planner.liveSaa(names) { saa = found }
+                try? await Task.sleep(for: .seconds(AirportLive.rvrEveryS))
+            }
+        }
     }
 
     /// The planner's answer; with no connection, the engine's from the

@@ -81,6 +81,8 @@ struct AirplaneCard: View {
     @State private var based: PastFlightField?
     @State private var fetchingMore = false
     @State private var problem: String?
+    /// Its latest tower departure event in a line (LiveWords.departureLine).
+    @State private var towerLine: String?
     private var tracking: Tracking { Tracking.shared }
 
     private var plane: TrafficAircraft? { tracking.hex == hex.lowercased() ? tracking.latest : nil }
@@ -132,7 +134,12 @@ struct AirplaneCard: View {
                     .font(.body)
                 }
                 if let plane {
-                    Section(title: "Now") { NowFlightRow(plane: plane, detail: detail, route: route?.plausible == false ? nil : route) }
+                    Section(title: "Now") {
+                        NowFlightRow(plane: plane, detail: detail, route: route?.plausible == false ? nil : route)
+                        if let towerLine {
+                            Label(towerLine, systemImage: "building.columns").font(.subheadline).foregroundStyle(.secondary)
+                        }
+                    }
                 }
                 Section(plane != nil ? "Earlier" : "Last flights") {
                     if history == nil, problem == nil {
@@ -189,6 +196,13 @@ struct AirplaneCard: View {
             }
             .navigationDestination(for: PastFlightSummary.self) { flight in PastFlightCard(hex: hex, flight: flight).closesBack() }
             .task(id: hex) { await load() }
+            // Its latest tower departure event, by the ident it files
+            // under: its callsign, else its registration (the web's FlightCard).
+            .task(id: plane?.callsign ?? detail?.registration ?? plane?.registration) {
+                let ident = (plane?.callsign ?? detail?.registration ?? plane?.registration)?.trimmingCharacters(in: .whitespaces) ?? ""
+                guard ident.count >= 2 else { towerLine = nil; return }
+                towerLine = LiveWords.departureLine((try? await Planner.liveDepartures(ident))?.first)
+            }
             .task(id: plane?.callsign) {
                 guard let callsign = plane?.callsign?.trimmingCharacters(in: .whitespaces), !callsign.isEmpty else { return }
                 route = try? await Planner.flightRoute(callsign: callsign, lat: plane?.lat, lon: plane?.lon)
