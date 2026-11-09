@@ -180,6 +180,9 @@
 //!   `procedure_climb_nm`, `procedure_hold_leg_nm`: a published
 //!   procedure's RF/AF arc, CIFP hold, 45°/180° procedure turn (AIM
 //!   5-3-8, 5-4-9) and open legs' lengths (paths.rs lists the inputs);
+//! - `checklist_phases`: the headings a checklist starts from, a
+//!   handbook's Normal or Emergency Procedures (GAMA Specification No. 1,
+//!   Sections 4 and 3), from `{"kind": "normal"|"emergency"}`;
 //! - `solo_xc_determinations`: 14 CFR 61.93(d)(1)-(3), `[{"rule",
 //!   "label"}]`, from `{}`;
 //! - `passenger_briefing`: the passengers' briefing (91.107(a), the
@@ -1057,6 +1060,21 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         // AC 61-65K's endorsements and their words filled in (kinds.rs),
         // the gateway's EndorsementKind before #482.
         _ if crate::pilot::kinds::NAMES.contains(&name) => crate::pilot::kinds::call(name, ask.v),
+        // The headings a checklist starts from (checklist.rs, GAMA
+        // Specification No. 1, Sections 3 and 4).
+        "checklist_phases" => {
+            let kind = ask.str("kind")?;
+            let phases: &[&str] = if kind == "normal" {
+                &checklist::NORMAL_PHASES
+            } else if kind == "emergency" {
+                &checklist::EMERGENCY_PHASES
+            } else {
+                return Err(format!("checklist_phases: no kind {kind:?}, only \"normal\" or \"emergency\""));
+            };
+            let mut out = String::new();
+            strings(&mut out, &phases.iter().map(|p| (*p).to_owned()).collect::<Vec<_>>());
+            Ok(out)
+        }
         // A procedure's legs as they are drawn (procedures' paths.rs).
         _ if crate::paths::NAMES.contains(&name) => crate::paths::call(name, ask.v),
         // The passengers' briefing (brief's passengers.rs, 14 CFR 91.107(a)).

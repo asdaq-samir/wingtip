@@ -17,6 +17,7 @@ export type GroundspeedKtAnswer = number;
 export type DiversionReasonableAnswer = boolean;
 export type DebriefAirborneAnswer = [number, number][];
 export type ChecklistWriteAnswer = string;
+export type ChecklistPhasesAnswer = string[];
 export type CsvRowsAnswer = string[][];
 export type LogbookCsvWriteAnswer = string;
 export type EndorsementLapseAnswer = string | null;
@@ -922,6 +923,13 @@ export interface EngineContract {
   checklist_write: {
     input: ChecklistWriteInput;
     answer: ChecklistWriteAnswer;
+  };
+  /**
+   * The headings a checklist can start from, with nothing under them: a pilot's operating handbook's Normal Procedures (GAMA Specification No. 1, Section 4) or Emergency Procedures (Section 3), in its order; the items are the pilot's, from their own airplane's handbook (FAA-H-8083-3C, chapter 2).
+   */
+  checklist_phases: {
+    input: ChecklistPhasesInput;
+    answer: ChecklistPhasesAnswer;
   };
   /**
    * A CSV file's rows of fields.
@@ -3430,6 +3438,9 @@ export interface Checklist {
       response?: string | null;
     }[];
   }[];
+}
+export interface ChecklistPhasesInput {
+  kind: "normal" | "emergency";
 }
 export interface CsvRowsInput {
   text: string;

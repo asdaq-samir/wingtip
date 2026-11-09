@@ -117,6 +117,22 @@ class EngineTest {
         assertEquals(c.heard, c.clearance["maintainFt"]?.jsonPrimitive?.doubleOrNull, read["maintainFt"]?.jsonPrimitive?.doubleOrNull)
     }
 
+    @Test
+    fun thePhasesAreHeadingsAloneInTheHandbooksOrder() {
+        assertEquals(13, app.wingtipmaps.android.checklist.ChecklistPhases.NORMAL.size)
+        assertEquals("Preflight inspection", app.wingtipmaps.android.checklist.ChecklistPhases.NORMAL.first())
+        assertEquals("Securing the airplane", app.wingtipmaps.android.checklist.ChecklistPhases.NORMAL.last())
+        assertEquals(12, app.wingtipmaps.android.checklist.ChecklistPhases.EMERGENCY.size)
+        assertEquals("Engine failure on the takeoff roll", app.wingtipmaps.android.checklist.ChecklistPhases.EMERGENCY.first())
+        assertEquals("Inadvertent icing", app.wingtipmaps.android.checklist.ChecklistPhases.EMERGENCY.last())
+        val text = app.wingtipmaps.android.checklist.ChecklistPhases.template(app.wingtipmaps.android.checklist.ChecklistKind.EMERGENCY)
+        val lines = text.lines().filter { it.isNotBlank() }
+        // Every line a heading: no item, so nothing of a manufacturer's.
+        assertTrue(lines.all { it.startsWith("# ") })
+        assertEquals(app.wingtipmaps.android.checklist.ChecklistPhases.EMERGENCY, lines.map { it.removePrefix("# ") })
+        assertFalse(app.wingtipmaps.android.checklist.ChecklistPhases.template(app.wingtipmaps.android.checklist.ChecklistKind.NORMAL).contains("--"))
+    }
+
     /** The passengers' briefing, the engine's (passenger_briefing):
      *  14 CFR 91.107(a)'s two first, each with its source. */
     @Test

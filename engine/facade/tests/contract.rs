@@ -597,6 +597,8 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         c.ask("diagram_fix_usable", json!({ "age_s": case["age_s"], "accuracy_m": case["accuracy_m"] }));
     }
     c.ask("traffic_reach", json!({}));
+    c.ask("checklist_phases", json!({ "kind": "normal" }));
+    c.ask("checklist_phases", json!({ "kind": "emergency" }));
     // A procedure's legs drawn (paths.rs), as the planner asks them.
     c.ask("procedure_arc", json!({ "center": [34.0, -118.0], "start": [34.08, -118.0], "end": [34.0, -117.9], "turn": "R" }));
     c.ask("procedure_hold", json!({ "fix": [34.2, -118.36], "inbound_deg": 80, "turn": "L", "leg_nm": 2 }));
