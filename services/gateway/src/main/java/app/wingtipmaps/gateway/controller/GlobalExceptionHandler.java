@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -86,6 +87,17 @@ public class GlobalExceptionHandler {
                 .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
                 .toList();
         return ResponseEntity.badRequest().body(new ErrorResponse("Invalid request", details));
+    }
+
+    /** A body that is not JSON, or not JSON this endpoint takes (a string
+     *  where a number goes, a value past the end): the caller's mistake,
+     *  a 400. It reached the catch-all below as a 500, which is how a
+     *  logbook entry Jackson 3 would not read showed as the server broken.
+     *  Jackson's own words name this app's classes, so they stay in the log. */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleUnreadable(HttpMessageNotReadableException ex) {
+        log.debug("Unreadable request body: {}", ex.getMessage());
+        return ResponseEntity.badRequest().body(new ErrorResponse("The request's body could not be read"));
     }
 
     /**
@@ -168,7 +180,7 @@ public class GlobalExceptionHandler {
      * against an opaque, stack-trace-leaking default error page.
      *
      * <p>Spring MVC's own request failures -- no such resource, a
-     * missing parameter, an unreadable body -- say which client error
+     * missing parameter -- say which client error
      * they are, and are answered as that. They were all 500s here: a
      * browser asking for a bundle file a new build had replaced was told
      * the server broke, and the log said "Unhandled exception".

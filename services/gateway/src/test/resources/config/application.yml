@@ -1,0 +1,14 @@
+# Read beside src/main/resources/application.yml in the tests, over it
+# (Boot reads classpath:/config/ after the classpath's root).
+#
+# No expired-session cleanup in the tests. Spring keeps each test class's
+# context for reuse, and each such context's cleanup job (every minute,
+# on its own scheduler) outlives the Testcontainers Postgres its class
+# started and stopped: at the next minute every kept context tried its
+# dead database at once, waited on its pool, and logged "Unexpected error
+# occurred in scheduled task" with a stack trace when the run ended. No
+# test asks for the cleanup; the running app keeps it.
+spring:
+  session:
+    jdbc:
+      cleanup-cron: "-"

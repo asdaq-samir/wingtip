@@ -84,7 +84,7 @@ struct TrustTests {
     }
 
     @Test func theCreditsAreTheIPhonesShareOfTheList() {
-        #expect(AboutCredits.data.count == 15)
+        #expect(AboutCredits.data.count == 17)
         #expect(AboutCredits.data.first?.what == "FAA aeronautical charts: sectional, terminal area and IFR enroute")
         #expect(AboutCredits.software.map(\.what) == ["Apple MapKit", "Claude, by Anthropic"])
         #expect(PlanningAid.words.hasPrefix("Wingtip Maps is a planning aid for VFR and IFR flight."))

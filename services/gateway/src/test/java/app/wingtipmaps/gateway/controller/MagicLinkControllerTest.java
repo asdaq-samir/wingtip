@@ -176,7 +176,15 @@ class MagicLinkControllerTest {
         MockHttpSession session = new MockHttpSession();
         String before = session.getId();
 
-        HttpSession after = mockMvc.perform(signInWith(token).session(session))
+        // The browser sends the session's cookie, as a planted one would
+        // be: Spring Framework 7's mock request counts a session as the
+        // client's only when its id was asked for, and Security's
+        // fixation strategy (rightly) leaves alone a session this request
+        // made itself.
+        HttpSession after = mockMvc.perform(signInWith(token).session(session).with(request -> {
+                    request.setRequestedSessionId(before);
+                    return request;
+                }))
                 .andExpect(status().isFound())
                 .andReturn()
                 .getRequest()

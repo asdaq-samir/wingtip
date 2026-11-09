@@ -10,8 +10,8 @@
 # than one test.
 -r requirements-wingtip-charts.txt   # wingtip's own list, charts included -- tests_wingtip/ covers both
 # Pillow among them is pinned once, 13.0.0, in services/planner/requirements-wingtip-charts.txt.
-pytest
+pytest==9.2.0
 pytest-randomly==5.1.0   # every run in a new random order, --randomly-seed=N repeats one (docs/CI.md, "Flaky tests")
 ruff==0.17.4
 import-linter==2.16   # lint-imports: the planner's import contracts (services/planner/.importlinter)
-pygeodesy   # TEST ONLY -- the independent implementation services/planner/tests_wingtip/test_geo.py pins wingtip.geo against
+pygeodesy==26.10.26   # TEST ONLY -- the independent implementation services/planner/tests_wingtip/test_geo.py pins wingtip.geo against

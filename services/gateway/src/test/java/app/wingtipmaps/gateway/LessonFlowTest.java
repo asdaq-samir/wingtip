@@ -279,8 +279,8 @@ class LessonFlowTest {
         TrackDto track = new TrackDto(
                 "practice.gpx",
                 List.of(
-                        new TrackPointDto(0, 46.84, -92.36, 3300.0),
-                        new TrackPointDto(60_000, 46.842, -92.21, 1500.0)));
+                        new TrackPointDto(0L, 46.84, -92.36, 3300.0),
+                        new TrackPointDto(60_000L, 46.842, -92.21, 1500.0)));
         // To Duluth by its FAA identifier, with a track, put to them.
         Long duluth = flights.save(
                         p[0],
