@@ -1,13 +1,22 @@
 import SwiftUI
 
 /// The dry run's controls over the map: how far along, pause and play,
-/// its speed, and the way out.
+/// its speed, forecast mode, and the way out; with forecast mode on, the
+/// forecast strip under them (ForecastStrip).
 struct DryRunControls: View {
     @Environment(DryRun.self) private var dryRun
+    private let forecast = ForecastRun.shared
 
     var body: some View {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+            controls
+            if forecast.on { ForecastStrip() }
+        }
+    }
+
+    private var controls: some View {
         @Bindable var dryRun = dryRun
-        HStack(spacing: WingtipSpace.sm) {
+        return HStack(spacing: WingtipSpace.sm) {
             Button { dryRun.running ? dryRun.pause() : dryRun.resume() } label: {
                 Image(systemName: dryRun.running ? "pause.fill" : "play.fill").symbolSwap().frame(width: 32, height: 32)
                     // The 44-point hit area round the 32-point glyph, which does not grow.
@@ -18,6 +27,16 @@ struct DryRunControls: View {
                 .figureTransition(Format.duration(dryRun.flownS / 60))
                 .accessibilityLabel("Flown \(SpokenFigures.minutes(dryRun.flownS / 60))")
             SpeedPicker(name: "Dry run speed", speed: $dryRun.speed)
+            // Forecast mode: the run meets the weather forecast for when it
+            // gets there. Filled on a tinted disc while on, the pressed look.
+            Button { forecast.on.toggle() } label: {
+                Image(systemName: forecast.on ? "cloud.sun.fill" : "cloud.sun").symbolSwap().frame(width: 32, height: 32)
+                    .background { if forecast.on { Circle().fill(.tint.opacity(0.2)) } }
+                    .contentShape(Rectangle().inset(by: -6))
+            }
+            .accessibilityLabel("Forecast mode")
+            .accessibilityValue(forecast.on ? "On" : "Off")
+            .accessibilityAddTraits(forecast.on ? .isSelected : [])
             Button { dryRun.stop() } label: {
                 Image(systemName: "xmark").frame(width: 32, height: 32)
                     .contentShape(Rectangle().inset(by: -6))
@@ -28,7 +47,7 @@ struct DryRunControls: View {
         // The system material goes opaque by itself with Reduce Transparency on.
         .floatingGlass(in: Capsule())
         // One line over the map: it stops growing at the second
-        // accessibility size, where the four controls would no longer fit.
+        // accessibility size, where the five controls would no longer fit.
         .dynamicTypeSize(...DynamicTypeSize.accessibility2)
     }
 }
@@ -54,5 +73,6 @@ struct SpeedPicker: View {
 #Preview("DryRunControls") {
     DryRunControls()
         .environment(DryRun())
+        .environment(Verdict())
         .padding()
 }
