@@ -31,9 +31,11 @@ repository variable, not with a stored access key.
 
 **Its dependencies are pinned and watched.** `planner`'s
 requirements pin exact versions and every GitHub Action is pinned to a
-commit rather than a movable tag. Dependabot opens grouped version
-updates monthly, security updates immediately, and CI fails the build on
-a high-severity npm advisory.
+commit rather than a movable tag. Dependabot's alerts flag any advisory
+against them; the updates themselves are made on a working branch in each
+wave's end pass, with the full checks, rather than by Dependabot pull
+requests (the owner, 2026-11-09). CI fails the build on a high-severity
+npm advisory.
 
 ## Scope
 
