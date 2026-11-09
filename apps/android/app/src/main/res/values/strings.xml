@@ -235,4 +235,26 @@
     <string name="minimum_crosswind">Crosswind</string>
     <string name="minimum_wind">Wind, with Gusts</string>
     <string name="passengers_aboard">Passengers Aboard</string>
+    <!-- The ATC copilot (atc/). -->
+    <string name="atc">ATC</string>
+    <string name="atc_off">Off</string>
+    <string name="atc_while_flying">While Flying</string>
+    <string name="atc_put_away">Put away</string>
+    <string name="atc_read_back">Read Back</string>
+    <string name="atc_read_back_again">Read Back Again</string>
+    <string name="atc_read_it_back">Read it back…</string>
+    <string name="atc_set">Set</string>
+    <string name="atc_direct_to">Direct To</string>
+    <string name="atc_set_next">Set Next</string>
+    <string name="atc_set_code">Set Code</string>
+    <string name="atc_kept_next">Next: %1$s</string>
+    <string name="atc_kept_code">Code %1$s</string>
+    <string name="atc_no_tail">ATC: give your airplane\'s registration in the Airplane tab to listen for its call sign</string>
+    <string name="atc_allow_mic">ATC: allow the microphone to listen to the radio</string>
+    <string name="atc_allow">Allow</string>
+    <string name="atc_not_listening">ATC: not listening yet</string>
+    <string name="atc_listen">Listen</string>
+    <string name="atc_direct_needs_position">Direct To needs your position: show it on the map.</string>
+    <string name="registration">Registration</string>
+    <string name="registration_hint">N123AB</string>
 </resources>

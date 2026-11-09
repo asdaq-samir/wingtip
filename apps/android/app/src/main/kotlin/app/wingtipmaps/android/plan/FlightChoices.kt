@@ -21,7 +21,8 @@ enum class FlightRules(val word: String) {
  * launches as the web's preferences keep them: the flight rules it is
  * flown under (FPL's Flight Rules; VFR until changed, as the web's), and
  * whether anyone but the pilot is aboard (the Airplane tab, where the
- * web reads it from the load's seats). The planner plans and briefs by
+ * web reads it from the load's seats), and the airplane's registration
+ * (the Airplane tab, where the web picks the pilot's own). The planner plans and briefs by
  * the rules; the copilot reads both (copilot_watch: 61.57(b)'s night
  * passengers, IFR's alternate), and the Brief's forecast icing is
  * IFR's, as the web's.
@@ -32,6 +33,18 @@ class FlightChoices(private val prefs: SharedPreferences) {
 
     private val _passengers = MutableStateFlow(prefs.getBoolean(PASSENGERS, false))
     val passengers: StateFlow<Boolean> = _passengers.asStateFlow()
+
+    /** The airplane's registration, the call sign ATC uses for it (AIM
+     *  4-2-4): what the ATC copilot listens for and the logbook's
+     *  airplane. None until the pilot gives it: none is assumed. */
+    private val _tail = MutableStateFlow(prefs.getString(TAIL, null))
+    val tail: StateFlow<String?> = _tail.asStateFlow()
+
+    fun setTail(registration: String) {
+        val tail = registration.trim().uppercase().ifEmpty { null }
+        prefs.edit { if (tail == null) remove(TAIL) else putString(TAIL, tail) }
+        _tail.value = tail
+    }
 
     fun setRules(rules: FlightRules) {
         prefs.edit { putString(RULES, rules.word) }
@@ -44,6 +57,7 @@ class FlightChoices(private val prefs: SharedPreferences) {
     }
 
     companion object {
+        private const val TAIL = "tail"
         private const val RULES = "rules"
         private const val PASSENGERS = "passengers"
 

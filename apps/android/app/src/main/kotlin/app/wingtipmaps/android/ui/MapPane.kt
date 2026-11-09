@@ -19,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.atc.AtcCopilotHost
 import app.wingtipmaps.android.copilot.CopilotBanner
 import app.wingtipmaps.android.emergency.EmergencyModel
 import app.wingtipmaps.android.emergency.EmergencyOpen
@@ -161,6 +162,8 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             // the buttons where nothing else was (#218).
             InFlightTop(state = inFlight, ahead = ahead, onNearest = onNearest, modifier = Modifier.align(Alignment.TopStart)) {
                 CopilotBanner(state, flying = inFlight.underway, fix = fix, ahead = ahead)
+                // The ATC copilot's card for the newest call to us.
+                AtcCopilotHost(plan, flying = inFlight.underway, fix = fix)
             }
         }
         if (ownShip.on && (approximate || denied)) {

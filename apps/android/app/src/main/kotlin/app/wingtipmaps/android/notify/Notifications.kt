@@ -45,9 +45,13 @@ object Notifications {
     const val CHANNEL_TRAFFIC = "traffic"
     const val CHANNEL_WATCHES = "watches"
     const val CHANNEL_OWN_SHIP = "own-ship"
+    const val CHANNEL_ATC = "atc"
 
     /** The foreground service's notification id (OwnShipService). */
     const val OWN_SHIP_ID = 1
+
+    /** The radio's listening service's notification id (AtcListenService). */
+    const val ATC_ID = 2
 
     private var asked = false
     private val _wanted = MutableStateFlow(false)
@@ -72,6 +76,12 @@ object Notifications {
         manager.createNotificationChannel(
             NotificationChannel(CHANNEL_OWN_SHIP, "Position in flight", NotificationManager.IMPORTANCE_LOW).apply {
                 description = "Shown while your position is read with the screen off"
+                setShowBadge(false)
+            },
+        )
+        manager.createNotificationChannel(
+            NotificationChannel(CHANNEL_ATC, "Listening to the radio", NotificationManager.IMPORTANCE_LOW).apply {
+                description = "Shown while the ATC copilot listens for calls to your airplane"
                 setShowBadge(false)
             },
         )
@@ -139,6 +149,21 @@ object Notifications {
             .setContentTitle("Flying")
             .setContentText("Your position is being read for the alerts ahead and the path flown.")
             .setCategory(NotificationCompat.CATEGORY_NAVIGATION)
+            .setOngoing(true)
+            .setSilent(true)
+            .setContentIntent(openApp(context))
+            .build()
+    }
+
+    /** The ATC copilot's service's notification: a status, as own ship's,
+     *  saying the microphone is in use and why. */
+    fun atc(context: Context): Notification {
+        channels(context)
+        return NotificationCompat.Builder(context, CHANNEL_ATC)
+            .setSmallIcon(R.drawable.ic_stat_wingtip)
+            .setContentTitle("Listening to the Radio")
+            .setContentText("The ATC copilot is listening for calls to your airplane.")
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setOngoing(true)
             .setSilent(true)
             .setContentIntent(openApp(context))

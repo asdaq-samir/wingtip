@@ -19,6 +19,19 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- The ATC copilot (atc/): the radio listened to through the phone's
+         speech recognizer while flying, with the pilot's leave (Setup's
+         ATC, off until turned on), kept with the screen off by a
+         foreground service of the microphone type. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- Android 11 and later show an app only the services it names: the
+         phone's speech recognizer, which the ATC copilot listens through. -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
 
     <!-- Only HTTPS: the gateway and the tiles' CDN are, and a plain-HTTP
          request is refused by the system rather than sent. The session's
@@ -80,6 +93,12 @@
             android:name=".flight.OwnShipService"
             android:exported="false"
             android:foregroundServiceType="location" />
+
+        <!-- The ATC copilot's listening with the screen off (atc/AtcListenService.kt). -->
+        <service
+            android:name=".atc.AtcListenService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
     </application>
 
 </manifest>

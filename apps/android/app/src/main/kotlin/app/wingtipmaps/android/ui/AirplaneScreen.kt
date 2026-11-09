@@ -39,6 +39,9 @@ import app.wingtipmaps.android.checklist.ChecklistScreen
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.plan.FlightChoices
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Switch
 import androidx.compose.ui.platform.LocalContext
@@ -121,6 +124,7 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
         }
         ProblemLine(problem)
         picked?.let { ProfileFigures(it) }
+        RegistrationField()
         PassengersRow()
         if (!state.airplane) {
             Text(stringResource(R.string.no_airplane_line), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -147,6 +151,28 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
             ChecklistScreen(airplane = state.aircraft, kind = kind)
         }
     }
+}
+
+/** The airplane's registration (N-number), the call sign the ATC copilot
+ *  listens for and the logbook's airplane; kept as typed, upper-cased. */
+@Composable
+private fun RegistrationField() {
+    val context = LocalContext.current
+    val choices = remember(context) { FlightChoices.of(context) }
+    val tail by choices.tail.collectAsStateWithLifecycle()
+    var typed by remember { mutableStateOf(tail.orEmpty()) }
+    OutlinedTextField(
+        value = typed,
+        onValueChange = {
+            typed = it.uppercase()
+            choices.setTail(it)
+        },
+        label = { Text(stringResource(R.string.registration)) },
+        placeholder = { Text(stringResource(R.string.registration_hint)) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Done),
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 /** Whether anyone but the pilot is aboard: where the web reads it from

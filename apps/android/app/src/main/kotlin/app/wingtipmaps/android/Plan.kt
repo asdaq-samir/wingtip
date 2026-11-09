@@ -183,10 +183,13 @@ class Plan(app: Application) : AndroidViewModel(app) {
 
     /** Direct To: from where the airplane is to the point, then on along
      *  the route, the point taken out of the stops after it. */
-    fun directTo(point: ChartPoint, at: OwnShip.Fix) {
+    fun directTo(point: ChartPoint, at: OwnShip.Fix) = directTo(point.ident, at)
+
+    /** Direct To by ident alone: a card's, or a fix ATC named (atc/). */
+    fun directTo(ident: String, at: OwnShip.Fix) {
         val s = _state.value
-        val stops = listOf(point.ident) + s.stops.filterNot { it.equals(point.ident, ignoreCase = true) }
-        plan(positionIdent(at), s.dest.ifEmpty { point.ident }, if (s.dest.isEmpty()) emptyList() else stops)
+        val stops = listOf(ident) + s.stops.filterNot { it.equals(ident, ignoreCase = true) }
+        plan(positionIdent(at), s.dest.ifEmpty { ident }, if (s.dest.isEmpty()) emptyList() else stops)
     }
 
     /** Add Stop and Add to Route: the point among the stops where it
