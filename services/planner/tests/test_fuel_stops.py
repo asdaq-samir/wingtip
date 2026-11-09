@@ -1,8 +1,8 @@
-"""Fuel stops in the trip's totals (plan.fuel_stops_of)."""
+"""Fuel stops in the trip's totals (wingtip.flight_plan.fuel_stops_of)."""
 from datetime import datetime, timezone
 
 from app.router_basics import Route
-from app.routers import plan
+from wingtip import flight_plan as plan
 from wingtip.fuelstops import FuelStop
 
 ROUTE = Route(("C81", "KJAX"), ({"lat": 42.3, "lon": -88.1}, {"lat": 30.5, "lon": -81.7}))

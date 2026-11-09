@@ -5,7 +5,7 @@ under it (the engine's floor_caution), never refused -- at the owner's
 own: 1,000 ft above the highest obstacle within 2,000 ft over a congested
 area (91.119(b)), 500 ft above the surface or any structure elsewhere
 (91.119(c))."""
-from app.planning import own_altitude_caution
+from wingtip.planning import own_altitude_caution
 from wingtip.engine import ask as engine
 
 

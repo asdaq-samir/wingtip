@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Query
 from wingtip import weather_map
 
-from ..planning import forecast_hour_for
+from wingtip.planning import forecast_hour_for
 from ..schemas.weather_map import WeatherMap
 
 router = APIRouter()

@@ -356,7 +356,7 @@ class Totals(BaseModel):
     alternate: "AlternateLeg | None" = None
     #: A route with stops: each flight between two landings with its own
     #: fuel check, the tanks filled at each stop -- the route's own fuel
-    #: figures are None then (app.planning.route_totals). Empty without.
+    #: figures are None then (wingtip.planning.route_totals). Empty without.
     hops: list["HopTotals"] = []
     #: Where a flight the tanks do not hold could land for fuel
     #: (wingtip.fuelstops), one entry a flight short of fuel; empty where every
@@ -541,7 +541,7 @@ class AirwayAltitudes(BaseModel):
 class AltitudeCaution(BaseModel):
     """An altitude the pilot set for a hop (`from_ident` to `to_ident`) and
     what is wrong with it against the planner's band there
-    (app.planning.own_altitude_caution): a warning, not a refusal."""
+    (wingtip.planning.own_altitude_caution): a warning, not a refusal."""
 
     from_ident: str
     to_ident: str
@@ -823,7 +823,7 @@ class NavLogError(BaseModel):
     same answer -- a route with no legal altitude -- so the page offers
     no Try again for it. For that one `detail` is the headline, and
     `reasons` and `advice` say why and what to do: the page lists them in
-    the nav log (app.planning.no_altitude)."""
+    the nav log (wingtip.planning.no_altitude)."""
 
     type: Literal["error"] = "error"
     detail: str

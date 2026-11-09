@@ -42,8 +42,8 @@ def test_each_runway_end_carries_its_heading_and_its_side(tmp_path):
 
 def test_the_pattern_is_the_faas_where_published_and_1000_ft_where_not(tmp_path):
     _files(tmp_path)
-    assert pattern.pattern_at("KRFD", 742.0, tmp_path) == {"agl_ft": 800.0, "altitude_ft": 1542, "published": True}
-    assert pattern.pattern_at("UGN", 727.0, tmp_path) == {"agl_ft": 1000.0, "altitude_ft": 1727, "published": False}
+    assert pattern.pattern_at("KRFD", 742.0, tmp_path) == {"agl_ft": 800.0, "altitude_ft": 1542, "flown_ft": 1500, "published": True}
+    assert pattern.pattern_at("UGN", 727.0, tmp_path) == {"agl_ft": 1000.0, "altitude_ft": 1727, "flown_ft": 1700, "published": False}
     assert pattern.pattern_at("UGN", None, tmp_path)["altitude_ft"] is None
 
 

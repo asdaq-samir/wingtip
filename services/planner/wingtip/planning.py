@@ -1,19 +1,21 @@
 """The nav log's own arithmetic: the cruise altitude (remembered per
 route), the course line, and the aircraft it is all computed for. The
-legs are wingtip.navlog's."""
+legs are wingtip.navlog's, and the flight put together from them
+wingtip.flight_plan's. Moved here from the planner's wingtip.planning
+(2026-11-09) with the flight's assembly, which needs it: nothing here
+serves HTTP."""
 import math
 import threading
 import time
 from datetime import datetime, timedelta, timezone
 
 from cachetools import TTLCache
-from fastapi import HTTPException
 
-from wingtip import aircraft as aircraft_module
-from wingtip import altitude as altitude_module
-from wingtip import airspace, geo, navlog, weather
-from wingtip.config import PLAN_LIMIT_S
-from wingtip.engine import ask as engine
+from . import aircraft as aircraft_module
+from . import altitude as altitude_module
+from . import airspace, geo, navlog, weather
+from .config import PLAN_LIMIT_S
+from .engine import ask as engine
 
 
 # How long a caller waits on a computation that is already running before
@@ -56,6 +58,11 @@ class StillComputing(RuntimeError):
         )
         self.elapsed_s = elapsed_s
         self.stages = sorted(stages)
+
+
+class UnknownAircraft(ValueError):
+    """No stock profile goes by the name asked: the planner answers it a
+    422 (app.main), as it did when this was wingtip.planning's HTTPException."""
 
 
 class _Flight:
@@ -214,7 +221,7 @@ def aircraft_profile(
     # is the request's, and the loader opens one with a suffix as it is.
     path = aircraft_module.profile_path(name)
     if path is None:
-        raise HTTPException(422, f"No aircraft profile is named {name!r}.")
+        raise UnknownAircraft(f"No aircraft profile is named {name!r}.")
     profile = aircraft_module.load_aircraft_profile(path)
     overrides = {
         "cruise_tas_kt": cruise_tas_kt, "fuel_burn_gph": fuel_burn_gph, "usable_fuel_gal": usable_fuel_gal,

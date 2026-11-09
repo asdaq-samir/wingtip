@@ -1,7 +1,7 @@
 """A route with no legal altitude flown anyway, with what it breaks said
-(app.planning.altitude_anyway, own_altitude_caution), at the owner's "I
+(wingtip.planning.altitude_anyway, own_altitude_caution), at the owner's "I
 don't want to put hard limits on anything" (2026-10-23)."""
-from app.planning import altitude_anyway, own_altitude_caution, prohibited_caution
+from wingtip.planning import altitude_anyway, own_altitude_caution, prohibited_caution
 
 # The Rockies on Los Angeles to Hartford's line, eastbound, for an airplane
 # whose ceiling is 10,950 ft.

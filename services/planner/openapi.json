@@ -2446,7 +2446,7 @@
         "type": "object"
       },
       "AltitudeCaution": {
-        "description": "An altitude the pilot set for a hop (`from_ident` to `to_ident`) and\nwhat is wrong with it against the planner's band there\n(app.planning.own_altitude_caution): a warning, not a refusal.",
+        "description": "An altitude the pilot set for a hop (`from_ident` to `to_ident`) and\nwhat is wrong with it against the planner's band there\n(wingtip.planning.own_altitude_caution): a warning, not a refusal.",
         "properties": {
           "altitude_ft": {
             "title": "Altitude Ft",
@@ -10189,7 +10189,7 @@
         "type": "object"
       },
       "NavLogError": {
-        "description": "The stream's failure. `retry` False where asking again gets the\nsame answer -- a route with no legal altitude -- so the page offers\nno Try again for it. For that one `detail` is the headline, and\n`reasons` and `advice` say why and what to do: the page lists them in\nthe nav log (app.planning.no_altitude).",
+        "description": "The stream's failure. `retry` False where asking again gets the\nsame answer -- a route with no legal altitude -- so the page offers\nno Try again for it. For that one `detail` is the headline, and\n`reasons` and `advice` say why and what to do: the page lists them in\nthe nav log (wingtip.planning.no_altitude).",
         "properties": {
           "advice": {
             "anyOf": [
@@ -20838,7 +20838,7 @@
     },
     "/api/navlog": {
       "get": {
-        "description": "Altitude and the dead-reckoning legs, as newline-delimited JSON --\nthe slow half, because it reads terrain, the obstacle file, the\nairspace shapefile and live winds; asked for separately so none of\nthat delays the chart. Each line is one app.schemas.NavLogMessage.\n\nStreamed rather than a single blocking response so a pilot sees the\ntable fill in as it goes rather than a blank screen: a \"stage\" line\nbefore each real piece of work (scoring, the altitude plans), an\n\"altitude\" line the moment those are decided -- the four plans and\nthe one chosen (altitude_choice, see /api/plan) with it -- one \"leg\"\nline per leg, then one \"done\" line with the totals, which need\nevery leg in before they mean anything. Its own implementation, not\na wrapper over /api/plan: that one commits to a single synchronous\nJSON response, and mixing a streaming and a non-streaming contract\ninto one function would compromise both. The overlap is the same\nhandful of calls into app.planning and wingtip.navlog either way.\n\nAn unflyable route (some leg with no legal cruising altitude at all)\nis reported as an \"error\" line, not an HTTP error status -- by the\ntime that's known, a 200 and a stream of NDJSON have already gone\nout, and an HTTP status can't change after that.",
+        "description": "Altitude and the dead-reckoning legs, as newline-delimited JSON --\nthe slow half, because it reads terrain, the obstacle file, the\nairspace shapefile and live winds; asked for separately so none of\nthat delays the chart. Each line is one app.schemas.NavLogMessage.\n\nStreamed rather than a single blocking response so a pilot sees the\ntable fill in as it goes rather than a blank screen: a \"stage\" line\nbefore each real piece of work (scoring, the altitude plans), an\n\"altitude\" line the moment those are decided -- the four plans and\nthe one chosen (altitude_choice, see /api/plan) with it -- one \"leg\"\nline per leg, then one \"done\" line with the totals, which need\nevery leg in before they mean anything. Its own implementation, not\na wrapper over /api/plan: that one commits to a single synchronous\nJSON response, and mixing a streaming and a non-streaming contract\ninto one function would compromise both. The overlap is the same\nhandful of calls into wingtip.flight_plan either way.\n\nAn unflyable route (some leg with no legal cruising altitude at all)\nis reported as an \"error\" line, not an HTTP error status -- by the\ntime that's known, a 200 and a stream of NDJSON have already gone\nout, and an HTTP status can't change after that.",
         "operationId": "navlog_stream_api_navlog_get",
         "parameters": [
           {

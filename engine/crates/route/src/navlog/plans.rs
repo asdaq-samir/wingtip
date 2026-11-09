@@ -1,7 +1,7 @@
 //! The four altitude plans -- lowest, highest, fastest, economical -- over
 //! the legal altitudes of each leg, and the route flown at each altitude
 //! for the altitude wheel: the planner's wingtip.navlog altitude_profiles,
-//! and app.routers.plan's join_options and join_figures for a route with
+//! and wingtip.flight_plan's join_options and join_figures for a route with
 //! stops. Which altitudes are legal (14 CFR 91.119, 91.159, 91.155, the
 //! airspace and the service ceiling) is the altitude selection's; this
 //! assembles the plans over them.

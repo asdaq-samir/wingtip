@@ -318,7 +318,7 @@
 //!   "traffic"?}`, `compass_word` from `{"bearing_deg"}`, `pattern_entry`
 //!   (AC 90-66C 11.3) `{"from", "pattern_side", "words"}` from `{"end",
 //!   "course_deg"}`, `pattern_exit` (11.8) from `{"traffic"?}`,
-//!   `pattern_altitude` `{"agl_ft", "altitude_ft", "published"}` from
+//!   `pattern_altitude` `{"agl_ft", "altitude_ft", "flown_ft", "published"}` from
 //!   `{"elevation_ft"?, "published_agl_ft"?}`; `runway_ends_traffic`: each
 //!   end's `{"ident", "heading_true_deg", "traffic"}`, from
 //!   `{"end_headings", "variation_deg", "right": [end key]}`;
@@ -672,7 +672,12 @@
 //!   `{"by_hop", "lengths"}`;
 //! - `navlog_hold` (AIM 5-3-8) from `{"leg", "before"?, "hold", "fix",
 //!   "variation_deg", "at_end"?}`; `navlog_racetrack` from `{"fix",
-//!   "inbound_true_deg", "right"?, "tas_kt", "leg_nm", "steps"?}`.
+//!   "inbound_true_deg", "right"?, "tas_kt", "leg_nm", "steps"?}`;
+//! - `navlog_fuel_stop_need` (14 CFR 91.151(a), 91.167(a)(3)): the figures
+//!   a flight's fuel stops are looked for by, `{"fuel_per_nm",
+//!   "min_per_nm", "usable_gal", "taxi_gal", "reserve_gal"}`, or null where
+//!   its fuel check passes or is not known, from `{"totals", "legs",
+//!   "start", "end", "depart_s"}`.
 //!
 //! `?` marks a member that may be missing or null. A name not known, or
 //! input not of its shape, is Err with a plain message, never a panic.

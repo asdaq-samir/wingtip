@@ -71,7 +71,7 @@ _RUNNING_AHEAD = 0
 
 # A request made ahead of the pilot: the web app planning the pilot's
 # Recents and Saved routes while the page is idle (?ahead=true on
-# /api/checkpoints and /api/navlog, app.routers.plan). It waits on its
+# /api/checkpoints and /api/navlog, app.routers.plan, wingtip.flight_plan). It waits on its
 # reads as any request does, but they are reads ahead, behind the pilot's
 # and one at a time: asked as waited-on reads, two of them took both
 # processes, and a new route's checkpoints waited for one to end: 3.9 s

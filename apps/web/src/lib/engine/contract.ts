@@ -708,6 +708,13 @@ export type NavLogLegsAtAnswer = NavLogLeg[];
 export type NavLogJoinPlansAnswer = NavLogPlan[];
 export type NavLogJoinFiguresAnswer = NavLogFigure[];
 export type NavLogRacetrackAnswer = [number, number][];
+export type NavLogFuelStopNeedAnswer = {
+  fuel_per_nm: number;
+  min_per_nm: number;
+  usable_gal: number;
+  taxi_gal: number;
+  reserve_gal: number;
+} | null;
 export type NavLogApproachEndAnswer = {
   end_altitude_ft: number;
   end_before_nm: number;
@@ -2696,6 +2703,13 @@ export interface EngineContract {
   navlog_racetrack: {
     input: NavLogRacetrackInput;
     answer: NavLogRacetrackAnswer;
+  };
+  /**
+   * What a flight's fuel stops are looked for by (route options' fuel_stops): null where its fuel check passes or a figure it needs is not known (no airplane, an unflyable leg); else the worst burn a mile over a tankful's stretch of its legs and its minutes a mile, each times the route's miles for each straight one, the usable fuel, the start and taxi allowance, and the reserve -- 14 CFR 91.151(a)(2)'s 45 minutes for (a)(1)'s 30 where any of a VFR trip, its stops' turnarounds counted, is at night; 91.167(a)(3)'s under IFR as given.
+   */
+  navlog_fuel_stop_need: {
+    input: NavLogFuelStopNeedInput;
+    answer: NavLogFuelStopNeedAnswer;
   };
   /**
    * Where a flight landing by an instrument approach comes down to: the first fix not of the missed approach with an altitude under the cruise -- the chart's lowest for it, else its highest (CIFP, ARINC 424-18 5.29; AIM 5-4-5) -- and that fix's distance from the field, as navlog_with_descents takes them. Null where no fix is under the cruise: down to the pattern.
@@ -5155,6 +5169,10 @@ export interface PatternAltitudeAnswer {
    * Feet MSL, whole; null with no elevation.
    */
   altitude_ft: number | null;
+  /**
+   * Feet MSL to the nearest hundred (halves to even), as the planner flies down to it; null with no elevation.
+   */
+  flown_ft: number | null;
   published: boolean;
 }
 export interface RunwayEndsTrafficInput {
@@ -7215,6 +7233,38 @@ export interface NavLogRacetrackInput {
   tas_kt: number;
   leg_nm: number;
   steps?: number | null;
+}
+export interface NavLogFuelStopNeedInput {
+  /**
+   * The flight's nav log totals with its fuel check (navlog_totals, navlog_fuel_plan).
+   */
+  totals: {
+    fuel_margin_gal?: number | null;
+    usable_fuel_gal?: number | null;
+    distance_nm?: number | null;
+    fuel_gal?: number | null;
+    ete_min?: number | null;
+    taxi_gal?: number | null;
+    reserve_gal?: number | null;
+    rules?: string | null;
+    night?: boolean | null;
+  };
+  legs: {
+    distance_nm?: number | null;
+    fuel_gal?: number | null;
+  }[];
+  start: {
+    lat: number;
+    lon: number;
+  };
+  end: {
+    lat: number;
+    lon: number;
+  };
+  /**
+   * The departure, unix seconds (now where none was given: the engine has no clock).
+   */
+  depart_s: number;
 }
 export interface NavLogApproachEndInput {
   fixes: {

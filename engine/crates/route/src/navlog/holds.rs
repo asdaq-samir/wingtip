@@ -1,5 +1,5 @@
 //! A pilot's hold flown on the nav log's leg (the planner's
-//! app.routers.plan.with_holds, a leg at a time, and wingtip.holds.racetrack):
+//! wingtip.flight_plan.with_holds, a leg at a time, and wingtip.holds.racetrack):
 //! its minutes at the leg's true airspeed and cruise burn added to the
 //! leg's time and fuel, so the totals and the fuel required (14 CFR
 //! 91.151, 91.167) are the flight's with the hold, and the leg says the

@@ -12,7 +12,7 @@ from wingtip import airports, airways, fixes, geo, places, weather
 from wingtip.config import PROCESSED_DIR  # noqa: F401  (re-exported for the routers)
 from wingtip.config import corridor_paths as paths  # noqa: F401  (the routers' name for it)
 
-from .planning import StillComputing
+from wingtip.planning import StillComputing
 
 log = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ def position_of(ident: str) -> dict | None:
     if not (-90 <= lat <= 90 and -180 <= lon <= 180):
         return None
     # The altitude the airplane is at, for its climb or level start (app.
-    # routers.plan's departure_elevation); none where the GPS gave none.
+    # wingtip.flight_plan's departure_elevation); none where the GPS gave none.
     altitude = float(match[3]) if match[3] else None
     return {"name": "Present position", "lat": lat, "lon": lon, "elevation_ft": None, "fix": True, "altitude_ft": altitude}
 

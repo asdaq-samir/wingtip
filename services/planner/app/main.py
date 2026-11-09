@@ -48,7 +48,7 @@ from wingtip import airports as airport_table
 
 from . import chart_model, chart_refresh, errors, tracing
 from .router_basics import PROCESSED_DIR
-from .planning import StillComputing
+from wingtip.planning import StillComputing, UnknownAircraft
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan
 from .routers import clearance, figures, gonogo, live, packs, pilot, route_options, system, traffic, weather_map, words
 from .schemas.chart import DetectMessage
@@ -360,11 +360,19 @@ async def _weather_service_error(request: Request, exc: weather.WeatherServiceEr
 
 @app.exception_handler(StillComputing)
 async def _still_computing(request: Request, exc: StillComputing):
-    # A computation for this route has run past its limit (app.planning):
+    # A computation for this route has run past its limit (wingtip.planning):
     # a 504 that says what it is still waiting on, and that asking again
     # in a minute gets the answer it goes on to cache.
     errors.record_for(request, 504, str(exc))
     return JSONResponse(status_code=504, content={"detail": str(exc)})
+
+
+@app.exception_handler(UnknownAircraft)
+async def _unknown_aircraft(request: Request, exc: UnknownAircraft):
+    # A stock profile asked by a name it does not go by (wingtip.planning
+    # aircraft_profile): the request's fault, a 422 with its words, from
+    # /api/plan, /api/navlog, the figures and route options alike.
+    return JSONResponse(status_code=422, content={"detail": str(exc)})
 
 
 @app.get("/")

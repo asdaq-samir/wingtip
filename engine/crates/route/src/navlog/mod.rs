@@ -19,6 +19,8 @@
 //!   band, fastest by the winds, economical by the fuel -- and the route
 //!   flown at each altitude for the altitude wheel; a route with stops'
 //!   plans joined from its hops';
+//! - fuel_stop: whether a flight the tanks do not hold needs a stop, and
+//!   the worst burn a mile and reserve its stops are looked for by;
 //! - holds: a pilot's hold flown on the leg leaving its point (AIM 5-3-8),
 //!   its minutes and fuel added, and the racetrack drawn.
 //!
@@ -35,6 +37,7 @@
 
 pub mod calls;
 pub mod climbs;
+pub mod fuel_stop;
 pub mod holds;
 pub mod legs;
 pub mod plans;

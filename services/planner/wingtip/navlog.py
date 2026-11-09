@@ -118,6 +118,6 @@ def altitude_profiles(
     plans = AltitudePlans(made["plans"])
     plans.by_altitude = made["by_altitude"]
     # The legs for an altitude picked on the wheel: flown as its figures
-    # were worked out, every leg legal (app.routers.plan).
+    # were worked out, every leg legal (wingtip.flight_plan).
     plans.legs_at = lambda target: engine("navlog_legs_at", **given, target_ft=target)
     return plans

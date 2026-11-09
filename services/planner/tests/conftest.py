@@ -3,10 +3,10 @@ flyable altitude selection and an NDJSON reader."""
 import json
 
 import pytest
-from wingtip import airports, airspace, faa_data, fixes, pattern, publications, tfr, weather
+from wingtip import airports, airspace, faa_data, fixes, pattern, planning, publications, tfr, weather
 from wingtip.config import get_settings
 
-from app import chart_model, chart_scorer, detection, planning, prefetch, checkpoint_scoring
+from app import chart_model, chart_scorer, detection, prefetch, checkpoint_scoring
 
 
 @pytest.fixture(autouse=True)
@@ -59,7 +59,7 @@ def noon_in_chicago(monkeypatch):
     A test about the night sets its own."""
     from datetime import datetime, timezone
 
-    from app import planning
+    from wingtip import planning
     monkeypatch.setattr(planning, "now", lambda: datetime(2026, 9, 22, 17, 0, tzinfo=timezone.utc))
 
 

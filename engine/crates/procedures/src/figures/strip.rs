@@ -2,7 +2,7 @@
 //! FlightLine, the iPhone's FiguresStrip, Android's Figures): one answer
 //! for the three, so the strip says the same fuel on each. The figure is
 //! the fuel required to the next landing -- the tanks are filled at each
-//! stop (the planner's app.planning.route_totals) -- less what a flight
+//! stop (the planner's wingtip.planning.route_totals) -- less what a flight
 //! under way has burnt; red where the tanks do not hold it on any flight
 //! of the route. Before the nav log's totals are in, an estimate from the
 //! airplane's book alone.
@@ -95,7 +95,7 @@ pub struct TankPoint {
 /// the reserve: full (`usable_gal`) at the departure, the start, taxi and
 /// takeoff allowance and each leg's burn taken from them after, filled
 /// again at each field landed at, as the planner checks each flight
-/// (app.planning.route_totals). None at a point past a leg whose burn is
+/// (wingtip.planning.route_totals). None at a point past a leg whose burn is
 /// not known, until the next fill.
 pub fn tanks(points: &[TankPoint], usable_gal: f64, taxi_gal: f64, reserve_gal: f64) -> Vec<Option<(f64, bool)>> {
     let mut burned = 0.0;

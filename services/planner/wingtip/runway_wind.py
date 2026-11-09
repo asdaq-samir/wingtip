@@ -80,7 +80,7 @@ def runway_in_use(runways: list, most_used: bool = False) -> str | None:
     nearly into the wind -- a calm field's runway in use first, ties to
     the runway used most (paved, then the longer). The web's runwayInUse
     (lib/pattern), the same rule, which the page's own pick goes by: the
-    planner picks with it for a first plan (app.routers.plan wind_picks),
+    planner picks with it for a first plan (wingtip.flight_plan wind_picks),
     the page's pick then the same. None with no wind on any runway -- no
     report, or a variable one -- where the page goes by a nearby report's.
     Over pattern.with_traffic's runways: open, with an end that has a

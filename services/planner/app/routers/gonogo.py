@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from .. import planning as planning_module
+from wingtip import planning as planning_module
 from ..router_basics import load_route
 from ..gonogo import live
 from ..gonogo.frat import assessment as risk_assessment, self_checks
@@ -26,7 +26,8 @@ from ..gonogo.words import (
     PLAN_NAME, WEATHER_SOURCE_LABEL, alt_ft, ceiling_and_visibility, flight_level, gairmet_title, grouped, sigmet_hazard, to_fixed,
 )
 from . import briefing as briefing_router
-from .plan import NoWinds, PlanQuery, Unflyable, flown_as_picked, planned_within_limit, totals_of, unflyable_parts
+from wingtip import flight_plan as fp
+from .plan import PlanQuery, named_checkpoints
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -63,22 +64,22 @@ def _as_dict(value) -> dict:
 
 def plan_for(q: PlanQuery, r) -> Planned:
     """The route planned as /api/plan plans it, bounded the same way."""
-    profile = q.profile()
-    _, _, runs, outcome = planned_within_limit(r, q, profile)
-    aircraft = {"name": q.aircraft, **profile}
-    if isinstance(outcome, Unflyable):
-        why, _ = unflyable_parts(outcome, runs)
+    asked = q.asked()
+    _, _, runs, outcome = fp.plan_within_limit(r, asked, lambda: named_checkpoints(r))
+    aircraft = {"name": q.aircraft, **asked.profile}
+    if isinstance(outcome, fp.Unflyable):
+        why, _ = fp.unflyable_parts(outcome, runs)
         return Planned(nav=None, legs=[], totals=None, problem=why["brief"])
     options = [_as_dict(o) for o in outcome.options]
-    if isinstance(outcome, NoWinds):
+    if isinstance(outcome, fp.NoWinds):
         # The altitude line came, then the winds failed: no legs, no totals.
         return Planned(nav={"flown": None, "altitude_ft": None, "options": options, "selection": outcome.selection,
                             "aircraft": aircraft, "cautions": []}, legs=[], totals=None)
     nav = {"flown": outcome.choice or "custom", "altitude_ft": outcome.altitude_ft, "options": options,
            "selection": outcome.selection, "aircraft": aircraft, "cautions": [_as_dict(c) for c in outcome.cautions]}
-    outcome, flown = flown_as_picked(r, runs, outcome, q)
+    outcome, flown = fp.flown_as_picked(r, runs, outcome, asked)
     legs = [_as_dict(leg) for leg in flown]
-    totals = totals_of(r, runs, outcome, profile, q.rules, q.alternate, q.own_ground())
+    totals = fp.totals_of(r, runs, outcome, asked)
     return Planned(nav=nav, legs=legs, totals=totals)
 
 

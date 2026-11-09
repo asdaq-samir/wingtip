@@ -17,7 +17,7 @@ from wingtip.engine import ask as engine
 
 from ..router_basics import DEFAULT_AIRCRAFT
 from ..figures.schemas import DebriefAnswer, DebriefAsk, Diversion, Holding, LostComms, LostCommsAsk
-from ..planning import aircraft_profile, forecast_hour_for
+from wingtip.planning import aircraft_profile, forecast_hour_for
 from .plan import CruisePower, CruiseTas
 
 router = APIRouter()

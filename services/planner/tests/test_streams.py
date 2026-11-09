@@ -79,6 +79,8 @@ def test_a_stuck_altitude_selection_ends_the_navlog_stream_saying_what_it_waits_
     aviationweather.gov" for as long as the selection never finished.
     Now each heartbeat names the stage actually running, and the stream
     ends at the limit with an error line saying so."""
+    from wingtip import flight_plan
+
     from app.routers import plan as plan_router
 
     monkeypatch.setattr(checkpoint_scoring, "score", lambda dep, dest: [])
@@ -91,7 +93,7 @@ def test_a_stuck_altitude_selection_ends_the_navlog_stream_saying_what_it_waits_
 
     monkeypatch.setattr(altitude_module, "select_cruise_altitude", stuck)
     monkeypatch.setattr(plan_router, "HEARTBEAT_S", 0.05)
-    monkeypatch.setattr(plan_router, "COMPUTE_LIMIT_S", 0.4)
+    monkeypatch.setattr(flight_plan, "COMPUTE_LIMIT_S", 0.4)
     try:
         resp = client.get("/api/navlog", params={"dep": "C81", "dest": "KDLH"})
     finally:

@@ -12,7 +12,7 @@ use crate::json::{self, Value};
 use wingtip_flight::performance::Climber;
 
 /// The names this module answers.
-pub const NAMES: [&str; 17] = [
+pub const NAMES: [&str; 18] = [
     "performance_cruise",
     "performance_climb",
     "navlog_leg",
@@ -30,6 +30,7 @@ pub const NAMES: [&str; 17] = [
     "navlog_join_figures",
     "navlog_hold",
     "navlog_racetrack",
+    "navlog_fuel_stop_need",
 ];
 
 fn opt_num(name: &str, v: &Value, key: &str) -> R<Option<f64>> {
@@ -246,6 +247,15 @@ fn answer(name: &str, v: &Value) -> R<String> {
             }
             let path = super::holds::racetrack(place(name, v, "fix")?, num(name, v, "inbound_true_deg")?, right, num(name, v, "tas_kt")?, num(name, v, "leg_nm")?, steps as usize);
             write(&Value::Array(path.into_iter().map(|(lat, lon)| Value::Array(vec![Value::Number(lat), Value::Number(lon)])).collect()))
+        }
+        "navlog_fuel_stop_need" => {
+            let totals = Obj::read(name, v.get("totals").unwrap_or(&Value::Null))?;
+            let legs = objs(name, v, "legs")?
+                .iter()
+                .map(|l| Ok((l.opt("distance_nm")?.unwrap_or(0.0), l.opt("fuel_gal")?)))
+                .collect::<R<Vec<_>>>()?;
+            let need = super::fuel_stop::fuel_stop_need(&totals, &legs, place(name, v, "start")?, place(name, v, "end")?, num(name, v, "depart_s")?)?;
+            need.map_or_else(|| "null".to_owned(), |n| write(&n.value()))
         }
         _ => return Err(format!("the engine has no rule called {name:?}")),
     })

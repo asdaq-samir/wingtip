@@ -163,7 +163,7 @@ def test_the_winds_product_is_the_one_whose_for_use_window_holds_the_departure(m
     1400-2100Z, the 12-hour 2100-0600Z, the 24-hour 0600-1800Z."""
     from datetime import datetime, timezone
 
-    from app import planning
+    from wingtip import planning
     from wingtip import weather
 
     periods = {
@@ -180,7 +180,7 @@ def test_the_winds_product_is_the_one_whose_for_use_window_holds_the_departure(m
 
 
 def test_totals_say_when_the_plan_was_made_and_the_winds_it_flies(messages, monkeypatch):
-    from app import planning
+    from wingtip import planning
     from wingtip import weather
 
     period = {"valid_at": "2026-09-22T18:00:00Z", "use_from": "2026-09-22T14:00:00Z", "use_to": "2026-09-22T21:00:00Z"}
@@ -200,7 +200,7 @@ def test_totals_say_when_the_plan_was_made_and_the_winds_it_flies(messages, monk
 def test_totals_carry_the_fuel_check(messages, monkeypatch):
     from datetime import datetime, timezone
 
-    from app import planning
+    from wingtip import planning
 
     # No departure time is now: here noon in Chicago (17:00 UTC), by day.
     monkeypatch.setattr(planning, "now", lambda: datetime(2026, 9, 22, 17, 0, tzinfo=timezone.utc))
@@ -334,9 +334,9 @@ def test_plan_without_winds_is_a_502(monkeypatch):
 
 
 def test_each_outcome_of_the_altitude_resolver(monkeypatch, altitude):
-    from app.planning import aircraft_profile
+    from wingtip.planning import aircraft_profile
     from app.router_basics import load_route
-    from app.routers.plan import Flown, NoWinds, resolve_altitude
+    from wingtip.flight_plan import Flown, NoWinds, resolve_altitude
 
     r = load_route("C81", "KDLH")
     fix_list = navlog.fixes(r.dep_ident, r.dest_ident, r.start, r.end, [])
@@ -350,7 +350,7 @@ def test_each_outcome_of_the_altitude_resolver(monkeypatch, altitude):
 
     monkeypatch.setattr(altitude_module, "select_cruise_altitude",
                         select_cruise_altitude_stub({**altitude, "recommended_ft": None}))
-    from app import planning
+    from wingtip import planning
     planning._ALTITUDE_CACHE.clear()
     planning._PLANS_CACHE.clear()
     anyway = resolve_altitude(r, fix_list, profile, "c172", None, "lowest")
@@ -370,7 +370,7 @@ def test_a_plan_whose_scoring_hangs_answers_within_the_bound(monkeypatch):
     read now."""
     import threading
 
-    from app.routers import plan as plan_router
+    from wingtip import flight_plan
 
     release = threading.Event()
 
@@ -379,7 +379,7 @@ def test_a_plan_whose_scoring_hangs_answers_within_the_bound(monkeypatch):
         return []
 
     monkeypatch.setattr(checkpoint_scoring, "score", slow_read)
-    monkeypatch.setattr(plan_router, "COMPUTE_LIMIT_S", 0.3)
+    monkeypatch.setattr(flight_plan, "COMPUTE_LIMIT_S", 0.3)
     try:
         resp = client.get("/api/plan", params={"dep": "C81", "dest": "KDLH"})
     finally:
@@ -411,7 +411,7 @@ def test_no_altitude_says_where_and_why_in_a_pilots_words():
     """Chicago to Las Vegas in a 172: the Rockies' floor over the climb
     the aeroplane has, not the whole route's highest floor beside its
     lowest ceiling and a query parameter to supply."""
-    from app import planning
+    from wingtip import planning
 
     selection = {"segments": [
         {"from_nm": 0.0, "to_nm": 150.0, "floor_ft": 2500.0, "service_ceiling_ft": 14000.0, "airspace_ceiling_ft": 3000.0,
@@ -443,7 +443,7 @@ def test_no_altitude_names_the_class_b_and_what_it_takes():
     """Midway to Duluth: the straight line runs over O'Hare, where the
     Chicago Class B reaches the ground. It said "The airspace over it
     stops at 0 ft"."""
-    from app import planning
+    from wingtip import planning
 
     selection = {
         "airspace_transits": [
@@ -487,7 +487,7 @@ def test_a_local_flight_is_its_time_aloft_at_cruise_burn_with_the_fuel_check(mon
     the burn gives, the day reserve with no departure time at noon."""
     from datetime import datetime, timezone
 
-    from app import planning
+    from wingtip import planning
 
     monkeypatch.setattr(planning, "now", lambda: datetime(2026, 9, 22, 17, 0, tzinfo=timezone.utc))
     resp = client.get("/api/local-flight", params={"dep": "C81", "dest": "C81", "duration_min": 90})
@@ -520,7 +520,7 @@ def test_without_checkpoints_the_legs_run_point_to_point_and_nothing_is_scored(m
 def test_an_altitude_the_pilot_set_is_checked_against_the_band_and_warned_not_refused():
     """A pilot's own altitude is flown as set; what is wrong with it is
     said, with the rule each breaks."""
-    from app import planning
+    from wingtip import planning
 
     band = {"floor_ft": 3200.0, "hemispheric_rule_from_ft": 3800.0, "eastbound": False, "airspace_ceiling_ft": 8000.0,
             "service_ceiling_ft": 13000.0, "cloud_ceiling_ft": 7000.0}
@@ -570,7 +570,7 @@ def test_an_altitude_the_pilot_set_under_ifr_is_checked_against_ifr_rules():
     """Under IFR a pilot's own altitude is warned under the minimum IFR
     altitude (91.177(a)) and off the thousands its direction takes
     (91.179(b)) -- ATC may assign otherwise, so a warning, never a refusal."""
-    from app import planning
+    from wingtip import planning
 
     band = {"floor_ft": 4100.0, "eastbound": True, "service_ceiling_ft": 13000.0, "obstacle_clearance_ft": 2000.0}
     selection = {"rules": "ifr", "segments": [{**band, "from_nm": 0.0, "to_nm": 10.0}]}
@@ -591,7 +591,7 @@ def test_an_altitude_the_pilot_set_under_ifr_is_checked_against_ifr_rules():
 def test_no_ifr_altitude_says_the_minimum_ifr_altitude_and_the_service_ceiling():
     """A C172 direct from Rocky Mountain Metro to Aspen under IFR: the
     minimum IFR altitude over the Rockies is past what it climbs to."""
-    from app import planning
+    from wingtip import planning
 
     stuck = {"from_nm": 0.0, "to_nm": 90.0, "floor_ft": 16300.0, "band_ceiling_ft": 11800.0,
              "service_ceiling_ft": 11800.0, "course_magnetic_deg": 235.7, "eastbound": False, "candidates_ft": [],
@@ -626,7 +626,7 @@ def test_under_ifr_the_fuel_on_to_the_alternate_is_flown_before_the_reserve(mess
 def test_an_airplanes_own_ceiling_is_flown_over_its_profiles():
     """The pilot's own service ceiling for their N-number (the owner's
     "give users a way to change these specs"): the profile's otherwise."""
-    from app.planning import aircraft_profile
+    from wingtip.planning import aircraft_profile
 
     assert aircraft_profile("pa28140cruiser")["service_ceiling_ft"] == 10950
     assert aircraft_profile("pa28140cruiser", service_ceiling_ft=14300)["service_ceiling_ft"] == 14300

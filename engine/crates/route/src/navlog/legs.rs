@@ -1,6 +1,6 @@
 //! A leg and a run of them, their totals and the fuel plan: the planner's
 //! wingtip.navlog assemble_leg, leg_between, legs, totals and fuel_plan,
-//! and app.planning.alternate_leg.
+//! and wingtip.planning.alternate_leg.
 
 use super::{number, object, opt_number, py_round, py_sum, Air, LegAir, Obj, Profile, R};
 use crate::geo::{bearing_deg, distance_nm, py_mod};
