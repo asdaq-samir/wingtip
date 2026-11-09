@@ -23,7 +23,7 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")/../.." && pwd)
 docker=${DOCKER:-docker}
 
-"$docker" run --rm -v "$here:/w" -w /w node:24-slim \
+"$docker" run --rm -v "$here:/w" -w /w "node:$("$here/scripts/build/toolchain.sh" get nodejs)-slim" \
   node scripts/build/engine-contract-apps.mjs engine/contract/engine.schema.json \
   apps/ios/Wingtip/Engine/Generated \
   apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/generated

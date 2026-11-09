@@ -1,7 +1,7 @@
-// A VS Code dev container for the editor's side of the work: Node (the web
-// app's version, apps/web/.nvmrc), Python 3.15 (services/Dockerfile.base's),
-// Rust stable (the engine) and the Docker CLI, so language servers, the
-// formatter and `make` work inside it.
+// A VS Code dev container for the editor's side of the work: Node, Python
+// and Rust at .tool-versions' versions (scripts/build/toolchain.sh writes
+// them here), and the Docker CLI, so language servers, the formatter and
+// `make` work inside it.
 //
 // The stack and the checks still run in Docker, as everywhere in this repo
 // (docs/LOCAL-DEV.md): the host's Docker is shared with the container
@@ -20,9 +20,9 @@
   "workspaceFolder": "${localWorkspaceFolder}",
   "features": {
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
-    "ghcr.io/devcontainers/features/node:1": { "version": "24" },
-    "ghcr.io/devcontainers/features/python:1": { "version": "3.14" },
-    "ghcr.io/devcontainers/features/rust:1": { "version": "stable", "profile": "minimal" },
+    "ghcr.io/devcontainers/features/node:1": { "version": "26" },
+    "ghcr.io/devcontainers/features/python:1": { "version": "3.15.2" },
+    "ghcr.io/devcontainers/features/rust:1": { "version": "1.99.1", "profile": "minimal" },
     "ghcr.io/devcontainers/features/common-utils:2": {}
   },
   // The Compose stack's front door, the inbox and the planner's docs.
