@@ -4,8 +4,11 @@
 # lists what is still to move.
 
 # The owner's FL-045 way of writing a cruise altitude (2026-11-04): how a
-# figure is written stays with each app (CLAUDE.md).
-apps/web/src/lib/units.ts 1
+# figure is written stays with each app (CLAUDE.md). The web's flightLevel
+# moved from lib/units.ts to lib/format/figures.ts in the lib regroup; it
+# writes the altitude it is given and decides nothing (the engine's
+# words_flight_level writes it the same way for the phones and the planner).
+apps/web/src/lib/format/figures.ts 1
 apps/ios/Wingtip/Views/ProfileCard.swift 1
 apps/android/app/src/main/kotlin/app/wingtipmaps/android/strip/StripData.kt 1
 services/planner/app/gonogo/words.py 1
@@ -20,3 +23,9 @@ apps/web/src/features/plan/lib/hourly.ts 1
 # 61.189(c)'s three years of an instructor's own records, which the gateway
 # keeps (records are its job, not a figure a flight is planned by).
 services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 1
+
+# How often the web asks the planner again for the SWIM feeds' live
+# reports (react-query's staleTime and refetchInterval): a minute, as the
+# feeds are made (RVR each minute, AIM 7-1-13), a polling cadence. What a
+# report means for the flight is the engine's (rvr_check, the Go / No-Go).
+apps/web/src/lib/liveReports.ts 1
