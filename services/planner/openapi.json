@@ -7846,6 +7846,10 @@
               }
             ]
           },
+          "magnetic_course_deg": {
+            "title": "Magnetic Course Deg",
+            "type": "number"
+          },
           "magnetic_heading_deg": {
             "title": "Magnetic Heading Deg",
             "type": "number"
@@ -7941,6 +7945,7 @@
           "true_heading_deg",
           "magnetic_variation_deg",
           "magnetic_heading_deg",
+          "magnetic_course_deg",
           "groundspeed_kt",
           "ete_min",
           "fuel_gal",
@@ -9578,6 +9583,10 @@
             ],
             "default": null
           },
+          "magnetic_course_deg": {
+            "title": "Magnetic Course Deg",
+            "type": "number"
+          },
           "magnetic_heading_deg": {
             "title": "Magnetic Heading Deg",
             "type": "number"
@@ -9683,6 +9692,7 @@
           "true_heading_deg",
           "magnetic_variation_deg",
           "magnetic_heading_deg",
+          "magnetic_course_deg",
           "groundspeed_kt",
           "ete_min",
           "fuel_gal",

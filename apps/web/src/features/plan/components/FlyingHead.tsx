@@ -5,7 +5,8 @@ import { distanceNm } from "../../../lib/geo";
 import { useOwnShip } from "../../../lib/map/ownShip";
 import { DRY_RUN, usePastFlight } from "../../../lib/map/pastFlight";
 import { GROUP_HEADING, TEXT } from "../../../lib/text";
-import { dryRunAt, dryRunRow, type DryRun } from "./navlog/dryRun";
+import { dryRunAt, type DryRun } from "./navlog/dryRun";
+import { dryRunNext, forgetPassed, gpsNext } from "./navlog/flyingTo";
 import { isLegPoint, rowPoint, type NavLogRow } from "./navlog/rows";
 
 /**
@@ -28,20 +29,7 @@ import { isLegPoint, rowPoint, type NavLogRow } from "./navlog/rows";
  * at each of a run's frames, as the dry run's figures are (DryRunFigures).
  */
 
-/** Within this of a checkpoint, own ship has passed it. */
-const PASSED_NM = 1;
-/** The rows own ship has passed, by key, from the GPS: kept across fixes
- *  and the rows' changes as legs come in, and let go with the position. */
-const passed = new Set<string>();
-
 interface Next { index: number; number: number; name: string; nm: number; min: number | null; at: number | null }
-
-/** The next checkpoint's row from `from`, skipping the tops of climb and
- *  descent; null past the last. */
-function checkpointFrom(rows: NavLogRow[], from: number): number | null {
-  for (let i = Math.max(1, from); i < rows.length; i++) if (!isLegPoint(rows[i]!)) return i;
-  return null;
-}
 
 /** Its number as the log counts the checkpoints: the departure 0. */
 const numberOf = (rows: NavLogRow[], index: number) => rows.slice(1, index + 1).filter(r => !isLegPoint(r)).length;
@@ -49,7 +37,7 @@ const numberOf = (rows: NavLogRow[], index: number) => rows.slice(1, index + 1).
 export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: NavLogRow[] }) {
   const key = usePastFlight(s => {
     if (!run || s.hex !== DRY_RUN || s.at === null) return "";
-    const index = checkpointFrom(rows, dryRunRow(run, s.at));
+    const index = dryRunNext(run, rows, s.at);
     const at = dryRunAt(run, s.at);
     if (index === null || !at || !run.bends[index] || run.rowT[index] == null) return "";
     const along = run.alongNm.at(-1)! - at.leftNm;
@@ -59,14 +47,10 @@ export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: Na
   });
   const gpsKey = useOwnShip(s => {
     if (run || !s.enabled || !s.fix) {
-      passed.clear();
+      forgetPassed();
       return "";
     }
-    let index = checkpointFrom(rows, 1);
-    while (index !== null && (passed.has(rows[index]!.key) || distanceNm(s.fix, rowPoint(rows[index]!)) < PASSED_NM)) {
-      passed.add(rows[index]!.key);
-      index = checkpointFrom(rows, index + 1);
-    }
+    const index = gpsNext(rows, s.fix);
     if (index === null) return "";
     const nm = distanceNm(s.fix, rowPoint(rows[index]!));
     const min = s.fix.speedKt ? (nm / s.fix.speedKt) * 60 : null;

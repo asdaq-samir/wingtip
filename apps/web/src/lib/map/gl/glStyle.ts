@@ -6,7 +6,7 @@ import type { ChartInfo } from "../../api/types";
 import type { AirspaceVolume } from "../overlayTypes";
 import { airspaceLabel } from "../airspaceLabel";
 import { chartPair, tileTemplate } from "../tiles";
-import { COURSE_MAGENTA } from "../chartColors";
+import { COURSE_MAGENTA, ROUTE_GREEN, ROUTE_GREEN_NIGHT } from "../chartColors";
 
 /**
  * The map's style (the owner, 2026-11-06: "Like ForeFlight, I want
@@ -235,34 +235,49 @@ export function pointFeatures(points: RoutePoint[]): GeoJSON.FeatureCollection<G
 }
 
 /** The course's width by zoom, in GL levels: thin over the whole-country
- *  view, full where a pilot reads a leg. The casing is wider by the same
- *  steps so a rim of it shows either side. */
+ *  view, full where a pilot reads a leg. The green casing is wider by the
+ *  same steps so a band of it shows either side of the magenta, and the
+ *  dark edge wider again, a hairline round the green. */
 const widthByZoom = (stops: [number, number][]) => ["interpolate", ["linear"], ["zoom"], ...stops.flat()];
-const CORE_WIDTH = widthByZoom([[3, 1.5], [6, 2.5], [10, 3.5], [14, 4.5]]);
-const CASING_WIDTH = widthByZoom([[3, 3.5], [6, 5.5], [10, 7], [14, 8.5]]);
-const CASING_WIDTH_SUN = widthByZoom([[3, 4.5], [6, 7], [10, 8.5], [14, 10]]);
+// The green a band of 2.5 to 3.5 either side, as wide as ForeFlight's
+// reads at a phone's width; the edge a point round it.
+const CORE_WIDTH = widthByZoom([[3, 2], [6, 3], [10, 4.5], [14, 5.5]]);
+const CASING_WIDTH = widthByZoom([[3, 5], [6, 8], [10, 10.5], [14, 12.5]]);
+const EDGE_WIDTH = widthByZoom([[3, 6.5], [6, 10], [10, 12.5], [14, 14.5]]);
+const EDGE_WIDTH_SUN = widthByZoom([[3, 7.5], [6, 11.5], [10, 14], [14, 16]]);
 
-/** The casing under the course so it keeps its contrast against the
- *  sectional in each look: a dark rim by day, a stronger and wider one in
- *  sunlight (the chart is lifted there and its pastels wash out the
- *  magenta), and a light rim at night, where the dimmed chart is dark and
- *  a dark rim would vanish into it. */
-export function routeCasingPaint(night: boolean, sunlight: boolean): Record<string, unknown> {
-  if (night) return { "line-color": "#ffffff", "line-opacity": 0.7, "line-width": CASING_WIDTH };
-  if (sunlight) return { "line-color": "#14110f", "line-opacity": 0.95, "line-width": CASING_WIDTH_SUN };
-  return { "line-color": "#1c1a17", "line-opacity": 0.6, "line-width": CASING_WIDTH };
+/** The green casing in each look (ROUTE_GREEN, as ForeFlight cases its
+ *  course): full by day and in sunlight, a shade deeper at night so it
+ *  does not glare off the dimmed chart. */
+export function routeCasingPaint(night: boolean): Record<string, unknown> {
+  return { "line-color": night ? ROUTE_GREEN_NIGHT : ROUTE_GREEN, "line-opacity": night ? 0.9 : 1, "line-width": CASING_WIDTH };
 }
 
+/** The dark edge round the green so it keeps its contrast against the
+ *  sectional in each look: a soft rim by day, a stronger and wider one in
+ *  sunlight (the chart is lifted there and its pastels wash out the
+ *  green), and at night a faint light one, where the dimmed chart is
+ *  dark and a dark rim would vanish into it. */
+export function routeEdgePaint(night: boolean, sunlight: boolean): Record<string, unknown> {
+  if (night) return { "line-color": "#ffffff", "line-opacity": 0.35, "line-width": EDGE_WIDTH };
+  if (sunlight) return { "line-color": "#0b0f0a", "line-opacity": 0.95, "line-width": EDGE_WIDTH_SUN };
+  return { "line-color": "#0b0f0a", "line-opacity": 0.6, "line-width": EDGE_WIDTH };
+}
+
+/** The course line: the dark edge, the green casing, the magenta core. */
 export function routeLayers(courseColour = COURSE_MAGENTA): LayerSpecification[] {
+  const round = { "line-join": "round", "line-cap": "round" } as const;
+  const edge: LineLayerSpecification = {
+    id: "route-edge", type: "line", source: ROUTE_SOURCE, layout: round,
+    paint: routeEdgePaint(false, false) as LineLayerSpecification["paint"],
+  };
   const casing: LineLayerSpecification = {
-    id: "route-casing", type: "line", source: ROUTE_SOURCE,
-    layout: { "line-join": "round", "line-cap": "round" },
-    paint: routeCasingPaint(false, false) as LineLayerSpecification["paint"],
+    id: "route-casing", type: "line", source: ROUTE_SOURCE, layout: round,
+    paint: routeCasingPaint(false) as LineLayerSpecification["paint"],
   };
   const core: LineLayerSpecification = {
-    id: "route-core", type: "line", source: ROUTE_SOURCE,
-    layout: { "line-join": "round", "line-cap": "round" },
+    id: "route-core", type: "line", source: ROUTE_SOURCE, layout: round,
     paint: { "line-color": courseColour, "line-width": CORE_WIDTH as never },
   };
-  return [casing, core];
+  return [edge, casing, core];
 }

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { Airport, Candidate, Leg } from "../../../../lib/api/types";
-import { groundMinAt, legOf, navLogRows, rowPoint, savedCheckpoints, turnaroundMin } from "./rows";
+import { groundMinAt, legOf, navLogRows, routeLegs, rowPoint, savedCheckpoints, turnaroundMin } from "./rows";
 
 const airport = (ident: string, lat: number, lon: number): Airport =>
   ({ ident, name: `${ident} field`, lat, lon, elevation_ft: 900 }) as Airport;
@@ -116,5 +116,26 @@ describe("tops of climb and descent", () => {
     const saved = savedCheckpoints(navLogRows(ends, [], [climbAndDescent]), 30);
     expect(saved.map(c => c.name)).toEqual(["C81", "KDLH"]);
     expect(saved[1]).toMatchObject({ sequenceNo: 1, legDistanceNm: 30, eteMin: 30 });
+  });
+});
+
+describe("routeLegs", () => {
+  const toc = { along_nm: 6, ete_min: 5, fuel_gal: 1, altitude_ft: 4500, lat: 42.2, lon: -88.2, tas_kt: 70, groundspeed_kt: 72 };
+  const withStop = { ...ends, stops: [airport("KMSN", 43.1, -89.3)] };
+
+  test("one leg a row after the departure, from the row before, a top of climb not an end of one", () => {
+    const first = { ...leg(10, 12), toc } as Leg;
+    const rows = navLogRows(withStop, [{ ...cp(42.6, -88.6, 20), hop: 0 } as Candidate], [first, leg(20, 40), leg(30, 90)]);
+    const legs = routeLegs(rows);
+    expect(legs.map(l => `${l.from.name}→${l.to.name}`)).toEqual(["C81→lake_or_pond", "lake_or_pond→KMSN", "KMSN→KDLH"]);
+    // The whole leg's figures, not the piece after the top of climb.
+    expect(legs[0]!.leg?.distance_nm).toBe(12);
+    expect(legs.map(l => l.toRow.kind)).toEqual(["checkpoint", "stop", "destination"]);
+  });
+
+  test("a leg not in yet is still there to tap, its figures to come", () => {
+    const legs = routeLegs(navLogRows(ends, [], []));
+    expect(legs).toHaveLength(1);
+    expect(legs[0]).toMatchObject({ key: "destination", leg: undefined });
   });
 });

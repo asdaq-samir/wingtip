@@ -17,13 +17,14 @@ import {
   FuelStopsGl, HoldTracksGl, LegPointsGl, LessonGl, PatternsGl, PickedGl, PlatesGl, ProceduresGl, StopFieldsGl, WaysGl,
 } from "./layers/RouteExtrasGl";
 import { RouteGl, type GlCandidate, type GlCheckpoint, type GlEndpoint } from "./layers/RouteGl";
+import type { GlLeg } from "./legTap";
 import { TfrGl } from "./layers/TfrGl";
 import { FlownTrackGl, LegHighlightGl, OwnTrailGl, ReplayGl } from "./layers/TracksGl";
 import { TrafficGl } from "./layers/TrafficGl";
 import { WeatherGl } from "./layers/WeatherGl";
 import { useGlFit } from "./useGlFit";
 
-export type { GlCandidate, GlCheckpoint, GlEndpoint };
+export type { GlCandidate, GlCheckpoint, GlEndpoint, GlLeg };
 
 type Point = { ident: string; lat: number; lon: number };
 const NONE: { lat: number; lon: number }[] = [];
@@ -71,6 +72,9 @@ export interface GlRouteMapProps {
   ways?: RouteWay[];
   wayShown: string | null;
   onPickWay?: (key: string) => void;
+  /** The route's legs, a tap on the course the nearest one's. */
+  routeLegs?: GlLeg[];
+  onSelectLeg?: (key: string) => void;
 }
 
 /**
@@ -133,7 +137,7 @@ function Layers(p: GlRouteMapProps) {
           {p.onPickWay && p.ways && <WaysGl ways={p.ways} shown={p.wayShown} onPick={p.onPickWay} />}
           <LegHighlightGl course={course} />
           <PlatesGl drawings={p.procedures} />
-          <RouteGl course={course} checkpoints={p.checkpoints} candidates={p.candidates} endpoints={p.endpoints} />
+          <RouteGl course={course} checkpoints={p.checkpoints} candidates={p.candidates} endpoints={p.endpoints} legs={p.routeLegs} onSelectLeg={p.onSelectLeg} />
           <FuelStopsGl stops={p.fuelStops} onSelect={p.onSelectPlace} />
           <FlownTrackGl course={course} />
           {dryRunning && <ReplayGl asOwnShip />}
