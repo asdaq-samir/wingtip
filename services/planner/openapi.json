@@ -21098,7 +21098,7 @@
   "paths": {
     "/": {
       "get": {
-        "description": "This service has no pages. The front end is built into the Spring\nBoot gateway's jar and served from there, which is also the only\nthing that calls this -- so this answers a health probe and says\nwhere the UI went.",
+        "description": "This service has no pages. The front end is built into the Spring Boot gateway's jar and served\nfrom there, which is also the only thing that calls this -- so this answers a health probe and\nsays where the UI went.",
         "operationId": "index__get",
         "responses": {
           "200": {

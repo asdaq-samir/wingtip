@@ -67,9 +67,8 @@ import org.springframework.security.web.savedrequest.NullRequestCache;
 public class SecurityConfig {
 
     /** The overlay's tile hosts (see the headers below). */
-    // And the radar and satellite loop's tiles (apps/web/src/features/weather-loop): IEM's NEXRAD
-    // mosaics and NOAA nowCOAST's GOES pictures, from their servers; in connect-src too, as MapLibre
-    // fetches a raster tile to read its caching headers.
+    // And the weather loop's tiles (web features/weather-loop), IEM's NEXRAD and nowCOAST's GOES; in
+    // connect-src too, as MapLibre fetches a raster tile to read its caching headers.
     private static final String WEATHER_TILES = "https://mesonet.agron.iastate.edu https://nowcoast.noaa.gov";
 
     private static final String OVERLAY_IMAGES =
