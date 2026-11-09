@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import app.wingtipmaps.android.api.generated.gateway.PaperworkDto
 import app.wingtipmaps.android.records.Paperwork
+import app.wingtipmaps.android.R
+import androidx.compose.ui.res.stringResource
 
 /**
  * Setup's Coming Up, for a pilot signed in: what falls due for them and
@@ -37,7 +39,7 @@ fun ComingUpSection(signedInAs: String) {
             .onFailure { problem = "What falls due could not be fetched: ${it.message}" }
     }
     Column(Modifier.fillMaxWidth()) {
-        Text("Coming Up", style = MaterialTheme.typography.titleLarge)
+        SectionTitle(stringResource(R.string.coming_up))
         val items = list?.items
         when {
             items == null -> Unit
@@ -63,7 +65,7 @@ fun ComingUpSection(signedInAs: String) {
 @Composable
 private fun toneColor(tone: Paperwork.Tone): Color = when (tone) {
     Paperwork.Tone.PAST -> MaterialTheme.colorScheme.error
-    Paperwork.Tone.SOON -> LocalWingtipPalette.current.caution
-    Paperwork.Tone.FINE -> LocalWingtipPalette.current.go
+    Paperwork.Tone.SOON -> LocalWingtipPalette.current.cautionInk
+    Paperwork.Tone.FINE -> LocalWingtipPalette.current.goInk
     Paperwork.Tone.UNKNOWN -> MaterialTheme.colorScheme.onSurfaceVariant
 }

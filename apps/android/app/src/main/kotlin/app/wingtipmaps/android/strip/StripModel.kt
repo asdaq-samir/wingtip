@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.strip
 
+import app.wingtipmaps.android.format.Format
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Plan
@@ -57,11 +58,11 @@ class StripModel : ViewModel() {
         }
 
         data object Airplane : Over {
-            override val title get() = "My airplane"
+            override val title get() = "Airplane"
         }
 
-        data object Settings : Over {
-            override val title get() = "Settings"
+        data object Setup : Over {
+            override val title get() = "Setup"
         }
 
         data object Ask : Over {
@@ -214,14 +215,14 @@ class StripModel : ViewModel() {
         val atis = frequencyOf(frequencies, listOf("ATIS")) ?: frequencyOf(frequencies, listOf("AWOS", "ASOS"))
         if (atis?.frequencyMhz != null) {
             val label = (atis.type ?: "ATIS").uppercase()
-            out += RadioChip(label, "$label ${StripData.mhzText(atis.frequencyMhz)}")
+            out += RadioChip(label, "$label ${Format.frequency(atis.frequencyMhz)}")
         }
         val tower = if (towered) frequencyOf(frequencies, listOf("TWR")) else null
         if (tower?.frequencyMhz != null) {
-            out += RadioChip("TOWER", "Tower ${StripData.mhzText(tower.frequencyMhz)}")
+            out += RadioChip("TOWER", "Tower ${Format.frequency(tower.frequencyMhz)}")
         } else {
             val ctaf = ctafOf(frequencies)
-            if (ctaf?.frequencyMhz != null) out += RadioChip("CTAF", "CTAF ${StripData.mhzText(ctaf.frequencyMhz)}")
+            if (ctaf?.frequencyMhz != null) out += RadioChip("CTAF", "CTAF ${Format.frequency(ctaf.frequencyMhz)}")
         }
         out.toList()
     }
