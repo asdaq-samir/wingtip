@@ -1,15 +1,12 @@
 package app.wingtipmaps.android
 
 import android.app.Application
-import android.content.Context
-import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.airplane.OwnAirplanes
 import app.wingtipmaps.android.airplane.OwnRecord
 import app.wingtipmaps.android.api.Course
-import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.NavLogMessage
 import app.wingtipmaps.android.api.NavLogTotals
@@ -21,6 +18,7 @@ import app.wingtipmaps.android.engine.generated.holdingLegMinutes
 import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.plan.FlightChoices
+import app.wingtipmaps.android.plan.KeptPlan
 import app.wingtipmaps.android.route.RouteEdits
 import app.wingtipmaps.android.route.RouteUndo
 import kotlinx.coroutines.CancellationException
@@ -35,9 +33,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import java.io.IOException
 
 /**
@@ -92,7 +87,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
         val airplane: Boolean get() = AirplaneNow.plannerName(aircraft, own) != null
     }
 
-    private val prefs = app.getSharedPreferences("plan", Context.MODE_PRIVATE)
+    private val store = KeptPlan(app)
 
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state.asStateFlow()
@@ -331,24 +326,10 @@ class Plan(app: Application) : AndroidViewModel(app) {
     }
 
     /** What is on the page, kept for the next launch. */
-    @Serializable
-    private class Kept(
-        val dep: String,
-        val dest: String,
-        val stops: List<String>,
-        val aircraft: String,
-        val course: Course? = null,
-        val legs: List<Leg> = emptyList(),
-        val totals: NavLogTotals? = null,
-        val altitudeFt: Double? = null,
-        val depart: String? = null,
-    )
-
     private fun keep() {
         val s = _state.value
         if (!s.routed || s.course == null || s.totals == null) return
-        val kept = Kept(s.dep, s.dest, s.stops, s.aircraft, s.course, s.legs, s.totals, s.altitudeFt, s.depart)
-        prefs.edit { putString(KEY, Gateway.json.encodeToString(kept)) }
+        store.write(KeptPlan.Kept(s.dep, s.dest, s.stops, s.aircraft, s.course, s.legs, s.totals, s.altitudeFt, s.depart))
     }
 
     /** The plan on the page kept now, whole, for the next launch with no
@@ -359,7 +340,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
      *  it opens with no signal (ready_to_fly's plan_saved). */
     fun saved(): Boolean {
         val s = _state.value
-        val kept = prefs.getString(KEY, null)?.let { runCatching { Gateway.json.decodeFromString<Kept>(it) }.getOrNull() } ?: return false
+        val kept = store.read() ?: return false
         return kept.dep == s.dep && kept.dest == s.dest && kept.stops == s.stops && kept.aircraft == s.aircraft && kept.totals != null
     }
 
@@ -383,9 +364,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
     /** The last plan kept, back on the page at launch: planned again when
      *  the planner answers, kept as it was when it does not. */
     fun restore() {
-        val kept = prefs.getString(KEY, null)?.let { text ->
-            runCatching { Gateway.json.decodeFromString<Kept>(text) }.getOrNull()
-        } ?: return
+        val kept = store.read() ?: return
         _state.update {
             it.copy(dep = kept.dep, dest = kept.dest, stops = kept.stops, aircraft = kept.aircraft,
                 course = kept.course, legs = kept.legs, totals = kept.totals, altitudeFt = kept.altitudeFt, depart = kept.depart)
@@ -397,12 +376,10 @@ class Plan(app: Application) : AndroidViewModel(app) {
     fun clear() {
         running?.cancel()
         _state.value = State(aircraft = _state.value.aircraft)
-        prefs.edit { remove(KEY) }
+        store.clear()
     }
 
     companion object {
-        private const val KEY = "kept"
-
         /** A departure time as written (ISO 8601, with its offset or Z),
          *  in epoch milliseconds; null where there is none or it is not one. */
         fun departMs(iso: String?): Long? =
