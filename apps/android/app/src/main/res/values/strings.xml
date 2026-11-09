@@ -93,6 +93,11 @@
     <string name="fix">Fix</string>
     <string name="vfr_waypoint">VFR Waypoint</string>
     <string name="traffic">Traffic</string>
+    <string name="receiver_setting">ADS-B Receiver</string>
+    <string name="receiver_auto">Auto</string>
+    <string name="receiver_off">Off</string>
+    <string name="receiver_chip">ADS-B receiver: %1$s</string>
+    <string name="receiver_report">%1$s over FIS-B, heard %2$s</string>
     <string name="traffic_gone">No longer heard.</string>
     <string name="track">Track</string>
     <string name="stop_tracking">Stop Tracking</string>

@@ -20,7 +20,16 @@ final class Traffic {
     var on: Bool = UserDefaults.standard.object(forKey: "traffic") as? Bool ?? true {
         didSet { UserDefaults.standard.set(on, forKey: "traffic"); if !on { planes = [] } }
     }
+    /// The airplanes drawn: the cockpit receiver's own first, where one is
+    /// heard, then the internet's it does not hear (Receiver.traffic).
     private(set) var planes: [TrafficAircraft] = []
+    /// The internet's airplanes at the last answer, none once it fails.
+    private var internet: [TrafficAircraft] = []
+    /// Own ship's height at the last answer, for the receiver's heights.
+    private var ownFt: Double?
+    /// Whether any airplane drawn came from the internet, whose credit
+    /// the map then shows.
+    var credited: Bool { on && !internet.isEmpty }
     private(set) var source: String?
     /// When the airplanes last heard were where they are given: the
     /// answer's time less its own age (TrafficAnswer.age_s).
@@ -46,6 +55,8 @@ final class Traffic {
     /// about own ship where there is a fix (its height tells which
     /// airplanes are near), else about the middle of the map.
     func run(near ownShip: @escaping @MainActor () -> OwnShip.Fix?) async {
+        // The receiver's airplanes merged as each second's bytes are read.
+        Receiver.shared.onRead = { [weak self] in self?.merge() }
         await Ticker.shared.run(every: Self.everyS) { [weak self] in
             await self?.ask(near: ownShip())
         }
@@ -53,6 +64,7 @@ final class Traffic {
 
     /// One answer about a point, where traffic is on and there is one.
     private func ask(near fix: OwnShip.Fix?) async {
+        ownFt = fix?.altitudeFt
         guard on, let at = fix?.coordinate ?? mapCentre else { return }
         let radius = min(60, max(10, mapRadiusNm))
         let answer: TrafficAnswer
@@ -60,16 +72,26 @@ final class Traffic {
             answer = try await Planner.traffic(lat: at.latitude, lon: at.longitude, radiusNm: radius)
         } catch {
             Log.map.notice("the traffic could not be asked for: \(error.localizedDescription, privacy: .public)")
+            // No signal: the receiver's airplanes alone, the internet's
+            // last answer going stale.
+            internet = []
+            merge()
             return
         }
         guard on else { return }
-        planes = answer.aircraft.filter { ($0.seenS ?? 0) + (answer.ageS ?? 0) <= Self.staleS }
+        internet = answer.aircraft.filter { ($0.seenS ?? 0) + (answer.ageS ?? 0) <= Self.staleS }
+        merge()
         source = answer.source
         heardAt = Date().addingTimeInterval(-(answer.ageS ?? 0))
         // With no height of own ship tellNear asks nothing, so the marks
         // the map draws are checked here, their problem kept to show.
         if fix?.altitudeFt == nil { _ = drawn(planes, ownFt: nil) }
         await tellNear(fix)
+    }
+
+    /// The internet's airplanes and the receiver's, as drawn.
+    private func merge() {
+        planes = on ? Receiver.shared.traffic(internet, ownFt: ownFt) : []
     }
 
     /// The airplanes near own ship (the engine's `traffic_marks`, the

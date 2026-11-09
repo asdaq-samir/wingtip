@@ -13,6 +13,8 @@ struct WingtipApp: App {
     @State private var dryRun = DryRun()
     @State private var traffic = Traffic()
     @State private var verdict = Verdict()
+    /// iOS's hand-over of the chart downloads finished in the background.
+    @UIApplicationDelegateAdaptor(OfflineAppDelegate.self) private var offlineDelegate
 
     init() {
         // Apple's own measurements of this app on this phone -- launch,
@@ -35,6 +37,7 @@ struct WingtipApp: App {
                 .task { ownShip.start() }
                 .task { await session.refresh() }
                 .task { await charts.load() }
+                .task { OfflineDownloads.shared.start() }
                 .task { plan.restore() }
                 // The flight in progress on the Lock Screen and in the
                 // Dynamic Island (FlightActivity, a Live Activity: the
@@ -48,6 +51,9 @@ struct WingtipApp: App {
                 // Group only as they change, on the same clock.
                 .task { await Ticker.shared.run(every: 15) { WidgetFeed.shared.update(plan: plan, verdict: verdict) } }
                 .task { await WatchLink.shared.run(plan: plan, ownShip: ownShip) }
+                // The cockpit's ADS-B receiver on the Wi-Fi, read once a
+                // second while the setting is Auto (Receiver).
+                .task { await Receiver.shared.run() }
                 // A link opens the app (Associated Domains): a route, a
                 // field or an airplane shared from the site, or a track
                 // file from Files or Mail, is a command RootView does

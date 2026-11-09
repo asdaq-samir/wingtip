@@ -235,8 +235,19 @@ owner, 2026-11-03):
   (`Views/DiagramOwnShip.swift`): the FAA's PDF drawn by PDFKit, own ship
   placed by the diagram's own latitude and longitude marks (the free
   d-TPP's diagrams have no GeoPDF georeference; KORD's and a few others
-  have no marks, and say so). FIS-B weather from ADS-B In is still to
-  come.
+  have no marks, and say so).
+- **A cockpit ADS-B receiver** (`Wingtip/Receiver/`): a Stratux, Sentry,
+  Garmin GDL 39/52 or uAvionix receiver on the Wi-Fi sends GDL 90 to UDP
+  port 4000; `ReceiverListener` (Network.framework) gathers it and once a
+  second the engine reads it (`receiver_read`, `engine/crates/receiver`).
+  Its traffic is drawn ahead of the internet's, merged by ICAO address
+  (`receiver_traffic`, through `Traffic`); a chip on the map says
+  "Stratux · 12 targets · GPS"; a field's FIS-B METAR and TAF show on its
+  card's Weather tab when the weather service has none
+  (`receiver_reports`); FIS-B NEXRAD is drawn over the chart
+  (`receiver_nexrad`, `NexradMapLayer`). Setup's Map section has ADS-B
+  Receiver: Auto or Off. A receiver that only broadcasts to the network
+  is heard once Apple grants the multicast entitlement.
 - **The privacy manifest** (`Wingtip/PrivacyInfo.xcprivacy`): what is
   collected and the required-reason APIs used; the session is cookies in
   `HTTPCookieStorage`, and `UserDefaults` holds no secret.
@@ -408,6 +419,45 @@ code:
   figures for the engine's readers and the map's decoding on the runner,
   and `Metrics` subscribes to MetricKit, so launch, hang, battery and
   crash reports come from real phones into the system log.
+
+## Downloads: the chart with no signal
+
+Setup → Chart → Downloads (`Wingtip/Offline/`) keeps a region's chart on
+the phone, as ForeFlight's and Garmin Pilot's downloads do: a sectional
+sheet's coverage ("Chicago", "Twin Cities"), a state, or the map's view,
+picked on a list or on a map of the sheets. The planner cuts each one
+from its cycle's archives (`/api/offline-charts`,
+`wingtip.offline_charts`): one PMTiles file per chart kind and density
+(Sectional, Terminal Area, IFR Low, High and Area; Sharp is the 512-pixel
+@2x tiles, Smaller the 256), each sized before it is fetched (Chicago's
+sectional 583 MB sharp, 206 MB smaller). `DownloadsModel` holds the
+screen; `OfflineDownloads` fetches the files with a background
+URLSession, so they come with the app closed (`OfflineAppDelegate` takes
+iOS's hand-over); `OfflineStore` keeps them under Application Support,
+out of the backup, with `manifest.json`. The region's cycle packs are
+fetched with it (`CyclePacks.keep`), so its airspace and places answer
+with no signal too.
+
+The map reads a tile from a downloaded region first (`TileStore.read`
+asks `OfflineStore.tile`), at the density asked for or else the other,
+then from the tiles it fetched as it went, then the network.
+`PMTilesReader` is the phone's own reader of the format (spec v3): the
+header once, each directory once as it is needed, then the tile's own
+bytes, by ranged reads of the file, never mapped whole (Alaska's
+sectional at 2x is 7 GB). When the planner has the next cycle, a kept
+region offers "Update to" it; on the day the old edition is replaced
+(0901Z on the next one's date) it is said to be expired and kept until
+its update is whole, then removed (`OfflineStore.sweep`; warn, never
+limit). `WingtipTests/OfflineChartsTests` reads an archive the planner's
+writer made, leaf directories and all.
+
+The web app has no Downloads: a browser cannot be relied on to keep
+gigabytes (Safari may clear a site's storage after seven days without a
+visit, and every browser caps it and may evict it under pressure). The service worker keeps the tiles looked at and a route's corridor
+(KeepRoute). A later path for an installed web app would be the same
+archives in the Origin Private File System, with
+`navigator.storage.persist()` asked first, read by the `pmtiles`
+library the overlays already use.
 
 ## Building
 

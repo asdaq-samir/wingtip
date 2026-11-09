@@ -1,0 +1,48 @@
+{
+  "_note": "A flight's NOTAMs ranked by what bears on it, the engine's notams_ranked (engine/crates/weather/src/notam_rank.rs). C81 to KOSH leaving 1400Z, landing about 1510Z on runway 36, at 4,500 ft. The scores are worked by hand from the rule's table: OSH 11/012 is in force (+30) at the destination (+20), names runway 36 in use (+40) and closes it (+15), 105; the taxiway closure 30+20+15, 65; C81's fuel 30+20+5 and the jump area's SFC-FL180 en route 30+25, 55 each, a tie the ids order; the TFR the route goes through 30+35, but its 3,000 ft top is clear of 4,500 ft (-20), 45; 09/27's closure starts the next day, -100+20+10+15, -55, never in the top. engine/facade/tests/notams_ranked.rs asks the engine each case; the planner asks the same name.",
+  "cases": [
+    {
+      "about": "C81 to KOSH: the runway in use closed first, the tie at the boundary kept in id order, tomorrow's closure last",
+      "input": {
+        "from": "2026-11-14T13:00:00Z",
+        "until": "2026-11-14T16:10:00Z",
+        "cruise_ft": 4500,
+        "airspaces": ["CHICAGO CLASS B"],
+        "fields": [
+          {"ident": "C81", "role": "dep", "from": "2026-11-14T13:00:00Z", "until": "2026-11-14T14:30:00Z", "runways": ["06"]},
+          {"ident": "KOSH", "role": "dest", "from": "2026-11-14T14:40:00Z", "until": "2026-11-14T16:10:00Z", "runways": ["36"]}
+        ],
+        "notams": [
+          {"id": "OSH 11/030", "location": "OSH", "starts": "2026-11-15T12:00:00Z", "ends": "2026-11-15T20:00:00Z", "text": "!OSH 11/030 OSH RWY 09/27 CLSD 2611151200-2611152000"},
+          {"id": "OSH 11/012", "location": "OSH", "starts": "2026-11-14T14:00:00Z", "ends": "2026-11-14T18:00:00Z", "text": "!OSH 11/012 OSH RWY 18/36 CLSD 2611141400-2611141800"},
+          {"id": "ZAU 11/301", "location": "ZAU", "starts": "2026-11-14T14:00:00Z", "ends": "2026-11-14T22:00:00Z", "text": "!ZAU 11/301 ZAU AIRSPACE PARACHUTE JUMP AREA WI 3NM FOND DU LAC SFC-FL180 2611141400-2611142200"},
+          {"id": "C81 11/004", "location": "C81", "starts": null, "ends": null, "text": "!C81 11/004 C81 SVC FUEL 100LL NOT AVBL"},
+          {"id": "OSH 11/015", "location": "KOSH", "starts": "2026-11-14T12:00:00Z", "ends": "2026-11-16T12:00:00Z", "text": "!OSH 11/015 OSH TWY B CLSD 2611141200-2611161200"},
+          {"id": "6/1234", "location": null, "starts": "2026-11-14T13:00:00Z", "ends": "2026-11-14T19:00:00Z", "text": "TFR 6/1234: VIP movement.", "floor_ft": 0, "ceiling_ft": 3000, "crosses": true}
+        ]
+      },
+      "answer": {
+        "ranked": [
+          {"id": "OSH 11/012", "rank": 1, "score": 105, "top": true, "tied": false, "field": "KOSH", "role": "dest", "keyword": "RWY", "runways": ["18", "36"], "closed": true, "low_ft": null, "high_ft": null, "in_force": true,
+           "reasons": [{"key": "time", "words": "In force while you are at KOSH"}, {"key": "field", "words": "At KOSH, your destination"}, {"key": "runway", "words": "Names runway 18/36, the one in use at KOSH"}, {"key": "closed", "words": "Closes what it names"}]},
+          {"id": "OSH 11/015", "rank": 2, "score": 65, "top": true, "tied": false, "field": "KOSH", "role": "dest", "keyword": "TWY", "runways": [], "closed": true, "low_ft": null, "high_ft": null, "in_force": true,
+           "reasons": [{"key": "time", "words": "In force while you are at KOSH"}, {"key": "field", "words": "At KOSH, your destination"}, {"key": "closed", "words": "Closes what it names"}]},
+          {"id": "C81 11/004", "rank": 3, "score": 55, "top": true, "tied": true, "field": "C81", "role": "dep", "keyword": "SVC", "runways": [], "closed": false, "low_ft": null, "high_ft": null, "in_force": true,
+           "reasons": [{"key": "time", "words": "In force while you are at C81"}, {"key": "field", "words": "At C81, your departure"}, {"key": "kind", "words": "A service at C81"}]},
+          {"id": "ZAU 11/301", "rank": 4, "score": 55, "top": false, "tied": true, "field": null, "role": null, "keyword": "AIRSPACE", "runways": [], "closed": false, "low_ft": 0.0, "high_ft": 18000.0, "in_force": true,
+           "reasons": [{"key": "time", "words": "In force during the flight"}, {"key": "altitude", "words": "From the surface to FL180, which takes in your 4,500 ft"}]},
+          {"id": "6/1234", "rank": 5, "score": 45, "top": false, "tied": false, "field": null, "role": null, "keyword": null, "runways": [], "closed": false, "low_ft": 0.0, "high_ft": 3000.0, "in_force": true,
+           "reasons": [{"key": "time", "words": "In force during the flight"}, {"key": "altitude", "words": "From the surface to 3,000 ft, clear of your 4,500 ft"}, {"key": "airspace", "words": "The route goes through it"}]},
+          {"id": "OSH 11/030", "rank": 6, "score": -55, "top": false, "tied": false, "field": "KOSH", "role": "dest", "keyword": "RWY", "runways": ["09", "27"], "closed": true, "low_ft": null, "high_ft": null, "in_force": false,
+           "reasons": [{"key": "time", "words": "Not in force while you are at KOSH"}, {"key": "field", "words": "At KOSH, your destination"}, {"key": "runway", "words": "Names runway 09/27, not the one in use at KOSH (36)"}, {"key": "closed", "words": "Closes what it names"}]}
+        ],
+        "top": 3
+      }
+    },
+    {
+      "about": "Nothing heard: nothing ranked",
+      "input": {"notams": [], "fields": [], "from": "2026-11-14T13:00:00Z", "until": "2026-11-14T16:00:00Z", "cruise_ft": null, "airspaces": []},
+      "answer": {"ranked": [], "top": 0}
+    }
+  ]
+}

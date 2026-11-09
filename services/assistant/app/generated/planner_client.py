@@ -622,6 +622,51 @@ def navlog_stream(*, dep: str, dest: str, ahead: bool | None = None, stops: str 
     return _NAVLOG_STREAM.validate_python(found)
 
 
+_NOTAMS_RANKED = _Answer(m.NotamsRanked)
+
+
+def notams_ranked(*, body: m.NotamsRankedAsk | dict[str, Any]) -> m.NotamsRanked:
+    """POST /api/notams/ranked: Notams Ranked"""
+    found = _send('POST', '/api/notams/ranked', query={}, body=_body(body), headers={})
+    return _NOTAMS_RANKED.validate_python(found)
+
+
+_OFFLINE_BOX = _Answer(m.OfflineBox)
+
+
+def offline_box(*, west: float, south: float, east: float, north: float) -> m.OfflineBox:
+    """GET /api/offline-box: Offline Box"""
+    found = _send('GET', '/api/offline-box', query={'west': west, 'south': south, 'east': east, 'north': north}, body=None, headers={})
+    return _OFFLINE_BOX.validate_python(found)
+
+
+_OFFLINE_CATALOG = _Answer(m.OfflineCatalog)
+
+
+def offline_catalog() -> m.OfflineCatalog:
+    """GET /api/offline-charts: Offline Catalog"""
+    found = _send('GET', '/api/offline-charts', query={}, body=None, headers={})
+    return _OFFLINE_CATALOG.validate_python(found)
+
+
+_OFFLINE_REGION = _Answer(m.OfflineRegionFiles)
+
+
+def offline_region(*, cycle: str, region: str) -> m.OfflineRegionFiles:
+    """GET /api/offline-charts/{cycle}/{region}: Offline Region"""
+    found = _send('GET', f"/api/offline-charts/{_seg(cycle)}/{_seg(region)}", query={}, body=None, headers={})
+    return _OFFLINE_REGION.validate_python(found)
+
+
+_OFFLINE_ARCHIVE = _Answer(Any)
+
+
+def offline_archive(*, cycle: str, region: str, archive: str) -> Any:
+    """GET /api/offline-charts/{cycle}/{region}/{archive}.pmtiles: Offline Archive"""
+    found = _send('GET', f"/api/offline-charts/{_seg(cycle)}/{_seg(region)}/{_seg(archive)}.pmtiles", query={}, body=None, headers={})
+    return _OFFLINE_ARCHIVE.validate_python(found)
+
+
 _OVERLAY_TILES = _Answer(m.OverlayTiles)
 
 

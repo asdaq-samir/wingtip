@@ -4,7 +4,7 @@ import { afterEach, describe, expect, test } from "vitest";
 import type { WordsAnswer } from "../../../../lib/api/words";
 import { wordsState } from "../../../../lib/wordsState";
 import WordsSection from "../../../../components/WordsSection";
-import { notamCredit, notamNone } from "./briefingWords";
+import { notamCredit, notamNone } from "../../../../lib/notamCoverage";
 
 afterEach(cleanup);
 

@@ -4131,6 +4131,34 @@ object EngineContract {
         val value: Double,
     )
 
+    /**
+     * An airplane as the map's traffic draws it, the planner's TrafficAircraft (wingtip.traffic): who, where, how high, its track, speed and climb, how old.
+     */
+    @Serializable
+    data class HeardPlane(
+        val hex: String,
+        val callsign: String? = null,
+        val registration: String? = null,
+        val type: String? = null,
+        val category: String? = null,
+        val lat: Double,
+        val lon: Double,
+        @SerialName("altitude_ft")
+        val altitudeFt: Double? = null,
+        @SerialName("pressure_altitude")
+        val pressureAltitude: Boolean? = null,
+        @SerialName("track_deg")
+        val trackDeg: Double? = null,
+        @SerialName("speed_kt")
+        val speedKt: Double? = null,
+        @SerialName("vertical_fpm")
+        val verticalFpm: Double? = null,
+        val squawk: String? = null,
+        val emergency: String? = null,
+        @SerialName("seen_s")
+        val seenS: Double? = null,
+    )
+
     @Serializable
     data class HeardToken(
         val word: String,
@@ -5932,6 +5960,119 @@ object EngineContract {
     )
 
     @Serializable
+    data class NotamsRankedAnswer(
+        val ranked: List<EngineContract.NotamsRankedAnswerRankedItem>,
+        val top: Int,
+    )
+
+    @Serializable
+    data class NotamsRankedAnswerRankedItem(
+        val id: String,
+        val rank: Int,
+        val score: Int,
+        /**
+         * One of the first three said with a line each; the rest are folded.
+         */
+        val top: Boolean,
+        /**
+         * Another NOTAM has the same score: the words may put a tie in another order.
+         */
+        val tied: Boolean,
+        val field: String? = null,
+        val role: String? = null,
+        /**
+         * Its JO 7930.2 keyword (RWY, AD, NAV, AIRSPACE...).
+         */
+        val keyword: String? = null,
+        val runways: List<String>,
+        val closed: Boolean,
+        @SerialName("low_ft")
+        val lowFt: Double? = null,
+        @SerialName("high_ft")
+        val highFt: Double? = null,
+        @SerialName("in_force")
+        val inForce: Boolean? = null,
+        val reasons: List<EngineContract.NotamsRankedAnswerRankedItemReasonsItem>,
+    )
+
+    @Serializable
+    data class NotamsRankedAnswerRankedItemReasonsItem(
+        val key: String,
+        val words: String,
+    )
+
+    @Serializable
+    data class NotamsRankedInput(
+        val notams: List<EngineContract.NotamsRankedInputNotamsItem>,
+        val fields: List<EngineContract.NotamsRankedInputFieldsItem>? = null,
+        /**
+         * The flight's window, ISO 8601 UTC: for a NOTAM at no field of the route.
+         */
+        val from: String? = null,
+        val until: String? = null,
+        /**
+         * The cruise altitude, ft MSL.
+         */
+        @SerialName("cruise_ft")
+        val cruiseFt: Double? = null,
+        /**
+         * The airspaces the route passes, by name (CHICAGO CLASS B).
+         */
+        val airspaces: List<String>? = null,
+    )
+
+    @Serializable
+    data class NotamsRankedInputFieldsItem(
+        val ident: String,
+        val role: String,
+        /**
+         * When the flight's time at the field starts, ISO 8601 UTC.
+         */
+        val from: String? = null,
+        val until: String? = null,
+        /**
+         * The runway ends in use there ("18", "09L"); empty where none is known.
+         */
+        val runways: List<String>? = null,
+    )
+
+    @Serializable
+    data class NotamsRankedInputNotamsItem(
+        val id: String,
+        /**
+         * The place the NOTAM is issued for, as the feed names it (OSH, KOSH).
+         */
+        val location: String? = null,
+        /**
+         * ISO 8601 UTC; null for in force now.
+         */
+        val starts: String? = null,
+        /**
+         * ISO 8601 UTC; null for until further notice.
+         */
+        val ends: String? = null,
+        val schedule: String? = null,
+        /**
+         * The NOTAM's text as sent.
+         */
+        val text: String,
+        /**
+         * A TFR's floor, ft MSL, where the planner read it.
+         */
+        @SerialName("floor_ft")
+        val floorFt: Double? = null,
+        /**
+         * A TFR's ceiling, ft MSL.
+         */
+        @SerialName("ceiling_ft")
+        val ceilingFt: Double? = null,
+        /**
+         * The route goes through it (a TFR the planner placed on the route).
+         */
+        val crosses: Boolean? = null,
+    )
+
+    @Serializable
     data class OurCallInput(
         val text: String,
         val tail: String,
@@ -7017,6 +7158,346 @@ object EngineContract {
     @Serializable
     data class ReadTrackInput(
         val text: String,
+    )
+
+    /**
+     * A FIS-B NEXRAD block (products 63 regional and 64 CONUS): 32 bins across and 4 down, north row first, each a level 0 to 7.
+     */
+    @Serializable
+    data class ReceiverBlock(
+        val id: Double,
+        val regional: Boolean,
+        val north: Double,
+        val west: Double,
+        val south: Double,
+        val east: Double,
+        /**
+         * 128 digits 0 to 7, row by row from the north-west.
+         */
+        val bins: String,
+        val time: String,
+        val at: Double,
+    )
+
+    @Serializable
+    data class ReceiverNexradAnswer(
+        val levels: List<EngineContract.ReceiverNexradLevel>,
+        val time: String? = null,
+        val at: Double? = null,
+    )
+
+    @Serializable
+    data class ReceiverNexradInput(
+        /**
+         * The last answer, or null at first.
+         */
+        val picture: EngineContract.ReceiverPicture? = null,
+    )
+
+    /**
+     * One NEXRAD level's rectangles, [south, west, north, east] degrees each.
+     */
+    @Serializable
+    data class ReceiverNexradLevel(
+        /**
+         * 1 to 7, DO-358B's levels (0 is none).
+         */
+        val level: Double,
+        val rects: List<List<Double>>,
+    )
+
+    /**
+     * Own ship as the receiver's GPS gives it.
+     */
+    @Serializable
+    data class ReceiverOwnship(
+        /**
+         * The address as the internet's traffic writes it: six lower-case hex digits, a ~ before one that is not an ICAO address.
+         */
+        val hex: String,
+        /**
+         * The 24-bit participant address (GDL 90 3.5.1.3).
+         */
+        val address: Double,
+        /**
+         * 0 ADS-B with an ICAO address, 1 ADS-B self-assigned, 2 TIS-B ICAO, 3 TIS-B track file, 4 surface vehicle, 5 ground station beacon (GDL 90 3.5.1.2).
+         */
+        @SerialName("address_type")
+        val addressType: Double,
+        val source: String,
+        val callsign: String? = null,
+        val lat: Double,
+        val lon: Double,
+        /**
+         * Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4).
+         */
+        @SerialName("pressure_ft")
+        val pressureFt: Double? = null,
+        val airborne: Boolean,
+        val extrapolated: Boolean,
+        @SerialName("track_deg")
+        val trackDeg: Double? = null,
+        /**
+         * True track, true heading or magnetic heading (GDL 90 3.5.1.5).
+         */
+        @SerialName("track_kind")
+        val trackKind: String,
+        @SerialName("speed_kt")
+        val speedKt: Double? = null,
+        @SerialName("vertical_fpm")
+        val verticalFpm: Double? = null,
+        /**
+         * GDL 90's emitter category code (3.5.1.10).
+         */
+        val emitter: Double,
+        /**
+         * DO-260B's emitter category, A1 light to C5 line obstacle.
+         */
+        val category: String? = null,
+        /**
+         * 0 none, 1 general, 2 medical, 3 minimum fuel, 4 no communication, 5 unlawful interference, 6 downed aircraft (GDL 90 3.5.1.12).
+         */
+        val emergency: Double,
+        /**
+         * Navigation Integrity Category.
+         */
+        val nic: Double,
+        /**
+         * Navigation Accuracy Category for Position.
+         */
+        val nacp: Double,
+        val alert: Boolean,
+        /**
+         * When it was last heard, Unix s.
+         */
+        val at: Double,
+        /**
+         * The GPS height (GDL 90 ID 11), ft: above MSL where the receiver says so (receiver.msl), else above the WGS-84 ellipsoid.
+         */
+        @SerialName("geometric_ft")
+        val geometricFt: Double? = null,
+        /**
+         * Its Vertical Figure of Merit, m.
+         */
+        @SerialName("vfom_m")
+        val vfomM: Double? = null,
+    )
+
+    /**
+     * What a receiver has said so far: hand it back with the next bytes.
+     */
+    @Serializable
+    data class ReceiverPicture(
+        val receiver: EngineContract.ReceiverPictureReceiver,
+        val ownship: EngineContract.ReceiverOwnship? = null,
+        val targets: List<EngineContract.ReceiverTarget>,
+        val texts: List<EngineContract.ReceiverText>,
+        val nexrad: List<EngineContract.ReceiverBlock>,
+    )
+
+    @Serializable
+    data class ReceiverPictureReceiver(
+        /**
+         * The name its ID message gives (Stratux, Sentry, SkyEcho).
+         */
+        val name: String? = null,
+        @SerialName("long_name")
+        val longName: String? = null,
+        val stratux: Boolean,
+        @SerialName("heartbeat_at")
+        val heartbeatAt: Double? = null,
+        /**
+         * A Heartbeat came in the last 5 s (one a second, GDL 90 3.1).
+         */
+        val live: Boolean,
+        /**
+         * One line for the receiver's chip: "Stratux · 12 targets · GPS".
+         */
+        val summary: String,
+        val gps: Boolean,
+        @SerialName("utc_ok")
+        val utcOk: Boolean,
+        @SerialName("battery_low")
+        val batteryLow: Boolean,
+        val maintenance: Boolean,
+        /**
+         * Its GPS heights are above MSL (ForeFlight's ID message), else the ellipsoid.
+         */
+        val msl: Boolean,
+        val frames: Double,
+        /**
+         * Frames whose CRC did not match, dropped.
+         */
+        @SerialName("bad_frames")
+        val badFrames: Double,
+        @SerialName("station_lat")
+        val stationLat: Double? = null,
+        @SerialName("station_lon")
+        val stationLon: Double? = null,
+        @SerialName("station_at")
+        val stationAt: Double? = null,
+    )
+
+    @Serializable
+    data class ReceiverReadInput(
+        /**
+         * The bytes received since the last read (whole UDP datagrams), Base64 (RFC 4648).
+         */
+        val data: String? = null,
+        /**
+         * Now, Unix s: when the bytes came.
+         */
+        val at: Double,
+        /**
+         * The last answer, or null at first.
+         */
+        val picture: EngineContract.ReceiverPicture? = null,
+    )
+
+    /**
+     * A field's report as FIS-B sent it: its kind (METAR, SPECI, TAF), its words as sent, the product's time HHMMZ and when it was last heard, Unix s.
+     */
+    @Serializable
+    data class ReceiverReport(
+        val kind: String,
+        val text: String,
+        val time: String,
+        val at: Double,
+    )
+
+    @Serializable
+    data class ReceiverReportsAnswer(
+        val metar: EngineContract.ReceiverReport? = null,
+        val taf: EngineContract.ReceiverReport? = null,
+    )
+
+    @Serializable
+    data class ReceiverReportsInput(
+        /**
+         * The last answer, or null at first.
+         */
+        val picture: EngineContract.ReceiverPicture? = null,
+        val ident: String,
+    )
+
+    /**
+     * An airplane a receiver reports (GDL 90's Traffic or Ownship Report, 560-1058-00 Rev A 3.5.1), as heard.
+     */
+    @Serializable
+    data class ReceiverTarget(
+        /**
+         * The address as the internet's traffic writes it: six lower-case hex digits, a ~ before one that is not an ICAO address.
+         */
+        val hex: String,
+        /**
+         * The 24-bit participant address (GDL 90 3.5.1.3).
+         */
+        val address: Double,
+        /**
+         * 0 ADS-B with an ICAO address, 1 ADS-B self-assigned, 2 TIS-B ICAO, 3 TIS-B track file, 4 surface vehicle, 5 ground station beacon (GDL 90 3.5.1.2).
+         */
+        @SerialName("address_type")
+        val addressType: Double,
+        val source: String,
+        val callsign: String? = null,
+        val lat: Double,
+        val lon: Double,
+        /**
+         * Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4).
+         */
+        @SerialName("pressure_ft")
+        val pressureFt: Double? = null,
+        val airborne: Boolean,
+        val extrapolated: Boolean,
+        @SerialName("track_deg")
+        val trackDeg: Double? = null,
+        /**
+         * True track, true heading or magnetic heading (GDL 90 3.5.1.5).
+         */
+        @SerialName("track_kind")
+        val trackKind: String,
+        @SerialName("speed_kt")
+        val speedKt: Double? = null,
+        @SerialName("vertical_fpm")
+        val verticalFpm: Double? = null,
+        /**
+         * GDL 90's emitter category code (3.5.1.10).
+         */
+        val emitter: Double,
+        /**
+         * DO-260B's emitter category, A1 light to C5 line obstacle.
+         */
+        val category: String? = null,
+        /**
+         * 0 none, 1 general, 2 medical, 3 minimum fuel, 4 no communication, 5 unlawful interference, 6 downed aircraft (GDL 90 3.5.1.12).
+         */
+        val emergency: Double,
+        /**
+         * Navigation Integrity Category.
+         */
+        val nic: Double,
+        /**
+         * Navigation Accuracy Category for Position.
+         */
+        val nacp: Double,
+        val alert: Boolean,
+        /**
+         * When it was last heard, Unix s.
+         */
+        val at: Double,
+    )
+
+    /**
+     * A FIS-B text product as sent (AIM 4-5-9): a METAR, TAF, winds aloft or PIREP (product 413), or a NOTAM, TFR, AIRMET, SIGMET, SUA status, G-AIRMET or CWA text record.
+     */
+    @Serializable
+    data class ReceiverText(
+        /**
+         * The FIS-B product ID (DO-358B).
+         */
+        val product: Double,
+        /**
+         * METAR, SPECI, TAF, WINDS, PIREP ... or NOTAM, AIRMET, SIGMET, SUA, G-AIRMET, CWA, NOTAM-TRA, NOTAM-TMOA.
+         */
+        val kind: String,
+        /**
+         * The station or office.
+         */
+        val location: String? = null,
+        /**
+         * A text record's report number.
+         */
+        val number: Double? = null,
+        /**
+         * The words as sent; a METAR or TAF without its kind, as the METAR and TAF readers take it.
+         */
+        val text: String,
+        /**
+         * The product's time, HHMMZ.
+         */
+        val time: String,
+        /**
+         * When it was last sent, Unix s.
+         */
+        val at: Double,
+    )
+
+    @Serializable
+    data class ReceiverTrafficInput(
+        /**
+         * The last answer, or null at first.
+         */
+        val picture: EngineContract.ReceiverPicture? = null,
+        val internet: List<EngineContract.HeardPlane>? = null,
+        /**
+         * Own ship's height MSL from the phone's GPS, ft, where known.
+         */
+        @SerialName("own_ft")
+        val ownFt: Double? = null,
+        /**
+         * Now, Unix s.
+         */
+        val at: Double,
     )
 
     /**
