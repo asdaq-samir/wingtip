@@ -12915,6 +12915,273 @@
         "title": "Obstacles",
         "type": "object"
       },
+      "OfflineArchive": {
+        "description": "One archive of a region: its kind and density, how many tiles and\nbytes it holds (`exact` once cut, else from the directory, within a\nfew KB), and its address under the planner.",
+        "properties": {
+          "archive": {
+            "title": "Archive",
+            "type": "string"
+          },
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "exact": {
+            "title": "Exact",
+            "type": "boolean"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "scale": {
+            "title": "Scale",
+            "type": "integer"
+          },
+          "tiles": {
+            "title": "Tiles",
+            "type": "integer"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "archive",
+          "kind",
+          "scale",
+          "tiles",
+          "bytes",
+          "exact",
+          "url"
+        ],
+        "title": "OfflineArchive",
+        "type": "object"
+      },
+      "OfflineBox": {
+        "description": "A box drawn on the map as a region id, snapped outward to the half\ndegree (wingtip.offline_regions.box_id).",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "OfflineBox",
+        "type": "object"
+      },
+      "OfflineCatalog": {
+        "description": "What can be kept: the cycle the map draws, the day it is replaced,\nthe next cycle where it is here ahead of its date, the archives each\ncycle has (a kind and a density: \"sec\", \"sec@2x\"), the overlays and\nthe regions.",
+        "properties": {
+          "archives": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Archives",
+            "type": "array"
+          },
+          "cycle": {
+            "title": "Cycle",
+            "type": "string"
+          },
+          "expires": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires"
+          },
+          "next_cycle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cycle"
+          },
+          "next_effective": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Effective"
+          },
+          "overlay": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OfflineOverlay"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "regions": {
+            "items": {
+              "$ref": "#/components/schemas/OfflineRegion"
+            },
+            "title": "Regions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cycle",
+          "expires",
+          "next_cycle",
+          "next_effective",
+          "archives",
+          "overlay",
+          "regions"
+        ],
+        "title": "OfflineCatalog",
+        "type": "object"
+      },
+      "OfflineOverlay": {
+        "description": "The map's overlays of the cycle, the whole country in one archive\n(/api/overlay-tiles/{name}.pmtiles), kept with any region.",
+        "properties": {
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "bytes"
+        ],
+        "title": "OfflineOverlay",
+        "type": "object"
+      },
+      "OfflinePack": {
+        "description": "A cycle pack the region touches (/api/cycle-pack/{cycle}/{name}.pack).",
+        "properties": {
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "bytes",
+          "url"
+        ],
+        "title": "OfflinePack",
+        "type": "object"
+      },
+      "OfflineRegion": {
+        "description": "A place to keep: a sectional sheet's coverage, a state, or a box\ndrawn on the map. `sizes` are the bytes of each of its archives\nalready worked out (\"sec\", \"sec@2x\", \"tac\" ...); the rest come with\nthe region's own answer.",
+        "properties": {
+          "boxes": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Boxes",
+            "type": "array"
+          },
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "sizes": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Sizes",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "group",
+          "boxes",
+          "sizes"
+        ],
+        "title": "OfflineRegion",
+        "type": "object"
+      },
+      "OfflineRegionFiles": {
+        "description": "Everything a phone fetches to keep a region of a cycle: an archive\nper kind and density with tiles there, and the cycle packs it touches.",
+        "properties": {
+          "archives": {
+            "items": {
+              "$ref": "#/components/schemas/OfflineArchive"
+            },
+            "title": "Archives",
+            "type": "array"
+          },
+          "cycle": {
+            "title": "Cycle",
+            "type": "string"
+          },
+          "expires": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires"
+          },
+          "packs": {
+            "items": {
+              "$ref": "#/components/schemas/OfflinePack"
+            },
+            "title": "Packs",
+            "type": "array"
+          },
+          "region": {
+            "$ref": "#/components/schemas/OfflineRegion"
+          }
+        },
+        "required": [
+          "cycle",
+          "expires",
+          "region",
+          "archives",
+          "packs"
+        ],
+        "title": "OfflineRegionFiles",
+        "type": "object"
+      },
       "OnRoute": {
         "description": "Where and when the flight meets a hazard (app.exposure): the legs\nit is on (0-based, Briefing.leg_fixes' -- the nav log's where the\npage sent them), from how far along to how far (nm from the\ndeparture), when the airplane gets there and leaves (ISO 8601 UTC),\nand the hazard's own times -- valid from and to, and when it was\nissued (a pilot report's, when it was made; a METAR's, when it was\nobserved). `when` is whether the airplane is in it while it is\nvalid, give or take half an hour; None for one with no valid times\n(a pilot report, a report or forecast for a field).",
         "properties": {
@@ -23968,6 +24235,235 @@
         "summary": "Navlog Stream",
         "x-gateway": {
           "access": "public"
+        }
+      }
+    },
+    "/api/offline-box": {
+      "get": {
+        "description": "The id of a box drawn on the map, snapped outward to the half\ndegree, for /api/offline-charts/{cycle}/{region}.",
+        "operationId": "offline_box_api_offline_box_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "west",
+            "required": true,
+            "schema": {
+              "maximum": 180,
+              "minimum": -180,
+              "title": "West",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "south",
+            "required": true,
+            "schema": {
+              "maximum": 85,
+              "minimum": -85,
+              "title": "South",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "east",
+            "required": true,
+            "schema": {
+              "maximum": 180,
+              "minimum": -180,
+              "title": "East",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "north",
+            "required": true,
+            "schema": {
+              "maximum": 85,
+              "minimum": -85,
+              "title": "North",
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflineBox"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Offline Box",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
+      }
+    },
+    "/api/offline-charts": {
+      "get": {
+        "description": "The sectional sheets and the states a phone can keep the charts of,\nwith each archive's size where it is known (all of them within about\na minute of a cycle's first ask), the overlays, and the cycle's end.\n404 until the cycle's archives are on this disk.",
+        "operationId": "offline_catalog_api_offline_charts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflineCatalog"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Offline Catalog",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
+      }
+    },
+    "/api/offline-charts/{cycle}/{region}": {
+      "get": {
+        "description": "A region's files for a cycle, each with its size before it is\nfetched: an archive per chart kind and density it has tiles of, and\nthe cycle packs it touches. A drawn box is `box_W_S_E_N` snapped to\nthe half degree (offline_regions.box_id).",
+        "operationId": "offline_region_api_offline_charts__cycle___region__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cycle",
+            "required": true,
+            "schema": {
+              "title": "Cycle",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "region",
+            "required": true,
+            "schema": {
+              "title": "Region",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflineRegionFiles"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Offline Region",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
+      }
+    },
+    "/api/offline-charts/{cycle}/{region}/{archive}.pmtiles": {
+      "get": {
+        "description": "The region's archive of one chart kind and density (\"sec\",\n\"sec@2x\", \"tac\", \"ifr_low\" ...), a PMTiles file of the same tiles the\nmap's chart is drawn from. Cut on the first ask (Chicago's sectional\nat 2x, 583 MB, in under a second from a warm disk) and kept for the\ncycle, which its address names.",
+        "operationId": "offline_archive_api_offline_charts__cycle___region___archive__pmtiles_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cycle",
+            "required": true,
+            "schema": {
+              "title": "Cycle",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "region",
+            "required": true,
+            "schema": {
+              "title": "Region",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "archive",
+            "required": true,
+            "schema": {
+              "title": "Archive",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "application/octet-stream": {}
+            },
+            "description": "Successful Response"
+          },
+          "206": {
+            "content": {
+              "application/octet-stream": {}
+            },
+            "description": "The byte range asked for (Range: bytes=a-b)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Offline Archive",
+        "x-gateway": {
+          "access": "public",
+          "cache": true,
+          "headers": [
+            "Content-Length",
+            "Content-Range",
+            "Accept-Ranges",
+            "ETag"
+          ],
+          "range": true
         }
       }
     },

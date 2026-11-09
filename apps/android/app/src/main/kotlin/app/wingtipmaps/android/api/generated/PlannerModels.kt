@@ -5228,6 +5228,101 @@ data class Obstacle (
 )
 
 /**
+ * A box drawn on the map as a region id, snapped outward to the half
+ * degree (wingtip.offline_regions.box_id).
+ */
+@Serializable
+data class OfflineBox (
+    val id: String
+)
+
+/**
+ * What can be kept: the cycle the map draws, the day it is replaced,
+ * the next cycle where it is here ahead of its date, the archives each
+ * cycle has (a kind and a density: "sec", "sec@2x"), the overlays and
+ * the regions.
+ */
+@Serializable
+data class OfflineCatalog (
+    val archives: List<String>,
+    val cycle: String,
+    val expires: String? = null,
+
+    @SerialName("next_cycle")
+    val nextCycle: String? = null,
+
+    @SerialName("next_effective")
+    val nextEffective: String? = null,
+
+    val overlay: OfflineOverlay? = null,
+    val regions: List<OfflineRegion>
+)
+
+/**
+ * The map's overlays of the cycle, the whole country in one archive
+ * (/api/overlay-tiles/{name}.pmtiles), kept with any region.
+ */
+@Serializable
+data class OfflineOverlay (
+    val bytes: Long,
+    val name: String
+)
+
+/**
+ * A place to keep: a sectional sheet's coverage, a state, or a box
+ * drawn on the map. `sizes` are the bytes of each of its archives
+ * already worked out ("sec", "sec@2x", "tac" ...); the rest come with
+ * the region's own answer.
+ */
+@Serializable
+data class OfflineRegion (
+    val boxes: List<List<Double>>,
+    val group: String,
+    val id: String,
+    val name: String,
+    val sizes: Map<String, Long>
+)
+
+/**
+ * Everything a phone fetches to keep a region of a cycle: an archive
+ * per kind and density with tiles there, and the cycle packs it touches.
+ */
+@Serializable
+data class OfflineRegionFiles (
+    val archives: List<OfflineArchive>,
+    val cycle: String,
+    val expires: String? = null,
+    val packs: List<OfflinePack>,
+    val region: OfflineRegion
+)
+
+/**
+ * One archive of a region: its kind and density, how many tiles and
+ * bytes it holds (`exact` once cut, else from the directory, within a
+ * few KB), and its address under the planner.
+ */
+@Serializable
+data class OfflineArchive (
+    val archive: String,
+    val bytes: Long,
+    val exact: Boolean,
+    val kind: String,
+    val scale: Int,
+    val tiles: Int,
+    val url: String
+)
+
+/**
+ * A cycle pack the region touches (/api/cycle-pack/{cycle}/{name}.pack).
+ */
+@Serializable
+data class OfflinePack (
+    val bytes: Long,
+    val name: String,
+    val url: String
+)
+
+/**
  * The map's FAA overlays as vector tiles (wingtip.vector_tiles): one
  * PMTiles archive of the cycle, fetched in byte ranges at
  * /api/overlay-tiles/{name}.pmtiles; its zooms, and how far its lines
