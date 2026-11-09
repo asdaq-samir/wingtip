@@ -1,9 +1,9 @@
-import type { Map as MlMap } from "maplibre-gl";
+import type { Map as MlMap, SymbolLayerSpecification } from "maplibre-gl";
 import { describe, expect, it, vi } from "vitest";
 import type { OverlayTiles } from "../../api/types";
 import { usePreferences } from "../../preferences";
 import { OVERLAY_LAYERS } from "../overlayTiles";
-import { applyOverlayFilters, overlayStyle, setAirportWeather, setOverlayExclusion, volumeOfTile, vorOfTile } from "./glOverlays";
+import { AIRSPACE_TILE_LAYERS, applyOverlayFilters, overlayStyle, setAirportWeather, setOverlayExclusion, setSelectedAirport, volumeOfTile, vorOfTile } from "./glOverlays";
 import { airspaceText, glZoom } from "./glStyle";
 
 const TILES: OverlayTiles = {
@@ -28,7 +28,10 @@ function fakeMap(ids: string[]) {
 describe("the overlay tiles' layers", () => {
   it("draw the airspace's rings under the marks, and the navaids, fixes, waypoints and airports as marks", () => {
     const { layers } = overlayStyle(TILES, ORIGIN);
-    expect(layers.lines!.map(l => l.id)).toEqual(["runway-surface", "runway-centreline", "runway-ends", "airspace-D", "airspace-C", "airspace-B", "airspace-labels"]);
+    expect(layers.lines!.map(l => l.id)).toEqual([
+      "runway-surface", "runway-centreline", "runway-ends", "sua-band", "sua-line",
+      "airspace-D-band", "airspace-D", "airspace-C-band", "airspace-C", "airspace-B-band", "airspace-B", "airspace-labels",
+    ]);
     expect(layers.marks!.map(l => l.id)).toEqual([
       "navaids", "navaids-idents", "fixes", "fixes-idents", "vfr-waypoints", "vfr-waypoints-idents", "airports",
     ]);
@@ -40,6 +43,29 @@ describe("the overlay tiles' layers", () => {
   it("leave out a layer an older archive has not got", () => {
     const { layers } = overlayStyle({ ...TILES, layers: TILES.layers.filter(l => l.name !== "runways") }, ORIGIN);
     expect(layers.lines!.map(l => l.id)).not.toContain("runway-surface");
+  });
+
+  it("write one tab a shelf from the label points, or along the rings where an older archive has none", () => {
+    const label = (tiles: OverlayTiles) => overlayStyle(tiles, ORIGIN).layers.lines!.find(l => l.id === "airspace-labels") as SymbolLayerSpecification;
+    const points = label(TILES);
+    expect(points["source-layer"]).toBe("airspace_labels");
+    expect(points.layout).toMatchObject({ "text-rotate": ["get", "angle"], "icon-rotate": ["get", "angle"], "text-rotation-alignment": "map" });
+    expect(points.layout!["symbol-placement"]).toBeUndefined();
+    const older = label({ ...TILES, layers: TILES.layers.filter(l => l.name !== "airspace_labels") });
+    expect(older["source-layer"]).toBe("airspace");
+    expect(older.layout!["symbol-placement"]).toBe("line");
+  });
+
+  it("turn the airspace, its bands and labels, and the special-use areas off with the Airspace setting", () => {
+    expect(AIRSPACE_TILE_LAYERS).toEqual(expect.arrayContaining(["airspace-C-band", "airspace-C", "airspace-labels", "sua-band", "sua-line"]));
+  });
+
+  it("leave the open card's field's ident to the ring's own, larger one", () => {
+    const { map, set } = fakeMap(["airports"]);
+    setSelectedAirport(map, "KMSN");
+    expect(set.layout.get("airports.text-field")).toEqual(["case", ["==", ["get", "ident"], "KMSN"], "", ["get", "ident"]]);
+    setSelectedAirport(map, null);
+    expect(set.layout.get("airports.text-field")).toEqual(["get", "ident"]);
   });
 
   it("hide the armed services' and private fields unless asked for, and the route's own fields", () => {
@@ -66,16 +92,16 @@ describe("the overlay tiles' layers", () => {
 });
 
 describe("a tapped tile feature", () => {
-  it("is the volume the airspace card reads, its tab's words the chart's", () => {
+  it("is the volume the airspace card reads, its tab's words ForeFlight's", () => {
     const shelf = volumeOfTile({ properties: { class: "B", name: "CHICAGO CLASS B", floor_ft: 3000, ceiling_ft: 10000, number: 7 } }, { lat: 42, lon: -88 });
     expect(shelf).toMatchObject({ id: "tile-7", airspace_class: "B", floor_ft: 3000, floor_sfc: false, ceiling_ft: 10000, ceiling_excluded: false });
-    expect(airspaceText(shelf)).toBe("B: 100–30");
+    expect(airspaceText(shelf)).toBe("B: 3000–10000");
     // The surface: 0 ft, which the tiles keep.
     const surface = volumeOfTile({ properties: { class: "C", floor_ft: 0, ceiling_ft: 4800 } }, { lat: 0, lon: 0 });
-    expect(airspaceText(surface)).toBe("C: 48–SFC");
+    expect(airspaceText(surface)).toBe("C: SFC–4800");
     // A Class D under a Class B shelf: up to but not including (TNI).
     const d = volumeOfTile({ properties: { class: "D", floor_ft: 0, ceiling_ft: 2500, ceiling_excluded: true, hours_code: "NOTAM" } }, { lat: 0, lon: 0 });
-    expect(airspaceText(d)).toBe("D: -25");
+    expect(airspaceText(d)).toBe("D: SFC–<2500");
     expect(d.hours_code).toBe("NOTAM");
   });
 

@@ -87,7 +87,7 @@ final class AirportMarkView: MKAnnotationView {
     private let symbol = UIImageView()
     private let label = UILabel()
     /// The symbol's box, the mark's height, and the gap to the ident.
-    static let box: CGFloat = 20
+    static let box: CGFloat = 26
     static let height: CGFloat = 30
     private static let gap: CGFloat = 2
 
@@ -156,23 +156,25 @@ final class AirportMarkView: MKAnnotationView {
 }
 
 /// The sectional's airport symbol (FAA Aeronautical Chart User's Guide,
-/// VFR Terms and Symbols, Airports) as the web map draws it
-/// (sectionalAirportSvg): a solid disc in the field's ink with a white
-/// casing, sized by the field; a private field (NASR FACILITY_USE_CODE
-/// PR) the guide's small circle with an R, a military one with an M; the
-/// field's flight category a small pip at its lower right where it
-/// reports one -- no ring and no big weather fill. Drawn once for each
-/// look and kept.
+/// VFR Terms and Symbols, Airports: blue for a field with a control
+/// tower, magenta for every other) as ForeFlight draws it and the web map
+/// (sectionalAirportSvg, the owner's screenshot over Madison,
+/// 2026-11-08): a ring in the field's ink round a white disc with a dot
+/// of the ink in its middle, inside a white halo, sized by the field; a
+/// private field (NASR FACILITY_USE_CODE PR) the guide's circle with an
+/// R, a military one with an M; the field's flight category a small pip
+/// at its lower right where it reports one. Drawn once for each look and
+/// kept.
 enum SectionalSymbol {
     /// The disc's radius by the field's size, the big fields the biggest
     /// so the small ones don't crowd the chart at a distance (web
     /// SECTIONAL_RADIUS).
     static func radius(_ kind: String) -> CGFloat {
         switch kind {
-        case "large": return 7
-        case "medium": return 6
-        case "small": return 5
-        default: return 4.5
+        case "large": return 8.5
+        case "medium": return 7.5
+        case "small": return 6.5
+        default: return 6
         }
     }
 
@@ -198,29 +200,30 @@ enum SectionalSymbol {
             let cg = context.cgContext
             let middle = CGPoint(x: box / 2, y: box / 2)
             func circle(_ at: CGPoint, _ r: CGFloat) -> CGRect { CGRect(x: at.x - r, y: at.y - r, width: 2 * r, height: 2 * r) }
+            let r: CGFloat = use == nil ? radius(kind) : 7
+            // The halo, 2.5 points past the ring.
+            cg.setFillColor(UIColor.white.cgColor)
+            cg.fillEllipse(in: circle(middle, r + 2.5))
+            cg.setStrokeColor(ink.cgColor)
             if let use {
-                cg.setFillColor(UIColor.white.cgColor)
-                cg.setStrokeColor(ink.cgColor)
-                cg.setLineWidth(1.6)
-                cg.addEllipse(in: circle(middle, 5.5))
-                cg.drawPath(using: .fillStroke)
+                cg.setLineWidth(2)
+                cg.strokeEllipse(in: circle(middle, r))
                 let letter = NSAttributedString(string: use == "military" ? "M" : "R", attributes: [
-                    .font: UIFont.systemFont(ofSize: 8, weight: .heavy), .foregroundColor: ink,
+                    .font: UIFont.systemFont(ofSize: 9.5, weight: .heavy), .foregroundColor: ink,
                 ])
                 let size = letter.size()
                 letter.draw(at: CGPoint(x: middle.x - size.width / 2, y: middle.y - size.height / 2))
             } else {
+                cg.setLineWidth(2.6)
+                cg.strokeEllipse(in: circle(middle, r))
                 cg.setFillColor(ink.cgColor)
-                cg.setStrokeColor(UIColor.white.cgColor)
-                cg.setLineWidth(1.5)
-                cg.addEllipse(in: circle(middle, radius(kind)))
-                cg.drawPath(using: .fillStroke)
+                cg.fillEllipse(in: circle(middle, r * 0.42))
             }
             if let pip {
                 cg.setFillColor(pip.cgColor)
                 cg.setStrokeColor(UIColor.white.cgColor)
-                cg.setLineWidth(1.2)
-                cg.addEllipse(in: circle(CGPoint(x: middle.x + 5.5, y: middle.y + 5.5), 3))
+                cg.setLineWidth(1.3)
+                cg.addEllipse(in: circle(CGPoint(x: middle.x + r * 0.78, y: middle.y + r * 0.78), 3.4))
                 cg.drawPath(using: .fillStroke)
             }
         }

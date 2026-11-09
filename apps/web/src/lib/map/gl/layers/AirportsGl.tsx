@@ -1,14 +1,14 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import type { CircleLayerSpecification, MapGeoJSONFeature } from "maplibre-gl";
+import type { CircleLayerSpecification, MapGeoJSONFeature, SymbolLayerSpecification } from "maplibre-gl";
 import { useEffect, useMemo, useRef } from "react";
 import { api } from "../../../api/client";
 import { airportsQuery } from "../../airportsQuery";
 import { colourOf } from "../../flightCategory";
 import { useGlData, useGlLayer, useGlMap, useGlMiss, useGlTap } from "../glLayer";
-import { setAirportWeather, setOverlayExclusion } from "../glOverlays";
+import { setAirportWeather, setOverlayExclusion, setSelectedAirport } from "../glOverlays";
 import { useGlView } from "../useGlView";
 import { useGlProbe } from "../useGlProbe";
-import { TAP } from "./common";
+import { GL_FONT_BOLD, TAP } from "./common";
 
 const SELECTED = "airport-selected";
 const empty = () => ({ type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] } });
@@ -17,6 +17,20 @@ const empty = () => ({ type: "geojson" as const, data: { type: "FeatureCollectio
 const RING: CircleLayerSpecification = {
   id: "airport-selected", type: "circle", source: SELECTED,
   paint: { "circle-radius": 20, "circle-color": "rgba(0,0,0,0)", "circle-stroke-color": "#ff3b00", "circle-stroke-width": 3 },
+};
+/** The open card's field's ident, larger and bolder than the chart's
+ *  others, white on a dark rim over the ring, as ForeFlight
+ *  writes the field it shows (the owner's screenshot over Madison,
+ *  2026-11-08); the tile layer leaves its own ident for it out
+ *  (setSelectedAirport). Map words, not the page's: no Dynamic Type. */
+const SELECTED_IDENT: SymbolLayerSpecification = {
+  id: "airport-selected-ident", type: "symbol", source: SELECTED,
+  layout: {
+    "text-field": ["get", "ident"], "text-font": GL_FONT_BOLD, "text-size": 17,
+    "text-anchor": "bottom", "text-offset": [0, -1.3],
+    "text-allow-overlap": true, "text-ignore-placement": true,
+  },
+  paint: { "text-color": "#ffffff", "text-halo-color": "#14181f", "text-halo-width": 2.25 },
 };
 /** Ten minutes, as a METAR's colour can change by the hour. */
 const WEATHER_EVERY_MS = 10 * 60_000;
@@ -62,9 +76,9 @@ function useAlongRoute(route: Props["route"]) {
  *  the chart putting it away; and the specs' view of the marks drawn
  *  (data-airport-marks, useGlProbe). */
 function useAirportTaps({ selected, onSelect }: Pick<Props, "selected" | "onSelect">, fields: (f: MapGeoJSONFeature) => Record<string, unknown>) {
-  useGlLayer("marks", { [SELECTED]: empty() }, [RING], "airports");
+  useGlLayer("marks", { [SELECTED]: empty() }, [RING, SELECTED_IDENT], "airports");
   const ring = useMemo<GeoJSON.FeatureCollection | null>(() => (selected
-    ? { type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [selected.lon, selected.lat] } }] }
+    ? { type: "FeatureCollection", features: [{ type: "Feature", properties: { ident: selected.ident }, geometry: { type: "Point", coordinates: [selected.lon, selected.lat] } }] }
     : null), [selected]);
   useGlData(SELECTED, ring);
   useGlProbe("selected-airport", ["airport-selected"], () => ({ ring: true }));
@@ -83,6 +97,8 @@ function TileAirports(props: Props) {
   const othersKey = others.map(a => a.ident).join();
   useEffect(() => { setOverlayExclusion(map, "airports", othersKey ? othersKey.split(",") : []); }, [map, othersKey]);
   useEffect(() => () => setOverlayExclusion(map, "airports", []), [map]);
+  const selectedIdent = props.selected?.ident ?? null;
+  useEffect(() => { setSelectedAirport(map, selectedIdent); }, [map, selectedIdent]);
   const { box, level } = useGlView();
   const { data: inView } = useQuery({
     ...airportsQuery(box, level), refetchInterval: WEATHER_EVERY_MS, placeholderData: keepPreviousData,

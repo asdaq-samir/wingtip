@@ -13,10 +13,10 @@ import { airportMark, drawn, openMapSettings, slow } from "./helpers";
 /** How many of the volumes' lines are drawn in the view, as the map's probe
  *  says (AirspaceGl). */
 const lines = async (page: Page): Promise<number> => new Set((await drawn(page, "airspace-lines")).map(l => l.id)).size;
-/** The altitudes along the lines, each label's words (AirspaceGl's probe);
- *  MapLibre keeps each upright along its line (text-keep-upright). */
-const labels = async (page: Page): Promise<{ text: string; angle: number }[]> =>
-  (await drawn(page, "airspace-edge-labels")).map(l => ({ text: String(l.text), angle: 0 }));
+/** The altitudes on the rings, each label's words and its turn along its
+ *  ring (AirspaceGl's probe, the tiles' `angle`). */
+const labels = async (page: Page): Promise<{ id: string; text: string; angle: number }[]> =>
+  (await drawn(page, "airspace-edge-labels")).map(l => ({ id: String(l.id), text: String(l.text), angle: Number(l.angle ?? 0) }));
 /** The VORs' idents drawn (NavaidsGl's probe). */
 const vors = async (page: Page): Promise<string[]> =>
   (await drawn(page, "navaid-marks")).filter(m => m.kind === "vor").map(m => String(m.ident));
@@ -35,18 +35,21 @@ test("Chicago's airspace is drawn over the chart with its altitudes, and the swi
   // O'Hare's card brings the map in on it, close enough for the labels.
   await page.goto("/app/plan?place=KORD");
   await expect.poll(() => lines(page), { timeout: slow(30000) }).toBeGreaterThan(5);
-  // The altitudes on the lines in their dark tabs, as ForeFlight writes
-  // them (2026-11-07): O'Hare's shelves among them ("B: 100–30"), and a
-  // Class D's ceiling alone ("D: -30"). The surface area's "B: 100–SFC"
-  // is a small ring round KORD's own mark, its label skipped there.
-  await expect.poll(async () => (await labels(page)).some(l => /^B: 100–(SFC|\d+)$/.test(l.text)), { timeout: slow(15000) }).toBe(true);
+  // The altitudes on the rings in their dark tabs, as ForeFlight writes
+  // them (2026-11-08): the floor and the ceiling in feet MSL, O'Hare's
+  // shelves among them ("B: 3000–10000"), and a Class D's from the
+  // surface ("D: SFC–<3000" under a Class B shelf). The surface area's
+  // "B: SFC–10000" is a small ring round KORD's own mark, its label
+  // skipped there.
+  await expect.poll(async () => (await labels(page)).some(l => /^B: (SFC|\d+)–10000$/.test(l.text)), { timeout: slow(15000) }).toBe(true);
   const written = await labels(page);
-  expect(written.some(l => /^D: -?\d+$/.test(l.text))).toBe(true);
+  expect(written.some(l => /^D: SFC–<?\d+$/.test(l.text))).toBe(true);
   expect(written.some(l => /^[BC]: \d+–\d+$/.test(l.text))).toBe(true);
   expect(written.length).toBeGreaterThan(3);
-  // Upright: a line straight up and down reads bottom to top, either
-  // end of the half-turn.
-  expect(written.every(l => l.angle >= -90 && l.angle <= 90)).toBe(true);
+  // One a shelf, not one every few hundred pixels round its ring.
+  expect(new Set(written.map(l => l.id)).size).toBe(written.length);
+  // Upright, along the ring.
+  expect(written.every(l => l.angle > -90 && l.angle <= 90)).toBe(true);
   // And the VORs about it: Northbrook's, north of the field.
   await expect.poll(() => vors(page), { timeout: slow(15000) }).toContain("OBK");
 

@@ -18,6 +18,9 @@ FAA's own data set, its attributes the fields named below:
   wingtip.airspace_at reads it), UPPER_VAL (ceiling, ft MSL; the floor of
   Class A, 18,000 ft MSL per 14 CFR 71.33, for "up to but not including"
   it), UPPER_DESC TNI, WKHR_CODE and WKHR_RMK.
+- `airspace_labels`: a point a Class B, C or D volume of that file, where
+  the map writes its altitudes on its ring, with their figures and the
+  text's turn (airspace_label_features).
 - `special_use`: the FAA's special use airspace feature service (ADDS),
   as the cycle pack holds it: NAME, TYPE_CODE, LOWER_*/UPPER_*, TIMESOFUSE,
   GMTOFFSET/DST_CODE and CONT_AGENT, read as wingtip.sua reads them.
@@ -189,6 +192,94 @@ def airspace_features(pack, bbox=None):
             "ceiling_excluded": volume["ceiling_excluded"], "number": number,
             "hours_code": volume["hours_code"], "hours_remark": volume["hours_remark"],
         }, shapely.to_geojson(geometry), minzoom)
+
+
+#: The classes whose altitudes the map writes on their rings, as the
+#: sectional prints a Class B or C shelf's and a Class D's (FAA
+#: Aeronautical Chart User's Guide, VFR Terms and Symbols, Airspace).
+LABELLED_CLASSES = ("B", "C", "D")
+#: Where on a round ring its label sits: the azimuth from the airspace's
+#: centre, degrees true, a little west of north -- where ForeFlight puts
+#: Madison's Class C tab (the owner's screenshot, 2026-11-08), clear of
+#: the field's own name, which the chart prints beside the field.
+LABEL_AZIMUTH = 330.0
+#: How close to a shelf's farthest point from the centre a point of its
+#: ring must be to count as its outer edge, the part the label goes on.
+OUTER_EDGE = 0.97
+
+
+def _label_place(geometry, centre: tuple[float, float]) -> tuple[tuple[float, float], float]:
+    """Where a volume's label goes and how it is turned: a point of its
+    outer ring on the shelf's outer edge (the points farthest from its
+    airspace's centre), in the middle of that edge, or at LABEL_AZIMUTH
+    where the edge goes all the way round (a ring); and the ring's
+    direction there as the text's clockwise turn, kept upright
+    (-90 to 90), so the label lies along the line as ForeFlight's do. In a
+    plane tangent at the centre (east scaled by the cosine of the
+    latitude), which is the web map's own angle near it: Mercator is
+    conformal."""
+    polygon = max(getattr(geometry, "geoms", [geometry]), key=lambda p: p.area)
+    ring = list(polygon.exterior.coords)[:-1]
+    lon0, lat0 = centre
+    k = math.cos(math.radians(lat0))
+    xy = [((lon - lon0) * k, lat - lat0) for lon, lat in ring]
+    far = max(math.hypot(x, y) for x, y in xy)
+    edge = [i for i, (x, y) in enumerate(xy) if far > 0 and math.hypot(x, y) >= OUTER_EDGE * far]
+    if not edge:
+        edge = list(range(len(xy)))
+    units = [(xy[i][0] / (math.hypot(*xy[i]) or 1), xy[i][1] / (math.hypot(*xy[i]) or 1)) for i in edge]
+    sx, sy = sum(u[0] for u in units), sum(u[1] for u in units)
+    if math.hypot(sx, sy) < 0.5 * len(units):
+        # All the way round: the label at LABEL_AZIMUTH.
+        az = math.radians(LABEL_AZIMUTH)
+        sx, sy = math.sin(az), math.cos(az)
+    best = max(range(len(edge)), key=lambda j: units[j][0] * sx + units[j][1] * sy)
+    i = edge[best]
+    (ax, ay), (bx, by) = xy[i - 1], xy[(i + 1) % len(xy)]
+    bearing = math.degrees(math.atan2(bx - ax, by - ay))
+    turn = bearing - 90.0
+    while turn > 90.0:
+        turn -= 180.0
+    while turn <= -90.0:
+        turn += 180.0
+    return ring[i], round(turn, 1)
+
+
+def airspace_label_features(pack, bbox=None):
+    """The `airspace_labels` layer's lines of GeoJSON: one point a Class
+    B, C or D volume with a ceiling, on its ring (_label_place), with
+    the figures its label is written from (the map writes the words) and
+    `angle`, the text's turn. One a shelf, where the ring's own line
+    placement put a label every few hundred pixels and one in each tile
+    the ring crossed: three "C: 49–23" round Madison (the owner,
+    2026-11-08)."""
+    numbers = cycle_pack._controlled_numbers(pack)
+    volumes = []
+    for record, number, geometry in zip(pack.attrs("airspace"), numbers, pack.geometries("airspace")):
+        geometry = _orient(geometry)
+        if geometry is None or geometry.is_empty:
+            continue
+        volume = cycle_pack._volume_drawn(record, number)
+        if volume["class"] in LABELLED_CLASSES and volume["ceiling_ft"] is not None:
+            volumes.append((volume, number, geometry))
+    # Each airspace's centre: the middle of its volumes' bounds, by its
+    # class and ident (or name): a Class C's surface area and shelf, a
+    # Class B's shelves.
+    bounds: dict[tuple, list[float]] = {}
+    for volume, _, geometry in volumes:
+        key = (volume["class"], volume["ident"] or volume["name"])
+        w, s, e, n = geometry.bounds
+        held = bounds.setdefault(key, [w, s, e, n])
+        held[:] = [min(held[0], w), min(held[1], s), max(held[2], e), max(held[3], n)]
+    for volume, number, geometry in volumes:
+        if not _meets(geometry.bounds, bbox):
+            continue
+        w, s, e, n = bounds[(volume["class"], volume["ident"] or volume["name"])]
+        (lon, lat), angle = _label_place(geometry, ((w + e) / 2, (s + n) / 2))
+        yield _feature({
+            "class": volume["class"], "floor_ft": volume["floor_ft"], "ceiling_ft": volume["ceiling_ft"],
+            "ceiling_excluded": volume["ceiling_excluded"], "number": number, "angle": angle,
+        }, json.dumps({"type": "Point", "coordinates": [round(lon, 6), round(lat, 6)]}), AIRSPACE_MIN_ZOOM[volume["class"]])
 
 
 def special_use_features(pack, bbox=None):
@@ -411,6 +502,7 @@ def write_layers(folder: Path, pack, *, apt_path: Path, rwy_path: Path | None, r
     how many features each holds."""
     sources = {
         "airspace": airspace_features(pack, bbox),
+        "airspace_labels": airspace_label_features(pack, bbox),
         "special_use": special_use_features(pack, bbox),
         "airports": airport_features(apt_path, rwy_path, rwy_end_path, bbox),
         "navaids": navaid_features(nav_path, bbox, nav_rmk_path),
