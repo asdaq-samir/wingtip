@@ -29,6 +29,8 @@ datastore = "1.1.7"
 # height above mean sea level, for phones below Android 14 (own ship's
 # altitude, flight/OwnShip.kt).
 coreLocationAltitude = "1.0.1"
+# Google's document scanner, for Add from a Photo (documents/).
+mlkitDocumentScanner = "16.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -77,6 +79,10 @@ androidx-lifecycle-process = { group = "androidx.lifecycle", name = "lifecycle-p
 # AltitudeConverterCompat: mean-sea-level altitude from the fix's
 # ellipsoid height, Android 14's AltitudeConverter brought to older phones.
 androidx-core-location-altitude = { group = "androidx.core", name = "core-location-altitude", version.ref = "coreLocationAltitude" }
+# ML Kit's document scanner through Play services: the system's own scan
+# screen (edges found, the page flattened, a photo picked instead), with
+# no camera permission and no model in the app (documents/PageScanner.kt).
+play-services-mlkit-document-scanner = { group = "com.google.android.gms", name = "play-services-mlkit-document-scanner", version.ref = "mlkitDocumentScanner" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

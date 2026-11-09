@@ -37,6 +37,8 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.checklist.ChecklistKind
 import app.wingtipmaps.android.checklist.ChecklistScreen
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.documents.AddFromPhotoRow
+import app.wingtipmaps.android.documents.HandbookPhotoSheet
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.plan.FlightChoices
 import androidx.compose.foundation.text.KeyboardOptions
@@ -90,6 +92,7 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
     val state by plan.state.collectAsStateWithLifecycle()
     var expanded by remember { mutableStateOf(false) }
     var checklist by remember { mutableStateOf<ChecklistKind?>(null) }
+    var photo by remember { mutableStateOf(false) }
     val picked = profiles.firstOrNull { it.name == state.aircraft }
 
     Column(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
@@ -126,6 +129,7 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
         picked?.let { ProfileFigures(it) }
         RegistrationField()
         PassengersRow()
+        AddFromPhotoRow(stringResource(R.string.photo_line_airplane)) { photo = true }
         if (!state.airplane) {
             Text(stringResource(R.string.no_airplane_line), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             return@Column
@@ -145,6 +149,7 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
             )
         }
     }
+    if (photo) HandbookPhotoSheet(type = state.aircraft, onClose = { photo = false })
     checklist?.let { kind ->
         val title = stringResource(R.string.checklists_of, state.aircraft.uppercase())
         WingtipSheet(title = title, onClose = { checklist = null }, full = true) {

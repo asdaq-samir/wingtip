@@ -12,6 +12,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -19,6 +22,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.documents.AddFromPhotoRow
+import app.wingtipmaps.android.documents.LogbookPhotoSheet
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
 
@@ -26,11 +31,12 @@ import app.wingtipmaps.android.ui.SectionTitle
  * The pilot's logbook, at its least (LogbookModel): what the currency
  * says, then each entry, newest first, its date over its route, hours
  * and landings. Entries are added from a recorded flight ("Flight
- * Logged"), or on the web.
+ * Logged"), from a photo of a paper page (Add from a Photo), or on the web.
  */
 @Composable
 fun LogbookScreen(model: LogbookModel = viewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
+    var photo by remember { mutableStateOf(false) }
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg)) {
         item {
             if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -40,6 +46,7 @@ fun LogbookScreen(model: LogbookModel = viewModel()) {
         items(state.currency) { Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = WingtipSpace.Xs)) }
         item {
             SectionTitle(stringResource(R.string.logbook_entries))
+            AddFromPhotoRow(stringResource(R.string.photo_line_logbook)) { photo = true }
             if (!state.loading && state.entries.isEmpty() && state.problem == null) {
                 Text(stringResource(R.string.logbook_empty), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -53,4 +60,5 @@ fun LogbookScreen(model: LogbookModel = viewModel()) {
             )
         }
     }
+    if (photo) LogbookPhotoSheet(onClose = { photo = false })
 }

@@ -146,6 +146,8 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.lifecycle.process)
+    // Add from a Photo: the page scanned by Google's document scanner.
+    implementation(libs.play.services.mlkit.document.scanner)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)

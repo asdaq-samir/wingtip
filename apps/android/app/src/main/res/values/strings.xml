@@ -293,4 +293,37 @@
     <string name="later">Later</string>
     <string name="not_a_flight">Not a Flight to Log</string>
     <string name="try_again">Try Again</string>
+    <!-- Add from a Photo (documents/): a handbook page or a logbook page
+         read by the assistant and checked by the engine, every item
+         confirmed by the pilot before anything is kept. -->
+    <string name="add_from_photo">Add from a Photo</string>
+    <string name="photo_line_airplane">Cruise, climb and fuel figures from the handbook\'s page</string>
+    <string name="photo_line_logbook">Flights from a paper logbook page</string>
+    <string name="photo_airplane_line">Pick the page, then scan it or choose a photo of it. Nothing is kept until you confirm it and save.</string>
+    <string name="photo_logbook_line">Scan a logbook page, or choose a photo of one. Nothing is logged until you confirm it.</string>
+    <string name="photo_performance">Performance</string>
+    <string name="photo_weight_balance">Weight &amp; Balance</string>
+    <string name="scan_page">Scan the Page</string>
+    <string name="scan_again">Scan Another Page</string>
+    <string name="reading_page">Reading the page…</string>
+    <string name="photo_unreadable">Not read: %1$s</string>
+    <string name="photo_review_line">Confirm each item that matches the page.</string>
+    <string name="use_confirmed">Use Confirmed Figures</string>
+    <string name="your_airplane">Your Airplane</string>
+    <string name="cruise_from_row">Cruise from the row %1$s</string>
+    <string name="airplane_type">Type</string>
+    <string name="field_cruise_tas">Cruise TAS (kt)</string>
+    <string name="field_burn">Fuel Burn (gph)</string>
+    <string name="field_power" formatted="false">Cruise Power (%)</string>
+    <string name="field_climb_burn">Climb Fuel Burn (gph)</string>
+    <string name="field_usable_fuel">Usable Fuel (gal)</string>
+    <string name="save_airplane">Save Airplane</string>
+    <string name="airplane_saved">Saved, with the handbook figures you confirmed.</string>
+    <string name="back_to_items">Back to the Items</string>
+    <string name="no_date_read">No date read</string>
+    <string name="logged_row">Logged</string>
+    <plurals name="log_flights">
+        <item quantity="one">Log %1$d Flight</item>
+        <item quantity="other">Log %1$d Flights</item>
+    </plurals>
 </resources>
