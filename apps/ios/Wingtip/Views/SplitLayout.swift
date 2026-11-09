@@ -131,11 +131,11 @@ struct SplitLayout<Map: View>: View {
             map
                 .overlay(alignment: .bottom) {
                     FiguresStrip()
-                        .padding(.vertical, 10)
+                        .padding(.vertical, WingtipSpace.md)
                         .frame(maxWidth: 520)
                         .floatingGlass(in: floatingCard)
-                        .padding(.bottom, 16)
-                        .padding(.horizontal, 16)
+                        .padding(.bottom, WingtipSpace.lg)
+                        .padding(.horizontal, WingtipSpace.lg)
                 }
                 .toolbar(.hidden, for: .navigationBar)
                 .inspector(isPresented: inspectorShown) {

@@ -52,7 +52,7 @@ struct CardRow<Value: View>: View {
     @ViewBuilder var value: () -> Value
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: WingtipSpace.md) {
             if let badge { badge }
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -108,7 +108,7 @@ struct RunwayRowView: View {
 
     var body: some View {
         let heading = (runway.runwayEnds ?? []).compactMap(\.headingTrueDeg).first
-        HStack(spacing: 12) {
+        HStack(spacing: WingtipSpace.md) {
             ZStack {
                 RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Badge.runway)
                 RoundedRectangle(cornerRadius: 1).fill(.white).frame(width: side / 5.6, height: side * 0.64)
@@ -306,7 +306,7 @@ private enum PreviewData {
 }
 
 #Preview("RowBadge") {
-    HStack(spacing: 12) {
+    HStack(spacing: WingtipSpace.md) {
         RowBadge(systemImage: "building.columns", colour: Badge.tower)
         RowBadge(systemImage: "cloud.sun", colour: Badge.weather)
         RowBadge(systemImage: "fuelpump", colour: Badge.fuel)
@@ -342,7 +342,7 @@ private enum PreviewData {
 }
 
 #Preview("CardActionLabel") {
-    HStack(spacing: 8) {
+    HStack(spacing: WingtipSpace.sm) {
         Button {} label: { CardActionLabel(.flyHere) }.buttonStyle(.borderedProminent)
         Button {} label: { CardActionLabel(.addStop) }.buttonStyle(.bordered)
         Button {} label: { CardActionLabel(.call) }.buttonStyle(.bordered)

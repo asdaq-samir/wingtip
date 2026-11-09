@@ -150,7 +150,7 @@ struct AirportStrip: View {
     var body: some View {
         Section {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 12) {
+                HStack(alignment: .top, spacing: WingtipSpace.md) {
                     switch shelf.shows {
                     case .favorites:
                         ForEach(shelf.favorites) { field in tile(field.ident, field.name) }
@@ -159,16 +159,16 @@ struct AirportStrip: View {
                     case .nearest:
                         ForEach(nearest.prefix(12)) { field in tile(field.ident, Format.distance(field.distanceNm, decimals: 0), category: field.flightCategory) }
                     }
-                    if empty { Text(emptyWords).foregroundStyle(.secondary).padding(.vertical, 12) }
+                    if empty { Text(emptyWords).foregroundStyle(.secondary).padding(.vertical, WingtipSpace.md) }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+                .padding(.horizontal, WingtipSpace.lg)
+                .padding(.vertical, WingtipSpace.sm)
             }
             .listRowInsets(EdgeInsets())
         } header: {
             HStack {
                 Button { open(AirportRoute.list(shelf.shows).text) } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: WingtipSpace.xs) {
                         Text(shelf.shows.title)
                         Image(systemName: "chevron.right").font(.caption.weight(.bold))
                     }
@@ -208,7 +208,7 @@ struct AirportStrip: View {
 
     private func tile(_ ident: String, _ under: String, category: String? = nil) -> some View {
         Button { open(ident) } label: {
-            VStack(spacing: 4) {
+            VStack(spacing: WingtipSpace.xs) {
                 Text(ident)
                     .font(.caption.weight(.bold))
                     .lineLimit(1).minimumScaleFactor(0.7)
@@ -305,10 +305,10 @@ struct NearestRow: View {
 
     var body: some View {
         let bearing = field.bearingDeg.truncatingRemainder(dividingBy: 360)
-        HStack(spacing: 12) {
+        HStack(spacing: WingtipSpace.md) {
             Circle().strokeBorder(Color(uiColor: FlightCategory.mark(field.flightCategory)), lineWidth: 2.5).frame(width: 12, height: 12)
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
+                HStack(spacing: WingtipSpace.sm) {
                     Text(field.ident).font(.headline)
                     if withoutColour, let category = field.flightCategory { Text(category).font(.caption.weight(.semibold)).foregroundStyle(.secondary) }
                 }

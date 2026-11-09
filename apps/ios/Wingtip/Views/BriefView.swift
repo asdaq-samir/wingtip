@@ -81,7 +81,7 @@ struct BriefView: View {
                             ForEach(Array(gairmets.enumerated()), id: \.offset) { i, g in
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text([g.hazard, g.severity].compactMap { $0 }.joined(separator: " · ")).font(.headline)
-                                    HStack(spacing: 8) {
+                                    HStack(spacing: WingtipSpace.sm) {
                                         if let low = g.altitudeLowFt, let high = g.altitudeHighFt { Text(Format.altitudeRange(low, high)) }
                                         if let due = g.dueTo { Text(due) }
                                         if let at = g.validAt { Text(at) }
@@ -102,7 +102,7 @@ struct BriefView: View {
                                         if tfr.crosses { Text("crosses").foregroundStyle(.red).font(.footnote.weight(.semibold)) }
                                         if tfr.activeNow { Text("active now").foregroundStyle(.red).font(.footnote.weight(.semibold)) }
                                     }
-                                    HStack(spacing: 8) {
+                                    HStack(spacing: WingtipSpace.sm) {
                                         Text("\(Format.distance(tfr.alongTrackNm, decimals: 0)) along")
                                         if let floor = tfr.floorFt, let ceiling = tfr.ceilingFt { Text(Format.altitudeRange(floor, ceiling)) }
                                         if let effective = tfr.effective { Text("from \(effective)") }
@@ -118,7 +118,7 @@ struct BriefView: View {
                         Section(title: "Pilot Reports") {
                             ForEach(Array(pireps.enumerated()), id: \.offset) { i, p in
                                 VStack(alignment: .leading, spacing: 2) {
-                                    HStack(spacing: 8) {
+                                    HStack(spacing: WingtipSpace.sm) {
                                         Text("\(Format.distance(p.alongTrackNm, decimals: 0)) along").font(.headline)
                                         if let turbulence = p.turbulence { Text("turbulence \(turbulence)") }
                                         if let icing = p.icing { Text("icing \(icing)") }

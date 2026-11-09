@@ -177,7 +177,7 @@ struct InkChipStyle: ButtonStyle {
         configuration.label
             .condensedCaps()
             .lineLimit(1)
-            .padding(.horizontal, 14)
+            .padding(.horizontal, WingtipSpace.md)
             .frame(height: WingtipSize.chip)
             .foregroundStyle(filled ? Color.white : ink.tint)
             .background(filled ? ink.tint : ink.card, in: Capsule())

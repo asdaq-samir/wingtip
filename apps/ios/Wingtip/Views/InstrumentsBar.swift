@@ -15,8 +15,8 @@ struct InstrumentsBar: View {
 
     var body: some View {
         if let fix = flight.fix, flight.underway {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 4) {
+            VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+                HStack(spacing: WingtipSpace.xs) {
                     cell("GS", fix.groundspeedKt.map { Format.number($0, decimals: 0) } ?? "—", unit: "kt",
                          spoken: fix.groundspeedKt.map { "Groundspeed \(SpokenFigures.knots($0))" })
                     cell("TRK", Self.track(fix.trackDeg, magnetic: flight.progress?.trackMagDeg),
@@ -28,7 +28,7 @@ struct InstrumentsBar: View {
                 }
                 if let progress = flight.progress, progress.onRoute, let next = progress.next {
                     Divider()
-                    HStack(spacing: 4) {
+                    HStack(spacing: WingtipSpace.xs) {
                         VStack(alignment: .leading, spacing: 1) {
                             Text("NEXT").font(.caption2).foregroundStyle(.secondary)
                             Text(next.name).font(.headline).lineLimit(1).minimumScaleFactor(0.7)
@@ -52,7 +52,7 @@ struct InstrumentsBar: View {
                 if let problem = flight.problem {
                     Text(problem).font(.footnote).foregroundStyle(.orange).lineLimit(3)
                 }
-                HStack(alignment: .center, spacing: 8) {
+                HStack(alignment: .center, spacing: WingtipSpace.sm) {
                     Button { nearest = true } label: {
                         Label("Nearest", systemImage: "airplane.arrival")
                             .font(.subheadline.weight(.semibold))
@@ -67,9 +67,9 @@ struct InstrumentsBar: View {
                         .font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.trailing)
                 }
             }
-            .padding(10)
+            .padding(WingtipSpace.md)
             .floatingGlass(in: floatingCard)
-            .padding(.horizontal, 12)
+            .padding(.horizontal, WingtipSpace.md)
             // Eight figures across a phone: past the second accessibility
             // size they would not fit, so the bar stops there.
             .dynamicTypeSize(...DynamicTypeSize.accessibility2)
@@ -91,9 +91,9 @@ struct InstrumentsBar: View {
             // where the bar would be, not hidden as if on the ground.
             Label(problem, systemImage: "exclamationmark.triangle")
                 .font(.footnote).foregroundStyle(.orange)
-                .padding(10)
+                .padding(WingtipSpace.md)
                 .floatingGlass(in: floatingCard)
-                .padding(.horizontal, 12)
+                .padding(.horizontal, WingtipSpace.md)
         }
     }
 

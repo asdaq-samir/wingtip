@@ -64,7 +64,7 @@ struct DebriefSections: View {
             // PA.VI.A's tolerances in the title, as the web page has them.
             Section(title: "Leg by Leg · Within \(Format.tenths(t.offRouteNm)) nm, \(Format.tenths(t.altitudeFt)) ft, \(Format.tenths(t.courseDeg))°") {
                 ForEach(Array(d.legs.enumerated()), id: \.offset) { _, leg in
-                    HStack(alignment: .top, spacing: 12) {
+                    HStack(alignment: .top, spacing: WingtipSpace.md) {
                         WithinMark(ok: leg.ok)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("\(leg.from) → \(leg.to)")
@@ -76,7 +76,7 @@ struct DebriefSections: View {
             }
             Section(title: "Checkpoints · Within \(Format.tenths(t.etaMin)) min") {
                 ForEach(Array(d.passes.enumerated()), id: \.offset) { _, pass in
-                    HStack(alignment: .top, spacing: 12) {
+                    HStack(alignment: .top, spacing: WingtipSpace.md) {
                         if let ok = pass.ok { WithinMark(ok: ok) } else { Image(systemName: "circle").foregroundStyle(.secondary).accessibilityHidden(true) }
                         VStack(alignment: .leading, spacing: 2) {
                             Text(pass.name)
@@ -88,7 +88,7 @@ struct DebriefSections: View {
             if !d.patterns.isEmpty {
                 Section(title: "Into the Pattern · Within \(Format.tenths(t.patternFt)) ft") {
                     ForEach(d.patterns, id: \.ident) { entry in
-                        HStack(spacing: 12) {
+                        HStack(spacing: WingtipSpace.md) {
                             WithinMark(ok: entry.ok)
                             LabeledContent {
                                 Text("\(Format.altitude(entry.altFt)) (\(FigureWords.signed(entry.offFt, "")))").monospacedDigit()
@@ -230,7 +230,7 @@ struct DiversionDrillView: View {
                     ForEach(Self.estimates, id: \.key) { e in
                         let check = answer?.checks.first { $0.key == e.key }
                         LabeledContent {
-                            HStack(spacing: 6) {
+                            HStack(spacing: WingtipSpace.sm) {
                                 if let ok = check?.reasonable { WithinMark(ok: ok) }
                                 TextField("", text: Binding(get: { typed[e.key] ?? "" }, set: { typed[e.key] = $0 }))
                                     .keyboardType(.decimalPad).multilineTextAlignment(.trailing).monospacedDigit()
@@ -355,7 +355,7 @@ struct HoldingView: View {
                         .frame(maxWidth: 320).frame(maxWidth: .infinity)
                         .accessibilityElement()
                         .accessibilityLabel("\(answer.entryName) entry to a hold with \(turns) turns on an inbound course of \(Format.heading(i)), arriving on a heading of \(Format.heading(h)).")
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                         Text("\(answer.entryName) entry").font(.headline)
                         Text(answer.steps).font(.subheadline)
                     }
@@ -406,7 +406,7 @@ struct HoldingView: View {
 
     private func number(_ title: String, _ value: Binding<String>, _ unit: String) -> some View {
         LabeledContent(title) {
-            HStack(spacing: 6) {
+            HStack(spacing: WingtipSpace.sm) {
                 TextField("", text: value).keyboardType(.numberPad).multilineTextAlignment(.trailing).monospacedDigit().frame(width: 72)
                 Text(unit).foregroundStyle(.secondary).frame(width: 24, alignment: .leading)
             }
@@ -588,7 +588,7 @@ struct LostCommsSegmentsSections: View {
         }
         Section(title: "The Route's Segments") {
             ForEach(segments.indices, id: \.self) { i in
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                     HStack {
                         TextField("Segment", text: $segments[i].name)
                         TextField("", text: $minimums[i]).keyboardType(.numberPad).multilineTextAlignment(.trailing).monospacedDigit().frame(width: 80)
@@ -618,7 +618,7 @@ struct LostCommsSegmentsSections: View {
 }
 
 #Preview("WithinMark") {
-    HStack(spacing: 12) {
+    HStack(spacing: WingtipSpace.md) {
         WithinMark(ok: true)
         WithinMark(ok: false)
     }

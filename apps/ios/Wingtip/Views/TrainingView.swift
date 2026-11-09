@@ -161,7 +161,7 @@ struct TrainingView: View {
         if !t.reviews.isEmpty || !taken.isEmpty {
             Section(title: "Solo Cross-Countries") {
                 ForEach(t.reviews) { review in
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                         Text(Endorsing.route(review)).font(.headline.monospaced())
                         Text("\(Day.said(review.flightOn)) · \(review.makeModel) · \(Endorsing.state(review))").font(.footnote).foregroundStyle(.secondary)
                         ForEach(Array(review.checks.enumerated()), id: \.offset) { _, check in
@@ -253,7 +253,7 @@ struct SignedEndorsementRow: View {
 
     var body: some View {
         DisclosureGroup {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                 Text(e.text).textSelection(.enabled)
                 if !e.signature.isEmpty { Text(e.signature).font(.footnote.monospaced()).foregroundStyle(.secondary) }
             }

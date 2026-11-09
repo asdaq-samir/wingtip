@@ -173,14 +173,14 @@ struct AirportHead: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .top, spacing: WingtipSpace.md) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                 Text(place.name).font(.title3.weight(.semibold))
                 let region = place.region.map { $0.hasPrefix("US-") ? String($0.dropFirst(3)) : $0 }
                 let whereIs = [place.municipality, region].compactMap { $0 }.joined(separator: ", ")
                 if !whereIs.isEmpty { Text(whereIs).foregroundStyle(.secondary) }
                 if let restriction = Self.restriction(place) { Text(restriction).font(.subheadline).foregroundStyle(.orange) }
-                HStack(spacing: 12) {
+                HStack(spacing: WingtipSpace.md) {
                     if let elevation = place.elevationFt { Text("Elev \(Format.altitude(elevation))") }
                     Text(place.towered ? "Towered" : "Non-towered")
                     if let cls = place.airspaceClass { Text("Class \(cls)") }
@@ -198,7 +198,7 @@ struct AirportHead: View {
                 }
                 .font(.caption.weight(.bold))
                 .foregroundStyle(.white)
-                .padding(.horizontal, 6).padding(.vertical, 3)
+                .padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xs)
                 .background(Color(uiColor: FlightCategory.words(chip.category)), in: RoundedRectangle(cornerRadius: WingtipRadius.cockpit))
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(chip.own ? "Flight category \(chip.category)" : "About \(chip.category), not this field's own report")
@@ -246,8 +246,8 @@ struct AirportPictures: View {
                             .overlay(alignment: .bottomLeading) {
                                 // Its photographer and licence, as Commons' licences ask.
                                 Text(credit).font(.caption2).lineLimit(1)
-                                    .padding(.horizontal, 6).padding(.vertical, 2)
-                                    .floatingGlass(in: Capsule(), material: .thinMaterial).padding(6)
+                                    .padding(.horizontal, WingtipSpace.sm).padding(.vertical, 2)
+                                    .floatingGlass(in: Capsule(), material: .thinMaterial).padding(WingtipSpace.sm)
                             }
                     }
                     .accessibilityLabel("\(place.ident) from the ground, full screen")

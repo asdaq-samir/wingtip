@@ -14,7 +14,7 @@ struct ProceduresRow: View {
     @State private var list: ProcedureList?
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: WingtipSpace.sm) {
             Text(ident).font(.body.monospaced())
             Spacer()
             if let list {

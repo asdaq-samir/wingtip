@@ -23,13 +23,13 @@ struct StripHead: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
             card
             ways
             if let answer = verdict.answer {
                 ForEach(Glance.lines(answer)) { glanceLine in
                     Button(action: onBrief) {
-                        HStack(spacing: 10) {
+                        HStack(spacing: WingtipSpace.md) {
                             Image(systemName: FindingStyle.symbol(glanceLine.finding))
                                 .foregroundStyle(ink.finding(glanceLine.finding))
                                 .accessibilityHidden(true)
@@ -39,7 +39,7 @@ struct StripHead: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             Image(systemName: "chevron.right").foregroundStyle(ink.tint).accessibilityHidden(true)
                         }
-                        .padding(.horizontal, 14).padding(.vertical, 10)
+                        .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.md)
                         .frame(minHeight: 44)
                     }
                     .buttonStyle(.plain)
@@ -53,14 +53,14 @@ struct StripHead: View {
     }
 
     private var card: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
             HStack(alignment: .top) {
                 Spacer(minLength: 0)
                 menu
             }
             if let answer = verdict.answer {
                 Button(action: onBrief) {
-                    HStack(spacing: 10) {
+                    HStack(spacing: WingtipSpace.md) {
                         Image(systemName: FindingStyle.symbol(answer.line.finding))
                             .font(.title2)
                             .foregroundStyle(ink.finding(answer.line.finding))
@@ -85,7 +85,7 @@ struct StripHead: View {
                 .lineLimit(1)
                 .accessibilityLabel(line)
         }
-        .padding(16)
+        .padding(WingtipSpace.lg)
         .frame(maxWidth: .infinity, minHeight: 112, alignment: .bottomLeading)
         .inkCard()
     }
@@ -114,7 +114,7 @@ struct StripHead: View {
     private var ways: some View {
         if let chips = plan.routes?.chips, chips.count > 1 {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: WingtipSpace.sm) {
                     ForEach(chips) { chip in
                         let picked = (plan.pickedChip?.key ?? "none") == chip.key
                         Button(chip.label) { plan.use(chip) }
@@ -122,7 +122,7 @@ struct StripHead: View {
                             .accessibilityAddTraits(picked ? .isSelected : [])
                     }
                 }
-                .padding(.horizontal, 2).padding(.vertical, 6)
+                .padding(.horizontal, 2).padding(.vertical, WingtipSpace.sm)
             }
             .accessibilityLabel("The route's ways")
         }

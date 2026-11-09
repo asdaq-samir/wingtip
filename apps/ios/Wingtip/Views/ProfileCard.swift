@@ -80,7 +80,7 @@ struct ProfileCard: View {
             if let cautions = plan.altitude?.cautions, !cautions.isEmpty {
                 Section {
                     ForEach(cautions) { caution in
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                             Text("\(Format.cruiseAltitude(caution.altitudeFt)) \(caution.fromIdent) → \(caution.toIdent)").font(.subheadline.weight(.semibold))
                             ForEach(caution.reasons, id: \.self) { Text("• \($0)").font(.footnote) }
                         }

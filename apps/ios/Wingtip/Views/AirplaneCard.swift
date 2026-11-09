@@ -101,11 +101,11 @@ struct AirplaneCard: View {
         NavigationStack {
             List {
                 Section {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                         Text(detail?.description.map(FlightWords.nameCase) ?? detail?.type ?? plane?.type ?? name).font(.title3.weight(.semibold))
                         if let op = detail?.operator { Text(FlightWords.nameCase(op)).foregroundStyle(.secondary) }
                     }
-                    HStack(spacing: 10) {
+                    HStack(spacing: WingtipSpace.md) {
                         Button {
                             if let kept { tracking.toggleFavorite(kept) }
                         } label: {
@@ -244,7 +244,7 @@ struct NowFlightRow: View {
     @Environment(OwnShip.self) private var ownShip
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
             HStack {
                 Circle().fill(.green).frame(width: 8, height: 8)
                 Text(started.map { "In the air · \(FlightWords.lasted(Date().timeIntervalSince1970 - $0))" } ?? "In the air")
@@ -316,7 +316,7 @@ struct PastFlightRow: View {
     let type: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
             HStack {
                 Text(FlightWords.ended(flight)).foregroundStyle(flight.landed || flight.inAir ? Color.green : Color.secondary)
                 Spacer()
@@ -325,7 +325,7 @@ struct PastFlightRow: View {
             .font(.subheadline.weight(.semibold))
             HStack(alignment: .top) {
                 end(flight.origin?.ident ?? "?", FlightWords.place(flight.origin), FlightWords.when(flight.off), trailing: false)
-                Image(systemName: flight.local ? "arrow.clockwise" : "arrow.right").padding(.top, 4)
+                Image(systemName: flight.local ? "arrow.clockwise" : "arrow.right").padding(.top, WingtipSpace.xs)
                 end(flight.inAir ? "Now" : flight.destination?.ident ?? "?", flight.inAir ? nil : FlightWords.place(flight.destination),
                     flight.inAir ? nil : FlightWords.when(flight.on), trailing: true)
             }

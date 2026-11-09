@@ -180,7 +180,7 @@ struct VerdictRow: View {
     let item: VerdictItem
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
+        HStack(alignment: .firstTextBaseline, spacing: WingtipSpace.md) {
             Image(systemName: FindingStyle.symbol(item.finding)).foregroundStyle(FindingStyle.colour(item.finding))
                 .accessibilityLabel(FindingStyle.word(item.finding))
             VStack(alignment: .leading, spacing: 2) {
@@ -206,7 +206,7 @@ struct FindingFold: View {
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                 Text(item.detail).font(.subheadline)
                 Text("In the Brief: \([item.tab.capitalized, item.section].compactMap { $0 }.joined(separator: " · "))")
                     .font(.footnote).foregroundStyle(.secondary)
@@ -321,7 +321,7 @@ struct LoadingView: View {
     /// One figure the pilot types, its unit beside it.
     private func figure(_ title: String, unit: String, value: Double, note: String? = nil, set: @escaping (Double) -> Void) -> some View {
         LabeledContent {
-            HStack(spacing: 4) {
+            HStack(spacing: WingtipSpace.xs) {
                 TextField(title, value: Binding(get: { value }, set: { set(max(0, $0)) }), format: .number.precision(.fractionLength(0...2)))
                     .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(maxWidth: fieldWidth)
                 Text(unit).foregroundStyle(.secondary)
@@ -347,7 +347,7 @@ struct RiskView: View {
         List {
             if let risk = verdict.answer?.risk {
                 Section {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                         // The level's mark with its colour, so the line reads
                         // the same to a pilot who does not see the colour.
                         Label(risk.line, systemImage: FindingStyle.symbol(finding(risk.level)))

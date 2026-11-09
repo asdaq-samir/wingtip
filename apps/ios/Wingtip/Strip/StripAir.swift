@@ -16,10 +16,10 @@ struct StripAir: View {
     private var next: StripPoint? { StripData.nextPoint(points, position: position) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            RibbonLine(points: points, position: position).padding(.horizontal, 4)
+        VStack(alignment: .leading, spacing: WingtipSpace.md) {
+            RibbonLine(points: points, position: position).padding(.horizontal, WingtipSpace.xs)
             if let next {
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                HStack(alignment: .firstTextBaseline, spacing: WingtipSpace.md) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Next").condensedCaps(.caption).foregroundStyle(ink.muted)
                         Text(next.name)
@@ -49,11 +49,11 @@ struct StripAir: View {
                         .accessibilityLabel("\(SpokenFigures.nauticalMiles(nm)) to go")
                     }
                 }
-                .padding(16)
+                .padding(WingtipSpace.lg)
                 .inkCard()
             }
             FiguresStrip()
-                .padding(.vertical, 8)
+                .padding(.vertical, WingtipSpace.sm)
                 .inkCard()
         }
         .accessibilityIdentifier("strip-air")

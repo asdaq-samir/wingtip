@@ -50,15 +50,15 @@ struct RouteLineRow: View {
     var body: some View {
         let chips = RouteLine.chips(plan.routes)
         let picked = RouteLine.picked(chips, chip: plan.pickedChip)
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+            HStack(spacing: WingtipSpace.md) {
                 Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
                     .foregroundStyle(Color.accentColor)
                     .accessibilityLabel("Route options")
                 if open {
                     ScrollViewReader { reader in
                         ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 6) {
+                            HStack(spacing: WingtipSpace.sm) {
                                 ForEach(chips) { chip in
                                     RouteChipButton(label: chip.label, picked: chip.id == picked.id) { take(chip) }
                                         .id(chip.id)
@@ -136,7 +136,7 @@ private struct RouteChipButton: View {
                 .font(.subheadline)
                 .lineLimit(1)
                 .fixedSize()
-                .padding(.horizontal, 12)
+                .padding(.horizontal, WingtipSpace.md)
                 // 32 points at the default size; taller with larger type.
                 .frame(minHeight: 32)
                 .foregroundStyle(picked ? Color.accentColor : Color.primary)
@@ -157,7 +157,7 @@ private struct RouteChipButton: View {
 }
 
 #Preview("RouteChipButton") {
-    HStack(spacing: 6) {
+    HStack(spacing: WingtipSpace.sm) {
         RouteChipButton(label: "None", picked: false) {}
         RouteChipButton(label: "Around the weather", picked: true) {}
     }

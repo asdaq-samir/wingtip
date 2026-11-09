@@ -23,7 +23,7 @@ struct WordsSection: View {
                         .font(.subheadline).foregroundStyle(.secondary)
                 } else {
                     ForEach(Array(said.words.sentences.enumerated()), id: \.offset) { _, sentence in
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                             Text(sentence.text)
                             chips(sentence, words: said.words)
                         }
@@ -66,7 +66,7 @@ struct WordsSection: View {
     @ViewBuilder private func chips(_ sentence: WordsSentence, words: Words) -> some View {
         let cited = sentence.sources.compactMap(words.source)
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: WingtipSpace.sm) {
                 ForEach(cited) { source in
                     Button {
                         opened = source

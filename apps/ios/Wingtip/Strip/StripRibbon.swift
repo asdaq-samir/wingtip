@@ -96,12 +96,12 @@ struct StripRibbonRow: View {
 
     var body: some View {
         let figures = StripData.figures(eteMin: eteMin, fuelGal: fuelGal)
-        VStack(spacing: 6) {
-            HStack(spacing: 8) {
+        VStack(spacing: WingtipSpace.sm) {
+            HStack(spacing: WingtipSpace.sm) {
                 if let verdict, let tag = StripData.tag(verdict.finding) {
                     Text(tag)
                         .condensedCaps(.caption, weight: .bold)
-                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xs)
                         .foregroundStyle(ink.finding(verdict.finding))
                         .background(ink.finding(verdict.finding).opacity(0.14), in: Capsule())
                         .accessibilityLabel("Verdict: \(verdict.words)")
@@ -118,7 +118,7 @@ struct StripRibbonRow: View {
             }
             RibbonLine(points: points, position: position)
         }
-        .padding(.horizontal, 4)
+        .padding(.horizontal, WingtipSpace.xs)
         .accessibilityIdentifier("strip-ribbon")
     }
 }

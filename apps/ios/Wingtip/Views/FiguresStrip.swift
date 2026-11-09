@@ -65,7 +65,7 @@ struct FiguresStrip: View {
 func stripFigure(_ name: String, _ value: String, spoken: String? = nil, warn: Bool = false) -> some View {
     VStack(spacing: 2) {
         Text(name).font(.caption2).foregroundStyle(.secondary)
-        HStack(spacing: 3) {
+        HStack(spacing: WingtipSpace.xs) {
             // A mark with the red, for a pilot who does not see the colour
             // (the owner's rule: warn, never limit).
             if warn { Image(systemName: "exclamationmark.triangle.fill").font(.caption2) }

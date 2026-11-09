@@ -24,8 +24,8 @@ struct StripList: View {
             ZStack(alignment: .topLeading) {
                 // The timeline's line: 4 points of magenta at the left,
                 // each entry's dot on it.
-                RoundedRectangle(cornerRadius: 2).fill(ink.magenta).frame(width: 4).padding(.leading, 7).padding(.vertical, 12)
-                VStack(alignment: .leading, spacing: 8) {
+                RoundedRectangle(cornerRadius: 2).fill(ink.magenta).frame(width: 4).padding(.leading, WingtipSpace.sm).padding(.vertical, WingtipSpace.md)
+                VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                     StripFieldCard(point: first, atLabel: "leaving", clearance: true, plates: false,
                                    onOpen: onField, onPlates: onPlates, onClearance: onClearance)
                     ForEach(Array(fold.rows.enumerated()), id: \.offset) { _, row in
@@ -55,14 +55,14 @@ struct StripList: View {
     /// and distance under it (the nav log's figures), its minutes at the
     /// right; a tap opens the leg.
     private func checkpoint(_ point: StripPoint, number: Int?) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: WingtipSpace.md) {
             Circle().fill(ink.brown).frame(width: 14, height: 14)
                 .overlay(Circle().strokeBorder(ink.paper, lineWidth: 3).padding(-3))
-                .padding(.leading, 2).padding(.top, 15)
+                .padding(.leading, 2).padding(.top, WingtipSpace.lg)
             Button {
                 if let leg = point.leg { onLeg(leg) }
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: WingtipSpace.md) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("\(number.map { "\($0). " } ?? "")\(point.name)")
                             .font(ChartInk.text.weight(.medium)).lineLimit(1)
@@ -76,7 +76,7 @@ struct StripList: View {
                         Text(Format.duration(ete)).font(ChartInk.detail.monospacedDigit()).foregroundStyle(ink.muted)
                     }
                 }
-                .padding(.horizontal, 4).padding(.vertical, 6)
+                .padding(.horizontal, WingtipSpace.xs).padding(.vertical, WingtipSpace.sm)
                 .frame(minHeight: 44)
             }
             .buttonStyle(.plain)
@@ -86,10 +86,10 @@ struct StripList: View {
 
     /// "N more checkpoints", a tap unfolds them.
     private func foldRow(_ hidden: Int) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: WingtipSpace.md) {
             Circle().fill(ink.paper).frame(width: 8, height: 8)
                 .overlay(Circle().strokeBorder(ink.brown, lineWidth: 2))
-                .padding(.leading, 5)
+                .padding(.leading, WingtipSpace.xs)
             Button("\(hidden) more checkpoints") { withAnimation(.easeOut(duration: 0.3)) { unfolded = true } }
                 .font(ChartInk.text.weight(.semibold))
                 .frame(minHeight: 44)
@@ -101,12 +101,12 @@ struct StripList: View {
     /// After the destination: the debrief, once a track is flown -- the
     /// saved flight's own page reads it (FlownTrackView's DebriefSections).
     private var after: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: WingtipSpace.md) {
             Circle().fill(ink.paper).frame(width: 14, height: 14)
                 .overlay(Circle().strokeBorder(ink.magenta, lineWidth: 2))
-                .padding(.leading, 2).padding(.top, 15)
+                .padding(.leading, 2).padding(.top, WingtipSpace.lg)
             Button(action: onDebrief) {
-                HStack(spacing: 10) {
+                HStack(spacing: WingtipSpace.md) {
                     Image(systemName: "flag.checkered").foregroundStyle(ink.tint).accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Debrief").font(ChartInk.text.weight(.semibold))
@@ -115,7 +115,7 @@ struct StripList: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     Image(systemName: "chevron.right").foregroundStyle(ink.tint).accessibilityHidden(true)
                 }
-                .padding(14)
+                .padding(WingtipSpace.md)
                 .frame(minHeight: 44)
             }
             .buttonStyle(.plain)
@@ -148,10 +148,10 @@ struct StripFieldCard: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Circle().fill(ink.field).frame(width: 18, height: 18).padding(.top, 16)
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .top, spacing: WingtipSpace.md) {
+            Circle().fill(ink.field).frame(width: 18, height: 18).padding(.top, WingtipSpace.lg)
+            VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+                HStack(alignment: .top, spacing: WingtipSpace.sm) {
                     Button { onOpen(point.name) } label: {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(point.name).font(ChartInk.text.weight(.bold)).foregroundStyle(ink.tint)
@@ -181,7 +181,7 @@ struct StripFieldCard: View {
                 }
                 chips
             }
-            .padding(14)
+            .padding(WingtipSpace.md)
             .frame(maxWidth: .infinity, alignment: .leading)
             .inkCard()
         }
@@ -195,7 +195,7 @@ struct StripFieldCard: View {
         let radio = place.map { StripData.radioChips($0.frequencies, towered: $0.towered) } ?? []
         if !radio.isEmpty || clearance || plates {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: WingtipSpace.sm) {
                     ForEach(radio, id: \.label) { chip in
                         Button(chip.label) { onOpen(point.name) }
                             .buttonStyle(.inkChip)
@@ -208,7 +208,7 @@ struct StripFieldCard: View {
                         Button("Plates") { onPlates(point.name) }.buttonStyle(.inkChip).accessibilityLabel("The approach plates")
                     }
                 }
-                .padding(.vertical, 6)
+                .padding(.vertical, WingtipSpace.sm)
             }
         }
     }

@@ -555,7 +555,7 @@ struct Kneeboard: View {
     let legs: [Leg]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
             HStack(alignment: .firstTextBaseline) {
                 Text(route).font(.system(size: 15, weight: .bold))
                 Spacer()
@@ -585,11 +585,11 @@ struct Kneeboard: View {
                 }
             }
             .font(.system(size: 8.5).monospacedDigit())
-            Text("Squawk ______   Clearance ____________________   Hobbs out ______ in ______").font(.system(size: 9)).padding(.top, 6)
+            Text("Squawk ______   Clearance ____________________   Hobbs out ______ in ______").font(.system(size: 9)).padding(.top, WingtipSpace.sm)
             Spacer(minLength: 0)
             Text("Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight.").font(.system(size: 6.5))
         }
-        .padding(24)
+        .padding(WingtipSpace.xl)
         .frame(width: 396, height: 612, alignment: .topLeading)
         .foregroundStyle(.black)
         .background(.white)
@@ -670,7 +670,7 @@ struct ForgetNotesButton: View {
 struct WatchBanner: View {
     var body: some View {
         if let words = Tracking.shared.fired {
-            HStack(spacing: 8) {
+            HStack(spacing: WingtipSpace.sm) {
                 Image(systemName: "bell.fill").accessibilityHidden(true)
                 Text(words).font(.subheadline.weight(.semibold)).lineLimit(2)
                 Button { Tracking.shared.fired = nil } label: {
@@ -679,14 +679,14 @@ struct WatchBanner: View {
                 }
                 .accessibilityLabel("Dismiss")
             }
-            .padding(.horizontal, 12).padding(.vertical, 8)
+            .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
             .floatingGlass(in: Capsule())
         } else if let problem = Tracking.shared.watchProblem {
             // A watch that could not be checked says so where it would
             // have gone off, rather than staying quiet.
             Label(problem, systemImage: "exclamationmark.triangle")
                 .font(.subheadline).foregroundStyle(.orange).lineLimit(2)
-                .padding(.horizontal, 12).padding(.vertical, 8)
+                .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
                 .floatingGlass(in: Capsule())
         }
     }

@@ -108,9 +108,9 @@ struct PictureViewer: View {
             .safeAreaInset(edge: .bottom) {
                 if let credit = picture.credit, images != nil {
                     Text(credit).font(.caption2).foregroundStyle(.secondary)
-                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xs)
                         .floatingGlass(in: Capsule(), material: .thinMaterial)
-                        .padding(.bottom, 8)
+                        .padding(.bottom, WingtipSpace.sm)
                 }
             }
             .task { await load() }

@@ -116,7 +116,7 @@ struct StripSheetView: View {
 
     private var home: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: WingtipSpace.md) {
                 if let fix = flyingFix {
                     let along = Result { try StripData.positionAlong(points, fix: fix.coordinate) }
                     StripAir(points: points, position: try? along.get(), fix: fix)
@@ -150,8 +150,8 @@ struct StripSheetView: View {
                     }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 24)
+            .padding(.horizontal, WingtipSpace.lg)
+            .padding(.bottom, WingtipSpace.xl)
         }
         .scrollDismissesKeyboard(.interactively)
         .toolbar(.hidden, for: .navigationBar)
@@ -166,12 +166,12 @@ struct StripSheetView: View {
         VStack(alignment: .leading, spacing: 0) {
             StripFieldRow(text: $text, flying: flyingFix != nil, listening: hearing || listener.hearingOnce, busy: busy,
                           onSubmit: { Task { await run(text) } }, onMic: { Task { await hear() } }, focused: $focused)
-                .padding(.horizontal, 16)
-                .padding(.top, 6)
-                .padding(.bottom, 8)
+                .padding(.horizontal, WingtipSpace.lg)
+                .padding(.top, WingtipSpace.sm)
+                .padding(.bottom, WingtipSpace.sm)
             if let problem {
                 ProblemLine(problem)
-                    .padding(.horizontal, 20).padding(.bottom, 6)
+                    .padding(.horizontal, WingtipSpace.lg).padding(.bottom, WingtipSpace.sm)
                     .accessibilityAddTraits(.isStaticText)
             }
             if focused, text.isEmpty, flyingFix == nil {
@@ -185,15 +185,15 @@ struct StripSheetView: View {
 
     /// The first flight's welcome, the field at the foot being the way in.
     private var welcome: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+            HStack(spacing: WingtipSpace.md) {
                 Image(systemName: "airplane").foregroundStyle(.tint).accessibilityHidden(true)
                 Text("Where to?").font(ChartInk.heading)
             }
             Text("Type or say a field, a town or a route above. Wingtip plans from where you are: the route, the checkpoints you'll see from the air, the nav log and a weather brief, all on one strip.")
                 .font(ChartInk.text)
         }
-        .padding(16)
+        .padding(WingtipSpace.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .inkCard()
         .accessibilityIdentifier("strip-welcome")
@@ -214,7 +214,7 @@ struct StripSheetView: View {
                 }
             }
             .font(ChartInk.detail)
-            .padding(14)
+            .padding(WingtipSpace.md)
             .frame(maxWidth: .infinity, alignment: .leading)
             .inkCard()
         }

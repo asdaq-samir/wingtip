@@ -466,7 +466,7 @@ struct ProcedureFixesView: View {
                 let direct = plan.extras.procedureDirect["\(ident):\(id)"]
                 Section {
                     ForEach(drawing.fixes.filter { !$0.missed }) { fix in
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                             HStack {
                                 Text(fix.ident).font(.headline.monospaced())
                                 if !fix.roles.isEmpty { Text(fix.roles.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary) }

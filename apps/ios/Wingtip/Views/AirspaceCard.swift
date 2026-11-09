@@ -20,7 +20,7 @@ struct AirspaceCard: View {
     var body: some View {
         List {
             Section {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                     Text(AirportWords.degreesMinutes(lat: lat, lon: lon)
                          + (here?.groundFt.map { " · ground \(Format.altitude($0))" } ?? ""))
                         .monospacedDigit()
@@ -183,7 +183,7 @@ struct BandRow: View {
 
     var body: some View {
         let ink = Self.ink(band.airspaceClass)
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: WingtipSpace.md) {
             Text(band.airspaceClass)
                 .font(.subheadline.weight(.bold))
                 .foregroundStyle(ink.solid ? Color.white : ink.colour)
@@ -191,7 +191,7 @@ struct BandRow: View {
                 .background(ink.solid ? ink.colour : Color.clear, in: RoundedRectangle(cornerRadius: 6))
                 .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(ink.colour, style: StrokeStyle(lineWidth: 2, dash: ink.dashed ? [3, 2] : [])))
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                 Text("Class \(band.airspaceClass)").fontWeight(.semibold)
                     + Text(band.name.map { " · " + AirportWords.shortAirspaceName($0) } ?? "").foregroundStyle(.secondary)
                 Text(AirportWords.bandRange(band, ground: ground)).fontWeight(.semibold).monospacedDigit()

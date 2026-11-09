@@ -66,9 +66,9 @@ struct DiagramOwnShipView: View {
                 if let diagram {
                     Text(note(diagram))
                         .font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.xs)
                         .floatingGlass(in: Capsule(), material: .thinMaterial)
-                        .padding(.bottom, 8)
+                        .padding(.bottom, WingtipSpace.sm)
                 }
             }
         }

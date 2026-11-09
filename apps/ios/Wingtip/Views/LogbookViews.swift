@@ -399,7 +399,7 @@ struct LogbookEntryForm: View {
 
     private func hours(_ title: String, _ key: WritableKeyPath<LogbookEntryRequest, Double>) -> some View {
         LabeledContent(title) {
-            HStack(spacing: 4) {
+            HStack(spacing: WingtipSpace.xs) {
                 TextField("0", value: Binding(get: { entry[keyPath: key] }, set: { entry[keyPath: key] = max(0, $0) }), format: .number)
                     .multilineTextAlignment(.trailing).keyboardType(.decimalPad)
                 Text("h").foregroundStyle(.secondary)
@@ -409,7 +409,7 @@ struct LogbookEntryForm: View {
 
     private func miles(_ title: String, _ key: WritableKeyPath<LogbookEntryRequest, Double>) -> some View {
         LabeledContent(title) {
-            HStack(spacing: 4) {
+            HStack(spacing: WingtipSpace.xs) {
                 TextField("0", value: Binding(get: { entry[keyPath: key] }, set: { entry[keyPath: key] = max(0, $0) }), format: .number)
                     .multilineTextAlignment(.trailing).keyboardType(.decimalPad)
                 Text("nm").foregroundStyle(.secondary)

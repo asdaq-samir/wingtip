@@ -191,7 +191,7 @@ struct RootView: View {
                        ask: layoutName == "strip" ? nil : { asking = true })
         }
         .overlay(alignment: .top) {
-            VStack(spacing: 8) {
+            VStack(spacing: WingtipSpace.sm) {
                 AlertsBanner(alerts: ownShip.ahead)
                 // The radio, while the app listens or a call to us waits.
                 RadioOverlay()
@@ -201,20 +201,20 @@ struct RootView: View {
             .padding(.trailing, 64)
         }
         .overlay(alignment: .topLeading) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                 if dryRun.fix != nil { DryRunControls() }
                 WatchBanner()
                 // The licence's credit, beside the traffic it covers.
                 if traffic.on, !traffic.planes.isEmpty {
-                    Text(Traffic.credit(traffic.source)).font(.caption2).padding(.horizontal, 6).padding(.vertical, 2)
+                    Text(Traffic.credit(traffic.source)).font(.caption2).padding(.horizontal, WingtipSpace.sm).padding(.vertical, 2)
                         .floatingGlass(in: Capsule(), material: .thinMaterial)
                     if let problem = traffic.marksProblem {
-                        Text(problem).font(.caption2).foregroundStyle(.orange).padding(.horizontal, 6).padding(.vertical, 2)
+                        Text(problem).font(.caption2).foregroundStyle(.orange).padding(.horizontal, WingtipSpace.sm).padding(.vertical, 2)
                             .floatingGlass(in: Capsule(), material: .thinMaterial)
                     }
                 }
             }
-            .padding(.leading, 12).padding(.top, 12)
+            .padding(.leading, WingtipSpace.md).padding(.top, WingtipSpace.md)
         }
         // About own ship's real fix, never the dry run's: the traffic near
         // it is told in a notification (Traffic.tellNear).

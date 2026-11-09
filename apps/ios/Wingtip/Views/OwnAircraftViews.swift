@@ -22,7 +22,7 @@ struct OwnAircraftListView: View {
                     } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
-                                HStack(spacing: 6) {
+                                HStack(spacing: WingtipSpace.sm) {
                                     Text(airplane.tailNumber).font(.headline.monospaced())
                                     Text(airplane.typeDesignator).foregroundStyle(.secondary)
                                 }
@@ -137,7 +137,7 @@ struct AircraftFormView: View {
     private func number(_ title: String, unit: String, text: Binding<String>, placeholder: String, key: String, problems: [String: String]) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             LabeledContent(title) {
-                HStack(spacing: 4) {
+                HStack(spacing: WingtipSpace.xs) {
                     TextField(placeholder, text: text).multilineTextAlignment(.trailing).keyboardType(.decimalPad)
                     Text(unit).foregroundStyle(.secondary)
                 }
@@ -300,7 +300,7 @@ struct InspectionsSection: View {
             ForEach(dated, id: \.title) { d in
                 VStack(alignment: .leading, spacing: 2) {
                     OptionalDayRow(title: d.title, day: Binding(get: { form[keyPath: d.on] }, set: { form[keyPath: d.on] = $0 }), upTo: Date())
-                    HStack(spacing: 4) {
+                    HStack(spacing: WingtipSpace.xs) {
                         Text(d.rule)
                         if d.through != nil { Text("·"); StandingText(through: d.through) }
                     }
@@ -309,7 +309,7 @@ struct InspectionsSection: View {
             }
             VStack(alignment: .leading, spacing: 2) {
                 OptionalDayRow(title: "ELT battery replace by", day: $form.eltBatteryDueOn)
-                HStack(spacing: 4) {
+                HStack(spacing: WingtipSpace.xs) {
                     Text("As marked on the transmitter, 91.207(c)")
                     if let due = record.inspections.eltBatteryDueOn { Text("·"); StandingText(through: due, good: "By", past: "Due since") }
                 }
@@ -395,7 +395,7 @@ struct VorCheckSection: View {
             }
             LabeledContent("Where") { TextField("KDLH VOT", text: $place).multilineTextAlignment(.trailing) }
             LabeledContent("Bearing error") {
-                HStack(spacing: 4) {
+                HStack(spacing: WingtipSpace.xs) {
                     TextField("0", text: $errorText).multilineTextAlignment(.trailing).keyboardType(.numbersAndPunctuation)
                     Text("°").foregroundStyle(.secondary)
                 }
