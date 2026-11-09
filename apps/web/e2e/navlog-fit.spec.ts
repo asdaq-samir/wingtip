@@ -56,7 +56,7 @@ test("the nav log fits a phone's panel with long names, five-figure altitudes an
   // and each row's groundspeed its figure alone under "GS kt", lined up
   // as the times are (the design review, 2026-10-28).
   const heads = log.getByTestId("navlog-list-heads");
-  await expect(heads).toHaveText(/ETA\s*GS kt/);
+  await expect(heads).toHaveText(/ETA \S+\s*GS kt/);
   const speeds = log.getByTestId("navlog-row-gs");
   await expect(speeds.nth(1)).toHaveText(/^\d+$/);
   const rightEdges = await log.locator('[data-testid="navlog-row-eta"], [data-testid="navlog-row-gs"]').evaluateAll(els => els.map(el => Math.round(el.getBoundingClientRect().right)));

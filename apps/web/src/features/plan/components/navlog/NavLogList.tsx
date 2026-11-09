@@ -1,5 +1,6 @@
 import { Fragment, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "cn";
+import { zoneName } from "../../../../lib/clock";
 import { placeName } from "../../../../lib/radio";
 import { TEXT } from "../../../../lib/text";
 import { altFt, bearing, etaAt, one, windAloft } from "../../format";
@@ -117,7 +118,8 @@ export function NavLogList({ rows, label, numberOf, weather, isSelected, onSelec
           design review, 2026-10-28, the owner's "I want all"). The screen
           reader's names are the row group's above. */}
       <div aria-hidden="true" className={cn("grid grid-cols-[2.125rem_minmax(0,1fr)_auto] gap-x-2.5 px-1.5 pb-0.5 text-right text-muted-foreground", TEXT.note)} data-testid="navlog-list-heads">
-        <span className="col-start-3">ETA</span>
+        {/* The clock's zone, once over the column (the FPL audit's A19). */}
+        <span className="col-start-3">ETA {zoneName()}</span>
         <span className="col-start-3">GS kt</span>
       </div>
       <div role="rowgroup">
