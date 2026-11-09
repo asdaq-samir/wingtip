@@ -3473,6 +3473,7 @@
             "type": "string"
           },
           "description": {
+            "maxLength": 500,
             "title": "Description",
             "type": "string"
           },
@@ -4617,6 +4618,7 @@
             "items": {
               "$ref": "#/components/schemas/LegGrade"
             },
+            "maxItems": 200,
             "title": "Legs",
             "type": "array"
           },
@@ -4629,8 +4631,10 @@
           },
           "notes": {
             "items": {
+              "maxLength": 500,
               "type": "string"
             },
+            "maxItems": 50,
             "title": "Notes",
             "type": "array"
           },
@@ -4638,6 +4642,7 @@
             "items": {
               "$ref": "#/components/schemas/CheckpointPass"
             },
+            "maxItems": 200,
             "title": "Passes",
             "type": "array"
           },
@@ -4645,6 +4650,7 @@
             "items": {
               "$ref": "#/components/schemas/PatternEntry"
             },
+            "maxItems": 200,
             "title": "Patterns",
             "type": "array"
           },
@@ -12551,6 +12557,7 @@
             "anyOf": [
               {
                 "additionalProperties": true,
+                "maxProperties": 50,
                 "type": "object"
               },
               {
@@ -13714,6 +13721,7 @@
       "SeedNoteRequest": {
         "properties": {
           "description": {
+            "maxLength": 500,
             "title": "Description",
             "type": "string"
           },

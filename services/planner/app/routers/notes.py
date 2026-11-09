@@ -7,7 +7,7 @@ which asks /pending for the checkpoints still without one and /seed to
 keep each it writes."""
 
 from fastapi import APIRouter, Header, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from wingtip import checkpoint_notes
 
 from wingtip import geo
@@ -26,7 +26,9 @@ class CheckpointNoteRequest(BaseModel):
     stops: list[str] = []
     lat: float
     lon: float
-    description: str
+    #: A "how to spot it" sentence, not a document; the file is read whole
+    #: on every notes request.
+    description: str = Field(max_length=500)
 
 
 class GenerateNotesRequest(BaseModel):
@@ -86,7 +88,7 @@ class SeedNoteRequest(BaseModel):
     hop_key: str
     lat: float
     lon: float
-    description: str
+    description: str = Field(max_length=500)
 
 
 @router.post("/api/checkpoint-notes/seed")

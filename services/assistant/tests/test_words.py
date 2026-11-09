@@ -134,3 +134,12 @@ def test_the_debrief_words_carry_the_instructor_note_and_the_planners_422_is_the
     fake_planner.answer("/api/words/debrief/sources", PlannerError(422, "There is no debrief to put into words."))
     resp = client.post("/api/words/debrief", json={"debrief": {"debrief": None}})
     assert resp.status_code == 422 and resp.json()["detail"] == "There is no debrief to put into words."
+
+
+def test_the_material_is_capped_in_sources_and_in_characters():
+    many = [words.Source(id=f"s{i}", label="S", text="x") for i in range(500)]
+    assert words._material("Say it.", many).count("<source ") == words.MOST_SOURCES
+    long = [words.Source(id=f"s{i}", label="S", text="y" * words.SOURCE_CHARS) for i in range(40)]
+    material = words._material("Say it.", long)
+    assert material.count("<source ") == words.MOST_MATERIAL_CHARS // words.SOURCE_CHARS
+    assert len(material) < words.MOST_MATERIAL_CHARS + 2_000

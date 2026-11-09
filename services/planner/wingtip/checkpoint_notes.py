@@ -89,14 +89,20 @@ def _append(route: str, lat: float, lon: float, description: str, pilot: str, pa
             "created_at": datetime.now(timezone.utc).isoformat(timespec="microseconds"),
             "pilot": pilot,
         }
-        write_rows(path, COLUMNS, [*notes, row])
+        # One row per pilot and place: an edit replaces the pilot's earlier
+        # one there, so a loop of saves cannot grow the file or the read
+        # every notes request makes of all of it.
+        kept = [n for n in notes if not (
+            n["route"] == route and n["pilot"] == pilot
+            and distance_nm(n["lat"], n["lon"], lat, lon) < SAME_PLACE_NM)]
+        write_rows(path, COLUMNS, [*kept, row])
     return row, True
 
 
 def save_note(route: str, lat: float, lon: float, description: str, pilot: str | None = None,
               path: Path | None = None) -> dict:
-    """Add one note. Appended, never overwritten: the latest at a place
-    is what find_note returns, and what it said before stays readable.
+    """Save one note, replacing the same pilot's earlier one at that place
+    (the file keeps the latest only, so it cannot be grown without limit).
     `pilot` makes it that pilot's own; None is the shared note."""
     row, _ = _append(route, lat, lon, description, pilot or "", path or NOTES_PATH, if_absent=False)
     return row

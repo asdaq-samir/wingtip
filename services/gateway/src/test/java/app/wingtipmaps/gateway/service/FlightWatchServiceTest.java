@@ -217,6 +217,24 @@ class FlightWatchServiceTest {
     }
 
     @Test
+    void onePilotWatchingManyFlightsCannotTakeTheWholeRun() {
+        List<FlightWatch> due = new java.util.ArrayList<>();
+        for (long id = 1; id <= 8; id++) {
+            due.add(new FlightWatch(id, 1L, DEPART, THEN, NOW));    // one pilot's eight, nearest first
+        }
+        due.add(new FlightWatch(100L, 2L, DEPART, THEN, NOW));      // another's one
+        given(watches.due(any(), any(), any(), any())).willReturn(due);
+
+        service.check(NOW);
+
+        for (long id = 1; id <= FlightWatchService.MOST_A_PILOT_A_RUN; id++) {
+            verify(flights).findById(id);
+        }
+        verify(flights, never()).findById(6L);
+        verify(flights).findById(100L);
+    }
+
+    @Test
     void aRunEndsTheWatchesPastDepartureAndAsksForThoseInTheWindow() {
         service.check(NOW);
 

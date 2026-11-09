@@ -16,7 +16,10 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +60,10 @@ public class FlightWatchService {
      *  planner calls of tens of seconds, and the next run is half an hour
      *  after this one ends. */
     static final int MOST_A_RUN = 50;
+    /** The most of one run's watches a single pilot's may take, so one
+     *  pilot watching fifty flights cannot spend the whole run (each is a
+     *  billed Claude call) and delay everyone else's. */
+    static final int MOST_A_PILOT_A_RUN = 5;
 
     private final FlightWatchRepository watches;
     private final FlightRepository flights;
@@ -138,9 +145,22 @@ public class FlightWatchService {
             log.info("{} flight watch(es) past departure ended", gone);
         }
         List<FlightWatch> due = watches.due(now.minus(AFTER_DEPARTURE), now.plus(BEFORE_DEPARTURE),
-                now.minus(AGAIN_AFTER), PageRequest.of(0, MOST_A_RUN));
-        int changed = 0;
+                now.minus(AGAIN_AFTER), PageRequest.of(0, MOST_A_RUN * 4));
+        // Nearest departure first, as the query orders them, but at most
+        // MOST_A_PILOT_A_RUN of any one pilot's; the rest wait for the
+        // next run, as those past MOST_A_RUN always did.
+        Map<Long, Integer> perPilot = new HashMap<>();
+        List<FlightWatch> taken = new ArrayList<>();
         for (FlightWatch watch : due) {
+            if (taken.size() >= MOST_A_RUN) {
+                break;
+            }
+            if (perPilot.merge(watch.getPilotId(), 1, Integer::sum) <= MOST_A_PILOT_A_RUN) {
+                taken.add(watch);
+            }
+        }
+        int changed = 0;
+        for (FlightWatch watch : taken) {
             try {
                 if (checkOne(watch, now)) {
                     changed++;

@@ -130,6 +130,11 @@ public class PlannerProxyController {
      *  more than app.narrative.MAX_LEGS legs. Every byte is prompt text a
      *  billed Claude call reads. */
     static final int NARRATIVE_BODY_LIMIT = 256 * 1024;
+    /** The largest body sent to /api/words/{kind}: a briefing, a Go / No-Go
+     *  or a debrief's figures, none over a few tens of KB. Each source in
+     *  one becomes prompt text a billed Claude call reads, so a 4 MB body
+     *  would be about 190k tokens a call against a per-call allowance. */
+    static final int WORDS_BODY_LIMIT = 64 * 1024;
     /** The largest body forwarded on any POST. The biggest sent is a flown
      *  track for its debrief: a three-hour flight logged once a second is
      *  about a megabyte. A String @RequestBody read whatever was sent
@@ -404,6 +409,10 @@ public class PlannerProxyController {
         if ("POST".equals(method) && path.equals(NARRATIVE_PATH)
                 && body != null && body.getBytes(StandardCharsets.UTF_8).length > NARRATIVE_BODY_LIMIT) {
             return StreamingProxy.error(413, "a nav log is at most " + (NARRATIVE_BODY_LIMIT / 1024) + " KB");
+        }
+        if ("POST".equals(method) && WORDS_PATTERN.matches(PathContainer.parsePath(path))
+                && body != null && body.getBytes(StandardCharsets.UTF_8).length > WORDS_BODY_LIMIT) {
+            return StreamingProxy.error(413, "a reading to put in words is at most " + (WORDS_BODY_LIMIT / 1024) + " KB");
         }
         PaidFeature paid = "POST".equals(method) ? paidFeatureOf(path) : null;
         if (paid != null) {

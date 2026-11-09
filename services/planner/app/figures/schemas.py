@@ -1,9 +1,9 @@
 """The questions and answers of the four figures' endpoints (app.figures):
 POST /api/debrief, GET /api/diversion, GET /api/holding and POST
 /api/lost-comms."""
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 
 from ..schemas import Wind
 
@@ -120,14 +120,15 @@ class Debrief(BaseModel):
     landing: float
     flown_min: float
     planned_min: float | None
-    legs: list[LegGrade]
-    passes: list[CheckpointPass]
-    patterns: list[PatternEntry]
+    # Capped because a client's debrief goes to the words as sources.
+    legs: list[LegGrade] = Field(max_length=200)
+    passes: list[CheckpointPass] = Field(max_length=200)
+    patterns: list[PatternEntry] = Field(max_length=200)
     profile: list[ProfilePoint]
     planned: list[PlannedStep]
     line: list[LinePoint]
     has_altitude: bool
-    notes: list[str]
+    notes: list[Annotated[str, StringConstraints(max_length=500)]] = Field(max_length=50)
 
 
 class DebriefTolerances(BaseModel):

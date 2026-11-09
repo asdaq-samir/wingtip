@@ -76,6 +76,18 @@ class PaidCallAllowanceTest {
                 .andExpect(jsonPath("$.detail").value("a nav log is at most 256 KB"));
     }
 
+    /** A reading put in words is a few tens of KB: past 64 KB it is
+     *  refused before the allowance or the assistant is asked. */
+    @Test
+    void aReadingPastTheWordsLimitIsA413() throws Exception {
+        String huge = "{\"debrief\":\"" + "x".repeat(PlannerProxyController.WORDS_BODY_LIMIT) + "\"}";
+        finish(post("/api/planner/words/debrief")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(huge))
+                .andExpect(status().isPayloadTooLarge())
+                .andExpect(jsonPath("$.detail").value("a reading to put in words is at most 64 KB"));
+    }
+
     @Test
     void anAssistantQuestionPastTheDaysAllowanceIsA429ThatSaysSo() throws Exception {
         finish(post("/api/planner/assistant").contentType(MediaType.APPLICATION_JSON).content("{}"))

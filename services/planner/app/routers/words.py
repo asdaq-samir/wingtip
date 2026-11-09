@@ -24,7 +24,7 @@ import time
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from wingtip import notams, tfr
 
 from .. import exposure
@@ -108,7 +108,15 @@ class RiskAsk(BaseModel):
     source the words can cite."""
 
     verdict: RiskVerdict
-    pilot: dict | None = None
+    #: Bounded, as it all goes to the model: 50 keys, 20,000 characters.
+    pilot: dict | None = Field(default=None, max_length=50)
+
+    @field_validator("pilot")
+    @classmethod
+    def _pilot_small(cls, v):
+        if v is not None and len(json.dumps(v)) > 20_000:
+            raise ValueError("the pilot's record is at most 20,000 characters")
+        return v
 
 
 class DebriefWordsAsk(BaseModel):

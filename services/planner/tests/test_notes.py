@@ -90,3 +90,14 @@ def test_a_deleted_account_takes_its_own_notes_and_only_those(monkeypatch, tmp_p
     # Nobody named: refused, rather than read as the shared notes' empty pilot.
     assert client.delete("/api/checkpoint-notes/mine").status_code == 422
 
+
+
+def test_a_note_longer_than_500_characters_is_refused(monkeypatch, tmp_path):
+    _setup(monkeypatch, tmp_path)
+    long = "x" * 501
+    assert client.post("/api/checkpoint-notes", json={
+        "departure_ident": "C81", "destination_ident": "KDLH", "lat": 45.0, "lon": -90.0,
+        "description": long}).status_code == 422
+    resp = client.post("/api/checkpoint-notes/seed", json={
+        "hop_key": checkpoint_notes.route_key("C81", "KDLH"), "lat": 45.0, "lon": -90.0, "description": long})
+    assert resp.status_code == 422

@@ -58,7 +58,9 @@ x-anthropic-api-key: &anthropic-api-key ${ANTHROPIC_API_KEY:-}
 #                                 (8888), which answer without
 #                                 authentication -- Jupyter runs code --
 #                                 so a network you control, for as long as
-#                                 you need it. The database is never
+#                                 you need it. The database and the
+#                                 assistant (8085, which holds the Claude
+#                                 key and has no sign-in) are never
 #                                 published beyond loopback.
 #   Front-end work without rebuilding the image:
 #     COMPOSE_PROFILES=web-dev    starts web-build (vite --watch into
@@ -332,7 +334,11 @@ services:
       additional_contexts:
         wingtip-base: service:base
     ports:
-      - "${DEV_PUBLISH_ADDRESS:-127.0.0.1}:8085:8000"
+      # Loopback only, whatever DEV_PUBLISH_ADDRESS says: the assistant
+      # holds the Claude key and has no session, subscription or allowance
+      # of its own (those are the gateway's), which reaches it over the
+      # compose network.
+      - "127.0.0.1:8085:8000"
     mem_limit: 256m
     volumes:
       - .:/workspace
