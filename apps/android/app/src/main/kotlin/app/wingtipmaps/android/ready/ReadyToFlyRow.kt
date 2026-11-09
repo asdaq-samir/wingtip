@@ -31,7 +31,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -121,12 +120,12 @@ internal fun ReadyActionRow(item: EngineContract.ReadyItem, fixer: ReadyFixer, b
         Modifier.fillMaxWidth().heightIn(min = WingtipSize.TapTarget).then(tap),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
     ) {
-        FindingIcon(BriefModel.finding(item.finding), Modifier.size(20.dp))
+        FindingIcon(BriefModel.finding(item.finding), Modifier.size(WingtipSpace.Xl))
         Text(
             item.line, color = if (tappable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             maxLines = if (largeType()) 3 else 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
         )
-        if (busy) CircularProgressIndicator(Modifier.size(WingtipSpace.Lg), strokeWidth = 2.dp)
+        if (busy) CircularProgressIndicator(Modifier.size(WingtipSpace.Lg))
     }
 }
 

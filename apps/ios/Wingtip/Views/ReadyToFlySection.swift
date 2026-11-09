@@ -28,7 +28,7 @@ struct ReadyToFlyRows: View {
             DisclosureGroup(isExpanded: $allOpen) {
                 ForEach(answer.items, id: \.key) { item in
                     Label {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                             Text(item.line).font(WingtipType.row)
                             Text(item.detail).font(WingtipType.detail).foregroundStyle(.secondary)
                             Text(item.source).font(WingtipType.note).foregroundStyle(.secondary)
@@ -174,7 +174,7 @@ struct NotamsSection: View {
     }
 
     private func row(_ notam: APIRankedNotam) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xs) {
             Text([notam.field, notam.keyword].compactMap { $0 }.joined(separator: " · ")).font(WingtipType.row.weight(.semibold))
             Text(notam.raw).font(WingtipType.note.monospaced()).foregroundStyle(.secondary)
         }
