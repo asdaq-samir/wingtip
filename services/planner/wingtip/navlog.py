@@ -70,11 +70,6 @@ def legs(fix_list: list, altitude_ft: float, profile: dict, fcst_hr: str = "06")
     return engine("navlog_legs", fixes=flown, altitude_ft=altitude_ft, profile=profile, air=air)
 
 
-def leg_between(a: dict, b: dict, altitude_ft: float, profile: dict, fcst_hr: str = "06") -> dict:
-    """The leg between two fixes, named after them on "from" and "to"."""
-    return legs([a, b], altitude_ft, profile, fcst_hr)[0]
-
-
 def leg_from(start: tuple, end: tuple, altitude_ft: float, profile: dict, fcst_hr: str = "06") -> dict:
     """The leg from one (lat, lon) to another (the diversion's), its time
     and fuel null where it cannot be flown."""

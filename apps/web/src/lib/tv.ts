@@ -8,7 +8,7 @@ import { closeTopmost } from "./backNavigation";
  * so the platform is kept for the visit; a TV's own browser is known by
  * its agent.
  */
-export type TvPlatform = "tizen" | "webos";
+type TvPlatform = "tizen" | "webos";
 
 const KEY = "wingtip.tv";
 

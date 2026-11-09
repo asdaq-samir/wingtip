@@ -100,7 +100,7 @@ export function clearedRoute(text: string, found: Found, planned: ClearanceRoute
 }
 
 /** The route cleared held against the one filed. */
-export interface RouteDifference {
+interface RouteDifference {
   same: boolean;
   /** Each way it differs ("to KHIB instead of KDLH", "adds GEP"), none
    *  where it is the same. */

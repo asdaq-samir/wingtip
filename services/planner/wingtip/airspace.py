@@ -404,12 +404,23 @@ def own_class_b(polygons: list, start_point, end_point) -> set[str]:
     }
 
 
-def max_airspace_altitude_msl(route_start: tuple, route_end: tuple, shp_path) -> float | None:
-    """The highest altitude the route can cruise at while staying beneath
-    every Class B shelf it laterally passes through, in feet MSL -- i.e.
-    transiting *under* the Bravo rather than requesting a clearance
-    through it, which is the usual choice for a light aircraft. Returns
-    None if the route crosses no Class B at all, which is most routes.
+def airspace_ceiling_profile(route_start: tuple, route_end: tuple, fixes: list, shp_path) -> list:
+    """The airspace ceiling of each leg of the nav log -- the lowest
+    Class B shelf floor the leg between consecutive `fixes` ((lat, lon)
+    pairs, the route's ends included) passes laterally under, or None
+    where it passes under none. Where the whole route's ceiling is the
+    lowest shelf anywhere along it, this is the shelf over each leg, so
+    a route can cruise low under the Bravo by the departure and climb
+    once past it. The route's own surface areas are excluded on the
+    whole route's ends: a leg that
+    starts at the departure begins inside that airport's airspace just
+    as the route does -- and with them the whole Class B they are part
+    of (own_class_b): a route into or out of it is cleared through it.
+
+    A leg's ceiling is the highest it can cruise staying beneath every
+    Class B shelf it laterally passes through -- transiting *under* the
+    Bravo rather than asking for a clearance through it, the usual choice
+    for a light aircraft.
 
     Class C and D impose nothing here. Entering either needs only two-way
     radio communication established, which is routine, so they are
@@ -439,26 +450,6 @@ def max_airspace_altitude_msl(route_start: tuple, route_end: tuple, shp_path) ->
     not the surface -- C81/Grayslake sits laterally under Chicago's Class
     B, whose floor there is a few thousand feet, so it still imposes a
     ceiling exactly as before.
-
-    The same rule as airspace_ceiling_profile, over the route as its one
-    leg -- it was a second copy of the Class B filter and the own-surface
-    exclusion, which had to change in both places.
-    """
-    return airspace_ceiling_profile(route_start, route_end, [route_start, route_end], shp_path)[0]
-
-
-def airspace_ceiling_profile(route_start: tuple, route_end: tuple, fixes: list, shp_path) -> list:
-    """max_airspace_altitude_msl for each leg of the nav log -- the lowest
-    Class B shelf floor the leg between consecutive `fixes` ((lat, lon)
-    pairs, the route's ends included) passes laterally under, or None
-    where it passes under none. Where the whole route's ceiling is the
-    lowest shelf anywhere along it, this is the shelf over each leg, so
-    a route can cruise low under the Bravo by the departure and climb
-    once past it. The route's own surface areas are excluded on the
-    whole route's ends, as in max_airspace_altitude_msl: a leg that
-    starts at the departure begins inside that airport's airspace just
-    as the route does -- and with them the whole Class B they are part
-    of (own_class_b): a route into or out of it is cleared through it.
     """
     from .geo import corridor_bbox
 

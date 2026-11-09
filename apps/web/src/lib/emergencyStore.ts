@@ -3,7 +3,7 @@ import { create } from "zustand";
 /** Where the emergency assistant was opened from: the flying mode's
  *  Emergency, the pilot's own words ("mayday", "engine failure",
  *  "emergency", components/pilotCommand), or the emergency checklists. */
-export type EmergencyFrom = "flying" | "voice" | "checklist";
+type EmergencyFrom = "flying" | "voice" | "checklist";
 
 /**
  * Whether the emergency assistant is open, and from where: one place any

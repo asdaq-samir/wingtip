@@ -2,8 +2,8 @@ import type { ExpressionSpecification } from "maplibre-gl";
 import { callEngine } from "../../../../lib/engine/engine";
 import { M_PER_FT } from "./geometry";
 
-export const SV_AMBER = "rgba(255, 176, 0, 0.75)";
-export const SV_RED = "rgba(215, 0, 21, 0.8)";
+const SV_AMBER = "rgba(255, 176, 0, 0.75)";
+const SV_RED = "rgba(215, 0, 21, 0.8)";
 const CLEAR = "rgba(0, 0, 0, 0)";
 
 /**

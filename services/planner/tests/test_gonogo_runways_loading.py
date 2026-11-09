@@ -6,7 +6,7 @@ import pytest
 from wingtip.aircraft import load_aircraft_profile
 
 from app.gonogo import ask
-from app.gonogo.runways import density_altitude_ft, runway_checks, runway_flown
+from app.gonogo.runways import runway_checks
 from app.gonogo.weight_balance import balance, default_load
 
 
@@ -83,15 +83,6 @@ def test_between_its_weights_and_its_one_landing_table_at_any_weight():
     assert (landing["ground_roll_ft"], landing["total_ft"]) == (630, 1420)
 
 
-def test_density_altitude_is_the_pressure_altitude_on_a_standard_day_and_higher_the_hotter_it_is():
-    assert density_altitude_ft(0, 15) == pytest.approx(0, abs=1e-6)
-    # ISA at 5,000 ft is 5.1 °C: at 25 °C the rule of thumb's 120 ft a
-    # degree gives 7,390 ft; the atmosphere itself, 7,260.
-    assert density_altitude_ft(5000, 5.094) == pytest.approx(5000, abs=5)
-    assert 7200 < density_altitude_ft(5000, 25) < 7400
-    assert density_altitude_ft(2000, -10) < 2000
-
-
 def test_a_fields_air_off_the_altimeter_and_a_standard_days_temperature_where_none_is_reported():
     # A thousand feet an inch under 29.92; ISA at 900 ft is 13.2 °C.
     air = field_air(900, 29.42, 25)
@@ -163,36 +154,6 @@ def test_checks_the_runway_the_pilot_picked_whatever_the_wind_with_the_wind_on_t
 
 def test_is_not_worked_out_without_the_pohs_tables():
     assert runway_checks({**C172, "takeoff": None}, BRIEFING, FIELDS, 2550, 2400) == []
-
-
-def flown_runway(pairs: list[tuple[str, float]], length: int, wind: dict | None = None, closed: bool = False) -> dict:
-    return {"closed": closed, "ends": "/".join(p[0] for p in pairs), "length_ft": length, "lighted": True, "surface": "ASP",
-            "turf": [], "width_ft": 75, "runway_ends": [{"ident": i, "heading_true_deg": h, "traffic": "left"} for i, h in pairs],
-            "wind": wind}
-
-
-# A long runway into the wind and a short one across it.
-FIELD = [
-    flown_runway([("09", 90), ("27", 270)], 6000, {"end": "27", "headwind_kt": 12, "crosswind_kt": 1, "gust_crosswind_kt": None}),
-    flown_runway([("18", 180), ("36", 360)], 2400, {"end": "36", "headwind_kt": 0, "crosswind_kt": -12, "gust_crosswind_kt": None}),
-]
-
-
-def test_runway_flown_the_pilots_pick_where_they_made_one_even_off_the_wind():
-    flown = runway_flown(FIELD, "36")
-    assert flown["end"]["ident"] == "36"
-    assert flown["runway"]["length_ft"] == 2400
-
-
-def test_runway_flown_else_the_runway_most_nearly_into_the_wind():
-    assert runway_flown(FIELD, None)["end"]["ident"] == "27"
-    assert runway_flown(FIELD, "NONE")["end"]["ident"] == "27"
-
-
-def test_a_pick_on_a_closed_runway_or_one_the_field_doesnt_have_falls_back_to_the_winds():
-    closed = [FIELD[0], flown_runway([("18", 180), ("36", 360)], 2400, None, True)]
-    assert runway_flown(closed, "36")["end"]["ident"] == "27"
-    assert runway_flown(FIELD, "4")["end"]["ident"] == "27"
 
 
 PICKS = {"pattern": {"C81": "24", "UES": "10", "KDLH": "NONE"}, "takeoff": {"UES": "28"}}

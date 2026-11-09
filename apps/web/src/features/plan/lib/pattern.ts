@@ -98,7 +98,7 @@ export interface WindPick {
 }
 
 /** A report's wind: true, as a METAR's is, in knots. */
-export interface ReportedWind {
+interface ReportedWind {
   station: string;
   distanceNm: number;
   dirTrueDeg: number | null | undefined;
@@ -147,7 +147,7 @@ export function runwayNumber(ident: string): string {
   return callEngine("gonogo_runway_number", { ident });
 }
 
-export interface Entry {
+interface Entry {
   /** Where the airplane comes from, as a direction from the field. */
   from: string;
   /** Whether that is the pattern's side of the runway. */

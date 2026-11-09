@@ -54,7 +54,7 @@ export interface RadioPhase {
   calls: RadioCall[];
 }
 
-export interface RadioInput {
+interface RadioInput {
   callSign: string;
   /** The airports landed at, in order, with the briefing's facilities. */
   airports: { ident: string; facilities: Facilities }[];

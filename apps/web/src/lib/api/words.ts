@@ -32,13 +32,13 @@ export interface WordsAnswer {
   coverage_since?: string | null;
 }
 
-export interface DebriefWordsAnswer extends WordsAnswer {
+interface DebriefWordsAnswer extends WordsAnswer {
   /** A line for the pilot's instructor, where the reading has one. */
   instructor_note: string | null;
 }
 
 /** The route and its time, as /api/briefing is asked (usePlan). */
-export interface WordsRoute {
+interface WordsRoute {
   dep: string;
   dest: string;
   stops: string[];
@@ -49,14 +49,14 @@ export interface WordsRoute {
 /** The weather's, with the flight's time en route and its legs, the
  *  same as the briefing is asked with once the nav log has them
  *  (briefingLegs): null until it does. */
-export interface WeatherWordsRequest extends WordsRoute {
+interface WeatherWordsRequest extends WordsRoute {
   ete_min: number | null;
   fixes: string | null;
   /** Each leg's minutes, comma-joined, as briefingLegs writes them. */
   leg_min: string | null;
 }
 
-export interface RiskWordsRequest {
+interface RiskWordsRequest {
   /** The Go / No-Go as the Brief has it (lib/verdict): its line and each
    *  finding. */
   verdict: { finding: string; words: string; items: { key: string; label: string; finding: string; detail: string }[] };

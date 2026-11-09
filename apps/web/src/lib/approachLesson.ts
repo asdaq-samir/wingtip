@@ -43,8 +43,6 @@ export function approachCategory(vrefKt: number | null | undefined, vsoKt?: numb
 
 /** Which minimums an approach is flown to, by its kind (AIM 5-4-5 and
  *  FAA-H-8083-16B, chapter 4): a DA, an MDA, or either on an RNAV (GPS). */
-export type MinimumsKind = EngineAnswer<"approach_minimums_kind">;
-
 /** The approach's own fixes in the order flown: its missed approach's left out. */
 export function approachFixes(drawing: ProcedureDrawing): ProcedureFix[] {
   return drawing.fixes.filter(f => !f.missed);
@@ -80,7 +78,7 @@ export function stopwatch(seconds: number): string {
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }
 
-export type BriefItem = EngineAnswer<"approach_brief">[number];
+type BriefItem = EngineAnswer<"approach_brief">[number];
 
 /**
  * The approach briefing, the way an instructor has a student brief it
@@ -125,7 +123,7 @@ export function coachingSteps(input: LessonInput, gsKt: number): CoachStep[] {
 
 /** A point of the approach's side view: a fix's distance along the line
  *  from the first and the altitude it is crossed at. */
-export interface ProfileMark {
+interface ProfileMark {
   ident: string;
   alongNm: number;
   ft: number | null;
@@ -147,7 +145,7 @@ export function lessonProfile(drawing: ProcedureDrawing): { marks: ProfileMark[]
 
 /** A question: `answer` is the right choice's index, `explain` where the
  *  answer is, said once a choice is made. */
-export type QuizQuestion = EngineAnswer<"approach_quiz">[number];
+type QuizQuestion = EngineAnswer<"approach_quiz">[number];
 
 /**
  * The lesson asked back, its answers hidden: multiple choice made from the

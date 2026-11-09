@@ -78,6 +78,7 @@
     "globals": "^16.4.0",
     "jsdom": "^30.1.2",
     "json-schema-to-typescript": "15.0.4",
+    "knip": "5.88.1",
     "openapi-typescript": "7.13.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",

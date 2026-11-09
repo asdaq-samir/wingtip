@@ -5,7 +5,7 @@ import { ListGroup } from "./GroupedList";
 import { TEXT } from "../lib/text";
 
 /** How many rows a section shows before its title opens the rest. */
-export const FIRST_ROWS = 3;
+const FIRST_ROWS = 3;
 
 /**
  * A titled section of a card that shows its first three rows, its title

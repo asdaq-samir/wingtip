@@ -100,11 +100,6 @@ def test_an_obstacle_just_behind_the_start_counts_for_the_first_leg(ground, tmp_
     assert _floors(START, END, [0.0, 20.0, TOTAL_NM], faa_cache_dir=tmp_path) == [3400, 2000]
 
 
-def test_min_safe_altitude_is_the_highest_floor(ground, tmp_path):
-    ground(_dof_line(*_at(20.0), amsl_ft=2350))
-    assert terrain.min_safe_altitude_msl(START, END, faa_cache_dir=tmp_path) == 3400
-
-
 @pytest.fixture
 def towns(monkeypatch):
     """Over a town (14 CFR 91.119(b)) wherever `town(lat, lon)` says so,

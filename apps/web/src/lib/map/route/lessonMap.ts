@@ -10,7 +10,7 @@ import type { LatLon } from "../../geo";
  * apart from the dry run's replay (features/plan/map/pastFlight), so a lesson
  * flown leaves the route's own dry run where it was.
  */
-export interface LessonMap {
+interface LessonMap {
   drawing: ProcedureDrawing | null;
   focus: LessonFocus;
   /** The airplane's way to where the step has it, flown once each time

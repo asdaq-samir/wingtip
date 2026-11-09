@@ -20,7 +20,7 @@ import { create } from "zustand";
  */
 
 /** A system problem: the line's words, and how to ask again where it can. */
-export interface SystemProblem {
+interface SystemProblem {
   id: string;
   title: string;
   retry?: () => void;
@@ -43,7 +43,7 @@ export function clearProblem(id: string) {
 }
 
 /** A one-off failure, for the alert: one at a time, the latest. */
-export interface FailedAction {
+interface FailedAction {
   title: string;
   description?: string | null;
 }

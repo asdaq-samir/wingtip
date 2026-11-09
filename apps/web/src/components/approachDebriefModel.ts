@@ -130,7 +130,7 @@ export function attemptsAt(d: ProcedureDrawing, points: TrackPoint[]): { faf: nu
   return callEngine("approach_attempts", { drawing: d, points: enginePoints(points) });
 }
 
-export interface DebriefOptions {
+interface DebriefOptions {
   /** The attempt to debrief (attemptsAt); the first where none is given. */
   attempt?: { faf: number; from: number; to: number };
   /** The pilot's DA or MDA from the plate, ft MSL: the CIFP has no

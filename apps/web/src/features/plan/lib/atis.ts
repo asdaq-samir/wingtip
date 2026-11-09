@@ -16,8 +16,8 @@ import { altFt, reportedDirection } from "../../../lib/format";
 /** A broadcast's figures as the engine reads them (read_atis): a figure
  *  not heard is null. The shapes are the engine's contract's. */
 export type AtisReading = EngineAnswer<"read_atis">;
-export type AtisWind = NonNullable<AtisReading["wind"]>;
-export type AtisLayer = AtisReading["sky"][number];
+type AtisWind = NonNullable<AtisReading["wind"]>;
+type AtisLayer = AtisReading["sky"][number];
 
 /** The broadcast read by the engine (the rule read_atis). */
 export function readAtis(text: string): AtisReading {
@@ -70,7 +70,7 @@ export function skyWords(sky: AtisLayer[]): string {
 }
 
 /** The runways as said: both ways, or landing and departing apart. */
-export function runwayWords(r: AtisReading["runways"]): string | null {
+function runwayWords(r: AtisReading["runways"]): string | null {
   const same = r.landing.length > 0 && r.landing.join() === r.departing.join();
   if (same) return r.landing.join(", ");
   const parts = [];
@@ -119,7 +119,7 @@ const LONGEST_MS = 75000;
  *  failure in a pilot's words, why it did not run or stopped short where
  *  that is no failure (`notice`), and the outside input it was heard
  *  through, by its name. */
-export interface AtisHeard {
+interface AtisHeard {
   text: string;
   error?: string;
   notice?: string;

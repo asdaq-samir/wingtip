@@ -5,13 +5,13 @@ import { duration } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
 
 /** One of the flight's figures: its name over it, its unit after it. */
-export interface Figure {
+interface Figure {
   name: string; value: string; unit?: string; testId?: string;
   /** Red: the fuel required past what the tanks hold. */
   alert?: boolean;
 }
 
-export interface TripInput {
+interface TripInput {
   totals: Totals | null;
   /** Before the nav log's totals: the course's distance and the book
    *  cruise speed and burn over it (see FlightLine). */

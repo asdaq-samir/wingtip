@@ -16,7 +16,7 @@ import { bearing, nm as miles, one } from "../../format";
 export const HOLD_MS = 400;
 /** How far either finger may move in that time and still be held still,
  *  in points: a finger at rest on glass wanders a few. More is a pinch. */
-export const STILL_PX = 10;
+const STILL_PX = 10;
 
 type Point = { x: number; y: number };
 
@@ -42,7 +42,7 @@ export function middleCourse(a: LatLon, b: LatLon): { trueDeg: number; middle: L
  *  airplane's book cruise, as ForeFlight's, not a wind-corrected one. */
 export const eteMinutes = (nm: number, tasKt: number) => (nm / tasKt) * 60;
 
-export interface RulerWords {
+interface RulerWords {
   /** The course from the left end to the right, with its arrow: "134°M →". */
   toRight: string;
   /** The course back from the right end to the left: "← 314°M". */

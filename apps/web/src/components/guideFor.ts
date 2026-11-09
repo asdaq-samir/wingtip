@@ -12,7 +12,7 @@ export const ONE_AT_A_TIME = "One input at a time: a headset paired to the phone
  *  which only a ground test tells; or a voice with the way to the radio.
  *  Nothing where the catalogue can't tell (components/audioGear), the phone's own
  *  microphone included. */
-export interface Guide {
+interface Guide {
   hears: "radio" | "maybe" | "voice";
   line: string;
   /** Under a tap: for a voice the way to the radio, for a maybe how to

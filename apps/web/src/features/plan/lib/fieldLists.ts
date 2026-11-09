@@ -17,9 +17,9 @@ import { proceduresOf, proceduresParam, sameField, type PickedProcedure } from "
 import { patternsOf, patternsParam } from "../../../lib/trafficPattern";
 
 export const FIELD_LIST_KEYS = ["pattern", "takeoff", "procs", "altitudes", "cross", "ground", "holds"] as const;
-export type FieldListKey = (typeof FIELD_LIST_KEYS)[number];
+type FieldListKey = (typeof FIELD_LIST_KEYS)[number];
 
-export interface FieldLists {
+interface FieldLists {
   pattern: Map<string, string>;
   takeoff: Map<string, string>;
   procs: PickedProcedure[];
@@ -78,7 +78,7 @@ export function renamedFieldLists(lists: FieldLists, from: string, to: string): 
   };
 }
 
-export type ProcedureKind = "approach" | "arrival" | "departure";
+type ProcedureKind = "approach" | "arrival" | "departure";
 
 /**
  * The lists kept for a route, and only what still fits it: picks at a

@@ -4,7 +4,7 @@ import { altFt } from "../../format";
 
 /** The figures of a volume's card (AirspaceCard), as the pilot reads
  *  them: its name, floor, ceiling and hours. */
-export type AirspaceFacts = { name: string; floor: string; ceiling: string; hours: string | null };
+type AirspaceFacts = { name: string; floor: string; ceiling: string; hours: string | null };
 
 /** The FAA's boilerplate remark on a part-time volume, which says no more
  *  than its hours code does. */

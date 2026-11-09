@@ -3,7 +3,7 @@ import type { GonogoFactor } from "./engine/contract";
 import type { RiskFactor } from "./frat";
 
 /** A factor as the engine answers it, with its mark (the contract's). */
-export type EngineFactor = GonogoFactor;
+type EngineFactor = GonogoFactor;
 
 /** A factor as the pages read it: `stop` only where it is one, the mark
  *  theirs to draw (RiskAssessment), a self check's group kept. */

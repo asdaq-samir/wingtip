@@ -96,4 +96,3 @@ const rule = {
 };
 
 export default { rules: { layers: rule } };
-export { problem };

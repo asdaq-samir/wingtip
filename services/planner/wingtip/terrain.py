@@ -108,33 +108,6 @@ def _elevations_m(points: list) -> dict:
         done.set()
 
 
-def min_safe_altitude_msl(
-    route_start: tuple,
-    route_end: tuple,
-    sample_interval_nm: float = SAMPLE_INTERVAL_NM,
-    faa_cache_dir=DEFAULT_FAA_CACHE_DIR,
-) -> float:
-    """MEF-style floor for the route, in feet MSL -- see module docstring
-    for the clearances.
-
-    Terrain is sampled at fixed intervals along the direct route line
-    (reusing geo.destination_point the same way wingtip.elevation's ring
-    sampling does) via wingtip.elevation.get_elevations_m -- already
-    batched/cached/parallel, so this is just handing it a new list of
-    points. Obstacles come from wingtip.faa_data.load_obstacles, restricted
-    to the engine's 5 nm corridor about the direct line (a wider corridor than
-    the tight pilotage corridor used elsewhere in this project, since
-    terrain/obstacle awareness should tolerate some lateral track
-    deviation) -- their FAA-reported AMSL height is used directly rather
-    than combining a separately-sampled terrain point with obstacle AGL,
-    since the DOF data already gives the obstacle's true top elevation.
-    """
-    total_nm = geo.distance_nm(*route_start, *route_end)
-    return max(segment["floor_ft"] for segment in floor_profile(
-        route_start, route_end, [0.0, total_nm], sample_interval_nm, faa_cache_dir,
-    ))
-
-
 def floor_profile(
     route_start: tuple,
     route_end: tuple,
@@ -147,7 +120,7 @@ def floor_profile(
     `vfr_floors` answer, a dict a segment): one per consecutive pair
     of `breaks_nm` (along-track distances from route_start, ascending,
     from 0 to the route's length -- a nav log's fixes, say). The same
-    samples, obstacles and margins as min_safe_altitude_msl, read once
+    samples, obstacles and margins for every segment, read once
     for the whole route and split by along-track distance, so a leg
     under a low airspace shelf gets its own floor rather than the whole
     route's: that is what lets a nav log step down under the shelf and

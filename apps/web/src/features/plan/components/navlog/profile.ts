@@ -1,9 +1,7 @@
 import { callEngine, type EngineAnswer } from "../../../../lib/engine/engine";
 import type { NavLogRow } from "./rows";
 
-export type PlanProfile = EngineAnswer<"plan_profile">;
-export type ProfilePoint = PlanProfile["points"][number];
-export type ProfileMark = PlanProfile["marks"][number];
+type PlanProfile = EngineAnswer<"plan_profile">;
 
 /**
  * The plan's altitudes as a line over the ground, from the nav log's

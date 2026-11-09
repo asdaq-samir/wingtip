@@ -18,15 +18,6 @@ pub struct Minimums {
     pub wind_kt: Option<f64>,
 }
 
-/// The choices each minimum is picked from (menus, not sliders), the
-/// web's MINIMUM_CHOICES: the native app's menus read the same.
-pub const MINIMUM_CHOICES: [(&str, &[i64]); 4] = [
-    ("ceiling_ft", &[1000, 1500, 2000, 2500, 3000, 4000, 5000]),
-    ("visibility_sm", &[3, 4, 5, 6, 8, 10]),
-    ("crosswind_kt", &[5, 8, 10, 12, 15, 17, 20]),
-    ("wind_kt", &[10, 15, 20, 25, 30, 35]),
-];
-
 // A runway's wind and the crosswind it is judged by are the runway
 // module's (crate::runway::wind, lib/wind), shared with the runway pick,
 // the runway fit and the check.

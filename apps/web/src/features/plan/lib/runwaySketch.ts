@@ -4,7 +4,7 @@ import { FT_PER_NM, rad } from "../../../lib/geo";
 /** Nautical miles in a degree of latitude. */
 const NM_PER_DEG = 60;
 
-export interface Strip {
+interface Strip {
   /** Its two ends, in nautical miles east and north of the field. */
   a: [number, number];
   b: [number, number];

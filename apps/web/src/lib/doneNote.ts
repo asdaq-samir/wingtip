@@ -9,7 +9,7 @@ import { useSyncExternalStore } from "react";
  * just tapped -- as the place, or the one passed; DoneNotes draws the
  * word beside it for two seconds, and says it to a screen reader.
  */
-export type DoneNote = { id: number; words: string; detail?: string; at: { x: number; top: number; bottom: number } };
+type DoneNote = { id: number; words: string; detail?: string; at: { x: number; top: number; bottom: number } };
 
 const DURATION_MS = 2000;
 let notes: DoneNote[] = [];

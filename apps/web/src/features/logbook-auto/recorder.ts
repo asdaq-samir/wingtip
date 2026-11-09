@@ -33,9 +33,9 @@ export const recorded = keptStore<Recorded>(KEY, { points: [], askedTo: null });
 /** A point every 5 s: four hours are under 3,000 points, a light
  *  airplane's track keeps its shape (the engine's ground speeds read ten
  *  seconds round each point), and the gateway's 5,000 is never reached. */
-export const EVERY_MS = 5_000;
+const EVERY_MS = 5_000;
 /** The most points kept: the planner takes 5,000 at most. */
-export const MOST_POINTS = 5_000;
+const MOST_POINTS = 5_000;
 
 /** A fix from own ship into the recorded track, at most one per EVERY_MS;
  *  false where the browser would not keep it (private window, full). */

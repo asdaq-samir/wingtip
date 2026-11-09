@@ -9,7 +9,7 @@
 import type { RunwayRvr } from "../../../lib/api/types";
 import { callEngine } from "../../../lib/engine/engine";
 
-export interface RvrRow {
+interface RvrRow {
   runway: string;
   /** "6000+ · — · 6000+": touchdown, midpoint, rollout, ft. */
   readings: string;

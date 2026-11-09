@@ -35,7 +35,7 @@ export function clock(iso: string, timeZone?: string): string {
 }
 
 /** The zone a time is written in, "CST", as the device names it. */
-export function zoneName(iso: string, timeZone?: string): string {
+function zoneName(iso: string, timeZone?: string): string {
   const parts = new Intl.DateTimeFormat("en-US", { timeZoneName: "short", timeZone }).formatToParts(new Date(iso));
   return parts.find(p => p.type === "timeZoneName")?.value ?? "";
 }

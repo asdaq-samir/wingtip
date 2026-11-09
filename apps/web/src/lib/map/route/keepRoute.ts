@@ -33,7 +33,7 @@ import { kindCycle, tileUrl } from "../sources/tiles";
 export const CORRIDOR_NM = 10;
 const CONCURRENCY = 6;
 
-export interface KeepProgress {
+interface KeepProgress {
   done: number;
   total: number;
   failed: number;
@@ -201,7 +201,7 @@ async function keepRouteCharts(
  * had got to. Which download it is (`key`) is the route, the chart, the
  * edition and the revision -- the tile URLs it fetches.
  */
-export type KeepJob =
+type KeepJob =
   | { status: "idle" }
   | { status: "keeping"; key: string; progress: KeepProgress | null }
   | { status: "kept"; key: string; progress: KeepProgress }

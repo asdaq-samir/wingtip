@@ -37,7 +37,7 @@ import type { WorkspacePieces } from "./workspace";
  */
 const TrainWorkspace = lazy(loadTrainWorkspace);
 
-export type Mode = "pilot" | "dev";
+type Mode = "pilot" | "dev";
 
 /** What differs between the two pages: the words, the workspace, and
  *  the route to start on when the address names none (the planner

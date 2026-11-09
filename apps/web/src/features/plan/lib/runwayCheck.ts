@@ -49,7 +49,7 @@ export interface RunwayDistance extends Distances {
   beyond: boolean;
 }
 
-export interface RunwayCheck {
+interface RunwayCheck {
   field: Airport;
   /** "Departure", "Stop" or "Destination". */
   role: string;

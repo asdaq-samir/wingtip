@@ -10,7 +10,7 @@ import type { AirportSearchRow } from "./useAirportSearch";
  *  the idents straight after the size. */
 type Entry = [ident: string, name: string, town: string, state: string, size: number, ...rest: (number | string)[]];
 
-export interface AirportIndex {
+interface AirportIndex {
   rows: Entry[];
   /** Each row's latitude and longitude; NaN where the index does not say. */
   lat: Float64Array;

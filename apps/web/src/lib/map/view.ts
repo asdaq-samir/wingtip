@@ -1,10 +1,6 @@
-/** A pointer that hovers: a name shows under it. A finger's tap is the
- *  card's, not a tooltip's. */
-export const hovers = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(hover: hover)").matches;
-
 /** The map's view as its four edges: MapLibre's LngLatBounds, or any
  *  bounds that says them. */
-export type Bounds = { getSouth(): number; getWest(): number; getNorth(): number; getEast(): number };
+type Bounds = { getSouth(): number; getWest(): number; getNorth(): number; getEast(): number };
 
 /** A grid box, on the half-degree grid rounded outward, and its key: the
  *  planner's questions for the view (useGlView), cached by it. */

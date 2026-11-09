@@ -13,7 +13,7 @@
  */
 
 /** The model the winds aloft come from: NOAA/NCEP's GFS. */
-export const WINDS_MODEL = "GFS";
+const WINDS_MODEL = "GFS";
 
 /** Beside a wind aloft or its heading: "modelled (GFS)". */
 export const WINDS_MODELLED = `modelled (${WINDS_MODEL})`;

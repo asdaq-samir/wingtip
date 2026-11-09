@@ -25,7 +25,7 @@ import { altFt } from "../../../lib/format";
 
 const HOUR_MS = 3_600_000;
 /** How many hours after Now: a TAF covers 24 or 30 (AC 00-45H). */
-export const HOURS = 24;
+const HOURS = 24;
 /** How far ahead the sentence looks: a flight's day, not the TAF's end. */
 const SENTENCE_HOURS = 12;
 

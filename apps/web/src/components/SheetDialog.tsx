@@ -12,7 +12,7 @@ import { useIsMobile } from "../hooks/use-mobile";
 import { useNavEdge } from "../hooks/use-nav-edge";
 
 /** What the dialog is for: Delete, Set, Sign in. */
-export interface SheetDialogAction {
+interface SheetDialogAction {
   label: ReactNode;
   /** What it does; the dialog stays open until its caller closes it.
    *  Without it, and without a form, it only closes the dialog: OK. */

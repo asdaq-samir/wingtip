@@ -309,9 +309,9 @@ def test_out_of_glide_is_the_water_beyond_a_glide_of_land():
     flat = water.is_water
     try:
         water.is_water = lambda lats, lons: (np.asarray(lons) > 1.0) & (np.asarray(lons) < 1.5)
-        share = water.out_of_glide(0.0, 0.0, 4, 10, 0.25, height_ft=4000.0, speed_kt=110.0)
+        share = water.cell_shares(water.out_of_glide_samples(0.0, 0.0, 4, 10, 0.25, height_ft=4000.0, speed_kt=110.0), 4, 10)
         # Too slow to be flying (under the engine's 40 kt): no glide, all of it out of reach.
-        stopped = water.out_of_glide(0.0, 0.0, 4, 10, 0.25, height_ft=4000.0, speed_kt=0.0)
+        stopped = water.cell_shares(water.out_of_glide_samples(0.0, 0.0, 4, 10, 0.25, height_ft=4000.0, speed_kt=0.0), 4, 10)
     finally:
         water.is_water = flat
     assert share[:, 0].max() == 0.0                      # dry land

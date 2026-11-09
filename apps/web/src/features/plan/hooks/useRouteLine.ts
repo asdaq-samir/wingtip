@@ -17,7 +17,7 @@ const WAY_CHIP_SHARES = [0.2, 0.4, 0.6, 0.8];
 
 /** A card of FPL's route line: a way, its time, miles and fuel, and what
  *  it meets. */
-export interface WayCard { key: string; label: string; warning: string | null; time: string | null; nm: number | null; gal: number | null }
+interface WayCard { key: string; label: string; warning: string | null; time: string | null; nm: number | null; gal: number | null }
 
 /** What a chip's way meets, said on it in amber: the worst it meets
  *  first -- airspace a pilot may not enter, then storms and high ground,

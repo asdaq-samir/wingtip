@@ -12,7 +12,7 @@ import { callEngine } from "../../../../lib/engine/engine";
 
 export type Station = Briefing["forecast"]["stations"][number];
 
-export interface Place {
+interface Place {
   ident: string;
   role: string;
   lat: number;

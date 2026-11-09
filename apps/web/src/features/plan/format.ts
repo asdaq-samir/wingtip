@@ -156,7 +156,7 @@ export function surfaceName(surface: string | null | undefined): string | null {
 /** A runway's wind in its parts, signed as wingtip.runway_wind's are (a
  *  tailwind negative, a crosswind from the right positive): the planner's
  *  Runway["wind"] and features/plan/lib/pattern's WindPick alike. */
-export interface WindParts {
+interface WindParts {
   headwindKt: number;
   crosswindKt: number;
   gustCrosswindKt: number | null;

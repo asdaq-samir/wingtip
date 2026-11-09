@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../lib/api/client";
 import type { Briefing, IcingForecast, Leg } from "../../../lib/api/types";
 
-export interface IcingWhere {
+interface IcingWhere {
   /** Under IFR alone: VFR stays clear of cloud (14 CFR 91.155), where
    *  structural icing forms. */
   ifr: boolean;

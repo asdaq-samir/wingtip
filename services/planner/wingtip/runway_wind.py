@@ -50,19 +50,6 @@ def _report(metar: dict | None) -> dict | None:
     return {k: metar.get(k) for k in ("wind_dir_true_deg", "wind_speed_kt", "wind_gust_kt")} if metar else None
 
 
-def favoured_end(ends: list, metar: dict | None, variation_deg: float, recent: dict | None = None) -> dict | None:
-    """The end of a runway the reported wind favours -- the most headwind --
-    and its components: {"end", "headwind_kt", "crosswind_kt",
-    "gust_crosswind_kt"}, rounded to the knot, the gust's crosswind where
-    the report has a gust. `ends` is the runway's [(ident, true heading
-    or None)]. Calm is every end at nothing: the end the field's last wind
-    favoured (`recent`, wingtip.weather.recent_wind), the runway in use, said
-    so ("in_use"), else the first one named. None with no report, a
-    variable wind or no end with a heading."""
-    return _ask("runway_favoured_end", ends=_ends(ends), metar=_report(metar), variation_deg=variation_deg,
-                recent=recent or None)
-
-
 def with_winds(runways: list, metar: dict | None, lat: float, lon: float, recent: dict | None = None) -> list:
     """wingtip.airports.get_runways' runways, each with the reported wind on
     the end it favours (`wind`, favoured_end), at a field at (lat, lon);

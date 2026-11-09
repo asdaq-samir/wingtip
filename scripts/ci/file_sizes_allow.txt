@@ -121,7 +121,7 @@ services/planner/tests_wingtip/test_charts.py 1597
 services/planner/tests_wingtip/test_route_options.py 456
 services/planner/tests_wingtip/test_traffic.py 1236
 services/planner/wingtip/airports.py 720
-services/planner/wingtip/airspace.py 616
+services/planner/wingtip/airspace.py 607
 services/planner/wingtip/chart_faces.py 928
 services/planner/wingtip/charts.py 2253
 services/planner/wingtip/chartvision.py 1123

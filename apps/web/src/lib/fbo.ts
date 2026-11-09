@@ -63,7 +63,7 @@ export function inEmergency(plane: Pick<TrafficAircraft, "squawk" | "emergency">
 }
 
 /** An airport as the filter measures from: where it is and how high. */
-export interface FilterField extends LatLon {
+interface FilterField extends LatLon {
   elevationFt: number;
 }
 

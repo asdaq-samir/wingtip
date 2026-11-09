@@ -11,7 +11,7 @@
  * to thirty an hour besides. Sent with sendBeacon, which outlives the
  * page and carries no credentials.
  */
-export interface ClientErrorReport {
+interface ClientErrorReport {
   kind: "error" | "rejection" | "render";
   message: string;
   stack?: string;

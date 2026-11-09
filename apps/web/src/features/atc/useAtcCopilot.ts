@@ -49,7 +49,7 @@ function onRadio(s: ReturnType<typeof useAtcRadio.getState>) {
 
 /** What the card offers, each a tap: never done by itself (the owner's
  *  rule, warn never limit; 14 CFR 91.3 leaves the pilot to decide). */
-export interface AtcCopilot {
+interface AtcCopilot {
   /** The ATC copilot is on (the Map menu's Alerts, ATC). */
   on: boolean;
   card: AtcCard | null;

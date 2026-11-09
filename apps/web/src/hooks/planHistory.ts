@@ -14,7 +14,7 @@
 /** The address's keys that are the plan: the route, what was picked at
  *  its fields (features/plan/lib/fieldLists), its altitude and its Class B choice. Not
  *  the page's own (the card open, the panel, the departure time). */
-export const PLAN_KEYS = [
+const PLAN_KEYS = [
   "dep", "dest", "stops", "direct", "was", "fuel", "alternate",
   "altitude_ft", "altitude_nearest", "altitude_choice", "class_b", "class_b_via",
   "pattern", "takeoff", "auto", "procs", "altitudes", "cross", "ground", "holds",
@@ -32,7 +32,7 @@ export function planStateOf(params: URLSearchParams): PlanState {
   return state;
 }
 
-export function sameState(a: PlanState, b: PlanState): boolean {
+function sameState(a: PlanState, b: PlanState): boolean {
   return PLAN_KEYS.every(key => (a[key] ?? "") === (b[key] ?? ""));
 }
 

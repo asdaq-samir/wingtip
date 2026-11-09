@@ -17,11 +17,11 @@ import type { Clearance } from "./clearance";
 
 /** A part missed or said differently: what the readback had for it
  *  (`said`), null where it was not read back (the engine's contract). */
-export type ReadbackItem = EngineAnswer<"readback_check">["items"][number];
+type ReadbackItem = EngineAnswer<"readback_check">["items"][number];
 
 /** The parts of a clearance in the order they are read back, each with
  *  its name on the screen (the iPhone's ReadbackCheck.parts). */
-export const READBACK_PARTS: { item: ReadbackItem["item"]; name: string }[] = [
+const READBACK_PARTS: { item: ReadbackItem["item"]; name: string }[] = [
   { item: "limit", name: "limit" }, { item: "route", name: "route" }, { item: "altitude", name: "altitude" },
   { item: "expect", name: "expected altitude" }, { item: "frequency", name: "frequency" }, { item: "squawk", name: "squawk" },
   // An instruction's (the ATC copilot's, features/atc), and the readback's own.
@@ -44,7 +44,7 @@ export function clearanceParts(c: Clearance): ReadbackItem["item"][] {
 
 /** One line under the read back: a tick for what was read back, a mark
  *  for each part missed or said differently. */
-export interface ReadbackLine { ok: boolean; words: string }
+interface ReadbackLine { ok: boolean; words: string }
 
 const capital = (words: string) => words.charAt(0).toUpperCase() + words.slice(1);
 

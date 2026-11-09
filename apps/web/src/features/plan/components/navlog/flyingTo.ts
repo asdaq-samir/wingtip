@@ -23,7 +23,7 @@ const passed = new Set<string>();
 
 /** The next checkpoint's row from `from`, skipping the tops of climb and
  *  descent; null past the last. */
-export function checkpointFrom(rows: NavLogRow[], from: number): number | null {
+function checkpointFrom(rows: NavLogRow[], from: number): number | null {
   for (let i = Math.max(1, from); i < rows.length; i++) if (!isLegPoint(rows[i]!)) return i;
   return null;
 }

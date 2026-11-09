@@ -5,9 +5,9 @@ import { appZoomOf } from "./glStyle";
 
 /** The whole level a zoom is at: every layer draws by whole levels
  *  (zoom >= FROM_ZOOM), the same under a pinch as at rest. */
-export const levelOf = (zoom: number) => Math.floor(zoom + 1e-9);
+const levelOf = (zoom: number) => Math.floor(zoom + 1e-9);
 
-export interface GlView {
+interface GlView {
   /** The view and a screen round it on the half-degree grid (aheadOf):
    *  what the overlays ask the planner for, each box asked once and
    *  cached. */

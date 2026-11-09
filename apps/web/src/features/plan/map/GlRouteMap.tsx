@@ -37,7 +37,7 @@ export type { GlCandidate, GlCheckpoint, GlEndpoint, GlLeg };
 type Point = { ident: string; lat: number; lon: number };
 const NONE: { lat: number; lon: number }[] = [];
 
-export interface GlRouteMapProps {
+interface GlRouteMapProps {
   course: Course | null;
   /** The chart alone while there is no route. */
   chart: ChartInfo | null;

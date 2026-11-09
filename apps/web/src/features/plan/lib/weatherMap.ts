@@ -6,7 +6,7 @@ import { hundreds, mapLevel } from "../../../lib/format";
 /** Each area's colour by what it warns of, as aviationweather.gov's own
  *  map tells them apart: convective red-orange, icing blue, turbulence
  *  amber, IFR and mountains obscured violet and stone, the winds teal. */
-export const AREA_COLOURS: Record<string, string> = {
+const AREA_COLOURS: Record<string, string> = {
   convective: "#c2410c",
   Icing: "#2563eb", ICE: "#2563eb",
   Turbulence: "#d97706", TURB: "#d97706",

@@ -14,17 +14,6 @@ pub mod field;
 pub mod hours;
 pub mod route;
 
-use crate::metar;
-
-/// The category a ceiling and a visibility fall in (AIM 7-1-7's bounds,
-/// statute miles as US reports give visibility): metar::flight_category_of,
-/// the one rule for reports, forecasts and route options alike, a missing
-/// visibility settling only a ceiling under 500 ft. Kept by this name for
-/// the forecast's callers.
-pub fn category_of(ceiling_ft: Option<f64>, visibility_sm: Option<f64>) -> Option<&'static str> {
-    metar::flight_category_of(ceiling_ft, false, visibility_sm)
-}
-
 /// A category's place from best to worst, VFR 0 to LIFR 3; -1 for none or
 /// one not known, below them all.
 pub fn rank(category: Option<&str>) -> i32 {

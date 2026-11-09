@@ -27,7 +27,7 @@ export async function* ended<T extends { type: string }>(stream: AsyncIterable<T
 }
 
 /** How long a stream's lines are gathered before they are handed on, ms. */
-export const BATCH_MS = 120;
+const BATCH_MS = 120;
 
 /**
  * A stream's lines handed on in batches: the ones that come within

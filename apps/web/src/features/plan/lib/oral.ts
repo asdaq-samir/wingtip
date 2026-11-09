@@ -10,7 +10,7 @@ import { lookUp } from "../../../lib/checkride";
 import { duration } from "../../../lib/format";
 import { feet } from "../../../lib/format";
 
-export interface PlanFacts {
+interface PlanFacts {
   route: { ident: string; name?: string | null; airspaceClass?: string | null; patternFt?: number | null; runway?: string | null }[];
   aircraft?: string | null;
   cruiseFt?: number | null;

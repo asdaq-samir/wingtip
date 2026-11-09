@@ -19,7 +19,7 @@ export interface AssistantMessage {
 }
 
 /** What the pilot asked for, as the plan has it (lib/briefPlan). */
-export interface AssistantPlan {
+interface AssistantPlan {
   dep: string;
   dest: string;
   stops: string[];
@@ -50,7 +50,7 @@ export interface AssistantContext extends AssistantPlan {
   pilot: AssistantPilot | null;
 }
 
-export interface AssistantRequest {
+interface AssistantRequest {
   messages: AssistantMessage[];
   context: AssistantContext;
 }

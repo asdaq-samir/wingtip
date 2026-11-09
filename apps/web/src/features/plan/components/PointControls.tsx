@@ -9,7 +9,7 @@ import { TEXT } from "../../../lib/text";
 
 /** What a point's altitude is: a field's elevation, the plan's cruise to
  *  it, the chart's crossing at a procedure's fix, or the pilot's own. */
-export type AltitudeKind = "elev" | "cruise" | "pub" | "set";
+type AltitudeKind = "elev" | "cruise" | "pub" | "set";
 
 /**
  * The end of a point's row in FPL's list, at the owner's pick (A of the
@@ -61,7 +61,7 @@ const KIND_WORDS: Record<AltitudeKind, string> = {
  *  point has it: the same items in FPL's "⋯" (PointMenu) and the route
  *  box's pill (RouteBox), in the same words and order, at the audit's
  *  finding (two menus for one point, in different words). */
-export interface PointActions {
+interface PointActions {
   ident: string;
   /** Another point in its place (the route box's search). */
   onChange?: () => void;
