@@ -546,6 +546,9 @@ fn table(v: &Value) -> ShortField {
         ground_roll_ft: tables.iter().map(|t| grid(&t["ground_roll_ft"])).collect(),
         total_50ft_ft: tables.iter().map(|t| grid(&t["total_50ft_ft"])).collect(),
         grass_ground_roll_pct: v["grass_ground_roll_pct"].as_f64().unwrap(),
+        headwind_kt_per_10pct: v["headwind_kt_per_10pct"].as_f64(),
+        tailwind_kt_per_10pct: v["tailwind_kt_per_10pct"].as_f64(),
+        tailwind_max_kt: v["tailwind_max_kt"].as_f64(),
     }
 }
 
@@ -636,11 +639,8 @@ fn the_table_at_sea_level_and_15_c_half_way_between_its_10_and_20() {
 }
 
 #[test]
-fn a_headwind_takes_a_tenth_off_every_9_kt_a_tailwind_adds_a_tenth_every_2_grass_the_ground_rolls_15_pct() {
-    let t = airplane().takeoff.unwrap();
-    assert_eq!(runways::short_field(&t, 0.0, 10.0, 2550.0, 9.0, false).ground_roll_ft, 835.0);
-    assert_eq!(runways::short_field(&t, 0.0, 10.0, 2550.0, -2.0, false).ground_roll_ft, 1020.0);
-    let grass = runways::short_field(&t, 0.0, 10.0, 2550.0, 0.0, true);
+fn on_grass_the_ground_rolls_15_pct_more() {
+    let grass = runways::short_field(&airplane().takeoff.unwrap(), 0.0, 10.0, 2550.0, 0.0, true);
     assert_eq!((grass.ground_roll_ft, grass.total_ft), (1065.0, 1715.0));
 }
 

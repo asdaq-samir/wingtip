@@ -176,4 +176,13 @@ private fun TotalsRows(totals: NavLogTotals) {
         totals.fuelRequiredGal?.let { Figure(stringResource(R.string.figure_required), Format.fuel(it), warn = warn, said = stringResource(R.string.said_fuel_required) + ", " + Spoken.fuel(it)) }
     }
     if (warn) ProblemLine(stringResource(R.string.under_reserve), Modifier.padding(top = WingtipSpace.Xs))
+    // An airplane whose profile has no start, taxi and takeoff allowance:
+    // the planner leaves it out of the fuel required rather than take a
+    // stock airplane's (the owner, 2026-11-09), and the pilot is told.
+    if (totals.fuelRequiredGal != null && totals.taxiGal == null) {
+        Text(
+            stringResource(R.string.taxi_not_in_profile), style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = WingtipSpace.Xs),
+        )
+    }
 }

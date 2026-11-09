@@ -17,7 +17,13 @@ struct EmergencyFieldsSection: View {
                         detail: "The fields within a glide are worked out from it")
             } else if let ranked = model.ranked {
                 if ranked.needsAirplane {
-                    CardRow(title: "Glide needs an airplane", detail: "Choose one with its best-glide figures; nearest first meanwhile")
+                    // No airplane, or one whose profile has no glide: the
+                    // nearest first, and the glide asked for, never guessed.
+                    if Emergency.shared.answer?.airplane == nil {
+                        PickAirplaneRow(detail: "Its glide ranks the fields within reach; nearest first meanwhile")
+                    } else {
+                        CardRow(title: MissingFigure.line("Glide"), detail: "Nearest first; add its best glide to rank the fields within reach")
+                    }
                 }
                 ForEach(ranked.fields, id: \.ident) { field in
                     Button { model.pickedIdent = field.ident } label: { row(field, picked: field.ident == model.picked?.ident) }

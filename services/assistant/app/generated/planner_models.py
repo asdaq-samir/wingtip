@@ -37,28 +37,6 @@ class AheadAlert(BaseModel):
     top_ft: Annotated[float | None, Field(title='Top Ft')] = None
 
 
-class AircraftProfileSummary(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
-    cruise_tas_kt: Annotated[float | None, Field(title='Cruise Tas Kt')] = None
-    fuel_burn_gph: Annotated[float | None, Field(title='Fuel Burn Gph')] = None
-    name: Annotated[str | None, Field(title='Name')] = None
-    service_ceiling_ft: Annotated[float | None, Field(title='Service Ceiling Ft')] = (
-        None
-    )
-    type: Annotated[str | None, Field(title='Type')] = None
-
-
-class AircraftProfiles(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
-    profiles: Annotated[
-        list[AircraftProfileSummary] | None, Field(title='Profiles')
-    ] = None
-
-
 class AircraftRegistration(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -2907,13 +2885,21 @@ class ShortField(BaseModel):
     grass_ground_roll_pct: Annotated[
         float | None, Field(title='Grass Ground Roll Pct')
     ] = None
+    headwind_kt_per_10pct: Annotated[
+        float | None, Field(title='Headwind Kt Per 10Pct')
+    ] = None
     pressure_altitudes_ft: Annotated[
         list[float] | None, Field(title='Pressure Altitudes Ft')
     ] = None
     source: Annotated[str | None, Field(title='Source')] = None
     tables: Annotated[list[DistanceTable] | None, Field(title='Tables')] = None
+    tailwind_kt_per_10pct: Annotated[
+        float | None, Field(title='Tailwind Kt Per 10Pct')
+    ] = None
+    tailwind_max_kt: Annotated[float | None, Field(title='Tailwind Max Kt')] = None
     temperatures_c: Annotated[list[float] | None, Field(title='Temperatures C')] = None
     weights_lb: Annotated[list[float] | None, Field(title='Weights Lb')] = None
+    wind_source: Annotated[str | None, Field(title='Wind Source')] = None
 
 
 class SpecialUse(BaseModel):
@@ -3443,6 +3429,30 @@ class AircraftBases(BaseModel):
         None
     )
     pending: Annotated[list[str] | None, Field(title='Pending')] = None
+
+
+class AircraftProfileSummary(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    cruise_tas_kt: Annotated[float | None, Field(title='Cruise Tas Kt')] = None
+    fuel_burn_gph: Annotated[float | None, Field(title='Fuel Burn Gph')] = None
+    glide: GlideFigures | None = None
+    name: Annotated[str | None, Field(title='Name')] = None
+    service_ceiling_ft: Annotated[float | None, Field(title='Service Ceiling Ft')] = (
+        None
+    )
+    taxi_fuel_gal: Annotated[float | None, Field(title='Taxi Fuel Gal')] = None
+    type: Annotated[str | None, Field(title='Type')] = None
+
+
+class AircraftProfiles(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    profiles: Annotated[
+        list[AircraftProfileSummary] | None, Field(title='Profiles')
+    ] = None
 
 
 class AirportAtis(BaseModel):

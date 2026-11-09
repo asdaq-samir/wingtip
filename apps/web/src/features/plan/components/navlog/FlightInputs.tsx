@@ -51,10 +51,11 @@ export default function FlightInputs({
     });
   // An N-number typed: one of the pilot's own picked, any other added at
   // once, at the owner's ask ("Just show a button to add N number from
-  // here. You can do the lookup in the background"): flown on the profile
-  // in use until the FAA's registry answers, then on its type's where it
-  // has one (profileOfRegistered). No stock profile is a choice (the
-  // owner's "Why is it showing C172?").
+  // here. You can do the lookup in the background"): on no profile until
+  // the FAA's registry answers, then on its type's where it has one
+  // (profileOfRegistered) -- never another airplane's figures meanwhile
+  // (the owner's "Why is it showing C172?"; 2026-11-09, "Nothing assumes
+  // a Cessna 172").
   const commit = () => {
     const tail = (typed ?? "").trim().toUpperCase();
     setTyped(null);
@@ -64,15 +65,14 @@ export default function FlightInputs({
       onAircraftChange(mine.value);
       return;
     }
-    const now = /^[a-z0-9]+$/.test(aircraftValue) ? aircraftValue : "c172";
-    onTailPick?.(tail, now);
+    onTailPick?.(tail, "");
     void registered(tail)
       .then((found) => {
         const profile = found?.registered ? profileOfRegistered(found.registered) : null;
-        if (profile && profile !== now) onTailPick?.(tail, profile);
+        if (profile) onTailPick?.(tail, profile);
       })
       .catch(() => {
-        /* the profile in use stands */
+        /* its N-number alone stands, on no profile */
       });
   };
   return (

@@ -14,7 +14,7 @@
       "items": {
         "type": "string"
       },
-      "description": "What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, or a tailwind past ten."
+      "description": "What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, a tailwind past the POH's figures, or no wind correction in the airplane's profile."
     }
   },
   "required": [

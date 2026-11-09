@@ -93,12 +93,30 @@ final class InFlight {
         verticalFpm = asked("vertical speed") {
             try Engine.verticalSpeed(samples: altitudes.map { .init(tS: $0.t, altitudeFt: $0.ft) })
         }
-        glide = asked("glide ring") {
+        // The ring only where it is wanted and the airplane's own glide
+        // is known (ringRatio): none is drawn on any other airplane's.
+        let ratio = Self.ringRatio(plan: plan)
+        glide = ratio == nil ? nil : asked("glide ring") {
             try Engine.glideRing(lat: at.latitude, lon: at.longitude, altitudeFt: fix.altitudeFt, speedKt: fix.groundspeedKt,
-                                 terrainFt: terrainFt, fieldFt: fieldFt)
+                                 terrainFt: terrainFt, fieldFt: fieldFt, glideRatio: ratio)
         }
         problem = refused.isEmpty ? nil : "Not worked out: " + refused.joined(separator: "; ")
         if underway { askField(at, now: now) }
+    }
+
+    /// The pilot's own switch for the glide ring outside an emergency,
+    /// kept on the phone; off by default (the owner, 2026-11-09).
+    static let ringKey = "wingtip.glideRing"
+
+    /// The glide ratio the ring is drawn at, or nil for no ring: off by
+    /// default, on by itself while the emergency assistant is open (or
+    /// where the pilot switched it on), and only with an airplane picked
+    /// whose profile gives its glide (its POH's Section 3, as the planner's
+    /// /api/emergency/fields sends it) -- never another airplane's.
+    static func ringRatio(plan: Plan, defaults: UserDefaults = .standard) -> Double? {
+        guard plan.airplaneChosen, Emergency.shared.open != nil || defaults.bool(forKey: ringKey),
+              let airplane = Emergency.shared.answer?.airplane, airplane.name == plan.aircraft else { return nil }
+        return airplane.glide?.ratio
     }
 
     /// The engine's `in_flight` for a fix on the plan's route; nil with no

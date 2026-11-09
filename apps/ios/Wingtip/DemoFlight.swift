@@ -6,15 +6,15 @@ import Foundation
 /// flight as the web's (apps/web/src/lib/demoFlight.ts) and Android's
 /// (about/DemoFlight.kt), so all three show the same thing.
 ///
-/// The airplane is the planner's stock Cessna 172 profile (Plan's
-/// stockProfile, wingtip/aircraft.py's "c172"): the pilot asked for this
+/// The airplane is the planner's stock Cessna 172 profile
+/// (data/aircraft/c172.json, "c172"), named here: the pilot asked for this
 /// flight by name, so it is their pick, not an airplane assumed
 /// (docs/decisions/0011).
 enum DemoFlight {
     static let departure = "KMSN"
     static let destination = "KOSH"
     static let stops: [String] = []
-    static let airplane = Plan.stockProfile
+    static let airplane = "c172"
 
     /// The flight put on the plan: the airplane set, the pilot's own
     /// altitude, procedures and edits of the last route let go, and the

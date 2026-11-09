@@ -16,13 +16,16 @@
 //! - datis: a digital ATIS as the tower's data link sends it, read into
 //!   the same figures (its weather by wingtip-weather's METAR reader);
 //! - mayday: the distress call in AIM 6-3-2's order, the code (6-2-2) and
-//!   the frequencies to call on.
+//!   the frequencies to call on;
+//! - guidance: what to do in an emergency with no airplane picked, the
+//!   AIM's and the Airplane Flying Handbook's general good practice.
 
 pub mod atc;
 pub mod atis;
 pub mod callsign;
 pub mod clearance;
 pub mod datis;
+pub mod guidance;
 pub mod instruction;
 pub mod mayday;
 pub mod readback;

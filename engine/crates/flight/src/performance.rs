@@ -54,10 +54,6 @@ pub const SERVICE_CEILING_CLIMB_FPM: f64 = 100.0;
 /// altitude goes there, the plans keep under it -- the straight line runs
 /// down to nothing, and a climb that never ends is no nav log.
 pub const MIN_CLIMB_RATE_FPM: f64 = 50.0;
-/// Climb speed as a fraction of cruise TAS where the profile has none
-/// (Vy is around 70% of cruise on a C172 or an Archer: the stock C172
-/// profile's 74 of 110 kt).
-pub const DEFAULT_CLIMB_TAS_FRACTION: f64 = 0.7;
 /// A climb at full power burns more than cruise; the book figure for a
 /// light single is around a third more. For a profile, or a pilot's own
 /// airplane, with no climb burn of its own.
@@ -118,10 +114,11 @@ impl Airplane {
         given(self.cruise_power_pct).unwrap_or(DEFAULT_CRUISE_POWER_PCT)
     }
 
-    /// The climb speed: the profile's, else DEFAULT_CLIMB_TAS_FRACTION of
-    /// the cruise.
-    pub fn climb_tas_kt(&self) -> f64 {
-        given(self.climb_tas_kt).unwrap_or(DEFAULT_CLIMB_TAS_FRACTION * self.cruise_tas_kt)
+    /// The climb speed: the profile's own, or None where it gives none --
+    /// no stock airplane's ratio of climb to cruise fills the gap (the
+    /// owner, 2026-11-09), and the nav log then flies no climb.
+    pub fn climb_tas_kt(&self) -> Option<f64> {
+        given(self.climb_tas_kt)
     }
 
     /// The climb's fuel flow at sea level: the profile's own, or

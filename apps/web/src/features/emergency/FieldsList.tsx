@@ -64,8 +64,8 @@ export default function FieldsList({ vm }: { vm: EmergencyModel }) {
       {ranked?.needs_airplane && (
         <ListRow
           muted
-          title="Glide needs an airplane"
-          description="Choose one with its best-glide figures; nearest first meanwhile"
+          title={vm.airplaneName ? "Glide not in this airplane's profile" : "Glide needs an airplane"}
+          description="Nearest first: no glide is worked out without the airplane's own figures"
           data-testid="emergency-needs-airplane"
         />
       )}
