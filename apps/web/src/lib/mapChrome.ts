@@ -106,7 +106,7 @@ export const GLASS = "liquid-glass";
 
 /** The same glass for a sheet, frostier -- more of the material, less of
  *  the chart -- as what is on it is read: the console, the dialogs. */
-export const GLASS_SHEET = "bg-[var(--sheet)] shadow-[0_-1px_12px_rgb(0_0_0/0.12)] dark:shadow-[0_-1px_12px_rgb(0_0_0/0.5)]";
+export const GLASS_SHEET = "bg-[var(--sheet)] shadow-(--depth-sheet)";
 
 /** How long the sheet takes from the pill to half (SETTLE_POINTS), in
  *  seconds, at the owner's ask ("make the 8443 a bit fast to match Apple
@@ -196,7 +196,7 @@ export const ADD_CAPSULE =
 
 /** A star filled in iOS's yellow, as a starred thing is everywhere on
  *  iOS: the airport card's star, a round button by its close. */
-export const FAVORITE_STAR_ON = "fill-[#ffcc00] text-[#ffcc00] dark:fill-[#ffd60a] dark:text-[#ffd60a]";
+export const FAVORITE_STAR_ON = "fill-(--brand-taxiway-yellow) text-(--brand-taxiway-yellow)";
 
 /** A round button on the panel -- the console's, the route's close -- as
  *  Maps' are on iOS 26: a circle of that glass, its glyph bold in the

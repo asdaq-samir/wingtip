@@ -1,6 +1,7 @@
 import type { MapPirep, StationWind } from "../../../lib/api/types";
 import { barbSvg, pirepMark } from "../lib/weatherMap";
 import { divIcon, type IconLike } from "../../../lib/map/marks/icons";
+import { CHART } from "../../../lib/tokens";
 
 // The weather on the planner's map, at the pilot's pick: where its box
 // comes from, and its marks (features/plan/map/layers/WeatherGl draws
@@ -34,7 +35,7 @@ export function pirepIcon(p: MapPirep): IconLike {
   if (!icon) {
     icon = divIcon({
       className: "",
-      html: `<span style="display:flex;height:44px;align-items:center;justify-content:center"><span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;background:#fff;border:2px solid ${colour};border-radius:10px;padding:0 5px;font:700 12px/18px -apple-system,system-ui,sans-serif;color:${colour}">${glyph} ${level}</span></span>`,
+      html: `<span style="display:flex;height:44px;align-items:center;justify-content:center"><span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;background:${CHART.casing};border:2px solid ${colour};border-radius:10px;padding:0 5px;font:700 12px/18px -apple-system,system-ui,sans-serif;color:${colour}">${glyph} ${level}</span></span>`,
       iconSize: [56, 44],
       iconAnchor: [28, 22],
     });

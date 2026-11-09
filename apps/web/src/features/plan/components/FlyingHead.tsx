@@ -87,7 +87,7 @@ export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: Na
         // map's insets, MapPage): over a wide screen it ran on under the
         // panel, its next point hidden there (the owner's screenshot,
         // 2026-11-06); on a phone's bottom sheet both are 0.
-        "pointer-events-none absolute right-3 left-[calc(0.75rem+var(--map-inset-left,0px))] top-[calc(max(0.75rem,env(safe-area-inset-top))+var(--map-inset-top,0px))] z-[1000] flex items-center gap-3.5 rounded-[18px] px-4 py-3",
+        "pointer-events-none absolute right-3 left-[calc(0.75rem+var(--map-inset-left,0px))] top-[calc(max(0.75rem,env(safe-area-inset-top))+var(--map-inset-top,0px))] z-[1000] flex items-center gap-3.5 rounded-(--radius-card) px-4 py-3",
         // In as the flight starts; not where the pilot asks for less motion.
         "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-4 motion-safe:duration-300",
       )}
@@ -99,7 +99,7 @@ export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: Na
         <div className={cn(GROUP_HEADING, "truncate")}>
           Next · <span data-testid="flying-next-name">{next.name}</span>
         </div>
-        <div className="truncate text-[1.875rem] leading-[2.0625rem] font-bold tabular-nums" data-testid="flying-next-figures">
+        <div className="truncate text-3xl leading-[2.0625rem] font-bold tabular-nums" data-testid="flying-next-figures">
           {next.nm.toFixed(1)}
           <span className={cn(TEXT.title, "font-medium")}> nm</span>
           {next.min !== null && <> · {duration(next.min)}</>}

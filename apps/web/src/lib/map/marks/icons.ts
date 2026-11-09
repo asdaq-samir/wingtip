@@ -14,7 +14,7 @@ import type { AirspaceClass } from "../../preferences";
 import { inkOn } from "../../scoreScale";
 import { AIRPORT_MARK, airportMarkSvg, text } from "./airportMark";
 import { MAP_BLUE, WAYPOINT_MAGENTA } from "./chartColors";
-import { CHART } from "../../tokens";
+import { CATEGORY_UNKNOWN, CHART } from "../../tokens";
 
 /** An icon made once for the same arguments and handed out again after:
  *  a marker's element is made again only when its icon is a new object
@@ -69,20 +69,22 @@ export const dotIcon = made(function dotIcon(fill: string, label?: string | numb
   // Centred in a larger invisible box by `position: absolute` and a
   // transform.
   const tapSize = withLabel ? 36 : 32;
-  // leading-none and text-[11px]: a circle has less usable width near
+  // leading-none and text-(length:--type-caption): a circle has less usable width near
   // its edges than a square of the same size, so bold digits (a
   // route's checkpoint count runs to three) need real headroom to stay
   // inside the curve, and a browser's own line-height slack would sit
   // the number off-centre. 11px is Apple's floor for text meant to be
   // read; these were 8, and they are the numbers a pilot matches to
   // the nav log.
-  const size = withLabel ? "grid h-[24px] w-[24px] place-items-center text-[11px] font-bold leading-none tracking-tight" : "h-4 w-4";
+  const size = withLabel
+    ? "grid h-[24px] w-[24px] place-items-center text-(length:--type-caption) font-bold leading-none tracking-tight"
+    : "h-4 w-4";
   return divIcon({
     className: "",
     iconSize: [tapSize, tapSize],
     iconAnchor: [tapSize / 2, tapSize / 2],
     html:
-      `<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-[2.5px] border-background shadow-[0_1px_4px_rgba(0,0,0,.45)] outline outline-1 outline-[rgba(10,20,28,.55)] ${size}"` +
+      `<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-[2.5px] border-background shadow-(--depth-mark) outline outline-1 outline-(color:--chart-shade)/55 ${size}"` +
       ` style="background-color:${text(fill)};color:${text(inkOn(fill))}">${withLabel ? text(label) : ""}</div>`,
   });
 });
@@ -94,7 +96,7 @@ export const dotIcon = made(function dotIcon(fill: string, label?: string | numb
 export function ownShipHtml(headingDeg: number | null, off: boolean, look: OwnShipLook, moving: boolean): { size: number; html: string } {
   // Grey where own ship is off: the last position, no longer watched, as
   // Maps greys its dot when it stops knowing where you are. iOS's blue.
-  const fill = off ? "#9ca3af" : MAP_BLUE;
+  const fill = off ? CATEGORY_UNKNOWN : MAP_BLUE;
   const plane = look !== "arrow";
   const beam = plane && moving;
   // The beam's box twice the plane's, the plane at its middle (ownShipSvg).
@@ -103,12 +105,12 @@ export function ownShipHtml(headingDeg: number | null, off: boolean, look: OwnSh
     size,
     html:
       !plane && (headingDeg === null || off)
-        ? `<div data-own-ship="${off ? "off" : "on"}" class="absolute left-1/2 top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-[2.5px] border-white shadow-[0_1px_4px_rgba(0,0,0,.45)]" style="background:${fill}"></div>`
+        ? `<div data-own-ship="${off ? "off" : "on"}" class="absolute left-1/2 top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-[2.5px] border-white shadow-(--depth-mark)" style="background:${fill}"></div>`
         : ownShipSvg(
             look,
             fill,
             size,
-            `data-own-ship="${off ? "off" : "on"}" data-look="${look}" data-moving="${beam}" class="absolute left-0 top-0 drop-shadow-[0_1.5px_3px_rgba(0,0,0,.4)]" style="transform:rotate(${Number(headingDeg ?? 0)}deg)"`,
+            `data-own-ship="${off ? "off" : "on"}" data-look="${look}" data-moving="${beam}" class="absolute left-0 top-0 drop-shadow-md drop-shadow-black/40" style="transform:rotate(${Number(headingDeg ?? 0)}deg)"`,
             beam,
           ),
   };
@@ -129,7 +131,7 @@ export const fixMarkIcon = made(function fixMarkIcon(label: string) {
     iconSize: [TAP, TAP],
     iconAnchor: [TAP / 2, TAP / 2],
     html:
-      `<span class="absolute left-1/2 top-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 whitespace-nowrap rounded-full border-2 bg-white py-0.5 pr-1.5 pl-1 text-[11px] leading-none font-bold text-[#1c1a17] shadow-sm"` +
+      `<span class="absolute left-1/2 top-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 whitespace-nowrap rounded-full border-2 bg-white py-0.5 pr-1.5 pl-1 text-(length:--type-caption) leading-none font-bold text-(color:--chart-fix-ink) shadow-sm"` +
       ` style="border-color:${WAYPOINT_MAGENTA}">` +
       `<span class="size-2 shrink-0 rotate-45 rounded-[1px]" style="background-color:${WAYPOINT_MAGENTA}"></span>${text(label)}</span>`,
   });
@@ -166,8 +168,8 @@ export const airportMarkIcon = made(function airportMarkIcon(
     iconSize: [AIRPORT_MARK, AIRPORT_MARK],
     iconAnchor: [half, half],
     html:
-      airportMarkSvg(space, weather, use, "absolute inset-0 overflow-visible drop-shadow-[0_1px_1px_rgba(0,0,0,.35)]") +
-      `<span class="absolute top-1/2 left-[calc(100%+1px)] -translate-y-1/2 whitespace-nowrap text-[11px] leading-none font-bold text-[#1c1a17] [text-shadow:0_0_2px_#fff,0_0_2px_#fff,0_0_3px_#fff,0_0_4px_#fff]">${text(ident)}</span>`,
+      airportMarkSvg(space, weather, use, "absolute inset-0 overflow-visible drop-shadow-sm drop-shadow-black/35") +
+      `<span class="absolute top-1/2 left-[calc(100%+1px)] -translate-y-1/2 whitespace-nowrap text-(length:--type-caption) leading-none font-bold text-(color:--chart-fix-ink) [text-shadow:0_0_2px_var(--chart-casing),0_0_2px_var(--chart-casing),0_0_3px_var(--chart-casing),0_0_4px_var(--chart-casing)]">${text(ident)}</span>`,
   });
 });
 
@@ -200,21 +202,21 @@ export const trafficIcon = made(
         // (index.css), the mark not grown for it.
         `<span class="absolute rounded-full" style="inset:-${(44 - TRAFFIC_MARK) / 2}px" data-traffic-hit=""></span>` +
         (tracked
-          ? `<span class="pointer-events-none absolute -inset-[7px] rounded-full border-[2.5px] border-[var(--tint)] bg-white/70 shadow-[0_1px_4px_rgba(0,0,0,.4)]" data-traffic-tracked=""></span>`
+          ? `<span class="pointer-events-none absolute -inset-[7px] rounded-full border-[2.5px] border-[var(--tint)] bg-white/70 shadow-(--depth-mark)" data-traffic-tracked=""></span>`
           : "") +
         `<svg viewBox="0 0 22 22" width="${TRAFFIC_MARK}" height="${TRAFFIC_MARK}" aria-hidden="true" data-traffic="" overflow="visible"` +
-        ` class="pointer-events-none absolute left-0 top-0 overflow-visible drop-shadow-[0_1px_2px_rgba(0,0,0,.5)]"` +
+        ` class="pointer-events-none absolute left-0 top-0 overflow-visible drop-shadow-sm drop-shadow-black/50"` +
         ` style="transform:rotate(${trackDeg == null ? 0 : Math.round(trackDeg / 5) * 5}deg)">` +
         (trackDeg != null && trendPx > 0
           ? `<line x1="11" y1="4" x2="11" y2="${Math.round((4 - trend) * 10) / 10}" stroke="${text(colour)}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" data-trend=""/>`
           : "") +
         (trackDeg == null
-          ? `<circle cx="11" cy="11" r="5" fill="${text(colour)}" stroke="#ffffff" stroke-width="2" vector-effect="non-scaling-stroke"/>`
-          : `<path d="M11 2 L18 19 L11 14.5 L4 19 Z" fill="${text(colour)}" stroke="#ffffff" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`) +
+          ? `<circle cx="11" cy="11" r="5" fill="${text(colour)}" stroke="${CHART.casing}" stroke-width="2" vector-effect="non-scaling-stroke"/>`
+          : `<path d="M11 2 L18 19 L11 14.5 L4 19 Z" fill="${text(colour)}" stroke="${CHART.casing}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`) +
         `</svg>` +
         (label || callsign
-          ? `<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-[#1f2933]/80 px-1 text-center text-[11px] font-bold leading-[14px] text-white tabular-nums"` +
-            ` style="top:${tracked ? TRAFFIC_MARK + 6 : TRAFFIC_MARK}px;color:${text(colour === TRAFFIC_COLOURS.near ? CHART.trafficNearText : "#ffffff")}">` +
+          ? `<span class="pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-(--chart-tag)/80 px-1 text-center text-(length:--type-caption) font-bold leading-[14px] text-white tabular-nums"` +
+            ` style="top:${tracked ? TRAFFIC_MARK + 6 : TRAFFIC_MARK}px;color:${text(colour === TRAFFIC_COLOURS.near ? CHART.trafficNearText : CHART.casing)}">` +
             `${text(label)}${callsign ? `${label ? "<br>" : ""}<span class="font-semibold text-white/85">${text(callsign)}</span>` : ""}</span>`
           : ""),
     });

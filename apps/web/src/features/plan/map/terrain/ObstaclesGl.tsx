@@ -6,6 +6,7 @@ import { EMPTY, useGlMap } from "../../../../lib/map/gl/glLayer";
 import { glZoom } from "../../../../lib/map/gl/glStyle";
 import { obstacleFeatures } from "./geometry";
 import { setExtrusionData, useExtrusion } from "./useExtrusion";
+import { CHART } from "../../../../lib/tokens";
 
 type Box = { south: number; west: number; north: number; east: number };
 
@@ -32,7 +33,7 @@ export default function ObstaclesGl() {
     type: "fill-extrusion",
     minzoom: glZoom(9),
     paint: {
-      "fill-extrusion-color": ["case", [">=", ["get", "agl"], 1000], "#d70015", "#7a1f1f"],
+      "fill-extrusion-color": ["case", [">=", ["get", "agl"], 1000], CHART.warning, CHART.obstacle],
       "fill-extrusion-opacity": 0.95,
       "fill-extrusion-height": ["get", "height"],
     },

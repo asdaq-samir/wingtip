@@ -44,7 +44,7 @@ export function PointMark({
         aria-hidden="true"
         data-mark="checkpoint"
         className={cn(
-          "grid size-6 shrink-0 place-items-center rounded-full border-2 border-background font-bold tracking-tight shadow-[0_1px_3px_rgba(0,0,0,.35)] outline outline-1 outline-[rgba(10,20,28,.45)]",
+          "grid size-6 shrink-0 place-items-center rounded-full border-2 border-background font-bold tracking-tight shadow-(--depth-mark) outline outline-1 outline-(color:--chart-shade)/45",
           TEXT.caption,
         )}
         style={{ backgroundColor: fill, color: inkOn(fill) }}
@@ -61,7 +61,7 @@ export function PointMark({
       <span
         aria-hidden="true"
         data-mark={row.kind}
-        className="grid size-6 shrink-0 place-items-center rounded-[5px] border-[1.5px] border-course bg-white text-[#1c1a17]"
+        className="grid size-6 shrink-0 place-items-center rounded-sm border-[1.5px] border-course bg-white text-(color:--chart-fix-ink)"
       >
         <Arrow className="size-4" strokeWidth={2.5} />
       </span>

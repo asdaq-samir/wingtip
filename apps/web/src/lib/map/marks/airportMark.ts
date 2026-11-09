@@ -30,10 +30,10 @@ export function airportMarkSvg(
 ): string {
   const blue = space === "B" || space === "D";
   const ink = space ? (blue ? BLUE : MAGENTA) : UNKNOWN_GREY;
-  const casing = `stroke="#fff" stroke-linecap="round"`;
+  const casing = `stroke="${CHART.casing}" stroke-linecap="round"`;
   const symbol = use
     ? `<circle r="10" fill="${use === "military" ? BLUE : MAGENTA}" ${casing} stroke-width="2"/>` +
-      `<text y="4" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">${use === "military" ? "M" : "R"}</text>` +
+      `<text y="4" text-anchor="middle" font-size="11" font-weight="800" fill="${CHART.casing}">${use === "military" ? "M" : "R"}</text>` +
       `<circle data-weather="" cx="7.5" cy="7.5" r="4.6" fill="${text(weather)}" ${casing} stroke-width="1.4"/>`
     : (() => {
         // The four ticks, and the white casing round ticks and ring, each one
@@ -62,9 +62,9 @@ export function airportMarkSvg(
         const width = space === "B" ? 3.2 : space === "C" ? 2.8 : thin ? 1.6 : 2.2;
         const faded = space === "G" ? ` stroke-opacity="0.45"` : "";
         return (
-          `<path d="${ticks}${ring}" fill="#fff" ${casing} stroke-width="5.5"/>` +
+          `<path d="${ticks}${ring}" fill="${CHART.casing}" ${casing} stroke-width="5.5"/>` +
           `<path d="${ticks}" fill="none" stroke="${ink}"${faded} stroke-width="2.5" stroke-linecap="round"/>` +
-          `<circle r="8.5" fill="#fff" stroke="${ink}"${faded} stroke-width="${width}"${dashed ? ` stroke-dasharray="3.4 2.1"` : ""}/>` +
+          `<circle r="8.5" fill="${CHART.casing}" stroke="${ink}"${faded} stroke-width="${width}"${dashed ? ` stroke-dasharray="3.4 2.1"` : ""}/>` +
           `<circle data-weather="" r="6" fill="${text(weather)}"/>`
         );
       })();
@@ -108,14 +108,14 @@ export function sectionalAirportSvg(
   const box = 26;
   const letter = use === "private" ? "R" : use === "military" ? "M" : use === "heliport" ? "H" : null;
   const r = letter ? 7 : SECTIONAL_RADIUS[size];
-  const halo = `<circle r="${r}" fill="#fff" stroke="#fff" stroke-width="5"/>`;
+  const halo = `<circle r="${r}" fill="${CHART.casing}" stroke="${CHART.casing}" stroke-width="5"/>`;
   const symbol = letter
-    ? `${halo}<circle r="${r}" fill="#fff" stroke="${ink}" stroke-width="2"/>` +
+    ? `${halo}<circle r="${r}" fill="${CHART.casing}" stroke="${ink}" stroke-width="2"/>` +
       `<text y="3.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="9.5" font-weight="800" fill="${ink}">${letter}</text>`
-    : `${halo}<circle r="${r}" fill="#fff" stroke="${ink}" stroke-width="2.6"/><circle r="${(r * 0.42).toFixed(2)}" fill="${ink}"/>`;
+    : `${halo}<circle r="${r}" fill="${CHART.casing}" stroke="${ink}" stroke-width="2.6"/><circle r="${(r * 0.42).toFixed(2)}" fill="${ink}"/>`;
   const at = (r * 0.78).toFixed(2);
   const pip = weather
-    ? `<circle data-weather="" cx="${at}" cy="${at}" r="3.4" fill="${text(weather)}" stroke="#fff" stroke-width="1.3"/>`
+    ? `<circle data-weather="" cx="${at}" cy="${at}" r="3.4" fill="${text(weather)}" stroke="${CHART.casing}" stroke-width="1.3"/>`
     : "";
   return `<svg width="${box}" height="${box}" viewBox="${-box / 2} ${-box / 2} ${box} ${box}">${symbol}${pip}</svg>`;
 }

@@ -1,7 +1,8 @@
 import { divIcon, type IconLike } from "./icons";
 import { STOP_KINDS, type StopKind } from "../../stopKinds";
+import { BADGE, CHART } from "../../tokens";
 
-/** A stop's pin: the caution's orange, its glyph in white (lucide's), its
+/** A stop's pin: the fuel stop's amber, its glyph in white (lucide's), its
  *  point in the middle of the field's mark drawn under it (StopPin), as
  *  Tesla's trip map pins its chargers (the owner's screenshot,
  *  2026-10-21) -- the field under the pin, with its ident, at the owner's
@@ -11,8 +12,8 @@ function stopPin(glyph: string) {
   return divIcon({
     className: "",
     html:
-      '<svg width="30" height="38" viewBox="0 0 30 38" aria-hidden="true"><path d="M15 37C15 37 2 23.5 2 14a13 13 0 0 1 26 0c0 9.5-13 23-13 23z" fill="#d9480f" stroke="#fff" stroke-width="2"/>' +
-      `<g transform="translate(7.5 6.5) scale(0.62)" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${glyph}</g></svg>`,
+      `<svg width="30" height="38" viewBox="0 0 30 38" aria-hidden="true"><path d="M15 37C15 37 2 23.5 2 14a13 13 0 0 1 26 0c0 9.5-13 23-13 23z" fill="${BADGE.stopFuel}" stroke="${CHART.casing}" stroke-width="2"/>` +
+      `<g transform="translate(7.5 6.5) scale(0.62)" fill="none" stroke="${CHART.casing}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${glyph}</g></svg>`,
     iconSize: [30, 38],
     iconAnchor: [15, 37],
   });
@@ -48,8 +49,8 @@ export function stackedPin(kinds: StopKind[]): IconLike {
       const { colour, paths } = STOP_KINDS[kind];
       const glyph = paths.map((d) => `<path d="${d}"/>`).join("");
       return (
-        `<g transform="translate(${i * 8} ${(n - 1 - i) * 4})"><path d="M15 37C15 37 2 23.5 2 14a13 13 0 0 1 26 0c0 9.5-13 23-13 23z" fill="${colour}" stroke="#fff" stroke-width="2"/>` +
-        `<g transform="translate(7.5 6.5) scale(0.62)" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${glyph}</g></g>`
+        `<g transform="translate(${i * 8} ${(n - 1 - i) * 4})"><path d="M15 37C15 37 2 23.5 2 14a13 13 0 0 1 26 0c0 9.5-13 23-13 23z" fill="${colour}" stroke="${CHART.casing}" stroke-width="2"/>` +
+        `<g transform="translate(7.5 6.5) scale(0.62)" fill="none" stroke="${CHART.casing}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${glyph}</g></g>`
       );
     })
     .reverse()

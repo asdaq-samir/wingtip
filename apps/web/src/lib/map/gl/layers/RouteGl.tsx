@@ -26,6 +26,7 @@ import { GL_FONT, TAP } from "./common";
 import { ROUTE_PRIORITY } from "../declutter";
 import { useGlMarks, type GlMark } from "../useGlMarks";
 import { LEG_RANK, LEG_REACH, nearestLeg, type GlLeg } from "../legTap";
+import { CHART } from "../../../tokens";
 
 export interface GlCheckpoint {
   key: string;
@@ -79,7 +80,7 @@ const CANDIDATE_DOTS: CircleLayerSpecification = {
     "circle-radius": 4,
     "circle-color": ["get", "colour"],
     "circle-opacity": 0.5,
-    "circle-stroke-color": "#5b6b76",
+    "circle-stroke-color": CHART.fieldUnknown,
     "circle-stroke-width": 1,
     "circle-stroke-opacity": 0.65,
   },
@@ -100,7 +101,7 @@ const NAMES: SymbolLayerSpecification = {
     "text-justify": "auto",
     "symbol-sort-key": ["get", "number"],
   },
-  paint: { "text-color": "#1c1a17", "text-halo-color": "#ffffff", "text-halo-width": 2 },
+  paint: { "text-color": CHART.fixInk, "text-halo-color": CHART.casing, "text-halo-width": 2 },
 };
 
 /**

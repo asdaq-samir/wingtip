@@ -5,6 +5,7 @@ import { PointActions } from "./PointCardActions";
 import { usePointActions } from "../../../lib/map/cards/pointActions";
 import { fixRadialDistance } from "../../../lib/navaid";
 import { TEXT } from "../../../lib/text";
+import { CHART } from "../../../lib/tokens";
 
 /**
  * The card a tap on a VFR waypoint opens (the map draws them from the
@@ -29,7 +30,7 @@ export function WaypointCard({ waypoint: w }: { waypoint: Waypoint }) {
       // The map's magenta triangle, as it marks it, before its ident.
       media={
         <svg className="mx-1 shrink-0" width="16" height="16" viewBox="0 0 10 10" aria-hidden="true">
-          <polygon points="5,1 9.4,8.8 0.6,8.8" fill="#fff" stroke={MAGENTA} strokeWidth="1.6" strokeLinejoin="round" />
+          <polygon points="5,1 9.4,8.8 0.6,8.8" fill={CHART.casing} stroke={MAGENTA} strokeWidth="1.6" strokeLinejoin="round" />
         </svg>
       }
       title={

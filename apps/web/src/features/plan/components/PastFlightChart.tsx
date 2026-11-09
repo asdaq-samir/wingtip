@@ -13,8 +13,8 @@ import { AIRSPACE, ceilingOverFloor, ceilings, nameFits, namedPieces } from "./n
 // Green height and amber speed (flightTraces): the theme's chart greys
 // read as one line.
 const chartConfig = {
-  alt: { label: TRACES.alt.label, theme: { light: TRACES.alt.light, dark: TRACES.alt.dark } },
-  kt: { label: TRACES.kt.label, theme: { light: TRACES.kt.light, dark: TRACES.kt.dark } },
+  alt: { label: TRACES.alt.label, color: TRACES.alt.colour },
+  kt: { label: TRACES.kt.label, color: TRACES.kt.colour },
 } satisfies ChartConfig;
 
 /** A past flight's height and ground speed (PastFlightCard), in a chunk

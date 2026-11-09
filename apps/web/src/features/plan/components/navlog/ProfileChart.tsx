@@ -5,8 +5,12 @@ import ChartTick from "../../../../components/chartTick";
 import type { RouteProfile } from "../../../../lib/api/types";
 import { altFt } from "../../../../lib/format";
 import { AIRSPACE, ceilingOverFloor, ceilings, type planProfile } from "./profile";
+import { CHART } from "../../../../lib/tokens";
 
-const config = { ground: { label: "Ground", color: "#8b6f47" }, plan: { label: "Plan", color: "var(--primary)" } } satisfies ChartConfig;
+const config = {
+  ground: { label: "Ground", color: CHART.terrain },
+  plan: { label: "Plan", color: "var(--primary)" },
+} satisfies ChartConfig;
 
 /**
  * The route from the side: the ground under it, the Class B, C and D it

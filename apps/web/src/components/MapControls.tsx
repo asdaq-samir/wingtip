@@ -56,7 +56,7 @@ export default function MapControls() {
     <div
       data-map-food=""
       className={cn(
-        "z-[1000] flex items-end rounded-[26px] p-1",
+        "z-[1000] flex items-end rounded-4xl p-1",
         onPhone
           ? "absolute bottom-[calc(max(env(safe-area-inset-bottom),var(--sheet-cover,var(--map-inset-bottom,0px)))+1.5rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] max-w-[min(28rem,calc(100vw-5rem))]"
           : // In the column at the right edge: widening to the left into
@@ -125,7 +125,7 @@ export default function MapControls() {
                   variant="ghost"
                   aria-label="Nearest airports"
                   data-testid="flying-nearest"
-                  className={cn(FLYING_BUTTON, "text-[0.8125rem]")}
+                  className={cn(FLYING_BUTTON, "text-(length:--type-note)")}
                   onClick={nearest}
                 >
                   NRST

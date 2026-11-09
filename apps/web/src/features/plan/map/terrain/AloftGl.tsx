@@ -4,6 +4,7 @@ import { useGlMap } from "../../../../lib/map/gl/glLayer";
 import { DEM } from "./dem";
 import { aloftFeatures, aloftPieces, type AloftPoint } from "./geometry";
 import { setExtrusionData, useExtrusion } from "./useExtrusion";
+import { CHART } from "../../../../lib/tokens";
 
 /** The ground at a point as the 3D map stands things on it, metres: the
  *  same tiles its extrusions read (MapLibre's queryTerrainElevation); null
@@ -22,7 +23,7 @@ export default function AloftGl({ points }: { points: AloftPoint[] }) {
   useExtrusion(map, "route-aloft-curtain", {
     type: "fill-extrusion",
     paint: {
-      "fill-extrusion-color": "#c0309f",
+      "fill-extrusion-color": CHART.course,
       "fill-extrusion-opacity": 0.22,
       "fill-extrusion-base": 0,
       "fill-extrusion-height": ["get", "top"],
@@ -31,7 +32,7 @@ export default function AloftGl({ points }: { points: AloftPoint[] }) {
   useExtrusion(map, "route-aloft", {
     type: "fill-extrusion",
     paint: {
-      "fill-extrusion-color": "#c0309f",
+      "fill-extrusion-color": CHART.course,
       "fill-extrusion-opacity": 0.9,
       "fill-extrusion-base": ["get", "bottom"],
       "fill-extrusion-height": ["get", "top"],

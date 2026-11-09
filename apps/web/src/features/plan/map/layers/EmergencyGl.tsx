@@ -2,10 +2,11 @@ import type { LayerSpecification } from "maplibre-gl";
 import { useMemo } from "react";
 import { useEmergencyLine } from "../../../../lib/map/marks/emergencyLine";
 import { useGlData, useGlLayer } from "../../../../lib/map/gl/glLayer";
+import { CHART } from "../../../../lib/tokens";
 
 const SOURCE = "emergency";
 /** The emergency's ink: iOS's system red, what a pilot reads as now. */
-const RED = "#ff3b30";
+const RED = CHART.emergency;
 
 const LAYERS: LayerSpecification[] = [
   {
@@ -20,7 +21,7 @@ const LAYERS: LayerSpecification[] = [
     type: "line",
     source: SOURCE,
     filter: ["==", ["get", "kind"], "to"],
-    paint: { "line-color": "#ffffff", "line-width": 7 },
+    paint: { "line-color": CHART.casing, "line-width": 7 },
   },
   {
     id: "emergency-line",

@@ -3,6 +3,7 @@ import type { Runway } from "../../../lib/api/types";
 import { TEXT_POINTS } from "../../../lib/text";
 import { FT_PER_NM } from "../../../lib/geo";
 import { numberHalfWidth, numbersOf, stripsOf } from "../lib/runwaySketch";
+import { CHART } from "../../../lib/tokens";
 
 /** Round the runways, in the box's own points: the strips' half width and
  *  a little air. */
@@ -11,7 +12,7 @@ const MARGIN = 8;
 /** Turf, green as the grass it is, at the pilot's ask: a shade that
  *  reads beside the paved strips' ink on the card's glass in either
  *  scheme. */
-const TURF = "#3f8f3a";
+const TURF = CHART.runwaySoft;
 
 type Hole = { x: number; y: number; w: number; h: number };
 

@@ -3,6 +3,7 @@ import { compassPoint } from "../../lib/compass";
 import { normalizeDeg } from "../../lib/geo";
 import { SCORE_STEPS } from "../../lib/scoreScale";
 import { DEFAULT_FILTERS, type FilterKey, type Filters } from "../../lib/pointFilters";
+import { CATEGORY_UNKNOWN } from "../../lib/tokens";
 
 export { compassPoint, DEFAULT_FILTERS, type FilterKey, type Filters };
 
@@ -20,7 +21,7 @@ export { compassPoint, DEFAULT_FILTERS, type FilterKey, type Filters };
 /** 0 is a rejection (grey); 1-5 are lib/scoreScale's steps, the same
  *  colours the planner draws its scores in. */
 export const COLORS: Record<Rating, string> = {
-  0: "#8a8f94",
+  0: CATEGORY_UNKNOWN,
   1: SCORE_STEPS[0],
   2: SCORE_STEPS[1],
   3: SCORE_STEPS[2],

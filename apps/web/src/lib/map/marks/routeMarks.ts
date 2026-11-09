@@ -19,7 +19,7 @@ export const routeFieldIcon = made(function routeFieldIcon(ident: string, space:
     iconSize: [AIRPORT_MARK, AIRPORT_MARK],
     iconAnchor: [half, half],
     html:
-      airportMarkSvg(space, weather, null, "absolute inset-0 overflow-visible drop-shadow-[0_1px_1px_rgba(0,0,0,.35)]") +
-      `<span data-route-field="${text(ident)}" class="absolute top-1/2 left-[calc(100%+2px)] -translate-y-1/2 whitespace-nowrap rounded-[5px] bg-[rgba(22,27,34,.88)] px-[5px] py-[3px] text-[12px] leading-none font-bold tracking-[0.02em] text-white shadow-[0_1px_2px_rgba(0,0,0,.35)] ring-1 ring-white/25">${text(ident)}</span>`,
+      airportMarkSvg(space, weather, null, "absolute inset-0 overflow-visible drop-shadow-sm drop-shadow-black/35") +
+      `<span data-route-field="${text(ident)}" class="absolute top-1/2 left-[calc(100%+2px)] -translate-y-1/2 whitespace-nowrap rounded-sm bg-(--chart-tag)/88 px-1.25 py-0.75 text-xs leading-none font-bold tracking-[0.02em] text-white shadow-(--depth-mark) ring-1 ring-white/25">${text(ident)}</span>`,
   });
 });

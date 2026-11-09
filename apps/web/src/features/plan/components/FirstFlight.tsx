@@ -42,7 +42,7 @@ export default function FirstFlight({
       // map's buttons stand off it), in from the screen's sides as the
       // sheet is; one column on a phone, the sheet's width beside it.
       className={cn(
-        "absolute right-3 bottom-[calc(max(env(safe-area-inset-bottom),var(--sheet-cover,var(--map-inset-bottom,0px)))+0.75rem)] left-[calc(0.75rem+var(--map-inset-left,0px))] z-[1000] mx-auto flex max-w-md flex-col gap-3 rounded-[18px] bg-card/95 p-4 text-card-foreground shadow-[0_2px_14px_rgb(0_0_0/0.14)] backdrop-blur-xl solid:bg-card solid:backdrop-blur-none",
+        "absolute right-3 bottom-[calc(max(env(safe-area-inset-bottom),var(--sheet-cover,var(--map-inset-bottom,0px)))+0.75rem)] left-[calc(0.75rem+var(--map-inset-left,0px))] z-[1000] mx-auto flex max-w-md flex-col gap-3 rounded-(--radius-card) bg-card/95 p-4 text-card-foreground shadow-overlay backdrop-blur-xl solid:bg-card solid:backdrop-blur-none",
       )}
     >
       <div className="flex items-center gap-2.5">
@@ -74,7 +74,7 @@ export default function FirstFlight({
       <Button
         type="button"
         size="lg"
-        className="h-12 rounded-[14px] font-semibold"
+        className="h-12 rounded-(--radius-control) font-semibold"
         disabled={!ready || planning}
         onClick={() => {
           if (dest) void planIt(dest.ident, from?.ident ?? null);

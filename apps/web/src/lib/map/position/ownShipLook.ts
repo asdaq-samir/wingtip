@@ -1,3 +1,4 @@
+import { CHART } from "../../tokens";
 /**
  * How own ship is drawn on the chart, the pilot's pick in Settings
  * (Appearance, Position), at the owner's ask ("can we change the current
@@ -41,7 +42,7 @@ const PARTS: Record<OwnShipLook, string> = {
  * the plane at its middle, so the marker's anchor stays the airplane. */
 export function ownShipSvg(look: OwnShipLook, fill: string, size = 32, attrs = "", beam = false): string {
   const parts = PARTS[look] ?? PARTS.arrow;
-  const plane = `<g fill="#ffffff" stroke="#ffffff" stroke-width="2.6" stroke-linejoin="round">${parts}</g><g fill="${fill}">${parts}</g>`;
+  const plane = `<g fill="${CHART.casing}" stroke="${CHART.casing}" stroke-width="2.6" stroke-linejoin="round">${parts}</g><g fill="${fill}">${parts}</g>`;
   if (beam && look !== "arrow") {
     return (
       `<svg viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true" ${attrs}>` +
