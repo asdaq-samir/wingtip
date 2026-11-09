@@ -2,8 +2,7 @@
 figures alone, never a Cessna 172's under them (the owner, 2026-11-09)."""
 
 import pytest
-from wingtip.aircraft import load_aircraft_profile
-from wingtip.planning import OWN_AIRPLANE, UnknownAircraft, aircraft_profile
+from wingtip.aircraft import OWN_AIRPLANE, UnknownAircraft, aircraft_profile, load_aircraft_profile
 
 
 def test_an_own_airplane_carries_only_its_own_figures():

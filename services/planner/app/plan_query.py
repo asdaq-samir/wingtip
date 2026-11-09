@@ -15,7 +15,7 @@ from wingtip import flight_plan as fp
 # As vfr_holds: PlanQuery's own `holds` is the address's.
 from wingtip import holds as vfr_holds
 from wingtip.engine import ask as engine
-from wingtip.planning import aircraft_profile
+from wingtip.aircraft import aircraft_profile
 
 from . import foreflight
 from .checkpoint_scoring import route_checkpoints
@@ -61,7 +61,7 @@ class PlanQuery:
     #: not, with its cautions.
     altitude_nearest: bool = False
     altitude_choice: AltitudeChoice = "fastest"
-    #: A stock profile's name, or "own" (wingtip.planning.OWN_AIRPLANE)
+    #: A stock profile's name, or "own" (wingtip.aircraft.OWN_AIRPLANE)
     #: for a pilot's own airplane of no stock type, flown on the figures
     #: below alone; none asked, no airplane is picked: the
     #: plan is the route's own figures (its course, miles, legs,

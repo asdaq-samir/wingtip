@@ -14,7 +14,8 @@ from wingtip import route_options as wingtip_route_options
 
 from .. import prefetch
 from ..router_basics import load_route, resolve
-from wingtip.planning import aircraft_profile, forecast_hour_for
+from wingtip.aircraft import aircraft_profile
+from wingtip.planning import forecast_hour_for
 from ..schemas.route_options import RouteOptions
 from ..gateway import PUBLIC
 from ..plan_query import CruiseTas, GlideRatio, ServiceCeiling, TaxiFuel

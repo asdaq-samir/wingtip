@@ -6,7 +6,7 @@ one computation per key, even from several threads at once.
 import threading
 import time
 
-from wingtip import planning
+from wingtip import aircraft, planning
 
 
 def test_an_aeroplanes_own_override_does_not_leak_into_the_stock_profile():
@@ -18,10 +18,10 @@ def test_an_aeroplanes_own_override_does_not_leak_into_the_stock_profile():
     with no override at all. Two different pilots, two different answers,
     is the only acceptable outcome.
     """
-    overridden = planning.aircraft_profile("c172", cruise_tas_kt=999.0)
+    overridden = aircraft.aircraft_profile("c172", cruise_tas_kt=999.0)
     assert overridden["cruise_tas_kt"] == 999.0
 
-    stock = planning.aircraft_profile("c172")
+    stock = aircraft.aircraft_profile("c172")
     assert stock["cruise_tas_kt"] != 999.0
 
 
@@ -344,7 +344,7 @@ def test_an_aircraft_name_that_is_a_path_is_not_opened():
     from app.main import app
 
     for name in ("/etc/hostname.json", "../aircraft/c172.json", "c172.json", "nosuchplane"):
-        with pytest.raises(planning.UnknownAircraft):
-            planning.aircraft_profile(name)
+        with pytest.raises(aircraft.UnknownAircraft):
+            aircraft.aircraft_profile(name)
     resp = TestClient(app).get("/api/plan", params={"dep": "C81", "dest": "KDLH", "aircraft": "nosuchplane"})
     assert resp.status_code == 422 and "nosuchplane" in resp.json()["detail"]

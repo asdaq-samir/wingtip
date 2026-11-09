@@ -5,8 +5,7 @@ the engine's best_fields, asked by the app with this."""
 
 from fastapi import APIRouter, Query
 from wingtip import emergency
-from wingtip.aircraft import load_aircraft_profile, profile_path
-from wingtip.planning import OWN_AIRPLANE
+from wingtip.aircraft import OWN_AIRPLANE, load_aircraft_profile, profile_path
 
 from ..emergency.schemas import EmergencyFields
 from ..gateway import PUBLIC
@@ -18,7 +17,7 @@ router = APIRouter()
 def _airplane(name: str | None, glide_ratio: float | None = None) -> dict | None:
     """The stock profile's figures by its bare name, with the pilot's own
     glide ratio over its book's where they set one; for a pilot's own
-    airplane of no stock type ("own", wingtip.planning.OWN_AIRPLANE) its
+    airplane of no stock type ("own", wingtip.aircraft.OWN_AIRPLANE) its
     glide ratio alone, and no landing or crosswind figure (none is taken
     from another airplane, the owner 2026-11-09). None for no name, or a
     name that is neither."""

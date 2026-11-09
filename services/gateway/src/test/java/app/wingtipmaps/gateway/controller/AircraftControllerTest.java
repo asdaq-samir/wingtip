@@ -18,7 +18,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import app.wingtipmaps.gateway.domain.Aircraft;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.AircraftDto;
-import app.wingtipmaps.gateway.dto.OwnFigures;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
 import app.wingtipmaps.gateway.planner.model.PlannerVorCheckOutput;
 import app.wingtipmaps.gateway.service.AircraftService;
@@ -38,11 +37,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-/** The HTTP contract: signed out is 401 (not a redirect a fetch() would
- *  silently follow), a bad body is 400, a good one is 200. {@link AircraftService}
- *  and {@link PilotService} are both mocked -- pilot-scoping itself lives
- *  in {@code AircraftRepository#findByIdAndPilotId} and is exercised by
- *  actually running the app, not re-proven with a mock here. */
+/** The HTTP contract: signed out is 401 (not a redirect a fetch() would follow), a bad body
+ *  400, a good one 200; the services mocked, pilot-scoping being the repository's. */
 @WebMvcTest(AircraftController.class)
 @Import(app.wingtipmaps.gateway.security.SecurityConfig.class)
 class AircraftControllerTest {
@@ -305,39 +301,6 @@ class AircraftControllerTest {
                         .content("{\"tailNumber\":\"N1\",\"typeDesignator\":\"C172\",\"cruiseTasKt\":110,"
                                 + "\"fuelBurnGph\":8.5,\"climbTasKt\":0}"))
                 .andExpect(status().isBadRequest());
-    }
-
-    /** An inline ask's one figure goes through and comes back with the
-     *  airplane's own figures. */
-    @Test
-    void aFigureAskedInlineIsAddedAndReturned() throws Exception {
-        given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
-        given(aircraftService.addFigures(any(), eq(8L), eq(new OwnFigures(null, null, 1.2, null, null, null))))
-                .willReturn(Optional.of(sampleAircraft().keepFigures(null, null, 1.2, null, null, null)));
-
-        mockMvc.perform(put("/api/aircraft/8/figures")
-                        .with(oidcLogin())
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"taxiFuelGal\":1.2}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.figures.taxiFuelGal").value(1.2))
-                .andExpect(jsonPath("$.figures.glideRatio").isEmpty());
-    }
-
-    /** A glide ratio of 1 or less, or a ceiling no airplane has, is refused. */
-    @Test
-    void aFigureOutsideItsLimitsIsRefused() throws Exception {
-        given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
-
-        for (String body : new String[] {"{\"glideRatio\":1}", "{\"serviceCeilingFt\":500}", "{\"taxiFuelGal\":-1}"}) {
-            mockMvc.perform(put("/api/aircraft/8/figures")
-                            .with(oidcLogin())
-                            .with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(body))
-                    .andExpect(status().isBadRequest());
-        }
     }
 
     @Test

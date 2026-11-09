@@ -64,7 +64,8 @@ from . import chart_model, chart_refresh, errors, tracing
 from .chart_cycle import check as chart_cycle
 from .feeds import watch as feeds_watch
 from .router_basics import PROCESSED_DIR
-from wingtip.planning import StillComputing, UnknownAircraft
+from wingtip.aircraft import UnknownAircraft
+from wingtip.planning import StillComputing
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan
 from .routers import clearance, copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain
 from .routers import coach, engine as engine_router, logbook_draft, notam_rank, offline, traffic, weather_map, window, words
@@ -397,9 +398,8 @@ async def _still_computing(request: Request, exc: StillComputing):
 
 @app.exception_handler(UnknownAircraft)
 async def _unknown_aircraft(request: Request, exc: UnknownAircraft):
-    # A stock profile asked by a name it does not go by (wingtip.planning
-    # aircraft_profile): the request's fault, a 422 with its words, from
-    # /api/plan, /api/navlog, the figures and route options alike.
+    # A profile asked by a name no stock one goes by (wingtip.aircraft): the
+    # request's fault, a 422 with its words, from every endpoint alike.
     return JSONResponse(status_code=422, content={"detail": str(exc)})
 
 

@@ -77,7 +77,7 @@ class Asked:
     """What a flight is planned with, read from the request by its caller
     (app.routers.plan's PlanQuery.asked, which refuses what is not one).
 
-    `profile` is the airplane's (wingtip.planning.aircraft_profile) and
+    `profile` is the airplane's (wingtip.aircraft.aircraft_profile) and
     `aircraft_key` what the altitude selection is cached by (its name and
     any ceiling of the pilot's own); `profile` None is no airplane
     (no `aircraft` asked): the route's own figures, and none that
