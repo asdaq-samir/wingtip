@@ -50,7 +50,7 @@ const usePlayer = create<Player>()((set) => ({
 export function useWeatherLoop({ drive = false }: { drive?: boolean } = {}) {
   const kind = useWeatherLayers((s) => s.loop);
   const speed = useWeatherLayers((s) => s.loopSpeed);
-  const { data, error, isPending } = useQuery({
+  const { data, error, isPending, dataUpdatedAt } = useQuery({
     queryKey: ["weatherLoop", kind],
     queryFn: () => api.weatherLoop(kind === "off" ? "radar" : kind),
     enabled: kind !== "off",
@@ -102,6 +102,10 @@ export function useWeatherLoop({ drive = false }: { drive?: boolean } = {}) {
     ready,
     loading: kind !== "off" && isPending,
     failed: !!error && !data,
+    /** When the frame list shown came, and whether asking again failed:
+     *  its age where it is the one kept (KeptAge). */
+    fetchedAt: dataUpdatedAt || null,
+    refreshFailed: !!error,
     oldAfterS: data?.old_after_s ?? 900,
     credit: data?.credit ?? "",
     toggle: () => set({ playing: !playing, started: true, resume: false }),

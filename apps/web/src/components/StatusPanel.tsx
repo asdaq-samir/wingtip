@@ -1,4 +1,3 @@
-import { useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "./GroupedList";
@@ -7,6 +6,7 @@ import { zuluTime } from "../lib/format";
 import { useMinuteClock } from "../lib/useMinuteClock";
 import { cycleWarning, dayWords } from "../lib/dataCycles";
 import { savedWords, useSaved } from "../lib/fromCache";
+import { useOnline } from "../lib/kept/useOnline";
 import { ageWords, mapAgesQuery, useLayerAges } from "../lib/map/sources/layerAges";
 import { TEXT } from "../lib/text";
 
@@ -97,20 +97,4 @@ function failingWords(s: MapLayerAges["sources"][number]): string {
   return until.getTime() > Date.now()
     ? `Not answering: the last copy is used until ${zuluTime(until)}`
     : "Not answering: the last copy has run out";
-}
-
-/** Whether the browser has a network, said again as it comes and goes. */
-function useOnline(): boolean {
-  return useSyncExternalStore(
-    (change) => {
-      window.addEventListener("online", change);
-      window.addEventListener("offline", change);
-      return () => {
-        window.removeEventListener("online", change);
-        window.removeEventListener("offline", change);
-      };
-    },
-    () => navigator.onLine,
-    () => true,
-  );
 }

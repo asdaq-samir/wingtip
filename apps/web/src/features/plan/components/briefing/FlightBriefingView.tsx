@@ -1,3 +1,4 @@
+import KeptAge from "../../../../components/KeptAge";
 import { memo, type ReactNode } from "react";
 import { cn } from "cn";
 import { CloudOff } from "lucide-react";
@@ -131,6 +132,19 @@ export default memo(function FlightBriefingView(props: Props) {
           Could not refresh the briefing ({briefingState.refreshError}); showing the one fetched at{" "}
           {clockTime(new Date(briefingState.fetchedAt))}.
         </p>
+      )}
+
+      {briefingState.state === "ready" && (
+        // The briefing kept on this device, with its age, where it is the
+        // one shown with no signal: the Go / No-Go over Preflight is worked
+        // from it, so its own word there (lib/kept).
+        <KeptAge
+          kind={part === "preflight" ? "go_no_go" : "briefing"}
+          path="/api/planner/briefing"
+          atMs={briefingState.fetchedAt}
+          failed={!!briefingState.refreshError}
+          className="py-2 print:hidden"
+        />
       )}
 
       {/* Preflight: the go / no-go first, then what is done before
