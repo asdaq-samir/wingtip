@@ -6131,6 +6131,115 @@ enum EngineContract {
         var text: String
     }
 
+    struct NotamsRankedAnswer: Codable, Equatable, Sendable {
+        var ranked: [EngineContract.NotamsRankedAnswerRankedItem]
+        var top: Int
+    }
+
+    struct NotamsRankedAnswerRankedItem: Codable, Equatable, Sendable {
+        var id: String
+        var rank: Int
+        var score: Int
+        /// One of the first three said with a line each; the rest are folded.
+        var top: Bool
+        /// Another NOTAM has the same score: the words may put a tie in another order.
+        var tied: Bool
+        var field: String?
+        var role: String?
+        /// Its JO 7930.2 keyword (RWY, AD, NAV, AIRSPACE...).
+        var keyword: String?
+        var runways: [String]
+        var closed: Bool
+        var lowFt: Double?
+        var highFt: Double?
+        var inForce: Bool?
+        var reasons: [EngineContract.NotamsRankedAnswerRankedItemReasonsItem]
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case rank
+            case score
+            case top
+            case tied
+            case field
+            case role
+            case keyword
+            case runways
+            case closed
+            case lowFt = "low_ft"
+            case highFt = "high_ft"
+            case inForce = "in_force"
+            case reasons
+        }
+    }
+
+    struct NotamsRankedAnswerRankedItemReasonsItem: Codable, Equatable, Sendable {
+        var key: String
+        var words: String
+    }
+
+    struct NotamsRankedInput: Codable, Equatable, Sendable {
+        var notams: [EngineContract.NotamsRankedInputNotamsItem]
+        var fields: [EngineContract.NotamsRankedInputFieldsItem]?
+        /// The flight's window, ISO 8601 UTC: for a NOTAM at no field of the route.
+        var from: String?
+        var until: String?
+        /// The cruise altitude, ft MSL.
+        var cruiseFt: Double?
+        /// The airspaces the route passes, by name (CHICAGO CLASS B).
+        var airspaces: [String]?
+
+        enum CodingKeys: String, CodingKey {
+            case notams
+            case fields
+            case from
+            case until
+            case cruiseFt = "cruise_ft"
+            case airspaces
+        }
+    }
+
+    struct NotamsRankedInputFieldsItem: Codable, Equatable, Sendable {
+        var ident: String
+        var role: String
+        /// When the flight's time at the field starts, ISO 8601 UTC.
+        var from: String?
+        var until: String?
+        /// The runway ends in use there ("18", "09L"); empty where none is known.
+        var runways: [String]?
+    }
+
+    struct NotamsRankedInputNotamsItem: Codable, Equatable, Sendable {
+        var id: String
+        /// The place the NOTAM is issued for, as the feed names it (OSH, KOSH).
+        var location: String?
+        /// ISO 8601 UTC; null for in force now.
+        var starts: String?
+        /// ISO 8601 UTC; null for until further notice.
+        var ends: String?
+        var schedule: String?
+        /// The NOTAM's text as sent.
+        var text: String
+        /// A TFR's floor, ft MSL, where the planner read it.
+        var floorFt: Double?
+        /// A TFR's ceiling, ft MSL.
+        var ceilingFt: Double?
+        /// The route goes through it (a TFR the planner placed on the route).
+        var crosses: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case location
+            case starts
+            case ends
+            case schedule
+            case text
+            case floorFt = "floor_ft"
+            case ceilingFt = "ceiling_ft"
+            case crosses
+        }
+    }
+
     struct OurCallInput: Codable, Equatable, Sendable {
         var text: String
         var tail: String

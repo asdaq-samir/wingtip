@@ -14411,6 +14411,291 @@
       ],
       "additionalProperties": false
     },
+    "notams_ranked": {
+      "description": "A flight's NOTAMs ranked by what bears on it (14 CFR 91.103: all available information concerning the flight): in force while it is at the field or en route, at its departure, stops or destination, naming the runway in use, closing the field, an altitude span (FAA JO 7930.2 chapter 5; the ICAO Q) line's limits) taking in the cruise altitude, an airspace the route passes. The top three in force are said first; none is dropped.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NotamsRankedInput",
+          "type": "object",
+          "properties": {
+            "notams": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The place the NOTAM is issued for, as the feed names it (OSH, KOSH)."
+                  },
+                  "starts": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "ISO 8601 UTC; null for in force now."
+                  },
+                  "ends": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "ISO 8601 UTC; null for until further notice."
+                  },
+                  "schedule": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "text": {
+                    "type": "string",
+                    "description": "The NOTAM's text as sent."
+                  },
+                  "floor_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "A TFR's floor, ft MSL, where the planner read it."
+                  },
+                  "ceiling_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "A TFR's ceiling, ft MSL."
+                  },
+                  "crosses": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ],
+                    "description": "The route goes through it (a TFR the planner placed on the route)."
+                  }
+                },
+                "required": [
+                  "id",
+                  "text"
+                ]
+              }
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ident": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "dep",
+                      "stop",
+                      "dest"
+                    ]
+                  },
+                  "from": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "When the flight's time at the field starts, ISO 8601 UTC."
+                  },
+                  "until": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "runways": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "The runway ends in use there (\"18\", \"09L\"); empty where none is known."
+                  }
+                },
+                "required": [
+                  "ident",
+                  "role"
+                ]
+              }
+            },
+            "from": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The flight's window, ISO 8601 UTC: for a NOTAM at no field of the route."
+            },
+            "until": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "cruise_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The cruise altitude, ft MSL."
+            },
+            "airspaces": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The airspaces the route passes, by name (CHICAGO CLASS B)."
+            }
+          },
+          "required": [
+            "notams"
+          ]
+        },
+        "answer": {
+          "title": "NotamsRankedAnswer",
+          "type": "object",
+          "properties": {
+            "ranked": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "rank": {
+                    "type": "integer"
+                  },
+                  "score": {
+                    "type": "integer"
+                  },
+                  "top": {
+                    "type": "boolean",
+                    "description": "One of the first three said with a line each; the rest are folded."
+                  },
+                  "tied": {
+                    "type": "boolean",
+                    "description": "Another NOTAM has the same score: the words may put a tie in another order."
+                  },
+                  "field": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "role": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "keyword": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Its JO 7930.2 keyword (RWY, AD, NAV, AIRSPACE...)."
+                  },
+                  "runways": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "closed": {
+                    "type": "boolean"
+                  },
+                  "low_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "high_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "in_force": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "reasons": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "enum": [
+                            "time",
+                            "schedule",
+                            "field",
+                            "runway",
+                            "closed",
+                            "altitude",
+                            "airspace",
+                            "kind"
+                          ]
+                        },
+                        "words": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "words"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "rank",
+                  "score",
+                  "top",
+                  "tied",
+                  "field",
+                  "role",
+                  "keyword",
+                  "runways",
+                  "closed",
+                  "low_ft",
+                  "high_ft",
+                  "in_force",
+                  "reasons"
+                ]
+              }
+            },
+            "top": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "ranked",
+            "top"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "our_call": {
       "description": "Whether a transmission is said to the airplane `tail` (AIM 4-2-4).",
       "type": "object",
@@ -21287,6 +21572,7 @@
     "night_on_the_way",
     "no_altitude",
     "notams_fns",
+    "notams_ranked",
     "our_call",
     "own_altitude_caution",
     "own_ship_hex",

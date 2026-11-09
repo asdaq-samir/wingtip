@@ -321,6 +321,39 @@ struct ASOralFocus: Codable, Equatable, Sendable {
     var text: String
 }
 
+/// The flight's NOTAMs best first, the first `top` said with their line
+/// and the rest folded; the day the NOTAM feed was first heard
+/// (`coverage_since`), what could not be checked ("tfrs"), the model that
+/// wrote the lines and, where it could not, why (`unavailable`).
+// MARK: - ASRankedNotams
+struct ASRankedNotams: Codable, Equatable, Sendable {
+    var coverageSince: String?
+    var model: String
+    var notams: [ASRankedLine]
+    var top: Int
+    var unavailable: String?
+    var unchecked: [String]?
+}
+
+/// One NOTAM as the Brief shows it: its line (`why`, the model's, else
+/// the engine's reasons), whether it is said first (`top`), and what the
+/// engine read of it, with its text as sent.
+// MARK: - ASRankedLine
+struct ASRankedLine: Codable, Equatable, Sendable {
+    var ends, field: String?
+    var id: String
+    var inForce: Bool?
+    var kind, label: String
+    var rank: Int
+    var raw: String
+    var reasons: [String]
+    var score: Int
+    var starts: String?
+    var tied, top: Bool
+    var why: String
+    var worded: Bool
+}
+
 /// A words endpoint's answer: the sentences that passed the check, the
 /// sources they cite (for the pilot to read raw), which model wrote them,
 /// and -- with no sentences -- why the briefer could not be reached, where

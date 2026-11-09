@@ -439,6 +439,51 @@ data class OralFocus (
 )
 
 /**
+ * The flight's NOTAMs best first, the first `top` said with their line
+ * and the rest folded; the day the NOTAM feed was first heard
+ * (`coverage_since`), what could not be checked ("tfrs"), the model that
+ * wrote the lines and, where it could not, why (`unavailable`).
+ */
+@Serializable
+data class RankedNotams (
+    @SerialName("coverage_since")
+    val coverageSince: String? = null,
+
+    val model: String,
+    val notams: List<RankedLine>,
+    val top: Int,
+    val unavailable: String? = null,
+    val unchecked: List<String>? = null
+)
+
+/**
+ * One NOTAM as the Brief shows it: its line (`why`, the model's, else
+ * the engine's reasons), whether it is said first (`top`), and what the
+ * engine read of it, with its text as sent.
+ */
+@Serializable
+data class RankedLine (
+    val ends: String? = null,
+    val field: String? = null,
+    val id: String,
+
+    @SerialName("in_force")
+    val inForce: Boolean? = null,
+
+    val kind: String,
+    val label: String,
+    val rank: Int,
+    val raw: String,
+    val reasons: List<String>,
+    val score: Int,
+    val starts: String? = null,
+    val tied: Boolean,
+    val top: Boolean,
+    val why: String,
+    val worded: Boolean
+)
+
+/**
  * A words endpoint's answer: the sentences that passed the check, the
  * sources they cite (for the pilot to read raw), which model wrote them,
  * and -- with no sentences -- why the briefer could not be reached, where

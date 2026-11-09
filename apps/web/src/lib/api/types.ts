@@ -243,6 +243,10 @@ export type NarrativeRequest = Assistant["NarrativeRequest"];
 /** One line of the narrative's stream: text as Claude writes it, then the
  *  whole briefing, or why there is none. */
 export type NarrativeMessage = Assistant["NarrativeMessage"];
+/** The flight's NOTAMs ranked by the engine with a line on each (the
+ *  Brief's NOTAMs that matter, POST /api/words/notams/ranked). */
+export type RankedNotams = Assistant["RankedNotams"];
+export type RankedNotam = Assistant["RankedLine"];
 export type CheckpointNoteSaved = Schemas["CheckpointNoteSaved"];
 
 /** What the nav log stream's "altitude" message carries -- the generated

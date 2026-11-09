@@ -3064,6 +3064,62 @@ struct APIInboundRadio: Codable, Equatable, Sendable {
     var mhz: Double
 }
 
+/// The flight's NOTAMs best first, every one heard (`notams`), how many
+/// are said first (`top`), the day the NOTAM feed was first heard
+/// (`coverage_since`: earlier NOTAMs never changed since are not held) and
+/// what could not be checked ("tfrs").
+// MARK: - APINotamsRanked
+struct APINotamsRanked: Codable, Equatable, Sendable {
+    var coverageSince: String?
+    var notams: [APIRankedNotam]
+    var top: Int
+    var unchecked: [String]?
+}
+
+/// One NOTAM or TFR, ranked: its place in the list and score, whether it
+/// is one of the top three said first, whether its score is shared
+/// (`tied`), what was read of it, and its text as sent (`raw`).
+// MARK: - APIRankedNotam
+struct APIRankedNotam: Codable, Equatable, Sendable {
+    var closed: Bool
+    var ends, field: String?
+    var highFt: Double?
+    var id: String
+    var inForce: Bool?
+    var keyword: String?
+    var kind: String
+    var lowFt: Double?
+    var rank: Int
+    var raw: String
+    var reasons: [APINotamReason]
+    var role: String?
+    var runways: [String]
+    var score: Int
+    var starts: String?
+    var tied, top: Bool
+}
+
+/// Why it bears on the flight, or does not, in the engine's words.
+// MARK: - APINotamReason
+struct APINotamReason: Codable, Equatable, Sendable {
+    var key, words: String
+}
+
+/// The flight as the Brief has it: its route, when it leaves (UTC when
+/// naive; now when not given), how long it is (two hours when not given),
+/// its cruise altitude and the runway in use at each field the pilot's
+/// plan has picked ({"KOSH": "36"}).
+// MARK: - APINotamsRankedAsk
+struct APINotamsRankedAsk: Codable, Equatable, Sendable {
+    var altitudeFt: Double?
+    var dep: String
+    var depart: String?
+    var dest: String
+    var eteMin: Double?
+    var runways: [String: String]?
+    var stops: [String]?
+}
+
 /// A generated note offered as the shared one: kept (`written`), or
 /// the shared one saved meanwhile, which stays (`description` is it).
 // MARK: - APINoteSeeded

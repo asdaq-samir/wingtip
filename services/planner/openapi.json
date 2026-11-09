@@ -12752,6 +12752,149 @@
         "title": "NextCycle",
         "type": "object"
       },
+      "NotamReason": {
+        "description": "Why it bears on the flight, or does not, in the engine's words.",
+        "properties": {
+          "key": {
+            "enum": [
+              "time",
+              "schedule",
+              "field",
+              "runway",
+              "closed",
+              "altitude",
+              "airspace",
+              "kind"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "words": {
+            "title": "Words",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "words"
+        ],
+        "title": "NotamReason",
+        "type": "object"
+      },
+      "NotamsRanked": {
+        "description": "The flight's NOTAMs best first, every one heard (`notams`), how many\nare said first (`top`), the day the NOTAM feed was first heard\n(`coverage_since`: earlier NOTAMs never changed since are not held) and\nwhat could not be checked (\"tfrs\").",
+        "properties": {
+          "coverage_since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Since"
+          },
+          "notams": {
+            "items": {
+              "$ref": "#/components/schemas/RankedNotam"
+            },
+            "title": "Notams",
+            "type": "array"
+          },
+          "top": {
+            "title": "Top",
+            "type": "integer"
+          },
+          "unchecked": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Unchecked",
+            "type": "array"
+          }
+        },
+        "required": [
+          "notams",
+          "top"
+        ],
+        "title": "NotamsRanked",
+        "type": "object"
+      },
+      "NotamsRankedAsk": {
+        "description": "The flight as the Brief has it: its route, when it leaves (UTC when\nnaive; now when not given), how long it is (two hours when not given),\nits cruise altitude and the runway in use at each field the pilot's\nplan has picked ({\"KOSH\": \"36\"}).",
+        "properties": {
+          "altitude_ft": {
+            "anyOf": [
+              {
+                "maximum": 60000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altitude Ft"
+          },
+          "dep": {
+            "title": "Dep",
+            "type": "string"
+          },
+          "depart": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depart"
+          },
+          "dest": {
+            "title": "Dest",
+            "type": "string"
+          },
+          "ete_min": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1440.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ete Min"
+          },
+          "runways": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Runways",
+            "type": "object"
+          },
+          "stops": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Stops",
+            "type": "array"
+          }
+        },
+        "required": [
+          "dep",
+          "dest"
+        ],
+        "title": "NotamsRankedAsk",
+        "type": "object"
+      },
       "NoteSeeded": {
         "description": "A generated note offered as the shared one: kept (`written`), or\nthe shared one saved meanwhile, which stays (`description` is it).",
         "properties": {
@@ -15264,6 +15407,171 @@
           "complete"
         ],
         "title": "PyramidProgress",
+        "type": "object"
+      },
+      "RankedNotam": {
+        "description": "One NOTAM or TFR, ranked: its place in the list and score, whether it\nis one of the top three said first, whether its score is shared\n(`tied`), what was read of it, and its text as sent (`raw`).",
+        "properties": {
+          "closed": {
+            "title": "Closed",
+            "type": "boolean"
+          },
+          "ends": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ends"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "high_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "High Ft"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "in_force": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Force"
+          },
+          "keyword": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyword"
+          },
+          "kind": {
+            "enum": [
+              "notam",
+              "tfr"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "low_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low Ft"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "raw": {
+            "title": "Raw",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/NotamReason"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "runways": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Runways",
+            "type": "array"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "starts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Starts"
+          },
+          "tied": {
+            "title": "Tied",
+            "type": "boolean"
+          },
+          "top": {
+            "title": "Top",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "rank",
+          "score",
+          "top",
+          "tied",
+          "field",
+          "role",
+          "keyword",
+          "runways",
+          "closed",
+          "low_ft",
+          "high_ft",
+          "in_force",
+          "reasons",
+          "raw",
+          "starts",
+          "ends"
+        ],
+        "title": "RankedNotam",
         "type": "object"
       },
       "RecentError": {
@@ -23968,6 +24276,49 @@
         "summary": "Navlog Stream",
         "x-gateway": {
           "access": "public"
+        }
+      }
+    },
+    "/api/notams/ranked": {
+      "post": {
+        "description": "Every NOTAM the FAA's feed has sent for the fields the route lands\nat and every TFR near it, best first: in force while the flight is\nthere, at its departure, stops or destination, on the runway in use,\nclosing a field, its altitudes taking in the cruise altitude, on an\nairspace the route passes (14 CFR 91.103). `top` are said first; the\nrest are folded, never dropped. `coverage_since`, the day the feed\nwas first heard (UTC).",
+        "operationId": "notams_ranked_api_notams_ranked_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotamsRankedAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotamsRanked"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Notams Ranked",
+        "x-gateway": {
+          "access": "public",
+          "csrf": false
         }
       }
     },

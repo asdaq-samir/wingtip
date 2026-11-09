@@ -1041,6 +1041,174 @@
         "title": "OwnShip",
         "type": "object"
       },
+      "RankedLine": {
+        "description": "One NOTAM as the Brief shows it: its line (`why`, the model's, else\nthe engine's reasons), whether it is said first (`top`), and what the\nengine read of it, with its text as sent.",
+        "properties": {
+          "ends": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ends"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "in_force": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Force"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "raw": {
+            "title": "Raw",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "starts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Starts"
+          },
+          "tied": {
+            "title": "Tied",
+            "type": "boolean"
+          },
+          "top": {
+            "title": "Top",
+            "type": "boolean"
+          },
+          "why": {
+            "title": "Why",
+            "type": "string"
+          },
+          "worded": {
+            "title": "Worded",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "label",
+          "why",
+          "worded",
+          "top",
+          "rank",
+          "score",
+          "tied",
+          "reasons",
+          "raw"
+        ],
+        "title": "RankedLine",
+        "type": "object"
+      },
+      "RankedNotams": {
+        "description": "The flight's NOTAMs best first, the first `top` said with their line\nand the rest folded; the day the NOTAM feed was first heard\n(`coverage_since`), what could not be checked (\"tfrs\"), the model that\nwrote the lines and, where it could not, why (`unavailable`).",
+        "properties": {
+          "coverage_since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Since"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "notams": {
+            "items": {
+              "$ref": "#/components/schemas/RankedLine"
+            },
+            "title": "Notams",
+            "type": "array"
+          },
+          "top": {
+            "title": "Top",
+            "type": "integer"
+          },
+          "unavailable": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable"
+          },
+          "unchecked": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Unchecked",
+            "type": "array"
+          }
+        },
+        "required": [
+          "notams",
+          "top",
+          "model"
+        ],
+        "title": "RankedNotams",
+        "type": "object"
+      },
       "Sentence": {
         "properties": {
           "sources": {
@@ -1585,6 +1753,53 @@
           }
         },
         "summary": "Notam Words",
+        "x-gateway": {
+          "access": "signed-in",
+          "bodyLimit": 65536,
+          "paid": "WORDS"
+        }
+      }
+    },
+    "/api/words/notams/ranked": {
+      "post": {
+        "description": "The flight's NOTAMs and TFRs ranked by the engine ({dep, dest, stops,\ndepart, ete_min, altitude_ft, runways}), each with a line on why it\nmatters: the top three first, the rest folded, none dropped. With none\nheard there is nothing to word and no call.",
+        "operationId": "notams_ranked_api_words_notams_ranked_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "description": "The flight, as the planner's POST /api/notams/ranked takes it.",
+                "title": "Ask",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankedNotams"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Notams Ranked",
         "x-gateway": {
           "access": "signed-in",
           "bodyLimit": 65536,

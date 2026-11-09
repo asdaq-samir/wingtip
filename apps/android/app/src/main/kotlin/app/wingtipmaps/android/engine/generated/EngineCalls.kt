@@ -1207,6 +1207,12 @@ fun Engine.notamsFns(text: String): Result<List<EngineContract.NotamsFnsAnswerIt
     rule("notams_fns", EngineContract.NotamsFnsInput(text = text))
 
 /**
+ * A flight's NOTAMs ranked by what bears on it (14 CFR 91.103: all available information concerning the flight): in force while it is at the field or en route, at its departure, stops or destination, naming the runway in use, closing the field, an altitude span (FAA JO 7930.2 chapter 5; the ICAO Q) line's limits) taking in the cruise altitude, an airspace the route passes. The top three in force are said first; none is dropped.
+ */
+fun Engine.notamsRanked(notams: List<EngineContract.NotamsRankedInputNotamsItem>, fields: List<EngineContract.NotamsRankedInputFieldsItem>? = null, from: String? = null, until: String? = null, cruiseFt: Double? = null, airspaces: List<String>? = null): Result<EngineContract.NotamsRankedAnswer> =
+    rule("notams_ranked", EngineContract.NotamsRankedInput(notams = notams, fields = fields, from = from, until = until, cruiseFt = cruiseFt, airspaces = airspaces))
+
+/**
  * Whether a transmission is said to the airplane `tail` (AIM 4-2-4).
  */
 fun Engine.ourCall(text: String, tail: String): Result<Boolean> =

@@ -5857,6 +5857,119 @@ object EngineContract {
     )
 
     @Serializable
+    data class NotamsRankedAnswer(
+        val ranked: List<EngineContract.NotamsRankedAnswerRankedItem>,
+        val top: Int,
+    )
+
+    @Serializable
+    data class NotamsRankedAnswerRankedItem(
+        val id: String,
+        val rank: Int,
+        val score: Int,
+        /**
+         * One of the first three said with a line each; the rest are folded.
+         */
+        val top: Boolean,
+        /**
+         * Another NOTAM has the same score: the words may put a tie in another order.
+         */
+        val tied: Boolean,
+        val field: String? = null,
+        val role: String? = null,
+        /**
+         * Its JO 7930.2 keyword (RWY, AD, NAV, AIRSPACE...).
+         */
+        val keyword: String? = null,
+        val runways: List<String>,
+        val closed: Boolean,
+        @SerialName("low_ft")
+        val lowFt: Double? = null,
+        @SerialName("high_ft")
+        val highFt: Double? = null,
+        @SerialName("in_force")
+        val inForce: Boolean? = null,
+        val reasons: List<EngineContract.NotamsRankedAnswerRankedItemReasonsItem>,
+    )
+
+    @Serializable
+    data class NotamsRankedAnswerRankedItemReasonsItem(
+        val key: String,
+        val words: String,
+    )
+
+    @Serializable
+    data class NotamsRankedInput(
+        val notams: List<EngineContract.NotamsRankedInputNotamsItem>,
+        val fields: List<EngineContract.NotamsRankedInputFieldsItem>? = null,
+        /**
+         * The flight's window, ISO 8601 UTC: for a NOTAM at no field of the route.
+         */
+        val from: String? = null,
+        val until: String? = null,
+        /**
+         * The cruise altitude, ft MSL.
+         */
+        @SerialName("cruise_ft")
+        val cruiseFt: Double? = null,
+        /**
+         * The airspaces the route passes, by name (CHICAGO CLASS B).
+         */
+        val airspaces: List<String>? = null,
+    )
+
+    @Serializable
+    data class NotamsRankedInputFieldsItem(
+        val ident: String,
+        val role: String,
+        /**
+         * When the flight's time at the field starts, ISO 8601 UTC.
+         */
+        val from: String? = null,
+        val until: String? = null,
+        /**
+         * The runway ends in use there ("18", "09L"); empty where none is known.
+         */
+        val runways: List<String>? = null,
+    )
+
+    @Serializable
+    data class NotamsRankedInputNotamsItem(
+        val id: String,
+        /**
+         * The place the NOTAM is issued for, as the feed names it (OSH, KOSH).
+         */
+        val location: String? = null,
+        /**
+         * ISO 8601 UTC; null for in force now.
+         */
+        val starts: String? = null,
+        /**
+         * ISO 8601 UTC; null for until further notice.
+         */
+        val ends: String? = null,
+        val schedule: String? = null,
+        /**
+         * The NOTAM's text as sent.
+         */
+        val text: String,
+        /**
+         * A TFR's floor, ft MSL, where the planner read it.
+         */
+        @SerialName("floor_ft")
+        val floorFt: Double? = null,
+        /**
+         * A TFR's ceiling, ft MSL.
+         */
+        @SerialName("ceiling_ft")
+        val ceilingFt: Double? = null,
+        /**
+         * The route goes through it (a TFR the planner placed on the route).
+         */
+        val crosses: Boolean? = null,
+    )
+
+    @Serializable
     data class OurCallInput(
         val text: String,
         val tail: String,

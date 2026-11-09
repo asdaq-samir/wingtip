@@ -1004,6 +1004,11 @@ extension Engine {
         try rule("notams_fns", EngineContract.NotamsFnsInput(text: text))
     }
 
+    /// A flight's NOTAMs ranked by what bears on it (14 CFR 91.103: all available information concerning the flight): in force while it is at the field or en route, at its departure, stops or destination, naming the runway in use, closing the field, an altitude span (FAA JO 7930.2 chapter 5; the ICAO Q) line's limits) taking in the cruise altitude, an airspace the route passes. The top three in force are said first; none is dropped.
+    static func notamsRanked(notams: [EngineContract.NotamsRankedInputNotamsItem], fields: [EngineContract.NotamsRankedInputFieldsItem]? = nil, from: String? = nil, until: String? = nil, cruiseFt: Double? = nil, airspaces: [String]? = nil) throws -> EngineContract.NotamsRankedAnswer {
+        try rule("notams_ranked", EngineContract.NotamsRankedInput(notams: notams, fields: fields, from: from, until: until, cruiseFt: cruiseFt, airspaces: airspaces))
+    }
+
     /// Whether a transmission is said to the airplane `tail` (AIM 4-2-4).
     static func ourCall(text: String, tail: String) throws -> Bool {
         try rule("our_call", EngineContract.OurCallInput(text: text, tail: tail))

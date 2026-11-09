@@ -622,6 +622,15 @@ def navlog_stream(*, dep: str, dest: str, ahead: bool | None = None, stops: str 
     return _NAVLOG_STREAM.validate_python(found)
 
 
+_NOTAMS_RANKED = _Answer(m.NotamsRanked)
+
+
+def notams_ranked(*, body: m.NotamsRankedAsk | dict[str, Any]) -> m.NotamsRanked:
+    """POST /api/notams/ranked: Notams Ranked"""
+    found = _send('POST', '/api/notams/ranked', query={}, body=_body(body), headers={})
+    return _NOTAMS_RANKED.validate_python(found)
+
+
 _OVERLAY_TILES = _Answer(m.OverlayTiles)
 
 

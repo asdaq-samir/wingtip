@@ -2224,6 +2224,13 @@ export interface EngineContract {
     answer: NotamsFnsAnswer;
   };
   /**
+   * A flight's NOTAMs ranked by what bears on it (14 CFR 91.103: all available information concerning the flight): in force while it is at the field or en route, at its departure, stops or destination, naming the runway in use, closing the field, an altitude span (FAA JO 7930.2 chapter 5; the ICAO Q) line's limits) taking in the cruise altitude, an airspace the route passes. The top three in force are said first; none is dropped.
+   */
+  notams_ranked: {
+    input: NotamsRankedInput;
+    answer: NotamsRankedAnswer;
+  };
+  /**
    * Whether a transmission is said to the airplane `tail` (AIM 4-2-4).
    */
   our_call: {
@@ -7232,6 +7239,97 @@ export interface NoAltitudeAnswer {
 }
 export interface NotamsFnsInput {
   text: string;
+}
+export interface NotamsRankedInput {
+  notams: {
+    id: string;
+    /**
+     * The place the NOTAM is issued for, as the feed names it (OSH, KOSH).
+     */
+    location?: string | null;
+    /**
+     * ISO 8601 UTC; null for in force now.
+     */
+    starts?: string | null;
+    /**
+     * ISO 8601 UTC; null for until further notice.
+     */
+    ends?: string | null;
+    schedule?: string | null;
+    /**
+     * The NOTAM's text as sent.
+     */
+    text: string;
+    /**
+     * A TFR's floor, ft MSL, where the planner read it.
+     */
+    floor_ft?: number | null;
+    /**
+     * A TFR's ceiling, ft MSL.
+     */
+    ceiling_ft?: number | null;
+    /**
+     * The route goes through it (a TFR the planner placed on the route).
+     */
+    crosses?: boolean | null;
+  }[];
+  fields?: {
+    ident: string;
+    role: "dep" | "stop" | "dest";
+    /**
+     * When the flight's time at the field starts, ISO 8601 UTC.
+     */
+    from?: string | null;
+    until?: string | null;
+    /**
+     * The runway ends in use there ("18", "09L"); empty where none is known.
+     */
+    runways?: string[];
+  }[];
+  /**
+   * The flight's window, ISO 8601 UTC: for a NOTAM at no field of the route.
+   */
+  from?: string | null;
+  until?: string | null;
+  /**
+   * The cruise altitude, ft MSL.
+   */
+  cruise_ft?: number | null;
+  /**
+   * The airspaces the route passes, by name (CHICAGO CLASS B).
+   */
+  airspaces?: string[];
+}
+export interface NotamsRankedAnswer {
+  ranked: {
+    id: string;
+    rank: number;
+    score: number;
+    /**
+     * One of the first three said with a line each; the rest are folded.
+     */
+    top: boolean;
+    /**
+     * Another NOTAM has the same score: the words may put a tie in another order.
+     */
+    tied: boolean;
+    field: string | null;
+    role: string | null;
+    /**
+     * Its JO 7930.2 keyword (RWY, AD, NAV, AIRSPACE...).
+     */
+    keyword: string | null;
+    runways: string[];
+    closed: boolean;
+    low_ft: number | null;
+    high_ft: number | null;
+    in_force: boolean | null;
+    reasons: {
+      key: "time" | "schedule" | "field" | "runway" | "closed" | "altitude" | "airspace" | "kind";
+      words: string;
+    }[];
+  }[];
+  top: number;
 }
 export interface OurCallInput {
   text: string;

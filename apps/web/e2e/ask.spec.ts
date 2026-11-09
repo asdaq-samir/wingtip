@@ -24,6 +24,17 @@ const WORDS = {
   model: "claude-haiku-5-5", unavailable: null,
 };
 
+/** The Brief's NOTAMs that matter: the engine's ranking with a line each. */
+const RANKED = {
+  notams: [
+    { id: "DLH 11/012", kind: "notam", label: "NOTAM DLH 11/012", why: "Runway 09/27 at KDLH is closed while you are there.", worded: true,
+      top: true, rank: 1, score: 85, tied: false, field: "KDLH", in_force: true, reasons: [], raw: "!DLH 11/012 DLH RWY 09/27 CLSD", starts: null, ends: null },
+    { id: "C81 11/004", kind: "notam", label: "NOTAM C81 11/004", why: "Not in force while you are at C81; At C81, your departure.", worded: false,
+      top: false, rank: 2, score: -45, tied: false, field: "C81", in_force: false, reasons: [], raw: "!C81 11/004 C81 SVC FUEL 100LL NOT AVBL", starts: null, ends: null },
+  ],
+  top: 1, coverage_since: "2026-10-19", unchecked: [], model: "claude-haiku-5-5", unavailable: null,
+};
+
 /** The planner's AI routes, each answered here (a URL predicate: a glob's
  *  `**` does not cross the path's slashes). */
 async function mockAi(page: Page, asked: { body: unknown }[]) {
@@ -33,6 +44,7 @@ async function mockAi(page: Page, asked: { body: unknown }[]) {
   });
   await page.route(url => url.pathname.startsWith("/api/planner/words/"), route => {
     const kind = route.request().url().split("/words/")[1]!;
+    if (kind === "notams/ranked") return route.fulfill({ json: RANKED });
     if (kind === "weather") {
       return route.fulfill({ json: { sentences: [], sources: [], model: null, unavailable: "the model could not be reached" } });
     }
@@ -82,8 +94,13 @@ test("the Brief's words come with their chips, and a reading the model could not
   await settle(page);
   await openBrief(page);
   const panel = sideDrawer(page);
-  await expect(panel.getByTestId("brief-notam-words-words")).toHaveText("Nothing in the NOTAMs bears on this flight.", { timeout: slow(30000) });
-  await expect(panel.getByTestId("brief-notam-words-source")).toHaveText("NOTAMs C81, KDLH");
+  // The NOTAMs that matter: the top one with its chip, the rest folded, the feed's day under them.
+  await expect(panel.getByTestId("brief-notam")).toContainText("Runway 09/27 at KDLH is closed", { timeout: slow(30000) });
+  await expect(panel.getByTestId("brief-notam-source")).toHaveText("NOTAM DLH 11/012");
+  await expect(panel.getByTestId("brief-notam-folded")).toHaveCount(0);
+  await panel.getByTestId("brief-notams-more").click();
+  await expect(panel.getByTestId("brief-notam-folded")).toHaveCount(1);
+  await expect(panel.getByTestId("brief-notams-credit")).toHaveText("FAA NOTAM feed since 19 Oct 2026");
   await expect(panel.getByTestId("brief-weather-words-unavailable")).toHaveText("The model could not be reached.");
   await expect(page.locator("[data-sonner-toast]")).toHaveCount(0);
 });

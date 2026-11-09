@@ -5153,6 +5153,89 @@ data class InboundRadio (
 )
 
 /**
+ * The flight's NOTAMs best first, every one heard (`notams`), how many
+ * are said first (`top`), the day the NOTAM feed was first heard
+ * (`coverage_since`: earlier NOTAMs never changed since are not held) and
+ * what could not be checked ("tfrs").
+ */
+@Serializable
+data class NotamsRanked (
+    @SerialName("coverage_since")
+    val coverageSince: String? = null,
+
+    val notams: List<RankedNotam>,
+    val top: Int,
+    val unchecked: List<String>? = null
+)
+
+/**
+ * One NOTAM or TFR, ranked: its place in the list and score, whether it
+ * is one of the top three said first, whether its score is shared
+ * (`tied`), what was read of it, and its text as sent (`raw`).
+ */
+@Serializable
+data class RankedNotam (
+    val closed: Boolean,
+    val ends: String? = null,
+    val field: String? = null,
+
+    @SerialName("high_ft")
+    val highFt: Double? = null,
+
+    val id: String,
+
+    @SerialName("in_force")
+    val inForce: Boolean? = null,
+
+    val keyword: String? = null,
+    val kind: String,
+
+    @SerialName("low_ft")
+    val lowFt: Double? = null,
+
+    val rank: Int,
+    val raw: String,
+    val reasons: List<NotamReason>,
+    val role: String? = null,
+    val runways: List<String>,
+    val score: Int,
+    val starts: String? = null,
+    val tied: Boolean,
+    val top: Boolean
+)
+
+/**
+ * Why it bears on the flight, or does not, in the engine's words.
+ */
+@Serializable
+data class NotamReason (
+    val key: String,
+    val words: String
+)
+
+/**
+ * The flight as the Brief has it: its route, when it leaves (UTC when
+ * naive; now when not given), how long it is (two hours when not given),
+ * its cruise altitude and the runway in use at each field the pilot's
+ * plan has picked ({"KOSH": "36"}).
+ */
+@Serializable
+data class NotamsRankedAsk (
+    @SerialName("altitude_ft")
+    val altitudeFt: Double? = null,
+
+    val dep: String,
+    val depart: String? = null,
+    val dest: String,
+
+    @SerialName("ete_min")
+    val eteMin: Double? = null,
+
+    val runways: Map<String, String>? = null,
+    val stops: List<String>? = null
+)
+
+/**
  * A generated note offered as the shared one: kept (`written`), or
  * the shared one saved meanwhile, which stays (`description` is it).
  */
