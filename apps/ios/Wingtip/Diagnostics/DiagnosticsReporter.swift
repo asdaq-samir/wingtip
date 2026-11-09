@@ -39,8 +39,9 @@ enum DiagnosticsReporter {
     }
 
     /// The day's figures the owner steers by: launch to first draw at the
-    /// 50th and 95th percentile, resume at the 50th, the hang time and
-    /// the share of scrolling spent hitching.
+    /// 50th and 95th percentile, resume at the 50th, the hang time, the
+    /// share of scrolling spent hitching, the peak memory and the exits
+    /// the system forced for memory.
     static func report(_ payload: MXMetricPayload, from blank: DiagnosticsReport) -> DiagnosticsReport {
         var report = blank
         let launch = buckets(payload.applicationLaunchMetrics?.histogrammedTimeToFirstDraw, in: .milliseconds)
@@ -52,6 +53,18 @@ enum DiagnosticsReporter {
         if !hangs.isEmpty { report.measure("hang_s", DiagnosticsReport.total(of: hangs)) }
         if let hitch = payload.animationMetrics?.scrollHitchTimeRatio {
             report.measure("hitch_ratio", hitchRatio(value: hitch.value, symbol: hitch.unit.symbol))
+        }
+        // Memory: the day's peak, and how often the system ended the app
+        // for using too much, in the foreground (the pilot saw it go) and
+        // in the background (the chart was gone on return) -- a crash
+        // report never comes for either, as no crash happened.
+        if let peak = payload.memoryMetrics?.peakMemoryUsage {
+            report.measure("memory_mb_peak", peak.converted(to: .megabytes).value)
+        }
+        if let exits = payload.applicationExitMetrics {
+            report.measure("exits_memory_fg", Double(exits.foregroundExitData.cumulativeMemoryResourceLimitExitCount))
+            report.measure("exits_memory_bg", Double(exits.backgroundExitData.cumulativeMemoryResourceLimitExitCount
+                    + exits.backgroundExitData.cumulativeMemoryPressureExitCount))
         }
         return report
     }

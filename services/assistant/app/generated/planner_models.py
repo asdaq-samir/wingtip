@@ -810,6 +810,7 @@ class DataSource(BaseModel):
     fetched_at: Annotated[str | None, Field(title='Fetched At')] = None
     kept_until: Annotated[str | None, Field(title='Kept Until')] = None
     name: Annotated[str | None, Field(title='Name')] = None
+    stale: Annotated[bool | None, Field(title='Stale')] = False
 
 
 class Note(RootModel[str | None]):

@@ -233,6 +233,11 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       PLANNER_SERVICE_URL: http://planner:8000
       ASSISTANT_SERVICE_URL: http://assistant:8000
+      # The monitor's minute check (UptimeWatch, docs/OPERATIONS.md):
+      # the weather service watched too, and its alerts mailed by SES to
+      # APP_ALERT_EMAILS (the owner's secret), the developers where unset.
+      WEATHER_SERVICE_URL: http://weather:8000
+      APP_ALERT_EMAILS: ${APP_ALERT_EMAILS:-}
       # The gateway is reached only through Caddy over the server's own
       # network: plain HTTP inside, TLS at Caddy and at CloudFront.
       APP_PUBLIC_BASE_URL: https://${PUBLIC_HOST}

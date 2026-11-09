@@ -67,10 +67,10 @@ Some phones write a few of these on the device instead, with Apple's own on-devi
 So we hear when the app breaks without you having to write in, each app sends us a report when something goes wrong:
 
 - **the web app:** an error nobody caught, with its message and where in the app's code it happened;
-- **the iPhone app:** the crash, hang and exception reports Apple's MetricKit gives the app, and its daily launch time, hang time and scrolling smoothness;
+- **the iPhone app:** the crash, hang and exception reports Apple's MetricKit gives the app, and its daily launch time, hang time, scrolling smoothness, most memory used and how often the system closed it for using too much;
 - **the Android app:** why the app last stopped when the system stopped it (a crash, an app not responding, low memory), a crash's stack trace, and how long it took to start and how many frames were slow.
 
-Each report carries the app's version, the system's version and whether the device is a phone, tablet or computer. It carries nothing of yours: no account, no address, no route, no position. Our server takes out any web address's query, any email address, any user name in a folder's path and any per-install identifier before keeping it. Faults are kept 90 days.
+Each report carries the app's version, the system's version and whether the device is a phone, tablet or computer. It carries nothing of yours: no account, no address, no route, no position. Our server takes out any web address's query, any email address, any user name in a folder's path and any per-install identifier before keeping it. Faults are kept 30 days.
 
 The web app also sends, when you leave a page, how fast it was on your device (Google's Core Web Vitals and how long the browser was busy), with the page's name, the kind of device and the app's version, nothing else. Speed figures from all three apps are kept 400 days, to see whether the app is getting faster or slower.
 

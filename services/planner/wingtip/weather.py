@@ -275,31 +275,25 @@ def _failing(name: str, record) -> bool:
 
 def sources_status() -> list[dict]:
     """Each source as the pilot's Status page lists it: its name in a
-    pilot's words, when the copy held was fetched, to when that copy may
-    still be served (its product's own validity, the record's `until`),
-    and whether the service's last ask for a newer one failed -- the copy
-    held then served on (UNIX seconds; None where there is none)."""
+    pilot's words, its weather store name (`key`, which the feed watch's
+    lines go by), when the copy held was fetched, to when that copy may
+    still be served (its product's own validity, the record's `until`;
+    None for no limit, as the METARs, each carrying its own time), and
+    whether the service's last ask for a newer one failed -- the copy
+    held then served on (UNIX seconds; None where there is none). The
+    winds aloft, the GFS's, each period held to the end of its own window."""
+    named = [(name, _PRODUCT_WORDS.get(name, name)) for name in _CACHE_SOURCES]
+    named += [(f"winds-{hr}", f"Winds aloft, modelled (GFS), {int(hr)}-hour") for hr in weather_store.WIND_PERIODS]
     out = []
-    for name in _CACHE_SOURCES:
-        record = weather_store.read(name)
+    for key, words in named:
+        record = weather_store.read(key)
         out.append(
             {
-                "name": _PRODUCT_WORDS.get(name, name),
-                "fetched_at": record.fetched_at if record else None,
-                # No limit (METARs, each carrying its own time) is None.
-                "kept_until": record.until if record else None,
-                "failing": _failing(name, record),
-            }
-        )
-    # The winds aloft, the GFS's, each period held to the end of its own window.
-    for hr in weather_store.WIND_PERIODS:
-        record = weather_store.read(f"winds-{hr}")
-        out.append(
-            {
-                "name": f"Winds aloft, modelled (GFS), {int(hr)}-hour",
+                "name": words,
+                "key": key,
                 "fetched_at": record.fetched_at if record else None,
                 "kept_until": record.until if record else None,
-                "failing": _failing(f"winds-{hr}", record),
+                "failing": _failing(key, record),
             }
         )
     return out

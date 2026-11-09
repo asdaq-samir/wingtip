@@ -4239,7 +4239,9 @@ data class DataCycle (
  * page: its name in a pilot's words, when the copy it holds was fetched,
  * to when that copy may still be served by the product's own validity
  * (None: no limit, or none held), and whether the source is failing,
- * the held copy then served on (ISO 8601 UTC).
+ * the held copy then served on (ISO 8601 UTC); and whether it has
+ * stopped updating past its usual cadence, as the minute's feed watch
+ * found it (app.feeds.status_rows), for the page to say so.
  */
 @Serializable
 data class DataSource (
@@ -4251,7 +4253,8 @@ data class DataSource (
     @SerialName("kept_until")
     val keptUntil: String? = null,
 
-    val name: String
+    val name: String,
+    val stale: Boolean? = null
 )
 
 @Serializable

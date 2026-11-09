@@ -156,6 +156,6 @@ services/planner/wingtip/procedure_paths.py 406
 services/planner/wingtip/procedures.py 870
 services/planner/wingtip/publications.py 571
 services/planner/wingtip/traffic/flights.py 444
-services/planner/wingtip/weather.py 635
+services/planner/wingtip/weather.py 629
 services/weather/app/gfs.py 402
 services/weather/tests/test_aviationweather.py 557

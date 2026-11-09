@@ -47,15 +47,15 @@ Crashlytics, Firebase or analytics kit: a grep of `apps/ios` finds none).
 | Apple's type | What | Where |
 |---|---|---|
 | Location: Precise Location | The airplane's position, sent to the planner to answer (Nearest, the copilot's look ahead, `/api/copilot/around`) and not kept | `OwnShip.swift`, `Copilot/Copilot.swift`; `PrivacyInfo.xcprivacy` declares it unlinked |
+| Diagnostics: Crash Data | MetricKit's crash, hang, CPU and disk-write exception diagnostics (the call stack, the exception or signal), with the app's version, the iOS version and phone or tablet; no account, no cookie, no position or route; kept 30 days | `Diagnostics/DiagnosticsReporter.swift`, `DiagnosticsReport.swift`; the gateway's `diagnostics` |
+| Diagnostics: Performance Data | MetricKit's daily launch and resume times, hang time, scroll hitches, peak memory and the exits the system forced for memory, the same way; kept 400 days | `Diagnostics/DiagnosticsReporter.swift`; the gateway's `speed_samples` |
 
-Diagnostics: **not collected by the iOS app.** Its crashes and hangs
-come through MetricKit and are written to the phone's own log
-(`apps/ios/Wingtip/Metrics.swift`, `Log.swift`); nothing is sent to the
-server. Apple's own crash reports reach the developer only from users
-who share analytics with developers, which Apple does not count as the
-app's collection. (The web app does send its errors and speed figures,
-`lib/errorReports` and `lib/speed`; those are the web's, not on the App
-Store.)
+Both go to Wingtip's own gateway (`POST /api/diagnostics`, a session
+of its own with no cookie), not to any third party: there is no crash
+or analytics kit in the app. `PrivacyInfo.xcprivacy` declares both,
+unlinked, for App Functionality. Apple's own crash reports, from users
+who share analytics with developers, are Apple's collection, not the
+app's.
 
 Purchases: **not collected.** The app is free and has no in-app
 purchase (no StoreKit in `apps/ios`); the inventory's Purchases row is
@@ -105,7 +105,8 @@ Account button of its own yet (see listing.md).
 | Location: Precise location | Yes, a logged flight's track | No | Yes | App functionality | `logbook/FlightRecorder.kt`, `logbook/AutoLogbookHost.kt` |
 | App activity: Other user-generated content | Yes (airplanes, flights, logbook, notes) | No | Yes | App functionality | `logbook/`, `records/` |
 | App activity: Other actions | Yes, the count of Claude-written features for their cap | No | Yes | App functionality | the gateway |
-| App info and performance | **No** from the Android app: no crash reporter (no Crashlytics, Firebase or Sentry in `apps/android/app/build.gradle.kts`) | | | | |
+| App info and performance: Crash logs | Yes: the exits Android kept (`ApplicationExitInfo`: crashes, ANRs with their traces, low-memory kills) and an uncaught exception's stack, with the app's version, the Android version and phone or tablet; nothing of the pilot's; kept 30 days | No | No | App functionality (finding faults) | `diagnostics/ExitReasons.kt`, `CrashCatcher.kt`, `DiagnosticsReporter.kt` |
+| App info and performance: Diagnostics | Yes: the start-up time and the share of slow frames (JankStats), the same way; kept 400 days | No | No | App functionality (keeping the app fast) | `diagnostics/FrameStats.kt` |
 | Audio: Voice or sound recordings | **No**: the radio is heard by the phone's on-device `SpeechRecognizer` only (`createOnDeviceSpeechRecognizer`, `atc/RadioListener.kt`) and read on the phone; nothing is sent by the app or to Google; without an on-device recognizer voice is not offered | | | | |
 
 "Shared" is Google's meaning: the recipients in the inventory (AWS,
