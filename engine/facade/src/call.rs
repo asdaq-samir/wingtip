@@ -239,6 +239,9 @@
 //!   altitude), from `{"cruise_ft", "pattern_ft"?, "nm_out"}`;
 //! - `dry_run`: the planned flight flown on paper (motion::dry_run's
 //!   to_json), from `{"rows", "start_s", "line"?, "missed"?}`;
+//! - `terrain_view_bands`: `{"caution_from_ft", "warning_from_ft"}`, the
+//!   pilot's-eye view's amber and red from the ground under an airplane,
+//!   from `{"altitude_ft"}` (motion::terrain_view);
 //! - `read_track`: `{"points": [{"t", "lat", "lon", "alt_ft"}]}` or
 //!   `{"error"}`, a GPX or KML track read, from `{"text"}`; `thin_track`:
 //!   at most `most` (4,000) of `points`, from `{"points", "most"?}`.

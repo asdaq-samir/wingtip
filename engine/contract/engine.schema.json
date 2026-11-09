@@ -13090,6 +13090,48 @@
       ],
       "additionalProperties": false
     },
+    "terrain_view_bands": {
+      "description": "The pilot's-eye view's colours for the ground under an airplane at `altitude_ft` MSL: amber from `caution_from_ft` (1,000 ft below it), red from `warning_from_ft` (its own altitude), feet MSL; the owner's bands, as the cockpit's terrain pages colour the ground. A picture of the plan, not terrain clearance (no TAWS, TSO-C151; nothing of 14 CFR 91.119 or 91.177).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TerrainViewBandsInput",
+          "type": "object",
+          "properties": {
+            "altitude_ft": {
+              "type": "number",
+              "description": "The airplane's altitude, ft MSL."
+            }
+          },
+          "required": [
+            "altitude_ft"
+          ],
+          "additionalProperties": false
+        },
+        "answer": {
+          "title": "TerrainViewBandsAnswer",
+          "type": "object",
+          "properties": {
+            "caution_from_ft": {
+              "type": "number"
+            },
+            "warning_from_ft": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "caution_from_ft",
+            "warning_from_ft"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "strip_fuel": {
       "description": "The fuel figure in the strip at the sheet's foot, web, iPhone and Android alike: the fuel required to the landing of hop `hop` (the first where the route has stops, the tanks filled at each; the whole route's where it has none), less what a flight under way has burnt, never below nothing; and the flights the tanks fall short on, a fuel margin under nothing (14 CFR 91.151, 91.167).",
       "type": "object",
@@ -20917,6 +20959,7 @@
     "diagram_graticule",
     "diagram_point",
     "diagram_fix_usable",
+    "terrain_view_bands",
     "strip_fuel",
     "fuel_in_tanks",
     "fuel_estimate",

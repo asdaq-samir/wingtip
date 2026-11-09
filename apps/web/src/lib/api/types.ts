@@ -194,6 +194,9 @@ export type AircraftRegistration = Schemas["AircraftRegistration"];
 export type FlightRoute = Schemas["FlightRoute"];
 /** The deployment's browser key for Google's map tiles (routers/basemaps). */
 export type GoogleMaps = Schemas["GoogleMaps"];
+/** The FAA's Digital Obstacle File in a box, tallest first (routers/terrain). */
+export type Obstacles = Schemas["Obstacles"];
+export type Obstacle = Schemas["Obstacle"];
 export type AirspaceBand = Schemas["AirspaceBand"];
 export type VfrMinimums = Schemas["VfrMinimums"];
 /** `available` is false where the planner has no Docker API to talk

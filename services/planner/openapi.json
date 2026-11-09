@@ -10907,6 +10907,67 @@
         "title": "NotesToWrite",
         "type": "object"
       },
+      "Obstacle": {
+        "description": "One obstacle of the FAA's Digital Obstacle File (DOF.DAT): where it\nstands, its height above the ground and its top above the sea in feet,\nthe FAA's word for what it is (TOWER, BLDG, WINDMILL ...) and whether\nit is lit.",
+        "properties": {
+          "agl_ft": {
+            "title": "Agl Ft",
+            "type": "integer"
+          },
+          "amsl_ft": {
+            "title": "Amsl Ft",
+            "type": "integer"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lit": {
+            "title": "Lit",
+            "type": "boolean"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lat",
+          "lon",
+          "agl_ft",
+          "amsl_ft",
+          "type",
+          "lit"
+        ],
+        "title": "Obstacle",
+        "type": "object"
+      },
+      "Obstacles": {
+        "description": "The obstacles in a box, tallest first; `more` where some were left\nout past the most a map is given at once.",
+        "properties": {
+          "more": {
+            "title": "More",
+            "type": "boolean"
+          },
+          "obstacles": {
+            "items": {
+              "$ref": "#/components/schemas/Obstacle"
+            },
+            "title": "Obstacles",
+            "type": "array"
+          }
+        },
+        "required": [
+          "obstacles",
+          "more"
+        ],
+        "title": "Obstacles",
+        "type": "object"
+      },
       "OnRoute": {
         "description": "Where and when the flight meets a hazard (app.exposure): the legs\nit is on (0-based, Briefing.leg_fixes' -- the nav log's where the\npage sent them), from how far along to how far (nm from the\ndeparture), when the airplane gets there and leaves (ISO 8601 UTC),\nand the hazard's own times -- valid from and to, and when it was\nissued (a pilot report's, when it was made; a METAR's, when it was\nobserved). `when` is whether the airplane is in it while it is\nvalid, give or take half an hour; None for one with no valid times\n(a pilot report, a report or forecast for a field).",
         "properties": {
@@ -22697,6 +22758,160 @@
           }
         },
         "summary": "Stops Near",
+        "x-gateway": {
+          "access": "public"
+        }
+      }
+    },
+    "/api/terrain-tile/{z}/{x}/{y}.png": {
+      "get": {
+        "description": "The ground's heights for one {z}/{x}/{y} tile as a terrarium PNG\n(wingtip.elevation.terrain_tile_png): the AWS Terrain Tiles (USGS 3DEP,\nSRTM and, offshore, ETOPO1) the planner reads its terrain floors from,\ntheir voids filled and the sea floor the sea's surface, so the map's\nrelief and 3D ground are the same ground the altitudes were planned\nover. Zooms 0 to 12.",
+        "operationId": "terrain_tile_api_terrain_tile__z___x___y__png_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "z",
+            "required": true,
+            "schema": {
+              "title": "Z",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "x",
+            "required": true,
+            "schema": {
+              "title": "X",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "y",
+            "required": true,
+            "schema": {
+              "title": "Y",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "image/png": {}
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "No terrain tile at that zoom"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Terrain Tile",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
+      }
+    },
+    "/api/terrain/obstacles": {
+      "get": {
+        "description": "The FAA's Digital Obstacle File's obstacles in a box at least\n`min_agl_ft` tall (200 ft by default, 14 CFR 77.9(a)'s height for\nnotice to the FAA of construction, the file's own \"significant\"\nthreshold as wingtip.faa_data reads it), tallest first, for the map to\nstand them up over its 3D ground. A box over two degrees either way is\na 422: the map asks for its view close in.",
+        "operationId": "obstacles_api_terrain_obstacles_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "south",
+            "required": true,
+            "schema": {
+              "maximum": 90,
+              "minimum": -90,
+              "title": "South",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "west",
+            "required": true,
+            "schema": {
+              "maximum": 180,
+              "minimum": -180,
+              "title": "West",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "north",
+            "required": true,
+            "schema": {
+              "maximum": 90,
+              "minimum": -90,
+              "title": "North",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "east",
+            "required": true,
+            "schema": {
+              "maximum": 180,
+              "minimum": -180,
+              "title": "East",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "min_agl_ft",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 2000,
+              "minimum": 0,
+              "title": "Min Agl Ft",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Obstacles"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Obstacles",
         "x-gateway": {
           "access": "public"
         }

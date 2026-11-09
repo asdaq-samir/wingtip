@@ -22,7 +22,9 @@
 //!   waypoint and the destination, the desired track, the fuel left --
 //!   with the vertical speed and the glide ring (#218);
 //! - diagram: own ship on the FAA's airport diagram, by its own latitude
-//!   and longitude labels (#218).
+//!   and longitude labels (#218);
+//! - terrain_view: the pilot's-eye view's amber and red bands of the
+//!   ground under the airplane (lib/map/gl/terrain).
 //!
 //! What runs every frame stays in each app -- where a replay's airplane is
 //! between two reports, a report carried on along its track, the dry run's
@@ -40,6 +42,7 @@ pub mod dry_run;
 pub mod glide;
 pub mod instruments;
 pub mod profile;
+pub mod terrain_view;
 pub mod track;
 pub mod traffic;
 
@@ -106,6 +109,7 @@ pub fn call(name: &str, v: &Value) -> Option<Result<String, String>> {
         "diagram_graticule" => diagram::graticule_rule(v),
         "diagram_point" => diagram::point_rule(v),
         "diagram_fix_usable" => diagram::fix_usable_rule(v),
+        "terrain_view_bands" => terrain_view::bands_rule(v),
         _ => return None,
     })
 }

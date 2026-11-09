@@ -7,7 +7,7 @@ import Segmented from "./Segmented";
 import { Switch } from "./ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 import { clearOwnTrail, useOwnTrail } from "../lib/map/ownTrail";
-import { BASE_CHARTS, usePreferences, type BaseChart, type ChartLight, type ChartNight, type MapOverlay, type OverlayStrength } from "../lib/preferences";
+import { BASE_CHARTS, usePreferences, type BaseChart, type ChartLight, type ChartNight, type MapOverlay, type OverlayStrength, type Terrain } from "../lib/preferences";
 import { useShownOverlay } from "../lib/map/useShownOverlay";
 import { USGS_URL } from "../lib/map/imagery";
 import { useGoogleSession } from "../lib/map/googleSession";
@@ -164,6 +164,17 @@ export default function MapSettings() {
           <Segmented
             label="Sunlight" value={prefs.chartLight} onChange={v => prefs.setChartLight(v as ChartLight)}
             testId="sunlight-select" options={[{ value: "auto", label: "Auto" }, { value: "on", label: "On" }, { value: "off", label: "Off" }]}
+          />
+        </ListRow>
+        {/* The ground under the chart (TerrainGl): flat as printed, its
+            relief shaded over it, or stood up in 3D with the map tilted by
+            two fingers, the obstacles and the route at its altitudes over
+            it. A pick of three, segmented; here alone, as every other way
+            the map is drawn is. */}
+        <ListRow title="Terrain">
+          <Segmented
+            label="Terrain" value={prefs.terrain} onChange={v => prefs.setTerrain(v as Terrain)}
+            testId="terrain-select" options={[{ value: "flat", label: "Flat" }, { value: "shaded", label: "Shaded" }, { value: "3d", label: "3D" }]}
           />
         </ListRow>
         {/* Own ship on the chart, a plane or the arrow, at the owner's ask:

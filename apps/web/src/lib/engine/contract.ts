@@ -2292,6 +2292,13 @@ export interface EngineContract {
     answer: DiagramFixUsableAnswer;
   };
   /**
+   * The pilot's-eye view's colours for the ground under an airplane at `altitude_ft` MSL: amber from `caution_from_ft` (1,000 ft below it), red from `warning_from_ft` (its own altitude), feet MSL; the owner's bands, as the cockpit's terrain pages colour the ground. A picture of the plan, not terrain clearance (no TAWS, TSO-C151; nothing of 14 CFR 91.119 or 91.177).
+   */
+  terrain_view_bands: {
+    input: TerrainViewBandsInput;
+    answer: TerrainViewBandsAnswer;
+  };
+  /**
    * The fuel figure in the strip at the sheet's foot, web, iPhone and Android alike: the fuel required to the landing of hop `hop` (the first where the route has stops, the tanks filled at each; the whole route's where it has none), less what a flight under way has burnt, never below nothing; and the flights the tanks fall short on, a fuel margin under nothing (14 CFR 91.151, 91.167).
    */
   strip_fuel: {
@@ -6231,6 +6238,16 @@ export interface DiagramFixUsableInput {
    * Its horizontal accuracy, m.
    */
   accuracy_m: number;
+}
+export interface TerrainViewBandsInput {
+  /**
+   * The airplane's altitude, ft MSL.
+   */
+  altitude_ft: number;
+}
+export interface TerrainViewBandsAnswer {
+  caution_from_ft: number;
+  warning_from_ft: number;
 }
 export interface StripFuelInput {
   fuel_required_gal?: number | null;

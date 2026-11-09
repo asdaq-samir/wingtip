@@ -597,6 +597,9 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     for case in web["diagramFix"].as_array().unwrap() {
         c.ask("diagram_fix_usable", json!({ "age_s": case["age_s"], "accuracy_m": case["accuracy_m"] }));
     }
+    for case in web["terrainViewBands"].as_array().unwrap() {
+        c.ask("terrain_view_bands", json!({ "altitude_ft": case["altitude_ft"] }));
+    }
     c.ask("traffic_reach", json!({}));
     c.ask("checklist_phases", json!({ "kind": "normal" }));
     c.ask("checklist_phases", json!({ "kind": "emergency" }));
