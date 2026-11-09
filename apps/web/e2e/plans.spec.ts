@@ -447,3 +447,23 @@ test("an altitude typed is the field's at once: with no route, kept for the rout
   await expect(page.locator("[data-sonner-toast][data-type=loading]")).toHaveCount(0);
   await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/7,500 feet/);
 });
+
+test("the altitude's figures are taken whole as it is tapped, and its Done flies what is typed", async ({ page }) => {
+  // The FPL audit's A6 (2026-11-08): the caret fell between "FL" and "-",
+  // and iOS's number pad has no Return, so a new altitude was a tap, three
+  // deletes, three figures and a tap elsewhere.
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await page.getByTestId("sidebar-trigger-button").click();
+  await controlsInSight(page);
+  const input = page.getByTestId("altitude-input");
+  await expect(input).toHaveValue(/^FL-\d{3}$/, { timeout: slow(60000) });
+  await input.click();
+  await expect.poll(() => input.evaluate((el: HTMLInputElement) => [el.selectionStart, el.selectionEnd, el.value.length])).toEqual([3, 6, 6]);
+  await page.keyboard.type("075");
+  await expect(input).toHaveValue("FL-075");
+  await page.getByTestId("altitude-done").click();
+  await expect(page).toHaveURL(/[?&]altitude_ft=7500(&|$)/, { timeout: slow(10000) });
+  await expect(input).not.toBeFocused();
+  await expect(page.getByTestId("altitude-done")).toHaveCount(0);
+});
