@@ -8,15 +8,18 @@
 //! Its input, snake_case (engine.schema.json has it exactly):
 //! `{"now_s", "own": {"lat", "lon", "track_deg"?, "gs_kt"?}, "rules"?:
 //! "VFR"|"IFR", "dest", "alternate"?, "remaining_nm"?, "planned_gs_kt"?,
-//! "tas_kt"?, "fuel_gal"?, "burn_gph"?, "runway_min_ft"?, "minimums"?,
-//! "passengers"?, "night_current"?, "fields": [...], "areas": [...],
-//! "itws": [...], "ahead": [...]}`, the fields and areas as the planner's
-//! /api/copilot/around gives them.
+//! "tas_kt"?, "fuel_gal"?, "burn_gph"?, "minimums"?, "passengers"?,
+//! "night_current"?, "fields": [...], "areas": [...], "itws": [...],
+//! "ahead": [...]}`: the fields best_fields' candidates (brief's fields)
+//! with `fuel` and `planned_category`, the fields and areas as the
+//! planner's /api/copilot/around gives them.
 
 use crate::checks;
 use crate::fields::{self, Ask};
 use crate::input::{self, Field, R};
 use crate::message::{self, Message};
+use wingtip_brief::fields::calls::fields_of;
+use wingtip_brief::fields::Field as Candidate;
 use wingtip_core::geo;
 use wingtip_core::json::Value;
 
@@ -59,6 +62,8 @@ pub struct Flight {
     pub dest: Field,
     pub alternate: Option<Field>,
     pub fields: Vec<Field>,
+    /// The same fields as best_fields reads them, for its ranking.
+    pub candidates: Vec<Candidate>,
     pub remaining_nm: f64,
     /// The minutes to the destination at the ground speed, None when
     /// neither it nor the cruise is known.
@@ -82,6 +87,7 @@ fn str_of(name: &str, v: &Value, key: &str) -> R<String> {
 pub fn flight(name: &str, v: &Value) -> R<Flight> {
     let ask = fields::ask(name, v)?;
     let fields = input::fields(name, v)?;
+    let candidates = fields_of(name, v)?;
     let dest_id = input::text(name, v, "dest")?.ok_or_else(|| format!("{name}: \"dest\" is missing"))?;
     let dest = find(&fields, dest_id).ok_or_else(|| format!("{name}: \"dest\" {dest_id:?} is not among \"fields\""))?;
     let alternate = input::text(name, v, "alternate")?.and_then(|a| find(&fields, a));
@@ -122,6 +128,7 @@ pub fn flight(name: &str, v: &Value) -> R<Flight> {
         dest,
         alternate,
         fields,
+        candidates,
         remaining_nm,
         minutes,
         areas,

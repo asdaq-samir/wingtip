@@ -1,5 +1,5 @@
-//! The in-flight copilot (`copilot_watch`) and the best fields
-//! (`best_fields`) against the shared fixture copilot.json, a dry run from
+//! The in-flight copilot (`copilot_watch`), its alternative the emergency
+//! assistant's `best_fields`, against the shared fixture copilot.json, a dry run from
 //! KUGN to KOSH; and the boundaries each message turns on, from their
 //! sources: 91.155(c) and (d)'s 1,000 ft and 3 sm, 91.151(a)'s 30 minutes
 //! by day and 45 at night, 91.167(a)(3)'s 45 under IFR.
@@ -58,27 +58,32 @@ fn the_fixtures_first_messages() {
     }
 }
 
+/// The alternative is the emergency assistant's ranking, not a second
+/// one: with every other field good, it is best_fields' first diversion
+/// pick after the destination.
 #[test]
-fn the_fixtures_best_fields() {
+fn the_alternative_is_best_fields_diversion_pick() {
     let f = fixture();
-    for case in f["best"].as_array().unwrap() {
-        let name = case["name"].as_str().unwrap();
-        let answer = ask("best_fields", &common::copilot_input(&f["base"], case));
-        let picks = answer.as_array().unwrap();
-        assert_eq!(picks[0]["ident"], case["expect"]["first"], "{name}: {answer}");
-        let ok = picks.iter().filter(|p| p["ok"] == true).count() as u64;
-        assert_eq!(ok, case["expect"]["ok"].as_u64().unwrap(), "{name}: {answer}");
-        // Good ones first: no good field after one that is not.
-        let firsts: Vec<bool> = picks.iter().map(|p| p["ok"] == true).collect();
-        assert!(firsts.windows(2).all(|w| w[0] || !w[1]), "{name}: {firsts:?}");
-    }
+    let ifr = json!({ "KOSH": { "raw": "SPECI KOSH 091712Z 34012KT 2SM BR OVC008 08/07 A2992", "flight_category": "IFR" } });
+    let input = common::copilot_input(&f["base"], &json!({ "metars": ifr }));
+    let ranked = ask("best_fields", &json!({
+        "mode": "diversion", "at": input["own"], "speed_kt": input["own"]["gs_kt"],
+        "airplane": { "cruise_tas_kt": input["own"]["gs_kt"] }, "fields": input["fields"],
+    }));
+    let first = ranked["fields"].as_array().unwrap().iter().find(|r| r["ident"] != "KOSH").unwrap();
+    let said = ask("copilot_watch", &input);
+    assert_eq!(said["messages"][0]["alternative"]["ident"], first["ident"], "{said}");
+}
+
+fn metar(raw: String) -> Value {
+    json!({ "KOSH": { "raw": raw, "flight_category": null } })
 }
 
 /// 91.155(c): a ceiling of 1,000 ft is VFR's least in a surface area, so
 /// OVC010 is no message and OVC009 is.
 #[test]
 fn vfr_ceiling_either_side_of_1000_ft() {
-    let at = |sky: &str| watch(json!({}), json!({ "KOSH": format!("KOSH 091753Z 34008KT 10SM {sky} 09/01 A3001") }));
+    let at = |sky: &str| watch(json!({}), metar(format!("KOSH 091753Z 34008KT 10SM {sky} 09/01 A3001")));
     assert!(!kinds(&at("OVC010")).contains(&"weather".to_owned()));
     assert_eq!(kinds(&at("OVC009"))[0], "weather");
 }
@@ -86,7 +91,7 @@ fn vfr_ceiling_either_side_of_1000_ft() {
 /// 91.155(d): 3 sm is VFR's least visibility there; 2 1/2 is under it.
 #[test]
 fn vfr_visibility_either_side_of_3_sm() {
-    let at = |vis: &str| watch(json!({}), json!({ "KOSH": format!("KOSH 091753Z 34008KT {vis} FEW045 09/01 A3001") }));
+    let at = |vis: &str| watch(json!({}), metar(format!("KOSH 091753Z 34008KT {vis} FEW045 09/01 A3001")));
     assert!(at("3SM")["messages"].as_array().unwrap().is_empty());
     assert_eq!(kinds(&at("2 1/2SM"))[0], "weather");
 }
@@ -129,7 +134,7 @@ fn nothing_guessed_without_the_fuel() {
 /// it: "Oshkosh just went IFR. Fond du Lac is VFR, 6 min ahead."
 #[test]
 fn the_words_spoken_name_the_alternative() {
-    let a = watch(json!({}), json!({ "KOSH": "SPECI KOSH 091712Z 34012KT 2SM BR OVC008 08/07 A2992" }));
+    let a = watch(json!({}), metar("SPECI KOSH 091712Z 34012KT 2SM BR OVC008 08/07 A2992".to_owned()));
     let first = &a["messages"][0];
     let say = first["say"].as_str().unwrap();
     assert!(say.starts_with("Oshkosh just went IFR."), "{say}");

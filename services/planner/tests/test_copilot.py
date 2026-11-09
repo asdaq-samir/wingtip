@@ -13,10 +13,17 @@ from app.main import app
 
 client = TestClient(app)
 
-OSH = {"ident": "KOSH", "source_ident": "KOSH", "faa_id": "OSH", "name": "Wittman Regional Airport",
-       "municipality": "Oshkosh", "lat": 43.9844, "lon": -88.557}
-FLD = {"ident": "KFLD", "source_ident": "KFLD", "faa_id": "FLD", "name": "Fond du Lac County Airport",
-       "municipality": "Fond du Lac", "lat": 43.7712, "lon": -88.4884}
+def _field(ident: str, name: str, lat: float, lon: float, raw: str, category: str) -> dict:
+    """A candidate as wingtip.emergency.fields_near gives one."""
+    return {"ident": ident, "name": name, "lat": lat, "lon": lon, "elevation_ft": 808.0, "distance_nm": 0.0, "bearing_deg": 0.0,
+            "runways": [{"surface": "ASPH", "length_ft": 5941.0, "closed": False,
+                         "runway_ends": [{"ident": "18", "heading_true_deg": 179.0}, {"ident": "36", "heading_true_deg": 359.0}]}],
+            "metar": {"raw": raw, "flight_category": category}, "towered": False, "private": False, "military": False,
+            "frequencies": [], "phone": None}
+
+
+OSH = _field("KOSH", "Oshkosh", 43.9844, -88.557, "SPECI KOSH 091712Z 34012KT 2SM BR OVC008 08/07 A2992", "IFR")
+FLD = _field("KFLD", "Fond du Lac", 43.7712, -88.4884, "KFLD 091655Z 33010KT 10SM SCT050 09/02 A3002", "VFR")
 
 
 @pytest.fixture
@@ -25,13 +32,8 @@ def sources(tmp_path, monkeypatch):
     live_reports.reset()
     places = {"KOSH": OSH, "KFLD": FLD}
     monkeypatch.setattr(copilot.airports, "find_place", lambda ident: places.get(ident))
-    monkeypatch.setattr(copilot.airports, "nearest", lambda lat, lon, limit=10: [FLD, OSH])
-    monkeypatch.setattr(copilot.weather, "metar_for_idents", lambda idents: {
-        "KOSH": {"raw": "SPECI KOSH 091712Z 34012KT 2SM BR OVC008 08/07 A2992"},
-        "KFLD": {"raw": "KFLD 091655Z 33010KT 10SM SCT050 09/02 A3002"},
-    })
+    monkeypatch.setattr(copilot.emergency, "fields_near", lambda lat, lon, limit=12: [FLD, OSH])
     monkeypatch.setattr(copilot.fuelstops, "fields_with_fuel", lambda: pd.DataFrame({"ident": ["KFLD"], "faa_ident": ["FLD"]}))
-    monkeypatch.setattr(copilot.fuelstops, "paved_runways", lambda: {"KOSH": 8002, "KFLD": 5941})
     monkeypatch.setattr(copilot.tfr, "along_route", lambda path, start, end: [{
         "notam_id": "6/4321", "title": "Stadium", "active_now": True,
         "geometry": {"type": "Polygon",
@@ -52,7 +54,7 @@ def test_the_copilot_reads_round_the_airplane(sources):
         "lat": 43.6, "lon": -88.4, "dest": "kosh", "path": "43.6,-88.4;43.9844,-88.557"}).json()
     fields = {f["ident"]: f for f in body["fields"]}
     assert fields["KOSH"]["name"] == "Oshkosh" and fields["KOSH"]["fuel"] is False
-    assert fields["KFLD"]["fuel"] is True and fields["KFLD"]["runway_ft"] == 5941
+    assert fields["KFLD"]["fuel"] is True and fields["KFLD"]["runways"][0]["length_ft"] == 5941
     kinds = {(a["kind"], a["id"], a["active"]) for a in body["areas"]}
     # The MOA SFDPS has said nothing of is left to the Brief's chart times.
     assert kinds == {("tfr", "6/4321", True), ("sua", "R-6903", True)}

@@ -97,10 +97,6 @@ export function rememberCategories(seen: Record<string, string | null>, around: 
   const fresh = around.fields.filter(f => !(f.ident in seen));
   if (!fresh.length) return seen;
   const next = { ...seen };
-  for (const f of fresh) {
-    next[f.ident] = f.metar ? callEngine("best_fields", {
-      own: { lat: f.lat, lon: f.lon }, fields: [{ ident: f.ident, lat: f.lat, lon: f.lon, metar: f.metar }],
-    })[0]?.category ?? null : null;
-  }
+  for (const f of fresh) next[f.ident] = f.metar?.flight_category ?? null;
   return next;
 }

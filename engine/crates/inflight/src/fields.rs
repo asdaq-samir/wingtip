@@ -1,26 +1,24 @@
-//! The best fields to go to from where the airplane is (`best_fields`):
-//! the in-flight copilot's alternative when the destination's weather or
-//! the fuel turns, and the emergency assistant's fields within glide
-//! (claude/emergency-assist, which asks with `within_nm`). One ranking for
-//! both, so the two never name different "best" fields for the same sky.
+//! The copilot's alternative: the first field of the emergency assistant's
+//! ranking (brief's `best_fields` in its "diversion" mode: the runway
+//! against the airplane, the field's flight category, then the time to
+//! it) that the copilot's own checks also find good. One ranking for both,
+//! so the two never name different "best" fields for the same sky; what
+//! the copilot adds is what a diversion with the engine running must also
+//! meet:
 //!
-//! A field is good when, as far as is known now,
-//! - its weather is (`weather_of`): under VFR at or above 91.155(c) and
-//!   (d)'s surface-area minimums (1,000 ft and 3 sm, flight::vfr's one
-//!   copy) and, VFR or IFR, the pilot's own minimums (the Brief's
+//! - its weather (`weather_of`): under VFR at or above 91.155(c) and (d)'s
+//!   surface-area minimums (1,000 ft and 3 sm, flight::vfr's one copy)
+//!   and, VFR or IFR, the pilot's own minimums (the Brief's
 //!   gonogo::minimums::under_minimums, the same sentences);
 //! - the fuel on board reaches it with the reserve left (14 CFR 91.151(a),
 //!   30 minutes by day and 45 at night, judged at the field at the time
 //!   of arrival; 91.167(a)(3)'s 45 under IFR: flight::reserve_min);
-//! - its longest paved runway is at least the airplane's, where one is
-//!   asked; and fuel is sold there, where fuel is what is wanted.
+//! - fuel sold there, where fuel is what is wanted.
 //!
-//! Good fields come first, the nearest in time first; then the rest, the
-//! ones with a report before those with none. Nothing is refused: a field
-//! not good is still listed with why (the owner's rule, warn never limit).
 //! Weather with no report is not called good: no figure, no promise.
 
 use crate::input::{self, Field, Own, R};
+use wingtip_brief::fields::{best_fields, Airplane, Field as Candidate, Mode, Own as From, Ranked};
 use wingtip_brief::gonogo::minimums::{under_minimums, Landing, Minimums, Report, Weather as Briefed};
 use wingtip_core::geo;
 use wingtip_core::json::Value;
@@ -67,17 +65,17 @@ pub fn weather_of(f: &Field, ifr: bool, m: &Minimums) -> Weather {
         ..Briefed::default()
     };
     why.extend(under_minimums(m, &briefed));
-    if why.is_empty() {
-        if metar.ceiling_unknown() && !ifr {
-            return Weather::Unknown;
-        }
-        Weather::Good
-    } else {
+    if !why.is_empty() {
         Weather::Under(why)
+    } else if metar.ceiling_unknown() && !ifr {
+        Weather::Unknown
+    } else {
+        Weather::Good
     }
 }
 
-/// What a ranking is asked with.
+/// What the copilot weighs a field with.
+#[derive(Clone, Copy)]
 pub struct Ask {
     pub own: Own,
     pub ifr: bool,
@@ -88,10 +86,6 @@ pub struct Ask {
     /// under flying speed (a dry run not started, a GPS on the ramp).
     pub tas_kt: Option<f64>,
     pub now_s: Option<f64>,
-    pub runway_min_ft: Option<f64>,
-    pub within_nm: Option<f64>,
-    pub need_fuel: bool,
-    pub exclude: Vec<String>,
 }
 
 pub fn ask(name: &str, v: &Value) -> R<Ask> {
@@ -103,10 +97,6 @@ pub fn ask(name: &str, v: &Value) -> R<Ask> {
         burn_gph: input::num(name, v, "burn_gph")?.filter(|b| *b > 0.0),
         tas_kt: input::num(name, v, "tas_kt")?,
         now_s: input::num(name, v, "now_s")?,
-        runway_min_ft: input::num(name, v, "runway_min_ft")?,
-        within_nm: input::num(name, v, "within_nm")?,
-        need_fuel: input::flag(name, v, "need_fuel")?.unwrap_or(false),
-        exclude: input::list(name, v, "exclude")?.iter().filter_map(Value::as_str).map(str::to_owned).collect(),
     })
 }
 
@@ -120,22 +110,24 @@ pub fn speed_kt(own: &Own, tas_kt: Option<f64>) -> Option<f64> {
 /// 91.167(a)(3)'s under IFR. With no time known it is taken as night,
 /// the larger.
 pub fn reserve_at(ifr: bool, lat: f64, lon: f64, at_s: Option<f64>) -> f64 {
-    flight::reserve_min(ifr, at_s.map_or(true, |t| sun::is_night(lat, lon, t)))
+    flight::reserve_min(ifr, at_s.is_none_or(|t| sun::is_night(lat, lon, t)))
 }
 
-/// One field as ranked.
+/// Fuel left on landing, minutes at the burn, after `hours` more flying.
+pub fn fuel_left_min(fuel_gal: Option<f64>, burn_gph: Option<f64>, hours: Option<f64>) -> Option<f64> {
+    let (fuel, burn, hours) = (fuel_gal?, burn_gph?, hours?);
+    Some((fuel - burn * hours) / burn * 60.0)
+}
+
+/// The field picked, with the figures the copilot says of it.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Pick {
     pub field: Field,
-    pub distance_nm: f64,
-    pub bearing_deg: f64,
+    pub ranked: Ranked,
     pub off_track_deg: Option<f64>,
     pub minutes: Option<f64>,
-    pub weather: Weather,
     pub fuel_at_landing_min: Option<f64>,
     pub reserve_min: f64,
-    pub ok: bool,
-    pub why: Vec<String>,
 }
 
 impl Pick {
@@ -152,75 +144,50 @@ impl Pick {
             "right"
         })
     }
+
+    pub fn distance_nm(&self) -> f64 {
+        self.ranked.distance_nm
+    }
+
+    /// The runway best_fields picked, "Runway 18: 5,941 ft", where it did.
+    pub fn runway_words(&self) -> Option<String> {
+        self.ranked.end.as_ref()?;
+        self.ranked.reasons.iter().find(|(_, r)| r.starts_with("Runway ")).map(|(_, r)| r.clone())
+    }
 }
 
-/// Fuel left on landing, minutes at the burn, after `hours` more flying.
-pub fn fuel_left_min(fuel_gal: Option<f64>, burn_gph: Option<f64>, hours: Option<f64>) -> Option<f64> {
-    let (fuel, burn, hours) = (fuel_gal?, burn_gph?, hours?);
-    Some((fuel - burn * hours) / burn * 60.0)
-}
-
-fn pick(a: &Ask, f: &Field) -> Pick {
+/// The first field of best_fields' diversion ranking, not one of
+/// `exclude`, that the copilot's checks find good (and that sells fuel,
+/// where `need_fuel`); None where none does.
+pub fn alternative(a: &Ask, fields: &[Field], candidates: &[Candidate], need_fuel: bool, exclude: &[&str]) -> Option<Pick> {
     let o = &a.own;
-    let distance_nm = geo::distance_nm(o.lat, o.lon, f.lat, f.lon);
-    let bearing_deg = geo::bearing_deg(o.lat, o.lon, f.lat, f.lon);
-    let off_track_deg = o.track_deg.map(|t| geo::py_mod(bearing_deg - t + 180.0, 360.0) - 180.0);
-    let minutes = speed_kt(o, a.tas_kt).map(|kt| distance_nm / kt * 60.0);
-    let weather = weather_of(f, a.ifr, &a.minimums);
-    let fuel_at_landing_min = fuel_left_min(a.fuel_gal, a.burn_gph, minutes.map(|m| m / 60.0));
-    let reserve_min = reserve_at(a.ifr, f.lat, f.lon, a.now_s.map(|t| t + minutes.unwrap_or(0.0) * 60.0));
-    let mut why = Vec::new();
-    match &weather {
-        Weather::Under(reasons) => why.extend(reasons.iter().cloned()),
-        Weather::Unknown => why.push(format!("{}: no weather report to go by", f.ident)),
-        Weather::Good => {}
-    }
-    if let Some(left) = fuel_at_landing_min.filter(|l| *l < reserve_min) {
-        why.push(format!("{} min of fuel on landing, under the {} min reserve", js_num(left.round()), js_num(reserve_min)));
-    }
-    let runway = f.runway_ft.filter(|r| *r > 0.0);
-    if let Some(need) = a.runway_min_ft {
-        match runway {
-            Some(r) if r < need => why.push(format!("longest paved runway {} ft, under the {} ft asked", alt_ft(Some(r)), alt_ft(Some(need)))),
-            None => why.push("no paved runway known".to_owned()),
-            _ => {}
+    let from = From { lat: o.lat, lon: o.lon, altitude_ft: None, speed_kt: Some(o.gs_kt), wind: None, variation_deg: None };
+    let airplane = Airplane { cruise_tas_kt: speed_kt(o, a.tas_kt), ..Airplane::default() };
+    let answer = best_fields(Mode::Diversion, &from, Some(&airplane), candidates.to_vec(), candidates.len());
+    answer.fields.into_iter().find_map(|ranked| {
+        if exclude.iter().any(|e| input::same_field(e, &ranked.field.ident)) {
+            return None;
         }
-    }
-    if a.need_fuel && !f.fuel {
-        why.push("no fuel listed".to_owned());
-    }
-    if a.within_nm.is_some_and(|w| distance_nm > w) {
-        why.push(format!("{} nm away, beyond the {} nm asked", js_num(distance_nm.round()), js_num(a.within_nm.unwrap_or(0.0))));
-    }
-    let ok = why.is_empty();
-    Pick { field: f.clone(), distance_nm, bearing_deg, off_track_deg, minutes, weather, fuel_at_landing_min, reserve_min, ok, why }
-}
-
-/// Every field but those excluded, ranked.
-pub fn best(a: &Ask, fields: &[Field]) -> Vec<Pick> {
-    let mut picks: Vec<Pick> = fields
-        .iter()
-        .filter(|f| !a.exclude.iter().any(|e| input::same_field(e, &f.ident)))
-        .map(|f| pick(a, f))
-        .collect();
-    let known = |p: &Pick| !matches!(p.weather, Weather::Unknown);
-    picks.sort_by(|x, y| {
-        y.ok.cmp(&x.ok)
-            .then(known(y).cmp(&known(x)))
-            .then(x.minutes.unwrap_or(x.distance_nm).total_cmp(&y.minutes.unwrap_or(y.distance_nm)))
-    });
-    picks
+        let field = fields.iter().find(|f| input::same_field(&f.ident, &ranked.field.ident))?.clone();
+        if (need_fuel && !field.fuel) || weather_of(&field, a.ifr, &a.minimums) != Weather::Good {
+            return None;
+        }
+        let minutes = speed_kt(o, a.tas_kt).map(|kt| ranked.distance_nm / kt * 60.0);
+        let fuel_at_landing_min = fuel_left_min(a.fuel_gal, a.burn_gph, minutes.map(|m| m / 60.0));
+        let reserve_min = reserve_at(a.ifr, field.lat, field.lon, a.now_s.map(|t| t + minutes.unwrap_or(0.0) * 60.0));
+        if fuel_at_landing_min.is_some_and(|left| left < reserve_min) {
+            return None;
+        }
+        let off_track_deg = o.track_deg.map(|t| geo::py_mod(ranked.course_deg - t + 180.0, 360.0) - 180.0);
+        Some(Pick { field, ranked, off_track_deg, minutes, fuel_at_landing_min, reserve_min })
+    })
 }
 
 fn opt(n: Option<f64>) -> Value {
     n.map_or(Value::Null, Value::Number)
 }
 
-fn round1(n: f64) -> f64 {
-    (n * 10.0).round() / 10.0
-}
-
-/// A pick as the answer gives it.
+/// The alternative as the answer gives it.
 pub fn to_value(p: &Pick) -> Value {
     let f = &p.field;
     let s = |t: &str| Value::String(t.to_owned());
@@ -229,31 +196,15 @@ pub fn to_value(p: &Pick) -> Value {
         ("name".into(), f.name.as_deref().map_or(Value::Null, s)),
         ("lat".into(), Value::Number(f.lat)),
         ("lon".into(), Value::Number(f.lon)),
-        ("distance_nm".into(), Value::Number(round1(p.distance_nm))),
-        ("bearing_deg".into(), Value::Number(p.bearing_deg.round() % 360.0)),
-        ("off_track_deg".into(), opt(p.off_track_deg.map(f64::round))),
+        ("distance_nm".into(), Value::Number((p.distance_nm() * 10.0).round() / 10.0)),
+        ("course_deg".into(), Value::Number(p.ranked.course_deg.round() % 360.0)),
         ("side".into(), p.side().map_or(Value::Null, s)),
         ("minutes".into(), opt(p.minutes.map(f64::round))),
         ("category".into(), f.category().map_or(Value::Null, s)),
-        ("weather".into(), s(match p.weather {
-            Weather::Good => "good",
-            Weather::Under(_) => "under",
-            Weather::Unknown => "unknown",
-        })),
-        ("metar".into(), f.raw.as_deref().map_or(Value::Null, s)),
-        ("runway_ft".into(), opt(f.runway_ft.filter(|r| *r > 0.0))),
+        ("runway".into(), p.runway_words().map_or(Value::Null, |r| s(&r))),
         ("fuel".into(), Value::Bool(f.fuel)),
         ("fuel_at_landing_min".into(), opt(p.fuel_at_landing_min.map(f64::round))),
         ("reserve_min".into(), Value::Number(p.reserve_min)),
-        ("ok".into(), Value::Bool(p.ok)),
-        ("why".into(), Value::Array(p.why.iter().map(|w| s(w)).collect())),
+        ("reasons".into(), Value::Array(p.ranked.reasons.iter().map(|(_, r)| s(r)).collect())),
     ])
-}
-
-/// `best_fields`: the ranked fields, at most `limit` (5 where not given).
-pub fn rule(name: &str, v: &Value) -> R<Value> {
-    let a = ask(name, v)?;
-    let fields = input::fields(name, v)?;
-    let limit = input::num(name, v, "limit")?.map_or(5, |l| l.max(0.0) as usize);
-    Ok(Value::Array(best(&a, &fields).iter().take(limit).map(to_value).collect()))
 }

@@ -30,7 +30,8 @@ pub fn assert_same(got: &Value, want: &Value, what: impl std::fmt::Display) {
 }
 
 /// A case of copilot.json made whole: the base with the case's `with`
-/// laid over it and its `metars` put in those fields' reports.
+/// laid over it and its `metars` (each `{"raw", "flight_category"}`) in
+/// place of those fields' METARs.
 #[allow(dead_code)]
 pub fn copilot_input(base: &Value, case: &Value) -> Value {
     let mut input = base.clone();

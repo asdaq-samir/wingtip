@@ -10,6 +10,7 @@ import { AirportsGl } from "./layers/AirportsGl";
 import { AirspaceGl } from "./layers/AirspaceGl";
 import { LandWaterGl, OverlayGl } from "./layers/BaseGl";
 import { ChartGl } from "./layers/ChartGl";
+import { EmergencyGl } from "./layers/EmergencyGl";
 import { AheadGl, ClassBGl } from "./layers/MarksGl";
 import { NavaidsGl, WaypointsGl } from "./layers/NavaidsGl";
 import { OwnShipGl } from "./layers/OwnShipGl";
@@ -167,6 +168,8 @@ function Layers(p: GlRouteMapProps) {
       )}
       <PickedGl focus={p.focus} held={p.heldPoint} onHold={p.onHoldPoint} />
       <OwnTrailGl />
+      {/* The emergency assistant's glide ring and line (features/emergency). */}
+      <EmergencyGl />
       <OwnShipGl />
       <AheadGl />
       <TrafficGl />

@@ -1,7 +1,8 @@
 """What the in-flight copilot reads round the airplane and along the rest
 of its route, gathered in one answer for the apps (GET /api/copilot/
-around): the landing fields near it and near the destination with their
-METARs as sent, their longest paved runway and whether they sell fuel;
+around): the landing fields near it and near the destination as the
+emergency assistant gathers them for best_fields (runways, METAR), with
+whether they sell fuel;
 the TFRs, special-use areas SFDPS speaks of and convective SIGMETs on the
 way; and ITWS's alerts at the destination and the alternate.
 
@@ -19,7 +20,7 @@ from datetime import datetime, timezone
 
 from shapely.geometry import Polygon, shape
 
-from . import airports, fuelstops, itws, saa, sua, tfr, weather
+from . import airports, emergency, fuelstops, itws, saa, sua, tfr, weather
 
 log = logging.getLogger(__name__)
 
@@ -32,45 +33,26 @@ NEAR_DEST = 6
 WINDOW_S = 2 * 3600
 
 
-def _said_name(place: dict) -> str | None:
-    """The name a pilot says for a field: its town ("Oshkosh"), else its
-    own name."""
-    return place.get("municipality") or place.get("name")
-
-
 def fields(lat: float, lon: float, dest: str, alternate: str | None) -> list[dict]:
-    """The fields round the airplane and the destination, the destination
-    and the alternate among them, each as the engine's InflightField."""
-    places: dict[str, dict] = {}
-    dest_place = airports.find_place(dest)
-    for place in (dest_place, airports.find_place(alternate) if alternate else None):
+    """The fields round the airplane, the destination and the alternate,
+    each as the emergency assistant gathers a candidate for the engine's
+    best_fields (wingtip.emergency: runways, METAR, the field's kind), with
+    whether NASR lists fuel sold there (wingtip.fuelstops)."""
+    found: dict[str, dict] = {}
+    for field in emergency.fields_near(lat, lon, NEAR_OWN):
+        found.setdefault(field["ident"], field)
+    for ident, near in ((dest, NEAR_DEST), (alternate, 1)):
+        place = airports.find_place(ident) if ident else None
         if place:
-            places[place["ident"]] = place
-    near = airports.nearest(lat, lon, limit=NEAR_OWN)
-    if dest_place:
-        near += airports.nearest(dest_place["lat"], dest_place["lon"], limit=NEAR_DEST)
-    for place in near:
-        places.setdefault(place["ident"], place)
-    idents = list(places)
-    metars = weather.metar_for_idents(list(dict.fromkeys(
-        [*idents, *(p.get("source_ident") for p in places.values() if p.get("source_ident"))])))
+            for field in emergency.fields_near(place["lat"], place["lon"], near):
+                found.setdefault(field["ident"], field)
     try:
         with_fuel = fuelstops.fields_with_fuel()
         selling = set(with_fuel["ident"]) | set(with_fuel["faa_ident"])
     except (OSError, ValueError, KeyError) as err:
         log.warning("fuel listings not read: %s", err)
         selling = set()
-    runways = fuelstops.paved_runways()
-    out = []
-    for ident, p in places.items():
-        metar = metars.get(ident) or metars.get(p.get("source_ident") or "") or {}
-        runway = max(runways.get(ident, 0), runways.get(p.get("source_ident") or "", 0))
-        out.append({
-            "ident": ident, "name": _said_name(p), "lat": p["lat"], "lon": p["lon"],
-            "metar": metar.get("raw"), "runway_ft": runway or None,
-            "fuel": ident in selling or (p.get("faa_id") or "") in selling,
-        })
-    return out
+    return [{**field, "fuel": ident in selling or ident.removeprefix("K") in selling} for ident, field in found.items()]
 
 
 def _sigmet_id(raw: str | None) -> str:

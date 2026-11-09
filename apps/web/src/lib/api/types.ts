@@ -155,6 +155,8 @@ export type Tfr = Schemas["Tfr"];
 export type Tfrs = Schemas["Tfrs"];
 /** The fields nearest a position: how far, which way, the longest runway. */
 export type NearestAirports = Schemas["NearestAirports"];
+/** The emergency assistant's fields, wind aloft and airplane (lib/emergency). */
+export type EmergencyFields = Schemas["EmergencyFields"];
 /** The map's Stops: the fields with fuel, food, repair or a flight school. */
 export type StopFields = Schemas["StopFields"];
 export type StopField = Schemas["StopField"];

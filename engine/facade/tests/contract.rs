@@ -85,6 +85,8 @@ fn code_names() -> BTreeSet<String> {
         include_str!("../../crates/weather/src/rvr.rs"),
         include_str!("../../crates/altitude/src/altitude/calls.rs"),
         include_str!("../../crates/brief/src/alternates.rs"),
+        include_str!("../../crates/brief/src/fields/calls.rs"),
+        include_str!("../../crates/radio/src/mayday.rs"),
         include_str!("../../crates/brief/src/icing_forecast.rs"),
         include_str!("../../crates/pilot/src/aircraft/calls.rs"),
         include_str!("../../crates/route/src/approach/calls.rs"),
@@ -644,12 +646,24 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         c.ask("icing_forecast_route", json!({ "levels_ft": icing["levels_ft"], "legs": case["legs"] }));
     }
 
-    // The in-flight copilot and the best fields (copilot.json).
+    // The in-flight copilot (copilot.json).
     let copilot = fixture("copilot.json");
-    for case in copilot["cases"].as_array().unwrap().iter().chain(copilot["best"].as_array().unwrap()) {
-        let input = common::copilot_input(&copilot["base"], case);
-        c.ask("copilot_watch", input.clone());
-        c.ask("best_fields", input);
+    for case in copilot["cases"].as_array().unwrap() {
+        c.ask("copilot_watch", common::copilot_input(&copilot["base"], case));
+    }
+
+    // The emergency assistant (emergency.json).
+    let emergency = fixture("emergency.json");
+    let glide = emergency["lakeGeneva"]["input"].clone();
+    c.ask("best_fields", glide.clone());
+    let mut diversion = glide;
+    diversion["mode"] = json!("diversion");
+    diversion["airplane"] = Value::Null;
+    c.ask("best_fields", diversion);
+    c.ask("mayday_call", emergency["mayday"]["input"].clone());
+    c.ask("mayday_call", json!({}));
+    for case in emergency["sections"].as_array().unwrap() {
+        c.ask("checklist_section", json!({ "titles": case["titles"], "want": case["want"] }));
     }
 
     // Every fixture above was asked, and these are the names it reaches:

@@ -49,8 +49,8 @@
 //!   obstacle floor (14 CFR 91.119), the IFR floor (91.177), the band under
 //!   Class B, the clouds (91.155) and the service ceiling, the cruising
 //!   altitudes by course (91.159, 91.179) and the words where none fits;
-//! - inflight: the flight under way -- the best fields to go to from
-//!   where the airplane is, and the in-flight copilot's ranked messages;
+//! - inflight: the flight under way -- the in-flight copilot's ranked
+//!   messages, its alternative from the emergency assistant's best_fields;
 //! - flight: the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere;
 //! - wmm: magnetic variation from the World Magnetic Model;
 //! - forecast: a field's flight category from what is known of its
@@ -71,7 +71,7 @@ pub mod call;
 
 pub use wingtip_airspace::{ahead, airspace, drills, pack, pack_query, rules, spoken, view};
 pub use wingtip_altitude::altitude;
-pub use wingtip_brief::{alternates, gonogo, passengers, runway};
+pub use wingtip_brief::{alternates, fields, gonogo, passengers, runway};
 // Forecast icing along an IFR route (#216).
 pub use wingtip_brief::icing_forecast;
 pub use wingtip_procedures::figures;
@@ -79,10 +79,10 @@ pub use wingtip_procedures::figures;
 pub use wingtip_procedures::paths;
 pub use wingtip_core::{geo, grid, sums, time, wmm, xml};
 pub use wingtip_flight::{filing, flight, limits, performance, sun};
-// The in-flight copilot and the best fields (copilot_watch, best_fields).
+// The in-flight copilot (copilot_watch).
 pub use wingtip_inflight as inflight;
 pub use wingtip_pilot::{aircraft, pilot};
-pub use wingtip_radio::{atis, clearance, datis, readback};
+pub use wingtip_radio::{atis, clearance, datis, mayday, readback};
 pub use wingtip_route::{approach, motion, navlog, route};
 pub use wingtip_weather::{cycles, forecast, metar, notam, rvr, taf, tfr, validity, winds};
 pub use wingtip_wording::wording;

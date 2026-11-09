@@ -7,22 +7,16 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from wingtip import copilot
 
+from ..emergency.schemas import EmergencyField
 from ..gateway import PUBLIC
 
 router = APIRouter()
 
 
-class CopilotField(BaseModel):
-    """A landing field as the engine's best_fields reads it: the name a
-    pilot says, its METAR as sent, its longest open paved runway (ft,
-    OurAirports' runways) and whether NASR lists fuel there."""
+class CopilotField(EmergencyField):
+    """A landing field as the engine's best_fields reads it (the emergency
+    assistant's), with whether NASR lists fuel sold there."""
 
-    ident: str
-    name: str | None = None
-    lat: float
-    lon: float
-    metar: str | None = None
-    runway_ft: float | None = None
     fuel: bool = False
 
 

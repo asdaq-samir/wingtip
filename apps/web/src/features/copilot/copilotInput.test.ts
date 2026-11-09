@@ -5,7 +5,8 @@ import type { CopilotFlight } from "../../lib/copilot/flight";
 import { NO_MINIMUMS } from "../../lib/minimums";
 import { copilotInput, nightCurrent, rememberCategories, restOfRoute, watch, type CopilotInput } from "./copilotInput";
 
-type Case = { name: string; with?: Record<string, unknown>; metars?: Record<string, string>; expect: Record<string, unknown> | null };
+type Metar = CopilotInput["fields"][number]["metar"];
+type Case = { name: string; with?: Record<string, unknown>; metars?: Record<string, Metar>; expect: Record<string, unknown> | null };
 
 /** A case made whole, as the engine's tests make it (tests/common). */
 function inputOf(c: Case): CopilotInput {

@@ -19,8 +19,10 @@ pub struct Own {
 }
 
 /// A landing field the airplane might go to, as the planner's
-/// /api/copilot/around gives it: its METAR as sent, its longest open paved
-/// runway (OurAirports' runways table) and whether NASR lists fuel there.
+/// /api/copilot/around gives it -- the emergency assistant's best_fields
+/// candidate (brief's fields), with whether NASR lists fuel there and the
+/// category it had when the flight was planned -- as far as the copilot's
+/// own checks read it: the METAR as sent.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Field {
     pub ident: String,
@@ -32,7 +34,6 @@ pub struct Field {
     /// The category the field had when the flight was planned, so a
     /// worse one now is said as a change ("just went IFR").
     pub planned_category: Option<String>,
-    pub runway_ft: Option<f64>,
     pub fuel: bool,
 }
 
@@ -100,7 +101,11 @@ pub fn fields(name: &str, v: &Value) -> R<Vec<Field>> {
     list(name, v, "fields")?
         .iter()
         .map(|f| {
-            let raw = text(name, f, "metar")?.map(str::to_owned);
+            // The METAR as best_fields reads it, its report as sent in `raw`.
+            let raw = match f.get("metar") {
+                None | Some(Value::Null) => None,
+                Some(m) => text(name, m, "raw")?.map(str::to_owned),
+            };
             Ok(Field {
                 ident: text(name, f, "ident")?.ok_or_else(|| format!("{name}: a field has no \"ident\""))?.to_owned(),
                 name: text(name, f, "name")?.map(str::to_owned),
@@ -109,7 +114,6 @@ pub fn fields(name: &str, v: &Value) -> R<Vec<Field>> {
                 metar: raw.as_deref().and_then(metar::parse),
                 raw,
                 planned_category: text(name, f, "planned_category")?.map(str::to_owned),
-                runway_ft: num(name, f, "runway_ft")?,
                 fuel: flag(name, f, "fuel")?.unwrap_or(false),
             })
         })

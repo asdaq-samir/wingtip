@@ -6,6 +6,9 @@
 //!
 //! - alternates: the IFR alternate, 14 CFR 91.169 -- whether the
 //!   destination needs one and whether a field will do as one;
+//! - fields: the best fields to land at from where the airplane is,
+//!   ranked with their reasons -- within a glide with the engine stopped,
+//!   or for a diversion (the emergency assistant, the in-flight copilot);
 //! - icing_forecast: the icing the AWC forecasts on each leg of an IFR
 //!   route at the altitude flown (#216);
 //! - gonogo: the Brief's Go / No-Go -- its seven findings and the line
@@ -17,6 +20,7 @@
 //!   short-field distances and how an end suits the airplane.
 
 pub mod alternates;
+pub mod fields;
 pub mod gonogo;
 pub mod icing_forecast;
 pub mod passengers;

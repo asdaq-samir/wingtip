@@ -1,11 +1,11 @@
 //! The copilot's checks, one a kind (message::KINDS), each composed from
 //! the rule that owns its figure: the field's weather and the best
-//! alternative (fields.rs: 91.155, the pilot's minimums, 91.151 and
-//! 91.167's reserve), 61.57(b)'s night-passenger period (flight::sun),
+//! alternative (fields.rs: brief's best_fields in its diversion mode, held
+//! to 91.155, the pilot's minimums and 91.151 and 91.167's reserve), 61.57(b)'s night-passenger period (flight::sun),
 //! the alerts ahead (airspace::ahead, read as the host passes them) and
 //! ITWS's alerts (AIM 4-3-7). Each says where its figure comes from.
 
-use crate::fields::{self, Ask, Pick, Weather};
+use crate::fields::{self, Pick, Weather};
 use crate::input::{same_field, Field};
 use crate::message::{minutes_words, zulu, Level, Message};
 use crate::watch::Flight;
@@ -20,14 +20,9 @@ use wingtip_procedures::figures::words::{ceiling_and_visibility, js_num};
 /// a rule; worse by another such step, it is said again.
 pub const GROUNDSPEED_SHORTFALL: f64 = 0.15;
 
-/// The first good field, the best alternative to name.
-fn best_ok(ask: &Ask, fields: &[Field]) -> Option<Pick> {
-    fields::best(ask, fields).into_iter().find(|p| p.ok)
-}
-
 /// "9 min left of course", "6 min ahead".
 fn where_words(p: &Pick) -> String {
-    let when = p.minutes.map(minutes_words).unwrap_or_else(|| format!("{} nm", js_num(p.distance_nm.round())));
+    let when = p.minutes.map(minutes_words).unwrap_or_else(|| format!("{} nm", js_num(p.distance_nm().round())));
     let side = match p.side() {
         Some("ahead") => " ahead".to_owned(),
         Some("behind") => " behind".to_owned(),
@@ -44,9 +39,9 @@ fn alternative_words(p: &Pick) -> String {
 }
 
 fn alternative_detail(p: &Pick) -> String {
-    let mut parts = vec![format!("{}: {} nm", p.field.ident, js_num(p.distance_nm.round()))];
-    if let Some(r) = p.field.runway_ft.filter(|r| *r > 0.0) {
-        parts.push(format!("runway {} ft", wingtip_procedures::figures::words::grouped(r)));
+    let mut parts = vec![format!("{}: {} nm", p.field.ident, js_num(p.distance_nm().round()))];
+    if let Some(r) = p.runway_words() {
+        parts.push(r);
     }
     parts.push(if p.field.fuel { "fuel".to_owned() } else { "no fuel listed".to_owned() });
     if let Some(left) = p.fuel_at_landing_min {
@@ -116,8 +111,7 @@ pub fn fuel(f: &Flight) -> Vec<Message> {
     let rule = if a.ifr { "14 CFR 91.167(a)" } else { "14 CFR 91.151(a)" };
     let title = format!("Fuel: {} left at {}, under the {} min reserve", minutes_words(left), l.at.ident, js_num(l.reserve_min));
     let mut say = format!("Fuel. You would land at {} with {}, under the {} minute reserve.", l.at.said(), minutes_words(left), js_num(l.reserve_min));
-    let stop_ask = Ask { need_fuel: true, exclude: Vec::new(), ..clone_ask(a) };
-    let stop = best_ok(&stop_ask, &f.fields);
+    let stop = fields::alternative(a, &f.fields, &f.candidates, true, &[]);
     let mut m = Message::new(format!("fuel:{}", l.at.ident), "fuel", Level::Warning, title, String::new());
     m.detail.push(format!("At {} kt and {} gal/h, from {} gal on board", js_num(a.own.gs_kt.round()), js_num(a.burn_gph.unwrap_or(0.0)), js_num(a.fuel_gal.unwrap_or(0.0))));
     if let Some(p) = &stop {
@@ -129,10 +123,6 @@ pub fn fuel(f: &Flight) -> Vec<Message> {
     m.sources.push(rule.to_owned());
     m.sources.push("Fuel listed: FAA NASR APT_BASE".to_owned());
     vec![m]
-}
-
-fn clone_ask(a: &Ask) -> Ask {
-    Ask { exclude: a.exclude.clone(), ..*a }
 }
 
 fn worse(planned: Option<&str>, now: Option<&str>) -> bool {
@@ -157,8 +147,7 @@ fn weather_message(f: &Flight, field: &Field, alternate: bool) -> Option<Message
     let mut m = Message::new(format!("weather:{}:{}", field.ident, category.unwrap_or("under")), "weather", Level::Caution, String::new(), String::new());
     m.detail.extend(why);
     if !alternate {
-        let ask = Ask { exclude: vec![field.ident.clone()], ..clone_ask(a) };
-        if let Some(p) = best_ok(&ask, &f.fields) {
+        if let Some(p) = fields::alternative(a, &f.fields, &f.candidates, false, &[field.ident.as_str()]) {
             title.push_str(&format!("; {}", alternative_words(&p)));
             say.push_str(&format!(" {}.", alternative_words(&p)));
             m.detail.push(format!("Best alternative: {}", alternative_detail(&p)));

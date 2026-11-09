@@ -15,3 +15,5 @@ wingtip-core = { path = "../core" }
 wingtip-flight = { path = "../flight" }
 # The METAR reader, for a digital ATIS's weather groups (datis).
 wingtip-weather = { path = "../weather" }
+# How a figure is written (figures::words), for the MAYDAY call (mayday).
+wingtip-procedures = { path = "../procedures" }

@@ -45,8 +45,18 @@ class UpstreamRoutesTest {
      */
     static final Map<String, String> ADDED = Map.of(
             "POST /api/departure-window", "planner signed-in csrf",
+            // The emergency assistant's fields: public, no sign-in in an emergency.
+            "GET /api/emergency/fields", "planner public csrf",
             // The in-flight copilot's reads round the airplane, public as /api/live/* is.
             "GET /api/copilot/around", "planner public csrf");
+
+    @Test
+    void theEmergencyFieldsArePublicFromThePlanner() {
+        var route = UpstreamRoutes.shipped().find("GET", "/api/emergency/fields").orElseThrow();
+        assertThat(route.upstream()).isEqualTo(Upstream.PLANNER);
+        assertThat(route.access()).isEqualTo(UpstreamRoutes.Access.PUBLIC);
+        assertThat(route.cache()).isFalse();
+    }
 
     @Test
     void everyRouteTheDocumentsMarkIsOneTheHandListForwardedWithTheSameRules() {
@@ -57,6 +67,7 @@ class UpstreamRoutesTest {
             RoutesBefore old = before.stream().filter(b -> b.matches(route.method(), sample)).findFirst().orElse(null);
             String name = route.method() + " " + route.pattern().getPatternString();
             if (ADDED.containsKey(name)) {
+                assertThat(old).as(name + " is listed as added, but the hand list had it").isNull();
                 String rules = route.upstream().name().toLowerCase(Locale.ROOT) + " "
                         + route.access().name().toLowerCase(Locale.ROOT).replace('_', '-') + " "
                         + (route.csrf() ? "csrf" : "no-csrf");
