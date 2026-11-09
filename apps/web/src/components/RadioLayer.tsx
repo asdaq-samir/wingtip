@@ -6,6 +6,7 @@ import { GLASS } from "./mapChrome";
 import Waveform from "./Waveform";
 import { Button } from "./ui/button";
 import { api } from "../lib/api/client";
+import { useAtcListen } from "../lib/atc/listenSetting";
 import { callToUs, chosenOutside, heardThrough, lostWords, useAtcRadio, useRadioActions, type Transmission } from "../lib/atcRadio";
 import { clearedRoute, heardAny, placesAsked, readClearance, type Found } from "../lib/clearance";
 import { stopwatch } from "../lib/diversion";
@@ -383,12 +384,14 @@ function RadioCaptions() {
  *  of its own, loaded once the radio is first listened to. */
 export default function RadioLayer() {
   const call = useAtcRadio(callToUs);
+  // With the ATC copilot on, a call to us is its card (features/atc).
+  const atc = useAtcListen(s => s.value !== "off");
   const captions = useAtcRadio(s => s.mode === "radio" || (!!s.error && s.mode !== "once" && s.pill === null));
   // The microphone's pill is the mic's own circle grown (RadioPill, in
   // MapControls), not a line here.
   return (
     <>
-      {call && <RadioCall key={call.id} call={call} />}
+      {call && !atc && <RadioCall key={call.id} call={call} />}
       {captions && <RadioCaptions />}
     </>
   );

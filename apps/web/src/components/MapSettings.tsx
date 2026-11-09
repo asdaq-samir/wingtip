@@ -21,6 +21,7 @@ import { cycleWarning } from "../lib/dataCycles";
 import { keepingAvailable } from "../lib/map/keepRoute";
 import { ALERT_MODES, useAlertMode, type AlertMode } from "../lib/alertMode";
 import { COPILOT_MODES, useCopilotMode, type CopilotMode } from "../lib/copilot/mode";
+import { ATC_LISTEN_MODES, setAtcListen, useAtcListen, type AtcListen } from "../lib/atc/listenSetting";
 
 /**
  * The map's settings, the whole of the map's own button's sheet
@@ -59,6 +60,7 @@ export default function MapSettings() {
   const sec = prefs.base === "sec";
   const [alertMode, setAlertMode] = useAlertMode();
   const [copilotMode, setCopilotMode] = useCopilotMode();
+  const atcListen = useAtcListen(s => s.value);
   return (
     <div className="flex flex-col gap-5" data-testid="map-settings-groups">
       <PictureChoices
@@ -156,6 +158,15 @@ export default function MapSettings() {
           <Segmented
             label="Copilot" value={copilotMode} onChange={v => setCopilotMode(v as CopilotMode)} testId="copilot-mode"
             options={COPILOT_MODES}
+          />
+        </ListRow>
+        {/* The ATC copilot (features/atc): the radio listened to while
+            flying, calls to us read into cards. Off until the pilot
+            turns it on. */}
+        <ListRow title="ATC">
+          <Segmented
+            label="ATC" value={atcListen} onChange={v => setAtcListen(v as AtcListen)} testId="atc-listen-mode"
+            options={ATC_LISTEN_MODES}
           />
         </ListRow>
       </ListGroup>

@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CircleAlert, Info, TriangleAlert } from "lucide-react";
 import { cn } from "cn";
 import { Alert } from "../../components/ui/alert";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { GLASS } from "../../components/mapChrome";
+import { LATEST_KEPT_MS, useLatestAtcCall } from "../../lib/atc/latestCall";
 import { TEXT } from "../../lib/text";
 import { useCopilot } from "./useCopilot";
 
@@ -18,6 +19,29 @@ const INK = {
 
 const ICON = { warning: TriangleAlert, caution: CircleAlert, advisory: Info } as const;
 
+/** With no message of its own, the ATC copilot's last call to us in one
+ *  line (lib/atc/latestCall), once its card is put away and for a while
+ *  after: the altitude, heading and frequency last given, and what the
+ *  pilot set from it (the next frequency, the code). */
+function AtcLine() {
+  const atc = useLatestAtcCall();
+  // The line heard at `at` goes LATEST_KEPT_MS after it.
+  const [gone, setGone] = useState<number | null>(null);
+  useEffect(() => {
+    if (atc.at == null) return;
+    const at = atc.at;
+    const timer = window.setTimeout(() => setGone(at), Math.max(0, at + LATEST_KEPT_MS - Date.now()));
+    return () => window.clearTimeout(timer);
+  }, [atc.at]);
+  if (!atc.line || atc.cardShown || atc.at == null || gone === atc.at) return null;
+  const set = [atc.frequency && `Next ${atc.facility ? `${atc.facility} ` : ""}${atc.frequency}`, atc.squawk && `Code ${atc.squawk}`].filter(Boolean).join(" · ");
+  return (
+    <p className={cn(GLASS, "w-fit max-w-full rounded-[22px] px-3 py-2 tabular-nums", TEXT.detail)} role="status" data-testid="copilot-atc-line">
+      <span className="font-semibold">ATC </span>{atc.line}{set && <span className="text-muted-foreground"> · {set}</span>}
+    </p>
+  );
+}
+
 /**
  * The in-flight copilot's one message (useCopilot), in the map's banner
  * column under what is ahead: its line, and a tap opening the why and
@@ -28,7 +52,7 @@ const ICON = { warning: TriangleAlert, caution: CircleAlert, advisory: Info } as
 export default function CopilotBanner() {
   const { message, dismiss } = useCopilot();
   const [open, setOpen] = useState(false);
-  if (!message || message.elsewhere) return null;
+  if (!message || message.elsewhere) return <AtcLine />;
   const Icon = ICON[message.level];
   return (
     <div className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-[22px]")} data-copilot-banner={message.kind}>
