@@ -128,6 +128,16 @@ jobs:
       # contract files give (wingtip-contract-gen).
       # The crates use only the crates engine/README.md's table says they use.
       - run: python3 scripts/ci/engine_layers.py
+      # No dependency a crate names and does not use. cargo-machete reads the
+      # sources, so it needs no build; the binary is kept between runs.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        id: machete
+        with:
+          path: ~/.cargo/bin/cargo-machete
+          key: cargo-machete-0.9.1-${{ runner.os }}-${{ runner.arch }}
+      - if: steps.machete.outputs.cache-hit != 'true'
+        run: cargo install --locked cargo-machete@0.9.1
+      - run: cargo machete engine
       - run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine -p wingtip-core -p wingtip-flight -p wingtip-weather -p wingtip-procedures -p wingtip-radio -p wingtip-airspace -p wingtip-wording -p wingtip-brief -p wingtip-route -p wingtip-pilot -p wingtip-altitude -p wingtip-contract-gen
       # The web app's copy of the engine (apps/web/src/lib/engine), committed
       # because the web build has no Rust: built again in the script's
@@ -234,6 +244,8 @@ jobs:
         run: scripts/build/design-tokens.sh --check
       - run: npx tsc --noEmit
       - run: npx eslint .
+      # No unused file, export, type or dependency (knip, apps/web/knip.jsonc).
+      - run: npx knip --no-progress
       - run: npx vitest run
       - run: npx vite build
       # The JavaScript a phone loads before the planner draws, against a
@@ -654,6 +666,8 @@ jobs:
                 - '**/*.java'
                 - scripts/ci/file_sizes.py
                 - scripts/ci/file_sizes_allow.txt
+                - scripts/ci/dead_python.sh
+                - scripts/ci/vulture_allow.py
               # END generated
       - name: What this run builds and tests
         id: plan
@@ -1726,9 +1740,10 @@ jobs:
   # No source file new or grown past 400 lines (scripts/ci/file_sizes.py),
   # past what scripts/ci/file_sizes_allow.txt lists of the files over it
   # when the budget came in; and that list only shrinks against the base
-  # branch's. Seconds, the standard library only.
+  # branch's. Seconds, the standard library only. And no unused Python
+  # (scripts/ci/dead_python.sh: vulture, pinned, through pipx).
   architecture:
-    name: File sizes
+    name: Architecture
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: needs.changes.outputs.arch == 'true'
@@ -1740,6 +1755,8 @@ jobs:
         run: |
           git fetch -q --depth=1 origin "$BASE"
           python3 scripts/ci/file_sizes.py --base FETCH_HEAD
+      - name: No unused Python
+        run: scripts/ci/dead_python.sh
 
   # Every relative link and #anchor in the Markdown resolves: a doc moved
   # or a heading renamed breaks the links to it silently otherwise.

@@ -20,7 +20,7 @@
 areas:
   web:
     ci: test-web
-    check: npm run types && npx tsc --noEmit && npx eslint . && npx vitest run
+    check: npm run types && npx tsc --noEmit && npx eslint . && npx knip && npx vitest run
     paths:
       - apps/web/**
       - services/planner/openapi.json
@@ -121,7 +121,7 @@ areas:
       - engine/**
   engine:
     ci: test-root
-    check: scripts/ci/engine_layers.py, then cargo test --profile ci (ci.yml's line)
+    check: scripts/ci/engine_layers.py, cargo machete, then cargo test --profile ci (ci.yml's line)
     paths:
       - engine/**
       - scripts/ci/engine_layers.py
@@ -162,7 +162,7 @@ areas:
       - .github/workflows/native-android-build.yml
   arch:
     ci: arch
-    check: scripts/ci/file_sizes.py --base origin/main (no new or grown source file over 400 lines)
+    check: scripts/ci/file_sizes.py --base origin/main (no new or grown source file over 400 lines), then scripts/ci/dead_python.sh (vulture)
     paths:
       # Every source file the budget counts, and the budget itself.
       - "**/*.ts"
@@ -174,6 +174,8 @@ areas:
       - "**/*.java"
       - scripts/ci/file_sizes.py
       - scripts/ci/file_sizes_allow.txt
+      - scripts/ci/dead_python.sh
+      - scripts/ci/vulture_allow.py
 ci_only:
   # A change here can change what any job does: all of them.
   global:

@@ -26,7 +26,8 @@
 # - Volumes: wingtip-cargo-registry and wingtip-cargo-git (Cargo's
 #   downloads), wingtip-cargo-target-tests-<rust>-<arch>-<hash of the worktree's path>
 #   (the engine tests' build, one per worktree; tidy-local.sh removes those
-#   of worktrees that are gone), wingtip-check-raw (the FAA files the Python tests fetch into
+#   of worktrees that are gone), wingtip-cargo-tools (cargo-machete),
+#   wingtip-check-raw (the FAA files the Python tests fetch into
 #   data/raw, as CI's cache keeps them), fp-m2 (Maven's repository).
 # The test build is never scripts/build/build-engine-wasm.sh's: that one stays a
 # clean, reproducible build in its pinned image. Each worktree is mounted at
@@ -43,6 +44,8 @@ here=$(cd "$(dirname "$0")/../.." && pwd)
 PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:$HOME/.local/bin:$HOME/.cargo/bin
 
 RUST_IMAGE=rust:1.89-slim-bookworm
+# CI's (ci.yml's test job).
+CARGO_MACHETE=0.9.1
 
 # The areas and the paths that belong to each are scripts/areas.yml's, the
 # one table the pre-push hook and CI's changes filter read too.
@@ -202,11 +205,11 @@ run_area() {
     web)
       tag=$(web_image)
       # A worktree's own node_modules (macOS binaries, or an older lock's)
-      # would come first in Node's walk up: hidden behind an empty one.
-      local hide=()
-      [ -d "$here/apps/web/node_modules" ] && hide=(--tmpfs /repo/apps/web/node_modules)
-      docker run --rm -v "$here:/repo" "${hide[@]+"${hide[@]}"}" -w /repo/apps/web "$tag" \
-        sh -c 'npm run -s types && npx tsc --noEmit && npx eslint . && npx vitest run'
+      # would come first in Node's walk up: hidden behind one of the
+      # container's own, links to the image's /node_modules, where knip
+      # looks for the packages package.json names (it reads no further up).
+      docker run --rm -v "$here:/repo" --tmpfs /repo/apps/web/node_modules -w /repo/apps/web "$tag" \
+        sh -c 'ln -s /node_modules/* /node_modules/.bin node_modules/ && npm run -s types && npx tsc --noEmit && npx eslint . && npx knip --no-progress && npx vitest run'
       ;;
     py) run_py services/planner requirements-dev-wingtip.txt 3.14 wingtip tests_wingtip ;;
     planner) run_py services/planner requirements-dev.txt 3.14 app tests ;;
@@ -217,6 +220,11 @@ run_area() {
     engine)
       # The crates' layering, as engine/README.md's table gives it (seconds).
       python3 "$here/scripts/ci/engine_layers.py"
+      # No dependency a crate names and does not use (cargo-machete, CI's
+      # version), installed once into a volume of its own.
+      docker run --rm -v "$here:/w" -v wingtip-cargo-registry:/usr/local/cargo/registry \
+        -v wingtip-cargo-tools:/tools -w /w/engine "$RUST_IMAGE" sh -c \
+        "[ -x /tools/bin/cargo-machete ] || cargo install -q --locked cargo-machete@$CARGO_MACHETE --root /tools; /tools/bin/cargo-machete"
       # CI's own cargo test line (ci.yml's test job), so the crates tested
       # here are always the ones tested there.
       local cmd
@@ -263,6 +271,8 @@ run_area() {
       local base=()
       git -C "$here" rev-parse -q --verify origin/main >/dev/null && base=(--base origin/main)
       python3 "$here/scripts/ci/file_sizes.py" "${base[@]+"${base[@]}"}"
+      # No unused Python (vulture, with its list of what it cannot see used).
+      "$here/scripts/ci/dead_python.sh"
       ;;
     *) echo "check: no area '$1' (one of: $AREAS, all-changed)" >&2; return 64 ;;
   esac
