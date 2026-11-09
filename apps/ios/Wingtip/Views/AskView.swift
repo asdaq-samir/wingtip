@@ -140,17 +140,20 @@ struct AskView: View {
                     .focused($typing)
                     .onSubmit { send(question) }
                     .accessibilityLabel("Your question")
-                Button {
-                    Task { await hear() }
-                } label: {
-                    Image(systemName: "mic.fill")
-                        .foregroundStyle(listener.hearingOnce ? Color.accentColor : .secondary)
-                        .symbolEffect(.pulse, isActive: listener.hearingOnce && !reduceMotion)
-                        .frame(width: 28, height: 28)
+                // Asked by voice only where speech stays on the iPhone.
+                if listener.canListen {
+                    Button {
+                        Task { await hear() }
+                    } label: {
+                        Image(systemName: "mic.fill")
+                            .foregroundStyle(listener.hearingOnce ? Color.accentColor : .secondary)
+                            .symbolEffect(.pulse, isActive: listener.hearingOnce && !reduceMotion)
+                            .frame(width: 28, height: 28)
+                    }
+                    .contentShape(Rectangle().inset(by: -8))
+                    .disabled(client.answering)
+                    .accessibilityLabel(listener.hearingOnce ? "Listening" : "Ask by voice")
                 }
-                .contentShape(Rectangle().inset(by: -8))
-                .disabled(client.answering)
-                .accessibilityLabel(listener.hearingOnce ? "Listening" : "Ask by voice")
                 Button { send(question) } label: {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.title2)

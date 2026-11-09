@@ -6,7 +6,7 @@ import InputGuide from "./InputGuide";
 import { FieldError } from "./ui/field";
 import { inputLevel, lostWords, useAtcRadio } from "../lib/atcRadio";
 import { canPickInput, find, hold, isOutside, matchInput, pick, refresh, useInputs } from "../lib/audioInput";
-import { canListen } from "../lib/listen";
+import { useCanListen } from "../lib/speechLocal";
 import { usePreferences } from "../lib/preferences";
 import { TEXT } from "../lib/text";
 
@@ -65,7 +65,7 @@ export default function ListenThrough() {
   // so the input is heard, not only held.
   const hearing = useAtcRadio(s => s.listening || !!s.atisStop);
   const kept = usePreferences(s => s.listenInput);
-  const shown = canListen() && canPickInput();
+  const shown = useCanListen() && canPickInput();
   const arriving = useSoundArriving(shown && !!input && !input.lost && !input.paused);
   // The card's hold: what it opens stays open while the card is, and is
   // let go with it unless the radio is still being listened to.

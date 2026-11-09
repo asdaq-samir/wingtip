@@ -5,16 +5,23 @@
  * it is live (Chrome and Edge 135+, Firefox 160 on the desktop hear it;
  * Safari ignores it), the default input where the track will not do, a
  * fresh read of the track at each restart, and the start itself still in
- * the tap, as Safari asks.
+ * the tap. Every recognizer is told to process locally, and nothing is
+ * started where the browser cannot promise that (lib/speechLocal).
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { listen, noMicrophone, takesTrack } from "./listen";
+import { checkSpeech, forgetSpeechCheck } from "./speechLocal";
 
 class Recognizer {
   static made: Recognizer[] = [];
   /** Throws as Chrome does for a track it will not take. */
   static refuseTracks = false;
-  lang = ""; continuous = false; interimResults = false;
+  /** What Chrome's on-device check answers, and whether install worked. */
+  static here = "available";
+  static installs = 0;
+  static available = vi.fn(async () => Recognizer.here);
+  static install = vi.fn(async () => { Recognizer.installs++; return true; });
+  lang = ""; continuous = false; interimResults = false; processLocally = false;
   onresult: ((e: unknown) => void) | null = null;
   onerror: ((e: { error: string }) => void) | null = null;
   onend: (() => void) | null = null;
@@ -31,10 +38,14 @@ class Recognizer {
 
 const track = (readyState: "live" | "ended" = "live") => ({ kind: "audio", readyState }) as unknown as MediaStreamTrack;
 
-beforeEach(() => {
+beforeEach(async () => {
   Recognizer.made = [];
   Recognizer.refuseTracks = false;
+  Recognizer.here = "available";
+  Recognizer.installs = 0;
   vi.stubGlobal("SpeechRecognition", Recognizer);
+  forgetSpeechCheck();
+  await checkSpeech();
 });
 
 afterEach(() => {
@@ -88,6 +99,57 @@ describe("the recognizer's input", () => {
     first.onend!();
     expect(ended).not.toHaveBeenCalled();
     expect(Recognizer.made[1]!.starts).toEqual([[held]]);
+  });
+});
+
+describe("on the device where it can be", () => {
+  test("every recognizer is told to process locally, English asked for on the device", async () => {
+    const { renew } = await listen([], undefined, () => {}, () => {});
+    renew();
+    Recognizer.made[0]!.onend!();
+    expect(Recognizer.made.map(r => [r.processLocally, r.lang])).toEqual([[true, "en-US"], [true, "en-US"]]);
+    expect(Recognizer.available).toHaveBeenCalledWith({ langs: ["en-US"], processLocally: true });
+  });
+
+  test("a language pack to download: installed from the tap, then heard", async () => {
+    Recognizer.here = "downloadable";
+    forgetSpeechCheck();
+    await checkSpeech();
+    await listen([], undefined, () => {}, () => {});
+    expect(Recognizer.installs).toBe(1);
+    expect(Recognizer.made).toHaveLength(1);
+    expect(Recognizer.made[0]!.processLocally).toBe(true);
+  });
+
+  test("a recognizer that cannot promise the device (Safari, an older Chrome): the browser's own, not told to stay local", async () => {
+    const made: Record<string, unknown>[] = [];
+    class BrowserOnly { start = vi.fn(); stop() {} constructor() { made.push(this as unknown as Record<string, unknown>); } }
+    vi.stubGlobal("SpeechRecognition", undefined);
+    vi.stubGlobal("webkitSpeechRecognition", BrowserOnly);
+    forgetSpeechCheck();
+    const ended = vi.fn();
+    await listen([], undefined, () => {}, ended);
+    expect(ended).not.toHaveBeenCalled();
+    expect(made).toHaveLength(1);
+    expect(made[0]!.processLocally).toBeUndefined();
+    expect(made[0]!.start).toHaveBeenCalled();
+  });
+
+  test("on-device recognition unavailable: the browser's recognizer, not told to stay local", async () => {
+    Recognizer.here = "unavailable";
+    forgetSpeechCheck();
+    await listen([], undefined, () => {}, () => {});
+    expect(Recognizer.made).toHaveLength(1);
+    expect(Recognizer.made[0]!.processLocally).toBe(false);
+  });
+
+  test("no recognizer at all (Firefox): nothing starts", async () => {
+    vi.stubGlobal("SpeechRecognition", undefined);
+    vi.stubGlobal("webkitSpeechRecognition", undefined);
+    forgetSpeechCheck();
+    const ended = vi.fn();
+    await listen([], undefined, () => {}, ended);
+    expect(ended).toHaveBeenCalledWith("Speech can't be recognised on this device; type the clearance instead.");
   });
 });
 

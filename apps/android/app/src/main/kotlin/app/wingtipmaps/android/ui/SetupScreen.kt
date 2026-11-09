@@ -47,6 +47,7 @@ import app.wingtipmaps.android.about.AboutScreen
 import app.wingtipmaps.android.account.DeleteAccountButton
 import app.wingtipmaps.android.account.ExportRow
 import app.wingtipmaps.android.atc.AtcSettingRow
+import app.wingtipmaps.android.atc.RadioListener
 import app.wingtipmaps.android.briefing.PassengerScreen
 import app.wingtipmaps.android.copilot.CopilotMode
 import app.wingtipmaps.android.copilot.CopilotSetting
@@ -175,9 +176,12 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
             selected = copilotMode, onPick = copilot::set,
         )
         // The ATC copilot: the radio listened to while flying, calls to
-        // us read into cards; off until the pilot turns it on.
-        SectionTitle(stringResource(R.string.atc))
-        AtcSettingRow()
+        // us read into cards; off until the pilot turns it on, and not
+        // offered where speech cannot be recognised on the phone.
+        if (remember(context) { RadioListener.canListen(context) }) {
+            SectionTitle(stringResource(R.string.atc))
+            AtcSettingRow()
+        }
 
         // The passenger briefing for the planned flight (#223), where the
         // field's "passenger briefing" opens Setup.

@@ -6,7 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../co
 import { RowBadge } from "../../../components/RowBadge";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
-import { canListen } from "../../../lib/listen";
+import { useCanListen } from "../../../lib/speechLocal";
 import { chosenOutside, heardThrough, lostWords, useAtcRadio } from "../../../lib/atcRadio";
 import { atisRows, glanceWords, heardAny, hearAtis, readAtis, type AtisReading } from "../lib/atis";
 
@@ -39,7 +39,9 @@ export function AtisRows() {
   // Keyed by the field in PlaceCard, so another field's card is another
   // broadcast; the hearing ends with the card.
   useEffect(() => () => stop.current?.(), []);
-  if (!canListen()) return null;
+  // Heard on the device or not at all (lib/speechLocal).
+  const canListen = useCanListen();
+  if (!canListen) return null;
 
   const start = () => {
     if (listening) {

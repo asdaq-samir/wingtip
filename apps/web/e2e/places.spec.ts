@@ -939,7 +939,7 @@ test("the Weather tab listens to an ATIS and shows the runway in use and the alt
       }
       stop() { setTimeout(() => this.onend?.(), 50); }
     }
-    Object.assign(window, { SpeechRecognition: Heard, webkitSpeechRecognition: Heard });
+    Object.assign(window, { SpeechRecognition: Object.assign(Heard, { available: async () => "available" }), webkitSpeechRecognition: Heard });
   });
   await cardWeather(page, "KDLH", { metar: { raw: "KDLH 102155Z 27008KT 10SM CLR 12/02 A3001", flight_category: "VFR", ceiling_ft: null }, taf: null });
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=KDLH");

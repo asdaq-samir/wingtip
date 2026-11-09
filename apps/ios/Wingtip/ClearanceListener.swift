@@ -5,10 +5,17 @@ import Speech
 import UIKit
 
 /// The radio heard through the microphone by Apple's own recognizer (the
-/// Speech framework's SFSpeechRecognizer), a transmission at a time: on
-/// the phone where it can be, so nothing said goes off it, and told the names near
-/// the route to listen for (contextualStrings, /api/clearance/words) -- a
-/// fix said as a word, "Pykla", is not English.
+/// Speech framework's SFSpeechRecognizer), a transmission at a time, on
+/// the iPhone only (requiresOnDeviceRecognition, always), so nothing a
+/// pilot says goes to Apple or anyone (the owner, 2026-11-09); and told the
+/// names near the route to listen for (contextualStrings,
+/// /api/clearance/words) -- a fix said as a word, "Pykla", is not English.
+///
+/// Where the iPhone cannot recognise English on the device
+/// (supportsOnDeviceRecognition false: an older phone, the language's
+/// model not on it), voice is not offered at all: `canListen` is false and
+/// every microphone control hides itself, and nothing falls back to
+/// Apple's servers.
 ///
 /// It goes on with the phone locked, as the owner asked (2026-11-02;
 /// project.yml's UIBackgroundModes audio keeps the microphone open), and a
@@ -62,6 +69,10 @@ final class ClearanceListener {
     private static let longestOnce: TimeInterval = 20
 
     private let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+
+    /// Whether voice is offered here: English recognised on this iPhone,
+    /// never on a server. Every microphone control shows only when it is.
+    var canListen: Bool { recognizer?.supportsOnDeviceRecognition == true }
     private let audio = AVAudioEngine()
     private var request: SFSpeechAudioBufferRecognitionRequest?
     /// The request the microphone's buffers go to, from the audio thread.
@@ -80,12 +91,19 @@ final class ClearanceListener {
     /// one tap feeding whichever request is being heard.
     private func openMicrophone() async -> Bool {
         problem = nil
+        // Asked first, so a phone that cannot keep speech on itself is
+        // never even asked for the permission.
+        guard canListen else {
+            problem = "Speech can't be recognised on this iPhone; type the clearance instead."
+            Log.radio.error("on-device speech recognition is not available")
+            return false
+        }
         guard await Self.allowed() else {
             problem = "Microphone or speech recognition access was refused; allow it for Wingtip Maps in Settings."
             Log.radio.error("the microphone or speech recognition was refused")
             return false
         }
-        guard let recognizer, recognizer.isAvailable else {
+        guard let recognizer, recognizer.isAvailable, recognizer.supportsOnDeviceRecognition else {
             problem = "Speech recognition is not available now."
             Log.radio.error("speech recognition is not available")
             return false
@@ -142,12 +160,13 @@ final class ClearanceListener {
 
     /// The next transmission, heard afresh.
     private func hear() {
-        guard listening, let recognizer else { return }
+        guard listening, let recognizer, recognizer.supportsOnDeviceRecognition else { return }
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
         request.taskHint = .dictation
         request.contextualStrings = words
-        if recognizer.supportsOnDeviceRecognition { request.requiresOnDeviceRecognition = true }
+        // On the iPhone, never Apple's servers.
+        request.requiresOnDeviceRecognition = true
         self.request = request
         feed.set(request)
         let id = next
@@ -214,7 +233,8 @@ final class ClearanceListener {
         request.shouldReportPartialResults = true
         request.taskHint = .search
         request.contextualStrings = words
-        if recognizer.supportsOnDeviceRecognition { request.requiresOnDeviceRecognition = true }
+        // On the iPhone, never Apple's servers.
+        request.requiresOnDeviceRecognition = true
         self.request = request
         feed.set(request)
         heardOnce = nil

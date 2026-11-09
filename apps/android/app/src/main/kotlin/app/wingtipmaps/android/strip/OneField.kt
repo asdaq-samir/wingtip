@@ -1,8 +1,6 @@
 package app.wingtipmaps.android.strip
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.speech.RecognizerIntent
+import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
@@ -28,13 +26,17 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.api.Pilot
+import app.wingtipmaps.android.atc.RadioListener
+import app.wingtipmaps.android.atc.micAllowed
 import kotlinx.coroutines.launch
 
 /**
@@ -47,12 +49,14 @@ import kotlinx.coroutines.launch
  * idents are a route, a name a place, a screen's word that screen,
  * anything else a question for the assistant. Tapped, the bar opens full
  * screen, as Material's does, with the suggestions as chips while nothing
- * is typed, each one tap; the microphone opens the phone's own speech
- * recognizer and the words come back as if typed. Why a line could not
- * be done is said under the row.
+ * is typed, each one tap; the microphone hears one thing said with the
+ * phone's on-device recognizer (RadioListener.once) and the words come
+ * back as if typed. Why a line could not be done is said under the row.
  *
  * In the air the field is the radio: nothing is typed, the microphone is
- * the way in, and the placeholder says so.
+ * the way in, and the placeholder says so. Where speech cannot be
+ * recognised on the phone (RadioListener.canListen) there is no
+ * microphone: nothing said is ever sent to a server's recognizer.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,24 +83,26 @@ fun FieldRow(
         onLine(line)
     }
 
-    // The phone's own speech recognizer, through the system's intent: no
-    // permission of the app's own, and the words come back as typed.
-    val hear = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val words = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
-        if (!words.isNullOrBlank()) submit(words)
-    }
-    val listen = {
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-            .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            .putExtra(RecognizerIntent.EXTRA_PROMPT, if (flying) "Say it" else "Where to, or ask")
-        try {
-            hear.launch(intent)
-        } catch (e: ActivityNotFoundException) {
-            onProblem("This phone has no speech recognizer.")
+    // The phone's on-device recognizer, as the ATC copilot hears with:
+    // not the system's recognizer intent, whose service may send the
+    // audio away. The microphone is asked for from the tap, as Android's
+    // guidance has it.
+    val context = LocalContext.current
+    val voice = remember(context) { RadioListener.canListen(context) }
+    val hearOnce = {
+        scope.launch {
+            val words = RadioListener.of(context).once()
+            if (!words.isNullOrBlank()) submit(words) else onProblem("Nothing was heard.")
         }
     }
+    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) hearOnce() else onProblem("Allow the microphone to say it.")
+    }
+    val listen = {
+        if (micAllowed(context)) hearOnce() else ask.launch(Manifest.permission.RECORD_AUDIO)
+    }
 
-    val placeholder = if (flying) "Tap the mic and say it" else "Where to, or ask"
+    val placeholder = if (flying && voice) "Tap the mic and say it" else "Where to, or ask"
     val inputField: @Composable () -> Unit = {
         SearchBarDefaults.InputField(
             searchBarState = searchBarState,
@@ -105,10 +111,14 @@ fun FieldRow(
             enabled = !flying,
             placeholder = { Text(placeholder) },
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-            trailingIcon = {
-                IconButton(onClick = listen, enabled = true) {
-                    Icon(Icons.Filled.Mic, contentDescription = "Say it", tint = MaterialTheme.colorScheme.primary)
+            trailingIcon = if (voice) {
+                {
+                    IconButton(onClick = { listen() }, enabled = true) {
+                        Icon(Icons.Filled.Mic, contentDescription = "Say it", tint = MaterialTheme.colorScheme.primary)
+                    }
                 }
+            } else {
+                null
             },
             modifier = Modifier.semantics { contentDescription = if (flying) "The radio" else "Where to, or ask" },
         )

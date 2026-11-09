@@ -27,7 +27,7 @@ export function useMicPrimer(): [ReactNode, (then: () => void) => void] {
   const sheet = (
     <SheetDialog
       open={waiting !== null} onOpenChange={open => { if (!open) setWaiting(null); }} title="The Microphone"
-      description="Wingtip listens to the radio to write down your clearance; nothing leaves the phone unless you ask."
+      description="Wingtip listens to the radio to write down your clearance. Wingtip records no audio, and keeps speech on this device wherever your browser can."
       testId="mic-primer"
     >
       <div className="grid gap-2">

@@ -55,8 +55,9 @@ final class AtcCopilot {
     /// Listening starts as the flight does and stops with it, where the
     /// copilot started it; the radio's own listening is the pilot's.
     func follow(flying: Bool, tail: String?) async {
-        let auto = mode == .flying && flying && tail != nil
         let listener = ClearanceListener.shared
+        // Only where speech stays on the iPhone (ClearanceListener.canListen).
+        let auto = mode == .flying && flying && tail != nil && listener.canListen
         if auto, !started, !listener.listening {
             started = true
             await listener.start(words: [])

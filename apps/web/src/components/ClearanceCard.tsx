@@ -16,7 +16,7 @@ import {
   clearedRoute, heardAny, placesAsked, readClearance, routeDifference,
   type Clearance, type ClearedItem, type Found, type FoundPlace,
 } from "../lib/clearance";
-import { canListen } from "../lib/listen";
+import { useCanListen } from "../lib/speechLocal";
 import { heardThrough, useAtcRadio, useRadioActions, type PlannedRoute } from "../lib/atcRadio";
 import { listenOnce, startRadio, stopRadio } from "../lib/atcListening";
 import { callPattern } from "../lib/heardCall";
@@ -280,7 +280,7 @@ export default function ClearanceCard({ onDone }: {
   const altitude = altitudeLine(clearance);
   // The input's own problems are said under its picker (ListenThrough).
   const problem = error ?? readbackProblem ?? (found.isError ? "The places in it could not be looked up; check the connection and try again." : null);
-  const mic = canListen();
+  const mic = useCanListen();
 
   const hearState = onRadio ? "Listening…" : heardIt ? (heardAt ? `Heard ${time(heardAt)}` : "Heard") : NOT_YET;
   const readbackState = readingBack ? "Listening…"

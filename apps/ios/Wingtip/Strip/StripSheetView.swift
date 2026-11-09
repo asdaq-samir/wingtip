@@ -164,7 +164,7 @@ struct StripSheetView: View {
     private var fieldRow: some View {
         VStack(alignment: .leading, spacing: 0) {
             StripFieldRow(text: $text, flying: flyingFix != nil, listening: hearing || listener.hearingOnce, busy: busy,
-                          onSubmit: { Task { await run(text) } }, onMic: { Task { await hear() } }, focused: $focused)
+                          onSubmit: { Task { await run(text) } }, onMic: listener.canListen ? { Task { await hear() } } : nil, focused: $focused)
                 .padding(.horizontal, WingtipSpace.lg)
                 .padding(.top, WingtipSpace.sm)
                 .padding(.bottom, WingtipSpace.sm)

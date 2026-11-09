@@ -5,6 +5,7 @@ import { useLatestAtcCall } from "../../lib/atc/latestCall";
 import { useAtcListen } from "../../lib/atc/listenSetting";
 import { listenOnce, startRadio, stopRadio } from "../../lib/atcListening";
 import { useAtcRadio, useRadioActions } from "../../lib/atcRadio";
+import { useCanListen } from "../../lib/speechLocal";
 import { callPattern } from "../../lib/heardCall";
 import { heardInto, readBack, shownCard, type AtcCard } from "./atcCards";
 import type { AtcItem } from "./atcEngine";
@@ -79,7 +80,10 @@ interface AtcCopilot {
  * copilot's banner (lib/atc/latestCall). Nothing is set until a tap.
  */
 export function useAtcCopilot(): AtcCopilot {
-  const on = useAtcListen(s => s.value === "flying");
+  // The copilot listens or is not there: where the browser has no
+  // recognizer it is off, whatever the setting says.
+  const voice = useCanListen();
+  const on = useAtcListen(s => s.value === "flying") && voice;
   const flying = useFlying(s => s.flying);
   const tail = useAtcRadio(s => s.tail);
   const listening = useAtcRadio(s => s.listening);
