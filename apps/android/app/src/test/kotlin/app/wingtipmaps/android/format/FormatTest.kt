@@ -73,4 +73,18 @@ class FormatTest {
         assertEquals("118.3", Format.frequency(118.3))
         assertEquals("121.75", Format.frequency(121.75))
     }
+
+    /** The live reports' figures (D-ATIS, the emergency checklist), as the
+     *  web's lib/atis writes them. */
+    @Test
+    fun anAltimeterAVisibilityAndATemperature() {
+        assertEquals("29.92 inHg", Format.altimeter(29.92))
+        assertEquals("30.10 inHg", Format.altimeter(30.1))
+        assertEquals("10 sm", Format.visibility(10.0))
+        assertEquals("2½ sm", Format.visibility(2.5))
+        assertEquals("¾ sm", Format.visibility(0.75))
+        assertEquals("0 sm", Format.visibility(0.0))
+        assertEquals("15 °C", Format.temperature(15.0))
+        assertEquals("−3 °C", Format.temperature(-3.0))
+    }
 }

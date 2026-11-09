@@ -156,4 +156,18 @@
     <string name="the_flight">The Flight</string>
     <string name="server">Server</string>
     <string name="pilot_menu">The pilot\'s menu</string>
+
+    <!-- Live reports from SWIM on the airport and airspace cards (live/). -->
+    <string name="live_programs">Ground Stops and Delays</string>
+    <string name="live_programs_credit">FAA Command Center, through SWIM</string>
+    <string name="live_rvr">Runway Visual Range, ft</string>
+    <string name="live_rvr_runway">RVR %1$s</string>
+    <string name="live_rvr_parts">Touchdown · midpoint · rollout</string>
+    <string name="live_rvr_credit">FAA RVR, through SWIM</string>
+    <string name="live_as_sent">As Sent</string>
+    <string name="live_hide_sent">Hide As Sent</string>
+    <string name="live_atis_credit">FAA D-ATIS</string>
+    <string name="special_use">Special Use</string>
+    <string name="special_use_none">None here</string>
+    <string name="special_use_unavailable">The FAA\'s special-use airspace did not answer. Check the chart.</string>
 </resources>

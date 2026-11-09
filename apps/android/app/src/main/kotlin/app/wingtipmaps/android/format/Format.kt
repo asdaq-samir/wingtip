@@ -117,6 +117,31 @@ object Format {
         }
     }
 
+    /** An altimeter setting in inches of mercury to a hundredth, as ATIS
+     *  and the METAR give it (AIM 7-2-2): "29.92 inHg". */
+    fun altimeter(inHg: Double): String = String.format(Locale.US, "%.2f inHg", inHg)
+
+    /** A visibility in statute miles as said, quarters as fractions (the
+     *  web's lib/atis visibilityWords): "10 sm", "2½ sm", "¾ sm". */
+    fun visibility(sm: Double): String {
+        val whole = kotlin.math.floor(sm).toInt()
+        val frac = sm - whole
+        val part = when (frac) {
+            0.25 -> "¼"
+            0.5 -> "½"
+            0.75 -> "¾"
+            0.0 -> ""
+            else -> String.format(Locale.US, "%.2f", frac).trimEnd('0').removePrefix("0")
+        }
+        return "${if (whole != 0 || part.isEmpty()) whole.toString() else ""}$part sm"
+    }
+
+    /** A temperature in whole degrees Celsius: "15 °C", "−3 °C". */
+    fun temperature(c: Double): String {
+        val whole = c.roundToInt()
+        return if (whole < 0) "−${-whole} °C" else "$whole °C"
+    }
+
     /** A frequency's megahertz as the cards write them: "118.3", "121.75",
      *  "122.0" (lib/frequencies mhzText). */
     fun frequency(mhz: Double): String =
