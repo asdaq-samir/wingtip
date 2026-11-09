@@ -214,7 +214,7 @@ struct AirportStrip: View {
                     .lineLimit(1).minimumScaleFactor(0.7)
                     .frame(width: circle, height: circle)
                     .background(Circle().fill(Color.accentColor.opacity(0.15)))
-                    .overlay(Circle().strokeBorder(category.map { Color(uiColor: AirportAnnotation.colour($0)) } ?? .clear, lineWidth: 3))
+                    .overlay(Circle().strokeBorder(category.map { Color(uiColor: FlightCategory.mark($0)) } ?? .clear, lineWidth: 3))
                 Text(under).font(.caption2).foregroundStyle(.secondary).lineLimit(2).multilineTextAlignment(.center)
             }
             .frame(width: tileWidth)
@@ -306,7 +306,7 @@ struct NearestRow: View {
     var body: some View {
         let bearing = field.bearingDeg.truncatingRemainder(dividingBy: 360)
         HStack(spacing: 12) {
-            Circle().strokeBorder(Color(uiColor: AirportAnnotation.colour(field.flightCategory)), lineWidth: 2.5).frame(width: 12, height: 12)
+            Circle().strokeBorder(Color(uiColor: FlightCategory.mark(field.flightCategory)), lineWidth: 2.5).frame(width: 12, height: 12)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(field.ident).font(.headline)

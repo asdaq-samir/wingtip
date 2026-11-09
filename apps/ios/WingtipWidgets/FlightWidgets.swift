@@ -232,7 +232,7 @@ private struct WeatherLine: View {
             if let category = flight.depFlightCategory {
                 Text(category)
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(CategoryMark.colour(category))
+                    .foregroundStyle(Color(uiColor: FlightCategory.words(category)))
             }
             Text(flight.depWind ?? (flight.depFlightCategory == nil ? "No report" : ""))
                 .font(.caption)
@@ -271,21 +271,6 @@ enum VerdictMark {
         case "ok": return .green
         case "caution": return .orange
         case "stop": return .red
-        default: return .secondary
-        }
-    }
-}
-
-/// A flight category in the colour aviationweather.gov draws it, which
-/// the app's airport marks use: VFR green, MVFR blue, IFR red, LIFR
-/// magenta.
-enum CategoryMark {
-    static func colour(_ category: String) -> Color {
-        switch category.uppercased() {
-        case "VFR": return Color(uiColor: WingtipColor.Category.vfr)
-        case "MVFR": return Color(uiColor: WingtipColor.Category.mvfr)
-        case "IFR": return Color(uiColor: WingtipColor.Category.ifr)
-        case "LIFR": return Color(uiColor: WingtipColor.Category.lifr)
         default: return .secondary
         }
     }

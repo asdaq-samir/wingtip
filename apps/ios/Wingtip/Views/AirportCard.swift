@@ -199,7 +199,7 @@ struct AirportHead: View {
                 .font(.caption.weight(.bold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 6).padding(.vertical, 3)
-                .background(Color(uiColor: AirportAnnotation.colour(chip.category)), in: RoundedRectangle(cornerRadius: 6))
+                .background(Color(uiColor: FlightCategory.words(chip.category)), in: RoundedRectangle(cornerRadius: WingtipRadius.cockpit))
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(chip.own ? "Flight category \(chip.category)" : "About \(chip.category), not this field's own report")
             }
