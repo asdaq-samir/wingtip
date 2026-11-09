@@ -22,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.brief.DepartureWindowStrip
 import app.wingtipmaps.android.brief.IcingRows
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -37,7 +38,7 @@ import app.wingtipmaps.android.ui.sheet.WingtipSheet
  * engine's words throughout (BriefModel).
  */
 @Composable
-fun BriefSheet(model: BriefModel, plan: Plan.State, onClose: () -> Unit) {
+fun BriefSheet(model: BriefModel, plan: Plan.State, signedIn: Boolean, onClose: () -> Unit) {
     val state by model.state.collectAsStateWithLifecycle()
     WingtipSheet(title = stringResource(R.string.brief), onClose = onClose, full = true) {
         Column(
@@ -55,6 +56,8 @@ fun BriefSheet(model: BriefModel, plan: Plan.State, onClose: () -> Unit) {
                     )
                 }
             }
+            // "When should I go?": the hours across, under the verdict.
+            DepartureWindowStrip(plan, signedIn)
             state.risk?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             if (state.items.isNotEmpty()) SectionTitle(stringResource(R.string.brief_findings))
             state.items.forEach { item ->
