@@ -84,7 +84,7 @@ export function LogbookPanel({ aircraft }: { aircraft?: string }) {
   const { data: entries } = useQuery({ queryKey: ["logbook"], queryFn: api.logbook.list, meta: { silent: true } });
   const { data: currency } = useQuery(currencyQuery);
   const { data: training } = useQuery(trainingQuery);
-  const refresh = () => refreshLogbook(queryClient);
+  const refresh = () => void refreshLogbook(queryClient);
   const dates = useMutation({
     mutationFn: (next: { flightReviewOn: string | null; medicalExpiresOn: string | null; ipcOn: string | null }) =>
       api.logbook.setCurrencyDates(next),

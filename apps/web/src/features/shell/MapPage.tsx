@@ -9,6 +9,7 @@ import {
   useState,
   type CSSProperties,
   type ReactNode,
+  useEffectEvent,
 } from "react";
 import { showError } from "../../lib/problems";
 import { patched, useSearchParamsNow } from "../../lib/useSearchParamsNow";
@@ -30,6 +31,7 @@ import { BootMap, PlanWorkspace } from "../plan";
 import { loadTrainWorkspace } from "../chart-labels";
 import { useIsDesktop } from "../../hooks/use-desktop";
 import { useShortcuts } from "../../hooks/use-shortcuts";
+import PaletteHost from "./palette/PaletteHost";
 import type { WorkspacePieces } from "./workspace";
 
 /** Setup's pill (the switches, the account), with the console's code
@@ -90,8 +92,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
   const { title, panel: panelLabel, console: consoleLabel, Workspace, route } = MODES[mode];
   const navBar = usePreferences((s) => s.navBar);
   const edge = useNavEdge();
-  // A desktop's keys: / to the search, 1 to 4 for the tabs, Escape back.
-  useShortcuts(useIsDesktop());
+  useShortcuts(useIsDesktop()); // a desktop's keys: / the search, 1 to 4 the tabs, B, N, D, Escape back
   const [searchParams, setSearchParams] = useSearchParamsNow();
   // The route in the panel: the address's, unless the pilot has typed
   // over it -- and a draft belongs to the address it was typed over. The
@@ -314,8 +315,9 @@ export default function MapPage({ mode }: { mode: Mode }) {
                 {/* The emergency assistant (features/emergency); an airplane's profile, from any N-number (features/airplane). */}
                 <EmergencyHost />
                 <AirplaneProfileHost />
-                {/* A flight ended on own ship's GPS, offered for the logbook (features/logbook-auto). */}
+                {/* A flight ended on own ship's GPS, offered for the logbook (features/logbook-auto); the ⌘K palette. */}
                 <AutoLogbookHost />
+                <PaletteHost />
                 {/* Dev mode's refusal: someone it is not for, on the dev page, is taken to the map. */}
                 <DevGuard />
                 {/* For a keyboard: past the panel to the map in one press.
@@ -424,10 +426,8 @@ function ConsoleLayer({
   children: ReactNode;
 }) {
   const layer = useRef<HTMLElement>(null);
-  const close = useRef(onClose);
-  useEffect(() => {
-    close.current = onClose;
-  });
+  // The caller's close at the key, not the one it opened with.
+  const close = useEffectEvent(onClose);
   useEffect(() => {
     const node = layer.current;
     if (!node || !shown) return;
@@ -436,7 +436,7 @@ function ConsoleLayer({
       // which prevents the default.
       if (event.key !== "Escape" || event.defaultPrevented) return;
       event.preventDefault();
-      close.current();
+      close();
     };
     // On the layer first, ahead of the panel's own Escape; on the document
     // too, for when a tap on the map or on the panel's bare parts has

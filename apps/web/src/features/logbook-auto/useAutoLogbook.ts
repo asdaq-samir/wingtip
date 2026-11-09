@@ -9,7 +9,7 @@ import { airplaneChosen, usePreferences } from "../../lib/preferences";
 import { typeOf } from "../../lib/aircraftChoice";
 import { flightsQuery, pilotQuery } from "../../lib/queryClient";
 import { entryRequest, flightEnded, likelyFlight, type Edits } from "./draftEntry";
-import { asked, forget, record, recorded } from "./recorder";
+import { asked, forget, record, recorded, useRecorded } from "./recorder";
 
 /** The engine read the track in the browser at most this often while it
  *  records: whether the flight has ended is a question of minutes. */
@@ -31,8 +31,8 @@ export function useAutoLogbook() {
   const queryClient = useQueryClient();
   const ready = useEngineReady();
   const recording = useOwnShip((s) => s.enabled && !s.simulated && s.fix !== null);
-  const points = recorded((s) => s.value.points);
-  const askedTo = recorded((s) => s.value.askedTo);
+  const points = useRecorded((s) => s.value.points);
+  const askedTo = useRecorded((s) => s.value.askedTo);
   const aircraft = usePreferences((p) => p.aircraft);
   const { data: pilot } = useQuery(pilotQuery);
   const [problem, setProblem] = useState<string | null>(null);

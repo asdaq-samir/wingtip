@@ -13,7 +13,7 @@ import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import NumberRow from "./NumberRow";
-import { keepHandbook } from "../../lib/api/documents";
+import { useAirplanes } from "./airplanes/useAirplanes";
 import { Spinner } from "../../components/ui/spinner";
 import PullDown from "../../components/PullDown";
 import { ListChoices, ListGroup, ListRow } from "../../components/GroupedList";
@@ -32,7 +32,7 @@ import { TEXT } from "../../lib/text";
 import { altFt } from "../../lib/format";
 import { localDay } from "../../lib/format";
 import { FINDING_TONE } from "../../lib/findings";
-import { aircraftListQuery, aircraftProfilesQuery } from "../../lib/queryClient";
+import { aircraftProfilesQuery } from "../../lib/queryClient";
 import { callEngine } from "../../lib/engine/engine";
 import TogglePill from "../../components/TogglePill";
 import { daysBetween, daysWords, dueTone } from "./paperwork";
@@ -112,6 +112,24 @@ const EMPTY_AIRCRAFT_FORM: AircraftFormValues = {
   surveillance: "",
   colour: "",
 };
+const typed = (v: number | null | undefined) => (v == null ? "" : String(v));
+/** An airplane's figures in the form's fields: one saved, or one sent and
+ *  refused. */
+function formOf(a: AircraftRequest): AircraftFormValues {
+  return {
+    tailNumber: a.tailNumber,
+    typeDesignator: a.typeDesignator,
+    cruiseTasKt: typed(a.cruiseTasKt),
+    fuelBurnGph: typed(a.fuelBurnGph),
+    cruisePowerPct: typed(a.cruisePowerPct),
+    climbTasKt: typed(a.climbTasKt),
+    climbFuelBurnGph: typed(a.climbFuelBurnGph),
+    usableFuelGal: typed(a.usableFuelGal),
+    equipment: a.equipment ?? "",
+    surveillance: a.surveillance ?? "",
+    colour: a.colour ?? "",
+  };
+}
 
 /** A signed-in pilot's own airplanes -- the one the nav log flies
  *  ticked, and a tap on another flies that one, as iOS lists Wi-Fi
@@ -534,8 +552,6 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
 }
 
 export function AircraftPanel() {
-  const queryClient = useQueryClient();
-  const { data: list, isLoading } = useQuery(aircraftListQuery);
   // Which the nav log flies, remembered per browser, and the stock
   // profiles a pilot's own rides on (PlanWorkspace asks the same).
   const flying = usePreferences((s) => s.aircraft);
@@ -553,6 +569,7 @@ export function AircraftPanel() {
     handleSubmit,
     reset,
     setValue,
+    setError,
     formState: { errors },
   } = useForm<AircraftFormValues>({ resolver: zodResolver(aircraftSchema), defaultValues: EMPTY_AIRCRAFT_FORM });
 
@@ -566,54 +583,23 @@ export function AircraftPanel() {
     reset(EMPTY_AIRCRAFT_FORM);
   };
 
-  // Which airplane a save is for travels with it, the way `remove`'s id
-  // does: it used to be read from the form's state when the save
-  // finished, so an add still in flight when Edit was clicked on another
-  // row toasted "updated" and wiped the form just opened.
-  const save = useMutation({
-    mutationFn: async ({ id, request, figures }: { id: number | null; request: AircraftRequest; figures: HandbookFigures | null }) => {
-      const saved = id ? await api.aircraft.update(id, request) : await api.aircraft.add(request);
-      return figures ? keepHandbook(saved.id, figures) : saved;
-    },
-    // The only other feedback a save gets is a row quietly changing in
-    // a table below the form -- easy to miss with your eyes still on
-    // the inputs you just submitted, unlike Plan/Label's own toasts
-    // (usePageStatus), which confirm something already big and visible
-    // (a route, a rating). This is the one place in the app a genuine
-    // list-editing success has nothing else to announce it.
-    onSuccess: (_data, { id }) => {
-      done(id ? "Airplane Saved" : "Airplane Added");
-      // Cleared only while it still shows what was saved.
-      if (editingId === id) cancelEdit();
-      void queryClient.invalidateQueries({ queryKey: ["aircraft"] });
-    },
-  });
-
-  const remove = useMutation({
-    mutationFn: (id: number) => api.aircraft.remove(id),
-    onSuccess: (_data, id) => {
-      done("Airplane Deleted");
-      if (editingId === id) cancelEdit();
-      void queryClient.invalidateQueries({ queryKey: ["aircraft"] });
-    },
+  // A save or a delete shows in the list at once, the form closed
+  // (useAirplanes); a refused save opens the form again on what was typed,
+  // with why at its top, where the pilot was.
+  const { list, isLoading, saving, save, remove } = useAirplanes(({ id, request, figures }, why) => {
+    if (id) setEditingId(id);
+    else setAdding(true);
+    setHandbook(figures);
+    reset(formOf(request));
+    setError("root.server", { type: "server", message: why });
   });
 
   const edit = (a: Aircraft) => {
+    // One the gateway has yet to give an id is not edited until it has.
+    if (a.id < 0) return;
     setEditingId(a.id);
     setHandbook(null);
-    reset({
-      tailNumber: a.tailNumber,
-      typeDesignator: a.typeDesignator,
-      cruiseTasKt: String(a.cruiseTasKt),
-      fuelBurnGph: String(a.fuelBurnGph),
-      cruisePowerPct: a.cruisePowerPct == null ? "" : String(a.cruisePowerPct),
-      climbTasKt: a.climbTasKt == null ? "" : String(a.climbTasKt),
-      climbFuelBurnGph: a.climbFuelBurnGph == null ? "" : String(a.climbFuelBurnGph),
-      usableFuelGal: a.usableFuelGal == null ? "" : String(a.usableFuelGal),
-      equipment: a.equipment ?? "",
-      surveillance: a.surveillance ?? "",
-      colour: a.colour ?? "",
-    });
+    reset(formOf(a));
   };
 
   // The confirmed figures put in the form's fields to see and save; the rest of the page's go with that save.
@@ -629,10 +615,11 @@ export function AircraftPanel() {
     setHandbook((now) => mergeHandbook(now ?? list?.find((a) => a.id === editingId)?.handbook, figures));
   };
 
-  const onSubmit = (values: AircraftFormValues) =>
-    save.mutate({
-      id: editingId,
-      figures: handbook,
+  const onSubmit = (values: AircraftFormValues) => {
+    const sent = { id: editingId, figures: handbook };
+    cancelEdit();
+    save({
+      ...sent,
       request: {
         tailNumber: values.tailNumber.trim(),
         typeDesignator: values.typeDesignator.trim(),
@@ -648,6 +635,7 @@ export function AircraftPanel() {
         figures: null, // its own figures as they are: the airplane's profile sets them (features/airplane)
       },
     });
+  };
 
   // Delete is in the airplane's own form, asked first: it was a red
   // word on every row, beside Edit.
@@ -658,7 +646,10 @@ export function AircraftPanel() {
     confirmLabel: "Delete airplane",
     destructive: true,
     onConfirm: () => {
-      if (editingId !== null) remove.mutate(editingId);
+      if (editingId === null) return;
+      const id = editingId;
+      cancelEdit();
+      remove(id);
     },
   });
   const formElementId = `${formId}-form`;
@@ -774,11 +765,11 @@ export function AircraftPanel() {
                   form={formElementId}
                   size="sm"
                   className="-mr-1"
-                  disabled={save.isPending}
-                  aria-busy={save.isPending}
+                  disabled={saving}
+                  aria-busy={saving}
                   aria-label={editingId ? "Save changes" : "Add airplane"}
                 >
-                  {save.isPending && <Spinner role="presentation" aria-label={undefined} aria-hidden />}
+                  {saving && <Spinner role="presentation" aria-label={undefined} aria-hidden />}
                   {editingId ? "Save" : "Add"}
                 </Button>
               }
@@ -791,6 +782,13 @@ export function AircraftPanel() {
               }}
             >
               <form id={formElementId} className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
+                {/* What the gateway refused of the last save, over the
+                  fields typed as they were. */}
+                {errors.root?.server && (
+                  <p role="alert" className={cn("px-1 text-destructive", TEXT.note)} data-testid="aircraft-problem">
+                    {errors.root.server.message}
+                  </p>
+                )}
                 {/* What the airplane is, then its speeds and fuel burns --
                   climb and cruise, a row each under the group's heading
                   -- and the power the cruise is at, then its tanks. Each
@@ -983,7 +981,6 @@ export function AircraftPanel() {
                     <ListRow
                       title={<span className="font-medium text-destructive">Delete airplane</span>}
                       onClick={askDelete}
-                      disabled={remove.isPending}
                       data-testid="delete-aircraft-button"
                     />
                   </ListGroup>

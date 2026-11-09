@@ -1,5 +1,5 @@
 import { ChevronRight, CircleMinus, House, ListFilter, Plane, Plus } from "lucide-react";
-import { useEffect, useId, useRef, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, type CSSProperties, type ReactNode, useEffectEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { AircraftKind } from "../lib/aircraftKind";
 import { cn } from "cn";
@@ -456,11 +456,8 @@ export function ListPageHead({
   action?: ReactNode;
   testId?: string;
 }) {
-  const back = useRef(onBack);
-  useEffect(() => {
-    back.current = onBack;
-  });
-  useEffect(() => holdOpenCard({ close: () => back.current(), inBar: false }), []);
+  const back = useEffectEvent(onBack);
+  useEffect(() => holdOpenCard({ close: () => back(), inBar: false }), []);
   return (
     <div className="flex items-center gap-2" data-testid={testId}>
       <h3 className={cn("flex-1 font-bold", TEXT.title)}>{title}</h3>

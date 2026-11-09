@@ -18,6 +18,7 @@ import re
 import sys
 from pathlib import Path
 
+import design_tokens_feel as feel
 import design_tokens_haptic as haptic
 import design_tokens_spring as spring
 from design_tokens_formats import gen_formats
@@ -232,6 +233,8 @@ def gen_css(tree):
         ("sheet-blur", "%gpx" % mat["sheet-blur"]),
     ]
     root += [("motion-%s" % k, bezier(v) if isinstance(v, list) else "%gs" % v) for k, v in motion.items()]
+    day_feel, night_feel = feel.css(tokens(tree["feel"]))
+    root += day_feel
     root += [("tap-target", "%gpx" % tree["size"]["tap-target"]["$value"])]
     root += [("size-%s" % k, "%gpx" % t["$value"]) for k, t in tokens(tree["size"]).items() if k != "tap-target"]
     root += decls("color", "theme", "light")
@@ -243,7 +246,7 @@ def gen_css(tree):
     blocks = [
         "/* %s */" % BANNER,
         "/* The ground every look builds on, by day. */\n" + css_block(":root", root),
-        "/* Night (the cockpit's navy). */\n" + css_block(".dark", decls("color", "theme", "dark")),
+        "/* Night (the cockpit's navy). */\n" + css_block(".dark", decls("color", "theme", "dark") + night_feel),
         "/* Wingtip, the default look: the theme's own blue, in the looks' typeface. */\n"
         + css_block(':root[data-brand="wingtip"]', [("brand-font", font_stack(tree, "font.brand").rsplit(",", 1)[0])]),
         "/* Glass Cockpit: what can be tapped, the typeface and the corners.\n"

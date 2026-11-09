@@ -34,6 +34,7 @@ import { COPILOT_MODES, useCopilotMode, type CopilotMode } from "./copilotMode";
 import { useMicPrimer } from "./MicPrimer";
 import { ATC_LISTEN_MODES, setAtcListen, useAtcListen, type AtcListen } from "../lib/atc/listenSetting";
 import { useCanListen } from "../lib/speechLocal";
+import PaletteHint from "./PaletteHint";
 
 /**
  * The map's settings, the whole of the map's own button's sheet
@@ -306,10 +307,8 @@ export default function MapSettings() {
           testId="keep-offline-toggle"
         />
       </ListGroup>
-      {/* Where the map's data comes from, and when the weather layers' is
-          from (lib/map/sources/layerAges): the METARs behind the airports'
-          colours and the TFRs as the planner fetched them, the traffic as
-          the map last heard it. */}
+      {/* Where the map's data comes from, and when the weather layers' is from (lib/map/sources/layerAges):
+          the METARs behind the airports' colours and the TFRs as the planner fetched them, the traffic as the map last heard it. */}
       <ListGroup title="Sources">
         <ListRow
           title="Charts"
@@ -343,6 +342,7 @@ export default function MapSettings() {
           data-testid="traffic-age"
         />
       </ListGroup>
+      <PaletteHint />
     </div>
   );
 }

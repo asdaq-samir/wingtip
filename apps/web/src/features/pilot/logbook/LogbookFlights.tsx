@@ -17,9 +17,17 @@ import { useLogbookFlights, type LogbookFlightsModel } from "./useLogbookFlights
 function EntryRow({ e, vm }: { e: LogbookEntry; vm: LogbookFlightsModel }) {
   const day = said(e.flownOn);
   if (vm.changing === e.id) {
+    // What the gateway refused of this row's last save, typed as it was.
+    const refused = vm.refused?.id === e.id ? vm.refused : null;
     return (
       <div className="p-3" data-testid="logbook-entry-form">
-        <EntryForm initial={requestOf(e)} saving={vm.saving} onSave={(entry) => vm.update(e.id, entry)} onCancel={vm.stopChanging} />
+        <EntryForm
+          initial={refused?.entry ?? requestOf(e)}
+          problem={refused?.problem}
+          saving={vm.saving}
+          onSave={(entry) => vm.update(e.id, entry)}
+          onCancel={vm.stopChanging}
+        />
       </div>
     );
   }
@@ -50,6 +58,8 @@ function EntryRow({ e, vm }: { e: LogbookEntry; vm: LogbookFlightsModel }) {
 export default function LogbookFlights({ aircraft }: { aircraft?: string }) {
   const vm = useLogbookFlights();
   const { entries } = vm;
+  // A new flight the gateway refused, back in the plus's form.
+  const newRefused = vm.refused && vm.refused.id == null ? vm.refused : null;
   return (
     <ListGroup
       title="Flights"
@@ -64,7 +74,12 @@ export default function LogbookFlights({ aircraft }: { aircraft?: string }) {
               </IconButton>
             </ResponsivePopoverTrigger>
             <ResponsivePopoverContent title="Log a flight" className="w-80 p-3" align="end">
-              <EntryForm initial={blankEntry(aircraft)} saving={vm.saving} onSave={vm.add} />
+              <EntryForm
+                initial={newRefused?.entry ?? blankEntry(aircraft)}
+                problem={newRefused?.problem}
+                saving={vm.saving}
+                onSave={vm.add}
+              />
             </ResponsivePopoverContent>
           </ResponsivePopover>
         </span>

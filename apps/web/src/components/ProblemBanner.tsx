@@ -28,7 +28,7 @@ export default function ProblemBanner() {
   // The glass round the Alert, which is clear: its own card colour
   // outranked the glass on the same element, and it read white.
   return (
-    <div className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-[22px]")} data-problem-banner="">
+    <div className={cn(GLASS, "appear pointer-events-auto w-fit max-w-full rounded-[22px]")} data-problem-banner="">
       {/* A row of its own, 44 tall as a list's row is: the line and its
           Retry, not a control grown to its hit area. */}
       <Alert

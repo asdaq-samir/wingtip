@@ -704,7 +704,7 @@ export default function MapPanel({
               "left-[max(1rem,env(safe-area-inset-left))] w-(--size-panel) lg:w-(--size-panel-wide) ring-1 ring-black/5 dark:ring-white/10",
               // Floating, its edge drawn inside: the clip at its top (place)
               // cuts whatever is outside its box, a ring's or a shadow's.
-              floating ? "ring-inset" : "shadow-[0_2px_10px_rgba(0,0,0,0.12)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.45)]",
+              floating ? "ring-inset" : "shadow-float",
             ),
       )}
     >

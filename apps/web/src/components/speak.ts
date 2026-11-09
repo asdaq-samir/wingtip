@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useEffectEvent } from "react";
 import type { AheadAlert } from "../lib/api/types";
 import { usePreferences } from "../lib/preferences";
 import { say } from "../lib/speech";
@@ -56,7 +56,7 @@ export function useSpokenAlerts(ahead: Ahead | null) {
   const on = usePreferences((s) => s.speakAlerts);
   const alerts = ahead?.alerts;
   const key = alerts?.map((a) => a.id).join("|") ?? "";
-  useEffect(() => {
+  const speakAhead = useEffectEvent(() => {
     // On the ground, or looking at nothing: the next flight starts afresh.
     if (!alerts) {
       said = new Set();
@@ -74,7 +74,7 @@ export function useSpokenAlerts(ahead: Ahead | null) {
     const next = toSay(alerts, said);
     said = next.said;
     if (next.words) say(next.words);
-    // Keyed on which alerts are ahead, not on the array made each render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, on]);
+  });
+  // Keyed on which alerts are ahead, not on the array made each render.
+  useEffect(() => speakAhead(), [key, on]);
 }

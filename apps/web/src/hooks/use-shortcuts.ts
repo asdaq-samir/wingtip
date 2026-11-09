@@ -1,4 +1,7 @@
 import { useEffect } from "react";
+import { openPalette } from "../lib/palette";
+import { wantScreen } from "../lib/navigation/wanted";
+import type { ScreenId } from "../lib/navigation/generated/screens";
 
 /**
  * The keyboard's ways round the planner, as a desktop's web apps have
@@ -6,9 +9,17 @@ import { useEffect } from "react";
  * panel's tabs (FPL, Airport, Airplane, Setup) and Escape back one level
  * -- the close at the panel's top right, which goes back one card, one
  * list or one page (decision 0015) -- wherever the focus is outside a
- * field. A key a field, a menu or a dialog has used is left alone.
+ * field. A key a field, a menu or a dialog has used is left alone. And
+ * the common actions a letter each, as the command palette shows them
+ * (features/shell/palette): B the Brief, N Nearest, D Direct To (the
+ * palette, to pick where). ⌘K or Ctrl K, the palette itself, is the
+ * palette's own (PaletteHost), on every screen with a keyboard.
  */
 const TAB_KEYS: Record<string, string> = { "1": "tab-fpl", "2": "tab-airport", "3": "tab-aircraft", "4": "setup-button" };
+/** The letters for the screens a pilot opens most (lib/navigation). */
+export const SCREEN_KEYS: Partial<Record<ScreenId, string>> = { brief: "B", nearest: "N" };
+/** And for Direct To, which the palette asks the airport of. */
+export const DIRECT_KEY = "D";
 
 /** The panel's search field in sight: the tab's own. */
 const SEARCH = '[data-slot="map-panel"] input[type="search"]';
@@ -64,6 +75,14 @@ export function onShortcut(event: KeyboardEvent): void {
     if (focusSearch(doc)) event.preventDefault();
     return;
   }
+  const letter = event.key.toUpperCase();
+  const screen = (Object.keys(SCREEN_KEYS) as ScreenId[]).find((id) => SCREEN_KEYS[id] === letter);
+  if (screen || letter === DIRECT_KEY) {
+    event.preventDefault();
+    if (screen) wantScreen(screen);
+    else openPalette("direct");
+    return;
+  }
   const tab = TAB_KEYS[event.key];
   const button = tab ? doc.querySelector(`[data-testid="${tab}"]`) : null;
   if (visible(button)) {
@@ -71,6 +90,11 @@ export function onShortcut(event: KeyboardEvent): void {
     button.click();
   }
 }
+
+/** ⌘K on a Mac, Ctrl K elsewhere: the palette, from a field too (it is
+ *  never a typed letter); PaletteHost listens for it. */
+export const isPaletteKey = (event: KeyboardEvent): boolean =>
+  (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "k";
 
 /** The shortcuts on the page while `on` (a desktop's: useIsDesktop). */
 export function useShortcuts(on: boolean): void {

@@ -1,4 +1,4 @@
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useEffectEvent } from "react";
 import { MapInsetsContext, SHEET_SECONDS } from "../../../lib/mapChrome";
 import { prefersReducedMotion } from "../../../lib/motion";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
@@ -20,7 +20,7 @@ export function useGlFit(points: { lat: number; lon: number }[], fitKey: string 
   // what a sheet over the panel covers beyond it.
   const top = Math.max(0, cover.top - insets.top),
     bottom = Math.max(0, cover.bottom - insets.bottom);
-  useEffect(() => {
+  const fit = useEffectEvent(() => {
     if (!fitKey || points.length === 0) return;
     const ownShip = useOwnShip.getState();
     if (ownShip.enabled && ownShip.follow) ownShip.setFollow(false);
@@ -37,7 +37,7 @@ export function useGlFit(points: { lat: number; lon: number }[], fitKey: string 
         duration: prefersReducedMotion() ? 0 : SHEET_SECONDS * 2000,
       },
     );
-    // Once a key: the points are that key's.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, fitKey, maxZoom, top, bottom]);
+  });
+  // Once a key: the points are that key's.
+  useEffect(() => fit(), [map, fitKey, maxZoom, top, bottom]);
 }

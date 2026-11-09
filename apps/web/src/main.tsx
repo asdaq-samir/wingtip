@@ -38,6 +38,8 @@ import "@fontsource/barlow/latin-600.css";
 import "@fontsource/barlow/latin-700.css";
 import { startTv, tvPlatform } from "./lib/tv";
 import { loadEngine } from "./lib/engine/engine";
+import { preconnectTiles, preloadFirstLoad } from "./lib/preloads";
+import { usePreferences } from "./lib/preferences";
 
 // The shared Rust engine (lib/engine), asked for first: the rules it
 // works out (the hold's entry, lost comms, the diversion, the debrief)
@@ -167,7 +169,13 @@ const router = createBrowserRouter(
  */
 // The chart the map is drawn on, asked for now too: a map with no route
 // waits on nothing else (and draws from the last answer kept, meanwhile).
-void queryClient.prefetchQuery({ ...chartQuery, meta: { silent: true } });
+// Its tiles' server connected to, and the faces asked for, meanwhile
+// (lib/preloads): from the chart kept from the last load, and again from
+// the first answer where none was kept.
+preloadFirstLoad(queryClient.getQueryData(chartQuery.queryKey), usePreferences.getState().overlay);
+void queryClient
+  .prefetchQuery({ ...chartQuery, meta: { silent: true } })
+  .then(() => preconnectTiles(queryClient.getQueryData(chartQuery.queryKey)));
 // And the overlay tiles' archive's name, for the map's vector source; with
 // it, the archive's header and root directory (its first 16 KB, one range
 // request), so the map's first overlay tile goes straight to its bytes
