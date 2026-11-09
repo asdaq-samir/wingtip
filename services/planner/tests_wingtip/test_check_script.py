@@ -65,6 +65,13 @@ def test_each_app_is_its_own_area():
     assert areas("services/gateway/pom.xml") == ["java"]
     assert areas("apps/ios/Wingtip/App.swift") == ["ios", "arch"]
     assert areas("apps/android/app/build.gradle.kts") == ["android"]
+    assert areas("apps/site/src/index.html") == ["site"]
+
+
+def test_the_sites_sources_reach_it():
+    # Its colours are the tokens' and its legal pages the web app's.
+    assert areas("apps/web/public/privacy.html") == ["web", "site"]
+    assert areas("design/tokens.json") == ["web", "ios", "android", "site"]
 
 
 def test_words_alone_check_nothing():
@@ -86,7 +93,7 @@ def test_check_sh_lists_the_areas_the_file_names():
     names = subprocess.run(
         ["python3", str(ROOT / "scripts" / "areas.py"), "names"], capture_output=True, text=True, check=True,
     ).stdout.split()
-    assert names == "web py planner ingest assistant weather jobs engine java ios android arch".split()
+    assert names == "web py planner ingest assistant weather jobs engine java ios android site arch".split()
     for name in names:
         # every area has a branch in check.sh's run_area
         assert f"\n    {name})" in SCRIPT.read_text(), name

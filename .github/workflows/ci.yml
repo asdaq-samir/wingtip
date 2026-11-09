@@ -450,6 +450,7 @@ jobs:
       ios: ${{ steps.plan.outputs.ios }}
       api: ${{ steps.plan.outputs.api }}
       arch: ${{ steps.plan.outputs.arch }}
+      site: ${{ steps.plan.outputs.site }}
       docs-only: ${{ steps.docsonly.outputs.only }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
@@ -656,6 +657,12 @@ jobs:
                 - scripts/build/engine-contract-apps.*
                 - design/**
                 - .github/workflows/native-android-build.yml
+              site:
+                - apps/site/**
+                - design/tokens.json
+                - apps/web/public/privacy.html
+                - apps/web/public/terms.html
+                - apps/web/public/support.html
               arch:
                 - '**/*.ts'
                 - '**/*.tsx'
@@ -687,7 +694,7 @@ jobs:
           images = [{"service": s} for s in IMAGES if due(s)]
           outputs = {"images": json.dumps(images)}
           for name in ("test-root", "test-web", "test-gateway", "test-planner", "test-ingest", "test-assistant", "test-weather",
-                       "docs", "infra", "api", "arch"):
+                       "docs", "infra", "api", "arch", "site"):
               outputs[name] = "true" if due(name) else "false"
           # The phones' builds gate a merge: a pull request, or a run
           # started by hand on one's branch. Main's pushes and the nights
@@ -1758,6 +1765,20 @@ jobs:
       - name: No unused Python
         run: scripts/ci/dead_python.sh
 
+  # The website (apps/site, wingtipmaps.app's own pages): built from
+  # design/tokens.json and the web app's legal pages, then every page
+  # parsed, every link and file inside it found, and nothing loaded from
+  # another host. The standard library alone, in seconds.
+  site:
+    name: Website
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    needs: [changes]
+    if: needs.changes.outputs.site == 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - run: python3 apps/site/build.py
+      - run: python3 apps/site/check.py
+
   # Every relative link and #anchor in the Markdown resolves: a doc moved
   # or a heading renamed breaks the links to it silently otherwise.
   # External links are not fetched (slow, and flaky for reasons no change
@@ -2181,7 +2202,7 @@ jobs:
   passed:
     name: CI passed
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat, rules-boundary, architecture, links]
+    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat, rules-boundary, architecture, links, site]
     if: always()
     steps:
       - name: Every job passed or was not needed
