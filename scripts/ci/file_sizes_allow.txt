@@ -4,7 +4,7 @@
 # its count (`python3 scripts/ci/file_sizes.py --write`), and it leaves the
 # list once it is within the budget.
 
-apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/ChartMap.kt 793
+apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/ChartMap.kt 752
 apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/MapStyle.kt 848
 apps/ios/Wingtip/Plan.swift 415
 apps/ios/Wingtip/Strip/StripSheetView.swift 479
