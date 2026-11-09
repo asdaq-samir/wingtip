@@ -24,7 +24,7 @@ struct AirspaceCard: View {
             Section {
                 VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                     Text(AirportWords.degreesMinutes(lat: lat, lon: lon)
-                         + (here?.groundFt.map { " · ground \(Format.altitude($0))" } ?? ""))
+                        + (here?.groundFt.map { " · ground \(Format.altitude($0))" } ?? ""))
                         .monospacedDigit()
                     if let named = here?.point {
                         Text("\(named.ident) · \(named.name)").foregroundStyle(.secondary)

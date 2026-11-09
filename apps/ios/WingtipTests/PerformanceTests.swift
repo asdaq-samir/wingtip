@@ -1,5 +1,5 @@
-import XCTest
 @testable import Wingtip
+import XCTest
 
 /// The app's speed as numbers the runner keeps (XCTest's performance
 /// metrics, with a baseline once the owner sets one in Xcode): the engine

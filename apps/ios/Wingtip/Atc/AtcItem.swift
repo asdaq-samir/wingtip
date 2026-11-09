@@ -7,7 +7,6 @@ import Foundation
 typealias AtcItem = EngineContract.AtcItem
 
 extension EngineContract.AtcItem {
-
     /// The item in words, as the card writes it (the web's itemWords):
     /// altitudes as ATC says them (the engine's altitude_said, AIM 4-2-9),
     /// headings in three figures (AIM 4-2-10), times in UTC with a Z

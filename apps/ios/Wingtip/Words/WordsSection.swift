@@ -87,13 +87,13 @@ struct WordsSection: View {
 
 #Preview("WordsSection") {
     let words = Words(model: "claude", sentences: [
-            WordsSentence(sources: ["metar:KMSN"], text: "KMSN is VFR now, with a few clouds at 4,500 ft and 10 sm."),
-            WordsSentence(sources: ["gairmet:0", "flight:route"], text: "An IFR G-AIRMET lies along the route from 14:00 to 17:00."),
-        ], sources: [
-            WordsSource(id: "flight:route", label: "The flight", text: "KMSN to KDLH. 95 minutes in the air."),
-            WordsSource(id: "metar:KMSN", label: "KMSN METAR, VFR", text: "KMSN 031853Z 27008KT 10SM FEW045 12/03 A3012"),
-            WordsSource(id: "gairmet:0", label: "G-AIRMET, IFR", text: "G-AIRMET: IFR. Due to clouds. Valid at 1500Z."),
-        ], unavailable: nil)
+        WordsSentence(sources: ["metar:KMSN"], text: "KMSN is VFR now, with a few clouds at 4,500 ft and 10 sm."),
+        WordsSentence(sources: ["gairmet:0", "flight:route"], text: "An IFR G-AIRMET lies along the route from 14:00 to 17:00."),
+    ], sources: [
+        WordsSource(id: "flight:route", label: "The flight", text: "KMSN to KDLH. 95 minutes in the air."),
+        WordsSource(id: "metar:KMSN", label: "KMSN METAR, VFR", text: "KMSN 031853Z 27008KT 10SM FEW045 12/03 A3012"),
+        WordsSource(id: "gairmet:0", label: "G-AIRMET, IFR", text: "G-AIRMET: IFR. Due to clouds. Valid at 1500Z."),
+    ], unavailable: nil)
     List {
         WordsSection(said: SaidWords(words: words, origin: .planner))
         WordsSection(said: SaidWords(words: .none("none", "No words: the planner cannot be reached, and words on this iPhone need iOS 26."), origin: .none))

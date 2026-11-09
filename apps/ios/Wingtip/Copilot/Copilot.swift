@@ -108,7 +108,7 @@ final class Copilot {
             }
         }
         guard let around, let input = try? Self.input(fix: fix, flight: flight, around: around, ahead: ahead, minimums: minimums,
-                                                     remainingNm: position?.leftNm, startedAt: startedAt, firstSeen: firstSeen) else { return }
+                                                      remainingNm: position?.leftNm, startedAt: startedAt, firstSeen: firstSeen) else { return }
         guard let answer = try? Self.watch(input) else { return }
         let first = answer.messages.first { !dismissed.contains($0.id) }
         if first?.id != message?.id || first?.title != message?.title { message = first }

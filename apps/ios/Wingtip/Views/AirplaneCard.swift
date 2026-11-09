@@ -153,7 +153,7 @@ struct AirplaneCard: View {
                     }
                     if let unread = history?.unreadDays, unread > 0 {
                         Text(unread >= 7 ? "adsb.lol's flight history can't be read now, so only flights followed in this app are listed."
-                             : "\(unread == 1 ? "One day" : "\(unread) days") could not be read from adsb.lol just now, so their flights are missing.")
+                            : "\(unread == 1 ? "One day" : "\(unread) days") could not be read from adsb.lol just now, so their flights are missing.")
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                     if history?.nextUntil != nil {
@@ -485,7 +485,7 @@ struct FAARecordSection: View {
                     Text("Registered to").font(.subheadline.weight(.semibold))
                     Text([owner, faa.ownerType, [faa.city, faa.state].compactMap { $0 }.joined(separator: ", ").nonEmpty,
                           (faa.coOwners ?? 0) > 0 ? "and \(faa.coOwners!) more" : nil, faa.fractional == true ? "fractional" : nil]
-                        .compactMap { $0 }.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary)
+                            .compactMap { $0 }.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary)
                 }
             }
             LabeledContent(faa.nNumber) {

@@ -272,7 +272,7 @@ enum AirspaceTab {
             ring.removeLast()
         }
         let k = cos(centre.latitude * .pi / 180)
-        let xy = ring.map { ((($0.longitude - centre.longitude) * k), $0.latitude - centre.latitude) }
+        let xy = ring.map { (($0.longitude - centre.longitude) * k, $0.latitude - centre.latitude) }
         let far = xy.map { hypot($0.0, $0.1) }.max() ?? 0
         let sight = ring.indices.filter { rect.contains(MKMapPoint(ring[$0])) }
         guard far > 0, !sight.isEmpty else { return nil }

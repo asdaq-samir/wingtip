@@ -27,7 +27,7 @@ struct PassengersTests {
         """)
         // No time set and no report: what is known, no more.
         #expect(PassengerBriefing.message(dep: "KDLH", depName: nil, dest: "KHIB", destName: nil, departs: nil, eteMin: 40, weather: nil)
-                == "KDLH to KHIB\nAbout 40m in the air.")
+            == "KDLH to KHIB\nAbout 40m in the air.")
     }
 
     @Test func theDestinationsWeatherInWords() throws {

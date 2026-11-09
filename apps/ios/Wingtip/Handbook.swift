@@ -23,7 +23,6 @@ extension Handbook.Figures {
 }
 
 extension Handbook {
-
     /// The words on the page, top to bottom, one line each.
     static func read(_ image: UIImage) async throws -> String {
         guard let cg = image.cgImage else { return "" }

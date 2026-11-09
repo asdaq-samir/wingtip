@@ -59,8 +59,8 @@ struct FPLView: View {
                                 // The 44-point hit area round the glyph, which does not grow.
                                 .contentShape(Rectangle().inset(by: -10))
                         }
-                            .buttonStyle(.borderless)
-                            .accessibilityLabel(!voice ? "Enter a clearance" : ClearanceListener.shared.listening ? "Listening to the radio" : "Listen to the radio")
+                        .buttonStyle(.borderless)
+                        .accessibilityLabel(!voice ? "Enter a clearance" : ClearanceListener.shared.listening ? "Listening to the radio" : "Listen to the radio")
                         Button("Plan") { focused = nil; plan.plan() }
                             .buttonStyle(.borderedProminent)
                             // ⌘Return plans from an iPad's keyboard; Return

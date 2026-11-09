@@ -19,7 +19,7 @@ struct CfiWarnTests {
 
     @Test func recentExperienceRunOut() throws {
         #expect(try Endorsing.lapseWarning(jo("2025-12-31", "RE"), signedOn: "2026-10-25")
-                == "Your recent experience ran out on 31 Dec 2025: 14 CFR 61.197(a) asks for recent experience in the preceding 24 calendar months before you sign as an instructor.")
+            == "Your recent experience ran out on 31 Dec 2025: 14 CFR 61.197(a) asks for recent experience in the preceding 24 calendar months before you sign as an instructor.")
     }
 
     @Test func anOlderCertificateExpired() throws {

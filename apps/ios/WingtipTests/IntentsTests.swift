@@ -1,6 +1,6 @@
 import AppIntents
-import XCTest
 @testable import Wingtip
+import XCTest
 
 /// Siri's and Shortcuts' intents: what each leaves for the app to do
 /// (PendingCommand, BriefAsk), the radio's switch, the airport as

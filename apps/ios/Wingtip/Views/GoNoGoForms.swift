@@ -12,14 +12,13 @@ struct MinimumsView: View {
                 ForEach(PersonalMinimums.Key.allCases) { key in
                     Picker(key.title, selection: Binding(
                         get: { verdict.minimums[key] },
-                        set: { verdict.setMinimum(key, $0) }
-                    )) {
-                        Text("Off").tag(Double?.none)
-                        ForEach(key.choices, id: \.self) { value in
-                            Text(key.words(value)).tag(Double?.some(value))
+                        set: { verdict.setMinimum(key, $0) })) {
+                            Text("Off").tag(Double?.none)
+                            ForEach(key.choices, id: \.self) { value in
+                                Text(key.words(value)).tag(Double?.some(value))
+                            }
                         }
-                    }
-                    .pickerStyle(.menu)
+                        .pickerStyle(.menu)
                 }
             }
         }

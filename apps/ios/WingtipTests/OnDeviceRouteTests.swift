@@ -1,9 +1,9 @@
 import Foundation
 import Testing
+@testable import Wingtip
 #if canImport(FoundationModels)
 import FoundationModels
 #endif
-@testable import Wingtip
 
 /// Which way a question goes (AskRouter), the Foundation Models tools'
 /// wiring to the engine, and the Brief's glance from the model's guided

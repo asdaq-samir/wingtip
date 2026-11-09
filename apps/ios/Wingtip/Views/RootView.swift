@@ -70,8 +70,7 @@ struct RootView: View {
                 Tracking.shared.track(plane.hex, plane: plane)
                 FlightUI.shared.card = .airplane(plane.hex.lowercased())
             },
-            onDragged: { Tracking.shared.follow = false }
-        )
+            onDragged: { Tracking.shared.follow = false })
     }
 
     /// The sheet's lowest size, the pill: the figures' line and the tabs'
@@ -180,102 +179,99 @@ struct RootView: View {
                 onHold: { at in open(AirportRoute.airspace(lat: at.latitude, lon: at.longitude).text) },
                 onWaypoint: plan.course != nil ? { (ident: String, at: CLLocationCoordinate2D, action: CardAction) in
                     plan.drop(ident, at: at, then: action == .directTo ? .direct : .add, from: action == .directTo ? dryRun.fix ?? ownShip.fix : nil)
-                } : nil
-            ),
+                } : nil),
             // A tap on the course opens its nearest leg's sheet, that leg
             // cased in green while it is open (RouteLegSheet).
             routeLegs: RouteLegInput(
                 legs: plan.course != nil ? RouteLegModel.mapLegs(plan) : [],
                 selected: { if case .leg(let index) = FlightUI.shared.card { return index }; return nil }(),
-                onSelect: { index in FlightUI.shared.card = .leg(index) }
-            ),
+                onSelect: { index in FlightUI.shared.card = .leg(index) }),
             hazardLegs: plan.hazardLegs,
             bottomInset: mapInset,
             onReveal: {
                 Metrics.shared.mapShown() // Instruments' launch-to-map interval ends.
                 withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) { mapShown = true }
+            })
+            .ignoresSafeArea()
+            // Over the map, under its buttons, until it shows: Wingtip's mark
+            // turning where the map opens.
+            .overlay {
+                if !mapShown {
+                    MapLoading(bottom: mapInset).transition(.opacity)
+                }
             }
-        )
-        .ignoresSafeArea()
-        // Over the map, under its buttons, until it shows: Wingtip's mark
-        // turning where the map opens.
-        .overlay {
-            if !mapShown {
-                MapLoading(bottom: mapInset).transition(.opacity)
+            .overlay(alignment: .topTrailing) {
+                // In the strip the field is the way to the assistant, so the
+                // sparkle is not drawn.
+                MapButtons(following: $following, routeAway: routeAway && plan.course != nil, fitRoute: { fitRequest += 1 },
+                           ask: layoutName == "strip" ? nil : { asking = true })
             }
-        }
-        .overlay(alignment: .topTrailing) {
-            // In the strip the field is the way to the assistant, so the
-            // sparkle is not drawn.
-            MapButtons(following: $following, routeAway: routeAway && plan.course != nil, fitRoute: { fitRequest += 1 },
-                       ask: layoutName == "strip" ? nil : { asking = true })
-        }
-        .overlay(alignment: .top) {
-            VStack(spacing: WingtipSpace.sm) {
-                AlertsBanner(alerts: ownShip.ahead)
-                // The in-flight copilot's one message, under what is ahead.
-                CopilotBanner()
-                // The radio, while the app listens or a call to us waits.
-                RadioOverlay()
-                // The flight's instruments, at flying speed (#218).
-                InstrumentsBar()
+            .overlay(alignment: .top) {
+                VStack(spacing: WingtipSpace.sm) {
+                    AlertsBanner(alerts: ownShip.ahead)
+                    // The in-flight copilot's one message, under what is ahead.
+                    CopilotBanner()
+                    // The radio, while the app listens or a call to us waits.
+                    RadioOverlay()
+                    // The flight's instruments, at flying speed (#218).
+                    InstrumentsBar()
+                }
+                .padding(.trailing, 64)
             }
-            .padding(.trailing, 64)
-        }
-        .overlay(alignment: .topLeading) {
-            VStack(alignment: .leading, spacing: WingtipSpace.sm) {
-                if dryRun.fix != nil { DryRunControls() }
-                WatchBanner()
-                // The cockpit's ADS-B receiver heard, then the licence's
-                // credit beside the internet's traffic it covers.
-                ReceiverChip()
-                if traffic.credited { MapChip(Traffic.credit(traffic.source)) }
-                if traffic.on, !traffic.planes.isEmpty, let problem = traffic.marksProblem { MapChip(problem, colour: .orange) }
+            .overlay(alignment: .topLeading) {
+                VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+                    if dryRun.fix != nil { DryRunControls() }
+                    WatchBanner()
+                    // The cockpit's ADS-B receiver heard, then the licence's
+                    // credit beside the internet's traffic it covers.
+                    ReceiverChip()
+                    if traffic.credited { MapChip(Traffic.credit(traffic.source)) }
+                    if traffic.on, !traffic.planes.isEmpty, let problem = traffic.marksProblem { MapChip(problem, colour: .orange) }
+                }
+                .padding(.leading, WingtipSpace.md).padding(.top, WingtipSpace.md)
             }
-            .padding(.leading, WingtipSpace.md).padding(.top, WingtipSpace.md)
-        }
-        // About own ship's real fix, never the dry run's: the traffic near
-        // it is told in a notification (Traffic.tellNear).
-        .task { await traffic.run { [ownShip] in ownShip.fix } }
-        // The airplane tracked, its reports from the map's answers and its
-        // own; the watches set; the alerts ahead said aloud where asked.
-        .task { await Tracking.shared.run() }
-        // The in-flight copilot looks again every few seconds while flying
-        // with a route (Copilot): own ship's fix or the dry run's.
-        .task {
-            while !Task.isCancelled {
-                await Copilot.shared.look(fix: dryRun.fix ?? ownShip.fix, flying: InFlight.shared.underway, plan: plan,
-                                          ahead: ownShip.ahead, minimums: verdict.minimums)
-                try? await Task.sleep(for: .seconds(3))
+            // About own ship's real fix, never the dry run's: the traffic near
+            // it is told in a notification (Traffic.tellNear).
+            .task { await traffic.run { [ownShip] in ownShip.fix } }
+            // The airplane tracked, its reports from the map's answers and its
+            // own; the watches set; the alerts ahead said aloud where asked.
+            .task { await Tracking.shared.run() }
+            // The in-flight copilot looks again every few seconds while flying
+            // with a route (Copilot): own ship's fix or the dry run's.
+            .task {
+                while !Task.isCancelled {
+                    await Copilot.shared.look(fix: dryRun.fix ?? ownShip.fix, flying: InFlight.shared.underway, plan: plan,
+                                              ahead: ownShip.ahead, minimums: verdict.minimums)
+                    try? await Task.sleep(for: .seconds(3))
+                }
             }
-        }
-        .onChange(of: traffic.planes) { _, planes in Tracking.shared.heard(planes) }
-        .onChange(of: ownShip.ahead) { _, alerts in SpokenAlerts.shared.hear(alerts) }
-        // The ATC copilot: each settled transmission read, the radio listened to while flying where turned on.
-        .onChange(of: ClearanceListener.shared.heard) { _, heard in AtcCopilot.shared.observe(heard, tail: plan.tail) }
-        .task(id: "\(InFlight.shared.underway)|\(plan.tail ?? "")|\(AtcCopilot.shared.mode.rawValue)") {
-            await AtcCopilot.shared.follow(flying: InFlight.shared.underway, tail: plan.tail)
-        }
-        .modifier(AutoLogbookHost()) // The flight logged from its track once landed and at rest.
-        // Each fix, own ship's or the dry run's airplane, asked of the
-        // engine once for the instruments, the strip and the glide ring
-        // (InFlight); again when the route changes under it.
-        .onChange(of: dryRun.fix ?? ownShip.fix, initial: true) { _, fix in InFlight.shared.took(fix, plan: plan) }
-        .onChange(of: plan.course) { _, _ in InFlight.shared.took(dryRun.fix ?? ownShip.fix, plan: plan) }
-        .onChange(of: ownShip.groundFt) { _, ft in InFlight.shared.terrainFt = ft }
-        // The window's UndoManager for the route's history: shake to undo
-        // and the Edit menu (PlanHistory).
-        .onAppear { plan.undoManager = undoManager }
-        .onChange(of: undoManager) { _, manager in plan.undoManager = manager }
-        // Siri listens for the fields the shortcuts' airport entity
-        // suggests (the kept route's: AirportEntityQuery.suggestedEntities),
-        // and Spotlight finds them, so both are told again when the route
-        // changes (AirportSpotlight).
-        .onAppear { AirportSpotlight.refresh() }
-        .onChange(of: plan.idents) { _, _ in AirportSpotlight.refresh() }
-        // Siri's or a Shortcut's ask, taken as it comes and as the app
-        // opens with one waiting (the intents run before this has drawn).
-        .task(id: pending.command) { await apply(pending.take()) }
+            .onChange(of: traffic.planes) { _, planes in Tracking.shared.heard(planes) }
+            .onChange(of: ownShip.ahead) { _, alerts in SpokenAlerts.shared.hear(alerts) }
+            // The ATC copilot: each settled transmission read, the radio listened to while flying where turned on.
+            .onChange(of: ClearanceListener.shared.heard) { _, heard in AtcCopilot.shared.observe(heard, tail: plan.tail) }
+            .task(id: "\(InFlight.shared.underway)|\(plan.tail ?? "")|\(AtcCopilot.shared.mode.rawValue)") {
+                await AtcCopilot.shared.follow(flying: InFlight.shared.underway, tail: plan.tail)
+            }
+            .modifier(AutoLogbookHost()) // The flight logged from its track once landed and at rest.
+            // Each fix, own ship's or the dry run's airplane, asked of the
+            // engine once for the instruments, the strip and the glide ring
+            // (InFlight); again when the route changes under it.
+            .onChange(of: dryRun.fix ?? ownShip.fix, initial: true) { _, fix in InFlight.shared.took(fix, plan: plan) }
+            .onChange(of: plan.course) { _, _ in InFlight.shared.took(dryRun.fix ?? ownShip.fix, plan: plan) }
+            .onChange(of: ownShip.groundFt) { _, ft in InFlight.shared.terrainFt = ft }
+            // The window's UndoManager for the route's history: shake to undo
+            // and the Edit menu (PlanHistory).
+            .onAppear { plan.undoManager = undoManager }
+            .onChange(of: undoManager) { _, manager in plan.undoManager = manager }
+            // Siri listens for the fields the shortcuts' airport entity
+            // suggests (the kept route's: AirportEntityQuery.suggestedEntities),
+            // and Spotlight finds them, so both are told again when the route
+            // changes (AirportSpotlight).
+            .onAppear { AirportSpotlight.refresh() }
+            .onChange(of: plan.idents) { _, _ in AirportSpotlight.refresh() }
+            // Siri's or a Shortcut's ask, taken as it comes and as the app
+            // opens with one waiting (the intents run before this has drawn).
+            .task(id: pending.command) { await apply(pending.take()) }
     }
 }
 

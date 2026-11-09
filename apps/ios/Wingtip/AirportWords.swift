@@ -12,7 +12,6 @@ enum AirportWords {
         x == x.rounded() && abs(x) < 1e9 ? String(Int(x)) : String(x)
     }
 
-
     /// A bearing as one of the eight compass points in words,
     /// "northeast": the engine's `compass_word`, the web's and Android's.
     /// Words only: where the engine refuses (logged by Engine.rule) the
@@ -135,7 +134,7 @@ enum AirportWords {
     /// its components, never called calm.
     static func runwayWind(_ wind: RunwayWind) -> String {
         let calm = try? Engine.runwayCalm(wind: .init(end: wind.end, headwindKt: wind.headwindKt, crosswindKt: wind.crosswindKt,
-                                                     gustCrosswindKt: wind.gustCrosswindKt, inUse: nil))
+                                                      gustCrosswindKt: wind.gustCrosswindKt, inUse: nil))
         if calm == true { return "Calm on \(wind.end)" }
         let along = wind.headwindKt >= 0 ? "\(plain(wind.headwindKt)) kt headwind" : "\(plain(-wind.headwindKt)) kt tailwind"
         let kt = abs(wind.crosswindKt)
@@ -215,7 +214,7 @@ enum AirportWords {
     /// figures and references, "0 SFC to 18000 MSL".
     static func suaAltitudes(_ area: SpecialUse, midSentence: Bool = false) -> String {
         if let words = try? Engine.suaAltitudes(floorFt: area.floorFt, floorRef: area.floorRef, ceilingFt: area.ceilingFt,
-                                               ceilingRef: area.ceilingRef, midSentence: midSentence) { return words }
+                                                ceilingRef: area.ceilingRef, midSentence: midSentence) { return words }
         func raw(_ ft: Double?, _ ref: String?) -> String { [ft.map { Format.grouped($0) }, ref].compactMap { $0 }.joined(separator: " ") }
         return "\(raw(area.floorFt, area.floorRef)) to \(raw(area.ceilingFt, area.ceilingRef))"
     }

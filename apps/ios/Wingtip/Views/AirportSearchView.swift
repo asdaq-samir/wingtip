@@ -42,8 +42,8 @@ struct AirportSearchView: View {
                                     // The 44-point hit area round the glyph, which does not grow.
                                     .contentShape(Rectangle().inset(by: -12))
                             }
-                                .buttonStyle(.borderless)
-                                .accessibilityLabel("Clear the search")
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel("Clear the search")
                         }
                     }
                 }
@@ -330,7 +330,7 @@ struct NearestRow: View {
         .accessibilityLabel([field.ident, SpokenFigures.flightCategory(field.flightCategory), field.name,
                              field.longestRunwayFt.map { "longest runway \(SpokenFigures.feet(Double($0)))" },
                              SpokenFigures.nauticalMiles(field.distanceNm.rounded()), "bearing \(SpokenFigures.degrees(bearing)) true"]
-            .compactMap { $0 }.joined(separator: ", "))
+                .compactMap { $0 }.joined(separator: ", "))
     }
 }
 

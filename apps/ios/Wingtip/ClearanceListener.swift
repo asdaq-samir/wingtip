@@ -276,7 +276,7 @@ final class ClearanceListener {
     /// seconds, or `longest` seconds have passed. Nil where the
     /// microphone or the recognizer refused (`problem` says why).
     func hearBroadcast(words: [String] = [], pause: TimeInterval = 3, nothing: TimeInterval = 15, longest: TimeInterval = 75,
-                  heard: @MainActor (String) -> Void = { _ in }) async -> String? {
+                       heard: @MainActor (String) -> Void = { _ in }) async -> String? {
         let from = next
         await start(words: words)
         guard listening else { return nil }
@@ -318,7 +318,7 @@ final class ClearanceListener {
 
     /// The microphone's tap, made off the main actor: its block runs on
     /// the audio thread.
-    nonisolated private static func tap(_ input: AVAudioInputNode, into feed: Feed) {
+    private nonisolated static func tap(_ input: AVAudioInputNode, into feed: Feed) {
         input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { buffer, _ in feed.append(buffer) }
     }
 

@@ -21,7 +21,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
     /// The last context sent, so an unchanged one is not sent again.
     private var sentContext: Data?
 
-    private override init() { super.init() }
+    override private init() { super.init() }
 
     /// Activated, then kept up: every few seconds the picked airplane's
     /// checklist (kept on this phone) and the fix are sent,

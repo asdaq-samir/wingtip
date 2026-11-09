@@ -52,7 +52,7 @@ struct TrustTests {
             == "exception 1, code 0, signal 11 (SIGSEGV)")
         #expect(DiagnosticsReport.crashSignature(exceptionName: "NSException: NSRangeException", exceptionType: nil, exceptionCode: nil, signal: 6,
                                                  terminationReason: "Namespace SPRINGBOARD, Code 0x8badf00d")
-            == "NSException: NSRangeException, signal 6 (SIGABRT), Namespace SPRINGBOARD, Code 0x8badf00d")
+                == "NSException: NSRangeException, signal 6 (SIGABRT), Namespace SPRINGBOARD, Code 0x8badf00d")
         #expect(DiagnosticsReport.crashSignature(exceptionName: nil, exceptionType: nil, exceptionCode: nil, signal: nil, terminationReason: nil) == "crash")
     }
 

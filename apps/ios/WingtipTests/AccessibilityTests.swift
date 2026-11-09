@@ -13,8 +13,8 @@ struct AccessibilityTests {
                               groundspeedKt: 98, eteMin: 18, fuelGal: 1.4,
                               wind: APIWind(windDirTrueDeg: 270, windSpeedKt: 12))
         #expect(LegRow.spoken(leg, number: 2) ==
-                "Leg 2, KDPA to KRFD, heading three four six degrees magnetic, ground speed ninety-eight knots, "
-                + "wind two seven zero degrees true at twelve knots, forty-two nautical miles, eighteen minutes, one point four gallons")
+            "Leg 2, KDPA to KRFD, heading three four six degrees magnetic, ground speed ninety-eight knots, "
+            + "wind two seven zero degrees true at twelve knots, forty-two nautical miles, eighteen minutes, one point four gallons")
     }
 
     /// With no airplane there is no heading, only the course, and no
@@ -27,7 +27,7 @@ struct AccessibilityTests {
 
     @Test func theHeadLineIsReadInWords() {
         #expect(StripData.spokenHeadLine(dep: "C81", dest: "KDLH", stops: ["KJVL"], airplane: "C172", cruiseFt: 4500, departAt: nil)
-                == "C81 to KJVL to KDLH, C172, four thousand five hundred feet, leaving now")
+            == "C81 to KJVL to KDLH, C172, four thousand five hundred feet, leaving now")
         #expect(StripData.spokenFigures(eteMin: 65, fuelGal: 12) == "one hour five minutes, twelve gallons")
         #expect(StripData.spokenFigures(eteMin: nil, fuelGal: nil) == "")
     }

@@ -49,8 +49,7 @@ enum FlightActivityContent {
             frequency: inputs.frequency,
             copilot: message?.title,
             copilotWarns: message?.level == "warning",
-            updatedAt: inputs.now
-        )
+            updatedAt: inputs.now)
     }
 
     /// The frequency ATC last handed us, in the call card's words

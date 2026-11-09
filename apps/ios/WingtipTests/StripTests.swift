@@ -169,7 +169,7 @@ struct StripDataTests {
         #expect(Format.cruiseAltitude(4500) == "FL-045")
         #expect(Format.cruiseAltitude(10500) == "FL-105")
         #expect(StripData.headLine(dep: "C81", dest: "KDLH", stops: ["KJVL"], airplane: "C172", cruiseFt: 4500, departAt: nil)
-                == "C81 → KJVL → KDLH · C172 · FL-045 · leaving now")
+            == "C81 → KJVL → KDLH · C172 · FL-045 · leaving now")
         #expect(StripData.headLine(dep: "C81", dest: "KDLH", stops: [], airplane: "", cruiseFt: nil, departAt: nil) == "C81 → KDLH · leaving now")
     }
 

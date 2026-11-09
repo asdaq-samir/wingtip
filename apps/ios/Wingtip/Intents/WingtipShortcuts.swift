@@ -19,8 +19,7 @@ struct WingtipShortcuts: AppShortcutsProvider {
                 "Plan a trip in \(.applicationName)",
             ],
             shortTitle: "Plan a Trip",
-            systemImageName: "airplane"
-        )
+            systemImageName: "airplane")
         AppShortcut(
             intent: BriefFlightIntent(),
             phrases: [
@@ -30,8 +29,7 @@ struct WingtipShortcuts: AppShortcutsProvider {
                 "Brief my flight in \(.applicationName)",
             ],
             shortTitle: "Brief a Flight",
-            systemImageName: "checklist"
-        )
+            systemImageName: "checklist")
         AppShortcut(
             intent: NearestAirportsIntent(),
             phrases: [
@@ -39,8 +37,7 @@ struct WingtipShortcuts: AppShortcutsProvider {
                 "Show the nearest airports in \(.applicationName)",
             ],
             shortTitle: "Nearest Airports",
-            systemImageName: "mappin.and.ellipse"
-        )
+            systemImageName: "mappin.and.ellipse")
         AppShortcut(
             intent: WeatherAtIntent(),
             phrases: [
@@ -49,8 +46,7 @@ struct WingtipShortcuts: AppShortcutsProvider {
                 "Weather in \(.applicationName)",
             ],
             shortTitle: "Weather at an Airport",
-            systemImageName: "cloud.sun"
-        )
+            systemImageName: "cloud.sun")
         AppShortcut(
             intent: DirectToIntent(),
             phrases: [
@@ -58,8 +54,7 @@ struct WingtipShortcuts: AppShortcutsProvider {
                 "Go direct to \(\.$airport) in \(.applicationName)",
             ],
             shortTitle: "Direct to an Airport",
-            systemImageName: "location.north.line"
-        )
+            systemImageName: "location.north.line")
         AppShortcut(
             intent: DirectToPlaceIntent(),
             phrases: [
@@ -67,8 +62,7 @@ struct WingtipShortcuts: AppShortcutsProvider {
                 "Go direct in \(.applicationName)",
             ],
             shortTitle: "Direct to a Fix",
-            systemImageName: "point.topleft.down.to.point.bottomright.curvepath"
-        )
+            systemImageName: "point.topleft.down.to.point.bottomright.curvepath")
         AppShortcut(
             intent: StartListeningIntent(),
             phrases: [
@@ -77,8 +71,7 @@ struct WingtipShortcuts: AppShortcutsProvider {
                 "Listen to the radio in \(.applicationName)",
             ],
             shortTitle: "Start Listening",
-            systemImageName: "mic"
-        )
+            systemImageName: "mic")
         AppShortcut(
             intent: StopListeningIntent(),
             phrases: [
@@ -86,7 +79,6 @@ struct WingtipShortcuts: AppShortcutsProvider {
                 "Stop listening to the radio in \(.applicationName)",
             ],
             shortTitle: "Stop Listening",
-            systemImageName: "mic.slash"
-        )
+            systemImageName: "mic.slash")
     }
 }

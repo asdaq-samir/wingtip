@@ -53,7 +53,7 @@ final class Session {
     func open(_ url: URL) async {
         guard url.path.hasSuffix("/api/auth/magic-link/verify"),
               let token = URLComponents(url: url, resolvingAgainstBaseURL: false)?
-                .queryItems?.first(where: { $0.name == "token" })?.value
+                  .queryItems?.first(where: { $0.name == "token" })?.value
         else { return }
         do {
             try await Gateway.verifyMagicLink(token: token)
@@ -80,7 +80,7 @@ final class Session {
     /// is gone with the first launch's migration.
     static func forgetPilot(_ defaults: UserDefaults = .standard) {
         for key in defaults.dictionaryRepresentation().keys
-        where key.hasPrefix(TailFigures.prefix) || key.hasPrefix(LocalChecklists.prefix) || key == KeptAirplane.key {
+            where key.hasPrefix(TailFigures.prefix) || key.hasPrefix(LocalChecklists.prefix) || key == KeptAirplane.key {
             defaults.removeObject(forKey: key)
         }
     }

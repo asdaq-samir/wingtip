@@ -1,5 +1,5 @@
-import CoreLocation
 import CoreGraphics
+import CoreLocation
 import Foundation
 
 /// The route's legs as the map's course line is tapped by, and the Route

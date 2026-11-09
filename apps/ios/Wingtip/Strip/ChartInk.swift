@@ -92,8 +92,7 @@ extension ChartInk {
             magenta: Color(uiColor: p.inkMagenta), brown: Color(uiColor: p.inkBrown), field: Color(uiColor: p.inkField),
             flown: Color(uiColor: WingtipColor.Strip.flown),
             tint: Color(uiColor: p.tint), caution: Color(uiColor: p.caution), go: Color(uiColor: p.go), stop: Color(uiColor: p.destructiveInk),
-            ink: Color(uiColor: p.foreground), muted: Color(uiColor: p.mutedForeground), night: night
-        )
+            ink: Color(uiColor: p.foreground), muted: Color(uiColor: p.mutedForeground), night: night)
     }
 }
 

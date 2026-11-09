@@ -1,6 +1,6 @@
 import Foundation
-import WingtipEngine
 import os
+import WingtipEngine
 
 /// wingtip-engine, the planner's own Rust, through its C functions
 /// (engine/bindings/ffi): the same figures the planner works out, here with no
