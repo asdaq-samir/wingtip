@@ -70,7 +70,10 @@ class UpstreamRoutesTest {
             Map.entry("POST /api/trip-plan", "assistant signed-in csrf"),
             // A photographed page read and checked: a billed call against
             // the pilot's allowance, so a forged one is refused.
-            Map.entry("POST /api/read-document", "assistant signed-in csrf"));
+            Map.entry("POST /api/read-document", "assistant signed-in csrf"),
+            // The radar and satellite loop's frames, public as the map's
+            // other weather is.
+            Map.entry("GET /api/weather/loop", "planner public csrf"));
 
     @Test
     void theEmergencyFieldsArePublicFromThePlanner() {
