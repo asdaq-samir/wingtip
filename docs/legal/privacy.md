@@ -43,13 +43,13 @@ Your position is stored with your account only as a track you choose to save to 
 
 ## Listening to the radio
 
-When you turn on the ATC copilot, the app listens to the radio through your device's microphone and turns the calls into text, to show the ones addressed to you. **The app records no audio:** nothing it hears is saved to a file or sent to us. The speech is turned into text by your device's own speech recognizer:
+When you turn on the ATC copilot, or speak to the app, it listens through your device's microphone and turns the speech into text, to show the calls addressed to you. **Speech is recognised on your device and never leaves it:** the app records no audio, saves none to a file, and sends none to us, to Apple, to Google or to anyone else. It uses only the recognizer that runs on the device itself:
 
-- on the iPhone, Apple's, on the device where your iPhone supports it, otherwise on Apple's servers;
-- on Android, the system's speech recognizer (usually Google's), which may send the audio to its servers;
-- in a web browser, the browser's own (Safari sends it to Apple, Chrome to Google).
+- on the iPhone, Apple's on-device speech recognition;
+- on Android, the phone's on-device speech recognizer (Android 12 and later);
+- in a web browser, the browser's on-device speech recognition, where the browser can promise that the audio stays on the device (Chrome, which may first download its English language pack).
 
-What happens to the audio there is under Apple's or Google's own privacy policy. Of the text, only the place names in a clearance you heard (a clearance limit, a route, a departure) go to our planner, to find them on the map; a question you ask aloud goes to Claude as any question does.
+Where a device or browser cannot recognise speech on the device itself (an older phone, Safari or Firefox in a browser), the app does not offer voice at all, and you type instead; it never falls back to a recognizer on someone's servers. Of the text, only the place names in a clearance you heard (a clearance limit, a route, a departure) go to our planner, to find them on the map; a question you ask aloud goes to Claude as any typed question does.
 
 ## Features Claude writes
 

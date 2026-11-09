@@ -248,8 +248,7 @@ struct ClearanceSheet: View {
                             Button("Enter the route") { enter() }
                                 .buttonStyle(.borderedProminent)
                                 .disabled(!ready)
-                            Button("Read back again") { readBackAgain() }
-                                .buttonStyle(.bordered)
+                            if listener.canListen { Button("Read back again") { readBackAgain() }.buttonStyle(.bordered) }
                         }
                         .controlSize(.large)
                         .frame(maxWidth: .infinity)
@@ -272,17 +271,18 @@ struct ClearanceSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    // Listening goes on with the sheet put away: the
-                    // captions over the map carry it, and Stop ends it.
+                    // Listening goes on with the sheet put away: the captions over the map carry it, and Stop ends it.
                     CloseButton { dismiss() }
                 }
-                ToolbarItem(placement: .bottomBar) {
-                    Button {
-                        if listener.listening { listener.stop() } else { following = true; Task { await listener.start(words: words) } }
-                    } label: {
-                        Label(listener.listening ? "Stop" : "Listen", systemImage: listener.listening ? "stop.circle.fill" : "mic.fill")
+                if listener.canListen { // speech recognised on the iPhone, else no Listen or Read back: typed
+                    ToolbarItem(placement: .bottomBar) {
+                        Button {
+                            if listener.listening { listener.stop() } else { following = true; Task { await listener.start(words: words) } }
+                        } label: {
+                            Label(listener.listening ? "Stop" : "Listen", systemImage: listener.listening ? "stop.circle.fill" : "mic.fill")
+                        }
+                        .buttonStyle(.borderedProminent)
                     }
-                    .buttonStyle(.borderedProminent)
                 }
             }
             .task {

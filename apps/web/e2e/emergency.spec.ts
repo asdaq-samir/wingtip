@@ -62,7 +62,7 @@ test("the pilot's own \"mayday\" at the microphone opens it at once", async ({ p
       }
       stop() { setTimeout(() => this.onend?.(), 50); }
     }
-    Object.assign(window, { SpeechRecognition: Heard, webkitSpeechRecognition: Heard });
+    Object.assign(window, { SpeechRecognition: Object.assign(Heard, { available: async () => "available" }), webkitSpeechRecognition: Heard });
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);

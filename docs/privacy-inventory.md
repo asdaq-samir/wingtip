@@ -36,13 +36,19 @@ longer than it takes to answer the request.
   apps, with ADS-B Receiver on Auto): heard on the cockpit's Wi-Fi, read
   by the engine on the device and shown there; nothing of it is sent
   anywhere or kept past a few hours.
-- **The radio, with the ATC copilot on.** No audio is recorded or sent
-  to us. The device's speech recognizer turns it into text: Apple's on the
-  iPhone (on the device where it can, `requiresOnDeviceRecognition`,
-  else Apple's servers), the system's on Android (usually Google's, which
-  may use its servers; `atc/RadioListener.kt`), the browser's on the web
-  (Safari to Apple, Chrome to Google). Of the text, only a clearance's
-  place words go to the planner (`/api/clearance/places`).
+- **The radio, with the ATC copilot on, and anything said to the app.**
+  Speech is recognised on the device and never leaves it (the owner,
+  2026-11-09): no audio is recorded or sent to us, Apple, Google or
+  anyone. Apple's recognizer on the iPhone with
+  `requiresOnDeviceRecognition` always (`ClearanceListener.swift`), only
+  where `supportsOnDeviceRecognition`; Android's on-device recognizer
+  (`createOnDeviceSpeechRecognizer`, API 31+, `atc/RadioListener.kt`);
+  on the web, the Web Speech API with `processLocally` only where
+  `SpeechRecognition.available({processLocally: true})` says so
+  (`lib/speechLocal.ts`; Chrome). Elsewhere voice is not offered: the
+  microphone controls are hidden, with no server fallback. Of the text,
+  only a clearance's place words go to the planner
+  (`/api/clearance/places`).
 - **iCloud (iPhone).** Kept and watched airplanes and planned routes are
   in the pilot's own iCloud through SwiftData's CloudKit sync
   (`Records/Records.swift`); Apple's, not ours.

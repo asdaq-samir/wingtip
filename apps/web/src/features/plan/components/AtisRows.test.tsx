@@ -10,9 +10,10 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { useAtcRadio } from "../../../lib/atcRadio";
+import { LocalSpeech, speechAnswered } from "../../../test/localSpeech";
 import { AtisRows } from "./AtisRows";
 
-class Quiet {
+class Quiet extends LocalSpeech {
   lang = ""; continuous = false; interimResults = false;
   onresult = null; onerror = null;
   onend: (() => void) | null = null;
@@ -22,8 +23,9 @@ class Quiet {
 
 const PANEL = { label: "GMA 350c", outside: true, lost: false, why: null, instead: null, paused: false };
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.stubGlobal("SpeechRecognition", Quiet);
+  await speechAnswered();
   useAtcRadio.setState({ listening: false, mode: null, input: null, atisStop: null });
 });
 
@@ -33,6 +35,14 @@ afterEach(() => {
 });
 
 describe("Listen to ATIS", () => {
+  test("not offered where speech cannot be recognised on the device", async () => {
+    class ServerOnly { start() {} stop() {} }
+    vi.stubGlobal("SpeechRecognition", ServerOnly);
+    await speechAnswered();
+    render(<AtisRows />);
+    expect(screen.queryByTestId("place-atis-listen")).toBeNull();
+  });
+
   test("names the outside input it listens through, and says nothing was heard through it", async () => {
     render(<AtisRows />);
     const row = screen.getByTestId("place-atis-listen");
@@ -45,9 +55,10 @@ describe("Listen to ATIS", () => {
       .toBe("Nothing was heard through GMA 350c. Tune the ATIS, check it is sending the radio (an audio panel's recording mode, or the cable) and tap again."));
   });
 
-  test("in Safari, whose recognizer is not known to hear the input, it is named as chosen, the speaker still the sure way", async () => {
+  test("where the recognizer is not known to hear the input (named webkitSpeechRecognition alone), it is named as chosen, the speaker still the sure way", async () => {
     vi.stubGlobal("SpeechRecognition", undefined);
     vi.stubGlobal("webkitSpeechRecognition", Quiet);
+    await speechAnswered();
     render(<AtisRows />);
     const row = screen.getByTestId("place-atis-listen");
     fireEvent.click(row);

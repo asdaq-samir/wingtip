@@ -167,7 +167,8 @@ need no account; leave the demo account fields empty.
 > opens, to open the chart where you are and draw the airplane on it;
 > declined, the map opens on the country. The microphone and speech
 > recognition are asked for only when the pilot turns on the ATC
-> copilot in Setup under Alerts; background audio keeps listening to
+> copilot in Setup under Alerts, and speech is recognised on the
+> iPhone only (requiresOnDeviceRecognition), never sent to a server; background audio keeps listening to
 > the radio while the phone is locked in flight, and background
 > location keeps the airplane's position and the path flown. Local
 > network is asked for only when Traffic looks for a cockpit ADS-B

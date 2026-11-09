@@ -70,7 +70,7 @@ async function stubs(page: Page) {
       start(track?: MediaStreamTrack) { starts.push(track ? track.label : null); }
       stop() { setTimeout(() => this.onend?.(), 50); }
     }
-    Object.assign(window, { SpeechRecognition: Heard, webkitSpeechRecognition: Heard });
+    Object.assign(window, { SpeechRecognition: Object.assign(Heard, { available: async () => "available" }), webkitSpeechRecognition: Heard });
   });
 }
 

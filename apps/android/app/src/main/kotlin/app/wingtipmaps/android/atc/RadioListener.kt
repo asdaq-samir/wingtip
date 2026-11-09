@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -38,9 +39,14 @@ interface AtcListener {
  * listens again at once after each, and after a silence or a miss. While
  * it listens, a foreground service of the microphone type keeps the
  * process with the screen off, with the notification Android requires
- * (AtcListenService). Nothing heard leaves the phone but through the
- * recognizer the pilot's phone has chosen. Main thread only, as the
- * recognizer is.
+ * (AtcListenService). The recognizer is the phone's on-device one only
+ * (SpeechRecognizer.createOnDeviceSpeechRecognizer, Android 12, API 31),
+ * so nothing a pilot says goes to Google or anyone (the owner,
+ * 2026-11-09); never createSpeechRecognizer, which may send the audio to
+ * the recognizer service's servers. Where the phone has no on-device
+ * recognizer (below Android 12, or none installed), voice is not offered:
+ * canListen is false and the ATC copilot, its setting and the strip's
+ * microphone are hidden. Main thread only, as the recognizer is.
  */
 class RadioListener private constructor(private val context: Context) : AtcListener {
     private val _heard = MutableStateFlow<List<Heard>>(emptyList())
@@ -82,14 +88,14 @@ class RadioListener private constructor(private val context: Context) : AtcListe
         }
     }
 
-    /** The microphone allowed and a recognizer on the phone; said where not. */
+    /** An on-device recognizer and the microphone allowed; said where not. */
     private fun ready(): Boolean {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            _error.value = "ATC: allow the microphone to listen to the radio"
+        if (!canListen(context)) {
+            _error.value = "ATC: speech can't be recognised on this phone"
             return false
         }
-        if (!SpeechRecognizer.isRecognitionAvailable(context)) {
-            _error.value = "ATC: this phone has no speech recognition"
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            _error.value = "ATC: allow the microphone to listen to the radio"
             return false
         }
         _error.value = null
@@ -97,7 +103,10 @@ class RadioListener private constructor(private val context: Context) : AtcListe
     }
 
     private fun listen() {
-        val r = recognizer ?: SpeechRecognizer.createSpeechRecognizer(context).also {
+        // On the device or not at all: below Android 12 there is no
+        // on-device recognizer to ask for (ready() has said so already).
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+        val r = recognizer ?: SpeechRecognizer.createOnDeviceSpeechRecognizer(context).also {
             it.setRecognitionListener(callback)
             recognizer = it
         }
@@ -106,6 +115,9 @@ class RadioListener private constructor(private val context: Context) : AtcListe
             // US ATC's phraseology, in American English, as the engine reads it.
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
             .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            // The on-device recognizer is offline already; said again for
+            // any service that reads only the extra.
+            .putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
         r.startListening(intent)
     }
 
@@ -175,6 +187,12 @@ class RadioListener private constructor(private val context: Context) : AtcListe
         @SuppressLint("StaticFieldLeak")
         @Volatile
         private var shared: RadioListener? = null
+
+        /** Whether voice is offered on this phone: an on-device speech
+         *  recognizer (Android 12, API 31, and one installed). Every
+         *  microphone control shows only where it is. */
+        fun canListen(context: Context): Boolean =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && SpeechRecognizer.isOnDeviceRecognitionAvailable(context)
 
         fun of(context: Context): RadioListener =
             shared ?: synchronized(this) { shared ?: RadioListener(context.applicationContext).also { shared = it } }

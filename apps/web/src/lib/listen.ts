@@ -4,10 +4,10 @@
  * pause ends one and the next is heard afresh, so what ATC says shows as
  * it is said and a call to us can be acted on (lib/heardCall).
  *
- * The browser's Web Speech API: Safari's is Apple's recognizer, Chrome's
- * Google's, while the page is open. Firefox has one from 160 (10 November
- * 2026) on the desktop, not on Android (MDN's compat data,
- * api/SpeechRecognition); without one a clearance is typed.
+ * The browser's Web Speech API, on the device only (lib/speechLocal):
+ * each recognizer is told to process locally, and where the browser
+ * cannot promise that (Safari, Firefox, an older Chrome) nothing listens
+ * and a clearance is typed. Nothing a pilot says is sent to a server.
  *
  * Which input a browser's recognizer hears: the one the page hands it
  * (`track`, lib/audioInput) where it takes one -- Chrome and Edge 135+ and
@@ -18,9 +18,12 @@
  * Bluetooth or a cable, as a microphone).
  */
 
+import { readyLocally, readyNow, recognitionClass, SPEECH_LANG } from "./speechLocal";
+
 /** A transmission heard so far (`id` the same until it ends), and
  *  whether the recognizer has settled on it. */
 type OnHeard = (id: number, text: string, final: boolean) => void;
+
 /** Listening has ended: stopped, or (`error`) refused or failed. */
 type OnEnded = (error?: string) => void;
 
@@ -30,6 +33,8 @@ interface WebRecognition {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
+  /** Chrome's on-device switch: the audio stays on the device. */
+  processLocally: boolean;
   onresult: ((event: { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null;
   onerror: ((event: { error: string }) => void) | null;
   onend: (() => void) | null;
@@ -41,16 +46,7 @@ interface WebRecognition {
 }
 type WebRecognitionClass = new () => WebRecognition;
 
-function webRecognition(): WebRecognitionClass | null {
-  if (typeof window === "undefined") return null;
-  const w = window as unknown as { SpeechRecognition?: WebRecognitionClass; webkitSpeechRecognition?: WebRecognitionClass };
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
-}
 
-/** Whether this phone or browser can listen at all. */
-export function canListen(): boolean {
-  return webRecognition() !== null;
-}
 
 /**
  * Whether the browser's recognizer hears the track it is handed
@@ -85,6 +81,9 @@ export function noMicrophone(): string {
   return `No microphone could be used. If a Bluetooth audio panel or headset was the input, check it is still connected; if it is, ${again}.`;
 }
 
+/** Why nothing listens: speech cannot be recognised on this device. */
+const NOT_HERE = "Speech can't be recognised on this device; type the clearance instead.";
+
 /** The recognizer's refusal or failure in a pilot's words. A refusal is
  *  undone where it was given, in the browser's settings for the site: a
  *  website has no entry of its own in iOS's Settings, and words saying
@@ -95,7 +94,9 @@ function errorWords(code: string): string {
     const safari = /Safari\//.test(ua) && !/Chrome|Chromium|CriOS|FxiOS|EdgiOS|Edg\//.test(ua);
     return `Microphone or speech recognition access was refused; allow it in ${safari ? "Safari's" : "the browser's"} settings for this website.`;
   }
-  if (code === "network") return "Speech recognition needs the internet here; type the clearance instead.";
+  // On the device a network failure should not happen; the words say
+  // what is true either way, and never suggest a server.
+  if (code === "network" || code === "language-not-supported") return NOT_HERE;
   if (code === "audio-capture") return noMicrophone();
   return code;
 }
@@ -113,16 +114,18 @@ interface Listening {
  * takes neither (the native apps listen with their own). `track`, the input lib/audioInput holds, read afresh at each start so a
  * new choice is heard from the next.
  *
- * In a browser the recognizer starts before this returns, with no await
- * before it: Safari lets a page listen only straight from the tap.
+ * With the language pack on the device the recognizer starts before
+ * this returns, with no await before it, straight from the tap.
  */
 export async function listen(
   _words: string[], _callPattern: string | undefined, onHeard: OnHeard, onEnded: OnEnded,
   track?: () => MediaStreamTrack | null,
 ): Promise<Listening> {
-  const Recognition = webRecognition();
-  if (!Recognition) {
-    onEnded("This browser cannot listen; type the clearance instead.");
+  const Recognition = recognitionClass() as WebRecognitionClass | null;
+  // Where the language pack is there, no await before the start; else it
+  // is fetched first, from the pilot's tap. Never a server's recognizer.
+  if (!Recognition || !(readyNow() || await readyLocally())) {
+    onEnded(NOT_HERE);
     return { stop: () => {}, renew: () => {} };
   }
   // A browser's recognizer ends by itself after a while, quiet or not:
@@ -133,7 +136,8 @@ export async function listen(
     // Stopped by `renew` to start again on another input: what it says
     // as it goes is no failure.
     let retired = false;
-    recognition.lang = "en-US";
+    recognition.processLocally = true;
+    recognition.lang = SPEECH_LANG;
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.onresult = event => {

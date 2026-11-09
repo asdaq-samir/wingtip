@@ -23,7 +23,7 @@ enum Permission: Sendable {
         switch self {
         case .location: "Wingtip plans from where you are and shows your airplane on the chart."
         case .notifications: "Wingtip tells you when something on your route changes: a TFR, the weather turning."
-        case .microphone: "Wingtip listens to the radio to write down your clearance; nothing leaves the phone unless you ask."
+        case .microphone: "Wingtip listens to the radio to write down your clearance. Speech is recognised on this iPhone and never leaves it."
         }
     }
 

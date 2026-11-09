@@ -64,14 +64,14 @@ for a subscription that is off (docs/decisions/0022).
 Not collected, though the app uses them on the device:
 
 - **Audio and speech.** The ATC copilot hears the radio with the
-  microphone and turns it into words with Apple's recognizer, on the
-  device where it supports that (`ClearanceListener.swift` sets
+  microphone and turns it into words with Apple's recognizer on the
+  iPhone only (`ClearanceListener.swift` always sets
   `requiresOnDeviceRecognition`); the words are read by the engine on
   the phone (`Atc/AtcCopilot.swift`). No audio and no transcript is sent
-  to Wingtip's servers. Where the phone cannot recognise on the device,
-  Apple's recognizer may send the audio to Apple; that is Apple's
-  processing, covered by the permission prompt
-  (`NSSpeechRecognitionUsageDescription`), not the app's collection.
+  to Wingtip's servers or to Apple. Where the phone cannot recognise on
+  the device (`supportsOnDeviceRecognition` false), voice is not
+  offered at all: the microphone controls are hidden and neither
+  permission is asked for.
 - **Cockpit receiver traffic and FIS-B weather** (`Receiver/`): heard on
   the local Wi-Fi, read on the device, never sent.
 - **Favourites, recents and routes in iCloud** (`Records/Records.swift`,
@@ -106,7 +106,7 @@ Account button of its own yet (see listing.md).
 | App activity: Other user-generated content | Yes (airplanes, flights, logbook, notes) | No | Yes | App functionality | `logbook/`, `records/` |
 | App activity: Other actions | Yes, the count of Claude-written features for their cap | No | Yes | App functionality | the gateway |
 | App info and performance | **No** from the Android app: no crash reporter (no Crashlytics, Firebase or Sentry in `apps/android/app/build.gradle.kts`) | | | | |
-| Audio: Voice or sound recordings | **No**: the radio is heard by the system's `SpeechRecognizer` (`atc/RadioListener.kt`) and read on the phone; nothing is sent by the app | | | | |
+| Audio: Voice or sound recordings | **No**: the radio is heard by the phone's on-device `SpeechRecognizer` only (`createOnDeviceSpeechRecognizer`, `atc/RadioListener.kt`) and read on the phone; nothing is sent by the app or to Google; without an on-device recognizer voice is not offered | | | | |
 
 "Shared" is Google's meaning: the recipients in the inventory (AWS,
 Amazon SES, Anthropic for a written briefing with no personal data)
