@@ -306,7 +306,7 @@ export function useFlightBriefing({
   const hops = totals?.hops ?? [];
   // Under IFR, the alternate (AlternateSection): its ETA the nav log's.
   const etaIso = totals?.ete_min != null ? new Date(new Date(depart || opened).getTime() + totals.ete_min * 60_000).toISOString() : null;
-  const alternateWhere = { dest, eta: ifr ? etaIso : null, tasKt: nav?.aircraft?.cruise_tas_kt ?? 110 };
+  const alternateWhere = { dest, eta: ifr ? etaIso : null, tasKt: nav?.aircraft?.cruise_tas_kt ?? null };
   const alternateCheck = useAlternate(alternateWhere);
   const alternateFound = ifr ? alternateFinding(alternateCheck.data) : null;
   const verdictFound: VerdictItem[] = verdictItems({

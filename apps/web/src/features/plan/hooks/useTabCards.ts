@@ -7,6 +7,7 @@ import { identOf } from "../../../lib/identSchema";
 import { choosePastFlight, clearPastFlight, usePastFlight } from "../map/pastFlight";
 import { track, useTracking } from "../../../lib/map/position/tracking";
 import { patched } from "../../../lib/useSearchParamsNow";
+import { usePickAirplaneRequest } from "./usePickAirplaneRequest";
 
 /**
  * The planner's tabs and the cards open over them, apart from the route
@@ -355,5 +356,7 @@ export function usePanelTabs({
   // the way from Setup (the owner, 2026-11-05). Transitions started in one
   // event share their lane, so they commit together.
   const pickLater = useCallback((next: PanelTab) => startTransition(() => setTabPick(next)), []);
+  // "Pick an airplane" asked from a screen that needs one (lib/pickAirplane).
+  usePickAirplaneRequest(pickTab);
   return { tab, setTabPick: pickLater, pickTab, tabUp, closeSheet };
 }

@@ -8,8 +8,9 @@ export interface AlternateWhere {
   dest: string;
   /** The ETA there, an ISO instant; null before the nav log has one. */
   eta: string | null;
-  /** The airplane's cruise speed, the way on to an alternate flown at it. */
-  tasKt: number;
+  /** The airplane's cruise speed, the way on to an alternate flown at it;
+   *  null with no airplane, and no alternate is timed (no stock speed). */
+  tasKt: number | null;
 }
 
 /** The alternate filed (the address's `alternate`, per route), and the
@@ -18,8 +19,8 @@ export function useAlternate({ dest, eta, tasKt }: AlternateWhere) {
   const filed = useSearchParam("alternate") ?? "";
   const query = useQuery({
     queryKey: ["alternate", dest, eta, tasKt, filed],
-    queryFn: () => api.alternate(dest, eta!, tasKt, filed),
-    enabled: !!dest && !!eta,
+    queryFn: () => api.alternate(dest, eta!, tasKt!, filed),
+    enabled: !!dest && !!eta && tasKt != null,
     staleTime: 5 * 60_000,
     // Said in its own section, where it was asked for.
     meta: { silent: true },

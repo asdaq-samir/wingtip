@@ -2,6 +2,7 @@ import SheetDialog from "../../components/SheetDialog";
 import ActionsList from "./ActionsList";
 import EmergencyChecklist from "./EmergencyChecklist";
 import FieldsList from "./FieldsList";
+import GuidanceList from "./GuidanceList";
 import { useEmergency } from "./useEmergency";
 
 /**
@@ -28,7 +29,7 @@ export default function EmergencySheet() {
       testId="emergency-sheet"
     >
       <FieldsList vm={vm} />
-      <EmergencyChecklist vm={vm} />
+      {vm.guidance ? <GuidanceList vm={vm} /> : <EmergencyChecklist vm={vm} />}
       <ActionsList vm={vm} />
     </SheetDialog>
   );

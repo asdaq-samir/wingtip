@@ -233,9 +233,10 @@ export interface AircraftChoice {
    *  its type's stock profile: its N-number, for its own place in the
    *  picker (aircraftKey). */
   tail?: string;
-  /** No airplane picked (preferences' NO_AIRPLANE): the profile is the
-   *  planner's stock one, and no figure of it is shown. */
+  /** No airplane picked (preferences' NO_AIRPLANE): no profile (""), and no airplane figure. */
   none?: boolean;
+  glideRatio?: number; // its own, from its handbook as its pilot confirmed it
+  unmatched?: boolean; // an own airplane of no stock type: its base profile's POH figures are not its own (aircraftChoice)
 }
 /** One line of the per-checkpoint description stream. */
 export type CheckpointDescriptionMessage = Assistant["CheckpointNoteMessage"];

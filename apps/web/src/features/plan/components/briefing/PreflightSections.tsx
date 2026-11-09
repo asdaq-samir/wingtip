@@ -16,6 +16,8 @@ import { altFt, pounds } from "../../../../lib/format";
 import { useLoad } from "../../hooks/useLoad";
 import { armText } from "../../../../lib/weightBalance";
 import { phasesOf, type Phase } from "./sections";
+import { NotInProfile } from "./NotInProfile";
+import { useNotInProfileSummary } from "./notInProfileSummary";
 
 /** The envelope's picture: Recharts, loaded with the section. */
 const EnvelopeChart = lazy(() => import("./EnvelopeChart"));
@@ -66,7 +68,7 @@ function NumberField({
  * empty weight and arm, each station's load and the fuel, and the
  * weight and centre of gravity at takeoff and at landing -- the trip's
  * fuel burned -- against the most it may weigh and its envelope. For an
- * airplane whose profile has its POH's loading (the 172S's).
+ * airplane whose profile has its POH's loading; none else (NotInProfile).
  */
 export function WeightBalanceSection({
   aircraft,
@@ -76,8 +78,9 @@ export function WeightBalanceSection({
   tripFuelGal: number | null;
 }) {
   const { loading, load, result, setLoad } = useLoad(aircraft, tripFuelGal);
+  const missing = useNotInProfileSummary();
   const summary = !result
-    ? "Built in for the Cessna 172S"
+    ? missing
     : `${pounds(result.takeoff.weightLb)} at ${armText(result.takeoff)}${result.problems.length ? "" : " · within limits"}`;
   return (
     <AccordionSection
@@ -93,9 +96,7 @@ export function WeightBalanceSection({
       }
     >
       {!loading || !load || !result ? (
-        <p className={TEXT.prose}>
-          The weight and balance is worked out for an airplane whose loading is built in: the Cessna 172S, from its POH.
-        </p>
+        <NotInProfile what="The loading" testId="wb-not-in-profile" />
       ) : (
         <div className="space-y-4" data-testid="weight-balance">
           {/* From its own weight and balance record; the POH's sample airplane until set. */}
@@ -221,8 +222,9 @@ export function TakeoffLandingSection({
   const short = [...new Set(checks.filter((c) => c.distances.some((d) => d.over)).map((c) => c.field.ident))];
   const gusty = [...new Set(checks.filter((c) => c.crosswindOver).map((c) => c.field.ident))];
   const demonstrated = aircraft?.crosswind ?? null;
+  const missing = useNotInProfileSummary();
   const summary = !takeoffTable
-    ? "Built in for the Cessna 172S"
+    ? missing
     : !briefing
       ? undefined
       : short.length
@@ -250,9 +252,7 @@ export function TakeoffLandingSection({
       }
     >
       {!takeoffTable || !landingTable ? (
-        <p className={cn("text-muted-foreground", TEXT.prose)}>
-          The takeoff and landing distances are worked out for an airplane whose POH tables are built in: the Cessna 172S.
-        </p>
+        <NotInProfile what="The takeoff and landing distances" testId="tl-not-in-profile" />
       ) : !briefing ? (
         <p className="text-muted-foreground" role="status">
           Waiting on the runways and the weather at each field…
