@@ -365,7 +365,7 @@ export default function TabBar<T extends string>({
       // back/close button should do their action"): the tab's name is the
       // control a keyboard and a screen reader use, the rest of the line a
       // finger's bigger target for it; Back and the close keep their own.
-      // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
+      // eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-noninteractive-element-interactions
       <nav
         ref={bar}
         aria-label="Tabs"

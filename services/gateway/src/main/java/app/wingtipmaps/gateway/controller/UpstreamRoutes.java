@@ -1,8 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
 import app.wingtipmaps.gateway.domain.PaidFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,7 +8,6 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -20,6 +17,8 @@ import org.springframework.http.server.PathContainer;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.util.pattern.PathPattern;
 import org.springframework.web.util.pattern.PathPatternParser;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Every planner and assistant endpoint the browser may reach, and what
@@ -137,14 +136,8 @@ public final class UpstreamRoutes {
     static UpstreamRoutes of(Map<Upstream, JsonNode> documents) {
         List<Route> routes = new ArrayList<>();
         documents.forEach((upstream, document) -> {
-            for (Iterator<Map.Entry<String, JsonNode>> paths =
-                            document.path("paths").fields();
-                    paths.hasNext(); ) {
-                Map.Entry<String, JsonNode> path = paths.next();
-                for (Iterator<Map.Entry<String, JsonNode>> operations =
-                                path.getValue().fields();
-                        operations.hasNext(); ) {
-                    Map.Entry<String, JsonNode> operation = operations.next();
+            for (Map.Entry<String, JsonNode> path : document.path("paths").properties()) {
+                for (Map.Entry<String, JsonNode> operation : path.getValue().properties()) {
                     JsonNode spec = operation.getValue().get("x-gateway");
                     if (spec != null) {
                         routes.add(route(upstream, operation.getKey().toUpperCase(Locale.ROOT), path.getKey(), spec));
@@ -175,13 +168,12 @@ public final class UpstreamRoutes {
         if (!path.startsWith("/api/")) {
             throw new IllegalStateException(where + ": only /api/ routes are reached through " + PREFIX);
         }
-        for (Iterator<String> names = spec.fieldNames(); names.hasNext(); ) {
-            String name = names.next();
+        for (String name : spec.propertyNames()) {
             if (!KEYS.contains(name)) {
                 throw new IllegalStateException(where + ": x-gateway has no key '" + name + "' (one of " + KEYS + ")");
             }
         }
-        Access access = switch (spec.path("access").asText()) {
+        Access access = switch (spec.path("access").asString()) {
             case "public" -> Access.PUBLIC;
             case "signed-in" -> Access.SIGNED_IN;
             case "developer" -> Access.DEVELOPER;
@@ -189,13 +181,13 @@ public final class UpstreamRoutes {
                 throw new IllegalStateException(where + ": x-gateway's access is public, signed-in or developer");
         };
         List<String> headers = new ArrayList<>();
-        spec.path("headers").forEach(header -> headers.add(header.asText()));
+        spec.path("headers").forEach(header -> headers.add(header.asString()));
         return new Route(
                 method,
                 PathPatternParser.defaultInstance.parse(path),
                 upstream,
                 access,
-                spec.hasNonNull("paid") ? PaidFeature.valueOf(spec.get("paid").asText()) : null,
+                spec.hasNonNull("paid") ? PaidFeature.valueOf(spec.get("paid").asString()) : null,
                 spec.hasNonNull("bodyLimit") ? spec.get("bodyLimit").asInt() : null,
                 spec.path("csrf").asBoolean(true),
                 spec.path("cache").asBoolean(false),

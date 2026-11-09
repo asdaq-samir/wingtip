@@ -193,14 +193,14 @@ public class Aircraft {
         return this;
     }
 
-    /** Its flight plan's items 10a, 10b and 19 A/, all at once, as the
-     *  airplane's form saves them; null for one not said. */
     /** Its handbook figures, as confirmed; null takes them away. */
     public Aircraft keepHandbook(Map<String, Object> figures) {
         this.handbook = figures;
         return this;
     }
 
+    /** Its flight plan's items 10a, 10b and 19 A/, all at once, as the
+     *  airplane's form saves them; null for one not said. */
     public Aircraft describeForFlightPlan(String equipment, String surveillance, String colour) {
         this.equipment = equipment;
         this.surveillance = surveillance;

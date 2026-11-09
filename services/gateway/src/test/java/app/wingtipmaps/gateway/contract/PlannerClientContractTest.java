@@ -11,9 +11,7 @@ import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.service.AccountService;
 import app.wingtipmaps.gateway.service.AppleRevocation;
 import app.wingtipmaps.gateway.service.PlannerClient;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import app.wingtipmaps.gateway.service.PlannerUnavailableException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.time.Instant;
@@ -29,6 +27,9 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.transaction.support.TransactionTemplate;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Every call the gateway makes to the planner by hand -- PlannerClient's
@@ -149,7 +150,7 @@ class PlannerClientContractTest {
     void aQueryParameterRenamedIsNamed() {
         JsonNode planner = OpenApiContract.shipped("planner").deepCopy();
         for (JsonNode param : planner.at("/paths/~1api~1briefing/get/parameters")) {
-            if (param.path("name").asText().equals("ete_min")) {
+            if (param.path("name").asString().equals("ete_min")) {
                 ((ObjectNode) param).put("name", "ete_minutes");
             }
         }
@@ -175,8 +176,8 @@ class PlannerClientContractTest {
         properties.set(to, properties.remove(from));
         ArrayNode required = (ArrayNode) document.at("/components/schemas/" + schema + "/required");
         for (int i = 0; i < required.size(); i++) {
-            if (required.get(i).asText().equals(from)) {
-                required.set(i, required.textNode(to));
+            if (required.get(i).asString().equals(from)) {
+                required.set(i, required.stringNode(to));
             }
         }
     }
@@ -202,7 +203,7 @@ class PlannerClientContractTest {
                 assistantStub.asked.clear();
                 try {
                     call.make().accept(clients);
-                } catch (PlannerClient.Unavailable | AccountService.AccountNotDeletedException refused) {
+                } catch (PlannerUnavailableException | AccountService.AccountNotDeletedException refused) {
                     // What it asked is checked below: a refusal is the stub's
                     // 404. An answer of every field it may have that cannot
                     // be read is the client's fault, though.

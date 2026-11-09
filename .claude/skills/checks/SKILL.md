@@ -42,7 +42,7 @@ The commands below are what it runs, for reading a failure or running one by han
 
 **Web.** These are CI's steps; node 26 matches `apps/web/.nvmrc`.
 ```sh
-docker run --rm -v "$PWD":/repo -w /repo/apps/web node:26-slim sh -c 'npm run -s types && npx tsc --noEmit && npx eslint . && npx vitest run'
+docker run --rm -v "$PWD":/repo -w /repo/apps/web node:26-slim sh -c 'npm run -s types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx vitest run'
 ```
 
 **Python.** This mirrors CI: Python 3.15, the suite's requirements installed with uv, and a cache volume that brings a repeat run down to under a minute. Both suites run from `-w /repo/services/planner`: `requirements-dev-wingtip.txt` with `ruff check wingtip tests_wingtip && pytest tests_wingtip/`, or `requirements-dev.txt` with `ruff check app tests && pytest tests/`.
@@ -77,7 +77,7 @@ docker compose up -d
 scripts/dev/one-at-a-time.sh "session: <spec>" docker run --rm --network host -v "$PWD/apps/web":/w -w /w \
   -e BASE_URL=http://localhost:8080 -e MAILPIT_URL=http://localhost:8025 \
   -e MAILPIT_UI_AUTH="$(grep '^MAILPIT_UI_AUTH=' .env | cut -d= -f2-)" \
-  mcr.microsoft.com/playwright:v1.55.1-noble npx playwright test e2e/<spec>.spec.ts --reporter=list
+  mcr.microsoft.com/playwright:v1.65.0-noble npx playwright test e2e/<spec>.spec.ts --reporter=list
 ```
 - The image tag must equal `@playwright/test` in `apps/web/package.json`. Change both together.
 - Reach the stack at `localhost`, as CI does: the browser counts it as a secure origin and gives the page a position. Over `host.docker.internal` it is not one, and every test that taps the location arrow fails ("No position over this connection"). Four dry-run tests failed that way on 2026-10-19 and passed over `localhost`.

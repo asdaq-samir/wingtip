@@ -2,7 +2,7 @@ package app.wingtipmaps.gateway.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Where the pilot stands, from the logbook and the dates they give, as

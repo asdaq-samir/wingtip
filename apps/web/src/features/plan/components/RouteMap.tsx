@@ -35,7 +35,7 @@ const NO_LEGS: RouteLeg[] = [];
 
 /** A field of the map's Stops (StopsCard) pinned while the sheet is open:
  *  the kinds it has, in a row's order (lib/stopKinds). */
-export type StopFieldPin = { ident: string; lat: number; lon: number; kinds: StopKind[] };
+type StopFieldPin = { ident: string; lat: number; lon: number; kinds: StopKind[] };
 
 interface Props {
   course: Course | null;

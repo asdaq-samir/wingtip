@@ -2,7 +2,7 @@ package app.wingtipmaps.gateway.dto;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** One point of a flown track: when (ms since the epoch), where, and its
  *  GPS altitude in feet above sea level where the file had one. */

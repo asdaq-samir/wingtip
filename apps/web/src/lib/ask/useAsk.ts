@@ -37,7 +37,7 @@ import { feet } from "../format";
 /** A change the assistant proposed, as its chip shows it: the words on
  *  the chip (actionLabel), the word once applied (doneLabel), and whether
  *  the pilot has tapped it. */
-export interface AskAction {
+interface AskAction {
   change: AssistantChange;
   /** The assistant's one sentence on what it would do. */
   words: string;

@@ -20,7 +20,7 @@
 areas:
   web:
     ci: test-web
-    check: npm run types && npx tsc --noEmit && npx eslint . && npx knip && npx vitest run
+    check: npm run types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx knip && npx vitest run
     paths:
       - apps/web/**
       # Prettier's settings (npm run format:check)

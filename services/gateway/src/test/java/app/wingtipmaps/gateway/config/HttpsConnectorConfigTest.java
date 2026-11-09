@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import org.apache.catalina.connector.Connector;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.Compression;
 import org.springframework.util.unit.DataSize;
 
@@ -31,7 +31,7 @@ class HttpsConnectorConfigTest {
         new HttpsConnectorConfig()
                 .httpsConnector(keystore, "changeit", 8443, compression)
                 .customize(factory);
-        return factory.getAdditionalTomcatConnectors();
+        return factory.getAdditionalConnectors();
     }
 
     @Test

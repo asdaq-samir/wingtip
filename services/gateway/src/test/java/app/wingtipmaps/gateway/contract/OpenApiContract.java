@@ -1,21 +1,20 @@
 package app.wingtipmaps.gateway.contract;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.JsonNodeFactory;
 
 /**
  * One service's OpenAPI document, read as a contract a hand-written client
@@ -53,8 +52,7 @@ public final class OpenApiContract {
     /** The operation answering {@code method} on a concrete path, its path
      *  template's {param}s matching one segment each. */
     public Optional<JsonNode> operation(String method, String path) {
-        for (Iterator<Map.Entry<String, JsonNode>> it = document.path("paths").fields(); it.hasNext(); ) {
-            Map.Entry<String, JsonNode> entry = it.next();
+        for (Map.Entry<String, JsonNode> entry : document.path("paths").properties()) {
             String pattern = entry.getKey().replaceAll("\\{[^/}]+}", "[^/]+").replace(".", "\\.");
             if (path.matches(pattern) && entry.getValue().has(method.toLowerCase())) {
                 return Optional.of(entry.getValue().get(method.toLowerCase()));
@@ -78,8 +76,8 @@ public final class OpenApiContract {
     public static Map<String, JsonNode> parameters(JsonNode operation, String in) {
         Map<String, JsonNode> out = new LinkedHashMap<>();
         operation.path("parameters").forEach(p -> {
-            if (in.equalsIgnoreCase(p.path("in").asText())) {
-                out.put(p.path("name").asText(), p);
+            if (in.equalsIgnoreCase(p.path("in").asString())) {
+                out.put(p.path("name").asString(), p);
             }
         });
         return out;
@@ -118,13 +116,13 @@ public final class OpenApiContract {
                         ? NODES.numberNode(Long.parseLong(value))
                         : NODES.numberNode(Double.parseDouble(value));
             } catch (NumberFormatException notANumber) {
-                return NODES.textNode(value);
+                return NODES.stringNode(value);
             }
         }
         if (types.contains("boolean") && (value.equals("true") || value.equals("false"))) {
             return NODES.booleanNode(Boolean.parseBoolean(value));
         }
-        return NODES.textNode(value);
+        return NODES.stringNode(value);
     }
 
     /** What is wrong with a JSON value the client sends, against the
@@ -140,13 +138,13 @@ public final class OpenApiContract {
                 if (found.isEmpty()) {
                     return found;
                 }
-                if (told == null && !"null".equals(resolve(branch).path("type").asText())) {
+                if (told == null && !"null".equals(resolve(branch).path("type").asString())) {
                     told = found;
                 }
             }
             return told == null ? List.of(where + " fits none of the planner's types for it") : told;
         }
-        String type = schema.path("type").asText("");
+        String type = schema.path("type").asString("");
         if (value == null || value.isNull()) {
             if (!type.equals("null")) {
                 problems.add(where + " is sent as null, but the planner does not take null there");
@@ -161,8 +159,7 @@ public final class OpenApiContract {
                 }
                 JsonNode properties = schema.path("properties");
                 JsonNode extra = schema.path("additionalProperties");
-                for (Iterator<Map.Entry<String, JsonNode>> it = value.fields(); it.hasNext(); ) {
-                    Map.Entry<String, JsonNode> field = it.next();
+                for (Map.Entry<String, JsonNode> field : value.properties()) {
                     if (properties.has(field.getKey())) {
                         problems.addAll(
                                 check(field.getValue(), properties.get(field.getKey()), where + "." + field.getKey()));
@@ -174,8 +171,8 @@ public final class OpenApiContract {
                     }
                 }
                 schema.path("required").forEach(r -> {
-                    if (!value.has(r.asText())) {
-                        problems.add(where + "." + r.asText() + " is required, but is not sent");
+                    if (!value.has(r.asString())) {
+                        problems.add(where + "." + r.asString() + " is required, but is not sent");
                     }
                 });
             }
@@ -190,11 +187,12 @@ public final class OpenApiContract {
                 }
             }
             case "string" -> {
-                if (!value.isTextual()) {
+                if (!value.isString()) {
                     problems.add(where + " is sent as " + value.getNodeType() + ", but is a string");
-                } else if (!fitsFormat(value.asText(), schema)) {
-                    problems.add(where + " is sent as '" + value.asText() + "', which is not a "
-                            + schema.path("format").asText() + (schema.has("enum") ? " of " + schema.get("enum") : ""));
+                } else if (!fitsFormat(value.asString(), schema)) {
+                    problems.add(where + " is sent as '" + value.asString() + "', which is not a "
+                            + schema.path("format").asString()
+                            + (schema.has("enum") ? " of " + schema.get("enum") : ""));
                 }
             }
             case "number" -> {
@@ -223,14 +221,14 @@ public final class OpenApiContract {
     private static boolean fitsFormat(String text, JsonNode schema) {
         if (schema.has("enum")) {
             for (JsonNode e : schema.get("enum")) {
-                if (e.asText().equals(text)) {
+                if (e.asString().equals(text)) {
                     return true;
                 }
             }
             return false;
         }
         try {
-            switch (schema.path("format").asText("")) {
+            switch (schema.path("format").asString("")) {
                 case "date" -> LocalDate.parse(text);
                 case "date-time" -> OffsetDateTime.parse(text);
                 default -> {}
@@ -244,7 +242,7 @@ public final class OpenApiContract {
     /** A schema with its $refs followed. */
     public JsonNode resolve(JsonNode schema) {
         while (schema.has("$ref")) {
-            String ref = schema.get("$ref").asText();
+            String ref = schema.get("$ref").asString();
             schema = document.at(ref.substring(1));
         }
         return schema;
@@ -256,15 +254,13 @@ public final class OpenApiContract {
         if (schema.has("anyOf")) {
             schema.get("anyOf").forEach(b -> types.addAll(typesOf(b)));
         } else {
-            types.add(schema.path("type").asText(""));
+            types.add(schema.path("type").asString(""));
         }
         return types;
     }
 
     /** A schema's field names, for a problem to list what there is. */
     static String names(JsonNode properties) {
-        List<String> names = new ArrayList<>();
-        properties.fieldNames().forEachRemaining(names::add);
-        return names.toString();
+        return List.copyOf(properties.propertyNames()).toString();
     }
 }

@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** A logbook entry as its form sends it -- POST/PUT /api/logbook. The
  *  hours and landings are none or more; the text no longer than its

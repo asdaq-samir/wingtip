@@ -1,7 +1,7 @@
 package app.wingtipmaps.gateway.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A pilot as the API returns them.

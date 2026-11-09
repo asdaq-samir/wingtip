@@ -20,7 +20,7 @@ import { feet } from "../../../lib/format";
  * 4). A null is an item the pilot has not said.
  */
 
-export interface FormItem {
+interface FormItem {
   /** The form's item: "7", "15". */
   item: string;
   key: string;

@@ -5273,6 +5273,9 @@ export interface EndorsementRecordsInput {
   flight_on?: string | null;
 }
 export interface EndorsementRecordsAnswer {
+  /**
+   * Items: YYYY-MM-DD
+   */
   until: (string | null)[];
   /**
    * YYYY-MM-DD
@@ -6616,6 +6619,9 @@ export interface IfrAlternateDestinationAnswer {
   reasons: string[];
 }
 export interface IfrAlternatesRankedInput {
+  /**
+   * Items: An ifr_alternate_check answer with its distance_nm.
+   */
   checks: {}[];
   limit?: number;
 }
@@ -6783,6 +6789,9 @@ export interface LogbookCsvReadAnswer {
   }[];
 }
 export interface LogbookCsvWriteInput {
+  /**
+   * Items: The gateway's LogbookEntry, camelCase.
+   */
   entries: {}[];
 }
 export interface LogbookFromTrackInput {

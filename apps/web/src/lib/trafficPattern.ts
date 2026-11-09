@@ -32,7 +32,7 @@ import { callEngine, type EngineAnswer } from "./engine/engine";
 import type { LatLon } from "./geo";
 import { isFixIdent } from "./identSchema";
 
-export type LegName = "Upwind" | "Crosswind" | "Downwind" | "Base" | "Final";
+type LegName = "Upwind" | "Crosswind" | "Downwind" | "Base" | "Final";
 
 export interface TrafficPattern {
   /** Round the runway to land on it, or off it and out of the pattern

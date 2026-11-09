@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** A due item as its form sends it -- POST and PUT
  *  /api/aircraft/{id}/due-items. An AD's status as 14 CFR

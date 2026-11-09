@@ -209,7 +209,7 @@ run_area() {
       # container's own, links to the image's /node_modules, where knip
       # looks for the packages package.json names (it reads no further up).
       docker run --rm -v "$here:/repo" --tmpfs /repo/apps/web/node_modules -w /repo/apps/web "$tag" \
-        sh -c 'ln -s /node_modules/* /node_modules/.bin node_modules/ && npm run -s types && npx tsc --noEmit && npx eslint . && npx knip --no-progress && npx vitest run'
+        sh -c 'ln -s /node_modules/* /node_modules/.bin node_modules/ && npm run -s types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx knip --no-progress && npx vitest run'
       ;;
     py) run_py services/planner requirements-dev-wingtip.txt 3.15 wingtip tests_wingtip ;;
     planner) run_py services/planner requirements-dev.txt 3.15 app tests ;;

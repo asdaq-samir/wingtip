@@ -31,9 +31,9 @@ const SENTENCE_HOURS = 12;
 
 /** What the sky is, for the hour's glyph: clear (or no cloud said),
  *  few or scattered, and broken, overcast or obscured. */
-export type Sky = "clear" | "partly" | "cloudy";
+type Sky = "clear" | "partly" | "cloudy";
 /** The weather worth a glyph of its own, the worst first. */
-export type Precip = "thunder" | "snow" | "rain";
+type Precip = "thunder" | "snow" | "rain";
 
 export interface Hour {
   /** The hour's start, ms; Now's is the report's time (or now). */

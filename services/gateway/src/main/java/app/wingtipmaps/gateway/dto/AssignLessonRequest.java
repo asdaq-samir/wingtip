@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.Map;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** An approach set as a lesson for one of the instructor's students --
  *  POST /api/instructor/students/{studentId}/lessons: the approach as the

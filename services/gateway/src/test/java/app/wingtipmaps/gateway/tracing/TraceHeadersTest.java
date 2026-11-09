@@ -64,7 +64,7 @@ class TraceHeadersTest {
             }
         };
         Span span = tracer.nextSpan().name("served").start();
-        try (Tracer.SpanInScope ignored = tracer.withSpan(span)) {
+        try (Tracer.SpanInScope _ = tracer.withSpan(span)) {
             HttpRequest sent = new TraceHeaders(tracer, w3c).traced(ASKED);
             assertThat(sent.headers().firstValue("traceparent"))
                     .contains("00-" + span.context().traceId() + "-"
@@ -114,7 +114,7 @@ class TraceHeadersTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         String[] seen = new String[1];
         Span span = tracer.nextSpan().name("served").start();
-        try (Tracer.SpanInScope ignored = tracer.withSpan(span)) {
+        try (Tracer.SpanInScope _ = tracer.withSpan(span)) {
             new RequestIdFilter(provider).doFilter(request, response, new MockFilterChain() {
                 @Override
                 public void doFilter(jakarta.servlet.ServletRequest req, jakarta.servlet.ServletResponse res) {

@@ -7,6 +7,8 @@ import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { preloadEngine } from "./vite-plugins/preloadEngine.ts";
+import { CHUNK_SIZE_LIMIT, strictRolldown, warningsFail } from "./vite-plugins/strictBuild.ts";
 
 // Under docker-compose.yml's web-build watch, VITE_PUBLISH_DIR names the
 // directory the gateway serves (apps/web/dist). A phone that loaded the
@@ -99,30 +101,6 @@ const tesseractFiles: Plugin = {
   },
 };
 
-// The shared engine's WebAssembly (lib/engine), asked for by the page's
-// <head> as the scripts are: main.tsx waits for it before the first
-// render, and found only once the entry script ran it was a round trip
-// after the scripts instead of beside them. `crossorigin` as fetch()
-// asks it (same-origin, credentials), so the fetch takes the preload.
-const preloadEngine: Plugin = {
-  name: "preload-engine",
-  apply: "build",
-  transformIndexHtml: {
-    order: "post",
-    handler(_html, ctx) {
-      const file = Object.keys(ctx.bundle ?? {}).find((f) => /(^|\/)wingtip-engine-[^/]*\.wasm$/.test(f));
-      if (!file) return [];
-      return [
-        {
-          tag: "link",
-          attrs: { rel: "preload", href: `/app/${file}`, as: "fetch", type: "application/wasm", crossorigin: "anonymous" },
-          injectTo: "head",
-        },
-      ];
-    },
-  },
-};
-
 // An answer the service worker gives from its cache rather than the
 // network, marked so the page can say so (lib/fromCache): the header
 // carries when the network gave it, the response's own Date, which the
@@ -146,6 +124,7 @@ const markFromCache = {
 // front door on another port.
 export default defineConfig({
   plugins: [
+    warningsFail,
     publish,
     tesseractFiles,
     preloadEngine,
@@ -157,7 +136,9 @@ export default defineConfig({
     // Not the stock shadcn wrappers (components/ui), which hand their
     // props to Radix and gain nothing from a memo: 25.6 KB of the first
     // load, measured per file with and without it (the 20 Oct audit).
-    babel({ exclude: [/\/components\/ui\//], presets: [reactCompilerPreset()] }),
+    // node_modules named again: an exclude replaces the plugin's default,
+    // and without it the compiler ran over react-dom and MapLibre too.
+    babel({ exclude: [/[/\\]node_modules[/\\]/, /\/components\/ui\//], presets: [reactCompilerPreset()] }),
     tailwindcss(),
     // The app in the air: a service worker (Workbox, generated at
     // build) that keeps the app shell, every chart tile the map has
@@ -427,21 +408,29 @@ export default defineConfig({
     // the served directory from there whole (publishBuild, above).
     outDir: publishDir ? STAGING : "dist",
     emptyOutDir: true,
+    // A warning fails the build (vite-plugins/strictBuild.ts).
+    chunkSizeWarningLimit: CHUNK_SIZE_LIMIT,
     // The libraries in chunks of their own, so that a change to this
     // app's code (most deploys) leaves React, the map and the query
     // client with the same hashed names -- and so still in the
     // browser's cache, where WebMvcConfig lets hashed assets live for
     // a year.
-    rollupOptions: {
+    rolldownOptions: {
+      ...strictRolldown,
       output: {
-        manualChunks(id: string) {
-          // The map's engine (lib/map/gl), with the map's own chunk (routeMapChunk).
-          if (id.includes("node_modules/maplibre-gl/")) return "maplibre";
-          // TanStack's query client alone: its table (the nav log's and the
-          // kneeboard's, both lazy) stays with them, out of the first load.
-          if (/node_modules\/(react|react-dom|react-router|react-router-dom|@tanstack\/(react-query|query-core)|scheduler)\//.test(id))
-            return "react";
-          return undefined;
+        // Rolldown's groups, which replaced its deprecated manualChunks:
+        // each named chunk takes the modules its test matches.
+        codeSplitting: {
+          groups: [
+            // The map's engine (lib/map/gl), with the map's own chunk (routeMapChunk).
+            { name: "maplibre", test: /node_modules\/maplibre-gl\// },
+            // TanStack's query client alone: its table (the nav log's and the
+            // kneeboard's, both lazy) stays with them, out of the first load.
+            {
+              name: "react",
+              test: /node_modules\/(react|react-dom|react-router|react-router-dom|@tanstack\/(react-query|query-core)|scheduler)\//,
+            },
+          ],
         },
       },
     },

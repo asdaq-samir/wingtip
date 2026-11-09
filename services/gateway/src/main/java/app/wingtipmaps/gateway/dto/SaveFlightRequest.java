@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** Inbound request body for POST /api/flights -- files a new flight, with
  *  its nav log, for a route this pilot planned; every POST is another
@@ -18,7 +18,7 @@ import org.springframework.lang.Nullable;
  *  itself allows it to be null. */
 public record SaveFlightRequest(
         @Nullable Long aircraftId,
-        /** An airport's ident, or a present position, "@42.2340,-87.9877":
+        /* An airport's ident, or a present position, "@42.2340,-87.9877":
          *  a Direct-To in the air starts where the airplane is (the
          *  planner's app.router_basics.position_of, whose pattern this is). */
         @NotBlank(message = "departureIdent is required")
@@ -37,7 +37,7 @@ public record SaveFlightRequest(
         @Nullable Double totalFuelGal,
         @Nullable Instant plannedFor,
         @Valid List<SaveFlightCheckpointRequest> checkpoints,
-        /** The airports landed at on the way, in order; null or empty
+        /* The airports landed at on the way, in order; null or empty
          *  for a flight flown straight. */
         @Nullable @Size(max = 8, message = "a flight makes at most 8 stops")
         List<
@@ -47,9 +47,9 @@ public record SaveFlightRequest(
                                         "a stop must be a 2-5 character airport or waypoint ident, or a point off one as VPBNG/090/30")
                         String>
                 stops,
-        /** The pilot's risk assessment for it, where the planner made one. */
+        /* The pilot's risk assessment for it, where the planner made one. */
         @Nullable @Valid RiskAssessmentDto risk,
-        /** The altitudes the pilot set at points of the route, as the
+        /* The altitudes the pilot set at points of the route, as the
          *  planner's `altitudes` parameter writes them: "VPBNG:4500,KDLH:2400",
          *  ten at most. Null or blank for none. */
         @Nullable
@@ -57,7 +57,7 @@ public record SaveFlightRequest(
                 regexp = "^$|" + POINT + ":\\d{1,5}(," + POINT + ":\\d{1,5}){0,9}",
                 message = "altitudes must be IDENT:feet pairs joined by commas, ten at most")
         String altitudes,
-        /** The planner's address's other picks for the flight, as it writes
+        /* The planner's address's other picks for the flight, as it writes
          *  them -- runways, procedures, crossings, times on the ground,
          *  holds, the Class B avoided, the plan or altitude flown -- so it
          *  opens again as it was planned. Only those keys, URL-encoded.

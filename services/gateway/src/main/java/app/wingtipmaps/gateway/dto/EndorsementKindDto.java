@@ -13,6 +13,6 @@ public record EndorsementKindDto(
         String paragraph,
         String rule,
         String label,
-        /** The sample's words, {student} and each field's {key} in them. */
+        /* The sample's words, {student} and each field's {key} in them. */
         String template,
         List<EndorsementFieldDto> fields) {}
