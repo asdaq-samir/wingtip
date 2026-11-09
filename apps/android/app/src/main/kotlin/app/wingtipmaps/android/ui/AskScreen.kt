@@ -55,7 +55,13 @@ import app.wingtipmaps.android.api.AssistantClient
 import app.wingtipmaps.android.api.AssistantContext
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.api.AssistantTurn
+import app.wingtipmaps.android.api.Gateway
+import app.wingtipmaps.android.api.generated.assistant.Context
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.trip.TripPlannerCard
+import app.wingtipmaps.android.trip.TripPlannerModel
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
 import app.wingtipmaps.android.R
 import androidx.compose.ui.res.stringResource
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -87,6 +93,10 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantC
     val fix by ownShip.fix.collectAsStateWithLifecycle()
     var question by rememberSaveable { mutableStateOf("") }
     var source by remember { mutableStateOf<AssistantSource?>(null) }
+    // "Plan a trip…": the trip planner in the conversation's place until
+    // closed, as the web's Ask has it.
+    var trip by rememberSaveable { mutableStateOf(false) }
+    val tripModel: TripPlannerModel = viewModel()
     val list = rememberLazyListState()
 
     // The context as the app has it: the plan on the page, the airplane's
@@ -119,8 +129,24 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantC
             contentPadding = PaddingValues(WingtipSpace.Lg),
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md),
         ) {
-            if (conversation.turns.isEmpty()) {
-                item { Suggestions(onAsk = ::send) }
+            if (trip) {
+                item(key = "trip") {
+                    TripPlannerCard(
+                        tripModel,
+                        context = {
+                            Context(
+                                aircraft = context.aircraft, altitudeFt = context.altitudeFt, dep = context.dep, dest = context.dest,
+                                stops = context.stops, rules = "vfr",
+                                pilot = context.pilot?.let { Gateway.json.encodeToJsonElement(it).jsonObject },
+                            )
+                        },
+                        onUse = { leg -> plan.plan(leg.change.dep, leg.change.dest, leg.change.stops) },
+                        onSource = { source = AssistantSource(it.id, it.label, it.text) },
+                        onClose = { trip = false },
+                    )
+                }
+            } else if (conversation.turns.isEmpty()) {
+                item { Suggestions(onAsk = ::send, onTrip = { trip = true }) }
             }
             items(conversation.turns, key = { it.id }) { turn ->
                 TurnBubble(turn, onSource = { source = it })
@@ -155,13 +181,15 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantC
 }
 
 @Composable
-private fun Suggestions(onAsk: (String) -> Unit) {
+private fun Suggestions(onAsk: (String) -> Unit, onTrip: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         SectionTitle(stringResource(R.string.ask_about_flight))
         Text(
             stringResource(R.string.ask_help),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        // The first chip, as on the web: the trip planner.
+        AssistChip(onClick = onTrip, label = { Text(stringResource(R.string.trip_chip)) })
         askSuggestions.forEach { words ->
             AssistChip(onClick = { onAsk(words) }, label = { Text(words) })
         }

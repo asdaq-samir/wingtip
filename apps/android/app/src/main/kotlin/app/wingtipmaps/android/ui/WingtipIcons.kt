@@ -5,6 +5,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AddLocation
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Flight
@@ -56,6 +57,8 @@ object WingtipIcons {
     val address = Icons.Filled.Place
     val copy = Icons.Filled.ContentCopy
     val send = Icons.AutoMirrored.Filled.Send
+    /** A stream given up (the trip planner's Stop). */
+    val stop = Icons.Filled.Stop
     val airplane = Icons.Filled.Flight
     val setup = Icons.Filled.Settings
 
