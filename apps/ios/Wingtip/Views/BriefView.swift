@@ -200,7 +200,7 @@ struct BriefView: View {
             let legs = BriefLegs.query(course: plan.course, checkpoints: plan.checkpoints, legs: plan.legs)
             let eteMin = plan.totals?.eteMin
             let figures = WordsFigures.weather(briefing, dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: eteMin)
-            let body = WeatherWordsAsk(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: eteMin, fixes: legs?.fixes ?? "", legMin: legs?.legMin ?? "")
+            let body = WeatherWordsAsk(dep: plan.dep, dest: plan.dest, eteMin: eteMin, fixes: legs?.fixes ?? "", legMin: legs?.legMin ?? "", stops: plan.stops)
             guard let ask = try? WordsAsk(kind: .weather, body: body, figures: figures) else { return }
             let said = await WordsFor().said(ask)
             guard !Task.isCancelled else { return }

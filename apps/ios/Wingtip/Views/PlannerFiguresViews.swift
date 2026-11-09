@@ -33,7 +33,7 @@ struct WithinMark: View {
 /// the checkpoints and the patterns, each with its mark. GPS altitude is
 /// not the altimeter's, and a ground track is not a heading.
 struct DebriefSections: View {
-    let flight: Int64
+    let flight: Int
     let points: [SavedTrackPoint]
     @State private var answer: DebriefAnswer?
     @State private var loaded = false
@@ -174,7 +174,8 @@ struct DiversionDrillView: View {
     ]
     /// The altitudes the drill can be flown at, VFR's: below 18,000 ft
     /// MSL, the floor of Class A (14 CFR 71.33).
-    private static let altitudes = Altitudes.vfr(from: 1500)
+    /// A failure is said under the picker, which is then empty.
+    private static let altitudes = Result { try Altitudes.vfr(from: 1500) }
 
     private var fix: OwnShip.Fix? { dryRun.fix ?? ownShip.fix }
     private var checked: Bool { stopped != nil }
@@ -185,9 +186,12 @@ struct DiversionDrillView: View {
                 Section {
                     Text("Where you are, at \(AirportWords.feet(altitudeFt)), the examiner says: divert. Pick a field, and work out the magnetic heading, ground speed, time and fuel to it from the chart and the forecast wind.")
                     Picker("Altitude", selection: $altitudeFt) {
-                        ForEach(Self.altitudes, id: \.self) { ft in Text(AirportWords.feet(ft)).tag(ft) }
+                        ForEach((try? Self.altitudes.get()) ?? [], id: \.self) { ft in Text(AirportWords.feet(ft)).tag(ft) }
                     }
                     .pickerStyle(.menu)
+                    if case .failure(let error) = Self.altitudes {
+                        Text("The altitudes couldn't be listed: \(error.localizedDescription)").foregroundStyle(.orange)
+                    }
                     Button { start() } label: { Label("Start the Clock", systemImage: "timer") }
                         .disabled(fix == nil)
                     if fix == nil { Text("Waiting for your position").foregroundStyle(.secondary) }
@@ -269,7 +273,7 @@ struct DiversionDrillView: View {
             // altitude to the nearest 500 ft: a choice to change, no rule.
             guard altitudeFt == 0 else { return }
             let own = plan.altitudeFt ?? fix?.altitudeFt.map { ($0 / 500).rounded() * 500 }
-            altitudeFt = Self.altitudes.min { abs($0 - (own ?? 3500)) < abs($1 - (own ?? 3500)) } ?? 3500
+            altitudeFt = ((try? Self.altitudes.get()) ?? []).min { abs($0 - (own ?? 3500)) < abs($1 - (own ?? 3500)) } ?? 3500
         }
     }
 
@@ -526,11 +530,14 @@ struct HoldDiagram: View {
 /// says the expected altitude applies from there. It opens on a made-up
 /// route for the pilot's own.
 struct LostCommsSegmentsSections: View {
+    /// A segment's name as typed; its minimum is typed beside it.
+    struct Segment { var name: String }
+
     @Binding var leave: String?
-    @State private var segments: [LostCommsSegmentAsk] = [
-        LostCommsSegmentAsk(name: "Departure to SWEDE", minimumFt: 2600),
-        LostCommsSegmentAsk(name: "SWEDE to RAYMO", minimumFt: 5000),
-        LostCommsSegmentAsk(name: "RAYMO to the approach fix", minimumFt: 3400),
+    @State private var segments: [Segment] = [
+        Segment(name: "Departure to SWEDE"),
+        Segment(name: "SWEDE to RAYMO"),
+        Segment(name: "RAYMO to the approach fix"),
     ]
     @State private var minimums = ["2600", "5000", "3400"]
     @State private var assigned = "4000"
@@ -542,9 +549,9 @@ struct LostCommsSegmentsSections: View {
     @State private var answer: LostCommsAnswer?
     @State private var problem: String?
 
-    private var ask: LostCommsAsk {
-        LostCommsAsk(
-            segments: zip(segments, minimums).map { LostCommsSegmentAsk(name: $0.name, minimumFt: Self.feet($1)) },
+    private var ask: EngineContract.LostCommsInput {
+        EngineContract.LostCommsInput(
+            segments: zip(segments, minimums).map { .init(name: $0.name, minimumFt: Self.feet($1)) },
             assignedFt: Self.feet(assigned), expectedFt: Self.feet(expected), expectedFrom: expectedFrom,
             approachFix: approachFix, efc: efc, eta: eta
         )
@@ -569,7 +576,9 @@ struct LostCommsSegmentsSections: View {
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled else { return }
             do {
-                let found = try Engine.lostComms(ask)
+                let ask = ask
+                let found = try Engine.lostComms(segments: ask.segments, assignedFt: ask.assignedFt, expectedFt: ask.expectedFt,
+                                                 expectedFrom: ask.expectedFrom, approachFix: ask.approachFix, efc: ask.efc, eta: ask.eta)
                 answer = found
                 leave = found.leave
                 problem = nil
@@ -600,7 +609,7 @@ struct LostCommsSegmentsSections: View {
                 minimums.remove(atOffsets: at)
                 expectedFrom = max(0, min(expectedFrom, segments.count - 1))
             }
-            Button { segments.append(LostCommsSegmentAsk(name: "", minimumFt: nil)); minimums.append("") } label: {
+            Button { segments.append(Segment(name: "")); minimums.append("") } label: {
                 Label("Add a Segment", systemImage: "plus")
             }
             ProblemLine(problem)

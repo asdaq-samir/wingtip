@@ -106,9 +106,13 @@ fun StripLayout(
     val conversation by assistant.conversation.collectAsStateWithLifecycle()
     val rows = remember(state.legs, state.dep, state.dest, state.stops) { StripData.rows(state) }
     val points = remember(rows) { StripData.ribbonPoints(rows) }
-    val position = remember(state.course, state.legs, fix) {
+    val positionAsked = remember(state.course, state.legs, fix) {
         StripData.positionAlong(state.course?.courseLine.orEmpty(), state.legs, fix?.lat, fix?.lon)
     }
+    val position = positionAsked.getOrNull()
+    // Where the engine could not place the airplane on the route, the
+    // field's row says so rather than the ribbon showing it nowhere.
+    val positionProblem = positionAsked.exceptionOrNull()?.let { "Where the airplane is on the route failed: ${it.message}" }
     // When the flight leaves: now, as this app's plan has no time of its
     // own; the times down the strip are this plus the planner's minutes.
     val leaveMs = remember(state.legs) { System.currentTimeMillis() }
@@ -173,7 +177,7 @@ fun StripLayout(
         sheetContent = {
             Column(Modifier.fillMaxWidth().fillMaxHeight(0.7f)) {
                 FieldRow(
-                    suggestions = StripData.suggestions(state), pilot = pilot, flying = flying, problem = strip.problem,
+                    suggestions = StripData.suggestions(state), pilot = pilot, flying = flying, problem = strip.problem ?: positionProblem,
                     onLine = submit, onOpen = model::open, onSignOut = { session.signOut(appContext) },
                     onProblem = model::say,
                 )

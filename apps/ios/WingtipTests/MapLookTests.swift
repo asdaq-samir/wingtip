@@ -16,7 +16,7 @@ private final class LookBundle {}
 struct MapLookTests {
     // MARK: The day's lift
 
-    @Test func theDayLiftIsTheWebMapsContrastAndSaturation() {
+    @Test func theDayLiftIsTheWebMapsContrastAndSaturation() throws {
         // MapLibre's raster-contrast and raster-saturation of 0.1, each a
         // factor of 1 / (1 - 0.1).
         #expect(abs(ChartLift.contrast - 1.1111) < 0.001)
@@ -49,7 +49,7 @@ struct MapLookTests {
 
     // MARK: Apple's map close in
 
-    @Test func theChartGivesWayToApplesMapOverOneLevelCloseIn() {
+    @Test func theChartGivesWayToApplesMapOverOneLevelCloseIn() throws {
         #expect(ChartFade.alpha(zoom: 8) == 1)
         #expect(ChartFade.alpha(zoom: 13) == 1)
         #expect(abs(ChartFade.alpha(zoom: 13.5) - 0.5) < 0.001)
@@ -57,7 +57,7 @@ struct MapLookTests {
         #expect(ChartFade.alpha(zoom: 17) == 0)
     }
 
-    @Test func aRunwaysSurfaceIsItsOwnWidthBetweenItsEnds() {
+    @Test func aRunwaysSurfaceIsItsOwnWidthBetweenItsEnds() throws {
         // An east-west runway 150 ft wide: its corners 75 ft either side of
         // the centreline at each end.
         let a = CLLocationCoordinate2D(latitude: 41.98, longitude: -87.93)
@@ -73,13 +73,13 @@ struct MapLookTests {
 
     // MARK: Sectional symbols
 
-    @Test func aToweredFieldIsBlueAndEveryOtherMagenta() {
+    @Test func aToweredFieldIsBlueAndEveryOtherMagenta() throws {
         #expect(SectionalInk.airport(towered: true) == UIColor(hex: 0x2465B8))
         #expect(SectionalInk.airport(towered: false) == UIColor(hex: 0xC0309F))
         #expect(SectionalInk.airport(towered: nil) == UIColor(hex: 0x6B7280))
     }
 
-    @Test func theSymbolGrowsAsTheWebMapsDo() {
+    @Test func theSymbolGrowsAsTheWebMapsDo() throws {
         #expect(SectionalSymbol.scale(zoom: 3) == 0.7)
         #expect(SectionalSymbol.scale(zoom: 10) == 1)
         #expect(SectionalSymbol.scale(zoom: 13) == 1.25)
@@ -87,9 +87,9 @@ struct MapLookTests {
         #expect(SectionalSymbol.radius("large") > SectionalSymbol.radius("small"))
     }
 
-    @Test func aPrivateOrMilitaryFieldWearsItsLetter() {
+    @Test func aPrivateOrMilitaryFieldWearsItsLetter() throws {
         func pin(military: String?, isPrivate: Bool) -> AirportPin {
-            AirportPin(ident: "X", name: "X", lat: 0, lon: 0, kind: "small", military: military, isPrivate: isPrivate)
+            AirportPin(ident: "X", kind: "small", lat: 0, lon: 0, military: military, name: "X", isPrivate: isPrivate)
         }
         #expect(AirportAnnotation(pin(military: "military", isPrivate: false)).use == "military")
         #expect(AirportAnnotation(pin(military: nil, isPrivate: true)).use == "private")
@@ -125,7 +125,7 @@ struct MapLookTests {
                        ceilingExcluded: excluded, hoursCode: nil, hoursRemark: nil, labelLat: 0, labelLon: 0, lines: lines)
     }
 
-    @Test func aTabSaysTheFloorAndCeilingInFeetAsForeFlightWritesThem() {
+    @Test func aTabSaysTheFloorAndCeilingInFeetAsForeFlightWritesThem() throws {
         #expect(AirspaceTab.text(volume("B", floor: 3000, sfc: false, ceiling: 10000)) == "B: 3000–10000")
         // Madison's Class C shelf (the owner's ForeFlight screenshot).
         #expect(AirspaceTab.text(volume("C", floor: 2300, sfc: false, ceiling: 4900)) == "C: 2300–4900")
@@ -152,7 +152,7 @@ struct MapLookTests {
         #expect(AirspaceTab.place([ring], centre: centre, in: away) == nil)
     }
 
-    @Test func theBandWidensAsTheMapComesIn() {
+    @Test func theBandWidensAsTheMapComesIn() throws {
         #expect(AirspaceVignetteRenderer.width(zoom: 5) == 3)
         #expect(AirspaceVignetteRenderer.width(zoom: 9) == 6)
         #expect(AirspaceVignetteRenderer.width(zoom: 12) == 13)
@@ -161,7 +161,7 @@ struct MapLookTests {
 
     // MARK: Asking during a pinch
 
-    @Test func theViewIsAskedAgainOnlyAtANewLevelOrOutsideWhatWasAsked() {
+    @Test func theViewIsAskedAgainOnlyAtANewLevelOrOutsideWhatWasAsked() throws {
         var fetch = ViewFetch()
         let view = ViewBox(south: 41, west: -89, north: 42, east: -88)
         #expect(fetch.wants(view, zoom: 8.2))
@@ -176,7 +176,7 @@ struct MapLookTests {
 
     // MARK: Runways
 
-    @Test func aRunwayIsDrawnBetweenItsTwoPlacedEnds() {
+    @Test func aRunwayIsDrawnBetweenItsTwoPlacedEnds() throws {
         let end = { (ident: String, lat: Double?, heading: Double?) in
             RunwayEnd(headingTrueDeg: heading, ident: ident, lat: lat, lon: lat == nil ? nil : -87.9, traffic: "left")
         }
@@ -193,7 +193,7 @@ struct MapLookTests {
         #expect(shapes.first?.a.ident == "10L" && shapes.first?.b.ident == "28R" && shapes.first?.widthFt == 150)
     }
 
-    @Test func aTurfRunwayIsDrawnSoftAndAConcreteOneHard() {
+    @Test func aTurfRunwayIsDrawnSoftAndAConcreteOneHard() throws {
         // The engine's reading of the surface (gonogo_soft_surface), not
         // the app's: turf olive, concrete and asphalt the dark grey.
         let ends = [RunwayEnd(headingTrueDeg: 90, ident: "9", lat: 42.32, lon: -88.08, traffic: "left"),
@@ -210,7 +210,7 @@ struct MapLookTests {
 
     // MARK: Where the map opens
 
-    @Test func theMapOpensInTheMiddleOfWhatTheSheetLeaves() {
+    @Test func theMapOpensInTheMiddleOfWhatTheSheetLeaves() throws {
         // An iPhone 852 points tall, 59 under the status bar, the sheet at
         // half way covering 426: the point at 242.5 from the top, the
         // map's middle 183.5 below it.
@@ -220,7 +220,7 @@ struct MapLookTests {
         #expect(MapOpening.drop(height: 852, top: 0, bottomInset: 0) == 0)
     }
 
-    @Test func theOpeningZoomIsTheWebMaps() {
+    @Test func theOpeningZoomIsTheWebMaps() throws {
         #expect(MapOpening.zoom == 8)
         let span = MapOpening.longitudeDelta(zoom: 8, width: 393)
         #expect(abs(MapExtras.zoom(longitudeDelta: span, width: 393) - 8) < 1e-9)

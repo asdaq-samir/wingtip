@@ -20,6 +20,7 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.ahead
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.underway
 import app.wingtipmaps.android.notify.Notifications
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -260,7 +261,9 @@ class OwnShip private constructor(private val context: Context) {
         val fix = _fix.value ?: return
         val track = fix.trackDeg ?: return
         val gs = fix.groundspeedKt ?: return
-        if (!underway(gs)) return
+        // Where the engine cannot say, what is ahead is asked anyway: an
+        // alert asked for nothing costs less than one missed.
+        if (!underway(gs).getOrDefault(true)) return
         asking?.cancel()
         asking = scope.launch {
             // The packs' answer is asked either way, for the ground under
@@ -309,8 +312,7 @@ class OwnShip private constructor(private val context: Context) {
          *  `underway` (motion/glide.rs, AIRBORNE_KT), which the trail and
          *  the strip go by too. Below it nothing ahead is asked: taxiing,
          *  or a fix wandering while parked. */
-        fun underway(speedKt: Double?): Boolean =
-            Engine.call<OwnTrail.Speed, Boolean>("underway", OwnTrail.Speed(speedKt))
+        fun underway(speedKt: Double?): Result<Boolean> = Engine.underway(speedKt)
         const val FT_PER_M = 3.28084
         const val KT_PER_MPS = 1.943844
 

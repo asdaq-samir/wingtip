@@ -5,7 +5,7 @@ import app.wingtipmaps.android.api.ChartLayer
 import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.TrafficAircraft
 import app.wingtipmaps.android.api.generated.OverlayTilesLayer
-import app.wingtipmaps.android.engine.TrafficMarksAnswerElement
+import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.map.MapLayers
 import app.wingtipmaps.android.map.MapPick
@@ -167,8 +167,8 @@ class MapParityTest {
     fun theTrafficIsDrawnByItsMarkAndAStaleOneIsLeftOff() {
         val now = 1_000_000L
         val targets = listOf(
-            TrafficDrawing.Target(plane("a1", 92.0, 100.0, "N123AB"), TrafficMarksAnswerElement("+05", true), now - 2_000),
-            TrafficDrawing.Target(plane("b2", null, null), TrafficMarksAnswerElement("", false), now - 1_000),
+            TrafficDrawing.Target(plane("a1", 92.0, 100.0, "N123AB"), EngineContract.TrafficMarksAnswerItem("+05", true), now - 2_000),
+            TrafficDrawing.Target(plane("b2", null, null), EngineContract.TrafficMarksAnswerItem("", false), now - 1_000),
             TrafficDrawing.Target(plane("c3", 0.0, 100.0), null, now - 31_000),
         )
         val (points, trends) = TrafficDrawing.features(targets, tracked = "A1", nowMs = now)

@@ -29,10 +29,10 @@ struct AirplaneFiguresView: View {
     ]
 
     /// Within the bounds the engine reads a handbook's page by
-    /// (handbook_within): outside them a figure is a misreading.
-    private static func within(_ key: String, _ n: Double) -> Bool {
-        let yes: Bool? = try? Engine.call("handbook_within", json: ["key": key, "value": n])
-        return yes == true
+    /// (handbook_within): outside them a figure is a misreading. Thrown
+    /// where the engine cannot say, and nothing is saved then.
+    private static func within(_ key: String, _ n: Double) throws -> Bool {
+        try Engine.handbookWithin(key: key, value: n)
     }
 
     var body: some View {
@@ -79,7 +79,7 @@ struct AirplaneFiguresView: View {
                     problem = "That photo could not be opened."; return
                 }
                 do {
-                    let found = Handbook.figures(of: try await Handbook.read(image))
+                    let found = try Handbook.figures(of: try await Handbook.read(image))
                     if found.isEmpty { problem = "No figures were read off that page: take the specifications page, flat and in good light."; return }
                     if let f = found.cruiseTasKt { fields["cruiseTasKt"] = AirportWords.tenths(f.value) }
                     if let f = found.cruisePowerPct { fields["cruisePowerPct"] = AirportWords.tenths(f.value) }
@@ -98,7 +98,11 @@ struct AirplaneFiguresView: View {
     private func save() {
         var figures = Figures()
         for row in Self.rows {
-            guard let text = fields[row.key], let n = Double(text), Self.within(row.key, n) else { continue }
+            guard let text = fields[row.key], let n = Double(text) else { continue }
+            do { guard try Self.within(row.key, n) else { continue } } catch {
+                problem = "The figures couldn't be checked: \(error.localizedDescription)"
+                return
+            }
             switch row.key {
             case "cruiseTasKt": figures.cruiseTasKt = n
             case "cruisePowerPct": figures.cruisePowerPct = n

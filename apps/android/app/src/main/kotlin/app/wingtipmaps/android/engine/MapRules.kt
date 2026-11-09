@@ -1,84 +1,71 @@
 package app.wingtipmaps.android.engine
 
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.airspaceEntryRules
+import app.wingtipmaps.android.engine.generated.faaWords
+import app.wingtipmaps.android.engine.generated.fixRadialDistance
+import app.wingtipmaps.android.engine.generated.morse
+import app.wingtipmaps.android.engine.generated.navaidHours
+import app.wingtipmaps.android.engine.generated.placeName
+import app.wingtipmaps.android.engine.generated.radialOf
+import app.wingtipmaps.android.engine.generated.serviceVolume
+import kotlinx.serialization.json.JsonPrimitive
+
+/** A VOR as the rules read it: where it is and the declination its
+ *  radials are aligned to (NASR NAV_BASE MAG_VARN, east positive). */
+typealias Station = EngineContract.WordingStation
 
 /**
  * What the map's cards say a pilot does with what was tapped, the shared
- * engine's (engine/crates/wording, through Engine.call), as the web's
- * lib/navaid.ts, lib/airspaceRules.ts and lib/advisories.ts ask it: a
- * VOR's radial and the course back to it, its Morse identifier, its
+ * engine's (engine/crates/wording, through the generated calls), as the
+ * web's lib/navaid.ts, lib/airspaceRules.ts and lib/advisories.ts ask it:
+ * a VOR's radial and the course back to it, its Morse identifier, its
  * service volume and hours; a point's place off the nearest VOR as a
  * controller gives it; what it takes to enter a Class B, C or D and whom
  * to call; and the FAA's capitals in sentence case. The app writes the
- * answers; none is worked out here. Each answers null, or nothing, where
- * the engine cannot (an input it refuses), so a card shows what it has.
+ * answers; none is worked out here. Each answer is a Result, so a card
+ * says a rule failed where it happened (ProblemLine) rather than leaving
+ * the line out as if there were nothing to say.
  */
 object MapRules {
-    /** A VOR as the rules read it: where it is and the declination its
-     *  radials are aligned to (NASR NAV_BASE MAG_VARN, east positive). */
-    @Serializable
-    data class Station(
-        val ident: String? = null,
-        val lat: Double,
-        val lon: Double,
-        @SerialName("mag_var") val magVar: Double? = null,
-    )
-
-    @Serializable
-    private class At(val lat: Double, val lon: Double)
-
-    @Serializable
-    private class RadialAsk(val station: Station, val at: At)
-
-    @Serializable
-    private class FrdAsk(val at: At, val stations: List<Station>)
-
-    @Serializable
-    private class Ident(val ident: String?)
-
-    @Serializable
-    private class Code(val code: String?)
-
-    @Serializable
-    private class Hours(val hours: String?)
-
-    @Serializable
-    private class Text(val text: String)
-
-    @Serializable
-    private class ClassAsk(@SerialName("class") val airspaceClass: String)
-
     /** The radial of `station` the point is on, the course to fly to it
      *  and how far (`radial_of`), to the station's own declination; null
      *  where it has none filed. */
-    fun radialOf(station: Station, lat: Double, lon: Double): RadialOfAnswerClass? =
-        runCatching { Engine.call<RadialAsk, RadialOfAnswerClass?>("radial_of", RadialAsk(station, At(lat, lon))) }.getOrNull()
+    fun radialOf(station: Station, lat: Double, lon: Double): Result<EngineContract.RadialOfAnswer?> =
+        Engine.radialOf(station, EngineContract.WordingLatLon(lat, lon))
 
     /** A point off the nearest of `stations`, "JOT 045° 12 nm" (AIM
      *  5-1-6, `fix_radial_distance`); null with none that has a declination. */
-    fun fixRadialDistance(lat: Double, lon: Double, stations: List<Station>): String? =
-        runCatching { Engine.call<FrdAsk, String?>("fix_radial_distance", FrdAsk(At(lat, lon), stations)) }.getOrNull()
+    fun fixRadialDistance(lat: Double, lon: Double, stations: List<Station>): Result<String?> =
+        Engine.fixRadialDistance(EngineContract.WordingLatLon(lat, lon), stations)
 
     /** An ident in Morse code, what the station sends (AIM 1-1-3). */
-    fun morse(ident: String): String? = runCatching { Engine.call<Ident, String>("morse", Ident(ident)) }.getOrNull()
+    fun morse(ident: String): Result<String> = Engine.morse(ident)
 
     /** A VOR's standard service volume by NASR's ALT_CODE (AIM 1-1-8,
      *  TBL 1-1-1). */
-    fun serviceVolume(code: String?): String? = runCatching { Engine.call<Code, String?>("service_volume", Code(code)) }.getOrNull()
+    fun serviceVolume(code: String?): Result<String?> = Engine.serviceVolume(code)
 
     /** A navaid's hours as filed, in words ("24" is "Continuous"). */
-    fun navaidHours(hours: String?): String? = runCatching { Engine.call<Hours, String?>("navaid_hours", Hours(hours)) }.getOrNull()
+    fun navaidHours(hours: String?): Result<String?> = Engine.navaidHours(hours)
 
     /** What it takes to enter a Class B, C or D, each rule with its
      *  section (14 CFR 91.117, 91.129-91.131, 91.215, 91.225), and the
      *  frequency types to call (`airspace_entry_rules`). */
-    fun entryRules(airspaceClass: String): AirspaceEntryRulesAnswer? =
-        runCatching { Engine.call<ClassAsk, AirspaceEntryRulesAnswer>("airspace_entry_rules", ClassAsk(airspaceClass)) }.getOrNull()
+    fun entryRules(airspaceClass: String): Result<EngineContract.AirspaceEntryRulesAnswer> =
+        Engine.airspaceEntryRules(airspaceClass)
 
-    /** The FAA's capitals in sentence case, its codes kept (`faa_words`). */
-    fun faaWords(text: String): String = runCatching { Engine.call<Text, String>("faa_words", Text(text)) }.getOrDefault(text)
+    /** The FAA's capitals in sentence case, its codes kept (`faa_words`).
+     *  Wording only: where the engine fails (Engine.rule logs it) the
+     *  FAA's own text is shown as sent, which is still right. */
+    fun faaWords(text: String): String = Engine.faaWords(text = text).map { it.text() ?: text }.getOrDefault(text)
 
-    /** A place's name as it is written, each word capitalised (`place_name`). */
-    fun placeName(text: String): String = runCatching { Engine.call<Text, String>("place_name", Text(text)) }.getOrDefault(text)
+    /** A place's name as it is written, each word capitalised
+     *  (`place_name`); the name as filed where the engine fails, as
+     *  faaWords. */
+    fun placeName(text: String): String = Engine.placeName(text = text).map { it.text() ?: text }.getOrDefault(text)
+
+    /** The rule's one text, where it was asked for one (its answer is a
+     *  text for `text`, a list for `texts`). */
+    private fun kotlinx.serialization.json.JsonElement.text(): String? = (this as? JsonPrimitive)?.takeIf { it.isString }?.content
 }

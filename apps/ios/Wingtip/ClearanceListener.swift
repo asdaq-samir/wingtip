@@ -172,7 +172,12 @@ final class ClearanceListener {
     }
 
     private func heard(_ id: Int, _ text: String, final: Bool) {
-        let forUs = tail.map { HeardCall.ourCall(text, tail: $0) } ?? false
+        // Where the engine cannot say whether it was ours, the call is
+        // shown as not ours and the reason said (problem).
+        var forUs = false
+        if let tail {
+            do { forUs = try HeardCall.ourCall(text, tail: tail) } catch { problem = "Couldn't tell whether that was your call sign: \(error.localizedDescription)" }
+        }
         let was = heard.firstIndex { $0.id == id }
         let wasFinal = was.map { heard[$0].final } ?? false
         let next = Transmission(id: id, at: was.map { heard[$0].at } ?? Date(), text: text, final: final, forUs: forUs)

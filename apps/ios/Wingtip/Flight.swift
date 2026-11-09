@@ -13,9 +13,10 @@ enum Flight {
     /// Whether a groundspeed is flying speed, by the engine's rule
     /// (motion/glide.rs underway, AIRBORNE_KT 40 kt, the debrief's
     /// airborne line), the web's and OwnTrail's same: the app keeps no
-    /// figure of its own for it.
-    static func underway(_ groundspeedKt: Double?) -> Bool {
-        (try? Engine.call("underway", json: ["speed_kt": groundspeedKt])) ?? false
+    /// figure of its own for it. Throws where the engine cannot answer,
+    /// rather than reading as "on the ground".
+    static func underway(_ groundspeedKt: Double?) throws -> Bool {
+        try Engine.underway(speedKt: groundspeedKt)
     }
 
     /// Which side of true north the compass points, from the planner's
@@ -32,34 +33,24 @@ enum Flight {
     /// along the line, to go and off it, whether it is on the route (within
     /// 3 nm, the debrief's tolerance, ACS PA.VI.A.S5), the leg it is on and
     /// how far along it, and the fuel the plan's legs have burnt by there.
-    struct Position: Equatable, Sendable, Decodable {
-        let alongNm: Double
-        let totalNm: Double
-        let leftNm: Double
-        let offNm: Double
-        let onRoute: Bool
-        let leg: Int
-        let legFraction: Double
-        let burntGal: Double
-    }
+    /// The engine's answer (Engine/Generated); `leg` is an index, given as
+    /// a number by the contract.
+    typealias Position = EngineContract.RoutePositionAnswer
 
     /// Where `position` is along the course line, with the legs' miles and
-    /// fuel where given; nil with no line to be on.
-    static func position(_ position: CLLocationCoordinate2D, line: [CLLocationCoordinate2D], legs: [Leg] = []) -> Position? {
-        try? Engine.call("route_position", json: [
-            "at": ["lat": position.latitude, "lon": position.longitude],
-            "line": line.map { [$0.latitude, $0.longitude] },
-            "legs": legs.map { ["distance_nm": $0.distanceNm, "fuel_gal": $0.fuelGal] },
-        ], decoder: Planner.snakeCase)
+    /// fuel where given; nil with no line to be on, thrown where the
+    /// engine refuses.
+    static func position(_ position: CLLocationCoordinate2D, line: [CLLocationCoordinate2D], legs: [Leg] = []) throws -> Position? {
+        try Engine.routePosition(at: .init(lat: position.latitude, lon: position.longitude),
+                                 line: line.map { [$0.latitude, $0.longitude] },
+                                 legs: legs.map { .init(distanceNm: $0.distanceNm, fuelGal: $0.fuelGal) })
     }
 
     /// The same along the route's own points, those with no place left
     /// out: the leg an index into `points`.
-    static func position(_ position: CLLocationCoordinate2D, points: [CLLocationCoordinate2D?]) -> Position? {
-        try? Engine.call("route_position", json: [
-            "at": ["lat": position.latitude, "lon": position.longitude],
-            "points": points.map { p in p.map { [$0.latitude, $0.longitude] } as Any? },
-        ], decoder: Planner.snakeCase)
+    static func position(_ position: CLLocationCoordinate2D, points: [CLLocationCoordinate2D?]) throws -> Position? {
+        try Engine.routePosition(at: .init(lat: position.latitude, lon: position.longitude),
+                                 points: points.map { p in p.map { [$0.latitude, $0.longitude] } })
     }
 
     static func nm(from a: CLLocationCoordinate2D, to b: CLLocationCoordinate2D) -> Double {

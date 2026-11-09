@@ -35,7 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
-import app.wingtipmaps.android.api.AircraftProfile
+import app.wingtipmaps.android.api.AircraftProfileSummary
 import app.wingtipmaps.android.api.Planner
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,8 +45,8 @@ import kotlinx.coroutines.launch
 
 /** The planner's airplane types (/api/aircraft-profiles), asked once. */
 class AircraftModel : ViewModel() {
-    private val _profiles = MutableStateFlow<List<AircraftProfile>>(emptyList())
-    val profiles: StateFlow<List<AircraftProfile>> = _profiles.asStateFlow()
+    private val _profiles = MutableStateFlow<List<AircraftProfileSummary>>(emptyList())
+    val profiles: StateFlow<List<AircraftProfileSummary>> = _profiles.asStateFlow()
 
     private val _problem = MutableStateFlow<String?>(null)
     val problem: StateFlow<String?> = _problem.asStateFlow()
@@ -133,16 +133,15 @@ fun AircraftScreen(plan: Plan) {
 }
 
 /** "Cessna 172 · C172": the type's name and the planner's key for it. */
-private fun label(profile: AircraftProfile): String =
+private fun label(profile: AircraftProfileSummary): String =
     profile.type?.let { "$it · ${profile.name.uppercase()}" } ?: profile.name.uppercase()
 
 /** The handbook figures the planner flies the type on, its own. */
 @Composable
-private fun ProfileFigures(profile: AircraftProfile) {
+private fun ProfileFigures(profile: AircraftProfileSummary) {
     Row(Modifier.fillMaxWidth()) {
         Figure("CRUISE", kt(profile.cruiseTasKt))
         Figure("BURN", String.format(java.util.Locale.US, "%.1f gph", profile.fuelBurnGph))
         Figure("CEILING", ft(profile.serviceCeilingFt))
-        Figure("USABLE", profile.usableFuelGal?.let(::gal) ?: "—")
     }
 }

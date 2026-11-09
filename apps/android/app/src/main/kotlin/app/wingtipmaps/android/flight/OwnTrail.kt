@@ -6,6 +6,7 @@ import app.wingtipmaps.android.api.PathPoint
 import app.wingtipmaps.android.api.SavedTrack
 import app.wingtipmaps.android.api.SavedTrackPoint
 import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.underway
 import java.io.File
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,14 +33,11 @@ import kotlinx.serialization.encodeToString
  */
 class OwnTrail(
     private val file: File,
-    private val underway: (speedKt: Double?) -> Boolean = { speed -> Engine.call<Speed, Boolean>("underway", Speed(speed)) },
+    // Where the engine cannot say (Engine.rule has logged why), the point
+    // is kept: a track with a point too many beats one with a gap.
+    private val underway: (speedKt: Double?) -> Boolean = { speed -> Engine.underway(speed).getOrDefault(true) },
     private val nowMs: () -> Long = System::currentTimeMillis,
 ) {
-    /** The `underway` rule's input: a null speed is left out, which the
-     *  engine reads as not known. */
-    @Serializable
-    class Speed(@SerialName("speed_kt") val speedKt: Double?)
-
     private val _points = MutableStateFlow<List<PathPoint>>(emptyList())
     val points: StateFlow<List<PathPoint>> = _points.asStateFlow()
 

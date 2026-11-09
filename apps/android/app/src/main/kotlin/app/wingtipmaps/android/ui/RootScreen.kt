@@ -158,7 +158,9 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     var asking by rememberSaveable { mutableStateOf(false) }
     // Under way: own ship on and at flying speed (the engine's
     // `underway`), when the strip turns to the airplane.
-    val flying = ownShipOn && OwnShip.underway(fix?.groundspeedKt)
+    // InFlight asks the engine for each fix and says on the map's top
+    // where it could not (InFlight.State.problem).
+    val flying = ownShipOn && InFlight.shared.state.collectAsStateWithLifecycle().value.underway
     // In the air (#218): each fix asked of the engine once for the
     // instruments, the strip's figures and the glide ring (InFlight), again
     // when the route changes under it; what is ahead said aloud where the

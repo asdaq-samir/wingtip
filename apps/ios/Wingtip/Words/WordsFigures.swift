@@ -122,13 +122,12 @@ enum WordsFigures {
 
 /// POST /api/words/weather's body (app.routers.words.WeatherAsk): the
 /// briefing's own parameters, so the planner reads the same briefing.
-struct WeatherWordsAsk: Encodable, Equatable, Sendable {
-    var dep: String
-    var dest: String
-    var stops: [String] = []
-    var eteMin: Double?
-    var fixes = ""
-    var legMin = ""
+typealias WeatherWordsAsk = APIWeatherAsk
+
+extension WeatherWordsAsk {
+    init(dep: String, dest: String, stops: [String] = [], eteMin: Double? = nil, fixes: String = "", legMin: String = "") {
+        self.init(dep: dep, depart: nil, dest: dest, eteMin: eteMin, fixes: fixes, legMin: legMin, stops: stops)
+    }
 }
 
 /// POST /api/words/risk's body (app.routers.words.RiskAsk): the Go /
@@ -136,19 +135,14 @@ struct WeatherWordsAsk: Encodable, Equatable, Sendable {
 /// loading and the balance are left out: the phone keeps only the parts
 /// of them its pages show, and the planner reads neither for the words),
 /// and the pilot's own record where the phone has one.
-struct RiskWordsAsk: Encodable, Equatable, Sendable {
-    struct Verdict: Encodable, Equatable, Sendable {
-        var line: VerdictLine
-        var items: [VerdictItem]
-        var risk: RiskAssessment?
-        var selfChecks: [RiskCheck]
-    }
+typealias RiskWordsAsk = APIRiskAsk
 
-    var verdict: Verdict
-    var pilot: [String: String]?
-
-    init(_ answer: GoNoGoAnswer, pilot: [String: String]? = nil) {
-        verdict = Verdict(line: answer.line, items: answer.items, risk: answer.risk, selfChecks: answer.selfChecks ?? [])
-        self.pilot = pilot
+extension RiskWordsAsk {
+    /// The answer's line and findings are the RiskVerdict's looser ones by
+    /// name, read again as those.
+    init(_ answer: GoNoGoAnswer, pilot: [String: String]? = nil) throws {
+        let verdict = APIRiskVerdict(finding: nil, items: try answer.items.map { try Engine.recoded($0) }, line: try Engine.recoded(answer.line),
+                                     risk: answer.risk, words: nil)
+        self.init(pilot: pilot?.mapValues { JSONValue.string($0) }, verdict: verdict)
     }
 }

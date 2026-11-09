@@ -7,13 +7,13 @@ import Testing
 /// one, the Airport tab's lists, a page of its own for what the tabs
 /// reach only from inside, and words for what lives elsewhere.
 struct FieldTabsHomeTests {
-    @Test func theTabsOwnScreensAreTabs() {
+    @Test func theTabsOwnScreensAreTabs() throws {
         #expect(FieldTabsSheetView.Home.of(.airplane) == .tab(.aircraft))
         #expect(FieldTabsSheetView.Home.of(.settings) == .tab(.setup))
         #expect(FieldTabsSheetView.Home.of(.routes) == .tab(.fpl))
     }
 
-    @Test func theAirportTabsListsAreItsOwn() {
+    @Test func theAirportTabsListsAreItsOwn() throws {
         #expect(FieldTabsSheetView.Home.of(.nearest) == .list(.nearest))
         #expect(FieldTabsSheetView.Home.of(.favorites) == .list(.favorites))
         #expect(FieldTabsSheetView.Home.of(.recents) == .list(.recents))
@@ -23,7 +23,7 @@ struct FieldTabsHomeTests {
         #expect(FieldTabsSheetView.Home.of(.stops) == .list(.nearest))
     }
 
-    @Test func whatTheTabsReachOnlyFromInsideIsAPage() {
+    @Test func whatTheTabsReachOnlyFromInsideIsAPage() throws {
         #expect(FieldTabsSheetView.Home.of(.brief) == .page(.brief))
         #expect(FieldTabsSheetView.Home.of(.navlog) == .page(.navlog))
         #expect(FieldTabsSheetView.Home.of(.logbook) == .page(.logbook))
@@ -39,7 +39,7 @@ struct FieldTabsHomeTests {
         #expect(FieldTabsSheetView.Home.of(.recentRoutes) == .page(.flights))
     }
 
-    @Test func whatLivesElsewhereIsSaidInWords() {
+    @Test func whatLivesElsewhereIsSaidInWords() throws {
         for screen in [FieldScreen.share, .map] {
             guard case .words(let words) = FieldTabsSheetView.Home.of(screen) else {
                 Issue.record("\(screen) has no words")
@@ -49,7 +49,7 @@ struct FieldTabsHomeTests {
         }
     }
 
-    @Test func everyScreenHasAHome() {
+    @Test func everyScreenHasAHome() throws {
         // Exhaustive by the switch; this keeps a new word from being
         // added to FieldScreen without a home here being thought about.
         for screen in FieldScreen.allCases {

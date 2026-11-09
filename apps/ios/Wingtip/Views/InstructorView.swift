@@ -173,7 +173,7 @@ struct StudentView: View {
         List {
             if let training {
                 let name = training.fullName ?? row.name
-                let crossCountry = training.kinds?.first { $0.code == "solo-xc-flight" }
+                let crossCountry = training.kinds.first { $0.code == "solo-xc-flight" }
                 ForEach(training.reviews.filter { $0.answeredAt == nil }) { review in
                     if let crossCountry {
                         ReviewSection(review: review, kind: crossCountry, studentId: row.studentId, studentName: name, instructor: instructor) { next in
@@ -208,9 +208,11 @@ struct StudentView: View {
     // Each signed in AC 61-65K's words, which name the student as on their
     // certificate: none until they have given it.
     @ViewBuilder private func endorsements(_ t: Training, name: String) -> some View {
-        let signed = Endorsing.inForce(t.signed)
+        let inForce = Result { try Endorsing.inForce(t.signed) }
+        let signed = (try? inForce.get()) ?? [:]
         let paper = Dictionary((t.endorsements ?? []).map { ($0.code, $0) }, uniquingKeysWith: { a, _ in a })
         Section("Endorsements") {
+            ProblemLine(inForce, "Which endorsements are in force")
             if t.fullName == nil { Text("Waiting for their name as on their certificate").foregroundStyle(.secondary) }
             ForEach(t.kinds ?? []) { kind in
                 if let e = signed[kind.code] {
@@ -245,7 +247,7 @@ struct StudentView: View {
 struct ReviewSection: View {
     let review: CrossCountryReview
     let kind: EndorsementKind
-    let studentId: Int64
+    let studentId: Int
     let studentName: String
     let instructor: Instructor
     /// The student's record after a signature, or nil to fetch it again.
@@ -257,8 +259,9 @@ struct ReviewSection: View {
     var body: some View {
         Section("\(Endorsing.route(review)), \(Day.said(review.flightOn))") {
             if let note = review.note { Text("“\(note)”").italic() }
-            LabeledContent("Airplane", value: [review.makeModel, review.flight?.aircraftTailNumber].compactMap { $0 }.joined(separator: " · "))
-            if let f = review.flight {
+            LabeledContent("Airplane", value: [review.makeModel, review.flight.aircraftTailNumber].compactMap { $0 }.joined(separator: " · "))
+            do {
+                let f = review.flight
                 if let ft = f.cruiseAltitudeFt { LabeledContent("Altitude", value: "\(ft.formatted()) ft") }
                 if let nm = f.totalDistanceNm { LabeledContent("Distance", value: Formats.nm(nm, decimals: 0)) }
                 if let min = f.totalEteMin { LabeledContent("Time", value: hoursMinutes(min)) }
@@ -303,11 +306,11 @@ struct ReviewSection: View {
 /// changed; a correction voids it for a new one.
 struct SignView: View {
     let kind: EndorsementKind
-    let studentId: Int64
+    let studentId: Int
     let studentName: String
     let instructor: Instructor
     var initial: [String: String] = [:]
-    var reviewId: Int64? = nil
+    var reviewId: Int? = nil
     var onSigned: (Training) async -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var fields: [String: String] = [:]
@@ -317,13 +320,19 @@ struct SignView: View {
 
     var body: some View {
         let signedOn = Day.today()
-        let text = Endorsing.render(kind.template, student: studentName, fields: fields)
+        // Words the engine could not fill are not signed: the failure is
+        // said and the signature waits.
+        let rendered = Result { try Endorsing.render(kind.template, student: studentName, fields: fields) }
+        let text = (try? rendered.get()) ?? ""
         let missing = kind.fields.filter { $0.required && (fields[$0.key] ?? "").trimmingCharacters(in: .whitespaces).isEmpty }
         // A date passed warns and never stops the signature
         // (Endorsing.lapseWarning); the gateway signs either way.
-        let lapsed = Endorsing.lapseWarning(instructor, signedOn: signedOn)
+        let lapse = Result { try Endorsing.lapseWarning(instructor, signedOn: signedOn) }
+        let lapsed = (try? lapse.get()) ?? nil
         let crossCountry = kind.code == "solo-xc-flight"
-        let ready = missing.isEmpty && (!crossCountry || determined.count == Endorsing.determinations.count)
+        let determinations = (try? Endorsing.determinations.get()) ?? []
+        let ready = (try? rendered.get()) != nil && missing.isEmpty
+            && (!crossCountry || ((try? Endorsing.determinations.get()) != nil && determined.count == determinations.count))
         Form {
             Section {
                 ForEach(kind.fields, id: \.key) { f in
@@ -336,7 +345,8 @@ struct SignView: View {
             }
             if crossCountry {
                 Section("Your determination") {
-                    ForEach(Endorsing.determinations, id: \.rule) { d in
+                    ProblemLine(Endorsing.determinations, "What 61.93(d) asks you to determine")
+                    ForEach(determinations, id: \.rule) { d in
                         Toggle(isOn: Binding(get: { determined.contains(d.rule) }, set: { on in if on { determined.insert(d.rule) } else { determined.remove(d.rule) } })) {
                             Text(d.label)
                             Text(d.rule)
@@ -346,6 +356,8 @@ struct SignView: View {
             }
             Section("Instructor's signature") {
                 Text(text)
+                ProblemLine(rendered, "The endorsement's words")
+                ProblemLine(lapse, "Whether your certificate's date has passed")
                 Text(Endorsing.signatureLine(instructor, signedOn: signedOn)).font(.footnote.monospaced()).foregroundStyle(.secondary)
                 Button(signing ? "Signing…" : "Sign as \(instructor.fullName ?? "")") {
                     signing = true
@@ -374,19 +386,10 @@ struct SignView: View {
 }
 
 private enum PreviewData {
-    static let instructor = Instructor(fullName: "J. J. Jones", certificate: "987654321CFI", until: "2027-12-31", untilKind: "RE",
-                                       asking: [], students: [], kinds: [], reviews: [], signed: [])
-    static let kind = EndorsementKind(
-        code: "solo-xc-flight", label: "Solo cross-country flight", paragraph: "A.10", rule: "61.93(c)(2)(i)",
-        template: "I certify that {student} has received the required solo cross-country training. I find that {student} has met the applicable requirements of § 61.93, and is proficient to make solo cross-country flights in a {mm} aircraft.",
-        fields: [EndorsementField(key: "mm", label: "Make and model", example: "PA-28-181", required: true)])
-    static let review = CrossCountryReview(
-        id: 7, flightOn: "2026-10-28", makeModel: "PA-28-181",
-        checks: [ReviewCheck(label: "Solo cross-country training", detail: "Logged 2026-10-20", rule: "61.93(d)(4)", met: true),
-                 ReviewCheck(label: "Solo flight endorsement in force", detail: "Signed 2026-09-30, 90 days", rule: "61.93(d)(5)", met: true)],
-        note: "Could you look at this one for Saturday?",
-        flight: SavedFlight(id: 31, departureIdent: "KDLH", destinationIdent: "KHIB", aircraftTailNumber: "N3429J", cruiseAltitudeFt: 4500,
-                            totalDistanceNm: 62.4, totalEteMin: 36, totalFuelGal: 5.1))
+    static let instructor = Instructor(asking: [], certificate: "987654321CFI", fullName: "J. J. Jones", kinds: [], reviews: [], signed: [], students: [], until: "2027-12-31", untilKind: "RE")
+    static let kind = EndorsementKind(code: "solo-xc-flight", fields: [EndorsementField(example: "PA-28-181", key: "mm", label: "Make and model", required: true)], label: "Solo cross-country flight", paragraph: "A.10", rule: "61.93(c)(2)(i)", template: "I certify that {student} has received the required solo cross-country training. I find that {student} has met the applicable requirements of § 61.93, and is proficient to make solo cross-country flights in a {mm} aircraft.")
+    static let review = CrossCountryReview(askedAt: "2026-10-27", checks: [ReviewCheck(detail: "Logged 2026-10-20", label: "Solo cross-country training", met: true, rule: "61.93(d)(4)"),
+                 ReviewCheck(detail: "Signed 2026-09-30, 90 days", label: "Solo flight endorsement in force", met: true, rule: "61.93(d)(5)")], flight: SavedFlight(aircraftTailNumber: "N3429J", createdAt: "2026-10-26", cruiseAltitudeFt: 4500, departureIdent: "KDLH", destinationIdent: "KHIB", id: 31, stops: [], totalDistanceNm: 62.4, totalEteMin: 36, totalFuelGal: 5.1), flightOn: "2026-10-28", id: 7, makeModel: "PA-28-181", note: "Could you look at this one for Saturday?", studentName: "Avery B. Student")
 }
 
 #Preview("CertificateSection") {

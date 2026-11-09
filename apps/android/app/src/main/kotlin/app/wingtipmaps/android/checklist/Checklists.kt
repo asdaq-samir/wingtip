@@ -3,7 +3,9 @@ package app.wingtipmaps.android.checklist
 import android.content.Context
 import android.content.SharedPreferences
 import app.wingtipmaps.android.engine.Engine
-import kotlinx.serialization.Serializable
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.checklistPhases
+import app.wingtipmaps.android.engine.generated.checklistRead
 
 /**
  * An airplane's own checklists, kept on this phone: two plain texts per
@@ -23,20 +25,13 @@ enum class ChecklistKind(val title: String) {
     EMERGENCY("Emergency"),
 }
 
-/** One line of a checklist as the engine reads it: what is checked, and
- *  what it should be (none for an item that is only said). */
-@Serializable
-data class ChecklistItem(val challenge: String, val response: String? = null)
+/** One line of a checklist as the engine reads it (`checklist_read`):
+ *  what is checked, and what it should be (none for an item that is only
+ *  said). */
+typealias ChecklistItem = EngineContract.ChecklistReadSectionsItemItemsItem
 
-@Serializable
-data class ChecklistSection(val title: String, val items: List<ChecklistItem> = emptyList())
-
-/** The engine's ChecklistRead. */
-@Serializable
-data class ChecklistRead(val sections: List<ChecklistSection> = emptyList())
-
-@Serializable
-private class ChecklistReadAsk(val text: String)
+/** A heading of a list and the items under it. */
+typealias ChecklistSection = EngineContract.ChecklistReadSectionsItem
 
 /** Where a few short texts are kept: SharedPreferences on the phone, a
  *  map in the tests, so the rules of keeping them are held on the JVM. */
@@ -111,26 +106,21 @@ class ChecklistStore(private val store: TextStore) {
  * list, so the run view shows only the sections the pilot has filled.
  */
 object ChecklistPhases {
-    @kotlinx.serialization.Serializable
-    class PhasesAsk(val kind: String)
-
-    private fun asked(kind: String): List<String> =
-        runCatching { Engine.call<PhasesAsk, List<String>>("checklist_phases", PhasesAsk(kind)) }.getOrDefault(emptyList())
-
     /** The headings, the engine's (`checklist_phases`), as the web and
-     *  the iPhone start from them. */
-    val NORMAL: List<String> by lazy { asked("normal") }
+     *  the iPhone start from them; a failure the model shows. */
+    val NORMAL: Result<List<String>> by lazy { Engine.checklistPhases("normal") }
 
-    val EMERGENCY: List<String> by lazy { asked("emergency") }
+    val EMERGENCY: Result<List<String>> by lazy { Engine.checklistPhases("emergency") }
 
-    fun headings(kind: ChecklistKind): List<String> = when (kind) {
+    fun headings(kind: ChecklistKind): Result<List<String>> = when (kind) {
         ChecklistKind.NORMAL -> NORMAL
         ChecklistKind.EMERGENCY -> EMERGENCY
     }
 
     /** The headings as the editor's starting text: each a "# " line,
      *  with a blank line under it to write the items in. */
-    fun template(kind: ChecklistKind): String = headings(kind).joinToString("\n\n", postfix = "\n") { "# $it" }
+    fun template(kind: ChecklistKind): Result<String> =
+        headings(kind).map { it.joinToString("\n\n", postfix = "\n") { h -> "# $h" } }
 }
 
 /** A list run through: which items are ticked, by "section/item". */
@@ -144,6 +134,6 @@ object ChecklistRun {
 
 /** The engine reading a list typed as text (`checklist_read`). */
 object ChecklistText {
-    fun read(text: String): List<ChecklistSection> =
-        if (text.isBlank()) emptyList() else Engine.call<ChecklistReadAsk, ChecklistRead>("checklist_read", ChecklistReadAsk(text)).sections
+    fun read(text: String): Result<List<ChecklistSection>> =
+        if (text.isBlank()) Result.success(emptyList()) else Engine.checklistRead(text).map { it.sections }
 }

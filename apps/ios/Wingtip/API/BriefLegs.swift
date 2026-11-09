@@ -20,10 +20,7 @@ typealias RoutePoint = APIRoutePoint
 
 /// When the planner fetched what the map's weather layers are drawn
 /// from (MapLayerAges, /api/map/ages).
-struct MapLayerAges: Codable, Equatable, Sendable {
-    var metarsAt: String?
-    var tfrsAt: String?
-}
+typealias MapLayerAges = APIMapLayerAges
 
 /// The legs a hazard tapped in the Brief is on, for the map to draw and
 /// bring into view: `key` says which hazard, so a second tap puts them

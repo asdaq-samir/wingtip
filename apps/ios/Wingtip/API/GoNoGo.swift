@@ -6,15 +6,13 @@ import Foundation
 /// question is the route as the nav log was asked it and what only the
 /// pilot knows; the answer is each finding, the line over them, and the
 /// risk assessment and weight and balance the Brief's own pages show.
+/// Every model is the planner's, generated from its OpenAPI document.
 
 /// The pilot's personal minimums (app.gonogo.schemas.PersonalMinimums,
 /// the web's lib/minimums): each nil, Off, until picked.
-struct PersonalMinimums: Codable, Equatable, Sendable {
-    var ceilingFt: Double?
-    var visibilitySm: Double?
-    var crosswindKt: Double?
-    var windKt: Double?
+typealias PersonalMinimums = APIPersonalMinimums
 
+extension PersonalMinimums {
     /// One minimum by its key, for the menus.
     enum Key: String, CaseIterable, Identifiable, Sendable {
         case ceilingFt, visibilitySm, crosswindKt, windKt
@@ -75,158 +73,81 @@ struct PersonalMinimums: Codable, Equatable, Sendable {
 /// What the pilot loads (AirplaneLoad): the airplane's own empty weight
 /// and arm, each station's pounds in the loading's order, and the fuel
 /// at the start, gallons.
-struct AirplaneLoad: Codable, Equatable, Sendable {
-    var emptyWeightLb: Double
-    var emptyArmIn: Double
-    var stationsLb: [Double]
-    var fuelGal: Double
-}
+typealias AirplaneLoad = APIAirplaneLoad
 
 /// POST /api/go-no-go's question (GoNoGoAsk), encoded in snake case:
-/// the route as the nav log was asked it, then the pilot's own.
-struct GoNoGoAsk: Encodable, Equatable, Sendable {
-    var dep: String
-    var dest: String
-    var stops: String = ""
-    var aircraft: String
-    var altitudeFt: Double?
-    var altitudeNearest = false
-    var altitudeChoice = "fastest"
-    var procedures = ""
-    var cruiseTasKt: Double?
-    var fuelBurnGph: Double?
-    var usableFuelGal: Double?
-    var cruisePowerPct: Double?
-    var climbTasKt: Double?
-    var climbFuelBurnGph: Double?
-    var serviceCeilingFt: Double?
-    /// The flight's day where the pilot is, "yyyy-MM-dd": the logbook's
-    /// dates are read on it.
-    var day: String
-    var minimums = PersonalMinimums()
-    var load: AirplaneLoad?
-    var ticked: [String] = []
-    var currency: Currency?
-    /// The pilot's own airplane's records, for the risk assessment's
-    /// airworthiness checks; none for a stock profile.
-    var ownAirplane: OwnAirplaneAsk?
-}
+/// the route as the nav log was asked it, then the pilot's own; `day` the
+/// flight's day where the pilot is, "yyyy-MM-dd", the logbook's dates read
+/// on it.
+typealias GoNoGoAsk = APIGoNoGoAsk
 
 /// The planner's OwnAirplane: the gateway's records of the airplane
 /// flown, in the planner's names. The gateway works out each good-through
 /// day (14 CFR 91.409, 91.411, 91.413, 91.207, 91.171); this only carries
 /// them over.
-struct OwnAirplaneAsk: Encodable, Equatable, Sendable {
-    struct Due: Encodable, Equatable, Sendable {
-        var annualGoodThrough: String?
-        var staticCheckGoodThrough: String?
-        var transponderCheckGoodThrough: String?
-        var eltInspectionGoodThrough: String?
-        var eltBatteryDueOn: String?
-        var hoursNow: Double?
-        var hundredHourDueAtHours: Double?
-    }
-    struct Open: Encodable, Equatable, Sendable {
-        var text: String
-        var inoperative: Bool
-        var deferredFor: String?
-    }
-    struct Vor: Encodable, Equatable, Sendable {
-        var goodThrough: String
-        var withinLimit: Bool
-    }
+typealias OwnAirplaneAsk = APIOwnAirplane
 
-    var inspections: Due?
-    var squawks: [Open] = []
-    var vorCheck: Vor?
-
+extension OwnAirplaneAsk {
     init(_ record: OwnAircraftRecord) {
-        inspections = record.inspections.map {
-            Due(annualGoodThrough: $0.annualGoodThrough, staticCheckGoodThrough: $0.staticCheckGoodThrough,
-                transponderCheckGoodThrough: $0.transponderCheckGoodThrough, eltInspectionGoodThrough: $0.eltInspectionGoodThrough,
-                eltBatteryDueOn: $0.eltBatteryDueOn, hoursNow: $0.hoursNow,
+        let i = record.inspections
+        self.init(
+            inspections: APIAirplaneInspections(
+                annualGoodThrough: i.annualGoodThrough, eltBatteryDueOn: i.eltBatteryDueOn, eltInspectionGoodThrough: i.eltInspectionGoodThrough,
+                hoursNow: i.hoursNow,
                 // The 100-hour is owed only flown for hire (14 CFR 91.409(b)),
                 // as the owner says: not one, not weighed (the web's lib/airworthiness).
-                hundredHourDueAtHours: $0.forHire == true ? $0.hundredHourDueAtHours : nil)
-        }
-        // Only the squawks still open: a fixed one grounds nothing.
-        squawks = (record.openSquawks ?? []).filter { $0.fixedOn == nil }.map { Open(text: $0.text, inoperative: $0.inoperative, deferredFor: $0.deferredFor) }
-        vorCheck = record.vorCheck.map { Vor(goodThrough: $0.goodThrough, withinLimit: $0.withinLimit) }
+                hundredHourDueAtHours: i.forHire ? i.hundredHourDueAtHours : nil,
+                staticCheckGoodThrough: i.staticCheckGoodThrough, transponderCheckGoodThrough: i.transponderCheckGoodThrough),
+            // Only the squawks still open: a fixed one grounds nothing.
+            squawks: record.openSquawks.filter { $0.fixedOn == nil }.map {
+                APIOpenSquawk(deferredFor: $0.deferredFor, inoperative: $0.inoperative, text: $0.text)
+            },
+            vorCheck: record.vorCheck.map { APIVorCheckClass(goodThrough: $0.goodThrough, withinLimit: $0.withinLimit) })
     }
 }
 
 /// What the findings come to, in a line (VerdictLine).
-struct VerdictLine: Codable, Equatable, Sendable {
-    let finding: String
-    let words: String
-}
+typealias VerdictLine = APIVerdictLine
 
 /// One finding (VerdictItem): the weather, the TFRs and special use, the
 /// altitude, the fuel, the runways, the weight and balance or the risk,
 /// and where the web app says it in full.
-struct VerdictItem: Codable, Equatable, Sendable, Identifiable {
-    let key: String
-    let label: String
-    let finding: String
-    let detail: String
-    let tab: String
-    var section: String?
+typealias VerdictItem = APIVerdictItem
 
+extension VerdictItem: Identifiable {
     var id: String { key }
 }
 
 /// What raised the risk (RiskFactor), with its mark.
-struct RiskFactor: Codable, Equatable, Sendable, Identifiable {
-    let key: String
-    let label: String
-    var why: String?
-    let points: Int
-    var stop: Bool?
-    var finding: String?
+typealias RiskFactor = APIRiskFactor
 
+extension RiskFactor: Identifiable {
     var id: String { key }
     /// What it adds, as the web's row says it: "No-go" or "+3".
     var value: String { stop == true ? "No-go" : "+\(points)" }
 }
 
 /// A check only the pilot can answer (RiskCheck), in its group.
-struct RiskCheck: Codable, Equatable, Sendable, Identifiable {
-    let key: String
-    let group: String
-    let label: String
-    var why: String?
-    let points: Int
-    var stop: Bool?
+typealias RiskCheck = APIRiskCheck
 
+extension RiskCheck: Identifiable {
     var id: String { key }
     var value: String { stop == true ? "No-go" : "+\(points)" }
 }
 
 /// The risk assessment (RiskAssessment): its line, what to do at its
 /// level, and every factor counted.
-struct RiskAssessment: Codable, Equatable, Sendable {
-    let score: Int
-    let level: String
-    let line: String
-    let words: String
-    var factors: [RiskFactor]?
-}
+typealias RiskAssessment = APIRiskAssessment
 
 /// One of the loading's stations (LoadingStation).
 typealias LoadingStation = APILoadingStation
 
-/// The airplane's POH loading (Loading), the parts the Loading page asks
-/// for.
-struct PohLoading: Codable, Equatable, Sendable {
-    var source: String?
-    let stations: [LoadingStation]
-    let fuelMaxGal: Double
-}
+/// The airplane's POH loading (Loading).
+typealias PohLoading = APILoading
 
-struct LoadCondition: Codable, Equatable, Sendable {
-    let weightLb: Double
-    let armIn: Double
+typealias LoadCondition = APILoadCondition
 
+extension LoadCondition {
     /// "2,407 lb · 41.2 in", as the web's Balance rows.
     var words: String {
         "\(Formats.grouped(weightLb)) lb · \(Formats.number(armIn, decimals: 1)) in"
@@ -234,22 +155,10 @@ struct LoadCondition: Codable, Equatable, Sendable {
 }
 
 /// The weight and balance worked out for the load used (LoadBalance).
-struct LoadBalance: Codable, Equatable, Sendable {
-    let load: AirplaneLoad
-    let takeoff: LoadCondition
-    let landing: LoadCondition
-    var problems: [String]?
-}
+typealias LoadBalance = APILoadBalance
 
 /// POST /api/go-no-go's answer (GoNoGo).
-struct GoNoGoAnswer: Codable, Equatable, Sendable {
-    let line: VerdictLine
-    let items: [VerdictItem]
-    var risk: RiskAssessment?
-    var selfChecks: [RiskCheck]?
-    var loading: PohLoading?
-    var balance: LoadBalance?
-}
+typealias GoNoGoAnswer = APIGoNoGo
 
 extension Planner {
     /// The Go / No-Go for the route (POST /api/go-no-go).

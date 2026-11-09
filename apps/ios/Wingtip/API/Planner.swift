@@ -165,17 +165,15 @@ enum Planner {
     /// The fields in the map's view, fewer and bigger as it zooms out,
     /// with the flight category of each that reports (/api/airports/in-view).
     static func airports(south: Double, west: Double, north: Double, east: Double) async throws -> [AirportPin] {
-        struct Answer: Decodable { let airports: [AirportPin] }
         let box = ["south": String(south), "west": String(west), "north": String(north), "east": String(east)]
-        return try await fetch(Answer.self, "/api/airports/in-view", box).airports
+        return try await fetch(APIAirportsInView.self, "/api/airports/in-view", box).airports
     }
 
     /// The fields nearest a point (/api/airports/nearest), nearest first.
     /// Asked in the air (Nearest, Direct To, the watch), so it waits no
     /// longer than inFlight.
     static func nearest(lat: Double, lon: Double, limit: Int = 10) async throws -> [NearestAirport] {
-        struct Answer: Decodable { let airports: [NearestAirport] }
-        return try await fetch(Answer.self, "/api/airports/nearest", ["lat": String(lat), "lon": String(lon), "limit": String(limit)], timeout: inFlight).airports
+        return try await fetch(APINearestAirports.self, "/api/airports/nearest", ["lat": String(lat), "lon": String(lon), "limit": String(limit)], timeout: inFlight).airports
     }
 
     /// The airplanes heard about a point (/api/traffic), out to a radius.
@@ -185,8 +183,7 @@ enum Planner {
 
     /// Fields by ident or name as they are typed (/api/airports/search).
     static func search(_ q: String) async throws -> [AirportSuggestion] {
-        struct Answer: Decodable { let airports: [AirportSuggestion] }
-        return try await fetch(Answer.self, "/api/airports/search", ["q": q]).airports
+        return try await fetch(APIAirportSearch.self, "/api/airports/search", ["q": q]).airports
     }
 
     /// A field's card: its weather, runways, frequencies and pattern
@@ -199,8 +196,7 @@ enum Planner {
     /// (/api/checkpoints): read off the chart, so the first ask for a new
     /// route takes a while.
     static func checkpoints(dep: String, dest: String, stops: [String]) async throws -> [Checkpoint] {
-        struct Answer: Decodable { let selected: [Checkpoint] }
-        return try await fetch(Answer.self, "/api/checkpoints", route(dep, dest, stops)).selected
+        return try await fetch(APICheckpoints.self, "/api/checkpoints", route(dep, dest, stops)).selected
     }
 
     /// The ground and airspace under the route, for the profile
@@ -213,8 +209,7 @@ enum Planner {
     /// (/api/airspace/ahead): the planner's alerts, in its words. Waits no
     /// longer than inFlight, so OwnShip falls back to the packs.
     static func ahead(lat: Double, lon: Double, trackDeg: Double, groundspeedKt: Double, altitudeFt: Double?) async throws -> [AheadAlert] {
-        struct Answer: Decodable { let alerts: [AheadAlert] }
-        return try await fetch(Answer.self, "/api/airspace/ahead", [
+        return try await fetch(APIAlertsAhead.self, "/api/airspace/ahead", [
             "lat": String(lat), "lon": String(lon), "track": String(Int(trackDeg.rounded())), "gs": String(Int(groundspeedKt.rounded())),
             "alt": altitudeFt.map { String(Int($0.rounded())) },
         ], timeout: inFlight).alerts
@@ -241,14 +236,12 @@ enum Planner {
     /// The names a clearance near the route will likely say, for the
     /// recognizer's contextualStrings (/api/clearance/words).
     static func clearanceWords(near: String, dep: String) async throws -> [String] {
-        struct Answer: Decodable { let words: [String] }
-        return try await fetch(Answer.self, "/api/clearance/words", ["near": near.isEmpty ? nil : near, "dep": dep.isEmpty ? nil : dep]).words
+        return try await fetch(APIClearanceWords.self, "/api/clearance/words", ["near": near.isEmpty ? nil : near, "dep": dep.isEmpty ? nil : dep]).words
     }
 
     /// An airplane by its N-number in the FAA's registry (/api/traffic/find).
     static func registered(_ tail: String) async throws -> AircraftRegistration? {
-        struct Answer: Decodable { let registered: AircraftRegistration? }
-        return try await fetch(Answer.self, "/api/traffic/find", ["q": tail]).registered
+        return try await fetch(APITrafficFound.self, "/api/traffic/find", ["q": tail]).registered
     }
 
     /// The planner's airplane types (/api/aircraft-profiles).

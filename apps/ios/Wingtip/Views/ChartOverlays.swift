@@ -562,7 +562,9 @@ struct RunwayShape: Equatable, Sendable {
                 return End(ident: end.ident, lat: lat, lon: lon, headingTrueDeg: end.headingTrueDeg)
             }
             guard ends.count == 2 else { return nil }
-            let soft: Bool = (try? Engine.call("gonogo_soft_surface", json: ["surface": runway.surface])) ?? false
+            // Drawing only: a surface the engine cannot class is drawn
+            // paved (logged by Engine.rule); the card says the surface.
+            let soft = (try? Engine.gonogoSoftSurface(surface: runway.surface)) ?? false
             return RunwayShape(a: ends[0], b: ends[1], widthFt: runway.widthFt.map(Double.init), soft: soft)
         }
     }

@@ -475,7 +475,9 @@ struct FieldTabsSheetView: View {
     /// flown as the pilot's own. Nil where the words hold no command; ""
     /// where one was done; else why not.
     private func spoken(_ text: String) async -> String? {
-        if let said = HeardCall.directOf(text) {
+        let direct: String?
+        do { direct = try HeardCall.directOf(text) } catch { return "The words couldn't be read: \(error.localizedDescription)" }
+        if let said = direct {
             guard plan.routed else { return "Direct To needs a route." }
             var near: [(Double, Double)] = []
             if let course = plan.course {
@@ -501,7 +503,7 @@ struct FieldTabsSheetView: View {
         }
         let lower = text.lowercased()
         if lower.contains("altitude") || lower.contains("climb") || lower.contains("descend") || lower.contains("maintain"),
-           let ft = Clearance.read(text).maintainFt {
+           let ft = (try? Clearance.read(text))?.maintainFt {
             guard plan.routed else { return "Plan a route first; then say an altitude, \"altitude 5500\"." }
             plan.ownAltitudeFt = Double(ft)
             plan.ownAltitudeLegal = false

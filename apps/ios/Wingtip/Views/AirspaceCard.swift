@@ -212,24 +212,20 @@ struct BandRow: View {
 /// 500/1,000/2,000 ft; Classes D and E below 10,000 ft MSL 3 sm and
 /// 500/1,000/2,000 ft, day and night.
 private enum PreviewData {
-    static let basic = VfrMinimums(visibilitySm: 3, clearOfClouds: false, belowFt: 500, aboveFt: 1000, horizontalFt: 2000)
+    static let basic = VfrMinimums(aboveFt: 1000, belowFt: 500, clearOfClouds: false, horizontalFt: 2000, visibilitySm: 3)
     static let controlled = DayNightMinimums(day: basic, night: basic)
     static let ground = 1428.0
 }
 
 #Preview("BandRow") {
     List {
-        BandRow(band: AirspaceBand(airspaceClass: "G", floorFt: PreviewData.ground, ceilingFt: 2628, entry: "Nothing.",
-                                   minimums: DayNightMinimums(day: VfrMinimums(visibilitySm: 1, clearOfClouds: true), night: PreviewData.basic)),
+        BandRow(band: AirspaceBand(ceilingFt: 2628, airspaceClass: "G", entry: "Nothing.", floorFt: PreviewData.ground, minimums: DayNightMinimums(day: VfrMinimums(clearOfClouds: true, visibilitySm: 1), night: PreviewData.basic)),
                 ground: PreviewData.ground)
         // 91.117(b): 200 kt in Class D at or below 2,500 ft AGL within 4 nm of the field.
-        BandRow(band: AirspaceBand(airspaceClass: "D", floorFt: PreviewData.ground, ceilingFt: 3900,
-                                   entry: "Two-way radio contact with the tower before entering (91.129).", name: "DULUTH CLASS D",
-                                   equipment: "A two-way radio.", speedKt: 200, minimums: PreviewData.controlled),
+        BandRow(band: AirspaceBand(ceilingFt: 3900, airspaceClass: "D", entry: "Two-way radio contact with the tower before entering (91.129).", equipment: "A two-way radio.", floorFt: PreviewData.ground, minimums: PreviewData.controlled, name: "DULUTH CLASS D", speedKt: 200),
                 ground: PreviewData.ground)
         // 91.117(a): 250 kt below 10,000 ft MSL.
-        BandRow(band: AirspaceBand(airspaceClass: "E", floorFt: 3900, ceilingFt: 18000, entry: "Nothing for VFR.", name: "DULUTH CLASS E",
-                                   speedKt: 250, minimums: PreviewData.controlled),
+        BandRow(band: AirspaceBand(ceilingFt: 18000, airspaceClass: "E", entry: "Nothing for VFR.", floorFt: 3900, minimums: PreviewData.controlled, name: "DULUTH CLASS E", speedKt: 250),
                 ground: PreviewData.ground)
     }
 }

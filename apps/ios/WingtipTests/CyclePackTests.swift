@@ -44,7 +44,7 @@ struct CyclePackTests {
         #expect(here.modeCVeil == nil && (here.specialUse ?? []).isEmpty)
     }
 
-    @Test func regionsAreNamedAsThePlannerNamesThem() {
+    @Test func regionsAreNamedAsThePlannerNamesThem() throws {
         #expect(Engine.region(lat: 41.9786, lon: -87.9048) == "n40w088")
         #expect(Engine.region(lat: 41.9, lon: -88.25) == "n40w092")
         #expect(Engine.region(lat: -0.5, lon: 0.5) == "s04e000")

@@ -60,14 +60,14 @@ struct BriefLegsTests {
         #expect(BriefLegs.age(nil, now: now) == nil)
     }
 
-    @Test func legsAreSaidAsTheNavLogNumbersThem() {
+    @Test func legsAreSaidAsTheNavLogNumbersThem() throws {
         #expect(BriefLegs.legWords([1]) == "Leg 2")
         #expect(BriefLegs.legWords([2, 1]) == "Legs 2–3")
         #expect(BriefLegs.legWords([0, 2, 3]) == "Legs 1, 3–4")
         #expect(BriefLegs.legWords([]) == "")
     }
 
-    @Test func aHazardsLineIsItsLegsTheAirplanesTimeAndItsOwn() {
+    @Test func aHazardsLineIsItsLegsTheAirplanesTimeAndItsOwn() throws {
         #expect(BriefLegs.line(on(), zone: utc) == "Legs 2–3 · 14:20–14:45, valid till 15:00")
         #expect(BriefLegs.line(on(validFrom: "2026-10-04T16:00:00Z", when: "before"), zone: utc) == "Legs 2–3 · 14:20–14:45, before it starts at 16:00")
         #expect(BriefLegs.line(on(when: "after"), zone: utc) == "Legs 2–3 · 14:20–14:45, after it ends at 15:00")
@@ -78,7 +78,7 @@ struct BriefLegsTests {
         #expect(!BriefLegs.line(on(source: "G-AIRMET"), zone: utc).contains("valid till"))
     }
 
-    @Test func theLegsLinesJoinNeighboursAndLeaveOutLegsPastTheFixes() {
+    @Test func theLegsLinesJoinNeighboursAndLeaveOutLegsPastTheFixes() throws {
         let fixes = (0..<5).map { RoutePoint(lat: Double($0), lon: 0) }
         #expect(BriefLegs.lines([1, 2], fixes: fixes).map { $0.map(\.latitude) } == [[1, 2, 3]])
         #expect(BriefLegs.lines([0, 3, 9], fixes: fixes).map { $0.map(\.latitude) } == [[0, 1], [3, 4]])
@@ -92,7 +92,7 @@ struct BriefLegsTests {
         """#)
         let checkpoint = try decode(Checkpoint.self, #"{"id":"a","category":"lake","lat":42.6,"lon":-88.6,"predicted_score":3,"along_track_nm":20,"selected":true,"hop":0}"#)
         let leg = { (ete: Double?, ground: Double?) in
-            Leg(from: "A", to: "B", distanceNm: 30, altitudeFt: 4500, trueCourseDeg: 330, magneticHeadingDeg: 332, eteMin: ete, tasKt: 110, groundMin: ground)
+            Leg.preview(from: "A", to: "B", distanceNm: 30, altitudeFt: 4500, trueCourseDeg: 330, magneticHeadingDeg: 332, eteMin: ete, tasKt: 110, groundMin: ground)
         }
         let query = BriefLegs.query(course: course, checkpoints: [checkpoint], legs: [leg(10, nil), leg(20, 45), leg(30, nil)])
         #expect(query?.fixes == "42.10000,-88.10000;42.60000,-88.60000;43.10000,-89.30000;46.80000,-92.20000")

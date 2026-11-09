@@ -102,7 +102,9 @@ private struct TrafficFixture: Decodable {
 }
 
 private struct LogbookFixture: Decodable {
-    struct Export: Decodable { let entries: [LogbookEntry]; let csv: String }
+    // The web's entries, where a field not kept is null; the gateway's
+    // LogbookEntryDto never sends one, so these go to the engine as written.
+    struct Export: Decodable { let entries: [[String: JSONValue]]; let csv: String }
     struct Skip: Decodable { let line: Int; let reason: String }
     struct Import: Decodable { let name: String; let text: String; let entries: [LogbookEntryRequest]; let skipped: [Skip] }
     let exports: [Export]
@@ -116,14 +118,14 @@ struct SharedFixturesTests {
         let f = try fixture("holds", as: HoldsFixture.self)
         #expect(f.parse.count >= 5)
         for c in f.parse {
-            let hold = Hold.parse(c.text)
+            let hold = try Hold.parse(c.text)
             let flat = hold.map { HoldsFixture.Flat(fix: $0.fix, inbound: $0.inbound, right: $0.right, legMin: $0.legMin, legNm: $0.legNm, turns: $0.turns, minutes: $0.minutes) }
             #expect(flat == c.hold, "\(c.text)")
-            #expect(hold?.text == c.written, "\(c.text)")
+            #expect(try hold?.text() == c.written, "\(c.text)")
             #expect(hold?.words == c.words, "\(c.text)")
         }
         for c in f.legMinutes {
-            #expect(roughly(Hold.legMinutes(altitudeFt: c.altitudeFt), c.minutes), "\(c.altitudeFt) ft")
+            #expect(roughly(try Hold.legMinutes(altitudeFt: c.altitudeFt), c.minutes), "\(c.altitudeFt) ft")
         }
     }
 
@@ -131,9 +133,9 @@ struct SharedFixturesTests {
         let f = try fixture("checklist", as: ChecklistFixture.self)
         #expect(!f.cases.isEmpty)
         for (i, c) in f.cases.enumerated() {
-            let read = ChecklistText.parse(c.text)
+            let read = try ChecklistText.parse(c.text)
             #expect(read == c.checklist, "case \(i)")
-            #expect(ChecklistText.text(of: read) == c.written, "case \(i)")
+            #expect(try ChecklistText.text(of: read) == c.written, "case \(i)")
         }
     }
 
@@ -173,18 +175,18 @@ struct SharedFixturesTests {
 
     @Test func lostCommsSays91_185AsTheWebDoes() throws {
         let f = try fixture("lostComms", as: LostCommsFixture.self)
-        #expect(LostComms.routes.map { [$0.key, $0.label, $0.rule] } == f.routes.map { [$0.key, $0.label, $0.rule] })
+        #expect(try LostComms.opening.get().routes.map { [$0.key, $0.label, $0.rule] } == f.routes.map { [$0.key, $0.label, $0.rule] })
         for c in f.leaveLimit {
-            #expect(LostComms.leaveLimit(approachFix: c.approachFix, efc: c.efc, eta: c.eta) == c.words, "\(c.approachFix) '\(c.efc)' '\(c.eta)'")
+            #expect(try LostComms.leaveLimit(approachFix: c.approachFix, efc: c.efc, eta: c.eta) == c.words, "\(c.approachFix) '\(c.efc)' '\(c.eta)'")
         }
     }
 
     @Test func theFilingFormsItemsAreWrittenAsTheWebWritesThem() throws {
         let f = try fixture("filingForm", as: FilingFormFixture.self)
-        for c in f.cruisingSpeed { #expect(FilingForm.cruisingSpeed(c.tasKt) == c.item, "\(c.tasKt) kt") }
-        for c in f.cruisingLevel { #expect(FilingForm.cruisingLevel(c.altitudeFt) == c.item, "\(c.altitudeFt) ft") }
-        for c in f.hhmm { #expect(FilingForm.hhmm(c.minutes) == c.item, "\(c.minutes) min") }
-        for c in f.route { #expect(FilingForm.route(c.stops, isAirway: { c.airways.contains($0) }) == c.item, "\(c.stops)") }
+        for c in f.cruisingSpeed { #expect(try FilingForm.cruisingSpeed(c.tasKt) == c.item, "\(c.tasKt) kt") }
+        for c in f.cruisingLevel { #expect(try FilingForm.cruisingLevel(c.altitudeFt) == c.item, "\(c.altitudeFt) ft") }
+        for c in f.hhmm { #expect(try FilingForm.hhmm(c.minutes) == c.item, "\(c.minutes) min") }
+        for c in f.route { #expect(try FilingForm.route(c.stops, isAirway: { c.airways.contains($0) }) == c.item, "\(c.stops)") }
     }
 
     @Test func trafficIsLabelledAsTheWebLabelsIt() throws {
@@ -194,14 +196,14 @@ struct SharedFixturesTests {
         #expect(!f.cases.isEmpty)
         for c in f.cases {
             let said = "\(c.plane.altitudeFt.map { "\($0)" } ?? "none") ft against \(c.ownFt.map { "\($0)" } ?? "none")"
-            #expect(Traffic.label(c.plane, ownFt: c.ownFt) == c.label, "\(said)")
-            #expect(Traffic.near(c.plane, ownFt: c.ownFt) == c.near, "\(said)")
+            #expect(try Traffic.label(c.plane, ownFt: c.ownFt) == c.label, "\(said)")
+            #expect(try Traffic.near(c.plane, ownFt: c.ownFt) == c.near, "\(said)")
         }
     }
 
     @Test func theLogbookIsWrittenAndReadAsTheWebDoes() throws {
         let f = try fixture("logbookCsv", as: LogbookFixture.self)
-        for c in f.exports { #expect(LogbookCSV.csv(c.entries) == c.csv) }
+        for c in f.exports { #expect(try Engine.logbookCsvWrite(entries: c.entries) == c.csv) }
         // Field by field, each a Bool, so the type checker has no long
         // chain to solve.
         func same(_ a: LogbookEntryRequest, _ b: LogbookEntryRequest) -> Bool {
@@ -216,7 +218,7 @@ struct SharedFixturesTests {
             return !fields.contains(false)
         }
         for c in f.imports {
-            let read = LogbookCSV.read(c.text)
+            let read = try LogbookCSV.read(c.text)
             #expect(read.entries.count == c.entries.count, "\(c.name)")
             for (got, want) in zip(read.entries, c.entries) { #expect(same(got, want), "\(c.name): \(want.flownOn)") }
             #expect(read.skipped == c.skipped.map { LogbookCSV.Skipped(line: $0.line, reason: $0.reason) }, "\(c.name)")
@@ -225,9 +227,9 @@ struct SharedFixturesTests {
 
     @Test func aClearanceIsReadAsTheWebReadsIt() throws {
         let f = try fixture("clearances", as: ClearancesFixture.self)
-        for c in f.read { #expect(Clearance.read(c.heard) == c.clearance, "\(c.heard)") }
+        for c in f.read { #expect(try Clearance.read(c.heard) == c.clearance, "\(c.heard)") }
         for c in f.routes {
-            let got = Clearance.clearedRoute(c.heard, c.found, dep: c.planned.dep, stops: c.planned.stops, dest: c.planned.dest)
+            let got = try Clearance.clearedRoute(c.heard, c.found, dep: c.planned.dep, stops: c.planned.stops, dest: c.planned.dest)
             #expect(got.dep == c.route.dep && got.stops == c.route.stops && got.dest == c.route.dest, "\(c.heard)")
             #expect(got.typed == c.typed, "\(c.heard)")
         }
@@ -236,15 +238,15 @@ struct SharedFixturesTests {
     @Test func anAtisIsReadAsTheWebReadsIt() throws {
         let f = try fixture("atis", as: AtisFixture.self, decoder: Atis.decoder)
         #expect(f.cases.count >= 12)
-        for c in f.cases { #expect(Atis.read(c.heard) == c.reading, "\(c.name)") }
+        for c in f.cases { #expect(try Atis.read(c.heard) == c.reading, "\(c.name)") }
     }
 
     @Test func aCallToUsIsHeardAsTheWebHearsIt() throws {
         let f = try fixture("heardCalls", as: HeardCallsFixture.self)
         for c in f.cases {
-            #expect(HeardCall.ourCall(c.heard, tail: f.tail) == c.forUs, "\(c.heard)")
-            #expect(HeardCall.directOf(c.heard) == c.direct, "\(c.heard)")
-            #expect(Clearance.read(c.heard).maintainFt == c.maintainFt, "\(c.heard)")
+            #expect(try HeardCall.ourCall(c.heard, tail: f.tail) == c.forUs, "\(c.heard)")
+            #expect(try HeardCall.directOf(c.heard) == c.direct, "\(c.heard)")
+            #expect(try Clearance.read(c.heard).maintainFt == c.maintainFt, "\(c.heard)")
         }
     }
 }

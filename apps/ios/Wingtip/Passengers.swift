@@ -30,8 +30,10 @@ struct PassengerItem: Equatable, Identifiable, Sendable, Decodable {
 /// have them fastened, for taxi, takeoff and landing.
 enum PassengerBriefing {
     /// The items and their sources, the engine's (`passenger_briefing`),
-    /// as the web and Android list them.
-    static let items: [PassengerItem] = (try? Engine.call("passenger_briefing", json: [:])) ?? []
+    /// as the web and Android list them; asked once, and a refusal kept for
+    /// the screen to say (PassengerBriefingView).
+    static let asked = Result { try Engine.passengerBriefing().map { PassengerItem(key: $0.key, title: $0.title, source: $0.rule) } }
+    static var items: [PassengerItem] { (try? asked.get()) ?? [] }
 
     /// A field as the passengers would know it: its name with its ident,
     /// or the ident alone where the name is not known.

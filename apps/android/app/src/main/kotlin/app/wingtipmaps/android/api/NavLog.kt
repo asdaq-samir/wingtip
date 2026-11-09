@@ -1,6 +1,8 @@
 package app.wingtipmaps.android.api
 
-import kotlinx.serialization.SerialName
+import app.wingtipmaps.android.api.generated.NavLogAltitude
+import app.wingtipmaps.android.api.generated.NavLogDone
+import app.wingtipmaps.android.api.generated.NavLogStage
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 
@@ -9,8 +11,9 @@ import kotlinx.serialization.decodeFromString
  * JSON, app.schemas.NavLogMessage): a "stage" line before each slow piece
  * of work, one "altitude" line once the altitudes are decided, one "leg"
  * line per leg, then "done" with the totals -- or "error" where no route
- * can be flown. Decoded by hand, as the iOS app's NavLog.swift does: a
- * stream is not an OpenAPI response.
+ * can be flown. Each line is one of the document's NavLogMessage kinds,
+ * decoded into its generated model (NavLogStage, NavLogAltitude, Leg,
+ * NavLogDone, NavLogError) by its "type".
  */
 sealed interface NavLogMessage {
     data class Stage(val detail: String) : NavLogMessage
@@ -27,27 +30,19 @@ sealed interface NavLogMessage {
 }
 
 object NavLog {
+    /** A line's kind, read before the line itself. */
     @Serializable
     private class Kind(val type: String)
-
-    @Serializable
-    private class StageLine(val detail: String = "")
-
-    @Serializable
-    private class AltitudeLine(@SerialName("altitude_ft") val altitudeFt: Double? = null)
-
-    @Serializable
-    private class DoneLine(val totals: NavLogTotals)
 
     /** One line of the stream, or null for a line of a kind the app has
      *  no use for yet. */
     fun decode(line: String): NavLogMessage? {
         val json = Gateway.json
         return when (json.decodeFromString<Kind>(line).type) {
-            "stage" -> NavLogMessage.Stage(json.decodeFromString<StageLine>(line).detail)
-            "altitude" -> NavLogMessage.Altitude(json.decodeFromString<AltitudeLine>(line).altitudeFt)
+            "stage" -> NavLogMessage.Stage(json.decodeFromString<NavLogStage>(line).detail)
+            "altitude" -> NavLogMessage.Altitude(json.decodeFromString<NavLogAltitude>(line).altitudeFt)
             "leg" -> NavLogMessage.OneLeg(json.decodeFromString<Leg>(line))
-            "done" -> NavLogMessage.Done(json.decodeFromString<DoneLine>(line).totals)
+            "done" -> NavLogMessage.Done(json.decodeFromString<NavLogDone>(line).totals)
             "error" -> NavLogMessage.Problem(json.decodeFromString<NavLogError>(line))
             else -> null
         }

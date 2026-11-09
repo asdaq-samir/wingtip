@@ -33,15 +33,15 @@ struct GlanceTests {
     }
 
     @Test func nothingFoldedWhereTheLinesSaidEverything() throws {
-        let json = #"{"line":{"finding":"pending","words":"Still checking: Risk"},"items":[{"key":"risk","label":"Risk","finding":"pending","detail":"Waiting on the briefing…","tab":"preflight","section":"Risk Assessment"}]}"#
+        let json = #"{"line":{"finding":"pending","words":"Still checking: Risk"},"items":[{"key":"risk","label":"Risk","finding":"pending","detail":"Waiting on the briefing…","tab":"preflight","section":"Risk Assessment"}],"self_checks":[]}"#
         let a = try answer(json)
         #expect(Glance.lines(a).map(\.words) == ["Risk: Waiting on the briefing…"])
         #expect(Glance.rest(a).isEmpty && Glance.restWords(a) == nil)
     }
 
-    @Test func aLongFindingIsCutAtAWordToTheLongestLine() {
+    @Test func aLongFindingIsCutAtAWordToTheLongestLine() throws {
         let detail = String(repeating: "cloud layers along the route ", count: 8)
-        let item = VerdictItem(key: "weather", label: "Weather", finding: "caution", detail: detail, tab: "enroute")
+        let item = VerdictItem(detail: detail, finding: "caution", key: "weather", label: "Weather", tab: "enroute")
         let words = Glance.sentence(item)
         #expect(words.count <= Glance.longest)
         #expect(words.hasSuffix("…") && !words.hasSuffix(" …"))
@@ -49,7 +49,7 @@ struct GlanceTests {
     }
 
     @Test func aClearFlightHasNoLinesAndOneRow() throws {
-        let json = #"{"line":{"finding":"ok","words":"Go"},"items":[{"key":"weather","label":"Weather","finding":"ok","detail":"VFR","tab":"enroute"},{"key":"fuel","label":"Fuel","finding":"ok","detail":"Plenty","tab":"preflight"}]}"#
+        let json = #"{"line":{"finding":"ok","words":"Go"},"items":[{"key":"weather","label":"Weather","finding":"ok","detail":"VFR","tab":"enroute"},{"key":"fuel","label":"Fuel","finding":"ok","detail":"Plenty","tab":"preflight"}],"self_checks":[]}"#
         let a = try answer(json)
         #expect(Glance.lines(a).isEmpty)
         #expect(Glance.restWords(a) == "Weather and fuel: nothing to fix")

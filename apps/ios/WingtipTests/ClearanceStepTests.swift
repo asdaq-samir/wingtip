@@ -32,15 +32,15 @@ struct ClearanceStepTests {
     @Test func theReadBackIsCheckedAsTheWebChecksIt() throws {
         let f = try fixture("readbacks", as: ReadbacksFixture.self)
         for c in f.cases {
-            let check = try #require(ReadbackCheck.check(cleared: f.cleared, said: c.said), "\(c.name)")
+            let check = try #require(try ReadbackCheck.check(cleared: f.cleared, said: c.said), "\(c.name)")
             #expect(check.items == c.items && check.words == c.words, "\(c.name)")
         }
     }
 
     @Test func aFullReadBackIsOneTickNamingEveryPart() throws {
         let f = try fixture("readbacks", as: ReadbacksFixture.self)
-        let clearance = Clearance.read(f.cleared)
-        let check = try #require(ReadbackCheck.check(cleared: f.cleared, said: f.cases[0].said))
+        let clearance = try Clearance.read(f.cleared)
+        let check = try #require(try ReadbackCheck.check(cleared: f.cleared, said: f.cases[0].said))
         let lines = ReadbackCheck.lines(clearance, check)
         #expect(lines.map(\.ok) == [true])
         #expect(lines[0].words == "Limit, route, altitude, expected altitude, frequency and squawk read back")
@@ -48,9 +48,9 @@ struct ClearanceStepTests {
 
     @Test func aMissOrADifferenceIsOneLineEach() throws {
         let f = try fixture("readbacks", as: ReadbacksFixture.self)
-        let clearance = Clearance.read(f.cleared)
+        let clearance = try Clearance.read(f.cleared)
         // The third case: the altitude said differently, the squawk missed.
-        let check = try #require(ReadbackCheck.check(cleared: f.cleared, said: f.cases[2].said))
+        let check = try #require(try ReadbackCheck.check(cleared: f.cleared, said: f.cases[2].said))
         let lines = ReadbackCheck.lines(clearance, check)
         #expect(lines.map(\.ok) == [true, false, false])
         #expect(lines[0].words == "Limit, route, expected altitude and frequency read back")
@@ -74,7 +74,7 @@ struct ClearanceStepTests {
         #expect(compared(f.routes[3]) == ClearanceCompare.Difference(same: false, words: "adds GEP."))
     }
 
-    @Test func theSamePointsInAnotherOrderAreSaidSo() {
+    @Test func theSamePointsInAnotherOrderAreSaidSo() throws {
         let d = ClearanceCompare.describe(plannedStops: ["GEP", "BRD"], plannedDest: "KDLH", clearedStops: ["BRD", "GEP"], clearedDest: "KDLH")
         #expect(d == ClearanceCompare.Difference(same: false, words: "the same points in another order."))
     }

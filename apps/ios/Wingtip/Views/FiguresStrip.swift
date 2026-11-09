@@ -15,29 +15,27 @@ struct FiguresStrip: View {
     /// the destination at the groundspeed now, and the fuel still required.
     private var flying: (leftNm: Double, minutes: Double?, fuelGal: Double?)? {
         guard let progress = InFlight.shared.progress, progress.onRoute else { return nil }
-        let required = Self.fuel(plan.totals, burntGal: progress.burntGal).requiredGal
+        let required = (try? Self.fuel(plan.totals, burntGal: progress.burntGal))?.requiredGal
         return (progress.destination?.distanceNm ?? progress.leftNm, progress.destination?.eteMin, required)
     }
 
     /// The engine's answer to strip_fuel.
-    struct StripFuel: Decodable {
-        struct Short: Decodable { let name: String; let shortGal: Double }
-        let requiredGal: Double?
-        let short: [Short]
-    }
+    typealias StripFuel = EngineContract.StripFuelAnswer
 
     /// The strip's fuel from the planner's totals, as the engine works it
-    /// for the three apps: required, less `burntGal`, and where short.
-    static func fuel(_ totals: Totals?, burntGal: Double? = nil) -> StripFuel {
-        let answer: StripFuel? = try? Engine.call("strip_fuel", json: [
-            "fuel_required_gal": totals?.fuelRequiredGal, "fuel_margin_gal": totals?.fuelMarginGal, "burnt_gal": burntGal,
-        ], decoder: Planner.snakeCase)
-        return answer ?? StripFuel(requiredGal: nil, short: [])
+    /// for the three apps: required, less `burntGal`, and where short;
+    /// thrown where the engine cannot answer.
+    static func fuel(_ totals: Totals?, burntGal: Double? = nil) throws -> StripFuel {
+        try Engine.stripFuel(fuelRequiredGal: totals?.fuelRequiredGal, fuelMarginGal: totals?.fuelMarginGal, burntGal: burntGal)
     }
 
     var body: some View {
-        let fuel = Self.fuel(plan.totals)
-        let warn = !fuel.short.isEmpty
+        // A fuel the engine could not work out is shown as unknown and in
+        // the warning's colour, never as fuel enough.
+        let asked = Result { try Self.fuel(plan.totals) }
+        let fuel = (try? asked.get()) ?? StripFuel(requiredGal: nil, short: [])
+        let refused = (try? asked.get()) == nil
+        let warn = !fuel.short.isEmpty || refused
         HStack {
             stripFigure("TO", plan.routed ? plan.dest : "—")
             if let flying {
@@ -48,7 +46,8 @@ struct FiguresStrip: View {
                 let distance = plan.totals?.distanceNm ?? plan.course?.distanceNm
                 stripFigure("DIST", distance.map(AirportWords.nm) ?? "—", spoken: distance.map(SpokenFigures.nauticalMiles))
                 stripFigure("ETE", plan.totals?.eteMin.map(hoursMinutes) ?? "—", spoken: plan.totals?.eteMin.map(SpokenFigures.minutes))
-                stripFigure("FUEL", fuel.requiredGal.map(AirportWords.gal) ?? "—", spoken: fuel.requiredGal.map(SpokenFigures.gallons), warn: warn)
+                stripFigure("FUEL", fuel.requiredGal.map(AirportWords.gal) ?? (refused ? "?" : "—"),
+                            spoken: fuel.requiredGal.map(SpokenFigures.gallons) ?? (refused ? "Fuel not worked out" : nil), warn: warn)
             }
         }
         .padding(.horizontal)

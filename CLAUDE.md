@@ -71,8 +71,9 @@ one job (the owner kept both server languages on this split, 2026-11-06):
   engine; the engine never fetches.
 - Adding or changing a rule: the Rust in the lowest crate that can hold
   it, its name in `call.rs`, its entry in the contract
-  (`engine.schema.json`), `npm run types` in apps/web (and
-  `scripts/build/engine-contract-apps.sh` when a phone decodes it), its test
+  (`engine.schema.json`), `npm run types` in apps/web and
+  `scripts/build/engine-contract-apps.sh` (the phones' typed calls, which CI
+  checks match the contract), its test
   against the shared fixtures (apps/web/src/lib/fixtures),
   `scripts/build/build-engine-wasm.sh` (the `.wasm` is committed and CI checks
   it matches), and the images that link it rebuilt (the planner, ingest,

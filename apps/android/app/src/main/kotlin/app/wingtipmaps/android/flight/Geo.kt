@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.flight
 
 import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.compassWord
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.math.acos
@@ -53,9 +54,6 @@ object Geo {
         return la2 / RAD to ((lo2 / RAD + 540) % 360 - 180)
     }
 
-    @Serializable
-    private class CompassAsk(@SerialName("bearing_deg") val bearingDeg: Double)
-
     private val SHORT = mapOf(
         "north" to "N", "northeast" to "NE", "east" to "E", "southeast" to "SE",
         "south" to "S", "southwest" to "SW", "west" to "W", "northwest" to "NW",
@@ -66,7 +64,9 @@ object Geo {
      *  `compass_word`, the web's and the iPhone's, written short. Once a
      *  notification, not a fix, so the call is no waste. */
     fun compassPoint(bearingDeg: Double): String {
-        val word = runCatching { Engine.call<CompassAsk, String>("compass_word", CompassAsk(bearingDeg)) }.getOrDefault("")
-        return SHORT[word] ?: word
+        // Wording only: where the engine fails (Engine.rule logs it) the
+        // bearing itself is said, "045°", which is still right.
+        return Engine.compassWord(bearingDeg).map { SHORT[it] ?: it }
+            .getOrElse { String.format(java.util.Locale.US, "%03.0f°", ((bearingDeg % 360) + 360) % 360) }
     }
 }

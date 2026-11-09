@@ -173,8 +173,9 @@ private fun AirspaceCard(volume: MapPick.Airspace) {
         volume.ceilingFt?.let { "${if (volume.ceilingExcluded) "Up to but not including " else ""}${feet(it)} ft MSL" } ?: "—",
     )
     airspaceHours(volume.hoursCode, volume.hoursRemark)?.let { Fact("Hours", it) }
-    val rules = remember(volume.airspaceClass) { MapRules.entryRules(volume.airspaceClass) }
-    val types = rules?.call?.map { it.value }.orEmpty()
+    val asked = remember(volume.airspaceClass) { MapRules.entryRules(volume.airspaceClass) }
+    val rules = asked.getOrNull()
+    val types = rules?.call.orEmpty()
     val field by produceState<AirportPlace?>(null, volume.ident) {
         value = volume.ident?.let { runCatching { Planner.place(it) }.getOrNull() }
     }
@@ -186,6 +187,7 @@ private fun AirspaceCard(volume: MapPick.Airspace) {
             Fact(f.description ?: f.type ?: "", String.format(Locale.US, "%.3f", f.frequencyMhz!!).trimEnd('0').let { if (it.endsWith('.')) "${it}0" else it })
         }
     }
+    asked.exceptionOrNull()?.let { ProblemLine("The entry rules failed: ${it.message}") }
     if (!rules?.rules.isNullOrEmpty()) {
         Section("To enter")
         for (r in rules!!.rules) {
@@ -200,7 +202,7 @@ private fun AirspaceCard(volume: MapPick.Airspace) {
 
 // ---- A VOR, a fix, a waypoint ----------------------------------------------
 
-private fun MapPick.Vor.station() = MapRules.Station(ident, lat, lon, magVar)
+private fun MapPick.Vor.station() = app.wingtipmaps.android.engine.Station(ident, lat, lon, magVar)
 
 /** A VOR's card (the web's VorCard): the radial the airplane is on and the
  *  course to fly to it, to the station's own declination, where own ship
@@ -214,7 +216,9 @@ private fun VorCard(vor: MapPick.Vor) {
     Head(ink(MapStyle.BLUE), vor.ident, vor.kind, listOfNotNull(vor.name?.let(MapRules::placeName), vor.freq).joinToString(" · "))
     val context = LocalContext.current
     val fix by OwnShip.of(context).fix.collectAsStateWithLifecycle()
-    val on = fix?.let { MapRules.radialOf(vor.station(), it.lat, it.lon) }
+    val radial = fix?.let { MapRules.radialOf(vor.station(), it.lat, it.lon) }
+    radial?.exceptionOrNull()?.let { ProblemLine("The radial failed: ${it.message}") }
+    val on = radial?.getOrNull()
     if (on != null) {
         Text(
             "On the ${threeFigures(on.radial)} radial · ${nm(on.nm)}",
@@ -222,7 +226,9 @@ private fun VorCard(vor: MapPick.Vor) {
         )
         Text("${threeFigures(on.toCourse)}° to fly to it", color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
-    val morse = remember(vor.ident) { MapRules.morse(vor.ident) }
+    val morseAsked = remember(vor.ident) { MapRules.morse(vor.ident) }
+    morseAsked.exceptionOrNull()?.let { ProblemLine("The identifier's Morse failed: ${it.message}") }
+    val morse = morseAsked.getOrNull()
     if (morse != null) {
         ListItem(
             headlineContent = { Text("Identifier") },
@@ -233,10 +239,16 @@ private fun VorCard(vor: MapPick.Vor) {
         )
     }
     vor.channel?.let { Fact("DME channel", it) }
-    remember(vor.serviceVolume) { MapRules.serviceVolume(vor.serviceVolume) }?.let { Fact("Service volume", it, description = true) }
+    remember(vor.serviceVolume) { MapRules.serviceVolume(vor.serviceVolume) }.fold(
+        { it?.let { Fact("Service volume", it, description = true) } },
+        { ProblemLine("The service volume failed: ${it.message}") },
+    )
     vor.elevationFt?.let { Fact("Elevation", ft(it)) }
     vor.magVar?.let { Fact("Declination", declinationOf(it)) }
-    remember(vor.hours) { MapRules.navaidHours(vor.hours) }?.let { Fact("Hours", it) }
+    remember(vor.hours) { MapRules.navaidHours(vor.hours) }.fold(
+        { it?.let { Fact("Hours", it) } },
+        { ProblemLine("The hours failed: ${it.message}") },
+    )
     if (vor.remarks.isNotEmpty()) {
         var open by rememberSaveable(vor.ident) { mutableStateOf(false) }
         TextButton(onClick = { open = !open }) {
@@ -260,13 +272,15 @@ private fun VorCard(vor: MapPick.Vor) {
  *  place. */
 @Composable
 private fun PointCard(point: MapPick.Point) {
-    val frd = remember(point) { MapRules.fixRadialDistance(point.lat, point.lon, point.vors.map { it.station() }) }
+    val frdAsked = remember(point) { MapRules.fixRadialDistance(point.lat, point.lon, point.vors.map { it.station() }) }
+    val frd = frdAsked.getOrNull()
     Head(
         ink(if (point.vfr) MapStyle.VFR_GREEN else MapStyle.FIX_INK),
         point.ident,
         if (point.vfr) "VFR waypoint" else "Fix",
         frd,
     )
+    frdAsked.exceptionOrNull()?.let { ProblemLine("The fix, radial and distance failed: ${it.message}") }
     Fact("Position", degreesMinutes(point.lat, point.lon))
 }
 
@@ -298,6 +312,8 @@ private fun PlaneCard(hex: String) {
     val tracking = remember(context) { Tracking.of(context) }
     val planes by traffic.planes.collectAsStateWithLifecycle()
     val marks by traffic.marks.collectAsStateWithLifecycle()
+    val trafficProblem by traffic.problem.collectAsStateWithLifecycle()
+    val watchProblem by tracking.problem.collectAsStateWithLifecycle()
     val tracked by tracking.hex.collectAsStateWithLifecycle()
     val i = planes.indexOfFirst { it.hex.equals(hex, ignoreCase = true) }
     val plane = planes.getOrNull(i)
@@ -312,6 +328,8 @@ private fun PlaneCard(hex: String) {
         plane.type ?: "Traffic",
         plane.registration?.takeIf { it != plane.name },
     )
+    ProblemLine(trafficProblem)
+    ProblemLine(watchProblem)
     mark?.label?.takeIf { it.isNotEmpty() }?.let { Fact("Height", it) }
     plane.altitudeFt?.let { Fact("Altitude", ft(it)) }
     plane.speedKt?.let { Fact("Ground speed", kt(it)) }
