@@ -31,14 +31,17 @@ public record HandbookFigures(
         @Nullable Double usable_fuel_gal) {
 
     @Schema(description = "A cruise performance table's row: pressure altitude, power, RPM, true airspeed, fuel burn")
-    public record Cruise(double altitude_ft, @Nullable Double power_pct, @Nullable Double rpm, double tas_kt, double burn_gph) {
-    }
+    public record Cruise(
+            double altitude_ft,
+            @Nullable Double power_pct,
+            @Nullable Double rpm,
+            double tas_kt,
+            double burn_gph) {}
 
     @Schema(description = "A takeoff or landing distance table's row: ground roll and total over a 50 ft obstacle")
-    public record Distance(double pressure_altitude_ft, double temp_c, double ground_roll_ft, double over_obstacle_ft) {
-    }
+    public record Distance(
+            double pressure_altitude_ft, double temp_c, double ground_roll_ft, double over_obstacle_ft) {}
 
     @Schema(description = "A corner of the CG envelope: arm aft of the datum and weight")
-    public record Corner(double arm_in, double weight_lb) {
-    }
+    public record Corner(double arm_in, double weight_lb) {}
 }

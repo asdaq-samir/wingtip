@@ -77,8 +77,7 @@ public class FlightCheckpoint {
         // JPA
     }
 
-    public FlightCheckpoint(int sequenceNo, String name, String category,
-                            double lat, double lon, double alongTrackNm) {
+    public FlightCheckpoint(int sequenceNo, String name, String category, double lat, double lon, double alongTrackNm) {
         this.sequenceNo = sequenceNo;
         this.name = name;
         this.category = category;
@@ -88,8 +87,13 @@ public class FlightCheckpoint {
     }
 
     /** The leg leaving this fix. Left unset on the destination row. */
-    public FlightCheckpoint withLeg(Double legDistanceNm, Double trueCourseDeg, Double magneticHeadingDeg,
-                                    Double groundspeedKt, Double eteMin, Double fuelGal) {
+    public FlightCheckpoint withLeg(
+            Double legDistanceNm,
+            Double trueCourseDeg,
+            Double magneticHeadingDeg,
+            Double groundspeedKt,
+            Double eteMin,
+            Double fuelGal) {
         this.legDistanceNm = legDistanceNm;
         this.trueCourseDeg = trueCourseDeg;
         this.magneticHeadingDeg = magneticHeadingDeg;

@@ -31,8 +31,7 @@ public class ApproachLesson {
 
     /** One quiz question answered: the question as asked, the choice
      *  made, and whether it was the right one. */
-    public record Answer(String question, String chosen, boolean right) {
-    }
+    public record Answer(String question, String chosen, boolean right) {}
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -86,8 +85,16 @@ public class ApproachLesson {
         // JPA
     }
 
-    public ApproachLesson(Pilot student, Pilot instructor, String airportIdent, String procedureId, String procedureName, String cycle,
-                          Map<String, String> fixNotes, LocalDate dueOn, Instant now) {
+    public ApproachLesson(
+            Pilot student,
+            Pilot instructor,
+            String airportIdent,
+            String procedureId,
+            String procedureName,
+            String cycle,
+            Map<String, String> fixNotes,
+            LocalDate dueOn,
+            Instant now) {
         this.student = student;
         this.instructor = instructor;
         this.airportIdent = airportIdent;

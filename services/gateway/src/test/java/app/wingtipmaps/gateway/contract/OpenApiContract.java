@@ -65,11 +65,13 @@ public final class OpenApiContract {
 
     /** The schema of an operation's JSON request body, or of its 200 answer. */
     public static Optional<JsonNode> requestSchema(JsonNode operation) {
-        return Optional.ofNullable(operation.at("/requestBody/content/application~1json/schema")).filter(n -> !n.isMissingNode());
+        return Optional.ofNullable(operation.at("/requestBody/content/application~1json/schema"))
+                .filter(n -> !n.isMissingNode());
     }
 
     public static Optional<JsonNode> answerSchema(JsonNode operation) {
-        return Optional.ofNullable(operation.at("/responses/200/content/application~1json/schema")).filter(n -> !n.isMissingNode());
+        return Optional.ofNullable(operation.at("/responses/200/content/application~1json/schema"))
+                .filter(n -> !n.isMissingNode());
     }
 
     /** The query (or header) parameters an operation takes, by name. */
@@ -91,9 +93,11 @@ public final class OpenApiContract {
         sent.forEach((name, value) -> {
             JsonNode param = taken.get(name);
             if (param == null) {
-                problems.add("query parameter '" + name + "' is sent, but the operation takes no such parameter " + taken.keySet());
+                problems.add("query parameter '" + name + "' is sent, but the operation takes no such parameter "
+                        + taken.keySet());
             } else {
-                problems.addAll(check(scalar(param.path("schema"), value), param.path("schema"), "query parameter '" + name + "'"));
+                problems.addAll(check(
+                        scalar(param.path("schema"), value), param.path("schema"), "query parameter '" + name + "'"));
             }
         });
         taken.forEach((name, param) -> {
@@ -110,7 +114,8 @@ public final class OpenApiContract {
         Set<String> types = typesOf(schema);
         if (types.contains("number") || types.contains("integer")) {
             try {
-                return types.contains("integer") && value.matches("-?\\d+") ? NODES.numberNode(Long.parseLong(value))
+                return types.contains("integer") && value.matches("-?\\d+")
+                        ? NODES.numberNode(Long.parseLong(value))
                         : NODES.numberNode(Double.parseDouble(value));
             } catch (NumberFormatException notANumber) {
                 return NODES.textNode(value);
@@ -159,7 +164,8 @@ public final class OpenApiContract {
                 for (Iterator<Map.Entry<String, JsonNode>> it = value.fields(); it.hasNext(); ) {
                     Map.Entry<String, JsonNode> field = it.next();
                     if (properties.has(field.getKey())) {
-                        problems.addAll(check(field.getValue(), properties.get(field.getKey()), where + "." + field.getKey()));
+                        problems.addAll(
+                                check(field.getValue(), properties.get(field.getKey()), where + "." + field.getKey()));
                     } else if (extra.isObject()) {
                         problems.addAll(check(field.getValue(), extra, where + "." + field.getKey()));
                     } else if (!extra.asBoolean(false)) {
@@ -187,8 +193,8 @@ public final class OpenApiContract {
                 if (!value.isTextual()) {
                     problems.add(where + " is sent as " + value.getNodeType() + ", but is a string");
                 } else if (!fitsFormat(value.asText(), schema)) {
-                    problems.add(where + " is sent as '" + value.asText() + "', which is not a " + schema.path("format").asText()
-                            + (schema.has("enum") ? " of " + schema.get("enum") : ""));
+                    problems.add(where + " is sent as '" + value.asText() + "', which is not a "
+                            + schema.path("format").asText() + (schema.has("enum") ? " of " + schema.get("enum") : ""));
                 }
             }
             case "number" -> {
@@ -227,8 +233,7 @@ public final class OpenApiContract {
             switch (schema.path("format").asText("")) {
                 case "date" -> LocalDate.parse(text);
                 case "date-time" -> OffsetDateTime.parse(text);
-                default -> {
-                }
+                default -> {}
             }
             return true;
         } catch (RuntimeException notIt) {

@@ -22,32 +22,39 @@ public record SaveFlightRequest(
          *  a Direct-To in the air starts where the airplane is (the
          *  planner's app.router_basics.position_of, whose pattern this is). */
         @NotBlank(message = "departureIdent is required")
-        @Pattern(regexp = "[A-Za-z0-9]{3,4}|@-?\\d{1,2}(\\.\\d{1,6})?,-?\\d{1,3}(\\.\\d{1,6})?",
+        @Pattern(
+                regexp = "[A-Za-z0-9]{3,4}|@-?\\d{1,2}(\\.\\d{1,6})?,-?\\d{1,3}(\\.\\d{1,6})?",
                 message = "departureIdent must be a 3-4 character airport ident, or a position as @lat,lon")
         String departureIdent,
+
         @NotBlank(message = "destinationIdent is required")
         @Pattern(regexp = "[A-Za-z0-9]{3,4}", message = "destinationIdent must be a 3-4 character airport ident")
         String destinationIdent,
+
         @Nullable Integer cruiseAltitudeFt,
         @Nullable Double totalDistanceNm,
         @Nullable Double totalEteMin,
         @Nullable Double totalFuelGal,
         @Nullable Instant plannedFor,
-        @Valid
-        List<SaveFlightCheckpointRequest> checkpoints,
+        @Valid List<SaveFlightCheckpointRequest> checkpoints,
         /** The airports landed at on the way, in order; null or empty
          *  for a flight flown straight. */
-        @Nullable
-        @Size(max = 8, message = "a flight makes at most 8 stops")
-        List<@Pattern(regexp = POINT,
-            message = "a stop must be a 2-5 character airport or waypoint ident, or a point off one as VPBNG/090/30") String> stops,
+        @Nullable @Size(max = 8, message = "a flight makes at most 8 stops")
+        List<
+                        @Pattern(
+                                regexp = POINT,
+                                message =
+                                        "a stop must be a 2-5 character airport or waypoint ident, or a point off one as VPBNG/090/30")
+                        String>
+                stops,
         /** The pilot's risk assessment for it, where the planner made one. */
         @Nullable @Valid RiskAssessmentDto risk,
         /** The altitudes the pilot set at points of the route, as the
          *  planner's `altitudes` parameter writes them: "VPBNG:4500,KDLH:2400",
          *  ten at most. Null or blank for none. */
         @Nullable
-        @Pattern(regexp = "^$|" + POINT + ":\\d{1,5}(," + POINT + ":\\d{1,5}){0,9}",
+        @Pattern(
+                regexp = "^$|" + POINT + ":\\d{1,5}(," + POINT + ":\\d{1,5}){0,9}",
                 message = "altitudes must be IDENT:feet pairs joined by commas, ten at most")
         String altitudes,
         /** The planner's address's other picks for the flight, as it writes
@@ -57,14 +64,16 @@ public record SaveFlightRequest(
          *  Null or blank for none. */
         @Nullable
         @Size(max = 1000, message = "picks are at most 1,000 characters")
-        @Pattern(regexp = "^$|" + PICK + "(&" + PICK + ")*",
+        @Pattern(
+                regexp = "^$|" + PICK + "(&" + PICK + ")*",
                 message = "picks must be the planner's own keys, as key=value joined by &")
         String picks) {
 
     /** One pick: a key the planner's address has for a flight (web
      *  lib/flightLink PICK_KEYS), and its value URL-encoded. */
-    static final String PICK = "(?:altitude_ft|altitude_nearest|altitude_choice|pattern|takeoff|auto|procs|cross|ground|holds|class_b|class_b_via"
-            + "|alternate|local_min)=[A-Za-z0-9%._~+-]{0,400}";
+    static final String PICK =
+            "(?:altitude_ft|altitude_nearest|altitude_choice|pattern|takeoff|auto|procs|cross|ground|holds|class_b|class_b_via"
+                    + "|alternate|local_min)=[A-Za-z0-9%._~+-]{0,400}";
 
     /** A point of the route: an airport's or a waypoint's ident, or the
      *  pilot's own point off one, "VPBNG/090/30" (the planner's

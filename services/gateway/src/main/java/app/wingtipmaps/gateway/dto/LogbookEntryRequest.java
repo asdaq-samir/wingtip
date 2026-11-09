@@ -16,27 +16,64 @@ import org.springframework.lang.Nullable;
  *  else none kept). */
 public record LogbookEntryRequest(
         @NotNull(message = "flownOn is required") LocalDate flownOn,
-        @Size(max = 16, message = "aircraft must be at most 16 characters") @Nullable String aircraft,
-        @Size(max = 16, message = "aircraftType must be at most 16 characters") @Nullable String aircraftType,
-        @Size(max = 120, message = "route must be at most 120 characters") @Nullable String route,
-        @PositiveOrZero(message = "totalHours must be zero or more") @Max(value = 24, message = "totalHours must be a day at most")
+
+        @Size(max = 16, message = "aircraft must be at most 16 characters") @Nullable
+        String aircraft,
+
+        @Size(max = 16, message = "aircraftType must be at most 16 characters") @Nullable
+        String aircraftType,
+
+        @Size(max = 120, message = "route must be at most 120 characters") @Nullable
+        String route,
+
+        @PositiveOrZero(message = "totalHours must be zero or more")
+        @Max(value = 24, message = "totalHours must be a day at most")
         double totalHours,
-        @PositiveOrZero(message = "nightHours must be zero or more") double nightHours,
-        @PositiveOrZero(message = "crossCountryHours must be zero or more") double crossCountryHours,
-        @PositiveOrZero(message = "dayLandings must be zero or more") int dayLandings,
-        @PositiveOrZero(message = "nightLandings must be zero or more") int nightLandings,
-        @Size(max = 500, message = "remarks must be at most 500 characters") @Nullable String remarks,
-        @PositiveOrZero(message = "dualHours must be zero or more") double dualHours,
-        @PositiveOrZero(message = "soloHours must be zero or more") double soloHours,
-        @PositiveOrZero(message = "instrumentHours must be zero or more") double instrumentHours,
-        @PositiveOrZero(message = "toweredLandings must be zero or more") int toweredLandings,
-        @PositiveOrZero(message = "distanceNm must be zero or more") double distanceNm,
-        @PositiveOrZero(message = "longestLegNm must be zero or more") double longestLegNm,
-        @PositiveOrZero(message = "approaches must be zero or more") int approaches,
+
+        @PositiveOrZero(message = "nightHours must be zero or more")
+        double nightHours,
+
+        @PositiveOrZero(message = "crossCountryHours must be zero or more")
+        double crossCountryHours,
+
+        @PositiveOrZero(message = "dayLandings must be zero or more")
+        int dayLandings,
+
+        @PositiveOrZero(message = "nightLandings must be zero or more")
+        int nightLandings,
+
+        @Size(max = 500, message = "remarks must be at most 500 characters") @Nullable
+        String remarks,
+
+        @PositiveOrZero(message = "dualHours must be zero or more")
+        double dualHours,
+
+        @PositiveOrZero(message = "soloHours must be zero or more")
+        double soloHours,
+
+        @PositiveOrZero(message = "instrumentHours must be zero or more")
+        double instrumentHours,
+
+        @PositiveOrZero(message = "toweredLandings must be zero or more")
+        int toweredLandings,
+
+        @PositiveOrZero(message = "distanceNm must be zero or more")
+        double distanceNm,
+
+        @PositiveOrZero(message = "longestLegNm must be zero or more")
+        double longestLegNm,
+
+        @PositiveOrZero(message = "approaches must be zero or more")
+        int approaches,
+
         boolean holding,
         boolean tracking,
-        @PositiveOrZero(message = "airHours must be zero or more") double airHours,
-        @PositiveOrZero(message = "touchAndGoes must be zero or more") int touchAndGoes,
+
+        @PositiveOrZero(message = "airHours must be zero or more")
+        double airHours,
+
+        @PositiveOrZero(message = "touchAndGoes must be zero or more")
+        int touchAndGoes,
+
         boolean fromTrack,
-        @Nullable Long flightId) {
-}
+        @Nullable Long flightId) {}

@@ -10,5 +10,4 @@ public record MagicLinkRequest(
         @NotBlank(message = "email is required")
         @Email(message = "email must be a valid address")
         @Size(max = 320, message = "email must be at most 320 characters")
-        String email) {
-}
+        String email) {}

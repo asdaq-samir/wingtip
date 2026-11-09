@@ -25,8 +25,8 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
  *  one. */
 class StreamingProxyTest {
 
-    private static final StreamingProxy.Upstream PLANNER = new StreamingProxy.Upstream(
-            "planner service", "planner service unreachable", "planner service timed out");
+    private static final StreamingProxy.Upstream PLANNER =
+            new StreamingProxy.Upstream("planner service", "planner service unreachable", "planner service timed out");
 
     private HttpServer slow;
 
@@ -50,12 +50,13 @@ class StreamingProxyTest {
             exchange.close();
         });
         slow.start();
-        HttpRequest request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + slow.getAddress().getPort() + "/api/course"))
+        HttpRequest request = HttpRequest.newBuilder(
+                        URI.create("http://127.0.0.1:" + slow.getAddress().getPort() + "/api/course"))
                 .timeout(Duration.ofMillis(200))
                 .build();
 
-        ResponseEntity<StreamingResponseBody> answer = new StreamingProxy().exchange(
-                PLANNER, request, response -> ResponseEntity.ok().build());
+        ResponseEntity<StreamingResponseBody> answer = new StreamingProxy()
+                .exchange(PLANNER, request, response -> ResponseEntity.ok().build());
 
         assertThat(answer.getStatusCode().value()).isEqualTo(504);
         ByteArrayOutputStream body = new ByteArrayOutputStream();
@@ -75,7 +76,8 @@ class StreamingProxyTest {
                 throw new NullPointerException("this.headers[i] is null");
             }
         };
-        StreamingResponseBody body = StreamingProxy.pipe(new ByteArrayInputStream("{\"type\":\"leg\"}\n".getBytes(StandardCharsets.UTF_8)));
+        StreamingResponseBody body =
+                StreamingProxy.pipe(new ByteArrayInputStream("{\"type\":\"leg\"}\n".getBytes(StandardCharsets.UTF_8)));
         assertThatThrownBy(() -> body.writeTo(recycled)).isInstanceOf(AsyncRequestNotUsableException.class);
     }
 
@@ -112,6 +114,7 @@ class StreamingProxyTest {
         };
         assertThatThrownBy(() -> StreamingProxy.pipe(broken).writeTo(new ByteArrayOutputStream()))
                 .isInstanceOf(IOException.class)
-                .isNot(new org.assertj.core.api.Condition<>(t -> t instanceof AsyncRequestNotUsableException, "a client that left"));
+                .isNot(new org.assertj.core.api.Condition<>(
+                        t -> t instanceof AsyncRequestNotUsableException, "a client that left"));
     }
 }

@@ -49,7 +49,10 @@ class SpeedPersistenceTest {
         var days = speed.trend(7);
 
         assertThat(days).hasSize(2);
-        var phone = days.stream().filter(d -> d.getDevice().equals("phone")).findFirst().orElseThrow();
+        var phone = days.stream()
+                .filter(d -> d.getDevice().equals("phone"))
+                .findFirst()
+                .orElseThrow();
         assertThat(phone.getSource()).isEqualTo("field");
         assertThat(phone.getMetric()).isEqualTo("LCP");
         assertThat(phone.getCount()).isEqualTo(5);
@@ -60,10 +63,13 @@ class SpeedPersistenceTest {
 
     @Test
     void aSamplePastItsKeepingIsLetGo() {
-        samples.save(new SpeedSample(Instant.now().minus(Duration.ofDays(401)), "lab", "open_app", 1100, "plan", "phone", "old"));
-        samples.save(new SpeedSample(Instant.now().minus(Duration.ofDays(30)), "lab", "open_app", 1000, "plan", "phone", "new"));
+        samples.save(new SpeedSample(
+                Instant.now().minus(Duration.ofDays(401)), "lab", "open_app", 1100, "plan", "phone", "old"));
+        samples.save(new SpeedSample(
+                Instant.now().minus(Duration.ofDays(30)), "lab", "open_app", 1000, "plan", "phone", "new"));
 
-        assertThat(samples.deleteOlderThan(Instant.now().minus(Duration.ofDays(400)))).isEqualTo(1);
+        assertThat(samples.deleteOlderThan(Instant.now().minus(Duration.ofDays(400))))
+                .isEqualTo(1);
         assertThat(samples.findAll()).extracting(SpeedSample::getVersion).containsExactly("new");
     }
 }

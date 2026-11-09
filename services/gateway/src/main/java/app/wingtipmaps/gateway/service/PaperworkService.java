@@ -39,17 +39,27 @@ public class PaperworkService {
      * runs out every 30 days for an IFR airplane and is checked before a
      * flight, not planned for.
      */
-    public record Due(String what, String key, String title, String rule, Long aircraftId, String tailNumber, Long itemId,
-                      LocalDate dueOn, Double dueAtHours, Double hoursNow, String lead, boolean emailed) {
-    }
+    public record Due(
+            String what,
+            String key,
+            String title,
+            String rule,
+            Long aircraftId,
+            String tailNumber,
+            Long itemId,
+            LocalDate dueOn,
+            Double dueAtHours,
+            Double hoursNow,
+            String lead,
+            boolean emailed) {}
 
     private final LogbookRepository logbook;
     private final AircraftRepository aircraft;
     private final DueItemService items;
     private final PlannerClient planner;
 
-    public PaperworkService(LogbookRepository logbook, AircraftRepository aircraft, DueItemService items,
-                            PlannerClient planner) {
+    public PaperworkService(
+            LogbookRepository logbook, AircraftRepository aircraft, DueItemService items, PlannerClient planner) {
         this.logbook = logbook;
         this.aircraft = aircraft;
         this.items = items;
@@ -58,13 +68,27 @@ public class PaperworkService {
 
     /** Everything that falls due for the pilot, as of `today`. */
     public List<Due> of(Pilot pilot, LocalDate today) {
-        CurrencyDto c = planner.currency(logbook.findByPilotIdOrderByFlownOnDescIdDesc(pilot.getId()),
-                pilot.getFlightReviewOn(), pilot.getMedicalExpiresOn(), pilot.getIpcOn(), today);
+        CurrencyDto c = planner.currency(
+                logbook.findByPilotIdOrderByFlownOnDescIdDesc(pilot.getId()),
+                pilot.getFlightReviewOn(),
+                pilot.getMedicalExpiresOn(),
+                pilot.getIpcOn(),
+                today);
         List<Due> out = new ArrayList<>(ofPilot(c));
         for (Aircraft a : aircraft.findByPilotIdOrderByTailNumberAsc(pilot.getId())) {
-            out.addAll(ofAircraft(a, planner.inspections(a.getAnnualOn(), a.getEltInspectedOn(), a.getStaticCheckOn(),
-                    a.getTransponderCheckOn(), a.getHundredHourAtHours(), a.getVorCheckOn(),
-                    a.getVorCheckKind() == null ? null : a.getVorCheckKind().name(), a.getVorCheckErrorDeg()),
+            out.addAll(ofAircraft(
+                    a,
+                    planner.inspections(
+                            a.getAnnualOn(),
+                            a.getEltInspectedOn(),
+                            a.getStaticCheckOn(),
+                            a.getTransponderCheckOn(),
+                            a.getHundredHourAtHours(),
+                            a.getVorCheckOn(),
+                            a.getVorCheckKind() == null
+                                    ? null
+                                    : a.getVorCheckKind().name(),
+                            a.getVorCheckErrorDeg()),
                     items.of(a.getId())));
         }
         return out;
@@ -75,13 +99,40 @@ public class PaperworkService {
      *  instrument currency (61.57(c)), each where it can be had. */
     public static List<Due> ofPilot(CurrencyDto c) {
         List<Due> out = new ArrayList<>();
-        pilot(out, "flight-review", "Flight review", "14 CFR 61.56(c)", c.flightReviewUntil(), "Your flight review runs out");
-        pilot(out, "medical", "Medical certificate", "14 CFR 61.23", c.medicalExpiresOn(), "Your medical certificate runs out");
-        pilot(out, "day-passengers", "Passengers by day", "14 CFR 61.57(a)", c.dayPassengersUntil(),
+        pilot(
+                out,
+                "flight-review",
+                "Flight review",
+                "14 CFR 61.56(c)",
+                c.flightReviewUntil(),
+                "Your flight review runs out");
+        pilot(
+                out,
+                "medical",
+                "Medical certificate",
+                "14 CFR 61.23",
+                c.medicalExpiresOn(),
+                "Your medical certificate runs out");
+        pilot(
+                out,
+                "day-passengers",
+                "Passengers by day",
+                "14 CFR 61.57(a)",
+                c.dayPassengersUntil(),
                 "You may carry passengers by day until");
-        pilot(out, "night-passengers", "Passengers at night", "14 CFR 61.57(b)", c.nightPassengersUntil(),
+        pilot(
+                out,
+                "night-passengers",
+                "Passengers at night",
+                "14 CFR 61.57(b)",
+                c.nightPassengersUntil(),
                 "You may carry passengers at night until");
-        pilot(out, "instrument", "Instrument currency", "14 CFR 61.57(c)", c.instrumentCurrentUntil(),
+        pilot(
+                out,
+                "instrument",
+                "Instrument currency",
+                "14 CFR 61.57(c)",
+                c.instrumentCurrentUntil(),
                 "Your instrument currency runs out");
         return out;
     }
@@ -104,25 +155,78 @@ public class PaperworkService {
         List<Due> out = new ArrayList<>();
         String tail = a.getTailNumber();
         if (due != null) {
-            plane(out, a, "annual", "Annual inspection", "14 CFR 91.409(a)", due.getAnnualUntil(), tail + "'s annual inspection runs out");
+            plane(
+                    out,
+                    a,
+                    "annual",
+                    "Annual inspection",
+                    "14 CFR 91.409(a)",
+                    due.getAnnualUntil(),
+                    tail + "'s annual inspection runs out");
             if (a.isForHire() && due.getHundredHourDueAtHours() != null) {
-                out.add(new Due("hundred-hour", "aircraft-" + a.getId() + "-hundred-hour", "100-hour inspection",
-                        "14 CFR 91.409(b)", a.getId(), tail, null, null, PlannerClient.number(due.getHundredHourDueAtHours()), a.getHoursNow(),
-                        tail + "'s 100-hour inspection is due", false));
+                out.add(new Due(
+                        "hundred-hour",
+                        "aircraft-" + a.getId() + "-hundred-hour",
+                        "100-hour inspection",
+                        "14 CFR 91.409(b)",
+                        a.getId(),
+                        tail,
+                        null,
+                        null,
+                        PlannerClient.number(due.getHundredHourDueAtHours()),
+                        a.getHoursNow(),
+                        tail + "'s 100-hour inspection is due",
+                        false));
             }
-            plane(out, a, "elt", "ELT inspection", "14 CFR 91.207(d)", due.getEltUntil(), tail + "'s ELT inspection runs out");
+            plane(
+                    out,
+                    a,
+                    "elt",
+                    "ELT inspection",
+                    "14 CFR 91.207(d)",
+                    due.getEltUntil(),
+                    tail + "'s ELT inspection runs out");
         }
-        plane(out, a, "elt-battery", "ELT battery", "14 CFR 91.207(c)", a.getEltBatteryDueOn(),
+        plane(
+                out,
+                a,
+                "elt-battery",
+                "ELT battery",
+                "14 CFR 91.207(c)",
+                a.getEltBatteryDueOn(),
                 tail + "'s ELT battery is to be replaced by");
         if (due != null) {
-            plane(out, a, "static", "Altimeter and static system", "14 CFR 91.411(a)", due.getStaticCheckUntil(),
+            plane(
+                    out,
+                    a,
+                    "static",
+                    "Altimeter and static system",
+                    "14 CFR 91.411(a)",
+                    due.getStaticCheckUntil(),
                     tail + "'s altimeter and static system test runs out");
-            plane(out, a, "transponder", "Transponder", "14 CFR 91.413(a)", due.getTransponderCheckUntil(),
+            plane(
+                    out,
+                    a,
+                    "transponder",
+                    "Transponder",
+                    "14 CFR 91.413(a)",
+                    due.getTransponderCheckUntil(),
                     tail + "'s transponder test runs out");
-            if (due.getVorCheck() != null && Boolean.TRUE.equals(due.getVorCheck().getWithin())) {
-                out.add(new Due("vor-check", "aircraft-" + a.getId() + "-vor-check", "VOR check for IFR",
-                        "14 CFR 91.171(a)(2)", a.getId(), tail, null, due.getVorCheck().getUntil(), null, null,
-                        tail + "'s VOR check runs out", false));
+            if (due.getVorCheck() != null
+                    && Boolean.TRUE.equals(due.getVorCheck().getWithin())) {
+                out.add(new Due(
+                        "vor-check",
+                        "aircraft-" + a.getId() + "-vor-check",
+                        "VOR check for IFR",
+                        "14 CFR 91.171(a)(2)",
+                        a.getId(),
+                        tail,
+                        null,
+                        due.getVorCheck().getUntil(),
+                        null,
+                        null,
+                        tail + "'s VOR check runs out",
+                        false));
             }
         }
         for (AircraftDueItem i : kept) {
@@ -135,31 +239,63 @@ public class PaperworkService {
                     ? (i.getReference() == null ? "14 CFR 39.7" : i.getReference() + ", 14 CFR 39.7")
                     : i.getReference();
             String named = i.getKind() == DueItemKind.AD && i.getReference() != null
-                    ? i.getReference() + " (" + i.getTitle() + ")" : i.getTitle();
-            out.add(new Due("item", "item-" + i.getId(), i.getTitle(), rule, a.getId(), tail, i.getId(), i.getDueOn(),
-                    i.getDueAtHours(), a.getHoursNow(), tail + ": " + named + " is due", i.getDueOn() != null));
+                    ? i.getReference() + " (" + i.getTitle() + ")"
+                    : i.getTitle();
+            out.add(new Due(
+                    "item",
+                    "item-" + i.getId(),
+                    i.getTitle(),
+                    rule,
+                    a.getId(),
+                    tail,
+                    i.getId(),
+                    i.getDueOn(),
+                    i.getDueAtHours(),
+                    a.getHoursNow(),
+                    tail + ": " + named + " is due",
+                    i.getDueOn() != null));
         }
         return out;
     }
 
-    private static void plane(List<Due> out, Aircraft a, String what, String title, String rule, LocalDate until,
-                              String lead) {
+    private static void plane(
+            List<Due> out, Aircraft a, String what, String title, String rule, LocalDate until, String lead) {
         if (until != null) {
-            out.add(new Due(what, "aircraft-" + a.getId() + "-" + what, title, rule, a.getId(), a.getTailNumber(), null,
-                    until, null, null, lead, true));
+            out.add(new Due(
+                    what,
+                    "aircraft-" + a.getId() + "-" + what,
+                    title,
+                    rule,
+                    a.getId(),
+                    a.getTailNumber(),
+                    null,
+                    until,
+                    null,
+                    null,
+                    lead,
+                    true));
         }
     }
 
     /** The list as the app reads it: by day, soonest first, then by hours
      *  left, then those whose hours now are not known. */
     public static PaperworkDto toDto(List<Due> due, LocalDate today) {
-        List<PaperworkDto.DueDto> out = due.stream().map(d -> new PaperworkDto.DueDto(d.what(), d.title(), d.rule(),
-                d.aircraftId(), d.tailNumber(), d.itemId(), d.dueOn(),
-                d.dueOn() == null ? null : ChronoUnit.DAYS.between(today, d.dueOn()),
-                d.dueAtHours(),
-                d.dueAtHours() == null || d.hoursNow() == null ? null
-                        : Math.round((d.dueAtHours() - d.hoursNow()) * 10) / 10.0))
-                .sorted(Comparator.comparing(PaperworkDto.DueDto::daysLeft, Comparator.nullsLast(Comparator.naturalOrder()))
+        List<PaperworkDto.DueDto> out = due.stream()
+                .map(d -> new PaperworkDto.DueDto(
+                        d.what(),
+                        d.title(),
+                        d.rule(),
+                        d.aircraftId(),
+                        d.tailNumber(),
+                        d.itemId(),
+                        d.dueOn(),
+                        d.dueOn() == null ? null : ChronoUnit.DAYS.between(today, d.dueOn()),
+                        d.dueAtHours(),
+                        d.dueAtHours() == null || d.hoursNow() == null
+                                ? null
+                                : Math.round((d.dueAtHours() - d.hoursNow()) * 10) / 10.0))
+                .sorted(Comparator.comparing(
+                                PaperworkDto.DueDto::daysLeft, Comparator.nullsLast(Comparator.naturalOrder()))
                         .thenComparing(PaperworkDto.DueDto::hoursLeft, Comparator.nullsLast(Comparator.naturalOrder())))
                 .toList();
         return new PaperworkDto(today, out);

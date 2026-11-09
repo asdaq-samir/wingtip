@@ -23,7 +23,8 @@ class CompressionSettingsTest {
         Properties properties = yaml.getObject();
         assertThat(properties).isNotNull();
         assertThat(properties.getProperty("server.compression.enabled")).isEqualTo("true");
-        return Arrays.asList(properties.getProperty("server.compression.mime-types").split(","));
+        return Arrays.asList(
+                properties.getProperty("server.compression.mime-types").split(","));
     }
 
     @Test

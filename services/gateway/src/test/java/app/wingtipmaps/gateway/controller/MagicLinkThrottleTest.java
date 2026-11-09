@@ -43,7 +43,10 @@ class MagicLinkThrottleTest {
 
     private void ask(String email, String client, int expected) throws Exception {
         mockMvc.perform(post("/api/auth/magic-link")
-                        .with(request -> { request.setRemoteAddr(client); return request; })
+                        .with(request -> {
+                            request.setRemoteAddr(client);
+                            return request;
+                        })
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"" + email + "\"}"))
                 .andExpect(status().is(expected));
@@ -78,8 +81,12 @@ class MagicLinkThrottleTest {
         MockMvc behindTheBalancer = MockMvcBuilders.webAppContextSetup(context)
                 .addFilters(new ForwardedHeaderFilter())
                 .build();
-        behindTheBalancer.perform(post("/api/auth/magic-link")
-                        .with(request -> { request.setRemoteAddr("10.0.1.5"); return request; })   // the load balancer
+        behindTheBalancer
+                .perform(post("/api/auth/magic-link")
+                        .with(request -> {
+                            request.setRemoteAddr("10.0.1.5");
+                            return request;
+                        }) // the load balancer
                         .header("X-Forwarded-For", forwardedFor)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"" + email + "\"}"))

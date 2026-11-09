@@ -34,15 +34,16 @@ import org.springframework.test.web.servlet.ResultActions;
 @WebMvcTest(PlannerProxyController.class)
 @Import(StreamingProxy.class)
 @AutoConfigureMockMvc(addFilters = false)
-@TestPropertySource(properties = {
-        // A deployment that sells the subscription, whose gate these are.
-        "app.subscription.enabled=true",
-        "app.paid-calls.per-day=0",
-        "app.paid-calls.assistant-per-day=0",
-        "app.paid-calls.words-per-day=0",
-        "planner-service.base-url=http://127.0.0.1:9",
-        "assistant-service.base-url=http://127.0.0.1:9",
-})
+@TestPropertySource(
+        properties = {
+            // A deployment that sells the subscription, whose gate these are.
+            "app.subscription.enabled=true",
+            "app.paid-calls.per-day=0",
+            "app.paid-calls.assistant-per-day=0",
+            "app.paid-calls.words-per-day=0",
+            "planner-service.base-url=http://127.0.0.1:9",
+            "assistant-service.base-url=http://127.0.0.1:9",
+        })
 class PaidCallAllowanceTest {
 
     @Autowired
@@ -90,14 +91,19 @@ class PaidCallAllowanceTest {
 
     @Test
     void anAssistantQuestionPastTheDaysAllowanceIsA429ThatSaysSo() throws Exception {
-        finish(post("/api/planner/assistant").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        finish(post("/api/planner/assistant")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
                 .andExpect(status().isTooManyRequests())
-                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("questions to the assistant")));
+                .andExpect(
+                        jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("questions to the assistant")));
     }
 
     @Test
     void aReadingInWordsPastTheDaysAllowanceIsA429ThatSaysSo() throws Exception {
-        finish(post("/api/planner/words/notams").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        finish(post("/api/planner/words/notams")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("readings in words")));
     }
@@ -108,7 +114,9 @@ class PaidCallAllowanceTest {
     void aBodyPastTheLimitIsA413OnAnyPost() throws Exception {
         byte[] huge = new byte[PlannerProxyController.BODY_LIMIT + 1];
         java.util.Arrays.fill(huge, (byte) ' ');
-        finish(post("/api/planner/go-no-go").contentType(MediaType.APPLICATION_JSON).content(huge))
+        finish(post("/api/planner/go-no-go")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(huge))
                 .andExpect(status().isPayloadTooLarge())
                 .andExpect(jsonPath("$.detail").value("a request to the planner is at most 4 MB"));
     }
@@ -119,7 +127,8 @@ class PaidCallAllowanceTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"departure_ident\":\"C81\",\"destination_ident\":\"KDLH\"}"))
                 .andExpect(status().isTooManyRequests())
-                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("checkpoint-note generations")));
+                .andExpect(jsonPath("$.detail")
+                        .value(org.hamcrest.Matchers.containsString("checkpoint-note generations")));
     }
 
     /** Saving a pilot's own note costs nothing, so it is not counted: it
@@ -141,7 +150,8 @@ class PaidCallAllowanceTest {
         assertThat(limiter.allow("user:a", 2, morning.plusSeconds(60))).isTrue();
         assertThat(limiter.allow("user:a", 2, morning.plusSeconds(120))).isFalse();
         assertThat(limiter.allow("user:b", 2, morning.plusSeconds(120))).isTrue();
-        assertThat(limiter.allow("user:a", 2, morning.plus(Duration.ofDays(1)).plusSeconds(1))).isTrue();
+        assertThat(limiter.allow("user:a", 2, morning.plus(Duration.ofDays(1)).plusSeconds(1)))
+                .isTrue();
     }
 
     /** Every answer here, a 429 included, is a StreamingResponseBody,
@@ -149,7 +159,8 @@ class PaidCallAllowanceTest {
      *  once the async dispatch has run. Read before it, the body can be
      *  empty -- as it was on CI's runner, never locally. */
     private ResultActions finish(RequestBuilder call) throws Exception {
-        MvcResult started = mockMvc.perform(call).andExpect(request().asyncStarted()).andReturn();
+        MvcResult started =
+                mockMvc.perform(call).andExpect(request().asyncStarted()).andReturn();
         return mockMvc.perform(asyncDispatch(started));
     }
 }

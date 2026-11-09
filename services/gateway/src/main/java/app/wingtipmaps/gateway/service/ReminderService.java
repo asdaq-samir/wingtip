@@ -44,8 +44,7 @@ public class ReminderService {
 
     /** A reminder due: what it is of, its words, its day, and which of
      *  the two it is (30 days before, or 7). */
-    public record Reminder(String what, String words, LocalDate dueOn, int daysBefore) {
-    }
+    public record Reminder(String what, String words, LocalDate dueOn, int daysBefore) {}
 
     private final PilotRepository pilots;
     private final PaperworkService paperwork;
@@ -53,8 +52,12 @@ public class ReminderService {
     private final TransactionTemplate transaction;
     private final Mailer mail;
 
-    public ReminderService(PilotRepository pilots, PaperworkService paperwork, JdbcTemplate jdbc,
-                           TransactionTemplate transaction, Mailer mail) {
+    public ReminderService(
+            PilotRepository pilots,
+            PaperworkService paperwork,
+            JdbcTemplate jdbc,
+            TransactionTemplate transaction,
+            Mailer mail) {
         this.pilots = pilots;
         this.paperwork = paperwork;
         this.jdbc = jdbc;
@@ -83,7 +86,10 @@ public class ReminderService {
             }
             String when = days == 0 ? "today" : days == 1 ? "tomorrow" : "in " + days + " days";
             String rule = d.rule() == null ? "" : " (" + d.rule() + ")";
-            out.add(new Reminder(d.key(), d.lead() + " " + DAY.format(d.dueOn()) + ", " + when + rule + ".", d.dueOn(),
+            out.add(new Reminder(
+                    d.key(),
+                    d.lead() + " " + DAY.format(d.dueOn()) + ", " + when + rule + ".",
+                    d.dueOn(),
                     days <= 7 ? 7 : 30));
         }
         return out;
@@ -109,9 +115,15 @@ public class ReminderService {
             return 0;
         }
         Integer sent = transaction.execute(status -> {
-            List<Reminder> claimed = due.stream().filter(r -> jdbc.update(
-                    "INSERT INTO reminders_sent (pilot_id, what, due_on, days_before) VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING",
-                    pilot.getId(), r.what(), r.dueOn(), r.daysBefore()) == 1).toList();
+            List<Reminder> claimed = due.stream()
+                    .filter(r -> jdbc.update(
+                                    "INSERT INTO reminders_sent (pilot_id, what, due_on, days_before) VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING",
+                                    pilot.getId(),
+                                    r.what(),
+                                    r.dueOn(),
+                                    r.daysBefore())
+                            == 1)
+                    .toList();
             if (claimed.isEmpty()) {
                 return 0;
             }
@@ -125,9 +137,14 @@ public class ReminderService {
     static SimpleMailMessage message(Pilot pilot, List<Reminder> reminders) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(pilot.getEmail());
-        message.setSubject(reminders.size() == 1
-                ? "Wingtip Maps: " + reminders.get(0).words().replaceAll(", (today|tomorrow|in \\d+ days)( \\(.*\\))?\\.$", "")
-                : "Wingtip Maps: " + reminders.size() + " dates coming up");
+        message.setSubject(
+                reminders.size() == 1
+                        ? "Wingtip Maps: "
+                                + reminders
+                                        .get(0)
+                                        .words()
+                                        .replaceAll(", (today|tomorrow|in \\d+ days)( \\(.*\\))?\\.$", "")
+                        : "Wingtip Maps: " + reminders.size() + " dates coming up");
         StringBuilder body = new StringBuilder("Coming up, from your logbook and airplanes in Wingtip Maps:\n\n");
         reminders.forEach(r -> body.append("- ").append(r.words()).append('\n'));
         body.append("\nYou asked for these reminders. Turn them off in the Logbook, under Currency.");

@@ -47,8 +47,12 @@ import org.hibernate.type.SqlTypes;
  * than a wrong one.
  */
 @Entity
-@Table(name = "aircraft", uniqueConstraints =
-        @UniqueConstraint(name = "uq_aircraft_pilot_tail", columnNames = {"pilot_id", "tail_number"}))
+@Table(
+        name = "aircraft",
+        uniqueConstraints =
+                @UniqueConstraint(
+                        name = "uq_aircraft_pilot_tail",
+                        columnNames = {"pilot_id", "tail_number"}))
 @Getter
 public class Aircraft {
 
@@ -87,11 +91,14 @@ public class Aircraft {
     /** Its last VOR check for IFR (14 CFR 91.171, V20): when, how, where
      *  and the bearing error found; null until one is recorded. */
     private LocalDate vorCheckOn;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 16)
     private VorCheck vorCheckKind;
+
     @Column(length = 80)
     private String vorCheckPlace;
+
     private Double vorCheckErrorDeg;
 
     /** Its inspections and tests, as its owner records them from its
@@ -101,6 +108,7 @@ public class Aircraft {
      *  the ELT's inspection (91.207(d)) and the date its battery is to be
      *  replaced by (91.207(c)). Each null until recorded. */
     private LocalDate annualOn;
+
     private Double hundredHourAtHours;
     private Double hoursNow;
     private LocalDate staticCheckOn;
@@ -122,8 +130,10 @@ public class Aircraft {
      *  Each null until its owner says. */
     @Column(length = 40)
     private String equipment;
+
     @Column(length = 20)
     private String surveillance;
+
     @Column(length = 40)
     private String colour;
 
@@ -138,8 +148,16 @@ public class Aircraft {
         // JPA
     }
 
-    public Aircraft(Pilot pilot, String tailNumber, String typeDesignator, double cruiseTasKt, double fuelBurnGph,
-                    Double cruisePowerPct, Double climbTasKt, Double climbFuelBurnGph, Double usableFuelGal) {
+    public Aircraft(
+            Pilot pilot,
+            String tailNumber,
+            String typeDesignator,
+            double cruiseTasKt,
+            double fuelBurnGph,
+            Double cruisePowerPct,
+            Double climbTasKt,
+            Double climbFuelBurnGph,
+            Double usableFuelGal) {
         this.pilot = pilot;
         this.tailNumber = tailNumber;
         this.typeDesignator = typeDesignator;
@@ -155,8 +173,15 @@ public class Aircraft {
     /** Replaces every editable field at once -- an aeroplane's own
      *  numbers change together (a new owner, a re-rigged engine) often
      *  enough that a partial update isn't worth the extra API shape. */
-    public Aircraft update(String tailNumber, String typeDesignator, double cruiseTasKt, double fuelBurnGph,
-                           Double cruisePowerPct, Double climbTasKt, Double climbFuelBurnGph, Double usableFuelGal) {
+    public Aircraft update(
+            String tailNumber,
+            String typeDesignator,
+            double cruiseTasKt,
+            double fuelBurnGph,
+            Double cruisePowerPct,
+            Double climbTasKt,
+            Double climbFuelBurnGph,
+            Double usableFuelGal) {
         this.tailNumber = tailNumber;
         this.typeDesignator = typeDesignator;
         this.cruiseTasKt = cruiseTasKt;
@@ -184,8 +209,14 @@ public class Aircraft {
     }
 
     /** Its inspections and tests, all at once, as the form has them. */
-    public Aircraft recordInspections(LocalDate annualOn, Double hundredHourAtHours, Double hoursNow, LocalDate staticCheckOn,
-                                      LocalDate transponderCheckOn, LocalDate eltInspectedOn, LocalDate eltBatteryDueOn) {
+    public Aircraft recordInspections(
+            LocalDate annualOn,
+            Double hundredHourAtHours,
+            Double hoursNow,
+            LocalDate staticCheckOn,
+            LocalDate transponderCheckOn,
+            LocalDate eltInspectedOn,
+            LocalDate eltBatteryDueOn) {
         this.annualOn = annualOn;
         this.hundredHourAtHours = hundredHourAtHours;
         this.hoursNow = hoursNow;

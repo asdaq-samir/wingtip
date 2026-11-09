@@ -33,5 +33,4 @@ public record ApproachLessonDto(
         List<QuizAnswerDto> quizAnswers,
         @Nullable Integer quizOf,
         @Nullable Instant quizAt,
-        List<FlightSummaryDto> flights) {
-}
+        List<FlightSummaryDto> flights) {}

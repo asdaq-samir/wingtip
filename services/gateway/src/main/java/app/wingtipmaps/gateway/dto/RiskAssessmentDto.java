@@ -12,13 +12,15 @@ import java.util.List;
  *  raised them, each in a few words. In a {@link SaveFlightRequest} and
  *  back out in the flight's own DTOs alike. */
 public record RiskAssessmentDto(
-        @Min(value = 0, message = "score must not be negative")
-        @Max(value = 500, message = "score must be at most 500")
+        @Min(value = 0, message = "score must not be negative") @Max(value = 500, message = "score must be at most 500")
         int score,
+
         @NotNull(message = "level is required")
         @Pattern(regexp = "low|caution|high", message = "level must be low, caution or high")
         String level,
-        @NotNull(message = "factors is required")
-        @Size(max = 24, message = "at most 24 factors")
-        List<@Size(max = 80, message = "a factor must be at most 80 characters") @Pattern(regexp = "[^\\n]*", message = "a factor is one line") String> factors) {
-}
+
+        @NotNull(message = "factors is required") @Size(max = 24, message = "at most 24 factors")
+        List<
+                        @Size(max = 80, message = "a factor must be at most 80 characters")
+                        @Pattern(regexp = "[^\\n]*", message = "a factor is one line") String>
+                factors) {}

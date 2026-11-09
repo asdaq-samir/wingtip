@@ -6,5 +6,5 @@ package app.wingtipmaps.gateway.dto;
  * how much of it the logbook shows ({@code have} of {@code need}, in
  * {@code unit}: "h", "landings" or "flights"), and whether that is met.
  */
-public record ExperienceItemDto(String key, String rule, String label, double have, double need, String unit, boolean met) {
-}
+public record ExperienceItemDto(
+        String key, String rule, String label, double have, double need, String unit, boolean met) {}

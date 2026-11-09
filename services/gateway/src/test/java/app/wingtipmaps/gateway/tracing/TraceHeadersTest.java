@@ -2,10 +2,10 @@ package app.wingtipmaps.gateway.tracing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.micrometer.tracing.test.simple.SimpleTracer;
 import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
 import io.micrometer.tracing.propagation.Propagator;
+import io.micrometer.tracing.test.simple.SimpleTracer;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.util.List;
@@ -13,16 +13,18 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.beans.factory.ObjectProvider;
 
 /** The headers an upstream request carries, and the request id they
  *  carry, as the page sent it or as made here. */
 class TraceHeadersTest {
 
-    private static final HttpRequest ASKED = HttpRequest.newBuilder(URI.create("http://planner:8000/api/navlog")).GET().build();
+    private static final HttpRequest ASKED = HttpRequest.newBuilder(URI.create("http://planner:8000/api/navlog"))
+            .GET()
+            .build();
 
     @AfterEach
     void clearMdc() {
@@ -65,7 +67,8 @@ class TraceHeadersTest {
         try (Tracer.SpanInScope ignored = tracer.withSpan(span)) {
             HttpRequest sent = new TraceHeaders(tracer, w3c).traced(ASKED);
             assertThat(sent.headers().firstValue("traceparent"))
-                    .contains("00-" + span.context().traceId() + "-" + span.context().spanId() + "-01");
+                    .contains("00-" + span.context().traceId() + "-"
+                            + span.context().spanId() + "-01");
         } finally {
             span.end();
         }
@@ -85,7 +88,8 @@ class TraceHeadersTest {
                 new org.springframework.web.context.request.ServletRequestAttributes(
                         new MockHttpServletRequest("GET", "/actuator/health")));
         try {
-            assertThat(predicate.test("spring.security.authorizations", security)).isFalse();
+            assertThat(predicate.test("spring.security.authorizations", security))
+                    .isFalse();
         } finally {
             org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
         }
@@ -111,13 +115,12 @@ class TraceHeadersTest {
         String[] seen = new String[1];
         Span span = tracer.nextSpan().name("served").start();
         try (Tracer.SpanInScope ignored = tracer.withSpan(span)) {
-            new RequestIdFilter(provider).doFilter(request, response,
-                    new MockFilterChain() {
-                        @Override
-                        public void doFilter(jakarta.servlet.ServletRequest req, jakarta.servlet.ServletResponse res) {
-                            seen[0] = MDC.get(RequestIdFilter.MDC_KEY);
-                        }
-                    });
+            new RequestIdFilter(provider).doFilter(request, response, new MockFilterChain() {
+                @Override
+                public void doFilter(jakarta.servlet.ServletRequest req, jakarta.servlet.ServletResponse res) {
+                    seen[0] = MDC.get(RequestIdFilter.MDC_KEY);
+                }
+            });
         } finally {
             span.end();
         }

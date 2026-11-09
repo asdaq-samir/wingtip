@@ -71,9 +71,13 @@ class InstructorControllerTest {
     void aStudentNotTheirsIs404_andNothingIsSigned() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(CFI));
         given(instructors.student(CFI, 7L)).willReturn(Optional.empty());
-        mockMvc.perform(get("/api/instructor/students/7/training").with(oidcLogin())).andExpect(status().isNotFound());
-        mockMvc.perform(post("/api/instructor/students/7/endorsements").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(SIGN))
+        mockMvc.perform(get("/api/instructor/students/7/training").with(oidcLogin()))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/instructor/students/7/endorsements")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(SIGN))
                 .andExpect(status().isNotFound());
         verify(instructors, never()).sign(any(), any(), any(), any());
     }
@@ -83,9 +87,13 @@ class InstructorControllerTest {
         given(pilotService.current(any())).willReturn(Optional.of(CFI));
         given(instructors.student(CFI, 8L)).willReturn(Optional.of(STUDENT));
         given(instructors.sign(eq(CFI), eq(STUDENT), any(), any()))
-                .willThrow(new InstructorService.Refused(HttpStatus.CONFLICT, "The words have changed since you read them."));
-        mockMvc.perform(post("/api/instructor/students/8/endorsements").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(SIGN))
+                .willThrow(new InstructorService.Refused(
+                        HttpStatus.CONFLICT, "The words have changed since you read them."));
+        mockMvc.perform(post("/api/instructor/students/8/endorsements")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(SIGN))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error").value("The words have changed since you read them."));
     }
@@ -93,24 +101,34 @@ class InstructorControllerTest {
     @Test
     void aCertificateNotShapedLikeOneIs400() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(CFI));
-        mockMvc.perform(put("/api/instructor").with(oidcLogin()).with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"fullName\": \"J. J. Jones\", \"certificate\": \"98 76\", \"until\": \"2027-12-31\","
-                                + " \"untilKind\": \"RE\"}"))
+        mockMvc.perform(put("/api/instructor")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                                "{\"fullName\": \"J. J. Jones\", \"certificate\": \"98 76\", \"until\": \"2027-12-31\","
+                                        + " \"untilKind\": \"RE\"}"))
                 .andExpect(status().isBadRequest());
         verify(instructors, never()).setInstructor(any(), any());
     }
 
-    private static final String LESSON = "{\"airportIdent\": \"KDLH\", \"procedureId\": \"I09\", \"procedureName\": \"ILS RWY 09\","
-            + " \"cycle\": \"261029\", \"fixNotes\": {\"PYKLA\": \"Power to 1,800 rpm, gear down\"}, \"dueOn\": \"2026-11-08\"}";
+    private static final String LESSON =
+            "{\"airportIdent\": \"KDLH\", \"procedureId\": \"I09\", \"procedureName\": \"ILS RWY 09\","
+                    + " \"cycle\": \"261029\", \"fixNotes\": {\"PYKLA\": \"Power to 1,800 rpm, gear down\"}, \"dueOn\": \"2026-11-08\"}";
 
     @Test
     void aLessonForAStudentNotTheirsIs404_andNothingIsSet() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(CFI));
         given(instructors.student(CFI, 7L)).willReturn(Optional.empty());
-        mockMvc.perform(post("/api/instructor/students/7/lessons").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(LESSON))
+        mockMvc.perform(post("/api/instructor/students/7/lessons")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(LESSON))
                 .andExpect(status().isNotFound());
-        mockMvc.perform(delete("/api/instructor/students/7/lessons/3").with(oidcLogin()).with(csrf()))
+        mockMvc.perform(delete("/api/instructor/students/7/lessons/3")
+                        .with(oidcLogin())
+                        .with(csrf()))
                 .andExpect(status().isNotFound());
         verify(lessons, never()).assign(any(), any(), any(), any());
         verify(lessons, never()).remove(any(), any(), any());
@@ -120,19 +138,36 @@ class InstructorControllerTest {
     void aLessonIsSetForTheirStudent_andOneNotShapedLikeOneIs400() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(CFI));
         given(instructors.student(CFI, 8L)).willReturn(Optional.of(STUDENT));
-        given(training.trainingFor(eq(CFI), eq(STUDENT), any(), any())).willReturn(new app.wingtipmaps.gateway.dto.TrainingDto(
-                java.util.List.of(), java.util.List.of(), java.util.List.of(), java.util.List.of(), java.util.List.of(), null,
-                java.util.List.of(), java.util.List.of(), java.util.List.of()));
-        mockMvc.perform(post("/api/instructor/students/8/lessons").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(LESSON))
+        given(training.trainingFor(eq(CFI), eq(STUDENT), any(), any()))
+                .willReturn(new app.wingtipmaps.gateway.dto.TrainingDto(
+                        java.util.List.of(),
+                        java.util.List.of(),
+                        java.util.List.of(),
+                        java.util.List.of(),
+                        java.util.List.of(),
+                        null,
+                        java.util.List.of(),
+                        java.util.List.of(),
+                        java.util.List.of()));
+        mockMvc.perform(post("/api/instructor/students/8/lessons")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(LESSON))
                 .andExpect(status().isOk());
         verify(lessons).assign(eq(CFI), eq(STUDENT), any(), any());
         // A fix's identifier with a space in it, and an airport's of seven letters.
-        mockMvc.perform(post("/api/instructor/students/8/lessons").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(LESSON.replace("PYKLA", "PY KLA")))
+        mockMvc.perform(post("/api/instructor/students/8/lessons")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(LESSON.replace("PYKLA", "PY KLA")))
                 .andExpect(status().isBadRequest());
-        mockMvc.perform(post("/api/instructor/students/8/lessons").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(LESSON.replace("KDLH", "KDLHXYZ")))
+        mockMvc.perform(post("/api/instructor/students/8/lessons")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(LESSON.replace("KDLH", "KDLHXYZ")))
                 .andExpect(status().isBadRequest());
     }
 
@@ -140,6 +175,7 @@ class InstructorControllerTest {
     void aTrackNotPutToThemIs404() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(CFI));
         given(lessons.reviewedTrack(CFI, 8L, 99L)).willReturn(Optional.empty());
-        mockMvc.perform(get("/api/instructor/students/8/flights/99/track").with(oidcLogin())).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/instructor/students/8/flights/99/track").with(oidcLogin()))
+                .andExpect(status().isNotFound());
     }
 }

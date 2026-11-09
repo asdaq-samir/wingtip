@@ -57,7 +57,8 @@ class AircraftHandbookControllerTest {
 
     @BeforeEach
     void nothingDue() {
-        given(planner.inspections(any(), any(), any(), any(), any(), any(), any(), any())).willReturn(new PlannerInspections());
+        given(planner.inspections(any(), any(), any(), any(), any(), any(), any(), any()))
+                .willReturn(new PlannerInspections());
     }
 
     private static Pilot samplePilot() {
@@ -74,22 +75,33 @@ class AircraftHandbookControllerTest {
     @Test
     void handbook_keepsTheConfirmedFiguresAsSent() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
-        Map<String, Object> figures = Map.of("glide_speed_kias", 68, "glide_ratio", 9,
-                "envelope", List.of(Map.of("arm_in", 35, "weight_lb", 1500)));
-        given(aircraftService.keepHandbook(any(), eq(7L), argThat(f -> f != null
-                && f.glide_ratio() == 9.0 && f.envelope().get(0).weight_lb() == 1500.0)))
+        Map<String, Object> figures = Map.of(
+                "glide_speed_kias", 68, "glide_ratio", 9, "envelope", List.of(Map.of("arm_in", 35, "weight_lb", 1500)));
+        given(aircraftService.keepHandbook(
+                        any(),
+                        eq(7L),
+                        argThat(f -> f != null
+                                && f.glide_ratio() == 9.0
+                                && f.envelope().get(0).weight_lb() == 1500.0)))
                 .willReturn(Optional.of(sampleAircraft().keepHandbook(figures)));
-        String body = "{\"figures\":{\"glide_speed_kias\":68,\"glide_ratio\":9,\"envelope\":[{\"arm_in\":35,\"weight_lb\":1500}]}}";
+        String body =
+                "{\"figures\":{\"glide_speed_kias\":68,\"glide_ratio\":9,\"envelope\":[{\"arm_in\":35,\"weight_lb\":1500}]}}";
 
-        mockMvc.perform(put("/api/aircraft/7/handbook").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(put("/api/aircraft/7/handbook")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.handbook.glide_ratio").value(9))
                 .andExpect(jsonPath("$.handbook.envelope[0].weight_lb").value(1500));
 
         given(aircraftService.keepHandbook(any(), eq(8L), any())).willReturn(Optional.empty());
-        mockMvc.perform(put("/api/aircraft/8/handbook").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(put("/api/aircraft/8/handbook")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
                 .andExpect(status().isNotFound());
     }
 }

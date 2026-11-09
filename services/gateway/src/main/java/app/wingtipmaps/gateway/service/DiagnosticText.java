@@ -25,8 +25,8 @@ public final class DiagnosticText {
     private static final Pattern QUERY = Pattern.compile("[?#]\\S*");
     private static final Pattern EMAIL = Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}");
     private static final Pattern HOME = Pattern.compile("(/(?:Users|home)/)[^/\\s]+");
-    private static final Pattern UUID = Pattern.compile(
-            "\\b[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\b");
+    private static final Pattern UUID =
+            Pattern.compile("\\b[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\b");
 
     private DiagnosticText() {}
 

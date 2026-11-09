@@ -8,5 +8,4 @@ import java.util.List;
  *  ("metar:KDLH"), which {@link BriefingSourceDto} lists. The shape the
  *  planner's /api/words/changes writes a sentence in, carried as it is. */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record BriefingChangeDto(String text, List<String> sources) {
-}
+public record BriefingChangeDto(String text, List<String> sources) {}

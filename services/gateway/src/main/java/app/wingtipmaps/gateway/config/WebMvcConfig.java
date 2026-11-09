@@ -107,7 +107,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
         // page load re-downloaded a megabyte of JavaScript.
         registry.addResourceHandler("/app/assets/**")
                 .addResourceLocations(staticLocation + "assets/")
-                .setCacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable());
+                .setCacheControl(
+                        CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable());
         // resourceChain(false): a chain that caches wraps the resolver in
         // a map from request path to resource with no bound -- and as
         // every path under /app resolves (to the index, failing a file),

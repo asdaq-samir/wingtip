@@ -63,8 +63,11 @@ class PilotControllerTest {
     void contact_returns401_whenSignedOut() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.empty());
 
-        mockMvc.perform(put("/api/me/contact").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"phone\":\"608-555-0100\"}"))
+        mockMvc.perform(put("/api/me/contact")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"phone\":\"608-555-0100\"}"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -74,9 +77,12 @@ class PilotControllerTest {
         given(pilotService.current(any())).willReturn(Optional.of(pilot));
         Pilot saved = pilot();
         saved.setContact("+1 (608) 555-0100", "C81");
-        given(pilotService.setContact(eq(pilot), eq("+1 (608) 555-0100"), eq("c81"))).willReturn(saved);
+        given(pilotService.setContact(eq(pilot), eq("+1 (608) 555-0100"), eq("c81")))
+                .willReturn(saved);
 
-        mockMvc.perform(put("/api/me/contact").with(oidcLogin()).with(csrf())
+        mockMvc.perform(put("/api/me/contact")
+                        .with(oidcLogin())
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"phone\":\"+1 (608) 555-0100\",\"homeBase\":\"c81\"}"))
                 .andExpect(status().isOk())
@@ -91,8 +97,11 @@ class PilotControllerTest {
         given(pilotService.current(any())).willReturn(Optional.of(pilot));
         given(pilotService.setContact(eq(pilot), eq(""), eq(""))).willReturn(pilot);
 
-        mockMvc.perform(put("/api/me/contact").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"phone\":\"\",\"homeBase\":\"\"}"))
+        mockMvc.perform(put("/api/me/contact")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"phone\":\"\",\"homeBase\":\"\"}"))
                 .andExpect(status().isOk());
     }
 
@@ -107,8 +116,11 @@ class PilotControllerTest {
             {"{\"homeBase\":\"" + "K".repeat(12) + "\"}", "homeBase"},
         };
         for (String[] c : cases) {
-            mockMvc.perform(put("/api/me/contact").with(oidcLogin()).with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON).content(c[0]))
+            mockMvc.perform(put("/api/me/contact")
+                            .with(oidcLogin())
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(c[0]))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.details[0]").value(org.hamcrest.Matchers.startsWith(c[1] + ":")));
         }

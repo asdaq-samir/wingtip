@@ -1,14 +1,5 @@
 package app.wingtipmaps.gateway.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.databind.util.RawValue;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import app.wingtipmaps.gateway.assistant.model.AssistantChangesWords;
 import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.dto.CurrencyDto;
@@ -31,6 +22,16 @@ import app.wingtipmaps.gateway.planner.model.PlannerInspectionsAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerLogbookEntry;
 import app.wingtipmaps.gateway.planner.model.PlannerReviewCheck;
 import app.wingtipmaps.gateway.planner.model.PlannerVorCheckAsk;
+import app.wingtipmaps.gateway.tracing.TraceHeaders;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.util.RawValue;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
@@ -49,7 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import app.wingtipmaps.gateway.tracing.TraceHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -85,8 +85,8 @@ public class PlannerClient {
     /** Fields the planner adds later are ignored: its answers are
      *  generated from its OpenAPI document as this app was built, and a
      *  planner deployed after it may say more. */
-    static final ObjectMapper JSON = new ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    static final ObjectMapper JSON =
+            new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     /** The same, reading and writing the planner's days ("2026-10-11") as
      *  LocalDate, for the planner's own asks and answers: types generated
@@ -123,13 +123,15 @@ public class PlannerClient {
                 .followRedirects(HttpClient.Redirect.NEVER)
                 .build();
     }
+
     private final String plannerBaseUrl;
     private final String assistantBaseUrl;
     /** The trace's and the page's headers on each request (TraceHeaders). */
     private TraceHeaders traceHeaders = TraceHeaders.NONE;
 
-    public PlannerClient(@Value("${planner-service.base-url:http://planner:8000}") String plannerBaseUrl,
-                         @Value("${assistant-service.base-url:http://assistant:8000}") String assistantBaseUrl) {
+    public PlannerClient(
+            @Value("${planner-service.base-url:http://planner:8000}") String plannerBaseUrl,
+            @Value("${assistant-service.base-url:http://assistant:8000}") String assistantBaseUrl) {
         this.plannerBaseUrl = plannerBaseUrl.replaceAll("/+$", "");
         this.assistantBaseUrl = assistantBaseUrl.replaceAll("/+$", "");
     }
@@ -147,7 +149,8 @@ public class PlannerClient {
      * @throws Unavailable when the planner cannot be reached or refuses
      */
     public String briefing(String dep, String dest, List<String> stops, Instant depart, Double eteMin) {
-        StringBuilder query = new StringBuilder("?dep=").append(encode(dep)).append("&dest=").append(encode(dest));
+        StringBuilder query =
+                new StringBuilder("?dep=").append(encode(dep)).append("&dest=").append(encode(dest));
         if (stops != null && !stops.isEmpty()) {
             query.append("&stops=").append(encode(String.join(",", stops)));
         }
@@ -209,16 +212,39 @@ public class PlannerClient {
      *
      * @throws Unavailable when the planner cannot be reached or refuses
      */
-    public CurrencyDto currency(List<LogbookEntry> entries, LocalDate flightReviewOn, LocalDate medicalExpiresOn,
-                                LocalDate ipcOn, LocalDate today) {
+    public CurrencyDto currency(
+            List<LogbookEntry> entries,
+            LocalDate flightReviewOn,
+            LocalDate medicalExpiresOn,
+            LocalDate ipcOn,
+            LocalDate today) {
         PlannerCurrencyAsk ask = new PlannerCurrencyAsk(entriesOf(entries), today)
-                .flightReviewOn(flightReviewOn).medicalExpiresOn(medicalExpiresOn).ipcOn(ipcOn);
-        return answer("/api/pilot/currency", ask, PlannerCurrency.class, "the currency", c -> new CurrencyDto(
-                c.getDayPassengersUntil(), c.getNightPassengersUntil(), c.getFlightReviewOn(), c.getFlightReviewUntil(),
-                c.getMedicalExpiresOn(), c.getTotalHours().doubleValue(), c.getNightHours().doubleValue(),
-                c.getCrossCountryHours().doubleValue(), c.getLandings(), c.getFlights(), c.getInstrumentCurrentUntil(),
-                c.getInstrumentCurrentFrom(), c.getIpcOn(), c.getIpcNeededAfter(), c.getApproachesInWindow(),
-                c.getHoldingInWindow(), c.getTrackingInWindow()));
+                .flightReviewOn(flightReviewOn)
+                .medicalExpiresOn(medicalExpiresOn)
+                .ipcOn(ipcOn);
+        return answer(
+                "/api/pilot/currency",
+                ask,
+                PlannerCurrency.class,
+                "the currency",
+                c -> new CurrencyDto(
+                        c.getDayPassengersUntil(),
+                        c.getNightPassengersUntil(),
+                        c.getFlightReviewOn(),
+                        c.getFlightReviewUntil(),
+                        c.getMedicalExpiresOn(),
+                        c.getTotalHours().doubleValue(),
+                        c.getNightHours().doubleValue(),
+                        c.getCrossCountryHours().doubleValue(),
+                        c.getLandings(),
+                        c.getFlights(),
+                        c.getInstrumentCurrentUntil(),
+                        c.getInstrumentCurrentFrom(),
+                        c.getIpcOn(),
+                        c.getIpcNeededAfter(),
+                        c.getApproachesInWindow(),
+                        c.getHoldingInWindow(),
+                        c.getTrackingInWindow()));
     }
 
     /**
@@ -229,28 +255,42 @@ public class PlannerClient {
      * @throws Unavailable when the planner cannot be reached or refuses
      */
     public List<ExperienceItemDto> experience(List<LogbookEntry> entries, LocalDate today) {
-        return answer("/api/pilot/experience", new PlannerExperienceAsk(entriesOf(entries), today), PlannerExperienceItem[].class,
-                "the experience", items -> Arrays.stream(items).map(i -> new ExperienceItemDto(i.getKey(), i.getRule(), i.getLabel(),
-                        i.getHave().doubleValue(), i.getNeed().doubleValue(), i.getUnit().getValue(), i.getMet())).toList());
+        return answer(
+                "/api/pilot/experience",
+                new PlannerExperienceAsk(entriesOf(entries), today),
+                PlannerExperienceItem[].class,
+                "the experience",
+                items -> Arrays.stream(items)
+                        .map(i -> new ExperienceItemDto(
+                                i.getKey(),
+                                i.getRule(),
+                                i.getLabel(),
+                                i.getHave().doubleValue(),
+                                i.getNeed().doubleValue(),
+                                i.getUnit().getValue(),
+                                i.getMet()))
+                        .toList());
     }
 
     /** The columns the planner's rules read, as its LogbookEntry has them. */
     private static List<PlannerLogbookEntry> entriesOf(List<LogbookEntry> entries) {
-        return entries.stream().map(e -> new PlannerLogbookEntry(e.getFlownOn())
-                .totalHours(decimal(e.getTotalHours()))
-                .nightHours(decimal(e.getNightHours()))
-                .crossCountryHours(decimal(e.getCrossCountryHours()))
-                .dayLandings(e.getDayLandings())
-                .nightLandings(e.getNightLandings())
-                .dualHours(decimal(e.getDualHours()))
-                .soloHours(decimal(e.getSoloHours()))
-                .instrumentHours(decimal(e.getInstrumentHours()))
-                .toweredLandings(e.getToweredLandings())
-                .distanceNm(decimal(e.getDistanceNm()))
-                .longestLegNm(decimal(e.getLongestLegNm()))
-                .approaches(e.getApproaches())
-                .holding(e.isHolding())
-                .tracking(e.isTracking())).toList();
+        return entries.stream()
+                .map(e -> new PlannerLogbookEntry(e.getFlownOn())
+                        .totalHours(decimal(e.getTotalHours()))
+                        .nightHours(decimal(e.getNightHours()))
+                        .crossCountryHours(decimal(e.getCrossCountryHours()))
+                        .dayLandings(e.getDayLandings())
+                        .nightLandings(e.getNightLandings())
+                        .dualHours(decimal(e.getDualHours()))
+                        .soloHours(decimal(e.getSoloHours()))
+                        .instrumentHours(decimal(e.getInstrumentHours()))
+                        .toweredLandings(e.getToweredLandings())
+                        .distanceNm(decimal(e.getDistanceNm()))
+                        .longestLegNm(decimal(e.getLongestLegNm()))
+                        .approaches(e.getApproaches())
+                        .holding(e.isHolding())
+                        .tracking(e.isTracking()))
+                .toList();
     }
 
     /** An endorsement held, as the engine reads one: its code, the day it
@@ -269,8 +309,12 @@ public class PlannerClient {
      * @throws Unavailable when the planner cannot be reached or refuses
      */
     public PlannerEndorsements endorsements(List<PlannerHeldEndorsement> held, LocalDate flightOn) {
-        return answer("/api/pilot/endorsements", new PlannerEndorsementsAsk(held).flightOn(flightOn), PlannerEndorsements.class,
-                "the endorsements", e -> e);
+        return answer(
+                "/api/pilot/endorsements",
+                new PlannerEndorsementsAsk(held).flightOn(flightOn),
+                PlannerEndorsements.class,
+                "the endorsements",
+                e -> e);
     }
 
     /** One of 61.93(d)'s checks, as this app sends it on. */
@@ -292,11 +336,22 @@ public class PlannerClient {
                 .timeout(RULE_TIMEOUT)
                 .build();
         String what = "the endorsements' words";
-        return read(sendAgainOnce(request, what), PlannerEndorsementKind[].class, what, kinds -> Arrays.stream(kinds)
-                .map(k -> new EndorsementKindDto(k.getCode(), k.getParagraph(), k.getRule(), k.getLabel(), k.getTemplate(),
-                        k.getFields().stream().map(f -> new EndorsementFieldDto(f.getKey(), f.getLabel(), f.getExample(), f.getRequired()))
-                                .toList()))
-                .toList());
+        return read(
+                sendAgainOnce(request, what),
+                PlannerEndorsementKind[].class,
+                what,
+                kinds -> Arrays.stream(kinds)
+                        .map(k -> new EndorsementKindDto(
+                                k.getCode(),
+                                k.getParagraph(),
+                                k.getRule(),
+                                k.getLabel(),
+                                k.getTemplate(),
+                                k.getFields().stream()
+                                        .map(f -> new EndorsementFieldDto(
+                                                f.getKey(), f.getLabel(), f.getExample(), f.getRequired()))
+                                        .toList()))
+                        .toList());
     }
 
     /** The endorsement of {@code code} in the catalogue, if there is one. */
@@ -316,8 +371,10 @@ public class PlannerClient {
      */
     public PlannerEndorsementFilled fill(String code, String student, Map<String, String> fields) {
         PlannerEndorsementFillAsk ask = new PlannerEndorsementFillAsk(code).student(student);
-        (fields == null ? Map.<String, String>of() : fields).forEach((k, v) -> ask.putFieldsItem(k, v == null ? "" : v));
-        return answer("/api/pilot/endorsement-fill", ask, PlannerEndorsementFilled.class, "the endorsement's words", f -> f);
+        (fields == null ? Map.<String, String>of() : fields)
+                .forEach((k, v) -> ask.putFieldsItem(k, v == null ? "" : v));
+        return answer(
+                "/api/pilot/endorsement-fill", ask, PlannerEndorsementFilled.class, "the endorsement's words", f -> f);
     }
 
     /**
@@ -331,12 +388,24 @@ public class PlannerClient {
      *
      * @throws Unavailable when the planner cannot be reached or refuses
      */
-    public PlannerInspections inspections(LocalDate annualOn, LocalDate eltOn, LocalDate staticCheckOn, LocalDate transponderCheckOn,
-                                          Double hundredHourAtHours, LocalDate vorCheckOn, String vorCheckKind, Double vorCheckErrorDeg) {
-        PlannerInspectionsAsk ask = new PlannerInspectionsAsk().annualOn(annualOn).eltOn(eltOn).staticCheckOn(staticCheckOn)
-                .transponderCheckOn(transponderCheckOn).hundredHourAtHours(decimal(hundredHourAtHours));
+    public PlannerInspections inspections(
+            LocalDate annualOn,
+            LocalDate eltOn,
+            LocalDate staticCheckOn,
+            LocalDate transponderCheckOn,
+            Double hundredHourAtHours,
+            LocalDate vorCheckOn,
+            String vorCheckKind,
+            Double vorCheckErrorDeg) {
+        PlannerInspectionsAsk ask = new PlannerInspectionsAsk()
+                .annualOn(annualOn)
+                .eltOn(eltOn)
+                .staticCheckOn(staticCheckOn)
+                .transponderCheckOn(transponderCheckOn)
+                .hundredHourAtHours(decimal(hundredHourAtHours));
         if (vorCheckOn != null && vorCheckKind != null && vorCheckErrorDeg != null) {
-            ask.vorCheck(new PlannerVorCheckAsk(decimal(vorCheckErrorDeg), PlannerVorCheckAsk.KindEnum.fromValue(vorCheckKind), vorCheckOn));
+            ask.vorCheck(new PlannerVorCheckAsk(
+                    decimal(vorCheckErrorDeg), PlannerVorCheckAsk.KindEnum.fromValue(vorCheckKind), vorCheckOn));
         }
         return answer("/api/aircraft/inspections", ask, PlannerInspections.class, "the inspections", i -> i);
     }
@@ -389,7 +458,8 @@ public class PlannerClient {
         try {
             return send(http, request, "the planner", what);
         } catch (Unavailable unreached) {
-            if (!(unreached.getCause() instanceof IOException) || unreached.getCause() instanceof HttpTimeoutException) {
+            if (!(unreached.getCause() instanceof IOException)
+                    || unreached.getCause() instanceof HttpTimeoutException) {
                 throw unreached;
             }
             try (HttpClient fresh = newClient()) {
@@ -415,7 +485,8 @@ public class PlannerClient {
 
     private static String send(HttpClient client, HttpRequest request, String who, String what) {
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            HttpResponse<String> response =
+                    client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (response.statusCode() != 200) {
                 throw new Unavailable(who + " answered " + response.statusCode() + " to " + what);
             }

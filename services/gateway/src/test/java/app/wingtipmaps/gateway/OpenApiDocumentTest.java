@@ -47,13 +47,16 @@ class OpenApiDocumentTest {
 
     @Test
     void theCommittedDocumentIsTheOneThisAppServes() throws Exception {
-        String served = sorted(mockMvc.perform(get("/v3/api-docs")).andReturn()
-                .getResponse().getContentAsString(StandardCharsets.UTF_8));
+        String served = sorted(mockMvc.perform(get("/v3/api-docs"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString(StandardCharsets.UTF_8));
         if ("1".equals(System.getenv("WRITE_OPENAPI"))) {
             Files.writeString(DOCUMENT, served);
         }
         assertThat(Files.readString(DOCUMENT))
-                .as("a controller or DTO changed: run the suite with WRITE_OPENAPI=1 and commit services/gateway/openapi.json")
+                .as(
+                        "a controller or DTO changed: run the suite with WRITE_OPENAPI=1 and commit services/gateway/openapi.json")
                 .isEqualTo(served);
     }
 

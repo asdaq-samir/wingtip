@@ -8,9 +8,13 @@ import org.springframework.lang.Nullable;
  *  GPS altitude in feet above sea level where the file had one. */
 public record TrackPointDto(
         long t,
-        @DecimalMin(value = "-90", message = "lat must be at least -90") @DecimalMax(value = "90", message = "lat must be at most 90")
+
+        @DecimalMin(value = "-90", message = "lat must be at least -90")
+        @DecimalMax(value = "90", message = "lat must be at most 90")
         double lat,
-        @DecimalMin(value = "-180", message = "lon must be at least -180") @DecimalMax(value = "180", message = "lon must be at most 180")
+
+        @DecimalMin(value = "-180", message = "lon must be at least -180")
+        @DecimalMax(value = "180", message = "lon must be at most 180")
         double lon,
-        @Nullable Double altFt) {
-}
+
+        @Nullable Double altFt) {}

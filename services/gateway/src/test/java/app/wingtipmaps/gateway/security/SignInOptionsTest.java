@@ -13,8 +13,13 @@ class SignInOptionsTest {
 
     @Test
     void theProvidersAreTheRegisteredOnes() {
-        var google = CommonOAuth2Provider.GOOGLE.getBuilder("google").clientId("id").clientSecret("secret").build();
-        var config = new SecurityConfig(Optional.of(new InMemoryClientRegistrationRepository(google)), "", "", true, false, "");
+        var google = CommonOAuth2Provider.GOOGLE
+                .getBuilder("google")
+                .clientId("id")
+                .clientSecret("secret")
+                .build();
+        var config = new SecurityConfig(
+                Optional.of(new InMemoryClientRegistrationRepository(google)), "", "", true, false, "");
         assertThat(config.signInOptions().providers()).containsExactly("google");
         assertThat(config.signInOptions().access()).isEqualTo(SignInOptions.Access.SIGN_IN);
     }

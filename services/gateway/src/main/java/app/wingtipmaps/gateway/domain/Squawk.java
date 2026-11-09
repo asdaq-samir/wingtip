@@ -58,8 +58,13 @@ public class Squawk {
 
     /** Every field at once, as its form sends them. A determination is
      *  only an inoperative item's. */
-    public Squawk set(LocalDate reportedOn, String text, boolean inoperative, DeferredFor deferredFor, LocalDate fixedOn,
-                      String fixNote) {
+    public Squawk set(
+            LocalDate reportedOn,
+            String text,
+            boolean inoperative,
+            DeferredFor deferredFor,
+            LocalDate fixedOn,
+            String fixNote) {
         this.reportedOn = reportedOn;
         this.text = text;
         this.inoperative = inoperative;

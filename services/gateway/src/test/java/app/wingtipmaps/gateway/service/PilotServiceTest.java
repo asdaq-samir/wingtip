@@ -65,11 +65,15 @@ class PilotServiceTest {
         String email = UUID.randomUUID() + "@example.com";
         Pilot owner = pilotService.fromVerifiedEmail(email);
 
-        assertThatThrownBy(() -> pilotService.fromOidcUser(oidcUser(UUID.randomUUID().toString(), email, "Mallory", false), "google"))
+        assertThatThrownBy(() -> pilotService.fromOidcUser(
+                        oidcUser(UUID.randomUUID().toString(), email, "Mallory", false), "google"))
                 .isInstanceOf(UnverifiedEmailException.class);
-        assertThatThrownBy(() -> pilotService.fromOidcUser(oidcUser(UUID.randomUUID().toString(), UUID.randomUUID() + "@example.com", "M", null), "google"))
+        assertThatThrownBy(() -> pilotService.fromOidcUser(
+                        oidcUser(UUID.randomUUID().toString(), UUID.randomUUID() + "@example.com", "M", null),
+                        "google"))
                 .isInstanceOf(UnverifiedEmailException.class);
-        assertThat(pilots.findById(owner.getId()).orElseThrow().getGoogleSubject()).isNull();
+        assertThat(pilots.findById(owner.getId()).orElseThrow().getGoogleSubject())
+                .isNull();
     }
 
     /** Apple sends the claim as a string. */
@@ -119,7 +123,8 @@ class PilotServiceTest {
         // And the pilot's address follows: a magic link to the new one
         // used to make a second pilot.
         assertThat(pilots.findById(before.getId()).orElseThrow().getEmail()).isEqualTo(subject + "@new.example.com");
-        assertThat(pilotService.fromVerifiedEmail(subject + "@new.example.com").getId()).isEqualTo(before.getId());
+        assertThat(pilotService.fromVerifiedEmail(subject + "@new.example.com").getId())
+                .isEqualTo(before.getId());
     }
 
     /** Unless another pilot already holds the new address: the unique
@@ -130,7 +135,8 @@ class PilotServiceTest {
         Pilot before = pilotService.fromOidcUser(oidcUser(subject, subject + "@old.example.com", "A. Pilot"), "google");
         Pilot other = pilotService.fromVerifiedEmail(subject + "@taken.example.com");
 
-        Pilot after = pilotService.fromOidcUser(oidcUser(subject, subject + "@taken.example.com", "A. Pilot"), "google");
+        Pilot after =
+                pilotService.fromOidcUser(oidcUser(subject, subject + "@taken.example.com", "A. Pilot"), "google");
 
         assertThat(after.getId()).isEqualTo(before.getId()).isNotEqualTo(other.getId());
         assertThat(pilots.findById(before.getId()).orElseThrow().getEmail()).isEqualTo(subject + "@old.example.com");
@@ -149,7 +155,8 @@ class PilotServiceTest {
         Pilot signedIn = pilotService.fromOidcUser(oidcUser(subject, email, "A. Pilot"), "google");
 
         assertThat(signedIn.getId()).isEqualTo(preexisting.getId());
-        assertThat(pilots.findById(preexisting.getId()).orElseThrow().getGoogleSubject()).isEqualTo(subject);
+        assertThat(pilots.findById(preexisting.getId()).orElseThrow().getGoogleSubject())
+                .isEqualTo(subject);
     }
 
     @Test
@@ -165,9 +172,9 @@ class PilotServiceTest {
     @Test
     void anAssertionWithoutASubjectIsRejectedRatherThanTreatedAsANewPilot() {
         assertThatThrownBy(() -> pilotService.fromOidcUser(
-                new org.springframework.security.oauth2.core.user.DefaultOAuth2User(
-                        java.util.List.of(), Map.of("email", "nobody@example.com"), "email"),
-                "google"))
+                        new org.springframework.security.oauth2.core.user.DefaultOAuth2User(
+                                java.util.List.of(), Map.of("email", "nobody@example.com"), "email"),
+                        "google"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -197,7 +204,8 @@ class PilotServiceTest {
         Pilot viaApple = pilotService.fromOidcUser(oidcUser(appleSubject, email, "A. Pilot"), "apple");
 
         assertThat(viaApple.getId()).isEqualTo(viaGoogle.getId());
-        assertThat(pilots.findById(viaGoogle.getId()).orElseThrow().getAppleSubject()).isEqualTo(appleSubject);
+        assertThat(pilots.findById(viaGoogle.getId()).orElseThrow().getAppleSubject())
+                .isEqualTo(appleSubject);
     }
 
     /**
@@ -218,15 +226,20 @@ class PilotServiceTest {
     /** app.developer-emails, case ignored: the address is who they are. */
     @Test
     void aListedAddressIsADeveloperFromItsFirstSignIn() {
-        assertThat(pilotService.fromVerifiedEmail("listed@example.com").getRole()).isEqualTo(PilotRole.DEVELOPER);
-        Pilot viaGoogle = pilotService.fromOidcUser(oidcUser(UUID.randomUUID().toString(), "google-dev@example.com", "Dev"), "google");
+        assertThat(pilotService.fromVerifiedEmail("listed@example.com").getRole())
+                .isEqualTo(PilotRole.DEVELOPER);
+        Pilot viaGoogle = pilotService.fromOidcUser(
+                oidcUser(UUID.randomUUID().toString(), "google-dev@example.com", "Dev"), "google");
         assertThat(viaGoogle.getRole()).isEqualTo(PilotRole.DEVELOPER);
         assertThat(pilots.findById(viaGoogle.getId()).orElseThrow().getRole()).isEqualTo(PilotRole.DEVELOPER);
     }
 
     @Test
     void anAddressTheListDoesNotNameIsAPilot() {
-        assertThat(pilotService.fromVerifiedEmail(UUID.randomUUID() + "@example.com").getRole()).isEqualTo(PilotRole.PILOT);
+        assertThat(pilotService
+                        .fromVerifiedEmail(UUID.randomUUID() + "@example.com")
+                        .getRole())
+                .isEqualTo(PilotRole.PILOT);
     }
 
     /** Listed after they first signed in: made a developer at their next
@@ -236,7 +249,8 @@ class PilotServiceTest {
         Pilot before = pilots.save(new Pilot("later@example.com", "Later", null));
         assertThat(before.getRole()).isEqualTo(PilotRole.PILOT);
 
-        assertThat(pilotService.fromVerifiedEmail("later@example.com").getRole()).isEqualTo(PilotRole.DEVELOPER);
+        assertThat(pilotService.fromVerifiedEmail("later@example.com").getRole())
+                .isEqualTo(PilotRole.DEVELOPER);
         assertThat(pilots.findById(before.getId()).orElseThrow().getRole()).isEqualTo(PilotRole.DEVELOPER);
     }
 

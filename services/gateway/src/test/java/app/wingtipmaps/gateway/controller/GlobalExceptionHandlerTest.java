@@ -23,8 +23,10 @@ class GlobalExceptionHandlerTest {
     @Test
     void aBrowserThatLeftMidStreamGetsNothing() {
         // What Spring MVC raises when the nav log stream's reader is gone.
-        var gone = new AsyncRequestNotUsableException("ServletOutputStream failed to write: java.io.IOException: Broken pipe");
-        assertThat(handler.handleUnexpected(gone, new MockHttpServletResponse())).isNull();
+        var gone = new AsyncRequestNotUsableException(
+                "ServletOutputStream failed to write: java.io.IOException: Broken pipe");
+        assertThat(handler.handleUnexpected(gone, new MockHttpServletResponse()))
+                .isNull();
     }
 
     @Test
@@ -33,23 +35,28 @@ class GlobalExceptionHandlerTest {
         // spoke, once), unknown to Spring's helper: one while the request
         // was being read, one while the response was being written.
         var reading = new IOException("Client reset the stream before the request was fully read");
-        assertThat(handler.handleUnexpected(reading, new MockHttpServletResponse())).isNull();
+        assertThat(handler.handleUnexpected(reading, new MockHttpServletResponse()))
+                .isNull();
         var writing = new IOException("Client reset the stream before the response was complete");
-        assertThat(handler.handleUnexpected(writing, new MockHttpServletResponse())).isNull();
+        assertThat(handler.handleUnexpected(writing, new MockHttpServletResponse()))
+                .isNull();
     }
 
     @Test
     void aWriteToAStreamAlreadyResetGetsNothing() {
         var notWritable = new CloseNowException("Connection [1], Stream [7], This stream is not writable");
-        assertThat(handler.handleUnexpected(notWritable, new MockHttpServletResponse())).isNull();
+        assertThat(handler.handleUnexpected(notWritable, new MockHttpServletResponse()))
+                .isNull();
         // Wrapped, as Spring MVC hands on what a StreamingResponseBody threw.
         var wrapped = new IllegalStateException("the stream failed", notWritable);
-        assertThat(handler.handleUnexpected(wrapped, new MockHttpServletResponse())).isNull();
+        assertThat(handler.handleUnexpected(wrapped, new MockHttpServletResponse()))
+                .isNull();
     }
 
     @Test
     void anyOtherIOExceptionIsStillAnError() {
-        ResponseEntity<ErrorResponse> answer = handler.handleUnexpected(new IOException("No space left on device"), new MockHttpServletResponse());
+        ResponseEntity<ErrorResponse> answer =
+                handler.handleUnexpected(new IOException("No space left on device"), new MockHttpServletResponse());
         assertThat(answer.getStatusCode().value()).isEqualTo(500);
     }
 
@@ -58,12 +65,14 @@ class GlobalExceptionHandlerTest {
         MockHttpServletResponse streaming = new MockHttpServletResponse();
         streaming.setContentType("application/x-ndjson");
         streaming.flushBuffer();
-        assertThat(handler.handleUnexpected(new IllegalStateException("upstream went away"), streaming)).isNull();
+        assertThat(handler.handleUnexpected(new IllegalStateException("upstream went away"), streaming))
+                .isNull();
     }
 
     @Test
     void anythingElseIsA500WithAGenericMessage() {
-        ResponseEntity<ErrorResponse> answer = handler.handleUnexpected(new IllegalStateException("boom"), new MockHttpServletResponse());
+        ResponseEntity<ErrorResponse> answer =
+                handler.handleUnexpected(new IllegalStateException("boom"), new MockHttpServletResponse());
         assertThat(answer.getStatusCode().value()).isEqualTo(500);
         assertThat(answer.getBody().error()).isEqualTo("An unexpected error occurred");
     }

@@ -9,9 +9,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -63,8 +63,8 @@ public class PlannerProxyController {
      *  collection job is minutes. The client is what should give up. */
     private static final Duration TIMEOUT = Duration.ofMinutes(10);
 
-    private static final StreamingProxy.Upstream PLANNER = new StreamingProxy.Upstream(
-            "planner service", "planner service unreachable", "planner service timed out");
+    private static final StreamingProxy.Upstream PLANNER =
+            new StreamingProxy.Upstream("planner service", "planner service unreachable", "planner service timed out");
     private static final StreamingProxy.Upstream ASSISTANT = new StreamingProxy.Upstream(
             "assistant service", "assistant service unreachable", "assistant service timed out");
 
@@ -129,17 +129,30 @@ public class PlannerProxyController {
         this.pilots = pilots;
         this.subscriptions = subscriptions;
         this.allowances = new EnumMap<>(Map.of(
-                PaidFeature.CHECKPOINT_NOTES, new Allowance(paidCallsPerDay, "checkpoint-note generations used",
-                        "Notes already written still show; more tomorrow."),
-                PaidFeature.NARRATIVE, new Allowance(paidCallsPerDay, "AI narratives used",
-                        "The nav log and briefing still work; narratives are back tomorrow."),
-                PaidFeature.ASSISTANT, new Allowance(assistantPerDay, "questions to the assistant",
-                        "The plan and the Brief still work; the assistant is back tomorrow."),
-                PaidFeature.WORDS, new Allowance(wordsPerDay, "readings in words",
-                        "The Brief's figures still show in full; the words are back tomorrow.")));
+                PaidFeature.CHECKPOINT_NOTES,
+                        new Allowance(
+                                paidCallsPerDay,
+                                "checkpoint-note generations used",
+                                "Notes already written still show; more tomorrow."),
+                PaidFeature.NARRATIVE,
+                        new Allowance(
+                                paidCallsPerDay,
+                                "AI narratives used",
+                                "The nav log and briefing still work; narratives are back tomorrow."),
+                PaidFeature.ASSISTANT,
+                        new Allowance(
+                                assistantPerDay,
+                                "questions to the assistant",
+                                "The plan and the Brief still work; the assistant is back tomorrow."),
+                PaidFeature.WORDS,
+                        new Allowance(
+                                wordsPerDay,
+                                "readings in words",
+                                "The Brief's figures still show in full; the words are back tomorrow.")));
     }
 
-    @Operation(summary = "Any planner GET",
+    @Operation(
+            summary = "Any planner GET",
             description = "course, detect/stream, classify, picks, checkpoints, navlog, routes, build status")
     @GetMapping("/**")
     public ResponseEntity<StreamingResponseBody> get(HttpServletRequest request, HttpServletResponse servletResponse) {
@@ -148,9 +161,15 @@ public class PlannerProxyController {
 
     // The body is read here, bounded, rather than as a @RequestBody: the
     // document still says what it takes.
-    @Operation(summary = "Any planner POST", description = "picks, build",
-            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(
-                    mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(type = "string"))))
+    @Operation(
+            summary = "Any planner POST",
+            description = "picks, build",
+            requestBody =
+                    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                            content =
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                            schema = @Schema(type = "string"))))
     @PostMapping("/**")
     public ResponseEntity<StreamingResponseBody> post(HttpServletRequest request, HttpServletResponse servletResponse)
             throws IOException {
@@ -158,40 +177,51 @@ public class PlannerProxyController {
         // would have read all of it before this method could look.
         byte[] bytes = request.getInputStream().readNBytes(BODY_LIMIT + 1);
         if (bytes.length > BODY_LIMIT) {
-            return StreamingProxy.error(413, "a request to the planner is at most " + (BODY_LIMIT / 1024 / 1024) + " MB");
+            return StreamingProxy.error(
+                    413, "a request to the planner is at most " + (BODY_LIMIT / 1024 / 1024) + " MB");
         }
-        return forward(request, servletResponse, "POST", bytes.length == 0 ? null : new String(bytes, StandardCharsets.UTF_8));
+        return forward(
+                request, servletResponse, "POST", bytes.length == 0 ? null : new String(bytes, StandardCharsets.UTF_8));
     }
 
     @Operation(summary = "Any planner DELETE", description = "picks")
     @DeleteMapping("/**")
-    public ResponseEntity<StreamingResponseBody> delete(HttpServletRequest request, HttpServletResponse servletResponse) {
+    public ResponseEntity<StreamingResponseBody> delete(
+            HttpServletRequest request, HttpServletResponse servletResponse) {
         return forward(request, servletResponse, "DELETE", null);
     }
 
-    private ResponseEntity<StreamingResponseBody> forward(HttpServletRequest request, HttpServletResponse servletResponse,
-                                                          String method, String body) {
+    private ResponseEntity<StreamingResponseBody> forward(
+            HttpServletRequest request, HttpServletResponse servletResponse, String method, String body) {
         String path = UpstreamRoutes.upstreamPath(request);
         UpstreamRoutes.Route route = routes.find(method, path).orElse(null);
         if (route == null) {
             return StreamingProxy.error(404, "no such planner endpoint: " + method + " " + path);
         }
-        if (route.bodyLimit() != null && body != null && body.getBytes(StandardCharsets.UTF_8).length > route.bodyLimit()) {
-            return StreamingProxy.error(413, "a request to " + path + " is at most " + (route.bodyLimit() / 1024) + " KB");
+        if (route.bodyLimit() != null
+                && body != null
+                && body.getBytes(StandardCharsets.UTF_8).length > route.bodyLimit()) {
+            return StreamingProxy.error(
+                    413, "a request to " + path + " is at most " + (route.bodyLimit() / 1024) + " KB");
         }
         PaidFeature paid = route.paid();
         if (paid != null) {
             // The subscription (and app.claude-features) before the day's
             // allowance, so a refusal for want of one spends none of it.
-            var refused = subscriptions.refusal(SecurityContextHolder.getContext().getAuthentication(), paid);
+            var refused =
+                    subscriptions.refusal(SecurityContextHolder.getContext().getAuthentication(), paid);
             if (refused.isPresent()) {
-                return StreamingProxy.error(refused.get().status(), refused.get().detail());
+                return StreamingProxy.error(
+                        refused.get().status(), refused.get().detail());
             }
             Allowance allowance = allowances.get(paid);
             if (allowance != null
-                    && !allowance.limiter().allow(SlidingWindowLimiter.callerOf(request), allowance.perDay(), Instant.now())) {
-                return StreamingProxy.error(429, "That is today's " + allowance.perDay() + " " + allowance.used()
-                        + ". " + allowance.still());
+                    && !allowance
+                            .limiter()
+                            .allow(SlidingWindowLimiter.callerOf(request), allowance.perDay(), Instant.now())) {
+                return StreamingProxy.error(
+                        429,
+                        "That is today's " + allowance.perDay() + " " + allowance.used() + ". " + allowance.still());
             }
         }
         // Every Claude call to the assistant service, everything else to
@@ -222,9 +252,8 @@ public class PlannerProxyController {
         HttpRequest upstream = upstreamBuilder.build();
 
         return proxy.exchange(toAssistant ? ASSISTANT : PLANNER, upstream, response -> {
-            ResponseEntity.BodyBuilder builder = StreamingProxy.unbuffered(
-                    ResponseEntity.status(response.statusCode())
-                            .header(HttpHeaders.CONTENT_TYPE, StreamingProxy.contentTypeOf(response)));
+            ResponseEntity.BodyBuilder builder = StreamingProxy.unbuffered(ResponseEntity.status(response.statusCode())
+                    .header(HttpHeaders.CONTENT_TYPE, StreamingProxy.contentTypeOf(response)));
             // Forwarded for the chart tiles, the airport diagrams and the
             // few answers the same for every pilot (x-gateway's cache):
             // their `public, max-age=...`

@@ -44,7 +44,8 @@ public class PilotController {
         this.accounts = accounts;
     }
 
-    @Operation(summary = "The signed-in pilot",
+    @Operation(
+            summary = "The signed-in pilot",
             description = "Creates the pilot record on first sign-in. 204, with nothing, when no one is signed in: "
                     + "the ordinary answer for a signed-out page, not a refusal.")
     @ApiResponses({
@@ -59,7 +60,8 @@ public class PilotController {
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
-    @Operation(summary = "The signed-in pilot's telephone number and home base",
+    @Operation(
+            summary = "The signed-in pilot's telephone number and home base",
             description = "What a flight plan's item 19 C/ asks with the pilot in command's name (AIM Appendix 4), "
                     + "both at once; blank is none. Their name is set with PUT /api/training/name.")
     @ApiResponses({
@@ -68,12 +70,16 @@ public class PilotController {
         @ApiResponse(responseCode = "401", description = "No session")
     })
     @PutMapping("/contact")
-    public ResponseEntity<PilotDto> setContact(Authentication authentication, @Valid @RequestBody PilotContactRequest request) {
-        return PilotResponses.withPilot(pilots, authentication, pilot ->
-                ResponseEntity.ok(toDto(pilots.setContact(pilot, request.phone(), request.homeBase()))));
+    public ResponseEntity<PilotDto> setContact(
+            Authentication authentication, @Valid @RequestBody PilotContactRequest request) {
+        return PilotResponses.withPilot(
+                pilots,
+                authentication,
+                pilot -> ResponseEntity.ok(toDto(pilots.setContact(pilot, request.phone(), request.homeBase()))));
     }
 
-    @Operation(summary = "Delete the signed-in pilot's account",
+    @Operation(
+            summary = "Delete the signed-in pilot's account",
             description = "The pilot and everything that was theirs -- aircraft, flights with their nav logs and "
                     + "tracks, logbook, endorsements, their own checkpoint notes, the sign-in links sent to them -- "
                     + "and every session they hold. Nothing is deleted when the planner cannot take the notes (502).")
@@ -83,15 +89,17 @@ public class PilotController {
         @ApiResponse(responseCode = "502", description = "Nothing deleted: the planner could not take the notes")
     })
     @DeleteMapping
-    public ResponseEntity<?> delete(Authentication authentication, HttpServletRequest request,
-            HttpServletResponse response) {
+    public ResponseEntity<?> delete(
+            Authentication authentication, HttpServletRequest request, HttpServletResponse response) {
         return PilotResponses.<Object>withPilot(pilots, authentication, pilot -> {
             try {
                 accounts.delete(pilot);
             } catch (AccountNotDeletedException failed) {
                 log.warn("account {} not deleted: {}", pilot.getId(), failed.getMessage());
-                return ResponseEntity.status(502).body(new ErrorResponse(
-                        "Your account was not deleted: the planner did not answer. Nothing was removed; try again shortly."));
+                return ResponseEntity.status(502)
+                        .body(
+                                new ErrorResponse(
+                                        "Your account was not deleted: the planner did not answer. Nothing was removed; try again shortly."));
             }
             new SecurityContextLogoutHandler().logout(request, response, authentication);
             return ResponseEntity.noContent().build();
@@ -99,7 +107,13 @@ public class PilotController {
     }
 
     private static PilotDto toDto(Pilot pilot) {
-        return new PilotDto(pilot.getId(), pilot.getEmail(), pilot.getDisplayName(), pilot.getRole().isDeveloper(),
-                pilot.getFullName(), pilot.getPhone(), pilot.getHomeBase());
+        return new PilotDto(
+                pilot.getId(),
+                pilot.getEmail(),
+                pilot.getDisplayName(),
+                pilot.getRole().isDeveloper(),
+                pilot.getFullName(),
+                pilot.getPhone(),
+                pilot.getHomeBase());
     }
 }

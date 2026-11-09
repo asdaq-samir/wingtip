@@ -52,7 +52,8 @@ class SessionPersistenceTest {
         S stored = repository.findById(session.getId());
         assertThat(stored).isNotNull();
         assertThat(stored.getMaxInactiveInterval()).isEqualTo(Duration.ofDays(30));
-        SecurityContext restored = stored.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        SecurityContext restored =
+                stored.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
         assertThat(restored.getAuthentication().getName()).isEqualTo("pilot@example.com");
         assertThat(repository.findByPrincipalName("pilot@example.com")).containsKey(session.getId());
     }

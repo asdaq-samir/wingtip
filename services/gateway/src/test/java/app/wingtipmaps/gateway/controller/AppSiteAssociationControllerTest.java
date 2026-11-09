@@ -18,18 +18,24 @@ class AppSiteAssociationControllerTest {
         ResponseEntity<Map<String, Object>> answer =
                 new AppSiteAssociationController("ABCDE12345", "app.wingtipmaps.ios").association();
         assertThat(answer.getStatusCode()).isEqualTo(HttpStatus.OK);
-        Map<String, Object> details = ((List<Map<String, Object>>) ((Map<String, Object>) answer.getBody()
-                .get("applinks")).get("details")).get(0);
+        Map<String, Object> details = ((List<Map<String, Object>>)
+                        ((Map<String, Object>) answer.getBody().get("applinks")).get("details"))
+                .get(0);
         assertThat(details.get("appIDs")).isEqualTo(List.of("ABCDE12345.app.wingtipmaps.ios"));
-        assertThat((List<Map<String, String>>) details.get("components")).extracting(c -> c.get("/"))
+        assertThat((List<Map<String, String>>) details.get("components"))
+                .extracting(c -> c.get("/"))
                 .containsExactly("/api/auth/magic-link/verify*", "/app/*");
     }
 
     @Test
     void withNoAppThereIsNoFile() {
-        assertThat(new AppSiteAssociationController("", "app.wingtipmaps.ios").association().getStatusCode())
+        assertThat(new AppSiteAssociationController("", "app.wingtipmaps.ios")
+                        .association()
+                        .getStatusCode())
                 .isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(new AppSiteAssociationController("ABCDE12345", " ").association().getStatusCode())
+        assertThat(new AppSiteAssociationController("ABCDE12345", " ")
+                        .association()
+                        .getStatusCode())
                 .isEqualTo(HttpStatus.NOT_FOUND);
     }
 }

@@ -74,9 +74,10 @@ public class AppleNativeSignInController {
 
     /** Apple's identity tokens for this app alone. */
     static JwtDecoder appleTokens(String bundleId) {
-        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(APPLE + "/auth/keys").build();
-        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
-                JwtValidators.createDefaultWithIssuer(APPLE), forApp(bundleId)));
+        NimbusJwtDecoder decoder =
+                NimbusJwtDecoder.withJwkSetUri(APPLE + "/auth/keys").build();
+        decoder.setJwtValidator(
+                new DelegatingOAuth2TokenValidator<>(JwtValidators.createDefaultWithIssuer(APPLE), forApp(bundleId)));
         return decoder;
     }
 
@@ -94,35 +95,43 @@ public class AppleNativeSignInController {
     /** Signed in: where the app goes next (SignInLanding). */
     public record SignedIn(String next) {}
 
-    @Operation(summary = "Sign in with Apple from the iOS app",
+    @Operation(
+            summary = "Sign in with Apple from the iOS app",
             description = "Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id) and "
                     + "signs the pilot in on this session. 404 where no iOS app is set up.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Signed in; `next` is where to go",
+        @ApiResponse(
+                responseCode = "200",
+                description = "Signed in; `next` is where to go",
                 content = @Content(schema = @Schema(implementation = SignedIn.class))),
         @ApiResponse(responseCode = "401", description = "Not a token Apple issued to this app, or no verified email"),
         @ApiResponse(responseCode = "404", description = "No iOS app set up here")
     })
     @PostMapping
-    public ResponseEntity<?> signIn(@Valid @RequestBody AppleToken body, HttpServletRequest request,
-            HttpServletResponse response) {
+    public ResponseEntity<?> signIn(
+            @Valid @RequestBody AppleToken body, HttpServletRequest request, HttpServletResponse response) {
         if (decoder == null) {
-            return ResponseEntity.status(404).body(new ErrorResponse("Sign in with Apple is not set up for the app here."));
+            return ResponseEntity.status(404)
+                    .body(new ErrorResponse("Sign in with Apple is not set up for the app here."));
         }
         Jwt jwt;
         try {
             jwt = decoder.decode(body.identityToken());
         } catch (JwtException refused) {
-            return ResponseEntity.status(401).body(new ErrorResponse("Apple's sign-in could not be confirmed. Try again."));
+            return ResponseEntity.status(401)
+                    .body(new ErrorResponse("Apple's sign-in could not be confirmed. Try again."));
         }
-        OidcUser user = new DefaultOidcUser(List.of(new SimpleGrantedAuthority("OIDC_USER")),
-                new OidcIdToken(jwt.getTokenValue(), jwt.getIssuedAt(), jwt.getExpiresAt(), jwt.getClaims()), "sub");
+        OidcUser user = new DefaultOidcUser(
+                List.of(new SimpleGrantedAuthority("OIDC_USER")),
+                new OidcIdToken(jwt.getTokenValue(), jwt.getIssuedAt(), jwt.getExpiresAt(), jwt.getClaims()),
+                "sub");
         Pilot pilot;
         try {
             pilot = pilots.fromOidcUser(user, "apple");
         } catch (UnverifiedEmailException | IllegalArgumentException refused) {
-            return ResponseEntity.status(401).body(new ErrorResponse(
-                    "Apple did not share a verified email address, which an account here needs."));
+            return ResponseEntity.status(401)
+                    .body(new ErrorResponse(
+                            "Apple did not share a verified email address, which an account here needs."));
         }
         Authentication authentication = new OAuth2AuthenticationToken(user, user.getAuthorities(), "apple");
         SessionSignIn.signIn(authentication, request, response);

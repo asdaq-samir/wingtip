@@ -80,25 +80,42 @@ public class SpeedController {
             @NotNull @Pattern(regexp = NAME) String page,
             @NotNull @Pattern(regexp = DEVICE) String device,
             @NotNull @Pattern(regexp = VERSION) String version,
-            @NotNull @Size(min = 1, max = 5) Map<@Pattern(regexp = "LCP|INP|CLS|FCP|TTFB") String,
-                    @NotNull @DecimalMin("0") @DecimalMax("600000") Double> metrics) {}
+
+            @NotNull @Size(min = 1, max = 5)
+            Map<
+                            @Pattern(regexp = "LCP|INP|CLS|FCP|TTFB") String,
+                            @NotNull @DecimalMin("0") @DecimalMax("600000") Double>
+                    metrics) {}
 
     /** A night's measurements, each named in lower case (open_app, lighthouse_performance, first_load_kb). */
     public record LabReport(
             @NotNull @Pattern(regexp = NAME) String page,
             @NotNull @Pattern(regexp = DEVICE) String device,
             @NotNull @Pattern(regexp = VERSION) String commit,
-            @NotNull @Size(min = 1, max = 60) Map<@Pattern(regexp = "[a-z][a-z0-9_]{0,39}") String,
-                    @NotNull @DecimalMin("0") @DecimalMax("100000000") Double> metrics) {}
+
+            @NotNull @Size(min = 1, max = 60)
+            Map<
+                            @Pattern(regexp = "[a-z][a-z0-9_]{0,39}") String,
+                            @NotNull @DecimalMin("0") @DecimalMax("100000000") Double>
+                    metrics) {}
 
     /** One day of one metric from one source on one kind of device: its
      *  median and 75th percentile, how many samples, and the highest build
      *  or commit seen. */
-    public record SpeedDay(String day, String source, String metric, String device, double p50, double p75,
-            long count, String version) {}
+    public record SpeedDay(
+            String day,
+            String source,
+            String metric,
+            String device,
+            double p50,
+            double p75,
+            long count,
+            String version) {}
 
-    @Operation(summary = "Report a page's speed from a pilot's browser",
-            description = "Core Web Vitals and timings, nothing of the pilot's; 60 an hour per caller, the rest dropped.")
+    @Operation(
+            summary = "Report a page's speed from a pilot's browser",
+            description =
+                    "Core Web Vitals and timings, nothing of the pilot's; 60 an hour per caller, the rest dropped.")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Kept, or dropped past the hour's allowance"),
         @ApiResponse(responseCode = "400", description = "Not a speed report")
@@ -111,7 +128,8 @@ public class SpeedController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Report the nightly lab measurement",
+    @Operation(
+            summary = "Report the nightly lab measurement",
             description = "Only with the deployment's lab token in X-Speed-Token.")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Kept"),
@@ -119,10 +137,12 @@ public class SpeedController {
         @ApiResponse(responseCode = "403", description = "No token, the wrong one, or none set here")
     })
     @PostMapping("/lab")
-    public ResponseEntity<Void> lab(@Valid @RequestBody LabReport report,
+    public ResponseEntity<Void> lab(
+            @Valid @RequestBody LabReport report,
             @RequestHeader(value = "X-Speed-Token", required = false) String token) {
         // Compared in constant time, and never against an empty token.
-        boolean allowed = labToken.length > 0 && token != null
+        boolean allowed = labToken.length > 0
+                && token != null
                 && MessageDigest.isEqual(labToken, token.getBytes(StandardCharsets.UTF_8));
         if (!allowed) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -131,13 +151,22 @@ public class SpeedController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "The speed trend, a day at a time",
-            description = "Each day's median and 75th percentile by source, metric and device, oldest first; the developer's.")
+    @Operation(
+            summary = "The speed trend, a day at a time",
+            description =
+                    "Each day's median and 75th percentile by source, metric and device, oldest first; the developer's.")
     @GetMapping
     public List<SpeedDay> trend(@RequestParam(defaultValue = "90") int days) {
         return speed.trend(Math.max(1, Math.min(MOST_DAYS, days))).stream()
-                .map(d -> new SpeedDay(d.getDay(), d.getSource(), d.getMetric(), d.getDevice(), d.getP50(), d.getP75(),
-                        d.getCount(), d.getVersion()))
+                .map(d -> new SpeedDay(
+                        d.getDay(),
+                        d.getSource(),
+                        d.getMetric(),
+                        d.getDevice(),
+                        d.getP50(),
+                        d.getP75(),
+                        d.getCount(),
+                        d.getVersion()))
                 .toList();
     }
 }

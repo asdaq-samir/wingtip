@@ -100,10 +100,11 @@ engine/facade/tests/runway.rs 598
 scripts/build/assistant_client.py 423
 scripts/build/design_tokens.py 675
 services/assistant/app/toolbox.py 498
-services/gateway/src/main/java/app/wingtipmaps/gateway/security/SecurityConfig.java 413
-services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 432
-services/gateway/src/main/java/app/wingtipmaps/gateway/service/PlannerClient.java 434
-services/gateway/src/test/java/app/wingtipmaps/gateway/controller/PlannerProxyControllerTest.java 531
+services/gateway/src/main/java/app/wingtipmaps/gateway/security/SecurityConfig.java 441
+services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 539
+services/gateway/src/main/java/app/wingtipmaps/gateway/service/PlannerClient.java 505
+services/gateway/src/test/java/app/wingtipmaps/gateway/controller/AircraftControllerTest.java 525
+services/gateway/src/test/java/app/wingtipmaps/gateway/controller/PlannerProxyControllerTest.java 568
 services/ingest/ingest/swim.py 493
 services/jobs/charts/overlays.py 728
 services/jobs/charts/tests/test_overlays.py 795

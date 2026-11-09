@@ -56,32 +56,48 @@ class PlannerClientContractTest {
         }
     }
 
-    record Clients(PlannerClient planner, AccountService accounts) {
-    }
+    record Clients(PlannerClient planner, AccountService accounts) {}
 
     private static final LocalDate DAY = LocalDate.of(2026, 11, 9);
 
     /** Each method that asks the planner, once with every optional field
      *  given and once, where it has any, with them left out. */
     static final List<Call> CALLS = List.of(
-            new Call("briefing", c -> c.planner().briefing("KDLH", "KMSP", List.of("KHYR"), Instant.parse("2026-11-09T15:00:00Z"), 95.0)),
-            new Call("briefing (no stops)", c -> c.planner().briefing("KDLH", "KMSP", List.of(), Instant.parse("2026-11-09T15:00:00Z"), null)),
-            new Call("changes", c -> c.planner().changes("KDLH", "KMSP", List.of("KHYR"), Stub.briefing, Stub.briefing)),
-            new Call("currency", c -> c.planner().currency(logbook(), DAY.minusYears(1), DAY.plusYears(2), DAY.minusMonths(3), DAY)),
+            new Call(
+                    "briefing",
+                    c -> c.planner()
+                            .briefing("KDLH", "KMSP", List.of("KHYR"), Instant.parse("2026-11-09T15:00:00Z"), 95.0)),
+            new Call(
+                    "briefing (no stops)",
+                    c -> c.planner().briefing("KDLH", "KMSP", List.of(), Instant.parse("2026-11-09T15:00:00Z"), null)),
+            new Call(
+                    "changes", c -> c.planner().changes("KDLH", "KMSP", List.of("KHYR"), Stub.briefing, Stub.briefing)),
+            new Call(
+                    "currency",
+                    c -> c.planner().currency(logbook(), DAY.minusYears(1), DAY.plusYears(2), DAY.minusMonths(3), DAY)),
             new Call("currency (no dates)", c -> c.planner().currency(logbook(), null, null, null, DAY)),
             new Call("experience", c -> c.planner().experience(logbook(), DAY)),
-            new Call("endorsements", c -> c.planner().endorsements(List.of(PlannerClient.held("solo", DAY, "C172"),
-                    PlannerClient.held("solo-xc", DAY, null)), DAY.plusDays(3))),
+            new Call(
+                    "endorsements",
+                    c -> c.planner()
+                            .endorsements(
+                                    List.of(
+                                            PlannerClient.held("solo", DAY, "C172"),
+                                            PlannerClient.held("solo-xc", DAY, null)),
+                                    DAY.plusDays(3))),
             new Call("endorsements (no flight)", c -> c.planner().endorsements(List.of(), null)),
             new Call("endorsementKinds", c -> c.planner().endorsementKinds()),
             new Call("fill", c -> c.planner().fill("solo", "A. Pilot", Map.of("makeModel", "C172"))),
             new Call("inspections", c -> c.planner().inspections(DAY, DAY, DAY, DAY, 1234.5, DAY, "VOT", 2.0)),
-            new Call("inspections (none recorded)", c -> c.planner().inspections(null, null, null, null, null, null, null, null)),
-            new Call("AccountService.delete", c -> c.accounts().delete(new Pilot("pilot@example.com", "A. Pilot", "sub-1"))));
+            new Call(
+                    "inspections (none recorded)",
+                    c -> c.planner().inspections(null, null, null, null, null, null, null, null)),
+            new Call(
+                    "AccountService.delete",
+                    c -> c.accounts().delete(new Pilot("pilot@example.com", "A. Pilot", "sub-1"))));
 
     /** PlannerClient's methods that ask nothing themselves. */
-    private static final Set<String> NOT_CALLS = Set.of(
-            "endorsementKind"); // a filter over endorsementKinds()
+    private static final Set<String> NOT_CALLS = Set.of("endorsementKind"); // a filter over endorsementKinds()
 
     /** The gateway forwards the briefings it watches to the assistant,
      *  which hands the body whole to the planner's words sources: the body
@@ -99,11 +115,17 @@ class PlannerClientContractTest {
     @Test
     void everyMethodThatAsksThePlannerIsCovered() {
         Set<String> methods = Arrays.stream(PlannerClient.class.getDeclaredMethods())
-                .filter(m -> Modifier.isPublic(m.getModifiers()) && !Modifier.isStatic(m.getModifiers()) && !m.isSynthetic())
-                .map(Method::getName).collect(Collectors.toCollection(TreeSet::new));
+                .filter(m ->
+                        Modifier.isPublic(m.getModifiers()) && !Modifier.isStatic(m.getModifiers()) && !m.isSynthetic())
+                .map(Method::getName)
+                .collect(Collectors.toCollection(TreeSet::new));
         methods.removeAll(NOT_CALLS);
-        Set<String> covered = CALLS.stream().map(Call::method).filter(n -> !n.contains(".")).collect(Collectors.toCollection(TreeSet::new));
-        assertThat(covered).as("PlannerClient's public methods each need a Call in CALLS (or a reason in NOT_CALLS)")
+        Set<String> covered = CALLS.stream()
+                .map(Call::method)
+                .filter(n -> !n.contains("."))
+                .collect(Collectors.toCollection(TreeSet::new));
+        assertThat(covered)
+                .as("PlannerClient's public methods each need a Call in CALLS (or a reason in NOT_CALLS)")
                 .isEqualTo(methods);
     }
 
@@ -115,8 +137,12 @@ class PlannerClientContractTest {
         JsonNode planner = OpenApiContract.shipped("planner").deepCopy();
         rename(planner, "CurrencyAsk", "today", "asOf");
         assertThat(problems(planner, OpenApiContract.shipped("assistant")))
-                .anySatisfy(p -> assertThat(p).startsWith("PlannerClient.currency:").contains("body.today is sent, but the planner has no such field"))
-                .anySatisfy(p -> assertThat(p).startsWith("PlannerClient.currency:").contains("body.asOf is required, but is not sent"));
+                .anySatisfy(p -> assertThat(p)
+                        .startsWith("PlannerClient.currency:")
+                        .contains("body.today is sent, but the planner has no such field"))
+                .anySatisfy(p -> assertThat(p)
+                        .startsWith("PlannerClient.currency:")
+                        .contains("body.asOf is required, but is not sent"));
     }
 
     @Test
@@ -128,7 +154,9 @@ class PlannerClientContractTest {
             }
         }
         assertThat(problems(planner, OpenApiContract.shipped("assistant")))
-                .anySatisfy(p -> assertThat(p).startsWith("PlannerClient.briefing:").contains("query parameter 'ete_min' is sent"));
+                .anySatisfy(p -> assertThat(p)
+                        .startsWith("PlannerClient.briefing:")
+                        .contains("query parameter 'ete_min' is sent"));
     }
 
     @Test
@@ -136,8 +164,10 @@ class PlannerClientContractTest {
         JsonNode planner = OpenApiContract.shipped("planner").deepCopy();
         ((ObjectNode) planner.get("paths")).remove("/api/pilot/endorsement-kinds");
         assertThat(problems(planner, OpenApiContract.shipped("assistant")))
-                .anySatisfy(p -> assertThat(p).isEqualTo(
-                        "PlannerClient.endorsementKinds: GET /api/pilot/endorsement-kinds is not in services/planner/openapi.json"));
+                .anySatisfy(
+                        p -> assertThat(p)
+                                .isEqualTo(
+                                        "PlannerClient.endorsementKinds: GET /api/pilot/endorsement-kinds is not in services/planner/openapi.json"));
     }
 
     private static void rename(JsonNode document, String schema, String from, String to) {
@@ -156,10 +186,15 @@ class PlannerClientContractTest {
     static List<String> problems(JsonNode plannerDocument, JsonNode assistantDocument) {
         OpenApiContract planner = new OpenApiContract(plannerDocument);
         List<String> problems = new ArrayList<>();
-        try (Stub plannerStub = new Stub("planner", planner); Stub assistantStub = new Stub("assistant", new OpenApiContract(assistantDocument))) {
-            Stub.briefing = new AnswerContract(planner).sample(planner.operation("GET", "/api/briefing")
-                    .flatMap(OpenApiContract::answerSchema).orElseThrow()).toString();
-            Clients clients = new Clients(new PlannerClient(plannerStub.url(), assistantStub.url()), accounts(plannerStub.url()));
+        try (Stub plannerStub = new Stub("planner", planner);
+                Stub assistantStub = new Stub("assistant", new OpenApiContract(assistantDocument))) {
+            Stub.briefing = new AnswerContract(planner)
+                    .sample(planner.operation("GET", "/api/briefing")
+                            .flatMap(OpenApiContract::answerSchema)
+                            .orElseThrow())
+                    .toString();
+            Clients clients =
+                    new Clients(new PlannerClient(plannerStub.url(), assistantStub.url()), accounts(plannerStub.url()));
             for (Call call : CALLS) {
                 String who = call.method().contains(".") ? call.method() : "PlannerClient." + call.method();
                 List<Stub.Asked> asked = new ArrayList<>();
@@ -181,7 +216,9 @@ class PlannerClientContractTest {
                     problems.add(who + ": asked nothing of the planner");
                 }
                 for (Stub.Asked one : asked) {
-                    problems.addAll(check(call, one, planner).stream().map(p -> who + ": " + p).toList());
+                    problems.addAll(check(call, one, planner).stream()
+                            .map(p -> who + ": " + p)
+                            .toList());
                 }
             }
         }
@@ -193,7 +230,8 @@ class PlannerClientContractTest {
         OpenApiContract document = asked.stub().contract;
         JsonNode operation = document.operation(asked.method(), asked.path()).orElse(null);
         if (operation == null) {
-            problems.add(asked.method() + " " + asked.path() + " is not in services/" + asked.stub().service + "/openapi.json");
+            problems.add(asked.method() + " " + asked.path() + " is not in services/" + asked.stub().service
+                    + "/openapi.json");
             return problems;
         }
         problems.addAll(document.checkQuery(operation, asked.query()));
@@ -204,7 +242,9 @@ class PlannerClientContractTest {
             }
         });
         String bodyPath = BODY_FOR.get(call.method());
-        JsonNode bodyOperation = bodyPath == null ? operation : planner.operation("POST", bodyPath).orElse(null);
+        JsonNode bodyOperation = bodyPath == null
+                ? operation
+                : planner.operation("POST", bodyPath).orElse(null);
         if (bodyOperation == null) {
             problems.add("POST " + bodyPath + ", which takes this body on, is not in services/planner/openapi.json");
         } else {
@@ -221,13 +261,19 @@ class PlannerClientContractTest {
 
     @SuppressWarnings("unchecked")
     private static AccountService accounts(String plannerUrl) {
-        return new AccountService(mock(PilotRepository.class), mock(MagicLinkRepository.class),
-                mock(FindByIndexNameSessionRepository.class), mock(TransactionTemplate.class), mock(AppleRevocation.class), plannerUrl);
+        return new AccountService(
+                mock(PilotRepository.class),
+                mock(MagicLinkRepository.class),
+                mock(FindByIndexNameSessionRepository.class),
+                mock(TransactionTemplate.class),
+                mock(AppleRevocation.class),
+                plannerUrl);
     }
 
     private static List<LogbookEntry> logbook() {
         Pilot pilot = new Pilot("pilot@example.com", "A. Pilot", "sub-1");
-        return List.of(new LogbookEntry(pilot).set(LocalDate.of(2026, 9, 20), "N12345", "C172", null, 1.5, 0, 0, 3, 1, null)
+        return List.of(new LogbookEntry(pilot)
+                .set(LocalDate.of(2026, 9, 20), "N12345", "C172", null, 1.5, 0, 0, 3, 1, null)
                 .instrument(6, true, false));
     }
 }

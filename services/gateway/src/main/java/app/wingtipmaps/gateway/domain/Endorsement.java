@@ -21,9 +21,9 @@ public class Endorsement {
 
     /** The pilot and the endorsement's code. */
     @Embeddable
-    public record Key(@Column(name = "pilot_id") Long pilotId, @Column(name = "code", length = 40) String code)
-            implements Serializable {
-    }
+    public record Key(
+            @Column(name = "pilot_id") Long pilotId,
+            @Column(name = "code", length = 40) String code) implements Serializable {}
 
     @EmbeddedId
     private Key key;

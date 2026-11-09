@@ -47,15 +47,15 @@ class FlightServiceTest {
     }
 
     private static SaveFlightRequest request(Long aircraftId) {
-        return new SaveFlightRequest(aircraftId, "C81", "KDLH", null, null, null, null, null, List.of(), null, null, null, null);
+        return new SaveFlightRequest(
+                aircraftId, "C81", "KDLH", null, null, null, null, null, List.of(), null, null, null, null);
     }
 
     @Test
     void savingWithSomeoneElsesAircraftIdIsRejected() {
         given(aircraftRepository.findByIdAndPilotId(99L, pilot.getId())).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> flightService.save(pilot, request(99L)))
-                .isInstanceOf(NoSuchAircraftException.class);
+        assertThatThrownBy(() -> flightService.save(pilot, request(99L))).isInstanceOf(NoSuchAircraftException.class);
 
         org.mockito.Mockito.verify(flightRepository, never()).save(any());
     }

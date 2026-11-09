@@ -57,8 +57,8 @@ public class AircraftDueItem {
     }
 
     /** Every field at once, as its form sends them. */
-    public AircraftDueItem set(DueItemKind kind, String title, String reference, String method, LocalDate dueOn,
-                               Double dueAtHours) {
+    public AircraftDueItem set(
+            DueItemKind kind, String title, String reference, String method, LocalDate dueOn, Double dueAtHours) {
         this.kind = kind;
         this.title = title;
         this.reference = reference;

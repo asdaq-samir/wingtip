@@ -71,8 +71,17 @@ public class SignedEndorsement {
         // JPA
     }
 
-    public SignedEndorsement(Pilot student, Pilot instructor, String code, String studentName, Map<String, String> fields,
-                             String text, String signature, LocalDate signedOn, Instant signedAt, String digest) {
+    public SignedEndorsement(
+            Pilot student,
+            Pilot instructor,
+            String code,
+            String studentName,
+            Map<String, String> fields,
+            String text,
+            String signature,
+            LocalDate signedOn,
+            Instant signedAt,
+            String digest) {
         this.student = student;
         this.instructor = instructor;
         this.code = code;

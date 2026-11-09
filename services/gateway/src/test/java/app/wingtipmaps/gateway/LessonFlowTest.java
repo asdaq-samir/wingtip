@@ -14,19 +14,19 @@ import app.wingtipmaps.gateway.dto.AssignLessonRequest;
 import app.wingtipmaps.gateway.dto.InstructorRequest;
 import app.wingtipmaps.gateway.dto.LessonProgressRequest;
 import app.wingtipmaps.gateway.dto.QuizAnswerDto;
+import app.wingtipmaps.gateway.dto.ReviewCheckDto;
 import app.wingtipmaps.gateway.dto.SaveFlightRequest;
 import app.wingtipmaps.gateway.dto.TrackDto;
 import app.wingtipmaps.gateway.dto.TrackPointDto;
+import app.wingtipmaps.gateway.planner.model.PlannerEndorsements;
+import app.wingtipmaps.gateway.planner.model.PlannerHeldEndorsement;
+import app.wingtipmaps.gateway.planner.model.PlannerReviewCheck;
 import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.service.FlightService;
 import app.wingtipmaps.gateway.service.InstructorService;
 import app.wingtipmaps.gateway.service.LessonService;
 import app.wingtipmaps.gateway.service.Mailer;
-import app.wingtipmaps.gateway.planner.model.PlannerEndorsements;
-import app.wingtipmaps.gateway.planner.model.PlannerHeldEndorsement;
-import app.wingtipmaps.gateway.planner.model.PlannerReviewCheck;
 import app.wingtipmaps.gateway.service.PlannerClient;
-import app.wingtipmaps.gateway.dto.ReviewCheckDto;
 import app.wingtipmaps.gateway.service.TrainingService;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -95,7 +95,9 @@ class LessonFlowTest {
      *  two checks for a review, so these tests see the gateway send what
      *  is held -- voided ones left out -- and pass the answer on. */
     static final LocalDate SOLO_UNTIL = LocalDate.of(2099, 1, 1);
-    static final List<ReviewCheckDto> CHECKS = List.of(new ReviewCheckDto("61.93(d)(4)", "A", false, "None on record"),
+
+    static final List<ReviewCheckDto> CHECKS = List.of(
+            new ReviewCheckDto("61.93(d)(4)", "A", false, "None on record"),
             new ReviewCheckDto("61.93(d)(5)", "B", false, "None on record"));
 
     @org.junit.jupiter.api.BeforeEach
@@ -103,10 +105,24 @@ class LessonFlowTest {
         org.mockito.BDDMockito.given(planner.endorsements(any(), any())).willAnswer(ask -> {
             List<PlannerHeldEndorsement> held = ask.getArgument(0);
             LocalDate flightOn = ask.getArgument(1);
-            return new PlannerEndorsements().until(java.util.Collections.nCopies(held.size(), (LocalDate) null))
-                    .soloUntil(held.stream().anyMatch(h -> List.of("solo-first", "solo-90").contains(h.getCode())) ? SOLO_UNTIL : null)
-                    .checks(flightOn == null ? List.of() : CHECKS.stream().map(c -> new PlannerReviewCheck()
-                            .rule(c.rule()).label(c.label()).met(c.met()).detail(c.detail())).toList());
+            return new PlannerEndorsements()
+                    .until(java.util.Collections.nCopies(held.size(), (LocalDate) null))
+                    .soloUntil(
+                            held.stream()
+                                            .anyMatch(h -> List.of("solo-first", "solo-90")
+                                                    .contains(h.getCode()))
+                                    ? SOLO_UNTIL
+                                    : null)
+                    .checks(
+                            flightOn == null
+                                    ? List.of()
+                                    : CHECKS.stream()
+                                            .map(c -> new PlannerReviewCheck()
+                                                    .rule(c.rule())
+                                                    .label(c.label())
+                                                    .met(c.met())
+                                                    .detail(c.detail()))
+                                            .toList());
         });
     }
 
@@ -123,16 +139,25 @@ class LessonFlowTest {
         Pilot student = newPilot("avery");
         Pilot instructor = newPilot("Jo");
         instructors.setFullName(student, "Avery B. Student");
-        instructors.setInstructor(instructor, new InstructorRequest("J. J. Jones", "987654321CFI", LocalDate.of(2027, 12, 31),
-                InstructorUntil.RE));
+        instructors.setInstructor(
+                instructor,
+                new InstructorRequest("J. J. Jones", "987654321CFI", LocalDate.of(2027, 12, 31), InstructorUntil.RE));
         instructors.ask(student, instructor.getEmail(), NOW);
-        instructors.accept(instructor, instructors.instructor(instructor, NOW).asking().get(0).linkId(), NOW);
+        instructors.accept(
+                instructor,
+                instructors.instructor(instructor, NOW).asking().get(0).linkId(),
+                NOW);
         return new Pilot[] {student, instructor};
     }
 
     private static AssignLessonRequest ils09() {
-        return new AssignLessonRequest("kdlh", "i09", "ILS  RWY 09", "261029",
-                Map.of("pykla", "  Power to 1,800 rpm,   gear down ", "DL", "  "), LocalDate.of(2026, 11, 8));
+        return new AssignLessonRequest(
+                "kdlh",
+                "i09",
+                "ILS  RWY 09",
+                "261029",
+                Map.of("pykla", "  Power to 1,800 rpm,   gear down ", "DL", "  "),
+                LocalDate.of(2026, 11, 8));
     }
 
     private ApproachLessonDto theirLesson(Pilot student) {
@@ -157,16 +182,24 @@ class LessonFlowTest {
 
         ArgumentCaptor<SimpleMailMessage> sent = ArgumentCaptor.forClass(SimpleMailMessage.class);
         verify(mail, atLeastOnce()).send(sent.capture());
-        assertThat(sent.getAllValues()).filteredOn(m -> m.getTo()[0].equals(p[0].getEmail())).last().satisfies(m -> {
-            assertThat(m.getSubject()).contains("ILS RWY 09 at KDLH");
-            assertThat(m.getText()).contains("by 8 Nov 2026").contains("At PYKLA: \"Power to 1,800 rpm, gear down\"");
-        });
+        assertThat(sent.getAllValues())
+                .filteredOn(m -> m.getTo()[0].equals(p[0].getEmail()))
+                .last()
+                .satisfies(m -> {
+                    assertThat(m.getSubject()).contains("ILS RWY 09 at KDLH");
+                    assertThat(m.getText())
+                            .contains("by 8 Nov 2026")
+                            .contains("At PYKLA: \"Power to 1,800 rpm, gear down\"");
+                });
 
         // The same approach again, its quiz not taken: once is enough.
         assertThatThrownBy(() -> lessons.assign(p[1], student, ils09(), NOW))
-                .isInstanceOfSatisfying(InstructorService.Refused.class, r -> assertThat(r.status).isEqualTo(HttpStatus.CONFLICT));
+                .isInstanceOfSatisfying(
+                        InstructorService.Refused.class,
+                        r -> assertThat(r.status).isEqualTo(HttpStatus.CONFLICT));
         // Their instructor reads it among the student's record.
-        assertThat(training.trainingFor(p[1], student, List.of(), TODAY).lessons()).singleElement()
+        assertThat(training.trainingFor(p[1], student, List.of(), TODAY).lessons())
+                .singleElement()
                 .satisfies(l -> assertThat(l.id()).isEqualTo(lesson.id()));
     }
 
@@ -176,7 +209,8 @@ class LessonFlowTest {
         Pilot student = instructors.student(p[1], p[0].getId()).orElseThrow();
         Long id = lessons.assign(p[1], student, ils09(), NOW).getId();
 
-        assertThat(lessons.progress(p[0], id, new LessonProgressRequest(true, false, null), NOW)).isTrue();
+        assertThat(lessons.progress(p[0], id, new LessonProgressRequest(true, false, null), NOW))
+                .isTrue();
         assertThat(theirLesson(p[0]).status()).isEqualTo("briefed");
         // Briefed again later: the first time stands.
         lessons.progress(p[0], id, new LessonProgressRequest(true, true, null), NOW.plusSeconds(600));
@@ -187,17 +221,30 @@ class LessonFlowTest {
 
         QuizAnswerDto right = new QuizAnswerDto("What's the minimum altitude at DL?", "3,300 ft", true);
         QuizAnswerDto wrong = new QuizAnswerDto("What's the final approach fix?", "CFBSJ", false);
-        lessons.progress(p[0], id, new LessonProgressRequest(false, false, new LessonProgressRequest.Quiz(List.of(right, wrong), 8)), NOW);
-        ApproachLessonDto quizzed = training.trainingFor(p[1], student, List.of(), TODAY).lessons().get(0);
+        lessons.progress(
+                p[0],
+                id,
+                new LessonProgressRequest(false, false, new LessonProgressRequest.Quiz(List.of(right, wrong), 8)),
+                NOW);
+        ApproachLessonDto quizzed =
+                training.trainingFor(p[1], student, List.of(), TODAY).lessons().get(0);
         assertThat(quizzed.status()).isEqualTo("quizzed");
         assertThat(quizzed.quizOf()).isEqualTo(8);
         assertThat(quizzed.quizAnswers()).containsExactly(right, wrong);
         // Asked again: the new attempt replaces the old.
-        lessons.progress(p[0], id, new LessonProgressRequest(false, false, new LessonProgressRequest.Quiz(List.of(right), 8)), NOW);
+        lessons.progress(
+                p[0],
+                id,
+                new LessonProgressRequest(false, false, new LessonProgressRequest.Quiz(List.of(right), 8)),
+                NOW);
         assertThat(theirLesson(p[0]).quizAnswers()).containsExactly(right);
         // More answers than questions is not a quiz.
-        assertThatThrownBy(() -> lessons.progress(p[0], id,
-                new LessonProgressRequest(false, false, new LessonProgressRequest.Quiz(List.of(right, wrong), 1)), NOW))
+        assertThatThrownBy(() -> lessons.progress(
+                        p[0],
+                        id,
+                        new LessonProgressRequest(
+                                false, false, new LessonProgressRequest.Quiz(List.of(right, wrong), 1)),
+                        NOW))
                 .isInstanceOf(InstructorService.Refused.class);
     }
 
@@ -208,8 +255,10 @@ class LessonFlowTest {
         Long id = lessons.assign(p[1], student, ils09(), NOW).getId();
         Pilot stranger = newPilot("Stranger");
         // Another pilot's progress, and another instructor's taking it back.
-        assertThat(lessons.progress(p[1], id, new LessonProgressRequest(true, true, null), NOW)).isFalse();
-        assertThat(lessons.progress(stranger, id, new LessonProgressRequest(true, true, null), NOW)).isFalse();
+        assertThat(lessons.progress(p[1], id, new LessonProgressRequest(true, true, null), NOW))
+                .isFalse();
+        assertThat(lessons.progress(stranger, id, new LessonProgressRequest(true, true, null), NOW))
+                .isFalse();
         assertThat(lessons.remove(stranger, p[0].getId(), id)).isFalse();
         assertThat(lessons.remove(p[1], stranger.getId(), id)).isFalse();
         assertThat(theirLesson(p[0]).status()).isEqualTo("not-started");
@@ -224,46 +273,70 @@ class LessonFlowTest {
         Pilot[] p = pair();
         Pilot student = instructors.student(p[1], p[0].getId()).orElseThrow();
         lessons.assign(p[1], student, ils09(), NOW);
-        Long link = training.training(p[0], List.of(), TODAY).instructors().get(0).id();
-        TrackDto track = new TrackDto("practice.gpx", List.of(new TrackPointDto(0, 46.84, -92.36, 3300.0),
-                new TrackPointDto(60_000, 46.842, -92.21, 1500.0)));
+        Long link =
+                training.training(p[0], List.of(), TODAY).instructors().get(0).id();
+        TrackDto track = new TrackDto(
+                "practice.gpx",
+                List.of(
+                        new TrackPointDto(0, 46.84, -92.36, 3300.0),
+                        new TrackPointDto(60_000, 46.842, -92.21, 1500.0)));
         // To Duluth by its FAA identifier, with a track, put to them.
-        Long duluth = flights.save(p[0], new SaveFlightRequest(null, "KUGN", "DLH", 4500, 300.0, 150.0, 20.0, null,
-                List.of(), null, null, null, null)).getId();
+        Long duluth = flights.save(
+                        p[0],
+                        new SaveFlightRequest(
+                                null, "KUGN", "DLH", 4500, 300.0, 150.0, 20.0, null, List.of(), null, null, null, null))
+                .getId();
         flights.saveTrack(p[0], duluth, track);
         instructors.askReview(p[0], new AskReviewRequest(duluth, link, "Cessna 172", TODAY, null), NOW);
         // Elsewhere, with a track, put to them; and to Duluth with a track, never put to them.
-        Long elsewhere = flights.save(p[0], new SaveFlightRequest(null, "KUGN", "KRFD", null, null, null, null, null,
-                List.of(), null, null, null, null)).getId();
+        Long elsewhere = flights.save(
+                        p[0],
+                        new SaveFlightRequest(
+                                null, "KUGN", "KRFD", null, null, null, null, null, List.of(), null, null, null, null))
+                .getId();
         flights.saveTrack(p[0], elsewhere, track);
         instructors.askReview(p[0], new AskReviewRequest(elsewhere, link, "Cessna 172", TODAY, null), NOW);
-        Long kept = flights.save(p[0], new SaveFlightRequest(null, "KUGN", "KDLH", null, null, null, null, null,
-                List.of(), null, null, null, null)).getId();
+        Long kept = flights.save(
+                        p[0],
+                        new SaveFlightRequest(
+                                null, "KUGN", "KDLH", null, null, null, null, null, List.of(), null, null, null, null))
+                .getId();
         flights.saveTrack(p[0], kept, track);
 
-        assertThat(lessons.lessonsOf(student, p[1]).get(0).flights()).extracting(f -> f.id()).containsExactly(duluth);
+        assertThat(lessons.lessonsOf(student, p[1]).get(0).flights())
+                .extracting(f -> f.id())
+                .containsExactly(duluth);
         assertThat(theirLesson(p[0]).flights()).isEmpty();
-        assertThat(lessons.reviewedTrack(p[1], p[0].getId(), duluth)).hasValueSatisfying(t -> assertThat(t.points()).hasSize(2));
+        assertThat(lessons.reviewedTrack(p[1], p[0].getId(), duluth))
+                .hasValueSatisfying(t -> assertThat(t.points()).hasSize(2));
         assertThat(lessons.reviewedTrack(p[1], p[0].getId(), kept)).isEmpty();
-        assertThat(lessons.reviewedTrack(newPilot("Stranger"), p[0].getId(), duluth)).isEmpty();
+        assertThat(lessons.reviewedTrack(newPilot("Stranger"), p[0].getId(), duluth))
+                .isEmpty();
     }
 
     @Test
     void lessonsGoWithTheLink_andWithEitherAccount() {
         Pilot[] p = pair();
         lessons.assign(p[1], instructors.student(p[1], p[0].getId()).orElseThrow(), ils09(), NOW);
-        Long link = training.training(p[0], List.of(), TODAY).instructors().get(0).id();
+        Long link =
+                training.training(p[0], List.of(), TODAY).instructors().get(0).id();
         assertThat(instructors.drop(p[0], link)).isTrue();
-        assertThat(jdbc.queryForObject("SELECT count(*) FROM approach_lessons WHERE student_id = ?", Integer.class, p[0].getId())).isZero();
+        assertThat(jdbc.queryForObject(
+                        "SELECT count(*) FROM approach_lessons WHERE student_id = ?", Integer.class, p[0].getId()))
+                .isZero();
 
         Pilot[] q = pair();
         lessons.assign(q[1], instructors.student(q[1], q[0].getId()).orElseThrow(), ils09(), NOW);
         jdbc.update("DELETE FROM pilots WHERE id = ?", q[1].getId());
-        assertThat(jdbc.queryForObject("SELECT count(*) FROM approach_lessons WHERE student_id = ?", Integer.class, q[0].getId())).isZero();
+        assertThat(jdbc.queryForObject(
+                        "SELECT count(*) FROM approach_lessons WHERE student_id = ?", Integer.class, q[0].getId()))
+                .isZero();
 
         Pilot[] r = pair();
         lessons.assign(r[1], instructors.student(r[1], r[0].getId()).orElseThrow(), ils09(), NOW);
         jdbc.update("DELETE FROM pilots WHERE id = ?", r[0].getId());
-        assertThat(jdbc.queryForObject("SELECT count(*) FROM approach_lessons WHERE instructor_id = ?", Integer.class, r[1].getId())).isZero();
+        assertThat(jdbc.queryForObject(
+                        "SELECT count(*) FROM approach_lessons WHERE instructor_id = ?", Integer.class, r[1].getId()))
+                .isZero();
     }
 }

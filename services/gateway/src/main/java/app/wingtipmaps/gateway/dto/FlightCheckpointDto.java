@@ -19,5 +19,4 @@ public record FlightCheckpointDto(
         @Nullable Double groundspeedKt,
         @Nullable Double eteMin,
         @Nullable Double fuelGal,
-        @Nullable Double altitudeFt) {
-}
+        @Nullable Double altitudeFt) {}

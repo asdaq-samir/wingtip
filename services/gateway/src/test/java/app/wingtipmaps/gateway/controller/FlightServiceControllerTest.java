@@ -48,16 +48,25 @@ class FlightServiceControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.connected").value(false))
                 .andExpect(jsonPath("$.provider").value("none"));
-        mockMvc.perform(post("/api/flight-service/flight-plans").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(PLAN))
+        mockMvc.perform(post("/api/flight-service/flight-plans")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(PLAN))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.error").value(org.hamcrest.Matchers.containsString("1800wxbrief.com")));
-        mockMvc.perform(post("/api/flight-service/briefings").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(PLAN))
+        mockMvc.perform(post("/api/flight-service/briefings")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(PLAN))
                 .andExpect(status().isServiceUnavailable());
         // A speed not written as item 15 has it is refused before anything.
-        mockMvc.perform(post("/api/flight-service/flight-plans").with(oidcLogin()).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON).content(PLAN.replace("N0110", "110")))
+        mockMvc.perform(post("/api/flight-service/flight-plans")
+                        .with(oidcLogin())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(PLAN.replace("N0110", "110")))
                 .andExpect(status().isBadRequest());
     }
 }

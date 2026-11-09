@@ -24,8 +24,11 @@ public interface FlightWatchRepository extends JpaRepository<FlightWatch, Long> 
      *  as the page asks for. */
     @Query("SELECT w FROM FlightWatch w WHERE w.departAt BETWEEN :since AND :until"
             + " AND (w.checkedAt IS NULL OR w.checkedAt < :notSince) ORDER BY w.departAt")
-    List<FlightWatch> due(@Param("since") Instant since, @Param("until") Instant until,
-                          @Param("notSince") Instant notSince, Pageable page);
+    List<FlightWatch> due(
+            @Param("since") Instant since,
+            @Param("until") Instant until,
+            @Param("notSince") Instant notSince,
+            Pageable page);
 
     /** Watches of flights that departed before {@code before}: a flight
      *  gone cannot be re-briefed, and the row would only grow the table. */

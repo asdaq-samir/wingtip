@@ -31,7 +31,9 @@ public class PaperworkController {
     @GetMapping
     public ResponseEntity<PaperworkDto> due(Authentication authentication) {
         LocalDate today = LocalDate.now();
-        return PilotResponses.withPilot(pilots, authentication, pilot ->
-                ResponseEntity.ok(PaperworkService.toDto(paperwork.of(pilot, today), today)));
+        return PilotResponses.withPilot(
+                pilots,
+                authentication,
+                pilot -> ResponseEntity.ok(PaperworkService.toDto(paperwork.of(pilot, today), today)));
     }
 }

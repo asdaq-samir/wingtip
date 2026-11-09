@@ -26,8 +26,8 @@ public class AppSiteAssociationController {
 
     private final String appId;
 
-    public AppSiteAssociationController(@Value("${APPLE_TEAM_ID:}") String teamId,
-            @Value("${APP_IOS_BUNDLE_ID:}") String bundleId) {
+    public AppSiteAssociationController(
+            @Value("${APPLE_TEAM_ID:}") String teamId, @Value("${APP_IOS_BUNDLE_ID:}") String bundleId) {
         this.appId = teamId.isBlank() || bundleId.isBlank() ? null : teamId.trim() + "." + bundleId.trim();
     }
 
@@ -36,11 +36,25 @@ public class AppSiteAssociationController {
         if (appId == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(Map.of("applinks", Map.of(
-                "details", List.of(Map.of(
-                        "appIDs", List.of(appId),
-                        "components", List.of(
-                                Map.of("/", "/api/auth/magic-link/verify*", "comment", "the sign-in link"),
-                                Map.of("/", "/app/*", "comment", "a page of the app, a shared route among them")))))));
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of(
+                        "applinks",
+                        Map.of(
+                                "details",
+                                List.of(Map.of(
+                                        "appIDs", List.of(appId),
+                                        "components",
+                                                List.of(
+                                                        Map.of(
+                                                                "/",
+                                                                "/api/auth/magic-link/verify*",
+                                                                "comment",
+                                                                "the sign-in link"),
+                                                        Map.of(
+                                                                "/",
+                                                                "/app/*",
+                                                                "comment",
+                                                                "a page of the app, a shared route among them")))))));
     }
 }

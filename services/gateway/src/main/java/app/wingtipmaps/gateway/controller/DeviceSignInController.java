@@ -74,6 +74,7 @@ public class DeviceSignInController {
     static final Duration LIFETIME = Duration.ofMinutes(10);
     /** How often the TV asks, seconds (RFC 8628's interval). */
     static final int INTERVAL_S = 3;
+
     static final String ALPHABET = "BCDFGHJKLMNPQRSTVWXZ23456789";
     private static final int USER_CODE_LENGTH = 8;
 
@@ -97,10 +98,12 @@ public class DeviceSignInController {
     private final Map<String, Pending> byDevice = new ConcurrentHashMap<>();
     /** The device code's hash, by the user code. */
     private final Map<String, String> byUser = new ConcurrentHashMap<>();
+
     private final SlidingWindowLimiter starts = new SlidingWindowLimiter(Duration.ofHours(1));
     private final SlidingWindowLimiter approvals = new SlidingWindowLimiter(Duration.ofMinutes(10));
     /** Tries at user codes in ten minutes: by pilot, by place, and all together. */
     static final int TRIES_PER_PILOT = 10;
+
     static final int TRIES_PER_PLACE = 20;
     static final int TRIES_IN_ALL = 300;
 
@@ -115,7 +118,8 @@ public class DeviceSignInController {
     }
 
     /** What the TV shows and keeps. */
-    public record DeviceCode(String deviceCode, String userCode, String verificationPath, int expiresIn, int interval) {}
+    public record DeviceCode(
+            String deviceCode, String userCode, String verificationPath, int expiresIn, int interval) {}
 
     /** The code a pilot typed in on the phone. */
     public record Approval(@NotBlank @Size(max = 20) String userCode) {}
@@ -129,7 +133,8 @@ public class DeviceSignInController {
     /** Signed in: where the TV goes next (SignInLanding). */
     public record SignedIn(String next) {}
 
-    @Operation(summary = "A code for a TV to sign in with",
+    @Operation(
+            summary = "A code for a TV to sign in with",
             description = "The TV shows `userCode` and the address `verificationPath` on this site, and asks "
                     + "/api/auth/device/token with `deviceCode` every `interval` seconds until a pilot signed in "
                     + "on a phone types the code in. 429 past twenty an hour from one place.")
@@ -141,7 +146,8 @@ public class DeviceSignInController {
     public ResponseEntity<?> start(HttpServletRequest request) {
         Instant now = clock.instant();
         if (!starts.allow("client:" + SlidingWindowLimiter.clientOf(request), 20, now)) {
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(new ErrorResponse("Too many codes asked for. Wait a few minutes."));
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new ErrorResponse("Too many codes asked for. Wait a few minutes."));
         }
         forgetExpired(now);
         byte[] secret = new byte[32];
@@ -154,11 +160,16 @@ public class DeviceSignInController {
         String hash = hash(deviceCode);
         byDevice.put(hash, new Pending(userCode, now.plus(LIFETIME)));
         byUser.put(userCode, hash);
-        return ResponseEntity.ok(new DeviceCode(deviceCode, userCode.substring(0, 4) + "-" + userCode.substring(4), "/tv",
-                (int) LIFETIME.toSeconds(), INTERVAL_S));
+        return ResponseEntity.ok(new DeviceCode(
+                deviceCode,
+                userCode.substring(0, 4) + "-" + userCode.substring(4),
+                "/tv",
+                (int) LIFETIME.toSeconds(),
+                INTERVAL_S));
     }
 
-    @Operation(summary = "Sign in the TV showing this code as the pilot signed in here",
+    @Operation(
+            summary = "Sign in the TV showing this code as the pilot signed in here",
             description = "From the phone, signed in. 404 for a code no TV is showing now (mistyped, used or ten "
                     + "minutes old); 429 past ten tries in ten minutes.")
     @ApiResponses({
@@ -168,11 +179,12 @@ public class DeviceSignInController {
         @ApiResponse(responseCode = "429", description = "Too many tries")
     })
     @PostMapping("/approve")
-    public ResponseEntity<?> approve(@Valid @RequestBody Approval body, HttpServletRequest request,
-            Authentication authentication) {
+    public ResponseEntity<?> approve(
+            @Valid @RequestBody Approval body, HttpServletRequest request, Authentication authentication) {
         Optional<Pilot> pilot = pilots.current(authentication);
         if (pilot.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("Sign in on this phone first."));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("Sign in on this phone first."));
         }
         Instant now = clock.instant();
         // A pilot account costs an email address, so ten tries each is no
@@ -182,7 +194,8 @@ public class DeviceSignInController {
         if (!approvals.allow("pilot:" + pilot.get().getEmail(), TRIES_PER_PILOT, now)
                 || !approvals.allow("client:" + SlidingWindowLimiter.clientOf(request), TRIES_PER_PLACE, now)
                 || !approvals.allow("all", TRIES_IN_ALL, now)) {
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(new ErrorResponse("Too many tries. Wait a few minutes."));
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new ErrorResponse("Too many tries. Wait a few minutes."));
         }
         String typed = body.userCode().toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "");
         String hash = byUser.get(typed);
@@ -193,7 +206,8 @@ public class DeviceSignInController {
         if (hash != null) {
             byDevice.computeIfPresent(hash, (key, pending) -> {
                 if (!pending.expiresAt.isBefore(now)) {
-                    approved.set(pending.approvedEmail.compareAndSet(null, pilot.get().getEmail()));
+                    approved.set(pending.approvedEmail.compareAndSet(
+                            null, pilot.get().getEmail()));
                 }
                 return pending;
             });
@@ -205,25 +219,31 @@ public class DeviceSignInController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "The TV asking whether its code has been typed in",
+    @Operation(
+            summary = "The TV asking whether its code has been typed in",
             description = "202 while not yet; 200 once it has, the TV then signed in on this session, the code "
                     + "spent; 410 for a code ten minutes old or unknown, for which the TV asks for a new one.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Signed in; `next` is where to go",
+        @ApiResponse(
+                responseCode = "200",
+                description = "Signed in; `next` is where to go",
                 content = @Content(schema = @Schema(implementation = SignedIn.class))),
-        @ApiResponse(responseCode = "202", description = "Not yet; ask again in `interval` seconds",
+        @ApiResponse(
+                responseCode = "202",
+                description = "Not yet; ask again in `interval` seconds",
                 content = @Content(schema = @Schema(implementation = Waiting.class))),
         @ApiResponse(responseCode = "410", description = "The code is spent, too old or unknown")
     })
     @PostMapping("/token")
-    public ResponseEntity<?> token(@Valid @RequestBody TokenRequest body, HttpServletRequest request,
-            HttpServletResponse response) {
+    public ResponseEntity<?> token(
+            @Valid @RequestBody TokenRequest body, HttpServletRequest request, HttpServletResponse response) {
         String hash = hash(body.deviceCode());
         Pending pending = byDevice.get(hash);
         Instant now = clock.instant();
         if (pending == null || pending.expiresAt.isBefore(now)) {
             forget(hash);
-            return ResponseEntity.status(HttpStatus.GONE).body(new ErrorResponse("This code has run out. Ask for a new one."));
+            return ResponseEntity.status(HttpStatus.GONE)
+                    .body(new ErrorResponse("This code has run out. Ask for a new one."));
         }
         String approvedEmail = pending.approvedEmail.get();
         if (approvedEmail == null) {
@@ -231,7 +251,8 @@ public class DeviceSignInController {
         }
         // Spent before the sign-in, so two asks at once cannot both sign in.
         if (byDevice.remove(hash) == null) {
-            return ResponseEntity.status(HttpStatus.GONE).body(new ErrorResponse("This code has run out. Ask for a new one."));
+            return ResponseEntity.status(HttpStatus.GONE)
+                    .body(new ErrorResponse("This code has run out. Ask for a new one."));
         }
         byUser.remove(pending.userCode);
         Pilot pilot = pilots.fromVerifiedEmail(approvedEmail);
@@ -267,7 +288,8 @@ public class DeviceSignInController {
 
     private static String hash(String code) {
         try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(code.getBytes(StandardCharsets.UTF_8)));
+            return HexFormat.of()
+                    .formatHex(MessageDigest.getInstance("SHA-256").digest(code.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException impossible) {
             throw new IllegalStateException(impossible);
         }

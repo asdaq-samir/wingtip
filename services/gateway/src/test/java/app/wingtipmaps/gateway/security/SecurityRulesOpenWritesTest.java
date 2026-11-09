@@ -43,13 +43,17 @@ class SecurityRulesOpenWritesTest {
     @Test
     void plannerWritesAndTheNarrativeAreOpen() throws Exception {
         mockMvc.perform(post("/api/planner/picks").with(csrf()))
-                .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotIn(401, 403));
+                .andExpect(
+                        result -> assertThat(result.getResponse().getStatus()).isNotIn(401, 403));
         mockMvc.perform(post("/api/planner/retrain").with(csrf()))
-                .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotIn(401, 403));
+                .andExpect(
+                        result -> assertThat(result.getResponse().getStatus()).isNotIn(401, 403));
         mockMvc.perform(get("/api/planner/status"))
-                .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotIn(401, 403));
+                .andExpect(
+                        result -> assertThat(result.getResponse().getStatus()).isNotIn(401, 403));
         mockMvc.perform(post("/api/planner/briefing/narrative").with(csrf()))
-                .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotIn(401, 403));
+                .andExpect(
+                        result -> assertThat(result.getResponse().getStatus()).isNotIn(401, 403));
     }
 
     /** Opening planner writes does not open anyone's aircraft or flights. */

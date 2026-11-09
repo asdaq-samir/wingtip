@@ -74,7 +74,8 @@ class UpstreamRoutesTest {
 
     @Test
     void theEmergencyFieldsArePublicFromThePlanner() {
-        var route = UpstreamRoutes.shipped().find("GET", "/api/emergency/fields").orElseThrow();
+        var route =
+                UpstreamRoutes.shipped().find("GET", "/api/emergency/fields").orElseThrow();
         assertThat(route.upstream()).isEqualTo(Upstream.PLANNER);
         assertThat(route.access()).isEqualTo(UpstreamRoutes.Access.PUBLIC);
         assertThat(route.cache()).isFalse();
@@ -88,10 +89,15 @@ class UpstreamRoutesTest {
         List<String> differences = new ArrayList<>();
         for (Route route : routes) {
             String sample = RoutesBefore.sample(route.pattern().getPatternString());
-            RoutesBefore old = before.stream().filter(b -> b.matches(route.method(), sample)).findFirst().orElse(null);
+            RoutesBefore old = before.stream()
+                    .filter(b -> b.matches(route.method(), sample))
+                    .findFirst()
+                    .orElse(null);
             String name = route.method() + " " + route.pattern().getPatternString();
             if (ADDED.containsKey(name)) {
-                assertThat(old).as(name + " is listed as added, but the hand list had it").isNull();
+                assertThat(old)
+                        .as(name + " is listed as added, but the hand list had it")
+                        .isNull();
                 String rules = route.upstream().name().toLowerCase(Locale.ROOT) + " "
                         + route.access().name().toLowerCase(Locale.ROOT).replace('_', '-') + " "
                         + (route.csrf() ? "csrf" : "no-csrf");
@@ -106,11 +112,36 @@ class UpstreamRoutesTest {
             if (route.cache()) {
                 passed.add("Cache-Control");
             }
-            compare(differences, name, "upstream", old.upstream(), route.upstream().name().toLowerCase(Locale.ROOT));
-            compare(differences, name, "access", old.access(), route.access().name().toLowerCase(Locale.ROOT).replace('_', '-'));
-            compare(differences, name, "paid", old.paid(), route.paid() == null ? "-" : route.paid().name());
-            compare(differences, name, "bodyLimit", old.bodyLimit(), route.bodyLimit() == null ? "-" : route.bodyLimit().toString());
-            compare(differences, name, "csrf", old.csrf(), "GET".equals(route.method()) ? "-" : route.csrf() ? "checked" : "exempt");
+            compare(
+                    differences,
+                    name,
+                    "upstream",
+                    old.upstream(),
+                    route.upstream().name().toLowerCase(Locale.ROOT));
+            compare(
+                    differences,
+                    name,
+                    "access",
+                    old.access(),
+                    route.access().name().toLowerCase(Locale.ROOT).replace('_', '-'));
+            compare(
+                    differences,
+                    name,
+                    "paid",
+                    old.paid(),
+                    route.paid() == null ? "-" : route.paid().name());
+            compare(
+                    differences,
+                    name,
+                    "bodyLimit",
+                    old.bodyLimit(),
+                    route.bodyLimit() == null ? "-" : route.bodyLimit().toString());
+            compare(
+                    differences,
+                    name,
+                    "csrf",
+                    old.csrf(),
+                    "GET".equals(route.method()) ? "-" : route.csrf() ? "checked" : "exempt");
             compare(differences, name, "pilot", old.pilot(), route.pilot());
             compare(differences, name, "range", old.range(), route.range());
             compare(differences, name, "headers", new HashSet<>(old.passedHeaders()), passed);
@@ -123,7 +154,8 @@ class UpstreamRoutesTest {
         List<String> lost = new ArrayList<>();
         for (RoutesBefore old : before) {
             String name = old.method() + " " + old.pattern();
-            boolean found = UpstreamRoutes.shipped().find(old.method(), old.sample()).isPresent();
+            boolean found =
+                    UpstreamRoutes.shipped().find(old.method(), old.sample()).isPresent();
             if (found == NARROWED.containsKey(name)) {
                 lost.add(name + (found ? ": listed as narrowed, but still forwarded" : ": no longer forwarded"));
             }
@@ -131,10 +163,18 @@ class UpstreamRoutesTest {
         assertThat(lost).isEmpty();
         assertThat(before).hasSize(84);
         // What the narrowed routes are asked for, still forwarded.
-        for (String[] ask : new String[][] {{"GET", "/api/overlay-tiles/2026-10-29-v1-0badf00d.pmtiles"},
-                {"GET", "/api/cycle-pack/2026-10-29/n40w092.pack"}, {"POST", "/api/words/notams"}, {"POST", "/api/words/weather"},
-                {"POST", "/api/words/risk"}, {"POST", "/api/words/debrief"}, {"POST", "/api/words/changes"}}) {
-            assertThat(UpstreamRoutes.shipped().find(ask[0], ask[1])).as(ask[0] + " " + ask[1]).isPresent();
+        for (String[] ask : new String[][] {
+            {"GET", "/api/overlay-tiles/2026-10-29-v1-0badf00d.pmtiles"},
+            {"GET", "/api/cycle-pack/2026-10-29/n40w092.pack"},
+            {"POST", "/api/words/notams"},
+            {"POST", "/api/words/weather"},
+            {"POST", "/api/words/risk"},
+            {"POST", "/api/words/debrief"},
+            {"POST", "/api/words/changes"}
+        }) {
+            assertThat(UpstreamRoutes.shipped().find(ask[0], ask[1]))
+                    .as(ask[0] + " " + ask[1])
+                    .isPresent();
         }
     }
 
@@ -142,11 +182,22 @@ class UpstreamRoutesTest {
     void whatEachServiceKeepsToItselfIsNotForwarded() {
         // What the assistant asks the planner for, the gateway's own
         // currency figures, and the planner's root and docs.
-        for (String[] ask : new String[][] {{"POST", "/api/words/weather/sources"}, {"POST", "/api/checkpoint-notes/pending"},
-                {"POST", "/api/checkpoint-notes/seed"}, {"DELETE", "/api/checkpoint-notes/mine"}, {"GET", "/api/route-check"},
-                {"GET", "/api/plan"}, {"POST", "/api/pilot/currency"}, {"POST", "/api/aircraft/inspections"}, {"GET", "/"},
-                {"GET", "/openapi.json"}, {"GET", "/docs"}}) {
-            assertThat(UpstreamRoutes.shipped().find(ask[0], ask[1])).as(ask[0] + " " + ask[1]).isEmpty();
+        for (String[] ask : new String[][] {
+            {"POST", "/api/words/weather/sources"},
+            {"POST", "/api/checkpoint-notes/pending"},
+            {"POST", "/api/checkpoint-notes/seed"},
+            {"DELETE", "/api/checkpoint-notes/mine"},
+            {"GET", "/api/route-check"},
+            {"GET", "/api/plan"},
+            {"POST", "/api/pilot/currency"},
+            {"POST", "/api/aircraft/inspections"},
+            {"GET", "/"},
+            {"GET", "/openapi.json"},
+            {"GET", "/docs"}
+        }) {
+            assertThat(UpstreamRoutes.shipped().find(ask[0], ask[1]))
+                    .as(ask[0] + " " + ask[1])
+                    .isEmpty();
         }
     }
 
@@ -158,17 +209,19 @@ class UpstreamRoutesTest {
                 .hasMessageContaining("public, signed-in or developer");
         assertThatThrownBy(() -> read("{\"access\": \"signed-in\", \"paid\": \"LUNCH\"}"))
                 .isInstanceOf(IllegalArgumentException.class);
-        var document = new ObjectMapper().readTree(
-                "{\"paths\": {\"/api/a\": {\"post\": {\"x-gateway\": {\"access\": \"public\"}}}}}");
+        var document = new ObjectMapper()
+                .readTree("{\"paths\": {\"/api/a\": {\"post\": {\"x-gateway\": {\"access\": \"public\"}}}}}");
         assertThatThrownBy(() -> UpstreamRoutes.of(Map.of(Upstream.PLANNER, document, Upstream.ASSISTANT, document)))
                 .hasMessageContaining("declared by both");
     }
 
     @Test
     void anUnmarkedOperationIsNotARoute() throws Exception {
-        var document = new ObjectMapper().readTree(
-                "{\"paths\": {\"/api/a\": {\"get\": {}, \"post\": {\"x-gateway\": {\"access\": \"developer\", \"bodyLimit\": 10}}}}}");
-        List<Route> found = UpstreamRoutes.of(Map.of(Upstream.PLANNER, document)).all();
+        var document = new ObjectMapper()
+                .readTree(
+                        "{\"paths\": {\"/api/a\": {\"get\": {}, \"post\": {\"x-gateway\": {\"access\": \"developer\", \"bodyLimit\": 10}}}}}");
+        List<Route> found =
+                UpstreamRoutes.of(Map.of(Upstream.PLANNER, document)).all();
         assertThat(found).singleElement().satisfies(route -> {
             assertThat(route.method()).isEqualTo("POST");
             assertThat(route.access()).isEqualTo(UpstreamRoutes.Access.DEVELOPER);
@@ -178,8 +231,9 @@ class UpstreamRoutesTest {
     }
 
     private static UpstreamRoutes read(String spec) throws Exception {
-        return UpstreamRoutes.of(Map.of(Upstream.PLANNER, new ObjectMapper().readTree(
-                "{\"paths\": {\"/api/a\": {\"get\": {\"x-gateway\": " + spec + "}}}}")));
+        return UpstreamRoutes.of(Map.of(
+                Upstream.PLANNER,
+                new ObjectMapper().readTree("{\"paths\": {\"/api/a\": {\"get\": {\"x-gateway\": " + spec + "}}}}")));
     }
 
     private static void compare(List<String> differences, String name, String what, Object before, Object now) {

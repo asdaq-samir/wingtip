@@ -8,15 +8,15 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import app.wingtipmaps.gateway.assistant.model.AssistantChangesWords;
+import app.wingtipmaps.gateway.assistant.model.AssistantSentence;
+import app.wingtipmaps.gateway.assistant.model.AssistantSource;
 import app.wingtipmaps.gateway.domain.Flight;
 import app.wingtipmaps.gateway.domain.FlightWatch;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.BriefingChangeDto;
 import app.wingtipmaps.gateway.dto.BriefingSourceDto;
 import app.wingtipmaps.gateway.dto.FlightWatchDto;
-import app.wingtipmaps.gateway.assistant.model.AssistantChangesWords;
-import app.wingtipmaps.gateway.assistant.model.AssistantSentence;
-import app.wingtipmaps.gateway.assistant.model.AssistantSource;
 import app.wingtipmaps.gateway.repository.FlightRepository;
 import app.wingtipmaps.gateway.repository.FlightWatchRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
@@ -45,6 +45,7 @@ class FlightWatchServiceTest {
     private static final Instant DEPART = Instant.parse("2026-11-04T14:00:00Z");
     /** Two briefings as the planner writes them: never read inside. */
     private static final String THEN = "{\"forecast\":{\"min_ceiling_ft\":4000}}";
+
     private static final String LATER = "{\"forecast\":{\"min_ceiling_ft\":1500}}";
     private static final String CEILING = "KDLH's ceiling is forecast 1,500 ft, down from 4,000.";
 
@@ -87,15 +88,21 @@ class FlightWatchServiceTest {
     }
 
     private static AssistantChangesWords changed() {
-        return new AssistantChangesWords().changed(true)
+        return new AssistantChangesWords()
+                .changed(true)
                 .sentences(List.of(new AssistantSentence().text(CEILING).sources(List.of("taf:KDLH"))))
-                .sources(List.of(new AssistantSource().id("taf:KDLH").label("TAF KDLH 031720Z")
+                .sources(List.of(new AssistantSource()
+                        .id("taf:KDLH")
+                        .label("TAF KDLH 031720Z")
                         .text("KDLH 031720Z 0318/0418 ...")))
                 .model("claude-haiku-5-5");
     }
 
     private static AssistantChangesWords unchanged() {
-        return new AssistantChangesWords().changed(false).sentences(List.of()).sources(List.of())
+        return new AssistantChangesWords()
+                .changed(false)
+                .sentences(List.of())
+                .sources(List.of())
                 .model("claude-haiku-5-5");
     }
 
@@ -149,9 +156,10 @@ class FlightWatchServiceTest {
         verify(mail).send(sent.capture());
         assertThat(sent.getValue().getTo()).containsExactly("pilot@example.com");
         assertThat(sent.getValue().getSubject()).isEqualTo("Your flight C81 to KDLH: what changed");
-        assertThat(sent.getValue().getText()).isEqualTo(CEILING + "\n"
-                + "\nOpen the app to see the briefing."
-                + "\nhttps://maps.example.com/app/plan?dep=C81&dest=KDLH&stops=KJVL");
+        assertThat(sent.getValue().getText())
+                .isEqualTo(CEILING + "\n"
+                        + "\nOpen the app to see the briefing."
+                        + "\nhttps://maps.example.com/app/plan?dep=C81&dest=KDLH&stops=KJVL");
         // The briefing it was found in is the baseline now.
         assertThat(watch.getBriefingJson()).isEqualTo(LATER);
         assertThat(watch.getChangedAt()).isEqualTo(NOW);
@@ -181,7 +189,10 @@ class FlightWatchServiceTest {
         given(flights.findById(7L)).willReturn(Optional.of(flightWithId(7L, pilot)));
         given(planner.briefing("C81", "KDLH", List.of("KJVL"), DEPART, 205.0)).willReturn(LATER);
         given(planner.changes("C81", "KDLH", List.of("KJVL"), THEN, LATER))
-                .willReturn(new AssistantChangesWords().changed(false).sentences(List.of()).sources(List.of())
+                .willReturn(new AssistantChangesWords()
+                        .changed(false)
+                        .sentences(List.of())
+                        .sources(List.of())
                         .unavailable("Claude did not answer"));
         given(watches.save(any(FlightWatch.class))).willAnswer(call -> call.getArgument(0));
 
@@ -220,9 +231,9 @@ class FlightWatchServiceTest {
     void onePilotWatchingManyFlightsCannotTakeTheWholeRun() {
         List<FlightWatch> due = new java.util.ArrayList<>();
         for (long id = 1; id <= 8; id++) {
-            due.add(new FlightWatch(id, 1L, DEPART, THEN, NOW));    // one pilot's eight, nearest first
+            due.add(new FlightWatch(id, 1L, DEPART, THEN, NOW)); // one pilot's eight, nearest first
         }
-        due.add(new FlightWatch(100L, 2L, DEPART, THEN, NOW));      // another's one
+        due.add(new FlightWatch(100L, 2L, DEPART, THEN, NOW)); // another's one
         given(watches.due(any(), any(), any(), any())).willReturn(due);
 
         service.check(NOW);
@@ -239,8 +250,12 @@ class FlightWatchServiceTest {
         service.check(NOW);
 
         verify(watches).deleteDepartedBefore(NOW.minus(Duration.ofHours(2)));
-        verify(watches).due(eq(NOW.minus(Duration.ofHours(2))), eq(NOW.plus(Duration.ofHours(36))),
-                eq(NOW.minus(Duration.ofMinutes(20))), any());
+        verify(watches)
+                .due(
+                        eq(NOW.minus(Duration.ofHours(2))),
+                        eq(NOW.plus(Duration.ofHours(36))),
+                        eq(NOW.minus(Duration.ofMinutes(20))),
+                        any());
         verify(planner, never()).briefing(any(), any(), any(), any(), any());
     }
 

@@ -1,17 +1,17 @@
 package app.wingtipmaps.gateway.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import app.wingtipmaps.gateway.assistant.model.AssistantChangesWords;
+import app.wingtipmaps.gateway.assistant.model.AssistantSentence;
 import app.wingtipmaps.gateway.domain.Flight;
 import app.wingtipmaps.gateway.domain.FlightWatch;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.BriefingChangeDto;
 import app.wingtipmaps.gateway.dto.BriefingSourceDto;
 import app.wingtipmaps.gateway.dto.FlightWatchDto;
-import app.wingtipmaps.gateway.assistant.model.AssistantChangesWords;
-import app.wingtipmaps.gateway.assistant.model.AssistantSentence;
 import app.wingtipmaps.gateway.repository.FlightRepository;
 import app.wingtipmaps.gateway.repository.FlightWatchRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -51,6 +51,7 @@ public class FlightWatchService {
      *  as a pilot re-briefs. A flight more than two hours gone is left to
      *  expire: it cannot be re-briefed. */
     static final Duration AFTER_DEPARTURE = Duration.ofHours(2);
+
     static final Duration BEFORE_DEPARTURE = Duration.ofHours(36);
     /** No two checks of one watch closer than this, however the schedule
      *  fires: a briefing is weather fetched along the route, and the words
@@ -75,9 +76,13 @@ public class FlightWatchService {
      *  deployment sends no mail, and then there is no link. */
     private final String publicBaseUrl;
 
-    public FlightWatchService(FlightWatchRepository watches, FlightRepository flights, PilotRepository pilots,
-                              PlannerClient planner, Mailer mail,
-                              @Value("${app.public-base-url:}") String publicBaseUrl) {
+    public FlightWatchService(
+            FlightWatchRepository watches,
+            FlightRepository flights,
+            PilotRepository pilots,
+            PlannerClient planner,
+            Mailer mail,
+            @Value("${app.public-base-url:}") String publicBaseUrl) {
         this.watches = watches;
         this.flights = flights;
         this.pilots = pilots;
@@ -115,10 +120,12 @@ public class FlightWatchService {
     /** Ends the pilot's watch on the flight; false where there was none
      *  of theirs to end. */
     public boolean unwatch(Pilot pilot, Long flightId) {
-        return watches.findByFlightIdAndPilotId(flightId, pilot.getId()).map(watch -> {
-            watches.delete(watch);
-            return true;
-        }).orElse(false);
+        return watches.findByFlightIdAndPilotId(flightId, pilot.getId())
+                .map(watch -> {
+                    watches.delete(watch);
+                    return true;
+                })
+                .orElse(false);
     }
 
     /** Every half hour (wingtip.watch.every), the watches due a check.
@@ -144,8 +151,11 @@ public class FlightWatchService {
         if (gone > 0) {
             log.info("{} flight watch(es) past departure ended", gone);
         }
-        List<FlightWatch> due = watches.due(now.minus(AFTER_DEPARTURE), now.plus(BEFORE_DEPARTURE),
-                now.minus(AGAIN_AFTER), PageRequest.of(0, MOST_A_RUN * 4));
+        List<FlightWatch> due = watches.due(
+                now.minus(AFTER_DEPARTURE),
+                now.plus(BEFORE_DEPARTURE),
+                now.minus(AGAIN_AFTER),
+                PageRequest.of(0, MOST_A_RUN * 4));
         // Nearest departure first, as the query orders them, but at most
         // MOST_A_PILOT_A_RUN of any one pilot's; the rest wait for the
         // next run, as those past MOST_A_RUN always did.
@@ -182,8 +192,12 @@ public class FlightWatchService {
             return false;
         }
         String briefing = briefingOf(flight, watch.getDepartAt());
-        AssistantChangesWords answer = planner.changes(flight.getDepartureIdent(), flight.getDestinationIdent(),
-                flight.getStops(), watch.getBriefingJson(), briefing);
+        AssistantChangesWords answer = planner.changes(
+                flight.getDepartureIdent(),
+                flight.getDestinationIdent(),
+                flight.getStops(),
+                watch.getBriefingJson(),
+                briefing);
         if (answer.getUnavailable() != null) {
             // The words could not be written, so what changed is not known
             // yet: the baseline stays, and the next check diffs the same
@@ -205,8 +219,12 @@ public class FlightWatchService {
     }
 
     private String briefingOf(Flight flight, Instant departAt) {
-        return planner.briefing(flight.getDepartureIdent(), flight.getDestinationIdent(), flight.getStops(),
-                departAt, flight.getTotalEteMin());
+        return planner.briefing(
+                flight.getDepartureIdent(),
+                flight.getDestinationIdent(),
+                flight.getStops(),
+                departAt,
+                flight.getTotalEteMin());
     }
 
     private void send(Pilot pilot, Flight flight, AssistantChangesWords answer) {
@@ -223,15 +241,21 @@ public class FlightWatchService {
     static SimpleMailMessage message(Pilot pilot, Flight flight, AssistantChangesWords answer, String publicBaseUrl) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(pilot.getEmail());
-        message.setSubject("Your flight " + flight.getDepartureIdent() + " to " + flight.getDestinationIdent() + ": what changed");
+        message.setSubject(
+                "Your flight " + flight.getDepartureIdent() + " to " + flight.getDestinationIdent() + ": what changed");
         StringBuilder body = new StringBuilder();
-        for (AssistantSentence sentence : answer.getSentences() == null ? List.<AssistantSentence>of() : answer.getSentences()) {
+        for (AssistantSentence sentence :
+                answer.getSentences() == null ? List.<AssistantSentence>of() : answer.getSentences()) {
             body.append(sentence.getText()).append('\n');
         }
         body.append("\nOpen the app to see the briefing.");
         if (!publicBaseUrl.isBlank()) {
-            body.append('\n').append(publicBaseUrl).append("/app/plan?dep=").append(encode(flight.getDepartureIdent()))
-                    .append("&dest=").append(encode(flight.getDestinationIdent()));
+            body.append('\n')
+                    .append(publicBaseUrl)
+                    .append("/app/plan?dep=")
+                    .append(encode(flight.getDepartureIdent()))
+                    .append("&dest=")
+                    .append(encode(flight.getDestinationIdent()));
             if (!flight.getStops().isEmpty()) {
                 body.append("&stops=").append(encode(String.join(",", flight.getStops())));
             }
@@ -249,16 +273,24 @@ public class FlightWatchService {
         // of the planner's: its shape is this app's API, which outlives
         // a change to the planner's.
         AssistantChangesWords changes = read(watch);
-        List<BriefingChangeDto> sentences = changes == null || changes.getSentences() == null ? List.of()
+        List<BriefingChangeDto> sentences = changes == null || changes.getSentences() == null
+                ? List.of()
                 : changes.getSentences().stream()
-                        .map(c -> new BriefingChangeDto(c.getText(), c.getSources() == null ? List.<String>of() : c.getSources()))
+                        .map(c -> new BriefingChangeDto(
+                                c.getText(), c.getSources() == null ? List.<String>of() : c.getSources()))
                         .toList();
-        List<BriefingSourceDto> sources = changes == null || changes.getSources() == null ? List.of()
+        List<BriefingSourceDto> sources = changes == null || changes.getSources() == null
+                ? List.of()
                 : changes.getSources().stream()
                         .map(s -> new BriefingSourceDto(s.getId(), s.getLabel(), s.getText()))
                         .toList();
-        return new FlightWatchDto(watch.getFlightId(), watch.getDepartAt(), watch.getCheckedAt(), watch.getChangedAt(),
-                sentences, sources);
+        return new FlightWatchDto(
+                watch.getFlightId(),
+                watch.getDepartAt(),
+                watch.getCheckedAt(),
+                watch.getChangedAt(),
+                sentences,
+                sources);
     }
 
     private static String write(AssistantChangesWords answer) {

@@ -14,5 +14,4 @@ public record FlightWatchDto(
         @Nullable Instant checkedAt,
         @Nullable Instant changedAt,
         List<BriefingChangeDto> changes,
-        List<BriefingSourceDto> sources) {
-}
+        List<BriefingSourceDto> sources) {}

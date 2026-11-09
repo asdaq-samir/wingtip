@@ -6,11 +6,11 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import app.wingtipmaps.gateway.domain.Flight;
 import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.LogbookEntryRequest;
 import app.wingtipmaps.gateway.dto.LogbookImportResult;
-import app.wingtipmaps.gateway.domain.Flight;
 import app.wingtipmaps.gateway.repository.FlightRepository;
 import app.wingtipmaps.gateway.repository.LogbookRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
@@ -50,22 +50,47 @@ class LogbookServiceTest {
     }
 
     private static LogbookEntryRequest flight(String on, String aircraft, String route, double hours) {
-        return new LogbookEntryRequest(LocalDate.parse(on), aircraft, "C172", route, hours, 0, 0, 1, 0, null,
-                0, 0, 0, 0, 0, 0, 0, false, false, 0, 0, false, null);
+        return new LogbookEntryRequest(
+                LocalDate.parse(on),
+                aircraft,
+                "C172",
+                route,
+                hours,
+                0,
+                0,
+                1,
+                0,
+                null,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                false,
+                false,
+                0,
+                0,
+                false,
+                null);
     }
 
     @Test
     @SuppressWarnings("unchecked")
     void anImportAddsWhatIsNotThereAlreadyAndCountsTheRest() {
         Pilot pilot = pilot();
-        LogbookEntry logged = new LogbookEntry(pilot).set(LocalDate.of(2026, 9, 20), "N12345", "C172", "C81 KDLH", 3.4, 0, 3.4, 1, 0, null);
+        LogbookEntry logged = new LogbookEntry(pilot)
+                .set(LocalDate.of(2026, 9, 20), "N12345", "C172", "C81 KDLH", 3.4, 0, 3.4, 1, 0, null);
         given(entries.findByPilotIdOrderByFlownOnDescIdDesc(1L)).willReturn(List.of(logged));
 
-        LogbookImportResult result = logbook.importAll(pilot, List.of(
-                flight("2026-09-20", "n12345", "c81 kdlh", 3.4),   // already logged
-                flight("2026-09-21", "N12345", "KDLH C81", 3.1),
-                flight("2026-09-21", "N12345", "KDLH C81", 3.1),   // twice in the file
-                flight("2026-09-21", "N12345", "KDLH C81", 3.2)));  // another flight that day
+        LogbookImportResult result = logbook.importAll(
+                pilot,
+                List.of(
+                        flight("2026-09-20", "n12345", "c81 kdlh", 3.4), // already logged
+                        flight("2026-09-21", "N12345", "KDLH C81", 3.1),
+                        flight("2026-09-21", "N12345", "KDLH C81", 3.1), // twice in the file
+                        flight("2026-09-21", "N12345", "KDLH C81", 3.2))); // another flight that day
 
         assertThat(result).isEqualTo(new LogbookImportResult(2, 2));
         ArgumentCaptor<List<LogbookEntry>> saved = ArgumentCaptor.forClass(List.class);
@@ -95,7 +120,29 @@ class LogbookServiceTest {
     }
 
     private static LogbookEntryRequest fromTrack(Long flightId) {
-        return new LogbookEntryRequest(LocalDate.parse("2026-11-09"), "N3429J", "C150", "C81 KDLH", 4.0, 0.8, 4.0, 1, 1,
-                "Logged from the app's track.", 0, 0, 0, 1, 323, 323, 0, false, false, 3.9, 1, true, flightId);
+        return new LogbookEntryRequest(
+                LocalDate.parse("2026-11-09"),
+                "N3429J",
+                "C150",
+                "C81 KDLH",
+                4.0,
+                0.8,
+                4.0,
+                1,
+                1,
+                "Logged from the app's track.",
+                0,
+                0,
+                0,
+                1,
+                323,
+                323,
+                0,
+                false,
+                false,
+                3.9,
+                1,
+                true,
+                flightId);
     }
 }

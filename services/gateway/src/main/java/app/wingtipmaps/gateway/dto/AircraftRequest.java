@@ -24,26 +24,42 @@ public record AircraftRequest(
         @NotBlank(message = "tailNumber is required")
         @Size(max = 16, message = "tailNumber must be at most 16 characters")
         String tailNumber,
+
         @NotBlank(message = "typeDesignator is required")
         @Size(max = 16, message = "typeDesignator must be at most 16 characters")
         String typeDesignator,
+
         @Positive(message = "cruiseTasKt must be a positive number")
         double cruiseTasKt,
+
         @Positive(message = "fuelBurnGph must be a positive number")
         double fuelBurnGph,
+
         @DecimalMin(value = "40", message = "cruisePowerPct must be between 40 and 100")
         @DecimalMax(value = "100", message = "cruisePowerPct must be between 40 and 100")
-        @Nullable Double cruisePowerPct,
-        @Positive(message = "climbTasKt must be a positive number")
-        @Nullable Double climbTasKt,
-        @Positive(message = "climbFuelBurnGph must be a positive number")
-        @Nullable Double climbFuelBurnGph,
-        @Positive(message = "usableFuelGal must be a positive number")
-        @Nullable Double usableFuelGal,
-        @Pattern(regexp = "\\s*[A-Za-z0-9]{0,40}\\s*", message = "equipment must be at most 40 letters and figures, as item 10a writes it")
-        @Nullable String equipment,
-        @Pattern(regexp = "\\s*[A-Za-z0-9]{0,20}\\s*", message = "surveillance must be at most 20 letters and figures, as item 10b writes it")
-        @Nullable String surveillance,
-        @Size(max = 40, message = "colour must be at most 40 characters")
-        @Nullable String colour) {
-}
+        @Nullable
+        Double cruisePowerPct,
+
+        @Positive(message = "climbTasKt must be a positive number") @Nullable
+        Double climbTasKt,
+
+        @Positive(message = "climbFuelBurnGph must be a positive number") @Nullable
+        Double climbFuelBurnGph,
+
+        @Positive(message = "usableFuelGal must be a positive number") @Nullable
+        Double usableFuelGal,
+
+        @Pattern(
+                regexp = "\\s*[A-Za-z0-9]{0,40}\\s*",
+                message = "equipment must be at most 40 letters and figures, as item 10a writes it")
+        @Nullable
+        String equipment,
+
+        @Pattern(
+                regexp = "\\s*[A-Za-z0-9]{0,20}\\s*",
+                message = "surveillance must be at most 20 letters and figures, as item 10b writes it")
+        @Nullable
+        String surveillance,
+
+        @Size(max = 40, message = "colour must be at most 40 characters") @Nullable
+        String colour) {}

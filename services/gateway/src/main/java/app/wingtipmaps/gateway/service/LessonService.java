@@ -55,8 +55,12 @@ public class LessonService {
     private final FlightService flights;
     private final InstructorService instructors;
 
-    public LessonService(ApproachLessonRepository lessons, InstructorLinkRepository links, CrossCountryReviewRepository reviews,
-                         FlightService flights, InstructorService instructors) {
+    public LessonService(
+            ApproachLessonRepository lessons,
+            InstructorLinkRepository links,
+            CrossCountryReviewRepository reviews,
+            FlightService flights,
+            InstructorService instructors) {
         this.lessons = lessons;
         this.links = links;
         this.reviews = reviews;
@@ -73,19 +77,36 @@ public class LessonService {
     public ApproachLesson assign(Pilot instructor, Pilot student, AssignLessonRequest request, Instant now) {
         String field = request.airportIdent().strip().toUpperCase(Locale.ROOT);
         String procedure = request.procedureId().strip().toUpperCase(Locale.ROOT);
-        boolean open = lessons.findByStudentIdAndInstructorIdOrderByCreatedAtDesc(student.getId(), instructor.getId()).stream()
-                .anyMatch(l -> l.getAirportIdent().equals(field) && l.getProcedureId().equals(procedure) && l.getQuizAt() == null);
+        boolean open =
+                lessons.findByStudentIdAndInstructorIdOrderByCreatedAtDesc(student.getId(), instructor.getId()).stream()
+                        .anyMatch(l -> l.getAirportIdent().equals(field)
+                                && l.getProcedureId().equals(procedure)
+                                && l.getQuizAt() == null);
         if (open) {
             throw new InstructorService.Refused(HttpStatus.CONFLICT, "You have set them this approach already.");
         }
         String name = request.procedureName().strip().replaceAll("\\s+", " ");
-        ApproachLesson lesson = lessons.save(new ApproachLesson(student, instructor, field, procedure, name,
-                Typed.text(request.cycle()), notesOf(request.fixNotes()), request.dueOn(), now));
+        ApproachLesson lesson = lessons.save(new ApproachLesson(
+                student,
+                instructor,
+                field,
+                procedure,
+                name,
+                Typed.text(request.cycle()),
+                notesOf(request.fixNotes()),
+                request.dueOn(),
+                now));
         String by = EndorsementRecords.nameOf(instructor);
-        StringBuilder body = new StringBuilder(by + " has set you an approach to learn in Wingtip Maps: the " + name + " at " + field
-                + (request.dueOn() == null ? "" : ", by " + SAID.format(request.dueOn())) + ".\n");
-        lesson.getFixNotes().forEach((fix, note) -> body.append("\nAt ").append(fix).append(": \"").append(note).append('"'));
-        body.append("\n\nOpen Logbook, then Checkride, to brief it, fly it and take its quiz.").append(instructors.openLine());
+        StringBuilder body = new StringBuilder(by + " has set you an approach to learn in Wingtip Maps: the " + name
+                + " at " + field + (request.dueOn() == null ? "" : ", by " + SAID.format(request.dueOn())) + ".\n");
+        lesson.getFixNotes()
+                .forEach((fix, note) -> body.append("\nAt ")
+                        .append(fix)
+                        .append(": \"")
+                        .append(note)
+                        .append('"'));
+        body.append("\n\nOpen Logbook, then Checkride, to brief it, fly it and take its quiz.")
+                .append(instructors.openLine());
         instructors.send(student.getEmail(), by + " set you the " + name + " at " + field, body.toString());
         return lesson;
     }
@@ -93,10 +114,13 @@ public class LessonService {
     /** @return false where there is no such lesson of theirs for the student */
     @Transactional
     public boolean remove(Pilot instructor, Long studentId, Long lessonId) {
-        return lessons.findById(lessonId).filter(l -> isBetween(l, studentId, instructor.getId())).map(l -> {
-            lessons.delete(l);
-            return true;
-        }).orElse(false);
+        return lessons.findById(lessonId)
+                .filter(l -> isBetween(l, studentId, instructor.getId()))
+                .map(l -> {
+                    lessons.delete(l);
+                    return true;
+                })
+                .orElse(false);
     }
 
     /** The track of a flight the student put to this instructor, for its
@@ -107,8 +131,9 @@ public class LessonService {
         if (links.findByStudentIdAndInstructorId(studentId, instructor.getId()).isEmpty()) {
             return Optional.empty();
         }
-        boolean putToThem = reviews.findByStudentIdAndInstructorIdOrderByAskedAtDesc(studentId, instructor.getId()).stream()
-                .anyMatch(r -> r.getFlight().getId().equals(flightId));
+        boolean putToThem =
+                reviews.findByStudentIdAndInstructorIdOrderByAskedAtDesc(studentId, instructor.getId()).stream()
+                        .anyMatch(r -> r.getFlight().getId().equals(flightId));
         return putToThem ? flights.trackOf(flightId) : Optional.empty();
     }
 
@@ -118,23 +143,31 @@ public class LessonService {
      *  @return false where there is no such lesson of theirs */
     @Transactional
     public boolean progress(Pilot student, Long lessonId, LessonProgressRequest request, Instant now) {
-        return lessons.findById(lessonId).filter(l -> l.getStudent().getId().equals(student.getId())).map(l -> {
-            if (request.briefed()) {
-                l.briefed(now);
-            }
-            if (request.flown()) {
-                l.flown(now);
-            }
-            LessonProgressRequest.Quiz quiz = request.quiz();
-            if (quiz != null) {
-                if (quiz.answers().size() > quiz.of()) {
-                    throw new InstructorService.Refused(HttpStatus.BAD_REQUEST, "More answers than questions.");
-                }
-                l.quizzed(quiz.answers().stream().map(a -> new ApproachLesson.Answer(a.question().strip(), a.chosen().strip(), a.right()))
-                        .toList(), quiz.of(), now);
-            }
-            return true;
-        }).orElse(false);
+        return lessons.findById(lessonId)
+                .filter(l -> l.getStudent().getId().equals(student.getId()))
+                .map(l -> {
+                    if (request.briefed()) {
+                        l.briefed(now);
+                    }
+                    if (request.flown()) {
+                        l.flown(now);
+                    }
+                    LessonProgressRequest.Quiz quiz = request.quiz();
+                    if (quiz != null) {
+                        if (quiz.answers().size() > quiz.of()) {
+                            throw new InstructorService.Refused(HttpStatus.BAD_REQUEST, "More answers than questions.");
+                        }
+                        l.quizzed(
+                                quiz.answers().stream()
+                                        .map(a -> new ApproachLesson.Answer(
+                                                a.question().strip(), a.chosen().strip(), a.right()))
+                                        .toList(),
+                                quiz.of(),
+                                now);
+                    }
+                    return true;
+                })
+                .orElse(false);
     }
 
     // ---- Both
@@ -145,12 +178,23 @@ public class LessonService {
     @Transactional(readOnly = true)
     public List<ApproachLessonDto> lessonsOf(Pilot student, @Nullable Pilot instructor) {
         if (instructor == null) {
-            return lessons.findByStudentIdOrderByCreatedAtDesc(student.getId()).stream().map(l -> dto(l, List.of())).toList();
+            return lessons.findByStudentIdOrderByCreatedAtDesc(student.getId()).stream()
+                    .map(l -> dto(l, List.of()))
+                    .toList();
         }
-        List<Flight> reviewed = reviews.findByStudentIdAndInstructorIdOrderByAskedAtDesc(student.getId(), instructor.getId()).stream()
-                .map(CrossCountryReview::getFlight).distinct().filter(f -> flights.hasTrack(f.getId())).toList();
+        List<Flight> reviewed =
+                reviews.findByStudentIdAndInstructorIdOrderByAskedAtDesc(student.getId(), instructor.getId()).stream()
+                        .map(CrossCountryReview::getFlight)
+                        .distinct()
+                        .filter(f -> flights.hasTrack(f.getId()))
+                        .toList();
         return lessons.findByStudentIdAndInstructorIdOrderByCreatedAtDesc(student.getId(), instructor.getId()).stream()
-                .map(l -> dto(l, reviewed.stream().filter(f -> landsAt(f, l.getAirportIdent())).map(FlightSummaryDto::of).toList()))
+                .map(l -> dto(
+                        l,
+                        reviewed.stream()
+                                .filter(f -> landsAt(f, l.getAirportIdent()))
+                                .map(FlightSummaryDto::of)
+                                .toList()))
                 .toList();
     }
 
@@ -182,7 +226,8 @@ public class LessonService {
      *  procedures' ICAO identifier ("KBUR") and a flight's FAA one ("BUR")
      *  the same field. */
     static boolean landsAt(Flight f, String ident) {
-        return Stream.concat(f.getStops().stream(), Stream.of(f.getDestinationIdent())).anyMatch(at -> sameField(at, ident));
+        return Stream.concat(f.getStops().stream(), Stream.of(f.getDestinationIdent()))
+                .anyMatch(at -> sameField(at, ident));
     }
 
     static boolean sameField(String a, String b) {
@@ -194,15 +239,35 @@ public class LessonService {
     }
 
     private static boolean isBetween(ApproachLesson l, Long studentId, Long instructorId) {
-        return l.getStudent().getId().equals(studentId) && l.getInstructor().getId().equals(instructorId);
+        return l.getStudent().getId().equals(studentId)
+                && l.getInstructor().getId().equals(instructorId);
     }
 
     private static ApproachLessonDto dto(ApproachLesson l, List<FlightSummaryDto> flown) {
-        List<QuizAnswerDto> answers = l.getQuizAnswers() == null ? List.of()
-                : l.getQuizAnswers().stream().map(a -> new QuizAnswerDto(a.question(), a.chosen(), a.right())).toList();
-        return new ApproachLessonDto(l.getId(), l.getStudent().getId(), EndorsementRecords.nameOf(l.getStudent()),
-                EndorsementRecords.nameOf(l.getInstructor()), l.getAirportIdent(), l.getProcedureId(), l.getProcedureName(), l.getCycle(),
-                l.getFixNotes(), l.getDueOn(), l.getCreatedAt(), l.getUpdatedAt(), status(l), l.getBriefedAt(), l.getFlownAt(), answers,
-                l.getQuizOf(), l.getQuizAt(), flown);
+        List<QuizAnswerDto> answers = l.getQuizAnswers() == null
+                ? List.of()
+                : l.getQuizAnswers().stream()
+                        .map(a -> new QuizAnswerDto(a.question(), a.chosen(), a.right()))
+                        .toList();
+        return new ApproachLessonDto(
+                l.getId(),
+                l.getStudent().getId(),
+                EndorsementRecords.nameOf(l.getStudent()),
+                EndorsementRecords.nameOf(l.getInstructor()),
+                l.getAirportIdent(),
+                l.getProcedureId(),
+                l.getProcedureName(),
+                l.getCycle(),
+                l.getFixNotes(),
+                l.getDueOn(),
+                l.getCreatedAt(),
+                l.getUpdatedAt(),
+                status(l),
+                l.getBriefedAt(),
+                l.getFlownAt(),
+                answers,
+                l.getQuizOf(),
+                l.getQuizAt(),
+                flown);
     }
 }

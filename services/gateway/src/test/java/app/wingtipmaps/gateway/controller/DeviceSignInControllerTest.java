@@ -72,18 +72,22 @@ class DeviceSignInControllerTest {
     }
 
     private DeviceSignInController.DeviceCode start() {
-        return (DeviceSignInController.DeviceCode) controller.start(new MockHttpServletRequest()).getBody();
+        return (DeviceSignInController.DeviceCode)
+                controller.start(new MockHttpServletRequest()).getBody();
     }
 
     private int ask(String deviceCode, MockHttpServletRequest tv) {
-        return controller.token(new DeviceSignInController.TokenRequest(deviceCode), tv, new MockHttpServletResponse())
-                .getStatusCode().value();
+        return controller
+                .token(new DeviceSignInController.TokenRequest(deviceCode), tv, new MockHttpServletResponse())
+                .getStatusCode()
+                .value();
     }
 
     @Test
     void theCodeTypedInOnThePhoneSignsTheTvInAsThatPilotOnce() {
         DeviceSignInController.DeviceCode code = start();
-        assertThat(code.userCode()).matches("[" + DeviceSignInController.ALPHABET + "]{4}-[" + DeviceSignInController.ALPHABET + "]{4}");
+        assertThat(code.userCode())
+                .matches("[" + DeviceSignInController.ALPHABET + "]{4}-[" + DeviceSignInController.ALPHABET + "]{4}");
         assertThat(code.verificationPath()).isEqualTo("/tv");
         assertThat(code.interval()).isEqualTo(DeviceSignInController.INTERVAL_S);
         MockHttpServletRequest tv = new MockHttpServletRequest();
@@ -93,26 +97,44 @@ class DeviceSignInControllerTest {
 
         // Typed as a pilot types it: lower case, no hyphen.
         String typed = code.userCode().replace("-", "").toLowerCase();
-        assertThat(controller.approve(new DeviceSignInController.Approval(typed), new MockHttpServletRequest(), phone).getStatusCode().value()).isEqualTo(204);
+        assertThat(controller
+                        .approve(new DeviceSignInController.Approval(typed), new MockHttpServletRequest(), phone)
+                        .getStatusCode()
+                        .value())
+                .isEqualTo(204);
 
-        var signedIn = controller.token(new DeviceSignInController.TokenRequest(code.deviceCode()), tv, new MockHttpServletResponse());
+        var signedIn = controller.token(
+                new DeviceSignInController.TokenRequest(code.deviceCode()), tv, new MockHttpServletResponse());
         assertThat(signedIn.getStatusCode().value()).isEqualTo(200);
-        SecurityContext context = (SecurityContext) tv.getSession().getAttribute(
-                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        SecurityContext context = (SecurityContext)
+                tv.getSession().getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
         assertThat(context.getAuthentication().getPrincipal()).isEqualTo("pilot@example.com");
 
         // Spent: asked again, and typed again, it signs nobody in.
         assertThat(ask(code.deviceCode(), new MockHttpServletRequest())).isEqualTo(410);
-        assertThat(controller.approve(new DeviceSignInController.Approval(typed), new MockHttpServletRequest(), phone).getStatusCode().value()).isEqualTo(404);
+        assertThat(controller
+                        .approve(new DeviceSignInController.Approval(typed), new MockHttpServletRequest(), phone)
+                        .getStatusCode()
+                        .value())
+                .isEqualTo(404);
     }
 
     @Test
     void aMistypedCodeOrASignedOutPhoneApprovesNothing() {
         DeviceSignInController.DeviceCode code = start();
         // A 0 is never in a code: one no TV is showing.
-        assertThat(controller.approve(new DeviceSignInController.Approval("BCDF-GH0K"), new MockHttpServletRequest(), phone).getStatusCode().value())
+        assertThat(controller
+                        .approve(new DeviceSignInController.Approval("BCDF-GH0K"), new MockHttpServletRequest(), phone)
+                        .getStatusCode()
+                        .value())
                 .isEqualTo(404);
-        assertThat(controller.approve(new DeviceSignInController.Approval(code.userCode()), new MockHttpServletRequest(), null).getStatusCode().value())
+        assertThat(controller
+                        .approve(
+                                new DeviceSignInController.Approval(code.userCode()),
+                                new MockHttpServletRequest(),
+                                null)
+                        .getStatusCode()
+                        .value())
                 .isEqualTo(401);
         assertThat(ask(code.deviceCode(), new MockHttpServletRequest())).isEqualTo(202);
         assertThat(ask("not-a-code", new MockHttpServletRequest())).isEqualTo(410);
@@ -122,7 +144,13 @@ class DeviceSignInControllerTest {
     void aCodeTenMinutesOldHasRunOut() {
         DeviceSignInController.DeviceCode code = start();
         clock.now = clock.now.plus(DeviceSignInController.LIFETIME).plus(Duration.ofSeconds(1));
-        assertThat(controller.approve(new DeviceSignInController.Approval(code.userCode()), new MockHttpServletRequest(), phone).getStatusCode().value())
+        assertThat(controller
+                        .approve(
+                                new DeviceSignInController.Approval(code.userCode()),
+                                new MockHttpServletRequest(),
+                                phone)
+                        .getStatusCode()
+                        .value())
                 .isEqualTo(404);
         assertThat(ask(code.deviceCode(), new MockHttpServletRequest())).isEqualTo(410);
     }
@@ -131,14 +159,26 @@ class DeviceSignInControllerTest {
     void aPilotTriesTenCodesInTenMinutesAndNoMore() {
         start();
         for (int i = 0; i < 10; i++) {
-            assertThat(controller.approve(new DeviceSignInController.Approval("ZZZZ-ZZZ" + (char) ('0' + i)), new MockHttpServletRequest(), phone).getStatusCode().value())
+            assertThat(controller
+                            .approve(
+                                    new DeviceSignInController.Approval("ZZZZ-ZZZ" + (char) ('0' + i)),
+                                    new MockHttpServletRequest(),
+                                    phone)
+                            .getStatusCode()
+                            .value())
                     .isEqualTo(404);
         }
-        assertThat(controller.approve(new DeviceSignInController.Approval("ZZZZ-ZZZZ"), new MockHttpServletRequest(), phone)
-                .getStatusCode().value()).isEqualTo(429);
+        assertThat(controller
+                        .approve(new DeviceSignInController.Approval("ZZZZ-ZZZZ"), new MockHttpServletRequest(), phone)
+                        .getStatusCode()
+                        .value())
+                .isEqualTo(429);
         clock.now = clock.now.plus(Duration.ofMinutes(11));
-        assertThat(controller.approve(new DeviceSignInController.Approval("ZZZZ-ZZZZ"), new MockHttpServletRequest(), phone)
-                .getStatusCode().value()).isEqualTo(404);
+        assertThat(controller
+                        .approve(new DeviceSignInController.Approval("ZZZZ-ZZZZ"), new MockHttpServletRequest(), phone)
+                        .getStatusCode()
+                        .value())
+                .isEqualTo(404);
     }
 
     private int tryFrom(String email, String address) {
@@ -146,7 +186,10 @@ class DeviceSignInControllerTest {
         given(pilots.current(who)).willReturn(Optional.of(new Pilot(email, "P", null, null)));
         MockHttpServletRequest place = new MockHttpServletRequest();
         place.setRemoteAddr(address);
-        return controller.approve(new DeviceSignInController.Approval("ZZZZ-ZZZZ"), place, who).getStatusCode().value();
+        return controller
+                .approve(new DeviceSignInController.Approval("ZZZZ-ZZZZ"), place, who)
+                .getStatusCode()
+                .value();
     }
 
     @Test
@@ -160,7 +203,8 @@ class DeviceSignInControllerTest {
     @Test
     void manyPilotsFromManyPlacesStillTryThreeHundredCodesInTenMinutesAndNoMore() {
         for (int i = 0; i < DeviceSignInController.TRIES_IN_ALL; i++) {
-            assertThat(tryFrom("p" + i + "@example.com", "10.0." + (i / 200) + "." + (i % 200))).isEqualTo(404);
+            assertThat(tryFrom("p" + i + "@example.com", "10.0." + (i / 200) + "." + (i % 200)))
+                    .isEqualTo(404);
         }
         assertThat(tryFrom("last@example.com", "10.9.9.9")).isEqualTo(429);
     }
@@ -168,8 +212,16 @@ class DeviceSignInControllerTest {
     @Test
     void aPlaceAsksForTwentyCodesAnHourAndNoMore() {
         for (int i = 0; i < 20; i++) {
-            assertThat(controller.start(new MockHttpServletRequest()).getStatusCode().value()).isEqualTo(200);
+            assertThat(controller
+                            .start(new MockHttpServletRequest())
+                            .getStatusCode()
+                            .value())
+                    .isEqualTo(200);
         }
-        assertThat(controller.start(new MockHttpServletRequest()).getStatusCode().value()).isEqualTo(429);
+        assertThat(controller
+                        .start(new MockHttpServletRequest())
+                        .getStatusCode()
+                        .value())
+                .isEqualTo(429);
     }
 }

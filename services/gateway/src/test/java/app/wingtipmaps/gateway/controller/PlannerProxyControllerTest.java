@@ -1,5 +1,8 @@
 package app.wingtipmaps.gateway.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -9,10 +12,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
+import app.wingtipmaps.gateway.domain.Pilot;
+import app.wingtipmaps.gateway.service.PilotService;
+import app.wingtipmaps.gateway.service.SubscriptionService;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -20,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,15 +37,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import app.wingtipmaps.gateway.domain.Pilot;
-import app.wingtipmaps.gateway.service.PilotService;
-import app.wingtipmaps.gateway.service.SubscriptionService;
-import java.util.Optional;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
 
 /**
  * The front door, against a real upstream.
@@ -66,6 +65,7 @@ class PlannerProxyControllerTest {
 
     /** What the fake planner answers with next, and what it was asked. */
     private static final Map<String, String> responseBody = new ConcurrentHashMap<>();
+
     private static final Map<String, String> responseHeaders = new ConcurrentHashMap<>();
     private static final List<String> received = new ArrayList<>();
     private static volatile int responseStatus = 200;
@@ -84,8 +84,8 @@ class PlannerProxyControllerTest {
         upstream = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         upstream.createContext("/", exchange -> {
             String query = exchange.getRequestURI().getQuery();
-            received.add(exchange.getRequestMethod() + " " + exchange.getRequestURI().getPath()
-                    + (query == null ? "" : "?" + query));
+            received.add(exchange.getRequestMethod() + " "
+                    + exchange.getRequestURI().getPath() + (query == null ? "" : "?" + query));
             received.add("body=" + new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             String pilotHeader = exchange.getRequestHeaders().getFirst("X-Pilot-Id");
             if (pilotHeader != null) {
@@ -96,7 +96,8 @@ class PlannerProxyControllerTest {
                 received.add("range=" + rangeHeader);
             }
 
-            responseHeaders.forEach((name, value) -> exchange.getResponseHeaders().add(name, value));
+            responseHeaders.forEach(
+                    (name, value) -> exchange.getResponseHeaders().add(name, value));
             byte[] body = responseBody.getOrDefault("body", "{}").getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(responseStatus, body.length);
             exchange.getResponseBody().write(body);
@@ -112,10 +113,14 @@ class PlannerProxyControllerTest {
 
     @DynamicPropertySource
     static void plannerUrl(DynamicPropertyRegistry registry) {
-        registry.add("planner-service.base-url", () -> "http://127.0.0.1:" + upstream.getAddress().getPort());
+        registry.add(
+                "planner-service.base-url",
+                () -> "http://127.0.0.1:" + upstream.getAddress().getPort());
         // The assistant on the same fake, under a prefix of its own, so a
         // test sees which of the two a request was sent to.
-        registry.add("assistant-service.base-url", () -> "http://127.0.0.1:" + upstream.getAddress().getPort() + "/assistant");
+        registry.add(
+                "assistant-service.base-url",
+                () -> "http://127.0.0.1:" + upstream.getAddress().getPort() + "/assistant");
     }
 
     @BeforeEach
@@ -152,15 +157,25 @@ class PlannerProxyControllerTest {
 
     @Test
     void everyClaudeCallGoesToTheAssistantAtTheSameAddressAndTheRestToThePlanner() throws Exception {
-        for (String path : new String[] {"/assistant", "/briefing/narrative", "/words/weather", "/checkpoint-notes/generate",
-                "/oral/question", "/oral/grade"}) {
-            finish(mockMvc.perform(post("/api/planner" + path).contentType(MediaType.APPLICATION_JSON).content("{}"))
+        for (String path : new String[] {
+            "/assistant",
+            "/briefing/narrative",
+            "/words/weather",
+            "/checkpoint-notes/generate",
+            "/oral/question",
+            "/oral/grade"
+        }) {
+            finish(mockMvc.perform(post("/api/planner" + path)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{}"))
                     .andExpect(request().asyncStarted())
                     .andReturn());
             assertThat(received).contains("POST /assistant/api" + path);
         }
         // A pilot's own note is kept at the planner, which holds the notes.
-        finish(mockMvc.perform(post("/api/planner/checkpoint-notes").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        finish(mockMvc.perform(post("/api/planner/checkpoint-notes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
                 .andExpect(request().asyncStarted())
                 .andReturn());
         assertThat(received).contains("POST /api/checkpoint-notes");
@@ -195,8 +210,12 @@ class PlannerProxyControllerTest {
      *  and the planner is never asked. */
     @Test
     void aPathTheBrowserHasNoUseForIsA404AndNeverReachesThePlanner() throws Exception {
-        for (String path : new String[] {"/api/planner/../openapi.json", "/api/planner/docs",
-                "/api/planner/openapi.json", "/api/planner/internal/anything"}) {
+        for (String path : new String[] {
+            "/api/planner/../openapi.json",
+            "/api/planner/docs",
+            "/api/planner/openapi.json",
+            "/api/planner/internal/anything"
+        }) {
             mockMvc.perform(get(path)).andExpect(status().isNotFound());
         }
         mockMvc.perform(post("/api/planner/course")).andExpect(status().isNotFound());
@@ -214,7 +233,8 @@ class PlannerProxyControllerTest {
         assertThat(forwarded("GET", "/api/airport/../photos")).isFalse();
         assertThat(forwarded("GET", "/api//evil.example/photos")).isFalse();
         assertThat(UpstreamRoutes.isPlain("/api/airport/KDLH/photos")).isTrue();
-        assertThat(UpstreamRoutes.isPlain("/api/chart-tile/sectional/10/262/380.png")).isTrue();
+        assertThat(UpstreamRoutes.isPlain("/api/chart-tile/sectional/10/262/380.png"))
+                .isTrue();
     }
 
     @Test
@@ -254,12 +274,14 @@ class PlannerProxyControllerTest {
         // An airplane's past flights, and one of them (PastFlights): a 404
         // here, never asked of the planner, until they were listed.
         assertThat(forwarded("GET", "/api/traffic/flight/a89c1e/history")).isTrue();
-        assertThat(forwarded("GET", "/api/traffic/flight/a89c1e/history/1791723840")).isTrue();
+        assertThat(forwarded("GET", "/api/traffic/flight/a89c1e/history/1791723840"))
+                .isTrue();
         assertThat(forwarded("GET", "/api/traffic/route")).isTrue();
         assertThat(forwarded("GET", "/api/map/google")).isTrue();
         assertThat(forwarded("GET", "/api/airport/KBUR/procedures/I08-Y")).isTrue();
         assertThat(forwarded("GET", "/api/airport/KBUR/procedures/I08-Y/legs")).isFalse();
-        assertThat(forwarded("GET", "/api/foreflight-pack/C81-KDLH/C81-KDLH-checkpoints.zip")).isTrue();
+        assertThat(forwarded("GET", "/api/foreflight-pack/C81-KDLH/C81-KDLH-checkpoints.zip"))
+                .isTrue();
         assertThat(forwarded("GET", "/api/foreflight-pack")).isFalse();
         assertThat(forwarded("POST", "/api/oral/question")).isTrue();
         assertThat(forwarded("GET", "/api/oral/question")).isFalse();
@@ -287,13 +309,15 @@ class PlannerProxyControllerTest {
         assertThat(forwarded("GET", "/api/places/search")).isTrue();
         assertThat(forwarded("GET", "/api/airport/KDLH/extra")).isFalse();
         assertThat(forwarded("GET", "/api/airport-diagram/2610/KDLH.png")).isTrue();
-        assertThat(forwarded("GET", "/api/airport-diagram/2610/runways/KDLH.png")).isTrue();
+        assertThat(forwarded("GET", "/api/airport-diagram/2610/runways/KDLH.png"))
+                .isTrue();
         assertThat(forwarded("GET", "/api/airport-diagram/2610/KDLH.pdf")).isFalse();
         assertThat(forwarded("GET", "/api/airport/KDLH/procedures/R03/plate")).isTrue();
         assertThat(forwarded("GET", "/api/approach-plate/2610/KDLH/R03.png")).isTrue();
         assertThat(forwarded("GET", "/api/approach-plate/2610/KDLH/R03.pdf")).isFalse();
         assertThat(forwarded("GET", "/api/faa-chart")).isTrue();
-        assertThat(forwarded("GET", "/api/faa-chart/page/dtpp/2610/EC3TO.PDF/33.png")).isTrue();
+        assertThat(forwarded("GET", "/api/faa-chart/page/dtpp/2610/EC3TO.PDF/33.png"))
+                .isTrue();
         assertThat(forwarded("GET", "/api/faa-chart/page/dtpp/2610/EC3TO.PDF")).isFalse();
         assertThat(forwarded("GET", "/api/chart-tile/sectional/10/262/380.jpg")).isFalse();
         assertThat(forwarded("POST", "/api/dev/services/ml/stop")).isFalse();
@@ -339,8 +363,7 @@ class PlannerProxyControllerTest {
 
         // What lets a browser skip asking again for a tile it already
         // has, rather than round-tripping on every pan and zoom.
-        mockMvc.perform(asyncDispatch(started))
-                .andExpect(header().string("Cache-Control", "public, max-age=604800"));
+        mockMvc.perform(asyncDispatch(started)).andExpect(header().string("Cache-Control", "public, max-age=604800"));
     }
 
     @Test
@@ -367,9 +390,12 @@ class PlannerProxyControllerTest {
         // browser and CloudFront may keep (the planner's app.router_basics says
         // for how long), so a pilot typing an ident is answered from the
         // nearest edge.
-        for (String path : new String[] {"/api/planner/chart", "/api/planner/airports/search?q=KD",
-                "/api/planner/aircraft-profiles"}) {
-            MvcResult started = mockMvc.perform(get(path)).andExpect(request().asyncStarted()).andReturn();
+        for (String path : new String[] {
+            "/api/planner/chart", "/api/planner/airports/search?q=KD", "/api/planner/aircraft-profiles"
+        }) {
+            MvcResult started = mockMvc.perform(get(path))
+                    .andExpect(request().asyncStarted())
+                    .andReturn();
             mockMvc.perform(asyncDispatch(started))
                     .andExpect(header().string("Cache-Control", "public, max-age=300, s-maxage=3600"));
         }
@@ -391,7 +417,9 @@ class PlannerProxyControllerTest {
         // The phone's own copy of the airport search: sent gzipped by the
         // planner, so the browser has to be told so, or it reads the bytes
         // as they are.
-        MvcResult index = mockMvc.perform(get("/api/planner/airports/index")).andExpect(request().asyncStarted()).andReturn();
+        MvcResult index = mockMvc.perform(get("/api/planner/airports/index"))
+                .andExpect(request().asyncStarted())
+                .andReturn();
         mockMvc.perform(asyncDispatch(index))
                 .andExpect(header().string("Content-Encoding", "gzip"))
                 .andExpect(header().string("Vary", "Accept-Encoding"))
@@ -399,7 +427,9 @@ class PlannerProxyControllerTest {
 
         // Any other path's encoding is not passed on: its body is not the
         // planner's bytes as they came.
-        MvcResult search = mockMvc.perform(get("/api/planner/airports/search?q=KD")).andExpect(request().asyncStarted()).andReturn();
+        MvcResult search = mockMvc.perform(get("/api/planner/airports/search?q=KD"))
+                .andExpect(request().asyncStarted())
+                .andReturn();
         mockMvc.perform(asyncDispatch(search)).andExpect(header().doesNotExist("Content-Encoding"));
     }
 
@@ -431,7 +461,8 @@ class PlannerProxyControllerTest {
     @Test
     void theOverlayTilesArchiveIsReadInRangesAndKeptForItsCycle() throws Exception {
         assertThat(forwarded("GET", "/api/overlay-tiles")).isTrue();
-        assertThat(forwarded("GET", "/api/overlay-tiles/2026-10-29-v1-0badf00d.pmtiles")).isTrue();
+        assertThat(forwarded("GET", "/api/overlay-tiles/2026-10-29-v1-0badf00d.pmtiles"))
+                .isTrue();
         assertThat(forwarded("GET", "/api/overlay-tiles/a/b.pmtiles")).isFalse();
         responseStatus = 206;
         responseHeaders.put("Cache-Control", "public, max-age=2419200, immutable");
@@ -460,8 +491,7 @@ class PlannerProxyControllerTest {
         // /api/sectional-tile and /api/tac-tile were the same tiles under
         // older names, with no caller left; the planner no longer has them.
         for (String kind : new String[] {"sectional-tile", "tac-tile"}) {
-            mockMvc.perform(get("/api/planner/" + kind + "/10/262/380.png"))
-                    .andExpect(status().isNotFound());
+            mockMvc.perform(get("/api/planner/" + kind + "/10/262/380.png")).andExpect(status().isNotFound());
         }
     }
 
@@ -483,11 +513,13 @@ class PlannerProxyControllerTest {
         // The front end's own stream reader reports `detail`; a 502 with
         // an empty body or an HTML error page would show a pilot nothing.
         MockMvc unreachable = unreachablePlanner();
-        MvcResult started = unreachable.perform(get("/api/planner/course"))
+        MvcResult started = unreachable
+                .perform(get("/api/planner/course"))
                 .andExpect(request().asyncStarted())
                 .andReturn();
 
-        unreachable.perform(asyncDispatch(started))
+        unreachable
+                .perform(asyncDispatch(started))
                 .andExpect(status().is(502))
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.detail").value("planner service unreachable"));
@@ -522,10 +554,15 @@ class PlannerProxyControllerTest {
 
     /** A second MockMvc whose planner points at a port nothing is on. */
     private MockMvc unreachablePlanner() {
-        PlannerProxyController controller =
-                new PlannerProxyController(new StreamingProxy(), "http://127.0.0.1:1", "http://127.0.0.1:1", pilotService, subscriptions,
-                        40, 20, 150);
-        return standaloneSetup(controller)
-                .build();
+        PlannerProxyController controller = new PlannerProxyController(
+                new StreamingProxy(),
+                "http://127.0.0.1:1",
+                "http://127.0.0.1:1",
+                pilotService,
+                subscriptions,
+                40,
+                20,
+                150);
+        return standaloneSetup(controller).build();
     }
 }

@@ -28,7 +28,9 @@ class HttpsConnectorConfigTest {
         compression.setEnabled(true);
         compression.setMimeTypes(new String[] {"text/html", "application/json"});
         compression.setMinResponseSize(DataSize.ofBytes(1024));
-        new HttpsConnectorConfig().httpsConnector(keystore, "changeit", 8443, compression).customize(factory);
+        new HttpsConnectorConfig()
+                .httpsConnector(keystore, "changeit", 8443, compression)
+                .customize(factory);
         return factory.getAdditionalTomcatConnectors();
     }
 
@@ -46,7 +48,8 @@ class HttpsConnectorConfigTest {
     @Test
     void aReadableFileIsAnHttpsConnector() throws IOException {
         Path keystore = Files.writeString(dir.resolve("gateway.p12"), "not checked until Tomcat starts");
-        assertThat(connectorsFor(keystore.toString())).singleElement()
+        assertThat(connectorsFor(keystore.toString()))
+                .singleElement()
                 .satisfies(connector -> assertThat(connector.getScheme()).isEqualTo("https"));
     }
 
@@ -57,7 +60,8 @@ class HttpsConnectorConfigTest {
         Path keystore = Files.writeString(dir.resolve("gateway.p12"), "not checked until Tomcat starts");
         Connector connector = connectorsFor(keystore.toString()).getFirst();
         assertThat(connector.getProperty("compression")).isEqualTo("on");
-        assertThat(String.valueOf(connector.getProperty("compressibleMimeType"))).contains("application/json");
+        assertThat(String.valueOf(connector.getProperty("compressibleMimeType")))
+                .contains("application/json");
         assertThat(connector.getProperty("compressionMinSize")).isEqualTo(1024);
     }
 }

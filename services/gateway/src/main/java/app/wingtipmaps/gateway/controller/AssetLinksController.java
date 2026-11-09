@@ -32,7 +32,8 @@ public class AssetLinksController {
     private final String packageName;
     private final List<String> fingerprints;
 
-    public AssetLinksController(@Value("${APP_ANDROID_PACKAGE:}") String packageName,
+    public AssetLinksController(
+            @Value("${APP_ANDROID_PACKAGE:}") String packageName,
             @Value("${APP_ANDROID_CERT_SHA256:}") String fingerprints) {
         this.packageName = packageName.isBlank() ? null : packageName.trim();
         // Read with or without its colons, and written as keytool and the
@@ -52,11 +53,14 @@ public class AssetLinksController {
         if (packageName == null || fingerprints.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(List.of(Map.of(
-                "relation", List.of("delegate_permission/common.handle_all_urls"),
-                "target", Map.of(
-                        "namespace", "android_app",
-                        "package_name", packageName,
-                        "sha256_cert_fingerprints", fingerprints))));
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(List.of(Map.of(
+                        "relation", List.of("delegate_permission/common.handle_all_urls"),
+                        "target",
+                                Map.of(
+                                        "namespace", "android_app",
+                                        "package_name", packageName,
+                                        "sha256_cert_fingerprints", fingerprints))));
     }
 }

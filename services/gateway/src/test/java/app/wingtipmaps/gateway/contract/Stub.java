@@ -28,8 +28,13 @@ final class Stub implements AutoCloseable {
     static volatile String briefing = "{}";
 
     /** One request as it came. */
-    record Asked(Stub stub, String method, String path, Map<String, String> query, Map<String, String> headers, String body) {
-    }
+    record Asked(
+            Stub stub,
+            String method,
+            String path,
+            Map<String, String> query,
+            Map<String, String> headers,
+            String body) {}
 
     final String service;
     final OpenApiContract contract;
@@ -60,8 +65,11 @@ final class Stub implements AutoCloseable {
         String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
         asked.add(new Asked(this, method, path, query(exchange.getRequestURI().getRawQuery()), headers, body));
         byte[] answer = contract.operation(method, path)
-                .map(op -> OpenApiContract.answerSchema(op).map(s -> new AnswerContract(contract).sample(s).toString()).orElse("{}"))
-                .map(s -> s.getBytes(StandardCharsets.UTF_8)).orElse(null);
+                .map(op -> OpenApiContract.answerSchema(op)
+                        .map(s -> new AnswerContract(contract).sample(s).toString())
+                        .orElse("{}"))
+                .map(s -> s.getBytes(StandardCharsets.UTF_8))
+                .orElse(null);
         if (answer == null) {
             exchange.sendResponseHeaders(404, -1);
         } else {

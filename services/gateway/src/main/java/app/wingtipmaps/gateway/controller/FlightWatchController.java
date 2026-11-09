@@ -33,8 +33,8 @@ public class FlightWatchController {
     /** Watches the flight up to its departure, briefing it now as the
      *  baseline; the watch, with no changes yet. */
     @PostMapping
-    public ResponseEntity<FlightWatchDto> watch(Authentication authentication, @PathVariable Long id,
-                                                @Valid @RequestBody WatchFlightRequest request) {
+    public ResponseEntity<FlightWatchDto> watch(
+            Authentication authentication, @PathVariable Long id, @Valid @RequestBody WatchFlightRequest request) {
         return PilotResponses.found(pilots, authentication, pilot -> watches.watch(pilot, id, request.departAt()));
     }
 

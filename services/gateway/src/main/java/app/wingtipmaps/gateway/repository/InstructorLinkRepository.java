@@ -18,7 +18,8 @@ public interface InstructorLinkRepository extends JpaRepository<InstructorLink, 
     List<InstructorLink> findByInstructorIdOrderByAcceptedAt(Long instructorId);
 
     /** Asks for an address not yet taken, whatever its case. */
-    @Query("SELECT l FROM InstructorLink l WHERE l.instructor IS NULL AND lower(l.email) = lower(:email) ORDER BY l.askedAt")
+    @Query(
+            "SELECT l FROM InstructorLink l WHERE l.instructor IS NULL AND lower(l.email) = lower(:email) ORDER BY l.askedAt")
     List<InstructorLink> findOpenFor(@Param("email") String email);
 
     Optional<InstructorLink> findByStudentIdAndInstructorId(Long studentId, Long instructorId);

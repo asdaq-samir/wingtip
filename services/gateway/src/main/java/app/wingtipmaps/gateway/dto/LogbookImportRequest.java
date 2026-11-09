@@ -11,5 +11,4 @@ import java.util.List;
 public record LogbookImportRequest(
         @NotNull(message = "entries is required")
         @Size(max = 5000, message = "entries must be 5000 at most: import a long logbook in parts")
-        List<@Valid LogbookEntryRequest> entries) {
-}
+        List<@Valid LogbookEntryRequest> entries) {}

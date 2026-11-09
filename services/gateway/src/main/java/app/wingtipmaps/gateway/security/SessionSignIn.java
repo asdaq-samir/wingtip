@@ -37,8 +37,7 @@ public final class SessionSignIn {
     // late save finds nothing to overwrite.
     private static final SessionAuthenticationStrategy NEW_SESSION = new SessionFixationProtectionStrategy();
 
-    private SessionSignIn() {
-    }
+    private SessionSignIn() {}
 
     public static void signIn(Authentication authentication, HttpServletRequest request, HttpServletResponse response) {
         NEW_SESSION.onAuthentication(authentication, request, response);

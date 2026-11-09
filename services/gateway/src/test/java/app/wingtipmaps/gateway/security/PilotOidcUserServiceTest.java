@@ -35,18 +35,24 @@ class PilotOidcUserServiceTest {
     private final PilotService pilots = mock(PilotService.class);
 
     private static OidcUser user(Map<String, Object> claims) {
-        OidcIdToken token = new OidcIdToken("token", Instant.now(), Instant.now().plusSeconds(60), claims);
+        OidcIdToken token =
+                new OidcIdToken("token", Instant.now(), Instant.now().plusSeconds(60), claims);
         return new DefaultOidcUser(List.of(new OidcUserAuthority(token)), token);
     }
 
     private static OidcUserRequest request() {
         ClientRegistration google = ClientRegistration.withRegistrationId("google")
-                .clientId("id").authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .clientId("id")
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
-                .authorizationUri("https://accounts.example/auth").tokenUri("https://accounts.example/token")
+                .authorizationUri("https://accounts.example/auth")
+                .tokenUri("https://accounts.example/token")
                 .build();
         OAuth2AccessToken access = new OAuth2AccessToken(
-                OAuth2AccessToken.TokenType.BEARER, "access", Instant.now(), Instant.now().plusSeconds(60));
+                OAuth2AccessToken.TokenType.BEARER,
+                "access",
+                Instant.now(),
+                Instant.now().plusSeconds(60));
         OidcIdToken id = new OidcIdToken("token", Instant.now(), Instant.now().plusSeconds(60), Map.of("sub", "sub-1"));
         return new OidcUserRequest(google, access, id);
     }
@@ -69,7 +75,8 @@ class PilotOidcUserServiceTest {
 
         assertThatThrownBy(() -> new PilotOidcUserService(pilots, r -> loaded).loadUser(request()))
                 .isInstanceOf(OAuth2AuthenticationException.class)
-                .satisfies(e -> assertThat(((OAuth2AuthenticationException) e).getError().getErrorCode())
+                .satisfies(e -> assertThat(
+                                ((OAuth2AuthenticationException) e).getError().getErrorCode())
                         .isEqualTo(PilotOidcUserService.REFUSED));
     }
 

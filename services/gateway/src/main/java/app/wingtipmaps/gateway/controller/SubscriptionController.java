@@ -37,10 +37,12 @@ public class SubscriptionController {
         if (!subscriptions.sold()) {
             return ResponseEntity.notFound().build();
         }
-        return PilotResponses.withPilot(pilots, authentication, pilot -> ResponseEntity.ok(subscriptions.status(pilot)));
+        return PilotResponses.withPilot(
+                pilots, authentication, pilot -> ResponseEntity.ok(subscriptions.status(pilot)));
     }
 
-    @Operation(summary = "Start the free month",
+    @Operation(
+            summary = "Start the free month",
             description = "Once an account: 409 once it has been started, even after it ended. On the website; "
                     + "in the iOS and Android apps the free month is the store's introductory offer.")
     @PostMapping("/trial")
@@ -48,7 +50,7 @@ public class SubscriptionController {
         if (!subscriptions.sold()) {
             return ResponseEntity.notFound().build();
         }
-        return PilotResponses.withPilot(pilots, authentication,
-                pilot -> ResponseEntity.ok(subscriptions.startTrial(pilot)));
+        return PilotResponses.withPilot(
+                pilots, authentication, pilot -> ResponseEntity.ok(subscriptions.startTrial(pilot)));
     }
 }

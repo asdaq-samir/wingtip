@@ -39,13 +39,19 @@ public class FlightServiceController {
     }
 
     @PostMapping("/flight-plans")
-    public ResponseEntity<FlightPlanFiled> file(Authentication authentication, @Valid @RequestBody FlightPlanFilingRequest plan) {
-        return PilotResponses.withPilot(pilots, authentication, pilot ->
-                ResponseEntity.status(HttpStatus.CREATED).body(new FlightPlanFiled(flightService.file(pilot, plan))));
+    public ResponseEntity<FlightPlanFiled> file(
+            Authentication authentication, @Valid @RequestBody FlightPlanFilingRequest plan) {
+        return PilotResponses.withPilot(
+                pilots,
+                authentication,
+                pilot -> ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new FlightPlanFiled(flightService.file(pilot, plan))));
     }
 
     @PostMapping("/briefings")
-    public ResponseEntity<String> brief(Authentication authentication, @Valid @RequestBody FlightPlanFilingRequest plan) {
-        return PilotResponses.withPilot(pilots, authentication, pilot -> ResponseEntity.ok(flightService.brief(pilot, plan)));
+    public ResponseEntity<String> brief(
+            Authentication authentication, @Valid @RequestBody FlightPlanFilingRequest plan) {
+        return PilotResponses.withPilot(
+                pilots, authentication, pilot -> ResponseEntity.ok(flightService.brief(pilot, plan)));
     }
 }

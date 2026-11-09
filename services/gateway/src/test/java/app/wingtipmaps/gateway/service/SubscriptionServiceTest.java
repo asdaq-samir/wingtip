@@ -72,8 +72,14 @@ class SubscriptionServiceTest {
     private final Moving clock = new Moving();
 
     private SubscriptionService service(SignInOptions.Access access, String comped) {
-        return new SubscriptionService(repository, pilots, new SignInOptions(List.of("email"), access), clock, 30,
-                Map.of(PaidFeature.NARRATIVE, 2, PaidFeature.CHECKPOINT_NOTES, 60, PaidFeature.ORAL, 60), comped);
+        return new SubscriptionService(
+                repository,
+                pilots,
+                new SignInOptions(List.of("email"), access),
+                clock,
+                30,
+                Map.of(PaidFeature.NARRATIVE, 2, PaidFeature.CHECKPOINT_NOTES, 60, PaidFeature.ORAL, 60),
+                comped);
     }
 
     private SubscriptionService service() {
@@ -97,9 +103,14 @@ class SubscriptionServiceTest {
         assertThat(status.entitled()).isFalse();
         assertThat(status.trialAvailable()).isTrue();
         assertThat(status.trialDays()).isEqualTo(30);
-        assertThat(status.uses()).extracting(SubscriptionDto.FeatureUse::feature)
-                .containsExactly(PaidFeature.NARRATIVE, PaidFeature.CHECKPOINT_NOTES, PaidFeature.ORAL,
-                        PaidFeature.ASSISTANT, PaidFeature.WORDS);
+        assertThat(status.uses())
+                .extracting(SubscriptionDto.FeatureUse::feature)
+                .containsExactly(
+                        PaidFeature.NARRATIVE,
+                        PaidFeature.CHECKPOINT_NOTES,
+                        PaidFeature.ORAL,
+                        PaidFeature.ASSISTANT,
+                        PaidFeature.WORDS);
 
         Optional<SubscriptionService.Refusal> refused = service().refusal(who, PaidFeature.NARRATIVE);
         assertThat(refused).hasValueSatisfying(r -> {
@@ -118,7 +129,8 @@ class SubscriptionServiceTest {
         assertThat(started.trialAvailable()).isFalse();
         assertThat(started.until()).isEqualTo(Instant.parse("2026-11-10T12:00:00Z"));
         assertThat(service().refusal(who, PaidFeature.NARRATIVE)).isEmpty();
-        assertThatThrownBy(() -> service().startTrial(pilot)).isInstanceOf(SubscriptionService.TrialUsedException.class);
+        assertThatThrownBy(() -> service().startTrial(pilot))
+                .isInstanceOf(SubscriptionService.TrialUsedException.class);
 
         clock.now = clock.now.plus(Duration.ofDays(31));
         SubscriptionDto ended = service().status(pilot);
@@ -126,18 +138,26 @@ class SubscriptionServiceTest {
         assertThat(ended.trialAvailable()).isFalse();
         assertThat(service().refusal(who, PaidFeature.CHECKPOINT_NOTES)).hasValueSatisfying(r -> {
             assertThat(r.status()).isEqualTo(402);
-            assertThat(r.detail()).isEqualTo("Checkpoint descriptions come with the subscription. Your free month ended on 10 November.");
+            assertThat(r.detail())
+                    .isEqualTo(
+                            "Checkpoint descriptions come with the subscription. Your free month ended on 10 November.");
         });
         // Still once an account, long after.
-        assertThatThrownBy(() -> service().startTrial(pilot)).isInstanceOf(SubscriptionService.TrialUsedException.class);
+        assertThatThrownBy(() -> service().startTrial(pilot))
+                .isInstanceOf(SubscriptionService.TrialUsedException.class);
     }
 
     @Test
     void paidTimeIsTheirsUntilItRunsOut() {
         Authentication who = someone();
         Pilot pilot = pilotOf(who);
-        service().paid(pilot, Instant.parse("2027-10-11T12:00:00Z"), Subscription.Plan.YEARLY,
-                Subscription.Store.APP_STORE, "2000000123456789");
+        service()
+                .paid(
+                        pilot,
+                        Instant.parse("2027-10-11T12:00:00Z"),
+                        Subscription.Plan.YEARLY,
+                        Subscription.Store.APP_STORE,
+                        "2000000123456789");
         SubscriptionDto paid = service().status(pilot);
         assertThat(paid.state()).isEqualTo(State.SUBSCRIBED);
         assertThat(paid.plan()).isEqualTo(Subscription.Plan.YEARLY);
@@ -169,15 +189,17 @@ class SubscriptionServiceTest {
             assertThat(r.detail()).isEqualTo("That is this month's 2 written briefings. More on 1 November.");
         });
         // The refusal was not counted, and the other features are their own.
-        assertThat(service().status(pilot).uses()).contains(
-                new SubscriptionDto.FeatureUse(PaidFeature.NARRATIVE, 2, 2),
-                new SubscriptionDto.FeatureUse(PaidFeature.CHECKPOINT_NOTES, 0, 60));
+        assertThat(service().status(pilot).uses())
+                .contains(
+                        new SubscriptionDto.FeatureUse(PaidFeature.NARRATIVE, 2, 2),
+                        new SubscriptionDto.FeatureUse(PaidFeature.CHECKPOINT_NOTES, 0, 60));
         assertThat(service().refusal(who, PaidFeature.CHECKPOINT_NOTES)).isEmpty();
 
         // A new month, a new allowance.
         clock.now = Instant.parse("2026-11-01T00:00:00Z");
         assertThat(service().refusal(who, PaidFeature.NARRATIVE)).isEmpty();
-        assertThat(service().status(pilot).uses()).contains(new SubscriptionDto.FeatureUse(PaidFeature.NARRATIVE, 1, 2));
+        assertThat(service().status(pilot).uses())
+                .contains(new SubscriptionDto.FeatureUse(PaidFeature.NARRATIVE, 1, 2));
     }
 
     @Test
@@ -189,7 +211,9 @@ class SubscriptionServiceTest {
         assertThat(given.until()).isNull();
         service().refusal(instructor, PaidFeature.NARRATIVE);
         service().refusal(instructor, PaidFeature.NARRATIVE);
-        assertThat(service().refusal(instructor, PaidFeature.NARRATIVE)).map(SubscriptionService.Refusal::status).hasValue(429);
+        assertThat(service().refusal(instructor, PaidFeature.NARRATIVE))
+                .map(SubscriptionService.Refusal::status)
+                .hasValue(429);
 
         Authentication developer = new MagicLinkAuthenticationToken("dev@example.com");
         for (int i = 0; i < 5; i++) {
@@ -204,13 +228,21 @@ class SubscriptionServiceTest {
             assertThat(r.status()).isEqualTo(401);
             assertThat(r.detail()).isEqualTo("Sign in for the mock oral.");
         });
-        assertThat(service(SignInOptions.Access.OPEN, "").refusal(null, PaidFeature.ORAL)).isEmpty();
+        assertThat(service(SignInOptions.Access.OPEN, "").refusal(null, PaidFeature.ORAL))
+                .isEmpty();
     }
 
     private SubscriptionService unsold(SubscriptionService.ClaudeFeatures claude) {
-        return new SubscriptionService(repository, pilots, new SignInOptions(List.of("email"), SignInOptions.Access.SIGN_IN), clock, 30,
-                Map.of(PaidFeature.NARRATIVE, 2, PaidFeature.CHECKPOINT_NOTES, 60, PaidFeature.ORAL, 60), "",
-                false, claude);
+        return new SubscriptionService(
+                repository,
+                pilots,
+                new SignInOptions(List.of("email"), SignInOptions.Access.SIGN_IN),
+                clock,
+                30,
+                Map.of(PaidFeature.NARRATIVE, 2, PaidFeature.CHECKPOINT_NOTES, 60, PaidFeature.ORAL, 60),
+                "",
+                false,
+                claude);
     }
 
     @Test
@@ -220,7 +252,9 @@ class SubscriptionServiceTest {
         assertThat(service.refusal(pilot, PaidFeature.NARRATIVE)).isEmpty();
         assertThat(service.refusal(pilot, PaidFeature.NARRATIVE)).isEmpty();
         // The month's cap (2 here) still bounds what one pilot costs.
-        assertThat(service.refusal(pilot, PaidFeature.NARRATIVE)).map(SubscriptionService.Refusal::status).contains(429);
+        assertThat(service.refusal(pilot, PaidFeature.NARRATIVE))
+                .map(SubscriptionService.Refusal::status)
+                .contains(429);
         // The debrief costs nothing a use: everyone's.
         assertThat(service.refusal(someone(), PaidFeature.DEBRIEF)).isEmpty();
         assertThat(service.sold()).isFalse();
@@ -229,7 +263,9 @@ class SubscriptionServiceTest {
     @Test
     void with_no_subscription_sold_claude_features_kept_from_pilots_are_not_offered_rather_than_for_sale() {
         SubscriptionService service = unsold(SubscriptionService.ClaudeFeatures.OFF);
-        assertThat(service.refusal(someone(), PaidFeature.ORAL)).map(SubscriptionService.Refusal::status).contains(404);
+        assertThat(service.refusal(someone(), PaidFeature.ORAL))
+                .map(SubscriptionService.Refusal::status)
+                .contains(404);
         assertThat(service.refusal(someone(), PaidFeature.DEBRIEF)).isEmpty();
     }
 }

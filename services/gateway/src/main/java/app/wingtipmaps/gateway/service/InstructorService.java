@@ -9,11 +9,11 @@ import app.wingtipmaps.gateway.domain.SignedEndorsement;
 import app.wingtipmaps.gateway.dto.AskReviewRequest;
 import app.wingtipmaps.gateway.dto.CrossCountryReviewDto;
 import app.wingtipmaps.gateway.dto.EndorsementKindDto;
-import app.wingtipmaps.gateway.planner.model.PlannerEndorsementFilled;
 import app.wingtipmaps.gateway.dto.InstructorDto;
 import app.wingtipmaps.gateway.dto.InstructorRequest;
 import app.wingtipmaps.gateway.dto.SignRequest;
 import app.wingtipmaps.gateway.dto.StudentDto;
+import app.wingtipmaps.gateway.planner.model.PlannerEndorsementFilled;
 import app.wingtipmaps.gateway.repository.ApproachLessonRepository;
 import app.wingtipmaps.gateway.repository.CrossCountryReviewRepository;
 import app.wingtipmaps.gateway.repository.EndorsementRepository;
@@ -89,10 +89,18 @@ public class InstructorService {
     private final PlannerClient planner;
     private final String publicBaseUrl;
 
-    public InstructorService(PilotRepository pilots, InstructorLinkRepository links, SignedEndorsementRepository signed,
-                             CrossCountryReviewRepository reviews, EndorsementRepository recorded, FlightRepository flights,
-                             LogbookRepository logbook, ApproachLessonRepository lessons, Mailer mail, PlannerClient planner,
-                             @Value("${app.public-base-url:}") String publicBaseUrl) {
+    public InstructorService(
+            PilotRepository pilots,
+            InstructorLinkRepository links,
+            SignedEndorsementRepository signed,
+            CrossCountryReviewRepository reviews,
+            EndorsementRepository recorded,
+            FlightRepository flights,
+            LogbookRepository logbook,
+            ApproachLessonRepository lessons,
+            Mailer mail,
+            PlannerClient planner,
+            @Value("${app.public-base-url:}") String publicBaseUrl) {
         this.pilots = pilots;
         this.links = links;
         this.signed = signed;
@@ -135,24 +143,33 @@ public class InstructorService {
             throw new Refused(HttpStatus.CONFLICT, "You have already asked " + address + ".");
         }
         if (links.countByStudentIdAndAskedAtAfter(student.getId(), now.minus(Duration.ofDays(1))) >= ASKS_A_DAY) {
-            throw new Refused(HttpStatus.TOO_MANY_REQUESTS, "You have asked " + ASKS_A_DAY + " instructors today: ask again tomorrow.");
+            throw new Refused(
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    "You have asked " + ASKS_A_DAY + " instructors today: ask again tomorrow.");
         }
         links.save(new InstructorLink(student, address, now));
         String name = EndorsementRecords.nameOf(student);
-        send(address, name + " asks you to be their flight instructor",
-                name + " (" + student.getEmail() + ") has asked you to be their flight instructor in Wingtip Maps: to see their"
+        send(
+                address,
+                name + " asks you to be their flight instructor",
+                name + " (" + student.getEmail()
+                        + ") has asked you to be their flight instructor in Wingtip Maps: to see their"
                         + " way to the checkride, review the planning of their solo cross-countries and sign their endorsements"
-                        + " there.\n\nTo answer, sign in to Wingtip Maps with this address (" + address + ") and open Logbook, then"
+                        + " there.\n\nTo answer, sign in to Wingtip Maps with this address (" + address
+                        + ") and open Logbook, then"
                         + " Students." + openLine());
     }
 
     /** @return false where the student has no such instructor */
     @Transactional
     public boolean drop(Pilot student, Long linkId) {
-        return links.findById(linkId).filter(l -> l.getStudent().getId().equals(student.getId())).map(l -> {
-            end(l);
-            return true;
-        }).orElse(false);
+        return links.findById(linkId)
+                .filter(l -> l.getStudent().getId().equals(student.getId()))
+                .map(l -> {
+                    end(l);
+                    return true;
+                })
+                .orElse(false);
     }
 
     /** A saved flight put to one of the student's instructors, who is
@@ -165,17 +182,23 @@ public class InstructorService {
         Flight flight = flights.findByIdAndPilotId(request.flightId(), student.getId())
                 .orElseThrow(() -> new Refused(HttpStatus.NOT_FOUND, "No such flight of yours."));
         Pilot instructor = link.getInstructor();
-        boolean waiting = reviews.findByStudentIdAndInstructorIdOrderByAskedAtDesc(student.getId(), instructor.getId()).stream()
-                .anyMatch(r -> !r.isAnswered() && r.getFlight().getId().equals(flight.getId()));
+        boolean waiting =
+                reviews.findByStudentIdAndInstructorIdOrderByAskedAtDesc(student.getId(), instructor.getId()).stream()
+                        .anyMatch(r -> !r.isAnswered() && r.getFlight().getId().equals(flight.getId()));
         if (waiting) {
-            throw new Refused(HttpStatus.CONFLICT, "This flight is already with " + EndorsementRecords.nameOf(instructor) + ".");
+            throw new Refused(
+                    HttpStatus.CONFLICT, "This flight is already with " + EndorsementRecords.nameOf(instructor) + ".");
         }
         String note = Typed.text(request.note());
-        reviews.save(new CrossCountryReview(student, instructor, flight, request.makeModel().strip(), request.flightOn(), note, now));
+        reviews.save(new CrossCountryReview(
+                student, instructor, flight, request.makeModel().strip(), request.flightOn(), note, now));
         String name = EndorsementRecords.nameOf(student);
-        send(instructor.getEmail(), name + " asks you to review a solo cross-country",
+        send(
+                instructor.getEmail(),
+                name + " asks you to review a solo cross-country",
                 name + " asks you to review the planning of their solo cross-country, "
-                        + String.join(" ", route(flight)) + " in a " + request.makeModel().strip() + " on "
+                        + String.join(" ", route(flight)) + " in a "
+                        + request.makeModel().strip() + " on "
                         + EndorsementRecords.DAY.format(request.flightOn()) + " (14 CFR 61.93(c)(3)).\n"
                         + (note == null ? "" : "\n\"" + note + "\"\n")
                         + "\nOpen Logbook, then Students, in Wingtip Maps to review it." + openLine());
@@ -190,7 +213,8 @@ public class InstructorService {
                 .map(r -> {
                     reviews.delete(r);
                     return true;
-                }).orElse(false);
+                })
+                .orElse(false);
     }
 
     // ---- The instructor's side
@@ -198,7 +222,8 @@ public class InstructorService {
     @Transactional
     public void setInstructor(Pilot pilot, InstructorRequest request) {
         pilot.setFullName(request.fullName().strip().replaceAll("\\s+", " "));
-        pilot.setInstructor(request.certificate().strip().toUpperCase(Locale.ROOT), request.until(), request.untilKind());
+        pilot.setInstructor(
+                request.certificate().strip().toUpperCase(Locale.ROOT), request.until(), request.untilKind());
         pilots.save(pilot);
     }
 
@@ -218,7 +243,8 @@ public class InstructorService {
                 .filter(l -> !l.isAccepted() && l.getEmail().equalsIgnoreCase(instructor.getEmail()));
         ask.ifPresent(l -> {
             // Asked at two of the instructor's addresses, say: one is enough.
-            if (links.findByStudentIdAndInstructorId(l.getStudent().getId(), instructor.getId()).isPresent()) {
+            if (links.findByStudentIdAndInstructorId(l.getStudent().getId(), instructor.getId())
+                    .isPresent()) {
                 links.delete(l);
             } else {
                 l.accept(instructor, now);
@@ -231,20 +257,23 @@ public class InstructorService {
      *  @return false where there is no such ask or student */
     @Transactional
     public boolean leave(Pilot instructor, Long linkId) {
-        return links.findById(linkId).filter(l -> l.isAccepted()
+        return links.findById(linkId)
+                .filter(l -> l.isAccepted()
                         ? l.getInstructor().getId().equals(instructor.getId())
                         : l.getEmail().equalsIgnoreCase(instructor.getEmail()))
                 .map(l -> {
                     end(l);
                     return true;
-                }).orElse(false);
+                })
+                .orElse(false);
     }
 
     /** One of the instructor's students, loaded: read after this
      *  transaction, by the record and the signature. */
     @Transactional(readOnly = true)
     public Optional<Pilot> student(Pilot instructor, Long studentId) {
-        return links.findByStudentIdAndInstructorId(studentId, instructor.getId()).map(l -> (Pilot) Hibernate.unproxy(l.getStudent()));
+        return links.findByStudentIdAndInstructorId(studentId, instructor.getId())
+                .map(l -> (Pilot) Hibernate.unproxy(l.getStudent()));
     }
 
     /** The code of AC 61-65K A.10's endorsement, a solo cross-country's
@@ -262,7 +291,8 @@ public class InstructorService {
         LocalDate today = LocalDate.ofInstant(now, ZoneOffset.UTC);
         // The instructor's own day, which west of Greenwich is a day behind
         // UTC's in the evening.
-        if (request.signedOn().isBefore(today.minusDays(1)) || request.signedOn().isAfter(today.plusDays(1))) {
+        if (request.signedOn().isBefore(today.minusDays(1))
+                || request.signedOn().isAfter(today.plusDays(1))) {
             throw new Refused(HttpStatus.BAD_REQUEST, "An endorsement is signed with today's date.");
         }
         if (student.getFullName() == null || student.getFullName().isBlank()) {
@@ -276,33 +306,52 @@ public class InstructorService {
         Map<String, String> fields = filled.getFields();
         List<String> missing = filled.getMissing();
         if (!missing.isEmpty()) {
-            throw new Refused(HttpStatus.BAD_REQUEST, "Fill in " + String.join(", ", missing).toLowerCase(Locale.ROOT) + ".");
+            throw new Refused(
+                    HttpStatus.BAD_REQUEST,
+                    "Fill in " + String.join(", ", missing).toLowerCase(Locale.ROOT) + ".");
         }
         String text = filled.getText();
         if (!text.equals(request.text().replaceAll("\\s+", " ").strip())) {
-            throw new Refused(HttpStatus.CONFLICT, "The words have changed since you read them: read them again before signing.");
+            throw new Refused(
+                    HttpStatus.CONFLICT, "The words have changed since you read them: read them again before signing.");
         }
         CrossCountryReview review = null;
         if (request.reviewId() != null) {
             review = reviews.findById(request.reviewId())
-                    .filter(r -> r.getStudent().getId().equals(student.getId()) && r.getInstructor().getId().equals(instructor.getId()))
+                    .filter(r -> r.getStudent().getId().equals(student.getId())
+                            && r.getInstructor().getId().equals(instructor.getId()))
                     .orElseThrow(() -> new Refused(HttpStatus.NOT_FOUND, "No such review."));
             if (review.isAnswered() || !SOLO_XC_FLIGHT.equals(kind.code())) {
                 throw new Refused(HttpStatus.CONFLICT, "That review has been answered.");
             }
         }
         String signature = signatureLine(instructor, request.signedOn());
-        SignedEndorsement endorsement = signed.save(new SignedEndorsement(student, instructor, kind.code(), student.getFullName(),
-                fields, text, signature, request.signedOn(), now, digest(text, signature, now)));
+        SignedEndorsement endorsement = signed.save(new SignedEndorsement(
+                student,
+                instructor,
+                kind.code(),
+                student.getFullName(),
+                fields,
+                text,
+                signature,
+                request.signedOn(),
+                now,
+                digest(text, signature, now)));
         if (review != null) {
             review.endorsed(endorsement, now);
         }
-        String said = kind.label() + " (AC 61-65K " + kind.paragraph() + ", 14 CFR " + kind.rule() + ")\n\n" + text + "\n\n" + signature;
-        send(student.getEmail(), "Endorsed: " + kind.label(),
-                EndorsementRecords.nameOf(instructor) + " has signed this endorsement for you in Wingtip Maps:\n\n" + said
-                        + "\n\nIt is on your Checkride page, under Logbook." + openLine());
-        send(instructor.getEmail(), "You signed: " + kind.label() + " for " + student.getFullName(),
-                "You signed this endorsement in Wingtip Maps, kept with your students' records (14 CFR 61.189):\n\n" + said);
+        String said = kind.label() + " (AC 61-65K " + kind.paragraph() + ", 14 CFR " + kind.rule() + ")\n\n" + text
+                + "\n\n" + signature;
+        send(
+                student.getEmail(),
+                "Endorsed: " + kind.label(),
+                EndorsementRecords.nameOf(instructor) + " has signed this endorsement for you in Wingtip Maps:\n\n"
+                        + said + "\n\nIt is on your Checkride page, under Logbook." + openLine());
+        send(
+                instructor.getEmail(),
+                "You signed: " + kind.label() + " for " + student.getFullName(),
+                "You signed this endorsement in Wingtip Maps, kept with your students' records (14 CFR 61.189):\n\n"
+                        + said);
         return endorsement;
     }
 
@@ -312,16 +361,25 @@ public class InstructorService {
     @Transactional
     public boolean voidEndorsement(Pilot instructor, Long id, Instant now) {
         return signed.findById(id)
-                .filter(e -> e.getInstructor() != null && e.getInstructor().getId().equals(instructor.getId()) && !e.isVoided())
+                .filter(e -> e.getInstructor() != null
+                        && e.getInstructor().getId().equals(instructor.getId())
+                        && !e.isVoided())
                 .map(e -> {
                     e.voidAt(now);
                     if (e.getStudent() != null) {
-                        send(e.getStudent().getEmail(), "Voided: " + planner.endorsementKind(e.getCode()).map(EndorsementKindDto::label).orElse(e.getCode()),
-                                EndorsementRecords.nameOf(instructor) + " has voided this endorsement of " + e.getSignedOn()
-                                        .format(EndorsementRecords.DAY) + ":\n\n" + e.getText() + "\n\n" + e.getSignature());
+                        send(
+                                e.getStudent().getEmail(),
+                                "Voided: "
+                                        + planner.endorsementKind(e.getCode())
+                                                .map(EndorsementKindDto::label)
+                                                .orElse(e.getCode()),
+                                EndorsementRecords.nameOf(instructor) + " has voided this endorsement of "
+                                        + e.getSignedOn().format(EndorsementRecords.DAY) + ":\n\n" + e.getText()
+                                        + "\n\n" + e.getSignature());
                     }
                     return true;
-                }).orElse(false);
+                })
+                .orElse(false);
     }
 
     /** @return false where there is no such review waiting on them */
@@ -331,26 +389,46 @@ public class InstructorService {
                 .filter(r -> r.getInstructor().getId().equals(instructor.getId()) && !r.isAnswered())
                 .map(r -> {
                     r.declined(note.strip(), now);
-                    send(r.getStudent().getEmail(), "Not endorsed: " + String.join(" ", route(r.getFlight())),
+                    send(
+                            r.getStudent().getEmail(),
+                            "Not endorsed: " + String.join(" ", route(r.getFlight())),
                             EndorsementRecords.nameOf(instructor) + " has not endorsed your solo cross-country, "
-                                    + String.join(" ", route(r.getFlight())) + " on " + EndorsementRecords.DAY.format(r.getFlightOn())
+                                    + String.join(" ", route(r.getFlight())) + " on "
+                                    + EndorsementRecords.DAY.format(r.getFlightOn())
                                     + ":\n\n\"" + note.strip() + "\"" + openLine());
                     return true;
-                }).orElse(false);
+                })
+                .orElse(false);
     }
 
     /** The instructor's page: their certificate, students, asks, reviews
      *  waiting and their record of the last 3 years. */
     @Transactional(readOnly = true)
     public InstructorDto instructor(Pilot pilot, Instant now) {
-        List<StudentDto> students = links.findByInstructorIdOrderByAcceptedAt(pilot.getId()).stream().map(this::studentOf).toList();
-        List<StudentDto> asking = links.findOpenFor(pilot.getEmail()).stream().map(this::studentOf).toList();
-        List<CrossCountryReviewDto> waiting = reviews.findByInstructorIdAndAnsweredAtIsNullOrderByAskedAt(pilot.getId()).stream()
-                .map(this::reviewOf).toList();
-        Instant since = LocalDate.ofInstant(now, ZoneOffset.UTC).minusYears(RECORD_YEARS).atStartOfDay(ZoneOffset.UTC).toInstant();
-        return new InstructorDto(pilot.getFullName(), pilot.getInstructorCertificate(), pilot.getInstructorUntil(),
-                pilot.getInstructorUntilKind(), students, asking, waiting,
-                EndorsementRecords.dtos(planner, signed.findByInstructorIdAndSignedAtAfterOrderBySignedAtDesc(pilot.getId(), since)),
+        List<StudentDto> students = links.findByInstructorIdOrderByAcceptedAt(pilot.getId()).stream()
+                .map(this::studentOf)
+                .toList();
+        List<StudentDto> asking = links.findOpenFor(pilot.getEmail()).stream()
+                .map(this::studentOf)
+                .toList();
+        List<CrossCountryReviewDto> waiting =
+                reviews.findByInstructorIdAndAnsweredAtIsNullOrderByAskedAt(pilot.getId()).stream()
+                        .map(this::reviewOf)
+                        .toList();
+        Instant since = LocalDate.ofInstant(now, ZoneOffset.UTC)
+                .minusYears(RECORD_YEARS)
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant();
+        return new InstructorDto(
+                pilot.getFullName(),
+                pilot.getInstructorCertificate(),
+                pilot.getInstructorUntil(),
+                pilot.getInstructorUntilKind(),
+                students,
+                asking,
+                waiting,
+                EndorsementRecords.dtos(
+                        planner, signed.findByInstructorIdAndSignedAtAfterOrderBySignedAtDesc(pilot.getId(), since)),
                 planner.endorsementKinds());
     }
 
@@ -358,21 +436,43 @@ public class InstructorService {
      *  student's record answers of 61.93(d). */
     CrossCountryReviewDto reviewOf(CrossCountryReview r) {
         Long studentId = r.getStudent().getId();
-        return EndorsementRecords.dto(planner, r, EndorsementRecords.checks(planner, r.getFlightOn(),
-                recorded.findByKeyPilotIdOrderByKeyCode(studentId), signed.findByStudentIdOrderBySignedAtDesc(studentId)));
+        return EndorsementRecords.dto(
+                planner,
+                r,
+                EndorsementRecords.checks(
+                        planner,
+                        r.getFlightOn(),
+                        recorded.findByKeyPilotIdOrderByKeyCode(studentId),
+                        signed.findByStudentIdOrderBySignedAtDesc(studentId)));
     }
 
     private StudentDto studentOf(InstructorLink l) {
         Pilot student = l.getStudent();
-        var experience = planner.experience(logbook.findByPilotIdOrderByFlownOnDescIdDesc(student.getId()),
-                LocalDate.now(ZoneOffset.UTC));
+        var experience = planner.experience(
+                logbook.findByPilotIdOrderByFlownOnDescIdDesc(student.getId()), LocalDate.now(ZoneOffset.UTC));
         List<Endorsement> paper = recorded.findByKeyPilotIdOrderByKeyCode(student.getId());
         List<SignedEndorsement> theirs = signed.findByStudentIdOrderBySignedAtDesc(student.getId());
-        int waiting = l.isAccepted() ? (int) reviews.findByStudentIdAndInstructorIdOrderByAskedAtDesc(student.getId(),
-                l.getInstructor().getId()).stream().filter(r -> !r.isAnswered()).count() : 0;
-        return new StudentDto(l.getId(), student.getId(), EndorsementRecords.nameOf(student), student.getEmail(), l.getAskedAt(),
-                l.isAccepted(), (int) experience.stream().filter(i -> i.met()).count(), experience.size(),
-                planner.endorsements(EndorsementRecords.held(paper, theirs), null).getSoloUntil(), waiting);
+        int waiting =
+                l.isAccepted()
+                        ? (int) reviews
+                                .findByStudentIdAndInstructorIdOrderByAskedAtDesc(
+                                        student.getId(), l.getInstructor().getId())
+                                .stream()
+                                .filter(r -> !r.isAnswered())
+                                .count()
+                        : 0;
+        return new StudentDto(
+                l.getId(),
+                student.getId(),
+                EndorsementRecords.nameOf(student),
+                student.getEmail(),
+                l.getAskedAt(),
+                l.isAccepted(),
+                (int) experience.stream().filter(i -> i.met()).count(),
+                experience.size(),
+                planner.endorsements(EndorsementRecords.held(paper, theirs), null)
+                        .getSoloUntil(),
+                waiting);
     }
 
     /** A link ended, by either: the reviews still waiting between the two
@@ -380,9 +480,14 @@ public class InstructorService {
      *  neither could open again. */
     private void end(InstructorLink l) {
         if (l.isAccepted()) {
-            reviews.findByStudentIdAndInstructorIdOrderByAskedAtDesc(l.getStudent().getId(), l.getInstructor().getId()).stream()
-                    .filter(r -> !r.isAnswered()).forEach(reviews::delete);
-            lessons.deleteByStudentIdAndInstructorId(l.getStudent().getId(), l.getInstructor().getId());
+            reviews
+                    .findByStudentIdAndInstructorIdOrderByAskedAtDesc(
+                            l.getStudent().getId(), l.getInstructor().getId())
+                    .stream()
+                    .filter(r -> !r.isAnswered())
+                    .forEach(reviews::delete);
+            lessons.deleteByStudentIdAndInstructorId(
+                    l.getStudent().getId(), l.getInstructor().getId());
         }
         links.delete(l);
     }
@@ -408,8 +513,10 @@ public class InstructorService {
 
     /** The flight's airports in order: departure, stops, destination. */
     static List<String> route(Flight f) {
-        return Stream.concat(Stream.concat(Stream.of(f.getDepartureIdent()), f.getStops().stream()),
-                Stream.of(f.getDestinationIdent())).toList();
+        return Stream.concat(
+                        Stream.concat(Stream.of(f.getDepartureIdent()), f.getStops().stream()),
+                        Stream.of(f.getDestinationIdent()))
+                .toList();
     }
 
     String openLine() {

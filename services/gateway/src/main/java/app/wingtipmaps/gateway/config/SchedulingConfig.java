@@ -9,5 +9,4 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  *  wingtip.watch.every, whose first run waits one interval. */
 @Configuration
 @EnableScheduling
-public class SchedulingConfig {
-}
+public class SchedulingConfig {}

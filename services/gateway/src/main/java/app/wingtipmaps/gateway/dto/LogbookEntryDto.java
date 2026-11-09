@@ -28,5 +28,4 @@ public record LogbookEntryDto(
         double airHours,
         int touchAndGoes,
         boolean fromTrack,
-        @Nullable Long flightId) {
-}
+        @Nullable Long flightId) {}

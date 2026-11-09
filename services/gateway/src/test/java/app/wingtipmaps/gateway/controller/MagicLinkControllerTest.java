@@ -15,6 +15,7 @@ import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.repository.MagicLinkRepository;
 import app.wingtipmaps.gateway.service.Mailer;
 import app.wingtipmaps.gateway.service.PilotService;
+import jakarta.servlet.http.HttpSession;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
@@ -30,7 +31,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -52,12 +52,14 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(MagicLinkController.class)
 @Import(Mailer.class)
 @AutoConfigureMockMvc(addFilters = false)
-@TestPropertySource(properties = {
-    "app.public-base-url=https://planner.example.com",
-    // These tests ask for many links for one address; the throttle has
-    // its own test below, with the real limits.
-    "app.magic-link.per-address-per-hour=1000",
-    "app.magic-link.per-client-per-hour=1000"})
+@TestPropertySource(
+        properties = {
+            "app.public-base-url=https://planner.example.com",
+            // These tests ask for many links for one address; the throttle has
+            // its own test below, with the real limits.
+            "app.magic-link.per-address-per-hour=1000",
+            "app.magic-link.per-client-per-hour=1000"
+        })
 class MagicLinkControllerTest {
 
     private static final String EMAIL = "pilot@example.com";
@@ -80,8 +82,8 @@ class MagicLinkControllerTest {
     }
 
     private static String hash(String token) throws Exception {
-        return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-                .digest(token.getBytes(StandardCharsets.UTF_8)));
+        return HexFormat.of()
+                .formatHex(MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8)));
     }
 
     /** The token the emailed link carried, recovered from the message
@@ -132,11 +134,13 @@ class MagicLinkControllerTest {
         HttpSession signedIn = mockMvc.perform(signInWith(token).session(session))
                 .andExpect(status().isFound())
                 .andExpect(header().string("Location", "/app/plan"))
-                .andReturn().getRequest().getSession(false);
+                .andReturn()
+                .getRequest()
+                .getSession(false);
 
         assertThat(signedIn).isNotNull();
-        SecurityContext context = (SecurityContext) signedIn.getAttribute(
-                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        SecurityContext context = (SecurityContext)
+                signedIn.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
         assertThat(context).isNotNull();
         assertThat(context.getAuthentication().getPrincipal()).isEqualTo(EMAIL);
     }
@@ -174,7 +178,9 @@ class MagicLinkControllerTest {
 
         HttpSession after = mockMvc.perform(signInWith(token).session(session))
                 .andExpect(status().isFound())
-                .andReturn().getRequest().getSession(false);
+                .andReturn()
+                .getRequest()
+                .getSession(false);
 
         assertThat(after).isNotNull();
         assertThat(after.getId()).isNotEqualTo(before);
@@ -189,18 +195,17 @@ class MagicLinkControllerTest {
         given(magicLinks.consumeIfUsable(anyString(), any())).willReturn(0);
 
         MockHttpSession session = new MockHttpSession();
-        mockMvc.perform(signInWith(token).session(session))
-                .andExpect(status().isBadRequest());
+        mockMvc.perform(signInWith(token).session(session)).andExpect(status().isBadRequest());
 
-        assertThat(session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY)).isNull();
+        assertThat(session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY))
+                .isNull();
     }
 
     @Test
     void anUnrecognisedTokenIsRefused() throws Exception {
         given(magicLinks.consumeIfUsable(anyString(), any())).willReturn(0);
 
-        mockMvc.perform(signInWith("not-a-real-token"))
-                .andExpect(status().isBadRequest());
+        mockMvc.perform(signInWith("not-a-real-token")).andExpect(status().isBadRequest());
     }
 
     @Test

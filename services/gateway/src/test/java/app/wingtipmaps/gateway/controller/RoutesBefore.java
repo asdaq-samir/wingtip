@@ -15,8 +15,18 @@ import org.springframework.web.util.pattern.PathPatternParser;
  * route by route (its header says how) before both were replaced by the
  * services' x-gateway marks. What the documents produce is held to it.
  */
-public record RoutesBefore(String method, String pattern, String upstream, String access, String paid, String bodyLimit,
-                           String csrf, boolean pilot, boolean range, List<String> passedHeaders, String headAccess) {
+public record RoutesBefore(
+        String method,
+        String pattern,
+        String upstream,
+        String access,
+        String paid,
+        String bodyLimit,
+        String csrf,
+        boolean pilot,
+        boolean range,
+        List<String> passedHeaders,
+        String headAccess) {
 
     /** The route's sample path: each {variable} as "X". */
     public String sample() {
@@ -34,11 +44,22 @@ public record RoutesBefore(String method, String pattern, String upstream, Strin
 
     public static List<RoutesBefore> all() {
         try (InputStream in = RoutesBefore.class.getClassLoader().getResourceAsStream("planner-routes-before.tsv")) {
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8).lines()
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8)
+                    .lines()
                     .filter(line -> !line.startsWith("#") && !line.isBlank())
                     .map(line -> line.split("\t", -1))
-                    .map(f -> new RoutesBefore(f[0], f[1], f[2], f[3], f[4], f[5], f[6], Boolean.parseBoolean(f[7]),
-                            Boolean.parseBoolean(f[8]), "-".equals(f[9]) ? List.of() : List.of(f[9].split(",")), f[10]))
+                    .map(f -> new RoutesBefore(
+                            f[0],
+                            f[1],
+                            f[2],
+                            f[3],
+                            f[4],
+                            f[5],
+                            f[6],
+                            Boolean.parseBoolean(f[7]),
+                            Boolean.parseBoolean(f[8]),
+                            "-".equals(f[9]) ? List.of() : List.of(f[9].split(",")),
+                            f[10]))
                     .toList();
         } catch (IOException e) {
             throw new IllegalStateException(e);

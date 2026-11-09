@@ -63,14 +63,12 @@ class SpaFallbackTest {
 
     @Test
     void aMissingAssetIsA404NotTheIndex() throws Exception {
-        mockMvc.perform(get("/app/assets/app-missing.js"))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/app/assets/app-missing.js")).andExpect(status().isNotFound());
     }
 
     @Test
     void theBareRootGoesToThePlanner() throws Exception {
-        mockMvc.perform(get("/app"))
-                .andExpect(redirectedUrl("/app/plan"));
+        mockMvc.perform(get("/app")).andExpect(redirectedUrl("/app/plan"));
     }
 
     @Test

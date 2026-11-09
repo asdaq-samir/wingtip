@@ -44,21 +44,27 @@ public class FlightController {
 
     @GetMapping
     public ResponseEntity<List<FlightSummaryDto>> list(Authentication authentication) {
-        return PilotResponses.withPilot(pilots, authentication, pilot ->
-                ResponseEntity.ok(flightService.list(pilot).stream().map(FlightSummaryDto::of).toList()));
+        return PilotResponses.withPilot(
+                pilots,
+                authentication,
+                pilot -> ResponseEntity.ok(flightService.list(pilot).stream()
+                        .map(FlightSummaryDto::of)
+                        .toList()));
     }
 
     @PostMapping
-    public ResponseEntity<FlightDto> save(Authentication authentication, @Valid @RequestBody SaveFlightRequest request) {
-        return PilotResponses.withPilot(pilots, authentication, pilot ->
-                ResponseEntity.ok(toDto(flightService.save(pilot, request))));
+    public ResponseEntity<FlightDto> save(
+            Authentication authentication, @Valid @RequestBody SaveFlightRequest request) {
+        return PilotResponses.withPilot(
+                pilots, authentication, pilot -> ResponseEntity.ok(toDto(flightService.save(pilot, request))));
     }
 
     /** One of the pilot's flights, with its nav log: what its debrief
      *  is read against. */
     @GetMapping("/{id}")
     public ResponseEntity<FlightDto> get(Authentication authentication, @PathVariable Long id) {
-        return PilotResponses.found(pilots, authentication, pilot -> flightService.get(pilot, id).map(FlightController::toDto));
+        return PilotResponses.found(
+                pilots, authentication, pilot -> flightService.get(pilot, id).map(FlightController::toDto));
     }
 
     /** The flight's track, where the pilot saved one to their account. */
@@ -72,7 +78,8 @@ public class FlightController {
      *  what the server can hold back (SubscriptionService). Reading one
      *  back, or deleting it, never is: what a pilot saved stays theirs. */
     @PutMapping("/{id}/track")
-    public ResponseEntity<Void> saveTrack(Authentication authentication, @PathVariable Long id, @Valid @RequestBody TrackDto track) {
+    public ResponseEntity<Void> saveTrack(
+            Authentication authentication, @PathVariable Long id, @Valid @RequestBody TrackDto track) {
         var refused = subscriptions.refusal(authentication, PaidFeature.DEBRIEF);
         if (refused.isPresent()) {
             return ResponseEntity.status(refused.get().status()).build();
@@ -91,22 +98,47 @@ public class FlightController {
     }
 
     private static RiskAssessmentDto riskOf(Flight f) {
-        return f.getRiskScore() == null ? null : new RiskAssessmentDto(f.getRiskScore(), f.getRiskLevel(), f.getRiskFactors());
+        return f.getRiskScore() == null
+                ? null
+                : new RiskAssessmentDto(f.getRiskScore(), f.getRiskLevel(), f.getRiskFactors());
     }
 
     private static FlightDto toDto(Flight f) {
         List<FlightCheckpointDto> checkpoints = f.getCheckpoints().stream()
                 .map(FlightController::toCheckpointDto)
                 .toList();
-        return new FlightDto(f.getId(), f.getDepartureIdent(), f.getDestinationIdent(), f.getStops(),
+        return new FlightDto(
+                f.getId(),
+                f.getDepartureIdent(),
+                f.getDestinationIdent(),
+                f.getStops(),
                 f.getAircraft() == null ? null : f.getAircraft().getTailNumber(),
-                f.getCruiseAltitudeFt(), f.getTotalDistanceNm(), f.getTotalEteMin(), f.getTotalFuelGal(),
-                f.getPlannedFor(), f.getCreatedAt(), riskOf(f), checkpoints, f.getOwnAltitudes(), f.getPicks());
+                f.getCruiseAltitudeFt(),
+                f.getTotalDistanceNm(),
+                f.getTotalEteMin(),
+                f.getTotalFuelGal(),
+                f.getPlannedFor(),
+                f.getCreatedAt(),
+                riskOf(f),
+                checkpoints,
+                f.getOwnAltitudes(),
+                f.getPicks());
     }
 
     private static FlightCheckpointDto toCheckpointDto(FlightCheckpoint c) {
-        return new FlightCheckpointDto(c.getSequenceNo(), c.getName(), c.getCategory(), c.getLat(), c.getLon(),
-                c.getAlongTrackNm(), c.getLegDistanceNm(), c.getTrueCourseDeg(), c.getMagneticHeadingDeg(),
-                c.getGroundspeedKt(), c.getEteMin(), c.getFuelGal(), c.getAltitudeFt());
+        return new FlightCheckpointDto(
+                c.getSequenceNo(),
+                c.getName(),
+                c.getCategory(),
+                c.getLat(),
+                c.getLon(),
+                c.getAlongTrackNm(),
+                c.getLegDistanceNm(),
+                c.getTrueCourseDeg(),
+                c.getMagneticHeadingDeg(),
+                c.getGroundspeedKt(),
+                c.getEteMin(),
+                c.getFuelGal(),
+                c.getAltitudeFt());
     }
 }

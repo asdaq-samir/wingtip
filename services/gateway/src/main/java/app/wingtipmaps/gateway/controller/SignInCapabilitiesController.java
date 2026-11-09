@@ -34,17 +34,29 @@ public class SignInCapabilitiesController {
     /** @param access how this deployment is reached (SignInOptions).
      *  @param providers the OIDC providers really registered. */
     public record Capabilities(
-            @Schema(description = "SIGN_IN: a session can be had, and the developer's workspace needs the role. "
-                    + "OPEN: nobody can sign in and everything is open (the local stack). "
-                    + "CLOSED: nobody can sign in, and writes and the developer's workspace are refused.",
-                    example = "SIGN_IN") SignInOptions.Access access,
-            @Schema(description = "The OIDC providers with real credentials, by registration id: the sign-in "
-                    + "buttons to offer. Empty where only the emailed link signs in (the local stack).",
-                    example = "[\"google\", \"apple\"]") List<String> providers,
-            @Schema(description = "Whether this deployment sells the subscription; where not, the page says "
-                    + "nothing of one.", example = "false") boolean subscriptions,
-            @Schema(description = "Where no subscription is sold, who has the features Claude writes: OFF, "
-                    + "DEVELOPERS, or EVERYONE signed in.", example = "EVERYONE")
+            @Schema(
+                    description = "SIGN_IN: a session can be had, and the developer's workspace needs the role. "
+                            + "OPEN: nobody can sign in and everything is open (the local stack). "
+                            + "CLOSED: nobody can sign in, and writes and the developer's workspace are refused.",
+                    example = "SIGN_IN")
+            SignInOptions.Access access,
+
+            @Schema(
+                    description = "The OIDC providers with real credentials, by registration id: the sign-in "
+                            + "buttons to offer. Empty where only the emailed link signs in (the local stack).",
+                    example = "[\"google\", \"apple\"]")
+            List<String> providers,
+
+            @Schema(
+                    description = "Whether this deployment sells the subscription; where not, the page says "
+                            + "nothing of one.",
+                    example = "false")
+            boolean subscriptions,
+
+            @Schema(
+                    description = "Where no subscription is sold, who has the features Claude writes: OFF, "
+                            + "DEVELOPERS, or EVERYONE signed in.",
+                    example = "EVERYONE")
             SubscriptionService.ClaudeFeatures claudeFeatures) {}
 
     private final SignInOptions signIn;
@@ -53,7 +65,8 @@ public class SignInCapabilitiesController {
 
     /** The two settings read as SubscriptionService reads them, not through
      *  it: this answers before anyone signs in, from settings alone. */
-    public SignInCapabilitiesController(SignInOptions signIn,
+    public SignInCapabilitiesController(
+            SignInOptions signIn,
             @Value("${app.subscription.enabled:false}") boolean sold,
             @Value("${app.claude-features:EVERYONE}") SubscriptionService.ClaudeFeatures claude) {
         this.signIn = signIn;

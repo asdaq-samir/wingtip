@@ -29,22 +29,27 @@ class AssetLinksControllerTest {
         Map<String, Object> target = (Map<String, Object>) link.get("target");
         assertThat(target.get("namespace")).isEqualTo("android_app");
         assertThat(target.get("package_name")).isEqualTo("app.wingtipmaps.android");
-        assertThat((List<String>) target.get("sha256_cert_fingerprints")).containsExactly(PLAY,
-                "A1:B2:C3:D4:E5:F6:07:18:29:3A:4B:5C:6D:7E:8F:90:A1:B2:C3:D4:E5:F6:07:18:29:3A:4B:5C:6D:7E:8F:90");
+        assertThat((List<String>) target.get("sha256_cert_fingerprints"))
+                .containsExactly(
+                        PLAY,
+                        "A1:B2:C3:D4:E5:F6:07:18:29:3A:4B:5C:6D:7E:8F:90:A1:B2:C3:D4:E5:F6:07:18:29:3A:4B:5C:6D:7E:8F:90");
     }
 
     @Test
     void aFingerprintThatIsNotOneIsLeftOut() {
         // An SHA-1 (20 bytes), the wrong digest for App Links.
-        ResponseEntity<List<Map<String, Object>>> answer = new AssetLinksController("app.wingtipmaps.android",
-                "14:6D:E9:83:C5:73:06:50:D8:EE:B9:95:2F:34:FC:64:16:A0:83:42").links();
+        ResponseEntity<List<Map<String, Object>>> answer = new AssetLinksController(
+                        "app.wingtipmaps.android", "14:6D:E9:83:C5:73:06:50:D8:EE:B9:95:2F:34:FC:64:16:A0:83:42")
+                .links();
         assertThat(answer.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
     void withNoAppThereIsNoFile() {
         assertThat(new AssetLinksController("", PLAY).links().getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(new AssetLinksController("app.wingtipmaps.android", " ").links().getStatusCode())
+        assertThat(new AssetLinksController("app.wingtipmaps.android", " ")
+                        .links()
+                        .getStatusCode())
                 .isEqualTo(HttpStatus.NOT_FOUND);
     }
 }
