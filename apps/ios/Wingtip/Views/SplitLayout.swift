@@ -217,7 +217,7 @@ struct SplitLayout<Map: View>: View {
         switch tab {
         case .fpl: "Flight Plan"
         case .airport: "Airport"
-        case .aircraft: "Aircraft"
+        case .airplane: "Airplane"
         case .setup: "Setup"
         }
     }

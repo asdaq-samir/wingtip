@@ -11,7 +11,7 @@ struct LegDetailView: View {
         List {
             // Each figure's accessibilityValue is the figure as a pilot says
             // it (SpokenFigures), where "090°" would be read as "ninety".
-            Section("Course and heading") {
+            Section(title: "Course and Heading") {
                 LabeledContent("True course", value: Format.heading(leg.trueCourseDeg))
                     .accessibilityValue(SpokenFigures.degrees(leg.trueCourseDeg))
                 if let wind = leg.wind {
@@ -37,7 +37,7 @@ struct LegDetailView: View {
                         .accessibilityValue(SpokenFigures.degrees(heading))
                 }
             }
-            Section("Speed, time and fuel") {
+            Section(title: "Speed, Time and Fuel") {
                 LabeledContent("Altitude", value: Format.altitude(leg.altitudeFt))
                     .accessibilityValue(SpokenFigures.feet(leg.altitudeFt))
                 if let tas = leg.tasKt { LabeledContent("True airspeed", value: Format.speed(tas)).accessibilityValue(SpokenFigures.knots(tas)) }
@@ -49,7 +49,7 @@ struct LegDetailView: View {
                 if let climb = leg.climbMin, climb > 0 { LabeledContent("Climbing", value: Format.duration(climb)).accessibilityValue(SpokenFigures.minutes(climb)) }
             }
             if leg.toc != nil || leg.tod != nil {
-                Section("Climb and descent") {
+                Section(title: "Climb and Descent") {
                     if let along = leg.toc?.alongNm { LabeledContent("Top of climb", value: "\(Format.distance(along)) along") }
                     if let along = leg.tod?.alongNm { LabeledContent("Top of descent", value: "\(Format.distance(along)) along") }
                 }

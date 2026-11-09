@@ -119,15 +119,6 @@ struct GoNoGoSection: View {
             } else {
                 ProgressView("Checking the flight…")
             }
-            NavigationLink { MinimumsView().closesBack() } label: {
-                Label("Personal minimums", systemImage: "slider.horizontal.3")
-            }
-            .task(id: session.signedIn) {
-                // The instructor's name comes with the training (Gateway);
-                // none for a pilot with no instructor, or signed out.
-                guard session.signedIn else { instructor = nil; return }
-                instructor = (try? await Gateway.training())??.instructors.first { $0.accepted }
-            }
             if let instructor {
                 Label {
                     Text("Your instructor, \(instructor.name ?? instructor.email), reviews the flights you put to them from their phone.")
@@ -139,9 +130,15 @@ struct GoNoGoSection: View {
             }
         } header: {
             HStack {
-                Text("Go / No-Go")
+                SectionTitle("Go / No-Go")
                 if verdict.asking, verdict.answer != nil { ProgressView().controlSize(.mini) }
             }
+        }
+        .task(id: session.signedIn) {
+            // The instructor's name comes with the training (Gateway);
+            // none for a pilot with no instructor, or signed out.
+            guard session.signedIn else { instructor = nil; return }
+            instructor = (try? await Gateway.training())??.instructors.first { $0.accepted }
         }
         // The words for the answer on the page; the findings stay as they
         // are while they are written.
@@ -278,11 +275,11 @@ struct LoadingView: View {
     var body: some View {
         Form {
             if let loading = verdict.answer?.loading, let load = verdict.load(for: plan.aircraft) ?? verdict.answer?.balance?.load {
-                Section("The airplane") {
+                Section(title: "The Airplane") {
                     figure("Empty weight", unit: "lb", value: load.emptyWeightLb) { var l = load; l.emptyWeightLb = $0; save(l) }
                     figure("Empty arm", unit: "in", value: load.emptyArmIn) { var l = load; l.emptyArmIn = $0; save(l) }
                 }
-                Section("Loaded") {
+                Section(title: "Loaded") {
                     ForEach(Array(loading.stations.enumerated()), id: \.offset) { i, station in
                         figure(station.name, unit: "lb", value: i < load.stationsLb.count ? load.stationsLb[i] : 0,
                                note: station.maxLb.map { "\(Int($0).formatted()) lb at most" }) { value in
@@ -294,7 +291,7 @@ struct LoadingView: View {
                     figure("Fuel", unit: "gal", value: load.fuelGal, note: "\(loading.fuelMaxGal.formatted()) gal usable") { var l = load; l.fuelGal = $0; save(l) }
                 }
                 if let balance = verdict.answer?.balance {
-                    Section("Balance") {
+                    Section(title: "Balance") {
                         LabeledContent("Takeoff", value: balance.takeoff.words)
                         LabeledContent("Landing", value: balance.landing.words)
                         let problems = balance.problems ?? []
@@ -361,7 +358,7 @@ struct RiskView: View {
                 }
                 let own = Set((verdict.answer?.selfChecks ?? []).map(\.key))
                 let raised = (risk.factors ?? []).filter { !own.contains($0.key) }
-                Section("From the briefing and your logbook") {
+                Section(title: "From the Briefing and Your Logbook") {
                     if raised.isEmpty {
                         Text("Nothing raised").foregroundStyle(.secondary)
                     } else {

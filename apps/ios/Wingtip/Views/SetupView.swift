@@ -21,7 +21,7 @@ struct SetupView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Account") {
+                Section(title: "Account") {
                     if let pilot = session.pilot {
                         LabeledContent("Signed in as", value: pilot.displayName ?? pilot.email ?? "you")
                         LabeledContent("Email", value: pilot.email)
@@ -35,27 +35,29 @@ struct SetupView: View {
                     ProblemLine(session.problem)
                 }
                 if session.signedIn {
-                    Section("Pilot") {
-                        NavigationLink("Logbook and currency") { LogbookView().closesBack() }
+                    Section(title: "Pilot") {
+                        NavigationLink("Logbook and Currency") { LogbookView().closesBack() }
                         NavigationLink("Training") { TrainingView().closesBack() }
                         NavigationLink("Instructing") { InstructorView().closesBack() }
                     }
                 }
                 // The weather the pilot will not take off or land in, kept
                 // on this phone: the Brief's Go / No-Go holds it to them.
+                // Here alone (docs/decisions/0014, one home per control): the
+                // Brief's own link to it is gone (the UI audit, 2026-11-09).
                 Section {
-                    NavigationLink("Personal minimums") { MinimumsView().closesBack() }
+                    NavigationLink("Personal Minimums") { MinimumsView().closesBack() }
                     NavigationLink("Guide") { PilotGuideView().closesBack() }
                 }
-                Section("Map") {
+                Section(title: "Map") {
                     Toggle("Traffic", isOn: Binding(get: { traffic.on }, set: { traffic.on = $0 }))
                     SpokenAlertsToggle()
                     ForgetNotesButton()
-                    Toggle("VFR waypoints", isOn: $waypointsOn)
-                    Toggle("Class B weather", isOn: $classBOn)
-                    Toggle("Approach plates", isOn: $platesOn)
-                    Toggle("Military fields", isOn: $militaryOn)
-                    Toggle("Private fields", isOn: $privateOn)
+                    Toggle("VFR Waypoints", isOn: $waypointsOn)
+                    Toggle("Class B Weather", isOn: $classBOn)
+                    Toggle("Approach Plates", isOn: $platesOn)
+                    Toggle("Military Fields", isOn: $militaryOn)
+                    Toggle("Private Fields", isOn: $privateOn)
                     // How old each weather layer's data is.
                     LayerAgesRows()
                 }
@@ -63,24 +65,24 @@ struct SetupView: View {
                 // strip (StripSheetView), the owner's pick of 2026-11-04,
                 // tried beside the tabs; a segmented control, as a setting
                 // of two is.
-                Section("Screen") {
+                Section(title: "Screen") {
                     Picker("Screen", selection: $layoutName) {
                         Text("Tabs").tag("tabs")
                         Text("Strip").tag("strip")
                     }
                     .pickerStyle(.segmented)
                 }
-                Section("Chart") {
+                Section(title: "Chart") {
                     // The white paper chart dimmed in dark appearance, so it
                     // does not take the pilot's night vision: a menu of two,
                     // as the web app's Settings has it.
-                    Picker("Chart at night", selection: $chartNight) {
+                    Picker("Chart at Night", selection: $chartNight) {
                         ForEach(ChartNight.allCases) { Text($0.label).tag($0.rawValue) }
                     }
                     if let info = charts.info {
                         LabeledContent("Edition", value: info.chartCycle)
                         if let base = charts.base { LabeledContent("Layer", value: base.label) }
-                        LabeledContent("Kept for the air", value: ByteCountFormatter.string(fromByteCount: keptBytes, countStyle: .file))
+                        LabeledContent("Kept for the Air", value: ByteCountFormatter.string(fromByteCount: keptBytes, countStyle: .file))
                     } else {
                         LabeledContent("Edition", value: "Fetching…")
                     }

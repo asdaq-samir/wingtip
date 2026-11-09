@@ -41,7 +41,7 @@ struct StripSheetView: View {
     /// The pages the stack opens over the strip.
     enum StripPage: Hashable {
         case airport(String)
-        case brief, navlog, profile, airplane, logbook, instructor, settings, clearance, file, flights, procedures
+        case brief, navlog, profile, airplane, logbook, instructor, setup, clearance, file, flights, procedures
         case leg(Leg)
         case list(AirportShelf.Shows)
 
@@ -54,7 +54,7 @@ struct StripSheetView: View {
             case .airplane: return "My airplane"
             case .logbook: return "Logbook"
             case .instructor: return "Instructor"
-            case .settings: return "Settings"
+            case .setup: return "Setup"
             case .clearance: return "Clearance"
             case .file: return "File"
             case .flights: return "Flights"
@@ -230,13 +230,13 @@ struct StripSheetView: View {
         case .airplane: AircraftView()
         case .logbook: LogbookView()
         case .instructor: InstructorView()
-        case .settings: SetupView()
+        case .setup: SetupView()
         case .clearance: ClearanceSheet()
         case .file: FlightServiceView()
         case .flights: FlightsView()
         case .procedures:
             List {
-                Section("Procedures") {
+                Section(title: "Procedures") {
                     ProceduresRow(ident: plan.dep, kinds: ["departure"])
                     ForEach(plan.stops + [plan.dest], id: \.self) { field in
                         ProceduresRow(ident: field, kinds: ["arrival", "approach"])
@@ -423,7 +423,7 @@ struct StripSheetView: View {
         case .airplane: path.append(.airplane); detent = .large
         case .logbook: path.append(.logbook); detent = .large
         case .instructor: path.append(.instructor); detent = .large
-        case .settings: path.append(.settings); detent = .large
+        case .setup: path.append(.setup); detent = .large
         case .brief:
             guard routed else { return "Plan a route first: a field, a town or two idents." }
             path.append(.brief); up()
@@ -470,7 +470,7 @@ struct StripSheetView: View {
             AirportShelf.shared.show(.recents)
             path.append(.list(.recents)); up()
         case .map:
-            return "The map's settings are in Settings."
+            return "The map's settings are in Setup."
         }
         return nil
     }

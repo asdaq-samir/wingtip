@@ -40,7 +40,7 @@ struct DebriefSections: View {
     @State private var problem: String?
 
     var body: some View {
-        Section("Debrief") {
+        Section(title: "Debrief") {
             if let d = answer?.debrief {
                 LabeledContent("Took off", value: Date(timeIntervalSince1970: d.takeoff / 1000).formatted(.dateTime.day().month(.abbreviated).hour().minute()))
                 LabeledContent {
@@ -62,7 +62,7 @@ struct DebriefSections: View {
         if let answer, let d = answer.debrief {
             let t = answer.tolerances
             // PA.VI.A's tolerances in the title, as the web page has them.
-            Section("Leg by leg · within \(Format.tenths(t.offRouteNm)) nm, \(Format.tenths(t.altitudeFt)) ft, \(Format.tenths(t.courseDeg))°") {
+            Section(title: "Leg by Leg · Within \(Format.tenths(t.offRouteNm)) nm, \(Format.tenths(t.altitudeFt)) ft, \(Format.tenths(t.courseDeg))°") {
                 ForEach(Array(d.legs.enumerated()), id: \.offset) { _, leg in
                     HStack(alignment: .top, spacing: 12) {
                         WithinMark(ok: leg.ok)
@@ -74,7 +74,7 @@ struct DebriefSections: View {
                     }
                 }
             }
-            Section("Checkpoints · within \(Format.tenths(t.etaMin)) min") {
+            Section(title: "Checkpoints · Within \(Format.tenths(t.etaMin)) min") {
                 ForEach(Array(d.passes.enumerated()), id: \.offset) { _, pass in
                     HStack(alignment: .top, spacing: 12) {
                         if let ok = pass.ok { WithinMark(ok: ok) } else { Image(systemName: "circle").foregroundStyle(.secondary).accessibilityHidden(true) }
@@ -86,7 +86,7 @@ struct DebriefSections: View {
                 }
             }
             if !d.patterns.isEmpty {
-                Section("Into the pattern · within \(Format.tenths(t.patternFt)) ft") {
+                Section(title: "Into the Pattern · Within \(Format.tenths(t.patternFt)) ft") {
                     ForEach(d.patterns, id: \.ident) { entry in
                         HStack(spacing: 12) {
                             WithinMark(ok: entry.ok)
@@ -204,7 +204,7 @@ struct DiversionDrillView: View {
                             .monospacedDigit()
                     }
                 }
-                Section("Divert to") {
+                Section(title: "Divert to") {
                     if finding {
                         Text("Finding the nearest fields…").foregroundStyle(.secondary)
                     } else if fields.isEmpty {
@@ -226,7 +226,7 @@ struct DiversionDrillView: View {
                         .disabled(checked)
                     }
                 }
-                Section("Your estimates") {
+                Section(title: "Your Estimates") {
                     ForEach(Self.estimates, id: \.key) { e in
                         let check = answer?.checks.first { $0.key == e.key }
                         LabeledContent {
@@ -247,7 +247,7 @@ struct DiversionDrillView: View {
                     if let line = answer.problem {
                         Text(line).foregroundStyle(.red)
                     } else {
-                        Section("To \(answer.to), worked out") {
+                        Section(title: "To \(answer.to), Worked Out") {
                             ForEach(answer.steps, id: \.name) { step in LabeledContent(step.name, value: step.value).monospacedDigit() }
                         }
                     }
@@ -340,7 +340,7 @@ struct HoldingView: View {
 
     var body: some View {
         List {
-            Section("The hold") {
+            Section(title: "The Hold") {
                 number("Inbound course", $inbound, "°")
                 Picker("Turns", selection: $turns) {
                     Text("Right").tag("right")
@@ -371,7 +371,7 @@ struct HoldingView: View {
             // The course and the wind in the same reference: magnetic, as a
             // clearance gives the course (winds aloft are true, so the row
             // says which).
-            Section("In the wind") {
+            Section(title: "In the Wind") {
                 number("True airspeed", $tas, "kt")
                 number("Wind from, magnetic", $windFrom, "°")
                 number("Wind speed", $windKt, "kt")
@@ -560,7 +560,7 @@ struct LostCommsSegmentsSections: View {
     static func feet(_ text: String) -> Double? { Double(text.trimmingCharacters(in: .whitespaces)) }
 
     var body: some View {
-        Section("The clearance") {
+        Section(title: "The Clearance") {
             LabeledContent("Assigned") {
                 TextField("", text: $assigned).keyboardType(.numberPad).multilineTextAlignment(.trailing).monospacedDigit().frame(width: 90)
             }
@@ -586,7 +586,7 @@ struct LostCommsSegmentsSections: View {
                 problem = error.localizedDescription
             }
         }
-        Section("The route's segments") {
+        Section(title: "The Route's Segments") {
             ForEach(segments.indices, id: \.self) { i in
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {

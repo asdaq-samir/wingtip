@@ -216,7 +216,7 @@ struct StopServicesSections: View {
     var body: some View {
         Group {
             if let s = services {
-                Section("Fuel") {
+                Section(title: "Fuel") {
                     CardRow(badge: RowBadge(systemImage: "fuelpump", colour: Badge.fuel),
                             title: (s.fuelTypes ?? []).isEmpty ? "None listed" : AirportWords.fuelNames(s.fuelTypes ?? []))
                     // The remarks in plain English as the planner gives
@@ -225,7 +225,7 @@ struct StopServicesSections: View {
                 }
                 let field = onTheField(s)
                 if !field.isEmpty {
-                    Section("On the field") {
+                    Section(title: "On the Field") {
                         ForEach(field, id: \.title) { row in
                             CardRow(badge: RowBadge(systemImage: row.symbol, colour: row.colour), title: row.title, detail: row.detail) {
                                 if let value = row.value { Text(value).foregroundStyle(.secondary) }
@@ -237,15 +237,15 @@ struct StopServicesSections: View {
                 places("Places to stay", s.lodging, "bed.double", Badge.lodging)
                 places("Car rental", s.cars, "car", Badge.car)
                 if s.nearbyUnavailable == true {
-                    Section("Nearby") { Text("Places near the field could not be looked up").foregroundStyle(.secondary) }
+                    Section(title: "Nearby") { Text("Places near the field could not be looked up").foregroundStyle(.secondary) }
                 }
             } else if let problem {
-                Section("Services") {
+                Section(title: "Services") {
                     Text(problem).foregroundStyle(.secondary)
                     Button("Try Again") { Task { await load() } }
                 }
             } else {
-                Section("Services") { ProgressView("Fetching the services…") }
+                Section(title: "Services") { ProgressView("Fetching the services…") }
             }
         }
         .task(id: ident) { await load() }

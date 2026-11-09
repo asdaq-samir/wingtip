@@ -67,7 +67,7 @@ struct AirspaceCard: View {
                 }
             }
             if let here {
-                Section("Airspace here") {
+                Section(title: "Airspace Here") {
                     ForEach(here.bands) { band in BandRow(band: band, ground: here.groundFt) }
                 }
                 if let veil = here.modeCVeil {
@@ -79,7 +79,7 @@ struct AirspaceCard: View {
                                 detail: "\(Format.distance(veil.distanceNm)) from \(veil.ident): a transponder with altitude reporting and ADS-B Out from the surface to 10,000 ft (91.215, 91.225).")
                     }
                 }
-                Section("Special use") {
+                Section(title: "Special Use") {
                     if here.specialUseUnavailable == true {
                         ProblemLine("The FAA's special-use airspace did not answer. Check the chart.")
                     } else if (here.specialUse ?? []).isEmpty {
@@ -93,7 +93,7 @@ struct AirspaceCard: View {
                         }
                     }
                 }
-                Section("TFRs") {
+                Section(title: "TFRs") {
                     if here.tfrsUnavailable == true {
                         Link("tfr.faa.gov did not answer. Check it before flight.", destination: URL(string: "https://tfr.faa.gov")!)
                             .foregroundStyle(.orange)

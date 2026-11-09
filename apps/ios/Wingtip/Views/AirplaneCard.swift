@@ -132,7 +132,7 @@ struct AirplaneCard: View {
                     .font(.body)
                 }
                 if let plane {
-                    Section("Now") { NowFlightRow(plane: plane, detail: detail, route: route?.plausible == false ? nil : route) }
+                    Section(title: "Now") { NowFlightRow(plane: plane, detail: detail, route: route?.plausible == false ? nil : route) }
                 }
                 Section(plane != nil ? "Earlier" : "Last flights") {
                     if history == nil, problem == nil {
@@ -155,7 +155,7 @@ struct AirplaneCard: View {
                     }
                     ProblemLine(problem)
                 }
-                Section("Airplane") {
+                Section(title: "Airplane") {
                     if let model = detail?.description { LabeledContent("Model", value: FlightWords.nameCase(model)) }
                     if let op = detail?.operator { LabeledContent("Operator", value: FlightWords.nameCase(op)) }
                     LabeledContent("Registration", value: detail?.registration ?? plane?.registration ?? "—")
@@ -167,7 +167,7 @@ struct AirplaneCard: View {
                 if let route {
                     // Its flight number's scheduled route, not the flight
                     // plan filed, which the FAA does not publish openly.
-                    Section("Scheduled route") {
+                    Section(title: "Scheduled Route") {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(route.airports.map(\.ident).joined(separator: " → ")).font(.headline)
                             Text([route.airports.compactMap { $0.location ?? $0.name }.joined(separator: " to "),
@@ -356,7 +356,7 @@ struct PastFlightCard: View {
         List {
             Section { PastFlightRow(flight: flight, type: nil) }
             if points.isEmpty {
-                Section("Profile") {
+                Section(title: "Profile") {
                     Text(problem ?? "Fetching its track…").foregroundStyle(problem == nil ? Color.secondary : Color.red)
                 }
             } else {
@@ -465,7 +465,7 @@ struct FAARecordSection: View {
     let faa: FAARecord
 
     var body: some View {
-        Section("FAA registration") {
+        Section(title: "FAA Registration") {
             if let owner = faa.owner {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Registered to").font(.subheadline.weight(.semibold))

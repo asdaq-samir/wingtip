@@ -80,12 +80,12 @@ struct AircraftFormView: View {
                 field("Tail number", text: $form.tailNumber, placeholder: "N12345", key: "tailNumber", problems: problems, codes: true)
                 field("Type", text: $form.typeDesignator, placeholder: "C172", key: "typeDesignator", problems: problems, codes: true)
             }
-            Section("True airspeed") {
+            Section(title: "True Airspeed") {
                 number("Climb", unit: "kt", text: $form.climbTasKt, placeholder: "74", key: "climbTasKt", problems: problems)
                 number("Cruise", unit: "kt", text: $form.cruiseTasKt, placeholder: "110", key: "cruiseTasKt", problems: problems)
             }
             // Climb left blank climbs at the type's book figures.
-            Section("Fuel burn") {
+            Section(title: "Fuel Burn") {
                 number("Climb", unit: "gph", text: $form.climbFuelBurnGph, placeholder: "11", key: "climbFuelBurnGph", problems: problems)
                 number("Cruise", unit: "gph", text: $form.fuelBurnGph, placeholder: "8.5", key: "fuelBurnGph", problems: problems)
             }
@@ -101,7 +101,7 @@ struct AircraftFormView: View {
             }
             // FAA Form 7233-4's items (AIM Appendix 4): 10a equipment, 10b
             // surveillance, 19 colour and markings.
-            Section("Flight plan") {
+            Section(title: "Flight Plan") {
                 field("Equipment", text: $form.equipment, placeholder: "SDFGRY", key: "equipment", problems: problems, codes: true)
                 field("Surveillance", text: $form.surveillance, placeholder: "B1", key: "surveillance", problems: problems, codes: true)
                 field("Color", text: $form.colour, placeholder: "White, blue stripe", key: "colour", problems: problems, codes: false)
@@ -296,7 +296,7 @@ struct InspectionsSection: View {
         // The 100-hour is owed only when the airplane is flown for hire, or
         // for instruction in it by the one who provides it (91.409(b)); the
         // ELT's not on a training flight within 50 nm (91.207(f)).
-        Section("Inspections") {
+        Section(title: "Inspections") {
             ForEach(dated, id: \.title) { d in
                 VStack(alignment: .leading, spacing: 2) {
                     OptionalDayRow(title: d.title, day: Binding(get: { form[keyPath: d.on] }, set: { form[keyPath: d.on] = $0 }), upTo: Date())
@@ -374,7 +374,7 @@ struct VorCheckSection: View {
     @State private var problem: String?
 
     var body: some View {
-        Section("VOR check") {
+        Section(title: "VOR Check") {
             if let last = record.vorCheck {
                 LabeledContent {
                     if !last.withinLimit {
@@ -437,7 +437,7 @@ struct SquawksView: View {
         List {
             if let squawks {
                 let open = squawks.filter { $0.fixedOn == nil }
-                Section("Open") {
+                Section(title: "Open") {
                     if open.isEmpty { Text("None open").foregroundStyle(.secondary) }
                     ForEach(open) { s in
                         Button {
@@ -453,7 +453,7 @@ struct SquawksView: View {
                     }
                 }
                 if let fixing {
-                    Section("Fix: \(fixing.text)") {
+                    Section(title: "Fix: \(fixing.text)") {
                         TextField("What was done, and by whom", text: $fixNote, axis: .vertical).lineLimit(2...5)
                         Button("Fixed Today") { Task { await fix(fixing) } }.disabled(busy)
                         Button("Cancel") { self.fixing = nil }
@@ -463,7 +463,7 @@ struct SquawksView: View {
                 // be deferred for the kinds of flight it is not required for,
                 // removed or deactivated and placarded INOPERATIVE, by a pilot
                 // or a mechanic who finds it no hazard (14 CFR 91.213(d)).
-                Section("Write a squawk") {
+                Section(title: "Write a Squawk") {
                     TextField("What was found", text: $text, axis: .vertical).lineLimit(1...4)
                     DatePicker("Found on", selection: $foundOn, in: ...Date(), displayedComponents: .date)
                     Toggle("Inoperative equipment", isOn: $inoperative)
@@ -478,7 +478,7 @@ struct SquawksView: View {
                 }
                 let fixed = squawks.filter { $0.fixedOn != nil }
                 if !fixed.isEmpty {
-                    Section("Fixed") {
+                    Section(title: "Fixed") {
                         ForEach(fixed) { s in
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(s.text)

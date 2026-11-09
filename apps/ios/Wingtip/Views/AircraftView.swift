@@ -21,7 +21,7 @@ struct AircraftView: View {
                 Section {
                     NavigationLink { TrafficFindView().closesBack() } label: { Label("Find an Airplane", systemImage: "magnifyingglass") }
                 }
-                Section("Airplane") {
+                Section(title: "Airplane") {
                     HStack {
                         TextField("N-number", text: $typed)
                             .textInputAutocapitalization(.characters).autocorrectionDisabled()
@@ -35,14 +35,14 @@ struct AircraftView: View {
                         LabeledContent("Flying", value: "\(tail) on \(plan.aircraft.uppercased())\(plan.figures.cruiseTasKt == nil ? "" : ", your figures")")
                         // The figures the planner flies it on, the pilot's to
                         // set from the handbook, or read off a photo of it.
-                        NavigationLink("Planning figures") { AirplaneFiguresView().closesBack() }
+                        NavigationLink("Planning Figures") { AirplaneFiguresView().closesBack() }
                     }
                     // The airplane's checklists, normal and emergency, kept on
                     // this device by its N-number, else by its type.
                     ChecklistRows(airplane: LocalChecklists.airplane(of: plan))
                 }
                 if session.signedIn || !own.isEmpty {
-                    Section("Yours") {
+                    Section(title: "Yours") {
                         ForEach(own) { airplane in
                             Button {
                                 typed = airplane.tailNumber
@@ -65,7 +65,7 @@ struct AircraftView: View {
                         NavigationLink("Your Airplanes") { OwnAircraftListView().closesBack() }
                     }
                 }
-                Section("Types the planner has figures for") {
+                Section(title: "Types the Planner Has Figures for") {
                     if profiles.isEmpty {
                         if let problem { ProblemLine(problem) } else { ProgressView() }
                     }
@@ -84,7 +84,7 @@ struct AircraftView: View {
                     }
                 }
             }
-            .navigationTitle("Aircraft")
+            .navigationTitle("Airplane")
             .navigationBarTitleDisplayMode(.inline)
             .task {
                 do { profiles = try await Planner.aircraftProfiles() } catch { problem = error.localizedDescription }

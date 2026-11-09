@@ -80,7 +80,7 @@ struct CheckpointNotesView: View {
                     .disabled(writing || plan.checkpoints.isEmpty)
                 ProblemLine(problem)
             }
-            Section("Checkpoints") {
+            Section(title: "Checkpoints") {
                 if plan.checkpoints.isEmpty { Text("The route's checkpoints come with its plan.").foregroundStyle(.secondary) }
                 ForEach(plan.checkpoints) { point in
                     Button {
@@ -202,7 +202,7 @@ struct FlightServiceView: View {
     var body: some View {
         Form {
             if let status, status.connected, session.signedIn {
-                Section("Flight plan") {
+                Section(title: "Flight Plan") {
                     LabeledContent("Rules", value: "VFR")
                     TextField("Aircraft identification", text: $aircraftId).textInputAutocapitalization(.characters).autocorrectionDisabled()
                     TextField("Type of aircraft, as C172", text: $aircraftType).textInputAutocapitalization(.characters).autocorrectionDisabled()
@@ -228,7 +228,7 @@ struct FlightServiceView: View {
                     ProblemLine(problem)
                 }
                 if let briefing {
-                    Section("Standard briefing") { Text(briefing).font(.footnote.monospaced()).textSelection(.enabled) }
+                    Section(title: "Standard Briefing") { Text(briefing).font(.footnote.monospaced()).textSelection(.enabled) }
                 }
             }
             Section(status?.connected == true ? "Or" : "File it with Flight Service") {

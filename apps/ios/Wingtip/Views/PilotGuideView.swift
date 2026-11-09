@@ -16,7 +16,7 @@ struct PilotGuideView: View {
 
     var body: some View {
         List {
-            Section("Checkpoint colours") {
+            Section(title: "Checkpoint Colours") {
                 ForEach(Self.buckets, id: \.score) { b in
                     Label {
                         Text(b.words)
@@ -27,14 +27,14 @@ struct PilotGuideView: View {
                     }
                 }
             }
-            Section("Practice") {
+            Section(title: "Practice") {
                 ProblemLine(Drills.decks, "The drills' cards")
                 NavigationLink { DrillView(deck: Drills.lightGun).closesBack() } label: { row("Light gun signals", "14 CFR 91.125") }
                 NavigationLink { DrillView(deck: Drills.vfrMinimums).closesBack() } label: { row("VFR weather minimums", "14 CFR 91.155") }
                 NavigationLink { LostCommsView().closesBack() } label: { row("Lost communications", "14 CFR 91.185: route, altitude, and when to leave") }
                 NavigationLink { HoldingView().closesBack() } label: { row("Holding entries", "AIM 5-3-8: the entry, and the legs in the wind") }
             }
-            Section("More") {
+            Section(title: "More") {
                 NavigationLink("Your airplane in the day's air") { AirplaneInTheAirView().closesBack() }
             }
         }
@@ -221,19 +221,19 @@ struct LostCommsView: View {
                 ProblemLine(LostComms.opening, "The rule's words")
                 Text(opening?.vfr ?? "")
             }
-            Section("Route") {
+            Section(title: "Route") {
                 Picker("Which applies first", selection: $route) {
                     ForEach(routes, id: \.key) { r in Text(r.label).tag(r.key) }
                 }
                 .pickerStyle(.segmented)
                 Text(routes.first { $0.key == route }?.rule ?? "").font(.subheadline)
             }
-            Section("Altitude") {
+            Section(title: "Altitude") {
                 Text(opening?.altitude ?? "").font(.subheadline)
             }
             LostCommsSegmentsSections(leave: $leave, approachFix: approachFix,
                                       efc: efc.trimmingCharacters(in: .whitespaces), eta: eta.trimmingCharacters(in: .whitespaces))
-            Section("Leaving the clearance limit") {
+            Section(title: "Leaving the Clearance Limit") {
                 Toggle("The limit is a fix an approach begins from", isOn: $approachFix)
                 LabeledContent {
                     TextField("—", text: $efc).multilineTextAlignment(.trailing).monospacedDigit()

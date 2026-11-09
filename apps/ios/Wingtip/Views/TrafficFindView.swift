@@ -75,20 +75,20 @@ struct TrafficFindView: View {
                         Text("Fetching \(wanted)…").font(.footnote).foregroundStyle(.secondary)
                     }
                 } header: {
-                    Text("Found")
+                    SectionTitle("Found")
                 } footer: {
                     // Whose data answered, as the map credits what it draws.
                     if asked == wanted, found?.aircraft.isEmpty == false, let source = found?.source { Text(Traffic.credit(source)) }
                 }
             } else {
                 if !tracking.favorites.isEmpty {
-                    Section("Favorites") {
+                    Section(title: "Favorites") {
                         ForEach(tracking.favorites) { kept in
                             Button { open(kept.hex, plane: nil) } label: { KeptRow(kept: kept) }.foregroundStyle(.primary)
                         }
                     }
                 }
-                Section("Recents") {
+                Section(title: "Recents") {
                     if tracking.recents.isEmpty {
                         Text("None yet: the airplanes opened are kept here.").foregroundStyle(.secondary)
                     }

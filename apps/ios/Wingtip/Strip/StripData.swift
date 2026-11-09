@@ -167,7 +167,7 @@ enum StripData {
             return ["Brief me", "Weather at \(dest)", "Nav log", "Routes", "Altitude", "Procedures", "Stops", "Nearest fuel",
                     "File flight plan", "Dry run", "Clearance", "My airplane", "Saved flights"]
         }
-        return ["Nearest fuel", "Nearest airports", "Saved flights", "Favorites", "Recents", "My airplane", "Logbook", "Settings"]
+        return ["Nearest fuel", "Nearest airports", "Saved flights", "Favorites", "Recents", "My airplane", "Logbook", "Setup"]
     }
 
     /// A chip on a field's card: its label in capitals and the words it

@@ -31,7 +31,7 @@ struct SignInView: View {
                     .frame(height: 50)
                     .listRowInsets(EdgeInsets())
                 }
-                Section("Or by email") {
+                Section(title: "Or by Email") {
                     TextField("Email", text: $email)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)

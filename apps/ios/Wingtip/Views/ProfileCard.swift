@@ -45,7 +45,7 @@ struct ProfileCard: View {
                 // A dry run the engine could not fly (the toolbar's Dry run).
                 ProblemLine(dryRun.problem)
             }
-            Section("Altitude") {
+            Section(title: "Altitude") {
                 Picker("Cruise altitude", selection: Binding(get: { picked ?? plan.altitudeFt ?? altitudes.last ?? 0 }, set: { fly($0) })) {
                     ForEach(altitudes, id: \.self) { altitude in
                         let ete = plan.altitude?.altitudeFigures?.first(where: { $0.altitudeFt == altitude })?.eteMin
@@ -91,7 +91,7 @@ struct ProfileCard: View {
                 }
             }
             if let selection = plan.altitude?.altitudeSelection {
-                Section("How the altitude was chosen") {
+                Section(title: "How the Altitude Was Chosen") {
                     LabeledContent("Floor", value: "\(Format.altitude(selection.floorFt)), the terrain and obstacles (14 CFR 91.119)")
                     if let ceiling = selection.serviceCeilingFt { LabeledContent("Ceiling", value: "\(Format.altitude(ceiling)), the airplane's") }
                     if let clouds = selection.cloudBaseFt { LabeledContent("Clouds", value: "base \(Format.altitude(clouds)) (14 CFR 91.155)") }

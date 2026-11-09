@@ -98,13 +98,13 @@ struct StripProfileMenu: View {
             Button { open?(.airplane) } label: { Label("My airplane", systemImage: "airplane") }
             Button { open?(.logbook) } label: { Label("Logbook", systemImage: "book") }
             Button { open?(.instructor) } label: { Label("Instructor", systemImage: "graduationcap") }
-            Button { open?(.settings) } label: { Label("Settings", systemImage: "gearshape") }
+            Button { open?(.setup) } label: { Label("Setup", systemImage: WingtipIcon.tabSetup) }
             Divider()
             if session.signedIn {
                 Button { Task { await session.signOut() } } label: { Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right") }
             } else {
                 // The sign-in is Setup's own card (SetupView, its Account group).
-                Button { open?(.settings) } label: { Label("Sign in", systemImage: "person.crop.circle.badge.plus") }
+                Button { open?(.setup) } label: { Label("Sign in", systemImage: "person.crop.circle.badge.plus") }
             }
         } label: {
             ZStack {

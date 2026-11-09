@@ -54,7 +54,7 @@ struct RootView: View {
     @AppStorage(MapExtrasInput.Keys.classB) private var classBOn = false
     @AppStorage(MapExtrasInput.Keys.plates) private var platesOn = true
 
-    enum Tabs: String, Hashable { case fpl, airport, aircraft, setup }
+    enum Tabs: String, Hashable { case fpl, airport, airplane, setup }
 
     /// What the map draws of the airplane tracked and the flights flown,
     /// and its taps for them: an airplane's card, a point pressed.
@@ -312,7 +312,7 @@ struct RootView: View {
     }
 }
 
-/// The four tabs of the planner, in the sheet: FPL, Airport, Aircraft
+/// The four tabs of the planner, in the sheet: FPL, Airport, Airplane
 /// and Setup.
 struct SheetView: View {
     @Environment(Plan.self) private var plan
@@ -328,16 +328,16 @@ struct SheetView: View {
 
     var body: some View {
         TabView(selection: $tab) {
-            Tab("FPL", systemImage: "point.topleft.down.to.point.bottomright.curvepath", value: RootView.Tabs.fpl) {
+            Tab("FPL", systemImage: WingtipIcon.tabFPL, value: RootView.Tabs.fpl) {
                 FPLView().clearOfTabBar(!split)
             }
-            Tab("Airport", systemImage: "airplane.departure", value: RootView.Tabs.airport) {
+            Tab("Airport", systemImage: WingtipIcon.tabAirport, value: RootView.Tabs.airport) {
                 AirportSearchView(path: $airports).clearOfTabBar(!split)
             }
-            Tab("Aircraft", systemImage: "airplane", value: RootView.Tabs.aircraft) {
+            Tab("Airplane", systemImage: WingtipIcon.tabAirplane, value: RootView.Tabs.airplane) {
                 AircraftView().clearOfTabBar(!split)
             }
-            Tab("Setup", systemImage: "gearshape", value: RootView.Tabs.setup) {
+            Tab("Setup", systemImage: WingtipIcon.tabSetup, value: RootView.Tabs.setup) {
                 SetupView().clearOfTabBar(!split)
             }
         }

@@ -49,7 +49,7 @@ struct AirportSearchView: View {
                 if query.isEmpty {
                     AirportStrip(nearest: nearest, open: { path.append($0) })
                     if shelf.shows != .nearest, !nearest.isEmpty {
-                        Section("Nearest") {
+                        Section(title: "Nearest") {
                             ForEach(nearest.prefix(5)) { field in
                                 NavigationLink(value: field.ident) { NearestRow(field: field) }
                             }
@@ -59,7 +59,7 @@ struct AirportSearchView: View {
                     ContentUnavailableView.search(text: query)
                 } else {
                     if !found.isEmpty {
-                        Section("Airports") {
+                        Section(title: "Airports") {
                             ForEach(found) { field in
                                 NavigationLink(value: field.ident) {
                                     VStack(alignment: .leading, spacing: 2) {
@@ -77,7 +77,7 @@ struct AirportSearchView: View {
                     // as Maps' search asks where (the web app's Nearest).
                     let towns = places.filter { $0.kind != "airport" }
                     if !towns.isEmpty {
-                        Section("Fields near") {
+                        Section(title: "Fields Near") {
                             ForEach(towns) { place in
                                 NavigationLink(value: AirportRoute.nearFrom(lat: place.lat, lon: place.lon, label: place.label).text) {
                                     Label(place.label, systemImage: place.kind == "address" ? "mappin" : "building.2")
@@ -277,7 +277,7 @@ struct NearFromView: View {
     var body: some View {
         List {
             if let fields {
-                Section("Nearest \(label)") {
+                Section(title: "Nearest \(label)") {
                     ForEach(fields) { field in NavigationLink(value: field.ident) { NearestRow(field: field) } }
                 }
             } else if let problem {
