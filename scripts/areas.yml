@@ -35,7 +35,19 @@ areas:
       - scripts/build/design-tokens.sh
       - scripts/build/design_tokens.py
       - apps/ios/Wingtip/Design/Generated/**
-      - apps/ios/Wingtip/Assets.xcassets/AccentColor.colorset/**
+      - apps/ios/Wingtip/Assets.xcassets/**
+      # The icons and launch art, drawn from docs/brand by
+      # scripts/build/app-icons.sh and checked there (--check).
+      - docs/brand/**
+      - scripts/build/app-icons.sh
+      - scripts/build/app_icons.py
+      - scripts/build/brand-render.Dockerfile
+      - apps/ios/WingtipWatch/Assets.xcassets/**
+      - apps/android/app/src/main/res/mipmap-*/**
+      - apps/android/app/src/main/res/drawable-*/**
+      - apps/android/app/src/main/res/values*/brand_colors.xml
+      - apps/site/assets/**
+      - docs/store/*.png
       - apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/**
       - apps/ios/Wingtip/API/Generated/**
       - apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated/**
@@ -160,6 +172,16 @@ areas:
       - scripts/build/engine-contract-apps.*
       - design/**
       - .github/workflows/native-android-build.yml
+  site:
+    ci: site
+    check: python3 apps/site/build.py && python3 apps/site/check.py (the website, apps/site)
+    paths:
+      - apps/site/**
+      # its colours and its legal pages come from these
+      - design/tokens.json
+      - apps/web/public/privacy.html
+      - apps/web/public/terms.html
+      - apps/web/public/support.html
   arch:
     ci: arch
     check: scripts/ci/file_sizes.py --base origin/main (no new or grown source file over 400 lines), then scripts/ci/dead_python.sh (vulture)

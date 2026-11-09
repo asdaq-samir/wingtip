@@ -325,6 +325,8 @@ section has ADS-B Receiver: Auto or Off.
 
 Still to come: the tile store and the route's tiles for the air, the
 briefing, the checkpoints and the side view, the altitude wheel, the
-airplane by N-number, widgets, and the brand's own launcher icon: the
-launcher shows a plain airplane until `docs/brand/android-*.svg` are
-made vector drawables.
+airplane by N-number and widgets. The launcher icon is the brand's own
+adaptive icon (`docs/brand/android-*.svg`, drawn to PNG per density by
+`scripts/build/app-icons.sh`, with the themed monochrome layer), and
+Android 12's splash screen is the mark on the launch ground
+(`res/values-v31/themes.xml`).

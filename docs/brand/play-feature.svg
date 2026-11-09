@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 500">
+  <!-- Google Play's feature graphic (1024 by 500, no transparency): the
+       icon's piece of sectional carried out to the banner, the icon
+       itself and the name in the brand's Barlow (design/tokens.json
+       font.brand). Play may crop its edges, so the words keep inside the
+       middle. The rect with the id "icon" is where
+       scripts/build/app_icons.py lays appicon.svg, rounded as a launcher
+       would; it is not drawn. -->
+  <rect width="1024" height="500" fill="#D7E8C6"/>
+  <path d="M0 0 H470 C430 90 330 150 190 175 C110 190 40 215 0 260 Z" fill="#A9CDEB"/>
+  <path d="M640 500 C690 410 790 360 1024 345 V500 Z" fill="#E9DDBF"/>
+  <path d="M-20 430 C200 380 330 450 500 400 S820 250 1044 280" fill="none" stroke="#FFFFFF" stroke-width="14" opacity="0.9"/>
+  <rect id="icon" x="96" y="122" width="256" height="256" fill="none"/>
+  <text x="400" y="248" font-family="Barlow" font-weight="700" font-size="84" fill="#14284B">Wingtip Maps</text>
+  <text x="402" y="312" font-family="Barlow" font-weight="600" font-size="38" fill="#14284B" opacity="0.85">VFR and IFR flight planning</text>
+</svg>

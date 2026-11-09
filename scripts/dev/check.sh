@@ -6,7 +6,7 @@
 #
 #   scripts/dev/check.sh <area>...       an area of scripts/areas.yml (the table of areas, their
 #                                    paths and checks): web py planner ingest assistant
-#                                    weather jobs engine java ios android arch
+#                                    weather jobs engine java ios android site arch
 #   scripts/dev/check.sh all-changed     the areas `git diff origin/main...` and
 #                                    the uncommitted files touch, in parallel
 #   scripts/dev/check.sh --areas         reads paths on stdin, prints their areas
@@ -264,6 +264,11 @@ run_area() {
       export ANDROID_NDK_HOME=${ANDROID_NDK_HOME:-$(ls -d "$ANDROID_HOME"/ndk/* | sort -V | tail -1)}
       phone_engine android apps/android/app/engine engine/bindings/ffi/build-android.sh
       (cd "$here/apps/android" && ./gradlew --quiet testDebugUnitTest lintDebug assembleDebug)
+      ;;
+    site)
+      # The website: built, then its pages, links and hosts checked (seconds).
+      python3 "$here/apps/site/build.py"
+      python3 "$here/apps/site/check.py"
       ;;
     arch)
       # No new or grown source file over 400 lines (seconds); the allow-list

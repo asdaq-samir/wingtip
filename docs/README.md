@@ -38,7 +38,7 @@ Each fact lives in one doc; the others link to it.
 
 | Doc | Read it for |
 |---|---|
-| [APP-STORE.md](APP-STORE.md) | The App Store listing, privacy answers and review notes |
+| [store/listing.md](store/listing.md) | The App Store and Google Play listings and review notes; [store/privacy-labels.md](store/privacy-labels.md) the stores' privacy answers, [store/preview-video.md](store/preview-video.md) the App Preview's plan |
 | [GOOGLE-MAPS.md](GOOGLE-MAPS.md) | The map's imagery under the chart: the USGS's, and Google's with the owner's key |
 | [TV.md](TV.md) | The TV apps (parked): the site's remote-control mode and the deleted Tizen and webOS shells |
 | [brand/](brand) | The mark and the brand's files |

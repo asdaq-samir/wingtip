@@ -92,6 +92,12 @@ enum WingtipColor {
         static let markPlane = rgb(0x14284B)
         /// The selected airport's halo.
         static let taxiwayYellow = rgb(0xF2B600)
+        /// The launch screen's ground by day (iOS UILaunchScreen, Android's splash, the installed web app's): the app's own first screen's background, as Apple asks a launch screen to be, the mark on it (scripts/build/app-icons.sh).
+        static let launch = rgb(0xFFFFFF)
+        /// The launch screen's ground at night: the night theme's navy, the mark lit on it.
+        static let launchNight = rgb(0x0B1422)
+        /// The sectional's lowland green the app icon is drawn on (docs/brand/appicon.svg): the store art's and the small icon's ground.
+        static let chartLand = rgb(0xD7E8C6)
     }
     enum Strip {
         /// What is flown already, on the strip's ribbon.
