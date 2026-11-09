@@ -2,7 +2,7 @@
 the feed's own shape (AIXM 5.1 AIXMBasicMessage, one Event's NOTAM each)."""
 import pytest
 
-from wingtip import notams
+from wingtip import notams, stores
 
 #: 2026-10-20 02:05Z, a few minutes after the messages below.
 NOW = 1792461900
@@ -48,9 +48,24 @@ RUNWAY = message(location="ORD", text="RWY 04L/22R CLSD EXC TAX", start="2026101
 @pytest.fixture(autouse=True)
 def store(tmp_path, monkeypatch):
     monkeypatch.setattr(notams, "STORE", tmp_path / "notams.sqlite")
+    monkeypatch.setattr(notams, "FORMER", tmp_path / "former" / "notams.sqlite")
     notams.reset()
     yield
     notams.reset()
+
+
+def test_a_store_moved_to_the_live_volume_keeps_what_was_heard_and_since_when(tmp_path, monkeypatch):
+    """NOTAM_STORE set to /live: the NOTAMs on the data folder, and the day
+    the feed was first heard (the briefing's "since"), are copied there the
+    first time it is opened; never again once it has its own."""
+    assert notams.heard(RUNWAY, now=NOW) == 1
+    notams.reset()
+    monkeypatch.setattr(notams, "FORMER", tmp_path / "notams.sqlite")
+    monkeypatch.setattr(notams, "STORE", tmp_path / "live" / "notams.sqlite")
+    assert notams.since() == NOW
+    assert [n["location"] for n in notams.at_fields(["KORD"], now=NOW)] == ["ORD"]
+    notams.reset()
+    assert stores.adopt(tmp_path / "live" / "notams.sqlite", tmp_path / "notams.sqlite") is False
 
 
 def test_a_domestic_notam_is_kept_by_its_number_in_the_words_a_briefing_gives():

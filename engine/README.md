@@ -49,9 +49,9 @@ workspace.
 |---|---|---|
 | `core` | geo, wmm, grid, sums, time, json, xml | nothing |
 | `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), performance (the airplane's cruise and climbs in the day's air), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items), sun (1.1's night and 61.57(b)'s night-passenger period), vfr (91.155's minimums, one copy) | nothing |
-| `weather` | metar, taf, winds, forecast, validity, notam, tfr, cycles | core, flight |
+| `weather` | metar, taf, winds, forecast, validity, notam, tfr, cycles, rvr (RVR against a minimum, 91.175(h)'s table) | core, flight |
 | `procedures` | figures (debrief, diversion, holding, lost comms, words) | core, flight |
-| `radio` | clearance, readback, atis | core, flight |
+| `radio` | clearance, readback, atis, datis (a digital ATIS as the tower's data link writes it) | core, flight, weather |
 | `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109, records: endorsements' days, 61.93(d), inspections and 91.171), aircraft | core, flight |
 | `brief` | gonogo, runway, alternates (91.169's IFR alternate) | core, flight, procedures |
 | `route` | route (and its options: route options' grid and ways, fuel stops, the way round high ground, Class B detours), motion (with along: where the airplane is on the route), approach, navlog | core, flight, weather, procedures |
@@ -88,6 +88,8 @@ Why these lines:
 - `gonogo` and `runway` are one crate, `brief`: the Go / No-Go's runway
   check goes by the runway pick, and the runway rules read their input
   with the Go / No-Go's helpers, so each uses the other.
+- `radio` takes `weather` for `datis`: a D-ATIS's weather is a METAR's
+  groups, read by `metar`, the rest as `atis` reads a spoken one.
 - `airspace` takes `radio` because `spoken` finds the places a clearance
   names (it stays in `airspace`, not `radio`, as it reads the phone's
   packs through `pack` and `pack_query`, which `radio` is under), and `figures` because `rules` writes its figures with

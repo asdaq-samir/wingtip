@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 import requests
 from shapely.geometry import shape
 
-from . import airports, airspace, elevation, faa_data, sua, terrain, tfr
+from . import airports, airspace, elevation, faa_data, saa, sua, terrain, tfr
 from .engine import ask as engine
 from .units import M_TO_FT
 
@@ -151,4 +151,19 @@ def ahead(lat: float, lon: float, track_deg: float, gs_kt: float, alt_ft: float 
         given |= {"near_field": _near_field(lat, lon), "swath_ground_ft": _swath_ground(frame),
                   "obstacles": _obstacles(near_box, faa_cache_dir)}
     found = engine("alerts_ahead", **given)
-    return {"alerts": found["alerts"], "unavailable": found["unavailable"]}
+    return {"alerts": _with_sfdps(found["alerts"]), "unavailable": found["unavailable"]}
+
+
+def _with_sfdps(alerts: list[dict]) -> list[dict]:
+    """Each special-use area's alert with SFDPS's status of it now, where
+    it has one (wingtip.saa: `sfdps_active`, `sfdps_until`): passed on as
+    the FAA's word beside the engine's alert, whose level stays its own."""
+    names = [a["name"] for a in alerts if a.get("kind") == "special_use"]
+    if not names:
+        return alerts
+    try:
+        status = saa.status(names, now=datetime.now(timezone.utc).timestamp())
+    except Exception:  # noqa: BLE001 -- the store unread: the alerts as the engine gave them
+        return alerts
+    return [{**a, "sfdps_active": status[a["name"]]["active"], "sfdps_until": status[a["name"]]["until"]}
+            if a.get("kind") == "special_use" and a["name"] in status else a for a in alerts]

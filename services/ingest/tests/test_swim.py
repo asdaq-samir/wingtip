@@ -142,14 +142,104 @@ def test_a_flat_chart_distance_is_near_enough():
 
 
 def test_tfms_flight_plans_go_to_the_filed_routes_and_notams_to_theirs():
-    assert swim.HANDLERS["TFMS"] is swim.filed_routes.heard
-    assert swim.HANDLERS["FNS"] is swim.notams.heard
+    assert swim.handler_for("TFMS", "flightData") is swim.filed_routes.heard
+    assert swim.handler_for("FNS", "AIXMBasicMessage").reads is swim.notams.heard
+    assert swim.handler_for("STDDS", "TATrackAndFlightPlan") is swim._radar
+    # Nobody reads TAIS's status messages or TFMS's flight lists.
+    assert swim.handler_for("STDDS", "TAStatus") is None
+    assert swim.handler_for("TFMS", "flow TMI_FLIGHT_LIST") is None
+
+
+class _Routed(_Message):
+    """A message with the topic the broker routed it by, whose payload
+    must not be asked for (a kind nobody reads)."""
+
+    def __init__(self, topic, raw=None):
+        super().__init__(raw=raw)
+        self.topic, self.asked = topic, 0
+
+    def get_destination_name(self):
+        return self.topic
+
+    def get_payload_as_bytes(self):
+        self.asked += 1
+        return super().get_payload_as_bytes()
+
+
+def test_a_messages_kind_is_read_from_its_topic():
+    kind = swim.topic_kind
+    assert kind("STDDS", "TAIS/all/false/FP/FSD/R90") == "TATrackAndFlightPlan"
+    assert kind("STDDS", "TAIS/all/false/ST/FAI/A11") == "TAStatus"
+    assert kind("STDDS", "APDS/all/false/RR/KACY/N90") == "RVRDataUpdateMessage"
+    assert kind("STDDS", "TDES/all/false/DD/KMSP/M98") == "DATISData"
+    assert kind("STDDS", "TDES/all/false/DE/KSEA/S46") == "TowerDepartureEventMessage"
+    assert kind("STDDS", "TDES/all/false/GR/KSEA/S46") == "TDLSCSPMessage"
+    assert kind("TFMS", "TFMSR14/4/sourceFacility/sensitivity") == "flightData"
+    assert kind("TFMS", "TFMSR14Flow/FlowInformation/ALL/A/sensReason/GADV") == "flow GADV"
+    assert kind("ITWS", "ITWS_Alert/9834/MCO/MCO") == "product 9834"
+    assert kind("SFDPS", "FDPS/AirspaceAIXM/SU_AIXM/FDPS_OneMinFreq/FDPS_Recon/ZJX/true/false") == "AirspaceAIXM SU_AIXM"
+    assert kind("FNS", "anything") is None and kind("STDDS", None) is None
+
+
+def test_stdds_rvr_datis_and_departures_and_tfms_programs_have_their_readers():
+    assert swim.handler_for("STDDS", "RVRDataUpdateMessage") is swim.rvr.heard
+    assert swim.handler_for("STDDS", "DATISData") is swim.datis.heard
+    assert swim.handler_for("STDDS", "TowerDepartureEventMessage") is swim.departures.heard
+    assert swim.handler_for("STDDS", "TDLSCSPMessage") is None
+    assert swim.handler_for("TFMS", "flow GADV") is swim.flow.heard
+    assert swim.handler_for("TFMS", "flow RSTR") is swim.flow.heard
+    assert swim.handler_for("TFMS", "flow FXA") is None
+
+
+def test_an_rvr_message_reaches_the_planners_store(monkeypatch):
+    monkeypatch.setitem(swim.STATE, "STDDS", {"connected": True, "messages": 0, "items": 0, "last_at": None, "error": None})
+    message = ('<ns2:RVRDataUpdateMessage xmlns:ns2="x"><airport>KACY</airport><runwayData><runwayID><numericRunwayID>13'
+               '</numericRunwayID><runwaySubID> </runwaySubID></runwayID><touchdownVisualRange>24</touchdownVisualRange>'
+               '<rolloutVisualRange>60</rolloutVisualRange></runwayData></ns2:RVRDataUpdateMessage>')
+    swim.handle("STDDS", _Routed("APDS/all/false/RR/KACY/N90", raw=message.encode()))
+    assert swim.STATE["STDDS"]["items"] == 1
+    [end] = swim.rvr.at_airport("KACY")
+    assert (end["runway"], end["touchdown_ft"], end["rollout_ft"]) == ("13", 2400, 6000)
+
+
+def test_itws_alerts_are_read_and_its_maps_are_not():
+    assert swim.handler_for("ITWS", "product 9840") is swim.itws.heard
+    assert swim.handler_for("ITWS", "product 9893") is swim.itws.heard
+    # The microburst and gust front maps, the TRACON's echo tops.
+    for product in ("9832", "9833", "9838", "9858", "9837"):
+        assert swim.handler_for("ITWS", f"product {product}") is None
+    assert swim.handler_for("SFDPS", "AirspaceAIXM SU_AIXM") is swim.saa.heard
+    assert swim.handler_for("SFDPS", "FlightData FH") is None
+
+
+def test_itws_and_sfdps_are_read_where_their_own_are_set(monkeypatch):
+    _set(monkeypatch, *swim.SETTINGS, "SWIM_VPN_ITWS", "SWIM_QUEUE_ITWS")
+    monkeypatch.delenv("SWIM_QUEUE_SFDPS", raising=False)
+    swim.get_settings.cache_clear()
+    assert swim.configured("ITWS") and not swim.configured("SFDPS")
+    # Both on the shared broker.
+    monkeypatch.setenv("SWIM_HOST", "tcps://ems2.swim.faa.gov:55443")
+    swim.get_settings.cache_clear()
+    assert swim._host("ITWS") == swim._host("SFDPS") == "tcps://ems2.swim.faa.gov:55443"
+
+
+def test_a_kind_nobody_reads_is_counted_and_its_payload_never_fetched(monkeypatch):
+    monkeypatch.setitem(swim.STATE, "STDDS", {"connected": True, "messages": 0, "items": 0, "last_at": None, "error": None})
+    status = _Routed("TAIS/all/false/ST/FAI/A11", raw=b"<ns2:TAStatus/>")
+    swim.handle("STDDS", status)
+    assert status.asked == 0
+    track = _Routed("TAIS/all/false/FP/C90/C90", raw=MESSAGE.encode())
+    monkeypatch.setattr(swim, "WANTED", [([], set())])
+    swim.handle("STDDS", track)
+    assert track.asked == 1
+    assert swim.STATE["STDDS"]["kinds"] == {"TAStatus": 1, "TATrackAndFlightPlan": 1}
+    assert swim.STATE["STDDS"]["messages"] == 2
 
 
 def test_each_message_is_handed_to_its_feeds_handler_and_counted_by_kind(monkeypatch):
     texts = []
-    monkeypatch.setitem(swim.HANDLERS, "FNS", lambda text: texts.append(text) or 1)
-    monkeypatch.setitem(swim.HANDLERS, "TFMS", lambda data: texts.append(data) or 2)
+    monkeypatch.setitem(swim.HANDLERS, "FNS", {"*": swim.text(lambda text: texts.append(text) or 1)})
+    monkeypatch.setitem(swim.HANDLERS, "TFMS", {"tfmDataService": lambda data: texts.append(data) or 2})
     for feed in swim.FEEDS:
         monkeypatch.setitem(swim.STATE, feed, {"connected": False, "messages": 0, "items": 0, "last_at": None, "error": None})
     notam = '<?xml version="1.0"?><message:AIXMBasicMessage xmlns:message="m">!ORD 10/123</message:AIXMBasicMessage>'
@@ -187,10 +277,10 @@ def test_a_followed_airplane_is_found_by_its_address_in_either_case_and_only_the
     assert names("<acAddress> a3c858 </acAddress>", {"a3c858"})
 
 
-def test_only_tfms_messages_with_a_route_of_flight_are_handed_on():
+def test_only_tfms_flight_data_with_a_route_of_flight_is_handed_on():
     worth = swim.worth_sending
-    assert worth("TFMS", b'<nxcm:newRouteOfFlight legacyFormat="KDLH V2 C81"/>')
-    assert worth("TFMS", "<routeOfFlight/>")
-    assert not worth("TFMS", b"<fdm:trackInformation><nxcm:qualifiedAircraftId/></fdm:trackInformation>")
+    assert worth("TFMS", "flightData", b'<nxcm:newRouteOfFlight legacyFormat="KDLH V2 C81"/>')
+    assert worth("TFMS", "tfmDataService", "<routeOfFlight/>")
+    assert not worth("TFMS", "flightData", b"<fdm:trackInformation><nxcm:qualifiedAircraftId/></fdm:trackInformation>")
     # Every NOTAM goes on.
-    assert worth("FNS", "!ORD 10/123 ORD RWY 10L/28R CLSD")
+    assert worth("FNS", "AIXMBasicMessage", "!ORD 10/123 ORD RWY 10L/28R CLSD")

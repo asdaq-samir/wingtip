@@ -134,6 +134,10 @@ class Settings(BaseSettings):
     #: the followed airplanes and their tracks, where the map looks): written by
     #: ingest (services/ingest) and the planner both, on the data folder they share.
     live_store: Path = DATA_DIR / "raw" / "live" / "live.sqlite"
+    #: wingtip.live_reports' SQLite store of what SWIM says now of airports
+    #: and airspace (wind shear alerts, flow programs, RVR, D-ATIS, special
+    #: activity airspace, departures): written by ingest, read by the planner.
+    reports_store: Path = DATA_DIR / "raw" / "live" / "reports.sqlite"
 
     # The planner (services/planner/app)
     #: The logging level for the planner.

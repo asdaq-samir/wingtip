@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?><ds:tfmDataService xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ds="urn:us:gov:dot:faa:atm:tfm:tfmdataservice" xmlns:fcm="urn:us:gov:dot:faa:atm:tfm:ficommonmessages" xmlns:nxce="urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements" xmlns:fce="urn:us:gov:dot:faa:atm:tfm:ficommondatatypes" xmlns:frt="urn:us:gov:dot:faa:atm:tfm:rapttimeline" xmlns:fi="urn:us:gov:dot:faa:atm:tfm:flowinformation" xmlns:fm2="urn:us:gov:dot:faa:atm:tfm:ficommonmessages2" xsi:schemaLocation="urn:us:gov:dot:faa:atm:tfm:tfmdataservice TFMData_Service.xsd"><ds:fiOutput><fi:fiMessage refresh="RFRS" sensitivity="A" destinationCodes="ALL" sourceFacility="DCCO" sourceTimeStamp="2026-11-09T00:42:54Z" msgType="GADV"><fi:generalAdvisory><fcm:advisoryNumber>0010</fcm:advisoryNumber><fcm:origin>ATCSCC</fcm:origin><fcm:dateSent>2026-11-09T00:42:54Z</fcm:dateSent><fcm:effectivePeriod><fce:startTime>2026-11-09T00:42:50Z</fce:startTime><fce:endTime>2026-11-09T05:28:00Z</fce:endTime></fcm:effectivePeriod><fcm:advisoryTitle>ATCSCC ADVZY 010 AUS/ZHU 11/09/2026 CDM GROUND DELAY PROGRAM CNX</fcm:advisoryTitle><fcm:advisoryText>CTL ELEMENT: AUS
+ELEMENT TYPE: APT
+ADL TIME: 0038Z
+GDP CNX PERIOD: 09/0038Z - 09/0428Z
+DISREGARD EDCTS FOR DEST AUS
+COMMENTS: 
+090042-090528
+26/11/09 00:42  DCCOPS.lxstn37</fcm:advisoryText></fi:generalAdvisory></fi:fiMessage></ds:fiOutput></ds:tfmDataService>

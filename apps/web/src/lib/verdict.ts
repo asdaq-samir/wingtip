@@ -51,6 +51,13 @@ export interface VerdictInput {
     unchecked: string[];
     /** The worst the forecast says along the route, in words. */
     worst: string | null;
+    /** The ITWS alerts in force now at the route's airports, each in its
+     *  words with its airport (lib/liveReports). */
+    terminalAlerts?: string[];
+    /** The Command Center's programs at the route's airports, in words:
+     *  a finding under IFR only (`ifr`). */
+    flowPrograms?: string[];
+    ifr?: boolean;
   };
   airspace: {
     pending: boolean;
@@ -61,8 +68,9 @@ export interface VerdictInput {
     /** TFRs near the route that are not. */
     near: number;
     /** Special-use areas the legs cross, as their times of use read for
-     *  the pass (lib/passTimes). */
-    specialUse: { name: string; when: "active" | "not-scheduled" | "by-notam" | "unknown" }[];
+     *  the pass (lib/passTimes), or as SFDPS says they are now
+     *  (active-now, cold-now: lib/liveReports). */
+    specialUse: { name: string; when: "active" | "not-scheduled" | "by-notam" | "unknown" | "active-now" | "cold-now" }[];
   };
   altitude: {
     pending: boolean;
@@ -111,7 +119,8 @@ function engineInput({ weather, airspace, altitude, fuel, runways, balance, risk
     weather: {
       pending: weather.pending, failed: weather.failed, vfr_not_recommended: weather.vfrNotRecommended,
       under_minimums: weather.underMinimums, icing: weather.icing ?? null, hazards: weather.hazards, unchecked: weather.unchecked,
-      worst: weather.worst,
+      worst: weather.worst, terminal_alerts: weather.terminalAlerts ?? [], flow_programs: weather.flowPrograms ?? [],
+      ifr: weather.ifr ?? false,
     },
     airspace: {
       pending: airspace.pending, unchecked: airspace.unchecked, in_force: airspace.inForce, near: airspace.near,

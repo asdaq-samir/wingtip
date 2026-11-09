@@ -23,6 +23,9 @@ def test_a_beat_writes_ingests_and_each_feeds_state_and_drops_the_stale_radar(mo
 
 def test_healthy_while_the_beat_is_fresh():
     assert health.problem() == "no beat written yet"
+    # A store with no beat in it yet.
+    store.beat("STDDS", 1000.0)
+    assert health.problem() == "no beat written yet"
     store.beat("ingest", 1000.0)
     assert health.problem(now=1030.0) is None
     assert "more than 60" in health.problem(now=1061.0)

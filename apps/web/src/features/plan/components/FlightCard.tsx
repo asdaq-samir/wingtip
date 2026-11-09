@@ -35,6 +35,8 @@ import { CardAction } from "../../../components/CardAction";
 import { AirplaneFigures } from "./AirplaneFigures";
 import { shareOrCopy } from "../../../lib/share";
 import { aircraftKind } from "../../../lib/aircraftKind";
+import { departuresQuery } from "../../../lib/liveReports";
+import { departureLine } from "../../../lib/departureWords";
 
 /** A link to the airplane on the planner, shared where the phone can,
  *  copied where it cannot. */
@@ -395,6 +397,10 @@ export default function FlightCard({ hex, onClose, onOpenPast, onOpenAirport }: 
     fromIdent && toIdent && fromIdent !== toIdent ? `${fromIdent} → ${toIdent}` : fromIdent ? `From ${fromIdent}` : toIdent ? `To ${toIdent}` : null,
   ].filter(Boolean).join(" · ");
   const registration = detail?.registration ?? plane?.registration ?? null;
+  // Its latest tower departure event, by the ident it files under: its
+  // callsign, else its registration.
+  const { data: tower } = useQuery(departuresQuery(plane?.callsign ?? registration));
+  const towerLine = departureLine(tower?.events[0]);
   return (
     <PanelCard testId="flight-card" flush>
       <PhotoHead
@@ -458,6 +464,8 @@ export default function FlightCard({ hex, onClose, onOpenPast, onOpenAirport }: 
             )}
             <ListRow title="ICAO address" value={<span className={cn("font-semibold text-foreground uppercase tabular-nums", TEXT.row)}>{hex}</span>} />
             <ListRow title="Callsign" value={<span className="font-semibold text-foreground">{plane?.callsign ?? "—"}</span>} />
+            {/* The tower's departure event, where TDES sent one (lib/departureWords). */}
+            {towerLine && <ListRow title="Tower" description={towerLine} data-testid="flight-tower" />}
           </ListGroup>
         </PillSection>
       </div>

@@ -218,6 +218,13 @@ public class PlannerProxyController {
             route("GET", "/api/class-b"),
             route("GET", "/api/airspace/at"),
             route("GET", "/api/airspace/ahead"),
+            // What the FAA's SWIM feeds say now (the planner's app.routers.live).
+            route("GET", "/api/live/itws"),
+            route("GET", "/api/live/saa"),
+            route("GET", "/api/live/rvr"),
+            route("GET", "/api/live/atis"),
+            route("GET", "/api/live/flow"),
+            route("GET", "/api/live/departures"),
             route("GET", "/api/weather/map"),
             route("GET", "/api/traffic"),
             route("GET", "/api/traffic/find"),

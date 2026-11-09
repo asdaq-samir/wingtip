@@ -2843,6 +2843,319 @@
       ],
       "additionalProperties": false
     },
+    "read_datis": {
+      "description": "A digital ATIS as the tower's data link writes it (STDDS TDES DATISData), read into read_atis's figures, its weather from its METAR groups; a figure not read is null.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ReadDatisInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ]
+        },
+        "answer": {
+          "title": "ReadDatisAnswer",
+          "type": "object",
+          "properties": {
+            "information": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The letter."
+            },
+            "time_z": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "wind": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "from_deg": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "kt": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "gust_kt": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "variable": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "from_deg",
+                    "kt",
+                    "gust_kt",
+                    "variable"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "sky": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "cover": {
+                    "enum": [
+                      "few",
+                      "scattered",
+                      "broken",
+                      "overcast",
+                      "obscured",
+                      "clear"
+                    ]
+                  },
+                  "base_ft": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "cover",
+                  "base_ft"
+                ]
+              }
+            },
+            "temp_c": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "dewpoint_c": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "altimeter_inhg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "approach": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "runways": {
+              "type": "object",
+              "properties": {
+                "landing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "departing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "landing",
+                "departing"
+              ]
+            },
+            "remarks": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "raw": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "information",
+            "time_z",
+            "wind",
+            "visibility_sm",
+            "sky",
+            "temp_c",
+            "dewpoint_c",
+            "altimeter_inhg",
+            "approach",
+            "runways",
+            "remarks",
+            "raw"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "rvr_check": {
+      "description": "Each runway end's lowest RVR reading against a minimum, an RVR (ft) or a visibility (SM) by 14 CFR 91.175(h)(2)'s comparable values; a minimum between rows asks the next row up, one past 1 1/4 SM is not judged.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RvrCheckInput",
+          "type": "object",
+          "properties": {
+            "runways": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "runway": {
+                    "type": "string"
+                  },
+                  "touchdown_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "midpoint_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "rollout_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "runway"
+                ]
+              }
+            },
+            "minimum_rvr_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "minimum_sm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "runways"
+          ]
+        },
+        "answer": {
+          "title": "RvrCheckAnswer",
+          "type": "object",
+          "properties": {
+            "minimum_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The minimum as an RVR, ft; null where it has none."
+            },
+            "judged": {
+              "type": "boolean"
+            },
+            "runways": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "runway": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "reading_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The lowest reading reported, ft."
+                  },
+                  "at_most": {
+                    "type": "boolean",
+                    "description": "The reading is the system's most, 6,000 ft or more."
+                  },
+                  "under": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "comparable_sm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The visibility the table pairs with the reading."
+                  }
+                },
+                "required": [
+                  "runway",
+                  "reading_ft",
+                  "at_most",
+                  "under",
+                  "comparable_sm"
+                ]
+              }
+            }
+          },
+          "required": [
+            "minimum_ft",
+            "judged",
+            "runways"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "cleared_route": {
       "description": "The route a clearance gives, from the words heard, the planner's places found for them (ClearancePlaces) and the route planned.",
       "type": "object",
@@ -20426,6 +20739,8 @@
     "pilot_experience",
     "read_clearance",
     "read_atis",
+    "read_datis",
+    "rvr_check",
     "cleared_route",
     "our_call",
     "direct_of",
@@ -23491,6 +23806,33 @@
                 "null"
               ],
               "description": "The worst the forecast says along the route, in words."
+            },
+            "terminal_alerts": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "ITWS alerts in force now at the route's airports, each in its words with its airport (AIM 4-3-7)."
+            },
+            "flow_programs": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "The Command Center's ground stops and delay programs at the route's airports, in words; a finding under IFR only."
+            },
+            "ifr": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "The flight is planned IFR. Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
             }
           }
         },
@@ -23541,7 +23883,7 @@
                   },
                   "when": {
                     "type": "string",
-                    "description": "gonogo_sua_when's answer."
+                    "description": "gonogo_sua_when's answer, or SFDPS's status now: active-now, cold-now."
                   }
                 },
                 "required": [

@@ -16,6 +16,7 @@ import { RowBadge } from "../../../components/RowBadge";
 import { BADGE } from "../../../lib/rowBadges";
 import { FINDING_TONE } from "../../../lib/findings";
 import { faaWords, suaAltitudes, tfrPage } from "../../../lib/advisories";
+import { saaQuery, saaWords } from "../../../lib/liveReports";
 
 /** One of a band's rules on a line of its own, its glyph before it: the
  *  weather minimums, what it takes to go in, what the airplane carries,
@@ -108,6 +109,8 @@ export default function AirspaceCard({ point, onClose, summary = false, onExpand
     queryKey: ["airspaceAt", point.lat, point.lon], queryFn: () => api.airspaceAt(point.lat, point.lon),
     staleTime: 10 * 60_000,
   });
+  // Whether each special-use area here is active or cold now, as SFDPS says.
+  const { data: saa } = useQuery(saaQuery(data?.special_use.map(a => a.name) ?? []));
   const ground = data?.ground_ft ?? null;
   const named = data?.point ?? null;
   const actions = named ? [
@@ -171,10 +174,15 @@ export default function AirspaceCard({ point, onClose, summary = false, onExpand
                     <ListRow
                       key={area.name} media={<RowBadge colour={BADGE.hazard}><ShieldAlert /></RowBadge>}
                       title={<><span className="font-semibold">{faaWords(area.name)}</span><span className="text-muted-foreground"> · {area.kind}</span></>}
-                      description={[
-                        suaAltitudes(area),
-                        area.times_of_use, area.controlling_agency,
-                      ].filter(Boolean).join(" · ")}
+                      description={<>
+                        {[suaAltitudes(area), area.times_of_use, area.controlling_agency].filter(Boolean).join(" · ")}
+                        {/* SFDPS's word on it now, where it has one (lib/liveReports). */}
+                        {saaWords(saa?.areas[area.name]) && (
+                          <span className={cn("block font-semibold", saa?.areas[area.name]?.active ? "text-caution-ink" : "text-foreground")} data-testid="airspace-sua-status">
+                            {saaWords(saa?.areas[area.name])}
+                          </span>
+                        )}
+                      </>}
                       data-testid="airspace-sua"
                     />
                   ))}

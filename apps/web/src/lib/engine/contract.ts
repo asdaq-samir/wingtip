@@ -1046,6 +1046,20 @@ export interface EngineContract {
     answer: ReadAtisAnswer;
   };
   /**
+   * A digital ATIS as the tower's data link writes it (STDDS TDES DATISData), read into read_atis's figures, its weather from its METAR groups; a figure not read is null.
+   */
+  read_datis: {
+    input: ReadDatisInput;
+    answer: ReadDatisAnswer;
+  };
+  /**
+   * Each runway end's lowest RVR reading against a minimum, an RVR (ft) or a visibility (SM) by 14 CFR 91.175(h)(2)'s comparable values; a minimum between rows asks the next row up, one past 1 1/4 SM is not judged.
+   */
+  rvr_check: {
+    input: RvrCheckInput;
+    answer: RvrCheckAnswer;
+  };
+  /**
    * The route a clearance gives, from the words heard, the planner's places found for them (ClearancePlaces) and the route planned.
    */
   cleared_route: {
@@ -3781,6 +3795,70 @@ export interface ReadAtisAnswer {
   remarks: string[];
   raw: string;
 }
+export interface ReadDatisInput {
+  text: string;
+}
+export interface ReadDatisAnswer {
+  /**
+   * The letter.
+   */
+  information: string | null;
+  time_z: string | null;
+  wind: {
+    from_deg: number | null;
+    kt: number | null;
+    gust_kt: number | null;
+    variable: boolean;
+  } | null;
+  visibility_sm: number | null;
+  sky: {
+    cover: "few" | "scattered" | "broken" | "overcast" | "obscured" | "clear";
+    base_ft: number | null;
+  }[];
+  temp_c: number | null;
+  dewpoint_c: number | null;
+  altimeter_inhg: number | null;
+  approach: string | null;
+  runways: {
+    landing: string[];
+    departing: string[];
+  };
+  remarks: string[];
+  raw: string;
+}
+export interface RvrCheckInput {
+  runways: {
+    runway: string;
+    touchdown_ft?: number | null;
+    midpoint_ft?: number | null;
+    rollout_ft?: number | null;
+  }[];
+  minimum_rvr_ft?: number | null;
+  minimum_sm?: number | null;
+}
+export interface RvrCheckAnswer {
+  /**
+   * The minimum as an RVR, ft; null where it has none.
+   */
+  minimum_ft: number | null;
+  judged: boolean;
+  runways: {
+    runway: string | null;
+    /**
+     * The lowest reading reported, ft.
+     */
+    reading_ft: number | null;
+    /**
+     * The reading is the system's most, 6,000 ft or more.
+     */
+    at_most: boolean;
+    under: boolean | null;
+    /**
+     * The visibility the table pairs with the reading.
+     */
+    comparable_sm: number | null;
+  }[];
+}
 export interface ClearedRouteInput {
   text: string;
   found?: {
@@ -4187,6 +4265,18 @@ export interface VerdictInput {
      * The worst the forecast says along the route, in words.
      */
     worst?: string | null;
+    /**
+     * ITWS alerts in force now at the route's airports, each in its words with its airport (AIM 4-3-7).
+     */
+    terminal_alerts?: string[] | null;
+    /**
+     * The Command Center's ground stops and delay programs at the route's airports, in words; a finding under IFR only.
+     */
+    flow_programs?: string[] | null;
+    /**
+     * The flight is planned IFR. Read as JavaScript reads it: missing, null, false, 0 and "" are false.
+     */
+    ifr?: boolean | null;
   };
   airspace: {
     /**
@@ -4209,7 +4299,7 @@ export interface VerdictInput {
       | {
           name: string;
           /**
-           * gonogo_sua_when's answer.
+           * gonogo_sua_when's answer, or SFDPS's status now: active-now, cold-now.
            */
           when: string;
         }[]

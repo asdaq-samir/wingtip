@@ -1,14 +1,17 @@
-//! wingtip-radio: what is heard on the radio, over wingtip-core only
-//! (engine/README.md).
+//! wingtip-radio: what is heard on the radio, over wingtip-core,
+//! wingtip-flight and wingtip-weather (engine/README.md).
 //!
 //! - clearance: an ATC clearance heard, read into its items, and a call
 //!   to us by its call sign (the web's lib/clearance and lib/heardCall);
 //! - readback: the pilot's readback of a clearance checked against it;
 //! - atis: an ATIS or AWOS/ASOS broadcast as the phone heard it, read
-//!   into its figures.
+//!   into its figures;
+//! - datis: a digital ATIS as the tower's data link sends it, read into
+//!   the same figures (its weather by wingtip-weather's METAR reader).
 
 pub mod atis;
 pub mod clearance;
+pub mod datis;
 pub mod readback;
 
 // The modules below this crate by the names they had when the engine was

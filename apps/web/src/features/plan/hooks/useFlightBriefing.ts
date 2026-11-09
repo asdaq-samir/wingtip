@@ -26,6 +26,7 @@ import { usePrinting } from "../../../lib/usePrinting";
 import { fieldCategory } from "../components/briefing/fieldWeather";
 import { flightPlanForms, type FiledProcedure } from "../../../lib/flightPlanForm";
 import { alternateFinding, useAlternate } from "./useAlternate";
+import { flowQuery, itwsLines, itwsQuery, liveWhen, programLines, saaQuery } from "../../../lib/liveReports";
 import { icingAtAltitude, icingLine } from "../../../lib/icing";
 import { useIcingForecast } from "./useIcingForecast";
 import { planFacts } from "../../../lib/oral";
@@ -158,10 +159,20 @@ export function useFlightBriefing({
   // The special-use areas the legs cross (wingtip.sua, with the altitudes),
   // and their times of use read for when the flight passes each, in the
   // area's own time zone.
+  // Where SFDPS says an area is active or cold now, at the pass, that is
+  // its word instead (lib/liveReports), the FAA's own and newer than the
+  // chart's times of use.
+  const { data: saaNow } = useQuery(saaQuery((nav?.altitude_selection.special_use ?? []).map(area => area.name)));
   const specialUse = (nav?.altitude_selection.special_use ?? []).map(area => {
     const pass = passAt(area.along_track_nm);
-    return { area, pass, when: pass ? suaWhen(area.times_of_use, pass, area.time_zone) : "unknown" as SuaWhen };
+    const scheduled = pass ? suaWhen(area.times_of_use, pass, area.time_zone) : "unknown" as SuaWhen;
+    return { area, pass, when: liveWhen(scheduled, saaNow?.areas[area.name], pass) };
   });
+  // What SWIM says now at the route's airports: the ITWS alerts and,
+  // under IFR, the Command Center's ground stops and delay programs, for
+  // the Go / No-Go's weather finding (the engine's verdict).
+  const { data: itwsNow } = useQuery(itwsQuery(landings));
+  const { data: flowNow } = useQuery(flowQuery(ifr ? landings : []));
   // The call sign the radio calls use: the pilot's own airplane's
   // registration where they fly one, and its make from its profile.
   const flying = usePreferences(s => s.aircraft);
@@ -256,6 +267,9 @@ export function useFlightBriefing({
       ],
       worst: briefing && (briefing.forecast.min_ceiling_ft != null || briefing.forecast.min_visibility_sm != null)
         ? ceilingAndVisibility(briefing.forecast.min_ceiling_ft, briefing.forecast.min_visibility_sm) : null,
+      terminalAlerts: itwsLines(itwsNow?.alerts ?? []),
+      flowPrograms: programLines(flowNow?.programs ?? []),
+      ifr,
     },
     airspace: {
       pending: !briefing && !failed, unchecked: !!failed || unchecked("tfrs"),

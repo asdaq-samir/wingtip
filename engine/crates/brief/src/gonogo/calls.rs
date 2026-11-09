@@ -277,6 +277,9 @@ fn verdict_input(i: In, v: &Value) -> R<verdict::Input> {
             hazards: i.strings(w, "hazards")?,
             unchecked: i.strings(w, "unchecked")?,
             worst: i.opt_str(w, "worst")?,
+            terminal_alerts: i.strings(w, "terminal_alerts")?,
+            flow_programs: i.strings(w, "flow_programs")?,
+            ifr: truth(w, "ifr"),
         },
         airspace: verdict::Airspace {
             missing: left_out(a, &["unchecked", "in_force", "special_use"]),

@@ -30,9 +30,13 @@ from datetime import datetime, timezone
 
 import wingtip_native
 
-from .config import get_settings
+from . import stores
+from .config import Settings, get_settings
 
 STORE = get_settings().notam_store
+#: Where the store was kept before NOTAM_STORE moved it (the data
+#: folder's default), taken the first time the new path is opened.
+FORMER = Settings.model_fields["notam_store"].default
 #: How long an ended NOTAM is kept, s: a day, for a briefing read just after.
 KEEP_ENDED_S = 24 * 3600
 
@@ -58,8 +62,7 @@ _db: sqlite3.Connection | None = None
 def _connection() -> sqlite3.Connection:
     global _db
     if _db is None:
-        STORE.parent.mkdir(parents=True, exist_ok=True)
-        _db = sqlite3.connect(STORE, check_same_thread=False)
+        _db = stores.connect(STORE, former=FORMER)
         _db.executescript("""
             CREATE TABLE IF NOT EXISTS notams (
                 id TEXT PRIMARY KEY, icao_id TEXT, location TEXT, icao_location TEXT,

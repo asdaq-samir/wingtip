@@ -8,6 +8,7 @@ import { GLASS } from "./mapChrome";
 import { TEXT } from "../lib/text";
 import { acknowledge, alertTitle, alertWhen, alertWhere, useAhead } from "../lib/map/ahead";
 import { useSpokenAlerts } from "../lib/map/speak";
+import { saaWords } from "../lib/liveReports";
 
 /** A warning's red and a caution's amber, as a cockpit's are. */
 const INK = {
@@ -77,6 +78,10 @@ export default function AlertsBanner() {
               <div key={a.id} data-alert-item={a.kind}>
                 {a !== first && <p className={cn("font-semibold", INK[a.level])}>{alertTitle(a)}: {alertWhen(a)} · {alertWhere(a)}</p>}
                 <p>{a.need}</p>
+                {/* A special-use area's status now, as SFDPS has it. */}
+                {a.sfdps_active != null && (
+                  <p data-testid="alert-sfdps">{saaWords({ designator: a.name, active: a.sfdps_active, until: a.sfdps_until ?? null, heard: 0 })}</p>
+                )}
               </div>
             ))}
             {first && (failed || unavailable.length > 0) && <p className="text-muted-foreground">{unread}.</p>}

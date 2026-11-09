@@ -78,9 +78,9 @@ pub use wingtip_procedures::paths;
 pub use wingtip_core::{geo, grid, sums, time, wmm, xml};
 pub use wingtip_flight::{filing, flight, limits, performance, sun};
 pub use wingtip_pilot::{aircraft, pilot};
-pub use wingtip_radio::{atis, clearance, readback};
+pub use wingtip_radio::{atis, clearance, datis, readback};
 pub use wingtip_route::{approach, motion, navlog, route};
-pub use wingtip_weather::{cycles, forecast, metar, notam, taf, tfr, validity, winds};
+pub use wingtip_weather::{cycles, forecast, metar, notam, rvr, taf, tfr, validity, winds};
 pub use wingtip_wording::wording;
 
 // The JSON every rule reads and writes, as call.rs names it; not part of

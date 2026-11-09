@@ -113,6 +113,26 @@ def test_special_use_areas_ahead_and_the_one_the_airplane_is_in(ahead):
     assert found["VOLK EAST MOA"]["level"] == "caution" and "AIM 3-4-5" in found["VOLK EAST MOA"]["need"]
     # An AGL floor over the ground under the airplane: 500 over 800 ft.
     assert found["VOLK EAST MOA"]["floor_ft"] == 1300.0
+    # SFDPS has said nothing of them: no status.
+    assert "sfdps_active" not in found["R-6901A"]
+
+
+def test_a_special_use_alert_carries_sfdps_status_now_and_keeps_its_level(ahead, tmp_path, monkeypatch):
+    from wingtip import live_reports, saa
+
+    monkeypatch.setattr(live_reports, "STORE", tmp_path / "reports.sqlite")
+    live_reports.reset()
+    try:
+        ahead.world["areas"] = [_area("R-6901A", "R", _east(-1, 1))]
+        cold = '<Airspace><AirspaceTimeSlice><designator>R6901A</designator><activation><AirspaceActivation><status>INACTIVE' \
+               '</status></AirspaceActivation></activation></AirspaceTimeSlice></Airspace>'
+        assert saa.heard(cold) == 1
+        [alert] = ahead()["alerts"]
+        assert (alert["sfdps_active"], alert["sfdps_until"]) == (False, None)
+        # The engine's level, not lowered by the FAA's word.
+        assert alert["level"] in ("warning", "caution")
+    finally:
+        live_reports.reset()
 
 
 def test_a_tfr_in_force_ahead_is_a_warning_and_one_not_in_force_is_not_said(ahead):

@@ -3,6 +3,7 @@ import type { paths } from "./schema";
 import type { paths as AssistantPaths } from "./assistant-schema";
 import type { paths as GatewayPaths } from "./gateway-schema";
 import { noteAnswer } from "../fromCache";
+import type { AirportAtis, AirportRvr, DepartureEvents, FlowAtAirports, ItwsAlerts, SaaStatuses } from "./types";
 import type { Aircraft, AircraftBases, AssignLessonRequest, LessonProgressRequest, AircraftChoice, AircraftProfiles, AircraftRequest, AirportPhotos, AirportPlace, AirportSearch, AirportServices, ForecastWind, AirportsInView, AirspaceAt, WeatherMap, AlertsAhead, Alternates, AltitudeChoice, IcingForecast, AppleSignedIn, Briefing, ChartInfo, ChartPages, ChartRefreshStarted, CheckpointDescriptionMessage, CheckpointNoteSaved, Checkpoints, ClassBResponse, Classification, Course, Currency, CurrencyDatesRequest, Detour, DeviceCode, DevServices, DevServiceStarted, Flight, FlightDetail, FlightPlanFiled, FlightPlanFilingRequest, FlightRoute, FlightServiceStatus, FlightStatus, FlightSummary, GoogleMaps, InspectionsRequest, Instructor, InstructorRequest, LogbookEntry, LogbookEntryRequest, LogbookImportResult, MapLayerAges, ModelComparison, NarrativeMessage, NarrativeRequest, NavLogMessage, OverlayTiles, NearestAirports, OralGrade, OralGradeRequest, OralQuestion, OralQuestionRequest, PastFlight, PastFlights, PickDeleted, PickSaved, Pilot, PilotContactRequest, PlacesFound, PlateOverlay, ProcedureDrawing, ProcedureList, Rating, Reminders, RetrainStarted, Role, RouteProfile, RouteOptions, SavedTrack, SaveFlightRequest, SignRequest, SignInCapabilities, SpeedDay, Squawk, SquawkRequest, Status, StopFields, StreamMessage, Subscription, Tfrs, Totals, Traffic, TrafficFound, Training, VorCheckRequest, ClearanceAsk, ClearancePlaces, DueItem, DueItemRequest, Paperwork } from "./types";
 
 /**
@@ -618,6 +619,22 @@ export const api = {
    *  obstacles it comes near. */
   airspaceAhead: (ask: { lat: number; lon: number; track: number; gs: number; alt?: number; vs: number }) =>
     planner.GET("/api/airspace/ahead", { params: { query: ask } }).then(data<AlertsAhead>),
+
+  /** What the FAA's SWIM feeds say now (lib/liveReports): the ITWS alerts
+   *  at airports, special activity airspace's status, an airport's RVR
+   *  and D-ATIS, the Command Center's programs, a flight's departure. */
+  liveItws: (airports: string[]) =>
+    planner.GET("/api/live/itws", { params: { query: { airports: airports.join(",") } } }).then(data<ItwsAlerts>),
+  liveSaa: (designators: string[]) =>
+    planner.GET("/api/live/saa", { params: { query: { designators: designators.join(",") } } }).then(data<SaaStatuses>),
+  liveRvr: (airport: string) =>
+    planner.GET("/api/live/rvr", { params: { query: { airport } } }).then(data<AirportRvr>),
+  liveAtis: (airport: string) =>
+    planner.GET("/api/live/atis", { params: { query: { airport } } }).then(data<AirportAtis>),
+  liveFlow: (airports: string[]) =>
+    planner.GET("/api/live/flow", { params: { query: { airports: airports.join(",") } } }).then(data<FlowAtAirports>),
+  liveDepartures: (ident: string) =>
+    planner.GET("/api/live/departures", { params: { query: { ident } } }).then(data<DepartureEvents>),
 
   /** The airplanes ADS-B receivers hear within `radius` nm of a point,
    *  from adsb.lol's open data (TrafficGl). */

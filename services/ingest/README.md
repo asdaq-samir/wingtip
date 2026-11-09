@@ -18,6 +18,8 @@ asked by the planner.
 | STDDS (TAIS terminal radar) | FAA SWIM, the owner's SCDS subscription | the live store: each airplane's latest report, kept round the places the map looks and for the followed airplanes, and the followed ones' tracks |
 | FNS (NOTAMs) | FAA SWIM | `wingtip.notams`' store |
 | TFMS (flight plans) | FAA SWIM | `wingtip.filed_routes`' store (the routes pilots file between two fields) |
+| ITWS (terminal weather alerts) | FAA SWIM | `wingtip.live_reports`' store (`wingtip.itws`): each airport's microburst, wind shear, gust front, tornado and storm alerts while they last; the maps unread |
+| SFDPS (airspace) | FAA SWIM | `wingtip.live_reports`' store (`wingtip.saa`): each special activity airspace's status, active or cold |
 | The followed airplanes | adsb.fi's open data, every 30 s (`ADSBFI_OPEN_DATA`, off in production until adsb.fi agrees) | the live store: their tracks |
 
 The map's own traffic -- adsb.lol by region, ADS-B Exchange where it
@@ -26,12 +28,15 @@ asks, and stays there.
 
 ## How the planner and ingest share it
 
-No message bus and no HTTP between them: SQLite files on the data folder
-both containers mount (`/workspace/data`; `/srv/wingtip/data` on the
-server), as the NOTAM and filed-route stores already were. The live store
-(`wingtip.traffic.store`, `data/raw/live/live.sqlite`) is in WAL mode, so
-the planner's reads never wait on ingest's writes, and it carries both
-directions:
+No message bus and no HTTP between them: SQLite files both containers
+open, each in WAL mode so the planner's reads never wait on ingest's
+writes (`wingtip.stores`). On the server they are on the data folder both
+mount (`/srv/wingtip/data`); in the development stack on the `live-store`
+Docker volume (`/live`: `LIVE_STORE`, `NOTAM_STORE`, `FILED_STORE`), since
+SQLite's locks and write-ahead log do not work across macOS's file sharing
+into Docker (ingest's writes hung on 2026-11-08). A store first opened at
+its new path takes the file it had on the data folder. The live store
+(`wingtip.traffic.store`) carries both directions:
 
 - ingest writes `radar` (the latest report of each airplane), `points`
   (the followed airplanes' tracks) and `beats` (its own and each feed's
