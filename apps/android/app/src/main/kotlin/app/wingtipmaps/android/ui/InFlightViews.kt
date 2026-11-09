@@ -45,9 +45,11 @@ import app.wingtipmaps.android.api.AheadAlert
 import app.wingtipmaps.android.api.NearestAirport
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.nearest
+import app.wingtipmaps.android.design.RollingFigure
 import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.rememberHaptics
+import app.wingtipmaps.android.design.titleMediumEmphasized
 import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -196,7 +198,9 @@ private fun RowScope.Cell(name: String, value: String, spoken: String, said: Str
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.titleMedium, maxLines = if (largeType()) 2 else 1, overflow = TextOverflow.Ellipsis)
+        // Groundspeed, altitude, the miles and the time to the next point
+        // roll their digits as they change, rather than blink.
+        RollingFigure(value, style = MaterialTheme.typography.titleMediumEmphasized, maxLines = if (largeType()) 2 else 1)
     }
 }
 

@@ -24,12 +24,13 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.NavLogTotals
+import app.wingtipmaps.android.design.RollingFigure
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.design.titleMediumEmphasized
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.stripFuel
@@ -114,7 +115,8 @@ fun stripFuel(totals: NavLogTotals?, burntGal: Double? = null): Result<EngineCon
 /** One figure of a strip, its name over it, read as one node: `said` is
  *  what TalkBack says, the name and the figure in words (Spoken); the
  *  written name and figure where none is given. At large type the figure
- *  takes a second line rather than being cut. */
+ *  takes a second line rather than being cut; otherwise a change rolls
+ *  its digits. */
 @Composable
 fun RowScope.Figure(name: String, value: String, warn: Boolean = false, said: String? = null) {
     Column(
@@ -122,12 +124,13 @@ fun RowScope.Figure(name: String, value: String, warn: Boolean = false, said: St
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(
+        // The figure rolls its digits as it counts down in flight
+        // (RollingFigure), in the expressive figure role.
+        RollingFigure(
             value,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleMediumEmphasized,
             color = if (warn) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
             maxLines = if (largeType()) 2 else 1,
-            overflow = TextOverflow.Ellipsis,
         )
     }
 }
