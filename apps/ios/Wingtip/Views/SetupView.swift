@@ -53,6 +53,9 @@ struct SetupView: View {
                 }
                 Section(title: "Map") {
                     Toggle("Traffic", isOn: Binding(get: { traffic.on }, set: { traffic.on = $0 }))
+                    // A Stratux, Sentry or the like on the cockpit's Wi-Fi:
+                    // its traffic and FIS-B weather with no internet.
+                    ReceiverModePicker()
                     SpokenAlertsToggle()
                     ForgetNotesButton()
                     Toggle("VFR Waypoints", isOn: $waypointsOn)

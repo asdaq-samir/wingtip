@@ -180,8 +180,19 @@ owner, 2026-11-03):
   (`Views/DiagramOwnShip.swift`): the FAA's PDF drawn by PDFKit, own ship
   placed by the diagram's own latitude and longitude marks (the free
   d-TPP's diagrams have no GeoPDF georeference; KORD's and a few others
-  have no marks, and say so). FIS-B weather from ADS-B In is still to
-  come.
+  have no marks, and say so).
+- **A cockpit ADS-B receiver** (`Wingtip/Receiver/`): a Stratux, Sentry,
+  Garmin GDL 39/52 or uAvionix receiver on the Wi-Fi sends GDL 90 to UDP
+  port 4000; `ReceiverListener` (Network.framework) gathers it and once a
+  second the engine reads it (`receiver_read`, `engine/crates/receiver`).
+  Its traffic is drawn ahead of the internet's, merged by ICAO address
+  (`receiver_traffic`, through `Traffic`); a chip on the map says
+  "Stratux · 12 targets · GPS"; a field's FIS-B METAR and TAF show on its
+  card's Weather tab when the weather service has none
+  (`receiver_reports`); FIS-B NEXRAD is drawn over the chart
+  (`receiver_nexrad`, `NexradMapLayer`). Setup's Map section has ADS-B
+  Receiver: Auto or Off. A receiver that only broadcasts to the network
+  is heard once Apple grants the multicast entitlement.
 - **The privacy manifest** (`Wingtip/PrivacyInfo.xcprivacy`): what is
   collected and the required-reason APIs used; the session is cookies in
   `HTTPCookieStorage`, and `UserDefaults` holds no secret.
