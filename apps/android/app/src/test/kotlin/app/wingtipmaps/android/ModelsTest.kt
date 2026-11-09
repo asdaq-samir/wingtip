@@ -14,8 +14,9 @@ class ModelsTest {
     fun aLegLineIsReadWithItsFiguresAndItsWind() {
         val line = """{"type":"leg","from":"KUGN","to":"KENW","distance_nm":12.3,"altitude_ft":3500,""" +
             """"true_course_deg":354.2,"magnetic_heading_deg":350,"wca_deg":-2,"true_heading_deg":352.2,""" +
-            """"magnetic_variation_deg":-3.1,"groundspeed_kt":105,"ete_min":7.0,"fuel_gal":1.0,"tas_kt":110,""" +
-            """"wind":{"direction_deg":270,"speed_kt":10},"toc":{"along_nm":4.2}}"""
+            """"magnetic_variation_deg":-3.1,"magnetic_course_deg":351.1,"groundspeed_kt":105,"ete_min":7.0,"fuel_gal":1.0,""" +
+            """"tas_kt":110,"density_altitude_ft":4100,"fuel_burn_gph":8.5,"power_pct":65,""" +
+            """"wind":{"wind_dir_true_deg":270,"wind_speed_kt":10}}"""
         val message = NavLog.decode(line)
         assertTrue(message is NavLogMessage.OneLeg)
         val leg = (message as NavLogMessage.OneLeg).leg
@@ -25,18 +26,19 @@ class ModelsTest {
         assertEquals(3500.0, leg.altitudeFt, 1e-9)
         assertEquals(350.0, leg.magneticHeadingDeg, 1e-9)
         assertEquals(7.0, leg.eteMin!!, 1e-9)
-        assertEquals(270.0, leg.wind?.directionDeg!!, 1e-9)
+        assertEquals(270.0, leg.wind?.windDirTrueDeg!!, 1e-9)
         assertNull(leg.climbMin)
     }
 
     @Test
     fun theDoneLineGivesTheTotalsAndTheFuelCheck() {
         val line = """{"type":"done","totals":{"distance_nm":98.4,"ete_min":58.5,"fuel_gal":8.4,""" +
-            """"fuel_required_gal":12.6,"fuel_margin_gal":27.4,"usable_fuel_gal":40,"night":false,"fuel_stops":[]}}"""
+            """"fuel_required_gal":12.6,"fuel_margin_gal":27.4,"usable_fuel_gal":40,"night":false,"fuel_stops":[],""" +
+            """"legs_without_wind":0,"unflyable_legs":0}}"""
         val message = NavLog.decode(line)
         assertTrue(message is NavLogMessage.Done)
         val totals = (message as NavLogMessage.Done).totals
-        assertEquals(98.4, totals.distanceNm!!, 1e-9)
+        assertEquals(98.4, totals.distanceNm, 1e-9)
         assertEquals(58.5, totals.eteMin!!, 1e-9)
         assertEquals(8.4, totals.fuelGal!!, 1e-9)
         assertEquals(27.4, totals.fuelMarginGal!!, 1e-9)

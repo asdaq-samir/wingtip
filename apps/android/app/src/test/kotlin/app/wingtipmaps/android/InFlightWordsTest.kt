@@ -1,6 +1,7 @@
 package app.wingtipmaps.android
 
 import app.wingtipmaps.android.api.AheadAlert
+import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.ui.InstrumentsWords
@@ -28,7 +29,7 @@ class InFlightWordsTest {
 
     @Test
     fun offCourseIsSaidPastATenth() {
-        val p = InFlight.Progress(
+        val p = EngineContract.InFlightAnswer(
             onRoute = true, alongNm = 30.0, totalNm = 104.0, leftNm = 74.0, offNm = 2.2, offSide = "left",
             desiredTrackDeg = 0.0, burntGal = 3.0,
         )

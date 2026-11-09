@@ -13,8 +13,12 @@ import org.junit.Test
 class StripDataTest {
     private fun leg(from: String, to: String, nm: Double, mh: Double, ete: Double?, ground: Double? = null) = Leg(
         from = from, to = to, distanceNm = nm, altitudeFt = 4500.0, trueCourseDeg = mh, magneticHeadingDeg = mh,
-        eteMin = ete, tasKt = 110.0, groundMin = ground,
+        eteMin = ete, tasKt = 110.0, groundMin = ground, densityAltitudeFt = 4500.0, fuelBurnGph = 8.5,
+        magneticCourseDeg = mh, magneticVariationDeg = 0.0, powerPct = 65.0, trueHeadingDeg = mh, wcaDeg = 0.0,
     )
+
+    private fun pilot(displayName: String, email: String = "pilot@example.com") =
+        Pilot(id = 1, email = email, displayName = displayName, developer = false)
 
     private val state = Plan.State(
         dep = "C81", dest = "KDLH", stops = listOf("KJVL"), aircraft = "c172",
@@ -75,10 +79,10 @@ class StripDataTest {
 
     @Test
     fun thePilotsInitialsComeFromTheirNameOrTheirAddress() {
-        assertEquals("AS", StripData.initialsOf(Pilot(displayName = "Asdaq Samir")))
-        assertEquals("AS", StripData.initialsOf(Pilot(displayName = "asdaq")))
-        assertEquals("P", StripData.initialsOf(Pilot(displayName = "pilot@example.com")))
-        assertEquals("P", StripData.initialsOf(Pilot(email = "pilot@example.com")))
+        assertEquals("AS", StripData.initialsOf(pilot(displayName = "Asdaq Samir")))
+        assertEquals("AS", StripData.initialsOf(pilot(displayName = "asdaq")))
+        assertEquals("P", StripData.initialsOf(pilot(displayName = "pilot@example.com")))
+        assertEquals("P", StripData.initialsOf(pilot(displayName = "", email = "pilot@example.com")))
         assertEquals("", StripData.initialsOf(null))
     }
 

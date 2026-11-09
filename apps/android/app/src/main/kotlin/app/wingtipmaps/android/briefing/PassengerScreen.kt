@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.ui.ProblemLine
 
 /**
  * The passenger briefing (PassengerModel): the items ticked off for this
@@ -47,7 +48,7 @@ fun PassengerScreen(plan: Plan, modifier: Modifier = Modifier) {
     val planState by plan.state.collectAsStateWithLifecycle()
     LaunchedEffect(planState.dep, planState.dest, planState.stops) { model.show(planState) }
     val context = LocalContext.current
-    val items = PassengerBriefing.ITEMS
+    val items = state.items
     val done = items.count { it.key in state.ticked }
 
     Column(
@@ -58,11 +59,12 @@ fun PassengerScreen(plan: Plan, modifier: Modifier = Modifier) {
             "Brief Your Passengers · $done of ${items.size}",
             style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() },
         )
+        ProblemLine(state.problem)
         items.forEach { item ->
             val on = item.key in state.ticked
             ListItem(
                 headlineContent = { Text(item.title) },
-                supportingContent = { Text(item.source, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                supportingContent = { Text(item.rule, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 leadingContent = { Checkbox(checked = on, onCheckedChange = null) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier.fillMaxWidth().toggleable(value = on, role = Role.Checkbox, onValueChange = { model.tick(item.key) }),

@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.engine
 
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -38,13 +37,6 @@ object Engine {
      *  with the engine's own words for what was wrong. */
     @JvmStatic
     external fun callNative(name: String, input: String): String
-
-    /** The name of the region whose pack holds a point ("n40w088"), for
-     *  the packs kept for the air: the engine's `region_of` by name. */
-    fun regionOf(lat: Double, lon: Double): String = call<RegionAsk, String>("region_of", RegionAsk(lat, lon))
-
-    @Serializable
-    data class RegionAsk(val lat: Double, val lon: Double)
 
     /** A rule of the engine by its name, its input encoded and its answer
      *  decoded as written. */

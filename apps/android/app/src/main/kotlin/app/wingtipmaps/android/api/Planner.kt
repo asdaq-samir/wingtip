@@ -7,7 +7,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.serialization.Serializable
+import app.wingtipmaps.android.api.generated.AircraftProfiles
+import app.wingtipmaps.android.api.generated.AirportSearch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -20,7 +21,8 @@ import okhttp3.Request
  * The planner, through the gateway's proxy (`/api/planner/…`,
  * PlannerProxyController), with the pilot's session cookie as the
  * website's calls carry it, as the iOS app's Planner.swift has it. Each
- * answer decoded from the document's snake case into Models.kt.
+ * answer decoded from the document's snake case into its generated model
+ * (api/generated, named in Models.kt).
  */
 object Planner {
     /** FastAPI's `{"detail": "…"}`, where an answer carries one. */
@@ -94,23 +96,18 @@ object Planner {
             if (e.status == 404) null else throw e
         }
 
-    @Serializable
-    private class Airports(val airports: List<AirportSuggestion>)
-
     /** Fields by ident or name as they are typed (/api/airports/search). */
     suspend fun search(q: String): List<AirportSuggestion> =
-        Gateway.json.decodeFromString<Airports>(fetch("/api/airports/search", mapOf("q" to q))).airports
+        Gateway.json.decodeFromString<AirportSearch>(fetch("/api/airports/search", mapOf("q" to q))).airports
 
     /** A field's card: its weather, runways, frequencies and pattern
      *  (/api/airport/{ident}). */
     suspend fun place(ident: String): AirportPlace = Gateway.json.decodeFromString(fetch("/api/airport/$ident"))
 
-    @Serializable
-    private class Profiles(val profiles: List<AircraftProfile>)
-
-    /** The planner's airplane types (/api/aircraft-profiles). */
-    suspend fun aircraftProfiles(): List<AircraftProfile> =
-        Gateway.json.decodeFromString<Profiles>(fetch("/api/aircraft-profiles")).profiles
+    /** The planner's airplane types (/api/aircraft-profiles), each by
+     *  its summary. */
+    suspend fun aircraftProfiles(): List<AircraftProfileSummary> =
+        Gateway.json.decodeFromString<AircraftProfiles>(fetch("/api/aircraft-profiles")).profiles
 
     /** The route as entered, its ends found and its line (/api/course). */
     suspend fun course(dep: String, dest: String, stops: List<String>): Course =

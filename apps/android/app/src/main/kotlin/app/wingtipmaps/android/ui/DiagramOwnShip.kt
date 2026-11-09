@@ -53,6 +53,11 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.diagramFixUsable
+import app.wingtipmaps.android.engine.generated.diagramGraticule
+import app.wingtipmaps.android.engine.generated.diagramLabels
+import app.wingtipmaps.android.engine.generated.diagramPoint
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.OwnShip
 import kotlinx.coroutines.CancellationException
@@ -99,7 +104,10 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
             nowMs = System.currentTimeMillis()
         }
     }
-    val fix = DiagramPage.usable(flight.fix, nowMs)
+    // A failed check is said under the page (DiagramPage.note), and the
+    // airplane is not drawn on a fix the engine could not judge.
+    val fixAsked = DiagramPage.usable(flight.fix, nowMs)
+    val fix = fixAsked.getOrNull()
     LaunchedEffect(url) {
         try {
             page = withContext(Dispatchers.IO) { DiagramPage.read(url, context.cacheDir) }
@@ -127,7 +135,7 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
                 }
                 page?.let {
                     Text(
-                        DiagramPage.note(it, fix),
+                        DiagramPage.note(it, fixAsked),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(12.dp),
@@ -146,7 +154,7 @@ private fun DiagramWithOwnShip(page: DiagramPage, fix: OwnShip.Fix?) {
         scale = (scale * zoom).coerceIn(1f, 8f)
         offset += pan
     }
-    val at = fix?.let { page.place(it) }?.takeIf { it.onPage }
+    val at = fix?.let { page.place(it).getOrNull() }?.takeIf { it.onPage }
     BoxWithConstraints(Modifier.fillMaxSize().transformable(transform), contentAlignment = Alignment.Center) {
         val k = minOf(constraints.maxWidth / page.width, constraints.maxHeight / page.height)
         val density = LocalDensity.current
@@ -190,43 +198,23 @@ private fun DiagramWithOwnShip(page: DiagramPage, fix: OwnShip.Fix?) {
 }
 
 /** A diagram's first page as a picture, with its graticule from its
- *  labels (null where it has none the engine can fit). */
-class DiagramPage(val image: Bitmap, val width: Float, val height: Float, val graticule: Graticule?) {
-    @Serializable
-    data class Graticule(
-        @SerialName("lat_on_x") val latOnX: Boolean,
-        val a: Double,
-        val b: Double,
-        val c: Double,
-        val d: Double,
-        @SerialName("north_deg") val northDeg: Double,
-    )
-
-    @Serializable
-    data class Placed(val x: Double, val y: Double, @SerialName("on_page") val onPage: Boolean)
-
-    @Serializable
-    private class PointAsk(val graticule: Graticule, val lat: Double, val lon: Double, val width: Double, val height: Double)
-
-    /** Where the fix is on the page, in points from its top left. */
-    fun place(fix: OwnShip.Fix): Placed? {
-        val g = graticule ?: return null
-        return runCatching {
-            Engine.call<PointAsk, Placed>("diagram_point", PointAsk(g, fix.lat, fix.lon, width.toDouble(), height.toDouble()))
-        }.getOrNull()
+ *  labels (null where it has none the engine can fit), and the engine's
+ *  words where reading the labels failed. */
+class DiagramPage(
+    val image: Bitmap,
+    val width: Float,
+    val height: Float,
+    val graticule: EngineContract.DiagramGraticuleAnswer?,
+    val problem: String? = null,
+) {
+    /** Where the fix is on the page, in points from its top left; null
+     *  where the page has no graticule, a failure where the engine's
+     *  `diagram_point` failed. */
+    fun place(fix: OwnShip.Fix): Result<EngineContract.DiagramPointAnswer?> {
+        val g = graticule ?: return Result.success(null)
+        val asked = EngineContract.DiagramPointInputGraticule(g.latOnX, g.a, g.b, g.c, g.d, g.northDeg)
+        return Engine.diagramPoint(asked, fix.lat, fix.lon, width.toDouble(), height.toDouble())
     }
-
-    @Serializable
-    private class TextAsk(val text: String)
-
-    @Serializable
-    class Label(val text: String, val x: Double, val y: Double)
-
-    @Serializable
-    private class LabelsAsk(val labels: List<Label>)
-
-    @Serializable
-    class FixAsk(@SerialName("age_s") val ageS: Double, @SerialName("accuracy_m") val accuracyM: Double)
 
     companion object {
         private val http = OkHttpClient()
@@ -234,21 +222,22 @@ class DiagramPage(val image: Bitmap, val width: Float, val height: Float, val gr
         /** The fix to draw now, null where it is stale or too coarse: the
          *  engine's `diagram_fix_usable` (AC 120-76D 11.17.2.3, three
          *  seconds; 11.17.2.4, 30 m). */
-        fun usable(fix: OwnShip.Fix?, nowMs: Long): OwnShip.Fix? =
-            fix?.takeIf {
-                runCatching {
-                    Engine.call<FixAsk, Boolean>("diagram_fix_usable", FixAsk((nowMs - it.atMs) / 1000.0, it.accuracyM))
-                }.getOrDefault(false)
-            }
+        fun usable(fix: OwnShip.Fix?, nowMs: Long): Result<OwnShip.Fix?> {
+            if (fix == null) return Result.success(null)
+            return Engine.diagramFixUsable((nowMs - fix.atMs) / 1000.0, fix.accuracyM).map { if (it) fix else null }
+        }
 
         /** The line under the page: where the airplane is not drawn, why;
          *  and the planning aid's words with the FAA's credit. */
-        fun note(page: DiagramPage, fix: OwnShip.Fix?): String {
+        fun note(page: DiagramPage, fix: Result<OwnShip.Fix?>): String {
             val aid = "FAA · Planning aid, not for navigation"
+            val placed = fix.getOrNull()?.let { page.place(it) }
+            val failed = page.problem ?: fix.exceptionOrNull()?.message ?: placed?.exceptionOrNull()?.message
             return when {
+                failed != null -> "The airplane cannot be placed on this diagram: $failed $aid"
                 page.graticule == null -> "The airplane cannot be placed on this diagram: it has no latitude and longitude marks, or this phone cannot read them. $aid"
-                fix == null -> "Finding your position… $aid"
-                page.place(fix)?.onPage != true -> "You are off this diagram. $aid"
+                fix.getOrNull() == null -> "Finding your position… $aid"
+                placed?.getOrNull()?.onPage != true -> "You are off this diagram. $aid"
                 else -> aid
             }
         }
@@ -273,8 +262,8 @@ class DiagramPage(val image: Bitmap, val width: Float, val height: Float, val gr
                         val bitmap = Bitmap.createBitmap(page.width * 3, page.height * 3, Bitmap.Config.ARGB_8888)
                         bitmap.eraseColor(android.graphics.Color.WHITE)
                         page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                        val graticule = if (readsText()) graticuleOf(page) else null
-                        return DiagramPage(bitmap, w, h, graticule)
+                        val graticule = if (readsText()) graticuleOf(page) else Result.success(null)
+                        return DiagramPage(bitmap, w, h, graticule.getOrNull(), graticule.exceptionOrNull()?.message)
                     }
                 }
             }
@@ -287,9 +276,9 @@ class DiagramPage(val image: Bitmap, val width: Float, val height: Float, val gr
 
         @SuppressLint("NewApi")
         @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
-        private fun graticuleOf(page: PdfRenderer.Page): Graticule? = runCatching {
+        private fun graticuleOf(page: PdfRenderer.Page): Result<EngineContract.DiagramGraticuleAnswer?> = runCatching {
             val text = page.textContents.joinToString("\n") { it.text }
-            val words = Engine.call<TextAsk, List<String>>("diagram_labels", TextAsk(text))
+            val words = Engine.diagramLabels(text).getOrThrow()
             // Each label where it is drawn, by the page's own search: its
             // bounds in the page's points from its top left.
             val placed = words.flatMap { word ->
@@ -300,10 +289,10 @@ class DiagramPage(val image: Bitmap, val width: Float, val height: Float, val gr
                     val right = boxes.maxOf { it.right }
                     val top = boxes.minOf { it.top }
                     val bottom = boxes.maxOf { it.bottom }
-                    Label(word, ((left + right) / 2).toDouble(), ((top + bottom) / 2).toDouble())
+                    EngineContract.DiagramGraticuleInputLabelsItem(word, ((left + right) / 2).toDouble(), ((top + bottom) / 2).toDouble())
                 }
             }
-            Engine.call<LabelsAsk, Graticule?>("diagram_graticule", LabelsAsk(placed))
-        }.getOrNull()
+            Engine.diagramGraticule(placed).getOrThrow()
+        }
     }
 }

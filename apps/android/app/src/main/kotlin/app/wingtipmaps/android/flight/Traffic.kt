@@ -11,7 +11,9 @@ import app.wingtipmaps.android.api.TrafficAircraft
 import app.wingtipmaps.android.api.name
 import app.wingtipmaps.android.api.traffic
 import app.wingtipmaps.android.engine.Engine
-import app.wingtipmaps.android.engine.TrafficMarksAnswerElement
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.ownShipHex
+import app.wingtipmaps.android.engine.generated.trafficMarks
 import app.wingtipmaps.android.notify.Notifications
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -23,8 +25,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlin.math.roundToInt
 
 /**
@@ -54,7 +54,7 @@ class TrafficSwitch(private val store: DataStore<Preferences>, private val scope
 }
 
 /** An airplane's mark: the engine's `traffic_marks` answer, one per airplane. */
-typealias Mark = TrafficMarksAnswerElement
+typealias Mark = EngineContract.TrafficMarksAnswerItem
 
 /**
  * The airplanes ADS-B receivers hear about the map, from the planner
@@ -78,6 +78,12 @@ class Traffic private constructor(private val context: Context, private val tick
     /** Each airplane's mark, in the planes' order. */
     private val _marks = MutableStateFlow<List<Mark>>(emptyList())
     val marks: StateFlow<List<Mark>> = _marks.asStateFlow()
+
+    /** The engine's words where its traffic rules failed for the last
+     *  answer (own ship's own transponder, the marks), shown on an
+     *  airplane's card; the airplanes are drawn without their marks. */
+    private val _problem = MutableStateFlow<String?>(null)
+    val problem: StateFlow<String?> = _problem.asStateFlow()
 
     private val _source = MutableStateFlow<String?>(null)
     val source: StateFlow<String?> = _source.asStateFlow()
@@ -134,9 +140,13 @@ class Traffic private constructor(private val context: Context, private val tick
         // Own ship's own transponder, heard by the receivers on the ground,
         // is not traffic to itself (the engine's `own_ship_hex`).
         val own = ownShipHex(heard.map { it.copy(seenS = (it.seenS ?: 0.0) + age) }, fix)
-        val planes = heard.filter { it.hex != own }
+        val planes = heard.filter { it.hex != own.getOrNull() }
+        val marks = marks(planes, fix?.altitudeFt)
         _planes.value = planes
-        _marks.value = marks(planes, fix?.altitudeFt)
+        // A mark the engine could not give is blank, not near: the airplane
+        // is still drawn, and the card says why it has no mark.
+        _marks.value = marks.getOrElse { planes.map { Mark("", false) } }
+        _problem.value = (own.exceptionOrNull() ?: marks.exceptionOrNull())?.let { "The traffic rules failed: ${it.message}" }
         _source.value = answer.source
         _heardAtMs.value = System.currentTimeMillis() - (age * 1000).toLong()
         Tracking.of(context).heard(planes)
@@ -183,7 +193,7 @@ class Traffic private constructor(private val context: Context, private val tick
      *  drawn amber: a design choice, the web app's, 1,000 ft being the
      *  spacing VFR cruising altitudes keep between opposite directions
      *  (14 CFR 91.159). All the engine's, its type generated from the
-     *  engine's contract (engine/EngineContract.kt); the app draws it. */
+     *  engine's contract (engine/generated/EngineContract.kt); the app draws it. */
 
     companion object {
         /** The planner asks adsb.lol about a region at most every five
@@ -210,41 +220,27 @@ class Traffic private constructor(private val context: Context, private val tick
                     .also { shared = it }
             }
 
-        @Serializable
-        private class PlaneAsk(@SerialName("altitude_ft") val altitudeFt: Double?, @SerialName("vertical_fpm") val verticalFpm: Double?)
-
-        @Serializable
-        private class MarksAsk(@SerialName("own_ft") val ownFt: Double?, val planes: List<PlaneAsk>)
-
-        @Serializable
-        private class EngineFix(
-            val lat: Double,
-            val lon: Double,
-            @SerialName("heading_deg") val headingDeg: Double?,
-            @SerialName("speed_kt") val speedKt: Double?,
-            @SerialName("altitude_ft") val altitudeFt: Double?,
-        )
-
-        @Serializable
-        private class OwnAsk(val planes: List<TrafficAircraft>, val fix: EngineFix?)
+        /** An airplane heard as the engine's traffic rules read it. */
+        private fun TrafficAircraft.asPlane(): EngineContract.TrafficPlane =
+            EngineContract.TrafficPlane(hex, lat, lon, altitudeFt, verticalFpm, trackDeg, speedKt, seenS)
 
         /** Which airplane heard is own ship's own transponder -- the one
          *  nearest the fix, within half a mile and 400 ft, going the same
          *  way at about the same speed (the engine's `own_ship_hex`, the
          *  web's ownShipHex) -- or null; each airplane's `seen_s` with the
          *  answer's age in it. */
-        fun ownShipHex(planes: List<TrafficAircraft>, fix: OwnShip.Fix?): String? {
-            if (fix == null || planes.isEmpty()) return null
-            val ask = OwnAsk(planes, EngineFix(fix.lat, fix.lon, fix.trackDeg, fix.groundspeedKt, fix.altitudeFt))
-            return runCatching { Engine.call<OwnAsk, String?>("own_ship_hex", ask) }.getOrNull()
+        fun ownShipHex(planes: List<TrafficAircraft>, fix: OwnShip.Fix?): Result<String?> {
+            if (fix == null || planes.isEmpty()) return Result.success(null)
+            return Engine.ownShipHex(
+                planes.map { it.asPlane() },
+                EngineContract.OwnShipFix(fix.lat, fix.lon, fix.trackDeg, fix.groundspeedKt, fix.altitudeFt),
+            )
         }
 
         /** Each airplane's mark, in one call (the engine's `traffic_marks`,
-         *  the web app's trafficLabel); none where the engine cannot answer. */
-        fun marks(planes: List<TrafficAircraft>, ownFt: Double?): List<Mark> =
-            runCatching {
-                Engine.call<MarksAsk, List<Mark>>("traffic_marks", MarksAsk(ownFt, planes.map { PlaneAsk(it.altitudeFt, it.verticalFpm) }))
-            }.getOrDefault(emptyList())
+         *  the web app's trafficLabel). */
+        fun marks(planes: List<TrafficAircraft>, ownFt: Double?): Result<List<Mark>> =
+            Engine.trafficMarks(ownFt, planes.map { EngineContract.TrafficMarksInputPlanesItem(it.altitudeFt, it.verticalFpm) })
 
         /** A height against own ship's in words for a notification: "500
          *  ft above", "1,200 ft below", "at your height". */

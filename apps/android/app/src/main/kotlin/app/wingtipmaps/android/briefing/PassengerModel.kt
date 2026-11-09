@@ -31,6 +31,11 @@ class PassengerModel(app: Application) : AndroidViewModel(app) {
          *  opened, as this app's plan has no departure time of its own
          *  and leaves at the planner's now (the strip's leaveMs). */
         val departMs: Long = System.currentTimeMillis(),
+        /** The briefing's items, the engine's; none where it failed. */
+        val items: List<PassengerItem> = PassengerBriefing.ITEMS.getOrDefault(emptyList()),
+        /** Why there are no items: the engine's words where its
+         *  `passenger_briefing` failed. */
+        val problem: String? = PassengerBriefing.ITEMS.exceptionOrNull()?.let { "The briefing's items could not be had: ${it.message}" },
     )
 
     private val ticks = PassengerTicks(PreferencesStore(app.getSharedPreferences("passengers", Context.MODE_PRIVATE)))
