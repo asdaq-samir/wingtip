@@ -1,7 +1,7 @@
-import { ChevronDown, CloudLightning, Eye, EyeOff, Radar, Satellite } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "./GroupedList";
-import TogglePill from "./TogglePill";
+import SwitchRow from "./SwitchRow";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
@@ -11,7 +11,7 @@ import { WINDS_MODELLED_LABEL } from "../lib/windsAloft";
 
 /** The winds aloft's altitudes: the plan's cruise, or one of the FD
  *  product's own, written FL and hundreds of feet as the map's weather
- *  writes every altitude, the owner's pick (lib/weatherMap altitudeWords). */
+ *  writes every altitude, the owner's pick (lib/format mapLevel). */
 const WINDS: { value: WindsAt; label: string }[] = [
   { value: "off", label: "Off" }, { value: "plan", label: "The plan's" },
   { value: 3000, label: "FL030" }, { value: 6000, label: "FL060" }, { value: 9000, label: "FL090" },
@@ -31,18 +31,12 @@ export default function WeatherSettings() {
   const windsLabel = WINDS.find(w => w.value === winds)?.label ?? "Off";
   return (
     <ListGroup title="Weather">
-      <ListRow title="Radar">
-        <TogglePill pressed={radar} onPressedChange={on => set({ radar: on })} icon={<Radar />} label="Show" testId="weather-radar-toggle" />
-      </ListRow>
-      <ListRow title="Satellite">
-        <TogglePill pressed={satellite} onPressedChange={on => set({ satellite: on })} icon={<Satellite />} label="Show" testId="weather-satellite-toggle" />
-      </ListRow>
-      <ListRow title="AIRMETs and SIGMETs">
-        <TogglePill pressed={areas} onPressedChange={on => set({ areas: on })} icon={<CloudLightning />} label="Show" testId="weather-areas-toggle" />
-      </ListRow>
-      <ListRow title="PIREPs">
-        <TogglePill pressed={pireps} onPressedChange={on => set({ pireps: on })} icon={pireps ? <Eye /> : <EyeOff />} label="Show" testId="weather-pireps-toggle" />
-      </ListRow>
+      {/* The stock switch, whose state reads at a glance: a "Show" pill
+          looked the same on and off (the UI audit, 2026-11-09). */}
+      <SwitchRow title="Radar" on={radar} onChange={on => set({ radar: on })} testId="weather-radar-toggle" />
+      <SwitchRow title="Satellite" on={satellite} onChange={on => set({ satellite: on })} testId="weather-satellite-toggle" />
+      <SwitchRow title="AIRMETs and SIGMETs" on={areas} onChange={on => set({ areas: on })} testId="weather-areas-toggle" />
+      <SwitchRow title="PIREPs" on={pireps} onChange={on => set({ pireps: on })} testId="weather-pireps-toggle" />
       {/* Whose winds the barbs draw, under the row's title: the GFS's (lib/windsAloft). */}
       <ListRow title="Winds aloft" description={WINDS_MODELLED_LABEL}>
         <DropdownMenu>

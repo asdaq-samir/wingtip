@@ -1,5 +1,5 @@
 import type { ComponentProps } from "react";
-import { X } from "lucide-react";
+import { ICON } from "../lib/icons";
 import RoundButton from "./RoundButton";
 
 /**
@@ -17,7 +17,7 @@ export default function CloseButton({ label = "Close", ...props }: Omit<Componen
 }) {
   return (
     <RoundButton label={label} {...props}>
-      <X className="size-6!" strokeWidth={1.7} />
+      <ICON.close className="size-6!" strokeWidth={1.7} />
     </RoundButton>
   );
 }

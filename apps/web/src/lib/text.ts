@@ -72,6 +72,13 @@ export const TEXT = {
   word: TYPE_CLASS.word,
 } as const;
 
+/** A section's title, the one look every section of a tab, card and
+ *  sheet has (SectionTitle): 20 points in Title Case (18 with a mouse),
+ *  medium -- the owner's 20-point section titles (decision 0021), not
+ *  bold and not capitals ("Section labels don't need to be bold or all
+ *  caps", 2026-10-23). */
+export const SECTION_TITLE = `font-medium text-foreground ${TEXT.heading}`;
+
 /** A group's heading, as iOS's grouped lists set one: a note's size,
  *  semibold, in capitals, spaced out and grey. Over a list's box
  *  (ListGroup), the nav log's columns, a popover's parts -- one look,

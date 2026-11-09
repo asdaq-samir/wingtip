@@ -11,7 +11,7 @@ import type { NearestAirport, PlaceFound } from "../../../lib/api/types";
 import { compassPoint, saidPoint } from "../../../lib/compass";
 import { nmAway, nmFigure } from "../../../lib/useAway";
 import { mhzText } from "../../../lib/frequencies";
-import { colourOf } from "../../../lib/map/flightCategory";
+import { chipFillOf, colourOf } from "../../../lib/map/flightCategory";
 import { glideRangeNm, reachesField, underway } from "../../../lib/map/glide";
 import { airportMarkSvg } from "../../../lib/map/airportMark";
 import { positionNow, useOwnShip, useOwnFix } from "../../../lib/map/ownShip";
@@ -148,7 +148,7 @@ function NearestRow({ field, ahead, reach, onOpen }: {
           {category && (
             <span
               className={cn("mr-1.5 inline-block rounded-[5px] px-1.5 align-[0.05em] font-bold tracking-wide", TEXT.note)}
-              style={{ backgroundColor: colourOf(category), color: inkOn(colourOf(category)) }}
+              style={{ backgroundColor: chipFillOf(category), color: inkOn(chipFillOf(category)) }}
             >
               {category}
             </span>

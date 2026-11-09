@@ -1,5 +1,5 @@
 import { Suspense, type ReactNode } from "react";
-import { ChartArea, Sparkles } from "lucide-react";
+import { ICON } from "../../../../lib/icons";
 import { cn } from "cn";
 import RoundButton from "../../../../components/RoundButton";
 import { LocalDuration } from "../../routePanelParts";
@@ -72,7 +72,7 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
             onClick={openProfile} className="size-[32px]" data-testid="route-profile"
           >
             <span className="relative">
-              <ChartArea className="size-[18px]" strokeWidth={2} />
+              <ICON.profile className="size-[18px]" strokeWidth={2} />
               {altitudeMark && (
                 <span
                   aria-hidden="true" data-testid={altitudeMark === "caution" ? "own-altitude-flag" : "tight-altitude-flag"}
@@ -94,7 +94,7 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
             data-testid="route-brief" data-finding={briefMark ?? undefined} data-tip="brief"
           >
             <span className="relative">
-              <Sparkles className="size-[18px]" strokeWidth={2} />
+              <ICON.brief className="size-[18px]" strokeWidth={2} />
               {briefMark && (
                 <span
                   aria-hidden="true" data-testid="route-brief-mark"

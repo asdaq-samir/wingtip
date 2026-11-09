@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NO_AIRPLANE, forgetPilot, usePreferences } from "./preferences";
+import { NO_AIRPLANE, forgetPilot, migratePreferences, usePreferences } from "./preferences";
 import { NO_MINIMUMS } from "./minimums";
 
 describe("forgetPilot", () => {
@@ -24,11 +24,11 @@ describe("forgetPilot", () => {
 });
 
 describe("the look", () => {
-  it("is the Wingtip look for a new pilot and for one who had the old default, keeping Chart ink", async () => {
+  it("is the Wingtip look for a new pilot and for one who had the old default, keeping Chart ink", () => {
     expect(usePreferences.getInitialState().brand).toBe("wingtip");
-    const migrate = usePreferences.persist.getOptions().migrate!;
-    expect(await migrate({ brand: "cockpit" }, 6)).toMatchObject({ brand: "wingtip" });
-    expect(await migrate({ brand: "ink" }, 6)).toMatchObject({ brand: "ink" });
-    expect(await migrate({ brand: "windsock" }, 3)).toMatchObject({ brand: "wingtip" });
+    expect(migratePreferences({ brand: "cockpit" }, 6)).toMatchObject({ brand: "wingtip" });
+    expect(migratePreferences({ brand: "ink" }, 6)).toMatchObject({ brand: "ink" });
+    expect(migratePreferences({ brand: "windsock" }, 3)).toMatchObject({ brand: "wingtip" });
+    expect(migratePreferences({ brand: "cockpit" }, 7)).toMatchObject({ brand: "cockpit" });
   });
 });

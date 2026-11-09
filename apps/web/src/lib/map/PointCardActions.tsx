@@ -1,9 +1,9 @@
 import { useContext, useState } from "react";
-import { Check, Copy, MapPinPlus } from "lucide-react";
+import { Check } from "lucide-react";
+import { ACTION } from "../cardActions";
 import { CardCloseContext } from "./cardClose";
 import { cn } from "cn";
 import { CardAction } from "../../components/CardAction";
-import DirectToIcon from "../../components/DirectToIcon";
 import { usePointActions, type ChartPoint } from "./pointActions";
 
 /**
@@ -25,11 +25,12 @@ export function PointActions({ point, copy, addTestId = "point-add" }: {
   return (
     // As many columns as tiles, as the airport card's row fills its width.
     <div className={cn("grid gap-2", [directTo, addToRoute, copy].filter(Boolean).length === 3 ? "grid-cols-3" : "grid-cols-2")} data-testid="point-actions">
-      {directTo && <CardAction icon={<DirectToIcon />} label="Direct To" filled onClick={done(directTo)} testId="point-direct-to" />}
-      {addToRoute && <CardAction icon={<MapPinPlus />} label="Add to Route" onClick={done(addToRoute)} testId={addTestId} />}
+      {/* The navaid card's set in its order (lib/cardActions). */}
+      {directTo && <CardAction icon={<ACTION.directTo.icon />} label={ACTION.directTo.label} filled onClick={done(directTo)} testId="point-direct-to" />}
+      {addToRoute && <CardAction icon={<ACTION.addToRoute.icon />} label={ACTION.addToRoute.label} onClick={done(addToRoute)} testId={addTestId} />}
       {copy && (
         <CardAction
-          icon={copied ? <Check /> : <Copy />} label={copied ? "Copied" : copy.label} spoken={`Copy ${copy.label}`}
+          icon={copied ? <Check /> : <ACTION.copy.icon />} label={copied ? "Copied" : copy.label} spoken={`Copy ${copy.label}`}
           onClick={() => {
             // Called in the tap, as the clipboard asks; refused, nothing said.
             void navigator.clipboard?.writeText(copy.text).then(() => setCopied(true), () => {});

@@ -31,15 +31,22 @@ export function RouteGlyph({ className, filled = false }: { className?: string; 
   );
 }
 
-/** The chart's airport: a circle with its runway across it. Up, the
- *  disc with the runway cut out of it. */
+/** The four ticks round a sectional's airport symbol, the sign of a
+ *  field with services (FAA Aeronautical Chart User's Guide, Airports). */
+const TICKS = "M14 1.8V4.6M14 23.4V26.2M1.8 14H4.6M23.4 14H26.2";
+
+/** The chart's airport with services: a circle, its runway up the
+ *  middle and the four ticks round it. The runway drawn across on a
+ *  diagonal read as a "prohibited" sign (the UI audit, 2026-11-09). Up,
+ *  the disc with the runway cut out of it. */
 export function AirportGlyph({ className, filled = false }: { className?: string; filled?: boolean }) {
   const id = useId();
   if (!filled) {
     return (
       <svg className={className} {...GRID}>
-        <circle cx="14" cy="14" r="10.5" {...LINE} />
-        <path d="M8.2 19.8L19.8 8.2" {...LINE} strokeWidth={4.5} />
+        <circle cx="14" cy="14" r="8.6" {...LINE} />
+        <path d="M14 9.4V18.6" {...LINE} strokeWidth={3.2} />
+        <path d={TICKS} {...LINE} />
       </svg>
     );
   }
@@ -47,9 +54,10 @@ export function AirportGlyph({ className, filled = false }: { className?: string
     <svg className={className} {...GRID}>
       <mask id={id}>
         <rect width="28" height="28" fill="white" />
-        <path d="M7.6 20.4L20.4 7.6" stroke="black" strokeWidth={4} strokeLinecap="round" />
+        <path d="M14 8.8V19.2" stroke="black" strokeWidth={3.2} strokeLinecap="round" />
       </mask>
-      <circle cx="14" cy="14" r="11.5" fill="currentColor" mask={`url(#${id})`} />
+      <circle cx="14" cy="14" r="9.6" fill="currentColor" mask={`url(#${id})`} />
+      <path d={TICKS} {...LINE} />
     </svg>
   );
 }

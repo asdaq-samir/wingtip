@@ -326,6 +326,19 @@ export interface RecentAirport {
 /** How many the search bar remembers. */
 const RECENTS = 8;
 
+/** What a browser kept under an older version, brought up to this one
+ *  (the versions are listed where usePreferences is made). */
+export function migratePreferences(kept: unknown, from: number): Preferences {
+  return {
+    ...(kept as object),
+    ...(from < 6 && isStockDefault((kept as { aircraft?: AircraftChoice }).aircraft) ? { aircraft: NO_AIRPLANE } : {}),
+    ...(from < 1 ? { waypoints: false } : {}),
+    ...(from < 2 ? { airspace: true, navaids: true } : {}),
+    ...(from < 3 ? { chartLight: "auto" } : {}),
+    ...(from < 7 && (kept as { brand?: string }).brand !== "ink" ? { brand: "wingtip" } : {}),
+  } as Preferences;
+}
+
 export const usePreferences = create<Preferences>()(
   persist(
     set => ({
@@ -480,14 +493,7 @@ export const usePreferences = create<Preferences>()(
       // owner, 2026-11-09); Glass Cockpit was the default before, so a
       // browser that has it never picked it.
       version: 7,
-      migrate: (kept, from) => ({
-        ...(kept as object),
-        ...(from < 6 && isStockDefault((kept as { aircraft?: AircraftChoice }).aircraft) ? { aircraft: NO_AIRPLANE } : {}),
-        ...(from < 1 ? { waypoints: false } : {}),
-        ...(from < 2 ? { airspace: true, navaids: true } : {}),
-        ...(from < 3 ? { chartLight: "auto" } : {}),
-        ...(from < 7 && (kept as { brand?: string }).brand !== "ink" ? { brand: "wingtip" } : {}),
-      }) as Preferences,
+      migrate: migratePreferences,
       // The functions are not state; only the values are written.
       partialize: s => ({
         base: s.base, tac: s.tac, waypoints: s.waypoints, classB: s.classB, airspace: s.airspace, navaids: s.navaids, tfrs: s.tfrs, alerts: s.alerts, speakAlerts: s.speakAlerts, copilotMode: s.copilotMode, plates: s.plates, traffic: s.traffic, military: s.military, privateFields: s.privateFields, minimums: s.minimums, routeWeather: s.routeWeather, stopsRadiusNm: s.stopsRadiusNm, stopKind: s.stopKind, loads: s.loads, keepOffline: s.keepOffline, aircraft: s.aircraft, tailFigures: s.tailFigures, filters: s.filters, navBar: s.navBar, chartNight: s.chartNight, chartLight: s.chartLight, terrain: s.terrain, brand: s.brand, ownShipLook: s.ownShipLook,

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { usePrefetchQuery, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import { MapPin, MapPinPlus, Phone, Star } from "lucide-react";
-import DirectToIcon from "../../../components/DirectToIcon";
+import { Star } from "lucide-react";
+import { ACTION } from "../../../lib/cardActions";
 import { FAVORITE_STAR_ON } from "../../../components/mapChrome";
 import { cn } from "cn";
 import { useKeptAirport, usePreferences } from "../../../lib/preferences";
@@ -20,7 +20,7 @@ import type { AirportPin, AirportPlace, ClassBAirport } from "../../../lib/api/t
 import { compassPoint } from "../../../lib/compass";
 import { distanceNm, type LatLon } from "../../../lib/geo";
 import { awayFrom } from "../../../lib/useAway";
-import { chipColourOf } from "../../../lib/map/flightCategory";
+import { chipFillOf } from "../../../lib/map/flightCategory";
 import { inkOn } from "../../../lib/scoreScale";
 import { feet, miles } from "../../../lib/format";
 import { reportedWind, windLine } from "../format";
@@ -264,7 +264,7 @@ export default function PlaceCard({ ident, from, onClose, onFlyHere, onAddStop, 
     ? { category: modelled.flight_category, said: "modelled for this field by the National Weather Service, not a report" }
     : nearCategory ? { category: nearCategory, said: `from the report of ${nearby?.ident}, another station, not this field's own` } : null;
   const category = weather?.category ?? approximate?.category ?? null;
-  const chipColour = category ? chipColourOf({ status: "reported", category }) : null;
+  const chipColour = category ? chipFillOf(category) : null;
   const chip = category && chipColour && (
     <span
       // The words in whichever ink reads on the colour (inkOn), as the
@@ -446,19 +446,19 @@ export default function PlaceCard({ ident, from, onClose, onFlyHere, onAddStop, 
               until the owner moved the star up by the close (2026-10-29). */}
           <div className={cn("grid gap-2 pt-3", onAddStop ? "grid-cols-4" : "grid-cols-3")} data-testid="place-actions">
             <Action
-              icon={<DirectToIcon />} label="Fly Here" filled busy={flying} disabled={!place} testId="fly-here"
+              icon={<ACTION.flyHere.icon />} label={ACTION.flyHere.label} filled busy={flying} disabled={!place} testId="fly-here"
               onClick={() => { if (place) { setFlying(true); onFlyHere(place); } }}
             />
             {onAddStop && (
-              <Action icon={<MapPinPlus />} label="Add Stop" disabled={!place} onClick={() => { if (place) onAddStop(place); }} testId="place-add-stop" />
+              <Action icon={<ACTION.addStop.icon />} label={ACTION.addStop.label} disabled={!place} onClick={() => { if (place) onAddStop(place); }} testId="place-add-stop" />
             )}
             <Action
-              icon={<Phone />} label="Call" disabled={!place?.phone}
+              icon={<ACTION.call.icon />} label={ACTION.call.label} disabled={!place?.phone}
               href={place?.phone ? `tel:${place.phone}` : undefined}
               spoken={place?.phone ? `Call ${place.phone}` : "Call: no phone listed"} testId="place-call"
             />
             <Action
-              icon={<MapPin />} label="Address" disabled={!place} href={place ? mapsLink(place) : undefined}
+              icon={<ACTION.address.icon />} label={ACTION.address.label} disabled={!place} href={place ? mapsLink(place) : undefined}
               spoken={place?.address ? `Address in Maps: ${place.address}` : "Open in Maps"} testId="place-address-action"
             />
           </div>

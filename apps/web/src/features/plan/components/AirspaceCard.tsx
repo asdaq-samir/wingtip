@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Ban, Cloud, Gauge, KeyRound, MoveUpRight, Plus, Radio, Repeat2, ShieldAlert } from "lucide-react";
+import { Ban, Cloud, Gauge, KeyRound, Radio, ShieldAlert } from "lucide-react";
+import { ACTION, CARD_ACTIONS } from "../../../lib/cardActions";
 import { cn } from "cn";
 import { PillSection } from "../../../components/Favorites";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
@@ -113,15 +114,20 @@ export default function AirspaceCard({ point, onClose, summary = false, onExpand
   const { data: saa } = useQuery(saaQuery(data?.special_use.map(a => a.name) ?? []));
   const ground = data?.ground_ft ?? null;
   const named = data?.point ?? null;
-  const actions = named ? [
-    { go: onAdd, label: "Add to Route", icon: <Plus />, testId: "point-add" },
-    { go: onDirect, label: "Direct To", icon: <MoveUpRight />, testId: "point-direct" },
-    { go: onHold, label: "Hold Here", icon: <Repeat2 />, testId: "point-hold" },
-  ].filter(a => a.go) : [];
+  // A held point's actions, the point card's set in its order
+  // (lib/cardActions): Direct To first, filled, as every card's is.
+  const handlers = { directTo: onDirect, addToRoute: onAdd, holdHere: onHold };
+  const testIds = { directTo: "point-direct", addToRoute: "point-add", holdHere: "point-hold" };
+  const actions = named ? CARD_ACTIONS.point.map(name => ({ ...ACTION[name], go: handlers[name], testId: testIds[name] })).filter(a => a.go) : [];
   return (
     <PanelCard testId="airspace-card">
       <CardHead
-        name="Airspace" line={<>{degreesMinutes(point)}{ground !== null && ` · ground ${altFt(ground)} ft`}{named && <><br />{named.ident} · {named.name}</>}</>}
+        // The point itself as the card's name, its name off the nearest
+        // fix where it has one: the sheet's own title already says
+        // Airspace, and the card said it again under it (the UI audit,
+        // 2026-11-09).
+        name={named?.ident ?? "Dropped Pin"} nameTestId="airspace-name"
+        line={<>{degreesMinutes(point)}{ground !== null && ` · ground ${altFt(ground)} ft`}{named && <><br />{named.name}</>}</>}
         lineClassName="tabular-nums" lineTestId="airspace-where" onClose={onClose} closeTestId="airspace-close"
       />
       {/* The point into the route, as Maps' dropped pin's card offers its
@@ -130,7 +136,7 @@ export default function AirspaceCard({ point, onClose, summary = false, onExpand
         <div className="grid grid-cols-3 gap-2 pt-3" data-testid="point-actions">
           {/* The cards' own tiles (CardAction), as a VOR's and an airport's. */}
           {actions.map((a, i) => (
-            <CardAction key={a.testId} icon={a.icon} label={a.label} filled={i === 0} onClick={() => a.go!(named.ident, point)} testId={a.testId} />
+            <CardAction key={a.testId} icon={<a.icon />} label={a.label} filled={i === 0} onClick={() => a.go!(named.ident, point)} testId={a.testId} />
           ))}
         </div>
       )}
