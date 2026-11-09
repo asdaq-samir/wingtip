@@ -610,22 +610,42 @@ body[data-map-sheet][data-map-panel="full"] [data-sonner-toast][data-type="loadi
   }
 }
 
-/* A page giving way to the next (lib/viewTransition): only the element
-   named wingtip-page moves, a short shared-axis slide and fade over
-   motion.page on the sheet's ease-out; the rest of the screen, the map
-   under it, is not captured as the page's root would be. */
+/* A page giving way to the next (lib/viewTransition): React's
+   <ViewTransition> round a page (the Brief's, the welcome's) names it for
+   a typed page step alone, its class page-step forward and page-back
+   back, a short shared-axis slide and fade over motion.page on the
+   sheet's ease-out; the map panel's tabs cross-fade the body, named
+   wingtip-tab only while the tab changes (<html data-vt="tab">). The
+   rest of the screen, the map under it, is not captured as the page's
+   root would be. */
 :root {
   view-transition-name: none;
 }
-::view-transition-group(wingtip-page) {
+html[data-vt="tab"] [data-slot="map-panel"] [data-panel-body] {
+  view-transition-name: wingtip-tab;
+}
+::view-transition-group(.page-step),
+::view-transition-group(.page-back),
+::view-transition-group(wingtip-tab) {
   animation-duration: var(--motion-page);
   animation-timing-function: var(--motion-sheet-ease);
 }
-::view-transition-old(wingtip-page) {
+::view-transition-old(.page-step) {
   animation: var(--motion-page) var(--motion-sheet-ease) both page-out;
 }
-::view-transition-new(wingtip-page) {
+::view-transition-new(.page-step) {
   animation: var(--motion-page) var(--motion-sheet-ease) both page-in;
+}
+::view-transition-old(.page-back) {
+  animation: var(--motion-page) var(--motion-sheet-ease) both page-back-out;
+}
+::view-transition-new(.page-back) {
+  animation: var(--motion-page) var(--motion-sheet-ease) both page-back-in;
+}
+::view-transition-old(wingtip-tab),
+::view-transition-new(wingtip-tab) {
+  animation-duration: var(--motion-fade);
+  animation-timing-function: var(--motion-sheet-ease);
 }
 @keyframes page-out {
   to {
@@ -637,6 +657,27 @@ body[data-map-sheet][data-map-panel="full"] [data-sonner-toast][data-type="loadi
   from {
     opacity: 0;
     transform: translateX(1.5rem);
+  }
+}
+@keyframes page-back-out {
+  to {
+    opacity: 0;
+    transform: translateX(1.5rem);
+  }
+}
+@keyframes page-back-in {
+  from {
+    opacity: 0;
+    transform: translateX(-1.5rem);
+  }
+}
+/* Reduce Motion: no transition moves; the change is made where it is
+   (the * rule above does not reach the transition's pseudo-elements). */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }
 

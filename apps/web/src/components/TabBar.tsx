@@ -9,6 +9,7 @@ import { TEXT } from "../lib/text";
 import { BarOverPicture, PanelSize, TabBarMinimized, useConsoleOpen, useTabsShown } from "../lib/mapChrome";
 import { ON_PILL_PICTURE } from "./PillPicture";
 import { barHeadRef, closeSheetCards, useSheetCards } from "../lib/sheetCards";
+import { withTabTransition } from "../lib/viewTransition";
 
 /** One of a page's places, a tab of its bar: its word and its glyph. */
 export interface BarTab<T extends string> {
@@ -506,7 +507,7 @@ export default function TabBar<T extends string>({
             key={value}
             type="button"
             aria-current={current ? "page" : undefined}
-            onClick={() => tapped(value)}
+            onClick={() => (current || !size || size.size === "peek" ? tapped(value) : withTabTransition(() => tapped(value)))}
             data-testid={value === "setup" ? "setup-button" : `tab-${value}`}
             data-current={current || undefined}
             data-console-button={value === "setup" ? "" : undefined}

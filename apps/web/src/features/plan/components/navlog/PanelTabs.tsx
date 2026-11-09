@@ -8,7 +8,9 @@ import {
   type ComponentType,
   type ReactNode,
   useEffectEvent,
+  ViewTransition,
 } from "react";
+import { PAGE_STEP, pageStep } from "../../../../lib/viewTransition";
 import { cn } from "cn";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../components/ui/tabs";
 import { SectionsOpen } from "../../../../components/sectionLayout";
@@ -27,6 +29,8 @@ const TABS: { value: PanelTab; label: string }[] = [
   { value: "enroute", label: "En route" },
   { value: "arrive", label: "Arrive" },
 ];
+/** The pages' order, the overview first, for a step's direction. */
+const PAGE_ORDER: (PanelTab | null)[] = [null, ...TABS.map((t) => t.value)];
 /** On paper every tab, one after another, in the same order. */
 const PRINTED: PanelTab[] = TABS.map((t) => t.value);
 
@@ -136,7 +140,9 @@ export default function PanelTabs({
   const choose = useCallback(
     (next: string | null) => {
       if (scroller.current) scrolls.current[tab ?? "overview"] = scroller.current.scrollTop;
-      setTab(next as PanelTab | null);
+      // Slid in as a page of a stack, forward to a later page or from the
+      // overview, back to an earlier one (lib/viewTransition).
+      pageStep(PAGE_ORDER.indexOf(next as PanelTab | null) >= PAGE_ORDER.indexOf(tab), () => setTab(next as PanelTab | null));
     },
     [tab],
   );
@@ -258,43 +264,45 @@ export default function PanelTabs({
           </TabsList>
         )}
       </div>
-      <div
-        ref={scroller}
-        data-local-head=""
-        // The bottom inset clears the home indicator on an installed
-        // app, so the last section's content is not under it.
-        // `flight-briefing`: index.css's print rules lay every tab out on
-        // paper.
-        className="flight-briefing @container under-head min-h-0 flex-1 overflow-auto pr-4 pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))] print:h-auto print:overflow-visible print:pb-0"
-        data-testid="brief-scroller"
-      >
-        {notice}
-        {tab === null && !printing && Overview && <Overview onOpen={openPage} />}
-        <SectionsOpen.Provider value>
-          <GoToTab.Provider value={goTo}>
-            {/* Every page's sections one under another, each under its
+      <ViewTransition update={PAGE_STEP} enter="none" exit="none" default="none">
+        <div
+          ref={scroller}
+          data-local-head=""
+          // The bottom inset clears the home indicator on an installed
+          // app, so the last section's content is not under it.
+          // `flight-briefing`: index.css's print rules lay every tab out on
+          // paper.
+          className="flight-briefing @container under-head min-h-0 flex-1 overflow-auto pr-4 pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))] print:h-auto print:overflow-visible print:pb-0"
+          data-testid="brief-scroller"
+        >
+          {notice}
+          {tab === null && !printing && Overview && <Overview onOpen={openPage} />}
+          <SectionsOpen.Provider value>
+            <GoToTab.Provider value={goTo}>
+              {/* Every page's sections one under another, each under its
                 title, not pills to pick one by, at the owner's ask ("Make
                 the subtabs into sections Legs, Profile"). */}
-            {drawn &&
-              (printing ? PRINTED : TABS.map((t) => t.value).filter((t) => opened.includes(t))).map((t) => {
-                const away = !printing && t !== tab;
-                return (
-                  <TabsContent
-                    key={t}
-                    value={t}
-                    forceMount
-                    data-testid={`panel-${t}`}
-                    data-tab={t}
-                    inert={away}
-                    className={cn("mt-0", away && "tab-away")}
-                  >
-                    {contents[t]}
-                  </TabsContent>
-                );
-              })}
-          </GoToTab.Provider>
-        </SectionsOpen.Provider>
-      </div>
+              {drawn &&
+                (printing ? PRINTED : TABS.map((t) => t.value).filter((t) => opened.includes(t))).map((t) => {
+                  const away = !printing && t !== tab;
+                  return (
+                    <TabsContent
+                      key={t}
+                      value={t}
+                      forceMount
+                      data-testid={`panel-${t}`}
+                      data-tab={t}
+                      inert={away}
+                      className={cn("mt-0", away && "tab-away")}
+                    >
+                      {contents[t]}
+                    </TabsContent>
+                  );
+                })}
+            </GoToTab.Provider>
+          </SectionsOpen.Provider>
+        </div>
+      </ViewTransition>
     </Tabs>
   );
 }

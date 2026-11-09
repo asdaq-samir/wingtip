@@ -1,4 +1,6 @@
+import { ViewTransition } from "react";
 import { cn } from "cn";
+import { PAGE_STEP } from "../../../../lib/viewTransition";
 import SheetDialog from "../../../../components/SheetDialog";
 import { Button } from "../../../../components/ui/button";
 import { WELCOME, unseen, useTips } from "../../../../lib/firstRunTips";
@@ -55,23 +57,25 @@ function WelcomeSheet({ onPlan, onOpened }: { onPlan: (parts: RouteParts) => voi
       testId="welcome"
       description={page.line}
     >
-      {/* Named for the page transition (lib/viewTransition). */}
-      <div className="grid gap-4 [view-transition-name:wingtip-page]" data-testid={`welcome-${vm.step}`}>
-        <WelcomePage vm={vm} />
-        {!asks && (
-          <div className="grid gap-2">
-            <Button type="button" size="lg" className="h-12 rounded-[14px] font-semibold" onClick={vm.next} data-testid="welcome-next">
-              Next
-            </Button>
-            <Button type="button" variant="ghost" onClick={vm.skip} data-testid="welcome-skip">
-              Skip
-            </Button>
-          </div>
-        )}
-        <p className={cn("text-center text-muted-foreground", TEXT.note)} aria-live="polite">
-          {vm.index + 1} of {vm.count}
-        </p>
-      </div>
+      {/* A step slides in from the side it comes from (lib/viewTransition). */}
+      <ViewTransition update={PAGE_STEP} enter="none" exit="none" default="none">
+        <div className="grid gap-4" data-testid={`welcome-${vm.step}`}>
+          <WelcomePage vm={vm} />
+          {!asks && (
+            <div className="grid gap-2">
+              <Button type="button" size="lg" className="h-12 rounded-[14px] font-semibold" onClick={vm.next} data-testid="welcome-next">
+                Next
+              </Button>
+              <Button type="button" variant="ghost" onClick={vm.skip} data-testid="welcome-skip">
+                Skip
+              </Button>
+            </div>
+          )}
+          <p className={cn("text-center text-muted-foreground", TEXT.note)} aria-live="polite">
+            {vm.index + 1} of {vm.count}
+          </p>
+        </div>
+      </ViewTransition>
     </SheetDialog>
   );
 }
