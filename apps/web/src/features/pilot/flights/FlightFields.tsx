@@ -15,12 +15,15 @@ import { NAME_MAX, NOTES_MAX } from "./flightEdit";
  */
 export default function FlightFields({
   flight,
+  draft,
   problem,
   saving,
   onSave,
   onCancel,
 }: {
   flight: FlightSummary;
+  /** What was typed and refused, to put right rather than type again. */
+  draft?: { name: string; notes: string } | null;
   problem: string | null;
   saving: boolean;
   onSave: (name: string, notes: string) => void;
@@ -28,8 +31,8 @@ export default function FlightFields({
 }) {
   const nameId = useId();
   const notesId = useId();
-  const [name, setName] = useState(flight.name ?? "");
-  const [notes, setNotes] = useState(flight.notes ?? "");
+  const [name, setName] = useState(draft?.name ?? flight.name ?? "");
+  const [notes, setNotes] = useState(draft?.notes ?? flight.notes ?? "");
   const box = useRef<HTMLDivElement>(null);
   const nameField = useRef<HTMLInputElement>(null);
   // Opened by Edit or the name tapped: the name ready to type, as a

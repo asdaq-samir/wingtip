@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { airplaneFigures, handbookOf } from "../../lib/airplane/figures";
 import { C172, record } from "../../lib/airplane/testAirplanes";
 import { firstKept } from "./useKeepFiguresOffer";
-import { figureText, ownOfRecord, resettable, sourceWords, typeWords } from "./profileModel";
+import { figureText, ownOfRecord, ownWith, resettable, sourceWords, typeWords } from "./profileModel";
 
 describe("the airplane profile", () => {
   it("labels each figure by its source, and offers the book's back over the pilot's", () => {
@@ -39,5 +39,14 @@ describe("the airplane profile", () => {
   it("offers the first N-number this device kept figures for at sign-in", () => {
     expect(firstKept({})).toBeNull();
     expect(firstKept({ N1: {}, N123AB: { glideRatio: 9 } })).toBe("N123AB");
+  });
+});
+
+describe("the figures shown while a change is saved", () => {
+  it("puts a figure given over the pilot's own and takes a reset one out", () => {
+    const own = { taxi_fuel_gal: 1.1, glide_ratio: 9 };
+    expect(ownWith(own, { taxi_fuel_gal: 1.4 })).toEqual({ taxi_fuel_gal: 1.4, glide_ratio: 9 });
+    expect(ownWith(own, { glide_ratio: null })).toEqual({ taxi_fuel_gal: 1.1 });
+    expect(own).toEqual({ taxi_fuel_gal: 1.1, glide_ratio: 9 });
   });
 });

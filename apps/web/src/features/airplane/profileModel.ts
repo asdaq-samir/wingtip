@@ -1,5 +1,6 @@
 import type { Aircraft, AircraftRegistration } from "../../lib/api/types";
 import type { AirplaneFigure, FigureKey } from "../../lib/airplane/figures";
+import type { FigureChanges } from "../../lib/airplane/saveFigures";
 
 /**
  * The airplane profile's words and shapes, worked out of what the view
@@ -19,6 +20,18 @@ export function sourceWords(source: AirplaneFigure["source"]): string {
  *  the photographed page's, and the book has one to put back. */
 export function resettable(figure: AirplaneFigure): boolean {
   return figure.source != null && figure.source !== "book" && figure.book != null;
+}
+
+/** The pilot's own figures with `changes` over them: a figure given kept,
+ *  one reset (null) taken out so the book's stands -- what the profile
+ *  shows while the change is saved. */
+export function ownWith(own: Partial<Record<FigureKey, number>>, changes: FigureChanges): Partial<Record<FigureKey, number>> {
+  const next = { ...own };
+  for (const [key, value] of Object.entries(changes) as [FigureKey, number | null][]) {
+    if (value == null) delete next[key];
+    else next[key] = value;
+  }
+  return next;
 }
 
 /** The pilot's own figures on their record, by the engine's names: the

@@ -64,10 +64,10 @@ test(
     await page.getByLabel("Cruise fuel burn in gallons per hour").fill("8");
     await page.getByRole("button", { name: "Add airplane" }).click();
 
-    // The popover away first (the add is in flight regardless): on a
-    // phone it covers the rows, and their Edit buttons, under it.
-    await page.keyboard.press("Escape");
+    // The form closes at once and the new airplane is in the list while
+    // its add is still in flight (useAirplanes' optimistic row).
     await expect(page.getByLabel("Tail number")).toHaveCount(0);
+    await expect(console.locator("[data-aircraft-row]:visible", { hasText: "N3" })).toBeVisible();
     // The airplane's row, or on a phone its card: whichever is shown.
     await console.locator("[data-aircraft-row]:visible", { hasText: "N2" }).getByRole("button", { name: "Edit" }).click();
     await expect(page.getByLabel("Tail number")).toHaveValue("N2");
