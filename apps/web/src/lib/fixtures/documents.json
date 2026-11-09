@@ -1,0 +1,137 @@
+{
+  "about": "Pages read off photographs, checked by the engine's handbook_read_check and logbook_read_check (engine/crates/pilot/src/documents), the engine's tests (facade/tests/documents.rs) and the web's (features/document-photo) held to the same cases. The handbook figures are made up in a light single's range, not copied from any handbook. `flags` lists [item key or entry field, level, words the flag says]; an item or row not named has no flags of that level where `only` is true. `app` gives figures in the app's units by their path.",
+  "handbook": [
+    {
+      "name": "a clean page in knots and pounds",
+      "only": true,
+      "input": {
+        "speed_unit": "kt", "cruise_speed_kind": "tas", "distance_unit": "ft", "weight_unit": "lb", "arm_unit": "in", "fuel_unit": "gal", "burn_unit": "gph",
+        "cruise": [
+          {"altitude_ft": 4000, "power_pct": 65, "rpm": 2450, "tas": 110, "burn": 8.6},
+          {"altitude_ft": 6000, "power_pct": 55, "rpm": 2300, "tas": 104, "burn": 7.4},
+          {"altitude_ft": 6000, "power_pct": 65, "rpm": 2450, "tas": 113, "burn": 8.5},
+          {"altitude_ft": 6000, "power_pct": 75, "rpm": 2600, "tas": 120, "burn": 9.6},
+          {"altitude_ft": 8000, "power_pct": 65, "rpm": 2500, "tas": 116, "burn": 8.4}
+        ],
+        "climb": {"speed": 74, "rate_fpm": 700, "burn": 11},
+        "glide": {"speed": 68, "ratio": 9},
+        "takeoff": [
+          {"pressure_altitude_ft": 0, "temp_c": 0, "ground_roll": 845, "over_50ft": 1510},
+          {"pressure_altitude_ft": 0, "temp_c": 20, "ground_roll": 935, "over_50ft": 1665},
+          {"pressure_altitude_ft": 2000, "temp_c": 0, "ground_roll": 1010, "over_50ft": 1805}
+        ],
+        "landing": [
+          {"pressure_altitude_ft": 0, "temp_c": 0, "ground_roll": 545, "over_50ft": 1290},
+          {"pressure_altitude_ft": 0, "temp_c": 20, "ground_roll": 585, "over_50ft": 1335}
+        ],
+        "empty": {"weight": 1680, "arm": 39.5, "moment": 66.36, "moment_divisor": 1000},
+        "max_takeoff_weight": 2450,
+        "envelope": [
+          {"arm": 35, "weight": 1500}, {"arm": 35, "weight": 1950}, {"arm": 41, "weight": 2450},
+          {"arm": 47.3, "weight": 2450}, {"arm": 47.3, "weight": 1500}, {"arm": 35, "weight": 1500}
+        ],
+        "fuel": {"total": 56, "usable": 53}
+      },
+      "flags": [],
+      "profile": {"cruise_tas_kt": 113, "fuel_burn_gph": 8.5, "cruise_power_pct": 65, "cruise_from": "cruise.2", "climb_fuel_burn_gph": 11, "usable_fuel_gal": 53},
+      "envelope_corners": 5
+    },
+    {
+      "name": "miles an hour, litres and kilograms in the app's units",
+      "only": true,
+      "input": {
+        "speed_unit": "mph", "fuel_unit": "l", "burn_unit": "lph", "weight_unit": "kg", "arm_unit": "mm",
+        "cruise": [{"altitude_ft": 6000, "power_pct": 65, "tas": 130, "burn": 32}],
+        "empty": {"weight": 760, "arm": 1003},
+        "fuel": {"total": 212, "usable": 200}
+      },
+      "flags": [],
+      "app": {"cruise.0.tas": 112.97, "cruise.0.burn": 8.45, "empty.weight": 1675.5, "empty.arm": 39.49, "fuel.usable": 52.83},
+      "profile": {"cruise_tas_kt": 112.97, "fuel_burn_gph": 8.45, "cruise_power_pct": 65, "cruise_from": "cruise.0", "climb_fuel_burn_gph": null, "usable_fuel_gal": 52.83}
+    },
+    {
+      "name": "a page misread",
+      "only": false,
+      "input": {
+        "cruise_speed_kind": "ias",
+        "cruise": [
+          {"altitude_ft": 6000, "power_pct": 65, "tas": 113, "burn": 8.5},
+          {"altitude_ft": 6000, "power_pct": 75, "tas": 108, "burn": 9.6},
+          {"altitude_ft": 8000, "power_pct": 65}
+        ],
+        "glide": {"speed": 68, "ratio": 0.9},
+        "takeoff": [{"pressure_altitude_ft": 0, "temp_c": 15, "ground_roll": 1665, "over_50ft": 935}],
+        "empty": {"weight": 1680, "arm": 39.5, "moment": 63.36, "moment_divisor": 1000},
+        "max_takeoff_weight": 2450,
+        "envelope": [{"arm": 35, "weight": 1500}, {"arm": 35, "weight": 1950}, {"arm": 47.3, "weight": 2450}, {"arm": 41, "weight": 2450}, {"arm": 47.3, "weight": 1500}],
+        "fuel": {"total": 53, "usable": 56}
+      },
+      "flags": [
+        ["cruise.0", "wrong", "indicated airspeeds"],
+        ["cruise.1", "check", "more power gives more of both"],
+        ["cruise.2", "wrong", "No altitude, true airspeed or fuel burn was read."],
+        ["glide", "wrong", "glides farther than it falls"],
+        ["takeoff.0", "wrong", "shorter than the ground roll"],
+        ["empty", "wrong", "one of the three is misread"],
+        ["envelope", "wrong", "out of order"],
+        ["fuel", "wrong", "more than the total"]
+      ],
+      "profile": {"cruise_tas_kt": null, "fuel_burn_gph": null, "cruise_power_pct": null, "cruise_from": null, "climb_fuel_burn_gph": null, "usable_fuel_gal": 56}
+    },
+    {
+      "name": "an envelope of two corners, and a top below the maximum weight",
+      "only": false,
+      "input": {
+        "max_takeoff_weight": 2550,
+        "envelope": [{"arm": 35, "weight": 1500}, {"arm": 47.3, "weight": 2450}]
+      },
+      "flags": [["envelope", "wrong", "it takes three at least"]],
+      "profile": {"cruise_tas_kt": null, "fuel_burn_gph": null, "cruise_power_pct": null, "cruise_from": null, "climb_fuel_burn_gph": null, "usable_fuel_gal": null}
+    }
+  ],
+  "logbook": [
+    {
+      "name": "a page of three flights with its totals",
+      "input": {
+        "today": "2026-11-09",
+        "rows": [
+          {"date": "2026-10-03", "aircraft_type": "C172", "aircraft_id": "N12345", "from": "KANE", "to": "KSTC", "total": 1.4, "cross_country": 1.4, "solo": 1.4, "day_landings": 1},
+          {"date": "2026-10-03", "aircraft_type": "C172", "aircraft_id": "N12345", "from": "KSTC", "to": "KANE", "total": 1.3, "night": 0.8, "cross_country": 1.3, "solo": 1.3, "night_landings": 1},
+          {"date": "2026-10-10", "aircraft_type": "C172", "aircraft_id": "N12345", "from": "KANE", "to": "KANE", "via": ["KFCM"], "total": 1.6, "dual": 1.6, "instrument_simulated": 1.0, "approaches": 2, "holding": true, "day_landings": 3, "remarks": "ILS 10R, RNAV 28R; hold at FGT"}
+        ],
+        "page_totals": {"total": 4.3, "night": 0.8, "cross_country": 2.7, "dual": 1.6, "solo": 2.7, "instrument_simulated": 1.0, "day_landings": 4, "night_landings": 1, "approaches": 2}
+      },
+      "flags": [],
+      "page_flags": [],
+      "entries": [
+        {"flownOn": "2026-10-03", "aircraft": "N12345", "aircraftType": "C172", "route": "KANE KSTC", "totalHours": 1.4, "crossCountryHours": 1.4, "soloHours": 1.4, "dayLandings": 1},
+        {"route": "KSTC KANE", "nightHours": 0.8, "nightLandings": 1},
+        {"route": "KANE KFCM KANE", "dualHours": 1.6, "instrumentHours": 1.0, "approaches": 2, "holding": true, "dayLandings": 3, "remarks": "ILS 10R, RNAV 28R; hold at FGT"}
+      ]
+    },
+    {
+      "name": "rows that cannot be right",
+      "input": {
+        "today": "2026-11-09",
+        "rows": [
+          {"date": "2026-12-01", "aircraft_id": "N12345", "from": "KANE", "to": "KSTC", "total": 1.2, "night": 1.5, "day_landings": 1},
+          {"date": "2026-02-30", "aircraft_id": "N12345", "from": "KANE", "to": "KSTC", "total": 1.0, "dual": 1.0, "solo": 1.0, "day_landings": 1},
+          {"aircraft_id": "N12345", "from": "KANE", "to": "KANE", "total": 1.0, "cross_country": 1.0, "approaches": 1, "night_landings": 2}
+        ],
+        "page_totals": {"total": 3.5}
+      },
+      "flags": [
+        [0, "flownOn", "wrong", "after today"],
+        [0, "nightHours", "wrong", "longer than the flight"],
+        [1, "flownOn", "wrong", "is not a date"],
+        [1, "soloHours", "wrong", "alone aboard"],
+        [2, "flownOn", "wrong", "No date was read"],
+        [2, "approaches", "check", "no instrument time"],
+        [2, "nightLandings", "check", "no night time"],
+        [2, "crossCountryHours", "check", "a landing elsewhere"]
+      ],
+      "page_flags": [["totalHours", "check", "its rows add to 3.2"]],
+      "entries": [{"flownOn": "2026-12-01"}, {"flownOn": null}, {"flownOn": null}]
+    }
+  ]
+}

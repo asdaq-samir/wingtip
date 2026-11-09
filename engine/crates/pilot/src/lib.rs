@@ -12,6 +12,7 @@
 
 pub mod aircraft;
 pub mod autolog;
+pub mod documents;
 pub mod pilot;
 
 // The modules below this crate by the names they had when the engine was

@@ -2350,6 +2350,22 @@ object EngineContract {
     )
 
     @Serializable
+    data class DocumentFlag(
+        /**
+         * "check": outside what light airplanes' handbooks give, or at odds with another figure; "wrong": cannot be right as read.
+         */
+        val level: String,
+        /**
+         * The figure it is about where it is one: a logbook entry's member ("nightHours").
+         */
+        val field: String? = null,
+        /**
+         * What to check, a sentence the pilot reads.
+         */
+        val says: String,
+    )
+
+    @Serializable
     data class DrillCard(
         val id: String,
         val prompt: String,
@@ -4027,6 +4043,36 @@ object EngineContract {
     )
 
     @Serializable
+    data class HandbookDistance(
+        @SerialName("pressure_altitude_ft")
+        val pressureAltitudeFt: Double,
+        @SerialName("temp_c")
+        val tempC: Double,
+        @SerialName("ground_roll_ft")
+        val groundRollFt: Double,
+        @SerialName("over_50ft_ft")
+        val over50ftFt: Double,
+    )
+
+    @Serializable
+    data class HandbookDistanceRead(
+        @SerialName("pressure_altitude_ft")
+        val pressureAltitudeFt: Double? = null,
+        @SerialName("temp_c")
+        val tempC: Double? = null,
+        /**
+         * In distance_unit.
+         */
+        @SerialName("ground_roll")
+        val groundRoll: Double? = null,
+        /**
+         * Total over a 50 ft obstacle, in distance_unit.
+         */
+        @SerialName("over_50ft")
+        val over50ft: Double? = null,
+    )
+
+    @Serializable
     data class HandbookFigure(
         val value: Double,
         /**
@@ -4048,6 +4094,281 @@ object EngineContract {
     @Serializable
     data class HandbookFiguresInput(
         val text: String,
+    )
+
+    @Serializable
+    data class HandbookReadCheckAnswer(
+        val items: List<EngineContract.HandbookReadCheckAnswerItemsItem>,
+        /**
+         * Every figure in the app's units, for the airplane's record.
+         */
+        val handbook: EngineContract.HandbookReadCheckAnswerHandbook,
+        /**
+         * The airplane form's figures: the cruise row at the cruise reference altitude (6,000 ft, within 1,000 ft) and the power nearest 65%, free of wrong flags.
+         */
+        val profile: EngineContract.HandbookReadCheckAnswerProfile,
+    )
+
+    /**
+     * Every figure in the app's units, for the airplane's record.
+     */
+    @Serializable
+    data class HandbookReadCheckAnswerHandbook(
+        val cruise: List<EngineContract.HandbookReadCheckAnswerHandbookCruiseItem>,
+        @SerialName("climb_speed_kias")
+        val climbSpeedKias: Double? = null,
+        @SerialName("climb_rate_fpm")
+        val climbRateFpm: Double? = null,
+        @SerialName("climb_burn_gph")
+        val climbBurnGph: Double? = null,
+        @SerialName("glide_speed_kias")
+        val glideSpeedKias: Double? = null,
+        @SerialName("glide_ratio")
+        val glideRatio: Double? = null,
+        val takeoff: List<EngineContract.HandbookDistance>,
+        val landing: List<EngineContract.HandbookDistance>,
+        @SerialName("empty_weight_lb")
+        val emptyWeightLb: Double? = null,
+        @SerialName("empty_arm_in")
+        val emptyArmIn: Double? = null,
+        @SerialName("max_takeoff_weight_lb")
+        val maxTakeoffWeightLb: Double? = null,
+        val envelope: List<EngineContract.HandbookReadCheckAnswerHandbookEnvelopeItem>,
+        @SerialName("fuel_total_gal")
+        val fuelTotalGal: Double? = null,
+        @SerialName("usable_fuel_gal")
+        val usableFuelGal: Double? = null,
+    )
+
+    @Serializable
+    data class HandbookReadCheckAnswerHandbookCruiseItem(
+        @SerialName("altitude_ft")
+        val altitudeFt: Double,
+        @SerialName("power_pct")
+        val powerPct: Double? = null,
+        val rpm: Double? = null,
+        @SerialName("tas_kt")
+        val tasKt: Double,
+        @SerialName("burn_gph")
+        val burnGph: Double,
+    )
+
+    @Serializable
+    data class HandbookReadCheckAnswerHandbookEnvelopeItem(
+        @SerialName("arm_in")
+        val armIn: Double,
+        @SerialName("weight_lb")
+        val weightLb: Double,
+    )
+
+    @Serializable
+    data class HandbookReadCheckAnswerItemsItem(
+        /**
+         * "cruise.2", "climb", "envelope": what the pilot confirms.
+         */
+        val key: String,
+        val group: String,
+        val title: String,
+        val figures: List<EngineContract.HandbookReadCheckAnswerItemsItemFiguresItem>,
+        val flags: List<EngineContract.DocumentFlag>,
+    )
+
+    @Serializable
+    data class HandbookReadCheckAnswerItemsItemFiguresItem(
+        /**
+         * Where it is in the read: "cruise.2.tas".
+         */
+        val path: String,
+        val label: String,
+        /**
+         * As read.
+         */
+        val value: Double,
+        /**
+         * As read.
+         */
+        val unit: String,
+        @SerialName("app_value")
+        val appValue: Double,
+        @SerialName("app_unit")
+        val appUnit: String,
+    )
+
+    /**
+     * The airplane form's figures: the cruise row at the cruise reference altitude (6,000 ft, within 1,000 ft) and the power nearest 65%, free of wrong flags.
+     */
+    @Serializable
+    data class HandbookReadCheckAnswerProfile(
+        @SerialName("cruise_tas_kt")
+        val cruiseTasKt: Double? = null,
+        @SerialName("fuel_burn_gph")
+        val fuelBurnGph: Double? = null,
+        @SerialName("cruise_power_pct")
+        val cruisePowerPct: Double? = null,
+        /**
+         * The cruise item the cruise figures come from.
+         */
+        @SerialName("cruise_from")
+        val cruiseFrom: String? = null,
+        @SerialName("climb_fuel_burn_gph")
+        val climbFuelBurnGph: Double? = null,
+        @SerialName("usable_fuel_gal")
+        val usableFuelGal: Double? = null,
+    )
+
+    @Serializable
+    data class HandbookReadCheckInput(
+        /**
+         * The speeds' unit as printed; knots where none.
+         */
+        @SerialName("speed_unit")
+        val speedUnit: String? = null,
+        /**
+         * What the cruise table's speeds are: true, indicated or calibrated; true where none.
+         */
+        @SerialName("cruise_speed_kind")
+        val cruiseSpeedKind: String? = null,
+        /**
+         * The takeoff and landing distances' unit.
+         */
+        @SerialName("distance_unit")
+        val distanceUnit: String? = null,
+        /**
+         * The weights' unit.
+         */
+        @SerialName("weight_unit")
+        val weightUnit: String? = null,
+        /**
+         * The arms' unit.
+         */
+        @SerialName("arm_unit")
+        val armUnit: String? = null,
+        /**
+         * The fuel quantities' unit (US gallons or litres).
+         */
+        @SerialName("fuel_unit")
+        val fuelUnit: String? = null,
+        /**
+         * The fuel burns' unit; pounds an hour are taken as avgas, 6 lb a gallon.
+         */
+        @SerialName("burn_unit")
+        val burnUnit: String? = null,
+        /**
+         * The cruise performance table's rows.
+         */
+        val cruise: List<EngineContract.HandbookReadCheckInputCruiseItem>? = null,
+        val climb: EngineContract.HandbookReadCheckInputClimb? = null,
+        val glide: EngineContract.HandbookReadCheckInputGlide? = null,
+        /**
+         * The takeoff distance table's rows.
+         */
+        val takeoff: List<EngineContract.HandbookDistanceRead>? = null,
+        /**
+         * The landing distance table's rows.
+         */
+        val landing: List<EngineContract.HandbookDistanceRead>? = null,
+        val empty: EngineContract.HandbookReadCheckInputEmpty? = null,
+        /**
+         * In weight_unit.
+         */
+        @SerialName("max_takeoff_weight")
+        val maxTakeoffWeight: Double? = null,
+        /**
+         * The CG envelope's corners, going round.
+         */
+        val envelope: List<EngineContract.HandbookReadCheckInputEnvelopeItem>? = null,
+        val fuel: EngineContract.HandbookReadCheckInputFuel? = null,
+    )
+
+    @Serializable
+    data class HandbookReadCheckInputClimb(
+        /**
+         * Best rate of climb speed, Vy, indicated, in speed_unit.
+         */
+        val speed: Double? = null,
+        @SerialName("rate_fpm")
+        val rateFpm: Double? = null,
+        /**
+         * In burn_unit.
+         */
+        val burn: Double? = null,
+    )
+
+    @Serializable
+    data class HandbookReadCheckInputCruiseItem(
+        /**
+         * Pressure altitude.
+         */
+        @SerialName("altitude_ft")
+        val altitudeFt: Double? = null,
+        @SerialName("power_pct")
+        val powerPct: Double? = null,
+        val rpm: Double? = null,
+        /**
+         * In speed_unit.
+         */
+        val tas: Double? = null,
+        /**
+         * In burn_unit.
+         */
+        val burn: Double? = null,
+    )
+
+    @Serializable
+    data class HandbookReadCheckInputEmpty(
+        /**
+         * In weight_unit.
+         */
+        val weight: Double? = null,
+        /**
+         * In arm_unit.
+         */
+        val arm: Double? = null,
+        /**
+         * As printed.
+         */
+        val moment: Double? = null,
+        /**
+         * What the printed moment is divided by (1,000 for "moment/1000"); 1 where none.
+         */
+        @SerialName("moment_divisor")
+        val momentDivisor: Double? = null,
+    )
+
+    @Serializable
+    data class HandbookReadCheckInputEnvelopeItem(
+        /**
+         * In arm_unit.
+         */
+        val arm: Double? = null,
+        /**
+         * In weight_unit.
+         */
+        val weight: Double? = null,
+    )
+
+    @Serializable
+    data class HandbookReadCheckInputFuel(
+        /**
+         * In fuel_unit.
+         */
+        val total: Double? = null,
+        /**
+         * In fuel_unit.
+         */
+        val usable: Double? = null,
+    )
+
+    @Serializable
+    data class HandbookReadCheckInputGlide(
+        /**
+         * Best glide speed, indicated, in speed_unit.
+         */
+        val speed: Double? = null,
+        /**
+         * Feet forward for each foot down.
+         */
+        val ratio: Double? = null,
     )
 
     @Serializable
@@ -4916,6 +5237,134 @@ object EngineContract {
          */
         @SerialName("counts_night")
         val countsNight: Boolean,
+    )
+
+    @Serializable
+    data class LogbookReadCheckAnswer(
+        val rows: List<EngineContract.LogbookReadCheckAnswerRowsItem>,
+        /**
+         * The page's: its totals against its rows.
+         */
+        val flags: List<EngineContract.DocumentFlag>,
+    )
+
+    @Serializable
+    data class LogbookReadCheckAnswerRowsItem(
+        /**
+         * The gateway's LogbookEntryRequest, as the page gives it.
+         */
+        val entry: EngineContract.LogbookReadCheckAnswerRowsItemEntry,
+        val flags: List<EngineContract.DocumentFlag>,
+    )
+
+    /**
+     * The gateway's LogbookEntryRequest, as the page gives it.
+     */
+    @Serializable
+    data class LogbookReadCheckAnswerRowsItemEntry(
+        /**
+         * YYYY-MM-DD; null where no date was read.
+         */
+        val flownOn: String? = null,
+        val aircraft: String? = null,
+        val aircraftType: String? = null,
+        val route: String? = null,
+        val totalHours: Double,
+        val nightHours: Double,
+        val crossCountryHours: Double,
+        val dayLandings: Double,
+        val nightLandings: Double,
+        val remarks: String? = null,
+        val dualHours: Double,
+        val soloHours: Double,
+        val instrumentHours: Double,
+        val toweredLandings: Double,
+        val distanceNm: Double,
+        val longestLegNm: Double,
+        val approaches: Double,
+        val holding: Boolean,
+        val tracking: Boolean,
+        val airHours: Double,
+        val touchAndGoes: Double,
+        val fromTrack: Boolean,
+        val flightId: JsonElement,
+    )
+
+    @Serializable
+    data class LogbookReadCheckInput(
+        /**
+         * The page's rows, in order.
+         */
+        val rows: List<EngineContract.LogbookReadCheckInputRowsItem>? = null,
+        /**
+         * The page's "total this page" row, where it has one.
+         */
+        @SerialName("page_totals")
+        val pageTotals: EngineContract.LogbookReadCheckInputPageTotals? = null,
+        /**
+         * The caller's date, YYYY-MM-DD: a row dated after it is wrong.
+         */
+        val today: String? = null,
+    )
+
+    /**
+     * The page's "total this page" row, where it has one.
+     */
+    @Serializable
+    data class LogbookReadCheckInputPageTotals(
+        val total: Double? = null,
+        val night: Double? = null,
+        @SerialName("cross_country")
+        val crossCountry: Double? = null,
+        val dual: Double? = null,
+        val solo: Double? = null,
+        @SerialName("instrument_actual")
+        val instrumentActual: Double? = null,
+        @SerialName("instrument_simulated")
+        val instrumentSimulated: Double? = null,
+        @SerialName("day_landings")
+        val dayLandings: Double? = null,
+        @SerialName("night_landings")
+        val nightLandings: Double? = null,
+        val approaches: Double? = null,
+    )
+
+    @Serializable
+    data class LogbookReadCheckInputRowsItem(
+        /**
+         * YYYY-MM-DD.
+         */
+        val date: String? = null,
+        @SerialName("aircraft_type")
+        val aircraftType: String? = null,
+        @SerialName("aircraft_id")
+        val aircraftId: String? = null,
+        val from: String? = null,
+        val to: String? = null,
+        val via: List<String>? = null,
+        val total: Double? = null,
+        val night: Double? = null,
+        @SerialName("cross_country")
+        val crossCountry: Double? = null,
+        /**
+         * Dual received.
+         */
+        val dual: Double? = null,
+        val solo: Double? = null,
+        @SerialName("instrument_actual")
+        val instrumentActual: Double? = null,
+        @SerialName("instrument_simulated")
+        val instrumentSimulated: Double? = null,
+        @SerialName("day_landings")
+        val dayLandings: Double? = null,
+        /**
+         * Night landings to a full stop.
+         */
+        @SerialName("night_landings")
+        val nightLandings: Double? = null,
+        val approaches: Double? = null,
+        val holding: Boolean? = null,
+        val remarks: String? = null,
     )
 
     @Serializable

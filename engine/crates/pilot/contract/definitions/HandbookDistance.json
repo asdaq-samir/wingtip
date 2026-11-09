@@ -1,0 +1,24 @@
+{
+  "title": "HandbookDistance",
+  "type": "object",
+  "properties": {
+    "pressure_altitude_ft": {
+      "type": "number"
+    },
+    "temp_c": {
+      "type": "number"
+    },
+    "ground_roll_ft": {
+      "type": "number"
+    },
+    "over_50ft_ft": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "pressure_altitude_ft",
+    "temp_c",
+    "ground_roll_ft",
+    "over_50ft_ft"
+  ]
+}

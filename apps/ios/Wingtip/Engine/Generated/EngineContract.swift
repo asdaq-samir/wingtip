@@ -2513,6 +2513,15 @@ enum EngineContract {
         var exact: Double
     }
 
+    struct DocumentFlag: Codable, Equatable, Sendable {
+        /// "check": outside what light airplanes' handbooks give, or at odds with another figure; "wrong": cannot be right as read.
+        var level: String
+        /// The figure it is about where it is one: a logbook entry's member ("nightHours").
+        var field: String?
+        /// What to check, a sentence the pilot reads.
+        var says: String
+    }
+
     struct DrillCard: Codable, Equatable, Sendable {
         var id: String
         var prompt: String
@@ -4156,6 +4165,36 @@ enum EngineContract {
         }
     }
 
+    struct HandbookDistance: Codable, Equatable, Sendable {
+        var pressureAltitudeFt: Double
+        var tempC: Double
+        var groundRollFt: Double
+        var over50ftFt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case pressureAltitudeFt = "pressure_altitude_ft"
+            case tempC = "temp_c"
+            case groundRollFt = "ground_roll_ft"
+            case over50ftFt = "over_50ft_ft"
+        }
+    }
+
+    struct HandbookDistanceRead: Codable, Equatable, Sendable {
+        var pressureAltitudeFt: Double?
+        var tempC: Double?
+        /// In distance_unit.
+        var groundRoll: Double?
+        /// Total over a 50 ft obstacle, in distance_unit.
+        var over50ft: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case pressureAltitudeFt = "pressure_altitude_ft"
+            case tempC = "temp_c"
+            case groundRoll = "ground_roll"
+            case over50ft = "over_50ft"
+        }
+    }
+
     struct HandbookFigure: Codable, Equatable, Sendable {
         var value: Double
         /// The words on the page the figure was read from.
@@ -4173,6 +4212,247 @@ enum EngineContract {
 
     struct HandbookFiguresInput: Codable, Equatable, Sendable {
         var text: String
+    }
+
+    struct HandbookReadCheckAnswer: Codable, Equatable, Sendable {
+        var items: [EngineContract.HandbookReadCheckAnswerItemsItem]
+        /// Every figure in the app's units, for the airplane's record.
+        var handbook: EngineContract.HandbookReadCheckAnswerHandbook
+        /// The airplane form's figures: the cruise row at the cruise reference altitude (6,000 ft, within 1,000 ft) and the power nearest 65%, free of wrong flags.
+        var profile: EngineContract.HandbookReadCheckAnswerProfile
+    }
+
+    /// Every figure in the app's units, for the airplane's record.
+    struct HandbookReadCheckAnswerHandbook: Codable, Equatable, Sendable {
+        var cruise: [EngineContract.HandbookReadCheckAnswerHandbookCruiseItem]
+        var climbSpeedKias: Double?
+        var climbRateFpm: Double?
+        var climbBurnGph: Double?
+        var glideSpeedKias: Double?
+        var glideRatio: Double?
+        var takeoff: [EngineContract.HandbookDistance]
+        var landing: [EngineContract.HandbookDistance]
+        var emptyWeightLb: Double?
+        var emptyArmIn: Double?
+        var maxTakeoffWeightLb: Double?
+        var envelope: [EngineContract.HandbookReadCheckAnswerHandbookEnvelopeItem]
+        var fuelTotalGal: Double?
+        var usableFuelGal: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case cruise
+            case climbSpeedKias = "climb_speed_kias"
+            case climbRateFpm = "climb_rate_fpm"
+            case climbBurnGph = "climb_burn_gph"
+            case glideSpeedKias = "glide_speed_kias"
+            case glideRatio = "glide_ratio"
+            case takeoff
+            case landing
+            case emptyWeightLb = "empty_weight_lb"
+            case emptyArmIn = "empty_arm_in"
+            case maxTakeoffWeightLb = "max_takeoff_weight_lb"
+            case envelope
+            case fuelTotalGal = "fuel_total_gal"
+            case usableFuelGal = "usable_fuel_gal"
+        }
+    }
+
+    struct HandbookReadCheckAnswerHandbookCruiseItem: Codable, Equatable, Sendable {
+        var altitudeFt: Double
+        var powerPct: Double?
+        var rpm: Double?
+        var tasKt: Double
+        var burnGph: Double
+
+        enum CodingKeys: String, CodingKey {
+            case altitudeFt = "altitude_ft"
+            case powerPct = "power_pct"
+            case rpm
+            case tasKt = "tas_kt"
+            case burnGph = "burn_gph"
+        }
+    }
+
+    struct HandbookReadCheckAnswerHandbookEnvelopeItem: Codable, Equatable, Sendable {
+        var armIn: Double
+        var weightLb: Double
+
+        enum CodingKeys: String, CodingKey {
+            case armIn = "arm_in"
+            case weightLb = "weight_lb"
+        }
+    }
+
+    struct HandbookReadCheckAnswerItemsItem: Codable, Equatable, Sendable {
+        /// "cruise.2", "climb", "envelope": what the pilot confirms.
+        var key: String
+        var group: String
+        var title: String
+        var figures: [EngineContract.HandbookReadCheckAnswerItemsItemFiguresItem]
+        var flags: [EngineContract.DocumentFlag]
+    }
+
+    struct HandbookReadCheckAnswerItemsItemFiguresItem: Codable, Equatable, Sendable {
+        /// Where it is in the read: "cruise.2.tas".
+        var path: String
+        var label: String
+        /// As read.
+        var value: Double
+        /// As read.
+        var unit: String
+        var appValue: Double
+        var appUnit: String
+
+        enum CodingKeys: String, CodingKey {
+            case path
+            case label
+            case value
+            case unit
+            case appValue = "app_value"
+            case appUnit = "app_unit"
+        }
+    }
+
+    /// The airplane form's figures: the cruise row at the cruise reference altitude (6,000 ft, within 1,000 ft) and the power nearest 65%, free of wrong flags.
+    struct HandbookReadCheckAnswerProfile: Codable, Equatable, Sendable {
+        var cruiseTasKt: Double?
+        var fuelBurnGph: Double?
+        var cruisePowerPct: Double?
+        /// The cruise item the cruise figures come from.
+        var cruiseFrom: String?
+        var climbFuelBurnGph: Double?
+        var usableFuelGal: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case cruiseTasKt = "cruise_tas_kt"
+            case fuelBurnGph = "fuel_burn_gph"
+            case cruisePowerPct = "cruise_power_pct"
+            case cruiseFrom = "cruise_from"
+            case climbFuelBurnGph = "climb_fuel_burn_gph"
+            case usableFuelGal = "usable_fuel_gal"
+        }
+    }
+
+    struct HandbookReadCheckInput: Codable, Equatable, Sendable {
+        /// The speeds' unit as printed; knots where none.
+        var speedUnit: String?
+        /// What the cruise table's speeds are: true, indicated or calibrated; true where none.
+        var cruiseSpeedKind: String?
+        /// The takeoff and landing distances' unit.
+        var distanceUnit: String?
+        /// The weights' unit.
+        var weightUnit: String?
+        /// The arms' unit.
+        var armUnit: String?
+        /// The fuel quantities' unit (US gallons or litres).
+        var fuelUnit: String?
+        /// The fuel burns' unit; pounds an hour are taken as avgas, 6 lb a gallon.
+        var burnUnit: String?
+        /// The cruise performance table's rows.
+        var cruise: [EngineContract.HandbookReadCheckInputCruiseItem]?
+        var climb: EngineContract.HandbookReadCheckInputClimb?
+        var glide: EngineContract.HandbookReadCheckInputGlide?
+        /// The takeoff distance table's rows.
+        var takeoff: [EngineContract.HandbookDistanceRead]?
+        /// The landing distance table's rows.
+        var landing: [EngineContract.HandbookDistanceRead]?
+        var empty: EngineContract.HandbookReadCheckInputEmpty?
+        /// In weight_unit.
+        var maxTakeoffWeight: Double?
+        /// The CG envelope's corners, going round.
+        var envelope: [EngineContract.HandbookReadCheckInputEnvelopeItem]?
+        var fuel: EngineContract.HandbookReadCheckInputFuel?
+
+        enum CodingKeys: String, CodingKey {
+            case speedUnit = "speed_unit"
+            case cruiseSpeedKind = "cruise_speed_kind"
+            case distanceUnit = "distance_unit"
+            case weightUnit = "weight_unit"
+            case armUnit = "arm_unit"
+            case fuelUnit = "fuel_unit"
+            case burnUnit = "burn_unit"
+            case cruise
+            case climb
+            case glide
+            case takeoff
+            case landing
+            case empty
+            case maxTakeoffWeight = "max_takeoff_weight"
+            case envelope
+            case fuel
+        }
+    }
+
+    struct HandbookReadCheckInputClimb: Codable, Equatable, Sendable {
+        /// Best rate of climb speed, Vy, indicated, in speed_unit.
+        var speed: Double?
+        var rateFpm: Double?
+        /// In burn_unit.
+        var burn: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case speed
+            case rateFpm = "rate_fpm"
+            case burn
+        }
+    }
+
+    struct HandbookReadCheckInputCruiseItem: Codable, Equatable, Sendable {
+        /// Pressure altitude.
+        var altitudeFt: Double?
+        var powerPct: Double?
+        var rpm: Double?
+        /// In speed_unit.
+        var tas: Double?
+        /// In burn_unit.
+        var burn: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case altitudeFt = "altitude_ft"
+            case powerPct = "power_pct"
+            case rpm
+            case tas
+            case burn
+        }
+    }
+
+    struct HandbookReadCheckInputEmpty: Codable, Equatable, Sendable {
+        /// In weight_unit.
+        var weight: Double?
+        /// In arm_unit.
+        var arm: Double?
+        /// As printed.
+        var moment: Double?
+        /// What the printed moment is divided by (1,000 for "moment/1000"); 1 where none.
+        var momentDivisor: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case weight
+            case arm
+            case moment
+            case momentDivisor = "moment_divisor"
+        }
+    }
+
+    struct HandbookReadCheckInputEnvelopeItem: Codable, Equatable, Sendable {
+        /// In arm_unit.
+        var arm: Double?
+        /// In weight_unit.
+        var weight: Double?
+    }
+
+    struct HandbookReadCheckInputFuel: Codable, Equatable, Sendable {
+        /// In fuel_unit.
+        var total: Double?
+        /// In fuel_unit.
+        var usable: Double?
+    }
+
+    struct HandbookReadCheckInputGlide: Codable, Equatable, Sendable {
+        /// Best glide speed, indicated, in speed_unit.
+        var speed: Double?
+        /// Feet forward for each foot down.
+        var ratio: Double?
     }
 
     struct HandbookWithinInput: Codable, Equatable, Sendable {
@@ -5056,6 +5336,133 @@ enum EngineContract {
             case passengerNight = "passenger_night"
             case kind
             case countsNight = "counts_night"
+        }
+    }
+
+    struct LogbookReadCheckAnswer: Codable, Equatable, Sendable {
+        var rows: [EngineContract.LogbookReadCheckAnswerRowsItem]
+        /// The page's: its totals against its rows.
+        var flags: [EngineContract.DocumentFlag]
+    }
+
+    struct LogbookReadCheckAnswerRowsItem: Codable, Equatable, Sendable {
+        /// The gateway's LogbookEntryRequest, as the page gives it.
+        var entry: EngineContract.LogbookReadCheckAnswerRowsItemEntry
+        var flags: [EngineContract.DocumentFlag]
+    }
+
+    /// The gateway's LogbookEntryRequest, as the page gives it.
+    struct LogbookReadCheckAnswerRowsItemEntry: Codable, Equatable, Sendable {
+        /// YYYY-MM-DD; null where no date was read.
+        var flownOn: String?
+        var aircraft: String?
+        var aircraftType: String?
+        var route: String?
+        var totalHours: Double
+        var nightHours: Double
+        var crossCountryHours: Double
+        var dayLandings: Double
+        var nightLandings: Double
+        var remarks: String?
+        var dualHours: Double
+        var soloHours: Double
+        var instrumentHours: Double
+        var toweredLandings: Double
+        var distanceNm: Double
+        var longestLegNm: Double
+        var approaches: Double
+        var holding: Bool
+        var tracking: Bool
+        var airHours: Double
+        var touchAndGoes: Double
+        var fromTrack: Bool
+        var flightId: JSONValue
+    }
+
+    struct LogbookReadCheckInput: Codable, Equatable, Sendable {
+        /// The page's rows, in order.
+        var rows: [EngineContract.LogbookReadCheckInputRowsItem]?
+        /// The page's "total this page" row, where it has one.
+        var pageTotals: EngineContract.LogbookReadCheckInputPageTotals?
+        /// The caller's date, YYYY-MM-DD: a row dated after it is wrong.
+        var today: String?
+
+        enum CodingKeys: String, CodingKey {
+            case rows
+            case pageTotals = "page_totals"
+            case today
+        }
+    }
+
+    /// The page's "total this page" row, where it has one.
+    struct LogbookReadCheckInputPageTotals: Codable, Equatable, Sendable {
+        var total: Double?
+        var night: Double?
+        var crossCountry: Double?
+        var dual: Double?
+        var solo: Double?
+        var instrumentActual: Double?
+        var instrumentSimulated: Double?
+        var dayLandings: Double?
+        var nightLandings: Double?
+        var approaches: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case total
+            case night
+            case crossCountry = "cross_country"
+            case dual
+            case solo
+            case instrumentActual = "instrument_actual"
+            case instrumentSimulated = "instrument_simulated"
+            case dayLandings = "day_landings"
+            case nightLandings = "night_landings"
+            case approaches
+        }
+    }
+
+    struct LogbookReadCheckInputRowsItem: Codable, Equatable, Sendable {
+        /// YYYY-MM-DD.
+        var date: String?
+        var aircraftType: String?
+        var aircraftId: String?
+        var from: String?
+        var to: String?
+        var via: [String]?
+        var total: Double?
+        var night: Double?
+        var crossCountry: Double?
+        /// Dual received.
+        var dual: Double?
+        var solo: Double?
+        var instrumentActual: Double?
+        var instrumentSimulated: Double?
+        var dayLandings: Double?
+        /// Night landings to a full stop.
+        var nightLandings: Double?
+        var approaches: Double?
+        var holding: Bool?
+        var remarks: String?
+
+        enum CodingKeys: String, CodingKey {
+            case date
+            case aircraftType = "aircraft_type"
+            case aircraftId = "aircraft_id"
+            case from
+            case to
+            case via
+            case total
+            case night
+            case crossCountry = "cross_country"
+            case dual
+            case solo
+            case instrumentActual = "instrument_actual"
+            case instrumentSimulated = "instrument_simulated"
+            case dayLandings = "day_landings"
+            case nightLandings = "night_landings"
+            case approaches
+            case holding
+            case remarks
         }
     }
 

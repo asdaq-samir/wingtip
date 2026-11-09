@@ -1,0 +1,30 @@
+{
+  "title": "DocumentFlag",
+  "type": "object",
+  "properties": {
+    "level": {
+      "type": "string",
+      "enum": [
+        "check",
+        "wrong"
+      ],
+      "description": "\"check\": outside what light airplanes' handbooks give, or at odds with another figure; \"wrong\": cannot be right as read."
+    },
+    "field": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The figure it is about where it is one: a logbook entry's member (\"nightHours\")."
+    },
+    "says": {
+      "type": "string",
+      "description": "What to check, a sentence the pilot reads."
+    }
+  },
+  "required": [
+    "level",
+    "field",
+    "says"
+  ]
+}

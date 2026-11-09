@@ -588,6 +588,15 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         c.ask("checklist_section", json!({ "titles": case["titles"], "want": case["want"] }));
     }
 
+    // A photographed page's figures checked (documents.json).
+    let documents = fixture("documents.json");
+    for case in documents["handbook"].as_array().unwrap() {
+        c.ask("handbook_read_check", case["input"].clone());
+    }
+    for case in documents["logbook"].as_array().unwrap() {
+        c.ask("logbook_read_check", case["input"].clone());
+    }
+
     // Every fixture above was asked, and these are the names it reaches:
     // a name dropped from it fails here rather than going unchecked.
     assert!(c.checked.len() >= 30, "only {} names were checked: {:?}", c.checked.len(), c.checked);

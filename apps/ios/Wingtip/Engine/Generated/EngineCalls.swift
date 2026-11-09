@@ -729,6 +729,11 @@ extension Engine {
         try rule("handbook_figures", EngineContract.HandbookFiguresInput(text: text))
     }
 
+    /// A handbook's performance and weight and balance figures as read off a photographed page (POH sections 5 and 6), put in the app's units (knots, feet, pounds, inches, gallons) and checked, as items for the pilot to confirm: each against the band light airplanes' handbooks give (14 CFR 1.1's small airplane, 12,500 lb), and against the others (more power, more speed and burn; the distance over 50 ft no shorter than the ground roll; thinner air, longer distances, FAA-H-8083-25C chapter 11; weight times arm the moment; the CG envelope closed, at least three corners, sides not crossing; usable fuel no more than the total). Asked again with only the confirmed items, its handbook and profile are what is saved.
+    static func handbookReadCheck(speedUnit: String? = nil, cruiseSpeedKind: String? = nil, distanceUnit: String? = nil, weightUnit: String? = nil, armUnit: String? = nil, fuelUnit: String? = nil, burnUnit: String? = nil, cruise: [EngineContract.HandbookReadCheckInputCruiseItem]? = nil, climb: EngineContract.HandbookReadCheckInputClimb? = nil, glide: EngineContract.HandbookReadCheckInputGlide? = nil, takeoff: [EngineContract.HandbookDistanceRead]? = nil, landing: [EngineContract.HandbookDistanceRead]? = nil, empty: EngineContract.HandbookReadCheckInputEmpty? = nil, maxTakeoffWeight: Double? = nil, envelope: [EngineContract.HandbookReadCheckInputEnvelopeItem]? = nil, fuel: EngineContract.HandbookReadCheckInputFuel? = nil) throws -> EngineContract.HandbookReadCheckAnswer {
+        try rule("handbook_read_check", EngineContract.HandbookReadCheckInput(speedUnit: speedUnit, cruiseSpeedKind: cruiseSpeedKind, distanceUnit: distanceUnit, weightUnit: weightUnit, armUnit: armUnit, fuelUnit: fuelUnit, burnUnit: burnUnit, cruise: cruise, climb: climb, glide: glide, takeoff: takeoff, landing: landing, empty: empty, maxTakeoffWeight: maxTakeoffWeight, envelope: envelope, fuel: fuel))
+    }
+
     /// Whether an airplane's figure, typed in or read off its handbook's page, is within the bounds a light airplane's is believed within; outside them it is a misreading.
     static func handbookWithin(key: String, value: Double) throws -> Bool {
         try rule("handbook_within", EngineContract.HandbookWithinInput(key: key, value: value))
@@ -862,6 +867,11 @@ extension Engine {
     /// A logbook entry drawn from the app's own flown track, a draft for the pilot to change and confirm: 14 CFR 1.1's flight time and night, 61.57's landings (full stop or touch-and-go, 61.57(b)'s period), the approaches matched to the CIFP procedures given and the holds (61.57(c), offered apart in `instrument`: they count only when flown by instruments, 61.51(g)(1)), cross-country by 61.1(b), and a reason for each figure.
     static func logbookFromTrack(points: [EngineContract.TrackPoint], fields: [EngineContract.LogbookTrackField]? = nil, drawings: [EngineContract.ProcedureDrawing]? = nil, picked: String? = nil, aircraft: String? = nil, aircraftType: String? = nil, utcOffsetMin: Double? = nil) throws -> EngineContract.LogbookFromTrackAnswer {
         try rule("logbook_from_track", EngineContract.LogbookFromTrackInput(points: points, fields: fields, drawings: drawings, picked: picked, aircraft: aircraft, aircraftType: aircraftType, utcOffsetMin: utcOffsetMin))
+    }
+
+    /// A paper logbook page as read off a photograph, each row a draft of the gateway's logbook entry with what to check (14 CFR 61.51(b): the date, total time, where from and to, the airplane; each kind of time no longer than the flight; dual and solo not overlapping, 61.51(d); approaches and holds with instrument time, 61.51(g)(1), 61.57(c); night landings with night time, 61.57(b); cross-country with a landing elsewhere, 61.1), and the page's own totals against its rows.
+    static func logbookReadCheck(rows: [EngineContract.LogbookReadCheckInputRowsItem]? = nil, pageTotals: EngineContract.LogbookReadCheckInputPageTotals? = nil, today: String? = nil) throws -> EngineContract.LogbookReadCheckAnswer {
+        try rule("logbook_read_check", EngineContract.LogbookReadCheckInput(rows: rows, pageTotals: pageTotals, today: today))
     }
 
     /// Where a flown track took off, landed or came down low, for the host to find the fields within `within_nm` of each (the logbook entry drawn from the track, pilot's autolog).

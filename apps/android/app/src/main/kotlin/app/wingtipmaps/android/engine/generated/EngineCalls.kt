@@ -877,6 +877,12 @@ fun Engine.handbookFigures(text: String): Result<EngineContract.HandbookFiguresA
     rule("handbook_figures", EngineContract.HandbookFiguresInput(text = text))
 
 /**
+ * A handbook's performance and weight and balance figures as read off a photographed page (POH sections 5 and 6), put in the app's units (knots, feet, pounds, inches, gallons) and checked, as items for the pilot to confirm: each against the band light airplanes' handbooks give (14 CFR 1.1's small airplane, 12,500 lb), and against the others (more power, more speed and burn; the distance over 50 ft no shorter than the ground roll; thinner air, longer distances, FAA-H-8083-25C chapter 11; weight times arm the moment; the CG envelope closed, at least three corners, sides not crossing; usable fuel no more than the total). Asked again with only the confirmed items, its handbook and profile are what is saved.
+ */
+fun Engine.handbookReadCheck(speedUnit: String? = null, cruiseSpeedKind: String? = null, distanceUnit: String? = null, weightUnit: String? = null, armUnit: String? = null, fuelUnit: String? = null, burnUnit: String? = null, cruise: List<EngineContract.HandbookReadCheckInputCruiseItem>? = null, climb: EngineContract.HandbookReadCheckInputClimb? = null, glide: EngineContract.HandbookReadCheckInputGlide? = null, takeoff: List<EngineContract.HandbookDistanceRead>? = null, landing: List<EngineContract.HandbookDistanceRead>? = null, empty: EngineContract.HandbookReadCheckInputEmpty? = null, maxTakeoffWeight: Double? = null, envelope: List<EngineContract.HandbookReadCheckInputEnvelopeItem>? = null, fuel: EngineContract.HandbookReadCheckInputFuel? = null): Result<EngineContract.HandbookReadCheckAnswer> =
+    rule("handbook_read_check", EngineContract.HandbookReadCheckInput(speedUnit = speedUnit, cruiseSpeedKind = cruiseSpeedKind, distanceUnit = distanceUnit, weightUnit = weightUnit, armUnit = armUnit, fuelUnit = fuelUnit, burnUnit = burnUnit, cruise = cruise, climb = climb, glide = glide, takeoff = takeoff, landing = landing, empty = empty, maxTakeoffWeight = maxTakeoffWeight, envelope = envelope, fuel = fuel))
+
+/**
  * Whether an airplane's figure, typed in or read off its handbook's page, is within the bounds a light airplane's is believed within; outside them it is a misreading.
  */
 fun Engine.handbookWithin(key: String, value: Double): Result<Boolean> =
@@ -1037,6 +1043,12 @@ fun Engine.logbookCsvWrite(entries: List<Map<String, JsonElement>>): Result<Stri
  */
 fun Engine.logbookFromTrack(points: List<EngineContract.TrackPoint>, fields: List<EngineContract.LogbookTrackField>? = null, drawings: List<EngineContract.ProcedureDrawing>? = null, picked: String? = null, aircraft: String? = null, aircraftType: String? = null, utcOffsetMin: Double? = null): Result<EngineContract.LogbookFromTrackAnswer> =
     rule("logbook_from_track", EngineContract.LogbookFromTrackInput(points = points, fields = fields, drawings = drawings, picked = picked, aircraft = aircraft, aircraftType = aircraftType, utcOffsetMin = utcOffsetMin))
+
+/**
+ * A paper logbook page as read off a photograph, each row a draft of the gateway's logbook entry with what to check (14 CFR 61.51(b): the date, total time, where from and to, the airplane; each kind of time no longer than the flight; dual and solo not overlapping, 61.51(d); approaches and holds with instrument time, 61.51(g)(1), 61.57(c); night landings with night time, 61.57(b); cross-country with a landing elsewhere, 61.1), and the page's own totals against its rows.
+ */
+fun Engine.logbookReadCheck(rows: List<EngineContract.LogbookReadCheckInputRowsItem>? = null, pageTotals: EngineContract.LogbookReadCheckInputPageTotals? = null, today: String? = null): Result<EngineContract.LogbookReadCheckAnswer> =
+    rule("logbook_read_check", EngineContract.LogbookReadCheckInput(rows = rows, pageTotals = pageTotals, today = today))
 
 /**
  * Where a flown track took off, landed or came down low, for the host to find the fields within `within_nm` of each (the logbook entry drawn from the track, pilot's autolog).

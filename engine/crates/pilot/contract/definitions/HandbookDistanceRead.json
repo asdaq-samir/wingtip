@@ -1,0 +1,32 @@
+{
+  "title": "HandbookDistanceRead",
+  "type": "object",
+  "properties": {
+    "pressure_altitude_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "temp_c": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "ground_roll": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "In distance_unit."
+    },
+    "over_50ft": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Total over a 50 ft obstacle, in distance_unit."
+    }
+  }
+}
