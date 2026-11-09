@@ -1,0 +1,65 @@
+{
+  "x-call": "wingtip_receiver::calls::call",
+  "description": "A field's latest METAR (or SPECI) and TAF sent over FIS-B (AIM 4-5-9), as sent, with when; the K of a contiguous-states ICAO identifier matched either way (ORD, KORD).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ReceiverReportsInput",
+      "type": "object",
+      "properties": {
+        "picture": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ReceiverPicture"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The last answer, or null at first."
+        },
+        "ident": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ident"
+      ]
+    },
+    "answer": {
+      "title": "ReceiverReportsAnswer",
+      "type": "object",
+      "properties": {
+        "metar": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ReceiverReport"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "taf": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ReceiverReport"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "metar",
+        "taf"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

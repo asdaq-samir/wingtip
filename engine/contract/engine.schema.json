@@ -18085,6 +18085,227 @@
       ],
       "additionalProperties": false
     },
+    "receiver_nexrad": {
+      "description": "FIS-B NEXRAD to draw (products 63 and 64, AIM 4-5-9): for each level 1 to 7, rectangles [south, west, north, east], the regional product's where sent and the CONUS product's elsewhere, with the newest block's time. Not for avoiding weather close in.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ReceiverNexradInput",
+          "type": "object",
+          "properties": {
+            "picture": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ReceiverPicture"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The last answer, or null at first."
+            }
+          }
+        },
+        "answer": {
+          "title": "ReceiverNexradAnswer",
+          "type": "object",
+          "properties": {
+            "levels": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ReceiverNexradLevel"
+              }
+            },
+            "time": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "at": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "levels",
+            "time",
+            "at"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "receiver_read": {
+      "description": "A portable ADS-B receiver's GDL 90 bytes (Garmin 560-1058-00 Rev A; ForeFlight's ID message) read into what it has said: its state, own ship, the traffic it hears (AIM 4-5-7, 4-5-8) and the FIS-B products it is sent (AIM 4-5-9), each dropped once it is no longer heard. Traffic is for seeing, not avoiding (AIM 4-5-7).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ReceiverReadInput",
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The bytes received since the last read (whole UDP datagrams), Base64 (RFC 4648)."
+            },
+            "at": {
+              "type": "number",
+              "description": "Now, Unix s: when the bytes came."
+            },
+            "picture": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ReceiverPicture"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The last answer, or null at first."
+            }
+          },
+          "required": [
+            "at"
+          ]
+        },
+        "answer": {
+          "$ref": "#/definitions/ReceiverPicture"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "receiver_reports": {
+      "description": "A field's latest METAR (or SPECI) and TAF sent over FIS-B (AIM 4-5-9), as sent, with when; the K of a contiguous-states ICAO identifier matched either way (ORD, KORD).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ReceiverReportsInput",
+          "type": "object",
+          "properties": {
+            "picture": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ReceiverPicture"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The last answer, or null at first."
+            },
+            "ident": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "ident"
+          ]
+        },
+        "answer": {
+          "title": "ReceiverReportsAnswer",
+          "type": "object",
+          "properties": {
+            "metar": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ReceiverReport"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "taf": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ReceiverReport"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "metar",
+            "taf"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "receiver_traffic": {
+      "description": "The traffic to draw: the receiver's own targets, their pressure altitudes put on own ship's scale by own ship's height less its pressure altitude, then the internet's airplanes the receiver does not hear (by ICAO address), never own ship.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ReceiverTrafficInput",
+          "type": "object",
+          "properties": {
+            "picture": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ReceiverPicture"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The last answer, or null at first."
+            },
+            "internet": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/HeardPlane"
+              }
+            },
+            "own_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Own ship's height MSL from the phone's GPS, ft, where known."
+            },
+            "at": {
+              "type": "number",
+              "description": "Now, Unix s."
+            }
+          },
+          "required": [
+            "at"
+          ]
+        },
+        "answer": {
+          "title": "ReceiverTrafficAnswer",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HeardPlane"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "region_of": {
       "description": "The phone pack's region holding a point, \"n40w088\": a square of 4 degrees named by its south-west corner.",
       "type": "object",
@@ -22762,6 +22983,10 @@
     "read_datis",
     "read_track",
     "readback_check",
+    "receiver_nexrad",
+    "receiver_read",
+    "receiver_reports",
+    "receiver_traffic",
     "region_of",
     "registered_profile",
     "report_flight_category",
@@ -26045,6 +26270,99 @@
         "words"
       ]
     },
+    "HeardPlane": {
+      "title": "HeardPlane",
+      "description": "An airplane as the map's traffic draws it, the planner's TrafficAircraft (wingtip.traffic): who, where, how high, its track, speed and climb, how old.",
+      "type": "object",
+      "properties": {
+        "hex": {
+          "type": "string"
+        },
+        "callsign": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "registration": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "pressure_altitude": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "track_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "speed_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "vertical_fpm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "squawk": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "emergency": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "seen_s": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "hex",
+        "lat",
+        "lon"
+      ]
+    },
     "HeardToken": {
       "title": "HeardToken",
       "type": "object",
@@ -27437,6 +27755,572 @@
         }
       },
       "description": "A procedure as the planner draws it from the FAA's CIFP (/api/procedure's answer as it comes); only the members the engine reads."
+    },
+    "ReceiverBlock": {
+      "title": "ReceiverBlock",
+      "description": "A FIS-B NEXRAD block (products 63 regional and 64 CONUS): 32 bins across and 4 down, north row first, each a level 0 to 7.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number"
+        },
+        "regional": {
+          "type": "boolean"
+        },
+        "north": {
+          "type": "number"
+        },
+        "west": {
+          "type": "number"
+        },
+        "south": {
+          "type": "number"
+        },
+        "east": {
+          "type": "number"
+        },
+        "bins": {
+          "type": "string",
+          "description": "128 digits 0 to 7, row by row from the north-west."
+        },
+        "time": {
+          "type": "string"
+        },
+        "at": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "regional",
+        "north",
+        "west",
+        "south",
+        "east",
+        "bins",
+        "time",
+        "at"
+      ]
+    },
+    "ReceiverNexradLevel": {
+      "title": "ReceiverNexradLevel",
+      "description": "One NEXRAD level's rectangles, [south, west, north, east] degrees each.",
+      "type": "object",
+      "properties": {
+        "level": {
+          "type": "number",
+          "description": "1 to 7, DO-358B's levels (0 is none)."
+        },
+        "rects": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 4,
+            "maxItems": 4
+          }
+        }
+      },
+      "required": [
+        "level",
+        "rects"
+      ]
+    },
+    "ReceiverOwnship": {
+      "title": "ReceiverOwnship",
+      "description": "Own ship as the receiver's GPS gives it.",
+      "type": "object",
+      "properties": {
+        "hex": {
+          "type": "string",
+          "description": "The address as the internet's traffic writes it: six lower-case hex digits, a ~ before one that is not an ICAO address."
+        },
+        "address": {
+          "type": "number",
+          "description": "The 24-bit participant address (GDL 90 3.5.1.3)."
+        },
+        "address_type": {
+          "type": "number",
+          "description": "0 ADS-B with an ICAO address, 1 ADS-B self-assigned, 2 TIS-B ICAO, 3 TIS-B track file, 4 surface vehicle, 5 ground station beacon (GDL 90 3.5.1.2)."
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "ADS-B",
+            "TIS-B",
+            "vehicle",
+            "beacon"
+          ]
+        },
+        "callsign": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "pressure_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4)."
+        },
+        "airborne": {
+          "type": "boolean"
+        },
+        "extrapolated": {
+          "type": "boolean"
+        },
+        "track_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "track_kind": {
+          "type": "string",
+          "enum": [
+            "track",
+            "heading",
+            "magnetic"
+          ],
+          "description": "True track, true heading or magnetic heading (GDL 90 3.5.1.5)."
+        },
+        "speed_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "vertical_fpm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "emitter": {
+          "type": "number",
+          "description": "GDL 90's emitter category code (3.5.1.10)."
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "DO-260B's emitter category, A1 light to C5 line obstacle."
+        },
+        "emergency": {
+          "type": "number",
+          "description": "0 none, 1 general, 2 medical, 3 minimum fuel, 4 no communication, 5 unlawful interference, 6 downed aircraft (GDL 90 3.5.1.12)."
+        },
+        "nic": {
+          "type": "number",
+          "description": "Navigation Integrity Category."
+        },
+        "nacp": {
+          "type": "number",
+          "description": "Navigation Accuracy Category for Position."
+        },
+        "alert": {
+          "type": "boolean"
+        },
+        "at": {
+          "type": "number",
+          "description": "When it was last heard, Unix s."
+        },
+        "geometric_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The GPS height (GDL 90 ID 11), ft: above MSL where the receiver says so (receiver.msl), else above the WGS-84 ellipsoid."
+        },
+        "vfom_m": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Its Vertical Figure of Merit, m."
+        }
+      },
+      "required": [
+        "hex",
+        "address",
+        "address_type",
+        "source",
+        "callsign",
+        "lat",
+        "lon",
+        "pressure_ft",
+        "airborne",
+        "extrapolated",
+        "track_deg",
+        "track_kind",
+        "speed_kt",
+        "vertical_fpm",
+        "emitter",
+        "category",
+        "emergency",
+        "nic",
+        "nacp",
+        "alert",
+        "at",
+        "geometric_ft",
+        "vfom_m"
+      ]
+    },
+    "ReceiverPicture": {
+      "title": "ReceiverPicture",
+      "description": "What a receiver has said so far: hand it back with the next bytes.",
+      "type": "object",
+      "properties": {
+        "receiver": {
+          "title": "ReceiverState",
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The name its ID message gives (Stratux, Sentry, SkyEcho)."
+            },
+            "long_name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "stratux": {
+              "type": "boolean"
+            },
+            "heartbeat_at": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "live": {
+              "type": "boolean",
+              "description": "A Heartbeat came in the last 5 s (one a second, GDL 90 3.1)."
+            },
+            "summary": {
+              "type": "string",
+              "description": "One line for the receiver's chip: \"Stratux \u00b7 12 targets \u00b7 GPS\"."
+            },
+            "gps": {
+              "type": "boolean"
+            },
+            "utc_ok": {
+              "type": "boolean"
+            },
+            "battery_low": {
+              "type": "boolean"
+            },
+            "maintenance": {
+              "type": "boolean"
+            },
+            "msl": {
+              "type": "boolean",
+              "description": "Its GPS heights are above MSL (ForeFlight's ID message), else the ellipsoid."
+            },
+            "frames": {
+              "type": "number"
+            },
+            "bad_frames": {
+              "type": "number",
+              "description": "Frames whose CRC did not match, dropped."
+            },
+            "station_lat": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "station_lon": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "station_at": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "name",
+            "long_name",
+            "stratux",
+            "heartbeat_at",
+            "live",
+            "summary",
+            "gps",
+            "utc_ok",
+            "battery_low",
+            "maintenance",
+            "msl",
+            "frames",
+            "bad_frames",
+            "station_lat",
+            "station_lon",
+            "station_at"
+          ]
+        },
+        "ownship": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ReceiverOwnship"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "targets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReceiverTarget"
+          }
+        },
+        "texts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReceiverText"
+          }
+        },
+        "nexrad": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReceiverBlock"
+          }
+        }
+      },
+      "required": [
+        "receiver",
+        "ownship",
+        "targets",
+        "texts",
+        "nexrad"
+      ]
+    },
+    "ReceiverReport": {
+      "title": "ReceiverReport",
+      "description": "A field's report as FIS-B sent it: its kind (METAR, SPECI, TAF), its words as sent, the product's time HHMMZ and when it was last heard, Unix s.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "time": {
+          "type": "string"
+        },
+        "at": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "text",
+        "time",
+        "at"
+      ]
+    },
+    "ReceiverTarget": {
+      "title": "ReceiverTarget",
+      "description": "An airplane a receiver reports (GDL 90's Traffic or Ownship Report, 560-1058-00 Rev A 3.5.1), as heard.",
+      "type": "object",
+      "properties": {
+        "hex": {
+          "type": "string",
+          "description": "The address as the internet's traffic writes it: six lower-case hex digits, a ~ before one that is not an ICAO address."
+        },
+        "address": {
+          "type": "number",
+          "description": "The 24-bit participant address (GDL 90 3.5.1.3)."
+        },
+        "address_type": {
+          "type": "number",
+          "description": "0 ADS-B with an ICAO address, 1 ADS-B self-assigned, 2 TIS-B ICAO, 3 TIS-B track file, 4 surface vehicle, 5 ground station beacon (GDL 90 3.5.1.2)."
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "ADS-B",
+            "TIS-B",
+            "vehicle",
+            "beacon"
+          ]
+        },
+        "callsign": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "pressure_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4)."
+        },
+        "airborne": {
+          "type": "boolean"
+        },
+        "extrapolated": {
+          "type": "boolean"
+        },
+        "track_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "track_kind": {
+          "type": "string",
+          "enum": [
+            "track",
+            "heading",
+            "magnetic"
+          ],
+          "description": "True track, true heading or magnetic heading (GDL 90 3.5.1.5)."
+        },
+        "speed_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "vertical_fpm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "emitter": {
+          "type": "number",
+          "description": "GDL 90's emitter category code (3.5.1.10)."
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "DO-260B's emitter category, A1 light to C5 line obstacle."
+        },
+        "emergency": {
+          "type": "number",
+          "description": "0 none, 1 general, 2 medical, 3 minimum fuel, 4 no communication, 5 unlawful interference, 6 downed aircraft (GDL 90 3.5.1.12)."
+        },
+        "nic": {
+          "type": "number",
+          "description": "Navigation Integrity Category."
+        },
+        "nacp": {
+          "type": "number",
+          "description": "Navigation Accuracy Category for Position."
+        },
+        "alert": {
+          "type": "boolean"
+        },
+        "at": {
+          "type": "number",
+          "description": "When it was last heard, Unix s."
+        }
+      },
+      "required": [
+        "hex",
+        "address",
+        "address_type",
+        "source",
+        "callsign",
+        "lat",
+        "lon",
+        "pressure_ft",
+        "airborne",
+        "extrapolated",
+        "track_deg",
+        "track_kind",
+        "speed_kt",
+        "vertical_fpm",
+        "emitter",
+        "category",
+        "emergency",
+        "nic",
+        "nacp",
+        "alert",
+        "at"
+      ]
+    },
+    "ReceiverText": {
+      "title": "ReceiverText",
+      "description": "A FIS-B text product as sent (AIM 4-5-9): a METAR, TAF, winds aloft or PIREP (product 413), or a NOTAM, TFR, AIRMET, SIGMET, SUA status, G-AIRMET or CWA text record.",
+      "type": "object",
+      "properties": {
+        "product": {
+          "type": "number",
+          "description": "The FIS-B product ID (DO-358B)."
+        },
+        "kind": {
+          "type": "string",
+          "description": "METAR, SPECI, TAF, WINDS, PIREP ... or NOTAM, AIRMET, SIGMET, SUA, G-AIRMET, CWA, NOTAM-TRA, NOTAM-TMOA."
+        },
+        "location": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The station or office."
+        },
+        "number": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "A text record's report number."
+        },
+        "text": {
+          "type": "string",
+          "description": "The words as sent; a METAR or TAF without its kind, as the METAR and TAF readers take it."
+        },
+        "time": {
+          "type": "string",
+          "description": "The product's time, HHMMZ."
+        },
+        "at": {
+          "type": "number",
+          "description": "When it was last sent, Unix s."
+        }
+      },
+      "required": [
+        "product",
+        "kind",
+        "location",
+        "number",
+        "text",
+        "time",
+        "at"
+      ]
     },
     "RecentWindIn": {
       "title": "RecentWindIn",

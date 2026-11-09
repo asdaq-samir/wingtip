@@ -52,7 +52,7 @@ table, and its why below, in the same commit.
 
 | Crate | Modules | Uses |
 |---|---|---|
-| `core` | geo, wmm, grid, sums, time, json, xml | nothing |
+| `core` | base64, geo, wmm, grid, sums, time, json, xml | nothing |
 | `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), performance (the airplane's cruise and climbs in the day's air), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items), sun (1.1's night and 61.57(b)'s night-passenger period), vfr (91.155's minimums, one copy) | nothing |
 | `weather` | metar, taf, winds, forecast, validity, notam, tfr, cycles, rvr (RVR against a minimum, 91.175(h)'s table) | core, flight |
 | `procedures` | figures (debrief, diversion, holding, lost comms, words) | core, flight |
@@ -64,6 +64,7 @@ table, and its why below, in the same commit.
 | `wording` | wording (with script: the radio calls' words) | core, procedures, airspace, brief, route (without its options) |
 | `altitude` | altitude (the floor, the band, the cruising altitudes, the selection and its words, the cautions on a pilot's own altitude, 91.119(b)'s congested areas) | core, flight, weather, procedures |
 | `inflight` | watch, checks, message (`copilot_watch`: the in-flight copilot's ranked messages), fields (its alternative: brief's best_fields in diversion mode, held to its weather and fuel checks) | core, flight, weather, procedures, brief |
+| `receiver` | frame, message, report, uplink, dlac, fisb, nexrad, picture (a portable ADS-B receiver's GDL 90: own ship, its traffic, FIS-B's text and NEXRAD; AIM 4-5-7, 4-5-9), views | core |
 | `facade/` | call | all of them |
 
 Why these lines:
@@ -110,6 +111,10 @@ Why these lines:
 - `route` takes `flight` for the nav log: its legs fly the wind triangle
   and the airplane's performance, which sit in `flight` because the
   altitude selection needs the service ceiling on the day from them too.
+- `receiver` reads bytes a receiver sent into what it says, and needs
+  only `core` (its JSON and Base64): the METARs and TAFs it is sent are
+  handed on as sent, for `weather` to read where a screen asks, so it
+  sits beside `weather`, not on it.
 - `call.rs` dispatches every rule, so it alone stays in the facade, over all.
 
 Inside a crate, the modules under it are used at the root by the names

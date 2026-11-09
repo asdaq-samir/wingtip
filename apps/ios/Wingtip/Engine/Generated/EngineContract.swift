@@ -4401,6 +4401,43 @@ enum EngineContract {
         var value: Double
     }
 
+    /// An airplane as the map's traffic draws it, the planner's TrafficAircraft (wingtip.traffic): who, where, how high, its track, speed and climb, how old.
+    struct HeardPlane: Codable, Equatable, Sendable {
+        var hex: String
+        var callsign: String?
+        var registration: String?
+        var type: String?
+        var category: String?
+        var lat: Double
+        var lon: Double
+        var altitudeFt: Double?
+        var pressureAltitude: Bool?
+        var trackDeg: Double?
+        var speedKt: Double?
+        var verticalFpm: Double?
+        var squawk: String?
+        var emergency: String?
+        var seenS: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case hex
+            case callsign
+            case registration
+            case type
+            case category
+            case lat
+            case lon
+            case altitudeFt = "altitude_ft"
+            case pressureAltitude = "pressure_altitude"
+            case trackDeg = "track_deg"
+            case speedKt = "speed_kt"
+            case verticalFpm = "vertical_fpm"
+            case squawk
+            case emergency
+            case seenS = "seen_s"
+        }
+    }
+
     struct HeardToken: Codable, Equatable, Sendable {
         var word: String
         /// The run of figures said as one number, as digits; left out where the word is no figure.
@@ -7284,6 +7321,279 @@ enum EngineContract {
 
     struct ReadTrackInput: Codable, Equatable, Sendable {
         var text: String
+    }
+
+    /// A FIS-B NEXRAD block (products 63 regional and 64 CONUS): 32 bins across and 4 down, north row first, each a level 0 to 7.
+    struct ReceiverBlock: Codable, Equatable, Sendable {
+        var id: Double
+        var regional: Bool
+        var north: Double
+        var west: Double
+        var south: Double
+        var east: Double
+        /// 128 digits 0 to 7, row by row from the north-west.
+        var bins: String
+        var time: String
+        var at: Double
+    }
+
+    struct ReceiverNexradAnswer: Codable, Equatable, Sendable {
+        var levels: [EngineContract.ReceiverNexradLevel]
+        var time: String?
+        var at: Double?
+    }
+
+    struct ReceiverNexradInput: Codable, Equatable, Sendable {
+        /// The last answer, or null at first.
+        var picture: EngineContract.ReceiverPicture?
+    }
+
+    /// One NEXRAD level's rectangles, [south, west, north, east] degrees each.
+    struct ReceiverNexradLevel: Codable, Equatable, Sendable {
+        /// 1 to 7, DO-358B's levels (0 is none).
+        var level: Double
+        var rects: [[Double]]
+    }
+
+    /// Own ship as the receiver's GPS gives it.
+    struct ReceiverOwnship: Codable, Equatable, Sendable {
+        /// The address as the internet's traffic writes it: six lower-case hex digits, a ~ before one that is not an ICAO address.
+        var hex: String
+        /// The 24-bit participant address (GDL 90 3.5.1.3).
+        var address: Double
+        /// 0 ADS-B with an ICAO address, 1 ADS-B self-assigned, 2 TIS-B ICAO, 3 TIS-B track file, 4 surface vehicle, 5 ground station beacon (GDL 90 3.5.1.2).
+        var addressType: Double
+        var source: String
+        var callsign: String?
+        var lat: Double
+        var lon: Double
+        /// Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4).
+        var pressureFt: Double?
+        var airborne: Bool
+        var extrapolated: Bool
+        var trackDeg: Double?
+        /// True track, true heading or magnetic heading (GDL 90 3.5.1.5).
+        var trackKind: String
+        var speedKt: Double?
+        var verticalFpm: Double?
+        /// GDL 90's emitter category code (3.5.1.10).
+        var emitter: Double
+        /// DO-260B's emitter category, A1 light to C5 line obstacle.
+        var category: String?
+        /// 0 none, 1 general, 2 medical, 3 minimum fuel, 4 no communication, 5 unlawful interference, 6 downed aircraft (GDL 90 3.5.1.12).
+        var emergency: Double
+        /// Navigation Integrity Category.
+        var nic: Double
+        /// Navigation Accuracy Category for Position.
+        var nacp: Double
+        var alert: Bool
+        /// When it was last heard, Unix s.
+        var at: Double
+        /// The GPS height (GDL 90 ID 11), ft: above MSL where the receiver says so (receiver.msl), else above the WGS-84 ellipsoid.
+        var geometricFt: Double?
+        /// Its Vertical Figure of Merit, m.
+        var vfomM: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case hex
+            case address
+            case addressType = "address_type"
+            case source
+            case callsign
+            case lat
+            case lon
+            case pressureFt = "pressure_ft"
+            case airborne
+            case extrapolated
+            case trackDeg = "track_deg"
+            case trackKind = "track_kind"
+            case speedKt = "speed_kt"
+            case verticalFpm = "vertical_fpm"
+            case emitter
+            case category
+            case emergency
+            case nic
+            case nacp
+            case alert
+            case at
+            case geometricFt = "geometric_ft"
+            case vfomM = "vfom_m"
+        }
+    }
+
+    /// What a receiver has said so far: hand it back with the next bytes.
+    struct ReceiverPicture: Codable, Equatable, Sendable {
+        var receiver: EngineContract.ReceiverPictureReceiver
+        var ownship: EngineContract.ReceiverOwnship?
+        var targets: [EngineContract.ReceiverTarget]
+        var texts: [EngineContract.ReceiverText]
+        var nexrad: [EngineContract.ReceiverBlock]
+    }
+
+    struct ReceiverPictureReceiver: Codable, Equatable, Sendable {
+        /// The name its ID message gives (Stratux, Sentry, SkyEcho).
+        var name: String?
+        var longName: String?
+        var stratux: Bool
+        var heartbeatAt: Double?
+        /// A Heartbeat came in the last 5 s (one a second, GDL 90 3.1).
+        var live: Bool
+        /// One line for the receiver's chip: "Stratux · 12 targets · GPS".
+        var summary: String
+        var gps: Bool
+        var utcOk: Bool
+        var batteryLow: Bool
+        var maintenance: Bool
+        /// Its GPS heights are above MSL (ForeFlight's ID message), else the ellipsoid.
+        var msl: Bool
+        var frames: Double
+        /// Frames whose CRC did not match, dropped.
+        var badFrames: Double
+        var stationLat: Double?
+        var stationLon: Double?
+        var stationAt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case name
+            case longName = "long_name"
+            case stratux
+            case heartbeatAt = "heartbeat_at"
+            case live
+            case summary
+            case gps
+            case utcOk = "utc_ok"
+            case batteryLow = "battery_low"
+            case maintenance
+            case msl
+            case frames
+            case badFrames = "bad_frames"
+            case stationLat = "station_lat"
+            case stationLon = "station_lon"
+            case stationAt = "station_at"
+        }
+    }
+
+    struct ReceiverReadInput: Codable, Equatable, Sendable {
+        /// The bytes received since the last read (whole UDP datagrams), Base64 (RFC 4648).
+        var data: String?
+        /// Now, Unix s: when the bytes came.
+        var at: Double
+        /// The last answer, or null at first.
+        var picture: EngineContract.ReceiverPicture?
+    }
+
+    /// A field's report as FIS-B sent it: its kind (METAR, SPECI, TAF), its words as sent, the product's time HHMMZ and when it was last heard, Unix s.
+    struct ReceiverReport: Codable, Equatable, Sendable {
+        var kind: String
+        var text: String
+        var time: String
+        var at: Double
+    }
+
+    struct ReceiverReportsAnswer: Codable, Equatable, Sendable {
+        var metar: EngineContract.ReceiverReport?
+        var taf: EngineContract.ReceiverReport?
+    }
+
+    struct ReceiverReportsInput: Codable, Equatable, Sendable {
+        /// The last answer, or null at first.
+        var picture: EngineContract.ReceiverPicture?
+        var ident: String
+    }
+
+    /// An airplane a receiver reports (GDL 90's Traffic or Ownship Report, 560-1058-00 Rev A 3.5.1), as heard.
+    struct ReceiverTarget: Codable, Equatable, Sendable {
+        /// The address as the internet's traffic writes it: six lower-case hex digits, a ~ before one that is not an ICAO address.
+        var hex: String
+        /// The 24-bit participant address (GDL 90 3.5.1.3).
+        var address: Double
+        /// 0 ADS-B with an ICAO address, 1 ADS-B self-assigned, 2 TIS-B ICAO, 3 TIS-B track file, 4 surface vehicle, 5 ground station beacon (GDL 90 3.5.1.2).
+        var addressType: Double
+        var source: String
+        var callsign: String?
+        var lat: Double
+        var lon: Double
+        /// Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4).
+        var pressureFt: Double?
+        var airborne: Bool
+        var extrapolated: Bool
+        var trackDeg: Double?
+        /// True track, true heading or magnetic heading (GDL 90 3.5.1.5).
+        var trackKind: String
+        var speedKt: Double?
+        var verticalFpm: Double?
+        /// GDL 90's emitter category code (3.5.1.10).
+        var emitter: Double
+        /// DO-260B's emitter category, A1 light to C5 line obstacle.
+        var category: String?
+        /// 0 none, 1 general, 2 medical, 3 minimum fuel, 4 no communication, 5 unlawful interference, 6 downed aircraft (GDL 90 3.5.1.12).
+        var emergency: Double
+        /// Navigation Integrity Category.
+        var nic: Double
+        /// Navigation Accuracy Category for Position.
+        var nacp: Double
+        var alert: Bool
+        /// When it was last heard, Unix s.
+        var at: Double
+
+        enum CodingKeys: String, CodingKey {
+            case hex
+            case address
+            case addressType = "address_type"
+            case source
+            case callsign
+            case lat
+            case lon
+            case pressureFt = "pressure_ft"
+            case airborne
+            case extrapolated
+            case trackDeg = "track_deg"
+            case trackKind = "track_kind"
+            case speedKt = "speed_kt"
+            case verticalFpm = "vertical_fpm"
+            case emitter
+            case category
+            case emergency
+            case nic
+            case nacp
+            case alert
+            case at
+        }
+    }
+
+    /// A FIS-B text product as sent (AIM 4-5-9): a METAR, TAF, winds aloft or PIREP (product 413), or a NOTAM, TFR, AIRMET, SIGMET, SUA status, G-AIRMET or CWA text record.
+    struct ReceiverText: Codable, Equatable, Sendable {
+        /// The FIS-B product ID (DO-358B).
+        var product: Double
+        /// METAR, SPECI, TAF, WINDS, PIREP ... or NOTAM, AIRMET, SIGMET, SUA, G-AIRMET, CWA, NOTAM-TRA, NOTAM-TMOA.
+        var kind: String
+        /// The station or office.
+        var location: String?
+        /// A text record's report number.
+        var number: Double?
+        /// The words as sent; a METAR or TAF without its kind, as the METAR and TAF readers take it.
+        var text: String
+        /// The product's time, HHMMZ.
+        var time: String
+        /// When it was last sent, Unix s.
+        var at: Double
+    }
+
+    struct ReceiverTrafficInput: Codable, Equatable, Sendable {
+        /// The last answer, or null at first.
+        var picture: EngineContract.ReceiverPicture?
+        var internet: [EngineContract.HeardPlane]?
+        /// Own ship's height MSL from the phone's GPS, ft, where known.
+        var ownFt: Double?
+        /// Now, Unix s.
+        var at: Double
+
+        enum CodingKeys: String, CodingKey {
+            case picture
+            case internet
+            case ownFt = "own_ft"
+            case at
+        }
     }
 
     /// The field's last wind, for a calm one; both members needed where it is not empty.

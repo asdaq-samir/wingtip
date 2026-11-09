@@ -2,6 +2,7 @@
 //! which every other one may use and which uses none of them: the
 //! geodesy and the general readers, no aviation rule.
 //!
+//! - base64: bytes carried in JSON (RFC 4648), as a receiver's are;
 //! - geo: great-circle distances, as wingtip.geo has them;
 //! - wmm: magnetic variation from the World Magnetic Model;
 //! - grid: route options' straight lines over the grid (sums: the
@@ -10,6 +11,7 @@
 //! - json: the little JSON every rule reads and writes;
 //! - xml: the small XML reader the weather products share.
 
+pub mod base64;
 pub mod geo;
 pub mod grid;
 pub mod json;
