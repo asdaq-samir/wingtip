@@ -79,6 +79,11 @@ struct GoNoGoSection: View {
     @State private var restOpen = false
 
     var body: some View {
+        // With the planner's words out of reach, the glance on this
+        // iPhone first (OnDevice/BriefSummary).
+        if let answer = verdict.answer, let said = riskWords, said.origin != .planner {
+            BriefSummarySection(answer: answer)
+        }
         if verdict.answer != nil {
             WordsSection(title: "The flight in words", said: riskWords, writing: writingWords)
         }
