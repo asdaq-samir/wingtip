@@ -7,7 +7,7 @@
 //! of the route. Before the nav log's totals are in, an estimate from the
 //! airplane's book alone.
 
-use crate::flight::{reserve_min, DEFAULT_TAXI_FUEL_GAL};
+use crate::flight::reserve_min;
 
 /// One flight between two landings, as the planner's totals give it.
 #[derive(Clone, Debug, PartialEq)]
@@ -69,14 +69,15 @@ pub fn estimate_reserve_min() -> f64 {
 /// The figures from the airplane's book alone, before the nav log's: at
 /// cruise speed with no wind the time over the course's distance,
 /// minutes; the fuel at the cruise burn over that time; and the fuel
-/// required, that with the start and taxi allowance (DEFAULT_TAXI_FUEL_GAL)
-/// and the estimate's reserve at the cruise burn. None where the book
-/// gives no speed (or no burn, for the fuel).
-pub fn estimate(distance_nm: f64, cruise_tas_kt: Option<f64>, fuel_burn_gph: Option<f64>) -> (Option<f64>, Option<f64>, Option<f64>) {
+/// required, that with the airplane's own start and taxi allowance
+/// (`taxi_fuel_gal`, its profile's; left out where it has none, never a
+/// stock airplane's) and the estimate's reserve at the cruise burn. None
+/// where the book gives no speed (or no burn, for the fuel).
+pub fn estimate(distance_nm: f64, cruise_tas_kt: Option<f64>, fuel_burn_gph: Option<f64>, taxi_fuel_gal: Option<f64>) -> (Option<f64>, Option<f64>, Option<f64>) {
     let minutes = cruise_tas_kt.filter(|t| *t > 0.0).map(|t| distance_nm / t * 60.0);
     let burn = fuel_burn_gph.filter(|b| *b > 0.0);
     let trip = minutes.zip(burn).map(|(m, b)| m / 60.0 * b);
-    let required = trip.zip(burn).map(|(t, b)| t + DEFAULT_TAXI_FUEL_GAL + estimate_reserve_min() / 60.0 * b);
+    let required = trip.zip(burn).map(|(t, b)| t + taxi_fuel_gal.unwrap_or(0.0) + estimate_reserve_min() / 60.0 * b);
     (minutes, trip, required)
 }
 

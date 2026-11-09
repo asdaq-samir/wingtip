@@ -560,6 +560,9 @@ pub(crate) fn table(i: In, t: &Value) -> R<ShortField> {
         ground_roll_ft: grids("ground_roll_ft")?,
         total_50ft_ft: grids("total_50ft_ft")?,
         grass_ground_roll_pct: i.num(t, "grass_ground_roll_pct")?,
+        headwind_kt_per_10pct: i.opt_num(t, "headwind_kt_per_10pct")?,
+        tailwind_kt_per_10pct: i.opt_num(t, "tailwind_kt_per_10pct")?,
+        tailwind_max_kt: i.opt_num(t, "tailwind_max_kt")?,
     };
     // A table the reading would run off: two altitudes and temperatures at
     // least, a grid of them for every weight.

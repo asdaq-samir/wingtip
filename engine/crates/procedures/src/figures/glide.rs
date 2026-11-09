@@ -7,10 +7,6 @@
 use super::debrief::AIRBORNE_KT;
 use crate::flight;
 
-/// A light single's still-air glide: the Cessna 172S's maximum glide chart
-/// (POH figure 3-1, 68 KIAS) is about 1.5 nm for every 1,000 ft, 9 to 1.
-/// The ring's figure where no airplane's own is known.
-pub const GLIDE_NM_PER_1000_FT: f64 = 1.5;
 /// Below this over the ground (or slower than AIRBORNE_KT, the debrief's
 /// too), the airplane is on the ground or about to be, and there is no
 /// ring to draw.
@@ -22,28 +18,40 @@ pub const ARRIVE_AGL_FT: f64 = 1000.0;
 /// Feet in a nautical mile (1,852 m exactly, over 0.3048 m a foot).
 pub const FT_PER_NM: f64 = 1852.0 / 0.3048;
 
+/// Still-air nm for every 1,000 ft from an airplane's glide ratio (feet
+/// forward for each foot down, its POH's Section 3 "Maximum glide"); None
+/// with no ratio, or none above nothing. There is no stock figure behind
+/// it: an airplane whose profile has no glide has no glide worked out
+/// (the owner, 2026-11-09: no Cessna 172 figure fills the gap).
+pub fn nm_per_1000_ft(glide_ratio: Option<f64>) -> Option<f64> {
+    glide_ratio.filter(|r| r.is_finite() && *r > 0.0).map(|r| r * 1000.0 / FT_PER_NM)
+}
+
 /// How far own ship glides in still air from its GPS altitude over
 /// `ground_ft` -- the nearest field's elevation, as near as the page knows
-/// the ground -- nm; None on the ground or with a height not known.
-pub fn range_nm(altitude_ft: Option<f64>, speed_kt: Option<f64>, ground_ft: Option<f64>) -> Option<f64> {
+/// the ground -- at the airplane's `glide_ratio`, nm; None on the ground,
+/// with a height not known or with no glide ratio in its profile.
+pub fn range_nm(altitude_ft: Option<f64>, speed_kt: Option<f64>, ground_ft: Option<f64>, glide_ratio: Option<f64>) -> Option<f64> {
+    let per_1000 = nm_per_1000_ft(glide_ratio)?;
     let agl = altitude_ft? - ground_ft?;
     if agl < AIRBORNE_AGL_FT || speed_kt.unwrap_or(0.0) < AIRBORNE_KT {
         return None;
     }
-    Some((agl / 1000.0) * GLIDE_NM_PER_1000_FT)
+    Some((agl / 1000.0) * per_1000)
 }
 
 /// Whether own ship can glide, in still air, to a field `distance_nm` off
 /// and arrive over it at pattern height -- from its GPS altitude over that
 /// field's own elevation, not the nearest one's: a field on higher ground
-/// is nearer the airplane's height. False where either height is not known.
-pub fn reaches(altitude_ft: Option<f64>, speed_kt: Option<f64>, distance_nm: f64, elevation_ft: Option<f64>) -> bool {
-    let (Some(alt), Some(elevation)) = (altitude_ft, elevation_ft) else { return false };
+/// is nearer the airplane's height. False where either height is not
+/// known, or the airplane's profile has no glide ratio.
+pub fn reaches(altitude_ft: Option<f64>, speed_kt: Option<f64>, distance_nm: f64, elevation_ft: Option<f64>, glide_ratio: Option<f64>) -> bool {
+    let (Some(alt), Some(elevation), Some(per_1000)) = (altitude_ft, elevation_ft, nm_per_1000_ft(glide_ratio)) else { return false };
     if speed_kt.unwrap_or(0.0) < AIRBORNE_KT {
         return false;
     }
     let spare = alt - elevation - ARRIVE_AGL_FT;
-    spare > 0.0 && (spare / 1000.0) * GLIDE_NM_PER_1000_FT >= distance_nm
+    spare > 0.0 && (spare / 1000.0) * per_1000 >= distance_nm
 }
 
 /// Own ship moving at flying speed: in the air, or about to be.
@@ -65,7 +73,7 @@ impl Glide {
     /// Still-air nm for every 1,000 ft of height: the ratio's feet over a
     /// nautical mile's.
     pub fn nm_per_1000_ft(&self) -> f64 {
-        self.ratio * 1000.0 / FT_PER_NM
+        nm_per_1000_ft(Some(self.ratio)).unwrap_or(0.0)
     }
 
     /// The true airspeed at best glide at `altitude_ft`, on a standard

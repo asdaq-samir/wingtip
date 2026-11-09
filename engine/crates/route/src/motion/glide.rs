@@ -7,23 +7,24 @@ use crate::json::{self, Value};
 
 // The figures themselves are procedures' (figures::glide), which the
 // emergency's best fields glide by too; here by the names they had.
-pub use crate::figures::glide::{range_nm, reaches, underway, AIRBORNE_AGL_FT, ARRIVE_AGL_FT, GLIDE_NM_PER_1000_FT};
+pub use crate::figures::glide::{nm_per_1000_ft, range_nm, reaches, underway, AIRBORNE_AGL_FT, ARRIVE_AGL_FT, FT_PER_NM};
 
 /// `glide_range`: nm or null, from `{"altitude_ft"?, "speed_kt"?,
-/// "ground_ft"?}`.
+/// "ground_ft"?, "glide_ratio"?}` -- the ratio the picked airplane's
+/// profile gives, none with no airplane or none in its profile.
 pub(super) fn range_rule(v: &Value) -> Result<String, String> {
     let n = "glide_range";
     let mut out = String::new();
-    json::opt_number(&mut out, range_nm(opt(n, v, "altitude_ft")?, opt(n, v, "speed_kt")?, opt(n, v, "ground_ft")?));
+    json::opt_number(&mut out, range_nm(opt(n, v, "altitude_ft")?, opt(n, v, "speed_kt")?, opt(n, v, "ground_ft")?, opt(n, v, "glide_ratio")?));
     Ok(out)
 }
 
 /// `glide_reaches`: true or false, from `{"altitude_ft"?, "speed_kt"?,
-/// "distance_nm", "elevation_ft"?}`.
+/// "distance_nm", "elevation_ft"?, "glide_ratio"?}`.
 pub(super) fn reaches_rule(v: &Value) -> Result<String, String> {
     let n = "glide_reaches";
     let distance = opt(n, v, "distance_nm")?.ok_or("glide_reaches: \"distance_nm\" is missing")?;
-    let yes = reaches(opt(n, v, "altitude_ft")?, opt(n, v, "speed_kt")?, distance, opt(n, v, "elevation_ft")?);
+    let yes = reaches(opt(n, v, "altitude_ft")?, opt(n, v, "speed_kt")?, distance, opt(n, v, "elevation_ft")?, opt(n, v, "glide_ratio")?);
     Ok(if yes { "true" } else { "false" }.to_owned())
 }
 

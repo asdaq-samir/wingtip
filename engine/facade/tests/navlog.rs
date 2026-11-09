@@ -96,11 +96,17 @@ fn a_leg_flies_the_airplanes_figures_in_its_own_air() {
 
 #[test]
 fn the_fuel_required_includes_start_taxi_and_takeoff() {
-    let plan = ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": {"fuel_burn_gph": 8.0, "usable_fuel_gal": 40}, "night": false}));
-    // The C172S POH's 1.4 gal, and 30 minutes at 8 gph by day (91.151(a)(1)).
+    let plan = ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": {"fuel_burn_gph": 8.0, "usable_fuel_gal": 40, "taxi_fuel_gal": 1.4}, "night": false}));
+    // The profile's own 1.4 gal (the c172's, its POH's), and 30 minutes at
+    // 8 gph by day (91.151(a)(1)).
     assert_eq!(f(&plan["taxi_gal"]), 1.4);
     assert_eq!(f(&plan["fuel_required_gal"]), 25.4);
     assert_eq!(f(&plan["fuel_margin_gal"]), 14.6);
+    // A profile with no allowance of its own: none is assumed, the taxi
+    // null and the fuel required the trip and reserve alone.
+    let bare = ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": {"fuel_burn_gph": 8.0, "usable_fuel_gal": 40}, "night": false}));
+    assert!(bare["taxi_gal"].is_null());
+    assert_eq!(f(&bare["fuel_required_gal"]), 24.0);
     let own = ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": {"fuel_burn_gph": 8.0, "taxi_fuel_gal": 2.0}, "night": false}));
     assert_eq!(f(&own["fuel_required_gal"]), 26.0);
     assert!(own["fuel_margin_gal"].is_null());
@@ -110,7 +116,7 @@ fn the_fuel_required_includes_start_taxi_and_takeoff() {
 fn under_ifr_the_reserve_is_45_minutes_by_day_and_by_night() {
     // 14 CFR 91.167(a)(3), where VFR's is 30 by day (91.151(a)(1)) and 45
     // at night (91.151(a)(2)).
-    let p = json!({"fuel_burn_gph": 8.0});
+    let p = json!({"fuel_burn_gph": 8.0, "taxi_fuel_gal": 1.4});
     assert_eq!(f(&ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": p, "night": false}))["reserve_min"]), 30.0);
     assert_eq!(f(&ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": p, "night": true}))["reserve_min"]), 45.0);
     let day = ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": p, "night": false, "rules": "ifr"}));
@@ -265,6 +271,15 @@ fn a_climb_burns_the_airplanes_own_climb_fuel_flow() {
     let climb = ask("performance_climb", json!({"profile": own, "from_ft": 500.0, "to_ft": 3500.0}));
     let cruise_min = (60.0 - 70.0 * f(&climb["minutes"]) / 60.0) / 100.0 * 60.0;
     assert!(close(f(&legs[0]["fuel_gal"]), f(&climb["gallons"]) + cruise_min / 60.0 * 8.0, 1e-6));
+}
+
+#[test]
+fn a_profile_with_no_climb_speed_flies_no_climb_rather_than_a_stock_airplanes() {
+    // No ratio of climb to cruise is taken from another airplane (the
+    // owner, 2026-11-09): the leg as it was, with no top of climb.
+    let bare = json!({"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.0, "service_ceiling_ft": 14000.0});
+    let leg = json!([cruise_leg(60.0, 3500.0)]);
+    assert_eq!(climbs(leg.clone(), Some(500.0), bare), leg);
 }
 
 #[test]

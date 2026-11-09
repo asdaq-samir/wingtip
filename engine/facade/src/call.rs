@@ -124,7 +124,7 @@ pub fn rule(name: &str, v: &Value) -> Result<String, String> {
             Ok(out)
         }
         "fuel_estimate" => {
-            let (minutes, trip, required) = strip::estimate(ask.num("distance_nm")?, ask.opt_num("cruise_tas_kt")?, ask.opt_num("fuel_burn_gph")?);
+            let (minutes, trip, required) = strip::estimate(ask.num("distance_nm")?, ask.opt_num("cruise_tas_kt")?, ask.opt_num("fuel_burn_gph")?, ask.opt_num("taxi_fuel_gal")?);
             let mut out = String::from("{\"minutes\":");
             json::opt_number(&mut out, minutes);
             out.push_str(",\"trip_gal\":");

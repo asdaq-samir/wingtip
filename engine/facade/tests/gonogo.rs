@@ -514,6 +514,9 @@ fn table(v: &Value) -> ShortField {
         ground_roll_ft: tables.iter().map(|t| grid(&t["ground_roll_ft"])).collect(),
         total_50ft_ft: tables.iter().map(|t| grid(&t["total_50ft_ft"])).collect(),
         grass_ground_roll_pct: v["grass_ground_roll_pct"].as_f64().unwrap(),
+        headwind_kt_per_10pct: v["headwind_kt_per_10pct"].as_f64(),
+        tailwind_kt_per_10pct: v["tailwind_kt_per_10pct"].as_f64(),
+        tailwind_max_kt: v["tailwind_max_kt"].as_f64(),
     }
 }
 
@@ -595,6 +598,20 @@ fn a_headwind_takes_a_tenth_off_every_9_kt_a_tailwind_adds_a_tenth_every_2_grass
     assert_eq!(runways::short_field(&t, 0.0, 10.0, 2550.0, -2.0, false).ground_roll_ft, 1020.0);
     let grass = runways::short_field(&t, 0.0, 10.0, 2550.0, 0.0, true);
     assert_eq!((grass.ground_roll_ft, grass.total_ft), (1065.0, 1715.0));
+    // Past the 172S's 10 kt of tailwind its POH gives no figures: said.
+    assert!(!runways::short_field(&t, 0.0, 10.0, 2550.0, -12.0, false).caveats.is_empty());
+}
+
+#[test]
+fn a_table_without_its_pohs_wind_notes_takes_no_other_airplanes() {
+    // The 172S's table with its notes taken out: no credit for a headwind,
+    // and a tailwind said rather than corrected by the 172S's notes.
+    let t = ShortField { headwind_kt_per_10pct: None, tailwind_kt_per_10pct: None, tailwind_max_kt: None, ..airplane().takeoff.unwrap() };
+    let still = runways::short_field(&t, 0.0, 10.0, 2550.0, 0.0, false).ground_roll_ft;
+    assert_eq!(runways::short_field(&t, 0.0, 10.0, 2550.0, 9.0, false).ground_roll_ft, still);
+    let tail = runways::short_field(&t, 0.0, 10.0, 2550.0, -2.0, false);
+    assert_eq!(tail.ground_roll_ft, still);
+    assert_eq!(tail.caveats, vec!["the wind correction is not in this airplane's profile"]);
 }
 
 #[test]
