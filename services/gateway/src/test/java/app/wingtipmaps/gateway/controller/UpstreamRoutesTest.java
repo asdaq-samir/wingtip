@@ -48,7 +48,10 @@ class UpstreamRoutesTest {
             // The emergency assistant's fields: public, no sign-in in an emergency.
             "GET /api/emergency/fields", "planner public csrf",
             // The in-flight copilot's reads round the airplane, public as /api/live/* is.
-            "GET /api/copilot/around", "planner public csrf");
+            "GET /api/copilot/around", "planner public csrf",
+            // The 3D map's terrain tiles and the obstacles standing in a box.
+            "GET /api/terrain-tile/{z}/{x}/{y}.png", "planner public csrf",
+            "GET /api/terrain/obstacles", "planner public csrf");
 
     @Test
     void theEmergencyFieldsArePublicFromThePlanner() {
