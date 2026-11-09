@@ -4,7 +4,9 @@
 # Docker (the Mac has no node, npm or pytest), each area in its own turn of
 # scripts/dev/one-at-a-time.sh, and warm from the first run of any worktree.
 #
-#   scripts/dev/check.sh <area>...       web py planner ingest assistant weather jobs engine java ios android
+#   scripts/dev/check.sh <area>...       an area of scripts/areas.yml (the table of areas, their
+#                                    paths and checks): web py planner ingest assistant
+#                                    weather jobs engine java ios android
 #   scripts/dev/check.sh all-changed     the areas `git diff origin/main...` and
 #                                    the uncommitted files touch, in parallel
 #   scripts/dev/check.sh --areas         reads paths on stdin, prints their areas
@@ -39,59 +41,13 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")/../.." && pwd)
 PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:$HOME/.local/bin:$HOME/.cargo/bin
 
-AREAS="web py planner ingest assistant weather jobs engine java ios android"
 RUST_IMAGE=rust:1.89-slim-bookworm
 
-# The areas a list of changed paths touches, one per line in AREAS' order:
-# CI's changes filter (ci.yml, native-ios.yml, native-android.yml) by area.
-areas_for() {
-  local path found=" "
-  while IFS= read -r path; do
-    [ -n "$path" ] || continue
-    case "$path" in
-      apps/web/*|apps/web/.nvmrc|services/planner/openapi.json|services/gateway/openapi.json|engine/contract/*|scripts/build/api-models-apps.*)
-        found+="web " ;;
-    esac
-    case "$path" in
-      services/planner/wingtip/*|engine/*|services/planner/tests_wingtip/*|services/planner/requirements*.txt|ml/requirements-*.txt|scripts/build/build-engine-wasm.sh|apps/web/src/lib/engine/wingtip-engine.wasm|services/planner/pyproject.toml|services/planner/conftest.py|services/planner/pytest_guards.py)
-        found+="py " ;;
-    esac
-    case "$path" in
-      services/planner/*|engine/*) found+="planner " ;;
-    esac
-    # The weather service imports wingtip (its store and readers) and the engine.
-    case "$path" in
-      services/weather/*|services/planner/wingtip/*|services/planner/requirements-wingtip.txt|services/planner/pytest_guards.py|engine/*)
-        found+="weather " ;;
-    esac
-    case "$path" in
-      services/ingest/*|services/planner/wingtip/*|engine/*) found+="ingest " ;;
-      services/assistant/*) found+="assistant " ;;
-    esac
-    case "$path" in
-      services/jobs/*|services/planner/wingtip/*|services/planner/requirements-wingtip*.txt|services/planner/pytest_guards.py|engine/*)
-        found+="jobs " ;;
-    esac
-    case "$path" in
-      engine/*|apps/web/src/lib/fixtures/*|services/planner/tests_wingtip/fixtures/native/*) found+="engine " ;;
-    esac
-    case "$path" in
-      services/gateway/*|services/planner/openapi.json|services/assistant/openapi.json) found+="java " ;;
-    esac
-    case "$path" in
-      apps/ios/*|apps/web/src/lib/fixtures/*|apps/web/src/lib/acs.json|engine/facade/*|engine/crates/*|engine/bindings/ffi/*|engine/Cargo.*|services/planner/tests_wingtip/fixtures/native/*)
-        found+="ios " ;;
-    esac
-    case "$path" in
-      apps/android/*|apps/web/src/lib/fixtures/*|engine/facade/*|engine/crates/*|engine/bindings/ffi/*|engine/Cargo.*)
-        found+="android " ;;
-    esac
-  done
-  local area
-  for area in $AREAS; do
-    case "$found" in *" $area "*) echo "$area" ;; esac
-  done
-}
+# The areas and the paths that belong to each are scripts/areas.yml's, the
+# one table the pre-push hook and CI's changes filter read too.
+AREAS=$(python3 "$here/scripts/areas.py" names | tr '\n' ' ')
+# The areas a list of changed paths touches, one per line in AREAS' order.
+areas_for() { python3 "$here/scripts/areas.py" areas; }
 
 changed_paths() {
   git -C "$here" fetch -q origin main 2>/dev/null || true

@@ -1,5 +1,9 @@
 """scripts/dev/check.sh's all-changed picks the areas CI's changes filter would.
 
+Both read scripts/areas.yml: check.sh and the pre-push hook through
+scripts/areas.py, and ci.yml's paths-filter block is generated from it, which
+the last tests here hold to.
+
 The local checks run only what a branch touched; an area missed here is a
 check that passes on the Mac and fails in CI, and an area added for nothing
 is minutes in a turn another session waits for.
@@ -29,7 +33,7 @@ def test_a_web_change_is_the_web_alone():
 
 
 def test_an_openapi_document_reaches_the_web_types():
-    assert areas("services/planner/openapi.json") == ["web", "planner"]
+    assert areas("services/planner/openapi.json") == ["web", "planner", "assistant", "java"]
     assert areas("services/gateway/openapi.json") == ["web", "java"]
 
 
@@ -52,9 +56,9 @@ def test_an_engine_rule_reaches_every_shell_of_it():
         "py", "planner", "ingest", "weather", "jobs", "engine", "ios", "android"]
 
 
-def test_the_shared_fixtures_reach_the_engine_and_the_phones():
+def test_the_shared_fixtures_reach_wingtips_tests_the_engine_and_the_phones():
     assert areas("apps/web/src/lib/fixtures/winds.json") == [
-        "web", "engine", "ios", "android"]
+        "web", "py", "engine", "ios", "android"]
 
 
 def test_each_app_is_its_own_area():
@@ -70,3 +74,19 @@ def test_words_alone_check_nothing():
 def test_each_area_once_in_one_order():
     assert areas("services/planner/tests_wingtip/test_geo.py", "services/planner/wingtip/geo.py", "apps/web/src/App.tsx") == [
         "web", "py", "planner", "ingest", "weather", "jobs"]
+
+
+def test_ci_yml_has_the_filters_the_areas_file_makes():
+    result = subprocess.run(
+        ["python3", str(ROOT / "scripts" / "areas.py"), "check"], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+
+def test_check_sh_lists_the_areas_the_file_names():
+    names = subprocess.run(
+        ["python3", str(ROOT / "scripts" / "areas.py"), "names"], capture_output=True, text=True, check=True,
+    ).stdout.split()
+    assert names == "web py planner ingest assistant weather jobs engine java ios android".split()
+    for name in names:
+        # every area has a branch in check.sh's run_area
+        assert f"\n    {name})" in SCRIPT.read_text(), name
