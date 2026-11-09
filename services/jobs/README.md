@@ -86,6 +86,33 @@ A cycle drawn before the archives is converted once with
 MM-DD-YYYY` for one). It needs free space for the largest archive beside
 its loose tiles, and takes the refresh lock, so it waits for a render.
 
+### The overlay tiles
+
+`docker compose run --rm charts overlays` (the `charts-overlays`
+container) builds the map's FAA overlays as one vector-tile PMTiles
+archive a cycle, with tippecanoe from the planner's cycle pack
+(`charts/overlays.py`, `wingtip.vector_tiles`); the planner serves it at
+`/api/overlay-tiles`, and the web's MapLibre
+(`apps/web/src/lib/map/overlayTiles.ts`) and the phones' read it in byte
+ranges. Zooms 4 to 12, lines within `tolerance_m` (4.1 m) of the FAA's,
+nothing dropped for size. A sample of the 29 Oct 2026 cycle (92 to 84 W,
+38 to 46 N, about a tenth of its features) made an 8.6 MB archive in 90 s
+on the Mac mini, so the whole cycle is some 85 to 95 MB and 15 minutes,
+once a cycle.
+
+| Layer | From | Fields | First zoom |
+|---|---|---|---|
+| `airspace` | NASR Class_Airspace.shp, Class B–E | `class`, `local_type`, `name`, `ident`, `floor_ft`, `floor_ref` (SFC/AGL/MSL), `ceiling_ft` (MSL), `ceiling_excluded`, `number`, `hours_code`, `hours_remark` | B 4, C 5, D 6, E2–E4 7, E5–E7 8 |
+| `airspace_labels` | the same file, Class B–D: one point a volume on its ring's outer edge, where the map writes its altitudes | `class`, `floor_ft`, `ceiling_ft`, `ceiling_excluded`, `number`, `angle` (the text's clockwise turn along the ring, −90 to 90) | B 4, C 5, D 6 |
+| `special_use` | FAA special use airspace (ADDS) | `type` (P/R/MOA/W/A/D), `kind`, `name`, `floor_ft`, `floor_ref`, `ceiling_ft`, `ceiling_ref`, `times_of_use`, `time_zone`, `controlling_agency` | 5 |
+| `airports` | NASR APT_BASE, APT_RWY, APT_RWY_END (operational only) | `ident`, `faa_id`, `name`, `type`, `use`, `military`, `towered`, `elevation_ft`, `longest_ft`, `hard_ft`, `runway_true`, `fuel`, `rank` (0 towered … 4 heliport) | by rank: 5, 6, 7, 9, 10 |
+| `navaids` | NASR NAV_BASE (in service) | `ident`, `name`, `kind`, `freq`, `channel`, `service_volume`, `mag_var`, `elevation_ft`, `hours`, `restricted` | VORs 5, others 7 |
+| `fixes` | NASR FIX_BASE, every row | `ident`, `kind`, `vfr`, `enroute_low` | charted 8, others 10 |
+
+A change to the layers bumps `wingtip.vector_tiles.VERSION`, and the
+browser suite's own archive is rebuilt with
+`scripts/build/e2e-overlay-tiles.sh` ([docs/CI.md](../../docs/CI.md)).
+
 ## On AWS
 
 - **charts**: the chart cycle is a Fargate Spot task that EventBridge

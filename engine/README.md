@@ -222,7 +222,9 @@ Then the callers switch to the name and the old copy is deleted.
   14 CFR 91.119's clearances (`vfr_floors`), or 91.177(a)'s minimum IFR
   altitude over Part 95's mountainous areas (`ifr_floors`, the areas drawn
   in `mountainous.rs`), or an airway's MEA -- the band under the Class B
-  shelf, 91.155's distance under the forecast clouds and the service
+  shelf (only Class B bounds it: Class B takes a clearance, 91.131(a)(1),
+  while Class C and D take two-way radio communication, 91.130(c)(1) and
+  91.129(c)(1), so they are calls to make, not airspace to fly under), 91.155's distance under the forecast clouds and the service
   ceiling, none in prohibited airspace (73.83), the cruising altitudes by
   course (91.159, 91.179(b)), the recommendation and the icing
   (`select_cruise_altitude`), the altitude wheel's rows, and the altitude
