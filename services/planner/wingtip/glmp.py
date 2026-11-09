@@ -22,6 +22,7 @@ nearest-point search finds it (checked at six points across the grid,
 from __future__ import annotations
 
 import json
+import logging
 import math
 import sys
 import threading
@@ -33,6 +34,8 @@ from pyproj import Proj
 
 from . import weather_store
 from .units import M_TO_FT
+
+log = logging.getLogger(__name__)
 
 _M_PER_SM = 1609.344
 #: GLMP's ceiling where there is none: no layer broken or overcast.
@@ -132,3 +135,55 @@ def at(lat: float, lon: float, now: datetime | None = None) -> dict | None:
         "flight_category": flight_category(ceiling_ft, visibility_sm),
         "valid_at": ceiling_grid.valid.isoformat().replace("+00:00", "Z"),
     }
+
+
+# The forecast hours' grids, made once per record: (record, [(valid, ceiling, visibility)]).
+_FORECAST: dict = {}
+
+
+def _forecast_grids() -> list:
+    """The latest issue's forecast hours as the weather service stored them
+    ("glmp-forecast", services/weather/app/glmp_forecast.py): [(valid,
+    ceiling grid, visibility grid)], the hours in order; none where no
+    issue is held that may still be served."""
+    record = weather_store.read("glmp-forecast")
+    if not weather_store.servable(record):
+        return []
+    with _LOCK:
+        held = _FORECAST.get("issue")
+        if held is not None and held[0] is record:
+            return held[1]
+        try:
+            hours = [
+                (datetime.fromisoformat(h["valid"].replace("Z", "+00:00")).timestamp(), _Grid(h["cig"]), _Grid(h["vis"]))
+                for h in record.data["hours"]
+            ]
+        except (KeyError, OSError, ValueError) as err:
+            log.warning("GLMP's stored forecast could not be read: %s", err)
+            return []
+        _FORECAST["issue"] = (record, hours)
+        return hours
+
+
+def forecast_at(lat: float, lon: float, start: float, end: float) -> list[dict]:
+    """The Gridded LAMP's forecast hours at a point valid within [start,
+    end] (UNIX seconds), each {"valid", "ceiling_ft" (above the ground,
+    None with no ceiling), "visibility_sm"}: the figures the engine's
+    forecast dry run reads the hour nearest its time from
+    (forecast/run, MODELLED_REACH_S). Empty off the grid or where no
+    forecast is held: the run then reads the TAFs alone."""
+    out = []
+    for valid, ceiling_grid, visibility_grid in _forecast_grids():
+        if not start <= valid <= end:
+            continue
+        ceiling_m, visibility_m = ceiling_grid.at(lat, lon), visibility_grid.at(lat, lon)
+        if ceiling_m is None or visibility_m is None:
+            continue
+        out.append(
+            {
+                "valid": valid,
+                "ceiling_ft": None if ceiling_m <= _NO_CEILING_M else round(ceiling_m * M_TO_FT, -1),
+                "visibility_sm": round(visibility_m / _M_PER_SM, 2),
+            }
+        )
+    return out

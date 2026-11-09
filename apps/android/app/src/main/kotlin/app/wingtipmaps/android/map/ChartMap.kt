@@ -126,7 +126,7 @@ fun ChartMap(
 ) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val holder = LocalDensity.current.density.let { density -> remember { MapHolder(MapView(context).also(NexradLayer::follow).also(WeatherLoopLayer::follow), density) } }
+    val holder = LocalDensity.current.density.let { density -> remember { MapHolder(MapView(context).also(NexradLayer::follow).also(WeatherLoopLayer::follow).also(ForecastAreasLayer::follow), density) } }
     holder.onDragged = onDragged
     holder.onRevealed = onRevealed
     holder.onPick = onPick

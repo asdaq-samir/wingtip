@@ -173,7 +173,7 @@ pub fn tafs_along_route(tafs: &[Value], a: (f64, f64), b: (f64, f64), corridor_n
 }
 
 /// A whole number of feet with thousands commas, "1,200" (Python's ",.0f").
-fn feet(v: f64) -> String {
+pub(crate) fn feet(v: f64) -> String {
     let n = v.round() as i64;
     let digits = n.unsigned_abs().to_string();
     let mut out = String::new();
@@ -191,7 +191,7 @@ fn feet(v: f64) -> String {
 }
 
 /// A visibility as Python's "g" writes it: "3", "1.5", "0.25".
-fn miles(v: f64) -> String {
+pub(crate) fn miles(v: f64) -> String {
     if v.fract() == 0.0 {
         format!("{}", v as i64)
     } else {

@@ -239,7 +239,7 @@ export class GatewayRequest extends Request {
   }
 }
 
-const planner = createClient<paths>({ baseUrl: "", Request: GatewayRequest });
+export const planner = createClient<paths>({ baseUrl: "", Request: GatewayRequest });
 
 /** A logbook entry's columns kept of one drawn from the app's own track
  *  (features/logbook-auto), which a typed or imported entry has none of. */
