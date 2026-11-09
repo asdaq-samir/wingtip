@@ -3,6 +3,7 @@ package app.wingtipmaps.android.strip
 import app.wingtipmaps.android.emergency.EmergencyOpen
 
 import app.wingtipmaps.android.format.Format
+import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Plan
@@ -17,6 +18,7 @@ import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.ctafOf
 import app.wingtipmaps.android.engine.generated.frequencyOf
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.plan.FlightChoices
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -171,13 +173,14 @@ class StripModel : ViewModel() {
 
     /** The route planned: one ident is the destination, from the route's
      *  departure, else the nearest field to the airplane, else the pilot's
-     *  home base. */
+     *  home base (the account's, else the one given in the welcome). */
     private suspend fun route(command: FieldCommand.Route, plan: Plan, pilot: Pilot?, fix: OwnShip.Fix?): String? {
         var dep = command.dep ?: plan.state.value.dep
         if (dep.isEmpty() && fix != null) {
             dep = runCatching { nearest(fix.lat, fix.lon) }.getOrNull() ?: ""
         }
         if (dep.isEmpty()) dep = pilot?.homeBase?.trim()?.uppercase() ?: ""
+        if (dep.isEmpty()) dep = FlightChoices.of(plan.getApplication<Application>()).home.value ?: ""
         if (dep.isEmpty()) return "Say where from too: \"C81 KDLH\", or turn on Show my airplane."
         if (dep == command.dest && command.stops.isEmpty()) return "${command.dest} is where you are. Say somewhere to fly to."
         plan.plan(dep, command.dest, command.stops)

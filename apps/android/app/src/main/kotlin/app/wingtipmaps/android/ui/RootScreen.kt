@@ -39,6 +39,7 @@ import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.route.RouteLegHost
 import app.wingtipmaps.android.route.RouteLegModel
 import app.wingtipmaps.android.strip.StripLayout
+import app.wingtipmaps.android.welcome.WelcomeHost
 import app.wingtipmaps.android.ui.sheet.DockedSheet
 import app.wingtipmaps.android.ui.sheet.SheetStop
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
@@ -80,6 +81,8 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     var picked by remember { mutableStateOf<MapPick?>(null) }
     var asking by rememberSaveable { mutableStateOf(false) }
     var nearestOpen by rememberSaveable { mutableStateOf(false) }
+    // Bumped when the welcome ends into a flight, for the strip's sheet.
+    var raised by remember { mutableIntStateOf(0) }
     // Under way: own ship on and at flying speed (the engine's
     // `underway`), when the strip turns to the airplane.
     val inFlight by InFlight.shared.state.collectAsStateWithLifecycle()
@@ -122,7 +125,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val onNearest = { nearestOpen = true }
 
     if (layout == LayoutPreference.STRIP) {
-        StripLayout(plan = plan, session = session, ownShip = ownShip.ownShip, flying = flying, map = {
+        StripLayout(plan = plan, session = session, ownShip = ownShip.ownShip, flying = flying, raise = raised, map = {
             MapPane(plan, ownShip, covered = 0.dp, onPick = onPick, onAsk = null, onNearest = onNearest)
         })
     } else {
@@ -183,6 +186,13 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     EmergencyHost(plan, ownShip)
     // A flight recorded and ended, offered for the logbook.
     AutoLogbookHost(plan, session)
+    // The welcome, once per install: at its end the sheet comes up a stop
+    // on FPL (or the strip), with the sample flight or the way to plan one.
+    WelcomeHost(plan) {
+        tab = Tabs.FPL.ordinal
+        raised++
+        scope.launch { if (sheet.stop == SheetStop.PILL) sheet.moveTo(SheetStop.HALF) }
+    }
 }
 
 /** The pill: the drag handle, the figures' line and the tabs (Material's

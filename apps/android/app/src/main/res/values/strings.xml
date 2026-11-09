@@ -293,4 +293,28 @@
     <string name="later">Later</string>
     <string name="not_a_flight">Not a Flight to Log</string>
     <string name="try_again">Try Again</string>
+
+    <!-- The welcome, once per install (welcome/): one page a step, Skip on
+         each, the system's permission asks only after Allow. -->
+    <string name="welcome">Welcome</string>
+    <string name="welcome_skip">Skip</string>
+    <string name="welcome_next">Next</string>
+    <string name="welcome_airplane">Your Airplane</string>
+    <string name="welcome_airplane_line">Pick the one you fly for times, fuel and headings, or plan with no airplane.</string>
+    <string name="welcome_home">Home Airport</string>
+    <string name="welcome_home_line">Where your flights usually start. You can leave it empty.</string>
+    <string name="welcome_home_is">Home: %1$s</string>
+    <string name="welcome_rules">VFR or IFR</string>
+    <string name="welcome_rules_line">How you usually fly. Change it any time in FPL.</string>
+    <string name="welcome_location">Location</string>
+    <string name="welcome_location_line">Wingtip plans from where you are and shows your airplane on the chart.</string>
+    <string name="welcome_notifications">Notifications</string>
+    <string name="welcome_notifications_line">Wingtip tells you when something on your route changes: a TFR, the weather turning.</string>
+    <string name="welcome_finish">Ready to Fly</string>
+    <string name="welcome_finish_line">See a whole flight first, Madison (KMSN) to Oshkosh (KOSH), with its route, nav log and Brief, or plan your own.</string>
+    <string name="welcome_sample">Open Sample Flight</string>
+    <string name="welcome_own">Plan My Own</string>
+    <string name="welcome_again">Show Welcome Again</string>
+    <string name="microphone">Microphone</string>
+    <string name="microphone_line">Wingtip listens to the radio to write down your clearance; nothing leaves the phone unless you ask.</string>
 </resources>

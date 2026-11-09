@@ -83,8 +83,9 @@ fun AirportScreen(ident: String, plan: Plan, onDone: () -> Unit = {}, model: Air
     }
 }
 
+/** A field the search found: its ident and name, where it is under them. */
 @Composable
-private fun SuggestionRow(found: AirportSuggestion, onOpen: () -> Unit) {
+internal fun SuggestionRow(found: AirportSuggestion, onOpen: () -> Unit) {
     Column(Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(vertical = WingtipSpace.Md)) {
         Text("${found.ident}  ${found.name}", style = MaterialTheme.typography.bodyLarge)
         val where = listOfNotNull(found.municipality, found.region).joinToString(", ")

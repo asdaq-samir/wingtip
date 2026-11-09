@@ -54,6 +54,7 @@ import app.wingtipmaps.android.logbook.LogbookScreen
 import app.wingtipmaps.android.map.MapLayersStore
 import app.wingtipmaps.android.pilot.MinimumsRows
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
+import app.wingtipmaps.android.welcome.WelcomeMemory
 
 /**
  * The Setup tab: how the app looks (the screen's layout, the theme), the
@@ -162,6 +163,13 @@ fun SetupScreen(session: Session) {
             supportingContent = { Text(stringResource(R.string.passenger_briefing_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { briefing = true },
+        )
+        // The welcome once more, from its first page (WelcomeHost, over
+        // whatever is open): its one home.
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.welcome_again)) },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { WelcomeMemory.of(context).reset() },
         )
         Row(Modifier.fillMaxWidth().padding(top = WingtipSpace.Lg), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(stringResource(R.string.server), style = MaterialTheme.typography.bodyMedium)

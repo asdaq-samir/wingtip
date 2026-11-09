@@ -40,6 +40,18 @@ class FlightChoices(private val prefs: SharedPreferences) {
     private val _tail = MutableStateFlow(prefs.getString(TAIL, null))
     val tail: StateFlow<String?> = _tail.asStateFlow()
 
+    /** The pilot's home airport, given in the welcome: where a route
+     *  starts when the pilot names only where to (StripModel.route),
+     *  after the account's home base. None until given. */
+    private val _home = MutableStateFlow(prefs.getString(HOME, null))
+    val home: StateFlow<String?> = _home.asStateFlow()
+
+    fun setHome(ident: String?) {
+        val home = ident?.trim()?.uppercase()?.ifEmpty { null }
+        prefs.edit { if (home == null) remove(HOME) else putString(HOME, home) }
+        _home.value = home
+    }
+
     fun setTail(registration: String) {
         val tail = registration.trim().uppercase().ifEmpty { null }
         prefs.edit { if (tail == null) remove(TAIL) else putString(TAIL, tail) }
@@ -58,6 +70,7 @@ class FlightChoices(private val prefs: SharedPreferences) {
 
     companion object {
         private const val TAIL = "tail"
+        private const val HOME = "home"
         private const val RULES = "rules"
         private const val PASSENGERS = "passengers"
 
