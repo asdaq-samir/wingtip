@@ -518,6 +518,9 @@ jobs:
             test-assistant:
               - services/assistant/**
               - .ruff.toml
+              # the planner calls the assistant makes are checked against it
+              # (tests/test_planner_contract.py)
+              - services/planner/openapi.json
             # The weather service, and wingtip, whose store and readers it
             # is tested against.
             test-weather:
