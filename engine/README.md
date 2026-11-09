@@ -58,6 +58,7 @@ workspace.
 | `airspace` | airspace, pack, rules, pack_query, view, spoken, ahead, drills (91.125's light signals and 91.155's minimums as cards and by name) | core, flight, procedures, radio |
 | `wording` | wording (with script: the radio calls' words) | core, procedures, airspace, brief, route (without its options) |
 | `altitude` | altitude (the floor, the band, the cruising altitudes, the selection and its words, the cautions on a pilot's own altitude, 91.119(b)'s congested areas) | core, flight, weather, procedures |
+| `inflight` | fields (`best_fields`: where to go from here), watch, checks, message (`copilot_watch`: the in-flight copilot's ranked messages) | core, flight, weather, procedures, brief |
 | `facade/` | call | all of them |
 
 Why these lines:

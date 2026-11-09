@@ -10,6 +10,8 @@ import { cn } from "cn";
 import { useFlying } from "./mapChrome";
 
 const RadioLayer = lazy(() => import("./RadioLayer"));
+// The in-flight copilot, fetched with its first flight.
+const CopilotBanner = lazy(() => import("../features/copilot/CopilotBanner"));
 
 /**
  * The map's lines: at the top, the screen's width, over a panel at the
@@ -56,6 +58,8 @@ export default function MapBanners({ map }: { map: GlMap | null }) {
       {/* The sunlight scheme, the first time the light sensor turns it on. */}
       <SunlightBanner />
       <AlertsBanner />
+      {/* The copilot's one message while flying, after what is ahead. */}
+      {flying && <Suspense fallback={null}><CopilotBanner /></Suspense>}
       {radio && <Suspense fallback={null}><RadioLayer /></Suspense>}
       <AircraftAlerts />
       <ProblemBanner />

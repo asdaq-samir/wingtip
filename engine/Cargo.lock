@@ -1063,6 +1063,7 @@ dependencies = [
  "wingtip-brief",
  "wingtip-core",
  "wingtip-flight",
+ "wingtip-inflight",
  "wingtip-pilot",
  "wingtip-procedures",
  "wingtip-radio",
@@ -1081,6 +1082,17 @@ dependencies = [
 [[package]]
 name = "wingtip-flight"
 version = "0.1.0"
+
+[[package]]
+name = "wingtip-inflight"
+version = "0.1.0"
+dependencies = [
+ "wingtip-brief",
+ "wingtip-core",
+ "wingtip-flight",
+ "wingtip-procedures",
+ "wingtip-weather",
+]
 
 [[package]]
 name = "wingtip-pilot"

@@ -17,6 +17,7 @@ wingtip-brief = { path = "../crates/brief" }
 wingtip-procedures = { path = "../crates/procedures" }
 wingtip-core = { path = "../crates/core" }
 wingtip-flight = { path = "../crates/flight" }
+wingtip-inflight = { path = "../crates/inflight" }
 wingtip-pilot = { path = "../crates/pilot" }
 wingtip-radio = { path = "../crates/radio" }
 wingtip-route = { path = "../crates/route", default-features = false }

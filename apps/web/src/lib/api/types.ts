@@ -167,6 +167,8 @@ export type StationWind = Schemas["StationWind"];
 export type AlertsAhead = Schemas["AlertsAhead"];
 // What the FAA's SWIM feeds say now (app.routers.live, lib/liveReports).
 export type ItwsAlerts = Schemas["ItwsAlerts"];
+/** What the in-flight copilot reads round the airplane (GET /api/copilot/around). */
+export type CopilotAround = Schemas["CopilotAround"];
 export type ItwsProduct = Schemas["ItwsProduct"];
 export type SaaStatuses = Schemas["SaaStatuses"];
 export type SaaStatus = Schemas["SaaStatus"];

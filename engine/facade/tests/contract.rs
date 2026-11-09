@@ -6,6 +6,8 @@
 //! are of the shapes it gives. A member renamed in Rust then fails here,
 //! not on the phone.
 
+mod common;
+
 use serde_json::{json, Map, Value};
 use std::collections::BTreeSet;
 use std::path::PathBuf;
@@ -89,6 +91,7 @@ fn code_names() -> BTreeSet<String> {
         include_str!("../../crates/route/src/route/answers.rs"),
         include_str!("../../crates/route/src/navlog/calls.rs"),
         include_str!("../../crates/route/src/route/options.rs"),
+        include_str!("../../crates/inflight/src/lib.rs"),
     ] {
         names.extend(names_const(src));
     }
@@ -632,6 +635,14 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     let icing = fixture("icingForecast.json");
     for case in icing["routes"].as_array().unwrap() {
         c.ask("icing_forecast_route", json!({ "levels_ft": icing["levels_ft"], "legs": case["legs"] }));
+    }
+
+    // The in-flight copilot and the best fields (copilot.json).
+    let copilot = fixture("copilot.json");
+    for case in copilot["cases"].as_array().unwrap().iter().chain(copilot["best"].as_array().unwrap()) {
+        let input = common::copilot_input(&copilot["base"], case);
+        c.ask("copilot_watch", input.clone());
+        c.ask("best_fields", input);
     }
 
     // Every fixture above was asked, and these are the names it reaches:

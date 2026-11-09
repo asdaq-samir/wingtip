@@ -20700,6 +20700,371 @@
         "answer"
       ],
       "additionalProperties": false
+    },
+    "best_fields": {
+      "description": "The fields to go to from where the airplane is, ranked: good ones first (weather at or above 91.155(c), (d) under VFR and the pilot's minimums, fuel to reach them with 91.151(a) or 91.167(a)'s reserve, runway, fuel sold, within reach), nearest in time first; the rest after, each with why. The copilot's alternative and the emergency assistant's fields within glide.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "BestFieldsInput",
+          "type": "object",
+          "properties": {
+            "own": {
+              "$ref": "#/definitions/InflightOwn"
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/InflightField"
+              }
+            },
+            "rules": {
+              "enum": [
+                "VFR",
+                "IFR",
+                null
+              ]
+            },
+            "minimums": {
+              "$ref": "#/definitions/InflightMinimums"
+            },
+            "fuel_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "burn_gph": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "tas_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "now_s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "runway_min_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "within_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "need_fuel": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "exclude": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              }
+            },
+            "limit": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "own",
+            "fields"
+          ]
+        },
+        "answer": {
+          "title": "BestFieldsAnswer",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BestField"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "copilot_watch": {
+      "description": "The in-flight copilot: from own ship and the live data, the messages that change what the pilot should do, most pressing first (warning, caution, advisory; then the kinds' order), each with the words to show and speak and its sources. Warns, never limits.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "CopilotWatchInput",
+          "type": "object",
+          "properties": {
+            "own": {
+              "$ref": "#/definitions/InflightOwn"
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/InflightField"
+              }
+            },
+            "rules": {
+              "enum": [
+                "VFR",
+                "IFR",
+                null
+              ]
+            },
+            "minimums": {
+              "$ref": "#/definitions/InflightMinimums"
+            },
+            "fuel_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "burn_gph": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "tas_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "now_s": {
+              "type": "number"
+            },
+            "runway_min_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "dest": {
+              "type": "string"
+            },
+            "alternate": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "remaining_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "planned_gs_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "passengers": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "night_current": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "areas": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "title": "CopilotArea",
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "tfr",
+                      "sua",
+                      "sigmet"
+                    ]
+                  },
+                  "id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  },
+                  "active": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "starts_s": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "until_s": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "lat",
+                  "lon"
+                ]
+              }
+            },
+            "itws": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "title": "CopilotItws",
+                "type": "object",
+                "properties": {
+                  "airport": {
+                    "type": "string"
+                  },
+                  "alert": {
+                    "type": "string"
+                  },
+                  "words": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "airport",
+                  "alert",
+                  "words"
+                ]
+              }
+            },
+            "ahead": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "title": "CopilotAhead",
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "level": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "own",
+            "fields",
+            "now_s",
+            "dest"
+          ]
+        },
+        "answer": {
+          "title": "CopilotWatchAnswer",
+          "type": "object",
+          "properties": {
+            "messages": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/CopilotMessage"
+              }
+            },
+            "eta_s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "remaining_nm": {
+              "type": "number"
+            },
+            "fuel_at_landing_min": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "reserve_min": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "messages",
+            "eta_s",
+            "remaining_nm",
+            "fuel_at_landing_min",
+            "reserve_min"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -21029,7 +21394,9 @@
     "passenger_night",
     "passenger_night_on_the_way",
     "checkpoints_select",
-    "below_vfr_minimums"
+    "below_vfr_minimums",
+    "best_fields",
+    "copilot_watch"
   ],
   "additionalProperties": false,
   "definitions": {
@@ -26171,6 +26538,316 @@
           }
         }
       }
+    },
+    "InflightOwn": {
+      "title": "InflightOwn",
+      "description": "Own ship: where it is, its true track and ground speed (a GPS's or the dry run's).",
+      "type": "object",
+      "properties": {
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "track_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "gs_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "lat",
+        "lon"
+      ]
+    },
+    "InflightField": {
+      "title": "InflightField",
+      "description": "A landing field as /api/copilot/around gives it: its METAR as sent, its longest open paved runway, whether NASR lists fuel, and the category it had when the flight was planned.",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "metar": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "planned_category": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "runway_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "ident",
+        "lat",
+        "lon"
+      ]
+    },
+    "InflightMinimums": {
+      "title": "InflightMinimums",
+      "description": "The pilot's own minimums, each off (null) until set.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "crosswind_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "wind_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "BestField": {
+      "title": "BestField",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "distance_nm": {
+          "type": "number"
+        },
+        "bearing_deg": {
+          "type": "number",
+          "description": "True, from own ship."
+        },
+        "off_track_deg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Signed, right positive."
+        },
+        "side": {
+          "enum": [
+            "ahead",
+            "left",
+            "right",
+            "behind",
+            null
+          ]
+        },
+        "minutes": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "category": {
+          "enum": [
+            "VFR",
+            "MVFR",
+            "IFR",
+            "LIFR",
+            null
+          ]
+        },
+        "weather": {
+          "enum": [
+            "good",
+            "under",
+            "unknown"
+          ]
+        },
+        "metar": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "runway_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel": {
+          "type": "boolean"
+        },
+        "fuel_at_landing_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "reserve_min": {
+          "type": "number"
+        },
+        "ok": {
+          "type": "boolean",
+          "description": "Good on every count known: weather, fuel with the reserve, runway, fuel sold, distance."
+        },
+        "why": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Why it is not good, each a sentence."
+        }
+      },
+      "required": [
+        "ident",
+        "name",
+        "lat",
+        "lon",
+        "distance_nm",
+        "bearing_deg",
+        "off_track_deg",
+        "side",
+        "minutes",
+        "category",
+        "weather",
+        "metar",
+        "runway_ft",
+        "fuel",
+        "fuel_at_landing_min",
+        "reserve_min",
+        "ok",
+        "why"
+      ]
+    },
+    "CopilotMessage": {
+      "title": "CopilotMessage",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The same while what it says is; speak a message once by it."
+        },
+        "kind": {
+          "enum": [
+            "ahead",
+            "itws",
+            "fuel",
+            "weather",
+            "tfr",
+            "convective",
+            "sua",
+            "night",
+            "groundspeed"
+          ]
+        },
+        "level": {
+          "enum": [
+            "warning",
+            "caution",
+            "advisory"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "description": "The banner's line."
+        },
+        "say": {
+          "type": "string",
+          "description": "The words spoken."
+        },
+        "detail": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "elsewhere": {
+          "type": "boolean",
+          "description": "Drawn by the alerts-ahead banner, not the copilot's."
+        },
+        "alternative": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/BestField"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "level",
+        "title",
+        "say",
+        "detail",
+        "sources",
+        "elsewhere",
+        "alternative"
+      ]
     }
   }
 }

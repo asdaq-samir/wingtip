@@ -674,6 +674,23 @@
 //!   "variation_deg", "at_end"?}`; `navlog_racetrack` from `{"fix",
 //!   "inbound_true_deg", "right"?, "tas_kt", "leg_nm", "steps"?}`.
 //!
+//! The flight under way (crates/inflight), each from own ship `{"lat",
+//! "lon", "track_deg"?, "gs_kt"?}` and the fields round it as the
+//! planner's /api/copilot/around gives them, `[{"ident", "name"?, "lat",
+//! "lon", "metar"?, "planned_category"?, "runway_ft"?, "fuel"?}]`:
+//!
+//! - `best_fields`: the fields ranked, good ones first (weather under
+//!   91.155 and the pilot's minimums, fuel to reach them with 91.151 or
+//!   91.167's reserve, runway, fuel sold), from `{"own", "fields", "rules"?,
+//!   "minimums"?, "fuel_gal"?, "burn_gph"?, "tas_kt"?, "now_s"?,
+//!   "runway_min_ft"?, "within_nm"?, "need_fuel"?, "exclude"?, "limit"?}`;
+//! - `copilot_watch`: `{"messages": [{"id", "kind", "level", "title",
+//!   "say", "detail", "sources", "elsewhere", "alternative"}], "eta_s",
+//!   "remaining_nm", "fuel_at_landing_min", "reserve_min"}`, most pressing
+//!   first, from best_fields' input with `{"now_s", "dest", "alternate"?,
+//!   "remaining_nm"?, "planned_gs_kt"?, "passengers"?, "night_current"?,
+//!   "areas"?, "itws"?, "ahead"?}`.
+//!
 //! `?` marks a member that may be missing or null. A name not known, or
 //! input not of its shape, is Err with a plain message, never a panic.
 
@@ -1109,6 +1126,9 @@ pub fn call(name: &str, input: &str) -> Result<String, String> {
         _ if crate::aircraft::calls::NAMES.contains(&name) => crate::aircraft::calls::call(name, ask.v),
         // Instrument approaches taught and debriefed (approach::calls).
         _ if crate::approach::calls::NAMES.contains(&name) => crate::approach::calls::call(name, ask.v),
+        // The flight under way: the best fields to go to and the in-flight
+        // copilot's ranked messages (crates/inflight).
+        _ if crate::inflight::NAMES.contains(&name) => crate::inflight::call(name, ask.v),
         // The IFR alternate, 14 CFR 91.169 (alternates).
         _ if crate::alternates::NAMES.contains(&name) => crate::alternates::call(name, ask.v),
         // Forecast icing on an IFR route's legs (icing_forecast, #216).

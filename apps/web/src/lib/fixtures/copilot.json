@@ -1,0 +1,105 @@
+{
+  "about": "The in-flight copilot (copilot_watch) and the best fields (best_fields) on a dry run from KUGN to KOSH, own ship 24 nm short of Oshkosh with Fond du Lac 11 nm ahead, on 2026-11-09 at 1700Z. Each case is the base with `with` laid over it and `metars` replacing those fields' reports; `expect` is the first message, or null for none. Read by the engine's tests (engine/facade/tests/copilot.rs, contract.rs) and the web's (features/copilot). Field positions and runways are near NASR's, for the tests only; the METARs are made up for the cases.",
+  "base": {
+    "now_s": 1794243600,
+    "own": { "lat": 43.6, "lon": -88.4, "track_deg": 340, "gs_kt": 105 },
+    "rules": "VFR",
+    "dest": "KOSH",
+    "remaining_nm": 24,
+    "planned_gs_kt": 110,
+    "tas_kt": 110,
+    "fuel_gal": 20,
+    "burn_gph": 9,
+    "minimums": { "ceiling_ft": null, "visibility_sm": null, "crosswind_kt": null, "wind_kt": null },
+    "passengers": false,
+    "night_current": true,
+    "fields": [
+      { "ident": "KOSH", "name": "Oshkosh", "lat": 43.9844, "lon": -88.557, "metar": "KOSH 091653Z 34008KT 10SM FEW045 09/01 A3001", "planned_category": "VFR", "runway_ft": 8002, "fuel": true },
+      { "ident": "KFLD", "name": "Fond du Lac", "lat": 43.7712, "lon": -88.4884, "metar": "KFLD 091655Z 33010KT 10SM SCT050 09/02 A3002", "planned_category": "VFR", "runway_ft": 5941, "fuel": true },
+      { "ident": "KATW", "name": "Appleton", "lat": 44.2581, "lon": -88.5191, "metar": "KATW 091653Z 34010KT 10SM FEW040 08/01 A3001", "planned_category": "VFR", "runway_ft": 8002, "fuel": true },
+      { "ident": "KSBM", "name": "Sheboygan", "lat": 43.7696, "lon": -87.8516, "metar": "KSBM 091655Z 32012KT 10SM BKN045 09/02 A3002", "planned_category": "VFR", "runway_ft": 6800, "fuel": true },
+      { "ident": "KETB", "name": "West Bend", "lat": 43.4222, "lon": -88.1279, "metar": "KETB 091655Z 33008KT 10SM CLR 10/01 A3003", "planned_category": "VFR", "runway_ft": 4494, "fuel": true },
+      { "ident": "KUES", "name": "Waukesha", "lat": 43.0411, "lon": -88.2371, "metar": "KUES 091655Z 32008KT 10SM CLR 10/01 A3003", "planned_category": "VFR", "runway_ft": 5849, "fuel": true }
+    ]
+  },
+  "cases": [
+    { "name": "a quiet flight says nothing", "expect": null },
+    {
+      "name": "Oshkosh goes IFR: Fond du Lac, VFR and short of it, is named",
+      "metars": { "KOSH": "SPECI KOSH 091712Z 34012KT 2SM BR OVC008 08/07 A2992" },
+      "expect": { "kind": "weather", "level": "caution", "alternative": "KFLD", "title_has": "KOSH just went IFR" }
+    },
+    {
+      "name": "under IFR an IFR destination under no minimums of the pilot's is no message",
+      "with": { "rules": "IFR" },
+      "metars": { "KOSH": "SPECI KOSH 091712Z 34012KT 2SM BR OVC008 08/07 A2992" },
+      "expect": null
+    },
+    {
+      "name": "a 3,000 ft ceiling under the pilot's 3,500 ft",
+      "with": { "minimums": { "ceiling_ft": 3500, "visibility_sm": null, "crosswind_kt": null, "wind_kt": null } },
+      "metars": { "KOSH": "KOSH 091753Z 34008KT 10SM BKN030 09/01 A3001" },
+      "expect": { "kind": "weather", "level": "caution", "alternative": "KFLD", "title_has": "KOSH just went MVFR" }
+    },
+    {
+      "name": "fuel short of the 30 minute day reserve at Oshkosh, Fond du Lac reached with it",
+      "with": { "fuel_gal": 6 },
+      "expect": { "kind": "fuel", "level": "warning", "alternative": "KFLD", "title_has": "under the 30 min reserve" }
+    },
+    {
+      "name": "a microburst at Oshkosh outranks its weather",
+      "metars": { "KOSH": "SPECI KOSH 091712Z 34012KT 2SM BR OVC008 08/07 A2992" },
+      "with": { "itws": [{ "airport": "KOSH", "alert": "microburst", "words": "Runway 36 arrival microburst alert 40 kt, 3 mile final to runway" }] },
+      "expect": { "kind": "itws", "level": "warning", "title_has": "microburst" }
+    },
+    {
+      "name": "a TFR active ahead is said; one behind is not",
+      "with": { "areas": [
+        { "kind": "tfr", "id": "6/4321", "name": "6/4321", "lat": 43.8, "lon": -88.45, "active": true, "starts_s": null, "until_s": null },
+        { "kind": "tfr", "id": "6/1111", "name": "6/1111", "lat": 43.1, "lon": -88.2, "active": true, "starts_s": null, "until_s": null }
+      ] },
+      "expect": { "kind": "tfr", "level": "caution", "title_has": "6/4321 active now" }
+    },
+    {
+      "name": "a restricted area SFDPS says is cold now and goes active before the airplane gets there; one going active after it has passed is not said",
+      "with": { "areas": [
+        { "kind": "sua", "id": "R-6903", "name": "R-6903", "lat": 43.8, "lon": -88.45, "active": false, "starts_s": 1794243900, "until_s": null },
+        { "kind": "sua", "id": "R-6904", "name": "R-6904", "lat": 43.8, "lon": -88.45, "active": null, "starts_s": 1794258000, "until_s": null }
+      ] },
+      "expect": { "kind": "sua", "level": "caution", "title_has": "R-6903 active by", "count": 1 }
+    },
+    {
+      "name": "passengers after dark with night currency lapsed (61.57(b))",
+      "with": { "now_s": 1794270600, "passengers": true, "night_current": false },
+      "expect": { "kind": "night", "level": "caution", "title_has": "without night currency" }
+    },
+    {
+      "name": "ground speed 23% under the plan",
+      "with": { "own": { "lat": 43.6, "lon": -88.4, "track_deg": 340, "gs_kt": 85 } },
+      "expect": { "kind": "groundspeed", "level": "advisory", "title_has": "23% under plan" }
+    },
+    {
+      "name": "ground speed 14% under the plan is not said",
+      "with": { "own": { "lat": 43.6, "lon": -88.4, "track_deg": 340, "gs_kt": 95 } },
+      "expect": null
+    },
+    {
+      "name": "terrain ahead outranks everything, drawn by the alerts banner",
+      "metars": { "KOSH": "SPECI KOSH 091712Z 34012KT 2SM BR OVC008 08/07 A2992" },
+      "with": { "ahead": [{ "id": "terrain", "kind": "terrain", "level": "warning", "name": "Terrain ahead" }] },
+      "expect": { "kind": "ahead", "level": "warning", "elsewhere": true }
+    }
+  ],
+  "best": [
+    {
+      "name": "within a 15 nm glide only Fond du Lac is good",
+      "with": { "within_nm": 15 },
+      "expect": { "first": "KFLD", "ok": 1 }
+    },
+    {
+      "name": "fuel wanted and a 5,000 ft runway, Oshkosh left out: Fond du Lac first",
+      "with": { "need_fuel": true, "runway_min_ft": 5000, "exclude": ["KOSH"] },
+      "expect": { "first": "KFLD", "ok": 4 }
+    }
+  ]
+}

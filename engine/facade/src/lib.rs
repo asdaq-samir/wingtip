@@ -49,6 +49,8 @@
 //!   obstacle floor (14 CFR 91.119), the IFR floor (91.177), the band under
 //!   Class B, the clouds (91.155) and the service ceiling, the cruising
 //!   altitudes by course (91.159, 91.179) and the words where none fits;
+//! - inflight: the flight under way -- the best fields to go to from
+//!   where the airplane is, and the in-flight copilot's ranked messages;
 //! - flight: the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere;
 //! - wmm: magnetic variation from the World Magnetic Model;
 //! - forecast: a field's flight category from what is known of its
@@ -77,6 +79,8 @@ pub use wingtip_procedures::figures;
 pub use wingtip_procedures::paths;
 pub use wingtip_core::{geo, grid, sums, time, wmm, xml};
 pub use wingtip_flight::{filing, flight, limits, performance, sun};
+// The in-flight copilot and the best fields (copilot_watch, best_fields).
+pub use wingtip_inflight as inflight;
 pub use wingtip_pilot::{aircraft, pilot};
 pub use wingtip_radio::{atis, clearance, datis, readback};
 pub use wingtip_route::{approach, motion, navlog, route};

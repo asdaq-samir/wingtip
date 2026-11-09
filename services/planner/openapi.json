@@ -4047,6 +4047,217 @@
         "title": "ClearanceWords",
         "type": "object"
       },
+      "CopilotArea": {
+        "description": "A TFR, a special-use area SFDPS has spoken of, or a convective\nSIGMET on the rest of the route, at a point the route meets it (a\nSIGMET's, inside its area): whether it is in force now, when it\nstarts and ends (UNIX s).",
+        "properties": {
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "starts_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Starts S"
+          },
+          "until_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until S"
+          }
+        },
+        "required": [
+          "kind",
+          "lat",
+          "lon"
+        ],
+        "title": "CopilotArea",
+        "type": "object"
+      },
+      "CopilotAround": {
+        "description": "What the copilot reads now; `unavailable` names a source (\"tfr\",\n\"sua\") that could not be read, `at` when this was gathered.",
+        "properties": {
+          "areas": {
+            "items": {
+              "$ref": "#/components/schemas/CopilotArea"
+            },
+            "title": "Areas",
+            "type": "array"
+          },
+          "at": {
+            "title": "At",
+            "type": "number"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/CopilotField"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "itws": {
+            "items": {
+              "$ref": "#/components/schemas/CopilotItws"
+            },
+            "title": "Itws",
+            "type": "array"
+          },
+          "unavailable": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unavailable",
+            "type": "array"
+          }
+        },
+        "required": [
+          "fields",
+          "areas",
+          "itws",
+          "unavailable",
+          "at"
+        ],
+        "title": "CopilotAround",
+        "type": "object"
+      },
+      "CopilotField": {
+        "description": "A landing field as the engine's best_fields reads it: the name a\npilot says, its METAR as sent, its longest open paved runway (ft,\nOurAirports' runways) and whether NASR lists fuel there.",
+        "properties": {
+          "fuel": {
+            "default": false,
+            "title": "Fuel",
+            "type": "boolean"
+          },
+          "ident": {
+            "title": "Ident",
+            "type": "string"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "metar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metar"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "runway_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runway Ft"
+          }
+        },
+        "required": [
+          "ident",
+          "lat",
+          "lon"
+        ],
+        "title": "CopilotField",
+        "type": "object"
+      },
+      "CopilotItws": {
+        "description": "An ITWS alert at the destination or the alternate (AIM 4-3-7).",
+        "properties": {
+          "airport": {
+            "title": "Airport",
+            "type": "string"
+          },
+          "alert": {
+            "title": "Alert",
+            "type": "string"
+          },
+          "words": {
+            "title": "Words",
+            "type": "string"
+          }
+        },
+        "required": [
+          "airport",
+          "alert",
+          "words"
+        ],
+        "title": "CopilotItws",
+        "type": "object"
+      },
       "CorridorStatus": {
         "properties": {
           "candidates": {
@@ -19270,6 +19481,102 @@
           }
         },
         "summary": "Clearance Words",
+        "x-gateway": {
+          "access": "public"
+        }
+      }
+    },
+    "/api/copilot/around": {
+      "get": {
+        "description": "The fields near the airplane and the destination with their\nweather, runway and fuel, the TFRs, active special-use areas and\nconvective SIGMETs on the rest of the route, and ITWS's alerts at the\ndestination and alternate: the inputs of the engine's copilot_watch,\nwhich the app asks with its own GPS. Nothing is judged here.",
+        "operationId": "copilot_around_api_copilot_around_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "lat",
+            "required": true,
+            "schema": {
+              "maximum": 90,
+              "minimum": -90,
+              "title": "Lat",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lon",
+            "required": true,
+            "schema": {
+              "maximum": 180,
+              "minimum": -180,
+              "title": "Lon",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "dest",
+            "required": true,
+            "schema": {
+              "maxLength": 7,
+              "minLength": 2,
+              "title": "Dest",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "alternate",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 7,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Alternate"
+            }
+          },
+          {
+            "description": "The rest of the route from the airplane, lat,lon;lat,lon",
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "The rest of the route from the airplane, lat,lon;lat,lon",
+              "title": "Path",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CopilotAround"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Copilot Around",
         "x-gateway": {
           "access": "public"
         }

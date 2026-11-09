@@ -20,6 +20,7 @@ import { useDataCycles, useLayerAges } from "../lib/map/layerAges";
 import { cycleWarning } from "../lib/dataCycles";
 import { keepingAvailable } from "../lib/map/keepRoute";
 import { ALERT_MODES, useAlertMode, type AlertMode } from "../lib/alertMode";
+import { COPILOT_MODES, useCopilotMode, type CopilotMode } from "../lib/copilot/mode";
 
 /**
  * The map's settings, the whole of the map's own button's sheet
@@ -57,6 +58,7 @@ export default function MapSettings() {
   const chartsWarning = chartsCycle ? cycleWarning(chartsCycle) : null;
   const sec = prefs.base === "sec";
   const [alertMode, setAlertMode] = useAlertMode();
+  const [copilotMode, setCopilotMode] = useCopilotMode();
   return (
     <div className="flex flex-col gap-5" data-testid="map-settings-groups">
       <PictureChoices
@@ -146,6 +148,14 @@ export default function MapSettings() {
           <Segmented
             label="Alerts" value={alertMode} onChange={v => setAlertMode(v as AlertMode)} testId="alerts-mode"
             options={ALERT_MODES}
+          />
+        </ListRow>
+        {/* The in-flight copilot (features/copilot), off, shown or said
+            aloud, beside the alerts as the same kind of choice. */}
+        <ListRow title="Copilot">
+          <Segmented
+            label="Copilot" value={copilotMode} onChange={v => setCopilotMode(v as CopilotMode)} testId="copilot-mode"
+            options={COPILOT_MODES}
           />
         </ListRow>
       </ListGroup>

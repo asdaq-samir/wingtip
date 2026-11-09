@@ -3,7 +3,7 @@ import type { paths } from "./schema";
 import type { paths as AssistantPaths } from "./assistant-schema";
 import type { paths as GatewayPaths } from "./gateway-schema";
 import { noteAnswer } from "../fromCache";
-import type { AirportAtis, AirportRvr, DepartureEvents, FlowAtAirports, ItwsAlerts, SaaStatuses } from "./types";
+import type { AirportAtis, AirportRvr, CopilotAround, DepartureEvents, FlowAtAirports, ItwsAlerts, SaaStatuses } from "./types";
 import type { Aircraft, AircraftBases, AssignLessonRequest, LessonProgressRequest, AircraftChoice, AircraftProfiles, AircraftRequest, AirportPhotos, AirportPlace, AirportSearch, AirportServices, ForecastWind, AirportsInView, AirspaceAt, WeatherMap, AlertsAhead, Alternates, AltitudeChoice, IcingForecast, AppleSignedIn, Briefing, ChartInfo, ChartPages, ChartRefreshStarted, CheckpointDescriptionMessage, CheckpointNoteSaved, Checkpoints, ClassBResponse, Classification, Course, Currency, CurrencyDatesRequest, Detour, DeviceCode, DevServices, DevServiceStarted, Flight, FlightDetail, FlightPlanFiled, FlightPlanFilingRequest, FlightRoute, FlightServiceStatus, FlightStatus, FlightSummary, GoogleMaps, InspectionsRequest, Instructor, InstructorRequest, LogbookEntry, LogbookEntryRequest, LogbookImportResult, MapLayerAges, ModelComparison, NarrativeMessage, NarrativeRequest, NavLogMessage, OverlayTiles, NearestAirports, OralGrade, OralGradeRequest, OralQuestion, OralQuestionRequest, PastFlight, PastFlights, PickDeleted, PickSaved, Pilot, PilotContactRequest, PlacesFound, PlateOverlay, ProcedureDrawing, ProcedureList, Rating, Reminders, RetrainStarted, Role, RouteProfile, RouteOptions, SavedTrack, SaveFlightRequest, SignRequest, SignInCapabilities, SpeedDay, Squawk, SquawkRequest, Status, StopFields, StreamMessage, Subscription, Tfrs, Totals, Traffic, TrafficFound, Training, VorCheckRequest, ClearanceAsk, ClearancePlaces, DueItem, DueItemRequest, Paperwork } from "./types";
 
 /**
@@ -635,6 +635,12 @@ export const api = {
     planner.GET("/api/live/flow", { params: { query: { airports: airports.join(",") } } }).then(data<FlowAtAirports>),
   liveDepartures: (ident: string) =>
     planner.GET("/api/live/departures", { params: { query: { ident } } }).then(data<DepartureEvents>),
+
+  /** What the in-flight copilot reads (features/copilot): the fields round
+   *  the airplane with their METARs, the areas on the rest of the route
+   *  ("lat,lon;..."), ITWS's alerts at the destination and alternate. */
+  copilotAround: (ask: { lat: number; lon: number; dest: string; alternate?: string; path: string }) =>
+    planner.GET("/api/copilot/around", { params: { query: ask } }).then(data<CopilotAround>),
 
   /** The airplanes ADS-B receivers hear within `radius` nm of a point,
    *  from adsb.lol's open data (TrafficGl). */

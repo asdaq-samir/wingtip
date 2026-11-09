@@ -138,6 +138,10 @@ interface Preferences {
    *  (lib/map/speak). Off by default: a phone that starts talking
    *  unasked is a surprise; turned on, it says so. */
   speakAlerts: boolean;
+  /** The in-flight copilot (features/copilot): off, its one message shown,
+   *  or shown and said aloud. Shown by default, said only when asked, as
+   *  the alerts are. */
+  copilotMode: "off" | "on" | "spoken";
   /** Whether the airplanes ADS-B receivers hear about the map are drawn
    *  (TrafficGl, from adsb.lol). Off by default: it asks a third
    *  party every five seconds. */
@@ -259,6 +263,7 @@ interface Preferences {
   setTfrs: (tfrs: boolean) => void;
   setAlerts: (alerts: boolean) => void;
   setSpeakAlerts: (speakAlerts: boolean) => void;
+  setCopilotMode: (copilotMode: "off" | "on" | "spoken") => void;
   setPlates: (plates: boolean) => void;
   setTraffic: (traffic: boolean) => void;
   setMilitary: (military: boolean) => void;
@@ -325,6 +330,7 @@ export const usePreferences = create<Preferences>()(
       tfrs: true,
       alerts: true,
       speakAlerts: false,
+      copilotMode: "on",
       plates: true,
       traffic: false,
       military: false,
@@ -397,6 +403,7 @@ export const usePreferences = create<Preferences>()(
       setTfrs: tfrs => set({ tfrs }),
       setAlerts: alerts => set({ alerts }),
       setSpeakAlerts: speakAlerts => set({ speakAlerts }),
+      setCopilotMode: copilotMode => set({ copilotMode }),
       setPlates: plates => set({ plates }),
       setTraffic: traffic => set({ traffic }),
       setMilitary: military => set({ military }),
@@ -469,7 +476,7 @@ export const usePreferences = create<Preferences>()(
       }) as Preferences,
       // The functions are not state; only the values are written.
       partialize: s => ({
-        base: s.base, tac: s.tac, waypoints: s.waypoints, classB: s.classB, airspace: s.airspace, navaids: s.navaids, tfrs: s.tfrs, alerts: s.alerts, speakAlerts: s.speakAlerts, plates: s.plates, traffic: s.traffic, military: s.military, privateFields: s.privateFields, minimums: s.minimums, routeWeather: s.routeWeather, stopsRadiusNm: s.stopsRadiusNm, stopKind: s.stopKind, loads: s.loads, keepOffline: s.keepOffline, aircraft: s.aircraft, tailFigures: s.tailFigures, filters: s.filters, navBar: s.navBar, chartNight: s.chartNight, chartLight: s.chartLight, brand: s.brand, ownShipLook: s.ownShipLook,
+        base: s.base, tac: s.tac, waypoints: s.waypoints, classB: s.classB, airspace: s.airspace, navaids: s.navaids, tfrs: s.tfrs, alerts: s.alerts, speakAlerts: s.speakAlerts, copilotMode: s.copilotMode, plates: s.plates, traffic: s.traffic, military: s.military, privateFields: s.privateFields, minimums: s.minimums, routeWeather: s.routeWeather, stopsRadiusNm: s.stopsRadiusNm, stopKind: s.stopKind, loads: s.loads, keepOffline: s.keepOffline, aircraft: s.aircraft, tailFigures: s.tailFigures, filters: s.filters, navBar: s.navBar, chartNight: s.chartNight, chartLight: s.chartLight, brand: s.brand, ownShipLook: s.ownShipLook,
         flightRules: s.flightRules, routeEdit: s.routeEdit, listenInput: s.listenInput,
         recentAirports: s.recentAirports, homeAirport: s.homeAirport, favoriteAirports: s.favoriteAirports,
         recentAircraft: s.recentAircraft, favoriteAircraft: s.favoriteAircraft, myAircraft: s.myAircraft,

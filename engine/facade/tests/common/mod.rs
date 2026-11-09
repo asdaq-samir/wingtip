@@ -7,6 +7,9 @@
 //! Double), so it is compared by value, not by how serde_json happened to
 //! read it.
 
+// Each test file takes what it needs of these.
+#![allow(dead_code)]
+
 use serde_json::Value;
 
 /// Whether two JSON values are the same: numbers by value, arrays item by
@@ -24,4 +27,26 @@ pub fn same(a: &Value, b: &Value) -> bool {
 #[track_caller]
 pub fn assert_same(got: &Value, want: &Value, what: impl std::fmt::Display) {
     assert!(same(got, want), "{what}\n  got: {got}\n want: {want}");
+}
+
+/// A case of copilot.json made whole: the base with the case's `with`
+/// laid over it and its `metars` put in those fields' reports.
+#[allow(dead_code)]
+pub fn copilot_input(base: &Value, case: &Value) -> Value {
+    let mut input = base.clone();
+    if let Some(with) = case.get("with").and_then(Value::as_object) {
+        for (k, v) in with {
+            input[k.as_str()] = v.clone();
+        }
+    }
+    let metars = case.get("metars").and_then(Value::as_object).cloned().unwrap_or_default();
+    if let Some(fields) = input["fields"].as_array_mut() {
+        for field in fields {
+            let ident = field["ident"].as_str().unwrap_or("").to_owned();
+            if let Some(raw) = metars.get(&ident) {
+                field["metar"] = raw.clone();
+            }
+        }
+    }
+    input
 }

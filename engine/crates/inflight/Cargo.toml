@@ -1,0 +1,19 @@
+[package]
+name = "wingtip-inflight"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "The flight under way: the best fields to go to from where the airplane is, and the in-flight copilot's ranked messages, composed from the weather, fuel, night and minimums rules below it"
+
+[lib]
+name = "wingtip_inflight"
+
+# Only the engine's own crates, below this one (engine/README.md): the
+# copilot reads a METAR (weather), the reserve and the night (flight) and
+# the pilot's minimums (brief), and no crate under it sees all three.
+[dependencies]
+wingtip-core = { path = "../core" }
+wingtip-flight = { path = "../flight" }
+wingtip-weather = { path = "../weather" }
+wingtip-procedures = { path = "../procedures" }
+wingtip-brief = { path = "../brief" }

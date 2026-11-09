@@ -788,6 +788,19 @@ export type PassengerNightAnswer = boolean;
 export type PassengerNightOnTheWayAnswer = boolean;
 export type CheckpointsSelectAnswer = number[];
 export type BelowVfrMinimumsAnswer = boolean;
+/**
+ * The pilot's own minimums, each off (null) until set.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "InflightMinimums".
+ */
+export type InflightMinimums = {
+  ceiling_ft?: number | null;
+  visibility_sm?: number | null;
+  crosswind_kt?: number | null;
+  wind_kt?: number | null;
+} | null;
+export type BestFieldsAnswer = BestField[];
 
 /**
  * The engine's calls (engine/facade/src/call.rs): for each name, the JSON input it takes and the JSON answer it gives. The one source of their shapes: apps/web/src/lib/engine/contract.ts is generated from it (npm run types), and engine/facade/tests/contract.rs holds the engine's answers to it. A member left out of `required` may be missing; a type with null may be null.
@@ -3081,6 +3094,20 @@ export interface EngineContract {
   below_vfr_minimums: {
     input: BelowVfrMinimumsInput;
     answer: BelowVfrMinimumsAnswer;
+  };
+  /**
+   * The fields to go to from where the airplane is, ranked: good ones first (weather at or above 91.155(c), (d) under VFR and the pilot's minimums, fuel to reach them with 91.151(a) or 91.167(a)'s reserve, runway, fuel sold, within reach), nearest in time first; the rest after, each with why. The copilot's alternative and the emergency assistant's fields within glide.
+   */
+  best_fields: {
+    input: BestFieldsInput;
+    answer: BestFieldsAnswer;
+  };
+  /**
+   * The in-flight copilot: from own ship and the live data, the messages that change what the pilot should do, most pressing first (warning, caution, advisory; then the kinds' order), each with the words to show and speak and its sources. Warns, never limits.
+   */
+  copilot_watch: {
+    input: CopilotWatchInput;
+    answer: CopilotWatchAnswer;
   };
 }
 export interface HoldingInput {
@@ -8391,6 +8418,160 @@ export interface CheckpointsSelectInput {
 export interface BelowVfrMinimumsInput {
   ceiling_ft?: number | null;
   visibility_sm?: number | null;
+}
+export interface BestFieldsInput {
+  own: InflightOwn;
+  fields: InflightField[];
+  rules?: "VFR" | "IFR" | null;
+  minimums?: InflightMinimums;
+  fuel_gal?: number | null;
+  burn_gph?: number | null;
+  tas_kt?: number | null;
+  now_s?: number | null;
+  runway_min_ft?: number | null;
+  within_nm?: number | null;
+  need_fuel?: boolean | null;
+  exclude?: string[] | null;
+  limit?: number | null;
+}
+/**
+ * Own ship: where it is, its true track and ground speed (a GPS's or the dry run's).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "InflightOwn".
+ */
+export interface InflightOwn {
+  lat: number;
+  lon: number;
+  track_deg?: number | null;
+  gs_kt?: number | null;
+}
+/**
+ * A landing field as /api/copilot/around gives it: its METAR as sent, its longest open paved runway, whether NASR lists fuel, and the category it had when the flight was planned.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "InflightField".
+ */
+export interface InflightField {
+  ident: string;
+  name?: string | null;
+  lat: number;
+  lon: number;
+  metar?: string | null;
+  planned_category?: string | null;
+  runway_ft?: number | null;
+  fuel?: boolean | null;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "BestField".
+ */
+export interface BestField {
+  ident: string;
+  name: string | null;
+  lat: number;
+  lon: number;
+  distance_nm: number;
+  /**
+   * True, from own ship.
+   */
+  bearing_deg: number;
+  /**
+   * Signed, right positive.
+   */
+  off_track_deg: number | null;
+  side: "ahead" | "left" | "right" | "behind" | null;
+  minutes: number | null;
+  category: "VFR" | "MVFR" | "IFR" | "LIFR" | null;
+  weather: "good" | "under" | "unknown";
+  metar: string | null;
+  runway_ft: number | null;
+  fuel: boolean;
+  fuel_at_landing_min: number | null;
+  reserve_min: number;
+  /**
+   * Good on every count known: weather, fuel with the reserve, runway, fuel sold, distance.
+   */
+  ok: boolean;
+  /**
+   * Why it is not good, each a sentence.
+   */
+  why: string[];
+}
+export interface CopilotWatchInput {
+  own: InflightOwn;
+  fields: InflightField[];
+  rules?: "VFR" | "IFR" | null;
+  minimums?: InflightMinimums;
+  fuel_gal?: number | null;
+  burn_gph?: number | null;
+  tas_kt?: number | null;
+  now_s: number;
+  runway_min_ft?: number | null;
+  dest: string;
+  alternate?: string | null;
+  remaining_nm?: number | null;
+  planned_gs_kt?: number | null;
+  passengers?: boolean | null;
+  night_current?: boolean | null;
+  areas?: CopilotArea[] | null;
+  itws?: CopilotItws[] | null;
+  ahead?: CopilotAhead[] | null;
+}
+export interface CopilotArea {
+  kind: "tfr" | "sua" | "sigmet";
+  id?: string | null;
+  name?: string | null;
+  lat: number;
+  lon: number;
+  active?: boolean | null;
+  starts_s?: number | null;
+  until_s?: number | null;
+}
+export interface CopilotItws {
+  airport: string;
+  alert: string;
+  words: string;
+}
+export interface CopilotAhead {
+  id?: string | null;
+  kind?: string | null;
+  level?: string | null;
+  name?: string | null;
+}
+export interface CopilotWatchAnswer {
+  messages: CopilotMessage[];
+  eta_s: number | null;
+  remaining_nm: number;
+  fuel_at_landing_min: number | null;
+  reserve_min: number;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "CopilotMessage".
+ */
+export interface CopilotMessage {
+  /**
+   * The same while what it says is; speak a message once by it.
+   */
+  id: string;
+  kind: "ahead" | "itws" | "fuel" | "weather" | "tfr" | "convective" | "sua" | "night" | "groundspeed";
+  level: "warning" | "caution" | "advisory";
+  /**
+   * The banner's line.
+   */
+  title: string;
+  /**
+   * The words spoken.
+   */
+  say: string;
+  detail: string[];
+  sources: string[];
+  /**
+   * Drawn by the alerts-ahead banner, not the copilot's.
+   */
+  elsewhere: boolean;
+  alternative: BestField | null;
 }
 /**
  * This interface was referenced by `EngineContract`'s JSON-Schema

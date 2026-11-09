@@ -24,6 +24,7 @@ import type { PointAltitude } from "../components/PointAltitudeDialog";
 import { loadFlightChart } from "../components/loadFlightChart";
 import { useDryRun } from "./useDryRun";
 import { useFlyingMode } from "./useFlyingMode";
+import { useCopilotPublish } from "./useCopilotPublish";
 import { nextLanding } from "../figures";
 import { useRouteEdits } from "./useRouteEdits";
 import { useSuggestedStops, withStopsAfter } from "./useSuggestedStops";
@@ -564,6 +565,8 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   const flyDirectTo = nextLanding(s.totals, `${planned.dest}`).to;
   const flyDirect = useMemo(() => (flyDirectTo ? { to: flyDirectTo, go: () => directToPoint(flyDirectTo) } : null), [flyDirectTo, directToPoint]);
   const { flying, done: doneFlying } = useFlyingMode({ routed, setPanel, nearest: flyNearest, direct: flyDirect });
+  // The flight handed to the in-flight copilot (features/copilot).
+  useCopilotPublish({ dest: `${planned.dest}`, rules: flightRules, line: course?.course_line, totals: s.totals, aircraft: s.nav?.aircraft });
   // The Profile opened, at rest, from the route's Profile button, where the map's Play opened it and flew its
   // dry run at once until the owner took Play off the map (2026-11-02:
   // "I don't want the play button there, just the mic"); the run is the

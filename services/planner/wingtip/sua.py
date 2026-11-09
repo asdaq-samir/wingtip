@@ -281,7 +281,7 @@ def along_route(route_start: tuple, route_end: tuple, fixes: list | None = None)
     """Special-use airspace the route's legs pass laterally through, in
     along-route order: {"name", "type", "kind", "floor_ft", "ceiling_ft",
     "times_of_use", "time_zone", "controlling_agency", "along_track_nm",
-    "legs"}, where
+    "lat", "lon" (where the route meets it), "legs"}, where
     `legs` are the indices of the legs (between consecutive fixes) that
     cross it. One entry per named area, however many polygons it is drawn
     as."""
@@ -308,6 +308,9 @@ def along_route(route_start: tuple, route_end: tuple, fixes: list | None = None)
             found[name] = {
                 **_area(props),
                 "along_track_nm": along,
+                # Where the route meets it, for the copilot's "ahead".
+                "lat": round(point.y, 5),
+                "lon": round(point.x, 5),
                 "legs": sorted(set(crossed) | set(entry["legs"] if entry else [])),
             }
     return sorted(found.values(), key=lambda a: a["along_track_nm"])

@@ -54,6 +54,8 @@ def test_areas_the_route_crosses_are_listed_in_order_with_their_limits():
     assert moa["ceiling_ft"] == 18000.0                          # FL180
     assert moa["times_of_use"] == "0800-2200 LOCAL MON-FRI"
     assert moa["legs"] == [0]
+    # Where the route meets it, on the route's line (the copilot's "ahead").
+    assert moa["lon"] == pytest.approx(-90.0) and 45.0 <= moa["lat"] <= 46.0
 
 
 def test_an_areas_times_are_read_in_the_zone_the_faa_gives_it():
