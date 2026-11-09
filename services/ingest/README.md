@@ -18,6 +18,8 @@ asked by the planner.
 | STDDS (TAIS terminal radar) | FAA SWIM, the owner's SCDS subscription | the live store: each airplane's latest report, kept round the places the map looks and for the followed airplanes, and the followed ones' tracks |
 | FNS (NOTAMs) | FAA SWIM | `wingtip.notams`' store |
 | TFMS (flight plans) | FAA SWIM | `wingtip.filed_routes`' store (the routes pilots file between two fields) |
+| ITWS (terminal weather alerts) | FAA SWIM | `wingtip.live_reports`' store (`wingtip.itws`): each airport's microburst, wind shear, gust front, tornado and storm alerts while they last; the maps unread |
+| SFDPS (airspace) | FAA SWIM | `wingtip.live_reports`' store (`wingtip.saa`): each special activity airspace's status, active or cold |
 | The followed airplanes | adsb.fi's open data, every 30 s (`ADSBFI_OPEN_DATA`, off in production until adsb.fi agrees) | the live store: their tracks |
 
 The map's own traffic -- adsb.lol by region, ADS-B Exchange where it

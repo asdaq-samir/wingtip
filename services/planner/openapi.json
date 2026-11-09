@@ -7902,6 +7902,167 @@
         "title": "InspectionsAsk",
         "type": "object"
       },
+      "ItwsAlert": {
+        "description": "One ITWS alert (wingtip.itws): what (`alert`: microburst, wind\nshear, gust front, tornado, storm cell) and its words as a pilot is\ntold them (\"Runway 27L arrival microburst alert 40 kt, runway to 3\nmile final\", AIM 4-3-7); a runway alert's runway, direction, code,\nvalue in knots and span.",
+        "properties": {
+          "alert": {
+            "title": "Alert",
+            "type": "string"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "direction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direction"
+          },
+          "lat": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lat"
+          },
+          "lon": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lon"
+          },
+          "minutes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minutes"
+          },
+          "runway": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runway"
+          },
+          "value_kt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Kt"
+          },
+          "words": {
+            "title": "Words",
+            "type": "string"
+          }
+        },
+        "required": [
+          "alert",
+          "words"
+        ],
+        "title": "ItwsAlert",
+        "type": "object"
+      },
+      "ItwsAlerts": {
+        "description": "The ITWS alerts in force at the airports asked for: none where no\nITWS site alerts for them (most airports have no ITWS).",
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/ItwsProduct"
+            },
+            "title": "Alerts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "alerts"
+        ],
+        "title": "ItwsAlerts",
+        "type": "object"
+      },
+      "ItwsProduct": {
+        "description": "One ITWS product's alerts for one airport, until it expires\n(`expires`, UNIX s), heard at `heard`.",
+        "properties": {
+          "airport": {
+            "title": "Airport",
+            "type": "string"
+          },
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/ItwsAlert"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "expires": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires"
+          },
+          "heard": {
+            "title": "Heard",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "product": {
+            "title": "Product",
+            "type": "string"
+          }
+        },
+        "required": [
+          "airport",
+          "product",
+          "name",
+          "alerts",
+          "heard"
+        ],
+        "title": "ItwsProduct",
+        "type": "object"
+      },
       "Leg": {
         "description": "One dead-reckoning leg. `wind` is None when no winds-aloft station\nis near enough, which is not the same as calm: groundspeed then falls\nback to true airspeed. groundspeed/ETE/fuel are None when the wind\nexceeds true airspeed, i.e. the leg cannot be flown.\n\nThe true airspeed and fuel flow are the aeroplane's in the leg's own\nair (wingtip.performance): its cruise figures are at a reference\naltitude on a standard day, and the forecast temperature at this\naltitude gives the density altitude they are flown at, at the power\nit allows -- the cruise power, or less where full throttle cannot\nmake it. `oat_c` is None where no forecast temperature was near: a\nstandard day is assumed there.",
         "properties": {
@@ -13893,6 +14054,86 @@
         "title": "RunwayWind",
         "type": "object"
       },
+      "SaaStatus": {
+        "description": "A special activity airspace's status from SFDPS (wingtip.saa):\n`active` True (in use now), False (cold now) or None (no word of now);\n`until` when the status in force ends and `next` when the next\nactivation starts (UNIX s); `heard` when SFDPS last spoke of it.",
+        "properties": {
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "designator": {
+            "title": "Designator",
+            "type": "string"
+          },
+          "heard": {
+            "title": "Heard",
+            "type": "number"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "until": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until"
+          }
+        },
+        "required": [
+          "designator",
+          "heard"
+        ],
+        "title": "SaaStatus",
+        "type": "object"
+      },
+      "SaaStatuses": {
+        "description": "Each area asked for that SFDPS has spoken of, by the designator it\nwas asked by (\"R-4401A\"); one it never has is left out: its chart\ntimes of use are all there is.",
+        "properties": {
+          "areas": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SaaStatus"
+            },
+            "title": "Areas",
+            "type": "object"
+          }
+        },
+        "required": [
+          "areas"
+        ],
+        "title": "SaaStatuses",
+        "type": "object"
+      },
       "SeedNoteRequest": {
         "properties": {
           "description": {
@@ -19286,6 +19527,92 @@
           }
         },
         "summary": "Icing On The Route"
+      }
+    },
+    "/api/live/itws": {
+      "get": {
+        "description": "The ITWS alerts in force at these airports (a route's departure,\ndestination and alternates): microbursts, wind shear, gust fronts,\ntornadoes and storm cells near the field, as the tower's ITWS gives\nthem its controllers (AIM 4-3-7).",
+        "operationId": "itws_alerts_api_live_itws_get",
+        "parameters": [
+          {
+            "description": "Airports, comma separated: KORD,KMDW",
+            "in": "query",
+            "name": "airports",
+            "required": true,
+            "schema": {
+              "description": "Airports, comma separated: KORD,KMDW",
+              "minLength": 3,
+              "title": "Airports",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItwsAlerts"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Itws Alerts"
+      }
+    },
+    "/api/live/saa": {
+      "get": {
+        "description": "Whether each special activity airspace is active now, and until\nwhen, as SFDPS has it (wingtip.saa); an area it has not spoken of is\nleft out, its chart times of use being all there is.",
+        "operationId": "saa_status_api_live_saa_get",
+        "parameters": [
+          {
+            "description": "Areas, comma separated: R-4401A,R-4401B",
+            "in": "query",
+            "name": "designators",
+            "required": true,
+            "schema": {
+              "description": "Areas, comma separated: R-4401A,R-4401B",
+              "minLength": 1,
+              "title": "Designators",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaaStatuses"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Saa Status"
       }
     },
     "/api/local-flight": {

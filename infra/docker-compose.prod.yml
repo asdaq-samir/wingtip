@@ -146,6 +146,11 @@ services:
       SWIM_HOST_TFMS: ${SWIM_HOST_TFMS:-}
       SWIM_VPN_TFMS: ${SWIM_VPN_TFMS:-}
       SWIM_QUEUE_TFMS: ${SWIM_QUEUE_TFMS:-}
+      # ITWS's alerts and SFDPS's airspace, on SWIM_HOST's broker.
+      SWIM_VPN_ITWS: ${SWIM_VPN_ITWS:-}
+      SWIM_QUEUE_ITWS: ${SWIM_QUEUE_ITWS:-}
+      SWIM_VPN_SFDPS: ${SWIM_VPN_SFDPS:-}
+      SWIM_QUEUE_SFDPS: ${SWIM_QUEUE_SFDPS:-}
 
   # Every Claude call (services/assistant, issue #535): the only service
   # given the Anthropic key. It asks the planner for every figure and

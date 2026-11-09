@@ -251,6 +251,7 @@ services:
       LIVE_STORE: /live/live.sqlite
       NOTAM_STORE: /live/notams.sqlite
       FILED_STORE: /live/filed.sqlite
+      REPORTS_STORE: /live/reports.sqlite
       PYTHONPATH: /workspace/services/planner
       # Not the host's Docker socket -- the dev-services sidecar above,
       # which routers/devservices.py asks which services are up and to
@@ -308,6 +309,7 @@ services:
       LIVE_STORE: /live/live.sqlite
       NOTAM_STORE: /live/notams.sqlite
       FILED_STORE: /live/filed.sqlite
+      REPORTS_STORE: /live/reports.sqlite
       PYTHONPATH: /workspace/services/ingest:/workspace/services/planner
       # The FAA's SWIM feeds (ingest.swim); each off without its own. The
       # owner's SCDS subscriptions' login and queues.
@@ -321,6 +323,11 @@ services:
       SWIM_HOST_TFMS: ${SWIM_HOST_TFMS:-}
       SWIM_VPN_TFMS: ${SWIM_VPN_TFMS:-}
       SWIM_QUEUE_TFMS: ${SWIM_QUEUE_TFMS:-}
+      # ITWS's alerts and SFDPS's airspace, on SWIM_HOST's broker.
+      SWIM_VPN_ITWS: ${SWIM_VPN_ITWS:-}
+      SWIM_QUEUE_ITWS: ${SWIM_QUEUE_ITWS:-}
+      SWIM_VPN_SFDPS: ${SWIM_VPN_SFDPS:-}
+      SWIM_QUEUE_SFDPS: ${SWIM_QUEUE_SFDPS:-}
     healthcheck:
       <<: *python-healthcheck
       # Its beat in the live store, written every ten seconds (ingest.health),

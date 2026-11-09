@@ -13,6 +13,9 @@
 - TFMS's flight data, the NAS's flight plans and their amendments, to
   wingtip.filed_routes' store, which counts the routes pilots file between
   two fields.
+- ITWS's alerts for an airport (microburst, wind shear, gust front,
+  tornado, storm cells) to wingtip.itws, and SFDPS's special activity
+  airspace status to wingtip.saa, both in wingtip.live_reports' store.
 
 One connection a feed to its subscription's durable queue, on a thread of
 its own: each message read, handed on, then acknowledged. The radar's
@@ -36,7 +39,7 @@ import time
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
-from wingtip import filed_routes, notams, traffic
+from wingtip import filed_routes, itws, notams, saa, traffic
 
 from .settings import get_settings
 
@@ -45,7 +48,7 @@ log = logging.getLogger(__name__)
 #: What every connection needs, and each feed's own (its VPN and queue),
 #: from the subscription's Details page.
 SETTINGS = ("SWIM_HOST", "SWIM_USERNAME", "SWIM_PASSWORD")
-FEEDS = ("STDDS", "FNS", "TFMS")
+FEEDS = ("STDDS", "FNS", "TFMS", "ITWS", "SFDPS")
 #: How long to wait before connecting again, s, doubling to the most.
 RETRY_FIRST_S, RETRY_MOST_S = 10.0, 300.0
 
@@ -276,13 +279,22 @@ HANDLERS: dict[str, dict] = {
     # TFMS's flight data, by its topic's kind or, where a message comes
     # with no topic, its root element.
     "TFMS": {"flightData": filed_routes.heard, "tfmDataService": filed_routes.heard},
+    # ITWS's alert products for an airport, not its maps (wingtip.itws.KEPT),
+    # by the product number its topic gives, or its root with no topic.
+    "ITWS": {**{f"product {number}": itws.heard for number in itws.KEPT}, "itws_msg": itws.heard},
+    # SFDPS's airspace messages, each looked at for its special activity
+    # airspace's status (wingtip.saa): every message type of its
+    # AirspaceAIXM data, or an AIXMBasicMessage with no topic.
+    "SFDPS": {"AirspaceAIXM": saa.heard, "AIXMBasicMessage": saa.heard},
 }
 
 
 def handler_for(feed: str, name: str):
-    """The handler a message of this kind is handed to, or None."""
+    """The handler a message of this kind is handed to, or None: its
+    kind's, its kind's first word's ("AirspaceAIXM SU_AIXM"), or its
+    feed's for every kind ("*")."""
     handlers = HANDLERS.get(feed, {})
-    return handlers.get(name) or handlers.get("*")
+    return handlers.get(name) or handlers.get(name.split(" ")[0]) or handlers.get("*")
 
 
 #: A message's first element's name, its namespace prefix left off:
@@ -326,6 +338,12 @@ def topic_kind(feed: str, topic: str | None) -> str | None:
         return f"flow {parts[-1]}"
     if feed == "TFMS" and parts[0] == "TFMSR14":
         return "flightData"
+    if feed == "ITWS" and parts[0] == "ITWS_Alert" and len(parts) >= 2:
+        # "ITWS_Alert/9834/MCO/MCO": the product's number, then its site and airport.
+        return f"product {parts[1]}"
+    if feed == "SFDPS" and parts[0] == "FDPS" and len(parts) >= 3:
+        # "FDPS/AirspaceAIXM/SU_AIXM/...": its data type, then its message type.
+        return f"{parts[1]} {parts[2]}"
     return None
 
 

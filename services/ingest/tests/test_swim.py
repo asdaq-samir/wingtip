@@ -176,7 +176,30 @@ def test_a_messages_kind_is_read_from_its_topic():
     assert kind("STDDS", "TDES/all/false/GR/KSEA/S46") == "TDLSCSPMessage"
     assert kind("TFMS", "TFMSR14/4/sourceFacility/sensitivity") == "flightData"
     assert kind("TFMS", "TFMSR14Flow/FlowInformation/ALL/A/sensReason/GADV") == "flow GADV"
+    assert kind("ITWS", "ITWS_Alert/9834/MCO/MCO") == "product 9834"
+    assert kind("SFDPS", "FDPS/AirspaceAIXM/SU_AIXM/FDPS_OneMinFreq/FDPS_Recon/ZJX/true/false") == "AirspaceAIXM SU_AIXM"
     assert kind("FNS", "anything") is None and kind("STDDS", None) is None
+
+
+def test_itws_alerts_are_read_and_its_maps_are_not():
+    assert swim.handler_for("ITWS", "product 9840") is swim.itws.heard
+    assert swim.handler_for("ITWS", "product 9893") is swim.itws.heard
+    # The microburst and gust front maps, the TRACON's echo tops.
+    for product in ("9832", "9833", "9838", "9858", "9837"):
+        assert swim.handler_for("ITWS", f"product {product}") is None
+    assert swim.handler_for("SFDPS", "AirspaceAIXM SU_AIXM") is swim.saa.heard
+    assert swim.handler_for("SFDPS", "FlightData FH") is None
+
+
+def test_itws_and_sfdps_are_read_where_their_own_are_set(monkeypatch):
+    _set(monkeypatch, *swim.SETTINGS, "SWIM_VPN_ITWS", "SWIM_QUEUE_ITWS")
+    monkeypatch.delenv("SWIM_QUEUE_SFDPS", raising=False)
+    swim.get_settings.cache_clear()
+    assert swim.configured("ITWS") and not swim.configured("SFDPS")
+    # Both on the shared broker.
+    monkeypatch.setenv("SWIM_HOST", "tcps://ems2.swim.faa.gov:55443")
+    swim.get_settings.cache_clear()
+    assert swim._host("ITWS") == swim._host("SFDPS") == "tcps://ems2.swim.faa.gov:55443"
 
 
 def test_a_kind_nobody_reads_is_counted_and_its_payload_never_fetched(monkeypatch):

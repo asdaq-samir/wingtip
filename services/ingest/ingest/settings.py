@@ -30,6 +30,13 @@ class Settings(BaseSettings):
     swim_host_tfms: str | None = None
     swim_vpn_tfms: str | None = None
     swim_queue_tfms: str | None = None
+    # ITWS's alerts and SFDPS's airspace, on the shared broker (SWIM_HOST).
+    swim_host_itws: str | None = None
+    swim_vpn_itws: str | None = None
+    swim_queue_itws: str | None = None
+    swim_host_sfdps: str | None = None
+    swim_vpn_sfdps: str | None = None
+    swim_queue_sfdps: str | None = None
     #: How often ingest writes its beat and each feed's state to the store, s.
     beat_every_s: float = 10.0
     #: How old ingest's last beat may be and the health check still pass, s.

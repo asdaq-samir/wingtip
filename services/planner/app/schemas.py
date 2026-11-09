@@ -3145,3 +3145,65 @@ class WeatherMap(BaseModel):
     pireps: list[MapPirep] = []
     winds: MapWinds | None = None
     radar_valid: str | None = None
+
+
+# --- what SWIM says now (app.routers.live) ----------------------------
+
+
+class ItwsAlert(BaseModel):
+    """One ITWS alert (wingtip.itws): what (`alert`: microburst, wind
+    shear, gust front, tornado, storm cell) and its words as a pilot is
+    told them ("Runway 27L arrival microburst alert 40 kt, runway to 3
+    mile final", AIM 4-3-7); a runway alert's runway, direction, code,
+    value in knots and span."""
+
+    alert: str
+    words: str
+    runway: str | None = None
+    direction: str | None = None
+    code: str | None = None
+    value_kt: float | None = None
+    minutes: float | None = None
+    lat: float | None = None
+    lon: float | None = None
+
+
+class ItwsProduct(BaseModel):
+    """One ITWS product's alerts for one airport, until it expires
+    (`expires`, UNIX s), heard at `heard`."""
+
+    airport: str
+    product: str
+    name: str
+    alerts: list[ItwsAlert]
+    expires: float | None = None
+    heard: float
+
+
+class ItwsAlerts(BaseModel):
+    """The ITWS alerts in force at the airports asked for: none where no
+    ITWS site alerts for them (most airports have no ITWS)."""
+
+    alerts: list[ItwsProduct]
+
+
+class SaaStatus(BaseModel):
+    """A special activity airspace's status from SFDPS (wingtip.saa):
+    `active` True (in use now), False (cold now) or None (no word of now);
+    `until` when the status in force ends and `next` when the next
+    activation starts (UNIX s); `heard` when SFDPS last spoke of it."""
+
+    designator: str
+    active: bool | None = None
+    status: str | None = None
+    until: float | None = None
+    next: float | None = None
+    heard: float
+
+
+class SaaStatuses(BaseModel):
+    """Each area asked for that SFDPS has spoken of, by the designator it
+    was asked by ("R-4401A"); one it never has is left out: its chart
+    times of use are all there is."""
+
+    areas: dict[str, SaaStatus]
