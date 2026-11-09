@@ -60,6 +60,8 @@ enum AboutCredits {
         Credit(what: "FAA SWIM: NOTAMs, flow programs, terminal data and airspace status", terms: publicDomain),
         Credit(what: "NOAA Aviation Weather Center: METARs, TAFs, PIREPs, SIGMETs and G-AIRMETs", terms: publicDomain),
         Credit(what: "NOAA models: GFS winds and temperatures aloft, GLMP, magnetic declination", terms: publicDomain),
+        Credit(what: "NWS NEXRAD radar mosaic loop, via the Iowa Environmental Mesonet (Iowa State University); not for navigation, check official weather", terms: publicDomain),
+        Credit(what: "NOAA GOES East and West satellite loop, via NOAA nowCOAST; not for navigation, check official weather", terms: publicDomain),
         Credit(what: "USGS The National Map imagery", terms: publicDomain),
         Credit(what: "US Census Bureau geocoder and gazetteer", terms: publicDomain),
         Credit(what: "OurAirports: runways, frequencies and fields abroad", terms: publicDomain),

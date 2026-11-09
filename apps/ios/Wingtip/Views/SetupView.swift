@@ -72,6 +72,8 @@ struct SetupView: View {
                     Toggle("Approach Plates", isOn: $platesOn)
                     Toggle("Military Fields", isOn: $militaryOn)
                     Toggle("Private Fields", isOn: $privateOn)
+                    // The radar and satellite loop and its speed (WeatherLoop).
+                    WeatherLoopRows()
                     // How old each weather layer's data is.
                     LayerAgesRows()
                 }
