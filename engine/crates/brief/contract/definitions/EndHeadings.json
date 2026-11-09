@@ -1,0 +1,28 @@
+{
+  "title": "EndHeadings",
+  "type": [
+    "array",
+    "null"
+  ],
+  "items": {
+    "type": "array",
+    "minItems": 2,
+    "maxItems": 2,
+    "items": [
+      {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      {
+        "type": [
+          "number",
+          "null"
+        ]
+      }
+    ],
+    "additionalItems": false
+  },
+  "description": "A runway's ends as [ident, true heading], either null."
+}

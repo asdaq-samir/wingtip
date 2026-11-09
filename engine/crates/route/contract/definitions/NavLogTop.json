@@ -1,0 +1,55 @@
+{
+  "title": "NavLogTop",
+  "type": "object",
+  "properties": {
+    "along_nm": {
+      "type": "number"
+    },
+    "ete_min": {
+      "type": "number"
+    },
+    "fuel_gal": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "altitude_ft": {
+      "type": "number"
+    },
+    "to_ft": {
+      "type": "number"
+    },
+    "pattern": {
+      "type": "boolean"
+    },
+    "fix": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "fpm": {
+      "type": "number"
+    },
+    "tas_kt": {
+      "type": "number"
+    },
+    "groundspeed_kt": {
+      "type": "number"
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "along_nm",
+    "ete_min",
+    "altitude_ft"
+  ],
+  "additionalProperties": true,
+  "description": "A top of climb (toc) or descent (tod): its miles, minutes and gallons into the leg."
+}

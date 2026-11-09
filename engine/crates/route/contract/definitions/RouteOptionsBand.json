@@ -1,0 +1,22 @@
+{
+  "title": "RouteOptionsBand",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "vfr",
+        "mvfr",
+        "ifr",
+        "storm"
+      ]
+    },
+    "min": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "kind",
+    "min"
+  ]
+}

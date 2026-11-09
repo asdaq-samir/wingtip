@@ -1,0 +1,125 @@
+{
+  "title": "FieldHour",
+  "description": "One hour of a field's weather for the airport card: Now from the METAR, then each whole hour its TAF covers (AC 00-45H's change groups).",
+  "type": "object",
+  "properties": {
+    "at": {
+      "type": "number",
+      "description": "The hour's start, ms; Now's the report's time (or now)."
+    },
+    "now": {
+      "type": "boolean"
+    },
+    "category": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "VFR",
+        "MVFR",
+        "IFR",
+        "LIFR",
+        null
+      ]
+    },
+    "ceiling_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "visibility_sm": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "sky": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "clear",
+        "partly",
+        "cloudy",
+        null
+      ]
+    },
+    "precip": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "thunder",
+        "snow",
+        "rain",
+        null
+      ]
+    },
+    "wind_dir_true_deg": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "True; null where variable."
+    },
+    "wind_speed_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "wind_gust_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "at_times": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "VFR",
+        "MVFR",
+        "IFR",
+        "LIFR",
+        null
+      ],
+      "description": "A TEMPO's or PROB's category this hour where worse than the prevailing one."
+    },
+    "at_times_gust_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "at_times_thunder": {
+      "type": "boolean"
+    },
+    "at_times_chance": {
+      "type": "boolean",
+      "description": "The worse weather at times comes only from a PROB group (AC 00-45H)."
+    }
+  },
+  "required": [
+    "at",
+    "now",
+    "category",
+    "ceiling_ft",
+    "visibility_sm",
+    "sky",
+    "precip",
+    "wind_dir_true_deg",
+    "wind_speed_kt",
+    "wind_gust_kt",
+    "at_times",
+    "at_times_gust_kt",
+    "at_times_thunder",
+    "at_times_chance"
+  ]
+}

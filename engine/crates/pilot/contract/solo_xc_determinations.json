@@ -1,0 +1,38 @@
+{
+  "x-call": "wingtip_pilot::pilot::kinds::call",
+  "description": "14 CFR 61.93(d)(1)-(3): what an instructor must determine of a solo cross-country themselves before endorsing it (AC 61-65K A.10); (4) and (5) the record answers (endorsement_records).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "SoloXcDeterminationsInput",
+      "type": "object",
+      "properties": {}
+    },
+    "answer": {
+      "title": "SoloXcDeterminationsAnswer",
+      "type": "array",
+      "items": {
+        "title": "SoloXcDetermination",
+        "type": "object",
+        "properties": {
+          "rule": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "rule",
+          "label"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

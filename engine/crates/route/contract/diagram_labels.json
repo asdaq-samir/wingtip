@@ -1,0 +1,31 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "The latitude and longitude labels in an FAA airport diagram's page text (\"46°51'N\", \"92°13'W\"), each once, as written, for the app to find where each is drawn.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DiagramLabelsInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "DiagramLabelsAnswer",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

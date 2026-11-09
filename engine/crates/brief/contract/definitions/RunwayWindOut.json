@@ -1,0 +1,42 @@
+{
+  "title": "RunwayWindOut",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "end": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "headwind_kt": {
+          "type": "number"
+        },
+        "crosswind_kt": {
+          "type": "number"
+        },
+        "gust_crosswind_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "in_use": {
+          "const": true,
+          "description": "There only where calm picked the runway in use."
+        }
+      },
+      "required": [
+        "end",
+        "headwind_kt",
+        "crosswind_kt",
+        "gust_crosswind_kt"
+      ]
+    },
+    {
+      "type": "null"
+    }
+  ],
+  "description": "The planner's RunwayWind: the end the wind favours and its components, whole numbers where the wind blew, 0 where calm; null for none."
+}

@@ -32,11 +32,9 @@ pub const ITEMS: [(&str, &str, &str); 7] = [
     ("pax-questions", "Their questions", SAFETY),
 ];
 
-pub const NAMES: [&str; 1] = ["passenger_briefing"];
-
 /// The rule `name`: `passenger_briefing` from `{}`, `[{"key", "title",
 /// "rule"}]` in the briefing's order.
-pub fn call(name: &str) -> Result<String, String> {
+pub fn call(name: &str, _v: &crate::json::Value) -> Result<String, String> {
     match name {
         "passenger_briefing" => {
             let mut out = String::from("[");

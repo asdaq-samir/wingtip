@@ -123,8 +123,10 @@ jobs:
       # other's wheel.
       - run: uv pip install --system maturin==1.9.4 && maturin build --profile ci --compatibility linux -m engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
       # The engine's own tests, on the shared fixtures the Python reads too:
-      # the facade's and each of its crates' (engine/crates).
-      - run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine -p wingtip-core -p wingtip-flight -p wingtip-weather -p wingtip-procedures -p wingtip-radio -p wingtip-airspace -p wingtip-wording -p wingtip-brief -p wingtip-route -p wingtip-pilot -p wingtip-altitude
+      # the facade's and each of its crates' (engine/crates), and that the
+      # committed engine/contract/engine.schema.json is the one the rules'
+      # contract files give (wingtip-contract-gen).
+      - run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine -p wingtip-core -p wingtip-flight -p wingtip-weather -p wingtip-procedures -p wingtip-radio -p wingtip-airspace -p wingtip-wording -p wingtip-brief -p wingtip-route -p wingtip-pilot -p wingtip-altitude -p wingtip-contract-gen
       # The web app's copy of the engine (apps/web/src/lib/engine), committed
       # because the web build has no Rust: built again in the script's
       # pinned image, it must be the committed file byte for byte, or the

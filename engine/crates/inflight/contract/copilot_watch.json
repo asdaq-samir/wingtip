@@ -1,0 +1,311 @@
+{
+  "x-call": "wingtip_inflight::call",
+  "description": "The in-flight copilot: from own ship and the live data, the messages that change what the pilot should do, most pressing first (warning, caution, advisory; then the kinds' order), each with the words to show and speak and its sources. Warns, never limits.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "CopilotWatchInput",
+      "type": "object",
+      "properties": {
+        "now_s": {
+          "type": "number"
+        },
+        "own": {
+          "title": "CopilotOwn",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "track_deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "gs_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CopilotField"
+          }
+        },
+        "rules": {
+          "enum": [
+            "VFR",
+            "IFR",
+            null
+          ]
+        },
+        "minimums": {
+          "title": "CopilotMinimums",
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "ceiling_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "crosswind_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "wind_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "burn_gph": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "tas_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "dest": {
+          "type": "string"
+        },
+        "alternate": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "remaining_nm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "planned_gs_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "passengers": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "night_current": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "areas": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "title": "CopilotArea",
+            "type": "object",
+            "properties": {
+              "kind": {
+                "enum": [
+                  "tfr",
+                  "sua",
+                  "sigmet"
+                ]
+              },
+              "id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "active": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "starts_s": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "until_s": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "lat",
+              "lon"
+            ]
+          }
+        },
+        "itws": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "title": "CopilotItws",
+            "type": "object",
+            "properties": {
+              "airport": {
+                "type": "string"
+              },
+              "alert": {
+                "type": "string"
+              },
+              "words": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "airport",
+              "alert",
+              "words"
+            ]
+          }
+        },
+        "ahead": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "title": "CopilotAhead",
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "kind": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "level": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "own",
+        "fields",
+        "now_s",
+        "dest"
+      ]
+    },
+    "answer": {
+      "title": "CopilotWatchAnswer",
+      "type": "object",
+      "properties": {
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CopilotMessage"
+          }
+        },
+        "eta_s": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "remaining_nm": {
+          "type": "number"
+        },
+        "fuel_at_landing_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "reserve_min": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "messages",
+        "eta_s",
+        "remaining_nm",
+        "fuel_at_landing_min",
+        "reserve_min"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,32 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "An assessment in a few words: \"Raised · 8 points\".",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoRiskLineInput",
+      "type": "object",
+      "properties": {
+        "level": {
+          "type": "string"
+        },
+        "score": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "level",
+        "score"
+      ]
+    },
+    "answer": {
+      "title": "GonogoRiskLineAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

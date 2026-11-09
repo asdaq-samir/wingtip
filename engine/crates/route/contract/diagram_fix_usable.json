@@ -1,0 +1,35 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "Whether own ship is drawn on the airport diagram: a fix no older than 3 s (AC 120-76D 11.17.2.3) and good to 30 m or better (11.17.2.4); a negative accuracy, none known, never.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DiagramFixUsableInput",
+      "type": "object",
+      "properties": {
+        "age_s": {
+          "type": "number",
+          "description": "The fix's age, s."
+        },
+        "accuracy_m": {
+          "type": "number",
+          "description": "Its horizontal accuracy, m."
+        }
+      },
+      "required": [
+        "age_s",
+        "accuracy_m"
+      ],
+      "additionalProperties": false
+    },
+    "answer": {
+      "title": "DiagramFixUsableAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

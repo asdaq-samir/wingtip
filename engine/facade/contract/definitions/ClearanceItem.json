@@ -1,0 +1,91 @@
+{
+  "title": "ClearanceItem",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "vectors"
+        }
+      },
+      "required": [
+        "kind"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "heading"
+        },
+        "degrees": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "degrees"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "airway"
+        },
+        "ident": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "ident"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "places"
+        },
+        "said": {
+          "type": "string",
+          "description": "Words naming one place or more, to be found."
+        }
+      },
+      "required": [
+        "kind",
+        "said"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "departure",
+            "arrival"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "number": {
+          "type": "string"
+        },
+        "transition": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "number",
+        "transition"
+      ]
+    }
+  ]
+}

@@ -10,8 +10,7 @@
 //!   altimeter, approach, runway;
 //! - readback: the pilot's readback checked against what was cleared
 //!   (AIM 4-4-7 b);
-//! - atc: the ATC copilot's rules, `atc_call` and `readback_check`, by
-//!   their own block in call.rs;
+//! - atc: the ATC copilot's rules, `atc_call` and `readback_check`;
 //! - atis: an ATIS or AWOS/ASOS broadcast as the phone heard it, read
 //!   into its figures;
 //! - datis: a digital ATIS as the tower's data link sends it, read into

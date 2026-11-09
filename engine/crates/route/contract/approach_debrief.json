@@ -1,0 +1,60 @@
+{
+  "x-call": "wingtip_route::approach::calls::call",
+  "description": "One attempt at an approach debriefed, or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ApproachDebriefInput",
+      "type": "object",
+      "properties": {
+        "drawing": {
+          "$ref": "#/definitions/ProcedureDrawing"
+        },
+        "points": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/TrackPoint"
+          }
+        },
+        "attempt": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ApproachAttempt"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "minimums_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "drawing"
+      ]
+    },
+    "answer": {
+      "title": "ApproachDebriefAnswer",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ApproachDebrief"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

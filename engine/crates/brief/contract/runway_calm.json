@@ -1,0 +1,55 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "Whether a runway's wind is a calm one: no head-, cross- or gust's crosswind.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RunwayCalmInput",
+      "type": "object",
+      "properties": {
+        "wind": {
+          "type": "object",
+          "properties": {
+            "end": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "headwind_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "crosswind_kt": {
+              "type": "number"
+            },
+            "gust_crosswind_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "in_use": {}
+          },
+          "required": [
+            "crosswind_kt"
+          ]
+        }
+      },
+      "required": [
+        "wind"
+      ]
+    },
+    "answer": {
+      "title": "RunwayCalmAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

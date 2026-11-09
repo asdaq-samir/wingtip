@@ -1,0 +1,321 @@
+{
+  "x-call": "wingtip_brief::fields::call",
+  "description": "The best fields to land at from where the airplane is, ranked with their reasons: in \"glide\" mode (the engine stopped) by reach first -- over the field at pattern height, reachable lower, beyond -- with the airplane's best-glide figures and the wind aloft, then the runway against the POH and the distance; in \"diversion\" mode by the runway and the weather, then the time. With no glide figures the glide is not guessed: nearest first, needs_airplane true. Nothing is left out for a limitation; it is said and ranked lower.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "BestFieldsInput",
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "glide",
+            "diversion",
+            null
+          ]
+        },
+        "at": {
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        },
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "GPS altitude, feet MSL."
+        },
+        "speed_kt": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Groundspeed; under 40 kt the airplane is taken to be on the ground."
+        },
+        "wind": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The wind at the airplane's altitude, true.",
+          "properties": {
+            "from_deg": {
+              "type": "number"
+            },
+            "kt": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "from_deg",
+            "kt"
+          ]
+        },
+        "variation_deg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Magnetic variation, east positive."
+        },
+        "airplane": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "glide": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "description": "The POH's best-glide speed and glide ratio (Section 3).",
+              "properties": {
+                "best_glide_kias": {
+                  "type": "number"
+                },
+                "ratio": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "best_glide_kias",
+                "ratio"
+              ]
+            },
+            "landing": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ShortFieldTable"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "crosswind": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "demonstrated_kt": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              }
+            },
+            "cruise_tas_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "elevation_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "runways": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/Runway"
+                }
+              },
+              "metar": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "dir_true_deg": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "speed_kt": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "gust_kt": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "altimeter_in_hg": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "temp_c": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "flight_category": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              },
+              "towered": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "private": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "military": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "ident",
+              "lat",
+              "lon",
+              "runways"
+            ]
+          }
+        },
+        "limit": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "At most this many; 10 where not given."
+        }
+      },
+      "required": [
+        "at",
+        "fields"
+      ]
+    },
+    "answer": {
+      "title": "BestFieldsAnswer",
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "glide",
+            "diversion"
+          ]
+        },
+        "needs_airplane": {
+          "type": "boolean",
+          "description": "Glide mode with no best-glide figures: ranked by distance alone."
+        },
+        "glide": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "nm_per_1000_ft": {
+              "type": "number"
+            },
+            "agl_ft": {
+              "type": "number"
+            },
+            "still_air_nm": {
+              "type": "number"
+            },
+            "tas_kt": {
+              "type": "number"
+            },
+            "ring": {
+              "type": "array",
+              "description": "The ground the glide reaches every 10 degrees, wind corrected, [lat, lon].",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "required": [
+            "nm_per_1000_ft",
+            "agl_ft",
+            "still_air_nm",
+            "tas_kt",
+            "ring"
+          ]
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BestField"
+          }
+        }
+      },
+      "required": [
+        "mode",
+        "needs_airplane",
+        "glide",
+        "fields"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

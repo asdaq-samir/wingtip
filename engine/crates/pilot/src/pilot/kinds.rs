@@ -233,8 +233,6 @@ pub const DETERMINATIONS: [(&str, &str); 3] = [
     ("61.93(d)(3)", "The student is proficient to conduct it safely"),
 ];
 
-pub const NAMES: [&str; 3] = ["endorsement_kinds", "endorsement_fill", "solo_xc_determinations"];
-
 fn kind_json(out: &mut String, k: &Kind) {
     out.push_str("{\"code\":");
     json::string(out, k.code);

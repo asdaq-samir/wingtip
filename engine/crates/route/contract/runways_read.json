@@ -1,0 +1,62 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "Each piece of the route's runway picks (\"KSTL:30R,KMSN:36\") with its pick, or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RunwaysReadInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "RunwaysReadAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "part": {
+            "type": "string"
+          },
+          "pick": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "field": {
+                    "type": "string"
+                  },
+                  "runway": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "field",
+                  "runway"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "part",
+          "pick"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

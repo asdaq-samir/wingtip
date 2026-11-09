@@ -1,0 +1,34 @@
+{
+  "type": "object",
+  "properties": {
+    "key": {
+      "enum": [
+        "light-gun",
+        "vfr-minimums"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "cards": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/DrillCard"
+      }
+    }
+  },
+  "required": [
+    "key",
+    "title",
+    "source",
+    "url",
+    "cards"
+  ],
+  "additionalProperties": false
+}

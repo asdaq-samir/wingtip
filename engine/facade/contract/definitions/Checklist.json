@@ -1,0 +1,44 @@
+{
+  "title": "Checklist",
+  "type": "object",
+  "properties": {
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "challenge": {
+                  "type": "string"
+                },
+                "response": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "challenge"
+              ]
+            }
+          }
+        },
+        "required": [
+          "title",
+          "items"
+        ]
+      }
+    }
+  },
+  "required": [
+    "sections"
+  ]
+}

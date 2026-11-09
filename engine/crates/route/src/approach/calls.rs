@@ -9,31 +9,6 @@ use super::{list, missed_legs, num, opt_num, opt_str, Drawing, RunwayPath};
 use crate::figures::debrief::Point;
 use crate::json::{self, Value};
 
-/// The names this module answers.
-pub const NAMES: [&str; 21] = [
-    "approach_guidance",
-    "glidepath_ft",
-    "approach_attempts",
-    "approach_debrief",
-    "approach_find",
-    "approach_transition",
-    "approach_minimums",
-    "approach_descent_fpm",
-    "approach_rounded_fpm",
-    "approach_category",
-    "approach_minimums_kind",
-    "approach_fix_name",
-    "approach_missed_words",
-    "approach_brief_frequencies",
-    "approach_lesson_path",
-    "approach_path_between",
-    "approach_along_nm",
-    "approach_brief",
-    "approach_coaching",
-    "approach_quiz",
-    "approach_profile",
-];
-
 type R<T> = Result<T, String>;
 
 fn drawing(name: &str, v: &Value) -> R<Drawing> {

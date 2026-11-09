@@ -9,7 +9,7 @@ The simplicity audit scored 1.75 of 3; single responsibility and single knowledg
 
 ## Decision
 
-"Make sure to follow modular architecture." Engine: each rule in the lowest crate, in its own module, composed from existing rules with no copied thresholds, registered in `call.rs` as that crate's own block. Planner: its own router module and schemas module, and a `wingtip` module for the data work; the router only parses, calls and returns. Web: a feature folder with view components and one hook per screen; shared code only in `lib/`; no feature imports another feature's internals. Phones: a view plus one observable model per screen. Everywhere: small files (under about 300 lines), and nothing added to the god files.
+"Make sure to follow modular architecture." Engine: each rule in the lowest crate, in its own module, composed from existing rules with no copied thresholds, registered by its own contract file beside it (`crates/<crate>/contract/<name>.json`, from which the dispatcher and the contract are generated; engine/README.md). Planner: its own router module and schemas module, and a `wingtip` module for the data work; the router only parses, calls and returns. Web: a feature folder with view components and one hook per screen; shared code only in `lib/`; no feature imports another feature's internals. Phones: a view plus one observable model per screen. Everywhere: small files (under about 300 lines), and nothing added to the god files.
 
 ## Consequences
 

@@ -1,0 +1,54 @@
+{
+  "x-call": "wingtip_route::navlog::calls::call",
+  "description": "A best-rate climb's minutes and gallons, its rate falling with density altitude to 100 fpm at the service ceiling (PHAK ch. 11), in air isa_dev_c warmer than a standard day; nothing for a descent.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "PerformanceClimbInput",
+      "type": "object",
+      "properties": {
+        "profile": {
+          "$ref": "#/definitions/NavLogProfile"
+        },
+        "from_ft": {
+          "type": "number"
+        },
+        "to_ft": {
+          "type": "number"
+        },
+        "isa_dev_c": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "profile",
+        "from_ft",
+        "to_ft"
+      ]
+    },
+    "answer": {
+      "title": "PerformanceClimbAnswer",
+      "type": "object",
+      "properties": {
+        "minutes": {
+          "type": "number"
+        },
+        "gallons": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "minutes",
+        "gallons"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

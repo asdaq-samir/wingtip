@@ -1,0 +1,108 @@
+{
+  "x-call": "wingtip_route::navlog::calls::call",
+  "description": "The leg with a pilot's hold flown on it (AIM 5-3-8): its minutes at the leg's TAS and cruise burn added to the leg's time and fuel, and the hold's entry from the course flown to the fix (j.3) and its no-wind racetrack in true degrees.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavLogHoldInput",
+      "type": "object",
+      "properties": {
+        "leg": {
+          "$ref": "#/definitions/NavLogLeg"
+        },
+        "before": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NavLogLeg"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "hold": {
+          "type": "object",
+          "properties": {
+            "fix": {
+              "type": "string"
+            },
+            "inbound": {
+              "type": "number"
+            },
+            "right": {
+              "type": "boolean"
+            },
+            "leg_min": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "leg_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "turns": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "minutes": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "fix",
+            "inbound",
+            "right"
+          ]
+        },
+        "fix": {
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        },
+        "variation_deg": {
+          "type": "number"
+        },
+        "at_end": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "leg",
+        "hold",
+        "fix",
+        "variation_deg"
+      ]
+    },
+    "answer": {
+      "title": "NavLogHoldAnswer",
+      "$ref": "#/definitions/NavLogLeg"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

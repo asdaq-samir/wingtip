@@ -1,0 +1,36 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "The end the wind favours, the planner's RunwayWind, or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RunwayFavouredEndInput",
+      "type": "object",
+      "properties": {
+        "ends": {
+          "$ref": "#/definitions/EndHeadings"
+        },
+        "metar": {
+          "$ref": "#/definitions/MetarWindIn"
+        },
+        "variation_deg": {
+          "type": "number"
+        },
+        "recent": {
+          "$ref": "#/definitions/RecentWindIn"
+        }
+      },
+      "required": [
+        "variation_deg"
+      ]
+    },
+    "answer": {
+      "$ref": "#/definitions/RunwayWindOut"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

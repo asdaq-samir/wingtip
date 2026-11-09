@@ -1,0 +1,55 @@
+{
+  "x-call": "wingtip_altitude::altitude::calls::call",
+  "description": "Every legal cruising altitude for a magnetic course from the floor up to the ceiling, ascending: under VFR 14 CFR 91.159(a)'s thousands plus 500 under Class A (71.33), and every 500 ft up to rule_from_ft (3,000 ft over the lowest ground); under IFR 91.179(b)'s thousands (FAA Order JO 7110.65 TBL 4-5-1) to FL410.",
+  "x-tool": true,
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "LegalCruisingAltitudesInput",
+      "type": "object",
+      "properties": {
+        "floor_ft": {
+          "type": "number"
+        },
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "magnetic_course_deg": {
+          "type": "number"
+        },
+        "rule_from_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "rules": {
+          "enum": [
+            "vfr",
+            "ifr",
+            null
+          ]
+        }
+      },
+      "required": [
+        "floor_ft",
+        "magnetic_course_deg"
+      ]
+    },
+    "answer": {
+      "title": "LegalCruisingAltitudesAnswer",
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

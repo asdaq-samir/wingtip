@@ -1,0 +1,360 @@
+{
+  "title": "VerdictInput",
+  "type": "object",
+  "properties": {
+    "weather": {
+      "type": "object",
+      "properties": {
+        "pending": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+        },
+        "failed": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The briefing failed, in words."
+        },
+        "vfr_not_recommended": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "AIM 7-1-5's \"VFR flight not recommended\", its reasons."
+        },
+        "under_minimums": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Under the pilot's own minimums (gonogo_under_minimums)."
+        },
+        "icing": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Icing possible at an altitude flown, in a line (gonogo_icing)."
+        },
+        "hazards": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "SIGMETs and G-AIRMETs along the route, by name."
+        },
+        "unchecked": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Sources that did not answer, by name."
+        },
+        "worst": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The worst the forecast says along the route, in words."
+        },
+        "terminal_alerts": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "ITWS alerts in force now at the route's airports, each in its words with its airport (AIM 4-3-7)."
+        },
+        "flow_programs": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "The Command Center's ground stops and delay programs at the route's airports, in words; a finding under IFR only."
+        },
+        "ifr": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "The flight is planned IFR. Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+        }
+      }
+    },
+    "airspace": {
+      "type": "object",
+      "properties": {
+        "pending": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+        },
+        "unchecked": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "tfr.faa.gov did not answer."
+        },
+        "in_force": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "TFRs on the route in force when the flight gets there."
+        },
+        "near": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The number of TFRs near the route not in force."
+        },
+        "special_use": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "when": {
+                "type": "string",
+                "description": "gonogo_sua_when's answer, or SFDPS's status now: active-now, cold-now."
+              }
+            },
+            "required": [
+              "name",
+              "when"
+            ]
+          }
+        }
+      }
+    },
+    "altitude": {
+      "type": "object",
+      "properties": {
+        "pending": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+        },
+        "problem": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "No VFR altitude fits, in a line."
+        },
+        "cautions": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "flown": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The altitude flown as the FL chip says it."
+        }
+      }
+    },
+    "fuel": {
+      "type": "object",
+      "properties": {
+        "pending": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+        },
+        "margin_gal": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The least the tanks hold over the fuel and its reserve; null where usable fuel is not known."
+        },
+        "required_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "reserve_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ifr": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Under IFR the reserve is 14 CFR 91.167's, not 91.151's."
+        }
+      }
+    },
+    "runways": {
+      "type": "object",
+      "properties": {
+        "pending": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+        },
+        "worked": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+        },
+        "short": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "crosswind": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "beyond": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Fields whose distances were read past the POH's table: a caution."
+        },
+        "unchecked": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Fields whose distances could not be held to the runway (its length or the field's elevation not known): unknown, never ok."
+        }
+      }
+    },
+    "balance": {
+      "type": "object",
+      "properties": {
+        "pending": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+        },
+        "worked": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+        },
+        "problems": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "takeoff": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "risk": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "level": {
+              "type": "string",
+              "description": "\"low\", \"caution\" or \"high\"."
+            },
+            "line": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "level",
+            "line"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "weather",
+    "airspace",
+    "altitude",
+    "fuel",
+    "runways",
+    "balance"
+  ],
+  "description": "The web's VerdictInput: each tab's say, and the risk assessment's level and line (null while the briefing is awaited)."
+}

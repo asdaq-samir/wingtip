@@ -1,0 +1,131 @@
+{
+  "x-call": "wingtip_weather::rvr::call",
+  "description": "Each runway end's lowest RVR reading against a minimum, an RVR (ft) or a visibility (SM) by 14 CFR 91.175(h)(2)'s comparable values; a minimum between rows asks the next row up, one past 1 1/4 SM is not judged.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RvrCheckInput",
+      "type": "object",
+      "properties": {
+        "runways": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "runway": {
+                "type": "string"
+              },
+              "touchdown_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "midpoint_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "rollout_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "runway"
+            ]
+          }
+        },
+        "minimum_rvr_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "minimum_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "runways"
+      ]
+    },
+    "answer": {
+      "title": "RvrCheckAnswer",
+      "type": "object",
+      "properties": {
+        "minimum_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The minimum as an RVR, ft; null where it has none."
+        },
+        "judged": {
+          "type": "boolean"
+        },
+        "runways": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "runway": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "reading_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "The lowest reading reported, ft."
+              },
+              "at_most": {
+                "type": "boolean",
+                "description": "The reading is the system's most, 6,000 ft or more."
+              },
+              "under": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "comparable_sm": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "The visibility the table pairs with the reading."
+              }
+            },
+            "required": [
+              "runway",
+              "reading_ft",
+              "at_most",
+              "under",
+              "comparable_sm"
+            ]
+          }
+        }
+      },
+      "required": [
+        "minimum_ft",
+        "judged",
+        "runways"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

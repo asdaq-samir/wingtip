@@ -1,0 +1,100 @@
+{
+  "x-call": "wingtip_airspace::ahead::call",
+  "description": "Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AheadFrameInput",
+      "type": "object",
+      "properties": {
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "track_deg": {
+          "type": "number",
+          "description": "True track over the ground."
+        },
+        "gs_kt": {
+          "type": "number"
+        },
+        "alt_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "GPS altitude, feet MSL."
+        },
+        "vs_fpm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "lat",
+        "lon",
+        "track_deg",
+        "gs_kt"
+      ]
+    },
+    "answer": {
+      "title": "AheadFrameAnswer",
+      "type": "object",
+      "properties": {
+        "box": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4,
+          "description": "[south, west, north, east]."
+        },
+        "near_box": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4,
+          "description": "[south, west, north, east]."
+        },
+        "lats": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "description": "Three rows: the track, left of it, right of it."
+        },
+        "lons": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        }
+      },
+      "required": [
+        "box",
+        "near_box",
+        "lats",
+        "lons"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

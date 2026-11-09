@@ -1,0 +1,55 @@
+{
+  "title": "CircuitRunwayIn",
+  "type": "object",
+  "properties": {
+    "length_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "runway_ends": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "ident": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "heading_true_deg": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "traffic": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "\"right\" for right traffic; anything else, or none, is left (14 CFR 91.126(b)(1))."
+          },
+          "lat": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "lon": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "description": "A runway as the traffic pattern draws it: its ends' idents, true headings, traffic and thresholds."
+}

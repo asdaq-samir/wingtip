@@ -1,0 +1,52 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "A fix-radial-distance point read from text, or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FrdReadInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "FrdReadAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "base": {
+              "type": "string"
+            },
+            "course": {
+              "type": "integer",
+              "description": "Magnetic degrees from the base."
+            },
+            "distance_nm": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "base",
+            "course",
+            "distance_nm"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

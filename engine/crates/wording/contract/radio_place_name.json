@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "What a pilot calls a field: its name without Airport, International and the like; its ident where nothing is left.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RadioPlaceNameInput",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ident": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ident"
+      ]
+    },
+    "answer": {
+      "title": "RadioPlaceNameAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

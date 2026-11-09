@@ -75,19 +75,6 @@ use wingtip_core::grid::Point;
 use wingtip_core::wmm;
 use wingtip_flight::flight;
 
-/// The names this module answers (crate::call).
-pub const NAMES: [&str; 9] = [
-    "route_options_frame",
-    "route_options",
-    "terrain_way_frame",
-    "terrain_way_round",
-    "frd_near",
-    "fuel_stops",
-    "fields_along",
-    "class_b_entered",
-    "class_b_detours",
-];
-
 /// The kinds of way, in the order they are offered, and their titles.
 pub const KINDS: [&str; 4] = ["fastest", "weather", "stops", "land"];
 fn title(kind: &str) -> &'static str {

@@ -1,0 +1,62 @@
+{
+  "title": "GonogoInspections",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "annual_good_through": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "yyyy-mm-dd, 14 CFR 91.409(a)."
+        },
+        "elt_inspection_good_through": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "yyyy-mm-dd, 91.207(d)."
+        },
+        "elt_battery_due_on": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "yyyy-mm-dd, 91.207(c)."
+        },
+        "static_check_good_through": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "yyyy-mm-dd, 91.411(a)."
+        },
+        "transponder_check_good_through": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "yyyy-mm-dd, 91.413(a)."
+        },
+        "hundred_hour_due_at_hours": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "91.409(b)."
+        },
+        "hours_now": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    {
+      "type": "null"
+    }
+  ],
+  "description": "The airplane's inspections and tests as its owner recorded them; null or a member left out says nothing."
+}

@@ -1,0 +1,115 @@
+{
+  "x-call": "wingtip_route::navlog::calls::call",
+  "description": "Where a flight landing by an instrument approach comes down to: the first fix not of the missed approach with an altitude under the cruise -- the chart's lowest for it, else its highest (CIFP, ARINC 424-18 5.29; AIM 5-4-5) -- and that fix's distance from the field, as navlog_with_descents takes them. Null where no fix is under the cruise: down to the pattern.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavLogApproachEndInput",
+      "type": "object",
+      "properties": {
+        "fixes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "min_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "max_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "missed": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "lat",
+              "lon"
+            ]
+          }
+        },
+        "cruise_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "field": {
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        }
+      },
+      "required": [
+        "fixes",
+        "field"
+      ]
+    },
+    "answer": {
+      "title": "NavLogApproachEndAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "end_altitude_ft": {
+              "type": "number"
+            },
+            "end_before_nm": {
+              "type": "number"
+            },
+            "end_fix": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "end_altitude_ft",
+            "end_before_nm",
+            "end_fix"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,74 @@
+{
+  "x-call": "wingtip_pilot::autolog::call",
+  "description": "Where a flown track took off, landed or came down low, for the host to find the fields within `within_nm` of each (the logbook entry drawn from the track, pilot's autolog).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "LogbookTrackPlacesInput",
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TrackPoint"
+          },
+          "description": "The track, in any order; put in time order first."
+        }
+      },
+      "required": [
+        "points"
+      ]
+    },
+    "answer": {
+      "title": "LogbookTrackPlacesAnswer",
+      "type": "object",
+      "properties": {
+        "places": {
+          "type": "array",
+          "items": {
+            "title": "LogbookTrackPlace",
+            "type": "object",
+            "properties": {
+              "t": {
+                "type": "number",
+                "description": "ms since 1970."
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "kind": {
+                "enum": [
+                  "takeoff",
+                  "landing",
+                  "low"
+                ]
+              }
+            },
+            "required": [
+              "t",
+              "lat",
+              "lon",
+              "kind"
+            ]
+          }
+        },
+        "within_nm": {
+          "type": "number",
+          "description": "How far round each place a field is looked for."
+        }
+      },
+      "required": [
+        "places",
+        "within_nm"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

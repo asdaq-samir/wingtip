@@ -1,0 +1,16 @@
+{
+  "title": "RecentWindIn",
+  "type": [
+    "object",
+    "null"
+  ],
+  "properties": {
+    "wind_dir_true_deg": {
+      "type": "number"
+    },
+    "wind_speed_kt": {
+      "type": "number"
+    }
+  },
+  "description": "The field's last wind, for a calm one; both members needed where it is not empty."
+}

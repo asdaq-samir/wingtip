@@ -1,0 +1,34 @@
+{
+  "title": "GonogoRunwayWind",
+  "type": "object",
+  "properties": {
+    "end": {
+      "type": "string"
+    },
+    "headwind_kt": {
+      "type": "number"
+    },
+    "crosswind_kt": {
+      "type": "number"
+    },
+    "gust_crosswind_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "in_use": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+    }
+  },
+  "required": [
+    "end",
+    "headwind_kt",
+    "crosswind_kt"
+  ],
+  "description": "The planner's RunwayWind on a runway."
+}

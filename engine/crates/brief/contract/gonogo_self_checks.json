@@ -1,0 +1,24 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "The self checks the Brief's Risk page lists (IMSAFE and PAVE), in order, with no mark.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoSelfChecksInput",
+      "type": "object",
+      "properties": {}
+    },
+    "answer": {
+      "title": "GonogoSelfChecksAnswer",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/GonogoFactor"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

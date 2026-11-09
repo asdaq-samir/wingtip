@@ -1,0 +1,64 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "The SIGMETs in force whose area the route crosses (AC 00-45H).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "SigmetsAlongRouteInput",
+      "type": "object",
+      "properties": {
+        "advisories": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "from": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lat, lon], degrees."
+        },
+        "to": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lat, lon], degrees."
+        },
+        "corridor_nm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "now": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "advisories",
+        "from",
+        "to",
+        "now"
+      ]
+    },
+    "answer": {
+      "title": "SigmetsAlongRouteAnswer",
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

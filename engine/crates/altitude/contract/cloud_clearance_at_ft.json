@@ -1,0 +1,29 @@
+{
+  "x-call": "wingtip_altitude::altitude::calls::call",
+  "description": "The distance 14 CFR 91.155(a) keeps below the clouds at an altitude: 1,000 ft at or above 10,000 ft MSL, 500 ft below.",
+  "x-tool": true,
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "CloudClearanceAtFtInput",
+      "type": "object",
+      "properties": {
+        "altitude_ft": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "altitude_ft"
+      ]
+    },
+    "answer": {
+      "title": "CloudClearanceAtFtAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

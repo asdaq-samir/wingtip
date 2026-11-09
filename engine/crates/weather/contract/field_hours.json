@@ -1,0 +1,53 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "A field's weather hour by hour for the airport card: Now from the METAR, then each whole hour its TAF covers, the TAF's change groups read as AC 00-45H sets them out (a BECMG under way the worse of before and after, a TEMPO's or PROB's worse weather at times).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FieldHoursInput",
+      "type": "object",
+      "properties": {
+        "metar": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The field's report as the planner gives it."
+        },
+        "taf": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The TAF as sent."
+        },
+        "now": {
+          "type": "number",
+          "description": "ms"
+        },
+        "count": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Hours after Now; 24 where not given."
+        }
+      },
+      "required": [
+        "now"
+      ]
+    },
+    "answer": {
+      "title": "FieldHoursAnswer",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/FieldHour"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

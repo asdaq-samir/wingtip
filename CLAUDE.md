@@ -20,8 +20,11 @@ one job (the owner kept both server languages on this split, 2026-11-06):
   and a student's 61.109 experience, endorsements and inspections, the altitude limits,
   91.155's minimums, the filing form's items, night (14 CFR 1.1), the
   planning cautions, the IFR alternate (91.169), congested areas, what is
-  ahead, the checkpoint pick and the radio calls' words. No network, no screen, no clock of its own. Each rule is a name in `engine/facade/src/call.rs`,
-  JSON in and out, typed in `engine/contract/engine.schema.json`.
+  ahead, the checkpoint pick and the radio calls' words. No network, no screen, no clock of its own. Each rule is a name asked
+  through `engine/facade/src/call.rs`, JSON in and out, declared in one
+  contract file beside its code (`engine/crates/<crate>/contract/<name>.json`),
+  from which the dispatch table and `engine/contract/engine.schema.json`
+  are generated.
 - **The planner** (FastAPI, `services/planner`: `app` over `wingtip`) works
   out a flight: it fetches the FAA's data, reads the weather and the live
   feeds from the shared store, runs the chart model and chart vision,
@@ -70,10 +73,17 @@ one job (the owner kept both server languages on this split, 2026-11-06):
   store that ingest and weather fill, and the cycle packs feed the
   engine; the engine never fetches.
 - Adding or changing a rule: the Rust in the lowest crate that can hold
-  it, its name in `call.rs`, its entry in the contract
-  (`engine.schema.json`), `npm run types` in apps/web and
+  it and its one contract file beside it
+  (`engine/crates/<crate>/contract/<name>.json`: `"x-call"`, the function
+  that answers it; its description with its source; `"x-tool"`; its
+  input and answer), which the dispatcher (`engine/facade/build.rs`) and
+  the contract are both generated from -- no list to add it to; then
+  `cargo run -p wingtip-contract-gen` in engine/ (writes
+  `engine.schema.json`, never edited by hand; CI checks it matches),
+  `npm run types` in apps/web,
   `scripts/build/engine-contract-apps.sh` (the phones' typed calls, which CI
-  checks match the contract), its test
+  checks match the contract), `scripts/build/assistant-client.sh` for an
+  `"x-tool"`, its test
   against the shared fixtures (apps/web/src/lib/fixtures),
   `scripts/build/build-engine-wasm.sh` (the `.wasm` is committed and CI checks
   it matches), and the images that link it rebuilt (the planner, ingest,
@@ -123,13 +133,15 @@ one job (the owner kept both server languages on this split, 2026-11-06):
     brief names what the agent owns and what it must leave alone; a
     change another agent's area needs goes in the report, not the code.
   - Generated files are never merged by hand. On a conflict in
+    `engine/contract/engine.schema.json`,
     `apps/web/src/lib/engine/contract.ts`, the `.wasm`, the API
     documents and types, or the phones' generated models, take either
-    side and regenerate with the scripts (`npm run types`,
+    side and regenerate with the scripts (`cargo run -p
+    wingtip-contract-gen`, `npm run types`,
     `scripts/build/build-engine-wasm.sh`, `engine-contract-apps.sh`,
     `api-models-apps.sh`). The integration branch regenerates once after
     each merge.
-  - Shared lists (`call.rs`, `engine.schema.json`, `docker-compose.yml`,
+  - Shared lists (`docker-compose.yml`,
     `ci.yml`, `scripts/dev/check.sh`, the CloudFormation template, the
     docs' service tables): add an entry in its own block, in the list's
     order, and change no neighbouring line, so merges are additive.

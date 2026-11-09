@@ -1,0 +1,38 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "A point as a fix-radial-distance off the nearest station with a variation, \"JOT 045° 12 nm\" (AIM 5-1-6), or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FixRadialDistanceInput",
+      "type": "object",
+      "properties": {
+        "at": {
+          "$ref": "#/definitions/WordingLatLon"
+        },
+        "stations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WordingStation"
+          }
+        }
+      },
+      "required": [
+        "at",
+        "stations"
+      ]
+    },
+    "answer": {
+      "title": "FixRadialDistanceAnswer",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

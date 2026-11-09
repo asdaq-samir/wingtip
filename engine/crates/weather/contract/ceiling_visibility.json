@@ -1,0 +1,102 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "A report's or a forecast group's ceiling (14 CFR 1.1: the lowest broken or overcast layer, or the vertical visibility into an obscuration) and its visibility in statute miles, from the groups a host's own reader found: metres converted as the engine's METAR reader converts them (9999 the AWC's 6+), to the hundredth; CAVOK 6 (WMO No. 306: 10 km or more). Each null where none is given.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "CeilingVisibilityInput",
+      "type": "object",
+      "properties": {
+        "layers": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "cover": {
+                "type": "string",
+                "description": "As a METAR codes it: FEW, SCT, BKN, OVC, VV; others count for no ceiling."
+              },
+              "base_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Above the ground."
+              }
+            },
+            "required": [
+              "cover"
+            ]
+          }
+        },
+        "vertical_visibility_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Into an obscuration: a ceiling."
+        },
+        "visibility": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number"
+                },
+                "unit": {
+                  "enum": [
+                    "sm",
+                    "m"
+                  ]
+                }
+              },
+              "required": [
+                "value"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cavok": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "CeilingVisibilityAnswer",
+      "type": "object",
+      "properties": {
+        "ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "ceiling_ft",
+        "visibility_sm"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

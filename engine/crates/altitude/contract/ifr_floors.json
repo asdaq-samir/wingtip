@@ -1,0 +1,104 @@
+{
+  "x-call": "wingtip_altitude::altitude::calls::call",
+  "description": "Each leg's minimum IFR altitude (14 CFR 91.177(a)(2)): the highest of the ground given and the DOF obstacles within 4 nm of its course, plus 1,000 ft, or 2,000 ft over a mountainous area (Part 95 subpart B), rounded up to the next 100 ft.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "IfrFloorsInput",
+      "type": "object",
+      "properties": {
+        "legs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "a": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "[lat, lon], degrees."
+              },
+              "b": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "[lat, lon], degrees."
+              },
+              "ground_ft": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "a",
+              "b",
+              "ground_ft"
+            ]
+          }
+        },
+        "obstacles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "amsl_ft": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "lat",
+              "lon",
+              "amsl_ft"
+            ]
+          }
+        }
+      },
+      "required": [
+        "legs"
+      ]
+    },
+    "answer": {
+      "title": "IfrFloorsAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "floor_ft": {
+            "type": "number"
+          },
+          "highest_ft": {
+            "type": "number"
+          },
+          "highest_is_obstacle": {
+            "type": "boolean"
+          },
+          "mountainous": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "floor_ft",
+          "highest_ft",
+          "highest_is_obstacle",
+          "mountainous"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,59 @@
+{
+  "x-call": "wingtip_route::navlog::calls::call",
+  "description": "The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path) to the pattern altitude at the end, to an approach's fix end_before_nm short of it, and to a lower leg's altitude at a step down; the times and fuel unchanged.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavLogWithDescentsInput",
+      "type": "object",
+      "properties": {
+        "legs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogLeg"
+          }
+        },
+        "fixes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogFix"
+          }
+        },
+        "end_altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "end_before_nm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "end_fix": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "legs",
+        "fixes"
+      ]
+    },
+    "answer": {
+      "title": "NavLogWithDescentsAnswer",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/NavLogLeg"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

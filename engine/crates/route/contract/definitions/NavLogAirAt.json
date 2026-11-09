@@ -1,0 +1,29 @@
+{
+  "title": "NavLogAirAt",
+  "type": "object",
+  "properties": {
+    "altitude_ft": {
+      "type": "number"
+    },
+    "wind": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/NavLogWind"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "oat_c": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "altitude_ft"
+  ],
+  "description": "A leg's air at one altitude, looked up at its midpoint: no wind is no winds-aloft station near, no temperature a standard day."
+}

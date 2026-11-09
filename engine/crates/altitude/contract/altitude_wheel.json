@@ -1,0 +1,37 @@
+{
+  "x-call": "wingtip_altitude::altitude::calls::call",
+  "description": "The altitude wheel's rows, highest first: the legal altitudes given, the one flown, and every 500 ft from 1,000 ft to 17,500 ft under Class A (14 CFR 71.33, 91.135) besides (the owner's pick, 2026-10-20).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AltitudeWheelInput",
+      "type": "object",
+      "properties": {
+        "legal_ft": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "flown_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "AltitudeWheelAnswer",
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

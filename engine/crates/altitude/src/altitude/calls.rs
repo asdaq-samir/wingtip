@@ -1,35 +1,13 @@
-//! The altitude rules as crate::call answers them, JSON in and out; the
-//! names and their inputs are listed in call.rs with the others, and
-//! their shapes in engine/contract/engine.schema.json.
+//! The altitude rules as crate::call answers them, JSON in and out; each
+//! name, its input and its answer are in its file in
+//! crates/altitude/contract, which the dispatcher and
+//! engine/contract/engine.schema.json are generated from.
 
 use super::floor::{self, Ground, Obstacle, IFR_OBSTACLE_RADIUS_NM};
 use super::select::{self, Area};
 use super::words::{self, Via};
 use super::{cautions, clouds, congested, cruising, mountainous};
 use crate::json::{self, Value};
-
-/// The names this module answers.
-pub const NAMES: [&str; 19] = [
-    "legal_cruising_altitudes",
-    "tight_cruising_altitude",
-    "highest_under_clouds_ft",
-    "altitude_wheel",
-    "vfr_floors",
-    "ifr_floors",
-    "ifr_obstacle_radius_nm",
-    "airway_floor_ft",
-    "altitude_blocked",
-    "mountainous_at",
-    "select_cruise_altitude",
-    "altitude_anyway",
-    "no_altitude",
-    "cloud_clearance_at_ft",
-    "own_altitude_caution",
-    "floor_caution",
-    "oxygen_caution",
-    "prohibited_caution",
-    "congested_points",
-];
 
 type R<T> = Result<T, String>;
 

@@ -1,0 +1,30 @@
+{
+  "description": "An FD station and its wind [from true, kt] at each of the frame's altitudes_ft, null where it gives none.",
+  "title": "RouteOptionsStation",
+  "type": "object",
+  "properties": {
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "winds": {
+      "type": "array",
+      "items": {
+        "type": [
+          "array",
+          "null"
+        ],
+        "items": {
+          "type": "number"
+        }
+      }
+    }
+  },
+  "required": [
+    "lat",
+    "lon",
+    "winds"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "The pilot's-eye view's colours for the ground under an airplane at `altitude_ft` MSL: amber from `caution_from_ft` (1,000 ft below it), red from `warning_from_ft` (its own altitude), feet MSL; the owner's bands, no regulation's. A picture of the plan, not terrain clearance (no TAWS, TSO-C151; nothing of 14 CFR 91.119 or 91.177).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TerrainViewBandsInput",
+      "type": "object",
+      "properties": {
+        "altitude_ft": {
+          "type": "number",
+          "description": "The airplane's altitude, ft MSL."
+        }
+      },
+      "required": [
+        "altitude_ft"
+      ],
+      "additionalProperties": false
+    },
+    "answer": {
+      "title": "TerrainViewBandsAnswer",
+      "type": "object",
+      "properties": {
+        "caution_from_ft": {
+          "type": "number"
+        },
+        "warning_from_ft": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "caution_from_ft",
+        "warning_from_ft"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

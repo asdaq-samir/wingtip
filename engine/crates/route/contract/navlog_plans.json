@@ -1,0 +1,81 @@
+{
+  "x-call": "wingtip_route::navlog::calls::call",
+  "description": "The four altitude plans -- lowest and highest over the legal band, fastest by the winds, economical by the fuel, each paying its climbs -- and the route flown at each legal altitude (by_altitude). Empty where a leg has no legal altitude.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavLogPlansInput",
+      "type": "object",
+      "properties": {
+        "fixes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogFix"
+          }
+        },
+        "segments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogSegment"
+          }
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: \"don't assume\")."
+        },
+        "departure_elevation_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "air": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogLegAir"
+          }
+        }
+      },
+      "required": [
+        "fixes",
+        "segments",
+        "profile",
+        "air"
+      ]
+    },
+    "answer": {
+      "title": "NavLogPlansAnswer",
+      "type": "object",
+      "properties": {
+        "plans": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/NavLogPlan"
+          }
+        },
+        "by_altitude": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogFigure"
+          }
+        }
+      },
+      "required": [
+        "plans",
+        "by_altitude"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

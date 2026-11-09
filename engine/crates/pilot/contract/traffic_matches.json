@@ -1,0 +1,93 @@
+{
+  "x-call": "wingtip_pilot::aircraft::calls::call",
+  "description": "Whether an airplane heard passes the traffic list's filter.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TrafficMatchesInput",
+      "type": "object",
+      "properties": {
+        "plane": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "callsign": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "squawk": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "emergency": {
+              "type": [
+                "string",
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        },
+        "filter": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "\"any\" where none."
+            },
+            "band": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "\"any\" where none."
+            },
+            "operator": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "emergency": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        }
+      },
+      "required": [
+        "plane",
+        "filter"
+      ]
+    },
+    "answer": {
+      "title": "TrafficMatchesAnswer",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

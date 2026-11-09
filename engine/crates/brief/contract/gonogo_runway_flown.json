@@ -1,0 +1,37 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "The runway and end flown: the one picked where it is there, else the one the wind favours.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoRunwayFlownInput",
+      "type": "object",
+      "properties": {
+        "runways": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/Runway"
+          }
+        },
+        "picked": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The end picked."
+        }
+      }
+    },
+    "answer": {
+      "$ref": "#/definitions/GonogoFlown"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

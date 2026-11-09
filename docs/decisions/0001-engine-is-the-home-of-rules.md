@@ -13,7 +13,7 @@ Every aviation rule or figure is written once in the engine (`engine/`, ten doma
 
 ## Consequences
 
-Adding or changing a rule means the Rust in the lowest crate that can hold it, its name in `call.rs`, its contract entry, regenerated types, a test against the shared fixtures, the rebuilt committed `.wasm`, and the planner's image rebuilt (CLAUDE.md, Architecture). CI's "Rules boundary" job fails a change that writes a new rule outside the engine. Currency (14 CFR 61.56, 61.57) is still worked out in Java until #482 moves it; add no new rule there.
+Adding or changing a rule means the Rust in the lowest crate that can hold it, its one contract file beside it (from which `call.rs`'s dispatch and the contract are generated), regenerated types, a test against the shared fixtures, the rebuilt committed `.wasm`, and the planner's image rebuilt (CLAUDE.md, Architecture). CI's "Rules boundary" job fails a change that writes a new rule outside the engine. Currency (14 CFR 61.56, 61.57) is still worked out in Java until #482 moves it; add no new rule there.
 
 ## Source
 

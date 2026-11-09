@@ -1,0 +1,43 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "The temperature at an altitude from a profile: interpolated between levels, past the ends the nearest level's difference from a standard day kept (ICAO standard lapse rate).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TemperatureAtInput",
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "description": "[[altitude_ft, temp_c], ...]"
+        },
+        "altitude_ft": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "altitude_ft"
+      ]
+    },
+    "answer": {
+      "title": "TemperatureAtAnswer",
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

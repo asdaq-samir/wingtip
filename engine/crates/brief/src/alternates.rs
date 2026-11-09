@@ -30,9 +30,6 @@
 use crate::figures::words::grouped;
 use crate::json::{self, Value};
 
-/// The names this module answers.
-pub const NAMES: [&str; 3] = ["ifr_alternate_destination", "ifr_alternate_check", "ifr_alternates_ranked"];
-
 /// 91.169(b)(2)(i): an hour either side of the ETA, at least 2,000 ft
 /// above the field and 3 sm.
 pub const DESTINATION_CEILING_FT: f64 = 2000.0;

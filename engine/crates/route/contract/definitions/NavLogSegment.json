@@ -1,0 +1,21 @@
+{
+  "title": "NavLogSegment",
+  "type": "object",
+  "properties": {
+    "candidates_ft": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "additionalProperties": true,
+  "description": "The altitude selection's segment for a leg: its legal altitudes (14 CFR 91.119, 91.159, the airspace, the clouds and the service ceiling)."
+}

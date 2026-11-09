@@ -1,0 +1,105 @@
+{
+  "x-call": "wingtip_pilot::pilot::records::call",
+  "description": "What a student's endorsements say: each one's last good day (90 days for a solo endorsement, 14 CFR 61.87(n), (p), the night solo's, 61.87(o), and Class B's, 61.95(a)(2), (b)(2); AC 61-65K A.5-A.7, A.12, A.13; null for one that does not run out), the day their solo endorsement runs out, and, for a solo cross-country on flight_on, what their record answers of 61.93(d): (4) a solo cross-country endorsement (61.93(c)(1), (2)) and (5) a solo endorsement within the 90 days before the flight.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "EndorsementRecordsInput",
+      "type": "object",
+      "properties": {
+        "held": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "on": {
+                "type": "string"
+              },
+              "make_model": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "code",
+              "on"
+            ]
+          }
+        },
+        "flight_on": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "YYYY-MM-DD"
+        }
+      }
+    },
+    "answer": {
+      "title": "EndorsementRecordsAnswer",
+      "type": "object",
+      "properties": {
+        "until": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "YYYY-MM-DD"
+          }
+        },
+        "solo_until": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "YYYY-MM-DD"
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "rule": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "met": {
+                "type": "boolean"
+              },
+              "detail": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "rule",
+              "label",
+              "met",
+              "detail"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "until",
+        "solo_until",
+        "checks"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,60 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "What the findings come to, in a line over them: the worst finding and the tabs that have it.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoVerdictLineInput",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "tab": {
+                "type": "string"
+              },
+              "section": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "finding": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "label",
+              "tab",
+              "finding",
+              "detail"
+            ]
+          }
+        }
+      }
+    },
+    "answer": {
+      "$ref": "#/definitions/GonogoLine"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,138 @@
+{
+  "x-call": "wingtip_route::route::options::call",
+  "x-feature": "route-options",
+  "description": "The public fields along a route for the map's Stops (route/options/fuel.rs): those on a paved runway of 2,500 ft no more than 30 nm off each flight's line, not the route's own, each on the first flight it is near with its miles from that flight's departure and the miles it adds; the 40 nearest the line, in route order.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FieldsAlongInput",
+      "type": "object",
+      "properties": {
+        "flights": {
+          "type": "array",
+          "items": {
+            "title": "FieldsAlongFlight",
+            "type": "object",
+            "properties": {
+              "departure": {
+                "type": "string"
+              },
+              "start": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "end": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            },
+            "required": [
+              "departure",
+              "start",
+              "end"
+            ]
+          }
+        },
+        "skip": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "fields": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/FuelField"
+          }
+        }
+      },
+      "required": [
+        "flights"
+      ]
+    },
+    "answer": {
+      "type": "array",
+      "items": {
+        "title": "FieldAlong",
+        "type": "object",
+        "properties": {
+          "ident": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lon": {
+            "type": "number"
+          },
+          "runway_ft": {
+            "type": "integer"
+          },
+          "elevation_ft": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "from_nm": {
+            "type": "number"
+          },
+          "added_nm": {
+            "type": "number"
+          },
+          "flight": {
+            "type": "integer"
+          },
+          "departure": {
+            "type": "string"
+          },
+          "fuel_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "ident",
+          "name",
+          "city",
+          "lat",
+          "lon",
+          "runway_ft",
+          "elevation_ft",
+          "from_nm",
+          "added_nm",
+          "flight",
+          "departure",
+          "fuel_types"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

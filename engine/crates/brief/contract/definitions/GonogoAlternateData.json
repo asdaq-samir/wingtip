@@ -1,0 +1,53 @@
+{
+  "title": "GonogoAlternateData",
+  "type": "object",
+  "properties": {
+    "destination": {
+      "type": "object",
+      "properties": {
+        "required": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+        }
+      }
+    },
+    "alternate": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "ident": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "good": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "False: under its alternate minimums; null: the pilot's to check; left out: says nothing."
+            },
+            "reasons": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "description": "The planner's /api/alternate answer, as much as the finding reads."
+}
