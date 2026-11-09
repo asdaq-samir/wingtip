@@ -472,7 +472,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       // camera's with or without it).
       const room = padOf(to);
       const camera = map.cameraForBounds(bounds, {
-        padding: { top: room.top + FIT_MARGIN.top, bottom: room.bottom + FIT_MARGIN.bottom, left: room.left + FIT_MARGIN.left, right: room.right + FIT_MARGIN.right },
+        padding: { top: to.top + FIT_MARGIN.top, bottom: to.bottom + FIT_MARGIN.bottom, left: to.left + FIT_MARGIN.left, right: FIT_MARGIN.right },
         absolutePadding: true,
       });
       if (camera?.center !== undefined && camera.zoom !== undefined) {
