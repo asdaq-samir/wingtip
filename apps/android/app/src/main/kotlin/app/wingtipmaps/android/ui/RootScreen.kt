@@ -33,6 +33,7 @@ import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.InFlight
+import app.wingtipmaps.android.emergency.EmergencyHost
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.route.RouteLegHost
 import app.wingtipmaps.android.route.RouteLegModel
@@ -178,6 +179,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     }
     picked?.let { pick -> MapCardSheet(pick, plan, onClose = { picked = null }) }
     RouteLegHost(plan, ownShipOn = ownShip.on, model = legs)
+    EmergencyHost(plan, ownShip)
 }
 
 /** The pill: the drag handle, the figures' line and the tabs (Material's

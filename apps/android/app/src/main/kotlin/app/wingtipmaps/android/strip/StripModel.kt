@@ -1,5 +1,7 @@
 package app.wingtipmaps.android.strip
 
+import app.wingtipmaps.android.emergency.EmergencyOpen
+
 import app.wingtipmaps.android.format.Format
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -112,6 +114,12 @@ class StripModel : ViewModel() {
         context: AssistantContext,
         onOpen: (FieldScreen) -> String?,
     ) {
+        // The pilot's own "mayday", "engine failure", "emergency": the
+        // emergency assistant at once, no chip to find first.
+        if (EmergencyOpen.asked(text)) {
+            EmergencyOpen.open(EmergencyOpen.From.VOICE)
+            return
+        }
         val command = FieldCommands.readField(text) ?: return
         if (_state.value.busy) return
         _state.update { it.copy(problem = null, busy = true) }

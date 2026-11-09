@@ -184,4 +184,28 @@
     <string name="route_leg_remove">Remove %1$s</string>
     <string name="route_leg_distance">Distance</string>
     <string name="route_leg_course">Course</string>
+
+    <!-- The emergency assistant (emergency/, decision 0010). -->
+    <string name="emergency">Emergency</string>
+    <string name="emergency_assistant">Emergency Assistant</string>
+    <string name="emergency_assistant_line">Best fields within a glide, the checklist and the MAYDAY</string>
+    <string name="best_fields">Best Fields</string>
+    <string name="best_fields_glide">Best Fields · Glide About %1$d nm in Still Air</string>
+    <string name="show_my_position">Show My Position</string>
+    <string name="show_my_position_line">The fields within a glide are worked out from it</string>
+    <string name="glide_needs_airplane">Glide Needs an Airplane</string>
+    <string name="glide_needs_airplane_line">Choose one with its best-glide figures; nearest first meanwhile</string>
+    <string name="this_airplane">this airplane</string>
+    <string name="emergency_no_checklist">No emergency checklist for %1$s</string>
+    <string name="emergency_no_checklist_line">Write it from the airplane\'s handbook in the Airplane tab\'s Checklists</string>
+    <string name="emergency_other">Other</string>
+    <string name="emergency_radio">Transponder and Radio</string>
+    <string name="emergency_squawk">Squawk %1$s</string>
+    <string name="emergency_mayday">MAYDAY</string>
+    <string name="emergency_souls">People on Board</string>
+    <string name="emergency_fuel">Fuel, Minutes</string>
+    <string name="emergency_phone">Phone</string>
+    <string name="emergency_call_field">Call %1$s</string>
+    <string name="emergency_call_field_line">The airport\'s phone, as the FAA lists it</string>
+    <string name="emergency_call_911">Call 911</string>
 </resources>
