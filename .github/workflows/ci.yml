@@ -244,6 +244,14 @@ jobs:
       - name: The design tokens are the committed ones
         working-directory: .
         run: scripts/build/design-tokens.sh --check
+      # The screens a link opens (design/screens.json), generated into each
+      # app's list and docs/navigation.md's table by scripts/build/screens.sh
+      # and committed: generated again here, they must be the committed
+      # files byte for byte, or a link opens a screen on one platform and
+      # nothing on another.
+      - name: The screens and their links are the committed ones
+        working-directory: .
+        run: scripts/build/screens.sh --check
       # The icons and launch art of every app (iOS, the watch, Android,
       # the web, the site, the store), drawn from docs/brand's SVGs by
       # scripts/build/app-icons.sh in its pinned image and committed:
@@ -599,6 +607,11 @@ jobs:
                 - design/**
                 - scripts/build/design-tokens.sh
                 - scripts/build/design_tokens.py
+                - scripts/build/screens.sh
+                - scripts/build/screens.py
+                - docs/navigation.md
+                - apps/ios/Wingtip/Navigation/Generated/**
+                - apps/android/app/src/main/kotlin/app/wingtipmaps/android/navigation/generated/**
                 - apps/ios/Wingtip/Design/Generated/**
                 - apps/ios/Wingtip/Assets.xcassets/**
                 - docs/brand/**
