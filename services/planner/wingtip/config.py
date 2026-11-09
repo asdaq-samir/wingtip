@@ -159,6 +159,26 @@ class Settings(BaseSettings):
     charts_refresh_window: str = "01:00-06:00"
     #: How many render processes the charts job's run of a cycle gets (compose passes it to both).
     charts_refresh_workers: int = 1
+    #: Whether the planner starts the charts job's `next` run, which draws the
+    #: FAA's next chart cycle ahead of its effective date into a folder the
+    #: map does not serve until that date (wingtip.chart_next): on for a
+    #: machine of one's own, 0 in production (the AWS task draws each cycle)
+    #: and in CI. Its own switch, not CHARTS_AUTO_REFRESH's.
+    charts_cycle_auto: bool = True
+    #: How many days before the next cycle's effective date its staging may start.
+    charts_cycle_lead_days: int = 7
+    #: How many minutes a live feed may read stale before the planner says
+    #: so as an alert (app.feed_health): the console's row, a log warning
+    #: and FEED_ALERT_WEBHOOK.
+    feed_alert_after_min: int = 15
+    #: Where an alert is POSTed as JSON when a feed has been stale that
+    #: long, and again when it is back; None posts nothing (the log and
+    #: the console still say it).
+    feed_alert_webhook: str | None = None
+    #: The weather service's health answer (services/weather, GET /), which
+    #: says how fresh each product is by its own schedule; None reads only
+    #: the weather store's fetch times.
+    weather_url: str | None = "http://weather:8000"
     #: Whether the chart model reads tiles in the planner's own process pool.
     chart_reads_in_process: bool = True
     #: The OTLP collector traces go to; None sends none (app.tracing).
@@ -174,9 +194,10 @@ class Settings(BaseSettings):
 
     read_switches = field_validator(
         "charts_fetch_for_tiles", "adsbfi_open_data", "registry_refresh", "cycle_pack", "landmarks_build",
-        "charts_auto_refresh", "faa_data_auto_refresh", "chart_reads_in_process", mode="before")(_switch)
+        "charts_auto_refresh", "faa_data_auto_refresh", "chart_reads_in_process", "charts_cycle_auto",
+        mode="before")(_switch)
 
-    @field_validator("chart_tiles_url", "dev_services_url", mode="before")
+    @field_validator("chart_tiles_url", "dev_services_url", "feed_alert_webhook", "weather_url", mode="before")
     @classmethod
     def read_base_url(cls, value):
         """A base address without its trailing slash, None where blank."""

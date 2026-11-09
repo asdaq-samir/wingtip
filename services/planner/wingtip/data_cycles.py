@@ -31,13 +31,13 @@ def today() -> date:
     return datetime.now(tz=timezone.utc).date()
 
 
-def in_force_day() -> date:
+def in_force_day(now: datetime | None = None) -> date:
     """The UTC day to choose an edition to use by: an edition takes effect
     at 0901Z on its date (the FAA's schedule; 14 CFR 91.103 wants current
     information), so before then the previous one is still the one in
     force. The engine counts from 0000Z, toward the safe side for a
     warning; choosing what to fetch and show must not run ahead of it."""
-    return (datetime.now(tz=timezone.utc) - timedelta(hours=9, minutes=1)).date()
+    return ((now or datetime.now(tz=timezone.utc)) - timedelta(hours=9, minutes=1)).date()
 
 
 def cycle(kind: str, effective: date | None = None, on: date | None = None) -> dict:
@@ -133,7 +133,7 @@ def _charts_edition(charts) -> str | None:
         if charts.CHART_TILES_URL and held:
             return held
         return next((c for c in charts._cycles_on_disk(charts.CHART_TILE_CACHE_DIR)
-                     if charts.pyramid_complete(c, ("sec",))), None)
+                     if charts.in_force(c) and charts.pyramid_complete(c, ("sec",))), None)
     except Exception:  # noqa: BLE001 -- the status of the others is still worth having
         log.warning("chart cycle unknown", exc_info=True)
         return None
