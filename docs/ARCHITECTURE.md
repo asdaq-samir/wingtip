@@ -116,9 +116,13 @@ to what it normally does (`wingtip.feed_health`, `app/feeds`): STDDS,
 TFMS and FNS are stale after 2, 5 and 30 minutes of silence; ITWS and
 SFDPS, quiet by nature, only when their connection is down; every feed
 when ingest has not beaten for 60 seconds. The weather products are
-judged by the weather service's own health check. `GET /api/status/feeds`
-answers it, and a feed stale for 15 minutes (`FEED_ALERT_AFTER_MIN`)
-raises one alert in the log and to `FEED_ALERT_WEBHOOK` where it is set.
+judged by the weather service's own health check, the FAA's data sets
+by their cycles. `GET /api/status/feeds` answers it, and a feed stale
+for 15 minutes (`FEED_ALERT_AFTER_MIN`) raises one alert in the log and
+to `FEED_ALERT_WEBHOOK` where it is set; the gateway's minute check
+(`UptimeWatch`) mails it, beside any service down for 5 minutes, and the
+pilot's Status page says which sources have stopped updating.
+[OPERATIONS.md](OPERATIONS.md) has every threshold and where alerts go.
 
 ## Outside sources
 

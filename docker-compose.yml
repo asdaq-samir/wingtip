@@ -554,6 +554,13 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-wingtip}
       PLANNER_SERVICE_URL: http://planner:8000
       ASSISTANT_SERVICE_URL: http://assistant:8000
+      # The monitor's minute check (UptimeWatch, docs/OPERATIONS.md): the
+      # weather service watched beside the planner and the assistant, and
+      # its alerts mailed to an address of their own in the local inbox,
+      # where the e2e suite's sign-in links never meet them; APP_ALERT_EMAILS
+      # in .env sends them to yours.
+      WEATHER_SERVICE_URL: http://weather:8000
+      APP_ALERT_EMAILS: ${APP_ALERT_EMAILS:-alerts@example.com}
       # Traces to Jaeger with TRACING=1, the planner's calls under the
       # gateway's (see the jaeger service); off otherwise.
       MANAGEMENT_TRACING_EXPORT_ENABLED: ${TRACING:-false}
