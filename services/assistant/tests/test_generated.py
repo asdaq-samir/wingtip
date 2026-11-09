@@ -45,6 +45,12 @@ def test_every_tool_names_the_regulation_or_handbook_it_rests_on_where_it_states
     assert unsourced == [], unsourced
 
 
-def test_the_planners_allow_list_is_the_same_names():
+def test_the_planners_allow_list_is_the_tools_and_the_assistants_own_checks():
+    # The tools, and the rules tagged "x-assistant" (app.documents' checks
+    # of a photographed page), which are not the pilot's tools.
     text = (ROOT / "services/planner/app/generated/engine_tools.py").read_text()
-    assert [line.strip().strip(",'") for line in text.splitlines() if line.startswith("    '")] == [t["name"] for t in TOOLS]
+    own = [n for n, e in CONTRACT["properties"].items() if e.get("x-assistant")]
+    assert {"handbook_read_check", "logbook_read_check"} <= set(own)
+    allowed = [line.strip().strip(",'") for line in text.splitlines() if line.startswith("    '")]
+    assert allowed == sorted([t["name"] for t in TOOLS] + own)
+    assert not set(own) & {t["name"] for t in TOOLS}

@@ -2,7 +2,8 @@
 # Do not edit: change the source and run scripts/build/assistant-client.sh.
 # ruff: noqa: E501
 """The engine's rules the planner answers on POST /api/engine/{name}: those the
-contract tags "x-tool": true, the assistant's tools (#569), and no other."""
+contract tags "x-tool": true, the assistant's tools (#569), and "x-assistant":
+true, its own checks (a photographed page's figures), and no other."""
 from typing import Literal
 
 EngineToolName = Literal[
@@ -20,6 +21,7 @@ EngineToolName = Literal[
     'glide_range',
     'glide_reaches',
     'gonogo_density_altitude',
+    'handbook_read_check',
     'highest_under_clouds_ft',
     'holding',
     'holding_leg_minutes',
@@ -27,6 +29,7 @@ EngineToolName = Literal[
     'ifr_alternate_destination',
     'isa_temp_c',
     'legal_cruising_altitudes',
+    'logbook_read_check',
     'lowest_vfr_cruising_altitude',
     'magnetic_variation',
     'pattern_altitude',

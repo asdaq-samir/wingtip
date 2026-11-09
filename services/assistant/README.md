@@ -6,10 +6,18 @@ settings, and computes no figure: everything an answer rests on comes from
 the planner's HTTP API (`app/planner.py`), which asks the engine every rule.
 
 Its endpoints (the assistant, the briefing narrative, the words, the
-checkpoint notes, the mock oral, health) are in
+checkpoint notes, the mock oral, a photographed page read, health) are in
 [the API reference](../../docs/api/README.md), written from the code
 (`openapi.json`, here). The routes are served from `app/assistant.py`,
-`narrative.py`, `words.py`, `notes.py`, `oral.py` and `main.py`.
+`narrative.py`, `words.py`, `notes.py`, `oral.py`, `documents/` and `main.py`.
+
+`POST /api/read-document` (`app/documents/`) reads a photo of a handbook's
+performance or weight and balance page, a paper logbook page or a
+clearance note into figures (structured outputs, `DOCUMENTS_MODEL`), asks
+the engine to check them through the planner (`handbook_read_check`,
+`logbook_read_check`, the contract's `"x-assistant"` rules) and answers
+both. Nothing is saved: the apps show each item for the pilot to confirm
+and save what was confirmed through the gateway.
 
 ## How it is reached
 
@@ -26,7 +34,8 @@ in the gateway's route table: no app reaches them.
 From the environment (`app/settings.py`): `ANTHROPIC_API_KEY` (the SDK
 reads it), `PLANNER_URL` (`http://planner:8000`), `ASSISTANT_MODEL`,
 `ASSISTANT_EFFORT`, `ASSISTANT_FALLBACKS` (`1` only), `ORAL_MODEL`,
-`WORDS_MODEL`, `CHECKPOINT_NOTE_MODEL`, `NARRATIVE_MODEL`, `DATA_DIR`.
+`WORDS_MODEL`, `CHECKPOINT_NOTE_MODEL`, `NARRATIVE_MODEL`, `DOCUMENTS_MODEL`,
+`DOCUMENTS_EFFORT`, `DATA_DIR`.
 
 ## Running and checking
 

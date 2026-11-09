@@ -100,6 +100,69 @@
           }
         ]
       },
+      "ClearanceNote": {
+        "description": "A clearance or ATIS copied down in a pilot's shorthand, as written\nand as a controller would say it, for the app's clearance reader.",
+        "properties": {
+          "said": {
+            "description": "The same clearance as the controller said it, in words, figures as digits, nothing added.",
+            "title": "Said",
+            "type": "string"
+          },
+          "written": {
+            "description": "The note as written, line by line, shorthand kept.",
+            "title": "Written",
+            "type": "string"
+          }
+        },
+        "required": [
+          "written",
+          "said"
+        ],
+        "title": "ClearanceNote",
+        "type": "object"
+      },
+      "Climb": {
+        "properties": {
+          "burn": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The climb's fuel flow, in burn_unit.",
+            "title": "Burn"
+          },
+          "rate_fpm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rate of climb, feet a minute, at sea level where the page has several.",
+            "title": "Rate Fpm"
+          },
+          "speed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Best rate of climb speed (Vy), indicated, in speed_unit.",
+            "title": "Speed"
+          }
+        },
+        "title": "Climb",
+        "type": "object"
+      },
       "Context": {
         "description": "The pilot's plan, position and record as the app has them.",
         "properties": {
@@ -184,6 +247,101 @@
         "title": "Context",
         "type": "object"
       },
+      "Corner": {
+        "properties": {
+          "arm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "In arm_unit.",
+            "title": "Arm"
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "In weight_unit.",
+            "title": "Weight"
+          }
+        },
+        "title": "Corner",
+        "type": "object"
+      },
+      "CruiseRow": {
+        "properties": {
+          "altitude_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pressure altitude, feet.",
+            "title": "Altitude Ft"
+          },
+          "burn": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Fuel flow, in burn_unit.",
+            "title": "Burn"
+          },
+          "power_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Percent brake horsepower.",
+            "title": "Power Pct"
+          },
+          "rpm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rpm"
+          },
+          "tas": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "True airspeed, in speed_unit.",
+            "title": "Tas"
+          }
+        },
+        "title": "CruiseRow",
+        "type": "object"
+      },
       "DebriefWordsAnswer": {
         "properties": {
           "instructor_note": {
@@ -235,6 +393,270 @@
         "title": "DebriefWordsAnswer",
         "type": "object"
       },
+      "DistanceRow": {
+        "properties": {
+          "ground_roll": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "In distance_unit.",
+            "title": "Ground Roll"
+          },
+          "over_50ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Total distance to clear a 50 ft obstacle, in distance_unit.",
+            "title": "Over 50Ft"
+          },
+          "pressure_altitude_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pressure Altitude Ft"
+          },
+          "temp_c": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Outside air temperature, degrees Celsius.",
+            "title": "Temp C"
+          }
+        },
+        "title": "DistanceRow",
+        "type": "object"
+      },
+      "DocumentFlag": {
+        "properties": {
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "level": {
+            "enum": [
+              "check",
+              "wrong"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "says": {
+            "title": "Says",
+            "type": "string"
+          }
+        },
+        "required": [
+          "level",
+          "says"
+        ],
+        "title": "DocumentFlag",
+        "type": "object"
+      },
+      "DocumentRead": {
+        "description": "The page read and checked: the read (the engine rule's input, for\nthe app to edit and ask again), the engine's answer, what could not be\nread, and the model. `unreadable` with nothing else where the page\ncould not be read at all.",
+        "properties": {
+          "clearance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClearanceNote"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "handbook": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HandbookRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "handbook_check": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HandbookCheck"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "enum": [
+              "poh-performance",
+              "weight-balance",
+              "logbook-page",
+              "clearance"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "logbook": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LogbookPageRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "logbook_check": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LogbookCheck"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "notes": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "unreadable": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unreadable"
+          }
+        },
+        "required": [
+          "kind",
+          "model"
+        ],
+        "title": "DocumentRead",
+        "type": "object"
+      },
+      "Empty": {
+        "properties": {
+          "arm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Its arm (CG), in arm_unit.",
+            "title": "Arm"
+          },
+          "moment": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Its moment exactly as printed.",
+            "title": "Moment"
+          },
+          "moment_divisor": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "1000 where the column is moment/1000; 1 where it is the moment itself.",
+            "title": "Moment Divisor"
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Basic empty weight, in weight_unit.",
+            "title": "Weight"
+          }
+        },
+        "title": "Empty",
+        "type": "object"
+      },
+      "Fuel": {
+        "properties": {
+          "total": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Total capacity, in fuel_unit.",
+            "title": "Total"
+          },
+          "usable": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Usable fuel, in fuel_unit.",
+            "title": "Usable"
+          }
+        },
+        "title": "Fuel",
+        "type": "object"
+      },
       "GenerateNotesRequest": {
         "properties": {
           "departure_ident": {
@@ -261,6 +683,36 @@
         "title": "GenerateNotesRequest",
         "type": "object"
       },
+      "Glide": {
+        "properties": {
+          "ratio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Glide ratio, feet forward for each foot down (9 for 9:1).",
+            "title": "Ratio"
+          },
+          "speed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Best glide speed, indicated, in speed_unit.",
+            "title": "Speed"
+          }
+        },
+        "title": "Glide",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -272,6 +724,624 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HandbookCheck": {
+        "description": "handbook_read_check's answer: the items to confirm, every figure in\nthe app's units, and the airplane form's figures from them.",
+        "properties": {
+          "handbook": {
+            "$ref": "#/components/schemas/HandbookFigures"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HandbookItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/HandbookProfile"
+          }
+        },
+        "required": [
+          "items",
+          "handbook",
+          "profile"
+        ],
+        "title": "HandbookCheck",
+        "type": "object"
+      },
+      "HandbookCorner": {
+        "properties": {
+          "arm_in": {
+            "title": "Arm In",
+            "type": "number"
+          },
+          "weight_lb": {
+            "title": "Weight Lb",
+            "type": "number"
+          }
+        },
+        "required": [
+          "arm_in",
+          "weight_lb"
+        ],
+        "title": "HandbookCorner",
+        "type": "object"
+      },
+      "HandbookCruise": {
+        "properties": {
+          "altitude_ft": {
+            "title": "Altitude Ft",
+            "type": "number"
+          },
+          "burn_gph": {
+            "title": "Burn Gph",
+            "type": "number"
+          },
+          "power_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Pct"
+          },
+          "rpm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rpm"
+          },
+          "tas_kt": {
+            "title": "Tas Kt",
+            "type": "number"
+          }
+        },
+        "required": [
+          "altitude_ft",
+          "tas_kt",
+          "burn_gph"
+        ],
+        "title": "HandbookCruise",
+        "type": "object"
+      },
+      "HandbookDistance": {
+        "properties": {
+          "ground_roll_ft": {
+            "title": "Ground Roll Ft",
+            "type": "number"
+          },
+          "over_50ft_ft": {
+            "title": "Over 50Ft Ft",
+            "type": "number"
+          },
+          "pressure_altitude_ft": {
+            "title": "Pressure Altitude Ft",
+            "type": "number"
+          },
+          "temp_c": {
+            "title": "Temp C",
+            "type": "number"
+          }
+        },
+        "required": [
+          "pressure_altitude_ft",
+          "temp_c",
+          "ground_roll_ft",
+          "over_50ft_ft"
+        ],
+        "title": "HandbookDistance",
+        "type": "object"
+      },
+      "HandbookFigure": {
+        "properties": {
+          "app_unit": {
+            "title": "App Unit",
+            "type": "string"
+          },
+          "app_value": {
+            "title": "App Value",
+            "type": "number"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "path",
+          "label",
+          "value",
+          "unit",
+          "app_value",
+          "app_unit"
+        ],
+        "title": "HandbookFigure",
+        "type": "object"
+      },
+      "HandbookFigures": {
+        "description": "Every figure in the app's units (knots, feet, pounds, inches,\ngallons), as the airplane's record keeps them.",
+        "properties": {
+          "climb_burn_gph": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Climb Burn Gph"
+          },
+          "climb_rate_fpm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Climb Rate Fpm"
+          },
+          "climb_speed_kias": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Climb Speed Kias"
+          },
+          "cruise": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/HandbookCruise"
+            },
+            "title": "Cruise",
+            "type": "array"
+          },
+          "empty_arm_in": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Empty Arm In"
+          },
+          "empty_weight_lb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Empty Weight Lb"
+          },
+          "envelope": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/HandbookCorner"
+            },
+            "title": "Envelope",
+            "type": "array"
+          },
+          "fuel_total_gal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuel Total Gal"
+          },
+          "glide_ratio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Glide Ratio"
+          },
+          "glide_speed_kias": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Glide Speed Kias"
+          },
+          "landing": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/HandbookDistance"
+            },
+            "title": "Landing",
+            "type": "array"
+          },
+          "max_takeoff_weight_lb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Takeoff Weight Lb"
+          },
+          "takeoff": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/HandbookDistance"
+            },
+            "title": "Takeoff",
+            "type": "array"
+          },
+          "usable_fuel_gal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usable Fuel Gal"
+          }
+        },
+        "title": "HandbookFigures",
+        "type": "object"
+      },
+      "HandbookItem": {
+        "properties": {
+          "figures": {
+            "items": {
+              "$ref": "#/components/schemas/HandbookFigure"
+            },
+            "title": "Figures",
+            "type": "array"
+          },
+          "flags": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentFlag"
+            },
+            "title": "Flags",
+            "type": "array"
+          },
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "group",
+          "title",
+          "figures",
+          "flags"
+        ],
+        "title": "HandbookItem",
+        "type": "object"
+      },
+      "HandbookProfile": {
+        "properties": {
+          "climb_fuel_burn_gph": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Climb Fuel Burn Gph"
+          },
+          "cruise_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cruise From"
+          },
+          "cruise_power_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cruise Power Pct"
+          },
+          "cruise_tas_kt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cruise Tas Kt"
+          },
+          "fuel_burn_gph": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuel Burn Gph"
+          },
+          "usable_fuel_gal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usable Fuel Gal"
+          }
+        },
+        "title": "HandbookProfile",
+        "type": "object"
+      },
+      "HandbookRead": {
+        "description": "A handbook's performance or weight and balance page, as read:\nevery figure in the units the page prints, the units named once.\nWhat the page does not show is null or left empty.",
+        "properties": {
+          "arm_unit": {
+            "anyOf": [
+              {
+                "enum": [
+                  "in",
+                  "cm",
+                  "mm"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arm Unit"
+          },
+          "burn_unit": {
+            "anyOf": [
+              {
+                "enum": [
+                  "gph",
+                  "lph",
+                  "pph"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Gallons, litres or pounds an hour.",
+            "title": "Burn Unit"
+          },
+          "climb": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Climb"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cruise": {
+            "description": "Every row of the cruise performance table.",
+            "items": {
+              "$ref": "#/components/schemas/CruiseRow"
+            },
+            "title": "Cruise",
+            "type": "array"
+          },
+          "cruise_speed_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "tas",
+                  "ias",
+                  "cas"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What the cruise table's speeds are: KTAS tas, KIAS ias, KCAS cas.",
+            "title": "Cruise Speed Kind"
+          },
+          "distance_unit": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ft",
+                  "m"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Unit"
+          },
+          "empty": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Empty"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "envelope": {
+            "description": "The CG envelope's corners, in order going round its outline.",
+            "items": {
+              "$ref": "#/components/schemas/Corner"
+            },
+            "title": "Envelope",
+            "type": "array"
+          },
+          "fuel": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Fuel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fuel_unit": {
+            "anyOf": [
+              {
+                "enum": [
+                  "gal",
+                  "l"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "US gallons or litres.",
+            "title": "Fuel Unit"
+          },
+          "glide": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Glide"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "landing": {
+            "description": "Every row of the landing distance table.",
+            "items": {
+              "$ref": "#/components/schemas/DistanceRow"
+            },
+            "title": "Landing",
+            "type": "array"
+          },
+          "max_takeoff_weight": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Maximum takeoff (or ramp, where only that is printed) weight, in weight_unit.",
+            "title": "Max Takeoff Weight"
+          },
+          "speed_unit": {
+            "anyOf": [
+              {
+                "enum": [
+                  "kt",
+                  "mph",
+                  "kmh"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The speeds' unit as printed: KTAS/KIAS are kt, MPH mph.",
+            "title": "Speed Unit"
+          },
+          "takeoff": {
+            "description": "Every row of the takeoff distance table.",
+            "items": {
+              "$ref": "#/components/schemas/DistanceRow"
+            },
+            "title": "Takeoff",
+            "type": "array"
+          },
+          "weight_unit": {
+            "anyOf": [
+              {
+                "enum": [
+                  "lb",
+                  "kg"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight Unit"
+          }
+        },
+        "title": "HandbookRead",
         "type": "object"
       },
       "Index": {
@@ -299,6 +1369,443 @@
           "models"
         ],
         "title": "Index",
+        "type": "object"
+      },
+      "LogbookCheck": {
+        "properties": {
+          "flags": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentFlag"
+            },
+            "title": "Flags",
+            "type": "array"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/LogbookRowCheck"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows",
+          "flags"
+        ],
+        "title": "LogbookCheck",
+        "type": "object"
+      },
+      "LogbookEntryDraft": {
+        "description": "The gateway's LogbookEntryRequest as the row gives it; `flownOn`\nis null where no date was read, and such a row cannot be saved.",
+        "properties": {
+          "airHours": {
+            "default": 0,
+            "title": "Airhours",
+            "type": "number"
+          },
+          "aircraft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aircraft"
+          },
+          "aircraftType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aircrafttype"
+          },
+          "approaches": {
+            "default": 0,
+            "title": "Approaches",
+            "type": "integer"
+          },
+          "crossCountryHours": {
+            "default": 0,
+            "title": "Crosscountryhours",
+            "type": "number"
+          },
+          "dayLandings": {
+            "default": 0,
+            "title": "Daylandings",
+            "type": "integer"
+          },
+          "distanceNm": {
+            "default": 0,
+            "title": "Distancenm",
+            "type": "number"
+          },
+          "dualHours": {
+            "default": 0,
+            "title": "Dualhours",
+            "type": "number"
+          },
+          "flightId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flightid"
+          },
+          "flownOn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flownon"
+          },
+          "fromTrack": {
+            "default": false,
+            "title": "Fromtrack",
+            "type": "boolean"
+          },
+          "holding": {
+            "default": false,
+            "title": "Holding",
+            "type": "boolean"
+          },
+          "instrumentHours": {
+            "default": 0,
+            "title": "Instrumenthours",
+            "type": "number"
+          },
+          "longestLegNm": {
+            "default": 0,
+            "title": "Longestlegnm",
+            "type": "number"
+          },
+          "nightHours": {
+            "default": 0,
+            "title": "Nighthours",
+            "type": "number"
+          },
+          "nightLandings": {
+            "default": 0,
+            "title": "Nightlandings",
+            "type": "integer"
+          },
+          "remarks": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remarks"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route"
+          },
+          "soloHours": {
+            "default": 0,
+            "title": "Solohours",
+            "type": "number"
+          },
+          "totalHours": {
+            "default": 0,
+            "title": "Totalhours",
+            "type": "number"
+          },
+          "touchAndGoes": {
+            "default": 0,
+            "title": "Touchandgoes",
+            "type": "integer"
+          },
+          "toweredLandings": {
+            "default": 0,
+            "title": "Toweredlandings",
+            "type": "integer"
+          },
+          "tracking": {
+            "default": false,
+            "title": "Tracking",
+            "type": "boolean"
+          }
+        },
+        "title": "LogbookEntryDraft",
+        "type": "object"
+      },
+      "LogbookPageRead": {
+        "description": "A paper logbook page, as read: a row for each flight written on it,\nand the page's \"total this page\" row where it has one (not the amount\nforwarded, nor the total to date).",
+        "properties": {
+          "page_totals": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PageTotals"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/LogbookRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "title": "LogbookPageRead",
+        "type": "object"
+      },
+      "LogbookRow": {
+        "properties": {
+          "aircraft_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The registration as written: N12345.",
+            "title": "Aircraft Id"
+          },
+          "aircraft_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "As written: C172, PA-28-181.",
+            "title": "Aircraft Type"
+          },
+          "approaches": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Instrument approaches, the count.",
+            "title": "Approaches"
+          },
+          "cross_country": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cross Country"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "YYYY-MM-DD; null where the day, month or year cannot be read.",
+            "title": "Date"
+          },
+          "day_landings": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day Landings"
+          },
+          "dual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Dual received.",
+            "title": "Dual"
+          },
+          "from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Departure point as written: KANE.",
+            "title": "From"
+          },
+          "holding": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holding"
+          },
+          "instrument_actual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrument Actual"
+          },
+          "instrument_simulated": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Simulated instrument (hood).",
+            "title": "Instrument Simulated"
+          },
+          "night": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Night"
+          },
+          "night_landings": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Night landings to a full stop.",
+            "title": "Night Landings"
+          },
+          "remarks": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remarks"
+          },
+          "solo": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Solo"
+          },
+          "to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Arrival point as written.",
+            "title": "To"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Total flight time, hours and tenths.",
+            "title": "Total"
+          },
+          "via": {
+            "description": "Points between, as written.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Via",
+            "type": "array"
+          }
+        },
+        "title": "LogbookRow",
+        "type": "object"
+      },
+      "LogbookRowCheck": {
+        "properties": {
+          "entry": {
+            "$ref": "#/components/schemas/LogbookEntryDraft"
+          },
+          "flags": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentFlag"
+            },
+            "title": "Flags",
+            "type": "array"
+          }
+        },
+        "required": [
+          "entry",
+          "flags"
+        ],
+        "title": "LogbookRowCheck",
         "type": "object"
       },
       "NarrativeDelta": {
@@ -1041,6 +2548,172 @@
         "title": "OwnShip",
         "type": "object"
       },
+      "PageTotals": {
+        "properties": {
+          "approaches": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approaches"
+          },
+          "cross_country": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cross Country"
+          },
+          "day_landings": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day Landings"
+          },
+          "dual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dual"
+          },
+          "instrument_actual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrument Actual"
+          },
+          "instrument_simulated": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrument Simulated"
+          },
+          "night": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Night"
+          },
+          "night_landings": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Night Landings"
+          },
+          "solo": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Solo"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          }
+        },
+        "title": "PageTotals",
+        "type": "object"
+      },
+      "ReadAsk": {
+        "description": "A photo of a page and what it is of. `image` is the photo's bytes in\nbase64 (a JPEG the phone's scanner or the browser made, its long edge\nabout 2,000 px); `today` the app's own date, which a logbook row may\nnot be after.",
+        "properties": {
+          "image": {
+            "maxLength": 5000000,
+            "minLength": 100,
+            "title": "Image",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "poh-performance",
+              "weight-balance",
+              "logbook-page",
+              "clearance"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "media_type": {
+            "default": "image/jpeg",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp",
+              "image/gif"
+            ],
+            "title": "Media Type",
+            "type": "string"
+          },
+          "today": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Today"
+          }
+        },
+        "required": [
+          "kind",
+          "image"
+        ],
+        "title": "ReadAsk",
+        "type": "object"
+      },
       "Sentence": {
         "properties": {
           "sources": {
@@ -1448,6 +3121,49 @@
         "x-gateway": {
           "access": "developer",
           "paid": "ORAL"
+        }
+      }
+    },
+    "/api/read-document": {
+      "post": {
+        "description": "A photographed page (`kind`: a handbook's performance or weight and\nbalance page, a logbook page, a clearance note) read into figures, and\nthe engine's check of every one: ranges, units and the page's own sums,\neach flagged \"check\" or \"wrong\" for the pilot to confirm. A page that\ncould not be read says why in `unreadable`; a reader that could not be\nreached is a 503.",
+        "operationId": "read_document_api_read_document_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Document",
+        "x-gateway": {
+          "access": "signed-in",
+          "paid": "ASSISTANT"
         }
       }
     },

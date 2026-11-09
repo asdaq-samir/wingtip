@@ -1,7 +1,8 @@
 """POST /api/engine/{name} (app.routers.engine): the engine's rules the
 contract tags "x-tool": true, asked by name for the assistant's tools
-(issue #569), and no other rule; internal, so the gateway never forwards
-it."""
+(issue #569), and "x-assistant": true, its own checks (a photographed
+page's figures), and no other rule; internal, so the gateway never
+forwards it."""
 import json
 from pathlib import Path
 from typing import get_args
@@ -17,7 +18,16 @@ CONTRACT = Path(__file__).resolve().parents[3] / "engine" / "contract" / "engine
 
 def test_the_allow_list_is_the_contracts_tagged_rules():
     contract = json.loads(CONTRACT.read_text())
-    assert list(get_args(EngineToolName)) == [n for n, e in contract["properties"].items() if e.get("x-tool")]
+    assert list(get_args(EngineToolName)) == [n for n, e in contract["properties"].items() if e.get("x-tool") or e.get("x-assistant")]
+
+
+def test_the_assistants_own_check_is_asked_by_name():
+    # A logbook row whose night is longer than the flight (14 CFR 61.51(b)).
+    row = {"date": "2026-10-03", "aircraft_id": "N12345", "from": "KANE", "to": "KSTC", "total": 1.2, "night": 1.5, "day_landings": 1}
+    resp = client.post("/api/engine/logbook_read_check", json={"rows": [row], "today": "2026-11-09"})
+    assert resp.status_code == 200
+    flags = resp.json()["rows"][0]["flags"]
+    assert any(f["field"] == "nightHours" and f["level"] == "wrong" for f in flags)
 
 
 def test_a_tagged_rule_answers_as_the_engine_does():

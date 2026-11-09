@@ -16,6 +16,9 @@ asks the engine every rule.
   checkpoint without one, streamed, kept at the planner (app.notes).
 - POST /api/oral/question, /api/oral/grade: the mock oral, over the
   regulations and the AIM it fetches itself (app.oral, app.references).
+- POST /api/read-document: a photographed handbook page, logbook page or
+  clearance note read into figures, each checked by the engine through
+  the planner before the pilot confirms it (app.documents).
 
 The browser reaches these only through the gateway, which routes them
 here under the same /api/planner/... addresses the apps have always
@@ -27,7 +30,7 @@ from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel, TypeAdapter
 
-from . import assistant, narrative, notes, oral, tracing, words
+from . import assistant, documents, narrative, notes, oral, tracing, words
 from .schemas import STREAM_MESSAGES
 from .settings import get_settings
 
@@ -35,7 +38,7 @@ logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title="Wingtip Maps assistant")
 
-for module in (assistant, narrative, words, notes, oral):
+for module in (assistant, narrative, words, notes, oral, documents):
     app.include_router(module.router)
 
 # Traces, where an OTLP endpoint is set (app.tracing).
@@ -56,7 +59,8 @@ def index() -> Index:
     s = get_settings()
     return Index(service="assistant", planner_url=s.planner_url, models={
         "assistant": s.assistant_model, "oral": s.oral_model, "words": s.words_model,
-        "checkpoint_notes": s.checkpoint_note_model, "narrative": s.narrative_model})
+        "checkpoint_notes": s.checkpoint_note_model, "narrative": s.narrative_model,
+        "documents": s.documents_model})
 
 
 def _openapi() -> dict:

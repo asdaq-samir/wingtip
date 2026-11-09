@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     checkpoint_note_model: str = "claude-haiku-5-5"
     #: The Brief's narrative's model.
     narrative_model: str = "claude-haiku-5-5"
+    #: The model that reads a photographed page (app.documents), and its
+    #: effort: Opus at high, as a misread figure in a table costs a pilot
+    #: more than the call (every figure is still checked and confirmed).
+    documents_model: str = "claude-opus-5-5"
+    documents_effort: str = "high"
     #: Where the regulations and the AIM are kept once fetched (app.references).
     data_dir: Path = PROJECT_ROOT / "data"
 

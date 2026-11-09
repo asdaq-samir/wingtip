@@ -19,7 +19,9 @@ From the engine's contract (engine/contract/engine.schema.json):
   "x-tool": true as a Claude tool (its name, its description with the
   CFR or AIM paragraph it rests on, its input schema with the contract's
   definitions written in), asked through the planner (issue #569).
-- services/planner/app/generated/engine_tools.py: the same names, the
+- services/planner/app/generated/engine_tools.py: the same names and
+  those tagged "x-assistant": true (rules the assistant asks for its own
+  checks, not the pilot's tools: a photographed page's figures), the
   allow-list of the planner's POST /api/engine/{name}.
 
     python scripts/build/assistant_client.py           # write them
@@ -321,10 +323,11 @@ def assistant_engine_tools(contract: dict) -> str:
 
 
 def planner_engine_names(contract: dict) -> str:
-    names = [t["name"] for t in engine_tools(contract)]
+    names = [name for name, entry in contract["properties"].items() if entry.get("x-tool") or entry.get("x-assistant")]
     return (HEADER.format(source="engine/contract/engine.schema.json") +
             '"""The engine\'s rules the planner answers on POST /api/engine/{name}: those the\n'
-            'contract tags "x-tool": true, the assistant\'s tools (#569), and no other."""\n'
+            'contract tags "x-tool": true, the assistant\'s tools (#569), and "x-assistant":\n'
+            'true, its own checks (a photographed page\'s figures), and no other."""\n'
             "from typing import Literal\n\n"
             "EngineToolName = Literal[\n" + "".join(f"    {n!r},\n" for n in names) + "]\n")
 
