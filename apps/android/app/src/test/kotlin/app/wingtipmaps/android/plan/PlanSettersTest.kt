@@ -1,8 +1,8 @@
 package app.wingtipmaps.android.plan
 
 import app.wingtipmaps.android.Plan
-import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.airplane.AirplaneNow
+import app.wingtipmaps.android.api.Planner
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
