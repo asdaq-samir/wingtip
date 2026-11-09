@@ -84,11 +84,15 @@ public class PlannerClient {
         }
     }
 
-    private final HttpClient http = HttpClient.newBuilder()
-            .version(HttpClient.Version.HTTP_1_1)
-            .connectTimeout(Duration.ofSeconds(10))
-            .followRedirects(HttpClient.Redirect.NEVER)
-            .build();
+    private final HttpClient http = newClient();
+
+    private static HttpClient newClient() {
+        return HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(10))
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build();
+    }
     private final String plannerBaseUrl;
     private final String assistantBaseUrl;
 
@@ -293,7 +297,9 @@ public class PlannerClient {
      * not resend a POST on its own. That failed every rule asked after a
      * quiet minute -- a pilot's currency, a student's experience -- with
      * "could not be reached", several at once (the end-of-wave browser
-     * run, 2026-11-08). A timeout is not tried again.
+     * run, 2026-11-08). It is sent again on a client of its own, a new
+     * connection: the pool may hold several gone stale together, and a
+     * second one from it failed the same way. A timeout is not tried again.
      */
     private String post(String path, ObjectNode body, String what) {
         HttpRequest request = HttpRequest.newBuilder(URI.create(plannerBaseUrl + path))
@@ -307,7 +313,9 @@ public class PlannerClient {
             if (!(unreached.getCause() instanceof IOException) || unreached.getCause() instanceof HttpTimeoutException) {
                 throw unreached;
             }
-            return send(request, "the planner", what);
+            try (HttpClient fresh = newClient()) {
+                return send(fresh, request, "the planner", what);
+            }
         }
     }
 
@@ -320,8 +328,12 @@ public class PlannerClient {
     }
 
     private String send(HttpRequest request, String who, String what) {
+        return send(http, request, who, what);
+    }
+
+    private static String send(HttpClient client, HttpRequest request, String who, String what) {
         try {
-            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (response.statusCode() != 200) {
                 throw new Unavailable(who + " answered " + response.statusCode() + " to " + what);
             }
