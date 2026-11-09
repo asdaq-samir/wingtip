@@ -18,6 +18,9 @@ import re
 import sys
 from pathlib import Path
 
+import design_tokens_haptic as haptic
+from design_tokens_formats import gen_formats
+
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "design" / "tokens.json"
 WEB_CSS = ROOT / "apps/web/src/styles/tokens.css"
@@ -46,11 +49,6 @@ def lookup(tree, path):
     for part in path.split("."):
         node = node[part]
     return node
-
-
-def platform(token, name):
-    """A token's mapping for one platform, under $extensions."""
-    return token["$extensions"][EXT][name]
 
 
 ALIAS = re.compile(r"^\{([\w.-]+)\}$")
@@ -327,7 +325,6 @@ def gen_ts(tree):
     classes = {(camel(k) if "-" in k else k): q(web_class(r)) for k, r in roles.items()}
     points = {camel(k): r["$value"]["fontSize"] for k, r in roles.items() if "fontSize" in r["$value"]}
     motion = {camel(k): (q(t["$value"]) if isinstance(t["$value"], list) else t["$value"]) for k, t in tokens(tree["motion"]).items()}
-    haptic = {camel(k): q(platform(t, "web")) for k, t in tokens(tree["haptic"]).items()}
     radius = {camel(k): t["$value"] for k, t in tokens(tree["radius"]).items()}
     space = {camel(k): t["$value"] for k, t in tokens(tree["space"]).items()}
     parts = [
@@ -346,8 +343,7 @@ def gen_ts(tree):
         "/** Each text role's size in points on a touch screen, for text drawn in points (an SVG). */\n"
         "export const TYPE_POINTS = %s as const;" % ts_obj(points),
         "/** Motion: durations in seconds, curves as cubic-bezier points. */\nexport const MOTION = %s as const;" % ts_obj(motion),
-        "/** The taps felt on a key action: navigator.vibrate patterns in milliseconds (lib/haptics plays them). */\n"
-        "export const HAPTIC = %s as const;" % ts_obj(haptic),
+        haptic.ts(tokens(tree["haptic"]), camel),
         "/** Corners, in points. */\nexport const RADIUS = %s as const;" % ts_obj(radius),
         "/** The spacing scale, in points. */\nexport const SPACE = %s as const;" % ts_obj(space),
         "/** The least hit area, in points (Apple's HIG). */\nexport const TAP_TARGET = %d;" % tree["size"]["tap-target"]["$value"],
@@ -404,18 +400,6 @@ IOS_DEFAULT_SIZE = {
     "footnote": 13,
     "caption": 12,
     "caption2": 11,
-}
-
-
-# Each haptic's iOS name, as SwiftUI's SensoryFeedback writes it.
-IOS_HAPTIC = {
-    "selection": ".selection",
-    "success": ".success",
-    "warning": ".warning",
-    "error": ".error",
-    "impact-light": ".impact(weight: .light)",
-    "impact-medium": ".impact(weight: .medium)",
-    "impact-heavy": ".impact(weight: .heavy)",
 }
 
 
@@ -508,16 +492,7 @@ def gen_swift(tree, sch):
             L.append("    static let %s: TimeInterval = %g" % (camel(k), v))
     L.append("}")
     L.append("")
-    L.append("/// The taps felt on a key action, as SwiftUI's sensory feedback")
-    L.append("/// (`.sensoryFeedback(WingtipHaptic.altitude, trigger:)`); the system")
-    L.append("/// leaves them out where the pilot has turned system haptics off.")
-    L.append("enum WingtipHaptic {")
-    for k, t in tokens(tree["haptic"]).items():
-        if "$description" in t:
-            L.append("    /// %s" % t["$description"])
-        L.append("    static let %s: SensoryFeedback = %s" % (camel(k), IOS_HAPTIC[platform(t, "ios")]))
-    L.append("}")
-    L.append("")
+    L += haptic.swift(tokens(tree["haptic"]), camel)
     L.append("enum WingtipSize {")
     for k, t in tokens(tree["size"]).items():
         L.append("    static let %s: CGFloat = %g" % (camel(k), t["$value"]))
@@ -562,8 +537,7 @@ def gen_kotlin(tree, sch):
         "",
         "package app.wingtipmaps.android.design.generated",
         "",
-        "import android.os.Build",
-        "import android.view.HapticFeedbackConstants",
+        *haptic.KOTLIN_IMPORTS,
         "import androidx.compose.animation.core.CubicBezierEasing",
         "import androidx.compose.material3.Typography",
         "import androidx.compose.runtime.Immutable",
@@ -647,43 +621,13 @@ def gen_kotlin(tree, sch):
             L.append("    const val %s_MS = %d" % (re.sub("-", "_", k).upper(), round(v * 1000)))
     L.append("}")
     L.append("")
-    L.append("/** The taps felt on a key action, as View.performHapticFeedback's constants; one")
-    L.append(" *  from API 30 has its fallback below that. */")
-    L.append("object WingtipHaptic {")
-    for k, t in tokens(tree["haptic"]).items():
-        a = platform(t, "android")
-        name = re.sub("-", "_", k).upper()
-        if "$description" in t:
-            L.append("    /** %s */" % t["$description"].replace("*/", "* /"))
-        if "since" in a:
-            L.append(
-                "    val %s: Int get() = if (Build.VERSION.SDK_INT >= %d) HapticFeedbackConstants.%s else HapticFeedbackConstants.%s"
-                % (name, a["since"], a["constant"], a["fallback"])
-            )
-        else:
-            L.append("    const val %s = HapticFeedbackConstants.%s" % (name, a["constant"]))
-    L.append("}")
-    L.append("")
+    L += haptic.kotlin(tokens(tree["haptic"]))
     L.append("object WingtipSize {")
     for k, t in tokens(tree["size"]).items():
         v = t.get("$extensions", {}).get(EXT, {}).get("android", t["$value"])
         L.append("    val %s = %g.dp" % (pascal(k), v))
     L.append("}")
     return "\n".join(L) + "\n"
-
-
-# ---------------------------------------------------------------- formats
-
-
-def gen_formats(tree):
-    """The figure formats' example table, the one every app's formatter is
-    tested against: each format's name (camelCase), what it is for, and
-    its [input, written] pairs."""
-    table = {
-        camel(k): {"description": t.get("$description", ""), "examples": [{"input": i, "written": w} for i, w in t["$value"]]}
-        for k, t in tokens(tree["format"]).items()
-    }
-    return json.dumps({"$comment": BANNER, **table}, indent=2, ensure_ascii=False) + "\n"
 
 
 # ---------------------------------------------------------------- main
@@ -699,7 +643,7 @@ def main():
         IOS_SWIFT: gen_swift(tree, sch),
         IOS_ACCENT: gen_accent(sch),
         ANDROID_KT: gen_kotlin(tree, sch),
-        FORMATS: gen_formats(tree),
+        FORMATS: gen_formats(tokens(tree["format"]), camel, BANNER),
     }
     stale = []
     for path, text in outputs.items():
