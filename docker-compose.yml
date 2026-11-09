@@ -239,13 +239,18 @@ services:
     networks: [default, docker-control]
     volumes:
       - .:/workspace
-      # The live store (wingtip/traffic/store.py) on a Docker volume, not the
-      # Mac's shared folder: its SQLite write-ahead log needs shared memory
+      # The stores ingest writes (the live store, the NOTAMs, the filed
+      # routes; wingtip/stores.py) on a Docker volume, not the Mac's
+      # shared folder: SQLite's write-ahead log needs shared memory
       # between the planner and ingest, which the Mac's file sharing into
       # Docker does not give, and ingest's writes hung (2026-11-08).
       - live-store:/live
     environment:
+      # The stores ingest writes, on the volume above (wingtip/stores.py);
+      # each takes the file it had on data/raw the first time.
       LIVE_STORE: /live/live.sqlite
+      NOTAM_STORE: /live/notams.sqlite
+      FILED_STORE: /live/filed.sqlite
       PYTHONPATH: /workspace/services/planner
       # Not the host's Docker socket -- the dev-services sidecar above,
       # which routers/devservices.py asks which services are up and to
@@ -288,8 +293,9 @@ services:
         wingtip-base: service:base
     volumes:
       - .:/workspace
-      # The live store (wingtip/traffic/store.py) on a Docker volume, not the
-      # Mac's shared folder: its SQLite write-ahead log needs shared memory
+      # The stores ingest writes (the live store, the NOTAMs, the filed
+      # routes; wingtip/stores.py) on a Docker volume, not the Mac's
+      # shared folder: SQLite's write-ahead log needs shared memory
       # between the planner and ingest, which the Mac's file sharing into
       # Docker does not give, and ingest's writes hung (2026-11-08).
       - live-store:/live
@@ -298,7 +304,10 @@ services:
     # so it is held to twice that, well below what would crowd the planner.
     mem_limit: 384m
     environment:
+      # The stores it writes, on the volume above, as the planner reads them.
       LIVE_STORE: /live/live.sqlite
+      NOTAM_STORE: /live/notams.sqlite
+      FILED_STORE: /live/filed.sqlite
       PYTHONPATH: /workspace/services/ingest:/workspace/services/planner
       # The FAA's SWIM feeds (ingest.swim); each off without its own. The
       # owner's SCDS subscriptions' login and queues.

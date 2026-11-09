@@ -18,9 +18,13 @@ import threading
 import time
 import xml.etree.ElementTree as ET
 
-from .config import get_settings
+from . import stores
+from .config import Settings, get_settings
 
 STORE = get_settings().filed_store
+#: Where the store was kept before FILED_STORE moved it (the data
+#: folder's default), taken the first time the new path is opened.
+FORMER = Settings.model_fields["filed_store"].default
 #: How long a flight's route counts, s: a year, so a route a season favours
 #: and the airways and fixes of every chart cycle in it are all counted.
 KEEP_S = 365 * 24 * 3600
@@ -48,8 +52,7 @@ _pruned_at = 0.0
 def _connection() -> sqlite3.Connection:
     global _db
     if _db is None:
-        STORE.parent.mkdir(parents=True, exist_ok=True)
-        _db = sqlite3.connect(STORE, check_same_thread=False)
+        _db = stores.connect(STORE, former=FORMER)
         _db.executescript("""
             CREATE TABLE IF NOT EXISTS filings (
                 gufi TEXT PRIMARY KEY, dep TEXT, dest TEXT, stops TEXT, aircraft TEXT, heard REAL);
@@ -179,7 +182,7 @@ def most_filed(dep: str, dest: str, *, limit: int = 3, now: float | None = None)
     first, each {"stops": [...], "flights": n} with AT_LEAST flights or
     more. Empty where the store has none (or there's no store yet)."""
     now = time.time() if now is None else now
-    if _db is None and not STORE.exists():
+    if _db is None and not STORE.exists() and not FORMER.exists():
         return []
     with _LOCK:
         rows = _connection().execute("""
