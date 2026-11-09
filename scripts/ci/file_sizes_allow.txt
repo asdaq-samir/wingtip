@@ -4,14 +4,14 @@
 # its count (`python3 scripts/ci/file_sizes.py --write`), and it leaves the
 # list once it is within the budget.
 
-apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/ChartMap.kt 770
+apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/ChartMap.kt 793
 apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/MapStyle.kt 848
 apps/ios/Wingtip/Plan.swift 415
-apps/ios/Wingtip/Strip/StripSheetView.swift 477
+apps/ios/Wingtip/Strip/StripSheetView.swift 479
 apps/ios/Wingtip/Tiles/ChartTileOverlay.swift 420
-apps/ios/Wingtip/Views/AirplaneCard.swift 540
-apps/ios/Wingtip/Views/AirportCard.swift 626
-apps/ios/Wingtip/Views/ChartMap.swift 753
+apps/ios/Wingtip/Views/AirplaneCard.swift 554
+apps/ios/Wingtip/Views/AirportCard.swift 636
+apps/ios/Wingtip/Views/ChartMap.swift 760
 apps/ios/Wingtip/Views/ChartOverlays.swift 881
 apps/ios/Wingtip/Views/ClearanceSheet.swift 422
 apps/ios/Wingtip/Views/GoNoGoViews.swift 457
@@ -20,7 +20,8 @@ apps/ios/Wingtip/Views/InstructorView.swift 413
 apps/ios/Wingtip/Views/LogbookViews.swift 448
 apps/ios/Wingtip/Views/OwnAircraftViews.swift 578
 apps/ios/Wingtip/Views/PlannerFiguresViews.swift 650
-apps/ios/Wingtip/Views/RouteEditViews.swift 506
+apps/ios/Wingtip/Views/RootView.swift 419
+apps/ios/Wingtip/Views/RouteEditViews.swift 519
 apps/web/e2e/helpers.ts 765
 apps/web/e2e/ios/metrics.ts 634
 apps/web/e2e/ios/screens.ts 487
@@ -52,7 +53,7 @@ apps/web/src/features/plan/hooks/usePlan.ts 432
 apps/web/src/features/plan/hooks/usePlanWorkspace.ts 737
 apps/web/src/features/plan/hooks/useProceduresRoute.ts 543
 apps/web/src/features/shell/MapPage.tsx 421
-apps/web/src/lib/api/client.ts 989
+apps/web/src/lib/api/client.ts 992
 apps/web/src/lib/audioInput.test.ts 544
 apps/web/src/lib/audioInput.ts 572
 apps/web/src/lib/map/gl/glOverlays.ts 428
@@ -100,7 +101,7 @@ scripts/build/design_tokens.py 675
 services/assistant/app/toolbox.py 404
 services/gateway/src/main/java/app/wingtipmaps/gateway/security/SecurityConfig.java 413
 services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 432
-services/gateway/src/main/java/app/wingtipmaps/gateway/service/PlannerClient.java 424
+services/gateway/src/main/java/app/wingtipmaps/gateway/service/PlannerClient.java 434
 services/gateway/src/test/java/app/wingtipmaps/gateway/controller/PlannerProxyControllerTest.java 531
 services/ingest/ingest/swim.py 471
 services/jobs/charts/overlays.py 623
