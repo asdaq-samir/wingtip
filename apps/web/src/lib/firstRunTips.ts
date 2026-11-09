@@ -5,7 +5,8 @@
  * device. Settings, Tips brings them back.
  */
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { browserStorage } from "./storage";
 
 export interface TipSpec {
   /** The control's `data-tip`. */
@@ -84,7 +85,7 @@ const ALL_SEEN = "*";
 export const useTips = create<{ seen: string[]; see: (id: string) => void; reset: () => void }>()(
   persist(
     (set) => ({ seen: [], see: (id) => set((s) => (s.seen.includes(id) ? s : { seen: [...s.seen, id] })), reset: () => set({ seen: [] }) }),
-    { name: "wingtip.tips" },
+    { name: "wingtip.tips", storage: createJSONStorage(() => browserStorage) },
   ),
 );
 
