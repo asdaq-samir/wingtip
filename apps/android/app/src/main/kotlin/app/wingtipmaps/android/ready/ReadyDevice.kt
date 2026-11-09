@@ -8,6 +8,8 @@ import androidx.core.content.ContextCompat
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.offline.KeepForAir
+import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.offline.OfflineStore
 import app.wingtipmaps.android.receiver.Receiver
 import app.wingtipmaps.android.receiver.ReceiverMode
@@ -17,7 +19,8 @@ import app.wingtipmaps.android.receiver.ReceiverMode
  * already keeps it: the charts of Setup → Downloads (OfflineStore), the
  * cycle packs kept along the route (CyclePacks), the battery
  * (BatteryManager), the location permission, the plan kept for the next
- * launch (Plan.saved) and the ADS-B receiver (Receiver). Facts only; the
+ * launch (Plan.saved), the ADS-B receiver (Receiver) and what Keep for
+ * the Air holds for the route (KeepForAir). Facts only; the
  * engine judges them. Run off the main thread: the packs' regions are
  * asked of the engine along the whole route.
  */
@@ -37,6 +40,7 @@ object ReadyDevice {
                 planSaved = if (state.routed) plan.saved() else null,
             ),
             receiver = receiver(context),
+            kept = if (state.routed) KeepForAir.status(KeptForAir.of(context), state, plan.saved()) else null,
         )
     }
 

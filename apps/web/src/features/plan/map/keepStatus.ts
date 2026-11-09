@@ -3,15 +3,17 @@ import { toast } from "../../../lib/toast";
 import { clearProblem, raiseProblem } from "../../../lib/problems";
 import type { Course } from "../../../lib/api/types";
 import { usePreferences } from "../../../lib/preferences";
-import { keep, keepKey, keepingAvailable, keptAlready, stopKeeping, useKeepJob } from "../../../lib/map/route/keepRoute";
+import { keepKey, keepingAvailable, keptAlready, stopKeeping, useKeepJob } from "../../../lib/map/route/keepRoute";
+import { keepForAir, keptRecordStore } from "../../keptForAir";
 import { chartPair } from "../../../lib/map/sources/tiles";
 import { grouped } from "../../../lib/format";
 
 /**
- * Keep Charts Offline, a setting under Map: while it is on, each route
- * the planner loads has its base chart kept (keepRoute) -- once, not
- * again while the tiles are held -- and turning it off stops a keep
- * under way. It was an item in More beside the route, pressed per route.
+ * Keep for the Air, a setting under Map: while it is on, each route
+ * the planner loads is kept for the air (keepForAir: its briefing, NOTAMs,
+ * airport cards, plates, plan and weather loop, then its base chart) --
+ * once, not again while the tiles are held -- and turning it off stops a
+ * keep under way. It was an item in More beside the route, pressed per route.
  */
 export function useKeepOffline(course: Course | null) {
   const on = usePreferences((s) => s.keepOffline);
@@ -28,7 +30,7 @@ export function useKeepOffline(course: Course | null) {
     const job = useKeepJob.getState();
     if ((job.status === "keeping" || job.status === "kept") && job.key === key) return;
     if (keptAlready(key)) return;
-    void keep(course, layer);
+    void keepForAir(course, layer);
   }, [on, course, base]);
   useKeepRouteToast();
 }
@@ -56,7 +58,12 @@ export function useKeepRouteToast() {
         toast.dismiss(TOAST_ID);
         raiseProblem({ id: TOAST_ID, title: "Charts not kept: none of the tiles could be fetched" });
       } else {
-        toast.success("Charts Saved Offline", { id: TOAST_ID, description: undefined });
+        // The route's answers kept with them, and their size (keptForAir).
+        const answers = keptRecordStore().getState().value;
+        toast.success("Charts Saved Offline", {
+          id: TOAST_ID,
+          description: answers ? `With the briefing, NOTAMs and plates: ${megabytes(answers.bytes)}` : undefined,
+        });
         // The tiles that could not be fetched are a problem, said where
         // problems are (lib/problems) and kept until the next keep, not a
         // bracket inside the news that it worked.
@@ -72,4 +79,10 @@ export function useKeepRouteToast() {
       clearProblem(TOAST_ID);
     }
   }, [job]);
+}
+
+/** A size as the toast says it: "3 MB", "0.4 MB". */
+function megabytes(bytes: number): string {
+  const mb = bytes / 1e6;
+  return `${mb >= 1 ? Math.round(mb) : Math.max(0.1, Math.round(mb * 10) / 10)} MB`;
 }

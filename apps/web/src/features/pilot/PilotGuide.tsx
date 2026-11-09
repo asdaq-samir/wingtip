@@ -114,8 +114,9 @@ export default function PilotGuide() {
             With signal on the ground, open your route and its brief: the app keeps the chart, the nav log, the weather and the TFRs it
             showed you.
           </Tip>
-          <Tip title="Keep the charts">
-            Turn on Keep Charts Offline in the Map button's settings, and each route's charts stay on this phone.
+          <Tip title="Keep for the Air">
+            Turn on Keep for the Air in the Map button's settings, and each route's charts, briefing, NOTAMs, airport cards and plates stay
+            on this phone, shown with their age when there is no signal.
           </Tip>
           <Tip title="It stays quiet in the air">
             Losing coverage is normal in flight, so the app shows no errors for it and asks again by itself when the signal comes back.

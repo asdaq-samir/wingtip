@@ -54,6 +54,8 @@ struct BriefView: View {
                 }
                 if let briefing = plan.briefing {
                     let weatherAt = weatherPart(briefing)
+                    // The briefing kept, shown with no signal, with its age.
+                    KeptAgeLine(kind: .briefing, key: ReadyToFly.flightKey(plan))
                     WordsSection(title: "The weather in words", said: weatherWords, writing: writingWords)
                     if let notRecommended = briefing.vfrNotRecommended, !notRecommended.isEmpty {
                         Section {
@@ -156,6 +158,7 @@ struct BriefView: View {
                     let stations = briefing.metars.keys.sorted()
                     if !stations.isEmpty {
                         Section(title: "METARs") {
+                            KeptAgeLine(kind: .weather, key: ReadyToFly.flightKey(plan))
                             ForEach(stations, id: \.self) { ident in
                                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     HStack {

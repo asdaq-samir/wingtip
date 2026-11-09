@@ -49,6 +49,9 @@ import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
+import app.wingtipmaps.android.offline.KeepForAirRow
+import app.wingtipmaps.android.offline.KeptAgeLine
+import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.FlightRules
 import app.wingtipmaps.android.route.LegWords
@@ -105,6 +108,8 @@ fun FPLScreen(plan: Plan) {
         }
         FlightRulesRow(onChanged = { if (state.routed) plan.plan() })
         ProblemLine(state.problem)
+        // The nav log kept for the air, shown with no signal: how old.
+        KeptAgeLine(KeptForAir.PLAN, state.plannedAtMs.takeIf { state.kept })
         LazyColumn(Modifier.weight(1f)) {
             // The last edit to the route, undone where it was made (RouteUndo).
             item(key = "undo") { RouteUndoRow(plan) }
@@ -118,6 +123,8 @@ fun FPLScreen(plan: Plan) {
                     TotalsRows(totals, rememberAirplaneNow(plan))
                 }
             }
+            // The route kept for the air in one tap, once it has a course.
+            if (state.course != null) item(key = "keep-for-air") { KeepForAirRow(plan) }
         }
     }
     open?.let { i -> state.legs.getOrNull(i)?.let { LegSheet(number = null, leg = it, onClose = { open = null }) } }

@@ -5252,6 +5252,43 @@ enum EngineContract {
         }
     }
 
+    struct KeptAgeAnswer: Codable, Equatable, Sendable {
+        var kind: String
+        var ageMin: Double
+        /// "Fetched 42 min ago".
+        var line: String
+        /// Caution once past its freshness: the line drawn in the caution colour.
+        var finding: String
+        /// How long it is fresh, minutes; null for the kinds kept for their AIRAC cycle.
+        var freshMin: Double?
+        var detail: String
+        var source: String
+
+        enum CodingKeys: String, CodingKey {
+            case kind
+            case ageMin = "age_min"
+            case line
+            case finding
+            case freshMin = "fresh_min"
+            case detail
+            case source
+        }
+    }
+
+    struct KeptAgeInput: Codable, Equatable, Sendable {
+        /// Unix seconds, UTC: the engine has no clock.
+        var now: Double
+        /// When the network gave the kept answer, Unix seconds.
+        var fetchedAt: Double
+        var kind: String
+
+        enum CodingKeys: String, CodingKey {
+            case now
+            case fetchedAt = "fetched_at"
+            case kind
+        }
+    }
+
     struct KneeboardRadioInput: Codable, Equatable, Sendable {
         var frequencies: [EngineContract.FieldFrequency]
     }
@@ -7913,6 +7950,8 @@ enum EngineContract {
         /// The departure, destination and alternate: each METAR's observed time (Unix seconds) and whether a TAF is in.
         var fields: [EngineContract.ReadyToFlyInputFieldsItem]?
         var notams: EngineContract.ReadyToFlyInputNotams?
+        /// What Keep for the Air holds for the route beside its charts. Null leaves the item out.
+        var kept: EngineContract.ReadyToFlyInputKept?
         /// What the platform tells: a member null or missing leaves its item out.
         var device: EngineContract.ReadyToFlyInputDevice?
         var receiver: EngineContract.ReadyToFlyInputReceiver?
@@ -7968,6 +8007,22 @@ enum EngineContract {
             case role
             case metarObserved = "metar_observed"
             case taf
+        }
+    }
+
+    /// What Keep for the Air holds for the route beside its charts. Null leaves the item out.
+    struct ReadyToFlyInputKept: Codable, Equatable, Sendable {
+        /// The kinds kept on the device for this route.
+        var onBoard: [String]?
+        /// The kinds the route has and the device does not yet.
+        var missing: [String]?
+        /// What Keep for the Air downloads or holds for them, megabytes.
+        var sizeMb: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case onBoard = "on_board"
+            case missing
+            case sizeMb = "size_mb"
         }
     }
 

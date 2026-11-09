@@ -19,6 +19,7 @@ import { requestAirplanePick } from "../../lib/pickAirplane";
 import { usePreferences } from "../../lib/preferences";
 import { useMinuteClock } from "../../lib/useMinuteClock";
 import { useSearchParamsNow } from "../../lib/useSearchParamsNow";
+import { keepForAir, useKeptForAir } from "../keptForAir";
 import { notamRankingQuery } from "../notamRanking";
 import { readyInput } from "./readyFacts";
 import { useDevice } from "./useDevice";
@@ -55,7 +56,8 @@ function useBriefingOf(dep: string, dest: string) {
  * data's cycles, the briefing and NOTAMs' times, the battery and location
  * where the browser tells them -- asked of the engine's `ready_to_fly`,
  * and each of its fixes done in place: the route's charts kept
- * (keepRoute, as Keep Charts Offline does), the briefing and the NOTAMs
+ * (keepRoute, as Keep for the Air does), the route's answers with them
+ * (Keep for the Air, features/keptForAir), the briefing and the NOTAMs
  * asked again, the existing airplane picker opened, the browser's
  * location question asked. The answer is the engine's; nothing is judged
  * here.
@@ -77,6 +79,7 @@ export function useReadyToFly() {
   const alternate = useSearchParamsNow()[0].get("alternate") || null;
   const notams = useQuery({ ...notamRankingQuery(plan), enabled: false });
   const device = useDevice();
+  const kept = useKeptForAir(course, alternate, keepingAvailable());
   const [fixing, setFixing] = useState<ReadyFix | null>(null);
 
   const key = course && layer ? keepKey(course, layer.kind) : null;
@@ -110,19 +113,22 @@ export function useReadyToFly() {
           briefing,
           alternate,
           notamsAtMs: notams.dataUpdatedAt || null,
+          kept,
           device,
         }),
       );
     } catch {
       return null;
     }
-  }, [nowMs, plan, chart, cycles, briefing, alternate, notams.dataUpdatedAt, device]);
+  }, [nowMs, plan, chart, cycles, briefing, alternate, notams.dataUpdatedAt, kept, device]);
 
   const keeping = job.status === "keeping";
   /** The fixes the web can do in place; the rest are drawn as words. */
   const fixes: Partial<Record<ReadyFix, () => Promise<unknown> | void>> = {
     pick_airplane: requestAirplanePick,
     download_charts: () => (course && layer ? keep(course, layer) : undefined),
+    // Keep for the Air: the route's answers and its charts in one go.
+    keep_for_air: () => (course && layer ? keepForAir(course, layer, alternate) : undefined),
     refresh_weather: () => client.refetchQueries({ queryKey: ["briefing", plan.dep, plan.dest] }),
     fetch_notams: () => notams.refetch(),
     allow_location: device.askLocation,
@@ -137,6 +143,7 @@ export function useReadyToFly() {
     answer,
     canFix: (fix: ReadyFix | null | undefined): fix is ReadyFix => !!fix && !!fixes[fix],
     run,
-    busy: (fix: ReadyFix | null | undefined) => !!fix && (fixing === fix || (fix === "download_charts" && keeping)),
+    busy: (fix: ReadyFix | null | undefined) =>
+      !!fix && (fixing === fix || ((fix === "download_charts" || fix === "keep_for_air") && keeping)),
   };
 }

@@ -8,10 +8,13 @@ import SwiftUI
 struct FPLView: View {
     @Environment(Plan.self) private var plan
     @Environment(Charts.self) private var charts
+    @Environment(Verdict.self) private var verdict
+    @Environment(Session.self) private var session
     /// Opens a card in the iPad's inspector; nil on the iPhone.
     @Environment(\.openCard) private var openCard
     @FocusState private var focused: Field?
     @State private var path = NavigationPath()
+    private var keepForAir: KeepForAir { .shared }
 
     enum Field { case dep, dest, altitude }
     /// FPL's own pages.
@@ -147,18 +150,16 @@ struct FPLView: View {
                 }
                 if plan.course != nil, let template = charts.template {
                     // The chart along the route for the air, as the web app's
-                    // KeepRoute keeps it: tapped once, the count as it goes.
+                    // KeepRoute keeps it, and the briefing, NOTAMs, cards,
+                    // plates and the rest with it (KeepForAir): tapped once,
+                    // the count as it goes, then the size it came to.
                     Section {
                         Button {
-                            plan.keepForTheAir(template: template, minZoom: charts.base?.minZoom ?? 6)
+                            keepForAir.keep(plan: plan, template: template, minZoom: charts.base?.minZoom ?? 6, verdict: verdict, signedIn: session.signedIn)
                         } label: {
-                            if let keeping = plan.keeping {
-                                Label(keeping.kept >= keeping.wanted ? "Kept for the Air: \(keeping.wanted) tiles" : "Keeping for the Air: \(keeping.kept) of \(keeping.wanted)", systemImage: keeping.kept >= keeping.wanted ? "checkmark.icloud" : "icloud.and.arrow.down")
-                            } else {
-                                Label("Keep for the Air", systemImage: "icloud.and.arrow.down")
-                            }
+                            KeepForAirLabel(model: keepForAir)
                         }
-                        .disabled(plan.keeping.map { $0.kept < $0.wanted } ?? false)
+                        .disabled(keepForAir.keeping != nil && keepForAir.sizeMb == nil)
                     }
                 }
             }

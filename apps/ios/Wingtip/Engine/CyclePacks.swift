@@ -24,7 +24,7 @@ struct CyclePackIndex: Codable, Equatable, Sendable {
 
 /// The cycle packs kept on the phone, a region each (wingtip.cycle_pack's
 /// write_phone), so the airspace over a point is answered with no
-/// connection: kept along a route with its chart (Plan.keepForTheAir),
+/// connection: kept along a route with its chart (KeepForAir),
 /// and fetched again for the regions kept when the FAA's cycle turns.
 /// Under Application Support, not Caches: iOS may not clear them when
 /// space is short, as it may the chart's tiles, and they are small.
