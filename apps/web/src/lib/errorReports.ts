@@ -1,8 +1,11 @@
+import { originOf, type DiagnosticsReport } from "./diagnostics";
+
 /**
- * What goes wrong on a pilot's device, sent to the server's log
- * (ClientErrorController, CloudWatch in production) so the owner hears of
- * it without the pilot writing in: an error nobody caught, a promise
- * nobody caught, a render React could not finish (main.tsx).
+ * What goes wrong on a pilot's device, sent to the gateway's diagnostics
+ * (DiagnosticsController, lib/diagnostics), kept 90 days and written to
+ * the server's log, so the owner hears of it without the pilot writing
+ * in: an error nobody caught, a promise nobody caught, a render React
+ * could not finish (main.tsx).
  *
  * Nothing of the pilot's goes: the page's path without its query (a
  * magic link's token rides there), the message and the stack cut short and without any address's query,
@@ -41,9 +44,17 @@ export function reportOf(kind: ClientErrorReport["kind"], error: unknown, locati
     userAgent: userAgent.slice(0, 300) };
 }
 
+/** A report as the diagnostics door takes it: one fault, its kind and
+ *  message its signature, its stack, page and browser its detail. */
+export function diagnosticsOf(report: ClientErrorReport, now = new Date(),
+  origin: Pick<DiagnosticsReport, "platform" | "version" | "device"> = originOf()): DiagnosticsReport {
+  const detail = [report.stack, `page ${report.page}`, `browser ${report.userAgent}`].filter(Boolean).join("\n");
+  return { ...origin, faults: [{ kind: "error", signature: `${report.kind}: ${report.message}`, detail, at: now.toISOString() }] };
+}
+
 function beacon(body: string): boolean {
   return typeof navigator.sendBeacon === "function"
-    && navigator.sendBeacon("/api/client-errors", new Blob([body], { type: "application/json" }));
+    && navigator.sendBeacon("/api/diagnostics", new Blob([body], { type: "application/json" }));
 }
 
 /** Sends a report unless the same error has gone already, or ten have. */
@@ -51,7 +62,7 @@ export function sendReport(report: ClientErrorReport, send: (body: string) => bo
   const key = `${report.kind}:${report.message}`;
   if (sent.has(key) || sent.size >= LIMIT) return false;
   sent.add(key);
-  return send(JSON.stringify(report));
+  return send(JSON.stringify(diagnosticsOf(report)));
 }
 
 /** Listens for what nothing else caught. */

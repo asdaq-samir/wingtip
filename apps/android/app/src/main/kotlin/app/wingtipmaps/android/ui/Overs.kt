@@ -38,7 +38,7 @@ fun StripOver(over: StripModel.Over, plan: Plan, session: Session, ownShip: OwnS
         when (over) {
             is StripModel.Over.Airport -> AirportScreen(over.ident, plan = plan, onDone = onClose)
             StripModel.Over.Airplane -> AirplaneScreen(plan)
-            StripModel.Over.Setup -> SetupScreen(session)
+            StripModel.Over.Setup -> SetupScreen(session, onToMap = onClose)
             StripModel.Over.Ask -> AskScreen(plan = plan, session = session, ownShip = ownShip, client = assistant)
         }
     }

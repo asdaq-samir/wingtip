@@ -371,9 +371,12 @@ with ingest, weather and the assistant,
   aws logs tail /wingtip/server --region us-east-1 --follow --log-stream-name-prefix wingtip-gateway
   ```
 
-- **Errors on pilots' phones** are in the gateway's stream as `client
-  error [...]` lines (`ClientErrorController`, `lib/errorReports`): the
-  message, the stack and the page's path, nothing of the pilot's.
+- **Faults on pilots' devices** (the web's uncaught errors, the iPhone's
+  MetricKit diagnostics, Android's exit reasons and crashes) are kept 90
+  days in the `diagnostics` table, read by the developer at `GET
+  /api/diagnostics`, and logged in the gateway's stream as `web|ios|android
+  <version> [<kind>] ...` lines (`DiagnosticsController`): the signature
+  and the scrubbed stack, nothing of the pilot's.
 
 ### Chart cycles
 

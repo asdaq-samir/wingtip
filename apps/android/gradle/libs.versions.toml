@@ -29,6 +29,9 @@ datastore = "1.1.7"
 # height above mean sea level, for phones below Android 14 (own ship's
 # altitude, flight/OwnShip.kt).
 coreLocationAltitude = "1.0.1"
+# JankStats, for the frames the app draws and how many came late, sent
+# with the diagnostics (diagnostics/FrameStats.kt).
+metricsPerformance = "1.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -77,6 +80,9 @@ androidx-lifecycle-process = { group = "androidx.lifecycle", name = "lifecycle-p
 # AltitudeConverterCompat: mean-sea-level altitude from the fix's
 # ellipsoid height, Android 14's AltitudeConverter brought to older phones.
 androidx-core-location-altitude = { group = "androidx.core", name = "core-location-altitude", version.ref = "coreLocationAltitude" }
+# JankStats: each frame's time and whether it was janky, on the activity's
+# window (diagnostics/FrameStats.kt).
+androidx-metrics-performance = { group = "androidx.metrics", name = "metrics-performance", version.ref = "metricsPerformance" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

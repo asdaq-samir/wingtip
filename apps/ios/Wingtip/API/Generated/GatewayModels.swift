@@ -2,6 +2,46 @@
 // documents (quicktype); do not edit. Change the server and run the script.
 import Foundation
 
+// MARK: - GWAccountExport
+struct GWAccountExport: Codable, Equatable, Sendable {
+    var account: GWPilotDto
+    var airplanes: [GWExportedAirplane]
+    var currency: GWCurrencyDto
+    var exportedAt: String
+    var flights: [GWExportedFlight]
+    var format: String
+    var instructing: GWInstructorDto
+    var logbook: [GWLogbookEntryDto]
+    var training: GWTrainingDto
+}
+
+/// The signed-in pilot
+// MARK: - GWPilotDto
+struct GWPilotDto: Codable, Equatable, Sendable {
+    /// Whether this pilot also does development work here: the training workspace and the
+    /// developer console are theirs, a plain pilot's are not.
+    var developer: Bool
+    /// Display name
+    var displayName: String
+    /// Email address from the identity provider
+    var email: String
+    /// Their name as their certificate gives it: the pilot in command a flight plan names (item
+    /// 19 C/) and an endorsement names them by
+    var fullName: String?
+    /// Their airplane's home base, an airport identifier
+    var homeBase: String?
+    /// Internal id
+    var id: Int
+    /// Their telephone number, the contact a flight plan's item 19 C/ asks for
+    var phone: String?
+}
+
+// MARK: - GWExportedAirplane
+struct GWExportedAirplane: Codable, Equatable, Sendable {
+    var airplane: GWAircraftDto
+    var squawks: [GWSquawkDto]
+}
+
 // MARK: - GWAircraftDto
 struct GWAircraftDto: Codable, Equatable, Sendable {
     var climbFuelBurnGph, climbTasKt: Double?
@@ -89,83 +129,6 @@ struct GWVorCheckDto: Codable, Equatable, Sendable {
     var withinLimit: Bool
 }
 
-// MARK: - GWAircraftRequest
-struct GWAircraftRequest: Codable, Equatable, Sendable {
-    var climbFuelBurnGph, climbTasKt: Double?
-    var colour: String?
-    var cruisePowerPct: Double?
-    var cruiseTasKt: Double
-    var equipment: String?
-    var fuelBurnGph: Double
-    var surveillance: String?
-    var tailNumber, typeDesignator: String
-    var usableFuelGal: Double?
-}
-
-// MARK: - GWAppleToken
-struct GWAppleToken: Codable, Equatable, Sendable {
-    var identityToken: String
-}
-
-// MARK: - GWApproval
-struct GWApproval: Codable, Equatable, Sendable {
-    var userCode: String
-}
-
-// MARK: - GWAskInstructorRequest
-struct GWAskInstructorRequest: Codable, Equatable, Sendable {
-    var email: String
-}
-
-// MARK: - GWAskReviewRequest
-struct GWAskReviewRequest: Codable, Equatable, Sendable {
-    var flightId: Int
-    var flightOn: String
-    var instructorId: Int
-    var makeModel: String
-    var note: String?
-}
-
-// MARK: - GWAssignLessonRequest
-struct GWAssignLessonRequest: Codable, Equatable, Sendable {
-    var airportIdent: String
-    var cycle: String?
-    var dueOn: String?
-    var fixNotes: [String: String]
-    var procedureId: String
-    var procedureName: String
-}
-
-// MARK: - GWCapabilities
-struct GWCapabilities: Codable, Equatable, Sendable {
-    /// SIGN_IN: a session can be had, and the developer's workspace needs the role. OPEN: nobody
-    /// can sign in and everything is open (the local stack). CLOSED: nobody can sign in, and
-    /// writes and the developer's workspace are refused.
-    var access: String
-    /// Where no subscription is sold, who has the features Claude writes: OFF, DEVELOPERS, or
-    /// EVERYONE signed in.
-    var claudeFeatures: String
-    /// The OIDC providers with real credentials, by registration id: the sign-in buttons to
-    /// offer. Empty where only the emailed link signs in (the local stack).
-    var providers: [String]
-    /// Whether this deployment sells the subscription; where not, the page says nothing of one.
-    var subscriptions: Bool
-}
-
-// MARK: - GWClientError
-struct GWClientError: Codable, Equatable, Sendable {
-    var kind: String
-    var message: String
-    var page: String
-    var stack: String
-    var userAgent: String
-}
-
-// MARK: - GWCurrencyDatesRequest
-struct GWCurrencyDatesRequest: Codable, Equatable, Sendable {
-    var flightReviewOn, ipcOn, medicalExpiresOn: String?
-}
-
 // MARK: - GWCurrencyDto
 struct GWCurrencyDto: Codable, Equatable, Sendable {
     /// Approaches logged in the 6 calendar months before this one
@@ -195,39 +158,10 @@ struct GWCurrencyDto: Codable, Equatable, Sendable {
     var trackingInWindow: Bool
 }
 
-// MARK: - GWDeclineRequest
-struct GWDeclineRequest: Codable, Equatable, Sendable {
-    var note: String
-}
-
-// MARK: - GWDeviceCode
-struct GWDeviceCode: Codable, Equatable, Sendable {
-    var deviceCode: String
-    var expiresIn, interval: Int
-    var userCode, verificationPath: String
-}
-
-// MARK: - GWDueItemRequest
-struct GWDueItemRequest: Codable, Equatable, Sendable {
-    var dueAtHours: Double?
-    var dueOn: String?
-    var kind: String
-    var method: String?
-    var reference: String?
-    var title: String
-}
-
-// MARK: - GWEndorsementRequest
-struct GWEndorsementRequest: Codable, Equatable, Sendable {
-    var endorsedOn: String
-}
-
-// MARK: - GWFieldReport
-struct GWFieldReport: Codable, Equatable, Sendable {
-    var device: String
-    var metrics: [String: Double]
-    var page: String
-    var version: String
+// MARK: - GWExportedFlight
+struct GWExportedFlight: Codable, Equatable, Sendable {
+    var flight: GWFlightDto
+    var track: GWTrackDto
 }
 
 // MARK: - GWFlightDto
@@ -266,68 +200,18 @@ struct GWRiskAssessmentDto: Codable, Equatable, Sendable {
     var score: Int
 }
 
-// MARK: - GWFlightPlanFiled
-struct GWFlightPlanFiled: Codable, Equatable, Sendable {
-    var reference: String
+// MARK: - GWTrackDto
+struct GWTrackDto: Codable, Equatable, Sendable {
+    var points: [GWTrackPointDto]
+    var source: String
 }
 
-/// A flight plan, FAA Form 7233-4's items
-// MARK: - GWFlightPlanFilingRequest
-struct GWFlightPlanFilingRequest: Codable, Equatable, Sendable {
-    var aircraftId: String
-    var aircraftType: String
-    var alternate: String?
-    var cruisingLevel: String
-    var cruisingSpeed: String
-    var departure: String
-    /// The departure time, an instant (item 13, UTC)
-    var departureTime: String
-    var destination: String
-    var eetMinutes, enduranceMinutes: Int
-    var otherInformation: String?
-    var personsOnBoard: Int?
-    var route: String
-    var rules: String
-}
-
-// MARK: - GWFlightServiceStatus
-struct GWFlightServiceStatus: Codable, Equatable, Sendable {
-    var connected: Bool
-    var provider: String
-}
-
-// MARK: - GWFlightWatchDto
-struct GWFlightWatchDto: Codable, Equatable, Sendable {
-    var changedAt: String?
-    var changes: [GWBriefingChangeDto]
-    var checkedAt: String?
-    var departAt: String
-    var flightId: Int
-    var sources: [GWBriefingSourceDto]
-}
-
-// MARK: - GWBriefingChangeDto
-struct GWBriefingChangeDto: Codable, Equatable, Sendable {
-    var sources: [String]
-    var text: String
-}
-
-// MARK: - GWBriefingSourceDto
-struct GWBriefingSourceDto: Codable, Equatable, Sendable {
-    var id, label, text: String
-}
-
-// MARK: - GWFullNameRequest
-struct GWFullNameRequest: Codable, Equatable, Sendable {
-    var fullName: String
-}
-
-// MARK: - GWInspectionsRequest
-struct GWInspectionsRequest: Codable, Equatable, Sendable {
-    var annualOn, eltBatteryDueOn, eltInspectedOn: String?
-    var forHire: Bool?
-    var hoursNow, hundredHourAtHours: Double?
-    var staticCheckOn, transponderCheckOn: String?
+// MARK: - GWTrackPointDto
+struct GWTrackPointDto: Codable, Equatable, Sendable {
+    var altFt: Double?
+    var lat: Double
+    var lon: Double
+    var t: Int
 }
 
 // MARK: - GWInstructorDto
@@ -417,6 +301,288 @@ struct GWFlightSummaryDto: Codable, Equatable, Sendable {
     var totalDistanceNm, totalEteMin, totalFuelGal: Double?
 }
 
+// MARK: - GWLogbookEntryDto
+struct GWLogbookEntryDto: Codable, Equatable, Sendable {
+    var aircraft, aircraftType: String?
+    var airHours: Double
+    var approaches: Int
+    var crossCountryHours: Double
+    var dayLandings: Int
+    var distanceNm, dualHours: Double
+    var flightId: Int?
+    var flownOn: String
+    var fromTrack, holding: Bool
+    var id: Int
+    var instrumentHours, longestLegNm, nightHours: Double
+    var nightLandings: Int
+    var remarks, route: String?
+    var soloHours, totalHours: Double
+    var touchAndGoes, toweredLandings: Int
+    var tracking: Bool
+}
+
+// MARK: - GWTrainingDto
+struct GWTrainingDto: Codable, Equatable, Sendable {
+    var endorsements: [GWEndorsementDto]
+    var experience: [GWExperienceItemDto]
+    var fullName: String?
+    var instructors: [GWInstructorLinkDto]
+    var kinds: [GWEndorsementKindDto]
+    var knowledgeTestCodes: [String]
+    var lessons: [GWApproachLessonDto]
+    var reviews: [GWCrossCountryReviewDto]
+    var signed: [GWSignedEndorsementDto]
+}
+
+// MARK: - GWEndorsementDto
+struct GWEndorsementDto: Codable, Equatable, Sendable {
+    var code, endorsedOn: String
+    var until: String?
+}
+
+// MARK: - GWExperienceItemDto
+struct GWExperienceItemDto: Codable, Equatable, Sendable {
+    var have: Double
+    var key, label: String
+    var met: Bool
+    var need: Double
+    var rule, unit: String
+}
+
+// MARK: - GWInstructorLinkDto
+struct GWInstructorLinkDto: Codable, Equatable, Sendable {
+    var accepted: Bool
+    var askedAt: String
+    var certificate: String?
+    var email: String
+    var id: Int
+    var name: String?
+}
+
+// MARK: - GWApproachLessonDto
+struct GWApproachLessonDto: Codable, Equatable, Sendable {
+    var airportIdent: String
+    var briefedAt: String?
+    var createdAt: String
+    var cycle, dueOn: String?
+    var fixNotes: [String: String]
+    var flights: [GWFlightSummaryDto]
+    var flownAt: String?
+    var id: Int
+    var instructorName, procedureId, procedureName: String
+    var quizAnswers: [GWQuizAnswerDto]
+    var quizAt: String?
+    var quizOf: Int?
+    var status: String
+    var studentId: Int
+    var studentName, updatedAt: String
+}
+
+// MARK: - GWQuizAnswerDto
+struct GWQuizAnswerDto: Codable, Equatable, Sendable {
+    var chosen: String
+    var question: String
+    var right: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case chosen, question
+        case right = "right"
+    }
+}
+
+// MARK: - GWAircraftRequest
+struct GWAircraftRequest: Codable, Equatable, Sendable {
+    var climbFuelBurnGph, climbTasKt: Double?
+    var colour: String?
+    var cruisePowerPct: Double?
+    var cruiseTasKt: Double
+    var equipment: String?
+    var fuelBurnGph: Double
+    var surveillance: String?
+    var tailNumber, typeDesignator: String
+    var usableFuelGal: Double?
+}
+
+// MARK: - GWAppleToken
+struct GWAppleToken: Codable, Equatable, Sendable {
+    var identityToken: String
+}
+
+// MARK: - GWApproval
+struct GWApproval: Codable, Equatable, Sendable {
+    var userCode: String
+}
+
+// MARK: - GWAskInstructorRequest
+struct GWAskInstructorRequest: Codable, Equatable, Sendable {
+    var email: String
+}
+
+// MARK: - GWAskReviewRequest
+struct GWAskReviewRequest: Codable, Equatable, Sendable {
+    var flightId: Int
+    var flightOn: String
+    var instructorId: Int
+    var makeModel: String
+    var note: String?
+}
+
+// MARK: - GWAssignLessonRequest
+struct GWAssignLessonRequest: Codable, Equatable, Sendable {
+    var airportIdent: String
+    var cycle: String?
+    var dueOn: String?
+    var fixNotes: [String: String]
+    var procedureId: String
+    var procedureName: String
+}
+
+// MARK: - GWCapabilities
+struct GWCapabilities: Codable, Equatable, Sendable {
+    /// SIGN_IN: a session can be had, and the developer's workspace needs the role. OPEN: nobody
+    /// can sign in and everything is open (the local stack). CLOSED: nobody can sign in, and
+    /// writes and the developer's workspace are refused.
+    var access: String
+    /// Where no subscription is sold, who has the features Claude writes: OFF, DEVELOPERS, or
+    /// EVERYONE signed in.
+    var claudeFeatures: String
+    /// The OIDC providers with real credentials, by registration id: the sign-in buttons to
+    /// offer. Empty where only the emailed link signs in (the local stack).
+    var providers: [String]
+    /// Whether this deployment sells the subscription; where not, the page says nothing of one.
+    var subscriptions: Bool
+}
+
+// MARK: - GWCurrencyDatesRequest
+struct GWCurrencyDatesRequest: Codable, Equatable, Sendable {
+    var flightReviewOn, ipcOn, medicalExpiresOn: String?
+}
+
+// MARK: - GWDeclineRequest
+struct GWDeclineRequest: Codable, Equatable, Sendable {
+    var note: String
+}
+
+// MARK: - GWDeviceCode
+struct GWDeviceCode: Codable, Equatable, Sendable {
+    var deviceCode: String
+    var expiresIn, interval: Int
+    var userCode, verificationPath: String
+}
+
+// MARK: - GWDiagnosticDto
+struct GWDiagnosticDto: Codable, Equatable, Sendable {
+    var detail, device, kind, occurredAt: String
+    var os, platform, receivedAt, signature: String
+    var version: String
+}
+
+// MARK: - GWDiagnosticsReport
+struct GWDiagnosticsReport: Codable, Equatable, Sendable {
+    var device: String
+    var faults: [GWFaultReport]
+    var metrics: [String: Double]
+    var os: String
+    var page: String
+    var platform: String
+    var version: String
+}
+
+// MARK: - GWFaultReport
+struct GWFaultReport: Codable, Equatable, Sendable {
+    var at: String
+    var detail: String
+    var kind: String
+    var signature: String
+}
+
+// MARK: - GWDueItemRequest
+struct GWDueItemRequest: Codable, Equatable, Sendable {
+    var dueAtHours: Double?
+    var dueOn: String?
+    var kind: String
+    var method: String?
+    var reference: String?
+    var title: String
+}
+
+// MARK: - GWEndorsementRequest
+struct GWEndorsementRequest: Codable, Equatable, Sendable {
+    var endorsedOn: String
+}
+
+// MARK: - GWFieldReport
+struct GWFieldReport: Codable, Equatable, Sendable {
+    var device: String
+    var metrics: [String: Double]
+    var page: String
+    var version: String
+}
+
+// MARK: - GWFlightPlanFiled
+struct GWFlightPlanFiled: Codable, Equatable, Sendable {
+    var reference: String
+}
+
+/// A flight plan, FAA Form 7233-4's items
+// MARK: - GWFlightPlanFilingRequest
+struct GWFlightPlanFilingRequest: Codable, Equatable, Sendable {
+    var aircraftId: String
+    var aircraftType: String
+    var alternate: String?
+    var cruisingLevel: String
+    var cruisingSpeed: String
+    var departure: String
+    /// The departure time, an instant (item 13, UTC)
+    var departureTime: String
+    var destination: String
+    var eetMinutes, enduranceMinutes: Int
+    var otherInformation: String?
+    var personsOnBoard: Int?
+    var route: String
+    var rules: String
+}
+
+// MARK: - GWFlightServiceStatus
+struct GWFlightServiceStatus: Codable, Equatable, Sendable {
+    var connected: Bool
+    var provider: String
+}
+
+// MARK: - GWFlightWatchDto
+struct GWFlightWatchDto: Codable, Equatable, Sendable {
+    var changedAt: String?
+    var changes: [GWBriefingChangeDto]
+    var checkedAt: String?
+    var departAt: String
+    var flightId: Int
+    var sources: [GWBriefingSourceDto]
+}
+
+// MARK: - GWBriefingChangeDto
+struct GWBriefingChangeDto: Codable, Equatable, Sendable {
+    var sources: [String]
+    var text: String
+}
+
+// MARK: - GWBriefingSourceDto
+struct GWBriefingSourceDto: Codable, Equatable, Sendable {
+    var id, label, text: String
+}
+
+// MARK: - GWFullNameRequest
+struct GWFullNameRequest: Codable, Equatable, Sendable {
+    var fullName: String
+}
+
+// MARK: - GWInspectionsRequest
+struct GWInspectionsRequest: Codable, Equatable, Sendable {
+    var annualOn, eltBatteryDueOn, eltInspectedOn: String?
+    var forHire: Bool?
+    var hoursNow, hundredHourAtHours: Double?
+    var staticCheckOn, transponderCheckOn: String?
+}
+
 // MARK: - GWInstructorRequest
 struct GWInstructorRequest: Codable, Equatable, Sendable {
     var certificate: String
@@ -447,38 +613,6 @@ struct GWLessonProgressRequest: Codable, Equatable, Sendable {
 struct GWQuiz: Codable, Equatable, Sendable {
     var answers: [GWQuizAnswerDto]
     var of: Int
-}
-
-// MARK: - GWQuizAnswerDto
-struct GWQuizAnswerDto: Codable, Equatable, Sendable {
-    var chosen: String
-    var question: String
-    var right: Bool
-
-    enum CodingKeys: String, CodingKey {
-        case chosen, question
-        case right = "right"
-    }
-}
-
-// MARK: - GWLogbookEntryDto
-struct GWLogbookEntryDto: Codable, Equatable, Sendable {
-    var aircraft, aircraftType: String?
-    var airHours: Double
-    var approaches: Int
-    var crossCountryHours: Double
-    var dayLandings: Int
-    var distanceNm, dualHours: Double
-    var flightId: Int?
-    var flownOn: String
-    var fromTrack, holding: Bool
-    var id: Int
-    var instrumentHours, longestLegNm, nightHours: Double
-    var nightLandings: Int
-    var remarks, route: String?
-    var soloHours, totalHours: Double
-    var touchAndGoes, toweredLandings: Int
-    var tracking: Bool
 }
 
 // MARK: - GWLogbookImportRequest
@@ -552,27 +686,6 @@ struct GWDueDto: Codable, Equatable, Sendable {
 // MARK: - GWPilotContactRequest
 struct GWPilotContactRequest: Codable, Equatable, Sendable {
     var homeBase: String?
-    var phone: String?
-}
-
-/// The signed-in pilot
-// MARK: - GWPilotDto
-struct GWPilotDto: Codable, Equatable, Sendable {
-    /// Whether this pilot also does development work here: the training workspace and the
-    /// developer console are theirs, a plain pilot's are not.
-    var developer: Bool
-    /// Display name
-    var displayName: String
-    /// Email address from the identity provider
-    var email: String
-    /// Their name as their certificate gives it: the pilot in command a flight plan names (item
-    /// 19 C/) and an endorsement names them by
-    var fullName: String?
-    /// Their airplane's home base, an airport identifier
-    var homeBase: String?
-    /// Internal id
-    var id: Int
-    /// Their telephone number, the contact a flight plan's item 19 C/ asks for
     var phone: String?
 }
 
@@ -676,77 +789,6 @@ struct GWFeatureUse: Codable, Equatable, Sendable {
 // MARK: - GWTokenRequest
 struct GWTokenRequest: Codable, Equatable, Sendable {
     var deviceCode: String
-}
-
-// MARK: - GWTrackDto
-struct GWTrackDto: Codable, Equatable, Sendable {
-    var points: [GWTrackPointDto]
-    var source: String
-}
-
-// MARK: - GWTrackPointDto
-struct GWTrackPointDto: Codable, Equatable, Sendable {
-    var altFt: Double?
-    var lat: Double
-    var lon: Double
-    var t: Int
-}
-
-// MARK: - GWTrainingDto
-struct GWTrainingDto: Codable, Equatable, Sendable {
-    var endorsements: [GWEndorsementDto]
-    var experience: [GWExperienceItemDto]
-    var fullName: String?
-    var instructors: [GWInstructorLinkDto]
-    var kinds: [GWEndorsementKindDto]
-    var knowledgeTestCodes: [String]
-    var lessons: [GWApproachLessonDto]
-    var reviews: [GWCrossCountryReviewDto]
-    var signed: [GWSignedEndorsementDto]
-}
-
-// MARK: - GWEndorsementDto
-struct GWEndorsementDto: Codable, Equatable, Sendable {
-    var code, endorsedOn: String
-    var until: String?
-}
-
-// MARK: - GWExperienceItemDto
-struct GWExperienceItemDto: Codable, Equatable, Sendable {
-    var have: Double
-    var key, label: String
-    var met: Bool
-    var need: Double
-    var rule, unit: String
-}
-
-// MARK: - GWInstructorLinkDto
-struct GWInstructorLinkDto: Codable, Equatable, Sendable {
-    var accepted: Bool
-    var askedAt: String
-    var certificate: String?
-    var email: String
-    var id: Int
-    var name: String?
-}
-
-// MARK: - GWApproachLessonDto
-struct GWApproachLessonDto: Codable, Equatable, Sendable {
-    var airportIdent: String
-    var briefedAt: String?
-    var createdAt: String
-    var cycle, dueOn: String?
-    var fixNotes: [String: String]
-    var flights: [GWFlightSummaryDto]
-    var flownAt: String?
-    var id: Int
-    var instructorName, procedureId, procedureName: String
-    var quizAnswers: [GWQuizAnswerDto]
-    var quizAt: String?
-    var quizOf: Int?
-    var status: String
-    var studentId: Int
-    var studentName, updatedAt: String
 }
 
 // MARK: - GWVorCheckRequest
