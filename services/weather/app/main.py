@@ -39,7 +39,7 @@ from collections.abc import Callable
 
 from wingtip import tracing, weather_store
 
-from . import aviationweather, fetch, gfs, glmp, radar, satellite, tfr
+from . import aviationweather, fetch, gfs, glmp, glmp_forecast, radar, satellite, spc, tfr
 from .settings import get_settings
 
 log = logging.getLogger("weather")
@@ -71,6 +71,8 @@ PRODUCTS = (
     *(Product(name, _source(name), "reports") for name in aviationweather.SOURCES),
     *(Product(f"winds-{hr}", _winds(hr), "winds") for hr in gfs.PERIODS),
     Product("glmp", glmp.fetch_latest, "glmp"),
+    Product("glmp-forecast", glmp_forecast.fetch_latest, "glmp"),
+    Product("spc-outlook", spc.fetch_outlook, "outlook"),
     Product("tfrs", tfr.fetch, "tfrs"),
     Product("radar", radar.fetch, "radar"),
     Product("satellite", satellite.fetch, "satellite"),

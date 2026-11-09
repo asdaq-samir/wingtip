@@ -65,7 +65,13 @@ def _issues(now: datetime) -> list[datetime]:
 def _download(issued: datetime, field: str) -> bytes | None:
     """An issue's file for `field` ("cig" or "vis"); None where it is not
     up (yet). Raises GlmpUnavailable where NOMADS does not answer."""
-    url = URL.format(day=issued.strftime("%Y%m%d"), hour=issued.strftime("%H"), field=field)
+    return _download_url(URL, issued, field)
+
+
+def _download_url(template: str, issued: datetime, field: str) -> bytes | None:
+    """An issue's file of a URL `template` (its {day}, {hour} and {field})
+    -- the analysis hour's or the forecast hours' (app.glmp_forecast)."""
+    url = template.format(day=issued.strftime("%Y%m%d"), hour=issued.strftime("%H"), field=field)
     try:
         resp = requests.get(url, headers=HEADERS, timeout=20)
     except requests.RequestException as err:
