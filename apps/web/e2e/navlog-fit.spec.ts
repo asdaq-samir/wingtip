@@ -105,3 +105,29 @@ test("a long trip's figures are set smaller to fit the strip, not cut short", as
       { message: `at a root of ${root || "16px"}` }).toEqual([]);
   }
 });
+
+test("each row's miles over its groundspeed come to its minutes, a pattern's miles said where the leg ends", async ({ page }) => {
+  // The FPL audit's A4 (2026-11-08): KUGN's first checkpoint read "1.5 nm ·
+  // 3.4 min" at 86 kt -- a minute's flying -- the pattern departure's 3.4 nm
+  // and 2.3 min in its minutes and not its miles. And A5: the rows now add
+  // up to the strip's distance, which counts the patterns.
+  await page.goto("/app/plan?dep=KUGN&dest=KOSH&pattern=KUGN%3A23%2CKOSH%3A27");
+  await settle(page);
+  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await openNavLog(page);
+  const log = navLogSheet(page).getByTestId("navlog-list");
+  await expect(log.locator('[role="row"][data-kind="destination"]')).toBeVisible();
+  const rows = await log.locator('[role="row"][data-kind]:not([data-kind="departure"])').evaluateAll(els => els.map(el => ({
+    nm: Number(/([\d.]+) nm/.exec(el.querySelector('[data-testid="navlog-row-dist"]')?.textContent ?? "")?.[1]),
+    min: Number(/([\d.]+) min/.exec(el.textContent ?? "")?.[1]),
+    gs: Number(el.querySelector('[data-testid="navlog-row-gs"]')?.textContent),
+    said: el.querySelector('[data-testid="navlog-row-dist"]')?.textContent ?? "",
+  })));
+  for (const row of rows) {
+    if (!(row.gs > 0)) continue;
+    // The rows' own rounding: a tenth of a mile and of a minute.
+    expect(Math.abs((row.nm / row.gs) * 60 - row.min), JSON.stringify(row)).toBeLessThanOrEqual(0.3);
+  }
+  expect(rows.some(r => /incl\. (departure|pattern)/.test(r.said))).toBe(true);
+  await closeNavLog(page);
+});

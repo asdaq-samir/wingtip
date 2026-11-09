@@ -46,6 +46,9 @@ export interface Workings {
   /** What the leg's climb adds, where it has one: the log's own time and
    *  fuel are the cruise's and this. */
   climb: { min: number; gal: number } | null;
+  /** What the leg's procedure adds -- a pattern's, a departure's or an
+   *  approach's miles past the leg's line -- where it is flown by one. */
+  procedure: { nm: number; min: number; gal: number; landing: boolean } | null;
 }
 
 /** A leg worked out, or null for one that cannot be (no wind is a calm
@@ -65,8 +68,15 @@ export function workingsOf(leg: Leg): Workings | null {
   const gs = leg.groundspeed_kt;
   const ete = (leg.distance_nm / gs) * 60;
   const fuel = (ete / 60) * leg.fuel_burn_gph;
-  const climbMin = leg.ete_min - ete;
-  const climbGal = leg.fuel_gal - fuel;
+  // A procedure's miles (a pattern, a departure, an approach) are flown
+  // at the leg's ground speed and burn, and in its time and fuel
+  // (LegProcedure's more_*): said as their own, not as climb, which they
+  // were taken for -- "Climb, added 2 min" on a leg with none to climb
+  // (the FPL audit's A4).
+  const p = leg.procedure;
+  const procedure = p && p.more_nm > 0.05 ? { nm: p.more_nm, min: p.more_min, gal: p.more_gal } : null;
+  const climbMin = leg.ete_min - ete - (procedure?.min ?? 0);
+  const climbGal = leg.fuel_gal - fuel - (procedure?.gal ?? 0);
   const east = variation >= 0;
   const r1 = (n: number) => n.toFixed(1);
   const steps = [
@@ -101,6 +111,7 @@ export function workingsOf(leg: Leg): Workings | null {
     steps,
     answers: { wca, th, mh, gs, ete, fuel },
     climb: climbMin > 0.5 ? { min: climbMin, gal: Math.max(0, climbGal) } : null,
+    procedure: procedure && procedure.min > 0 ? { ...procedure, landing: p!.landing } : null,
   };
 }
 

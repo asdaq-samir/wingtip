@@ -27,6 +27,13 @@ function Worked({ workings }: { workings: Workings }) {
           value={`${Math.round(workings.climb.min)} min · ${workings.climb.gal.toFixed(1)} gal`} data-testid="working-climb"
         />
       )}
+      {workings.procedure && (
+        <ListRow
+          title={workings.procedure.landing ? "Pattern or approach, added" : "Departure, added"}
+          description={`${workings.procedure.nm.toFixed(1)} nm more than the leg's line, at its ground speed`}
+          value={`${Math.round(workings.procedure.min)} min · ${workings.procedure.gal.toFixed(1)} gal`} data-testid="working-procedure"
+        />
+      )}
     </ListGroup>
   );
 }

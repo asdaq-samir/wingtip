@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { Airport, Candidate, Leg } from "../../../../lib/api/types";
-import { groundMinAt, legOf, navLogRows, routeLegs, rowPoint, savedCheckpoints, turnaroundMin } from "./rows";
+import { flownNmOf, groundMinAt, legOf, navLogRows, procedureOf, routeLegs, rowPoint, savedCheckpoints, turnaroundMin } from "./rows";
 
 const airport = (ident: string, lat: number, lon: number): Airport =>
   ({ ident, name: `${ident} field`, lat, lon, elevation_ft: 900 }) as Airport;
@@ -35,6 +35,37 @@ describe("navLogRows", () => {
   test("a checkpoint row's key is its place, so a note stays with its checkpoint", () => {
     const rows = navLogRows(ends, [cp(43, -89, 50)], []);
     expect(rows[1]?.key).toBe("43.00000,-89.00000");
+  });
+});
+
+describe("a leg flown by a procedure", () => {
+  // KUGN to KOSH at 3,000 ft, runway 23's pattern departure and 27's
+  // pattern into KOSH (the planner's answer, 2026-11-08): the first leg
+  // 4.99 nm and 6.7 min, its top of climb 3.6 nm and 3.5 min in, the
+  // departure 3.4 nm and 2.3 min more than its line. The nav log said
+  // "1.5 nm · 3.4 min" at 89 kt, a minute's flying (the FPL audit's A4).
+  const flownBy = (more: { nm: number; min: number; landing: boolean }): Leg => ({
+    ...leg(6.7, 4.99), groundspeed_kt: 88.8,
+    toc: { along_nm: 3.6, ete_min: 3.5, fuel_gal: 0.61, altitude_ft: 3000, lat: 42.48, lon: -87.89, tas_kt: 74, groundspeed_kt: 61.7 },
+    procedure: { path: [], ft: [], nm: 8.3, landing: more.landing, final_at: null, map_at: null, missed: null, more_nm: more.nm, more_min: more.min, more_gal: 0.4 },
+  }) as Leg;
+
+  test("the row that ends the leg says the procedure's miles, so they come to its minutes at its ground speed", () => {
+    const rows = navLogRows(ends, [cp(42.5, -87.9, 5)], [flownBy({ nm: 3.4, min: 2.3, landing: false }), leg(60)]);
+    const [toc, first] = [rows[1]!, rows[2]!];
+    expect(toc.kind).toBe("toc");
+    expect(procedureOf(toc)).toBeNull();
+    expect(legOf(toc)?.procedure).toBeNull();
+    expect(procedureOf(first)).toEqual({ nm: 3.4, min: 2.3, word: "departure" });
+    const nm = flownNmOf(first)!;
+    expect(nm).toBeCloseTo(4.79, 2);
+    expect((nm / 88.8) * 60).toBeCloseTo(legOf(first)!.ete_min!, 0);
+  });
+
+  test("a landing's is its pattern, and a route's rows add up to the totals' distance", () => {
+    const rows = navLogRows(ends, [], [{ ...flownBy({ nm: 3.1, min: 2.1, landing: true }), toc: null }]);
+    expect(procedureOf(rows[1]!)?.word).toBe("pattern");
+    expect(flownNmOf(rows[1]!)).toBeCloseTo(4.99 + 3.1, 5);
   });
 });
 

@@ -4,7 +4,7 @@ import { placeName } from "../../../../lib/radio";
 import { TEXT } from "../../../../lib/text";
 import { altFt, bearing, etaAt, one, windAloft } from "../../format";
 import { PointMark } from "./PointMark";
-import { isLegPoint, legOf, rowPoint, type NavLogRow } from "./rows";
+import { flownNmOf, isLegPoint, legOf, procedureOf, rowPoint, type NavLogRow } from "./rows";
 
 /** The rail's middle, across the row: the row's own 6 and half the
  *  mark's column (2.125 rem). */
@@ -210,7 +210,12 @@ export function NavLogList({ rows, label, numberOf, weather, isSelected, onSelec
                           {leg ? bearing(leg.magnetic_heading_deg) : "—"}
                         </span>
                         <span aria-hidden="true"> · </span>
-                        <span role="cell">{leg ? `${one(leg.distance_nm)} nm` : "—"}</span>
+                        {/* With a procedure's miles where the leg ends (procedureOf),
+                            named, so the miles over the groundspeed come to the minutes. */}
+                        <span role="cell" data-testid="navlog-row-dist">
+                          {leg ? `${one(flownNmOf(row)!)} nm` : "—"}
+                          {procedureOf(row) && <span className="whitespace-nowrap"> incl. {procedureOf(row)!.word}</span>}
+                        </span>
                         <span aria-hidden="true"> · </span>
                         <span role="cell">{leg ? (leg.ete_min === null ? "unflyable" : `${one(leg.ete_min)} min`) : "—"}</span>
                         {altitude && <span aria-hidden="true"> · </span>}
