@@ -12,6 +12,17 @@ name: Native iOS test
 # Actions are pinned as in ci.yml (its opening comment says why).
 on:
   workflow_call:
+    inputs:
+      # The card rule's table-driven UI tests (CardRuleTests,
+      # CardScrollTests: every card by every way in, at two text sizes, on
+      # each simulator) as well: native-ios.yml's nights and runs by hand.
+      # Without it, as on a pull request, they are skipped and
+      # CardSmokeTests stands for them on the iPhone, one proof per
+      # journey as the browser suite does (docs/CI.md); with them on three
+      # simulators the job ran past its forty minutes (run 42843021881).
+      full:
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -28,7 +39,9 @@ jobs:
     # images/macos/xcode-27-arm64-Readme.md); macos-26 has 26.0.1-26.6 only
     # (images/macos/macos-26-arm64-Readme.md), so select-xcode.sh found none.
     runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
-    timeout-minutes: 40
+    # Forty minutes for a change; the night's full card suites on three
+    # simulators take longer, and nothing waits on them.
+    timeout-minutes: ${{ inputs.full && 100 || 40 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       # .tool-versions' Xcode (scripts/ci/select-xcode.sh, DEVELOPER_DIR for
@@ -114,6 +127,7 @@ jobs:
             ${{ steps.sim.outputs.duo && format('-destination "platform=iOS Simulator,id={0}"', steps.sim.outputs.duo) || '' }} \
             -derivedDataPath "$RUNNER_TEMP/derived" \
             -resultBundlePath "$RUNNER_TEMP/Wingtip.xcresult" \
+            ${{ !inputs.full && '-skip-testing:WingtipUITests/CardRuleTests -skip-testing:WingtipUITests/CardScrollTests -skip-testing:WingtipUITests/CardSmokeTests' || '' }} \
             CODE_SIGNING_ALLOWED=NO WINGTIP_HOST="$host" WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID" \
             test > "$RUNNER_TEMP/xcodebuild.log" 2>&1 || true
           # The lines that say what happened: each error with what follows
@@ -123,6 +137,21 @@ jobs:
           # Each test's own line, and the verdict.
           grep -E "✔ Test|✘ Test|Test run with" "$RUNNER_TEMP/xcodebuild.log" || true
           grep -qE "\*\* TEST SUCCEEDED \*\*" "$RUNNER_TEMP/xcodebuild.log"
+      - name: The card rule's smoke test, on the iPhone
+        # The build above, reused: the airport card opened, scrolled and
+        # closed at the default size, the one card test a change waits on.
+        if: ${{ !inputs.full }}
+        run: |
+          set -o pipefail
+          xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme Wingtip -configuration Debug \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.iphone }}" \
+            -derivedDataPath "$RUNNER_TEMP/derived" \
+            -resultBundlePath "$RUNNER_TEMP/CardSmoke.xcresult" \
+            -only-testing:WingtipUITests/CardSmokeTests \
+            CODE_SIGNING_ALLOWED=NO WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID" \
+            test-without-building > "$RUNNER_TEMP/card-smoke.log" 2>&1 || true
+          grep -E "✔ Test|✘ Test|Test run with|error:|XCTAssert" "$RUNNER_TEMP/card-smoke.log" | tail -60 || true
+          grep -qE "\*\* TEST EXECUTE SUCCEEDED \*\*|\*\* TEST SUCCEEDED \*\*" "$RUNNER_TEMP/card-smoke.log"
       - name: Each device's first screen
         # What the app shows on launch on the iPhone, the iPad and iPhone
         # Duo (where the runner's Xcode has it), for
@@ -163,5 +192,7 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: native-ios-log
-          path: ${{ runner.temp }}/xcodebuild.log
+          path: |
+            ${{ runner.temp }}/xcodebuild.log
+            ${{ runner.temp }}/card-smoke.log
           retention-days: 7

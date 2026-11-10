@@ -12,6 +12,7 @@ What runs, when, and how to move it onto the owner's Mac mini.
 | A pull request that touches a phone app (below) | Inside CI's run, so "CI passed" waits for it: Native Android (the engine per ABI, unit tests, lint, a debug APK) and/or Native iOS (XcodeGen, `xcodebuild test` on the simulators) | 5-10 min |
 | main's push that touches a phone app, a `claude/native-*` push | Native Android / Native iOS on their own (`native-android.yml`, `native-ios.yml`); TestFlight after iOS on main once its key is set | 5-10 min |
 | Every night | Native Android again, then its instrumented tests on an emulator | ~15 min |
+| Every night | Native iOS again with the card rule's full UI suites (`CardRuleTests`, `CardScrollTests`: every card by every way in, at two text sizes, on each simulator); a change runs `CardSmokeTests` on the iPhone in their place | ~60 min |
 
 ## What gates a merge
 

@@ -34,6 +34,11 @@ on:
       - .github/workflows/native-ios.yml
       - .github/workflows/native-ios-test.yml
   workflow_dispatch:
+  # Every night, the card rule's full UI suites too (CardRuleTests,
+  # CardScrollTests on each simulator): too long for each change, which
+  # runs CardSmokeTests in their place (docs/CI.md).
+  schedule:
+    - cron: "37 9 * * *"
 
 # Its own runs only: a pull request's tests run inside CI's run and under
 # CI's group.
@@ -51,10 +56,13 @@ env:
 jobs:
   test:
     uses: ./.github/workflows/native-ios-test.yml
+    with:
+      full: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
 
   testflight:
     needs: test
-    if: github.ref == 'refs/heads/main' && vars.APP_STORE_KEY_ID != ''
+    # Not the nights: they test, and upload nothing.
+    if: github.ref == 'refs/heads/main' && github.event_name != 'schedule' && vars.APP_STORE_KEY_ID != ''
     # xcode-27, the hosted image with .tool-versions' Xcode 27.2, as in
     # native-ios-test.yml.
     runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
