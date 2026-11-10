@@ -14,6 +14,7 @@ ask.spec.ts
 brief-glance.spec.ts
 card-scroll.spec.ts
 checkride.spec.ts
+claude-off.spec.ts
 coach.spec.ts
 copilot.spec.ts
 debrief.spec.ts
