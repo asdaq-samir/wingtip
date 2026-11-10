@@ -9,8 +9,9 @@ import app.wingtipmaps.android.api.Gateway
  * A screen's figures put in words, on the phone first (docs/android-ai.md):
  * Gemini Nano where this phone has it, so nothing leaves the phone; else
  * Wingtip's assistant on the server (Claude, POST /api/assistant) for a
- * pilot signed in; else nothing, and the screen shows its figures as it
- * always has. Either way the words pass FigureGuard: a sentence with a
+ * pilot signed in, only while the Claude features are on (ClaudeGate: off
+ * since the owner's decision of 2026-11-10); else nothing, and the screen
+ * shows its figures as it always has. Either way the words pass FigureGuard: a sentence with a
  * figure the sources do not give is dropped.
  */
 object AiWords {
@@ -20,7 +21,10 @@ object AiWords {
 
     /** Whether words can be offered here at all: Nano on the phone, or a
      *  session the assistant may answer for. */
-    suspend fun offered(): Boolean = Nano.ready() || Gateway.csrfToken != null
+    suspend fun offered(): Boolean = Nano.ready() || server()
+
+    /** The server's assistant may be asked: on (ClaudeGate) and signed in. */
+    private fun server(): Boolean = ClaudeGate.on.value && Gateway.csrfToken != null
 
     suspend fun say(task: AiTask, sources: List<AssistantSource>): Answer? {
         if (sources.isEmpty()) return null
@@ -30,7 +34,7 @@ object AiWords {
             val words = Nano.answer(AiTask.RULES, prompt, task.maxTokens) ?: return null
             return answer(words, Where.PHONE, texts, sources)
         }
-        if (Gateway.csrfToken == null) return null
+        if (!server()) return null
         val said = StringBuilder()
         val cited = mutableListOf<AssistantSource>()
         Assistant.stream(Assistant.Ask(listOf(Assistant.Message("user", "${AiTask.RULES}\n\n$prompt")))).collect { line ->

@@ -22,7 +22,8 @@ import kotlinx.coroutines.launch
  * Setup's On-Phone AI: whether Gemini Nano is on this phone, so the pilot
  * knows where the app's words are made, and Add Gemini Nano where Android
  * can fetch it (AICore's download, Google's). Nothing to turn on: on the
- * phone is always first, the assistant the fallback (docs/android-ai.md).
+ * phone is always first, the server's assistant a fallback only while the
+ * Claude features are on (ClaudeGate; docs/android-ai.md).
  */
 @Composable
 fun OnPhoneAiRow() {
