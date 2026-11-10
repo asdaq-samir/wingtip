@@ -45,7 +45,7 @@ export function movePoint<T>(list: readonly T[], from: number, to: number): T[] 
   const out = [...list];
   const [moved] = out.splice(from, 1);
   if (moved !== undefined) out.splice(to, 0, moved);
-  return out as HTMLAttributes<HTMLElement>;
+  return out;
 }
 
 type Props = Record<string, unknown>;

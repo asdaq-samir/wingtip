@@ -29,11 +29,11 @@ export interface NotamMarks {
 }
 
 /** A TFR is said as one; anything else the feed sends is a NOTAM. */
-export const kindOf = (n: RankedNotam): NotamKind => (n.kind === "tfr" ? "tfr" : "notam");
+const kindOf = (n: RankedNotam): NotamKind => (n.kind === "tfr" ? "tfr" : "notam");
 
 /** In force while the flight is there, or later; one the engine could not
  *  place in time counts as now, the safe side to show it on. */
-export const whenOf = (n: RankedNotam): NotamWhen => (n.in_force === false ? "later" : "now");
+const whenOf = (n: RankedNotam): NotamWhen => (n.in_force === false ? "later" : "now");
 
 /** Whether the filter is the one that shows every NOTAM. */
 export const showsAll = (f: NotamFilter): boolean =>

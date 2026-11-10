@@ -8,7 +8,7 @@ import type { LogbookEntry } from "../../../lib/api/types";
  * Nothing is reckoned: the rows are the gateway's, only ordered.
  */
 export type LogbookColumn = "date" | "route" | "airplane" | "total" | "landings" | "remarks";
-export type SortOrder = "ascending" | "descending";
+type SortOrder = "ascending" | "descending";
 export interface LogbookSort {
   column: LogbookColumn;
   order: SortOrder;

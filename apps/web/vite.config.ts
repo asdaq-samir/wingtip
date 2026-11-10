@@ -8,6 +8,7 @@ import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { preloadEngine } from "./vite-plugins/preloadEngine.ts";
+import { MANIFEST } from "./vite-plugins/manifest.ts";
 import { CHUNK_SIZE_LIMIT, strictRolldown, warningsFail } from "./vite-plugins/strictBuild.ts";
 
 // Under docker-compose.yml's web-build watch, VITE_PUBLISH_DIR names the
@@ -27,35 +28,6 @@ import { CHUNK_SIZE_LIMIT, strictRolldown, warningsFail } from "./vite-plugins/s
 // nothing else. Unset (the image's build, CI), vite writes dist as usual.
 const publishDir = process.env.VITE_PUBLISH_DIR;
 
-// The installed app's shortcuts (a long press on its icon, a desktop
-// taskbar's menu), generated from design/screens.json by
-// scripts/build/screens.sh with the same screens, in the same order, as
-// Android's app shortcuts: never written here by hand.
-const MANIFEST_SHORTCUTS = JSON.parse(
-  readFileSync(fileURLToPath(new URL("./src/lib/navigation/generated/manifest-shortcuts.json", import.meta.url)), "utf8"),
-).shortcuts;
-
-// The pictures Chrome's richer install dialog shows (web.dev, "Richer
-// install UI"): the phone's sheet and the desktop's side panel, each the
-// app's own screen, captured by e2e/manifest-screenshots.spec.ts into
-// public/screenshots. Named only once taken, so the manifest never points
-// at a picture that is not there.
-const SCREENSHOTS = [
-  {
-    src: "screenshots/wide.png",
-    sizes: "1280x800",
-    type: "image/png",
-    form_factor: "wide",
-    label: "The route over the sectional, with its plan beside it",
-  },
-  {
-    src: "screenshots/narrow.png",
-    sizes: "390x844",
-    type: "image/png",
-    form_factor: "narrow",
-    label: "The route over the sectional, with its plan in the sheet",
-  },
-].filter((shot) => existsSync(fileURLToPath(new URL(`./public/${shot.src}`, import.meta.url))));
 const STAGING = ".dist-next";
 const PUBLISHED = ".published.json";
 const STALE_MS = 60 * 60 * 1000;
@@ -187,42 +159,7 @@ export default defineConfig({
       // latest build at once, not a question. The cost is a reload
       // under whoever is on the page at that moment.
       registerType: "autoUpdate",
-      manifest: {
-        // The name on the Home Screen is the short one: iOS cuts a long
-        // name under the icon.
-        name: "Wingtip Maps",
-        short_name: "Wingtip",
-        description: "The map for flying: every airport and airspace on the chart, and the route, checkpoints and nav log when you go.",
-        // The app's own name for itself, as browsers know it apart from
-        // where it opens: a later start_url must not make a second app
-        // (MDN, "id").
-        id: "/app/plan",
-        start_url: "/app/plan",
-        scope: "/app/",
-        // A link to the app, a shortcut or a shared flight, opens in the
-        // app already running rather than a second window (MDN,
-        // "launch_handler"; Chromium only, ignored elsewhere).
-        launch_handler: { client_mode: ["focus-existing", "auto"] },
-        shortcuts: MANIFEST_SHORTCUTS,
-        ...(SCREENSHOTS.length ? { screenshots: SCREENSHOTS } : {}),
-        display: "standalone",
-        // Android's launch ground for the installed app: color.brand.launch.
-        background_color: "#ffffff",
-        theme_color: "#ffffff",
-        icons: [
-          // docs/brand/appicon.svg drawn by scripts/build/app-icons.sh: rounded
-          // as shown (192, 512), full bleed where masked (maskable 192/512,
-          // iOS's 180 from index.html). Beside the manifest, under /app/: the page's
-          // own links get the base put in front of them (index.html), the
-          // manifest's do not, and "/icon-192.png" asked the server's root,
-          // which answered 401 -- no icon to install with, and an error
-          // in the console Lighthouse counts.
-          { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-          { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-          { src: "icon-maskable-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
-          { src: "icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
-        ],
-      },
+      manifest: MANIFEST,
       workbox: {
         navigateFallback: "/app/index.html",
         navigateFallbackAllowlist: [/^\/app\//],

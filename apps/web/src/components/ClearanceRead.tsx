@@ -6,7 +6,7 @@ import type { Clearance, ClearedItem, Found } from "../lib/clearance";
 import { altitudeWords } from "../lib/readback";
 
 /** The clearance's own words in Title Case, as a name is written. */
-export const capital = (words: string) => words.replace(/\b[a-z]/g, (ch) => ch.toUpperCase());
+const capital = (words: string) => words.replace(/\b[a-z]/g, (ch) => ch.toUpperCase());
 
 /** One named line of a row's detail: a CRAFT item, a route, an altitude. */
 export function Line({ name, children }: { name: string; children: ReactNode }) {

@@ -90,5 +90,3 @@ export function useWelcome({
     openSample,
   };
 }
-
-export type WelcomeModel = ReturnType<typeof useWelcome>;

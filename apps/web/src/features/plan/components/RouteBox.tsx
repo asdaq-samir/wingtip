@@ -1153,13 +1153,12 @@ function Pill({
     // (Enter) and its Delete; held and moved, its drag not the sheet's.
     <span
       ref={self}
-      {...joinProps(move.dragProps, move.dropProps, {
-        onPointerDown: press,
-        onPointerMove: slide,
-        onPointerUp: letGo,
-        onPointerCancel: letGo,
-      })}
-      tabIndex={0}
+      // Focusable for the keyboard's drag (a group, so in the spread).
+      {...joinProps(move.dragProps, move.dropProps, { tabIndex: 0 })}
+      onPointerDown={(e) => (move.dragProps.onPointerDown?.(e), press(e))}
+      onPointerMove={(e) => (move.dragProps.onPointerMove?.(e), slide(e))}
+      onPointerUp={(e) => (move.dragProps.onPointerUp?.(e), letGo())}
+      onPointerCancel={(e) => (move.dragProps.onPointerCancel?.(e), letGo())}
       role="group"
       aria-label={`${label} ${ident}`}
       aria-keyshortcuts="Delete"

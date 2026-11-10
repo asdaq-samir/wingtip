@@ -59,8 +59,11 @@ export function useToastsWanted(): boolean {
 // One queue, so a call made before the Toaster was ready keeps its place
 // before one made after it.
 let queue: Promise<unknown> = Promise.resolve();
+// The chunk asked for at once, so a dismiss right after a toast finds it
+// asked for and is queued behind it, never dropped.
 const later = (call: (m: Manager) => void) => {
-  queue = queue.then(() => Promise.all([loadToasts(), mounted])).then(([m]) => call(m));
+  const asked = loadToasts();
+  queue = queue.then(() => Promise.all([asked, mounted])).then(([m]) => call(m));
 };
 
 function add(type: string | undefined, title: Message, data?: ToastData) {

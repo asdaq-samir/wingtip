@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { cn } from "cn";
-import { PlaybackButton, PlaybackToolbar, PlayToggle, keepSliderKeys } from "../../components/PlaybackBar";
+import { PlaybackButton, PlaybackToolbar, PlayToggle } from "../../components/PlaybackBar";
+import { keepSliderKeys } from "../../components/playbackKeys";
 import { Slider } from "../../components/ui/slider";
 import { GLASS } from "../../lib/mapChrome";
 import { TEXT } from "../../lib/text";
@@ -56,6 +57,7 @@ export function LoopBar() {
       data-testid="weather-loop-bar"
     >
       <PlayToggle playing={loop.playing} onToggle={loop.toggle} disabled={loop.frames.length < 2} testId="weather-loop-play" />
+      {/* eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- the slider's own keys, caught as they bubble so the toolbar's roving focus does not take them too. */}
       <div className="flex min-w-0 flex-1 flex-col gap-1 py-1" onKeyDown={keepSliderKeys}>
         {status ? (
           <span className={cn("truncate font-medium", TEXT.detail, loop.failed && "text-destructive-ink")} role="status">

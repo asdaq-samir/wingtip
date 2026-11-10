@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { playbackKey } from "./PlaybackBar";
+import { playbackKey } from "./playbackKeys";
 
 describe("the playback bar's keys", () => {
   it("plays or pauses with Space from the scrubber or the bar, never from a button's own press", () => {

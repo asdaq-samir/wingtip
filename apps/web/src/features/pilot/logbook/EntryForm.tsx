@@ -120,7 +120,7 @@ export default function EntryForm({
         </label>
         {/* Said under its own field, where the eye is (WCAG 3.3.1). */}
         {said && (
-          <p className={cn("mt-1 pl-[8.5rem] text-destructive-ink", TEXT.note)} data-testid={`logbook-${key}-problem`}>
+          <p className={cn("mt-1 pl-34 text-destructive-ink", TEXT.note)} data-testid={`logbook-${key}-problem`}>
             {said}
           </p>
         )}
