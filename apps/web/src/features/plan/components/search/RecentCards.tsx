@@ -69,7 +69,7 @@ function RecentCard({ airport, detail, onClick }: { airport: RecentAirport; deta
           over any chart. */}
       <span
         className={cn(
-          "relative flex flex-col bg-linear-to-t from-foreground/75 to-transparent px-3 pt-8 pb-2.5",
+          "relative flex flex-col bg-linear-to-t from-foreground/90 via-foreground/60 to-transparent px-3 pt-10 pb-2.5",
           src ? "text-background" : "from-transparent text-foreground",
         )}
       >
