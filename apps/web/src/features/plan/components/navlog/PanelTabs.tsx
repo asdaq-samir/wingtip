@@ -109,8 +109,7 @@ export default function PanelTabs({
   // at the owner's ask ("look at this for the see-through under the top
   // bar"): the scroller reaches up by both heads (--head-room on the
   // tabs' root, the panel's own head --panel-head and this one's foot in
-  // the panel's body), and the head is frosted with the panel's while
-  // anything is under them (index.css, data-under-band).
+  // the panel's body).
   const [localHead, setLocalHead] = useState<HTMLDivElement | null>(null);
   useEffect(() => {
     const root = localHead?.parentElement;
@@ -214,7 +213,7 @@ export default function PanelTabs({
     // Not clipped: its scroller runs on up under the heads over it
     // (under-head), and clips what it holds itself.
     <Tabs value={tab ?? ""} onValueChange={choose} className="flex min-h-0 flex-1 flex-col gap-0 print:h-auto">
-      <div ref={setLocalHead} data-under-band="" className="relative z-10 flex shrink-0 flex-col">
+      <div ref={setLocalHead} className="relative z-10 flex shrink-0 flex-col">
         {before}
         {/* The stock line tabs, as the consoles' (ConsoleTabs), over the
           scroller so they stay as it scrolls: an icon over its word, at a
@@ -267,7 +266,6 @@ export default function PanelTabs({
       <ViewTransition update={PAGE_STEP} enter="none" exit="none" default="none">
         <div
           ref={scroller}
-          data-local-head=""
           // The bottom inset clears the home indicator on an installed
           // app, so the last section's content is not under it.
           // `flight-briefing`: index.css's print rules lay every tab out on

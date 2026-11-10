@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../../../components/ui/button";
+import { Slider } from "../../../../components/ui/slider";
 import PullDown from "../../../../components/PullDown";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
 import { InlineField } from "../../../../components/InlineField";
@@ -286,18 +287,19 @@ export default function AltitudeGroup({
 
 /**
  * The Profile card's body, at the owner's pick (2026-10-20, option C of
- * the canvas): the route from the side (`chart`, MiniProfile), the graph
- * itself dragged up and down onto the legal altitudes as ForeFlight's
- * profile is (a glass wheel in the corner, then a ruler, before), and the
- * dry run's button in its top-right (`corner`); the drag put away while a
- * run plays (`wheelHidden`). Under the graph the ground against it, then the
- * altitude dragged to -- its plan's name, its time and fuel (the
- * planner's altitude_figures) -- whether it enters Class B, with the way
- * to avoid it, the flight rules, a route's problem, a pilot's own
- * altitude's cautions, and how the altitude was chosen, folded. The
- * altitude on the wheel is drawn on the graph at once (`chart`'s preview)
- * and flown once it rests a moment: its plan where it is one's, else as
- * the pilot's own.
+ * the canvas): the route from the side (`chart`, MiniProfile), a chart
+ * to read, and down its left the stock Base UI Slider, upright, stepping
+ * through the engine's altitudes (the owner, 2026-11-10, where the graph
+ * itself was a slider of our own), and the dry run's button in its
+ * top-right (`corner`); the slider put away while a run plays
+ * (`wheelHidden`). Under the graph the ground against it, then the
+ * altitude picked -- its plan's name, its time and fuel (the planner's
+ * altitude_figures) -- whether it enters Class B, with the way to avoid
+ * it, the plan's menu beside it, the flight rules, a route's problem, a
+ * pilot's own altitude's cautions, and how the altitude was chosen,
+ * folded. The altitude on the slider is drawn on the graph at once
+ * (`chart`'s preview) and flown once it rests a moment: its plan where it
+ * is one's, else as the pilot's own -- any row, warned, never limited.
  */
 export function AltitudeProfile({
   nav: navNow,
@@ -455,10 +457,9 @@ export function AltitudeProfile({
   useEffect(() => {
     if (scaleTop === undefined) graph.current?.style.removeProperty("--scale-top");
   }, [scaleTop]);
-  const dragging = useRef<{ top: number; altitude: number } | null>(null);
   const plotOf = () => graph.current?.querySelector<HTMLElement>("[data-plot]") ?? null;
   const baseTop = () => Number(getComputedStyle(plotOf() ?? document.body).getPropertyValue("--base-top")) || 10_000;
-  // Shown as the finger goes: the line, its words, the ground's tint and
+  // Shown as the slider goes: the line, its words, the ground's tint and
   // the strip, by their CSS and text, nothing re-rendered.
   const live = (altitude: number, top: number) => {
     const el = graph.current;
@@ -484,52 +485,31 @@ export function AltitudeProfile({
       strip.querySelector("[data-live=clearance]")!.textContent = clearanceWords(ground.clearance);
       strip.querySelector("[data-live=strike]")!.textContent = strikeWords(ground.strikeNm);
     }
-    const slider = el.querySelector<HTMLElement>("[role=slider]");
-    slider?.setAttribute("aria-valuenow", String(altitude));
-    slider?.setAttribute("aria-valuetext", `${altFt(altitude)} feet${names[altitude] ? `, ${names[altitude]}` : ""}`);
   };
-  // The altitude at a point on the graph, the legal one nearest it; the
-  // scale zoomed out past four fifths of the way up, in under a third, to
-  // put it about two thirds up, in whole thousands.
+  // The scale zoomed out past four fifths of the way up, in under a third,
+  // to put the altitude about two thirds up, in whole thousands.
   const zoomFor = (altitude: number, top: number) =>
     altitude > top * 0.8 || altitude < top * 0.3 ? Math.max(2000, Math.ceil((altitude * 1.5) / 1000) * 1000) : top;
-  const altitudeAt = (clientY: number, top: number) => {
-    const plot = plotOf()?.getBoundingClientRect();
-    if (!plot) return null;
-    const ft = (1 - (clientY - plot.top) / plot.height) * top;
-    return altitudes.reduce((best, a) => (Math.abs(a - ft) < Math.abs(best - ft) ? a : best), altitudes[0]!);
+  // The slider's steps are the altitudes' places, lowest at its foot: the
+  // engine's list is not evenly spaced (a pilot's own among the 500s).
+  const rising = [...altitudes].reverse();
+  const stepOf = (altitude: number | null) => (altitude === null ? 0 : Math.max(0, rising.indexOf(altitude)));
+  const [sliding, setSliding] = useState<number | null>(null);
+  const slid = (step: number) => {
+    const altitude = rising[step];
+    if (altitude === undefined) return;
+    setSliding(step);
+    live(altitude, zoomFor(altitude, scaleTop ?? baseTop()));
   };
-  const grab = (event: PointerEvent<HTMLDivElement>) => {
-    if (shownAt === null) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    dragging.current = { top: scaleTop ?? baseTop(), altitude: shownAt };
-    move(event);
-  };
-  const move = (event: PointerEvent<HTMLDivElement>) => {
-    const d = dragging.current;
-    if (!d) return;
-    const altitude = altitudeAt(event.clientY, d.top);
-    if (altitude === null) return;
-    const top = zoomFor(altitude, d.top);
-    if (altitude === d.altitude && top === d.top) return;
-    dragging.current = { top, altitude };
-    live(altitude, top);
-  };
-  const letGo = () => {
-    const d = dragging.current;
-    dragging.current = null;
-    if (!d) return;
-    setZoom({ top: d.top, route });
-    if (d.altitude !== shownAt) pick(d.altitude);
+  const rest = (step: number) => {
+    setSliding(null);
+    const altitude = rising[step];
+    if (altitude === undefined) return;
+    setZoom({ top: zoomFor(altitude, scaleTop ?? baseTop()), route });
+    if (altitude !== shownAt) pick(altitude);
     else graph.current?.style.setProperty("--roll-on", "0");
   };
-  const stepKey = (event: KeyboardEvent<HTMLDivElement>) => {
-    const by = event.key === "ArrowUp" ? -1 : event.key === "ArrowDown" ? 1 : 0;
-    if (!by || shownAt === null) return;
-    event.preventDefault();
-    const i = Math.max(0, Math.min(altitudes.length - 1, altitudes.indexOf(shownAt) + by));
-    pick(altitudes[i]!);
-  };
+  const spoken = (altitude: number) => `${altFt(altitude)} feet${names[altitude] ? `, ${names[altitude]}` : ""}`;
   const figure = figures.find((f) => f.altitude_ft === shownAt) ?? null;
   const bravo =
     profile && shownAt !== null
@@ -549,32 +529,26 @@ export function AltitudeProfile({
           just make it narrow so it's not taking much space"). */}
       <div ref={graph} className="relative h-56 max-h-full min-h-16 shrink-0">
         {chart(shownAt !== null && shownAt !== cruise ? shownAt : null, scaleTop)}
-        {/* The graph is the control, as ForeFlight's profile is (the owner's
-            recording, "yes" to building it): a drag up or down moves a dashed
-            line and its altitude across the ground, tinted against it, the
-            scale zooming to keep it in sight, onto the legal altitudes alone,
-            by their CSS as the finger goes ("notice how smooth theirs is"),
-            the plan asked once it lifts. To VoiceOver and the keyboard a
-            slider, a legal altitude a step. Its drags its own, not the stock
-            sheet's (touch-action none, data-base-ui-swipe-ignore). */}
-        {!wheelHidden && shownAt !== null && altitudes.length > 0 && (
-          <div
-            role="slider"
-            tabIndex={0}
-            aria-label="Cruise altitude"
-            aria-orientation="vertical"
-            aria-valuemin={altitudes.at(-1)}
-            aria-valuemax={altitudes[0]}
-            aria-valuenow={shownAt}
-            aria-valuetext={`${altFt(shownAt)} feet${names[shownAt] ? `, ${names[shownAt]}` : ""}`}
-            onPointerDown={grab}
-            onPointerMove={move}
-            onPointerUp={letGo}
-            onPointerCancel={letGo}
-            onKeyDown={stepKey}
-            className="absolute inset-0 cursor-ns-resize touch-none rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        {/* The altitude picked on the stock Slider, upright down the
+            graph's left, a step each of the engine's altitudes (legal or
+            not, the ones outside the limits named so): to VoiceOver and
+            the keyboard an adjustable control with the altitude in words.
+            Its drags its own, not the stock sheet's
+            (data-base-ui-swipe-ignore). */}
+        {!wheelHidden && shownAt !== null && altitudes.length > 1 && (
+          <Slider
+            orientation="vertical"
+            min={0}
+            max={rising.length - 1}
+            step={1}
+            largeStep={4}
+            value={sliding ?? stepOf(shownAt)}
+            onValueChange={(step) => slid(step as number)}
+            onValueCommitted={(step) => rest(step as number)}
+            className="absolute top-2 bottom-6 left-1 w-11"
             data-testid="altitude-wheel"
             data-base-ui-swipe-ignore=""
+            thumb={{ "aria-label": "Cruise altitude", getAriaValueText: (_words, step) => spoken(rising[step] ?? shownAt) }}
           />
         )}
         {corner}

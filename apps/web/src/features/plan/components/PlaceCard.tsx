@@ -42,6 +42,7 @@ import { PlaceRunwaysTab } from "./place/PlaceRunwaysTab";
 import { PlaceWeatherTab } from "./place/PlaceWeatherTab";
 import { PlaceAlerts } from "./place/PlaceNotams";
 import { useShown } from "../../../lib/shown";
+import { Badge } from "../../../components/ui/badge";
 
 const SketchViewer = lazy(() => import("./SketchViewer"));
 // The pictures behind the diagram, full screen to pinch in on, as a chart is.
@@ -77,9 +78,8 @@ function subtitleOf(place: AirportPlace, from: { point: LatLon; name: string | n
     .join(" · ");
 }
 
-/** How long the panel takes to come all the way up before the tabs' bar
- *  or the approaches are scrolled to: the stock Drawer's settle (0.45 s,
- *  sheet/useSheetFollow's DRAWER_MS) and a frame. */
+/** How long the panel takes to come all the way up before the tabs' bar or
+ *  the approaches are scrolled to: the Drawer's settle (DRAWER_MS) and a frame. */
 const RISEN_MS = 520;
 
 /** How old a report is, "14m ago", for the weather's line. */
@@ -301,11 +301,10 @@ export default function PlaceCard({
   const category = weather?.category ?? approximate?.category ?? null;
   const chipColour = category ? chipFillOf(category) : null;
   const chip = category && chipColour && (
-    <span
-      // The words in whichever ink reads on the colour (inkOn), as the
-      // map's chips are: white on a field's no-report grey was 2.6:1. The
-      // FAA's colours for the categories (lib/map/marks/flightCategory).
-      className={cn("flex h-[1.625rem] shrink-0 items-center rounded-full px-2.5 font-bold whitespace-nowrap", TEXT.detail)}
+    <Badge
+      // In whichever ink reads on the colour (inkOn): white on a no-report
+      // grey was 2.6:1. The FAA's colours (lib/map/marks/flightCategory).
+      className={cn("h-[1.625rem] px-2.5 font-bold", TEXT.detail)}
       style={{ backgroundColor: chipColour, color: inkOn(chipColour) }}
       data-testid="place-category"
     >
@@ -321,7 +320,7 @@ export default function PlaceCard({
           </span>
         </>
       )}
-    </span>
+    </Badge>
   );
   // The weather in a line at the top of its tab where there is no
   // forecast to say, as a pilot reads a report first: the wind, the
@@ -495,6 +494,7 @@ export default function PlaceCard({
             closeTestId="place-close"
             shareTestId="place-share"
             pill={{ line: pillLine || undefined, picture: pillPicture }}
+            refresh="airport"
             beside={<FavoriteButton ident={kept?.ident ?? ident} place={place ?? null} />}
           />
           {/* The pictures' lightboxes (Base UI Dialogs), opened from the

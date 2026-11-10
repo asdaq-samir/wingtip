@@ -2,6 +2,7 @@ import NavLogAge from "./NavLogAge";
 import { useAirplaneChosen } from "../../../../lib/preferences";
 import { Fragment, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "cn";
+import { Badge } from "../../../../components/ui/badge";
 import { zoneName } from "../../../../lib/format";
 import { placeName } from "../../lib/radio";
 import { wantPlace } from "../../../../lib/navigation/wanted";
@@ -188,15 +189,13 @@ export function NavLogList({
                 {wind && !first && (
                   <div aria-hidden="true" className="relative flex h-7 items-center pl-12.5">
                     <span className={cn("absolute inset-y-0 w-0.5 -translate-x-1/2 bg-border", RAIL)} />
-                    <span
-                      className={cn(
-                        "rounded-full border border-cyan-200 bg-cyan-50 px-2 py-0.5 font-semibold text-cyan-800 dark:border-cyan-900 dark:bg-cyan-950 dark:text-cyan-200",
-                        TEXT.note,
-                      )}
+                    <Badge
+                      variant="outline"
+                      className={cn("h-auto bg-background font-semibold", TEXT.note)}
                       data-testid="navlog-wind-change"
                     >
                       Wind {wind}
-                    </span>
+                    </Badge>
                   </div>
                 )}
                 {airway && (
@@ -204,15 +203,13 @@ export function NavLogList({
                   // altitudes change: the route column of a paper IFR log.
                   <div aria-hidden="true" className="relative flex h-7 items-center pl-12.5">
                     <span className={cn("absolute inset-y-0 w-0.5 -translate-x-1/2 bg-border", RAIL)} />
-                    <span
-                      className={cn(
-                        "rounded-full border border-border bg-background px-2 py-0.5 font-semibold text-foreground tabular-nums",
-                        TEXT.note,
-                      )}
+                    <Badge
+                      variant="outline"
+                      className={cn("h-auto bg-background font-semibold tabular-nums", TEXT.note)}
                       data-testid="navlog-airway"
                     >
                       {airway}
-                    </span>
+                    </Badge>
                   </div>
                 )}
                 <div className="relative">

@@ -3,6 +3,7 @@ import { CardHead } from "../../../components/PanelCard";
 import PanelTabs from "./navlog/PanelTabs";
 import BriefOverview from "./briefing/BriefOverview";
 import type { PanelTab } from "./navlog/panelTab";
+import RefreshButton from "../../../components/RefreshButton";
 
 /**
  * FPL's Brief, a card over it as an airport's is, at the owner's ask ("we
@@ -64,7 +65,10 @@ export default function BriefCard({
               onClose={onClose}
               onShare="brief"
               closeTestId="brief-close"
-            />
+            >
+              {/* The live reports asked again; kept fresh by themselves too. */}
+              <RefreshButton card="brief" label="Refresh the Brief" />
+            </CardHead>
           </div>
         }
       />

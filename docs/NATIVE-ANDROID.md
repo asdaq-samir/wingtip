@@ -356,5 +356,6 @@ briefing, the checkpoints and the side view, the altitude wheel, the
 airplane by N-number and widgets. The launcher icon is the brand's own
 adaptive icon (`docs/brand/android-*.svg`, drawn to PNG per density by
 `scripts/build/app-icons.sh`, with the themed monochrome layer), and
-Android 12's splash screen is the mark on the launch ground
-(`res/values-v31/themes.xml`).
+the splash screen is the mark on the launch ground on every Android from
+8 on, through AndroidX's SplashScreen (`res/values/themes.xml`'s
+`Theme.WingtipMaps.Starting`, `installSplashScreen` in `MainActivity`).

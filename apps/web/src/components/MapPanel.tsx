@@ -1,4 +1,14 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { useIsMobile } from "../hooks/use-mobile";
@@ -7,11 +17,11 @@ import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { useKeyboardInset, useSafeArea, useWindowHeight } from "../hooks/use-viewport";
 import { GLASS, MATERIAL, PILL_RADIUS, SHEET_MARGIN, usePanelDragging, type MapInsets, type PanelState } from "../lib/mapChrome";
-import { useOpenCards } from "../lib/openCards";
 import { raisedFor, useSheetCards } from "../lib/sheetCards";
 import { FLOAT_PX, insetsOf, type Detents, type SheetTurn } from "./sheet/insets";
 import { useSheetDetents } from "./sheet/useSheetDetents";
-import { useSheetFollow, type PinnedParts } from "./sheet/useSheetFollow";
+import { useSheetCover } from "./sheet/sheetCover";
+import { prefersReducedMotion } from "../lib/motion";
 import { useSheetLife } from "./sheet/useSheetLife";
 import { SheetGrabber, SheetParts, type PartsProps } from "./sheet/SheetParts";
 
@@ -59,8 +69,6 @@ interface Props {
 /** The grabber's row at the far edge of a top sheet or the side panel. */
 const GRABBER = 16;
 const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
-/** What the sheet opens over itself, whose Escape is its own to close. */
-const POPUPS = '[role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"]';
 
 /**
  * The page's one panel over the map, the way Maps on an iPhone has one:
@@ -75,10 +83,10 @@ const POPUPS = '[role="menu"], [role="listbox"], [role="dialog"], [role="alertdi
  * throw, picks the snap point and eases there on its own curve; a swipe
  * past the pill is refused and lands on the pill. What the stock sheet
  * leaves to its user is a thin layer here: the parts held in sight at its
- * free edge and the map's buttons riding its top (useSheetFollow), the
- * room it leaves the map (insetsOf, told as it sets off and once it has
- * landed), its heights from what it holds (useSheetDetents), and the
- * keyboard's inset under it.
+ * free edge (by the Drawer's own CSS variables, SheetParts) and the map's
+ * buttons riding its top (useSheetCover), the room it leaves the map
+ * (insetsOf, told as it sets off and once it has landed), its fixed
+ * heights (useSheetDetents), and the keyboard's inset under it.
  *
  * From `md` up it is a side panel instead, a plain region at the left the
  * window's height while it is out and its head alone at rest, the map
@@ -99,32 +107,25 @@ export default function MapPanel(props: Props) {
   const cardsUp = raised !== null;
   const footShown = !!foot && !cardsUp;
   const barShown = !!bar && !(onPhone && keyboard) && !flying;
-  const pictureCard = useOpenCards((s) => s.picture);
   const toEdge = layer !== "console" && !!props.toEdge && !cardsUp;
 
   // Where the Drawer is going (its snap point) and the size the sheet is
   // laid out for: the same, but on the way down to the pill the half's
   // layout is kept until it lands, so nothing goes before the sheet does.
-  const life = useSheetLife(props.state, props.onStateChange);
+  // Landed at once where nothing slides: the side panel, Reduce Motion,
+  // the sheet before its first frame, or a size of the same height.
+  const still = useRef({ onPhone, ready: false, detents: null as Detents | null, at: props.state as PanelState });
+  const life = useSheetLife(props.state, props.onStateChange, (target) => {
+    const now = still.current;
+    return !now.onPhone || !now.ready || prefersReducedMotion() || (!!now.detents && now.detents[target] === now.detents[now.at]);
+  });
   const { size, snap, moving } = life;
   const hasPill = !!bar || !!compact;
   const atPill = size === "peek" && hasPill;
 
   const [panel, setPanel] = useState<HTMLElement | null>(null);
-  const [head, setHeadState] = useState<HTMLDivElement | null>(null);
-  const [footNode, setFootState] = useState<HTMLDivElement | null>(null);
-  const parts = useRef<PinnedParts>({ head: null, body: null, foot: null });
-  const setHead = useCallback((node: HTMLDivElement | null) => {
-    parts.current.head = node;
-    setHeadState(node);
-  }, []);
-  const setFoot = useCallback((node: HTMLDivElement | null) => {
-    parts.current.foot = node;
-    setFootState(node);
-  }, []);
-  const setBody = useCallback((node: HTMLDivElement | null) => {
-    parts.current.body = node;
-  }, []);
+  const [head, setHead] = useState<HTMLDivElement | null>(null);
+  const [footNode, setFoot] = useState<HTMLDivElement | null>(null);
 
   // A bottom sheet runs on to the screen's edge, under the home indicator
   // (or eight points where there is none); its pill ends at its row's
@@ -135,15 +136,13 @@ export default function MapPanel(props: Props) {
   const room = onPhone
     ? windowHeight - keyboard - Math.round(fromBottom ? safe.top : safe.bottom) - SHEET_MARGIN
     : windowHeight - 2 * FLOAT_PX;
-  const pillKey = [footShown, layer, props.cardOver, cardsUp, barShown, top != null, pictureCard, flying].join("|");
   const sizes = useSheetDetents({
     head,
     foot: footNode,
     size,
     moving,
-    atPill,
+    barInPill: !flying,
     footShown,
-    pillKey,
     pillChrome,
     halfChrome,
     room,
@@ -160,7 +159,8 @@ export default function MapPanel(props: Props) {
   const detentsRef = useRef(detents);
   useLayoutEffect(() => {
     detentsRef.current = detents;
-  }, [detents]);
+    still.current = { onPhone, ready: life.ready, detents, at: life.snapRef.current };
+  });
   const go = life.go;
   const ask = useCallback((target: PanelState) => go(target, true), [go]);
   // The map told as the sheet sets off for another size, whatever sent it
@@ -183,31 +183,19 @@ export default function MapPanel(props: Props) {
     return () => cancelAnimationFrame(frame);
   }, [moving]);
 
-  // Escape lowers it, pressed in it -- but not in a menu or a list it
-  // opened, nor in Setup's page, whose Escape goes back a level
-  // (ConsoleLayer): each of those closes first and prevents the default.
-  // On a desktop it goes back one level by the panel's close first
-  // (useShortcuts' backOne). Those hear the key after the sheet does (on
-  // the document, or a popup's own React root), so the sheet waits for the
-  // key to have gone everywhere before it reads the default; and a popup
-  // drawn inside the sheet is told by where the key was pressed too. Read
-  // at once, the Share menu's Escape lowered the sheet and left the menu
-  // open, and Setup's left the page up under the pill.
-  useEffect(() => {
-    if (!panel || size === "peek") return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || event.defaultPrevented) return;
-      const popup = event.target instanceof Element ? event.target.closest(POPUPS) : null;
-      if (popup && popup !== panel) return;
-      setTimeout(() => {
-        if (event.defaultPrevented) return;
-        if (desktop && backOne(panel.ownerDocument)) return;
-        ask("peek");
-      });
-    };
-    panel.addEventListener("keydown", onKey);
-    return () => panel.removeEventListener("keydown", onKey);
-  }, [panel, size, ask, desktop]);
+  // Escape lowers it, once the key has gone everywhere and nothing else
+  // took it: Setup's page goes back a level (ConsoleLayer), a menu or a
+  // list the sheet opened closes first (each prevents the default). On a
+  // phone the Drawer says it (onOpenChange's "escape-key", below); the
+  // side panel is a plain region, which hears its own key, and on a
+  // desktop goes back one level by the panel's close first (backOne).
+  const lower = (event: Event) => {
+    setTimeout(() => {
+      if (event.defaultPrevented || life.sizeRef.current === "peek") return;
+      if (desktop && panel && backOne(panel.ownerDocument)) return;
+      ask("peek");
+    });
+  };
 
   // Half way the body is cut off at the sheet's edge, as Apple Maps' is: a
   // row focused there (the keyboard, VoiceOver) or asked for (sheetreveal,
@@ -258,10 +246,9 @@ export default function MapPanel(props: Props) {
     return () => document.body.removeAttribute("data-map-sheet");
   }, [onPhone]);
 
-  // The parts held in sight at the free edge and the map's buttons riding
-  // the top, following the Drawer (a phone's alone).
-  const mounted = useMemo(() => [head, footNode], [head, footNode]);
-  useSheetFollow(onPhone ? panel : null, parts, { fromBottom, ride: bottomSheet, full: detents.full, mounted });
+  // The map's buttons riding a phone's bottom sheet's top, at the height
+  // it is going to, on its curve.
+  useSheetCover(bottomSheet ? detents[snap] : null);
 
   const panelSize = useMemo(() => ({ size, to: ask, card: layer === "card" }), [size, ask, layer]);
   const shared: PartsProps = {
@@ -283,7 +270,6 @@ export default function MapPanel(props: Props) {
     sizes,
     panelSize,
     setHead,
-    setBody,
     setFoot,
     onFootTap: () => ask("half"),
     kept,
@@ -308,9 +294,13 @@ export default function MapPanel(props: Props) {
 
   if (!onPhone)
     return (
+      // eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- the side panel hears the Escape pressed in it, a keyboard convenience; its controls are its own
       <section
         ref={setPanel}
         {...common}
+        onKeyDown={(event: KeyboardEvent) => {
+          if (event.key === "Escape" && !event.defaultPrevented) lower(event.nativeEvent);
+        }}
         style={{ top: FLOAT_PX, height: size === "peek" ? undefined : detents.full, borderRadius: PILL_RADIUS }}
         className={cn(
           "fixed left-[max(1rem,env(safe-area-inset-left))] z-40 flex flex-col pb-4 overflow-clip text-foreground outline-none print:static",
@@ -345,14 +335,16 @@ export default function MapPanel(props: Props) {
       snapPoints={snapPoints}
       snapPoint={detents[snap]}
       onSnapPointChange={snapped}
-      // Never closed: Escape lowers it to the pill (above), a swipe past
-      // the pill lands on it. Its Escape let on to the document, where the
-      // Drawer would stop it: Setup's page goes back a level from there
-      // (ConsoleLayer) wherever the focus is in the sheet.
+      // Never closed: Escape lowers it to the pill (lower, above), a
+      // swipe past the pill lands on it. Its Escape let on to the
+      // document, where the Drawer would stop it: Setup's page goes back a
+      // level from there (ConsoleLayer) wherever the focus is in the sheet.
       onOpenChange={(open, details) => {
         if (open) return;
         details.cancel();
-        if (details.reason === "escape-key") details.allowPropagation();
+        if (details.reason !== "escape-key") return;
+        details.allowPropagation();
+        lower(details.event);
       }}
     >
       <Drawer.Portal>
@@ -363,6 +355,10 @@ export default function MapPanel(props: Props) {
             ref={setPanel}
             {...common}
             data-sheet=""
+            // Landed: the Drawer's own slide to its snap point has ended.
+            onTransitionEnd={(event) => {
+              if (event.target === event.currentTarget && event.propertyName === "transform") life.landed();
+            }}
             initialFocus={false}
             finalFocus={false}
             style={
@@ -372,7 +368,7 @@ export default function MapPanel(props: Props) {
               } as CSSProperties
             }
             className={cn(
-              "pointer-events-auto absolute inset-x-0 flex flex-col overflow-clip text-foreground outline-none will-change-transform print:static",
+              "group/sheet pointer-events-auto absolute inset-x-0 flex flex-col overflow-clip text-foreground outline-none will-change-transform print:static",
               // Slid by the Drawer's snap offset and the finger's movement,
               // in a class: the Drawer clears its popup's inline transform
               // as a swipe starts. Eased on the Drawer's own curve, never

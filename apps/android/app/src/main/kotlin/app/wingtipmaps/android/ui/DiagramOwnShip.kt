@@ -55,8 +55,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.design.predictiveBack
-import app.wingtipmaps.android.design.rememberPredictiveBack
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.diagramFixUsable
@@ -125,10 +123,8 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
         }
     }
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        // The page drawn back with the system's predictive gesture as Back
-        // closes it.
-        val back = rememberPredictiveBack(enabled = true, onBack = onClose)
-        Surface(Modifier.fillMaxSize().predictiveBack(back)) {
+        // Back closes it, the Dialog's own.
+        Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
                 Row(Modifier.fillMaxWidth().padding(start = WingtipSpace.Lg, end = WingtipSpace.Xs), verticalAlignment = Alignment.CenterVertically) {
                     Text("$ident airport diagram", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))

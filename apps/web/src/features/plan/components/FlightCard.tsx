@@ -2,6 +2,8 @@ import { useEffect, useMemo } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { BadgeCheck, ChartLine, Crosshair, Fan, IdCard, Plane, Route, Star, UserRound } from "lucide-react";
 import { cn } from "cn";
+import { Badge } from "../../../components/ui/badge";
+import { Progress } from "../../../components/ui/progress";
 import { PanelCard } from "../../../components/PanelCard";
 import { CardTitle } from "../../../components/CardTitle";
 import { CardPictures, type CardSlide } from "../../../components/CardPictures";
@@ -205,9 +207,9 @@ function FlightSummary({
     >
       <div className={cn("flex items-center gap-2 font-semibold", TEXT.note)}>
         {badge && (
-          <span className={cn("rounded-md px-1 font-bold text-white", TEXT.caption, TONE[badge.tone])} data-testid="flight-state">
+          <Badge className={cn("h-auto rounded-md px-1 font-bold text-white", TEXT.caption, TONE[badge.tone])} data-testid="flight-state">
             {badge.word}
-          </span>
+          </Badge>
         )}
         <span className={plane ? "text-go-ink" : "text-muted-foreground"}>
           {plane ? (flown ? `In the air · ${flown}` : "In the air") : "Not heard now"}
@@ -223,20 +225,13 @@ function FlightSummary({
             testId={departedAt ? "flight-departed" : undefined}
             openTestId={from.ident === airport ? "flight-airport" : undefined}
           />
-          {/* As far along as it has flown, in the tint; a plain line where
-              that cannot be said (no field it is bound for). */}
-          <div
-            className="relative h-1 rounded-full bg-foreground/15"
-            role={progress != null ? "progressbar" : undefined}
-            aria-label={progress != null ? "Of the way flown" : undefined}
-            aria-valuenow={progress != null ? Math.round(progress * 100) : undefined}
-            aria-valuemin={progress != null ? 0 : undefined}
-            aria-valuemax={progress != null ? 100 : undefined}
-          >
-            {progress != null && (
-              <div className="absolute inset-y-0 left-0 rounded-full bg-tint" style={{ width: `${Math.round(progress * 100)}%` }} />
-            )}
-          </div>
+          {/* As far along as it has flown, the stock Progress; a plain line
+              where that cannot be said (no field it is bound for). */}
+          {progress != null ? (
+            <Progress value={Math.round(progress * 100)} aria-label="Of the way flown" className="h-1 bg-foreground/15" />
+          ) : (
+            <div className="h-1 rounded-full bg-foreground/15" />
+          )}
           <End
             right
             ident={to?.ident ?? "Now"}

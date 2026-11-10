@@ -40,8 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
@@ -157,7 +155,6 @@ fun OneSearch(
             else -> R.string.search_hint
         },
     )
-    val said = if (flying) stringResource(R.string.said_radio) else stringResource(R.string.search_hint)
     val clear = stringResource(R.string.said_clear_search)
     val inputField: @Composable () -> Unit = {
         SearchBarDefaults.InputField(
@@ -172,7 +169,6 @@ fun OneSearch(
             } else {
                 null
             },
-            modifier = Modifier.semantics { contentDescription = said },
         )
     }
 

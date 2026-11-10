@@ -50,8 +50,7 @@ test(
     // and how it was chosen, folded.
     const popover = page.getByTestId("profile-card");
     await expect(popover).toBeVisible();
-    const wheel = popover.getByTestId("altitude-wheel");
-    await expect(wheel).toBeVisible();
+    const wheel = popover.getByRole("slider", { name: "Cruise altitude" }); // the stock Slider, a step each altitude
     await expect(wheel).toHaveAttribute("aria-valuetext", /feet, .*Fastest/);
     await expect(popover.getByTestId("mini-profile")).toBeVisible();
     await expect(popover.getByTestId("altitude-figures")).toContainText(/\d+[hm]\b/);
@@ -61,10 +60,11 @@ test(
     await expect(popover).toContainText("Checked as well");
     // A step down the wheel, as VoiceOver's adjustable control steps it:
     // flown once it rests, its plan where it is one's, else as the pilot's own.
-    const was = Number(await wheel.getAttribute("aria-valuenow"));
+    const feetOf = async () => Number((await wheel.getAttribute("aria-valuetext"))!.replace(/ feet.*$/, "").replace(/,/g, ""));
+    const was = await feetOf();
     await wheel.focus();
     await page.keyboard.press("ArrowDown");
-    await expect.poll(async () => Number(await wheel.getAttribute("aria-valuenow"))).toBeLessThan(was);
+    await expect.poll(feetOf).toBeLessThan(was);
     await expect(page).toHaveURL(/[?&](altitude_ft|altitude_choice)=/, { timeout: slow(10000) });
     await closeCard(page, "profile-close");
     await expect(popover).toHaveCount(0);

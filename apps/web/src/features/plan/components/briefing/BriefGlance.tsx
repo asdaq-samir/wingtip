@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, GraduationCap } from "lucide-react";
 import { cn } from "cn";
+import { Alert, AlertDescription } from "../../../../components/ui/alert";
 import FindingIcon from "../../../../components/FindingIcon";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../../../components/ui/accordion";
 import { clockTime, duration } from "../../../../lib/format";
@@ -191,14 +192,16 @@ function DataWarning() {
   const line = dataWarning(useDataCycles());
   if (!line) return null;
   return (
-    <div
-      className={cn("flex items-center gap-2.5 rounded-xl bg-caution-wash px-3.5 py-2.5", TEXT.detail)}
+    // The stock Alert, said politely (a status, not an alarm), in the
+    // caution's wash.
+    <Alert
       role="status"
+      className={cn("items-center rounded-xl border-0 bg-caution-wash px-3.5 py-2.5", TEXT.detail)}
       data-testid="brief-data-out-of-date"
     >
       <FindingIcon finding="caution" className="size-5 shrink-0" />
-      <span className={cn("min-w-0 flex-1", FINDING_TONE.caution)}>{line}</span>
-    </div>
+      <AlertDescription className={cn(TEXT.detail, FINDING_TONE.caution)}>{line}</AlertDescription>
+    </Alert>
   );
 }
 

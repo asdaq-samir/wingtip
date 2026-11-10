@@ -5,7 +5,6 @@ import { RouteLine, RouteEnds, RouteSplit } from "../../routePanelParts";
 // The search, on a chunk of its own: the first screen draws it.
 import { RouteBox } from "../../routeBoxChunk";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
-import RouteUndoBar from "../RouteUndoBar";
 
 /**
  * The route at FPL's head (PlanWorkspace's `route`): folded to its ends
@@ -105,8 +104,6 @@ export default function RouteHead({ vm, controls }: { vm: PlanWorkspaceModel; co
         ) : (
           <div className="flex w-full items-center pr-0.5 pb-2 pl-1.5">{controls}</div>
         ))}
-      {/* What the last change took away, and Undo, under the route. */}
-      <RouteUndoBar />
     </div>
   ) : (
     <div className="min-w-0 flex-1">
@@ -146,7 +143,6 @@ export default function RouteHead({ vm, controls }: { vm: PlanWorkspaceModel; co
           />
         </SearchNear.Provider>
       </Suspense>
-      <RouteUndoBar />
     </div>
   );
 }

@@ -49,8 +49,11 @@ These hold on every screen below and win over any reference app.
 - **One home per control**; there is no Settings page (decision 0014).
 - **Discrete settings are menus or segmented controls**, not sliders
   (decision 0017).
-- **Errors show where they happen** (`lib/problems`), and Undo sits in the
-  list it came from (`UndoRow`, `RouteUndoBar`), never in a toast.
+- **Errors show where they happen** (`lib/problems`), never in a toast.
+  A confirmation with Undo is a Base UI Toast with its action (`lib/toast`
+  `toast.undo`), the web's stock pattern, and a control's own
+  confirmation ("Copied") an anchored Base UI Toast by that control
+  (`lib/doneNote`), at the owner's word (2026-11-10).
 - **Words:** "airplane" (decision 0020), Title Case labels (0021), no
   explanatory footnotes (0019), FAA text in sentence case with its codes
   kept, raw reports as sent.
@@ -183,10 +186,9 @@ close does.
   of vaul, and its `/sonner` page now opens a Base UI Toast
   ([shadcn Base UI default][shadcn-base-default],
   [shadcn React Aria][shadcn-aria], [shadcn Drawer][shadcn-drawer],
-  [shadcn Toast][shadcn-toast]). Wingtip's `components/ui/sonner.tsx` and
-  `lib/toast.ts` still use sonner. **A choice for the owner:** move the few
-  toasts left (transient confirmations only) to Base UI's Toast and drop
-  sonner, or keep it; shadcn's pages do not say sonner is deprecated.
+  [shadcn Toast][shadcn-toast]). Wingtip's toasts are Base UI's
+  (`components/ui/toast.tsx`, `lib/toast.ts`): progress, Undo, and the
+  anchored confirmations.
 - **React Aria Components 1.22** adds a swipeable Sheet and positions
   overlays round the virtual keyboard ([React Aria 1.22][ra-122]). Its drag
   and drop works by keyboard (Enter to start, Tab between targets, arrows,
@@ -251,8 +253,8 @@ search with Shift-F ([Apple Maps shortcuts][amaps-shortcuts]).
    Airplanes (traffic by tail or ICAO address), Screens and Actions
    ("Direct To KSQL", "Brief", "Shortcuts"). A row's subtitle is what
    tells two apart (city, distance from the airplane or the map's centre).
-4. Matching airports drawn on the map as numbered marks while the list is
-   open, on desktop.
+4. (Numbered map marks for the results were built, then dropped on
+   2026-11-10 for the stock Autocomplete as it is.)
 
 **Stock parts.** Base UI Autocomplete (free text, `mode="list"`,
 `Autocomplete.Status` for the async count, `virtualized` for long lists)
@@ -265,17 +267,17 @@ modal, on ⌘J) if a menu of actions is wanted
 the results for both the field and the dialog.
 
 **Primary action.** Enter opens the highlighted row's card (Raycast's
-primary action); on desktop ⌘Enter does the row's second action (Fly Here
-for a field, Direct To for a fix), shown at the row's right with its key.
+primary action), the first row highlighted as the results come
+(`autoHighlight="always"`). A second action on ⌘Enter was dropped on
+2026-11-10 with the stock component's own keys kept.
 
 **Keyboard and hover.** The APG combobox: focus stays in the field and
 `aria-activedescendant` moves through the options; Down opens and moves
-in, Alt+Down opens without moving, Escape closes (and may clear), Enter
-accepts, Home and End in the list ([APG combobox][apg-combobox]). `/` and
-⌘K/Ctrl K focus it (overriding a browser key is acceptable only for a
-frequent app action, [APG keyboard interface][apg-keyboard]). On desktop, hovering
-a result highlights its mark on the map, and the mark's hover highlights
-the row.
+in, Escape closes, Enter accepts, Home and End in the list, each as Base
+UI's Autocomplete does it ([APG combobox][apg-combobox]); the clear is
+the search field's own. `/` and ⌘K/Ctrl K focus it (overriding a browser
+key is acceptable only for a frequent app action,
+[APG keyboard interface][apg-keyboard]).
 
 **Motion.** The dialog fades and scales from 0.98 in 150–200 ms; no motion
 under reduced motion. Results do not animate in.
@@ -340,7 +342,7 @@ mark: Base UI Preview Card, desktop only.
 
 **Primary action.** Fly Here, first and filled, in the actions row under
 the head; it stays in sight while the card scrolls on desktop (the head
-is sticky). ⌘Enter does it from the search.
+is sticky).
 
 **Keyboard and hover.** Tab reaches the actions, then the tabs (one tab
 stop, arrows between tabs, Home/End), then the panel
@@ -385,7 +387,8 @@ by clicking the map, typing an address or a name, up to 9 stops in all
 3. The route string field (typed, Enter to compute), as SkyVector's.
 4. The altitude (`FL045` style, decision 0009) and the figure strip at
    the foot: To, Dist, ETE, Fuel (ETE and Fuel only with an airplane).
-5. `RouteUndoBar` under the route after a change.
+5. A toast with Undo after a change that takes something away
+   (`toast.undo`).
 
 **Stock parts.** The rows: React Aria GridList with `useDragAndDrop` and
 `onReorder`, a `<Button slot="drag">` handle per row, keyboard drag and
@@ -918,12 +921,64 @@ proposal, not done here.
 1. Single-key shortcuts cannot be turned off (WCAG 2.1.4, Level A).
 2. The manifest has no `id`, `shortcuts`, `screenshots` or
    `description` (section 15).
-3. Toasts are sonner while shadcn's toast is now Base UI's (owner's
-   choice, "The stock parts").
+3. Done 2026-11-10: the toasts are Base UI's ("The stock parts").
 4. Route rows use dnd-kit; React Aria's GridList, already installed, does
    keyboard drag with announcements (owner's choice, section 3).
 5. Base UI Tabs default to manual activation; the APG prefers automatic
    for panels already loaded (section 2).
+
+## What is still built by hand, and why
+
+The owner's "Do em all" (2026-11-10) replaced every hand-built component
+that had a stock one: the departure hours (ToggleGroup), the spinners and
+the map's loading mark (Spinner), the fuel stop chip (Button), the route
+pill's long press (ContextMenu's own), pull to refresh (a Refresh button
+in each live card's head, and TanStack Query's focus manager and stale
+times for the rest), swipe to delete (the row menu, RowMenu), the Undo
+rows (Toast with its action), the status chips (Badge), the profile's
+altitude (Slider, upright), "Copied" (an anchored Toast), the flight's
+progress (Progress), the dry run's on-or-off buttons (Toggle) and the
+caution boxes (Alert). Code that re-implemented what a stock part does
+went with them: the sheet's frame loop following the Drawer (its parts
+now follow the Drawer's own CSS variables), its measured heights (fixed
+snap points: the pill's parts, 23 rem, the room), its landing timer (the
+Drawer's own transition end), its own Escape listener (the Drawer's
+`escape-key`), the head's frosting, the input's own clear and Done on
+Enter, the search's hidden native clear, its first-row and ⌘Enter
+fallbacks (`autoHighlight="always"`), its numbered map marks and Alt+Down
+override, the toasts' sonner-shaped calls (Base UI's `add` and `close`
+directly) and their switched-off swipe, `joinProps` (Base UI's
+`mergeProps`), and the route rows' drag image. What is left, each with
+its reason:
+
+- **`PhoneSheet` (components/PhoneSheet.tsx):** a phone's sheet for the
+  app's questions and pages (SheetDialog), shadcn's Sheet with a swipe to
+  put it away written by hand. Its stock replacement is Base UI's Drawer
+  with `swipeDirection`, as the map's own sheet (MapPanel) already is; it
+  carries every confirmation (an alertdialog) and the specs that drive
+  them, so it moves in a pass of its own.
+- **`IconTip` (components/popups/IconTip.tsx):** a long press that shows
+  an icon button's tooltip on touch. Base UI's Tooltip opens on hover and
+  focus only, and React Aria's `useLongPress` is in `react-aria`, which
+  the app does not install (only `react-aria-components`); a new package
+  for one gesture was not added.
+- **The profile's chart (navlog MiniProfile):** a drawing, not a control;
+  no stock chart draws the ground, the airspace and the altitude line
+  together. It is read-only now, the Slider beside it the control.
+- **The "Fetching…" lines** in the Brief's sections, the account pages
+  and the coach: words, not a component; `QueryState` and `SkeletonLines`
+  are the stock way, and each moves as its section is next changed.
+- **Map gestures** (the ruler's two-finger hold, the zoom banner): on
+  MapLibre's canvas, where no stock component reaches.
+- **The map's buttons on the sheet's top** (`sheet/sheetCover`): outside
+  the Drawer's tree, so its CSS variables do not reach them; set once per
+  snap point on the Drawer's curve. Under a finger they wait for the
+  throw.
+- **The side panel's Escape** (MapPanel, from `md` up): a plain region,
+  not a Drawer, so no stock component hears the key for it.
+- **The departure hours' semantics:** Base UI's ToggleGroup gives pressed
+  buttons in a group with arrow-key focus, not `role="radio"`; the stock
+  behaviour is kept rather than overriding its ARIA.
 
 ## Not verified
 

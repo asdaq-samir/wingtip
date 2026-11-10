@@ -14,6 +14,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,7 +31,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.name
-import app.wingtipmaps.android.design.RefreshBox
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.Tracking
@@ -93,7 +93,7 @@ fun MapCardSheet(pick: MapPick, plan: Plan, onClose: () -> Unit, onToPlan: () ->
         }
     }
     WingtipSheet(title = title, onClose = onClose) {
-        RefreshBox(refreshing = hearing, onRefresh = refresh, enabled = live) {
+        PullToRefreshBox(isRefreshing = hearing, onRefresh = refresh, enabled = live) {
             Column(
                 Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Lg),
                 verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),

@@ -53,6 +53,12 @@ work = "2.12.0"
 # Glance, for the home screen's Next Flight widget (widget/), drawn in
 # Material 3's roles from the Wingtip palettes.
 glance = "1.2.0"
+# Navigation Compose, for the docked sheet's pages (ui/PlanSheet.kt's
+# NavHost): its back stack, transitions and predictive back.
+navigation = "2.10.2"
+# AndroidX's SplashScreen, so Android 8 to 11 show the launch's mark as 12
+# and later do (res/values/themes.xml).
+coreSplashscreen = "1.2.0"
 # The app's AI on the phone (docs/android-ai.md), each the newest on Google
 # Maven on 2026-11-09. AppFunctions, Android's on-device MCP: the app's
 # actions and entities offered to Gemini and the system's agents
@@ -141,6 +147,8 @@ mlkit-genai-prompt = { group = "com.google.mlkit", name = "genai-prompt", versio
 play-services-mlkit-text-recognition = { group = "com.google.android.gms", name = "play-services-mlkit-text-recognition", version.ref = "mlkitTextRecognition" }
 # Play services' Task awaited in a coroutine (the text recognizer's answer).
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
 androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }
 

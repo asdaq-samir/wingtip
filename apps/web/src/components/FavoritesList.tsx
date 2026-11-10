@@ -1,9 +1,9 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { House, Plus } from "lucide-react";
 import type { RecentAirport } from "../lib/preferences";
 import { placeLink } from "../lib/flightLink";
-import { SwipeToDelete } from "./SwipeToDelete";
-import { UndoRow } from "./UndoRow";
+import { RemovableRow } from "./RemovableRow";
+import { toast } from "../lib/toast";
 import { ListGroup, ListRow } from "./GroupedList";
 import { EditToggle, KeptMark, ListPageHead, Mark, RemoveMinus } from "./Favorites";
 import { MoveHandle, SortableRow, SortableRows } from "./SortableRows";
@@ -40,13 +40,20 @@ export default function FavoritesList({
   onAdd: () => void;
 }) {
   const [editing, setEditing] = useState(false);
-  // The airport last taken off and where it was, for its Undo in the list.
-  const [removed, setRemoved] = useState<{ airport: RecentAirport; at: number } | null>(null);
+  // Taken off with a toast's Undo, which keeps it again at the list's end
+  // and moves it back to where it was.
   const remove = (airport: RecentAirport, at: number) => {
+    const end = favorites.length - 1;
     onRemove(airport);
-    setRemoved({ airport, at });
+    toast.undo(
+      `Removed ${airport.ident}`,
+      () => {
+        onRemove(airport);
+        onMove(end, at);
+      },
+      { testId: "favorites-undo" },
+    );
   };
-  const forget = useCallback(() => setRemoved(null), []);
   return (
     <div className="space-y-6" data-testid="favorites-list">
       {/* Every list's head (ListPageHead), where this was a copy of it. */}
@@ -61,9 +68,9 @@ export default function FavoritesList({
         {!home ? (
           <ListRow media={<Plus className="size-5" />} title="Add Home" onClick={onChangeHome} data-testid="favorites-home" />
         ) : (
-          // Taken off as every kept list's rows are: a swipe to the left, or
-          // Edit's minus bringing out the Delete (SwipeToDelete).
-          <SwipeToDelete label={`Remove ${home.ident} as Home`} onDelete={onRemoveHome} share={placeLink(home)}>
+          // Taken off as every kept list's rows are: its menu, or Edit's
+          // minus (RemovableRow).
+          <RemovableRow name={home.ident} label={`Remove ${home.ident} as Home`} onDelete={onRemoveHome} share={placeLink(home)}>
             {editing ? (
               <ListRow
                 media={<RemoveMinus label={`Remove ${home.ident} as Home…`} testId="favorites-home-remove" />}
@@ -88,30 +95,23 @@ export default function FavoritesList({
                 data-testid="favorites-home"
               />
             )}
-          </SwipeToDelete>
+          </RemovableRow>
         )}
       </ListGroup>
       <ListGroup title="Airports">
-        {removed && (
-          <UndoRow
-            said={`Removed ${removed.airport.ident}`}
-            onUndo={() => {
-              // Kept again at the end, then moved back to where it was.
-              onRemove(removed.airport);
-              onMove(favorites.length, removed.at);
-            }}
-            onDone={forget}
-            testId="favorites-undo"
-          />
-        )}
-        {favorites.length === 0 && !removed && <ListRow muted title="A star on an airport's card adds it here" />}
+        {favorites.length === 0 && <ListRow muted title="A star on an airport's card adds it here" />}
         {/* Edited, the rows are React Aria's GridList, dragged by their
             handles (SortableRows); at rest, each opens its card. */}
         {editing && favorites.length > 0 ? (
           <SortableRows label="Favorite airports" ids={favorites.map((a) => a.ident)} onMove={onMove}>
             {favorites.map((a, index) => (
               <SortableRow key={a.ident} id={a.ident} label={a.ident}>
-                <SwipeToDelete label={`Remove ${a.ident} from Favorites`} onDelete={() => remove(a, index)} share={placeLink(a)}>
+                <RemovableRow
+                  name={a.ident}
+                  label={`Remove ${a.ident} from Favorites`}
+                  onDelete={() => remove(a, index)}
+                  share={placeLink(a)}
+                >
                   <ListRow
                     media={<RemoveMinus label={`Remove ${a.ident} from Favorites…`} />}
                     title={
@@ -123,13 +123,19 @@ export default function FavoritesList({
                   >
                     <MoveHandle label={`Move ${a.ident}`} />
                   </ListRow>
-                </SwipeToDelete>
+                </RemovableRow>
               </SortableRow>
             ))}
           </SortableRows>
         ) : (
           favorites.map((a, index) => (
-            <SwipeToDelete key={a.ident} label={`Remove ${a.ident} from Favorites`} onDelete={() => remove(a, index)} share={placeLink(a)}>
+            <RemovableRow
+              key={a.ident}
+              name={a.ident}
+              label={`Remove ${a.ident} from Favorites`}
+              onDelete={() => remove(a, index)}
+              share={placeLink(a)}
+            >
               <ListRow
                 media={<KeptMark airport={a} />}
                 chevron
@@ -141,7 +147,7 @@ export default function FavoritesList({
                 description={a.municipality ?? undefined}
                 onClick={() => onOpen(a)}
               />
-            </SwipeToDelete>
+            </RemovableRow>
           ))
         )}
         <ListRow media={<Plus className="size-5" />} title="Add a Favorite" onClick={onAdd} data-testid="favorites-add" />

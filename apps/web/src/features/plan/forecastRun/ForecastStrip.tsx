@@ -1,7 +1,7 @@
-import type { ComponentProps } from "react";
 import { CloudSun, TriangleAlert } from "lucide-react";
 import { cn } from "cn";
-import RoundButton from "../../../components/RoundButton";
+import { PlaybackToggle } from "../../../components/PlaybackBar";
+import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert";
 import { describeError } from "../../../lib/api/client";
 import type { ForecastRun } from "../../../lib/api/types";
 import { TEXT } from "../../../lib/text";
@@ -12,21 +12,14 @@ import { hourZ, unavailableWords, zulu } from "./forecastRun";
 import { setForecastMode, useForecastMode, useForecastRun } from "./useForecastRun";
 
 /** Forecast mode's switch, among the dry run's own controls: the run
- *  played against the forecast for the hours it flies, or not. Its props
- *  the playback bar's (a toolbar item's focus and keys, PlaybackButton). */
-export function ForecastToggle(props: Partial<ComponentProps<typeof RoundButton>>) {
+ *  played against the forecast for the hours it flies, or not -- the
+ *  playback bar's stock toggle (PlaybackToggle). */
+export function ForecastToggle() {
   const on = useForecastMode((s) => s.on);
   return (
-    <RoundButton
-      {...props}
-      label={on ? "Forecast mode on" : "Forecast mode"}
-      aria-pressed={on}
-      onClick={() => setForecastMode(!on)}
-      className={cn(on && "bg-tint text-white hover:bg-tint/90")}
-      data-testid="dry-run-forecast"
-    >
-      <CloudSun className="size-5" />
-    </RoundButton>
+    <PlaybackToggle pressed={on} onPressedChange={setForecastMode} label="Forecast mode" testId="dry-run-forecast">
+      <CloudSun className="size-5" aria-hidden />
+    </PlaybackToggle>
   );
 }
 
@@ -63,13 +56,12 @@ export function ForecastStrip({ run, ends }: { run: DryRun; ends: RouteEnds | nu
       <Legs answer={vm.answer} now={vm.now} />
       {vm.here && <Here here={vm.here} />}
       {alert && (
-        <div role="alert" className={cn("flex gap-1.5 rounded-lg bg-caution-wash px-2 py-1", TEXT.note)} data-testid="forecast-run-alert">
-          <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-caution-ink" />
-          <div className="min-w-0">
-            <p>{alert.words}</p>
-            <p className={cn("text-muted-foreground", TEXT.caption)}>Source: {alert.source}</p>
-          </div>
-        </div>
+        // The stock Alert, in the caution's wash: warned, never stopped.
+        <Alert className={cn("border-0 bg-caution-wash px-2 py-1", TEXT.note)} data-testid="forecast-run-alert">
+          <TriangleAlert aria-hidden="true" className="text-caution-ink" />
+          <AlertTitle className="font-normal">{alert.words}</AlertTitle>
+          <AlertDescription className={TEXT.caption}>Source: {alert.source}</AlertDescription>
+        </Alert>
       )}
       {missing && <p className={cn("text-muted-foreground", TEXT.caption)}>{missing}</p>}
     </div>

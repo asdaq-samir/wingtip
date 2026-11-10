@@ -12,6 +12,17 @@ vi.mock("../../../lib/api/client", async (importOriginal) => ({
   api: { flights: { list: vi.fn(), update: vi.fn(), remove: vi.fn() } },
 }));
 const { api } = await import("../../../lib/api/client");
+// The toast's Undo, kept to press or let go here.
+const undos = vi.hoisted(() => [] as { words: string; undo: () => void; onClose?: () => void }[]);
+vi.mock("../../../lib/toast", () => ({
+  toast: {
+    done: () => {},
+    undo: (words: string, undo: () => void, data?: { onClose?: () => void }) => {
+      undos.push({ words, undo, onClose: data?.onClose });
+      return "undo";
+    },
+  },
+}));
 
 const flight = {
   id: 7,
@@ -79,15 +90,31 @@ describe("a saved flight renamed in its row", () => {
 });
 
 describe("a saved flight deleted", () => {
-  it("is gone at once, and back where the gateway refuses", async () => {
+  it("is gone at once, sent only once its Undo has gone, and back where the gateway refuses", async () => {
     const answer = held<void>();
     vi.mocked(api.flights.remove).mockReturnValue(answer.promise);
     const { result } = setUp();
-    act(() => result.current.askToDelete(flight));
-    act(() => result.current.deleteAsked());
+    act(() => result.current.deleteFlight(flight));
     expect(result.current.list).toEqual([]);
+    expect(undos.at(-1)?.words).toBe("Lake run Deleted");
+    expect(api.flights.remove).not.toHaveBeenCalled();
+    // The Undo let go: sent, and refused, so back in the list.
+    act(() => undos.at(-1)!.onClose!());
+    await waitFor(() => expect(api.flights.remove).toHaveBeenCalled());
+    expect(vi.mocked(api.flights.remove).mock.calls[0]![0]).toBe(7);
     vi.mocked(api.flights.list).mockResolvedValue([flight]);
     await act(async () => answer.settle().no(new Error("refused")));
     await waitFor(() => expect(result.current.list?.map((f) => f.id)).toEqual([7]));
+  });
+
+  it("comes back from its Undo, and nothing is sent", () => {
+    vi.mocked(api.flights.remove).mockClear();
+    const { result } = setUp();
+    act(() => result.current.deleteFlight(flight));
+    expect(result.current.list).toEqual([]);
+    act(() => undos.at(-1)!.undo());
+    act(() => undos.at(-1)!.onClose!());
+    expect(result.current.list?.map((f) => f.id)).toEqual([7]);
+    expect(api.flights.remove).not.toHaveBeenCalled();
   });
 });

@@ -12,13 +12,14 @@ import { ListPageHead, PillSection, PillStrip, SmallMark, SmallTile, StripNote }
 import { HomePlane, PLANE_TILE, PlaneMark } from "../../../components/PlaneMarks";
 import { planeLink } from "../../../lib/flightLink";
 import TabPage from "../../../components/TabPage";
-import { ClearList, SwipeToDelete } from "../../../components/SwipeToDelete";
+import { ClearList, RemovableRow } from "../../../components/RemovableRow";
 import AircraftRow from "./AircraftRow";
 
 import { useTracking } from "../../../lib/map/position/tracking";
 import { TEXT } from "../../../lib/text";
 import { aircraftKind, keptKind } from "../../../lib/aircraftKind";
 import { useShownStore } from "../../../lib/shown";
+import RefreshButton from "../../../components/RefreshButton";
 
 /** What is typed waits this long for the next letter before it is asked
  *  about: each search is a request adsb.lol paces (wingtip.traffic). */
@@ -164,7 +165,7 @@ export default function AircraftCard({
       {(searching || heard.length > 0) && (
         // Credited where ADS-B Exchange answered the search, as the
         // map credits whose traffic it draws (wingtip.traffic find_credited).
-        <PillSection title="Found" testId="aircraft-found-section">
+        <PillSection title="Found" testId="aircraft-found-section" right={<RefreshButton card="traffic" label="Refresh the airplanes" />}>
           <ListGroup footer={answer?.length && found?.source === "ADS-B Exchange" ? "Found by ADS-B Exchange." : undefined}>
             {listed.map((plane) => (
               <AircraftRow
@@ -365,7 +366,13 @@ export function AircraftRecentsPage({ onBack, onPick }: { onBack: () => void; on
       {recents.length > 0 ? (
         <ListGroup>
           {recents.map((a) => (
-            <SwipeToDelete key={a.hex} label={`Remove ${a.name} from Recents`} onDelete={() => removeRecent(a.hex)} share={planeLink(a)}>
+            <RemovableRow
+              key={a.hex}
+              name={a.name}
+              label={`Remove ${a.name} from Recents`}
+              onDelete={() => removeRecent(a.hex)}
+              share={planeLink(a)}
+            >
               <ListRow
                 media={<PlaneMark small kind={keptKind(a)} />}
                 data-testid="aircraft-recent"
@@ -374,7 +381,7 @@ export function AircraftRecentsPage({ onBack, onPick }: { onBack: () => void; on
                 chevron
                 onClick={() => onPick(a)}
               />
-            </SwipeToDelete>
+            </RemovableRow>
           ))}
         </ListGroup>
       ) : (

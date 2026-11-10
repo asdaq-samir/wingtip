@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { Ellipsis } from "lucide-react";
 import { cn } from "cn";
 import RoundButton from "../RoundButton";
-import { ROW_LIFT, type RowMenuProps } from "../RowMenu";
+import { ROW_LIFT, ROW_MORE, type RowMenuProps } from "../RowMenu";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "../ui/context-menu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 
@@ -50,6 +50,7 @@ export function RowMenuImpl({
           else a.onSelect();
         }}
         variant={a.destructive ? "destructive" : "default"}
+        aria-label={a.spoken}
         data-testid={a.testId}
       >
         {a.icon} {a.label}
@@ -70,7 +71,7 @@ export function RowMenuImpl({
               came up under its aria-hidden. Escape and a tap away still
               close it. */}
         <DropdownMenu modal={false} defaultOpen={defaultOpen}>
-          <DropdownMenuTrigger render={<RoundButton label={label} data-testid={testId} />}>
+          <DropdownMenuTrigger render={<RoundButton label={label} className={ROW_MORE} data-testid={testId} />}>
             <Ellipsis className="size-5" aria-hidden="true" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-48" finalFocus={afterClose} onPointerDown={ownPress}>

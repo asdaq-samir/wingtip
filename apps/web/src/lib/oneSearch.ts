@@ -23,7 +23,3 @@ const onMac = (): boolean => typeof navigator !== "undefined" && /Mac|iPhone|iPa
 
 /** The search's own keys as a menu shows them. */
 export const searchKeys = (): string => (onMac() ? "⌘K" : "Ctrl K");
-
-/** A result's second action's keys (⌘Enter, Raycast's secondary action;
- *  docs/design/web.md §1), as its row shows them. */
-export const secondKeys = (): string => (onMac() ? "⌘↩" : "Ctrl ↩");

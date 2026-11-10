@@ -17,55 +17,43 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.layout.AnimatedPane
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldDefaults
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
-import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldDestinationItem
-import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
-import androidx.compose.material3.adaptive.layout.calculateThreePaneScaffoldValue
+import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
+import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.window.core.layout.WindowSizeClass
 import app.wingtipmaps.android.design.generated.WingtipSize
-import app.wingtipmaps.android.design.predictiveBack
-import app.wingtipmaps.android.design.rememberPredictiveBack
 
 /**
  * The panel on a tablet or an unfolded phone, in place of the docked sheet
- * (the owner, 2026-11-09): Material's adaptive list-detail scaffold at the
- * screen's start beside the map -- the one search and what it lists, or
- * the plan, in the list pane, and the field's or airplane's card picked in
- * the detail pane. A window wide enough for two panes shows both side by
- * side; one pane wide shows the card in the list's place. Back closes the
- * card, the system's predictive back drawing it away.
- *
- * @param card the card open, or none.
+ * (the owner, 2026-11-09): Material's navigable list-detail scaffold at
+ * the screen's start beside the map -- the one search and what it lists,
+ * or the plan, in the list pane, and the field's or airplane's card picked
+ * in the detail pane. A window wide enough for two panes shows both side
+ * by side; one pane wide shows the card in the list's place. The
+ * scaffold's navigator (`sheet`'s panes) keeps the card, and its own
+ * predictive back closes it.
  */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun WidePanes(card: SheetPage?, list: @Composable () -> Unit, detail: @Composable (SheetPage) -> Unit, onBack: () -> Unit, map: @Composable () -> Unit) {
-    val directive = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2())
-    val role = if (card != null) ListDetailPaneScaffoldRole.Detail else ListDetailPaneScaffoldRole.List
-    val value = calculateThreePaneScaffoldValue(
-        directive.maxHorizontalPartitions,
-        ListDetailPaneScaffoldDefaults.adaptStrategies(),
-        ThreePaneScaffoldDestinationItem<Nothing>(role),
-    )
+fun WidePanes(sheet: SheetNav, list: @Composable () -> Unit, detail: @Composable (SheetPage) -> Unit, map: @Composable () -> Unit) {
+    val navigator = sheet.panes
+    val directive = navigator.scaffoldDirective
     val panes = directive.maxHorizontalPartitions.coerceIn(1, 2)
     val width = WingtipSize.Panel * panes + directive.horizontalPartitionSpacerSize * (panes - 1)
-    val back = rememberPredictiveBack(enabled = card != null, onBack = onBack)
     Row(Modifier.fillMaxSize()) {
         Surface(
             Modifier.width(width).fillMaxHeight(),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = BottomSheetDefaults.Elevation,
         ) {
-            ListDetailPaneScaffold(
-                directive = directive,
-                value = value,
+            NavigableListDetailPaneScaffold(
+                navigator = navigator,
                 listPane = { AnimatedPane { list() } },
-                detailPane = { AnimatedPane(Modifier.predictiveBack(back)) { card?.let { detail(it) } } },
+                detailPane = { AnimatedPane { navigator.currentDestination?.contentKey?.let { detail(SheetPage.of(it)) } } },
                 modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Vertical)),
+                // Back closes the card, not every pane change before it.
+                defaultBackBehavior = BackNavigationBehavior.PopUntilContentChange,
             )
         }
         Box(Modifier.weight(1f).fillMaxHeight()) { map() }

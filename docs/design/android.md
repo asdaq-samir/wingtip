@@ -164,10 +164,9 @@ end, and nothing on this page describes a Google app from memory.
   scheme's springs.
 - Use the system's **Remove animations** setting through Compose's
   animator duration scale. It already stills the stock springs.
-- Use the expressive scheme for a whole control and the standard scheme
-  (`MotionScheme.standard()`) for a figure changing in place, such as
-  `design/RollingFigure`. A figure that overshoots would read as a
-  different number for a frame.
+- A figure changing in place (the ETE, the fuel left, the miles to go)
+  is plain `Text`: the hand-built per-digit roll (`design/RollingFigure`)
+  is gone (the owner, 2026-11-10: stock components as they are).
 
 ### 1.6 Haptics
 
@@ -202,6 +201,8 @@ end, and nothing on this page describes a Google app from memory.
   | a switch | none | `ToggleOn` / `ToggleOff` | the stock `Switch` |
 
 - No haptics for scrolling, loading or arriving data.
+- The system's haptics switch alone governs them: Remove animations no
+  longer turns them off (the owner, 2026-11-10).
 
 ### 1.7 Touch targets
 
@@ -239,8 +240,12 @@ end, and nothing on this page describes a Google app from memory.
     predictive preview.
   - No back arrow is drawn in a top app bar's navigation slot. That is
     the one place Wingtip departs from Material's top app bar.
-  - Back steps down the same ladder as close: card, then lower sheet
-    size, then leave the app (`design/PredictiveBack`).
+  - Back steps down the same ladder as close: lower the sheet
+    (`MapSheet`'s `PredictiveBackHandler`), then a page back (the
+    sheet's Navigation Compose `NavHost`, `ui/PlanSheet`; a card in the
+    wide panes by `NavigableListDetailPaneScaffold`), then leave the
+    app. Overlays are stock `Dialog`s, which Back closes. The
+    hand-built shrink-on-back (`design/PredictiveBack`) is gone.
 - **Android 17**: activities are no longer recreated for keyboard,
   navigation-mode or colour-mode changes unless they opt in
   (`android:recreateOnConfigChanges`). Dark mode switching must

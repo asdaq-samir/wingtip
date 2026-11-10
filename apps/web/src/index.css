@@ -364,6 +364,10 @@ body[data-map-panel="full"] [data-slot="toast"],
 [data-slot="toast-viewport"][data-base-ui-inert] [data-slot="toast"] {
   pointer-events: auto;
 }
+/* A toast with an Undo is one to tap, wherever it is. */
+[data-slot="toast"][data-action] {
+  pointer-events: auto;
+}
 
 /* Touch targets. Apple asks for 44 points on both sides of anything a
    finger taps; the stock controls are smaller than that -- an icon
@@ -617,25 +621,6 @@ body[data-map-sheet][data-map-panel="full"] [data-slot="toast"][data-type="loadi
   /* And clear of the route's figures pinned at the sheet's foot over it
      (MapPanel's --foot-room): a row brought into view stops above them. */
   scroll-padding-bottom: var(--foot-room, 0px);
-}
-
-/* The map panel's head frosted with the sheet's own colour, a line under
-   it, while content is scrolled under it (MapPanel's data-under); a card's
-   own head under it -- the Brief's title and pages (PanelTabs) -- frosted
-   with it, the line under that one alone ("local"). Plain glass at rest. */
-[data-head-band],
-[data-under-band] {
-  transition:
-    background-color var(--motion-quick),
-    box-shadow var(--motion-quick);
-}
-[data-head-band][data-under],
-[data-head-band][data-under] ~ [data-panel-body] [data-under-band] {
-  background-color: var(--sheet);
-  box-shadow: 0 1px 0 var(--color-border);
-}
-[data-head-band][data-under="local"] {
-  box-shadow: none;
 }
 
 /* What floats over the chart -- the map's buttons, its banners, the

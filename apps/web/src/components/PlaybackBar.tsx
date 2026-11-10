@@ -49,6 +49,47 @@ export function PlaybackButton({ render, ...props }: { render: ReactElement } & 
   return <Toolbar.Button render={render} {...props} />;
 }
 
+/** One of the bar's on-or-off buttons -- Play, the pilot's view, forecast
+ *  mode -- as the stock Base UI Toggle (aria-pressed) in the toolbar's
+ *  roving focus, in RoundButton's round glass, filled in the tint while
+ *  it is on. */
+export function PlaybackToggle({
+  pressed,
+  onPressedChange,
+  label,
+  disabled,
+  testId,
+  children,
+}: {
+  pressed: boolean;
+  onPressedChange: (pressed: boolean) => void;
+  label: string;
+  disabled?: boolean;
+  testId: string;
+  children: ReactNode;
+}) {
+  return (
+    <Toolbar.Button
+      render={
+        <Toggle
+          pressed={pressed}
+          onPressedChange={onPressedChange}
+          aria-label={label}
+          className={cn(
+            "inline-flex size-9 shrink-0 items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+            ROUND_BUTTON,
+            pressed && "bg-tint text-white hover:bg-tint/90 hover:text-white",
+          )}
+        />
+      }
+      disabled={disabled}
+      data-testid={testId}
+    >
+      {children}
+    </Toolbar.Button>
+  );
+}
+
 /** Play, at the bar's start: a stock toggle, pressed while it plays. Its
  *  name stays "Play" and its state is aria-pressed, as a toggle button's
  *  is (APG button), where it had been a button renamed Pause. */
@@ -64,24 +105,9 @@ export function PlayToggle({
   testId: string;
 }) {
   return (
-    <Toolbar.Button
-      render={
-        <Toggle
-          pressed={playing}
-          onPressedChange={onToggle}
-          aria-label="Play"
-          className={cn(
-            "inline-flex size-9 shrink-0 items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
-            ROUND_BUTTON,
-            playing && "bg-tint text-white hover:bg-tint/90 hover:text-white",
-          )}
-        />
-      }
-      disabled={disabled}
-      data-testid={testId}
-    >
+    <PlaybackToggle pressed={playing} onPressedChange={onToggle} label="Play" disabled={disabled} testId={testId}>
       {playing ? <Pause className="size-5" aria-hidden /> : <Play className="size-5" aria-hidden />}
-    </Toolbar.Button>
+    </PlaybackToggle>
   );
 }
 

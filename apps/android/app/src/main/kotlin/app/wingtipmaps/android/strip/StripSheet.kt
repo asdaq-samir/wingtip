@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.strip
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -37,8 +38,6 @@ import app.wingtipmaps.android.api.AssistantTurn
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.design.predictiveBack
-import app.wingtipmaps.android.design.rememberPredictiveBack
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.navigation.CardRequests
@@ -130,9 +129,8 @@ fun StripLayout(
     val answerShown = ask != null && strip.answerShown
     val dismissAnswer = { assistant.clear(); model.dismissAnswer() }
     // Back at the pill with the answer's card open closes the card before
-    // leaving the app, the card drawn back with the predictive gesture;
-    // the sheet's own back lowers it first (MapSheet).
-    val answerBack = rememberPredictiveBack(enabled = answerShown) { dismissAnswer() }
+    // leaving the app; the sheet's own back lowers it first (MapSheet).
+    BackHandler(enabled = answerShown) { dismissAnswer() }
 
     // The foot is the handle and the field's row; in the air the ribbon
     // and the next checkpoint too, since they are what is glanced at.
@@ -156,7 +154,7 @@ fun StripLayout(
                     AnswerCard(
                         turn = ask, answering = conversation.answering, status = conversation.status,
                         onStop = assistant::cancel, onClose = dismissAnswer,
-                        onSource = { source = it }, modifier = Modifier.padding(horizontal = WingtipSpace.Lg).predictiveBack(answerBack),
+                        onSource = { source = it }, modifier = Modifier.padding(horizontal = WingtipSpace.Lg),
                     )
                 }
             }

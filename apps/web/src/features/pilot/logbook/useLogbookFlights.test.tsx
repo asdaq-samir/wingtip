@@ -12,6 +12,17 @@ vi.mock("../../../lib/api/client", async (importOriginal) => ({
   api: { logbook: { list: vi.fn(), add: vi.fn(), update: vi.fn(), remove: vi.fn() } },
 }));
 const { api } = await import("../../../lib/api/client");
+// The toast's Undo, kept to press here.
+const undos = vi.hoisted(() => [] as { words: string; undo: () => void }[]);
+vi.mock("../../../lib/toast", () => ({
+  toast: {
+    done: () => {},
+    undo: (words: string, undo: () => void) => {
+      undos.push({ words, undo });
+      return "undo";
+    },
+  },
+}));
 
 const entry: LogbookEntry = { ...blankEntry("N12345"), id: 4, route: "C81 KDLH", totalHours: 2.1 };
 
@@ -75,15 +86,15 @@ describe("a new flight logged", () => {
 });
 
 describe("a logged flight deleted", () => {
-  it("is gone at once with its Undo row", async () => {
+  it("is gone at once, its toast's Undo up once the gateway has it", async () => {
     const answer = held<void>();
     vi.mocked(api.logbook.remove).mockReturnValue(answer.promise);
     const { result } = setUp();
     act(() => result.current.remove(entry));
     expect(result.current.entries).toEqual([]);
-    expect(result.current.undoWords).toMatch(/Deleted/);
     vi.mocked(api.logbook.list).mockResolvedValue([]);
     await act(async () => answer.settle().ok());
     await waitFor(() => expect(result.current.entries).toEqual([]));
+    expect(undos.at(-1)?.words).toMatch(/Deleted/);
   });
 });

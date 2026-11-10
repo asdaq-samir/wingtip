@@ -6,6 +6,7 @@ import { cancelled, shareOrCopy } from "../../../lib/share";
 import { showError } from "../../../lib/problems";
 import type { FlightSummary } from "../../../lib/api/types";
 import { done } from "../../../lib/doneNote";
+import { toast } from "../../../lib/toast";
 import { useOptimisticList } from "../../../lib/optimisticList";
 import { flightsQuery } from "../../../lib/queryClient";
 import { flightEdit, flightEditProblem, flightTitle, type FlightEditRequest } from "./flightEdit";
@@ -26,15 +27,21 @@ type Draft = { name: string; notes: string };
  * refuses it the row goes back to what it was and opens again on what was
  * typed, with why under its field (`problem`), not in a toast or an alert
  * (lib/problems: a result shows where it happened). A delete takes the row
- * out at once too, and a refused one brings it back, with the alert every
+ * out at once, with a toast's Undo (the owner's "Undo after destructive
+ * edits", docs/navigation.md), and is sent only once the Undo has gone
+ * unpressed: the flight is the server's, and can't be filed again as it
+ * was (its id, its share). A refused one comes back, with the alert every
  * failed action has (the mutation cache's).
  */
 export function useSavedFlights() {
   const queryClient = useQueryClient();
   const asked = useQuery(flightsQuery);
-  const [list, change] = useOptimisticList(asked.data);
+  const [optimistic, change] = useOptimisticList(asked.data);
   const [editing, setEditing] = useState(false);
-  const [flightToDelete, setFlightToDelete] = useState<FlightSummary | null>(null);
+  // The flights deleted whose Undo is still up: out of the list, not yet
+  // sent.
+  const [deleting, setDeleting] = useState<ReadonlySet<number>>(new Set());
+  const list = deleting.size ? optimistic?.filter((f) => !deleting.has(f.id)) : optimistic;
   // The flight whose row is its fields now, and what was typed in them.
   const [changing, setChanging] = useState<number | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -103,24 +110,40 @@ export function useSavedFlights() {
     ask({ send: flight, body });
   };
 
-  /** Edit's minus or a swipe: the flight to ask about, then the ask. */
-  const askToDelete = (flight: FlightSummary) => setFlightToDelete(flight);
-  /** The ask answered: the row gone at once, back if the gateway refuses. */
-  const deleteAsked = () => {
-    if (!flightToDelete) return;
-    const { id } = flightToDelete;
-    setFlightToDelete(null);
-    startTransition(async () => {
-      change({ drop: id });
-      try {
-        await remove.mutateAsync(id);
-        queryClient.setQueryData<FlightSummary[]>(flightsQuery.queryKey, (now) => now?.filter((f) => f.id !== id));
-        done("Flight Deleted");
-      } catch {
-        // The row is back by itself; the mutation cache's alert says why.
-      }
-      void queryClient.invalidateQueries({ queryKey: flightsQuery.queryKey });
+  const back = (id: number) =>
+    setDeleting((now) => {
+      const next = new Set(now);
+      next.delete(id);
+      return next;
     });
+  /** Edit's minus or its menu's Remove: gone from the list at once, a
+   *  toast's Undo giving it back; sent once the Undo has gone. */
+  const deleteFlight = (flight: FlightSummary) => {
+    const { id } = flight;
+    setDeleting((now) => new Set(now).add(id));
+    let undone = false;
+    toast.undo(
+      `${flightTitle(flight)} Deleted`,
+      () => {
+        undone = true;
+        back(id);
+      },
+      {
+        testId: "saved-flight-undo",
+        onClose: () => {
+          if (undone) return;
+          remove
+            .mutateAsync(id)
+            .then(() => queryClient.setQueryData<FlightSummary[]>(flightsQuery.queryKey, (now) => now?.filter((f) => f.id !== id)))
+            // Refused: back in the list; the mutation cache's alert says why.
+            .catch(() => {})
+            .finally(() => {
+              back(id);
+              void queryClient.invalidateQueries({ queryKey: flightsQuery.queryKey });
+            });
+        },
+      },
+    );
   };
 
   /** Share: the flight shared by link (its N-number only where asked),
@@ -153,9 +176,7 @@ export function useSavedFlights() {
     stopSharing,
     editing,
     toggleEditing: () => setEditing((e) => !e),
-    flightToDelete,
-    askToDelete,
-    deleteAsked,
+    deleteFlight,
     changing,
     draft,
     problem,
