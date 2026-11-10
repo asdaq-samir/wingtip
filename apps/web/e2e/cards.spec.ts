@@ -25,6 +25,7 @@ for (const row of CARDS) {
   test.describe(`${row.name}`, () => {
     for (const entry of row.entries) {
       test(`from ${entry.name}: the same card over the search, and its ✕ goes back`, async ({ page }) => {
+        test.skip(!phone(page) && !!row.not?.desktop, row.not?.desktop ?? "");
         await open(page, row, entry);
         // The same component whatever the entry: one of it.
         await expect(page.getByTestId(row.card)).toHaveCount(1);
@@ -65,9 +66,11 @@ for (const row of CARDS) {
         await open(page, row, row.entries[0]!);
         if (phone(page)) await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
         const close = (await page.getByTestId(row.close).filter({ visible: true }).first().boundingBox())!;
-        const card = (await page.getByTestId(row.card).boundingBox())!;
-        expect(close.x + close.width / 2).toBeGreaterThan(card.x + card.width / 2);
-        expect(close.y).toBeLessThan(card.y + 120);
+        // The sheet's box, not the card's: the card runs on under its pinned
+        // head, its own top scrolled above the sheet's (the one scrolling rule).
+        const sheet = (await sideDrawer(page).boundingBox())!;
+        expect(close.x + close.width / 2).toBeGreaterThan(sheet.x + sheet.width / 2);
+        expect(close.y).toBeLessThan(Math.max(sheet.y, 0) + 120);
         // Not modal: no dimming over the map, no dialog taking the page.
         await expect(page.locator("[data-slot=dialog-overlay], [data-slot=sheet-overlay]")).toHaveCount(0);
       });
