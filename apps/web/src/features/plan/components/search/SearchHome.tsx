@@ -25,8 +25,8 @@ const AskSection = lazy(() => import("../ask/AskCard"));
  * flights saved and planned last, and Find Nearby. What the Airport and
  * Airplane tabs listed, and FPL's no-route strip, in one page: each
  * section's title the list in full, as before. Laid out as Apple Maps'
- * web sheet (the owner's screenshot, 2026-11-10): large bold section
- * titles, the Recents as picture cards sliding sideways, and its foot the
+ * web sheet (the owner's screenshot, 2026-11-10): the app's one section
+ * title (PillSection), the Recents as picture cards sliding sideways, and its foot the
  * legal links and the copyright (SheetFooter).
  */
 export default function SearchHome({ vm, model }: { vm: PlanWorkspaceModel; model: OneSearchModel }) {
@@ -61,7 +61,7 @@ export default function SearchHome({ vm, model }: { vm: PlanWorkspaceModel; mode
           <AskSection />
         </Suspense>
       )}
-      <PillSection large title="Favorites" onMore={() => openList("favorites")} testId="pill-section-favorites">
+      <PillSection title="Favorites" onMore={() => openList("favorites")} testId="pill-section-favorites">
         {/* Home and the airports, then the Airplane and the airplanes, in one
             row sliding sideways, as Apple Maps' Favorites are (the sheet
             audit's F-L2): they stood in two rows, a tile each. Each strip's
@@ -90,10 +90,10 @@ export default function SearchHome({ vm, model }: { vm: PlanWorkspaceModel; mode
           </Suspense>
         </PillStrip>
       </PillSection>
-      <PillSection large title="Recents" onMore={() => openList("recents")} testId="airport-recents">
+      <PillSection title="Recents" onMore={() => openList("recents")} testId="airport-recents">
         <RecentCards onPick={(airport) => void pickPlace(airport)} />
       </PillSection>
-      <PillSection large title="Nearest" onMore={openNearest} testId="pill-section-nearest">
+      <PillSection title="Nearest" onMore={openNearest} testId="pill-section-nearest">
         <NearestStrip fields={nearStrip} located={!!nearOrigin} onOpen={selectPlace} />
       </PillSection>
       <FplStrip onAllSaved={openSaved} onAllRecents={() => openList("routes")} />
