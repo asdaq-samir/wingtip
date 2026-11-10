@@ -107,9 +107,10 @@ each with the chips of the figures it rests on; a chip opens the report
 as sent. Every figure is the engine's or the planner's; a model only
 writes the sentences, and never a figure of its own:
 
-- `WordsFor` asks the planner first (`PlannerWords`: `POST
-  /api/words/{weather,risk}` through the gateway's proxy, Claude on the
-  planner, app.ai_words), then this iPhone when the planner fails or
+- `WordsFor` asks the planner first while the Claude features are on
+  (`PlannerWords`: `POST /api/words/{weather,risk}` through the gateway's
+  proxy, Claude in the assistant service; off by default, decision 0035,
+  when it asks only this iPhone), then this iPhone when the planner fails or
   cannot be reached (`OnDeviceWords`: Apple's on-device model,
   FoundationModels on iOS 26 with Apple Intelligence on), and says why
   in plain words when neither can (an older iOS, the model still

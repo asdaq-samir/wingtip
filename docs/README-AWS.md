@@ -48,7 +48,7 @@ pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                         taken over by whichever server is running
                           caddy ─▶ gateway ─▶ planner (the chart model and the engine in-process)
                                      │    ▲
-                                     │    └── assistant (every Claude call, 256 MB) ─▶ Anthropic
+                                     │    └── assistant (every Claude call, 256 MB; off, decision 0035) ─▶ Anthropic
                                      ├──▶ assistant (the Claude paths)
                                      └──▶ db (Postgres 18, on the data disk)
                           ingest (the FAA's SWIM feeds, the followed airplanes, 384 MB) ─▶ SQLite

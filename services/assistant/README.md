@@ -1,7 +1,10 @@
 # The assistant service
 
 Every Claude call Wingtip Maps makes, split out of the planner (issue #535,
-the owner's call of 2026-11-08). It holds the Anthropic key and the model
+the owner's call of 2026-11-08). **Off by default** since 2026-11-10
+([decision 0035](../../docs/decisions/0035-claude-off-until-subscription.md)):
+the gateway refuses every route here while `APP_CLAUDE_FEATURES` is `OFF`,
+and compose starts this service only with the `claude` profile. It holds the Anthropic key and the model
 settings, and computes no figure: everything an answer rests on comes from
 the planner's HTTP API (`app/planner.py`), which asks the engine every rule.
 

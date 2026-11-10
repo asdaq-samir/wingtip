@@ -38,3 +38,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0030 | [Controls never grow to reach 44 points](0030-nothing-grows-hit-areas.md) | 2026-10-22 | Accepted |
 | 0031 | [Each platform may look its own best](0031-platform-looks.md) | 2026-11-04 | Accepted, amended 2026-11-10 |
 | 0032 | [An architecture change updates the diagram too](0032-docs-include-diagrams.md) | 2026-11-07 | Accepted |
+| 0035 | [The Claude features are off until the subscription is decided](0035-claude-off-until-subscription.md) | 2026-11-10 | Accepted |
