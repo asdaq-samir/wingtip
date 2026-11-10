@@ -1,15 +1,16 @@
 package app.wingtipmaps.android.records
 
 import android.content.Context
-import androidx.room.Dao
-import androidx.room.Database
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
-import androidx.room.Room
-import androidx.room.RoomDatabase
+import androidx.room3.Dao
+import androidx.room3.Database
+import androidx.room3.Entity
+import androidx.room3.Insert
+import androidx.room3.OnConflictStrategy
+import androidx.room3.PrimaryKey
+import androidx.room3.Query
+import androidx.room3.Room
+import androidx.room3.RoomDatabase
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -43,18 +44,26 @@ object Records {
 
     /** The one database, in the app's files; a change the schema cannot
      *  migrate starts it afresh, since every record is also the
-     *  gateway's or soon set again, and the app must always start. */
+     *  gateway's or soon set again, and the app must always start.
+     *  Room 3 opens it through a SQLiteDriver: the framework's own
+     *  SQLite (AndroidSQLiteDriver), the one Room 2 used, so a file
+     *  Room 2 wrote opens as it was (the same tables and identity hash). */
     fun database(context: Context): RecordsDatabase =
         shared ?: synchronized(this) {
-            shared ?: Room.databaseBuilder(context.applicationContext, RecordsDatabase::class.java, "records.db")
-                .fallbackToDestructiveMigration(dropAllTables = true)
-                .build()
-                .also { shared = it }
+            shared ?: open(context.applicationContext, "records.db").also { shared = it }
         }
+
+    /** The database in the file [name], as [database] opens it: apart so
+     *  a test can open a file of its own the same way. */
+    internal fun open(context: Context, name: String): RecordsDatabase =
+        Room.databaseBuilder(context, RecordsDatabase::class.java, name)
+            .setDriver(AndroidSQLiteDriver())
+            .fallbackToDestructiveMigration(dropAllTables = true)
+            .build()
 
     /** A database that lives only as long as the test that made it. */
     fun inMemory(context: Context): RecordsDatabase =
-        Room.inMemoryDatabaseBuilder(context, RecordsDatabase::class.java).build()
+        Room.inMemoryDatabaseBuilder(context, RecordsDatabase::class.java).setDriver(AndroidSQLiteDriver()).build()
 }
 
 /** An airplane the pilot kept (the web app's favoriteAircraft and
