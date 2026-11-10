@@ -21,6 +21,18 @@ export async function pickAirplane(
   }, airplane);
 }
 
+/** The route's checkpoints off, as a pilot has them at first
+ *  (lib/preferences; the session every spec starts from turns them on,
+ *  helpers' noTips): each is a mark with a near miss's reach of its own,
+ *  and one sat at the middle of the test route's last leg, where a tap
+ *  for the leg then opened the checkpoint's card. */
+export async function noCheckpoints(page: Page) {
+  await page.addInitScript(() => {
+    const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":7}');
+    localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, waypoints: false } }));
+  });
+}
+
 /** The panel at rest, as a page opens on a phone: a desktop's side panel
  *  opens out, the search and the plan in it (MapPage, the one-search
  *  design's Desktop, 2026-11-09), so it is put away first there, for a
