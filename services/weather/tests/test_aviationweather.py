@@ -115,6 +115,8 @@ def test_the_metars_are_the_newest_report_per_station_from_the_cache_file():
         "wx": "",
         "ceiling_ft": 600,
         "ceiling_unknown": False,
+        # The ceiling layer's own cover, for the station model's "OVC 006".
+        "ceiling_cover": "OVC",
         "visibility_sm": 2.0,
         "wind_dir_true_deg": None,
         "wind_speed_kt": None,
