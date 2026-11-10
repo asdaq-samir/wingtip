@@ -1,9 +1,10 @@
-import { useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { useCallback, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { cn } from "cn";
 import { PanelSize, type PanelState } from "../../lib/mapChrome";
 import { SheetCardHost } from "../SheetCard";
 import TabKept from "../TabKept";
 import type { useSheetDetents } from "./useSheetDetents";
+import { useScrollAway } from "./useScrollAway";
 
 /** The first row's room under the grabber: ten points, the grabber's bar
  *  in it four from the edge. */
@@ -120,6 +121,19 @@ const CUT_TOP = "[clip-path:inset(0_0_max(0px,calc(-1*(var(--sheet-offset,0px)+v
  */
 export function SheetParts(p: PartsProps) {
   const { atPill, fromBottom, size, sizes, footShown, cardsUp, setHead, setFoot } = p;
+  // The head and the body, for the title and the field scrolling away with
+  // the suggestions (useScrollAway): all the way up on a phone, the title
+  // there, which is the search in use.
+  const [headNode, setHeadNode] = useState<HTMLDivElement | null>(null);
+  const [bodyNode, setBodyNode] = useState<HTMLDivElement | null>(null);
+  useScrollAway(headNode, bodyNode, p.onPhone && size === "full" && p.titleShown);
+  const headRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      setHead(node);
+      setHeadNode(node);
+    },
+    [setHead],
+  );
   const headerShown = !p.flying && !cardsUp && (atPill ? !p.barShown : p.top != null || !p.barShown);
   const headContent = atPill ? p.compact : p.top;
   const keptHere = p.kept != null && headerShown && headContent === p.kept;
@@ -143,7 +157,7 @@ export function SheetParts(p: PartsProps) {
   return (
     <>
       <div
-        ref={setHead}
+        ref={headRef}
         data-head-band=""
         style={vars}
         className={cn("relative flex shrink-0 flex-col", under && "z-20", topSheet && "pt-[env(safe-area-inset-top)]", topSheet && follows)}
@@ -228,6 +242,7 @@ export function SheetParts(p: PartsProps) {
             "--panel-head": `${under ? sizes.headHeight : 0}px`,
           } as CSSProperties
         }
+        ref={setBodyNode}
         data-panel-body=""
         // On a phone, Drawer.Content's own mark: a mouse dragged across the
         // body selects its words rather than moving the sheet (a finger

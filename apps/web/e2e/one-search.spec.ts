@@ -147,3 +147,33 @@ test("the top hit's Fly Here plans the route to it from the result, with no card
   await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
   await expect(sideDrawer(page).getByTestId("place-card")).toHaveCount(0);
 });
+
+test("typed, the suggestions scroll the title and the field away with them, the field kept focused, and back at the top they return", async ({
+  page,
+}) => {
+  // Apple Maps on the web, the owner's screenshot (2026-11-10): nothing pinned while typing.
+  test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
+  await page.goto("/app/plan");
+  await settle(page);
+  await showTabs(page);
+  const search = await airportSearch(page);
+  await search.click();
+  await search.fill("a");
+  await expect(searchAirports(page).first()).toBeVisible({ timeout: slow(10_000) });
+  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
+  const title = sideDrawer(page).getByTestId("sheet-title");
+  await expect(title).toBeInViewport();
+  // The list's own scroller, scrolled down past the head's height.
+  const scroll = (top: number) =>
+    page.getByTestId("one-search-results").evaluate((el, y) => {
+      let at: HTMLElement | null = el;
+      while (at && !(getComputedStyle(at).overflowY === "auto" && at.scrollHeight > at.clientHeight)) at = at.parentElement;
+      at?.scrollTo({ top: y });
+    }, top);
+  await scroll(400);
+  await expect(title).not.toBeInViewport();
+  await expect(search).toBeFocused();
+  await scroll(0);
+  await expect(title).toBeInViewport();
+  await expect(search).toBeFocused();
+});

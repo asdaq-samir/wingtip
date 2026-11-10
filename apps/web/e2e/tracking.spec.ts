@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { closeCard, drawn, grabberTo, openConsole, settle, showSearch, showTraffic, sideDrawer, slow, stripShows } from "./helpers";
+import { closeCard, drawn, grabberTo, settle, showSearch, showTraffic, sideDrawer, slow, stripShows } from "./helpers";
 
 /**
  * Tracking an airplane, as FlightAware and ForeFlight do, at the pilot's
@@ -608,16 +608,16 @@ test("an airplane opened is in the Aircraft card's Recents, and one starred on i
 });
 
 test("an airplane's card over the traffic is still open after the account page and back", async ({ page }) => {
-  // The owner's notice: "When I open an aircraft card and go to setup and
-  // come back, to aircraft tab, the card is not there anymore". Aircraft
-  // was taken for the tab up tapped again, which puts its card away.
+  // The owner's notice: "When I open an aircraft card and go to setup and come back, to aircraft tab, the card is not there
+  // anymore". Aircraft was taken for the tab up tapped again, which puts its card away.
   await sky(page);
   await page.goto("/app/plan?aircraft=1&flight=a0b7d8");
   await settle(page);
   const card = page.getByTestId("flight-card");
   await expect(card.getByTestId("flight-favorite")).toBeVisible({ timeout: slow(15_000) });
-  await openConsole(page);
-  await expect(sideDrawer(page).getByTestId("setup-page")).toBeVisible();
+  // The card is the whole sheet, no title row over it (Apple Maps' card, 2026-11-10): the account page by its link.
+  await page.goto("/app/plan?aircraft=1&flight=a0b7d8&open=setup");
+  await expect(sideDrawer(page).getByTestId("setup-page")).toBeVisible({ timeout: slow(15_000) });
   await sideDrawer(page).getByTestId("console-close").click();
   await expect(sideDrawer(page).getByTestId("setup-page")).toBeHidden();
   await expect(page).toHaveURL(/[?&]flight=a0b7d8/);

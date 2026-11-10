@@ -443,9 +443,9 @@ test("an airport's Info lists its first frequencies, and its title the way to ev
   await more.click();
   expect(await rows.count()).toBeGreaterThan(3);
   await expect(more).toHaveCount(0);
-  // Down past them to the Details' address: the grabber still in sight (and Escape), the way down from it.
+  // Down past them to the Details' address: the card's name and close pinned at its top (Apple Maps' card).
   await card(page).getByTestId("place-address").scrollIntoViewIfNeeded();
-  await expect(page.getByTestId("sidebar-trigger-button")).toBeInViewport();
+  await expect(card(page).getByTestId("place-close-pinned")).toBeInViewport({ ratio: 1 });
 });
 
 /** A field's procedures' list, not one procedure's drawing. */

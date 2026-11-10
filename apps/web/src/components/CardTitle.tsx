@@ -1,9 +1,10 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { Share } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
 import RoundButton from "./RoundButton";
 import RefreshButton from "./RefreshButton";
+import { PinnedCardBar } from "./PinnedCardBar";
 import type { LiveCard } from "../lib/liveRefresh";
 import { closeTopCard, useHeldCard, type PillHead } from "../lib/openCards";
 import { TEXT } from "../lib/text";
@@ -54,39 +55,42 @@ export function CardTitle({
   twoLines?: boolean;
 }) {
   useHeldCard(onClose, onShare, true, pill);
+  const name = useRef<HTMLHeadingElement>(null);
+  const close = () => {
+    if (!closeTopCard()) onClose();
+  };
   return (
-    <div className="flex items-start gap-2 pt-[var(--corner-inset,0.75rem)]" data-testid={testId}>
-      <div className="min-w-0 flex-1">
-        <h2
-          tabIndex={-1}
-          className={cn("truncate font-extrabold tracking-tight text-foreground outline-none", TEXT.hero)}
-          data-testid={titleTestId}
-        >
-          {title}
-        </h2>
-        {subtitle != null && (
-          <p className={cn("line-clamp-2 text-foreground/80", twoLines && "min-h-[2lh]", TEXT.prose)} data-testid={subtitleTestId}>
-            {subtitle}
-          </p>
-        )}
-        {line}
+    <>
+      {/* Scrolled past, its name and close pinned at the card's top. */}
+      <PinnedCardBar title={title} watched={name} onClose={close} closeTestId={closeTestId} />
+      <div className="flex items-start gap-2 pt-[var(--corner-inset,0.75rem)]" data-testid={testId}>
+        <div className="min-w-0 flex-1">
+          <h2
+            ref={name}
+            tabIndex={-1}
+            className={cn("truncate font-extrabold tracking-tight text-foreground outline-none", TEXT.hero)}
+            data-testid={titleTestId}
+          >
+            {title}
+          </h2>
+          {subtitle != null && (
+            <p className={cn("line-clamp-2 text-foreground/80", twoLines && "min-h-[2lh]", TEXT.prose)} data-testid={subtitleTestId}>
+              {subtitle}
+            </p>
+          )}
+          {line}
+        </div>
+        <div className="flex shrink-0 gap-2.5">
+          {onShare && (
+            <RoundButton label={`Share ${title}`} onClick={onShare} data-testid={shareTestId}>
+              <Share className="size-5" strokeWidth={2} />
+            </RoundButton>
+          )}
+          {refresh && <RefreshButton card={refresh} label={`Refresh ${title}`} />}
+          {beside}
+          <CloseButton onClick={close} data-back="" data-testid={closeTestId} />
+        </div>
       </div>
-      <div className="flex shrink-0 gap-2.5">
-        {onShare && (
-          <RoundButton label={`Share ${title}`} onClick={onShare} data-testid={shareTestId}>
-            <Share className="size-5" strokeWidth={2} />
-          </RoundButton>
-        )}
-        {refresh && <RefreshButton card={refresh} label={`Refresh ${title}`} />}
-        {beside}
-        <CloseButton
-          onClick={() => {
-            if (!closeTopCard()) onClose();
-          }}
-          data-back=""
-          data-testid={closeTestId}
-        />
-      </div>
-    </div>
+    </>
   );
 }

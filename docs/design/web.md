@@ -897,11 +897,23 @@ notifications before a tap; a different app per `start_url`.
 maps.apple.com (a script shell, see "Not verified"). On 2026-11-10 the
 owner sent screenshots of Apple Maps on the web (beta) in iPhone Safari,
 and these are the verified reference for the phone's map and sheet: the
-sheet at rest ([apple-maps-web-rest.jpg](reference/apple-maps-web-rest.jpg))
-and all the way up ([apple-maps-web-full.jpg](reference/apple-maps-web-full.jpg)),
-with a place card, the suggestions while typing, a sent search's results
-and filters, and the map-type card described in the owner's words. The
-owner's rule: a screenshot of another app means ours should show this.
+sheet at rest ([apple-maps-web-rest.jpg](reference/apple-maps-web-rest.jpg)),
+all the way up ([apple-maps-web-full.jpg](reference/apple-maps-web-full.jpg)),
+a place card at the medium detent
+([apple-maps-web-place-card.jpg](reference/apple-maps-web-place-card.jpg)),
+the suggestions while typing
+([apple-maps-web-typing.jpg](reference/apple-maps-web-typing.jpg)) and
+scrolled with the keyboard up
+([apple-maps-web-typing-scrolled.jpg](reference/apple-maps-web-typing-scrolled.jpg)),
+a sent search's results
+([apple-maps-web-results.jpg](reference/apple-maps-web-results.jpg)),
+the same with a filter chip on and the results on the map
+([apple-maps-web-results-map-filter-on.jpg](reference/apple-maps-web-results-map-filter-on.jpg)),
+its Filters page
+([apple-maps-web-filters.jpg](reference/apple-maps-web-filters.jpg)) and
+the map-type card
+([apple-maps-web-choose-map.jpg](reference/apple-maps-web-choose-map.jpg)).
+The owner's rule: a screenshot of another app means ours should show this.
 
 **What Wingtip shows, and where (built on `claude/web-applemaps`).**
 
@@ -915,8 +927,10 @@ owner's rule: a screenshot of another app means ours should show this.
 | One round button at the bottom left (Look Around) | The radio's microphone, where it already was |
 | Privacy \| Terms \| Legal \| Imagery at the map's bottom right, over the sheet | `MapCredits`: one MapLibre AttributionControl at the bottom right, riding the sheet's top, Privacy \| Terms \| Legal then each drawn source's credit (imagery, Google, the traffic, the overlay tiles' FAA cycle); gone all the way up, where the footer has them |
 | A place picked: its card is the whole sheet, no search | Any card (a field, an airplane, a point, the Brief, the Map card) hides the title row and the search; its ✕ goes back to the search with the query kept |
+| A place card scrolled: its head stays, Share and ✕ in sight | `CardTitle` pinned at the card's top (sticky), on the sheet's colour: the airport's, the airplane's and the Stops' |
 | Place card: big title, "kind · place" with the place a link, Share and ✕, four action tiles, photos sliding | The airport card: the ident, "name · town" with the town a link, Share and ✕, Fly Here (filled), Depart From, Add as Stop, Weather; the pictures as a sliding row |
 | Typing: top hit with inline action pills, suggestion rows, places | `OneSearchResults`: one white group, the top hit with Fly Here and Depart From pills, Search Nearby and Ask as suggestions, the match in bold |
+| Typing, scrolled: the title and the field go up with the list, nothing pinned, the keyboard up | `sheet/useScrollAway`: all the way up with the search in use, the head pulled up by as much as the list has scrolled, back at its top; the field never leaves the page, so it keeps its focus |
 | A sent search: ✕ on the title row, chips, rows with thumbnails, Filters page, numbered map marks | The sent search's list, its chips and Filters page on one filter state, and the results as their own clustered MapLibre layer over the chart (the chart's own airport symbols untouched) |
 | Map-type button: "Choose Map" card in the sheet, picture tiles | The Map card in the sheet (`MapSettingsButton`), chart picture tiles from committed crops (`public/map-tiles/`), every setting of the old menu under it |
 
