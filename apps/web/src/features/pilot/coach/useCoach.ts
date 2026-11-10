@@ -13,6 +13,7 @@ import type { Currency, LogbookEntry, Training } from "../../../lib/api/types";
 import { localDay } from "../../../lib/format";
 import { currencyQuery, pilotQuery, trainingQuery } from "../../../lib/queryClient";
 import { coachApi, type CoachAsk, type ProficiencyPlan } from "./coachApi";
+import { useClaudeOn } from "../../../lib/subscription";
 import { recentDebriefs } from "./coachDebriefs";
 
 /** What the pilot holds, as the plan reads it: a student is held to the
@@ -91,11 +92,13 @@ export function useCoach() {
       return coachApi.plan(askOf(entries.data ?? [], currency, training, certificate, pilot?.homeBase ?? null, debriefs, localDay()));
     },
   });
-  // The words follow the plan they were asked of, and are asked once.
+  // The words follow the plan they were asked of, and are asked once --
+  // only where Claude is on (lib/subscription): the plan's own lines stand alone.
+  const claude = useClaudeOn();
   const words = useQuery({
     queryKey: ["coach-words", plan.data],
     queryFn: ({ signal }) => coachApi.words(plan.data!, signal),
-    enabled: !!plan.data,
+    enabled: claude && !!plan.data,
     staleTime: Infinity,
     retry: false,
     meta: { silent: true },

@@ -32,6 +32,7 @@ import { useOwnShip } from "../map/position/ownShip";
 import { usePreferences } from "../preferences";
 import { currencyQuery, queryClient } from "../queryClient";
 import { speak } from "../speech";
+import { claudeOnNow } from "../subscription";
 import { feet } from "../format";
 
 /** A change the assistant proposed, as its chip shows it: the words on
@@ -251,7 +252,8 @@ export const useAsk = create<AskState>((set, get) => ({
   },
   ask: async (asked, options = {}) => {
     const question = asked.trim();
-    if (!question) return;
+    // Nothing goes to the assistant while the deployment keeps Claude off.
+    if (!question || !claudeOnNow()) return;
     // One question at a time: a new one gives the last up.
     inFlight?.abort();
     const controller = new AbortController();
