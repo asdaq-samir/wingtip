@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { LocateFixed, MapPin, Navigation2 } from "lucide-react";
 import { cn } from "cn";
+import { Badge } from "../../../components/ui/badge";
 import { ListPageHead } from "../../../components/Favorites";
 import { PanelCard } from "../../../components/PanelCard";
 import QueryState from "../../../components/QueryState";
@@ -177,12 +178,12 @@ function NearestRow({
       description={
         <>
           {category && (
-            <span
-              className={cn("mr-1.5 inline-block rounded-sm px-1.5 align-[0.05em] font-bold tracking-wide", TEXT.note)}
+            <Badge
+              className={cn("mr-1.5 h-auto rounded-sm px-1.5 align-[0.05em] font-bold tracking-wide", TEXT.note)}
               style={{ backgroundColor: chipFillOf(category), color: inkOn(chipFillOf(category)) }}
             >
               {category}
-            </span>
+            </Badge>
           )}
           {parts.map((part, i) => (
             <span key={part}>

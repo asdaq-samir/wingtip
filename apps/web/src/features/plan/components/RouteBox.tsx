@@ -1,14 +1,4 @@
-import {
-  Fragment,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type MouseEvent,
-  type PointerEvent,
-  type ReactNode,
-} from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { ArrowRight, Coffee, Fuel, PlaneLanding, PlaneTakeoff, Plus, Route, Trash2, TriangleAlert } from "lucide-react";
 import { joinProps, movePoint, usePointDrag } from "./pointDrag";
 import { cn } from "cn";
@@ -18,6 +8,8 @@ import ClearButton from "../../../components/ClearButton";
 import { PANEL_FIELD } from "../../../components/panelField";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "../../../components/ui/context-menu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../../components/ui/dropdown-menu";
+import { Button } from "../../../components/ui/button";
+import { Alert, AlertAction, AlertDescription } from "../../../components/ui/alert";
 import { PointMenuItems } from "./PointControls";
 import { CONTEXT_MENU, useAfterMenu } from "./pointMenu";
 import { InputGroup } from "../../../components/ui/input-group";
@@ -859,29 +851,30 @@ export default function RouteBox({
           </PopoverContent>
         </Popover>
         {unknownPoint && (
-          // Under the box, in the destructive red its pill is drawn in, with
-          // the one thing to do that the pill's tap does not: Remove.
-          <div className="flex items-center gap-2 px-2 pt-1.5" role="alert" data-testid="route-unknown">
-            <TriangleAlert className="size-4 shrink-0 text-destructive" aria-hidden="true" />
-            <p className={cn("min-w-0 flex-1 text-destructive", TEXT.detail)}>
+          // Under the box, the stock Alert in the destructive red its pill
+          // is drawn in, with the one thing to do that the pill's tap does
+          // not: Remove, the stock Button.
+          <Alert variant="destructive" className="mt-1.5 border-0 bg-transparent px-2 py-0" data-testid="route-unknown">
+            <TriangleAlert aria-hidden="true" />
+            <AlertDescription className={cn("text-destructive", TEXT.detail)}>
               {unknownPoint.ident
                 ? `${unknownPoint.ident} isn't an airport or waypoint we know. Tap it to change it.`
                 : "A point of the route isn't an airport or waypoint we know."}
-            </p>
+            </AlertDescription>
             {unknownPoint.ident && points.includes(unknownPoint.ident) && (
-              <button
-                type="button"
-                onClick={() => remove(points.indexOf(unknownPoint.ident!))}
-                data-testid="route-unknown-remove"
-                className={cn(
-                  "relative shrink-0 rounded-full px-1.5 font-semibold text-tint outline-none after:absolute after:-inset-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-                  TEXT.detail,
-                )}
-              >
-                Remove
-              </button>
+              <AlertAction className="top-1/2 right-0 -translate-y-1/2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => remove(points.indexOf(unknownPoint.ident!))}
+                  data-testid="route-unknown-remove"
+                  className="relative after:absolute after:-inset-y-1.5 after:inset-x-0"
+                >
+                  Remove
+                </Button>
+              </AlertAction>
             )}
-          </div>
+          </Alert>
         )}
         <PointAltitudeDialog
           point={editing}
@@ -907,7 +900,7 @@ function frdWords(ident: string): string {
 }
 
 /** A fuel stop suggested and not yet in the route (the totals' fuel_stops), in the
- *  box: dashed in the caution's colour with the pump; a tap its menu, to
+ *  box: a small button dashed in the caution's colour with the pump; a tap its menu, to
  *  add it to the route or take it out of the box, at the owner's ask
  *  ("Fuel stops should also have a way to delete them and add them back as
  *  pleased", 2026-10-24). A stop added is the route's own, taken out by its
@@ -925,44 +918,36 @@ function FuelStopChip({
 }) {
   // A break on a long flight the tanks hold wears a cup, not the pump.
   const Glyph = reason === "break" ? Coffee : Fuel;
-  // A word of the route's title, as its points are (Pill), in the
-  // caution's colour with the pump and a dashed line under it: suggested,
-  // not yet in the route.
-  const chip = cn(
-    "relative inline-flex h-7 shrink-0 items-center gap-1 rounded-full px-1 font-semibold whitespace-nowrap text-caution-ink underline decoration-dashed decoration-1 underline-offset-4 outline-none after:absolute after:-inset-y-2 after:inset-x-0 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-    TEXT.detail,
-  );
+  // The stock small Button (the owner, 2026-11-10), outlined dashed in the
+  // caution's colour with the pump: suggested, not yet in the route. A
+  // finger's 44 round it by a pseudo-element, the button not grown.
+  const look = "relative border-dashed border-caution text-caution-ink after:absolute after:-inset-y-1.5 after:inset-x-0";
   const face = (
     <>
-      <Glyph className="size-3.5 shrink-0" aria-hidden="true" />
+      <Glyph aria-hidden="true" data-icon="inline-start" />
       {ident}
     </>
   );
+  const words = `Suggested ${reason === "break" ? "stop" : "fuel stop"} ${ident}`;
   if (!onHide) {
     return (
-      <button
-        type="button"
+      <Button
+        variant="outline"
+        size="sm"
         onClick={onAdd}
         disabled={!onAdd}
         data-testid="route-fuel-stop"
-        aria-label={`Suggested ${reason === "break" ? "stop" : "fuel stop"} ${ident}: add it to the route`}
-        className={chip}
+        aria-label={`${words}: add it to the route`}
+        className={look}
       >
         {face}
-      </button>
+      </Button>
     );
   }
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={
-          <button
-            type="button"
-            data-testid="route-fuel-stop"
-            aria-label={`Suggested ${reason === "break" ? "stop" : "fuel stop"} ${ident}`}
-            className={chip}
-          />
-        }
+        render={<Button variant="outline" size="sm" data-testid="route-fuel-stop" aria-label={words} className={look} />}
       >
         {face}
       </DropdownMenuTrigger>
@@ -1068,34 +1053,9 @@ function Pill({
   // focus from the search as it opened, which closed it (useAfterMenu).
   const [changing, setChanging] = useState(false);
   const { later, finalFocus } = useAfterMenu();
-  // A finger's hold, as iOS's: its menu at half a second -- unless the
-  // browser has lifted it first for a drag; lifted with the menu out, the
-  // menu goes and the drag goes on. A context menu's own hold is put off by any
-  // move at all, and a finger is never quite still: this one allows it
-  // eight points, and opens where the menu's own would.
-  const hold = useRef<{ timer: number; x: number; y: number } | null>(null);
+  // A finger's hold opens its menu by the stock ContextMenu's own long
+  // press, as a right click does; held and moved, React Aria's drag.
   const menuOut = useRef(false);
-  const letGo = () => {
-    if (hold.current) window.clearTimeout(hold.current.timer);
-    hold.current = null;
-  };
-  const press = (event: PointerEvent<HTMLSpanElement>) => {
-    if (event.pointerType === "mouse") return;
-    letGo();
-    const pill = event.currentTarget,
-      { clientX, clientY } = event;
-    hold.current = {
-      x: clientX,
-      y: clientY,
-      timer: window.setTimeout(
-        () => pill.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX, clientY })),
-        500,
-      ),
-    };
-  };
-  const slide = (event: PointerEvent<HTMLSpanElement>) => {
-    if (hold.current && Math.hypot(event.clientX - hold.current.x, event.clientY - hold.current.y) > 8) letGo();
-  };
   const self = useRef<HTMLSpanElement>(null);
   // React Aria's drag and drop (pointDrag): pressed and moved, or Enter on
   // the pill for the keyboard's drag, Tab to another pill and Enter there.
@@ -1106,7 +1066,6 @@ function Pill({
     dropRef: self,
     onMove,
     onDragStart: () => {
-      letGo();
       // The menu closes on Escape's key; a pointer's drag has no keys of
       // its own to lose to it.
       if (menuOut.current) document.dispatchEvent(new globalThis.KeyboardEvent("keydown", { key: "Escape" }));
@@ -1155,10 +1114,6 @@ function Pill({
       ref={self}
       // Focusable for the keyboard's drag (a group, so in the spread).
       {...joinProps(move.dragProps, move.dropProps, { tabIndex: 0 })}
-      onPointerDown={(e) => (move.dragProps.onPointerDown?.(e), press(e))}
-      onPointerMove={(e) => (move.dragProps.onPointerMove?.(e), slide(e))}
-      onPointerUp={(e) => (move.dragProps.onPointerUp?.(e), letGo())}
-      onPointerCancel={(e) => (move.dragProps.onPointerCancel?.(e), letGo())}
       role="group"
       aria-label={`${label} ${ident}`}
       aria-keyshortcuts="Delete"

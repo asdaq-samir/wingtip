@@ -7,7 +7,7 @@ import { cn } from "cn";
 import CloseButton from "../../../components/CloseButton";
 import RoundButton from "../../../components/RoundButton";
 import { Slider } from "../../../components/ui/slider";
-import { PlaybackButton, PlaybackToolbar, PlayToggle, SpeedMenu } from "../../../components/PlaybackBar";
+import { PlaybackButton, PlaybackToggle, PlaybackToolbar, PlayToggle, SpeedMenu } from "../../../components/PlaybackBar";
 import { playbackKey } from "../../../components/playbackKeys";
 import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, usePastFlight } from "../map/pastFlight";
 import { routeProfileQuery } from "../../../lib/queryClient";
@@ -150,20 +150,10 @@ export function DryRunControls({
             Go missed
           </PlaybackButton>
         )}
-        <PlaybackButton
-          render={
-            <RoundButton
-              label={pilotView ? "Chart view" : "Pilot's view"}
-              aria-pressed={pilotView}
-              onClick={() => setPilotView(!pilotView)}
-              className={cn(pilotView && "bg-tint text-white hover:bg-tint/90")}
-              data-testid="dry-run-pilot-view"
-            />
-          }
-        >
-          <Mountain className="size-5" />
-        </PlaybackButton>
-        <PlaybackButton render={<ForecastToggle />} />
+        <PlaybackToggle pressed={pilotView} onPressedChange={setPilotView} label="Pilot's view" testId="dry-run-pilot-view">
+          <Mountain className="size-5" aria-hidden />
+        </PlaybackToggle>
+        <ForecastToggle />
         <PlayToggle playing={playing} onToggle={toggle} testId="dry-run-play" />
         <SpeedMenu
           name="Speed"

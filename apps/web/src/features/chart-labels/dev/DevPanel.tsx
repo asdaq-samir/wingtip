@@ -10,6 +10,7 @@ import type { loadPilotPanel } from "../../pilot";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import StatusBadge, { type Tone } from "../../../components/StatusBadge";
 import { Progress } from "../../../components/ui/progress";
+import { Spinner } from "../../../components/ui/spinner";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "../../../components/ui/chart";
 import { api, errorMessage } from "../../../lib/api/client";
 import { statusQuery } from "../../../lib/queryClient";
@@ -1083,7 +1084,13 @@ function SystemTab({
             asked, where it was an icon beside the tabs. */}
         <ListGroup>
           <ListRow
-            media={<RefreshCw className={cn("size-5", refreshing && "animate-spin")} />}
+            media={
+              refreshing ? (
+                <Spinner className="size-5" role={undefined} aria-label={undefined} aria-hidden />
+              ) : (
+                <RefreshCw className="size-5" />
+              )
+            }
             title="Check again"
             description="It checks by itself every 30 seconds"
             onClick={onRefresh}

@@ -3,6 +3,7 @@ import { cn } from "cn";
 import { PillSection } from "../../components/Favorites";
 import FindingIcon from "../../components/FindingIcon";
 import { Skeleton } from "../../components/ui/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
 import { describeError } from "../../lib/api/client";
 import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
@@ -61,42 +62,42 @@ export default function DepartureWindowStrip() {
             </p>
           )}
           {/* Across, as far as the forecasts reach: the strip scrolls,
-              the page does not. Each tile's hit area is 44 points by its
+              the page does not. The stock ToggleGroup, one hour at most
+              picked (Base UI's single selection, its arrow keys along the
+              strip; the owner, 2026-11-10), where the tiles were buttons
+              of our own. Each tile's hit area is 44 points by its
               pseudo-element, the tiles gap-2 apart so the areas meet. */}
-          <div
-            className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1"
-            role="group"
+          <ToggleGroup
+            value={m.selected ? [m.selected.depart] : []}
+            onValueChange={(value) => m.pick(value[0] ?? null)}
             aria-label="Departure hours"
+            className="-mx-4 w-auto snap-x overflow-x-auto px-4 pb-1"
             data-testid="departure-window-hours"
           >
             {m.hours.map((h) => {
               const finding = HOUR_FINDING[h.verdict];
-              const on = m.selected?.depart === h.depart;
               const day = dayOf(h.depart, now);
               return (
-                <button
+                <ToggleGroupItem
                   key={h.depart}
-                  type="button"
-                  onClick={() => m.pick(h.depart)}
-                  aria-pressed={on}
+                  value={h.depart}
                   aria-label={hourLabel(h)}
                   data-testid="departure-window-hour"
                   data-verdict={h.verdict}
                   className={cn(
-                    "relative flex w-12 shrink-0 snap-start flex-col items-center gap-0.5 rounded-xl py-1.5 outline-none",
-                    "after:absolute after:-inset-1 focus-visible:ring-2 focus-visible:ring-ring",
+                    "relative h-auto w-12 snap-start flex-col gap-0.5 rounded-xl py-1.5",
+                    "after:absolute after:-inset-1 data-pressed:ring-2 data-pressed:ring-tint",
                     TILE_TINT[finding],
-                    on && "ring-2 ring-tint",
                   )}
                 >
                   <span className={cn(TEXT.detail, "tabular-nums text-foreground")}>{clock(h.depart).slice(0, 2)}</span>
                   <FindingIcon finding={finding} className="size-5" />
                   {h.night ? <Moon className="size-3 text-muted-foreground" aria-hidden /> : <span className="h-3" aria-hidden />}
                   {day && <span className="sr-only">{day}</span>}
-                </button>
+                </ToggleGroupItem>
               );
             })}
-          </div>
+          </ToggleGroup>
           {m.selected && (
             <div className="flex flex-col gap-1 rounded-xl bg-muted/60 px-3.5 py-2.5" data-testid="departure-window-detail">
               <div className={cn("flex items-center gap-2 font-medium", TEXT.row)}>

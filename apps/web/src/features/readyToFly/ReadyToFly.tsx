@@ -1,6 +1,7 @@
-import { ChevronRight, Loader2 } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { cn } from "cn";
 import FindingIcon from "../../components/FindingIcon";
+import { Spinner } from "../../components/ui/spinner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { dayWords } from "../../lib/dataCycles";
 import { FINDING_TONE } from "../../lib/findings";
@@ -17,7 +18,11 @@ type Item = ReadyAnswer["items"][number];
 export function ReadyAction({ item, ready, onDone }: { item: Item; ready: Ready; onDone?: () => void }) {
   const can = ready.canFix(item.fix);
   const busy = ready.busy(item.fix);
-  const icon = busy ? <Loader2 className="size-5 shrink-0 animate-spin text-tint" aria-hidden /> : <FindingIcon finding="caution" />;
+  const icon = busy ? (
+    <Spinner className="size-5 shrink-0 text-tint" role={undefined} aria-label={undefined} aria-hidden />
+  ) : (
+    <FindingIcon finding="caution" />
+  );
   if (!can)
     return (
       <div className={cn("flex items-center gap-2.5", TEXT.row)} data-testid={`ready-action-${item.key}`}>
