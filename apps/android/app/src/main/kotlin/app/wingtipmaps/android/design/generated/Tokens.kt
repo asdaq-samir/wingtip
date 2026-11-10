@@ -736,7 +736,6 @@ object WingtipMotion {
     const val QUICK_MS = 150
     const val PAGE_MS = 250
     const val SKELETON_PULSE_MS = 1500
-    const val PRESS_MS = 100
 }
 
 /** The taps felt on a key action, as View.performHapticFeedback's constants; one

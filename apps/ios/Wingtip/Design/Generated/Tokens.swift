@@ -640,7 +640,6 @@ enum WingtipMotion {
     static let quick: TimeInterval = 0.15
     static let page: TimeInterval = 0.25
     static let skeletonPulse: TimeInterval = 1.5
-    static let press: TimeInterval = 0.1
 }
 
 /// The taps felt on a key action, as SwiftUI's sensory feedback

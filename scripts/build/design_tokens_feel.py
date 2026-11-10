@@ -1,14 +1,13 @@
 """The feel tokens as the web's custom properties, for design_tokens.py.
 
-design/tokens.json's feel group is the web's alone: a press's scale, a
-hover's lift, the washes a control's own colour is mixed in at (hover,
-press, a picked row), and the layered shadows (float, raised, overlay),
-each with its night value under $extensions. iOS and Android draw their
-system's own states and depth, so only tokens.css carries these.
+design/tokens.json's feel group is the web's alone: the layered shadows
+of its own surfaces over the chart (float, overlay, card, sheet, mark),
+each with its night value under $extensions. Stock components keep their
+own states and shadows, and iOS and Android draw their system's own depth,
+so only tokens.css carries these.
 """
 
 EXT = "app.wingtipmaps"
-WASHES = ("hover", "press", "selected")
 
 
 def shadow_css(layers):
@@ -30,8 +29,6 @@ def shadow_css(layers):
 def css(group):
     """The group's declarations by day (for :root) and at night (.dark)."""
     shadows = {k: t for k, t in group.items() if t.get("$type") == "shadow"}
-    day = [("feel-press-scale", "%g" % group["press-scale"]["$value"]), ("feel-lift", "%gpx" % group["lift"]["$value"])]
-    day += [("feel-%s" % k, "%g%%" % (group[k]["$value"] * 100)) for k in WASHES]
-    day += [("depth-%s" % k, shadow_css(t["$value"])) for k, t in shadows.items()]
+    day = [("depth-%s" % k, shadow_css(t["$value"])) for k, t in shadows.items()]
     night = [("depth-%s" % k, shadow_css(t["$extensions"][EXT]["dark"])) for k, t in shadows.items()]
     return day, night

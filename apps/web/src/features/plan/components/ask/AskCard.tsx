@@ -234,7 +234,7 @@ export default function AskSection() {
             onClick={hear}
             disabled={listeningFor === "ask"}
             data-testid="ask-mic"
-            className="size-12 shrink-0 rounded-full border-0 bg-card shadow-raised"
+            className="size-12 shrink-0 rounded-full border-0 bg-card shadow-float"
           >
             <Mic className={cn("size-5", listeningFor === "ask" && "animate-pulse")} strokeWidth={2.4} />
           </IconButton>

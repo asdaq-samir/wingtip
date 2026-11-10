@@ -1,27 +1,16 @@
-/* How the web app feels in the hand, as the newest web apps do (Apple's
-   own, Linear, Vercel, Raycast; the owner, 2026-11-09: "make sure we can
-   compete with other latest web apps"), the layout kept as it is. Every
-   figure is a token (design/tokens.json's feel and motion groups, written
-   by scripts/build/design-tokens.sh): the press's give, the hover's lift,
-   the washes of a control's own colour mixed in OKLCH, and the layered
-   shadows. Every motion here is held still under Reduce Motion. */
+/* Page-level type and scrolling for the web app, the layout kept as it is.
+   No component's own states or shadows are drawn over here: the stock
+   Base UI and shadcn components show theirs (the owner, 2026-11-10: no
+   look or behaviour on top of stock components), styled by the brand's
+   colour, type, radius and spacing tokens alone. */
 
 @theme inline {
-  /* Layered shadows, a hairline round each (shadow-float, -raised,
-     -overlay), deeper at night (tokens.css's .dark). */
+  /* The shadow under what floats over the chart -- the liquid glass, the
+     desktop's panel, the assistant's cards -- and an own card laid over
+     the map (design/tokens.json's feel.float and feel.overlay, deeper at
+     night). */
   --shadow-float: var(--depth-float);
-  --shadow-raised: var(--depth-raised);
   --shadow-overlay: var(--depth-overlay);
-  /* A control's states as washes of its own colour (bg-wash-hover,
-     bg-wash-press), as a tinted word or glyph is the colour it is washed
-     in; a picked row in the tint (bg-wash-selected). A filled button
-     darkens by day and lightens at night, towards the words' colour
-     (bg-primary-hover, bg-primary-press). */
-  --color-wash-hover: color-mix(in oklch, currentColor var(--feel-hover), transparent);
-  --color-wash-press: color-mix(in oklch, currentColor var(--feel-press), transparent);
-  --color-wash-selected: color-mix(in oklch, var(--tint) var(--feel-selected), transparent);
-  --color-primary-hover: color-mix(in oklch, var(--primary), var(--foreground) var(--feel-hover));
-  --color-primary-press: color-mix(in oklch, var(--primary), var(--foreground) var(--feel-press));
 }
 
 /* The browser's own parts -- a field's caret and date picker, a scroll
@@ -89,35 +78,6 @@
 }
 :where([data-slot="popover-content"], [data-slot="command-list"]) {
   scrollbar-gutter: stable;
-}
-
-/* A press gives a little, as iOS's buttons do under a finger: the stock
-   Button and every round glass button (they are stock Buttons), scaled
-   rather than moved, in the press's time. Not with Reduce Motion. */
-@media (prefers-reduced-motion: no-preference) {
-  :where([data-slot="button"], [data-slot="toggle"], [data-slot="toggle-group-item"]):not(:disabled):active {
-    scale: var(--feel-press-scale);
-    transition-duration: var(--motion-press);
-  }
-}
-
-/* A tile or card a mouse can open, lifted under it with a raised shadow
-   (Setup's tiles, Favorites'). A finger has no hover; Reduce Motion
-   keeps the shadow and not the move. */
-@utility lift {
-  transition:
-    translate var(--motion-quick) var(--motion-sheet-ease),
-    box-shadow var(--motion-quick) var(--motion-sheet-ease);
-  @media (hover: hover) {
-    &:hover {
-      box-shadow: var(--depth-raised);
-    }
-    @media (prefers-reduced-motion: no-preference) {
-      &:hover {
-        translate: 0 calc(-1 * var(--feel-lift));
-      }
-    }
-  }
 }
 
 /* What comes into a page as it is -- a banner, a problem's line, an

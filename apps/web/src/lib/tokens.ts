@@ -177,7 +177,6 @@ export const MOTION = {
   quick: 0.15,
   page: 0.25,
   skeletonPulse: 1.5,
-  press: 0.1,
 } as const;
 
 /** The taps felt on a key action: navigator.vibrate patterns in milliseconds (lib/haptics plays them). */
