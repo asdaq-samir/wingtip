@@ -30,7 +30,8 @@ import {
 import { RouteGl, type GlCandidate, type GlCheckpoint, type GlEndpoint } from "../../../lib/map/gl/layers/RouteGl";
 import type { GlLeg } from "../../../lib/map/gl/legTap";
 import { TfrGl } from "./layers/TfrGl";
-import { FlownTrackGl, LegHighlightGl, OwnTrailGl, ReplayGl } from "./layers/TracksGl";
+import { SearchMarksGl } from "./layers/SearchMarksGl";
+import { FlownTrackGl, LegHighlightGl, LegHoverGl, OwnTrailGl, ReplayGl } from "./layers/TracksGl";
 import { ForecastRunGl } from "../forecastRun/ForecastRunGl";
 import { TrafficGl } from "./layers/TrafficGl";
 import { WeatherGl } from "./layers/WeatherGl";
@@ -170,6 +171,7 @@ function Layers(p: GlRouteMapProps) {
         <>
           {p.onPickWay && p.ways && <WaysGl ways={p.ways} shown={p.wayShown} onPick={p.onPickWay} />}
           <LegHighlightGl course={course} />
+          <LegHoverGl />
           <PlatesGl drawings={p.procedures} />
           <RouteGl
             course={course}
@@ -200,6 +202,8 @@ function Layers(p: GlRouteMapProps) {
       <OwnShipGl />
       <AheadGl />
       <TrafficGl />
+      {/* The one search's airports, numbered, while its results are up (a desktop's). */}
+      <SearchMarksGl />
     </>
   );
 }

@@ -14,8 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.toggleableState
-import androidx.compose.ui.state.ToggleableState
 
 /**
  * A group of settings rows, Material 3 Expressive's segmented list: the
@@ -32,18 +30,16 @@ fun SettingsGroup(modifier: Modifier = Modifier, content: @Composable ColumnScop
 /**
  * A setting on or off: a segmented row with the stock switch at its end,
  * the whole row the toggle (a row is 56 dp, over Material's 48 dp
- * target), read out by TalkBack as one switch by its name. The switch's
+ * target), Material's own checkable segmented list item. The switch's
  * own ToggleOn and ToggleOff haptics are the stock ones.
  */
 @Composable
 fun SwitchSettingRow(title: String, on: Boolean, index: Int, count: Int, onChange: (Boolean) -> Unit) {
     SegmentedListItem(
-        onClick = { onChange(!on) },
+        checked = on,
+        onCheckedChange = onChange,
         shapes = ListItemDefaults.segmentedShapes(index = index, count = count),
-        modifier = Modifier.fillMaxWidth().semantics {
-            role = Role.Switch
-            toggleableState = ToggleableState(on)
-        },
+        modifier = Modifier.fillMaxWidth(),
         trailingContent = { Switch(checked = on, onCheckedChange = null) },
         content = { Text(title) },
     )

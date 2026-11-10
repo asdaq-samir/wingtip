@@ -37,8 +37,8 @@ import app.wingtipmaps.android.ai.AiTask
 import app.wingtipmaps.android.ai.AiWordsRow
 import app.wingtipmaps.android.brief.DepartureWindowStrip
 import app.wingtipmaps.android.brief.IcingRows
+import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.RefreshBox
-import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -81,7 +81,7 @@ fun BriefSheet(model: BriefModel, plan: Plan.State, signedIn: Boolean, onClose: 
                 // Ready to fly first: what to fix on the phone while there
                 // is still a signal (ReadyToFlyRow).
                 ready()
-                if (state.loading) Skeleton(rows = 4)
+                if (state.loading) LoadingRow()
                 ProblemLine(state.problem)
                 VerdictBlock(state.verdict, state.actions)
                 // The brief kept for the air, shown with no signal: how old.

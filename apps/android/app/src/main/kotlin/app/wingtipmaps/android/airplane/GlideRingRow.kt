@@ -2,7 +2,6 @@ package app.wingtipmaps.android.airplane
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -15,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
@@ -37,6 +35,9 @@ fun GlideRingRow(plan: Plan) {
     val on = kept == true
     Column {
         ListItem(
+            checked = on,
+            onCheckedChange = { GlideRing.set(context, it) },
+            enabled = why == null,
             supportingContent = {
                 val line = when (why) {
                     GlideRing.Unavailable.NO_AIRPLANE -> stringResource(R.string.glide_ring_no_airplane)
@@ -47,7 +48,7 @@ fun GlideRingRow(plan: Plan) {
             },
             trailingContent = { Switch(checked = on && why == null, onCheckedChange = null, enabled = why == null) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            modifier = Modifier.fillMaxWidth().toggleable(value = on, enabled = why == null, role = Role.Switch) { GlideRing.set(context, it) },
+            modifier = Modifier.fillMaxWidth(),
             content = { Text(stringResource(R.string.glide_ring)) },
         )
         if (why == GlideRing.Unavailable.NO_GLIDE) {

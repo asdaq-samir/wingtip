@@ -5,7 +5,6 @@ import android.os.Build
 import android.view.HapticFeedbackConstants
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,7 +39,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -290,9 +288,10 @@ private fun Mark(ok: Boolean, words: String) {
 private fun HeardLog(heard: List<Heard>, onPick: (String) -> Unit) {
     heard.filter { it.final }.asReversed().take(10).forEach { t ->
         ListItem(
+            onClick = { onPick(t.text) },
             supportingContent = { Text(Format.clock(t.atMs), color = MaterialTheme.colorScheme.onSurfaceVariant) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { onPick(t.text) },
+            modifier = Modifier.fillMaxWidth(),
             content = { Text(t.text) },
         )
     }

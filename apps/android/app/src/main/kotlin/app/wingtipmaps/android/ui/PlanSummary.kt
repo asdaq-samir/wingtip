@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedListItem
@@ -17,8 +17,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import app.wingtipmaps.android.Plan
@@ -51,12 +51,14 @@ fun PlanHead(state: Plan.State, tail: String?, onClose: () -> Unit) {
             val altitude = (state.altitudeFt ?: state.legs.firstOrNull()?.altitudeFt)?.let(Format::cruiseAltitude)
             val airplane = listOfNotNull(tail, state.aircraft.uppercase().ifEmpty { null }).joinToString(" · ").ifEmpty { null }
             val line = listOfNotNull(airplane ?: stringResource(R.string.no_airplane), altitude).joinToString(" · ")
-            Text(
-                line,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (airplane == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { ScreenRequests.ask(Screen.AIRPLANE) }
-                    .padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm),
+            // Material's clickable list item, to the airplane's page.
+            ListItem(
+                onClick = { ScreenRequests.ask(Screen.AIRPLANE) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.fillMaxWidth(),
+                content = {
+                    Text(line, style = MaterialTheme.typography.bodyMedium, color = if (airplane == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                },
             )
         }
     }

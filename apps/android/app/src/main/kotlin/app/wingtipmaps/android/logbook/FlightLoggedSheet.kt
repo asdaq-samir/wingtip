@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -24,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.LogbookDraft
@@ -107,10 +105,12 @@ private fun DraftRows(draft: LogbookDraft, state: LogbookDraftModel.State, model
         val n = draft.instrument.approaches
         val found = pluralStringResource(if (draft.instrument.holding) R.plurals.flight_logged_found_hold else R.plurals.flight_logged_found, n, n)
         ListItem(
+            checked = state.byInstruments,
+            onCheckedChange = model::byInstruments,
             supportingContent = { Text(listOf(found, said).filter { it.isNotEmpty() }.joinToString(" ")) },
             trailingContent = { Checkbox(checked = state.byInstruments, onCheckedChange = null) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            modifier = Modifier.fillMaxWidth().toggleable(value = state.byInstruments, role = Role.Checkbox, onValueChange = model::byInstruments),
+            modifier = Modifier.fillMaxWidth(),
             content = { Text(stringResource(R.string.flown_by_instruments)) },
         )
     }

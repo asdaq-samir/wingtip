@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { WandSparkles } from "lucide-react";
 import {
@@ -18,7 +18,6 @@ import { SectionPane } from "../../../../components/SectionPane";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import IconButton from "../../../../components/IconButton";
 import { Popover, PopoverContent, PopoverTrigger } from "../../../../components/ui/popover";
-import { Textarea } from "../../../../components/ui/textarea";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "../../../../components/ui/table";
 import type { Candidate, Leg, NavLogAltitude, Totals, TopOfClimb, TopOfDescent } from "../../../../lib/api/types";
 import { feet, magneticVariation, windCorrection } from "../../../../lib/format";
@@ -36,6 +35,12 @@ import { dryRunRow, type DryRun } from "./dryRun";
 import { DRY_RUN, usePastFlight } from "../../map/pastFlight";
 import { PointMark } from "./PointMark";
 import { NavLogList } from "./NavLogList";
+import { DescriptionCell } from "./DescriptionCell";
+import { NavLogTotals } from "./NavLogTotals";
+import NavLogAge from "./NavLogAge";
+import { useIsDesktop } from "../../../../hooks/use-desktop";
+import { hoverLeg } from "../../../../lib/map/marks/mapHover";
+import { useAirplaneChosen } from "../../../../lib/preferences";
 import { Spinner } from "../../../../components/ui/spinner";
 
 // TanStack Table's own extension point for arbitrary per-column data --
@@ -55,6 +60,16 @@ declare module "@tanstack/react-table" {
 // documented way to say "just the core row/column/header model," not
 // a placeholder waiting to be filled in.
 const navLogTableFeatures = tableFeatures({});
+
+/** A column on paper alone: a phone has the leg's figures under its row. */
+const PAPER = { className: "hidden print:table-cell" };
+/** A desktop's side panel's columns (docs/design/web.md §4: Point, Alt,
+ *  TC, Wind, MH, Dist, GS, ETE, Fuel, and the ETA with a departure time);
+ *  the rest are the leg's grid under its row, as on a phone. */
+const DESK = new Set(["waypoint", "alt", "dist", "tc", "wind", "mh", "gs", "ete", "fuel", "eta"]);
+/** The columns only an airplane gives (decision 0011: none assumed): its
+ *  heading, groundspeed, time and fuel, which need its airspeed and burn. */
+const AIRPLANE = new Set(["mh", "gs", "ete", "fuel"]);
 
 interface Props {
   totals: Totals | null;
@@ -147,100 +162,6 @@ interface Props {
    *  procedures", 2026-10-18). The nav log is then a card of its own in
    *  the main sheet, this view drawn again without the route. */
   route?: ReactNode;
-}
-
-/**
- * One checkpoint's "how to spot it" text -- an editable box from the
- * start, whether or not the AI button has ever been clicked for this
- * route: a pilot can type their own note here without asking for a
- * generated one first. Clicking the AI button just streams a value
- * into it later, the same as a pilot's own edit would, and this cell
- * doesn't care which one filled it in. Local draft state is what lets
- * typing feel immediate without saving on every keystroke; the save
- * itself happens on blur.
- */
-export function DescriptionCell({
-  description,
-  onSave,
-  selected,
-  onFocus,
-}: {
-  description: Description | undefined;
-  onSave: (text: string) => Promise<unknown>;
-  /** Its waypoint's row selected: the box then shows as a field on the
-   *  selection's tint, the two reading as one selected group rather
-   *  than a highlighted row sitting above an unrelated one. */
-  selected: boolean;
-  /** Selects this row's own waypoint the moment a pilot focuses (or
-   *  clicks into) the box -- the reverse half of the sync: selecting
-   *  the row already highlights this box, and typing here should
-   *  highlight the row back, not leave it looking unselected while
-   *  its own description is what's actually being edited. */
-  onFocus: () => void;
-}) {
-  // null while nobody is editing: the box shows the note as it stands,
-  // and a line that streams in shows at once. A string while a pilot
-  // types, kept until it is saved -- a generated line arriving in the
-  // middle does not replace it, and a save that fails leaves it in the
-  // box to try again. It used to be one string reset whenever the note
-  // changed, so a line arriving mid-typing replaced the typing, and the
-  // blur that followed saw nothing new to save.
-  const [draft, setDraft] = useState<string | null>(null);
-  const id = useId();
-  return (
-    // A label round the box, nine points proud of it above and below and
-    // taking no room: a tap there focuses the box, so a finger has 44
-    // points to find it in while the box itself stays the row's own 26.
-    // A text field cannot carry the ::after the buttons reach 44 with
-    // (index.css). Positioned, so the band lies over the leg's figures it
-    // reaches into rather than under them. The box keeps a name of its
-    // own: through the label it would be named with its own text.
-    <label htmlFor={id} className="relative -my-2.25 block py-2.25">
-      <Textarea
-        id={id}
-        aria-label="How to spot it"
-        value={draft ?? description?.text ?? ""}
-        onChange={(e) => setDraft(e.target.value)}
-        onFocus={onFocus}
-        onBlur={() => {
-          if (draft === null) return;
-          const trimmed = draft.trim();
-          // Nothing new, or emptied: back to the note as it stands.
-          if (!trimmed || trimmed === (description?.text ?? "")) {
-            setDraft(null);
-            return;
-          }
-          const typed = draft;
-          // Cleared once saved -- unless the pilot is typing again by then.
-          // A failure keeps the text; the query client reports it.
-          onSave(trimmed).then(
-            () => setDraft((d) => (d === typed ? null : d)),
-            () => {},
-          );
-        }}
-        rows={1}
-        placeholder={description?.source === "error" ? "Couldn't auto-generate — type one" : "How to spot it…"}
-        // shadcn's own Textarea, sized down to a table cell: one line in
-        // the row, at the row's own size -- 15 to a finger, where it was a
-        // field's 17 among figures of 15 (iOS Safari zooms in on a field
-        // under 16; the viewport no longer forbids it, #265).
-        className={cn(
-          "min-h-0 w-full resize-none rounded py-0.5 pr-1 pl-0.5 text-left align-top shadow-none",
-          // md:text-xs: the Textarea's own md:text-sm is another variant, which
-          // TEXT.detail's text-xs does not displace, so a mouse would see 14
-          // beside the row's 12.
-          TEXT.detail,
-          "md:text-xs",
-          // On a selected row, a field: the page's own background and the
-          // stock edge, on the selection's tint, so it reads as somewhere
-          // to type rather than one more line of the row.
-          selected
-            ? "border-input bg-background text-foreground"
-            : "border-transparent bg-transparent text-muted-foreground hover:border-border focus:border-ring focus:bg-background",
-        )}
-      />
-    </label>
-  );
 }
 
 /**
@@ -406,6 +327,12 @@ export default function NavLogView({
   // For the printer every page, one after another: the paper is the whole
   // briefing whatever was up on screen (usePrinting).
   const printing = usePrinting();
+  // On a desktop's side panel the log on screen is the dense table, its
+  // heading held as it scrolls (web.md §4); a phone's is a line a point.
+  const onDesk = useIsDesktop() && !printing;
+  const airplane = useAirplaneChosen();
+  // The leg lit on the map by a mouse put away with the table.
+  useEffect(() => () => hoverLeg(null), []);
   // One row per waypoint the plan knows about, regardless of how many
   // legs have streamed in: a row whose leg has not arrived shows a dash
   // in every column that needs one. Column defs are declared here, not
@@ -489,7 +416,7 @@ export default function NavLogView({
       // reasoning), not a red mark by the waypoint, which the pilot found
       // one warning too many.
       cell: ({ row }) => (
-        <span className="flex min-w-[5.5rem] items-center gap-2">
+        <span className="flex min-w-[5.5rem] items-center gap-2 lg:pointer-fine:min-w-[4.5rem]">
           <PointMark
             row={row.original}
             number={row.original.kind === "checkpoint" ? numbers.get(row.original.key) : undefined}
@@ -539,13 +466,13 @@ export default function NavLogView({
     {
       id: "tc",
       header: () => <Heading name="TC" unit="true" spoken="True course" />,
-      meta: { className: "hidden print:table-cell" },
+      meta: PAPER,
       cell: ({ row }) => (legOf(row.original) ? bearing(legOf(row.original)!.true_course_deg) : "—"),
     },
     {
       id: "wind",
       header: () => <Heading name="Wind" unit="°/kt" spoken="Wind, direction and speed" />,
-      meta: { className: "hidden print:table-cell" },
+      meta: PAPER,
       cell: ({ row }) => {
         const leg = legOf(row.original);
         return leg ? (leg.wind ? windAloft(leg.wind.wind_dir_true_deg, leg.wind.wind_speed_kt) : "no data") : "—";
@@ -554,19 +481,19 @@ export default function NavLogView({
     {
       id: "wca",
       header: () => <Heading name="WCA" unit="°" spoken="Wind correction angle" />,
-      meta: { className: "hidden print:table-cell" },
+      meta: PAPER,
       cell: ({ row }) => (legOf(row.original)?.wca_deg != null ? windCorrection(legOf(row.original)!.wca_deg!, 1) : "—"),
     },
     {
       id: "th",
       header: () => <Heading name="TH" unit="true" spoken="True heading" />,
-      meta: { className: "hidden print:table-cell" },
+      meta: PAPER,
       cell: ({ row }) => (legOf(row.original)?.true_heading_deg != null ? bearing(legOf(row.original)!.true_heading_deg!) : "—"),
     },
     {
       id: "var",
       header: () => <Heading name="Var" unit="°" spoken="Magnetic variation" />,
-      meta: { className: "hidden print:table-cell" },
+      meta: PAPER,
       cell: ({ row }) => (legOf(row.original) ? magneticVariation(legOf(row.original)!.magnetic_variation_deg, 1) : "—"),
     },
     {
@@ -580,7 +507,7 @@ export default function NavLogView({
       // reasoning says how it is worked out).
       id: "tas",
       header: () => <Heading name="TAS" unit="kt" spoken="True airspeed, knots" />,
-      meta: { className: "hidden print:table-cell" },
+      meta: PAPER,
       cell: ({ row }) => {
         const leg = legOf(row.original);
         return leg ? tas(leg) : "—";
@@ -589,7 +516,7 @@ export default function NavLogView({
     {
       id: "gs",
       header: () => <Heading name="GS" unit="kt" spoken="Groundspeed, knots" />,
-      meta: { className: "hidden print:table-cell" },
+      meta: PAPER,
       cell: ({ row }) => {
         const leg = legOf(row.original);
         return leg ? (leg.groundspeed_kt === null ? "—" : Math.round(leg.groundspeed_kt)) : "—";
@@ -606,7 +533,7 @@ export default function NavLogView({
     {
       id: "fuel",
       header: () => <Heading name="Fuel" unit="gal" spoken="Fuel, gallons" />,
-      meta: { className: "hidden print:table-cell" },
+      meta: PAPER,
       cell: ({ row }) => (legOf(row.original) ? one(legOf(row.original)!.fuel_gal) : "—"),
     },
   ];
@@ -638,7 +565,14 @@ export default function NavLogView({
   // and `navLogTableFeatures`'s own core model is the only row model
   // this needs; a sortable column here would let a pilot reorder the
   // log into something unflyable (e.g. by Fuel).
-  const table = useTable({ features: navLogTableFeatures, data, columns, getRowId: (row) => row.key });
+  // A desktop's columns: the desk's, and those an airplane gives only with
+  // one picked (NavLogList's rule on a phone, FlightLine's on the strip).
+  const shownColumns = onDesk ? columns.filter((c) => DESK.has(c.id ?? "") && (airplane || !AIRPLANE.has(c.id ?? ""))) : columns;
+  const metaClass = (meta?: { className?: string }) => (onDesk && meta === PAPER ? undefined : meta?.className);
+  // With no airplane no tops of climb and descent, as NavLogList has it:
+  // where the airplane levels off is its climb's.
+  const tableRows = useMemo(() => (onDesk && !airplane ? data.filter((r) => !isLegPoint(r)) : data), [onDesk, airplane, data]);
+  const table = useTable({ features: navLogTableFeatures, data: tableRows, columns: shownColumns, getRowId: (row) => row.key });
 
   // The selected row as it is put in the page: the rows are drawn a moment
   // after the panel (PanelTabs' deferred draw), and on a busy page after
@@ -732,7 +666,8 @@ export default function NavLogView({
   // nothing scrolls: every column is laid out for the browser to
   // paginate.
   const navLogTable = (
-    <div ref={watchFit}>
+    <div ref={watchFit} data-testid={onDesk ? "navlog-table" : undefined}>
+      {onDesk && <NavLogAge />}
       <Table
         containerClassName={cn(fits ? "overflow-x-visible" : "overflow-x-auto", "print:overflow-visible")}
         className={cn(
@@ -742,6 +677,9 @@ export default function NavLogView({
           // every column of it scrolled sideways under the waypoint's. On
           // paper, every column at the stock padding.
           "text-right whitespace-nowrap [&_td]:px-1 [&_th]:px-1 print:[&_td]:px-2 print:[&_th]:px-2",
+          // A desktop's nine or ten columns in the side panel's width with
+          // no sideways scroll (web.md §4): the cells' padding halved again.
+          onDesk && "[&_td]:px-0.5 [&_th]:px-0.5",
           // To a finger, the figures at what is read (15) and the rows 44
           // points to tap (lib/text.ts), as the pilot had them: 12 on a
           // phone was too small to read. (What they had asked to have
@@ -764,7 +702,7 @@ export default function NavLogView({
                 // sat off its column), the waypoint's left as its names
                 // are; set as every group's heading is in the app
                 // (GROUP_HEADING), at the pilot's ask.
-                <TableHead key={header.id} className={cn("text-right", GROUP_HEADING, header.column.columnDef.meta?.className)}>
+                <TableHead key={header.id} className={cn("text-right", GROUP_HEADING, metaClass(header.column.columnDef.meta))}>
                   {flexRender(header.column.columnDef.header, header.getContext())}
                 </TableHead>
               ))}
@@ -774,7 +712,7 @@ export default function NavLogView({
         <TableBody>
           {data.length === 0 && (
             <TableRow>
-              <TableCell className="text-left text-muted-foreground" colSpan={columns.length}>
+              <TableCell className="text-left text-muted-foreground" colSpan={shownColumns.length}>
                 No route planned yet
               </TableCell>
             </TableRow>
@@ -800,6 +738,10 @@ export default function NavLogView({
                   confident answer. They were the grey rows, before
                   every row's figures were grey. */}
                 <SelectableRow
+                  // A mouse on a leg's row lights the leg on the map (web.md §4).
+                  onHover={
+                    onDesk && row.index > 0 ? (on) => hoverLeg(on ? [rowPoint(tableRows[row.index - 1]!), { lat, lon }] : null) : undefined
+                  }
                   selected={rowSelected}
                   flying={row.index === flying}
                   kind={r.kind}
@@ -811,7 +753,7 @@ export default function NavLogView({
                   scrollRef={rowSelected ? setSelectedRow : row.index === flying ? setFlyingRow : undefined}
                 >
                   {row.getAllCells().map((cell) => (
-                    <TableCell key={cell.id} className={cell.column.columnDef.meta?.className}>
+                    <TableCell key={cell.id} className={metaClass(cell.column.columnDef.meta)} data-testid={`navlog-row-${cell.column.id}`}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -825,7 +767,7 @@ export default function NavLogView({
                   selects it, on the map too, and opens it. On paper
                   every row is open. */}
                 {(rowSelected || printing) && (
-                  <NoteRow selected={rowSelected} colSpan={columns.length}>
+                  <NoteRow selected={rowSelected} colSpan={shownColumns.length}>
                     {noteOf(r, rowSelected)}
                   </NoteRow>
                 )}
@@ -833,6 +775,8 @@ export default function NavLogView({
             );
           })}
         </TableBody>
+        {/* The totals at the foot, a desktop's: the engine's own sums. */}
+        {onDesk && totals && data.length > 0 && <NavLogTotals totals={totals} columns={shownColumns.map((c) => c.id ?? "")} />}
       </Table>
     </div>
   );
@@ -918,7 +862,7 @@ export default function NavLogView({
   const legsSection = (
     <SectionPane title={LEGS} heading={printing && !local}>
       {!local && summary}
-      {!local && (printing ? navLogTable : (route ?? navLogList))}
+      {!local && (printing ? navLogTable : (route ?? (onDesk ? navLogTable : navLogList)))}
     </SectionPane>
   );
   const title = routeName(

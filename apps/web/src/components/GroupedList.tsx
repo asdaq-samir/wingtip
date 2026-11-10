@@ -214,7 +214,8 @@ export function ListRow({
       // accordion's content styles every <a>), and a row is not prose.
       // A click handler goes on the link too, run before it opens: a row
       // that copies what the site it opens is to be given (the Brief's
-      // Open in 1800wxbrief), in the tap's own gesture.
+      // Open in 1800wxbrief), in the tap's own gesture; a mouse's hover
+      // too, for what the row lights on the map (a TFR's).
       <Item
         size="sm"
         className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 no-underline!"
@@ -224,6 +225,8 @@ export function ListRow({
             target="_blank"
             rel="noreferrer"
             onClick={buttonProps.onClick as ComponentProps<"a">["onClick"]}
+            onPointerEnter={buttonProps.onPointerEnter as ComponentProps<"a">["onPointerEnter"]}
+            onPointerLeave={buttonProps.onPointerLeave as ComponentProps<"a">["onPointerLeave"]}
             data-testid={(buttonProps as { "data-testid"?: string })["data-testid"]}
           >
             {body}

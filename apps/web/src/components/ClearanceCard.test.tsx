@@ -154,7 +154,7 @@ describe("the clearance card", () => {
     expect(enterDetail.textContent).toContain("KMSP → GEP → BRD → KDLH");
     expect(enterDetail.textContent).toContain("Fly 7,000 ft, expected");
 
-    // Nothing in the plan until Enter Route; then the expected altitude flown.
+    // Nothing in the plan until Use This Route; then the expected altitude flown.
     const enter = useRadioActions.getState().enter!;
     expect(enter).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId("clearance-enter"));
@@ -164,7 +164,7 @@ describe("the clearance card", () => {
     expect((screen.getByTestId("clearance-enter") as HTMLButtonElement).disabled).toBe(true);
   });
 
-  test("Enter in the typed field reads it at once, and Use This Route under the clearance enters it", async () => {
+  test("Enter in the typed field reads it at once, and Use This Route on the Enter row enters it", async () => {
     const { onDone } = card();
     const field = screen.getByTestId("clearance-text");
     fireEvent.change(field, { target: { value: CLEARED } });
@@ -174,7 +174,11 @@ describe("the clearance card", () => {
     const elements = screen.getByTestId("clearance-elements");
     expect(elements.getAttribute("aria-live")).toBe("polite");
     await waitFor(() => expect(within(elements).getByText("4512")).toBeTruthy());
-    const use = await screen.findByTestId("clearance-use");
+    // One Use This Route, the Enter row's (docs/design/web.md §12).
+    const use = screen.getByTestId("clearance-enter");
+    expect(use.textContent).toBe("Use This Route");
+    await waitFor(() => expect((use as HTMLButtonElement).disabled).toBe(false));
+    expect(screen.getAllByRole("button", { name: "Use This Route" })).toHaveLength(1);
     fireEvent.click(use);
     expect(useRadioActions.getState().enter).toHaveBeenCalledWith({ dep: "KMSP", stops: ["GEP", "BRD"], dest: "KDLH" }, [], 7000);
     expect(onDone).toHaveBeenCalledTimes(1);

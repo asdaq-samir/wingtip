@@ -1,7 +1,6 @@
 package app.wingtipmaps.android.ui
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -11,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
@@ -27,9 +25,10 @@ import app.wingtipmaps.android.navigation.generated.Screen
 @Composable
 internal fun ScreenRow(screen: Screen, @StringRes title: Int, @StringRes line: Int) {
     ListItem(
+        onClick = { ScreenRequests.ask(screen) },
         supportingContent = { Text(stringResource(line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { ScreenRequests.ask(screen) },
+        modifier = Modifier.fillMaxWidth(),
         content = { Text(stringResource(title), color = MaterialTheme.colorScheme.primary) },
     )
 }

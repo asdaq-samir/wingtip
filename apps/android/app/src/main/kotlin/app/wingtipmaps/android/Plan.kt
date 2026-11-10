@@ -157,7 +157,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
         plan(s.dep, s.dest, stops!!)
     }
 
-    /** The last edit that changed the route, for its Undo row. */
+    /** The last edit that changed the route, for its Undo (RouteUndoSnackbar). */
     val undo = RouteUndo()
 
     internal fun undoable(kind: RouteUndo.Kind, ident: String) {

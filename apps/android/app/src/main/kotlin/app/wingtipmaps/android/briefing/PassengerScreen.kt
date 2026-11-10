@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -26,10 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
@@ -43,8 +38,8 @@ import app.wingtipmaps.android.ui.WingtipIcons
  * The passenger briefing (PassengerModel): the items ticked off for this
  * flight, each with where it comes from under its title, the count of
  * them in the heading, then the flight in a few lines and Share, which
- * hands it to the phone's share sheet. Each item is a Material list item
- * made toggleable whole, its touch target the row's height.
+ * hands it to the phone's share sheet. Each item is Material's checkable
+ * list item, its touch target the row's height.
  */
 @Composable
 fun PassengerScreen(plan: Plan, modifier: Modifier = Modifier) {
@@ -68,10 +63,12 @@ fun PassengerScreen(plan: Plan, modifier: Modifier = Modifier) {
         items.forEach { item ->
             val on = item.key in state.ticked
             ListItem(
+                checked = on,
+                onCheckedChange = { model.tick(item.key) },
                 supportingContent = { Text(item.rule, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 leadingContent = { Checkbox(checked = on, onCheckedChange = null) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                modifier = Modifier.fillMaxWidth().toggleable(value = on, role = Role.Checkbox, onValueChange = { model.tick(item.key) }),
+                modifier = Modifier.fillMaxWidth(),
                 content = { Text(item.title) },
             )
         }

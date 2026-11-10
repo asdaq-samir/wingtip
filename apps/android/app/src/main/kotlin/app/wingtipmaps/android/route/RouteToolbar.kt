@@ -28,7 +28,7 @@ import app.wingtipmaps.android.ui.WingtipIcons
  * with Undo, Redo and Add Point, where the hand is while the route is
  * worked on the map rather than in the panel beside it. Undo and Redo are
  * the plan's own (Plan.undoEdit, Plan.redoEdit), the same step back the
- * Undo row in the plan takes; Add Point opens the one search for a stop,
+ * Undo of the edit's Snackbar takes (RouteUndoSnackbar); Add Point opens the one search for a stop,
  * as the plan's Add a Stop does. The phone's sheet keeps its own rows.
  */
 @Composable

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "cn";
+import { hoverTfr, mouseHover } from "../../../../lib/map/marks/mapHover";
 import AccordionSection from "../../../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import SectionTitle from "../../../../components/SectionTitle";
@@ -195,6 +196,11 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
                       }
                       value={t.crosses ? "On the route" : `${Math.round(t.along_track_nm)} nm along`}
                       href={tfrPage(t.notam_id)}
+                      // A mouse on it lights its area on the map (web.md §5).
+                      {...mouseHover(
+                        () => hoverTfr(t.notam_id),
+                        () => hoverTfr(null),
+                      )}
                     />,
                     t.on_route?.legs.length ? (
                       <OnRouteRow key={`${t.notam_id}-on`} on={t.on_route} briefing={briefing} hazardKey={`tfr-${t.notam_id}`} />

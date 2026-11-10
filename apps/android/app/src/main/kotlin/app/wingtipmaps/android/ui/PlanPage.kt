@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +19,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -32,11 +32,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -67,7 +69,6 @@ import app.wingtipmaps.android.plan.FlightRules
 import app.wingtipmaps.android.ready.ReadyToFlyRow
 import app.wingtipmaps.android.route.LegWords
 import app.wingtipmaps.android.route.RoutePointMenu
-import app.wingtipmaps.android.route.RouteUndoRow
 import app.wingtipmaps.android.share.ShareRouteButton
 import kotlinx.coroutines.launch
 
@@ -122,8 +123,6 @@ fun PlanPage(plan: Plan, onClose: () -> Unit, onField: (String) -> Unit, onFind:
                 KeptAgeLine(KeptForAir.PLAN, state.plannedAtMs.takeIf { state.kept })
             }
         }
-        // The last edit to the route, undone where it was made (RouteUndo).
-        item(key = "undo") { Box(pad) { RouteUndoRow(plan) } }
         itemsIndexed(state.legs, key = { i, _ -> "leg-$i" }) { i, leg ->
             Column(pad) {
                 LegRow(leg, onOpen = { open = i }) { RoutePointMenu(leg.to, plan) }
@@ -144,7 +143,8 @@ fun PlanPage(plan: Plan, onClose: () -> Unit, onField: (String) -> Unit, onFind:
     open?.let { i -> state.legs.getOrNull(i)?.let { LegSheet(number = null, leg = it, onClose = { open = null }) } }
 }
 
-/** Where the legs start in the plan's list (the undo row's place), for
+/** Where the legs start in the plan's list of a routed plan (head,
+ *  buttons, stops, Ready to Fly, route, rules, altitude, problem), for
  *  the Nav Log button to scroll to. */
 private const val LEGS_AT = 8
 
@@ -217,13 +217,15 @@ internal fun FlightRulesRow(onChanged: () -> Unit) {
 private fun LegRow(leg: Leg, onOpen: () -> Unit, menu: @Composable () -> Unit) {
     val openLeg = stringResource(R.string.said_open_leg)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        LegFigures(leg, Modifier.weight(1f).clickable(role = Role.Button, onClickLabel = openLeg, onClick = onOpen))
+        // Material's clickable surface, clear, over the leg's figures.
+        Surface(onClick = onOpen, color = Color.Transparent, modifier = Modifier.weight(1f).semantics { onClick(label = openLeg, action = null) }) {
+            LegFigures(leg, Modifier.fillMaxWidth())
+        }
         menu()
     }
 }
 
-/** The leg's figures, read as one sentence; `modifier` makes them the
- *  row's tap. */
+/** The leg's figures, read as one sentence. */
 @Composable
 private fun LegFigures(leg: Leg, modifier: Modifier) {
     Row(

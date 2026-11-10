@@ -16,9 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -31,11 +29,8 @@ import androidx.core.graphics.toColorInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.api.AirportPlace
-import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.name
 import app.wingtipmaps.android.design.RefreshBox
-import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.Tracking
@@ -46,7 +41,6 @@ import app.wingtipmaps.android.live.DepartureLine
 import app.wingtipmaps.android.live.SpecialUseRows
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapStyle
-import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.ui.sheet.CardSheet
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 import kotlinx.coroutines.launch

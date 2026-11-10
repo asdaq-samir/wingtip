@@ -2,7 +2,7 @@ import { Suspense, lazy } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, Plane, Search } from "lucide-react";
 import { cn } from "cn";
-import SheetDialog from "../../../../components/SheetDialog";
+import PanelOrSheet from "../../../../components/PanelOrSheet";
 import { ListChoices, ListGroup, ListRow } from "../../../../components/GroupedList";
 import { Button } from "../../../../components/ui/button";
 import { pilotQuery } from "../../../../lib/queryClient";
@@ -25,25 +25,26 @@ const TITLE = "[data-welcome-title]";
  * airplane, optional, No Airplane until one is picked (decision 0011) --
  * leaving it is the skip; Plan a Flight, filled, the primary, which puts
  * the pilot in the one search; the sample flight; the location with why,
- * asked only on a tap; and Sign In while signed out. Its stock sheet
- * (SheetDialog) fades in once, and not at all under Reduce Motion
- * (index.css); Escape or the close leaves the map ready, the welcome seen.
+ * asked only on a tap; and Sign In while signed out. On a phone its stock
+ * sheet fades in once, and not at all under Reduce Motion (index.css);
+ * from `md` up it is a card in the side panel, no modal, the map usable
+ * beside it (PanelOrSheet). Escape or the close leaves the map ready, the
+ * welcome seen.
  */
 export default function WelcomeCard({ onPlan, onOpened }: { onPlan: (parts: RouteParts) => void; onOpened: () => void }) {
   const vm = useWelcome({ onPlan, onOpened });
   const { data: pilot, isLoading } = useQuery(pilotQuery);
   return (
-    <SheetDialog
+    <PanelOrSheet
       open
-      onOpenChange={(open) => {
-        if (!open) vm.skip();
-      }}
+      onClose={vm.skip}
+      name="Welcome to Wingtip Maps"
       title={
         <span tabIndex={-1} className="outline-none" data-welcome-title="">
           Welcome to Wingtip Maps
         </span>
       }
-      initialFocus={(sheet) => sheet.querySelector<HTMLElement>(TITLE)}
+      titleFocus={TITLE}
       testId="welcome"
       description="The FAA chart, your route, its nav log and its Brief, for VFR and IFR."
     >
@@ -89,6 +90,6 @@ export default function WelcomeCard({ onPlan, onOpened }: { onPlan: (parts: Rout
           </p>
         )}
       </div>
-    </SheetDialog>
+    </PanelOrSheet>
   );
 }

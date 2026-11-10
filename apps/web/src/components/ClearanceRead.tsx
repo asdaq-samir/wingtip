@@ -67,23 +67,12 @@ function altitudeLine(c: Clearance): string | null {
 
 /**
  * The clearance as read, element by element in CRAFT's order (AIM 4-4-3:
- * cleared to, route, altitude, frequency, transponder), and under it what
- * the card does with it (`children`: Use This Route). A polite live region
+ * cleared to, route, altitude, frequency, transponder). A polite live region
  * (WCAG 4.1.3), so the words as they are heard or typed are said without
  * the focus leaving the field; the region is there from the start, as a
  * live region must be before what it says changes. Nothing heard, empty.
  */
-export function ClearanceElements({
-  clearance,
-  places,
-  heard,
-  children,
-}: {
-  clearance: Clearance;
-  places: Found | undefined;
-  heard: boolean;
-  children?: ReactNode;
-}) {
+export function ClearanceElements({ clearance, places, heard }: { clearance: Clearance; places: Found | undefined; heard: boolean }) {
   const limit = clearance.classB ? (
     "Class Bravo airspace"
   ) : places?.limit?.ident ? (
@@ -92,29 +81,25 @@ export function ClearanceElements({
     clearance.limit && capital(clearance.limit)
   );
   const altitude = altitudeLine(clearance);
-  // The action after the region, not in it: a button is not news.
   return (
-    <>
-      <div className="flex flex-col gap-1" aria-live="polite" data-testid="clearance-elements">
-        {heard && (
-          <>
-            {limit && <Line name="Cleared to">{limit}</Line>}
-            {(clearance.route.length > 0 || clearance.asFiled) && (
-              <Line name="Route">
-                <RouteWords items={clearance.route} asFiled={clearance.asFiled} found={places} />
-              </Line>
-            )}
-            {altitude && <Line name="Altitude">{altitude}</Line>}
-            {clearance.frequency && (
-              <Line name="Frequency">
-                <FrequencyButton mhz={clearance.frequency} name={capital(clearance.facility ?? "")} named />
-              </Line>
-            )}
-            {clearance.squawk && <Line name="Transponder">{clearance.squawk}</Line>}
-          </>
-        )}
-      </div>
-      {heard && children}
-    </>
+    <div className="flex flex-col gap-1" aria-live="polite" data-testid="clearance-elements">
+      {heard && (
+        <>
+          {limit && <Line name="Cleared to">{limit}</Line>}
+          {(clearance.route.length > 0 || clearance.asFiled) && (
+            <Line name="Route">
+              <RouteWords items={clearance.route} asFiled={clearance.asFiled} found={places} />
+            </Line>
+          )}
+          {altitude && <Line name="Altitude">{altitude}</Line>}
+          {clearance.frequency && (
+            <Line name="Frequency">
+              <FrequencyButton mhz={clearance.frequency} name={capital(clearance.facility ?? "")} named />
+            </Line>
+          )}
+          {clearance.squawk && <Line name="Transponder">{clearance.squawk}</Line>}
+        </>
+      )}
+    </div>
   );
 }

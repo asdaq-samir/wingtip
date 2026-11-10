@@ -1,12 +1,10 @@
 package app.wingtipmaps.android.documents
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DocumentScanner
 import androidx.compose.material3.Checkbox
@@ -20,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.assistant.DocumentFlag
 import app.wingtipmaps.android.api.generated.assistant.DocumentRead
@@ -34,10 +31,11 @@ import app.wingtipmaps.android.ui.LocalInk
 @Composable
 fun AddFromPhotoRow(line: String, title: String = stringResource(R.string.add_from_photo), onOpen: () -> Unit) {
     ListItem(
+        onClick = onOpen,
         supportingContent = { Text(line, color = MaterialTheme.colorScheme.onSurfaceVariant) },
         leadingContent = { Icon(Icons.Outlined.DocumentScanner, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onOpen),
+        modifier = Modifier.fillMaxWidth(),
         content = { Text(title) },
     )
 }
@@ -94,11 +92,14 @@ fun ConfirmRow(
     body: @Composable () -> Unit,
 ) {
     ListItem(
+        checked = checked,
+        onCheckedChange = { onToggle() },
+        enabled = enabled,
         overlineContent = overline?.let { { Text(it) } },
         supportingContent = { Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) { body() } },
         trailingContent = { Checkbox(checked = checked, onCheckedChange = null, enabled = enabled) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.fillMaxWidth().toggleable(value = checked, enabled = enabled, role = Role.Checkbox, onValueChange = { onToggle() }),
+        modifier = Modifier.fillMaxWidth(),
         content = { Text(title) },
     )
 }

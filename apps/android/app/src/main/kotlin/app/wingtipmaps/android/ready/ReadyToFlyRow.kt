@@ -1,11 +1,10 @@
 package app.wingtipmaps.android.ready
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
@@ -29,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -41,7 +39,6 @@ import app.wingtipmaps.android.ai.AiSources
 import app.wingtipmaps.android.ai.AiTask
 import app.wingtipmaps.android.ai.AiWordsRow
 import app.wingtipmaps.android.design.Loading
-import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.offline.KeptAgeLine
@@ -80,12 +77,9 @@ fun ReadyToFlyRow(plan: Plan, onSetRoute: (() -> Unit)?, model: ReadyToFlyModel 
         answer.actions.forEach { ReadyActionRow(it, fixer, busy = it.fix in state.busy) }
         // The whole list under a tap: what is fine too, and each limit's source.
         val fold = stringResource(if (unfolded) R.string.ready_fewer else R.string.ready_all)
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = WingtipSize.TapTarget).clickable(role = Role.Button) { unfolded = !unfolded },
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
-        ) {
-            Text(fold, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
-            Icon(if (unfolded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        TextButton(onClick = { unfolded = !unfolded }) {
+            Text(fold)
+            Icon(if (unfolded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.padding(start = WingtipSpace.Xs))
         }
         if (unfolded) {
             answer.items.forEach { item ->
@@ -118,8 +112,7 @@ internal fun ReadyLine(answer: EngineContract.ReadyToFlyAnswer) {
 
 /** One action as a Material list row: the finding's glyph at the start,
  *  the engine's line, and at the end a Fix button where the phone can fix
- *  it (ReadyFixer), the row itself taking the same tap; plain where it
- *  cannot. The stock row and button keep 48 dp targets. */
+ *  it (ReadyFixer), Material's text button; plain where it cannot. The stock row and button keep 48 dp targets. */
 @Composable
 internal fun ReadyActionRow(item: EngineContract.ReadyItem, fixer: ReadyFixer, busy: Boolean, before: () -> Unit = {}) {
     val fix = item.fix?.takeIf(fixer::can)
@@ -140,7 +133,7 @@ internal fun ReadyActionRow(item: EngineContract.ReadyItem, fixer: ReadyFixer, b
             null
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = if (run != null) Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = run) else Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         content = { Text(item.line, maxLines = if (largeType()) 3 else 2, overflow = TextOverflow.Ellipsis) },
     )
 }

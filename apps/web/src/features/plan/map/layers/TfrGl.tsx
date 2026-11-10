@@ -3,6 +3,8 @@ import type { FeatureCollection, Geometry } from "geojson";
 import type { FillLayerSpecification, LineLayerSpecification } from "maplibre-gl";
 import { useMemo } from "react";
 import { usePreferences } from "../../../../lib/preferences";
+import { useMapHover } from "../../../../lib/map/marks/mapHover";
+import { CHART } from "../../../../lib/tokens";
 import { tfrsQuery } from "../../../../lib/queryClient";
 import { TfrCard } from "../TfrCard";
 import { TFR_RED, inForce } from "../tfrMarks";
@@ -49,6 +51,18 @@ const LINE_LATER: LineLayerSpecification = {
 };
 const ALL = [...LAYERS, LINE, LINE_LATER];
 
+/** The TFR a mouse rests on in the Brief (lib/map/marks/mapHover): its
+ *  edge again, wide, in the selection's yellow over its red. */
+const HOVER_SOURCE = "tfr-hover";
+const HOVER_SOURCES = { [HOVER_SOURCE]: { type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] } } };
+const HOVER: LineLayerSpecification = {
+  id: "tfr-hover-line",
+  type: "line",
+  source: HOVER_SOURCE,
+  layout: { "line-join": "round" },
+  paint: { "line-color": CHART.selected, "line-width": 5, "line-opacity": 0.9 },
+};
+
 /**
  * The temporary flight restrictions (tfrsQuery), at the settings' TFRs:
  * each area a fill and its edge, all of them in one source rather than a
@@ -75,6 +89,16 @@ export function TfrGl() {
     [show, data, now],
   );
   useGlData(SOURCE, features);
+  // The one under the mouse in the Brief, lit; none on a touch screen.
+  useGlLayer("areas", HOVER_SOURCES, [HOVER]);
+  const hovered = useMapHover((s) => s.tfr);
+  const lit = useMemo<FeatureCollection | null>(() => {
+    const tfr = hovered ? data?.find((t) => t.notam_id === hovered) : undefined;
+    return tfr
+      ? { type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: tfr.geometry as unknown as Geometry }] }
+      : null;
+  }, [hovered, data]);
+  useGlData(HOVER_SOURCE, lit);
   const { openCard } = useGlMap();
   useGlTap(["tfrs-fill", "tfrs-fill-later"], 1, TAP.rank.area, (feature) => {
     const tfr = data?.find((t) => t.notam_id === feature.properties.id);

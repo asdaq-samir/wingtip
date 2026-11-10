@@ -26,6 +26,9 @@ interface Player {
   started: boolean;
   /** Playing when the app went to the background, to go on with on return. */
   resume: boolean;
+  /** The frame a mouse rests over on the scrubber, shown on the map while
+   *  it does (docs/design/web.md §7, desktop only); null with none. */
+  peek: number | null;
   set: (patch: Partial<Omit<Player, "set">>) => void;
 }
 
@@ -35,6 +38,7 @@ const usePlayer = create<Player>()((set) => ({
   ready: false,
   started: false,
   resume: false,
+  peek: null,
   set: (patch) => set(patch),
 }));
 
@@ -60,12 +64,14 @@ export function useWeatherLoop({ drive = false }: { drive?: boolean } = {}) {
     meta: { silent: true },
   });
   const frames = data?.frames ?? [];
-  const { index, playing, ready, started, set } = usePlayer();
+  const { index, playing, ready, started, peek, set } = usePlayer();
   const shown = frames.length ? Math.min(index ?? frames.length - 1, frames.length - 1) : -1;
+  // What the map shows: the frame under the mouse on the scrubber, else the loop's.
+  const showing = peek !== null && peek < frames.length ? peek : shown;
 
   // A new pick starts afresh: the newest frame, loading.
   useEffect(() => {
-    if (drive) usePlayer.getState().set({ index: null, playing: false, ready: false, started: false, resume: false });
+    if (drive) usePlayer.getState().set({ index: null, playing: false, ready: false, started: false, resume: false, peek: null });
   }, [drive, kind]);
 
   // Played by itself once loaded, unless the pilot asked for less motion.
@@ -105,6 +111,11 @@ export function useWeatherLoop({ drive = false }: { drive?: boolean } = {}) {
     frames,
     shown,
     frame: shown >= 0 ? frames[shown] : undefined,
+    showing,
+    /** The frame a mouse rests over on the scrubber, or null as it leaves. */
+    peekAt: (i: number | null) => {
+      if (usePlayer.getState().peek !== i) set({ peek: i });
+    },
     playing,
     ready,
     loading: kind !== "off" && isPending,

@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.logbook
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,9 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withLink
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.ai.AiDraftButton
 import app.wingtipmaps.android.ai.AiSources
@@ -39,8 +42,8 @@ import app.wingtipmaps.android.ui.ProblemLine
  * headline, the airplane, landings and remarks under it, and the time at
  * its end, so the hours line up down the list. A tap opens it into its
  * fields where it is (Material's inline edit; no form of its own), with
- * Save, Cancel and Delete. Delete takes it out with an Undo row in its
- * place (LogbookScreen); a refusal is said in the row.
+ * Save, Cancel and Delete. Delete takes it out with a Snackbar's Undo
+ * (LogbookScreen); a refusal is said in the row.
  */
 @Composable
 fun LogbookEntryRow(e: LogbookEntryDto, state: LogbookModel.State, model: LogbookModel) {
@@ -53,7 +56,9 @@ fun LogbookEntryRow(e: LogbookEntryDto, state: LogbookModel.State, model: Logboo
                     // The airplane's N-number, its own tap to the airplane's
                     // profile inside the row's tap to edit.
                     e.aircraft?.let { tail ->
-                        Text(tail, color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickable(role = Role.Button) { ProfileOpen.open(tail) })
+                        // Compose's own text link, in the tint.
+                        val link = LinkAnnotation.Clickable(tail, TextLinkStyles(SpanStyle(color = MaterialTheme.colorScheme.primary))) { ProfileOpen.open(tail) }
+                        Text(buildAnnotatedString { withLink(link) { append(tail) } })
                     }
                     LogbookModel.details(e)?.let { Text(it, maxLines = 2) }
                 }

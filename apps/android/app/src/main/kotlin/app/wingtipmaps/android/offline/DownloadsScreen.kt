@@ -1,7 +1,6 @@
 package app.wingtipmaps.android.offline
 
 import android.text.format.Formatter
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -25,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
@@ -105,9 +103,11 @@ fun DownloadsScreen(model: DownloadsModel = viewModel()) {
                 key = { "$group/${it.id}" }) { region ->
                 val size = if (region.id in busy) stringResource(R.string.offline_asking) else bytes(DownloadsModel.size(region, archives)) ?: sizing
                 ListItem(
+                    onClick = { asking = region.id },
+                    enabled = archives.isNotEmpty() && region.id !in busy,
                     trailingContent = { Text(size, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    modifier = Modifier.fillMaxWidth().clickable(enabled = archives.isNotEmpty() && region.id !in busy, role = Role.Button) { asking = region.id },
+                    modifier = Modifier.fillMaxWidth(),
                     content = { Text(region.name) },
                 )
             }

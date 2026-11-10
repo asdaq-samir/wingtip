@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,17 +11,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
@@ -92,13 +93,17 @@ fun FiguresStrip(state: Plan.State) {
     // The figures open the nav log they add up, the plan's legs (tap
     // what you see, docs/navigation.md).
     val openNavLog = stringResource(R.string.said_open_nav_log)
-    Column(
-        Modifier.fillMaxWidth().clickable(enabled = state.routed, role = Role.Button, onClickLabel = openNavLog) { ScreenRequests.ask(Screen.NAVLOG) }
-            .padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs),
-        verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
+    // Material's clickable surface, clear, over the figures.
+    Surface(
+        onClick = { ScreenRequests.ask(Screen.NAVLOG) },
+        enabled = state.routed,
+        color = Color.Transparent,
+        modifier = Modifier.fillMaxWidth().semantics { onClick(label = openNavLog, action = null) },
     ) {
-        rows.forEach { row ->
-            Row(Modifier.fillMaxWidth()) { row.forEach { Figure(it.name, it.value, it.warn, it.said) } }
+        Column(Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
+            rows.forEach { row ->
+                Row(Modifier.fillMaxWidth()) { row.forEach { Figure(it.name, it.value, it.warn, it.said) } }
+            }
         }
     }
 }

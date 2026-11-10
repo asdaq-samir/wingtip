@@ -50,8 +50,8 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.airplane.FigureKey
 import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.api.AirportPlace
+import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.RefreshBox
-import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.format.Format
@@ -131,7 +131,7 @@ fun AirportCard(ident: String, plan: Plan, onClose: () -> Unit, onDone: () -> Un
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
                 state.problem?.let { item(key = "problem") { ProblemLine(it, Modifier.padding(horizontal = WingtipSpace.Lg)) } }
                 if (place == null) {
-                    if (state.loading) item(key = "loading") { Skeleton(Modifier.padding(WingtipSpace.Lg)) }
+                    if (state.loading) item(key = "loading") { LoadingRow(Modifier.padding(WingtipSpace.Lg)) }
                     return@LazyColumn
                 }
                 // Closures and TFRs first, as Maps puts its live cards.

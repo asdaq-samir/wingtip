@@ -1,9 +1,7 @@
 package app.wingtipmaps.android.strip
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,9 +10,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.ui.InkColors
 import app.wingtipmaps.android.ui.LocalInk
 
 /** The verdict's tag, as the ribbon wears it. */
@@ -116,16 +113,15 @@ fun StripRibbon(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             val tag = verdict?.let { tagWords(it.finding) }?.let { stringResource(it) }
             if (verdict != null && tag != null) {
+                // Material's badge with text, washed in the verdict's colour.
                 val wash = when (verdict.finding) {
                     Finding.OK -> ink.field.copy(alpha = 0.14f)
                     Finding.CAUTION -> ink.caution.copy(alpha = 0.18f)
                     else -> MaterialTheme.colorScheme.error.copy(alpha = 0.10f)
                 }
-                Text(
-                    tag.uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold,
-                    color = ink.words(verdict.finding, MaterialTheme.colorScheme.onSurfaceVariant),
-                    modifier = Modifier.background(wash, CircleShape).padding(horizontal = WingtipSpace.Sm, vertical = WingtipSpace.Xxs),
-                )
+                Badge(containerColor = wash, contentColor = ink.words(verdict.finding, MaterialTheme.colorScheme.onSurfaceVariant)) {
+                    Text(tag.uppercase(), fontWeight = FontWeight.Bold)
+                }
             }
             Text(
                 when {

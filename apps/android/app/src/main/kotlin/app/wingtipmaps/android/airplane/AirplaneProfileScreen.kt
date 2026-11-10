@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.airplane
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,7 +27,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -97,10 +95,11 @@ private fun FigureRow(airplane: AirplaneNow, key: FigureKey, onEdit: () -> Unit,
     val source = stringResource(AirplaneProfileModel.sourceLabel(f?.source?.takeIf { f.value != null }))
     val book = f?.book?.takeIf { f.source == "pilot" }?.let { " · " + stringResource(R.string.source_book) + " " + key.show(it) }.orEmpty()
     ListItem(
+        onClick = onEdit,
         supportingContent = { Text(source + book, color = MaterialTheme.colorScheme.onSurfaceVariant) },
         trailingContent = { Text(f?.value?.let(key::show) ?: "—", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onEdit),
+        modifier = Modifier.fillMaxWidth(),
         content = { Text(stringResource(key.label)) },
     )
     if (AirplaneProfileModel.resettable(f?.source, f?.book)) {

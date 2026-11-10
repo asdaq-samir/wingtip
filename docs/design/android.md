@@ -28,6 +28,8 @@ end, and nothing on this page describes a Google app from memory.
    what Google's own pages confirm
 3. [The screens](#3-the-screens), one section each
 4. [Not verified](#4-not-verified)
+5. [Since the one search](#5-since-the-one-search)
+6. [Stock components, and what is left hand-built](#6-stock-components-and-what-is-left-hand-built)
 
 ---
 
@@ -525,9 +527,11 @@ placement wins, and the difference is noted.
      **Use** is the card's filled button.
   5. Legs as `ListItem`s (`route/RouteLegs`). Each has a leading
      waypoint symbol, the leg's figures, and a trailing drag handle.
-     Long press drags to reorder; a swipe removes the leg and shows an
-     undo row (`route/RouteUndoRow`), not a snackbar toast (problems
-     show where they happen).
+     Long press drags to reorder; a swipe removes the leg and shows
+     Material's `Snackbar` with an Undo action (`route/RouteUndoSnackbar`,
+     through the screen's `SnackbarHostState`; the owner, 2026-11-10:
+     stock over the hand-built undo row). Problems still show where they
+     happen.
   6. The figure strip at the sheet's foot: To, Dist, ETE and Fuel, with
      only To and Dist when there is no airplane (0011).
 - **Primary action**:
@@ -609,7 +613,8 @@ placement wins, and the difference is noted.
      - weather en route
      - winds aloft
      - icing (`brief/IcingRows`)
-     - the departure window (`brief/DepartureWindowStrip`)
+     - the departure window (`brief/DepartureWindowStrip`: an hour per
+       `FilterChip` in a `LazyRow`, single-select)
      - NOTAMs
      - TFRs
   6. Detail folded under a tap (a `ListItem` that expands).
@@ -748,6 +753,8 @@ placement wins, and the difference is noted.
      fields.
   5. Flights recorded automatically arrive as drafts (`DraftEntry`) at
      the top, with Keep and Discard.
+  6. A delete offers Undo in Material's `Snackbar`, in the screen's
+     `Scaffold`; the delete is sent once it is let go.
 - **Primary action**: an `ExtendedFloatingActionButton` "Add Flight" at
   the bottom end. It shrinks to an icon FAB while the list scrolls
   (`expanded` from the list state).
@@ -1068,3 +1075,61 @@ Setup tabs, read: one search as the sheet's first row with its
 microphone and the account button; the plan as the sheet's main
 content; the airport and airplane cards opened from the search; and
 Setup's settings on the account menu's Settings page.
+
+## 6. Stock components, and what is left hand-built
+
+The owner, 2026-11-10: "Do em all": every hand-built component replaced
+by a stock one (Material 3 1.5.0-rc01, Compose foundation and Glance
+count as stock), keeping the stock component's own behaviour. What was
+swapped:
+
+- Departure-hour tiles: `FilterChip`s in a `LazyRow`, single-select
+  (`brief/DepartureWindowStrip`).
+- Undo rows: Material's `Snackbar` with an Undo action through the
+  screen's `SnackbarHostState` (the route in `MapSheet`'s
+  `BottomSheetScaffold` or over the map in the panes, the logbook in its
+  `Scaffold`). `ui/UndoRow` is gone. Saved flights and favourites have no
+  delete with Undo on Android, so there was nothing to swap there.
+- Skeletons: the stock `LoadingIndicator` (`design/LoadingRow`).
+  `design/Skeleton` is gone.
+- Status chips: the stock `Badge` with text, in the flight-category,
+  verdict and caution colours (`ui/CategoryChip`, the strip's verdict tag,
+  `receiver/ReceiverChip`).
+- The map's loading mark: the stock `LoadingIndicator`
+  (`map/MapLoading`). The Wingtip mark is only on the launch's splash
+  screen.
+- Rows built from `Modifier.clickable`, `toggleable` or `selectable`: the
+  stock `ListItem` overloads (`onClick`, `checked`/`onCheckedChange`,
+  `selected`/`onClick`), `Surface(onClick)`, `TextButton`, or Compose's
+  `LinkAnnotation` for the logbook's N-number. Each list item keeps its
+  stock role, press shape and colours.
+- The trip planner's bubbles: `Card`s.
+
+Kept, each still a thin wrapper over stock parts:
+
+- `design/ChoiceGroup`: the connected `ToggleButton` group, laid out as
+  Material's single-choice sample.
+- `design/Loading`: the stock `LoadingIndicator`, with the experimental
+  opt-in kept to that one file, TalkBack's "Loading", and held still
+  under Remove animations (the stock one still steps through its shapes
+  when the animator scale is 0).
+- The altitude: the stock exposed dropdown menu (`ui/AltitudeRow`),
+  stepping through the engine's legal altitudes. No profile chart is
+  drawn on Android.
+
+Left hand-built, with no stock equivalent:
+
+- The chart's own drawings: `map/OverlayPictures` (the sectional's
+  symbols for MapLibre), `ui/DiagramOwnShip`'s own-ship arrow on an
+  airport diagram, and the course's magenta ribbon of the strip layout
+  (`strip/StripRibbon`'s `RibbonLine`, `strip/StripList`'s timeline).
+  These are chart graphics, not controls.
+- The forecast run's legs (`dryrun/ForecastStrip`): segments as wide as
+  each leg's time, in its flight category's colour. A proportional
+  timeline is a chart; Material has no component for it.
+- The photo carousel's tap (`ui/PhotoCarousel`): `Modifier.clickable` on a
+  carousel item is how Material's own carousel samples open an item.
+- The platform's splash screen (Android 12 and up) draws the mark;
+  Android 8 to 11 show the window's background, as before. Adding
+  `core-splashscreen` for those versions is left for a decision.
+

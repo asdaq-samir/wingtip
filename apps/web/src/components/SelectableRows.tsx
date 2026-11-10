@@ -21,9 +21,13 @@ export function SelectableRow({
   onSelect,
   scrollRef,
   kind,
+  onHover,
   children,
 }: {
   selected: boolean;
+  /** A mouse on the row, or off it: what it is lit on the map (the nav
+   *  log's leg). A finger has no hover. */
+  onHover?: (on: boolean) => void;
   /** The row the dry run is flying to (the nav log's): the tint's own
    *  blue behind it, as the place a run is at, under the selection's grey. */
   flying?: boolean;
@@ -46,7 +50,12 @@ export function SelectableRow({
   return (
     <TableRow
       ref={scrollRef}
+      // Its role said outright, as the phone's list (NavLogList) says its
+      // rows', so one query finds a row in either.
+      role="row"
       onClick={onSelect}
+      onPointerEnter={onHover && ((e) => e.pointerType === "mouse" && onHover(true))}
+      onPointerLeave={onHover && ((e) => e.pointerType === "mouse" && onHover(false))}
       tabIndex={0}
       data-selected={selected || undefined}
       data-flying={flying || undefined}

@@ -135,3 +135,24 @@ test("the loop bar's keys: arrows step a frame, Space plays, one pass stops on t
   // The bar is one toolbar: Play and Now its buttons.
   await expect(page.getByRole("toolbar", { name: "Radar loop" })).toBeVisible();
 });
+
+test("on a desktop a mouse over the scrubber shows that frame and says its time, and leaving goes back", async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1024, "a mouse's hover, a desktop's");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await stubLoop(page);
+  await page.goto("/app/plan");
+  await settle(page);
+  await turnOnRadar(page);
+  const time = page.getByTestId("weather-loop-time");
+  await expect(time).toContainText(/\d{4}Z/);
+  const newest = await time.textContent();
+  // The oldest frame under the pointer, at the scrubber's start: an hour
+  // old, said in the time; the loop itself not moved (docs/design/web.md §7).
+  const peek = page.getByTestId("weather-loop-peek");
+  const box = (await peek.boundingBox())!;
+  await page.mouse.move(box.x + 2, box.y + box.height / 2);
+  await expect(time).toContainText(/Old: \d+m ago|Old: 1h/);
+  // Away from it: the frame the loop is on again.
+  await page.mouse.move(box.x + box.width / 2, box.y - 200);
+  await expect(time).toHaveText(newest ?? "");
+});

@@ -3,23 +3,26 @@ import { openBrief, openPanel, openProfile, settle, sideDrawer, slow } from "./h
 
 /**
  * Ready to fly (the engine's ready_to_fly, features/readyToFly): the
- * Brief's first row says in one line whether the device has what the
+ * Brief's last part, after its cards, says in one line whether the device has what the
  * flight needs while there is a signal, then at most three actions that
  * fix in place. With no airplane picked none is assumed: "Pick the
  * airplane" is one of them and opens the existing picker. Starting a dry
  * run with something missing shows it once, and the pilot may fly anyway.
  */
 
-test("the Brief opens on Ready to fly, its actions fixing in place", async ({ page }) => {
+test("the Brief ends on Ready to fly, its actions fixing in place", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120_000) });
   await openBrief(page);
   const ready = sideDrawer(page).getByTestId("ready-to-fly");
   await expect(ready).toBeVisible({ timeout: slow(30_000) });
-  // First in the Brief, over the verdict.
+  // After the verdict, the Ask and the cards: the checks left before
+  // departure (docs/design/web.md §5; decision 0012, the verdict first).
   const glance = sideDrawer(page).getByTestId("brief-glance");
-  await expect(glance.locator("> *").first()).toHaveAttribute("data-testid", "ready-to-fly");
+  await expect(glance.locator("> *").first()).not.toHaveAttribute("data-testid", "ready-to-fly");
+  const top = async (id: string) => (await glance.getByTestId(id).first().boundingBox())!.y;
+  expect(await top("brief-glance-preflight")).toBeLessThan(await top("ready-to-fly"));
   await expect(ready.getByTestId("ready-line")).toHaveText(/things? to fix while you have a signal|Ready to fly/);
   const actions = ready.locator("[data-testid^='ready-action-']");
   expect(await actions.count()).toBeLessThanOrEqual(3);

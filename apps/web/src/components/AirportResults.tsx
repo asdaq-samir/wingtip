@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import { Diamond, History, Search } from "lucide-react";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
-import { CommandGroup, CommandItem, CommandList } from "./ui/command";
+import { CommandGroup, CommandItem, CommandList, CommandShortcut } from "./ui/command";
+import { Kbd } from "./ui/kbd";
 import type { RecentAirport } from "../lib/preferences";
 import type { AirportSearchRow } from "../lib/useAirportSearch";
 
@@ -113,25 +114,53 @@ export function AirportRow({
   waypoint = false,
   onSelect,
   testId,
+  value,
+  number,
+  second,
+  hot = false,
+  onHover,
 }: {
   airport: RecentAirport;
   recent?: boolean;
   waypoint?: boolean;
   onSelect: () => void;
   testId?: string;
+  /** The row's value to the list, where its ident alone is not unique. */
+  value?: string;
+  /** Its number as its mark on the map has it (the one search on a desktop). */
+  number?: number;
+  /** Its second action (⌘Enter), named with its keys at the row's right
+   *  while it is highlighted, as Raycast shows a result's actions. */
+  second?: { label: string; keys: string } | null;
+  /** Its mark on the map under the pointer: the row lit as if it were. */
+  hot?: boolean;
+  /** The pointer on the row, or off it: its mark lit on the map. */
+  onHover?: (on: boolean) => void;
 }) {
   return (
     // 52 at the least, as a search result's two lines are in Maps: the
     // row is the control, not a control grown to its hit area.
     <CommandItem
-      value={airport.ident}
+      value={value ?? airport.ident}
       onClick={onSelect}
-      className="min-h-13 gap-3 rounded-lg px-2 py-2"
+      onPointerEnter={onHover && ((e) => e.pointerType === "mouse" && onHover(true))}
+      onPointerLeave={onHover && ((e) => e.pointerType === "mouse" && onHover(false))}
+      data-hot={hot || undefined}
+      className="min-h-13 gap-3 rounded-lg px-2 py-2 data-hot:bg-muted"
       data-testid={testId ?? "airport-result"}
     >
       {/* Its magenta as fill and stroke, not the text colour: a row's
-          highlight recolours its icons' text, and the diamond went black. */}
-      {waypoint ? (
+          highlight recolours its icons' text, and the diamond went black.
+          Numbered, the number its mark on the map wears. */}
+      {number !== undefined ? (
+        <span
+          aria-hidden="true"
+          className="grid size-5 shrink-0 place-items-center rounded-full bg-tint text-(length:--type-caption) font-bold text-white tabular-nums"
+          data-testid="search-number"
+        >
+          {number}
+        </span>
+      ) : waypoint ? (
         <Diamond className="size-5 fill-(--airspace-magenta-text) stroke-(color:--airspace-magenta-text)" />
       ) : recent ? (
         <History className="size-5 text-muted-foreground" />
@@ -144,6 +173,11 @@ export function AirportRow({
         </span>
         {airport.municipality && <span className={cn("block truncate text-muted-foreground", TEXT.detail)}>{airport.municipality}</span>}
       </span>
+      {second && (
+        <CommandShortcut className="hidden tracking-normal group-data-highlighted/command-item:inline" data-testid="search-second">
+          {second.label} <Kbd>{second.keys}</Kbd>
+        </CommandShortcut>
+      )}
     </CommandItem>
   );
 }
