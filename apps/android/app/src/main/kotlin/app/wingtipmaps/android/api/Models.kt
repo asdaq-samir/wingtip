@@ -23,9 +23,10 @@ typealias ChartLayer = app.wingtipmaps.android.api.generated.ChartLayer
  *  and its layers. */
 typealias OverlayTiles = app.wingtipmaps.android.api.generated.OverlayTiles
 
-/** A field in the map's view (AirportPin): the planner's, or the engine's
- *  from the cycle packs, which writes the same shape (InView.kt). */
-typealias AirportPin = app.wingtipmaps.android.api.generated.AirportPin
+/** A field in the map's view (the planner's AirportInView): the planner's,
+ *  with its METAR as the map's marks read it, or the engine's from the
+ *  cycle packs, which writes the same shape with no weather (InView.kt). */
+typealias AirportPin = app.wingtipmaps.android.api.generated.AirportInView
 
 /** A field found by ident or name. */
 typealias AirportSuggestion = app.wingtipmaps.android.api.generated.AirportSuggestion

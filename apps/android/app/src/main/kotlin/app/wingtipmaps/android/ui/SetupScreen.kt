@@ -143,6 +143,8 @@ fun SetupScreen(session: Session) {
         WeatherLoopRows()
         // What the map draws and the traffic over it, one group.
         MapLayerRows()
+        // Each reporting field's weather: halo, dot or station model.
+        AirportWeatherRows()
         // Off unless kept on; on by itself in an emergency (GlideRing).
         GlideRingRow(plan)
         // A Stratux, Sentry or the like on the cockpit's Wi-Fi: its traffic

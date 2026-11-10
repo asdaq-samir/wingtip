@@ -37,3 +37,12 @@ suspend fun Planner.googleMaps(): GoogleMaps? =
     } catch (e: Planner.Failure) {
         if (e.status == 404) null else throw e
     }
+
+/** The route's briefing (/api/briefing), for what the map marks of it:
+ *  each field's METAR now and the TAF stations' worst within an hour of
+ *  the flight's time there (`forecast.stations`, `eta_*`), the flight
+ *  timed from `depart` (now where none) over `eteMin`. */
+suspend fun Planner.routeBriefing(dep: String, dest: String, stops: List<String>, depart: String?, eteMin: Double?): app.wingtipmaps.android.api.generated.Briefing =
+    Gateway.json.decodeFromString(
+        fetch("/api/briefing", route(dep, dest, stops) + mapOf("depart" to depart, "ete_min" to eteMin?.let { "%.1f".format(java.util.Locale.US, it) })),
+    )
