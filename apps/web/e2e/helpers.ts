@@ -181,16 +181,13 @@ async function panelFull(page: Page) {
   await settled(panel);
 }
 
-/** The console out -- the tab bar's Settings -- half way at the least: at
- *  the pill, Settings picked keeps the pill (its quick controls), and the
- *  tab tapped again opens it, as every tab's does. */
+/** The console out, all the way up: the account button's menu, its first
+ *  row the account page (Setup). At the pill, where the developer's page
+ *  rests, the page is under the pill's edge until the sheet comes up. */
 export async function openConsole(page: Page) {
   await showTabs(page);
-  // The account button's menu, its first row the account page (Setup).
   await page.getByTestId("account-button").click();
   await page.getByTestId("account-menu-setup").click();
-  // At the pill (the developer's page rests there) the account page is
-  // under the pill's edge: all the way up first, then in sight.
   await grabberTo(page, "full");
   await expect(page.getByTestId("console-sheet")).toBeVisible();
 }
