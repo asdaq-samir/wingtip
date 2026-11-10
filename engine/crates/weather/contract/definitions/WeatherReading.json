@@ -1,0 +1,25 @@
+{
+  "title": "WeatherReading",
+  "description": "One reading of a route's weather: the METARs of its fields, the advisories near it and the TAFs for the flight's time at each field.",
+  "type": "object",
+  "properties": {
+    "metars": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/WorseField"
+      }
+    },
+    "advisories": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/WorseAdvisory"
+      }
+    },
+    "tafs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/WorseField"
+      }
+    }
+  }
+}

@@ -3045,6 +3045,13 @@ export interface EngineContract {
     answer: WeatherInForceAnswer;
   };
   /**
+   * What counts as a route's weather getting worse from the briefing the pilot had (then) to a later one (now): a field's METAR in a worse flight category, and worse than VFR (AIM 7-1-7); a SIGMET, AIRMET or G-AIRMET newly on the route (AIM 7-1-6); a TAF where the flight lands forecasting a worse category, and worse than VFR, for the flight's time there. A caution, never a limit; each change keyed so an app tells it once.
+   */
+  weather_worse: {
+    input: WeatherWorseInput;
+    answer: WeatherWorseAnswer;
+  };
+  /**
    * The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends, light and variable left out; null with no level left, never calm. A list for "altitudes".
    */
   wind_at_altitude: {
@@ -10273,6 +10280,88 @@ export interface WeatherInForceInput {
    * For a forecast, the end of its valid time, Unix seconds.
    */
   valid_to?: number | null;
+}
+export interface WeatherWorseInput {
+  then: WeatherReading;
+  now: WeatherReading;
+}
+/**
+ * One reading of a route's weather: the METARs of its fields, the advisories near it and the TAFs for the flight's time at each field.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "WeatherReading".
+ */
+export interface WeatherReading {
+  metars?: WorseField[];
+  advisories?: WorseAdvisory[];
+  tafs?: WorseField[];
+}
+/**
+ * A field's ceiling and visibility in one reading: its METAR's, or its TAF's for the flight's time there. The engine reads the flight category (AIM 7-1-7).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "WorseField".
+ */
+export interface WorseField {
+  ident: string;
+  ceiling_ft?: number | null;
+  visibility_sm?: number | null;
+  /**
+   * The lowest broken, overcast or obscured layer sent with no height (14 CFR 1.1): not known, not none.
+   */
+  ceiling_unknown?: boolean | null;
+  /**
+   * A TAF where the flight lands (a stop or the destination): only those are compared.
+   */
+  arrival?: boolean | null;
+}
+/**
+ * A SIGMET, AIRMET or G-AIRMET in one reading (AIM 7-1-6).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "WorseAdvisory".
+ */
+export interface WorseAdvisory {
+  /**
+   * What names the advisory from one reading to the next: its text as sent, or its hazard, severity and altitudes.
+   */
+  key: string;
+  /**
+   * "SIGMET", "Convective SIGMET", "AIRMET" or "G-AIRMET", as the app words it.
+   */
+  kind: string;
+  /**
+   * Its hazard as sent ("IFR", "TURB", "ICE").
+   */
+  hazard?: string | null;
+  /**
+   * Whether the briefing places it on the route.
+   */
+  on_route?: boolean | null;
+}
+export interface WeatherWorseAnswer {
+  worse: WeatherWorseItem[];
+}
+/**
+ * One way the weather got worse.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "WeatherWorseItem".
+ */
+export interface WeatherWorseItem {
+  /**
+   * The change and its new state ("metar:KMSN:IFR", "advisory:<key>", "taf:KDLH:MVFR"): an app tells a key once.
+   */
+  key: string;
+  kind: "metar" | "advisory" | "taf";
+  ident: string | null;
+  was: string | null;
+  now: string | null;
+  /**
+   * The change in a pilot's words: "KMSN is IFR now; it was VFR at the briefing".
+   */
+  line: string;
+  source: string;
 }
 export interface WindAtAltitudeInput {
   /**

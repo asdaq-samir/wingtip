@@ -10279,6 +10279,35 @@ enum EngineContract {
         }
     }
 
+    /// One reading of a route's weather: the METARs of its fields, the advisories near it and the TAFs for the flight's time at each field.
+    struct WeatherReading: Codable, Equatable, Sendable {
+        var metars: [EngineContract.WorseField]?
+        var advisories: [EngineContract.WorseAdvisory]?
+        var tafs: [EngineContract.WorseField]?
+    }
+
+    struct WeatherWorseAnswer: Codable, Equatable, Sendable {
+        var worse: [EngineContract.WeatherWorseItem]
+    }
+
+    struct WeatherWorseInput: Codable, Equatable, Sendable {
+        var then: EngineContract.WeatherReading
+        var now: EngineContract.WeatherReading
+    }
+
+    /// One way the weather got worse.
+    struct WeatherWorseItem: Codable, Equatable, Sendable {
+        /// The change and its new state ("metar:KMSN:IFR", "advisory:<key>", "taf:KDLH:MVFR"): an app tells a key once.
+        var key: String
+        var kind: String
+        var ident: String?
+        var was: String?
+        var now: String?
+        /// The change in a pilot's words: "KMSN is IFR now; it was VFR at the briefing".
+        var line: String
+        var source: String
+    }
+
     /// The worst a TAF forecasts in a window, TEMPO and PROB groups included.
     struct WeatherWorst: Codable, Equatable, Sendable {
         var ceilingFt: Double?
@@ -10503,5 +10532,43 @@ enum EngineContract {
         var key: String
         var typed: Double
         var answer: Double
+    }
+
+    /// A SIGMET, AIRMET or G-AIRMET in one reading (AIM 7-1-6).
+    struct WorseAdvisory: Codable, Equatable, Sendable {
+        /// What names the advisory from one reading to the next: its text as sent, or its hazard, severity and altitudes.
+        var key: String
+        /// "SIGMET", "Convective SIGMET", "AIRMET" or "G-AIRMET", as the app words it.
+        var kind: String
+        /// Its hazard as sent ("IFR", "TURB", "ICE").
+        var hazard: String?
+        /// Whether the briefing places it on the route.
+        var onRoute: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case key
+            case kind
+            case hazard
+            case onRoute = "on_route"
+        }
+    }
+
+    /// A field's ceiling and visibility in one reading: its METAR's, or its TAF's for the flight's time there. The engine reads the flight category (AIM 7-1-7).
+    struct WorseField: Codable, Equatable, Sendable {
+        var ident: String
+        var ceilingFt: Double?
+        var visibilitySm: Double?
+        /// The lowest broken, overcast or obscured layer sent with no height (14 CFR 1.1): not known, not none.
+        var ceilingUnknown: Bool?
+        /// A TAF where the flight lands (a stop or the destination): only those are compared.
+        var arrival: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case ceilingFt = "ceiling_ft"
+            case visibilitySm = "visibility_sm"
+            case ceilingUnknown = "ceiling_unknown"
+            case arrival
+        }
     }
 }

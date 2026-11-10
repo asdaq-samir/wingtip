@@ -1,0 +1,53 @@
+{
+  "title": "WeatherWorseItem",
+  "description": "One way the weather got worse.",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "The change and its new state (\"metar:KMSN:IFR\", \"advisory:<key>\", \"taf:KDLH:MVFR\"): an app tells a key once."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "metar",
+        "advisory",
+        "taf"
+      ]
+    },
+    "ident": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "was": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "now": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "line": {
+      "type": "string",
+      "description": "The change in a pilot's words: \"KMSN is IFR now; it was VFR at the briefing\"."
+    },
+    "source": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "key",
+    "kind",
+    "ident",
+    "was",
+    "now",
+    "line",
+    "source"
+  ]
+}

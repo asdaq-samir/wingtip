@@ -1849,6 +1849,12 @@ fun Engine.weatherInForce(product: String, now: Double, observed: Double? = null
     rule("weather_in_force", EngineContract.WeatherInForceInput(product = product, now = now, observed = observed, lastRoutine = lastRoutine, validFrom = validFrom, validTo = validTo))
 
 /**
+ * What counts as a route's weather getting worse from the briefing the pilot had (then) to a later one (now): a field's METAR in a worse flight category, and worse than VFR (AIM 7-1-7); a SIGMET, AIRMET or G-AIRMET newly on the route (AIM 7-1-6); a TAF where the flight lands forecasting a worse category, and worse than VFR, for the flight's time there. A caution, never a limit; each change keyed so an app tells it once.
+ */
+fun Engine.weatherWorse(then: EngineContract.WeatherReading, now: EngineContract.WeatherReading): Result<EngineContract.WeatherWorseAnswer> =
+    rule("weather_worse", EngineContract.WeatherWorseInput(then = then, now = now))
+
+/**
  * The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends, light and variable left out; null with no level left, never calm. A list for "altitudes".
  */
 fun Engine.windAtAltitude(levels: Map<String, EngineContract.WindAtAltitudeInputLevelsValue>, altitudeFt: Double? = null, altitudes: List<Double>? = null): Result<JsonElement?> =
