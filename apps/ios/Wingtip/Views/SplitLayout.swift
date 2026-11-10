@@ -95,8 +95,6 @@ struct SplitLayout<Map: View>: View {
                 .navigationSplitViewColumnWidth(min: 320, ideal: 375, max: 420)
         } detail: {
             map
-                // The chart runs on under the floating sidebar (iPadOS 26).
-                .chartUnderSidebar()
                 .overlay(alignment: .bottom) {
                     FiguresStrip()
                         .environment(\.figuresOnGlass, true)
@@ -109,6 +107,11 @@ struct SplitLayout<Map: View>: View {
                 .toolbar(.hidden, for: .navigationBar)
                 .inspector(isPresented: inspectorShown) {
                     inspector
+                        // The cards' rows on a solid ground, not the map
+                        // through glass: glass is for controls (HIG
+                        // Materials; docs/design/ios.md §0), and the audit
+                        // found the Brief's words faint over the chart.
+                        .background(Color(.systemGroupedBackground))
                         .inspectorColumnWidth(min: 320, ideal: 375, max: 440)
                 }
         }
@@ -213,13 +216,4 @@ struct SplitLayout<Map: View>: View {
         .environment(DryRun())
         .environment(Traffic())
         .environment(Verdict())
-}
-
-private extension View {
-    /// The map mirrored on under the sidebar's glass, as Maps' does on
-    /// iPadOS 26 (backgroundExtensionEffect); as it was before.
-    @ViewBuilder
-    func chartUnderSidebar() -> some View {
-        if #available(iOS 26.0, *) { backgroundExtensionEffect() } else { self }
-    }
 }

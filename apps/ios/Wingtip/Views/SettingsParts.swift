@@ -66,7 +66,10 @@ struct AccountHeadRow: View {
                     avatar("")
                     VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                         Text("Sign In").font(WingtipType.heading)
-                        Text("Keep your airplanes, flights and logbook on every device.").font(WingtipType.detail).foregroundStyle(.secondary)
+                        // The system's secondary label, not the button's tinted
+                        // secondary, which read too faint (the audit, 2026-11-09).
+                        Text("Keep your airplanes, flights and logbook on every device.").font(WingtipType.detail)
+                            .foregroundStyle(Color(.secondaryLabel))
                     }
                 }
             }

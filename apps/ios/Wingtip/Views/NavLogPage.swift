@@ -38,7 +38,10 @@ struct NavLogPage: View {
         List {
             if plan.legs.isEmpty {
                 ContentUnavailableView(plan.planning ? "Planning…" : "No Legs Yet", systemImage: WingtipIcon.navLog,
-                                       description: Text(plan.planning ? "The legs come in as the planner works them out." : "Plan the route first."))
+                                       description: Text(plan.planning ? "The legs come in as the planner works them out." : "Plan the route first.")
+                                           // The system's secondary label: the view's own grey read
+                                           // faint in the iPad's glass sidebar (the audit, 2026-11-09).
+                                           .foregroundStyle(Color(.secondaryLabel)))
             } else {
                 Section {
                     totals.listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
