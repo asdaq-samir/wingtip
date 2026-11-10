@@ -229,10 +229,11 @@ final class AccessibilityAuditTests: XCTestCase {
         sleep(UIDevice.current.userInterfaceIdiom == .pad ? 4 : 2)
     }
 
-    /// The Native look (Look.native: iOS's system blue, labels and grounds)
-    /// held to the same audit as the brand's, on the plan, the search,
-    /// Setup and the strip: the system's blue is Apple's to set, so its
-    /// contrast is measured here, on the screens a pilot sees it on.
+    /// The Native look (Look.native: iOS out of the box, no tint, type or
+    /// card of the app's) held to the same audit as the brand's, on the
+    /// plan, the search, Setup and the strip: its colours are the system's
+    /// defaults, so their contrast is measured here, on the screens a pilot
+    /// sees them on, and reported rather than changed.
     /// `-look` sets the kept look for the run (the argument domain).
     @MainActor
     func testTheNativeLookPassesTheAudit() throws {

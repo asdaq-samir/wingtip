@@ -17,11 +17,32 @@
      in; a picked row in the tint (bg-wash-selected). A filled button
      darkens by day and lightens at night, towards the words' colour
      (bg-primary-hover, bg-primary-press). */
-  --color-wash-hover: color-mix(in oklch, currentColor var(--feel-hover), transparent);
-  --color-wash-press: color-mix(in oklch, currentColor var(--feel-press), transparent);
-  --color-wash-selected: color-mix(in oklch, var(--tint) var(--feel-selected), transparent);
-  --color-primary-hover: color-mix(in oklch, var(--primary), var(--foreground) var(--feel-hover));
-  --color-primary-press: color-mix(in oklch, var(--primary), var(--foreground) var(--feel-press));
+  --color-wash-hover: var(--wash-hover);
+  --color-wash-press: var(--wash-press);
+  --color-wash-selected: var(--wash-selected);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-press: var(--primary-press);
+}
+
+/* The washes themselves, by look: currentColor is the element's own where
+   the variable is used, not :root's. */
+:root {
+  --wash-hover: color-mix(in oklch, currentColor var(--feel-hover), transparent);
+  --wash-press: color-mix(in oklch, currentColor var(--feel-press), transparent);
+  --wash-selected: color-mix(in oklch, var(--tint) var(--feel-selected), transparent);
+  --primary-hover: color-mix(in oklch, var(--primary), var(--foreground) var(--feel-hover));
+  --primary-press: color-mix(in oklch, var(--primary), var(--foreground) var(--feel-press));
+}
+/* The Native look's states as shadcn's stock buttons and menus draw them:
+   a quiet control's hover and press in the accent (hover:bg-accent), a
+   picked one the same, and a filled button at 80% (hover:bg-primary/80),
+   pressed or not. */
+:root[data-brand="native"] {
+  --wash-hover: var(--accent);
+  --wash-press: var(--accent);
+  --wash-selected: var(--accent);
+  --primary-hover: color-mix(in oklab, var(--primary) 80%, transparent);
+  --primary-press: color-mix(in oklab, var(--primary) 80%, transparent);
 }
 
 /* The browser's own parts -- a field's caret and date picker, a scroll
@@ -93,9 +114,11 @@
 
 /* A press gives a little, as iOS's buttons do under a finger: the stock
    Button and every round glass button (they are stock Buttons), scaled
-   rather than moved, in the press's time. Not with Reduce Motion. */
+   rather than moved, in the press's time. Not with Reduce Motion, nor in
+   the Native look, whose stock buttons do not give. */
 @media (prefers-reduced-motion: no-preference) {
-  :where([data-slot="button"], [data-slot="toggle"], [data-slot="toggle-group-item"]):not(:disabled):active {
+  :where(:root:not([data-brand="native"]))
+    :where([data-slot="button"], [data-slot="toggle"], [data-slot="toggle-group-item"]):not(:disabled):active {
     scale: var(--feel-press-scale);
     transition-duration: var(--motion-press);
   }
@@ -103,18 +126,20 @@
 
 /* A tile or card a mouse can open, lifted under it with a raised shadow
    (Setup's tiles, Favorites'). A finger has no hover; Reduce Motion
-   keeps the shadow and not the move. */
+   keeps the shadow and not the move; the Native look has neither. */
 @utility lift {
-  transition:
-    translate var(--motion-quick) var(--motion-sheet-ease),
-    box-shadow var(--motion-quick) var(--motion-sheet-ease);
-  @media (hover: hover) {
-    &:hover {
-      box-shadow: var(--depth-raised);
-    }
-    @media (prefers-reduced-motion: no-preference) {
+  @variant branded {
+    transition:
+      translate var(--motion-quick) var(--motion-sheet-ease),
+      box-shadow var(--motion-quick) var(--motion-sheet-ease);
+    @media (hover: hover) {
       &:hover {
-        translate: 0 calc(-1 * var(--feel-lift));
+        box-shadow: var(--depth-raised);
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        &:hover {
+          translate: 0 calc(-1 * var(--feel-lift));
+        }
       }
     }
   }
@@ -123,15 +148,17 @@
 /* What comes into a page as it is -- a banner, a problem's line, an
    Undo row, a palette's results -- fading up from a little under where
    it lands (@starting-style: no script, no keyframes, and nothing to
-   undo as it goes). Still with Reduce Motion. */
+   undo as it goes). Still with Reduce Motion, and in the Native look. */
 @utility appear {
   @media (prefers-reduced-motion: no-preference) {
-    transition:
-      opacity var(--motion-fade) var(--motion-sheet-ease),
-      translate var(--motion-fade) var(--motion-sheet-ease);
-    @starting-style {
-      opacity: 0;
-      translate: 0 0.25rem;
+    @variant branded {
+      transition:
+        opacity var(--motion-fade) var(--motion-sheet-ease),
+        translate var(--motion-fade) var(--motion-sheet-ease);
+      @starting-style {
+        opacity: 0;
+        translate: 0 0.25rem;
+      }
     }
   }
 }
@@ -142,10 +169,12 @@
    cannot move, and stays inline so a long one still ends in an
    ellipsis), rather than blinking: the element is keyed on its value, so
    each new value is a new one, as iOS's numeric content transition
-   rolls its digits. Still with Reduce Motion. */
+   rolls its digits. Still with Reduce Motion, and in the Native look. */
 @utility figure-roll {
   @media (prefers-reduced-motion: no-preference) {
-    animation: figure-roll var(--motion-page) var(--motion-sheet-ease);
+    @variant branded {
+      animation: figure-roll var(--motion-page) var(--motion-sheet-ease);
+    }
   }
 }
 @keyframes figure-roll {

@@ -95,8 +95,18 @@ end, and nothing on this page describes a Google app from memory.
   from Android 12, so leaving them out is the supported path:
   https://developer.android.com/develop/ui/compose/designsystems/material3
 - The brand tint is Sectional Blue (#0066CC). Everything tappable is the
-  tint, and the container roles are `color.material.*`. Two looks, Glass
-  Cockpit (the default) and Chart ink, are the only themes.
+  tint, and the container roles are `color.material.*`. The looks are
+  Wingtip (the default), Glass Cockpit, Chart ink and Native.
+- **Native is Material out of the box** (the owner, 2026-11-10: "Native
+  means how they come out of the box, look and behavior wise"): a plain
+  `MaterialTheme` with Material You's dynamic scheme on Android 12 and
+  later (the baseline scheme before), Material's default `Typography()`,
+  `Shapes()` and motion, stock component colours (`ChoiceGroup`), and no
+  haptics of the app's own but a warning's. Each place the app sets a
+  shape or a feel of its own asks `design/Native.kt`'s `LocalNative`
+  once. The 4-dp spacing grid and layout sizes stay: Material has no
+  theme role for them. What follows stays fixed in Native too, being the
+  chart's content and a state's meaning rather than chrome.
 - **The chart's colours never follow the theme.** These are the chart's
   own, so they stay the same at night (`color.chart.*`):
   - the course's magenta #E600E6

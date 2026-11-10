@@ -30,7 +30,9 @@ import app.wingtipmaps.android.design.generated.WingtipSize
  * radio group, each button a radio button that is selected or not. The
  * Wingtip theme's colours: the tint for the choice made (Material's
  * default), the muted container for the rest; the choice made in the
- * emphasized label role.
+ * emphasized label role. In the Native look (LocalNative) the buttons are
+ * as Material ships them: its own colours, label and 40-point height, the
+ * 48-point touch target Material's own (minimumInteractiveComponentSize).
  */
 @Composable
 fun <T> ChoiceGroup(
@@ -39,8 +41,10 @@ fun <T> ChoiceGroup(
     modifier: Modifier = Modifier,
     onPick: (T) -> Unit,
 ) {
+    val native = LocalNative.current
     val scheme = MaterialTheme.colorScheme
-    val colors = ToggleButtonDefaults.colors(containerColor = scheme.surfaceContainerHigh, contentColor = scheme.onSurface)
+    val colors =
+        if (native) ToggleButtonDefaults.colors() else ToggleButtonDefaults.colors(containerColor = scheme.surfaceContainerHigh, contentColor = scheme.onSurface)
     Row(
         modifier.fillMaxWidth().selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
@@ -50,7 +54,7 @@ fun <T> ChoiceGroup(
             ToggleButton(
                 checked = checked,
                 onCheckedChange = { onPick(value) },
-                modifier = Modifier.weight(1f).heightIn(min = WingtipSize.TapTarget).semantics { role = Role.RadioButton },
+                modifier = Modifier.weight(1f).then(if (native) Modifier else Modifier.heightIn(min = WingtipSize.TapTarget)).semantics { role = Role.RadioButton },
                 shapes = when (i) {
                     0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
                     choices.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
@@ -58,6 +62,10 @@ fun <T> ChoiceGroup(
                 },
                 colors = colors,
             ) {
+                if (native) {
+                    Text(label)
+                    return@ToggleButton
+                }
                 val type = MaterialTheme.typography
                 // Two lines where a choice's name is long for its share of
                 // the row (Setup's four looks), never cut short.

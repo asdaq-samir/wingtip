@@ -33,4 +33,17 @@ import UIKit
         let strip = ChartInk.native(dark: false)
         #expect(strip.magenta == ChartInk.light.magenta && strip.caution == ChartInk.light.caution)
     }
+
+    /// Native is iOS out of the box (the owner, 2026-11-10): the app sets no
+    /// tint over it, so a control draws in the system's own accent, the
+    /// strip's tappable words in that same accent, and only Native steps
+    /// the brand's modifiers aside.
+    @Test func theNativeLookSetsNoTintOfItsOwn() {
+        #expect(Look.native.appliedTint(dark: false) == nil && Look.native.appliedTint(dark: true) == nil)
+        #expect(Look.allCases.filter(\.isStock) == [.native])
+        for look in Look.allCases where !look.isStock {
+            #expect(look.appliedTint(dark: false) != nil)
+        }
+        #expect(ChartInk.native(dark: false).tint == .accentColor && ChartInk.native(dark: true).tint == .accentColor)
+    }
 }
