@@ -15,6 +15,15 @@ if (typeof document !== "undefined") {
   const { cleanup } = await import("@testing-library/react");
   afterEach(cleanup);
   lingeringTimers();
+  // The menus, popovers and tooltips are on a chunk of their own
+  // (components/popupsChunk), which main.tsx fetches while the page waits
+  // for the engine, so a pilot's first tap finds it in. A test had no such
+  // wait: the first tap on a pull-down in a file fetched and transformed
+  // the chunk then, and ClearanceCard's "Find Inputs" test, waiting the
+  // default second for the menu's rows, failed whenever a busy run took
+  // longer (two runs of 2026-11-09, at 1016 ms). In before
+  // any test, as in the app, so no test races its import.
+  await (await import("../components/popupsChunk")).loadPopups();
 }
 
 /**

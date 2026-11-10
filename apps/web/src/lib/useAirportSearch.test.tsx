@@ -19,8 +19,12 @@ vi.mock("./api/client", async (importOriginal) => ({
 // index it read (and the download it warmed) in the module, so a test that
 // read it first left the next one nothing to warm. Shuffled, "is downloaded
 // once the page is idle" failed after "is read when something is typed".
-let api: typeof import("./api/client").api;
-let useAirportSearch: typeof import("./useAirportSearch").useAirportSearch;
+// Forgotten by forgetAirportIndex, not by importing every module again
+// (vi.resetModules) before each test, which on a loaded Mac took past the
+// hook's ten seconds (a run of 2026-11-10).
+const { api } = await import("./api/client");
+const { useAirportSearch } = await import("./useAirportSearch");
+const { forgetAirportIndex } = await import("./airportIndex");
 
 function wrapper() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -35,10 +39,8 @@ function wrapper() {
 // window, an unhandled "window is not defined" that failed the run.
 afterEach(cleanup);
 
-beforeEach(async () => {
-  vi.resetModules();
-  ({ api } = await import("./api/client"));
-  ({ useAirportSearch } = await import("./useAirportSearch"));
+beforeEach(() => {
+  forgetAirportIndex();
   vi.clearAllMocks();
   vi.mocked(api.warmAirportIndex).mockResolvedValue(true);
   vi.mocked(api.airportIndex).mockResolvedValue({ airports: [["KOSH", "Wittman Regional", "Oshkosh", "WI", 1]] } as never);
