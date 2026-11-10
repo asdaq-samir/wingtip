@@ -28,10 +28,10 @@ import { airportMarkSvg } from "../../../lib/map/marks/airportMark";
 import { colourOf } from "../../../lib/map/marks/flightCategory";
 import { WAYPOINT_MAGENTA } from "../../../lib/map/marks/chartColors";
 import { altFt, bearing, flightLevel } from "../../../lib/format";
-import { sameField, TYPED_PROCEDURE, type TypedProcedure } from "../../../lib/procedures";
+import { sameField, TYPED_PROCEDURE, type BranchFix, type TypedProcedure } from "../../../lib/procedures";
 import { TEXT } from "../../../lib/text";
 import PointAltitudeDialog, { type EditedPoint, type PointAltitude } from "./PointAltitudeDialog";
-import type { BranchFix } from "../../../lib/procedures";
+import { useStopAsked } from "../hooks/useStopAsked";
 
 /** The route as the box changes it: either end may be missing (half a
  *  route, the other end still to be typed), and neither means none. */
@@ -566,8 +566,8 @@ export default function RouteBox({
       )}
     </>
   );
-  // An arrow between two points, a tap on it the field there; a plain
-  // arrow on either side of the field once it is open.
+  // An arrow between two points: the one search asked for a stop there (useStopAsked); a plain one either side of an open field.
+  const { oneSearch, askAt } = useStopAsked({ points, hasDep, hasDest, isEnd, change });
   const arrow = (before: number) =>
     at === before ? (
       <Fragment key={`at-${before}`}>
@@ -580,9 +580,9 @@ export default function RouteBox({
         key={`arrow-${before}`}
         type="button"
         disabled={full && !(before === 0 && !hasDep)}
-        onClick={() => typeAt(before)}
+        onClick={() => (oneSearch ? askAt(before) : typeAt(before))}
         data-testid="route-arrow"
-        aria-label={before === 0 ? "Type the departure" : `Type a stop between ${points[before - 1]} and ${points[before]}`}
+        aria-label={before === 0 ? "Add the departure" : `Add a stop between ${points[before - 1]} and ${points[before]}`}
         className="grid h-5 w-4 shrink-0 place-items-center rounded-full text-muted-foreground outline-none hover:text-tint focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40"
       >
         <ArrowRight className="size-3" />
