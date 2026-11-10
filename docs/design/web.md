@@ -15,6 +15,9 @@ was read from on 2026-11-09. Where a page could not be read, or a detail
 could not be confirmed from the app's own site, this document says so
 rather than describing the app from memory (see "Not verified" at the end).
 
+The card rule, the scrolling rule and their tests, the one search and the
+airport weather marks hold on all three apps: [rules.md](rules.md).
+
 ## What does not change
 
 These hold on every screen below and win over any reference app.
@@ -630,8 +633,8 @@ than its METAR now (`weather_worse`). The weather comes on the map's own
 `/api/airports/in-view` answer (`weather`), the same for every app; the
 shared fixture is `apps/web/src/lib/fixtures/airportWeatherMarks.json`. A
 screen reader says each field's category and wind ("KJVL, IFR, wind 220
-at 18 gusting 26"). The Map card's Airport Weather is a menu (Off,
-Halo, Dot, Station) with three switches: the station model when zoomed
+at 18 gusting 26"). The Map card's Airport Weather is a segmented control (Off,
+Halo, Dot, Station; `Segmented`, shadcn's ToggleGroup) with three switches: the station model when zoomed
 in, the wind arrows, and getting worse by arrival, all on to begin with.
 
 ### 8. The emergency assistant
