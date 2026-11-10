@@ -33,7 +33,7 @@ const sourceIds = (f: LoopFrame) =>
  */
 export function WeatherLoopGl() {
   const { map } = useGlMap();
-  const { frames, shown, setReady } = useWeatherLoop();
+  const { frames, showing, setReady } = useWeatherLoop();
   const ids = frames.flatMap(sourceIds).join(",");
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export function WeatherLoopGl() {
   return (
     <>
       {frames.map((f, i) => (
-        <FrameGl key={f.valid} frame={f} shown={i === shown} />
+        <FrameGl key={f.valid} frame={f} shown={i === showing} />
       ))}
     </>
   );
