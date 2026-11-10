@@ -4,8 +4,10 @@ import {
   clearTheRoute,
   closeNavLog,
   controlsInSight,
+  emptyPlan,
   grabberTo,
   inSheet,
+  mapStill,
   navLogSheet,
   openNavLog,
   openPanel,
@@ -14,7 +16,6 @@ import {
   sideDrawer,
   slow,
   waypointMarks,
-  mapStill,
 } from "./helpers";
 import { fillTime } from "./ariaFields";
 
@@ -185,12 +186,11 @@ test("the route's box reads its points with an arrow between each two, a tap on 
   await expect(page).not.toHaveURL(/[?&]dest=/);
   await expect(page).toHaveURL(/[?&]dep=KRYV(&|$)/);
   await expect(sideDrawer(page).getByTestId("route-type")).toHaveAttribute("placeholder", "Destination");
-  // And the last: no route, FPL's box empty to type another in.
+  // And the last: no route, the plan's box empty to type another in.
   await lines.getByRole("group", { name: "Departure KRYV" }).focus();
   await page.keyboard.press("Delete");
   await expect(page).not.toHaveURL(/[?&]dep=/);
   await showTabs(page);
-  await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-selected", "true");
   await expect(sideDrawer(page).getByTestId("route-type")).toBeVisible();
 });
 
@@ -317,7 +317,7 @@ test("a cleared route's box takes the departure first, then asks for the destina
 test("Return after an ident typed key by key takes the first suggestion", async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
-  await openPanel(page);
+  await emptyPlan(page);
   const field = sideDrawer(page).getByTestId("route-type");
   await field.click();
   await field.pressSequentially("KUGN", { delay: 120 });

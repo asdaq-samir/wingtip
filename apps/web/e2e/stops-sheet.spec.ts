@@ -1,5 +1,5 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-import { grabberTo, inSheet, settle, showTabs, sideDrawer, slow } from "./helpers";
+import { grabberTo, inSheet, settle, showSearch, sideDrawer, slow } from "./helpers";
 
 const origin = new URL(process.env.BASE_URL ?? "http://localhost:8080").origin;
 
@@ -97,11 +97,11 @@ async function stops(page: Page, asked: string[] = []) {
   );
 }
 
-/** The Stops opened from the Airport tab's Find Nearby, `kind` picked. */
+/** The Stops opened from the one search's Find Nearby (its own page's
+ *  foot), `kind` picked. */
 async function findNearby(page: Page, kind: string) {
-  await showTabs(page);
-  await page.getByTestId("tab-airport").click();
-  await grabberTo(page, "half");
+  await showSearch(page);
+  await grabberTo(page, "full");
   await sideDrawer(page).getByTestId(`find-nearby-${kind}`).click();
   const card = sideDrawer(page).getByTestId("stops-card");
   await expect(card).toBeVisible({ timeout: slow(30_000) });
@@ -212,12 +212,11 @@ test("with no route the Stops look round the pilot, 25 nm at first, the distance
   await expect(card.getByTestId("stops-add-stop")).toHaveCount(0);
 });
 
-test("the Airport tab's Find Nearby tiles open the Stops round the pilot with that kind picked", async ({ page, context }) => {
+test("the one search's Find Nearby tiles open the Stops round the pilot with that kind picked", async ({ page, context }) => {
   await stops(page);
   await nearMe(page, context);
-  await showTabs(page);
-  await page.getByTestId("tab-airport").click();
-  await grabberTo(page, "half");
+  await showSearch(page);
+  await grabberTo(page, "full");
   const nearby = sideDrawer(page).getByTestId("find-nearby");
   await expect(nearby).toBeVisible();
   await expect(nearby.getByRole("button")).toHaveText(["Food", "Fuel", "Repair", "Flight Training"]);

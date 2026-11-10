@@ -112,10 +112,10 @@ async function signedInAs(page: Page, address: string) {
   await expect.poll(async () => (await page.request.get("/api/me")).status()).toBe(200);
 }
 
-/** The console once the page has drawn its tab bar (instructor.spec's). */
+/** The console once the page has drawn its first row (instructor.spec's). */
 async function logbook(page: Page) {
   const console = page.getByTestId("console-sheet");
-  await expect(page.getByTestId("setup-button").or(console).first()).toBeVisible();
+  await expect(page.getByTestId("account-button").or(console).first()).toBeVisible();
   if (!(await console.isVisible())) await openConsole(page);
   await library(console, "Logbook");
   return console;

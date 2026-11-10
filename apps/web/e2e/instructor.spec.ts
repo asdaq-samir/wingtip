@@ -23,12 +23,12 @@ async function signedInAs(page: Page, address: string) {
   await expect.poll(async () => (await page.request.get("/api/me")).status()).toBe(200);
 }
 
-/** The console, once the page has drawn its tab bar: just signed in, the
+/** The console, once the page has drawn its first row: just signed in, the
  *  phone's panel was still coming up as openConsole looked for the
  *  tabs, and waited on a gear it never showed. */
 async function consoleOpen(page: Page) {
   const console = page.getByTestId("console-sheet");
-  await expect(page.getByTestId("setup-button").or(console).first()).toBeVisible();
+  await expect(page.getByTestId("account-button").or(console).first()).toBeVisible();
   if (!(await console.isVisible())) await openConsole(page);
 }
 

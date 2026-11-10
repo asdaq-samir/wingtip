@@ -33,7 +33,7 @@ test("signed out, the planner opens on the map, and the sign-in is in the pilot 
   // over the map a pilot came to look at. It opens when asked.
   await page.goto("/app/plan");
   await showTabs(page);
-  await expect(page.getByTestId("setup-button")).toBeVisible();
+  await expect(page.getByTestId("account-button")).toBeVisible();
   await page.waitForTimeout(500); // a moment for a console that was coming down by itself
   await expect(consoleSheet(page)).toHaveCount(0);
   await expect(await devSwitchInSettings(page)).toHaveCount(0);
@@ -89,7 +89,7 @@ test("signed out, the dev page sends you to the planner", async ({ page }) => {
   await page.goto("/app/dev");
   await page.waitForURL(/\/app\/plan/);
   await showTabs(page);
-  await expect(page.getByTestId("setup-button")).toBeVisible();
+  await expect(page.getByTestId("account-button")).toBeVisible();
   await expect(await devSwitchInSettings(page)).toHaveCount(0);
   await closeConsole(page);
 });
@@ -108,8 +108,8 @@ test("the emailed link opens the app's own sign-in dialog, over the planner, and
   // dialog has the token by then, and checking the address for it was
   // a race the test lost once the page got quicker.)
   await expect(page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
-  // The planner under it, its tab bar there.
-  await expect(page.getByTestId("tab-bar")).toBeVisible();
+  // The planner under it, its one search there.
+  await expect(page.getByTestId("search-airports")).toBeVisible();
   expect(new URL(page.url()).search).not.toContain("signin");
 
   await page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true }).click();
@@ -134,8 +134,8 @@ test("a pilot's link lands on the planner, with no dev switch, and the pilot con
   await signInByEmail(page, address);
 
   await page.waitForURL("**/app/plan**");
-  // The planner as a fresh load opens, the tabs alone.
-  await expect(sideDrawer(page).getByTestId("tab-bar")).toBeVisible();
+  // The planner as a fresh load opens, the one search alone.
+  await expect(sideDrawer(page).getByTestId("search-airports")).toBeVisible();
   await page.waitForTimeout(500); // a moment for a console that was coming down by itself
   await expect(consoleSheet(page)).toHaveCount(0);
   await expect(await devSwitchInSettings(page)).toHaveCount(0);
@@ -190,7 +190,7 @@ test("a developer's link lands in dev mode, and the dev console logs out to the 
   // title was tapped as it went.
   await expect(page.getByRole("button", { name: /^Train/ })).toHaveCount(0);
   await showTabs(page);
-  await expect(page.getByTestId("setup-button")).toBeVisible();
+  await expect(page.getByTestId("account-button")).toBeVisible();
   await expect(consoleSheet(page)).toHaveCount(0);
   await expect(await devSwitchInSettings(page)).toHaveCount(0);
   await closeConsole(page);

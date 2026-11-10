@@ -37,7 +37,7 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   await expect(sideDrawer(page)).not.toHaveAttribute("data-panel", "peek");
   await expect(sideDrawer(page).getByTestId("dry-run-close")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("route-box")).toBeHidden();
-  await expect(sideDrawer(page).getByTestId("tab-fpl")).toBeHidden();
+  await expect(sideDrawer(page).getByTestId("search-airports")).toBeHidden();
   await expect(page.getByTestId("done-flying")).toBeVisible();
   // The map's buttons: NRST, D→ and the location arrow at the right, the
   // microphone at the left, each 60 points.
@@ -57,7 +57,7 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   await expect(page.getByTestId("map-settings-button")).toHaveCount(0);
 
   // The dry run closed from the Profile: on the ground at once, everything
-  // back -- the small buttons, and at half the route's box and the tabs.
+  // back -- the small buttons, and at half the route's box and the search.
   await grabberTo(page, "half");
   await sideDrawer(page).getByTestId("dry-run-close").click();
   await expect(page.locator("[data-own-ship]")).toHaveCount(0);
@@ -69,7 +69,7 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   await closeProfile(page);
   await grabberTo(page, "half");
   await expect(sideDrawer(page).getByTestId("route-box")).toBeVisible();
-  await expect(sideDrawer(page).getByTestId("tab-fpl")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("search-airports")).toBeVisible();
 });
 
 test("Done flying leaves flying mode with one tap while the airplane flies on", async ({ page }) => {

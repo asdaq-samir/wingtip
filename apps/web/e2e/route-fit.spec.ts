@@ -1,16 +1,17 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import {
   airportMark,
+  airportSearch,
   closeSidebarWithTheStockKey,
   expectDrawerClosed,
   grabberTo,
   mapStill,
   openPanel,
+  searchAirports,
   settle,
   settled,
   sideDrawer,
   slow,
-  airportSearch,
 } from "./helpers";
 
 /**
@@ -20,13 +21,12 @@ import {
  * to and fitted above the sheet; lowered to its capsule, the route stays
  * where it is, as under Apple Maps' sheet, and raised, it is still above
  * it -- slid at its zoom where it would be under the sheet, and fitted
- * again where even slid it would be, while any of it is in sight. With
- * neither the route nor the position in sight, the map stays put.
+ * again where even slid it would be, while any of it is in sight; with
+ * neither in sight, the map stays put.
  */
 
 // Geolocation is a secure origin's only: the suite's address must be one
-// (CI's is localhost; from the test container, the local stack is reached
-// on a localhost port forwarded to it).
+// (CI's is localhost; locally, a localhost port forwarded to the stack).
 const origin = new URL(process.env.BASE_URL ?? "http://localhost:8080").origin;
 
 /** The course line's core, on screen. */
@@ -288,7 +288,7 @@ test("a route entered is fitted above the half sheet, to the whole screen at the
   const search = await airportSearch(page);
   await search.click();
   await search.fill("KDLH");
-  await page.getByTestId("search-result").filter({ hasText: "KDLH" }).first().click();
+  await searchAirports(page).filter({ hasText: "KDLH" }).first().click();
   await page.getByTestId("place-card").getByTestId("fly-here").click();
   await expect(page).toHaveURL(/dep=C81.*dest=KDLH|dest=KDLH.*dep=C81/);
   // The route at the height the card was: half, as every card opens.
@@ -418,7 +418,7 @@ test("an airport's card keeps its field in sight: the next position the GPS give
   const search = await airportSearch(page);
   await search.click();
   await search.fill("KDLH");
-  await page.getByTestId("search-result").filter({ hasText: "KDLH" }).first().click();
+  await searchAirports(page).filter({ hasText: "KDLH" }).first().click();
   await expect(sideDrawer(page).getByTestId("place-card")).toBeVisible();
   await fieldClearOfCard(page, "KDLH");
 

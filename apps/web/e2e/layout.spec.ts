@@ -1,17 +1,18 @@
 import { test, expect } from "@playwright/test";
 import {
-  PAGES,
-  grabberTo,
-  settle,
-  slow,
-  expectDrawerClosed,
-  openBrief,
-  openSidebar,
-  sideDrawer,
-  openSetup,
-  openPanel,
   closeSidebarWithTheStockKey,
+  expectDrawerClosed,
+  firstRow,
+  grabberTo,
+  openBrief,
+  openPanel,
+  openSetup,
+  openSidebar,
+  PAGES,
+  settle,
   showTabs,
+  sideDrawer,
+  slow,
 } from "./helpers";
 
 /**
@@ -49,22 +50,23 @@ test.describe("/app/plan", () => {
   // route is entered, let's have tabs on the pill"), a route's figures
   // pinned under them ("If a route is entered, then let's pin the
   // calculations at the bottom"); the grabber half way.
-  test("the panel rests as the tabs, a route's figures under them, and half way has the route's box", async ({ page }) => {
+  test("the panel rests as the one search, a route's figures in its place, and half way has the route's box", async ({ page }) => {
     await page.goto("/app/plan");
     await settle(page);
     await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
-    await expect(sideDrawer(page).getByTestId("tab-bar")).toBeVisible();
+    await expect(firstRow(page)).toBeVisible();
     await expect(sideDrawer(page).getByTestId("route-type")).toBeHidden();
     await expect(sideDrawer(page).getByTestId("flight-line")).toHaveCount(0);
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
     await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
-    // With a route, its figures in the tabs' place.
+    // With a route, its figures in the search's place.
     await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+ nm/, { timeout: slow(30000) });
-    await expect(sideDrawer(page).getByTestId("tab-bar")).toBeHidden();
+    await expect(firstRow(page)).toBeHidden();
     await page.getByTestId("sidebar-trigger-button").click();
     await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
-    await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-selected", "true");
+    // The plan, the sheet's main content with a route.
+    await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeVisible();
     await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+ nm/, { timeout: slow(30000) });
     await expect(page.getByLabel("Departure", { exact: true })).toBeVisible();
     expect(await page.getByTestId("toolbar-trigger").count()).toBe(0);
@@ -88,7 +90,7 @@ test.describe("/app/plan", () => {
     }).toPass({ timeout: 10_000 });
     await page.getByTestId("sidebar-trigger-button").click();
     await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
-    await expect(sideDrawer(page).getByTestId("tab-bar").getByTestId("setup-button")).toBeVisible();
+    await expect(firstRow(page).getByTestId("account-button")).toBeVisible();
     await grabberTo(page, "full");
 
     await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -225,9 +227,10 @@ test.describe("/app/plan", () => {
     await expect(header.getByRole("tablist")).toHaveCount(0);
     const headerBox = (await header.boundingBox())!;
     if (phone) expect(headerBox.y).toBeGreaterThan(viewport.height / 2);
-    // From md up the tab bar is the panel's first row (TabBar), the head under it.
+    // From md up the one search is the panel's first row (OneSearchField),
+    // the head under it.
     else {
-      const bar = (await page.getByTestId("tab-bar").boundingBox())!;
+      const bar = (await firstRow(page).boundingBox())!;
       expect(bar.y).toBeLessThan(40);
       expect(headerBox.y).toBeLessThan(bar.y + bar.height + 8);
     }
@@ -284,7 +287,7 @@ for (const path of PAGES) {
     }
     // Never among the map's buttons, on either page: their first is the
     // map's own, its sheet the map's settings, as Maps' is.
-    expect(await page.locator("[data-map-controls]").getByTestId("setup-button").count()).toBe(0);
+    expect(await page.locator("[data-map-controls]").getByTestId("account-button").count()).toBe(0);
     await expect(first).toHaveAttribute("data-testid", "map-settings-button");
     await first.click();
     await expect(page.getByTestId("map-settings").getByTestId("base-chart-select")).toBeVisible();
@@ -295,17 +298,17 @@ for (const path of PAGES) {
       // At the end of the training page's route capsule, which has no
       // search bar.
       await showTabs(page);
-      await expect(sideDrawer(page).getByTestId("setup-button")).toBeVisible();
+      await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();
     } else {
       // At the end of the route's capsule, as at the search bar's once
       // the route is closed, as Maps' account is.
       await showTabs(page);
-      await expect(sideDrawer(page).getByTestId("setup-button")).toBeVisible();
+      await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();
       await page.goto(path);
       await settle(page);
       await showTabs(page);
-      await expect(sideDrawer(page).getByTestId("setup-button")).toBeVisible();
-      expect(await page.locator("[data-map-controls]").getByTestId("setup-button").count()).toBe(0);
+      await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();
+      expect(await page.locator("[data-map-controls]").getByTestId("account-button").count()).toBe(0);
     }
 
     // Setup holds the cockpit's Controls, never the map's: they are the

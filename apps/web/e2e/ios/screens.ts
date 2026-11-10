@@ -11,6 +11,7 @@ import {
   openSetup,
   openTab,
   settle,
+  showSearch,
   showTabs,
   sideDrawer,
   slow,
@@ -18,13 +19,15 @@ import {
 } from "../helpers";
 
 /** One state of the app as a pilot sees it, reached from a fresh page. */
-type Screen = { name: string; ready: (page: Page) => Promise<void> };
+import { SEARCH_SCREENS } from "./searchScreens";
+
+export type Screen = { name: string; ready: (page: Page) => Promise<void> };
 
 const ROUTE = "dep=C81&dest=KDLH";
 
 /**
  * The screens the iOS audit measures: the planner's map, its panel and
- * the nav log with a leg open, the panel's other four tabs, an airport's card, the training drawer with a waypoint open,
+ * the nav log with a leg open, the one search's places, an airport's card, the training drawer with a waypoint open,
  * both consoles and the settings. Nothing is written: a row is selected,
  * never rated, and no note is typed.
  */
@@ -283,17 +286,7 @@ export const SCREENS: Screen[] = [
       await expect(page.getByTestId("about-build")).toBeVisible();
     },
   },
-  // The tab bar's other places, each as it opens: the airplanes about
-  // and the airports nearest, half way up.
-  {
-    name: "Aircraft tab",
-    ready: async (page) => {
-      await page.goto("/app/plan?aircraft=1");
-      await settle(page);
-      await openPanel(page);
-      await expect(sideDrawer(page).getByTestId("aircraft-search")).toBeVisible();
-    },
-  },
+  ...SEARCH_SCREENS,
   // An airplane's card in the air, half way as it opens: its pictures
   // across the top (no photo: the stand-in), Follow, Alert, Debrief and
   // the star, the flight it is on (adsb.lol and Planespotters stubbed);
@@ -408,6 +401,7 @@ export const SCREENS: Screen[] = [
       });
       await page.goto("/app/plan");
       await settle(page);
+      await showSearch(page);
       await grabberTo(page, "full");
       await stripShows(page, "fpl-strip-shows", "fpl-shows-recents");
       await expect(sideDrawer(page).getByTestId("route-recent").first()).toBeVisible();

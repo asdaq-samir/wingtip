@@ -108,12 +108,12 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   await expect(drawer.getByRole("table", { name: /Navigation log from/i })).toHaveCount(0);
 
   // Back on FPL all the way up, the route's box over its chips and side
-  // view, where the pill has them, the figures pinned at the foot;
-  // Settings a tab, not a gear in the head.
+  // view, where the pill has them, the figures pinned at the foot; the
+  // account button beside the search, not a gear in the head.
   await openTab(page, "Nav Log");
   await expect(drawer.getByTestId("flight-line")).toBeVisible();
   expect(await page.locator("header").getByLabel("Departure", { exact: true }).count()).toBe(1);
-  expect(await page.locator("header").getByTestId("setup-button").count()).toBe(0);
+  expect(await page.locator("header").getByTestId("account-button").count()).toBe(0);
 
   // The route's buttons, the Brief (where the Nav log was) and Share, at
   // the end of the airplane's, the altitude's and the time's line, at the

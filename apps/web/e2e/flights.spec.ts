@@ -201,7 +201,9 @@ test("a saved flight opened from FPL's Saved opens its page, and Open on the map
     ],
   );
   await page.goto("/app/plan");
-  await grabberTo(page, "half");
+  // The saved flights on the one search's own page, under its Favorites,
+  // Recents and Nearest: all the way up.
+  await grabberTo(page, "full");
   const panel = sideDrawer(page);
   await panel.getByTestId("pill-section-saved-more").click();
   await panel.getByRole("button", { name: /^KMSP → KDLH/ }).click();
@@ -282,7 +284,9 @@ test("a saved flight's ••• and its long press offer Edit, Share and Remove
     await route.fulfill({ status: 204, body: "" });
   });
   await page.goto("/app/plan");
-  await grabberTo(page, "half");
+  // The saved flights on the one search's own page, under its Favorites,
+  // Recents and Nearest: all the way up.
+  await grabberTo(page, "full");
   const panel = sideDrawer(page);
   await panel.getByTestId("pill-section-saved-more").click();
   // A right click, as a long press on a phone, brings the same menu up.
