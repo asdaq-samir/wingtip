@@ -19,7 +19,13 @@ function Slider({
    *  feet and knots.) */
   thumb?: SliderPrimitive.Thumb.Props;
 }) {
-  const _values = Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max];
+  // One thumb for a single value: Base UI takes a number as well as an
+  // array, and shadcn's line counted a number as no value at all, so a
+  // slider given value={3} drew a range's two thumbs, two role=slider
+  // inputs saying the same thing (the Profile card's altitude, plans.spec's
+  // strict-mode failure on run 42843021881).
+  const given = value ?? defaultValue;
+  const _values = Array.isArray(given) ? given : given != null ? [given] : [min, max];
 
   return (
     <SliderPrimitive.Root
