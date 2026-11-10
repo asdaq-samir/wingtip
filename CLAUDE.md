@@ -295,7 +295,10 @@ Guidelines first.
   value there, never in `styles/tokens.css`, `lib/tokens.ts`,
   `Design/Generated` or `design/generated`.
 - Panels are sheets with detents, like Apple Maps: the platform's stock
-  sheet as it comes (decision 0018's amendments).
+  sheet as it comes (decision 0018's amendments). On the web the sheet is
+  solid at every size, the look's `--sheet`, not Liquid Glass; glass stays
+  only on what floats over the map, the map's buttons (owner decision
+  2026-11-10 (decisions page)).
 - Errors show where they happen (`lib/problems`), not in a toast.
 - Discrete settings are menus or segmented controls, not sliders.
 

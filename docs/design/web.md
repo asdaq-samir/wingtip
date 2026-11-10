@@ -77,7 +77,10 @@ These hold on every screen below and win over any reference app.
   panel is a side panel the window's height, beside the map. An iPad held
   wide, all touch, keeps the phone's layout.
 - **Phone** (and touch tablets) is the map with one sheet over it, at three
-  detents (pill, half, full), as decision 0018 sets.
+  detents (pill, half, full), as decision 0018 sets. The sheet is solid at
+  every size (`GLASS_SHEET`, the look's `--sheet`), not glass; only the
+  map's floating buttons are frosted (owner decision 2026-11-10
+  (decisions page), the sheet audit's F-L1).
 - Inside the panel, lay content out by the panel's width, not the
   window's: size container queries are Baseline widely available since
   February 2023 ([MDN @container][mdn-container]). The same card then reads
@@ -956,7 +959,7 @@ The owner's rule: a screenshot of another app means ours should show this.
 |---|---|
 | Sheet at rest: grabber, "Maps BETA" title row, full-width white search field on a light grey sheet | Grabber, the title row (`SheetTitle`: the mark and "Wingtip Maps", `Wordmark`, with the account button at its right end, moved from beside the field), the one search full width with the microphone as its trailing button. The phone's sheet is `GLASS_SHEET` (the look's `--sheet`: `#f2f2f7` in Wingtip, the paper in Chart ink, Canvas in Native) and the field `bg-card` |
 | All the way up: the title gone, the field pinned with a hairline under it | The title row goes at the full detent (MapPanel `titleShown`), kept while the search is in use, as Apple's is while typing; a hairline under the field |
-| Large bold section titles, picture cards sliding sideways, a white card with a question and art | The search's page (`SearchHome`): Favorites, Recents and Nearest titled in bold (`PillSection large`); the Recents as picture cards of the sectional round each field (`RecentCards`, the chart's own tile, shadcn Carousel); Plan a Flight, "Where do you want to fly?", the mark as its art (`FlightSummary`) |
+| Large bold section titles, picture cards sliding sideways, a white card with a question and art | The search's page (`SearchHome`): Favorites, Recents and Nearest titled as every section is, 20 points medium in the text's colour with the chevron in the tint (`PillSection`, decision 0021; owner decision 2026-11-10 (decisions page): one heading style, not Apple's bold); the Recents as picture cards of the sectional round each field (`RecentCards`, the chart's own tile, shadcn Carousel); Plan a Flight, "Where do you want to fly?", the mark as its art (`FlightSummary`) |
 | Sheet's foot: Privacy \| Terms \| Legal \| Imagery, the copyright | `SheetFooter`: Privacy \| Terms \| Legal (About, every data source and licence), "© year Wingtip Maps". No "manage your business" line: no page for schools or clubs exists |
 | One rounded card at the top right: map button over location | `MapControls`: the map's settings, the location arrow, the flown track and full screen in one rounded glass card at the top right under a bottom sheet (bottom right under a top sheet); the map's banners keep clear of it |
 | One round button at the bottom left (Look Around) | The radio's microphone, where it already was |

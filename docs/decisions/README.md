@@ -23,7 +23,7 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0015 | [Close goes back one level; no Back buttons](0015-close-goes-back.md) | 2026-10-22 | Accepted, amended 2026-11-10 |
 | 0016 | [Stock components over hand-rolled ones](0016-stock-components.md) | 2026-10-28 | Accepted, amended 2026-11-10 |
 | 0017 | [Discrete settings are menus or segmented controls, not sliders](0017-menus-not-sliders.md) | 2026-10-15 | Accepted |
-| 0018 | [Panels are Liquid Glass sheets with detents; a throw moves one size](0018-liquid-glass-sheets.md) | 2026-10-15 | Accepted, amended 2026-11-10 |
+| 0018 | [Panels are Liquid Glass sheets with detents; a throw moves one size](0018-liquid-glass-sheets.md) | 2026-10-15 | Accepted, amended 2026-11-10 (the web's sheet solid) |
 | 0019 | [No explanatory footnotes on pilot screens](0019-no-explanatory-footnotes.md) | 2026-10-16 | Accepted |
 | 0020 | [The app says "airplane"](0020-airplane-not-aircraft.md) | 2026-11-06 | Accepted |
 | 0021 | [Labels are Title Case; the FAA's text is sentence case with codes kept](0021-title-case-labels.md) | 2026-10-23 | Accepted |
