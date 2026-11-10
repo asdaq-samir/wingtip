@@ -1,3 +1,4 @@
+import Charts
 import SwiftUI
 
 /// The dry run's forecast strip, under its controls while forecast mode
@@ -64,44 +65,36 @@ struct ForecastStrip: View {
         }
     }
 
-    /// The legs in their categories, each as wide as its time, labelled
-    /// with the hour it starts (Zulu) and its worst category, and a mark
-    /// at the run's time now.
+    /// The legs in their categories, each as wide as its time, in Swift
+    /// Charts (stock over the hand-drawn bars, the owner, 2026-11-10): a
+    /// bar per leg in its category's colour, the hour it starts (Zulu)
+    /// and its category on the axis under it, and a rule at the run's
+    /// time now.
     private func timeline(_ legs: [APIRunLeg]) -> some View {
-        let total = max(1, (legs.last?.toT ?? 0) - (legs.first?.fromT ?? 0))
-        let at = ForecastPlay.fraction(legs, at: forecast.now ?? 0)
-        return VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-            GeometryReader { box in
-                HStack(spacing: WingtipSpace.hairline) {
-                    ForEach(Array(legs.enumerated()), id: \.offset) { _, leg in
-                        Rectangle().fill(Color(FlightCategory.mark(leg.category)))
-                            .frame(width: max(2, box.size.width * (leg.toT - leg.fromT) / total - 1))
-                    }
-                }
-                .clipShape(Capsule())
-                .overlay(alignment: .leading) {
-                    Capsule().fill(.primary).frame(width: 3, height: 18)
-                        .offset(x: min(box.size.width - 3, max(0, box.size.width * at - 1.5)))
-                }
-                .frame(height: 10)
-                .frame(maxHeight: .infinity)
+        let start = legs.first?.fromT ?? 0
+        let end = max(start + 1, legs.last?.toT ?? start + 1)
+        return Chart {
+            ForEach(Array(legs.enumerated()), id: \.offset) { _, leg in
+                BarMark(xStart: .value("From", leg.fromT), xEnd: .value("To", leg.toT), y: .value("Run", "Run"), height: .fixed(10))
+                    .foregroundStyle(Color(FlightCategory.mark(leg.category)))
             }
-            .frame(height: 18)
-            GeometryReader { box in
-                HStack(spacing: 0) {
-                    ForEach(Array(legs.enumerated()), id: \.offset) { _, leg in
-                        let width = box.size.width * (leg.toT - leg.fromT) / total
-                        Text("\(ForecastPlay.hourZ(leg.fromT)) \(leg.category ?? "")")
-                            .font(WingtipType.tabBar.monospacedDigit()).foregroundStyle(.secondary)
-                            .lineLimit(1).fixedSize()
-                            .frame(width: width, alignment: .leading).clipped()
-                            // Only where the leg is wide enough to say it.
-                            .opacity(width >= 44 ? 1 : 0)
-                    }
-                }
-            }
-            .frame(height: 16)
+            // The run's time now, kept on the strip at its ends.
+            RuleMark(x: .value("Now", min(end, max(start, forecast.now ?? start))))
+                .foregroundStyle(.primary)
+                .lineStyle(StrokeStyle(lineWidth: 3))
         }
+        .chartXScale(domain: start...end)
+        .chartYAxis(.hidden)
+        .chartXAxis {
+            AxisMarks(values: legs.map(\.fromT)) { value in
+                AxisValueLabel {
+                    if let t = value.as(Double.self), let leg = legs.first(where: { $0.fromT == t }) {
+                        Text("\(ForecastPlay.hourZ(t)) \(leg.category ?? "")").font(WingtipType.tabBar.monospacedDigit())
+                    }
+                }
+            }
+        }
+        .frame(height: 40)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("The forecast along the run")
         .accessibilityValue(legs.map { "from \(ForecastPlay.hourZ($0.fromT)), \(SpokenFigures.flightCategory($0.category))" }.joined(separator: "; "))

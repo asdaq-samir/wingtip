@@ -12,6 +12,8 @@ struct ProfileCard: View {
     @Environment(DryRun.self) private var dryRun
     @State private var picked: Double?
     @AppStorage(FlightRules.key) private var rules: FlightRules = .vfr
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     /// The wheel's rows, highest first: the planner's legal altitudes, the
     /// one flown and every 500 ft from 1,000 ft under Class A (14 CFR
@@ -41,35 +43,30 @@ struct ProfileCard: View {
     var body: some View {
         List {
             Section {
-                ProfileChart(profile: plan.profile, legs: plan.legs, altitudeFt: picked ?? plan.altitudeFt, selection: plan.altitude?.altitudeSelection)
-                    .frame(height: 200)
-                    .listRowInsets(EdgeInsets())
+                // The profile, read only, and the wheel of altitudes beside
+                // it where the width allows (an iPad, a wide window), under
+                // it on an iPhone (the owner, 2026-11-10).
+                let beside = sizeClass == .regular && !typeSize.isAccessibilitySize
+                let layout = beside ? AnyLayout(HStackLayout(alignment: .center, spacing: WingtipSpace.md)) : AnyLayout(VStackLayout(spacing: 0))
+                layout {
+                    ProfileChart(profile: plan.profile, legs: plan.legs, altitudeFt: picked ?? plan.altitudeFt, selection: plan.altitude?.altitudeSelection)
+                        .frame(height: 200)
+                    altitudeWheel
+                        .frame(maxWidth: beside ? 320 : .infinity)
+                }
+                .listRowInsets(EdgeInsets())
                 // A dry run the engine could not fly (the toolbar's Dry run).
                 ProblemLine(dryRun.problem)
+                ProblemLine(wheel, "The wheel's altitudes")
+                // Any row may be flown; one outside the planner's legal
+                // altitudes is said here, its reasons in Cautions where the planner gives them.
+                if let own = plan.ownAltitudeFt, !plan.ownAltitudeLegal {
+                    Label("\(Format.cruiseAltitude(own)) is outside the planner's legal altitudes; flown with its warnings.",
+                          systemImage: "exclamationmark.triangle")
+                        .font(.footnote).foregroundStyle(WingtipInk.caution)
+                }
             }
             Section("Altitude") {
-                Picker("Cruise altitude", selection: Binding(get: { picked ?? plan.altitudeFt ?? altitudes.last ?? 0 }, set: { fly($0) })) {
-                    ForEach(altitudes, id: \.self) { altitude in
-                        let ete = plan.altitude?.altitudeFigures?.first(where: { $0.altitudeFt == altitude })?.eteMin
-                        HStack {
-                            Text(Format.cruiseAltitude(altitude)).monospacedDigit().bold()
-                            if let name = name(of: altitude) {
-                                Text(name).foregroundStyle(legal.contains(altitude) ? Color.secondary : WingtipInk.caution)
-                            }
-                            if let ete {
-                                Spacer()
-                                Text(Format.duration(ete)).foregroundStyle(.secondary).monospacedDigit()
-                            }
-                        }
-                        // "FL-045" read as the feet it stands for.
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel([Format.spokenAltitude(altitude), name(of: altitude), ete.map(SpokenFigures.minutes)].compactMap { $0 }.joined(separator: ", "))
-                        .tag(altitude)
-                    }
-                }
-                .pickerStyle(.wheel)
-                .frame(height: 160)
-                ProblemLine(wheel, "The wheel's altitudes")
                 // The rules the route is planned under, here as the web's
                 // altitude popover has them (FlightRules); planned again.
                 Picker("Flight Rules", selection: $rules) {
@@ -131,6 +128,33 @@ struct ProfileCard: View {
             }
         }
         .onChange(of: plan.altitudeFt) { _, _ in picked = nil }
+    }
+
+    /// The system's wheel of the engine's altitudes, highest first, opening
+    /// on the one the planner picked: each row its altitude, its plan's
+    /// name or "Outside the limits", and its time en route.
+    private var altitudeWheel: some View {
+        Picker("Cruise altitude", selection: Binding(get: { picked ?? plan.altitudeFt ?? altitudes.last ?? 0 }, set: { fly($0) })) {
+            ForEach(altitudes, id: \.self) { altitude in
+                let ete = plan.altitude?.altitudeFigures?.first(where: { $0.altitudeFt == altitude })?.eteMin
+                HStack {
+                    Text(Format.cruiseAltitude(altitude)).monospacedDigit().bold()
+                    if let name = name(of: altitude) {
+                        Text(name).foregroundStyle(legal.contains(altitude) ? Color.secondary : WingtipInk.caution)
+                    }
+                    if let ete {
+                        Spacer()
+                        Text(Format.duration(ete)).foregroundStyle(.secondary).monospacedDigit()
+                    }
+                }
+                // "FL-045" read as the feet it stands for.
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel([Format.spokenAltitude(altitude), name(of: altitude), ete.map(SpokenFigures.minutes)].compactMap { $0 }.joined(separator: ", "))
+                .tag(altitude)
+            }
+        }
+        .pickerStyle(.wheel)
+        .frame(height: 160)
     }
 
     /// An altitude off the wheel: a plan's where it is one's, else the

@@ -103,12 +103,12 @@ struct StripRibbonRow: View {
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: WingtipSpace.xs)) : AnyLayout(HStackLayout(spacing: WingtipSpace.sm))
         VStack(spacing: WingtipSpace.sm) {
             line {
+                // The verdict as Weather says a condition: its symbol and
+                // word in the finding's colour, no capsule drawn round it.
                 if let verdict, let tag = StripData.tag(verdict.finding) {
-                    Text(tag)
+                    Label(tag, systemImage: FindingStyle.symbol(verdict.finding))
                         .condensedCaps(.caption, weight: .bold)
-                        .padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xs)
                         .foregroundStyle(ink.finding(verdict.finding))
-                        .background(ink.finding(verdict.finding).opacity(0.14), in: Capsule())
                         .accessibilityLabel("Verdict: \(verdict.words)")
                 }
                 Text(route)

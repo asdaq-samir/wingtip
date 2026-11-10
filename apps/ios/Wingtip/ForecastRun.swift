@@ -153,12 +153,6 @@ enum ForecastPlay {
         String(Format.zulu(Date(timeIntervalSince1970: t)).prefix(2)) + "Z"
     }
 
-    /// How far through the run `t` is, 0 to 1, by its legs' times.
-    static func fraction(_ legs: [APIRunLeg], at t: Double) -> Double {
-        guard let from = legs.first?.fromT, let to = legs.last?.toT, to > from else { return 0 }
-        return min(1, max(0, (t - from) / (to - from)))
-    }
-
     /// The products the planner could not have, in a pilot's words.
     static func unavailable(_ names: [String]) -> String? {
         guard !names.isEmpty else { return nil }

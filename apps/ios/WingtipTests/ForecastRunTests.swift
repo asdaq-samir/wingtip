@@ -83,11 +83,8 @@ struct ForecastRunTests {
         #expect(ForecastRunMapLayer.overlays(Self.answer.areas).map(\.kind) == ["sigmet"])
     }
 
-    @Test func theStripsWordsAndPlace() {
+    @Test func theStripsWords() {
         #expect(ForecastPlay.hourZ(14 * 3600 + 59 * 60) == "14Z")
-        #expect(ForecastPlay.fraction(Self.answer.legs, at: 900) == 0.5)
-        #expect(ForecastPlay.fraction(Self.answer.legs, at: 5000) == 1)
-        #expect(ForecastPlay.fraction([], at: 5) == 0)
         #expect(ForecastPlay.unavailable([]) == nil)
         #expect(ForecastPlay.unavailable(["gairmets", "winds"]) == "Played without G-AIRMETs, the winds aloft.")
         let line = ForecastPlay.line(Self.answer.samples[1])
