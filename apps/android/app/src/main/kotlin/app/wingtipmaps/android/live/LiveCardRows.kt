@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.design.Skeleton
+import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.SectionTitle
 
@@ -34,7 +34,7 @@ fun SpecialUseRows(lat: Double, lon: Double, model: SpecialUseModel = viewModel(
     LaunchedEffect(lat, lon) { model.at(lat, lon) }
     SectionTitle(stringResource(R.string.special_use))
     when {
-        state.loading -> Skeleton(rows = 2)
+        state.loading -> LoadingRow()
         state.unavailable -> Text(stringResource(R.string.special_use_unavailable), color = LocalInk.current.cautionInk)
         state.areas.isNullOrEmpty() -> Text(stringResource(R.string.special_use_none), color = MaterialTheme.colorScheme.onSurfaceVariant)
     }

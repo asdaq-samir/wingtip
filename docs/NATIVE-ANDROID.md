@@ -48,7 +48,8 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     route, own ship and the path flown), `MapStyle` (the first style as
     JSON: the chart and the overlay tiles' layers, the web's
     `glStyle.ts` and `glOverlays.ts`), `OverlayPictures` (the symbols'
-    pictures, drawn with Canvas) and `MapLoading` (the turning mark);
+    pictures, drawn with Canvas) and `MapLoading` (Material's loading
+    indicator until the map is drawn);
   - `ui/`: Material 3 screens, one composable and one ViewModel per
     screen. `RootScreen` (the map, `MapPane`, under the docked sheet with
     the four tabs: FPL, Airport, Airplane, Setup, and the figures' strip
@@ -169,8 +170,8 @@ and `glOverlays.ts`):
   distance field glyphs in the app's assets (`assets/glyphs/Inter-Bold`,
   written by `scripts/build/map-glyphs.py` from the web's Inter), so no
   glyph server is asked.
-- **The map is shown as one thing**: Wingtip's mark turns in the middle
-  of what the sheet leaves (`MapLoading`, still with the system's
+- **The map is shown as one thing**: Material's loading indicator in the
+  middle of what the sheet leaves (`MapLoading`, still with the system's
   animations off) until the map is first at rest with the chart and the
   overlays drawn, or 2.5 s after its style was set, then fades out over
   150 ms. The map opens on the airplane's last position (kept by

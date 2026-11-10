@@ -16,7 +16,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.design.Skeleton
+import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.route.RoutePoints
 import app.wingtipmaps.android.strip.FindingIcon
 import app.wingtipmaps.android.ui.LocalInk
@@ -40,7 +40,7 @@ fun IcingRows(plan: Plan.State, model: IcingModel = viewModel()) {
         state.unchecked -> Text(stringResource(R.string.icing_unchecked), color = LocalInk.current.cautionInk, style = MaterialTheme.typography.bodyMedium)
         state.loading -> {
             SectionTitle(stringResource(R.string.icing_forecast))
-            Skeleton(rows = 2)
+            LoadingRow()
         }
         state.rows.isNotEmpty() -> {
             SectionTitle(stringResource(R.string.icing_forecast))
