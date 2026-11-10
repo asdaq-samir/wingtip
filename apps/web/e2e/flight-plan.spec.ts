@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { slow, settle, openTab, openSection, openConsole, NO_OWN_FIGURES } from "./helpers";
+import { slow, settle, openTab, openSection, openConsole } from "./helpers";
+import { NO_OWN_FIGURES } from "./airplaneMocks";
 
 /**
  * The Brief tab's Flight Plan: the FAA's form (FAA Form 7233-4) filled in

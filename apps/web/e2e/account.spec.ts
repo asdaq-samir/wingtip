@@ -1,5 +1,6 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
-import { closeConsole, library, openConsole, controlsInSight, NO_OWN_FIGURES } from "./helpers";
+import { closeConsole, library, openConsole, controlsInSight } from "./helpers";
+import { NO_OWN_FIGURES } from "./airplaneMocks";
 
 /**
  * The pilot console's two saves, each answered only when the test lets

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { library, openConsole, showTabs, NO_OWN_FIGURES } from "./helpers";
+import { library, openConsole, showTabs } from "./helpers";
+import { NO_OWN_FIGURES } from "./airplaneMocks";
 
 /**
  * Instrument currency in the Logbook (14 CFR 61.57(c), (d)): what the

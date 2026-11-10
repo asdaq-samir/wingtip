@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { library, openConsole, showTabs, NO_OWN_FIGURES } from "./helpers";
+import { library, openConsole, showTabs } from "./helpers";
+import { NO_OWN_FIGURES } from "./airplaneMocks";
 
 /**
  * An airplane's inspections and tests in its form (the Library's
