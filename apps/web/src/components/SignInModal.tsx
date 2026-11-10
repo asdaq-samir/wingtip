@@ -4,7 +4,7 @@ import { Mail } from "lucide-react";
 import { cn } from "cn";
 import AppleLogo from "./icons/AppleLogo";
 import GoogleLogo from "./icons/GoogleLogo";
-import { Button } from "./ui/button";
+import { Button, buttonVariants } from "./ui/button";
 import SheetDialog from "./SheetDialog";
 import { Input } from "./ui/input";
 import { Spinner } from "./ui/spinner";
@@ -117,32 +117,20 @@ export default function SignInModal({
         <>
           {providers.length > 0 && (
             <>
+              {/* Links in a button's look: they go to the provider's page, and
+                  Base UI's Button rendered as one named them buttons. */}
               <div className="flex flex-col gap-2">
                 {providers.includes("google") && (
-                  <Button
-                    variant="outline"
-                    className="justify-start gap-3"
-                    nativeButton={false}
-                    render={
-                      <a href="/oauth2/authorization/google">
-                        <GoogleLogo className="size-4" />
-                        Continue with Google
-                      </a>
-                    }
-                  />
+                  <a href="/oauth2/authorization/google" className={cn(buttonVariants({ variant: "outline" }), "justify-start gap-3")}>
+                    <GoogleLogo className="size-4" />
+                    Continue with Google
+                  </a>
                 )}
                 {providers.includes("apple") && (
-                  <Button
-                    variant="outline"
-                    className="justify-start gap-3"
-                    nativeButton={false}
-                    render={
-                      <a href="/oauth2/authorization/apple">
-                        <AppleLogo className="size-4" />
-                        Continue with Apple
-                      </a>
-                    }
-                  />
+                  <a href="/oauth2/authorization/apple" className={cn(buttonVariants({ variant: "outline" }), "justify-start gap-3")}>
+                    <AppleLogo className="size-4" />
+                    Continue with Apple
+                  </a>
                 )}
               </div>
               <div className={`flex items-center gap-3 text-muted-foreground ${TEXT.note}`}>

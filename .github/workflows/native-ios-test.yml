@@ -22,7 +22,12 @@ env:
 
 jobs:
   test:
-    runs-on: ${{ vars.MAC_RUNNER || 'macos-26' }}
+    # GitHub's xcode-27 image (macOS 27, preview), the one hosted image with
+    # .tool-versions' Xcode 27.2 (/Applications/Xcode_27.2.app, build 27B52,
+    # image 20261104.0337: actions/runner-images,
+    # images/macos/xcode-27-arm64-Readme.md); macos-26 has 26.0.1-26.6 only
+    # (images/macos/macos-26-arm64-Readme.md), so select-xcode.sh found none.
+    runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1

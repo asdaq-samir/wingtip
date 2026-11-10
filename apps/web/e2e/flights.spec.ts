@@ -87,7 +87,9 @@ test("a flight is filed once, whole, and a new plan is offered for saving again"
   // stay for the session, and a click filed a duplicate of whatever was
   // on screen. (There is no Load: every change plans again.)
   await page.getByTestId("depart-date").click();
-  await page.locator('[data-slot="calendar"] td button').nth(20).click();
+  // The month's last day open to pick: React Aria's days are role=button
+  // cells, not buttons.
+  await page.locator('[data-slot="calendar"] td [role="button"]:not([aria-disabled="true"]):not([data-outside-month])').last().click();
   await page.getByTestId("depart-done").click();
   await expect(page).toHaveURL(/[?&]depart=/);
   await page.getByTestId("share-route").click();

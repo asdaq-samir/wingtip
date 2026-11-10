@@ -76,9 +76,10 @@ test(
     // The role, a menu, in Personal's Account row, at the owner's ask: Pilot
     // (chosen here), Developer for a developer, and Sign out last; who is
     // signed in beside it.
-    // Setup is a tab's page, named for the console, no dialog over the panel.
+    // Setup is a tab's page, named for the console, no dialog over the panel
+    // (on a phone the panel is itself the Drawer's dialog, named for its page).
     await expect(pilot).toHaveAccessibleName("Pilot");
-    await expect(page.getByRole("dialog", { name: "Pilot" })).toHaveCount(0);
+    await expect(page.getByRole("dialog", { name: "Pilot" }).and(page.locator(':not([data-slot="map-panel"])'))).toHaveCount(0);
     await openAccount(page);
     await expect(pilot.getByTestId("role-menu")).toHaveText("Pilot");
     // Who is signed in, the role menu's title.

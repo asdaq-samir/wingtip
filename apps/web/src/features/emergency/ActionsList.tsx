@@ -5,8 +5,10 @@ import FrequencyButton from "../../components/FrequencyButton";
 import { TEXT } from "../../lib/text";
 import type { EmergencyModel } from "./useEmergency";
 
-/** The emergency frequency, VHF guard (AIM 6-3-1(d)). */
-const GUARD_MHZ = 121.5;
+/** The emergency frequency, VHF guard, by the engine's own label for it
+ *  (maydayCall's channels, AIM 6-3-1(d)), as the iPhone finds it: its
+ *  figure is the engine's, not written again here. */
+const GUARD = "Guard";
 /** The two figures a pilot reads first, large. */
 const FIGURE = "text-2xl";
 
@@ -45,7 +47,7 @@ export default function ActionsList({ vm }: { vm: EmergencyModel }) {
             data-testid="emergency-channel"
             value={
               c.mhz != null ? (
-                <span className={cn(c.mhz === GUARD_MHZ && FIGURE)}>
+                <span className={cn(c.label === GUARD && FIGURE)}>
                   <FrequencyButton mhz={c.mhz} name={c.label} />
                 </span>
               ) : undefined

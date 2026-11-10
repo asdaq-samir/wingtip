@@ -3,10 +3,18 @@
 # (scripts/build/store-frames.sh). librsvg draws the SVGs, Pillow sizes,
 # rounds and packs them; Barlow, the brand's text face (design/tokens.json
 # font.brand), sets the store art's words. Pinned so the Mac and CI draw
-# the same pixels: the base by digest, Pillow by version, Barlow by the
-# google/fonts commit and its checksum.
+# the same pixels: the base by digest, Debian's packages by its snapshot,
+# Pillow by version, Barlow by the google/fonts commit and its checksum.
 FROM python:3.15-slim-trixie@sha256:65a65fc7b30b06cb6df4930fd4650697cb23f4c2698ab81fc87e4b031bc36928
-RUN apt-get update \
+# Debian's packages from the snapshot the base image was made from (its
+# debian.sources names it), not today's mirror: librsvg, cairo, pango and
+# FreeType draw every pixel, and a point release or security update of
+# any of them redraws the icons, so a fresh build in CI would otherwise
+# draw other pixels than the Mac's cached image. Moved with the digest.
+RUN sed -i -e 's|http://deb.debian.org/debian-security|http://snapshot.debian.org/archive/debian-security/20261104T212339Z|' \
+           -e 's|http://deb.debian.org/debian$|http://snapshot.debian.org/archive/debian/20261104T212339Z|' \
+           /etc/apt/sources.list.d/debian.sources \
+ && apt-get -o Acquire::Check-Valid-Until=false update \
  && apt-get install -y --no-install-recommends librsvg2-bin fontconfig \
  && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir pillow==13.0.0
