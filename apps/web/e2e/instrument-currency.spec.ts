@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { library, openConsole, showTabs } from "./helpers";
+import { NO_OWN_FIGURES } from "./airplaneMocks";
 
 /**
  * Instrument currency in the Logbook (14 CFR 61.57(c), (d)): what the
@@ -87,6 +88,7 @@ test("an airplane's VOR check is recorded with its kind and error, and says how 
     id: 5,
     tailNumber: "N12345",
     typeDesignator: "C172",
+    figures: NO_OWN_FIGURES,
     cruiseTasKt: 110,
     fuelBurnGph: 8.5,
     cruisePowerPct: null,

@@ -108,6 +108,7 @@ struct LogbookView: View {
         }
         .navigationTitle("Logbook")
         .glassScrollEdges()
+        .navigationBarMinimizesOnScroll()
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if session.signedIn {

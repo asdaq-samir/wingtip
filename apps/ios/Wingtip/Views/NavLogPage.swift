@@ -25,8 +25,10 @@ struct NavLogPage: View {
             }
         }
         .navigationTitle("Nav Log")
-        // A long list: its rows soften under the bar and the tab bar.
+        // A long list: its rows soften under the bar and the tab bar, and
+        // the bar folds away while it scrolls down (iOS 27).
         .glassScrollEdges()
+        .navigationBarMinimizesOnScroll()
     }
 }
 

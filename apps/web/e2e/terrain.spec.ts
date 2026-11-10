@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { beforeTheRoute, closeProfile, openPanel, openProfile, settle, sideDrawer, slow } from "./helpers";
+import { beforeTheRoute, closeProfile, openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart } from "./helpers";
 
 /**
  * The ground under the chart (features/plan/map/terrain), from the Map menu's
@@ -46,7 +46,7 @@ test("the dry run seen from the pilot's seat, its key a view and not clearance",
   await openProfile(page);
   const start = sideDrawer(page).getByTestId("dry-run-start");
   await expect(start).toBeVisible({ timeout: slow(60_000) });
-  await start.click();
+  await pressDryRunStart(page, start);
 
   const pilot = sideDrawer(page).getByTestId("dry-run-pilot-view");
   await expect(pilot).toHaveAttribute("aria-pressed", "false");

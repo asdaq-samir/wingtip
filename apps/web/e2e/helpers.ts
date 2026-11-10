@@ -1,5 +1,7 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
+export { closeProfile, openProfile, pressDryRunStart } from "./dryRun";
+
 /**
  * What the browser suite's specs share: the two pages, the waits CI
  * doubles, and the drawer opened and closed the way the stock
@@ -473,28 +475,6 @@ export async function openNavLog(page: Page) {
   }
   await expect(sheet).toBeVisible();
   return sheet;
-}
-
-/** The side view, a card over FPL, with the altitude's wheel in its
- *  corner: opened at rest from the route's Profile button, beside the AI
- *  brief's (the owner, 2026-11-04). */
-export async function openProfile(page: Page) {
-  await openPanel(page);
-  const card = page.getByTestId("profile-card");
-  if (!(await card.isVisible()))
-    await sideDrawer(page)
-      .getByTestId("route-profile")
-      .click({ timeout: slow(60_000) });
-  await expect(card).toBeVisible();
-  return card;
-}
-
-/** The side view's card put away: its close, kept for a keyboard and a
- *  screen reader (CardClose), as the nav log's is. */
-export async function closeProfile(page: Page) {
-  await page.getByTestId("profile-close").focus();
-  await page.keyboard.press("Enter");
-  await expect(page.getByTestId("profile-card")).toHaveCount(0);
 }
 
 /** The nav log's card over FPL (the owner's "make Navlog open like brief

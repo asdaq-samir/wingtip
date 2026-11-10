@@ -103,8 +103,9 @@ test(
     const zoomOfTiles = () => chartZoom(page);
     const before = await zoomOfTiles();
     // A checkpoint drawn at this zoom: those without room for their dots
-    // wait for the map to come in (RouteMap's useSpaced).
-    const marker = page.locator(".maplibregl-marker", { hasText: /^\d+$/ }).first();
+    // wait for the map to come in (RouteMap's useSpaced), and those a
+    // higher mark covers are left out until then (lib/map/gl/declutter).
+    const marker = page.locator('.maplibregl-marker:not([data-declutter="hidden"])', { hasText: /^\d+$/ }).first();
     await expect(marker).toBeVisible({ timeout: slow(60000) });
     // Its own click, not one at its place: the route fitted to a phone
     // stacks neighbouring checkpoints, and a click there lands on the one
@@ -143,7 +144,9 @@ test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks
   // airports; the landmarks, from zoom 7.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  const numbered = page.locator(".maplibregl-marker", { hasText: /^\d+$/ });
+  // The badges the map shows: one a higher mark covers is left out
+  // (lib/map/gl/declutter).
+  const numbered = page.locator('.maplibregl-marker:not([data-declutter="hidden"])', { hasText: /^\d+$/ });
   await expect(numbered.first()).toBeVisible({ timeout: slow(60000) });
 
   // Out to the zoom a whole region fits at: the tiles say which.

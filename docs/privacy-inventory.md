@@ -63,6 +63,25 @@ longer than it takes to answer the request.
   on-device model from the NOTAMs and the engine's reasons
   (`Intents/AskIntents.swift`, `Words/NotamsInWords.swift`); nothing is
   sent, and there is no server path for them.
+- **Gemini Nano on Android** (docs/android-ai.md). Where the phone has
+  it (ML Kit's Prompt API over AICore, `ai/Nano.kt`), Ask
+  (`ai/OnPhoneAsk.kt`), In Plain Words (`ai/AiWords.kt`), a drafted
+  logbook remark and a photographed page (ML Kit's on-device text
+  recognition, then Nano, `ai/read/OnPhoneReader.kt`) are made on the
+  phone and nothing of them goes to Anthropic or Google. Ask's tools
+  fetch from the planner what the screens fetch (an airport, the route's
+  NOTAMs); the question itself stays on the phone. Without Nano they go
+  to Claude as in the table below, signed in only.
+- **Gemini and the system's agents on Android** (AppFunctions,
+  `ai/functions/`, Android 16+). An agent the pilot asks may read the
+  airport's card, frequencies, approaches, the nearest fields (from the
+  last position), the route kept on the phone, its NOTAMs, the Brief's
+  kept verdict, and, signed in, the pilot's airplanes and logbook; and
+  open the app. Answered on the phone, only when called; the agent's
+  maker's terms apply to what it does with it. The Assist API
+  (`ai/ScreenContext.kt`) gives an assistant asked about the screen the
+  route as the site's link and JSON-LD. App shortcuts
+  (`res/xml/shortcuts.xml`) open screens and send nothing.
 - **iCloud (iPhone).** Kept and watched airplanes and planned routes are
   in the pilot's own iCloud through SwiftData's CloudKit sync
   (`Records/Records.swift`); Apple's, not ours.
@@ -81,7 +100,7 @@ longer than it takes to answer the request.
 
 | Recipient | What | Personal |
 |---|---|---|
-| Anthropic (Claude) | Ask: the conversation (typed or spoken), the route, stops, airplane, altitude, departure time, the pilot's minimums, currency lines and home base, and the live position (3 decimals), altitude, track and groundspeed where known (`services/assistant/app/assistant.py`). The briefing and the Brief's words: the route, the nav log, the weather and NOTAM text on it, the airplane's type, and for the risk words the pilot's minimums and currency. A checkpoint note: the checkpoint and the route around it. The mock oral: the plan as text and the typed answers. Flight watch: what changed on the route. A photographed page (handbook, logbook, clearance note; `POST /api/read-document`) and the date, except on an iPhone that reads it on the device (iOS 27, Apple Intelligence with vision: `Documents/OnDeviceDocumentReader.swift`), where the photo is not sent. Nothing kept: the conversation is the client's | No name, address, account; a tail number only where the pilot typed it into a question |
+| Anthropic (Claude) | Ask: the conversation (typed or spoken), the route, stops, airplane, altitude, departure time, the pilot's minimums, currency lines and home base, and the live position (3 decimals), altitude, track and groundspeed where known (`services/assistant/app/assistant.py`). The briefing and the Brief's words: the route, the nav log, the weather and NOTAM text on it, the airplane's type, and for the risk words the pilot's minimums and currency. A checkpoint note: the checkpoint and the route around it. The mock oral: the plan as text and the typed answers. Flight watch: what changed on the route. A photographed page (handbook, logbook, clearance) and today's date, to read it (`services/assistant/app/documents/`), only where the phone cannot read it itself (Android with Gemini Nano, and an iPhone on iOS 27 with Apple Intelligence that can see images, `Documents/OnDeviceDocumentReader.swift`, read it on the phone). Nothing kept: the conversation is the client's | No name, address, account; a tail number only where the pilot typed it into a question |
 | Amazon SES | The address a sign-in link is sent to, and the link; an instructor's address a student asks in, with the student's name and address; the endorsements and reviews between the two, to each | Yes, to deliver it |
 | The student's instructor | Once they take the student on: the student's name and address, 61.109 experience from their logbook, knowledge test codes, endorsements, and the saved flights the student puts to them | Yes: the student asks them in, and either ends it |
 | Google, Apple | Their own sign-in, when a pilot uses it | Their own |

@@ -5,6 +5,7 @@
   --display: var(--font-sans);
   --radius: 0.625rem;
   --spacing: 0.25rem;
+  --space-hairline: 0.0625rem;
   --space-xxs: 0.125rem;
   --space-xs: 0.25rem;
   --space-sm: 0.5rem;

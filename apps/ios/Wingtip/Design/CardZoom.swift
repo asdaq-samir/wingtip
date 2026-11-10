@@ -2,7 +2,7 @@ import SwiftUI
 
 /// A card opened from its row grows out of the row, iOS's zoom navigation
 /// transition (iOS 18), the way Photos and Maps open an item; with Reduce
-/// Motion on, the stack's own push, which the system then cross-fades.
+/// Motion on, a cross-fade (iOS 27), or the stack's own push before it.
 extension View {
     /// The row a card opens from, by the card's id.
     func cardSource(_ id: some Hashable, in space: Namespace.ID) -> some View {
@@ -34,7 +34,9 @@ private struct CardZoom: ViewModifier {
 
     func body(content: Content) -> some View {
         if reduceMotion {
-            content
+            // iOS 27's cross-fade, the HIG's way to show a change without
+            // movement (HIG, Accessibility: Motion); the stack's push before it.
+            if #available(iOS 27.0, *) { content.navigationTransition(.crossFade) } else { content }
         } else {
             content.navigationTransition(.zoom(sourceID: id, in: space))
         }

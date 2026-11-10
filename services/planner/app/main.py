@@ -56,8 +56,7 @@ from wingtip import (
     water,
     weather,
 )
-from wingtip import airspace_at, congested, data_cycles
-from wingtip import cycle_pack
+from wingtip import airspace_at, congested, cycle_pack, data_cycles
 from wingtip import airports as airport_table
 
 from . import chart_model, chart_refresh, errors, tracing
@@ -66,9 +65,9 @@ from .feeds import watch as feeds_watch
 from .router_basics import PROCESSED_DIR
 from wingtip.aircraft import UnknownAircraft
 from wingtip.planning import StillComputing
-from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan
-from .routers import clearance, copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain
-from .routers import coach, engine as engine_router, logbook_draft, notam_rank, offline, traffic, weather_loop, weather_map, window, words
+from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan, clearance
+from .routers import copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, coach, words
+from .routers import engine as engine_router, forecast_run, logbook_draft, notam_rank, offline, traffic, weather_loop, weather_map, window
 from .schemas.chart import DetectMessage
 from .schemas.common import Index
 from .schemas.plan import NavLogMessage
@@ -432,6 +431,7 @@ for module in (
     words,
     weather_map,
     weather_loop,
+    forecast_run,
     pilot,
     live,
     feeds,

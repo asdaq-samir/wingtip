@@ -703,6 +703,7 @@ val WingtipTypography = Typography(
 
 object WingtipSpace {
     val Unit = 4.dp
+    val Hairline = 1.dp
     val Xxs = 2.dp
     val Xs = 4.dp
     val Sm = 8.dp

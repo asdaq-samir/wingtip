@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { slow, settle, openTab, openSection, openConsole } from "./helpers";
+import { NO_OWN_FIGURES } from "./airplaneMocks";
 
 /**
  * The Brief tab's Flight Plan: the FAA's form (FAA Form 7233-4) filled in
@@ -59,6 +60,7 @@ test("items 10 and 19 come from the airplane's page, the pilot's and the persons
             id: 5,
             tailNumber: "N12345",
             typeDesignator: "C172",
+            figures: NO_OWN_FIGURES,
             cruiseTasKt: 110,
             fuelBurnGph: 8.5,
             cruisePowerPct: null,

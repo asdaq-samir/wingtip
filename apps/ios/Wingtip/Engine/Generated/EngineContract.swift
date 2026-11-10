@@ -3151,6 +3151,201 @@ enum EngineContract {
         }
     }
 
+    struct ForecastRunAnswer: Codable, Equatable, Sendable {
+        var samples: [EngineContract.ForecastRunAnswerSamplesItem]
+        var legs: [EngineContract.ForecastRunAnswerLegsItem]
+        var fields: [EngineContract.ForecastRunAnswerFieldsItem]
+        var areas: [EngineContract.ForecastRunAnswerAreasItem]
+        var alerts: [EngineContract.ForecastRunAnswerAlertsItem]
+    }
+
+    struct ForecastRunAnswerAlertsItem: Codable, Equatable, Sendable {
+        var t: Double
+        var lat: Double
+        var lon: Double
+        var kind: String
+        var words: String
+        /// The rule and the product it is held to.
+        var source: String
+    }
+
+    struct ForecastRunAnswerAreasItem: Codable, Equatable, Sendable {
+        var kind: String
+        var words: String
+        var source: String
+        var lowFt: Double?
+        var highFt: Double?
+        var validFrom: Double?
+        var validTo: Double?
+        var coords: [[Double]]
+
+        enum CodingKeys: String, CodingKey {
+            case kind
+            case words
+            case source
+            case lowFt = "low_ft"
+            case highFt = "high_ft"
+            case validFrom = "valid_from"
+            case validTo = "valid_to"
+            case coords
+        }
+    }
+
+    struct ForecastRunAnswerFieldsItem: Codable, Equatable, Sendable {
+        var ident: String
+        var role: String
+        var t: Double
+        /// AIM 7-1-7's flight category; null where the forecast does not settle it.
+        var category: String?
+        /// Feet above the ground.
+        var ceilingFt: Double?
+        var ceilingUnknown: Bool
+        var visibilitySm: Double?
+        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+        var source: String?
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case role
+            case t
+            case category
+            case ceilingFt = "ceiling_ft"
+            case ceilingUnknown = "ceiling_unknown"
+            case visibilitySm = "visibility_sm"
+            case source
+        }
+    }
+
+    struct ForecastRunAnswerLegsItem: Codable, Equatable, Sendable {
+        var row: Int
+        var fromT: Double
+        var toT: Double
+        /// AIM 7-1-7's flight category; null where the forecast does not settle it.
+        var category: String?
+        var worstT: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case row
+            case fromT = "from_t"
+            case toT = "to_t"
+            case category
+            case worstT = "worst_t"
+        }
+    }
+
+    struct ForecastRunAnswerSamplesItem: Codable, Equatable, Sendable {
+        var t: Double
+        var lat: Double
+        var lon: Double
+        /// AIM 7-1-7's flight category; null where the forecast does not settle it.
+        var category: String?
+        /// Feet above the ground.
+        var ceilingFt: Double?
+        var ceilingUnknown: Bool
+        var visibilitySm: Double?
+        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+        var source: String?
+        var windDirTrueDeg: Double?
+        var windSpeedKt: Double?
+        /// Indexes into areas.
+        var areas: [Int]
+
+        enum CodingKeys: String, CodingKey {
+            case t
+            case lat
+            case lon
+            case category
+            case ceilingFt = "ceiling_ft"
+            case ceilingUnknown = "ceiling_unknown"
+            case visibilitySm = "visibility_sm"
+            case source
+            case windDirTrueDeg = "wind_dir_true_deg"
+            case windSpeedKt = "wind_speed_kt"
+            case areas
+        }
+    }
+
+    struct ForecastRunInput: Codable, Equatable, Sendable {
+        /// The run's points, in time order.
+        var track: [EngineContract.ForecastRunInputTrackItem]
+        var fields: [EngineContract.ForecastRunInputFieldsItem]?
+        /// TAF stations as the weather store keeps them.
+        var tafs: [[String: JSONValue]]?
+        var sigmets: [[String: JSONValue]]?
+        var gairmets: [[String: JSONValue]]?
+        /// SPC outlook areas: {label, valid_from, valid_to, coords}.
+        var outlooks: [[String: JSONValue]]?
+        var rules: String?
+        var minimums: EngineContract.ForecastRunInputMinimums?
+    }
+
+    struct ForecastRunInputFieldsItem: Codable, Equatable, Sendable {
+        var ident: String
+        var role: String
+        var t: Double
+        var lat: Double
+        var lon: Double
+    }
+
+    struct ForecastRunInputMinimums: Codable, Equatable, Sendable {
+        var ceilingFt: Double?
+        var visibilitySm: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case ceilingFt = "ceiling_ft"
+            case visibilitySm = "visibility_sm"
+        }
+    }
+
+    struct ForecastRunInputTrackItem: Codable, Equatable, Sendable {
+        /// s since 1970.
+        var t: Double
+        var lat: Double
+        var lon: Double
+        /// ft MSL.
+        var altFt: Double?
+        /// The nav log's row the airplane is flying to: its leg.
+        var row: Int
+        /// The Gridded LAMP's forecast hours at this point.
+        var modelled: [EngineContract.ForecastRunInputTrackItemModelledItem]?
+        /// Each GFS period's winds at the station nearest this point.
+        var winds: [EngineContract.ForecastRunInputTrackItemWindsItem]?
+
+        enum CodingKeys: String, CodingKey {
+            case t
+            case lat
+            case lon
+            case altFt = "alt_ft"
+            case row
+            case modelled
+            case winds
+        }
+    }
+
+    struct ForecastRunInputTrackItemModelledItem: Codable, Equatable, Sendable {
+        var valid: Double
+        var ceilingFt: Double?
+        var visibilitySm: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case valid
+            case ceilingFt = "ceiling_ft"
+            case visibilitySm = "visibility_sm"
+        }
+    }
+
+    struct ForecastRunInputTrackItemWindsItem: Codable, Equatable, Sendable {
+        var useFrom: Double
+        var useTo: Double
+        var levels: [String: [String: JSONValue]]
+
+        enum CodingKeys: String, CodingKey {
+            case useFrom = "use_from"
+            case useTo = "use_to"
+            case levels
+        }
+    }
+
     struct FrdNearAnswer: Codable, Equatable, Sendable {
         var base: String
         var courseDeg: Int

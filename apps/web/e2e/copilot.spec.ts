@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
-import { openMapSettings, openPanel, openProfile, settle, sideDrawer, slow } from "./helpers";
+import { openMapSettings, openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart } from "./helpers";
 
 /**
  * The in-flight copilot (features/copilot): flying the dry run from KUGN
@@ -34,7 +34,7 @@ async function startDryRun(page: Page) {
   await openProfile(page);
   const start = sideDrawer(page).getByTestId("dry-run-start");
   await expect(start).toBeVisible({ timeout: slow(60_000) });
-  await start.click();
+  await pressDryRunStart(page, start);
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
 }
 

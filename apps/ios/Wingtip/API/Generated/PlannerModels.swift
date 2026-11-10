@@ -2044,6 +2044,114 @@ struct APIFlowProgram: Codable, Equatable, Sendable {
     var text, title, value: String?
 }
 
+/// The dry run against the forecast, and the products that could not be had.
+// MARK: - APIForecastRun
+struct APIForecastRun: Codable, Equatable, Sendable {
+    var alerts: [APIRunAlert]
+    var areas: [APIRunArea]
+    var fields: [APIRunFieldForecast]
+    var legs: [APIRunLeg]
+    var samples: [APIRunSample]
+    var unavailable: [String]
+}
+
+/// What the run is warned of, when and where, its rule and product cited.
+// MARK: - APIRunAlert
+struct APIRunAlert: Codable, Equatable, Sendable {
+    var kind: String
+    var lat, lon: Double
+    var source: String
+    var t: Double
+    var words: String
+}
+
+/// An advisory area the run is in at some time: in words, cited, its
+/// altitudes (ft MSL), when in force, and its outline ([lat, lon]).
+// MARK: - APIRunArea
+struct APIRunArea: Codable, Equatable, Sendable {
+    var coords: [[Double]]
+    var highFt: Double?
+    var kind: String
+    var lowFt: Double?
+    var source: String
+    var validFrom, validTo: Double?
+    var words: String
+}
+
+/// A field's TAF at the run's time there.
+// MARK: - APIRunFieldForecast
+struct APIRunFieldForecast: Codable, Equatable, Sendable {
+    var category: String?
+    var ceilingFt: Double?
+    var ceilingUnknown: Bool
+    var ident, role: String
+    var source: String?
+    var t: Double
+    var visibilitySm: Double?
+}
+
+/// A leg as flown: its nav log row, when, and its worst forecast category.
+// MARK: - APIRunLeg
+struct APIRunLeg: Codable, Equatable, Sendable {
+    var category: String?
+    var fromT: Double
+    var row: Int
+    var toT: Double
+    var worstT: Double?
+}
+
+/// What the airplane meets at a point: the forecast ceiling (ft above
+/// the ground) and visibility then and its flight category (AIM 7-1-7),
+/// whose forecast it is, the wind aloft at its altitude, and the areas
+/// (indexes into `areas`) it is in.
+// MARK: - APIRunSample
+struct APIRunSample: Codable, Equatable, Sendable {
+    var areas: [Int]
+    var category: String?
+    var ceilingFt: Double?
+    var ceilingUnknown: Bool
+    var lat, lon: Double
+    var source: String?
+    var t: Double
+    var visibilitySm, windDirTrueDeg, windSpeedKt: Double?
+}
+
+/// The dry run to play against the forecast.
+// MARK: - APIForecastRunAsk
+struct APIForecastRunAsk: Codable, Equatable, Sendable {
+    var fields: [APIRunField]?
+    var minimums: APIRunMinimums?
+    var rules: String?
+    var track: [APIRunPoint]
+}
+
+/// A field the run takes off from or lands at, and when.
+// MARK: - APIRunField
+struct APIRunField: Codable, Equatable, Sendable {
+    var ident: String
+    var lat: Double
+    var lon: Double
+    var role: String
+    var t: Double
+}
+
+/// The pilot's personal minimums, each None until set.
+// MARK: - APIRunMinimums
+struct APIRunMinimums: Codable, Equatable, Sendable {
+    var ceilingFt, visibilitySm: Double?
+}
+
+/// A point of the dry run: when (s since 1970), where, how high (ft
+/// MSL, None on the ground or not known) and the nav log's row it flies to.
+// MARK: - APIRunPoint
+struct APIRunPoint: Codable, Equatable, Sendable {
+    var altFt: Double?
+    var lat: Double
+    var lon: Double
+    var row: Int
+    var t: Double
+}
+
 /// The wind a TAF forecasts at a field for a time (wingtip.weather.
 /// forecast_wind): its own TAF's, else the nearest station's within 30
 /// nm (`ident`, `distance_nm`). From true north; `dir_true_deg` None for

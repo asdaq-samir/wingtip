@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { closeProfile, grabberTo, openPanel, openProfile, settle, sideDrawer, slow } from "./helpers";
+import { closeProfile, grabberTo, openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart } from "./helpers";
 
 /**
  * Flying mode (useFlyingMode), the canvas's Flying screen: once own ship
@@ -20,7 +20,7 @@ async function startDryRun(page: Page) {
   await openProfile(page);
   const start = sideDrawer(page).getByTestId("dry-run-start");
   await expect(start).toBeVisible({ timeout: slow(60_000) });
-  await start.click();
+  await pressDryRunStart(page, start);
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
 }
 

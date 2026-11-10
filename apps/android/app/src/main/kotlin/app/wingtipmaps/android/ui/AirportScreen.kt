@@ -31,6 +31,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.ai.AiSources
+import app.wingtipmaps.android.ai.AiTask
+import app.wingtipmaps.android.ai.AiWordsRow
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.AirportSuggestion
 import app.wingtipmaps.android.design.RefreshBox
@@ -131,6 +134,8 @@ fun PlaceCard(place: AirportPlace, keptAtMs: Long? = null) {
                 metar.flightCategory?.let { CategoryChip(it) }
             }
             Text(metar.raw, style = MaterialTheme.typography.bodyMedium)
+            // The report and forecast in plain words, under them.
+            AiWordsRow(AiTask.AIRPORT_WEATHER, key = place.ident + metar.raw, sources = { AiSources.weather(place) })
         } else {
             // With no report from the weather service (no signal, or none
             // at the field), what the cockpit receiver heard over FIS-B.

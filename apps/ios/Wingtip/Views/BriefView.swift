@@ -197,6 +197,7 @@ struct BriefView: View {
         .siriSees(SiriSaw.flight(plan))
         .navigationTitle("Brief")
         .glassScrollEdges()
+        .navigationBarMinimizesOnScroll()
         .navigationBarTitleDisplayMode(.inline)
         // The UI tests' sign the Brief is up (WingtipUITests/FlowTests).
         .accessibilityIdentifier("brief")

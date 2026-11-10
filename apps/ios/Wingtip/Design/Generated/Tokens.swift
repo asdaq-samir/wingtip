@@ -607,6 +607,7 @@ enum WingtipType {
 
 enum WingtipSpace {
     static let unit: CGFloat = 4
+    static let hairline: CGFloat = 1
     static let xxs: CGFloat = 2
     static let xs: CGFloat = 4
     static let sm: CGFloat = 8
