@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { api } from "../../lib/api/client";
 import { prefersReducedMotion } from "../../lib/motion";
 import { useWeatherLayers } from "../../lib/map/sources/weatherLayers";
-import { dwellMs, nextFrame } from "./loopFrames";
+import { dwellMs, firstPlay, nextInPass, playFrom } from "./loopFrames";
 
 /** How often the frames are asked for again: half the radar's five
  *  minutes, so a new mosaic is in the loop within a few minutes of IEM's. */
@@ -42,10 +42,11 @@ const usePlayer = create<Player>()((set) => ({
  * The radar and satellite loop on the map (the owner, 2026-11-09): the
  * frames the planner lists for the pick in the Map menu (wingtip.
  * weather_loop), the one shown, and play, pause and scrub. The bar passes
- * `drive`, and runs the clock: it plays once the frames have loaded --
- * not before, so nothing flickers in -- and not by itself under Reduce
- * Motion, which shows the newest frame still; it pauses while the app is
- * in the background and goes on when it is back.
+ * `drive`, and runs the clock: it plays once through when the frames have
+ * loaded -- not before, so nothing flickers in -- and stops on the newest
+ * (WCAG 2.2.2); not by itself under Reduce Motion, which shows the newest
+ * frame still; it pauses while the app is in the background and goes on
+ * when it is back.
  */
 export function useWeatherLoop({ drive = false }: { drive?: boolean } = {}) {
   const kind = useWeatherLayers((s) => s.loop);
@@ -70,13 +71,19 @@ export function useWeatherLoop({ drive = false }: { drive?: boolean } = {}) {
   // Played by itself once loaded, unless the pilot asked for less motion.
   useEffect(() => {
     if (!drive || !ready || started || frames.length < 2) return;
-    set({ started: true, playing: !prefersReducedMotion(), index: prefersReducedMotion() ? null : 0 });
+    set({ started: true, ...firstPlay(prefersReducedMotion()) });
   }, [drive, ready, started, frames.length, set]);
 
-  // The clock: each frame for its dwell, the newest held a little longer.
+  // The clock: each frame for its dwell, one pass, stopped on the newest,
+  // which is then followed (index null) so a refresh's new frame shows.
   useEffect(() => {
     if (!drive || !playing || !ready || frames.length < 2) return;
-    const timer = setTimeout(() => set({ index: nextFrame(shown, frames.length) }), dwellMs(shown, frames.length, speed));
+    const next = nextInPass(shown, frames.length);
+    if (next === null) {
+      set({ playing: false, index: null });
+      return;
+    }
+    const timer = setTimeout(() => set({ index: next }), dwellMs(speed));
     return () => clearTimeout(timer);
   }, [drive, playing, ready, shown, frames.length, speed, set]);
 
@@ -108,8 +115,17 @@ export function useWeatherLoop({ drive = false }: { drive?: boolean } = {}) {
     refreshFailed: !!error,
     oldAfterS: data?.old_after_s ?? 900,
     credit: data?.credit ?? "",
-    toggle: () => set({ playing: !playing, started: true, resume: false }),
+    /** Play a pass (from the oldest frame where it stands on the newest),
+     *  or pause where it is. */
+    toggle: () =>
+      set(
+        playing
+          ? { playing: false, started: true, resume: false }
+          : { playing: true, index: playFrom(shown, frames.length), started: true, resume: false },
+      ),
     seek: (i: number) => set({ index: i, playing: false, started: true, resume: false }),
+    /** The newest frame, followed from then on, the loop paused (the bar's Now). */
+    now: () => set({ index: null, playing: false, started: true, resume: false }),
     setReady: (on: boolean) => set({ ready: on }),
   };
 }

@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import { CloudSun, TriangleAlert } from "lucide-react";
 import { cn } from "cn";
 import RoundButton from "../../../components/RoundButton";
@@ -11,11 +12,13 @@ import { hourZ, unavailableWords, zulu } from "./forecastRun";
 import { setForecastMode, useForecastMode, useForecastRun } from "./useForecastRun";
 
 /** Forecast mode's switch, among the dry run's own controls: the run
- *  played against the forecast for the hours it flies, or not. */
-export function ForecastToggle() {
+ *  played against the forecast for the hours it flies, or not. Its props
+ *  the playback bar's (a toolbar item's focus and keys, PlaybackButton). */
+export function ForecastToggle(props: Partial<ComponentProps<typeof RoundButton>>) {
   const on = useForecastMode((s) => s.on);
   return (
     <RoundButton
+      {...props}
       label={on ? "Forecast mode on" : "Forecast mode"}
       aria-pressed={on}
       onClick={() => setForecastMode(!on)}

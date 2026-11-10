@@ -1,12 +1,13 @@
 import { Suspense, lazy, memo, useEffect, useMemo, useRef, type ComponentProps, type KeyboardEvent, type PointerEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Mountain, Pause, Play } from "lucide-react";
+import { Mountain } from "lucide-react";
 import { callEngine } from "../../../lib/engine/engine";
 import { setPilotView, usePilotView } from "../map/terrain/pilotView";
 import { cn } from "cn";
 import CloseButton from "../../../components/CloseButton";
 import RoundButton from "../../../components/RoundButton";
 import { Slider } from "../../../components/ui/slider";
+import { PlaybackButton, PlaybackToolbar, PlayToggle, SpeedMenu, playbackKey } from "../../../components/PlaybackBar";
 import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, usePastFlight } from "../map/pastFlight";
 import { routeProfileQuery } from "../../../lib/queryClient";
 import { TEXT } from "../../../lib/text";
@@ -66,9 +67,8 @@ export function DryRunControls({
   // at the owner's ask ("just show a go missed button when on the final of
   // the approach").
   const onFinal = !!run.final && !missed && !!onMissed && second !== null && second >= run.final.from && second < run.final.to;
-  // The speeds in turn, a tap each: one small button on the chart, where
-  // a segmented control took a row of its own.
-  const nextSpeed = REPLAY_SPEEDS[(REPLAY_SPEEDS.indexOf(speed as (typeof REPLAY_SPEEDS)[number]) + 1) % REPLAY_SPEEDS.length]!;
+  // Play or pause, from the toggle, Space on the bar, or Space on the chart.
+  const toggle = () => (usePastFlight.getState().playing ? pausePastFlight() : playPastFlight());
   // The run seen from the pilot's seat over the 3D ground, or the chart
   // from above (features/plan/map/terrain's PilotCamera): a toggle among the
   // run's own controls, put back to the chart as the run is put away.
@@ -102,8 +102,13 @@ export function DryRunControls({
     held.current = null;
   };
   // Five miles an arrow, where the slider's own would step a tenth; Home
-  // and End are the slider's.
+  // and End are the slider's; Space plays or pauses (the playback bar's).
   const step = (event: KeyboardEvent<HTMLSpanElement>) => {
+    if (playbackKey(event.key, event.target) === "toggle") {
+      event.preventDefault();
+      toggle();
+      return;
+    }
     const by = event.key === "ArrowRight" || event.key === "ArrowUp" ? 5 : event.key === "ArrowLeft" || event.key === "ArrowDown" ? -5 : 0;
     if (!by) return;
     event.preventDefault();
@@ -117,43 +122,57 @@ export function DryRunControls({
           start, play or pause, how fast, and the close. Eight apart, their
           44-point hit areas their own (index.css). */}
       {/* Over the chart's drag where their hit areas reach into it. */}
-      <div className="absolute top-1.5 right-1.5 z-10 flex items-center gap-2">
+      {/* The map's one playback bar (components/PlaybackBar, the radar
+          loop's too): a toolbar, one tab stop, the arrows between its
+          buttons; Play a stock toggle; the speed a menu (decision 0017),
+          its one small button where the speeds went round a tap each. */}
+      <PlaybackToolbar
+        label="Dry run"
+        onToggle={toggle}
+        className="absolute top-1.5 right-1.5 z-10 flex items-center gap-2"
+        data-testid="dry-run-bar"
+      >
         {/* No from the start, at the owner's ask ("I don't think we need the
             replay button"): the chart's drag takes the run back. Go missed
             on the approach's final only (above). */}
         {onFinal && (
-          <RoundButton
-            label="Go missed"
-            onClick={onMissed}
-            className={cn("w-auto px-2.5 font-semibold", TEXT.note)}
-            data-testid="dry-run-missed"
+          <PlaybackButton
+            render={
+              <RoundButton
+                label="Go missed"
+                onClick={onMissed}
+                className={cn("w-auto px-2.5 font-semibold", TEXT.note)}
+                data-testid="dry-run-missed"
+              />
+            }
           >
             Go missed
-          </RoundButton>
+          </PlaybackButton>
         )}
-        <RoundButton
-          label={pilotView ? "Chart view" : "Pilot's view"}
-          aria-pressed={pilotView}
-          onClick={() => setPilotView(!pilotView)}
-          className={cn(pilotView && "bg-tint text-white hover:bg-tint/90")}
-          data-testid="dry-run-pilot-view"
+        <PlaybackButton
+          render={
+            <RoundButton
+              label={pilotView ? "Chart view" : "Pilot's view"}
+              aria-pressed={pilotView}
+              onClick={() => setPilotView(!pilotView)}
+              className={cn(pilotView && "bg-tint text-white hover:bg-tint/90")}
+              data-testid="dry-run-pilot-view"
+            />
+          }
         >
           <Mountain className="size-5" />
-        </RoundButton>
-        <ForecastToggle />
-        <RoundButton label={playing ? "Pause" : "Play"} onClick={playing ? pausePastFlight : playPastFlight} data-testid="dry-run-play">
-          {playing ? <Pause className="size-5" /> : <Play className="size-5" />}
-        </RoundButton>
-        <RoundButton
-          label={`${speed} times as fast; ${nextSpeed} times next`}
-          onClick={() => usePastFlight.setState({ speed: nextSpeed })}
-          className={cn("w-auto px-2 font-semibold tabular-nums", TEXT.note)}
-          data-testid="dry-run-speed"
-        >
-          {speed}×
-        </RoundButton>
-        <CloseButton onClick={onClose} data-testid="dry-run-close" />
-      </div>
+        </PlaybackButton>
+        <PlaybackButton render={<ForecastToggle />} />
+        <PlayToggle playing={playing} onToggle={toggle} testId="dry-run-play" />
+        <SpeedMenu
+          name="Speed"
+          value={speed}
+          choices={REPLAY_SPEEDS.map((x) => ({ value: x as number, label: `${x}×` }))}
+          onPick={(x) => usePastFlight.setState({ speed: x })}
+          testId="dry-run-speed"
+        />
+        <PlaybackButton render={<CloseButton onClick={onClose} data-testid="dry-run-close" />} />
+      </PlaybackToolbar>
       {/* In the pilot's view, its key at the chart's other corner: what the
           ground's amber and red are, and that they are a picture of the
           plan, not terrain clearance (no TAWS; nothing of 14 CFR 91.119 or
