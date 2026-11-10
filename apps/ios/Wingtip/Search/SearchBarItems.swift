@@ -16,29 +16,36 @@ struct SearchBarItems: ToolbarContent {
         UndoToolbarItem()
         ToolbarItemGroup(placement: .topBarTrailing) {
             if let hear {
-                MicButton(listening: model.hearing || ClearanceListener.shared.hearingOnce, busy: model.busy, action: hear)
+                MicButton(listening: VoiceInput.shared.listening, busy: model.busy, action: hear)
             }
             AccountMenu(open: open)
         }
     }
 }
 
-/// The search's microphone, apart from the field (the owner's design): one
-/// line said and done as if typed and sent, recognised on this iPhone
-/// alone (ClearanceListener.hearOnce, requiresOnDeviceRecognition).
+/// The search's microphone, apart from the field (the owner's design): Ask
+/// by voice, one line said -- the words appearing in the search field as
+/// they are said, as the keyboard's dictation types them -- and done as if
+/// typed and sent, recognised on this iPhone alone (VoiceInput,
+/// requiresOnDeviceRecognition). The system's `mic` glyph, filled and
+/// breathing while it listens; a second tap ends it. Nothing of the
+/// radio's: its waves and words are the radio's own (the owner,
+/// 2026-11-10).
 struct MicButton: View {
     let listening: Bool
     let busy: Bool
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            if listening { VoiceInput.shared.finish() } else { action() }
+        } label: {
             Image(systemName: listening ? "mic.fill" : WingtipIcon.microphone)
-                .symbolListening(listening)
+                .symbolDictating(listening)
                 .symbolSwap()
         }
-        .disabled(listening || busy)
-        .accessibilityLabel(listening ? "Listening" : "Say It")
+        .disabled(busy)
+        .accessibilityLabel(listening ? "Listening…" : "Say It")
         .accessibilityHint("Say a field, a route, a screen or a question")
         .accessibilityIdentifier("search-mic")
     }

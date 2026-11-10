@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.WbCloudy
 import androidx.compose.material.icons.outlined.WbCloudy
 import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,6 +45,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipRadius
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.design.lookShape
 import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.map.ForecastAreasLayer
@@ -98,7 +100,7 @@ fun DryRunBar(rules: String, modifier: Modifier = Modifier) {
             IconButton(onClick = dryRun::close) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.dry_run_close)) }
         }
         if (played.on) {
-            Surface(shape = RoundedCornerShape(WingtipRadius.Banner), color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.widthIn(max = 360.dp)) {
+            Surface(shape = lookShape(RoundedCornerShape(WingtipRadius.Banner), CardDefaults.shape), color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.widthIn(max = 360.dp)) {
                 ForecastStrip(played, run.t, Modifier.padding(WingtipSpace.Sm))
             }
         }

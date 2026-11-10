@@ -8,6 +8,7 @@ import SwiftUI
 /// arrow's other face fits the course again; tapped then, the arrow
 /// comes back to bring the map to the position.
 struct MapButtons: View {
+    @Environment(\.lookAccent) private var accent
     @Environment(OwnShip.self) private var ownShip
     @Binding var following: Bool
     let routeAway: Bool
@@ -46,7 +47,7 @@ struct MapButtons: View {
                 .accessibilityLabel("Ask about this flight")
                 .floatingGlass(in: Circle(), interactive: true)
                 .hoverEffect(.highlight)
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(accent)
             }
         }
         // The two round buttons one piece of glass, as Maps' are.

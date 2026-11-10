@@ -6,6 +6,7 @@ import SwiftUI
 /// sheets overlap at their edges), or the map's view taken as a box of
 /// its own; the pick and its size at the foot, with Download.
 struct DownloadsMapView: View {
+    @Environment(\.lookAccent) private var accent
     let model: DownloadsModel
     @State private var picked: APIOfflineRegion?
     @State private var view: MKCoordinateRegion?
@@ -20,8 +21,8 @@ struct DownloadsMapView: View {
                 ForEach(sheets, id: \.id) { sheet in
                     ForEach(Array(sheet.boxes.enumerated()), id: \.offset) { _, box in
                         MapPolygon(coordinates: Self.corners(box))
-                            .foregroundStyle(Color.accentColor.opacity(sheet.id == picked?.id ? 0.25 : 0.04))
-                            .stroke(Color.accentColor, lineWidth: sheet.id == picked?.id ? 2 : 0.5)
+                            .foregroundStyle(accent.opacity(sheet.id == picked?.id ? 0.25 : 0.04))
+                            .stroke(accent, lineWidth: sheet.id == picked?.id ? 2 : 0.5)
                     }
                 }
             }

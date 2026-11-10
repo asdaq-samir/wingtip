@@ -70,6 +70,7 @@ enum VerdictTarget: Equatable {
 /// opening where the Brief says it in full; the pilot's minimums under
 /// them, which the weather is held to.
 struct GoNoGoSection: View {
+    @Environment(\.lookAccent) private var accent
     @Environment(Verdict.self) private var verdict
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
@@ -139,7 +140,7 @@ struct GoNoGoSection: View {
                     Text("Your instructor, \(instructor.name ?? instructor.email), reviews the flights you put to them from their phone.")
                         .font(.subheadline)
                 } icon: {
-                    Image(systemName: "person.crop.circle").foregroundStyle(Color.accentColor)
+                    Image(systemName: "person.crop.circle").foregroundStyle(accent)
                 }
                 .accessibilityElement(children: .combine)
             }

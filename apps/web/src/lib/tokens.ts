@@ -133,20 +133,20 @@ export const INK = {
 
 /** Each text role's classes (lib/text's TEXT reads these). */
 export const TYPE_CLASS = {
-  hero: "text-[1.75rem] leading-[2.125rem]",
-  card: "text-[1.375rem] leading-[1.75rem]",
-  heading: "text-[1.25rem] leading-[1.5625rem]",
+  hero: "text-(length:--type-hero) leading-(--lead-hero)",
+  card: "text-(length:--type-card) leading-(--lead-card)",
+  heading: "text-(length:--type-heading) leading-(--lead-heading)",
   title: "text-base pointer-coarse:text-[1.0625rem]",
   row: "text-base pointer-coarse:text-[1.0625rem]",
   prose: "text-base pointer-coarse:text-[0.9375rem]",
   detail: "text-sm pointer-coarse:text-[0.9375rem]",
-  note: "text-[0.8125rem] leading-[1.125rem]",
-  tab: "text-[0.8125rem] leading-[1.0625rem]",
-  tabBar: "text-[0.75rem] leading-[1rem]",
-  caption: "text-[0.6875rem] leading-[0.8125rem]",
-  label: "font-display text-[0.8125rem] leading-[1.0625rem] font-semibold uppercase tracking-[0.1em]",
-  figure: "text-[1.625rem] leading-[1.9375rem] font-bold tabular-nums",
-  word: "font-display font-semibold uppercase tracking-[0.08em]",
+  note: "text-(length:--type-note) leading-(--lead-note)",
+  tab: "text-(length:--type-tab) leading-(--lead-tab)",
+  tabBar: "text-(length:--type-tab-bar) leading-(--lead-tab-bar)",
+  caption: "text-(length:--type-caption) leading-(--lead-caption)",
+  label: "font-display text-(length:--type-label) leading-(--lead-label) font-semibold uppercase native:normal-case tracking-[0.1em] native:tracking-normal",
+  figure: "text-(length:--type-figure) leading-(--lead-figure) font-bold tabular-nums",
+  word: "font-display font-semibold uppercase native:normal-case tracking-[0.08em] native:tracking-normal",
 } as const;
 
 /** Each text role's size in points on a touch screen, for text drawn in points (an SVG). */

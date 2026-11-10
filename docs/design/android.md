@@ -95,8 +95,18 @@ end, and nothing on this page describes a Google app from memory.
   from Android 12, so leaving them out is the supported path:
   https://developer.android.com/develop/ui/compose/designsystems/material3
 - The brand tint is Sectional Blue (#0066CC). Everything tappable is the
-  tint, and the container roles are `color.material.*`. Two looks, Glass
-  Cockpit (the default) and Chart ink, are the only themes.
+  tint, and the container roles are `color.material.*`. The looks are
+  Wingtip (the default), Glass Cockpit, Chart ink and Native.
+- **Native is Material out of the box** (the owner, 2026-11-10: "Native
+  means how they come out of the box, look and behavior wise"): a plain
+  `MaterialTheme` with Material You's dynamic scheme on Android 12 and
+  later (the baseline scheme before), Material's default `Typography()`,
+  `Shapes()` and motion, stock component colours (`ChoiceGroup`), and no
+  haptics of the app's own but a warning's. Each place the app sets a
+  shape or a feel of its own asks `design/Native.kt`'s `LocalNative`
+  once. The 4-dp spacing grid and layout sizes stay: Material has no
+  theme role for them. What follows stays fixed in Native too, being the
+  chart's content and a state's meaning rather than chrome.
 - **The chart's colours never follow the theme.** These are the chart's
   own, so they stay the same at night (`color.chart.*`):
   - the course's magenta #E600E6
@@ -400,7 +410,11 @@ placement wins, and the difference is noted.
 - **Structure, top to bottom**:
   1. A `SearchBar` at the top of the map, in the status bar's inset. It
      has the leading search glyph, the placeholder ("Airports, fixes,
-     places"), and a trailing mic when the voice ask is on.
+     places"), and a trailing mic when the voice ask is on: Ask by voice
+     (`voice/VoiceInput`), a stock icon toggle checked while it listens,
+     the words typed into the field as said. The radio's listening has
+     its own mark (`cell_tower`), words and indicator (the owner,
+     2026-11-10: two features, no shared look).
   2. Tapping it expands to `ExpandedFullScreenSearchBar`, driven by
      `rememberSearchBarState()`, the slot-based API that is stable in
      1.5. Inside, in order:

@@ -6,6 +6,7 @@ import SwiftUI
 /// the constraints it could not meet said plainly, and the reports it
 /// rests on. What went wrong is said in place (ProblemLine).
 struct TripPlannerView: View {
+    @Environment(\.lookAccent) private var accent
     let trip: TripPlanner
     let context: () -> AssistantContext
     let onUse: (TripLeg) -> Void
@@ -19,7 +20,7 @@ struct TripPlannerView: View {
             if !trip.asked.isEmpty {
                 Text(trip.asked)
                     .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
-                    .background(Color.accentColor, in: .rect(cornerRadius: WingtipRadius.card))
+                    .background(accent, in: .rect(cornerRadius: WingtipRadius.card))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }

@@ -1,12 +1,12 @@
-"""The platforms' own colours (design/tokens.json color.system) and the
+"""The phones' own colours (design/tokens.json color.system) and the
 Native look that is made of them, for scripts/build/design_tokens.py.
 
-A system colour is a name each platform resolves at run time, never a
-hex: the web's CSS system colour (Canvas, LinkText, AccentColor), iOS's
-UIColor (systemBlue, label) and Material 3's ColorScheme role (primary,
-onSurface), which Material You fills from the wallpaper. A look token
-aliases one as {color.system.<name>}; this module writes that alias out
-in each platform's idiom. Standard library only."""
+A system colour is a name each phone resolves at run time, never a hex:
+iOS's UIColor (systemBlue, label) and Material 3's ColorScheme role
+(primary, onSurface), which Material You fills from the wallpaper. A look
+token aliases one as {color.system.<name>}; this module writes that alias
+out in each phone's idiom. The web's Native is shadcn's stock theme by
+value (color.look.native.web), so it names none. Standard library only."""
 
 import re
 from collections import namedtuple
@@ -17,8 +17,8 @@ EXT = "app.wingtipmaps"
 ALIAS = re.compile(r"^\{color\.system\.([\w-]+)\}$")
 
 # A system colour in a resolved scheme: its token's name, and each
-# platform's word for it.
-SystemRef = namedtuple("SystemRef", "name web fallback ios android")
+# phone's word for it.
+SystemRef = namedtuple("SystemRef", "name ios android")
 
 
 def ref(tree, value):
@@ -27,33 +27,13 @@ def ref(tree, value):
     if not m:
         return None
     ext = tree["color"]["system"][m.group(1)]["$extensions"][EXT]
-    return SystemRef(m.group(1), ext["web"], ext.get("web-fallback"), ext["ios"], ext["android"])
+    return SystemRef(m.group(1), ext["ios"], ext["android"])
 
 
 def colour(tree, value):
     """A resolved scheme's colour: a SystemRef for a system colour, else
     the colour's sRGB."""
     return ref(tree, value) or rgba(value)
-
-
-def css(tree, selector, decls, block):
-    """The Native look's blocks for tokens.css: each system colour as the
-    web's keyword, a browser without one (Chromium has no AccentColor)
-    taking its fallback first and the keyword only under @supports."""
-    plain, supported = [], []
-    for k, v in decls:
-        r = ref(tree, v)
-        if r and r.fallback:
-            plain.append((k, r.fallback))
-            supported.append((k, r.web))
-        else:
-            plain.append((k, r.web if r else v))
-    out = [block(selector, plain)]
-    for keyword in sorted({ref(tree, v).web for _, v in decls if ref(tree, v) and ref(tree, v).fallback}):
-        rows = [(k, v) for k, v in supported if v == keyword]
-        inner = block(selector, rows).replace("\n", "\n  ")
-        out.append("@supports (color: %s) {\n  %s\n}" % (keyword, inner))
-    return out
 
 
 def swift(c):

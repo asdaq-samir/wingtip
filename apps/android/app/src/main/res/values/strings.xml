@@ -17,6 +17,10 @@
     <string name="search_hint_flying">Tap the mic and say it</string>
     <string name="search_add_stop">Add a stop</string>
     <string name="say_it">Say it</string>
+    <!-- Ask by voice (voice/VoiceInput): the mic's own words, never the radio's. -->
+    <string name="voice_listening">Listening…</string>
+    <string name="voice_speak">Speak your question</string>
+    <string name="voice_radio_busy">The radio is being listened to; stop it to ask by voice.</string>
     <string name="said_clear_search">Clear the search</string>
     <string name="nothing_heard">Nothing was heard.</string>
     <string name="allow_microphone">Allow the microphone to say it.</string>

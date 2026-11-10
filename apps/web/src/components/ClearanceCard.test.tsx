@@ -215,11 +215,11 @@ describe("the clearance card", () => {
     expect(screen.getByTestId("clearance-toggle").getAttribute("aria-label")).toBe("Listen");
     fireEvent.click(screen.getByTestId("clearance-readback-mic"));
     expect(listenOnce).toHaveBeenCalledWith([], CLEARED);
-    expect(state("readback")).toBe("Listening…");
+    expect(state("readback")).toBe("Listening for your read back…");
     act(() =>
       useAtcRadio.setState({ listening: true, mode: "once", pill: { listening: true, text: "", error: null, readbackOf: CLEARED } }),
     );
-    expect(state("readback")).toBe("Listening…");
+    expect(state("readback")).toBe("Listening for your read back…");
     act(() =>
       useAtcRadio.setState({
         listening: false,
@@ -232,7 +232,7 @@ describe("the clearance card", () => {
     expect(useAtcRadio.getState().pill).toBeNull();
 
     fireEvent.click(screen.getByTestId("clearance-readback-mic"));
-    expect(state("readback")).toBe("Listening…");
+    expect(state("readback")).toBe("Listening for your read back…");
     const quiet = "Nothing was heard. Tap the microphone and speak, or hold the phone to the speaker.";
     act(() =>
       useAtcRadio.setState({ listening: true, mode: "once", pill: { listening: true, text: "", error: null, readbackOf: CLEARED } }),

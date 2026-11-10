@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconToggleButton
@@ -49,6 +50,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipRadius
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.design.lookShape
 import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.offline.KeptAgeLine
@@ -119,7 +121,7 @@ fun WeatherLoopBar(modifier: Modifier = Modifier) {
     // frame's time, as Pixel Weather's map keeps its timeline at the foot.
     HorizontalFloatingToolbar(
         expanded = true,
-        shape = RoundedCornerShape(WingtipRadius.Banner),
+        shape = lookShape(RoundedCornerShape(WingtipRadius.Banner), FloatingToolbarDefaults.ContainerShape),
         modifier = modifier.widthIn(max = 360.dp).fillMaxWidth().padding(horizontal = WingtipSpace.Md),
     ) {
         val playLabel = stringResource(if (state.playing) R.string.loop_pause else R.string.loop_play)

@@ -74,9 +74,6 @@ interface AskState {
   /** The pilot's tap on a chip: the change applied, the chip marked done.
    *  Nothing is applied without it. */
   apply: (change: AssistantChange) => void;
-  /** The map's microphone is listening for a question for the card
-   *  (AskCard's mic), not for a command of its own. */
-  listeningFor: "ask" | null;
   ask: (question: string, options?: { speak?: boolean }) => Promise<void>;
   /** The question in flight given up; its answer stays as far as it got. */
   stop: () => void;
@@ -236,7 +233,6 @@ function messagesOf(turns: AskTurn[], question: string): AssistantMessage[] {
 export const useAsk = create<AskState>((set, get) => ({
   turns: [],
   busy: false,
-  listeningFor: null,
   applyChange: null,
   apply: (change) => {
     const applyChange = get().applyChange;

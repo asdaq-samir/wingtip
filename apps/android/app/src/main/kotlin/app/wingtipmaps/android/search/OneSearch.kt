@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExpandedDockedSearchBarWithGap
 import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -53,6 +55,7 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.ui.isWide
+import app.wingtipmaps.android.voice.VoiceInput
 import kotlinx.coroutines.launch
 
 /**
@@ -66,10 +69,13 @@ import kotlinx.coroutines.launch
  * the root). The keyboard's search key does the line as the strip's field
  * did (FieldCommands: a route, a field, a screen's word, else a question).
  *
- * The microphone hears one thing said with the phone's on-device
- * recognizer (RadioListener.once), never a server's, and the words are
- * done as if typed; where speech cannot be recognised on the phone there
- * is no microphone. In the air the field is the radio: nothing is typed
+ * The microphone is Ask by voice (VoiceInput), Material's voice input on
+ * a search bar: a stock icon toggle, checked while it listens, the field
+ * asking to "Speak your question" and the words appearing in it as they
+ * are said, then done as if typed -- the phone's on-device recognizer,
+ * never a server's; where speech cannot be recognised on the phone there
+ * is no microphone. Nothing of the radio's (the ATC copilot's capsule,
+ * its mark and words) is used for it: the owner, 2026-11-10. In the air the field is the radio: nothing is typed
  * and the placeholder says to tap the mic. Why a line could not be done
  * is said under the row.
  */
@@ -135,11 +141,23 @@ fun OneSearch(
     }
 
     val voice = remember(context) { RadioListener.canListen(context) }
+    val speech = remember(context) { VoiceInput.of(context) }
+    val listening by speech.listening.collectAsStateWithLifecycle()
+    val heard by speech.words.collectAsStateWithLifecycle()
+    // The words in the field as they are said.
+    LaunchedEffect(heard) { if (heard.isNotEmpty()) textFieldState.setTextAndPlaceCursorAtEnd(heard) }
     val nothingHeard = stringResource(R.string.nothing_heard)
     val allowMic = stringResource(R.string.allow_microphone)
+    val radioBusy = stringResource(R.string.voice_radio_busy)
     val hearOnce = {
         scope.launch {
-            val words = RadioListener.of(context).once()
+            // The radio has the microphone while it is listened to.
+            if (RadioListener.of(context).listening.value) {
+                onProblem(radioBusy)
+                return@launch
+            }
+            textFieldState.clearText()
+            val words = speech.hear()
             if (!words.isNullOrBlank()) submit(words) else onProblem(nothingHeard)
         }
     }
@@ -150,6 +168,7 @@ fun OneSearch(
 
     val placeholder = stringResource(
         when {
+            listening -> R.string.voice_speak
             control.addingStop -> R.string.search_add_stop
             flying && voice -> R.string.search_hint_flying
             else -> R.string.search_hint
@@ -180,8 +199,19 @@ fun OneSearch(
         ) {
             SearchBar(state = searchBarState, inputField = inputField, modifier = Modifier.weight(1f))
             if (voice) {
-                IconButton(onClick = { if (micAllowed(context)) hearOnce() else askMic.launch(Manifest.permission.RECORD_AUDIO) }) {
-                    Icon(Icons.Filled.Mic, contentDescription = stringResource(R.string.say_it), tint = MaterialTheme.colorScheme.primary)
+                // Material's icon toggle, checked while it listens; a second
+                // tap ends it.
+                FilledIconToggleButton(
+                    checked = listening,
+                    onCheckedChange = { on ->
+                        when {
+                            !on -> speech.finish()
+                            micAllowed(context) -> hearOnce()
+                            else -> askMic.launch(Manifest.permission.RECORD_AUDIO)
+                        }
+                    },
+                ) {
+                    Icon(Icons.Filled.Mic, contentDescription = stringResource(if (listening) R.string.voice_listening else R.string.say_it))
                 }
             }
             AccountMenu(pilot = pilot, onSignOut = onSignOut)

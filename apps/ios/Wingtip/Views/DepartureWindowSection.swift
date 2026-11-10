@@ -7,6 +7,7 @@ import SwiftUI
 /// it, and a tap on an hour opening why, with its time and fuel. Its state
 /// is DepartureWindow's.
 struct DepartureWindowSection: View {
+    @Environment(\.lookAccent) private var accent
     let model: DepartureWindow
     let signedIn: Bool
     let airplane: Bool
@@ -54,7 +55,7 @@ struct DepartureWindowSection: View {
             }
             .frame(width: 44, height: 64)
             .background(Self.ink(hour.verdict).opacity(0.14), in: RoundedRectangle(cornerRadius: WingtipRadius.base))
-            .overlay(RoundedRectangle(cornerRadius: WingtipRadius.base).strokeBorder(Color.accentColor, lineWidth: on ? 2 : 0))
+            .overlay(RoundedRectangle(cornerRadius: WingtipRadius.base).strokeBorder(accent, lineWidth: on ? 2 : 0))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(DepartureWindow.label(hour))

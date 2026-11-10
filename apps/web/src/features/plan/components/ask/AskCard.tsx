@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { ArrowUp, Check, Mic, Square } from "lucide-react";
+import { useRef, useState } from "react";
+import { ArrowUp, Check, Square } from "lucide-react";
 import { cn } from "cn";
 import IconButton from "../../../../components/IconButton";
 import { PillSection } from "../../../../components/Favorites";
@@ -7,18 +7,11 @@ import { PANEL_FIELD } from "../../../../components/panelField";
 import { Button } from "../../../../components/ui/button";
 import { Input } from "../../../../components/ui/input";
 import SkeletonLines from "../../../../components/SkeletonLines";
-import { useAtcRadio } from "../../../../lib/atcRadio";
-import { useCanListen } from "../../../../lib/speechLocal";
 import { TEXT } from "../../../../lib/text";
 import SourceChips from "../../../../components/SourceChips";
 import { useAsk, type AskTurn } from "../../../../lib/ask/useAsk";
 import { TripPlanner } from "../../../tripPlanner";
-
-/** The listening code (lib/atcListening), in a chunk of its own, fetched
- *  as the card comes so the mic's tap starts listening at once: Safari
- *  lets a page listen only straight from the tap (RadioLayer the same). */
-let listening: typeof import("../../../../lib/atcListening") | null = null;
-const load = () => import("../../../../lib/atcListening").then((m) => (listening = m));
+import { useVoice, VoiceButton } from "../../../voice";
 
 /** One question and its answer: the question at the right as a message
  *  of the pilot's own, the answer at the left as prose with its figures
@@ -106,49 +99,31 @@ const FIRST_QUESTIONS = ["Brief me", "Is the weather within my minimums?", "What
  * answer is asked with the plan, the airplane's position and the pilot's
  * own minimums and currency (useAsk). "Plan a trip…", the first chip,
  * puts the trip planner (features/tripPlanner) in its place until closed.
- * The microphone is the map's own
- * (lib/atcListening): its pill over the map types what is said, and the
- * words come here and are sent as the pause ends them.
+ * The microphone is Ask by voice (features/voice): the words appear in
+ * the field as they are said, as a phone's dictation types them, and are
+ * sent as the pause ends them.
  */
 export default function AskSection() {
   const turns = useAsk((s) => s.turns);
   const busy = useAsk((s) => s.busy);
-  const listeningFor = useAsk((s) => s.listeningFor);
-  // Asked by voice only where speech stays on the device (lib/speechLocal).
-  const voice = useCanListen();
   const [text, setText] = useState("");
   const [focused, setFocused] = useState(false);
   // "Plan a trip…": the trip planner in the section's place until closed.
   const [trip, setTrip] = useState(false);
   const field = useRef<HTMLInputElement>(null);
   const expanded = focused || busy || turns.length > 0;
-  useEffect(() => {
-    void load();
-  }, []);
-  // The microphone's words, once the pause ends them, asked as typed;
-  // the pill put away, its chips being for a command, not a question.
-  useEffect(() => {
-    if (listeningFor !== "ask") return;
-    return useAtcRadio.subscribe((s) => {
-      const pill = s.pill;
-      if (!pill || pill.listening) return;
-      useAsk.setState({ listeningFor: null });
-      if (!pill.text) return;
-      useAtcRadio.setState({ pill: null });
-      setText("");
-      void useAsk.getState().ask(pill.text);
-    });
-  }, [listeningFor]);
+  // Asked by voice only where speech stays on the device (features/
+  // voice): the words in the field as they are said, asked as the pause
+  // ends them.
+  const voice = useVoice("ask", (said) => {
+    setText("");
+    void useAsk.getState().ask(said);
+  });
   const send = () => {
     const question = text.trim();
     if (!question || busy) return;
     setText("");
     void useAsk.getState().ask(question);
-  };
-  const hear = () => {
-    useAsk.setState({ listeningFor: "ask" });
-    if (listening) void listening.listenOnce([]);
-    else void load().then((m) => m.listenOnce([]));
   };
   if (trip) {
     return (
@@ -209,9 +184,9 @@ export default function AskSection() {
       <div className="flex items-center gap-2" data-composer="">
         <Input
           ref={field}
-          value={text}
+          value={voice.listening ? voice.words : text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Ask about this flight"
+          placeholder={voice.listening ? voice.prompt : "Ask about this flight"}
           aria-label="Ask about this flight"
           enterKeyHint="send"
           autoComplete="off"
@@ -226,18 +201,8 @@ export default function AskSection() {
           }}
           className={cn("h-12 rounded-full border-0 px-4", PANEL_FIELD)}
         />
-        {voice && (
-          <IconButton
-            label="Ask by voice"
-            variant="outline"
-            size="icon-lg"
-            onClick={hear}
-            disabled={listeningFor === "ask"}
-            data-testid="ask-mic"
-            className="size-12 shrink-0 rounded-full border-0 bg-card shadow-float"
-          >
-            <Mic className={cn("size-5", listeningFor === "ask" && "animate-pulse")} strokeWidth={2.4} />
-          </IconButton>
+        {voice.offered && (
+          <VoiceButton field="ask" label="Ask by voice" onPress={voice.press} testId="ask-mic" className="size-12 bg-card shadow-float" />
         )}
         {busy ? (
           <IconButton
@@ -264,6 +229,12 @@ export default function AskSection() {
           </IconButton>
         )}
       </div>
+      {/* Why the mic heard nothing, under the field it was for. */}
+      {voice.error && (
+        <p role="alert" className={cn("text-destructive-ink", TEXT.note)} data-testid="ask-voice-problem">
+          {voice.error}
+        </p>
+      )}
     </PillSection>
   );
 }

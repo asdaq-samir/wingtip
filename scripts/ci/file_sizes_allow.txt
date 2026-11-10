@@ -9,7 +9,7 @@
 apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/ChartMap.kt 739
 apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/MapStyle.kt 848
 apps/ios/Wingtip/Tiles/ChartTileOverlay.swift 420
-apps/ios/Wingtip/Views/AirplaneCard.swift 551
+apps/ios/Wingtip/Views/AirplaneCard.swift 480
 apps/ios/Wingtip/Views/AirportCard.swift 483
 apps/ios/Wingtip/Views/ChartMap.swift 758
 apps/ios/Wingtip/Views/ChartOverlays.swift 879
@@ -107,7 +107,7 @@ engine/facade/tests/motion.rs 773
 engine/facade/tests/navlog.rs 684
 engine/facade/tests/runway.rs 598
 scripts/build/assistant_client.py 426
-scripts/build/design_tokens.py 613
+scripts/build/design_tokens.py 557
 services/assistant/app/toolbox.py 498
 services/gateway/src/main/java/app/wingtipmaps/gateway/security/SecurityConfig.java 441
 services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 534

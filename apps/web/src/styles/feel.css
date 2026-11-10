@@ -83,15 +83,17 @@
 /* What comes into a page as it is -- a banner, a problem's line, an
    Undo row, a palette's results -- fading up from a little under where
    it lands (@starting-style: no script, no keyframes, and nothing to
-   undo as it goes). Still with Reduce Motion. */
+   undo as it goes). Still with Reduce Motion, and in the Native look. */
 @utility appear {
   @media (prefers-reduced-motion: no-preference) {
-    transition:
-      opacity var(--motion-fade) var(--motion-sheet-ease),
-      translate var(--motion-fade) var(--motion-sheet-ease);
-    @starting-style {
-      opacity: 0;
-      translate: 0 0.25rem;
+    @variant branded {
+      transition:
+        opacity var(--motion-fade) var(--motion-sheet-ease),
+        translate var(--motion-fade) var(--motion-sheet-ease);
+      @starting-style {
+        opacity: 0;
+        translate: 0 0.25rem;
+      }
     }
   }
 }
@@ -102,10 +104,12 @@
    cannot move, and stays inline so a long one still ends in an
    ellipsis), rather than blinking: the element is keyed on its value, so
    each new value is a new one, as iOS's numeric content transition
-   rolls its digits. Still with Reduce Motion. */
+   rolls its digits. Still with Reduce Motion, and in the Native look. */
 @utility figure-roll {
   @media (prefers-reduced-motion: no-preference) {
-    animation: figure-roll var(--motion-page) var(--motion-sheet-ease);
+    @variant branded {
+      animation: figure-roll var(--motion-page) var(--motion-sheet-ease);
+    }
   }
 }
 @keyframes figure-roll {

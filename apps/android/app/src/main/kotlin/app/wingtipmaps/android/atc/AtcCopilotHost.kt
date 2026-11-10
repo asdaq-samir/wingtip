@@ -8,9 +8,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalFloatingToolbar
@@ -39,12 +39,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.ui.LocalInk
+import app.wingtipmaps.android.ui.WingtipIcons
 
 /** Whether the microphone may be used: what the copilot listens with. */
 fun micAllowed(context: Context): Boolean =
@@ -55,8 +57,11 @@ fun micAllowed(context: Context): Boolean =
  * has it on (the web's AtcCopilot): the newest call to us as its card;
  * flying with no registration, a line saying so; flying without the
  * microphone allowed, or not listening, a line and a tap to start; while
- * it listens, a "Listening…" capsule on Material's floating toolbar with
- * the words as they are heard and its Stop. The microphone is asked for in the moment it is needed, as Android's
+ * it listens, a capsule on Material's floating toolbar -- Material's
+ * loading indicator and "Listening to the radio…" until words come, then
+ * the radio's mark and "Heard: " with them -- and its Stop. The radio's
+ * own look and words, never the mic's, which is Ask by voice's
+ * (voice/VoiceInput; the owner, 2026-11-10). The microphone is asked for in the moment it is needed, as Android's
  * guidance has it, never at launch.
  */
 @Composable
@@ -108,14 +113,20 @@ fun AtcCopilotHost(plan: Plan, flying: Boolean, fix: OwnShip.Fix?) {
     }
 }
 
-/** Listening: the microphone, "Listening…" or the words now heard, and
- *  Stop at the end, on Material's floating toolbar over the map. */
+/** Listening to the radio: the stock loading indicator and "Listening to
+ *  the radio…", or the radio's mark and the words now heard, and Stop at
+ *  the end, on Material's floating toolbar over the map. */
 @Composable
 private fun ListeningCapsule(words: String?, onStop: () -> Unit) {
     HorizontalFloatingToolbar(expanded = true) {
-        Icon(Icons.Filled.Mic, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.CenterVertically))
+        val at = Modifier.align(Alignment.CenterVertically)
+        if (words == null) {
+            Loading(at.size(CapsuleMark), description = stringResource(R.string.atc_listening))
+        } else {
+            Icon(WingtipIcons.radio, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = at)
+        }
         Text(
-            words ?: stringResource(R.string.atc_listening),
+            words?.let { stringResource(R.string.atc_heard, it) } ?: stringResource(R.string.atc_listening),
             Modifier.align(Alignment.CenterVertically).padding(horizontal = WingtipSpace.Sm).widthIn(max = CapsuleWords).semantics { liveRegion = LiveRegionMode.Polite },
             style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
@@ -127,6 +138,9 @@ private fun ListeningCapsule(words: String?, onStop: () -> Unit) {
  *  stays a capsule over the map at a phone's width. */
 private val CapsuleWords = 220.dp
 
+/** The indicator's size in the capsule, an icon's. */
+private val CapsuleMark = 24.dp
+
 /** One line over the map, with the tap that answers it where there is one. */
 @Composable
 private fun StatusLine(words: String, button: String?, caution: Boolean = false, onTap: () -> Unit) {
@@ -136,7 +150,7 @@ private fun StatusLine(words: String, button: String?, caution: Boolean = false,
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
         ) {
-            Icon(Icons.Filled.Mic, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icon(WingtipIcons.radio, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Text(
                 words, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.bodyMedium,
                 color = if (caution) LocalInk.current.cautionInk else MaterialTheme.colorScheme.onSurfaceVariant,

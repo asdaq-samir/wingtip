@@ -6,6 +6,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -23,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
+import app.wingtipmaps.android.design.LocalNative
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipPalette
 import app.wingtipmaps.android.design.generated.WingtipPalettes
@@ -178,35 +180,65 @@ fun nativeScheme(context: Context, dark: Boolean): ColorScheme = when {
     else -> lightColorScheme()
 }
 
+/** What a look gives Material: its scheme, type scale and shapes. */
+class LookTheme(val colorScheme: ColorScheme, val typography: Typography, val shapes: Shapes, val native: Boolean)
+
 /**
- * The one Wingtip Material theme, for both layouts: Material 3
- * Expressive's own theme (MaterialExpressiveTheme), so every stock
- * component -- switches, tabs, menus, sliders, sheets, buttons -- moves on
- * Google's expressive motion scheme, its springs; in the look picked in
- * Setup (Wingtip by default), light or dark with the system, with the
- * tokens' type roles (their emphasized twins included) and shapes.
- * Under Remove animations nothing springs: Compose runs every animation
- * on the window's animator duration scale, which that switch sets to 0,
- * so each finishes at once. Material You is the Native look's alone: in
- * the others the look's tint is the tint, where the wallpaper's colours
- * would put a tappable thing in whatever colour the wallpaper was. Native
- * takes Material's own scheme, type scale and shapes whole; the states
- * and the chart's inks stay the theme's in it (LocalWingtipPalette,
- * LocalInk), being aviation's.
+ * A look's Material theme. The brand looks: the palette in Material's
+ * roles, the tokens' type roles (their emphasized twins included) and
+ * shapes. Native (`nativeScheme` given): Material as it comes out of the
+ * box (the owner, 2026-11-10: "Native means how they come out of the box,
+ * look and behavior wise"), the scheme whole and Material's own
+ * Typography() and Shapes(), nothing of the tokens'.
+ */
+fun lookTheme(look: Look, dark: Boolean, nativeScheme: ColorScheme?): LookTheme =
+    if (look == Look.NATIVE && nativeScheme != null) {
+        LookTheme(nativeScheme, Typography(), Shapes(), native = true)
+    } else {
+        LookTheme(look.palette(dark).materialScheme(dark), WingtipTypography, WingtipShapes, native = false)
+    }
+
+/**
+ * The one Wingtip Material theme, for both layouts, in the look picked in
+ * Setup (Wingtip by default), light or dark with the system. The brand
+ * looks wear Material 3 Expressive's own theme (MaterialExpressiveTheme),
+ * so every stock component -- switches, tabs, menus, sliders, sheets,
+ * buttons -- moves on Google's expressive motion scheme, its springs.
+ * Native is a plain MaterialTheme: its default scheme (Material You's
+ * from the wallpaper on Android 12 and later, the baseline before), its
+ * default type, shapes and motion, and LocalNative set, so the app's own
+ * shapes and haptics stand aside (design/Native). Material You is the
+ * Native look's alone: in the others the look's tint is the tint, where
+ * the wallpaper's colours would put a tappable thing in whatever colour
+ * the wallpaper was. In every look the states and the chart's inks stay
+ * the theme's (LocalWingtipPalette, LocalInk, nativePalette in Native),
+ * being aviation's: the map's content and a caution's meaning, not the
+ * components' chrome. Under Remove animations nothing springs: Compose
+ * runs every animation on the window's animator duration scale, which
+ * that switch sets to 0, so each finishes at once.
  */
 @Composable
 fun WingtipTheme(content: @Composable () -> Unit) {
     val dark = isSystemInDarkTheme()
     val look = rememberLook().value ?: Look.WINGTIP
     val scheme = if (look == Look.NATIVE) nativeScheme(LocalContext.current, dark) else null
+    val theme = lookTheme(look, dark, scheme)
     val palette = scheme?.let { nativePalette(it, dark) } ?: look.palette(dark)
-    CompositionLocalProvider(LocalWingtipPalette provides palette, LocalInk provides InkColors.of(palette, dark)) {
-        MaterialExpressiveTheme(
-            colorScheme = scheme ?: palette.materialScheme(dark),
-            motionScheme = MotionScheme.expressive(),
-            typography = if (scheme != null) Typography() else WingtipTypography,
-            shapes = if (scheme != null) Shapes() else WingtipShapes,
-            content = content,
-        )
+    CompositionLocalProvider(
+        LocalWingtipPalette provides palette,
+        LocalInk provides InkColors.of(palette, dark),
+        LocalNative provides theme.native,
+    ) {
+        if (theme.native) {
+            MaterialTheme(colorScheme = theme.colorScheme, content = content)
+        } else {
+            MaterialExpressiveTheme(
+                colorScheme = theme.colorScheme,
+                motionScheme = MotionScheme.expressive(),
+                typography = theme.typography,
+                shapes = theme.shapes,
+                content = content,
+            )
+        }
     }
 }

@@ -27,12 +27,13 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
  * tint, sized by `modifier` and centred in it. Under Remove animations it
  * is the same indicator held at its first shape (its determinate form at
  * nought), since the stock one still steps through its shapes on a timer
- * when the system's animator scale is 0. TalkBack reads "Loading", an
- * indeterminate progress bar, either way.
+ * when the system's animator scale is 0. TalkBack reads "Loading", or
+ * `description` where it is something else going on (the radio being
+ * listened to), an indeterminate progress bar, either way.
  */
 @Composable
-fun Loading(modifier: Modifier = Modifier) {
-    val loading = stringResource(R.string.loading)
+fun Loading(modifier: Modifier = Modifier, description: String? = null) {
+    val loading = description ?: stringResource(R.string.loading)
     Box(
         modifier.clearAndSetSemantics {
             contentDescription = loading

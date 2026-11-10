@@ -5,6 +5,7 @@ import SwiftUI
 /// flight in a few lines, to send them (PassengerBriefing). Its state is
 /// the model's (PassengerBriefingModel).
 struct PassengerBriefingView: View {
+    @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     @State private var model: PassengerBriefingModel
 
@@ -29,7 +30,7 @@ struct PassengerBriefingView: View {
                         model.toggle(item.key)
                     } label: {
                         HStack(alignment: .firstTextBaseline) {
-                            Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Color.accentColor : Color.secondary).symbolSwap()
+                            Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? accent : Color.secondary).symbolSwap()
                             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                 Text(item.title).foregroundStyle(.primary)
                                 Text(item.source).font(.footnote).foregroundStyle(.secondary)

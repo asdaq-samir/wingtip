@@ -12,6 +12,7 @@ import SwiftUI
 /// last 90 days against the year's pace with their arrows and words, then
 /// practice, the sessions, what is due, the debriefs and the instructor.
 struct CoachView: View {
+    @Environment(\.lookAccent) private var accent
     @Environment(Session.self) private var session
     @State private var model = CoachModel()
 
@@ -81,7 +82,7 @@ struct CoachView: View {
                                 Text(t.words).font(WingtipType.detail).foregroundStyle(.secondary)
                             }
                         } icon: {
-                            Image(systemName: Self.symbol(t.way)).foregroundStyle(t.way == .down ? WingtipInk.caution : Color.accentColor)
+                            Image(systemName: Self.symbol(t.way)).foregroundStyle(t.way == .down ? WingtipInk.caution : accent)
                         }
                         .accessibilityElement(children: .combine)
                     }

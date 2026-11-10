@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Mic, Search } from "lucide-react";
+import { useEffect, useEffectEvent } from "react";
+import { Search } from "lucide-react";
 import { cn } from "cn";
 import { PANEL_FIELD } from "../../../../components/panelField";
 import { CommandField } from "../../../../components/ui/command";
@@ -7,17 +7,10 @@ import { Kbd } from "../../../../components/ui/kbd";
 import { isSearchKey } from "../../../../hooks/use-shortcuts";
 import { useIsDesktop } from "../../../../hooks/use-desktop";
 import { askSearch, searchKeys } from "../../../../lib/oneSearch";
-import { useAtcRadio } from "../../../../lib/atcRadio";
-import { useCanListen } from "../../../../lib/speechLocal";
 import { TEXT } from "../../../../lib/text";
 import { AccountButton } from "../../../pilot";
+import { useVoice, VoiceButton } from "../../../voice";
 import type { OneSearchModel } from "../../hooks/useOneSearch";
-
-/** The listening code (lib/atcListening), its own chunk, fetched once the
- *  field is drawn so the microphone's tap starts listening at once: Safari
- *  lets a page listen only straight from the tap (AskCard the same). */
-let listening: typeof import("../../../../lib/atcListening") | null = null;
-const load = () => import("../../../../lib/atcListening").then((m) => (listening = m));
 
 /**
  * The sheet's first row (the owner's one-search design, 2026-11-09), where
@@ -25,20 +18,27 @@ const load = () => import("../../../../lib/atcListening").then((m) => (listening
  * airports, airplanes, or ask", on Base UI's Autocomplete (the list is
  * OneSearchResults, in the sheet's body, inside the same Autocomplete
  * root: the arrows and Enter go from the field to its rows); the
- * microphone beside it, on-device speech as the map's is, what is said
- * typed into the field; and the account button (AccountButton), which took
+ * microphone beside it, Ask by voice (features/voice): on-device speech,
+ * the words appearing in the field as they are said, as a phone's
+ * dictation types them; and the account button (AccountButton), which took
  * Setup's place -- Cancel in its place while the field is in use, as iOS's
  * search fields have it. ⌘K or Ctrl K focuses it from anywhere, its keys
  * shown in it on a desktop: the command palette it replaced.
  */
 export default function OneSearchField({ model, inputRef }: { model: OneSearchModel; inputRef: React.RefObject<HTMLInputElement | null> }) {
   const desktop = useIsDesktop();
-  const voice = useCanListen();
-  const [hearing, setHearing] = useState(false);
-  const using = model.focused || !!model.typed || model.direct;
+  // What is said typed in the field once a pause ends it, the field
+  // focused to go on from there.
+  const voice = useVoice("search", (said) => {
+    model.setTyped(said);
+    inputRef.current?.focus();
+  });
+  const using = model.focused || !!model.typed || model.direct || voice.listening;
+  // The words as they are said, in the field.
+  const typeSaid = useEffectEvent((words: string) => model.setTyped(words));
   useEffect(() => {
-    if (voice) void load();
-  }, [voice]);
+    if (voice.listening && voice.words) typeSaid(voice.words);
+  }, [voice.listening, voice.words]);
   // ⌘K anywhere, a field's too: the search, or out of it again.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -50,26 +50,6 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [model, inputRef]);
-  // What the microphone heard, once the pause ends it, typed in the field;
-  // the map's pill put away, its chips being the radio's commands.
-  useEffect(() => {
-    if (!hearing) return;
-    return useAtcRadio.subscribe((s) => {
-      const pill = s.pill;
-      if (!pill || pill.listening) return;
-      setHearing(false);
-      useAtcRadio.setState({ pill: null });
-      if (pill.text) {
-        model.setTyped(pill.text);
-        inputRef.current?.focus();
-      }
-    });
-  }, [hearing, model, inputRef]);
-  const hear = () => {
-    setHearing(true);
-    if (listening) void listening.listenOnce([]);
-    else void load().then((m) => m.listenOnce([]));
-  };
   return (
     <div className="flex w-full items-center gap-2" role="search">
       {/* 41 tall, as Maps' field is, a white card on the sheet's grey; its
@@ -91,7 +71,7 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
-          placeholder={model.placeholder}
+          placeholder={voice.listening ? voice.prompt : model.placeholder}
           aria-label={model.placeholder}
           // Open only while its results are in the sheet (PlanSidebar's
           // search page): the Autocomplete is always open, inline, and
@@ -116,18 +96,20 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
       </label>
       {/* The microphone, a button of its own beside the field: on-device
           speech only (lib/speechLocal), so none where the browser has no
-          recognizer. 44 round, in the tint. */}
-      {voice && (
-        <button
-          type="button"
-          aria-label="Search by voice"
-          onClick={hear}
-          disabled={hearing}
-          data-testid="one-search-mic"
-          className="grid size-11 shrink-0 place-items-center rounded-full text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
-        >
-          <Mic className={cn("size-5", hearing && "animate-pulse")} strokeWidth={2.2} aria-hidden="true" />
-        </button>
+          recognizer. 44 round, in the tint, pressed while it listens. */}
+      {voice.offered && (
+        <VoiceButton
+          field="search"
+          label="Search by voice"
+          onPress={() => {
+            // The search opened as the mic is tapped, so the words show
+            // in the field and why nothing was heard under it.
+            if (!voice.listening) model.focus();
+            voice.press();
+          }}
+          testId="one-search-mic"
+          className="size-11"
+        />
       )}
       {using ? (
         <button

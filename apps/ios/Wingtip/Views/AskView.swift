@@ -7,12 +7,13 @@ import SwiftUI
 /// assistant's on the left, the pilot's on the right in the tint; while
 /// the assistant looks something up its own words for that stand under
 /// the last bubble, and the answer's text appends as it streams. A
-/// question is typed, or said once through the microphone
-/// (ClearanceListener.hearOnce). Presented as a sheet, from the sparkle
+/// question is typed, or said once through the microphone (Ask by voice,
+/// VoiceInput), its words appearing in the field as they are said. Presented as a sheet, from the sparkle
 /// button on the map or the one search's "Ask: …" (RootView places it):
 /// `.sheet(isPresented:) { AskView() }`, with Plan, OwnShip, Session and
 /// Verdict in the environment as the root puts them.
 struct AskView: View {
+    @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(Session.self) private var session
@@ -29,7 +30,7 @@ struct AskView: View {
     /// Why the microphone could not be used, under the field.
     @State private var micProblem: String?
     @FocusState private var typing: Bool
-    private var listener: ClearanceListener { ClearanceListener.shared }
+    private var voice: VoiceInput { VoiceInput.shared }
     /// The question the one search sent ("Ask: …"), asked as the sheet
     /// opens; nil opened from the map's sparkle or a link.
     var first: String?
@@ -137,7 +138,7 @@ struct AskView: View {
     private var composer: some View {
         VStack(alignment: .leading, spacing: WingtipSpace.xs) {
             HStack(alignment: .bottom, spacing: WingtipSpace.sm) {
-                TextField("Ask about the flight", text: $question, axis: .vertical)
+                TextField(voice.listening ? OneSearchModel.speak : "Ask about the flight", text: $question, axis: .vertical)
                     .lineLimit(1...4)
                     .borderedField()
                     .submitLabel(.send)
@@ -145,18 +146,21 @@ struct AskView: View {
                     .onSubmit { send(question) }
                     .accessibilityLabel("Your question")
                 // Asked by voice only where speech stays on the iPhone.
-                if listener.canListen {
+                if voice.canListen {
+                    // The system's mic, filled and breathing while it
+                    // listens (symbolDictating); a second tap ends it.
                     Button {
-                        Task { await hear() }
+                        if voice.listening { voice.finish() } else { Task { await hear() } }
                     } label: {
-                        Image(systemName: "mic.fill")
-                            .foregroundStyle(listener.hearingOnce ? Color.accentColor : .secondary)
-                            .symbolListening(listener.hearingOnce)
+                        Image(systemName: voice.listening ? "mic.fill" : WingtipIcon.microphone)
+                            .foregroundStyle(voice.listening ? accent : .secondary)
+                            .symbolDictating(voice.listening)
+                            .symbolSwap()
                             .frame(width: 28, height: 28)
                     }
                     .contentShape(Rectangle().inset(by: -8))
                     .disabled(client.answering)
-                    .accessibilityLabel(listener.hearingOnce ? "Listening" : "Ask by voice")
+                    .accessibilityLabel(voice.listening ? "Listening…" : "Ask by voice")
                 }
                 Button { send(question) } label: {
                     Image(systemName: "arrow.up.circle.fill")
@@ -194,10 +198,11 @@ struct AskView: View {
     private func hear() async {
         micProblem = nil
         typing = false
-        if let said = await listener.hearOnce(words: plan.idents.filter { !$0.isEmpty }) {
+        question = ""
+        if let said = await voice.hear(words: plan.idents.filter { !$0.isEmpty }, heard: { question = $0 }) {
             send(said)
         } else {
-            micProblem = listener.problem ?? "Nothing was heard."
+            micProblem = voice.problem ?? "Nothing was heard."
         }
     }
 }
@@ -205,6 +210,7 @@ struct AskView: View {
 /// One turn: the pilot's words in the tint on the right, the assistant's
 /// on the left with its source chips and, where the stream broke, why.
 private struct TurnBubble: View {
+    @Environment(\.lookAccent) private var accent
     let turn: AssistantTurn
     let onSource: (AssistantSource) -> Void
 
@@ -213,7 +219,7 @@ private struct TurnBubble: View {
             if turn.role == .user {
                 Text(turn.content)
                     .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous))
+                    .background(accent, in: RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .accessibilityLabel("You asked: \(turn.content)")

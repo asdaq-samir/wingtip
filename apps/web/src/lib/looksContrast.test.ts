@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { contrast, lookTokens, over, parseColour, type Linear, type Look, type SystemColours } from "./contrast";
+import { contrast, lookTokens, over, parseColour, type Linear, type Look } from "./contrast";
 import { CATEGORY, CATEGORY_CHIP } from "./tokens";
 
 /**
@@ -15,47 +15,47 @@ import { CATEGORY, CATEGORY_CHIP } from "./tokens";
  */
 const css = readFileSync(new URL("../styles/tokens.css", import.meta.url), "utf8");
 
-/**
- * The browsers' system colours the Native look is drawn in (Canvas,
- * CanvasText, LinkText, AccentColor), by day and at night, for the
- * browsers it is held under: HTML's own link blues on Chromium's grounds
- * (Chromium has no AccentColor, so the ring takes LinkText); iOS's
- * system colours on an iPhone's Safari (systemBlue, a black ground at
- * night); and a Mac's Safari (NSColor.linkColor on its dark grey). Where a
- * browser's own value is not one of these, Native's mixes keep the
- * margin: its link blue is a fifth of the way to the words' colour.
- */
-const BROWSERS: { name: string; day: SystemColours; night: SystemColours }[] = [
-  {
-    name: "Chromium",
-    day: { canvas: "#ffffff", canvastext: "#000000", linktext: "#0000ee", accentcolor: "#0000ee" },
-    night: { canvas: "#121212", canvastext: "#ffffff", linktext: "#9e9eff", accentcolor: "#9e9eff" },
-  },
-  {
-    name: "Safari on an iPhone",
-    day: { canvas: "#ffffff", canvastext: "#000000", linktext: "#007aff", accentcolor: "#007aff" },
-    night: { canvas: "#000000", canvastext: "#ffffff", linktext: "#0a84ff", accentcolor: "#0a84ff" },
-  },
-  {
-    name: "Safari on a Mac",
-    day: { canvas: "#ffffff", canvastext: "#000000", linktext: "#0068da", accentcolor: "#007aff" },
-    night: { canvas: "#1e1e1e", canvastext: "#ffffff", linktext: "#419cff", accentcolor: "#0a84ff" },
-  },
-];
-
-const LOOKS: (Look & { name: string; system: SystemColours })[] = [];
+const LOOKS: (Look & { name: string })[] = [];
 for (const brand of ["wingtip", "cockpit", "ink", "native"] as const) {
   for (const dark of [false, true]) {
     for (const bright of [false, true]) {
       const name = `${{ wingtip: "Wingtip", cockpit: "Glass Cockpit", ink: "Chart ink", native: "Native" }[brand]}, ${dark ? "night" : "day"}${bright ? ", sunlight" : ""}`;
-      if (brand !== "native") LOOKS.push({ name, brand, dark, bright, system: {} });
-      else for (const b of BROWSERS) LOOKS.push({ name: `${name}, ${b.name}`, brand, dark, bright, system: dark ? b.night : b.day });
+      LOOKS.push({ name, brand, dark, bright });
     }
   }
 }
 
-const colour = (v: string | undefined, what: string, system: SystemColours = {}): Linear => {
-  const c = v === undefined ? null : parseColour(v, system);
+/**
+ * Where the Native look, shadcn's stock neutral theme as it ships, is
+ * under WCAG's line, with its ratio: reported, not recoloured (the owner,
+ * 2026-11-10: Native is the stock components "out of the box", and a
+ * stock default that fails is said so). shadcn's muted words on its muted
+ * fill are 4.34:1 by day, under 1.4.3's 4.5:1; its focus ring, the
+ * neutral 0.708, is 2.59:1 on white and 2.38:1 on the muted fill by day,
+ * under 1.4.11's 3:1. Each pair is held at its figure, so a stock change
+ * either way shows here. Every other pair in Native passes. (Not measured
+ * here: a field's edge, --input, which no look holds to 3:1 in this test;
+ * shadcn's is 1.26:1 on white, the edge a stock Input has.)
+ */
+const STOCK_SHORTFALLS: Record<string, number> = {
+  "Native, day: --muted-foreground on --muted": 4.34,
+  "Native, day: --ring on --background": 2.59,
+  "Native, day: --ring on --card": 2.59,
+  "Native, day: --ring on --popover": 2.59,
+  "Native, day: --ring on --muted": 2.38,
+  "Native, day: --ring on --sheet": 2.59,
+};
+
+/** What a pair is held to: `least` as WCAG gives it, which the ratio
+ *  must reach (min(ratio, least) is least), or one of Native's stock
+ *  shortfalls, which its ratio, to two places, must be. */
+const heldTo = (look: string, a: string, b: string, ratio: number, least: number) => {
+  const known = STOCK_SHORTFALLS[`${look}: ${a} on ${b}`];
+  return known === undefined ? { got: Math.min(ratio, least), want: least } : { got: Math.round(ratio * 100) / 100, want: known };
+};
+
+const colour = (v: string | undefined, what: string): Linear => {
+  const c = v === undefined ? null : parseColour(v);
   if (!c) throw new Error(`${what} is not a colour: ${v}`);
   return c;
 };
@@ -93,18 +93,21 @@ const NON_TEXT = ["--ring", "--caution", "--go", "--destructive"];
 
 describe.each(LOOKS)("$name", (look) => {
   const t = lookTokens(css, look);
-  const c = (name: string) => colour(t[name], `${look.name} ${name}`, look.system);
+  const c = (name: string) => colour(t[name], `${look.name} ${name}`);
 
   it.each(WORDS.flatMap((w) => SURFACES.map((s) => [w, s] as const)))("%s reads 4.5:1 or more on %s", (word, surface) => {
-    expect(contrast(c(word), c(surface))).toBeGreaterThanOrEqual(4.5);
+    const { got, want } = heldTo(look.name, word, surface, contrast(c(word), c(surface)), 4.5);
+    expect(got).toBe(want);
   });
 
   it.each(ON_FILL)("%s reads 4.5:1 or more on %s", (word, fill) => {
-    expect(contrast(c(word), c(fill))).toBeGreaterThanOrEqual(4.5);
+    const { got, want } = heldTo(look.name, word, fill, contrast(c(word), c(fill)), 4.5);
+    expect(got).toBe(want);
   });
 
   it.each(NON_TEXT.flatMap((u) => SURFACES.map((s) => [u, s] as const)))("%s marks 3:1 or more on %s", (mark, surface) => {
-    expect(contrast(c(mark), c(surface))).toBeGreaterThanOrEqual(3);
+    const { got, want } = heldTo(look.name, mark, surface, contrast(c(mark), c(surface)), 3);
+    expect(got).toBe(want);
   });
 
   it("caution's words on its wash, 4.5:1 or more", () => {
