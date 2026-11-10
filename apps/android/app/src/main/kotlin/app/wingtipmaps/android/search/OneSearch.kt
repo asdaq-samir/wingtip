@@ -243,7 +243,7 @@ fun OneSearch(
                         FlightCard(planState, tail = tail, onOpen = { pick(SearchPick.Flight) }, modifier = Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm))
                     }
                 }
-                nothingTyped(favorites, own.values, recents, state.nearest, state.nearestProblem, onPick = pick)
+                nothingTyped(favorites, own.values, recents, state.nearest, state.nearestProblem, fix, onPick = pick)
             }
         }
     }
