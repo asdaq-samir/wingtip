@@ -1,10 +1,12 @@
 import { cn } from "cn";
 import { ListChoices, ListGroup, ListRow } from "../../../components/GroupedList";
+import { Button } from "../../../components/ui/button";
 import { said } from "../../../lib/endorsements";
 import { FINDING_TONE, type Finding } from "../../../lib/findings";
 import { TEXT } from "../../../lib/text";
 import type { CoachDue, CoachSession, CoachWords, ProficiencyPlan } from "./coachApi";
 import { CERTIFICATES, useCoach, type Certificate } from "./useCoach";
+import { coachStep } from "./coachStep";
 
 /**
  * The Logbook's Coach: a pilot's own proficiency plan. On the pilot's
@@ -20,6 +22,20 @@ export default function CoachPage() {
   const c = useCoach();
   return (
     <section aria-label="Coach" className="space-y-5" data-testid="coach">
+      {/* Verdict first (decision 0012, docs/design/web.md §10): what to
+          practise next in one line, and the one filled action under it. */}
+      <Next next={c.plan?.sessions[0]?.practise ?? null} planned={!!c.plan} make={c.make} disabled={!c.ready || c.making} />
+      {/* Each step said to a screen reader as it comes, the focus left
+          where the pilot is (WCAG 4.1.3). */}
+      <p className={cn("px-1 text-muted-foreground", TEXT.note)} role="status" data-testid="coach-status">
+        {coachStep(c)}
+      </p>
+      {c.problem && (
+        <p className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} role="alert">
+          {c.problem.message}
+        </p>
+      )}
+      {c.plan && <Plan plan={c.plan} words={c.words} wording={c.wording} />}
       <ListGroup title="Your Certificate">
         <ListChoices value={c.certificate} onChange={(v) => c.choose(v as Certificate)} label="Your certificate">
           {CERTIFICATES.map((o) => (
@@ -27,26 +43,31 @@ export default function CoachPage() {
           ))}
         </ListChoices>
       </ListGroup>
-      <ListGroup>
-        <ListRow
-          title={<span className="text-tint">{c.plan ? "Make It Again" : "Make My Plan"}</span>}
-          description={
-            c.making
-              ? "Reading your logbook and your flights' debriefs…"
-              : `From your logbook, your saved flights' tracks and the fields near ${c.home ?? "your home base"}`
-          }
-          onClick={c.make}
-          disabled={!c.ready || c.making}
-          data-testid="coach-make"
-        />
-      </ListGroup>
-      {c.problem && (
-        <p className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} role="alert">
-          {c.problem.message}
-        </p>
-      )}
-      {c.plan && <Plan plan={c.plan} words={c.words} wording={c.wording} />}
     </section>
+  );
+}
+
+/** What to practise next and the coach's one action: Make My Plan, or
+ *  Make It Again once there is one. */
+function Next({ next, planned, make, disabled }: { next: string | null; planned: boolean; make: () => void; disabled: boolean }) {
+  return (
+    <div className="grid gap-3 rounded-lg border border-border bg-card p-4" data-testid="coach-next">
+      <p className={cn(TEXT.row, !next && "text-muted-foreground")}>
+        {next ? (
+          <>
+            <span className="font-semibold">Next: </span>
+            {next}
+          </>
+        ) : planned ? (
+          "Nothing to practise for now."
+        ) : (
+          "Your plan from your logbook, your saved flights' tracks and your debriefs."
+        )}
+      </p>
+      <Button onClick={make} disabled={disabled} data-testid="coach-make">
+        {planned ? "Make It Again" : "Make My Plan"}
+      </Button>
+    </div>
   );
 }
 
@@ -116,8 +137,8 @@ function Plan({ plan, words, wording }: { plan: ProficiencyPlan; words: CoachWor
 }
 
 function Words({ words, wording }: { words: CoachWords | null; wording: boolean }) {
-  if (wording) return <p className={cn("px-1 text-muted-foreground", TEXT.prose)}>Putting your plan into words…</p>;
-  if (!words) return null;
+  // While the words are on their way the status line says so (coachStep).
+  if (wording || !words) return null;
   if (!words.sentences.length) {
     return words.unavailable ? <p className={cn("px-1 text-muted-foreground", TEXT.prose)}>No words for now: {words.unavailable}</p> : null;
   }

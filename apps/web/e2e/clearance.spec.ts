@@ -58,6 +58,35 @@ test("a clearance read is shown in its items and entered as the route", async ({
 });
 
 /**
+ * Typing works as well as speaking (docs/design/web.md §12): Enter in the
+ * field reads what was typed at once, and Use This Route, filled under the
+ * clearance's items, enters it.
+ */
+test("Enter in the typed clearance reads it, and Use This Route enters it", async ({ page }) => {
+  // No recognizer, as the first test's: the comms button opens the card to type in.
+  await page.addInitScript(() => {
+    const w = window as unknown as Record<string, unknown>;
+    delete w.SpeechRecognition;
+    delete w.webkitSpeechRecognition;
+  });
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  await page.getByTestId("radio-button").click();
+  const field = page.getByTestId("clearance-text");
+  await field.fill("cleared to the Duluth airport via Gopher then as filed, maintain three thousand, squawk four five two one");
+  await field.press("Enter");
+  // One line: Enter put no new line in it.
+  await expect(field).not.toHaveValue(/\n/);
+  const body = page.getByTestId("clearance-body");
+  await expect(body.getByTestId("clearance-elements")).toContainText("4521");
+  const use = body.getByTestId("clearance-use");
+  await expect(use).toBeVisible({ timeout: slow(20_000) });
+  await use.click();
+  await expect(page).toHaveURL(/stops=GEP/, { timeout: slow(10_000) });
+});
+
+/**
  * The microphone used as Siri's is (the owner's pick, 2026-11-02): a tap
  * listens, the pill over the map typing the words; at the pause after
  * them, the chips of what was heard, and Fly flies its altitude. The
