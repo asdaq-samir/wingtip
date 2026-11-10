@@ -8,15 +8,21 @@ import Foundation
 /// one of the app's screens (design/screens.json; the same from the app's
 /// own wingtipmaps://plan?open=logbook) -- and a track
 /// file (GPX, KML) handed over from Files or Mail, which the app is a
-/// viewer of (CFBundleDocumentTypes). The sign-in link is not one of
+/// viewer of (CFBundleDocumentTypes), and a Wingtip flight file
+/// (FlightFile), the app's own type. The sign-in link is not one of
 /// these: Session.open takes it. The answer is a PendingCommand, done by
 /// RootView once the screen is up, as Siri's asks are.
 enum Links {
     /// The file types the app opens, as Finder and Files name them.
     static let trackExtensions: Set<String> = ["gpx", "kml"]
+    /// A Wingtip flight file's (UTType.wingtipFlight).
+    static let flightExtension = "wingtip"
 
     static func command(for url: URL) -> PendingCommand.Command? {
         if url.isFileURL {
+            // A Wingtip flight file (FlightFile): previewed as a shared
+            // flight is, never planned until Use This Plan.
+            if url.pathExtension.lowercased() == flightExtension { return FlightFile.read(at: url).map { .sharedFlight(.file($0)) } }
             return trackExtensions.contains(url.pathExtension.lowercased()) ? .track(url) : nil
         }
         guard let query = query(of: url) else { return nil }
@@ -47,7 +53,7 @@ enum Links {
     /// The link's keys, where it is the planner's address: the site's
     /// (`https://<host>/app/plan?...`) or the app's own scheme
     /// (`wingtipmaps://plan?...`).
-    private static func query(of url: URL) -> [String: String]? {
+    static func query(of url: URL) -> [String: String]? {
         guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }
         let ours = parts.scheme == Screen.scheme ? parts.host == Screen.schemeHost : parts.path.hasSuffix(Screen.linkPath)
         guard ours else { return nil }

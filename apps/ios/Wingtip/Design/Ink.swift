@@ -19,6 +19,9 @@ enum WingtipInk {
     static let inactiveFill = Color(dynamic(\.muted))
     /// What is fine.
     static let go = Color(dynamic(\.goInk))
+    /// The brand's tint, Sectional Blue, by day and at night: for the
+    /// widgets, which have no accent colour of their own to take it from.
+    static let tint = Color(dynamic(\.tint))
     /// Words in the tokens' text colour, for text on clear glass over the
     /// map (the iPad's figures, FiguresStrip): there the system's .primary
     /// and .secondary turn vibrant and take on the chart behind, and the

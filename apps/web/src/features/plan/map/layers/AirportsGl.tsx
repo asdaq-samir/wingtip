@@ -15,13 +15,22 @@ import { CHART } from "../../../../lib/tokens";
 const SELECTED = "airport-selected";
 const empty = () => ({ type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] } });
 
-/** The ring round the field whose card is open. */
-const RING: CircleLayerSpecification = {
-  id: "airport-selected",
+/** The ring round the field whose card is open, in the brand's Taxiway
+ *  Yellow (CHART.selected, the owner, 2026-11-09), cased as a picked
+ *  point's ring is (RouteExtrasGl): white, then the shade's dark edge, so
+ *  it holds over the sectional's towns, as yellow as it is (about 1.6:1
+ *  there alone), and its pale greens (1.4:1). */
+const ring = (id: string, color: string, width: number): CircleLayerSpecification => ({
+  id,
   type: "circle",
   source: SELECTED,
-  paint: { "circle-radius": 20, "circle-color": "transparent", "circle-stroke-color": CHART.selected, "circle-stroke-width": 3 },
-};
+  paint: { "circle-radius": 20, "circle-color": "transparent", "circle-stroke-color": color, "circle-stroke-width": width },
+});
+const RING = [
+  ring("airport-selected-edge", `${CHART.shade}8c`, 9),
+  ring("airport-selected-casing", CHART.casing, 6),
+  ring("airport-selected", CHART.selected, 3),
+];
 /** The open card's field's ident, larger and bolder than the chart's
  *  others, white on a dark rim over the ring, as ForeFlight
  *  writes the field it shows (the owner's screenshot over Madison,
@@ -92,7 +101,7 @@ function useAirportTaps(
   { selected, onSelect }: Pick<Props, "selected" | "onSelect">,
   fields: (f: MapGeoJSONFeature) => Record<string, unknown>,
 ) {
-  useGlLayer("marks", { [SELECTED]: empty() }, [RING, SELECTED_IDENT], "airports");
+  useGlLayer("marks", { [SELECTED]: empty() }, [...RING, SELECTED_IDENT], "airports");
   const ring = useMemo<GeoJSON.FeatureCollection | null>(
     () =>
       selected

@@ -49,8 +49,14 @@ struct WingtipApp: App {
                 // The next flight on the Home Screen and the Lock Screen
                 // (WidgetFeed, FlightWidget in WingtipWidgets): the plan, its
                 // verdict and the departure's weather, written to the App
-                // Group only as they change, on the same clock.
-                .task { await Ticker.shared.run(every: 15) { WidgetFeed.shared.update(plan: plan, verdict: verdict) } }
+                // Group only as they change, on the same clock; and the
+                // fields the weather widget's settings offer first.
+                .task {
+                    await Ticker.shared.run(every: 15) {
+                        WidgetFeed.shared.update(plan: plan, verdict: verdict)
+                        WidgetFeed.shared.airports(homeBase: session.pilot?.homeBase, favorites: AirportShelf.shared.favorites)
+                    }
+                }
                 // The route's weather watched after the Brief (WeatherWatch):
                 // a look every quarter hour while the app runs, and iOS's
                 // background refresh asked for as it goes behind.

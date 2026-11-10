@@ -38,7 +38,7 @@ export const CHART = {
   warning: "#d70015",
   caution: "#ffb000",
   terrain: "#8b6f47",
-  selected: "#ff3b00",
+  selected: "#f2b600",
   courseChip: "#b000b0",
   pattern: "#0e8f8a",
   patternLabel: "#0b7a75",

@@ -34,6 +34,12 @@ enum AirportRoute: Hashable, Sendable {
         }
     }
 
+    /// The field whose card this is, for its ring on the chart.
+    var field: String? {
+        if case .airport(let ident) = self { return ident }
+        return nil
+    }
+
     /// The point a held finger marks on the map, for its pin.
     var heldPoint: CLLocationCoordinate2D? {
         if case .airspace(let lat, let lon) = self { return CLLocationCoordinate2D(latitude: lat, longitude: lon) }
