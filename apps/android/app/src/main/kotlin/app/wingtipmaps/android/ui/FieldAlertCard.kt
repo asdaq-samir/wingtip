@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
@@ -18,7 +17,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.RankedNotam
@@ -43,13 +43,14 @@ fun FieldAlertCard(ident: String, alerts: List<RankedNotam>, onOpen: () -> Unit,
                 val words = remember(notam.raw) { MapRules.faaWords(FieldAlerts.body(notam.raw)) }
                 val whenLine = notamWhen(FieldAlerts.whenOf(notam))
                 ListItem(
+                    onClick = onOpen,
                     leadingContent = {
                         val tfr = FieldAlerts.isTfr(notam)
                         Icon(if (tfr) Icons.Filled.Block else Icons.Filled.Warning, contentDescription = stringResource(if (tfr) R.string.field_alert_tfr else R.string.field_alert_closed))
                     },
                     supportingContent = whenLine?.let { { Text(it) } },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent, contentColor = ink, leadingContentColor = ink, supportingContentColor = ink),
-                    modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = open, onClick = onOpen),
+                    modifier = Modifier.fillMaxWidth().semantics { onClick(label = open, action = null) },
                     content = { Text(words, maxLines = 3, overflow = TextOverflow.Ellipsis) },
                 )
             }

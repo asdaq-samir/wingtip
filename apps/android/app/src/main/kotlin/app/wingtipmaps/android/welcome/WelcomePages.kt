@@ -1,21 +1,23 @@
 package app.wingtipmaps.android.welcome
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -23,7 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AirportSuggestion
-import app.wingtipmaps.android.design.Skeleton
+import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.AirplaneModel
 import app.wingtipmaps.android.ui.AirplanePicker
@@ -88,7 +90,7 @@ private fun HomeSearch(home: String?, onPick: (String) -> Unit) {
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Search),
     )
     ProblemLine(found.problem)
-    if (found.loading && found.suggestions.isEmpty()) Skeleton(rows = 2)
+    if (found.loading && found.suggestions.isEmpty()) LoadingRow()
     if (found.query.isNotBlank()) {
         found.suggestions.take(SHOWN).forEach { field ->
             SuggestionRow(field) {
@@ -107,11 +109,13 @@ private const val SHOWN = 5
 /** A field the welcome's search found: its ident and name, where it is under them. */
 @Composable
 private fun SuggestionRow(found: AirportSuggestion, onOpen: () -> Unit) {
-    Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = stringResource(R.string.said_open), onClick = onOpen).padding(vertical = WingtipSpace.Md)) {
-        Text("${found.ident}  ${found.name}", style = MaterialTheme.typography.bodyLarge)
-        val where = listOfNotNull(found.municipality, found.region).joinToString(", ")
-        if (where.isNotEmpty()) {
-            Text(where, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
+    val open = stringResource(R.string.said_open)
+    val where = listOfNotNull(found.municipality, found.region).joinToString(", ")
+    ListItem(
+        onClick = onOpen,
+        supportingContent = where.takeIf { it.isNotEmpty() }?.let { { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        modifier = Modifier.fillMaxWidth().semantics { onClick(label = open, action = null) },
+        content = { Text("${found.ident}  ${found.name}") },
+    )
 }

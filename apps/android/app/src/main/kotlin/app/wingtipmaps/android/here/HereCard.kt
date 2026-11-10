@@ -1,7 +1,6 @@
 package app.wingtipmaps.android.here
 
 import android.content.Intent
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
@@ -20,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -28,7 +26,7 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.AirspaceBand
 import app.wingtipmaps.android.api.generated.TfrHere
 import app.wingtipmaps.android.api.generated.VfrMinimums
-import app.wingtipmaps.android.design.Skeleton
+import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.ProblemLine
@@ -54,7 +52,7 @@ fun HereCard(lat: Double, lon: Double, model: HereModel = viewModel()) {
     )
     here?.point?.let { Text("${it.ident} · ${it.name}", color = MaterialTheme.colorScheme.onSurfaceVariant) }
     when {
-        state.loading -> Skeleton(rows = 3)
+        state.loading -> LoadingRow()
         state.problem != null -> {
             ProblemLine(state.problem)
             TextButton(onClick = model::retry) { Text(stringResource(R.string.try_again)) }
@@ -134,11 +132,14 @@ private fun Tfrs(tfrs: List<TfrHere>, unavailable: Boolean) {
 
 @Composable
 private fun Row(icon: (@Composable () -> Unit)?, title: String, lines: List<String>, onClick: (() -> Unit)? = null) {
-    ListItem(
-        leadingContent = icon,
-        supportingContent = { Column { lines.forEach { Text(it) } } },
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = if (onClick != null) Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick) else Modifier.fillMaxWidth(),
-        content = { Text(title, style = MaterialTheme.typography.titleMedium) },
-    )
+    val supporting: @Composable () -> Unit = { Column { lines.forEach { Text(it) } } }
+    val colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+    val headline: @Composable () -> Unit = { Text(title, style = MaterialTheme.typography.titleMedium) }
+    // Material's clickable list item where the row opens something, its
+    // plain one where it does not.
+    if (onClick != null) {
+        ListItem(onClick = onClick, leadingContent = icon, supportingContent = supporting, colors = colors, modifier = Modifier.fillMaxWidth(), content = headline)
+    } else {
+        ListItem(leadingContent = icon, supportingContent = supporting, colors = colors, modifier = Modifier.fillMaxWidth(), content = headline)
+    }
 }

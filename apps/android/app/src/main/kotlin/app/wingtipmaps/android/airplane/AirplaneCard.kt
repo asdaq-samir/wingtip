@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.airplane
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,7 +31,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
@@ -110,9 +108,11 @@ fun AirplaneCard(at: ProfileOpen.At, plan: Plan, onClose: () -> Unit, onFlown: (
                 ChecklistKind.entries.forEach { kind ->
                     val normal = kind == ChecklistKind.NORMAL
                     ListItem(
+                        onClick = { checklist = kind },
+                        enabled = airplane.name != null,
                         supportingContent = { Text(stringResource(if (normal) R.string.checklist_normal_line else R.string.checklist_emergency_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier.fillMaxWidth().clickable(enabled = airplane.name != null, role = Role.Button) { checklist = kind },
+                        modifier = Modifier.fillMaxWidth(),
                         content = { Text(stringResource(if (normal) R.string.checklist_normal else R.string.checklist_emergency)) },
                     )
                 }

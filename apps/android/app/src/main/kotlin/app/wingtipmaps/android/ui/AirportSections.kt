@@ -2,7 +2,6 @@ package app.wingtipmaps.android.ui
 
 import android.content.Intent
 import androidx.annotation.StringRes
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -28,7 +26,7 @@ import app.wingtipmaps.android.ai.AiSources
 import app.wingtipmaps.android.ai.AiTask
 import app.wingtipmaps.android.ai.AiWordsRow
 import app.wingtipmaps.android.api.AirportPlace
-import app.wingtipmaps.android.design.Skeleton
+import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.live.LiveAirportRows
@@ -104,7 +102,7 @@ fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, s
         }
         AirportSection.APPROACHES -> items(place.procedures.orEmpty()) { p ->
             val context = LocalContext.current
-            Row(p.name, p.kind, pad.clickable(role = Role.Button) { context.startActivity(Intent(Intent.ACTION_VIEW, p.url.toUri())) })
+            Row(p.name, p.kind, pad) { context.startActivity(Intent(Intent.ACTION_VIEW, p.url.toUri())) }
         }
         AirportSection.NOTAMS -> {
             state.notamsProblem?.let { item(key = "notams-problem") { ProblemLine(it, pad) } }
@@ -112,7 +110,7 @@ fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, s
             if (state.notams?.unchecked?.contains("tfrs") == true) item(key = "notams-tfrs") { ProblemLine(stringResource(R.string.notams_tfrs_unchecked), pad) }
             val notams = state.notams?.notams?.sortedBy { it.rank }
             when {
-                notams == null && state.notamsProblem == null -> item(key = "notams-loading") { Skeleton(pad) }
+                notams == null && state.notamsProblem == null -> item(key = "notams-loading") { LoadingRow(pad) }
                 notams.isNullOrEmpty() -> item(key = "notams-none") { Row(stringResource(R.string.notams), stringResource(R.string.no_notams), pad) }
                 else -> items(notams, key = { "n-" + it.id }) { n -> Row(n.raw, notamWhen(FieldAlerts.whenOf(n)), pad) }
             }
@@ -143,14 +141,16 @@ private const val CHART_ZOOM = 11
 
 /** A row of the card: Material's list item, its supporting text under it. */
 @Composable
-private fun Row(headline: String, supporting: String?, modifier: Modifier = Modifier, trailing: (@Composable () -> Unit)? = null) {
-    ListItem(
-        supportingContent = supporting?.takeIf { it.isNotEmpty() }?.let { { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
-        trailingContent = trailing,
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = modifier.fillMaxWidth(),
-        content = { Text(headline, style = MaterialTheme.typography.bodyLarge) },
-    )
+private fun Row(headline: String, supporting: String?, modifier: Modifier = Modifier, trailing: (@Composable () -> Unit)? = null, onClick: (() -> Unit)? = null) {
+    val line: (@Composable () -> Unit)? = supporting?.takeIf { it.isNotEmpty() }?.let { { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+    val colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+    val title: @Composable () -> Unit = { Text(headline, style = MaterialTheme.typography.bodyLarge) }
+    // Material's clickable list item where the row opens something.
+    if (onClick != null) {
+        ListItem(onClick = onClick, supportingContent = line, trailingContent = trailing, colors = colors, modifier = modifier.fillMaxWidth(), content = title)
+    } else {
+        ListItem(supportingContent = line, trailingContent = trailing, colors = colors, modifier = modifier.fillMaxWidth(), content = title)
+    }
 }
 
 /** "In effect now, until Nov 12 1432Z", "From Nov 12 1400Z", or none. */

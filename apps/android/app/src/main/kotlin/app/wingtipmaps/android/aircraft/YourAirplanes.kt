@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.aircraft
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,12 +22,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.gateway.AircraftDto
-import app.wingtipmaps.android.design.Skeleton
+import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
@@ -37,10 +35,11 @@ import app.wingtipmaps.android.ui.sheet.WingtipSheet
 @Composable
 fun YourAirplanesRow(onOpen: () -> Unit) {
     ListItem(
+        onClick = onOpen,
         supportingContent = { Text(stringResource(R.string.your_airplanes_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
         leadingContent = { Icon(Icons.Outlined.Flight, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onOpen),
+        modifier = Modifier.fillMaxWidth(),
         content = { Text(stringResource(R.string.your_airplanes)) },
     )
 }
@@ -73,7 +72,7 @@ fun YourAirplanesSheet(onClose: () -> Unit, model: AircraftModel = viewModel()) 
 private fun AirplaneList(state: AircraftModel.State, model: AircraftModel) {
     ProblemLine(state.problem)
     when {
-        state.loading -> Skeleton()
+        state.loading -> LoadingRow()
         state.signedOut -> Line(stringResource(R.string.your_airplanes_sign_in))
         else -> {
             if (state.airplanes.isEmpty() && state.problem == null) Line(stringResource(R.string.your_airplanes_none))
@@ -87,9 +86,10 @@ private fun AirplaneList(state: AircraftModel.State, model: AircraftModel) {
 @Composable
 private fun AirplaneRow(a: AircraftDto, onOpen: () -> Unit) {
     ListItem(
+        onClick = onOpen,
         supportingContent = { Text("${a.typeDesignator} · ${AircraftForm.figuresLine(a)}", color = MaterialTheme.colorScheme.onSurfaceVariant) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onOpen),
+        modifier = Modifier.fillMaxWidth(),
         content = { Text(a.tailNumber) },
     )
 }

@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,10 +15,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,9 +35,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -63,11 +63,7 @@ import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 import kotlinx.coroutines.CancellationException
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import java.time.Instant
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -115,11 +111,17 @@ fun AlertsBanner(alerts: List<AheadAlert>) {
     // A tap opens every alert ahead in full, each with its fix (AheadSheet).
     var open by rememberSaveable { mutableStateOf(false) }
     if (open) AheadSheet(alerts, onClose = { open = false })
-    Surface(color = if (danger) LocalWingtipPalette.current.destructive else LocalWingtipPalette.current.caution, contentColor = Color.White, shape = MaterialTheme.shapes.medium) {
+    // Material's clickable surface, the alert's colour, opening them all.
+    val showAhead = stringResource(R.string.said_show_ahead)
+    Surface(
+        onClick = { open = true },
+        color = if (danger) LocalWingtipPalette.current.destructive else LocalWingtipPalette.current.caution,
+        contentColor = Color.White,
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.semantics { onClick(label = showAhead, action = null) },
+    ) {
         Row(
-            Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = stringResource(R.string.said_show_ahead)) { open = true }
-                .padding(horizontal = WingtipSpace.Md, vertical = WingtipSpace.Sm)
-                .semantics(mergeDescendants = true) {},
+            Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Md, vertical = WingtipSpace.Sm),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
         ) {
@@ -302,15 +304,18 @@ fun NearestSheet(fix: OwnShip.Fix?, onOpen: (String) -> Unit, onClose: () -> Uni
                 items(fields.orEmpty(), key = { it.ident }) { field ->
                     // A glide the engine could not judge says so, never "out of reach".
                     val reach = fix?.let { glideReaches(it, field, InFlight.shared.glideRatio) }
-                    Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = openWord) { onOpen(field.ident) }.padding(vertical = WingtipSpace.Md)) {
-                        Text("${field.ident}  ${field.name}", style = MaterialTheme.typography.bodyLarge, maxLines = if (largeType()) 3 else 1, overflow = TextOverflow.Ellipsis)
-                        val parts = listOfNotNull(
-                            "${Format.distance(field.distanceNm)} ${Format.heading(field.bearingDeg)}T",
-                            field.longestRunwayFt?.let { "${Format.altitude(it.toDouble())} runway" },
-                            reach?.fold({ if (it) "within a glide" else null }, { "glide not worked out" }),
-                        )
-                        Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    val parts = listOfNotNull(
+                        "${Format.distance(field.distanceNm)} ${Format.heading(field.bearingDeg)}T",
+                        field.longestRunwayFt?.let { "${Format.altitude(it.toDouble())} runway" },
+                        reach?.fold({ if (it) "within a glide" else null }, { "glide not worked out" }),
+                    )
+                    ListItem(
+                        onClick = { onOpen(field.ident) },
+                        supportingContent = { Text(parts.joinToString(" · "), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        modifier = Modifier.fillMaxWidth().semantics { onClick(label = openWord, action = null) },
+                        content = { Text("${field.ident}  ${field.name}", maxLines = if (largeType()) 3 else 1, overflow = TextOverflow.Ellipsis) },
+                    )
                     HorizontalDivider()
                 }
             }

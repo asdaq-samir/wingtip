@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.trip
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +10,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -64,12 +65,10 @@ fun TripPlannerCard(
     Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
         SectionTitle(stringResource(R.string.trip_title))
         if (state.asked.isNotEmpty()) {
-            Text(
-                state.asked,
-                Modifier.align(Alignment.End).background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.large)
-                    .padding(horizontal = WingtipSpace.Md, vertical = WingtipSpace.Sm),
-                color = MaterialTheme.colorScheme.onPrimary,
-            )
+            // What was asked, at the end in Material's card in the tint.
+            Card(Modifier.align(Alignment.End), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)) {
+                Text(state.asked, Modifier.padding(horizontal = WingtipSpace.Md, vertical = WingtipSpace.Sm))
+            }
         }
         state.status?.let { status ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
@@ -79,18 +78,17 @@ fun TripPlannerCard(
         }
         val proposal = state.proposal
         if (proposal != null || state.words.isNotEmpty()) {
-            Column(
-                Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.large)
-                    .padding(WingtipSpace.Md),
-                verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md),
-            ) {
-                if (state.words.isNotEmpty()) Text(state.words)
-                proposal?.legs?.forEach { leg ->
-                    TripLegRow(leg, used = leg.kind in state.used, onUse = { onUse(leg); model.used(leg) })
-                }
-                proposal?.unmet?.forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
-                if (!state.busy) {
-                    state.sources.forEach { source -> AssistChip(onClick = { onSource(source) }, label = { Text(source.label) }) }
+            // The answer in Material's card.
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(WingtipSpace.Md), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
+                    if (state.words.isNotEmpty()) Text(state.words)
+                    proposal?.legs?.forEach { leg ->
+                        TripLegRow(leg, used = leg.kind in state.used, onUse = { onUse(leg); model.used(leg) })
+                    }
+                    proposal?.unmet?.forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+                    if (!state.busy) {
+                        state.sources.forEach { source -> AssistChip(onClick = { onSource(source) }, label = { Text(source.label) }) }
+                    }
                 }
             }
         }
