@@ -58,12 +58,18 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     style), `SectionTitle`, `WingtipIcons` (the concept table of
     docs/design/icons.md), `CardActions` (each card kind's actions, the
     web's lib/cardActions.ts);
-  - `ui/sheet/`: `DockedSheet` (the panel at pill, half and full, a
-    300 ms ease-out with no spring and one stop a throw, decision 0018;
-    predictive back lowers it a stop, then a card closes, then the app
-    goes) and `WingtipSheet` (every sheet over the map: Material's modal
-    sheet with a start-aligned title and a Close at the end, decision
-    0015);
+  - `ui/sheet/`: `MapSheet` (the panel on a phone: Material's standard
+    bottom sheet, `BottomSheetScaffold`, at its peek or expanded, on the
+    theme's expressive springs, since the owner on 2026-11-09 had stock
+    components keep their stock behaviour; predictive back lowers it,
+    then a card closes, then the app goes), `WingtipSheet` (every sheet
+    over the map: Material's modal sheet with a start-aligned title and
+    a Close at the end, decision 0015) and `FlexibleSheet` (a page over
+    the map under Material 3 Expressive's flexible top app bar, which
+    collapses as it scrolls); `ui/TabletopPanes` puts the map above a
+    half-folded phone's fold and the panel below it, and
+    `route/RouteToolbar` floats Undo, Redo and Add Point over the map on
+    a wide window while the plan is open;
   - `format/Format.kt`: every figure written one way, tested against the
     shared `apps/web/src/lib/fixtures/formats.json` (FormatTest), which
     design/tokens.json generates: FL-045 on the cruise controls

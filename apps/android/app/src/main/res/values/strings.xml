@@ -114,11 +114,6 @@
     <string name="said_open_field">Open %1$s</string>
     <string name="said_best_field">Best field %1$s, %2$s</string>
     <string name="said_atc_heard">Call for you: %1$s</string>
-    <string name="said_sheet_pill">Panel lowered</string>
-    <string name="said_sheet_half">Panel at half</string>
-    <string name="said_sheet_full">Panel full screen</string>
-    <string name="said_sheet_up">Raise the panel</string>
-    <string name="said_sheet_down">Lower the panel</string>
 
     <!-- The map's buttons (the UI audit's #12: the state said, not only drawn). -->
     <string name="own_ship_button">My Position</string>

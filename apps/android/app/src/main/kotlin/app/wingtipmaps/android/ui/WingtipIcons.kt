@@ -1,8 +1,10 @@
 package app.wingtipmaps.android.ui
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.AddLocation
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Call
@@ -58,6 +60,8 @@ object WingtipIcons {
     val nearest = Icons.Filled.MyLocation
     val addToRoute = Icons.Filled.AddLocation
     val holdHere = Icons.Filled.Sync
+    val undo = Icons.AutoMirrored.Filled.Undo
+    val redo = Icons.AutoMirrored.Filled.Redo
     val call = Icons.Filled.Call
     val address = Icons.Filled.Place
     val copy = Icons.Filled.ContentCopy

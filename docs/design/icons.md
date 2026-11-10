@@ -27,6 +27,8 @@ own maps follow this table.
 | directTo | `DirectToIcon` (the chart's D-arrow) | the same, drawn | the same, as a vector | Direct To; Fly Here. |
 | addToRoute | lucide `MapPinPlus` | `mappin.and.ellipse` with `plus` | `add_location` | Add Stop; Add to Route. |
 | holdHere | lucide `Repeat2` | `arrow.triangle.2.circlepath` | `sync` | Hold Here. |
+| undo | lucide `Undo2` | `arrow.uturn.backward` | `undo` | The route's last edit taken back. |
+| redo | lucide `Redo2` | `arrow.uturn.forward` | `redo` | An edit taken back, put back (the wide window's route toolbar). |
 | call | lucide `Phone` | `phone` | `call` | A field's phone. |
 | address | lucide `MapPin` | `mappin` | `place` | A place in Maps. |
 | copy | lucide `ClipboardCopy` | `doc.on.doc` | `content_copy` | A frequency to the clipboard. |
