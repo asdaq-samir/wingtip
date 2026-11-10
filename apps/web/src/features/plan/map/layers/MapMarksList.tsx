@@ -3,6 +3,7 @@ import { cn } from "cn";
 import type { AirportsInView } from "../../../../lib/api/types";
 import { TEXT } from "../../../../lib/text";
 import { useGlMap } from "../../../../lib/map/gl/glLayer";
+import { spokenWeather } from "../../../../lib/map/marks/airportWeather";
 
 type Field = AirportsInView["airports"][number];
 
@@ -22,12 +23,13 @@ function inSight(fields: Field[], bounds: { south: number; west: number; north: 
 }
 
 /** A field as a screen reader says it: its ident, name, its weather's
- *  category in words, and whether it has a tower, the colour of its
- *  symbol on the chart (FAA Chart User's Guide, Airports). */
+ *  category and wind in words, as its halo and arrow show them ("KJVL,
+ *  Janesville, IFR, wind 220 at 18 gusting 26"), and whether it has a
+ *  tower, the colour of its symbol on the chart (FAA Chart User's Guide,
+ *  Airports). */
 function fieldWords(f: Field): string {
-  const category = f.flight_category ? `, ${f.flight_category}` : ", no weather reported";
   const tower = f.towered == null ? "" : f.towered ? ", towered" : ", no tower";
-  return `${f.ident}, ${f.name}${category}${tower}`;
+  return `${spokenWeather(`${f.ident}, ${f.name}`, f.flight_category ?? "no weather reported", f.weather)}${tower}`;
 }
 
 /**

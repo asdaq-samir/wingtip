@@ -10,8 +10,10 @@ import type { OverlayTiles } from "../../api/types";
 import type { AirspaceVolume, VorPin } from "../sources/overlayTypes";
 import { usePreferences } from "../../preferences";
 import { BLUE } from "../../useAirspace";
-import { sectionalAirportSvg, TOWERED_BLUE, UNTOWERED_MAGENTA } from "../marks/airportMark";
-import { colourOf } from "../marks/flightCategory";
+import { TOWERED_BLUE, UNTOWERED_MAGENTA } from "../marks/airportMark";
+import type { AirportWeatherLook } from "../marks/airportWeatherPrefs";
+import { stationPictures } from "../marks/stationModel";
+import { airportPictures, tileAirportIcon, TOWERED } from "./airportIcons";
 import { overlaySource } from "../sources/overlayTiles";
 import { SLOTS, drawSvg, slotId, type DrawnImage, type Slot, type Stretch } from "./glLayer";
 import {
@@ -105,32 +107,6 @@ const SUA_PICTURES: Picture[] = (Object.keys(SUA_INK) as (keyof typeof SUA_INK)[
     `<svg width="7" height="10" viewBox="0 0 7 10"><rect width="7" height="10" fill="${SUA_INK[ink]}" fill-opacity="0.14"/><path d="M1.5 9.5L5.5 0.5" stroke="${SUA_INK[ink]}" stroke-width="1.3" stroke-linecap="round" stroke-opacity="0.9"/></svg>`,
 ]);
 
-type AirportSize = "large" | "medium" | "small" | "other";
-type AirportUse = "military" | "private" | "heliport" | null;
-
-/** A field's symbol's picture by what it is drawn as (sectionalAirportSvg):
- *  towered or not, its size, its weather pip's colour, its use. */
-const airportMarkId = (towered: boolean, size: string, weather: string | null, use: string | null) =>
-  `apt|${towered ? "t" : "u"}|${size}|${weather ?? ""}|${use ?? ""}`;
-
-const SIZES: AirportSize[] = ["large", "medium", "small", "other"];
-const USES: AirportUse[] = [null, "private", "military", "heliport"];
-/** Each flight category's pip, and none. */
-const PIPS: (string | null)[] = [null, ...["VFR", "MVFR", "IFR", "LIFR"].map((c) => colourOf(c))];
-
-/** Every airport symbol the tiles can ask for: 2 inks, 4 sizes, 5 pips
- *  and 4 uses, 160 small pictures. */
-function airportPictures(): Picture[] {
-  const out: Picture[] = [];
-  for (const towered of [true, false])
-    for (const size of SIZES)
-      for (const pip of PIPS)
-        for (const use of USES) {
-          out.push([airportMarkId(towered, size, pip, use), () => sectionalAirportSvg(towered, size, use, pip)]);
-        }
-  return out;
-}
-
 let drawn: Promise<Map<string, DrawnImage>> | null = null;
 /** Every picture the overlay layers wear, drawn once a page at the
  *  screen's density, for the map to take in its own `styleimagemissing`
@@ -138,7 +114,7 @@ let drawn: Promise<Map<string, DrawnImage>> | null = null;
  *  without its picture). */
 export function overlayPictures(): Promise<Map<string, DrawnImage>> {
   drawn ??= Promise.all(
-    [...airportPictures(), ...NAVAID_PICTURES, ...AIRSPACE_TAB_PICTURES, ...SUA_PICTURES].map(([id, svg, stretch]) =>
+    [...airportPictures(), ...stationPictures(), ...NAVAID_PICTURES, ...AIRSPACE_TAB_PICTURES, ...SUA_PICTURES].map(([id, svg, stretch]) =>
       drawSvg(svg(), stretch).then((d) => [id, d] as const),
     ),
   ).then((all) => new Map(all.filter((e): e is readonly [string, DrawnImage] => !!e[1])));
@@ -153,62 +129,6 @@ export function overlayPictures(): Promise<Map<string, DrawnImage>> {
  *  towered, then the long hard runways, other public fields, private
  *  ones, heliports. */
 const AIRPORTS_FARTHEST_ZOOM = 4;
-
-/** A field's size from its longest runway (NASR APT_RWY RWY_LEN), the
- *  symbol's size: an airline airport's 8,000 ft and more, then 5,000 and
- *  2,000. Only how big the disc is drawn. */
-const TILE_SIZE: ExpressionSpecification = [
-  "step",
-  ["coalesce", ["get", "longest_ft"], 0],
-  "other",
-  2000,
-  "small",
-  5000,
-  "medium",
-  8000,
-  "large",
-];
-const TILE_USE: ExpressionSpecification = [
-  "case",
-  ["==", ["get", "military"], "military"],
-  "military",
-  ["==", ["get", "use"], "private"],
-  "private",
-  ["==", ["get", "type"], "heliport"],
-  "heliport",
-  "",
-];
-const TOWERED: ExpressionSpecification = ["==", ["get", "towered"], true];
-
-/** The pip's colour by ident: from the METARs, once they are in
- *  (setAirportWeather); none before. */
-function weatherExpression(colours: Map<string, string>): ExpressionSpecification | string {
-  const byColour = new Map<string, string[]>();
-  for (const [ident, colour] of colours) {
-    let idents = byColour.get(colour);
-    if (!idents) byColour.set(colour, (idents = []));
-    idents.push(ident);
-  }
-  if (!byColour.size) return "";
-  const branches = [...byColour].flatMap(([colour, idents]) => [idents, colour]);
-  return ["match", ["get", "ident"], ...branches, ""] as unknown as ExpressionSpecification;
-}
-
-/** The airports' symbol from the tiles: its picture by its ink, size, use
- *  and weather (airportMarkId). */
-function tileAirportIcon(colours: Map<string, string>): ExpressionSpecification {
-  return [
-    "concat",
-    "apt|",
-    ["case", TOWERED, "t", "u"],
-    "|",
-    TILE_SIZE,
-    "|",
-    weatherExpression(colours),
-    "|",
-    TILE_USE,
-  ] as ExpressionSpecification;
-}
 
 /** The airports' one symbol layer, from either source: the mark, its
  *  ident beside it in bold, the field's ink (the sectional sets an
@@ -418,12 +338,13 @@ interface Changes {
   airports: string[];
   waypoints: string[];
   weather: Map<string, string>;
+  look: AirportWeatherLook;
   selected: string | null;
 }
 const changes = new WeakMap<MlMap, Changes>();
 const changesOf = (map: MlMap) => {
   let kept = changes.get(map);
-  if (!kept) changes.set(map, (kept = { airports: [], waypoints: [], weather: new Map(), selected: null }));
+  if (!kept) changes.set(map, (kept = { airports: [], waypoints: [], weather: new Map(), look: "halo", selected: null }));
   return kept;
 };
 
@@ -481,14 +402,17 @@ function selectedIdentLeftOut(ident: string | null): ExpressionSpecification {
   return ident ? ["case", ["==", ["get", "ident"], ident], "", ["get", "ident"]] : ["get", "ident"];
 }
 
-/** Each field's weather pip from its METAR (its flight category's colour,
- *  flightCategory colourOf), joined onto the tile airports by ident. */
-export function setAirportWeather(map: MlMap, colours: Map<string, string>) {
+/** Each field's weather halo from its METAR (its flight category's colour,
+ *  flightCategory colourOf), joined onto the tile airports by ident; as
+ *  the Map card's Airport Weather says: none (Off), a halo (Halo, Station)
+ *  or a dot in place of the symbol (Dot). */
+export function setAirportWeather(map: MlMap, colours: Map<string, string>, look: AirportWeatherLook = "halo") {
   const own = changesOf(map);
-  const same = own.weather.size === colours.size && [...colours].every(([k, v]) => own.weather.get(k) === v);
+  const same = own.look === look && own.weather.size === colours.size && [...colours].every(([k, v]) => own.weather.get(k) === v);
   if (same || !map.style || !map.getLayer("airports")) return;
   own.weather = new Map(colours);
-  map.setLayoutProperty("airports", "icon-image", tileAirportIcon(own.weather));
+  own.look = look;
+  map.setLayoutProperty("airports", "icon-image", tileAirportIcon(own.weather, look));
 }
 
 // ---- What a card needs, from a tapped feature ---------------------------

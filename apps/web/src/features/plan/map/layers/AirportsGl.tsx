@@ -11,6 +11,8 @@ import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
 import { GL_FONT_BOLD, TAP } from "../../../../lib/map/gl/layers/common";
 import MapMarksList from "./MapMarksList";
 import AirportHover from "./AirportHover";
+import AirportWeatherGl from "./AirportWeatherGl";
+import { useAirportWeatherPrefs } from "../../../../lib/map/marks/airportWeatherPrefs";
 import { CHART } from "../../../../lib/tokens";
 
 const SELECTED = "airport-selected";
@@ -61,12 +63,15 @@ type Props = {
   /** The fields wearing a chip of their own already: the route's. */
   others: { ident: string; lat: number; lon: number }[];
   route: { south: number; west: number; north: number; east: number } | null;
+  /** The plan's fields whose weather gets worse by the pilot's time
+   *  there (worseByArrival), for their amber ↓. */
+  worse: string[];
 };
 
 /**
  * The chart's airports in the sectional's symbology (sectionalAirportSvg:
  * blue towered, magenta not, a private field's R, a military field's M),
- * its weather a pip beside it, its ident in bold beside it -- as one
+ * its weather a halo round it, its ident in bold beside it -- as one
  * symbol layer, kept apart by MapLibre's collision. A tap within a
  * finger's reach opens its card, which asks the planner for the field
  * (its frequencies, runways, elevation, weather) as it opens.
@@ -152,10 +157,13 @@ function TileAirports(props: Props) {
     return out;
   }, [alongRoute, inView]);
   const known = useRef(colours);
+  // The Map card's Airport Weather: a halo, a dot or none.
+  const look = useAirportWeatherPrefs((s) => s.look);
   useEffect(() => {
     known.current = colours;
-    setAirportWeather(map, colours);
-  }, [map, colours]);
+    setAirportWeather(map, colours, look);
+  }, [map, colours, look]);
+  const reporting = useMemo(() => [...(alongRoute ?? []), ...(inView ?? [])], [alongRoute, inView]);
   useAirportTaps(props, (f) => {
     const p = f.properties;
     const use = p.military === "military" ? "military" : p.use === "private" ? "private" : "";
@@ -167,6 +175,7 @@ function TileAirports(props: Props) {
   return (
     <>
       <MapMarksList fields={inView ?? []} onSelect={props.onSelect} />
+      <AirportWeatherGl fields={reporting} worse={props.worse} />
       <AirportHover layer="airports" />
     </>
   );
