@@ -43,7 +43,8 @@ import app.wingtipmaps.android.ui.SectionTitle
  * registration and type, and every figure with where it comes from --
  * the type's book, a photographed handbook page, or the pilot -- each a
  * tap to edit in place, a figure of the pilot's over a book figure with
- * Reset to Book Figure under it. Opened at `focus` from an ask's Edit.
+ * Reset to Book Figure under it, then its endurance (EnduranceSection).
+ * Opened at `focus` from an ask's Edit.
  * The Figures section of the airplane's card (AirplaneCard).
  */
 @Composable
@@ -76,6 +77,7 @@ fun AirplaneProfileScreen(airplane: AirplaneNow, focus: String?, model: Airplane
             else FigureRow(airplane, key, onEdit = { model.edit(key.key, airplane.value(key)) }, onReset = { model.reset(airplane, key, own) })
         }
         if (state.editing == null) ProblemLine(state.problem)
+        EnduranceSection(airplane, onEdit = { key -> model.edit(key.key, airplane.value(key)) })
     }
 }
 
