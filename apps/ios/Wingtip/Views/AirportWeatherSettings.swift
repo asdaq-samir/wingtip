@@ -10,7 +10,8 @@ enum AirportWeatherStyle: String, CaseIterable, Identifiable, Sendable {
 
     var id: String { rawValue }
 
-    var label: String {
+    /// The segment's word, a resource so the string catalog gathers it.
+    var label: LocalizedStringResource {
         switch self {
         case .off: "Off"
         case .halo: "Halo"
