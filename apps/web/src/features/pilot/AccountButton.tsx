@@ -4,11 +4,12 @@ import { useConsoleOpen } from "../../lib/mapChrome";
 import { wantScreen } from "../../lib/navigation/wanted";
 import { pilotQuery } from "../../lib/queryClient";
 import { AccountFace } from "./AccountFace";
-import { ACCOUNT_BUTTON } from "./accountLook";
+import { accountButton } from "./accountLook";
 
 /**
- * The account button at the sheet's title row: the pilot's initials, or a
- * person's glyph signed out, in the tint, 44 points round. A tap opens the
+ * The account button at the sheet's title row: the pilot's initials on the
+ * tint, or a person's glyph in the tint on grey signed out, 36 points
+ * round with a 44-point hit area (accountLook). A tap opens the
  * account and settings page itself (PilotPanel), at the owner's word
  * (2026-11-10: "When tapping the avatar just open the settings"), where a
  * menu of the page's rows came first; every row it held is on the page.
@@ -28,7 +29,7 @@ export default function AccountButton({ className }: { className?: string }) {
         wantScreen("setup");
         useConsoleOpen.getState().setOpen(true);
       }}
-      className={cn(ACCOUNT_BUTTON, className)}
+      className={cn(accountButton(!!name), className)}
     >
       <AccountFace name={name} />
     </button>
