@@ -223,10 +223,11 @@ export default function MapPanel(props: Props) {
   }, [panel, fromBottom, ask, halfEdge, onPhone, life.sizeRef]);
 
   // A card opened comes up half way at the least, all the way for a
-  // search; the last put away, the panel goes back to where it was.
+  // search; the last put away, the panel goes back to where it was. By where it is going, not its
+  // layout, kept at half on its way down: a card reopened then landed at the pill, out of sight.
   const raisedFrom = useRef<PanelState | null>(null);
   useEffect(() => {
-    const now = life.sizeRef.current;
+    const now = life.snapRef.current;
     if (raised) {
       raisedFrom.current ??= now;
       if (RANK[now] < RANK[raised]) ask(raised);
@@ -235,7 +236,7 @@ export default function MapPanel(props: Props) {
       raisedFrom.current = null;
       if (back !== now) ask(back);
     }
-  }, [raised, ask, life.sizeRef]);
+  }, [raised, ask, life.snapRef]);
 
   // The panel's size on <body>, for index.css's rules over the map.
   useLayoutEffect(() => {
