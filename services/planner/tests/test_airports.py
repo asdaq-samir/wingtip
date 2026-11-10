@@ -201,6 +201,41 @@ def test_the_fields_in_view_carry_their_metars_flight_category(monkeypatch):
     assert [a["flight_category"] for a in body["airports"]] == [None, None]
 
 
+def test_the_fields_in_view_carry_their_metar_for_the_maps_marks(monkeypatch):
+    # The station model and the wind arrow read the METAR as the engine
+    # read it; the least crosswind only where the wind earns an arrow
+    # (wind_arrow: 10 kt or more, or gusting), from the field's runways.
+    from wingtip import map_weather
+
+    calm_field = {**DULUTH, "ident": "1D2", "source_ident": "1D2", "kind": "small"}
+    monkeypatch.setattr(airports, "places_in", lambda *args, **kwargs: [{**DULUTH}, calm_field])
+    monkeypatch.setattr(weather, "reporting_idents", lambda: {"KDLH", "1D2"})
+    windy = {"flight_category": "MVFR", "wind_dir_true_deg": 220, "wind_speed_kt": 18, "wind_gust_kt": 26}
+    windy |= {"visibility_sm": 2, "wx": "BR", "ceiling_ft": 800, "ceiling_unknown": False}
+    light = {"flight_category": "VFR", "wind_dir_true_deg": 220, "wind_speed_kt": 5, "wx": "", "visibility_sm": 10}
+    monkeypatch.setattr(weather, "metar_for_idents", lambda idents: {"KDLH": windy, "1D2": light})
+    asked = []
+    monkeypatch.setattr(
+        map_weather, "end_headings", lambda ident: asked.append(ident) or [[["18", 180.0], ["36", 360.0]], [["27", 270.0], ["09", 90.0]]]
+    )
+    monkeypatch.setattr(map_weather, "magnetic_variation_deg", lambda lat, lon: 0.0)
+    body = client.get("/api/airports/in-view", params={"south": 46, "west": -93, "north": 47, "east": -92}).json()
+    dlh, small = body["airports"]
+    # 40 degrees off runway 18, the gust's 26 sin 40 = 16.7: 17 kt.
+    assert dlh["weather"] == {
+        "wind_dir_true_deg": 220,
+        "wind_speed_kt": 18,
+        "wind_gust_kt": 26,
+        "visibility_sm": 2,
+        "wx": "BR",
+        "ceiling_ft": 800,
+        "ceiling_unknown": False,
+        "crosswind_kt": 17,
+    }
+    assert small["weather"]["crosswind_kt"] is None and small["weather"]["wx"] is None
+    assert asked == ["KDLH"]
+
+
 def test_the_fields_in_view_carry_their_surface_class_for_their_marks(monkeypatch):
     # Asked once for all of them, each field's own point.
     small = {**DULUTH, "ident": "1D2", "source_ident": "1D2", "lat": 46.5, "lon": -92.5, "kind": "small"}

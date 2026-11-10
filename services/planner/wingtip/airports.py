@@ -653,6 +653,12 @@ def nearest_abroad(lat: float, lon: float, limit: int = 3, cache_path: Path = DE
     ]
 
 
+def load_runways(cache_path: Path = RUNWAYS_CACHE_PATH) -> pd.DataFrame:
+    """OurAirports' runways table, held in memory after the first read as
+    load_airports' is. Callers must treat the frame as read-only."""
+    return _load_table(RUNWAYS_URL, cache_path)
+
+
 def get_runways(ident: str, cache_path: Path = RUNWAYS_CACHE_PATH) -> list[dict]:
     """This airport's runways, for the briefing's own airport-
     information section. Keyed by `airport_ident` directly --

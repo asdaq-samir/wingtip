@@ -39,6 +39,8 @@ data class AircraftProfiles (
  */
 @Serializable
 data class AircraftProfileSummary (
+    val crosswind: DemonstratedCrosswind? = null,
+
     @SerialName("cruise_tas_kt")
     val cruiseTasKt: Double,
 
@@ -55,6 +57,19 @@ data class AircraftProfileSummary (
     val taxiFuelGal: Double? = null,
 
     val type: String
+)
+
+/**
+ * The strongest crosswind the POH says the aeroplane was shown to
+ * take off and land in: not a limitation, but past it the pilot is
+ * beyond what was tested.
+ */
+@Serializable
+data class DemonstratedCrosswind (
+    @SerialName("demonstrated_kt")
+    val demonstratedKt: Double,
+
+    val source: String
 )
 
 /**
@@ -536,22 +551,15 @@ data class NearbyPlace (
 
 @Serializable
 data class AirportsInView (
-    val airports: List<AirportPin>
+    val airports: List<AirportInView>
 )
 
 /**
- * A landing field the map can open a card for: the ident pilots use,
- * where it is, and its size -- the bigger ones are kept when a wide
- * view holds more than the map asks for. `flight_category` is the
- * field's METAR's (VFR, MVFR, IFR, LIFR), for the map's weather chip:
- * None where it has no reporting station, or the weather could not be
- * asked. `military` is a field the armed services own (the FAA's
- * airport file, wingtip.faa_data.military_fields): "military" where a civil
- * airplane lands only with the service's permission, "joint" where a
- * civil airport shares it; None for every other field.
+ * A field on the map's own list (/api/airports/in-view): a pin, and
+ * its METAR as the map's marks read it, None where it has no report.
  */
 @Serializable
-data class AirportPin (
+data class AirportInView (
     @SerialName("airspace_class")
     val airspaceClass: String? = null,
 
@@ -571,7 +579,44 @@ data class AirportPin (
     @SerialName("private")
 
     val isPrivate: Boolean? = null,
-    val towered: Boolean? = null
+    val towered: Boolean? = null,
+    val weather: PinWeather? = null
+)
+
+/**
+ * A field's METAR as the map's station model and wind arrow read it
+ * (wingtip.map_weather): the wind (true, knots; no direction for a
+ * variable one), the visibility in statute miles and the weather with it
+ * as reported ("BR", "-TSRA"), the ceiling in feet AGL -- not known where
+ * `ceiling_unknown` (14 CFR 1.1) -- and `crosswind_kt`, the least
+ * crosswind on the field's runways, steady or gust (the engine's
+ * least_crosswind), there only where the wind earns an arrow (the
+ * engine's wind_arrow) and a runway end has a heading.
+ */
+@Serializable
+data class PinWeather (
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    @SerialName("ceiling_unknown")
+    val ceilingUnknown: Boolean? = null,
+
+    @SerialName("crosswind_kt")
+    val crosswindKt: Double? = null,
+
+    @SerialName("visibility_sm")
+    val visibilitySm: Double? = null,
+
+    @SerialName("wind_dir_true_deg")
+    val windDirTrueDeg: Double? = null,
+
+    @SerialName("wind_gust_kt")
+    val windGustKt: Double? = null,
+
+    @SerialName("wind_speed_kt")
+    val windSpeedKt: Double? = null,
+
+    val wx: String? = null
 )
 
 /**
@@ -2855,19 +2900,6 @@ data class EmergencyAirplane (
     val landing: ShortField? = null,
     val name: String,
     val type: String? = null
-)
-
-/**
- * The strongest crosswind the POH says the aeroplane was shown to
- * take off and land in: not a limitation, but past it the pilot is
- * beyond what was tested.
- */
-@Serializable
-data class DemonstratedCrosswind (
-    @SerialName("demonstrated_kt")
-    val demonstratedKt: Double,
-
-    val source: String
 )
 
 /**

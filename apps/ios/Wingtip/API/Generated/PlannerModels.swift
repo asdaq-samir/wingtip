@@ -27,12 +27,22 @@ struct APIAircraftProfiles: Codable, Equatable, Sendable {
 /// One of data/aircraft/*.json, for the nav log's aircraft picker.
 // MARK: - APIAircraftProfileSummary
 struct APIAircraftProfileSummary: Codable, Equatable, Sendable {
+    var crosswind: APIDemonstratedCrosswind?
     var cruiseTasKt, fuelBurnGph: Double
     var glide: APIGlideFigures?
     var name: String
     var serviceCeilingFt: Double
     var taxiFuelGal: Double?
     var type: String
+}
+
+/// The strongest crosswind the POH says the aeroplane was shown to
+/// take off and land in: not a limitation, but past it the pilot is
+/// beyond what was tested.
+// MARK: - APIDemonstratedCrosswind
+struct APIDemonstratedCrosswind: Codable, Equatable, Sendable {
+    var demonstratedKt: Double
+    var source: String
 }
 
 /// The POH's best-glide speed and glide ratio (Section 3). A pilot's
@@ -334,20 +344,13 @@ struct APINearbyPlace: Codable, Equatable, Sendable {
 
 // MARK: - APIAirportsInView
 struct APIAirportsInView: Codable, Equatable, Sendable {
-    var airports: [APIAirportPin]
+    var airports: [APIAirportInView]
 }
 
-/// A landing field the map can open a card for: the ident pilots use,
-/// where it is, and its size -- the bigger ones are kept when a wide
-/// view holds more than the map asks for. `flight_category` is the
-/// field's METAR's (VFR, MVFR, IFR, LIFR), for the map's weather chip:
-/// None where it has no reporting station, or the weather could not be
-/// asked. `military` is a field the armed services own (the FAA's
-/// airport file, wingtip.faa_data.military_fields): "military" where a civil
-/// airplane lands only with the service's permission, "joint" where a
-/// civil airport shares it; None for every other field.
-// MARK: - APIAirportPin
-struct APIAirportPin: Codable, Equatable, Sendable {
+/// A field on the map's own list (/api/airports/in-view): a pin, and
+/// its METAR as the map's marks read it, None where it has no report.
+// MARK: - APIAirportInView
+struct APIAirportInView: Codable, Equatable, Sendable {
     var airspaceClass, flightCategory: String?
     var ident, kind: String
     var lat, lon: Double
@@ -355,6 +358,7 @@ struct APIAirportPin: Codable, Equatable, Sendable {
     var name: String
     var primaryOf: String?
     var isPrivate, towered: Bool?
+    var weather: APIPinWeather?
 
     enum CodingKeys: String, CodingKey {
         case airspaceClass
@@ -362,8 +366,25 @@ struct APIAirportPin: Codable, Equatable, Sendable {
         case ident, kind, lat, lon, military, name
         case primaryOf
         case isPrivate = "private"
-        case towered
+        case towered, weather
     }
+}
+
+/// A field's METAR as the map's station model and wind arrow read it
+/// (wingtip.map_weather): the wind (true, knots; no direction for a
+/// variable one), the visibility in statute miles and the weather with it
+/// as reported ("BR", "-TSRA"), the ceiling in feet AGL -- not known where
+/// `ceiling_unknown` (14 CFR 1.1) -- and `crosswind_kt`, the least
+/// crosswind on the field's runways, steady or gust (the engine's
+/// least_crosswind), there only where the wind earns an arrow (the
+/// engine's wind_arrow) and a runway end has a heading.
+// MARK: - APIPinWeather
+struct APIPinWeather: Codable, Equatable, Sendable {
+    var ceilingFt: Double?
+    var ceilingUnknown: Bool?
+    var crosswindKt, visibilitySm, windDirTrueDeg, windGustKt: Double?
+    var windSpeedKt: Double?
+    var wx: String?
 }
 
 /// The airspace over a point on the chart, from the ground up: the
@@ -1730,15 +1751,6 @@ struct APIEmergencyAirplane: Codable, Equatable, Sendable {
     var landing: APIShortField?
     var name: String
     var type: String?
-}
-
-/// The strongest crosswind the POH says the aeroplane was shown to
-/// take off and land in: not a limitation, but past it the pilot is
-/// beyond what was tested.
-// MARK: - APIDemonstratedCrosswind
-struct APIDemonstratedCrosswind: Codable, Equatable, Sendable {
-    var demonstratedKt: Double
-    var source: String
 }
 
 /// A POH's short-field takeoff or landing distances: a table per

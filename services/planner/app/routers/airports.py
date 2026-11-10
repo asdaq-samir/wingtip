@@ -31,6 +31,7 @@ from wingtip import (
     geo,
     geocode,
     glmp,
+    map_weather,
     nearby,
     pattern,
     places,
@@ -129,6 +130,8 @@ def airports_in_view(
                 "airspace_class": cls,
                 "primary_of": primaries.get(p.get("faa_id") or ""),
                 "towered": p["ident"].upper() in towers or p.get("source_ident", "").upper() in towers,
+                "weather": map_weather.marks_of([p["ident"], p.get("source_ident")], p["lat"], p["lon"], metars.get(p["source_ident"]))
+                or None,
             }
             for p, cls, (military, private) in zip(places, classes, _owners(places))
         ]

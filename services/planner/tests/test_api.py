@@ -262,6 +262,8 @@ def test_aircraft_profiles_lists_the_stock_profiles():
     assert resp.status_code == 200
     names = {p["name"]: p for p in resp.json()["profiles"]}
     assert names["c172"]["cruise_tas_kt"] == 110 and names["c172"]["type"] == "Cessna 172"
+    # Its POH's demonstrated crosswind, for the map's wind arrows.
+    assert names["c172"]["crosswind"]["demonstrated_kt"] == 15
     # The same for every pilot: a browser and the CDN may keep the list.
     assert resp.headers["cache-control"] == "public, max-age=300, s-maxage=3600"
 

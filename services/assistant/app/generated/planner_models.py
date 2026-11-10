@@ -125,31 +125,6 @@ class AirportEnd(BaseModel):
     )
 
 
-class AirportPin(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
-    airspace_class: Annotated[
-        Literal['B', 'C', 'D', 'E', 'G'] | None, Field(title='Airspace Class')
-    ] = None
-    flight_category: Annotated[str | None, Field(title='Flight Category')] = None
-    ident: Annotated[str | None, Field(title='Ident')] = None
-    kind: Annotated[
-        Literal['large', 'medium', 'small', 'other'] | None, Field(title='Kind')
-    ] = None
-    lat: Annotated[float | None, Field(title='Lat')] = None
-    lon: Annotated[float | None, Field(title='Lon')] = None
-    military: Annotated[
-        Literal['military', 'joint'] | None, Field(title='Military')
-    ] = None
-    name: Annotated[str | None, Field(title='Name')] = None
-    primary_of: Annotated[Literal['B', 'C', 'D'] | None, Field(title='Primary Of')] = (
-        None
-    )
-    private: Annotated[bool | None, Field(title='Private')] = False
-    towered: Annotated[bool | None, Field(title='Towered')] = False
-
-
 class AirportSuggestion(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -159,13 +134,6 @@ class AirportSuggestion(BaseModel):
     municipality: Annotated[str | None, Field(title='Municipality')] = None
     name: Annotated[str | None, Field(title='Name')] = None
     region: Annotated[str | None, Field(title='Region')] = None
-
-
-class AirportsInView(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
-    airports: Annotated[list[AirportPin] | None, Field(title='Airports')] = None
 
 
 class AirspaceTransit(BaseModel):
@@ -2388,6 +2356,20 @@ class PilotNotesForgotten(BaseModel):
     removed: Annotated[int | None, Field(title='Removed')] = None
 
 
+class PinWeather(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    ceiling_ft: Annotated[float | None, Field(title='Ceiling Ft')] = None
+    ceiling_unknown: Annotated[bool | None, Field(title='Ceiling Unknown')] = False
+    crosswind_kt: Annotated[float | None, Field(title='Crosswind Kt')] = None
+    visibility_sm: Annotated[float | None, Field(title='Visibility Sm')] = None
+    wind_dir_true_deg: Annotated[float | None, Field(title='Wind Dir True Deg')] = None
+    wind_gust_kt: Annotated[float | None, Field(title='Wind Gust Kt')] = None
+    wind_speed_kt: Annotated[float | None, Field(title='Wind Speed Kt')] = None
+    wx: Annotated[str | None, Field(title='Wx')] = None
+
+
 class PipelineStage(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -3607,6 +3589,7 @@ class AircraftProfileSummary(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
+    crosswind: DemonstratedCrosswind | None = None
     cruise_tas_kt: Annotated[float | None, Field(title='Cruise Tas Kt')] = None
     fuel_burn_gph: Annotated[float | None, Field(title='Fuel Burn Gph')] = None
     glide: GlideFigures | None = None
@@ -3633,6 +3616,32 @@ class AirportAtis(BaseModel):
     )
     airport: Annotated[str | None, Field(title='Airport')] = None
     broadcasts: Annotated[list[DigitalAtis] | None, Field(title='Broadcasts')] = None
+
+
+class AirportInView(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    airspace_class: Annotated[
+        Literal['B', 'C', 'D', 'E', 'G'] | None, Field(title='Airspace Class')
+    ] = None
+    flight_category: Annotated[str | None, Field(title='Flight Category')] = None
+    ident: Annotated[str | None, Field(title='Ident')] = None
+    kind: Annotated[
+        Literal['large', 'medium', 'small', 'other'] | None, Field(title='Kind')
+    ] = None
+    lat: Annotated[float | None, Field(title='Lat')] = None
+    lon: Annotated[float | None, Field(title='Lon')] = None
+    military: Annotated[
+        Literal['military', 'joint'] | None, Field(title='Military')
+    ] = None
+    name: Annotated[str | None, Field(title='Name')] = None
+    primary_of: Annotated[Literal['B', 'C', 'D'] | None, Field(title='Primary Of')] = (
+        None
+    )
+    private: Annotated[bool | None, Field(title='Private')] = False
+    towered: Annotated[bool | None, Field(title='Towered')] = False
+    weather: PinWeather | None = None
 
 
 class AirportPhotos(BaseModel):
@@ -3689,6 +3698,13 @@ class AirportServices(BaseModel):
         Literal['major', 'minor'] | None, Field(title='Powerplant Repair')
     ] = None
     tie_down: Annotated[bool | None, Field(title='Tie Down')] = False
+
+
+class AirportsInView(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    airports: Annotated[list[AirportInView] | None, Field(title='Airports')] = None
 
 
 class AlternateCheck(BaseModel):
