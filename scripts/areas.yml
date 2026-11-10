@@ -35,7 +35,7 @@ areas:
       # The design tokens and every app's generated copy, checked there.
       - design/**
       - scripts/build/design-tokens.sh
-      - scripts/build/design_tokens.py
+      - scripts/build/design_tokens*.py
       # The screens' links and every app's generated list, checked there.
       - scripts/build/screens.sh
       - scripts/build/screens.py
