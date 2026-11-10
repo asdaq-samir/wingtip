@@ -565,11 +565,12 @@ export default function PlaceCard({
           there back half way (CardTabBar). Not over a card that could not
           be had. */}
       {!(error && !place) && (
-        <Tabs value={tab} className="gap-0">
+        <Tabs value={tab} onValueChange={(next) => setPicked(next as typeof tab)} className="gap-0">
           <CardTabBar
             tabs={CARD_TABS}
             value={tab}
             onPick={setPicked}
+            activateOnFocus
             testIdPrefix="place-tab"
             disabled={!place}
             raise={{ onExpand: raise, onLower }}
@@ -581,7 +582,6 @@ export default function PlaceCard({
           <CardTabPanel value="radio" className="space-y-0">
             {place && <PlaceInfoTab place={place} where={where} services={services} />}
           </CardTabPanel>
-
           <CardTabPanel value="weather" className="space-y-0">
             <PlaceWeatherTab
               ident={ident}
