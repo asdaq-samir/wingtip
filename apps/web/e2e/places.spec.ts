@@ -23,17 +23,14 @@ import {
 } from "./helpers";
 
 /**
- * Airports as places, as Maps has them: a tap on one on the chart opens
- * its card in the panel -- its name, what kind of field it is, the
- * weather there as pilots read it -- with Fly Here, Weather and
- * Frequencies; the card is the address's (?place=) and puts itself away.
+ * Airports as places, as Maps has them: a tap on one on the chart opens its card in the panel -- its name, what kind of field it is, the
+ * weather there as pilots read it -- with Fly Here, Weather and Frequencies; the card is the address's (?place=) and puts itself away.
  */
 
 const card = (page: Page) => sideDrawer(page).getByTestId("place-card");
 
 /** The card's answer for `ident` with its weather as given: its own
- *  report, or none and the nearest station's; its TAF too where the test
- *  gives one, none where it gives null. */
+ *  report, or none and the nearest station's; its TAF too where the test gives one, none where it gives null. */
 async function cardWeather(
   page: Page,
   ident: string,
@@ -52,6 +49,13 @@ async function cardWeather(
   );
 }
 
+test("the departure's own card says no distance from itself while the pilot's position is not known", async ({ page }) => {
+  await page.goto("/app/plan?dep=C81&dest=KDLH&place=C81");
+  await settle(page);
+  // Its elevation alone: no "here of C81", as the phones said no "From KMSN 0 nm" (PlaceCard's subtitleOf).
+  await expect(card(page).getByTestId("place-line")).toHaveText(/^Elevation [\d,]+ ft$/);
+});
+
 test("an airport's card has the field's pictures across its top, its ident over them, how far it is, its actions, its tabs right under them and the weather there", async ({
   page,
 }) => {
@@ -63,22 +67,19 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await settle(page);
   // Half way, as every card opens (the owner's ask).
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
-  // The owner's pick of the redesign (A2): the pictures across the top,
-  // the ident large over them with the name and the town under it.
+  // The owner's pick of the redesign (A2): the pictures across the top, the ident large over them with the name and the town under it.
   await expect(card(page).getByTestId("place-head")).toBeInViewport();
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
   // The name · the town on one line, the town a link (Apple Maps' place card, 2026-11-10).
   await expect(card(page).getByTestId("place-where")).toHaveText("Duluth International Airport · Duluth, MN");
   await expect(card(page).getByTestId("place-town")).toHaveText("Duluth, MN");
   await expect(card(page).getByTestId("place-ident")).toHaveCount(0);
-  // Measured from the route's departure while the pilot's own position
-  // is not known.
+  // Measured from the route's departure while the pilot's own position is not known.
   await expect(card(page).getByTestId("place-line")).toHaveText(/^\d+ nm NW of C81 · Elevation [\d,]+ ft$/);
   // Its share and close at the title's right; the card the whole sheet, no search over it.
   for (const id of ["place-share", "place-close"]) await expect(card(page).getByTestId(id)).toBeInViewport();
   await expect(firstRow(page)).toBeHidden();
-  // Its four tiles in a row at half -- no Add Stop for the route's own
-  // destination, Weather the last -- the pictures and the tabs under them, Info open.
+  // Its four tiles in a row at half -- no Add Stop for the route's destination, Weather last -- Info open.
   for (const id of ["fly-here", "place-weather-action", "place-call", "place-favorite"])
     await expect(card(page).getByTestId(id)).toBeInViewport({ ratio: 1 });
   await expect(card(page).getByTestId("place-add-stop")).toHaveCount(0);

@@ -17,6 +17,7 @@ import SwiftUI
 /// is answered on the strip itself (StripAnswerCard); why not is said
 /// under the field (lib/problems' rule: where it happens, never a toast).
 struct StripSheetView: View {
+    @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(Session.self) private var session
@@ -207,7 +208,7 @@ struct StripSheetView: View {
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 if let problem = listener.problem { ProblemLine(problem) }
                 ForEach(listener.heard.suffix(2)) { t in
-                    Text(t.text).lineLimit(2).foregroundStyle(t.forUs ? Color.accentColor : Color.primary)
+                    Text(t.text).lineLimit(2).foregroundStyle(t.forUs ? accent : Color.primary)
                 }
             }
             .font(ChartInk.detail)

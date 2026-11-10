@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 test("the dry run's bar is the map's playback bar: Play a toggle, Space on the chart, the speed a menu", async ({ page }) => {
   // docs/design/web.md §11: the same bar as the radar loop's

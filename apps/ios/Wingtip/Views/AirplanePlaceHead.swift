@@ -8,6 +8,7 @@ import SwiftUI
 /// facts -- cruise, burn, usable fuel and glide -- each the engine's
 /// figure for this airplane (airplane_figures), as the rows under it.
 struct AirplanePlaceHead: View {
+    @Environment(\.lookAccent) private var accent
     let model: AirplaneProfileModel
     let fly: () -> Void
     @Environment(Plan.self) private var plan
@@ -22,7 +23,7 @@ struct AirplanePlaceHead: View {
                     .font(.largeTitle)
                     .foregroundStyle(.tint)
                     .frame(width: tile, height: tile)
-                    .background(Color.accentColor.opacity(0.14), in: RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous))
+                    .background(accent.opacity(0.14), in: RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous))
                     .accessibilityHidden(true)
                     .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
             }

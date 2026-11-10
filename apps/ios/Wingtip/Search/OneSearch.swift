@@ -43,7 +43,7 @@ struct OneSearch: ViewModifier {
     @Environment(OwnShip.self) private var ownShip
     @Environment(Session.self) private var session
     @State private var profile: ProfileAsk?
-    private var listener: ClearanceListener { .shared }
+    private var voice: VoiceInput { .shared }
 
     private var runner: FieldRunner {
         FieldRunner(plan: plan, ownShip: ownShip, session: session, open: host.field,
@@ -53,7 +53,7 @@ struct OneSearch: ViewModifier {
     func body(content: Content) -> some View {
         content
             .searchable(text: $model.text, isPresented: $model.presented,
-                        placement: .navigationBarDrawer(displayMode: .always), prompt: Text(OneSearchModel.prompt))
+                        placement: .navigationBarDrawer(displayMode: .always), prompt: Text(voice.listening ? OneSearchModel.speak : OneSearchModel.prompt))
             .searchSuggestions {
                 if let problem = model.problem {
                     Section { ProblemLine(problem) }
@@ -67,7 +67,7 @@ struct OneSearch: ViewModifier {
             .onSubmit(of: .search) { Task { await send(model.text) } }
             .onChange(of: model.text) { _, _ in model.problem = nil; model.typed() }
             .toolbar {
-                SearchBarItems(model: model, hear: listener.canListen ? { Task { await hear() } } : nil, open: host.page)
+                SearchBarItems(model: model, hear: voice.canListen ? { Task { await hear() } } : nil, open: host.page)
             }
             .airplaneProfile($profile)
             .onChange(of: model.profileTail, initial: true) { _, tail in
@@ -117,16 +117,16 @@ struct OneSearch: ViewModifier {
     }
 
     /// One line said: the route's idents given the recognizer as words to
-    /// listen for, so "KMSN" is not "Kay Em Ess En"; the words shown in
-    /// the field, then done as typed.
+    /// listen for, so "KMSN" is not "Kay Em Ess En"; the words appearing
+    /// in the field as they are said, then done as typed.
     private func hear() async {
         model.problem = nil
-        model.hearing = true
-        let said = await listener.hearOnce(words: plan.idents.filter { !$0.isEmpty })
-        model.hearing = false
+        model.text = ""
+        model.presented = true
+        let said = await voice.hear(words: plan.idents.filter { !$0.isEmpty }) { model.text = $0 }
         guard let said, !said.isEmpty else {
             model.presented = true
-            model.problem = listener.problem ?? "Nothing was heard."
+            model.problem = voice.problem ?? "Nothing was heard."
             return
         }
         model.text = said

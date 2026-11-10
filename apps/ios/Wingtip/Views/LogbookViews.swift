@@ -329,8 +329,9 @@ struct LogbookView: View {
         guard session.signedIn else { flights.entries = nil; currency = nil; return }
         do {
             let list = try await Gateway.logbook()
-            // A flight whose Undo still stands stays off the list.
-            let held = Set(flights.removed.map(\.entry.id))
+            // A flight whose Undo still stands, or whose delete an earlier
+            // launch left to send, stays off the list.
+            let held = flights.held
             flights.entries = list.filter { !held.contains($0.id) }
             currency = try await Gateway.currency()
             reminders = try? await Gateway.reminders()

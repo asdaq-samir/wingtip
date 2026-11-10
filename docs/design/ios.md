@@ -47,8 +47,10 @@ Companion docs:
   `color.theme.light.tint`, #0066CC (5.6:1 on white), at night
   `color.theme.dark.tint`, #57A8FF, and in sunlight
   `color.theme.sunlight.tint`, #0047A0.
-  - It is set as the app's `AccentColor`, which is generated from the
-    tokens, so stock controls pick it up.
+  - It is set at the root at run time for the brand looks (`lookTint`:
+    SwiftUI's `.tint` and the window's `tintColor`, which the alerts and
+    menus the system draws take), so stock controls pick it up. The app
+    names no global accent colour, so Native gets the system's own.
   - Plain text never takes the tint.
   - HIG Color asks for colour on the *background* of a primary action
     on Liquid Glass, not on its symbol ([HIG Color][hig-color]). So the
@@ -1101,8 +1103,13 @@ instead of animating.
   type" ([HIG Text fields][hig-textfields]).
 - **HIG Generative AI** (updated 2026-06-08): let people refine results
   ([What's new][hig-whatsnew]).
-- **The owner's mic rule:** tapping the mic shows a "Listening…" pill
-  with the live words and chips, no card.
+- **The owner's split (2026-11-10):** the mic (Ask by voice, `VoiceInput`)
+  and the radio (`ClearanceListener`) are two features with two looks.
+  The mic is the system's `mic`, breathing while it listens, the field
+  saying "Speak your question" and the words typed into it as said. The
+  radio is `antenna.radiowaves.left.and.right` with the variable-colour
+  effect, "Listening to the radio…" and "Heard: …", in its own places
+  (the captions, the ATC card, this sheet, the Live Activity).
 
 No Apple app shows a clearance. The structure is the HIG's and the
 owner's (**[inference]**).
@@ -1163,8 +1170,14 @@ reader could not parse plays a warning notification once.
   ([HIG Dark Mode][hig-darkmode]).
   - Wingtip's Look (Wingtip, Glass Cockpit, Chart ink, Native) and
     Sunlight are a cockpit need, not a light/dark switch, so they stay.
-    Native is iOS's own: `systemBlue`, the system's labels and grouped
-    grounds, by name (design/tokens.json `color.system`).
+    Native is iOS out of the box (the owner, 2026-11-10): no tint of the
+    app's, the system's labels and grouped grounds by name
+    (design/tokens.json `color.system`), the text styles as SwiftUI sets
+    them, no brand haptics, corners or shadows (`Look.isStock` gates each
+    modifier). The app names no global accent colour (project.yml), so an
+    untinted control in Native draws in the system's own, `systemBlue`.
+    The chart, the course, airspace, flight categories and the caution,
+    go and no-go colours stay as they are in every look.
   - Night follows the system.
 
 **Structure, top to bottom (inset-grouped `List`):**

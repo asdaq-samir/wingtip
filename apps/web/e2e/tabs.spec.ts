@@ -1,5 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { settle, sideDrawer, slow, openTab, openSection, panelTabs, openBrief, closeCard } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * The planning panel's tabs, the flight's phases in the order flown (the

@@ -14,6 +14,7 @@ import {
   sideDrawer,
   slow,
 } from "./helpers";
+import { fromRest } from "./startState";
 
 /**
  * The regressions this file exists to catch (see playwright.config.ts
@@ -50,20 +51,23 @@ test.describe("/app/plan", () => {
   // route is entered, let's have tabs on the pill"), a route's figures
   // pinned under them ("If a route is entered, then let's pin the
   // calculations at the bottom"); the grabber half way.
-  test("the panel rests as the one search, a route's figures in its place, and half way has the route's box", async ({ page }) => {
+  test("the panel rests as the one search, a route's figures under it, and half way has the route's box", async ({ page }) => {
     await page.goto("/app/plan");
     await settle(page);
+    await fromRest(page);
     await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
     await expect(firstRow(page)).toBeVisible();
     await expect(sideDrawer(page).getByTestId("route-type")).toBeHidden();
     await expect(sideDrawer(page).getByTestId("flight-line")).toHaveCount(0);
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
+    await fromRest(page);
     await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
-    // With a route, its figures in the search's place (a no-break space
-    // between a figure and its unit, so \s).
+    // With a route, the one search is still the pill (the one-search
+    // design, 2026-11-09: MapPanel's bar) and the route's figures are pinned
+    // under it (a no-break space between a figure and its unit, so \s).
     await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
-    await expect(firstRow(page)).toBeHidden();
+    await expect(firstRow(page)).toBeVisible();
     await page.getByTestId("sidebar-trigger-button").click();
     await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
     // The plan, the sheet's main content with a route.
@@ -78,7 +82,7 @@ test.describe("/app/plan", () => {
   test("a fresh load opens as the pill, a route's link at rest, and a reload forgets the route", async ({ page }) => {
     await page.goto("/app/plan");
     await settle(page);
-    await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
+    await fromRest(page);
     await expect(page.getByTestId("search-close")).toHaveCount(0);
 
     // The grabber on the panel's far edge, once the panel has come to rest.
@@ -96,7 +100,7 @@ test.describe("/app/plan", () => {
 
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
-    await expectDrawerClosed(page);
+    await fromRest(page);
     // Share among the route's chips half way.
     await openPanel(page);
     await sideDrawer(page).getByTestId("share-route").click();
@@ -108,7 +112,7 @@ test.describe("/app/plan", () => {
     await page.reload();
     await settle(page);
     await expect(page).not.toHaveURL(/[?&]dep=/);
-    await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
+    await fromRest(page);
   });
 
   test("sidebar opens from its own trigger, closes on Escape", { tag: "@smoke" }, async ({ page }) => {

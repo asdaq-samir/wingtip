@@ -162,13 +162,13 @@ export default function MapControls() {
           )}
         </div>
       </div>
-      {/* The radio's microphone (RadioButton) in a glass circle of its own
+      {/* Comms assist, the radio's button (RadioButton), in a glass circle of its own
         at the left, level with the group, where the Stops were (it was
         Fly-in Food before them), at the owner's ask (2026-11-02), alone:
         the route's Play above it went to the route's ••• menu as Profile
         (2026-11-02, "just the mic"). The circle is the pill too: tapped,
         it widens to the right into the listening pill (RadioPill) with
-        the mic's glyph become the waveform at its end, and shrinks back
+        the radio's glyph become the radio's level at its end, and shrinks back
         once the pill is put away -- the button and the pill were two
         things apart, one here and one at the top of the map (the owner,
         2026-11-03). The width eases through a grid column from 0fr to

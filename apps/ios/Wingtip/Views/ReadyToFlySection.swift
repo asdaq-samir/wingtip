@@ -6,6 +6,7 @@ import SwiftUI
 /// The words, the order and what is missing are the engine's
 /// (`ready_to_fly`); this draws them.
 struct ReadyToFlyRows: View {
+    @Environment(\.lookAccent) private var accent
     @Environment(\.dismiss) private var dismiss
     private var model: ReadyToFly { .shared }
     /// The airplane picker and the altitude wheel, opened by their fixes
@@ -64,7 +65,7 @@ struct ReadyToFlyRows: View {
                 // The whole row is the tap, its 44 points the list's own.
                 .contentShape(Rectangle())
             }
-            .tint(.accentColor)
+            .tint(accent)
             .accessibilityHint(item.detail)
         } else {
             Text(item.line).font(WingtipType.row).foregroundStyle(.secondary)

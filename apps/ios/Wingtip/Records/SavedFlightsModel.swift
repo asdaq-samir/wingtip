@@ -4,7 +4,9 @@ import Observation
 /// The Saved Flights screen's state and its calls: the pilot's flights
 /// from the gateway, one at a time named and noted in its own row (Edit,
 /// then Return or Save sends PATCH /api/flights/{id}), and a delete held
-/// back, with the system's Undo, until the list is left (docs/navigation.md).
+/// back, with the system's Undo, until the list is left (docs/navigation.md),
+/// and kept on the phone till then (PendingDeletes), so one made just before
+/// the app is closed is sent at the next launch.
 @MainActor
 @Observable
 final class SavedFlightsModel {
@@ -55,8 +57,12 @@ final class SavedFlightsModel {
     /// The link just made, for the share sheet; nil once it is put away.
     var sendingLink: Sending?
     @ObservationIgnored private let calls: Calls
+    @ObservationIgnored private let pending: PendingDeletes
 
-    init(calls: Calls = .gateway) { self.calls = calls }
+    init(calls: Calls = .gateway, pending: PendingDeletes = PendingDeletes()) {
+        self.calls = calls
+        self.pending = pending
+    }
 
     /// The flight's name where it has one, else its route.
     static func title(_ flight: SavedFlight) -> String {
@@ -81,7 +87,10 @@ final class SavedFlightsModel {
 
     func load() async {
         do {
-            flights = try await calls.list()
+            // A flight whose Undo still stands, or whose delete is still to
+            // be sent from an earlier launch, stays off the list.
+            let held = pending.ids(.flight)
+            flights = try await calls.list().filter { !held.contains($0.id) }
             problem = nil
         } catch {
             problem = "Your flights could not be fetched: \(error.localizedDescription)"
@@ -147,12 +156,14 @@ final class SavedFlightsModel {
         if editingID == flight.id { cancelEdit() }
         flights.remove(at: at)
         removed.append((flight, at))
+        pending.hold(.flight, flight.id)
         undo?.register(self, named: "Delete Flight") { $0.undoDelete(undo: undo) }
     }
 
     /// The last flight deleted put back where it was; its redo deletes it again.
     func undoDelete(undo: UndoManager? = nil) {
         guard let last = removed.popLast() else { return }
+        pending.release(.flight, last.flight.id)
         flights.insert(last.flight, at: min(last.at, flights.count))
         undo?.register(self, named: "Delete Flight") { $0.delete(last.flight, undo: undo) }
     }
@@ -165,6 +176,7 @@ final class SavedFlightsModel {
             do { try await calls.delete(flight.id) } catch {
                 problem = "\(Self.title(flight)) could not be deleted: \(error.localizedDescription)"
             }
+            pending.release(.flight, flight.id)
         }
     }
 

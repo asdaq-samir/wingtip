@@ -1,6 +1,8 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
 import { closeConsole, library, openConsole, controlsInSight } from "./helpers";
 import { NO_OWN_FIGURES } from "./airplaneMocks";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * The pilot console's two saves, each answered only when the test lets

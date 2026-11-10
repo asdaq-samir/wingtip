@@ -49,15 +49,16 @@ struct ChartInk: Equatable, Sendable {
     /// The scheme for the appearance.
     static func scheme(dark: Bool) -> ChartInk { dark ? night : light }
 
-    /// The strip in the Native look: iOS's grouped grounds, labels and
-    /// blue (WingtipPalette.nativeLight, .nativeDark, system colours by
-    /// name), the chart's inks and the states kept as they are, being
-    /// aviation's rather than the look's.
+    /// The strip in the Native look: iOS's grouped grounds and labels
+    /// (WingtipPalette.nativeLight, .nativeDark, system colours by name)
+    /// and the accent an untinted control draws in (systemBlue, Color.blue), the
+    /// chart's inks and the states kept as they are, being aviation's
+    /// rather than the look's.
     static func native(dark: Bool) -> ChartInk {
         let ink = scheme(dark: dark)
         let p = dark ? WingtipPalette.nativeDark : WingtipPalette.nativeLight
         return ChartInk(paper: Color(uiColor: p.sheet), card: Color(uiColor: p.card), magenta: ink.magenta, brown: ink.brown, field: ink.field,
-                        flown: ink.flown, tint: Color(uiColor: p.tint), caution: ink.caution, go: ink.go, stop: ink.stop,
+                        flown: ink.flown, tint: .blue, caution: ink.caution, go: ink.go, stop: ink.stop,
                         ink: Color(uiColor: p.foreground), muted: Color(uiColor: p.mutedForeground), night: dark)
     }
 
@@ -121,7 +122,7 @@ extension EnvironmentValues {
 }
 
 /// The theme put in the environment for the appearance, and the tint set
-/// for every control under it.
+/// for every control under it, none in Native (Look.isStock).
 private struct ChartInkTheme: ViewModifier {
     @Environment(\.colorScheme) private var scheme
     @AppStorage(Look.key) private var look = Look.standard.rawValue
@@ -129,38 +130,49 @@ private struct ChartInkTheme: ViewModifier {
     func body(content: Content) -> some View {
         let dark = scheme == .dark
         let picked = Look(rawValue: look) ?? .standard
-        let ink = picked == .native ? ChartInk.native(dark: dark) : ChartInk.scheme(dark: dark).tinted(Color(uiColor: picked.tint(dark: dark)))
+        let ink = picked.isStock ? ChartInk.native(dark: dark) : ChartInk.scheme(dark: dark).tinted(Color(uiColor: picked.tint(dark: dark)))
         content
             .environment(\.chartInk, ink)
-            .tint(ink.tint)
+            .tint(picked.isStock ? nil : ink.tint)
     }
 }
 
 /// The condensed letterspaced capitals of a label, an ident or a chip's
 /// words: the web's Barlow Condensed role, in SF Pro's condensed width.
+/// In Native (Look.isStock) the text style as the system sets it, in its
+/// own width, case and spacing.
 private struct CondensedCaps: ViewModifier {
     let size: Font.TextStyle
     let weight: Font.Weight
+    @Environment(\.look) private var look
 
     func body(content: Content) -> some View {
+        let stock = look.isStock
         content
             .font(Font.system(size, design: .default).weight(weight))
-            .fontWidth(.condensed)
-            .textCase(.uppercase)
-            .tracking(WingtipType.labelTracking)
+            .fontWidth(stock ? nil : .condensed)
+            .textCase(stock ? nil : .uppercase)
+            .tracking(stock ? 0 : WingtipType.labelTracking)
     }
 }
 
 /// A card of the strip: 18-point corners, the card's colour on the
 /// paper, a hair of shadow (the canvas's boards: "white cards with a
-/// 4 px shadow, 18 px corners").
+/// 4 px shadow, 18 px corners"). In Native (Look.isStock) no shadow, and
+/// the 10-point corner of the system's own grouped box (GroupBox, an inset
+/// grouped list's cell), on the system's grouped ground.
 private struct InkCard: ViewModifier {
     @Environment(\.chartInk) private var ink
+    @Environment(\.look) private var look
 
     func body(content: Content) -> some View {
-        content
-            .background(ink.card, in: RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous))
-            .shadow(color: Color.black.opacity(ink.night ? 0.3 : 0.08), radius: 4, x: 0, y: 1)
+        if look.isStock {
+            content.background(ink.card, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        } else {
+            content
+                .background(ink.card, in: RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous))
+                .shadow(color: Color.black.opacity(ink.night ? 0.3 : 0.08), radius: 4, x: 0, y: 1)
+        }
     }
 }
 

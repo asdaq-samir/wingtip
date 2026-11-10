@@ -14,7 +14,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
@@ -57,6 +56,7 @@ import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
+import app.wingtipmaps.android.ui.WingtipIcons
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 import java.util.Locale
 
@@ -122,7 +122,7 @@ fun ClearanceSheet(plan: Plan, fix: OwnShip.Fix?, onClose: () -> Unit) {
         actions = {
             if (radio != null) {
                 FilledTonalButton(onClick = { if (listening) model.stopListening() else withMic(model::listen) }) {
-                    Icon(if (listening) Icons.Filled.Stop else Icons.Filled.Mic, contentDescription = null)
+                    Icon(if (listening) Icons.Filled.Stop else WingtipIcons.radio, contentDescription = null)
                     Text(stringResource(if (listening) R.string.clearance_stop else R.string.clearance_listen), Modifier.padding(start = WingtipSpace.Xs))
                 }
             }

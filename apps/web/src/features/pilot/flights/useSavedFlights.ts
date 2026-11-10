@@ -8,6 +8,7 @@ import type { FlightSummary } from "../../../lib/api/types";
 import { done } from "../../../lib/doneNote";
 import { toast } from "../../../lib/toast";
 import { useOptimisticList } from "../../../lib/optimisticList";
+import { holdDelete, releaseDelete, usePendingDeletes } from "../../../lib/pendingDeletes";
 import { flightsQuery } from "../../../lib/queryClient";
 import { flightEdit, flightEditProblem, flightTitle, type FlightEditRequest } from "./flightEdit";
 
@@ -30,17 +31,19 @@ type Draft = { name: string; notes: string };
  * out at once, with a toast's Undo (the owner's "Undo after destructive
  * edits", docs/navigation.md), and is sent only once the Undo has gone
  * unpressed: the flight is the server's, and can't be filed again as it
- * was (its id, its share). A refused one comes back, with the alert every
- * failed action has (the mutation cache's).
+ * was (its id, its share). Until then it is kept in this browser
+ * (lib/pendingDeletes), so one deleted just before the tab is closed is
+ * sent at the next load, not back in the list. A refused one comes back,
+ * with the alert every failed action has (the mutation cache's).
  */
 export function useSavedFlights() {
   const queryClient = useQueryClient();
   const asked = useQuery(flightsQuery);
   const [optimistic, change] = useOptimisticList(asked.data);
   const [editing, setEditing] = useState(false);
-  // The flights deleted whose Undo is still up: out of the list, not yet
-  // sent.
-  const [deleting, setDeleting] = useState<ReadonlySet<number>>(new Set());
+  // The flights deleted whose Undo is still up, or whose tab was closed
+  // first: out of the list, not yet sent.
+  const deleting = usePendingDeletes("flight");
   const list = deleting.size ? optimistic?.filter((f) => !deleting.has(f.id)) : optimistic;
   // The flight whose row is its fields now, and what was typed in them.
   const [changing, setChanging] = useState<number | null>(null);
@@ -110,23 +113,17 @@ export function useSavedFlights() {
     ask({ send: flight, body });
   };
 
-  const back = (id: number) =>
-    setDeleting((now) => {
-      const next = new Set(now);
-      next.delete(id);
-      return next;
-    });
   /** Edit's minus or its menu's Remove: gone from the list at once, a
    *  toast's Undo giving it back; sent once the Undo has gone. */
   const deleteFlight = (flight: FlightSummary) => {
     const { id } = flight;
-    setDeleting((now) => new Set(now).add(id));
+    holdDelete("flight", id);
     let undone = false;
     toast.undo(
       `${flightTitle(flight)} Deleted`,
       () => {
         undone = true;
-        back(id);
+        releaseDelete("flight", id);
       },
       {
         testId: "saved-flight-undo",
@@ -138,7 +135,7 @@ export function useSavedFlights() {
             // Refused: back in the list; the mutation cache's alert says why.
             .catch(() => {})
             .finally(() => {
-              back(id);
+              releaseDelete("flight", id);
               void queryClient.invalidateQueries({ queryKey: flightsQuery.queryKey });
             });
         },

@@ -3,6 +3,7 @@
     <!-- The logbook's Add Flight, its extended button and sheet (logbook/). -->
     <string name="logbook_add_flight">Add Flight</string>
     <!-- The ATC copilot's listening capsule over the map (atc/). -->
-    <string name="atc_listening">Listening…</string>
+    <string name="atc_listening">Listening to the radio…</string>
+    <string name="atc_heard">Heard: %1$s</string>
     <string name="atc_stop_listening">Stop listening</string>
 </resources>

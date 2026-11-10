@@ -1,15 +1,15 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { cardClose, drawn, grabberTo, openTab, settle, settled, sideDrawer, slow } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /** The traffic patterns the map draws, by name ("pattern-at-KDLH",
- *  "departure-at-C81": PatternsGl's lines). A line can come back once for
- *  each tile it crosses, so the names, each once. */
+ *  "departure-at-C81": PatternsGl's lines). A line can come back once for each tile it crosses, so the names, each once. */
 const circuitsOf = (page: Page) => async () => [...new Set((await drawn(page, "patterns")).map((p) => String(p.name)))].sort();
 
 /**
  * The route's Procedures (ProceduresRoute), FPL's list, at the pilot's ask: a field's
- * traffic pattern picked by its runway, kept in the address, and drawn on
- * the map round the runway with its 45° entry (PatternLayer).
+ * traffic pattern picked by its runway, kept in the address, and drawn on the map round the runway with its 45° entry (PatternLayer).
  */
 /** A field's runway line opened where it is folded to the runway picked
  *  (PatternChips), at the owner's ask ("can the runway line collapse to

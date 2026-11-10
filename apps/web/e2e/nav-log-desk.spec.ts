@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { closeNavLog, navLogSheet, openNavLog, openPanel, settle, slow } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * The nav log on a desktop (docs/design/web.md §4): a dense table, TanStack

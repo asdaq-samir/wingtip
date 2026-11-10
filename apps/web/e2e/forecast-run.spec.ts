@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { openPanel, openProfile, pressDryRunStart, settle, sideDrawer, slow } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * The dry run played against the forecast (features/plan/forecastRun):

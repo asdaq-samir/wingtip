@@ -89,7 +89,7 @@ struct EmergencyCodeTiles: View {
         Button { FrequencyCopy.copy(figure) } label: {
             VStack(spacing: WingtipSpace.xxs) {
                 Text(label).font(.headline).foregroundStyle(.secondary)
-                Text(figure).font(WingtipType.figure).foregroundStyle(.primary)
+                Text(figure).figureFont().foregroundStyle(.primary)
             }
             .frame(maxWidth: .infinity, minHeight: 88)
             .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous))

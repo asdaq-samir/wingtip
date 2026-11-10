@@ -36,11 +36,11 @@ interface AtcRadio {
   /** Where the route is, its ends' "lat,lon;lat,lon", for the places the
    *  radio names to be looked for near (/api/clearance). */
   near: string;
-  /** How it listens: once, from the map's microphone, as Siri does (the
-   *  owner's pick A, 2026-11-02), or on and on from the Radio card, with
-   *  the captions over the map. */
+  /** How it listens: once, from Comms assist on the map (the owner's pick
+   *  A, 2026-11-02), or on and on from the Radio card, with the captions
+   *  over the map. */
   mode: "once" | "radio" | null;
-  /** The microphone's pill over the map: listening, then what was heard
+  /** Comms assist's pill over the map: listening, then what was heard
    *  with what it offers, until put away. A readback is listened for with
    *  the clearance it reads back (`readbackOf`, lib/readback); a timer the
    *  pilot started by voice counts from `timerFrom`. */

@@ -1,6 +1,8 @@
 import { writeFileSync } from "node:fs";
 import { test, type Page } from "@playwright/test";
 import { controlsInSight, noTips, openPanel } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * The nightly lab run for the speed trend (ci.yml, SpeedController): the

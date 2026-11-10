@@ -5,7 +5,9 @@ import Observation
 /// opened in its own row to change (Edit, then Save sends PUT
 /// /api/logbook/{id}), and a delete held back, with the system's Undo,
 /// until the logbook is left (docs/navigation.md), rather than a form and
-/// a "can't be undone" question.
+/// a "can't be undone" question; kept on the phone till then
+/// (PendingDeletes), so one made just before the app is closed is sent at
+/// the next launch.
 @MainActor
 @Observable
 final class LogbookEntriesModel {
@@ -30,8 +32,16 @@ final class LogbookEntriesModel {
     /// the last last: kept back from the gateway while their Undo stands.
     private(set) var removed: [(entry: LogbookEntry, at: Int)] = []
     @ObservationIgnored private let calls: Calls
+    @ObservationIgnored private let pending: PendingDeletes
 
-    init(calls: Calls = .gateway) { self.calls = calls }
+    init(calls: Calls = .gateway, pending: PendingDeletes = PendingDeletes()) {
+        self.calls = calls
+        self.pending = pending
+    }
+
+    /// The flights whose Undo still stands, or whose delete is still to be
+    /// sent from an earlier launch: kept off the list.
+    var held: Set<Int> { pending.ids(.logbook) }
 
     /// "28 Oct 2026 · KDLH KHIB": the row's words.
     static func title(_ e: LogbookEntry) -> String {
@@ -76,12 +86,14 @@ final class LogbookEntriesModel {
         if editingID == e.id { cancelEdit() }
         entries?.remove(at: at)
         removed.append((e, at))
+        pending.hold(.logbook, e.id)
         undo?.register(self, named: "Delete Flight") { $0.undoDelete(undo: undo) }
     }
 
     /// The last flight deleted put back where it was; its redo deletes it again.
     func undoDelete(undo: UndoManager? = nil) {
         guard let last = removed.popLast() else { return }
+        pending.release(.logbook, last.entry.id)
         // The place worked out before the insert: read inside the insert's
         // own argument, `entries` is read while it is being modified, which
         // Swift's exclusivity check stops the app for.
@@ -98,6 +110,7 @@ final class LogbookEntriesModel {
             do { try await calls.delete(e.id) } catch {
                 why = "\(Self.title(e)) could not be deleted: \(error.localizedDescription)"
             }
+            pending.release(.logbook, e.id)
         }
         return why
     }

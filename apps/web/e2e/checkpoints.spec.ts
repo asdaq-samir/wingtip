@@ -17,6 +17,8 @@ import {
   navLogSheet,
   settled,
 } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * The nav log's checkpoints: selected by a click, by Enter or by a pick

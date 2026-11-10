@@ -16,6 +16,8 @@ import Observation
 @Observable
 final class OneSearchModel {
     static let prompt = "Search airports, airplanes, or ask"
+    /// The field's prompt while Ask by voice listens, nothing said yet.
+    static let speak = "Speak your question"
 
     var text = ""
     /// The search up: the field focused and its suggestions in sight.
@@ -25,8 +27,6 @@ final class OneSearchModel {
     var profileTail: String?
     /// Why a line sent or said was not done, said under the field.
     var problem: String?
-    /// The microphone is hearing one line.
-    var hearing = false
     var busy = false
 
     private(set) var airports: [AirportSuggestion] = []

@@ -39,7 +39,7 @@ private struct FrequencyActions: ViewModifier {
                 .contextMenu {
                     FrequencyCopyButton(figure: figure)
                 } preview: {
-                    Text(figure).font(WingtipType.figure).padding(WingtipSpace.xl)
+                    Text(figure).figureFont().padding(WingtipSpace.xl)
                 }
                 .accessibilityAction(named: "Copy \(figure)") { FrequencyCopy.copy(figure) }
         } else {

@@ -17,14 +17,14 @@ import {
   slow,
   waypointMarks,
 } from "./helpers";
+import { pickAirplane } from "./startState";
 import { fillTime } from "./ariaFields";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * A route that lands on the way, as Maps' Add Stop: a stop added in the
- * panel's second row goes into the address, the capsule names the route
- * through it, the nav log lands at it, and each flight between two
- * landings has its own fuel check. Took off again, the route is as it
- * was.
+ * panel's second row goes into the address, the capsule names the route through it, the nav log lands at it, and each flight between two
+ * landings has its own fuel check. Took off again, the route is as it was.
  *
  * C81 to KDLH through KMSN is the planner's own answer, recorded: its two
  * hops' chart has never been read on CI's runner, and reading it would

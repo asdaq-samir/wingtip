@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-import { openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart } from "./helpers";
+import { consoleSheet, openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart } from "./helpers";
+import { pickAirplane } from "./startState";
 
 /**
  * The emergency assistant (features/emergency), reached with no map button
@@ -10,6 +11,9 @@ import { openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart } fr
  */
 
 async function flying(page: Page) {
+  // An airplane picked: its glide ranks the fields, its checklist opens
+  // at the emergency (with none, general guidance alone).
+  await pickAirplane(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
@@ -41,10 +45,13 @@ test("in flight, Emergency opens the best fields, the squawk and the MAYDAY", { 
   await sheet.getByTestId("emergency-souls").fill("2");
   await expect(call).toContainText("2 people on board");
   // A second field picked: the call's intentions follow it.
+  // By its name: the list is ranked again as own ship flies on, and the
+  // field picked may move in it.
   const second = sheet.getByTestId("emergency-field").nth(1);
   if (await second.count()) {
+    const name = (await second.locator(".font-semibold").first().textContent())!;
     await second.click();
-    await expect(second).toHaveAttribute("aria-checked", "true");
+    await expect(sheet.getByTestId("emergency-field").filter({ hasText: name }).first()).toHaveAttribute("aria-checked", "true");
   }
   await expect(sheet.getByTestId("emergency-call-911")).toHaveAttribute("href", "tel:911");
   // From md up it is a region in the side panel, not a modal dialog: the
@@ -68,10 +75,12 @@ test("it opens on its title, and the next Tab is Direct To the best field, which
   const direct = sheet.getByTestId("emergency-direct-to");
   await expect(direct).toBeVisible({ timeout: slow(20_000) });
   await page.keyboard.press("Tab");
-  // In the side panel the card's close sits beside its title, as every
-  // panel card's does: the next Tab after it.
-  if (await sheet.getByTestId("sheet-card-close").isVisible()) {
-    await expect(sheet.getByTestId("sheet-card-close")).toBeFocused();
+  // The close sits at the title row's end, as every sheet's and panel
+  // card's does -- the side panel's card's (SheetCard), a phone sheet's
+  // (SheetDialog) -- so it comes first, Direct To the next Tab after it.
+  const close = sheet.getByTestId("sheet-card-close").or(sheet.getByTestId("sheet-close"));
+  if (await close.isVisible()) {
+    await expect(close).toBeFocused();
     await page.keyboard.press("Tab");
   }
   await expect(direct).toBeFocused();
@@ -124,11 +133,12 @@ test('the pilot\'s own "mayday" at the microphone opens it at once', async ({ pa
 });
 
 test("from the emergency checklists, the assistant is a row away", async ({ page }) => {
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await pickAirplane(page);
+  // Setup's Checklists, by their link (the account menu's row opens the same).
+  await page.goto("/app/plan?dep=C81&dest=KDLH&open=checklists");
   await settle(page);
-  await openPanel(page);
-  await page.getByRole("button", { name: "Checklists" }).click();
-  await page.getByTestId("checklist-kind").getByText("Emergency").click();
-  await page.getByTestId("checklist-emergency").click();
+  const sheet = consoleSheet(page);
+  await sheet.getByTestId("checklist-kind").getByText("Emergency").click();
+  await sheet.getByTestId("checklist-emergency").click();
   await expect(page.getByTestId("emergency-sheet")).toBeVisible();
 });

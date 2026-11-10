@@ -10,7 +10,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,6 +31,7 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.AnnounceOnce
 import app.wingtipmaps.android.ui.LocalInk
+import app.wingtipmaps.android.ui.WingtipIcons
 
 /**
  * A call to us as the ATC copilot read it (the web's AtcCard): what was
@@ -52,7 +52,7 @@ fun AtcCardView(card: AtcCard, kept: AtcCopilotModel.Kept, problem: String?, wor
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-                Icon(Icons.Filled.Radio, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Icon(WingtipIcons.radio, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Text(
                     card.text, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis,

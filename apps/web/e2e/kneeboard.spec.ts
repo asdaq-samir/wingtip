@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { settle, slow, controlsInSight, openNavLog } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * Print's Kneeboard card (Kneeboard, printKneeboard): offered beside the

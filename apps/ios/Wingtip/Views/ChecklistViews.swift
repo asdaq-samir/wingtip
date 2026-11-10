@@ -5,6 +5,7 @@ import SwiftUI
 /// ticked as it is done, a section's count by its title -- or written as
 /// plain text (ChecklistText). Its state is the model's (ChecklistModel).
 struct ChecklistView: View {
+    @Environment(\.lookAccent) private var accent
     @State private var model: ChecklistModel
 
     init(airplane: String, kind: ChecklistKind) {
@@ -44,7 +45,7 @@ struct ChecklistView: View {
                                 model.toggle(s, i)
                             } label: {
                                 HStack {
-                                    Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Color.accentColor : Color.secondary).symbolSwap()
+                                    Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? accent : Color.secondary).symbolSwap()
                                     Text(item.challenge).foregroundStyle(on ? .secondary : .primary)
                                     Spacer()
                                     if let response = item.response { Text(response).foregroundStyle(.secondary) }

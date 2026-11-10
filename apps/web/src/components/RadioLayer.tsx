@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Mic, Radio } from "lucide-react";
+import { Radio } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
 import { GLASS } from "../lib/mapChrome";
@@ -367,14 +367,11 @@ function ReadbackLine({ cleared, said }: { cleared: string; said: string }) {
 }
 
 /**
- * The map's microphone grown into a pill, as Siri listens (the owner's
- * pick A, 2026-11-02), in the mic's own circle, which widens into it
- * (MapControls; the owner, 2026-11-03: the button and the pill were two
- * things apart, one at the bottom left and one at the top): the mic's
- * glyph becomes the waveform, "Listening…" and then the words typing in
- * as they are said beside it; at a pause or a second tap, what was heard
- * with the chips it offers (CallActions) and ✕, and the circle again
- * once put away. The Radio card, the log, a tap on the words away.
+ * Comms assist grown into a pill (pick A, 2026-11-02), its circle widened
+ * (MapControls): the radio's level, "Listening to the radio…", then
+ * "Heard: " and the words -- never the mic's look (features/voice, the
+ * owner's split of 2026-11-10); at a pause or a second tap, its chips
+ * (CallActions) and ✕. The Radio card, a tap on the words away.
  */
 export function RadioPill() {
   const pill = useAtcRadio((s) => s.pill)!;
@@ -396,10 +393,10 @@ export function RadioPill() {
   const waiting = readback
     ? "Read it back…"
     : name
-      ? `Listening through ${name}…`
+      ? `Listening to the radio through ${name}…`
       : chosen
-        ? `Listening with ${chosen} chosen…`
-        : "Listening…";
+        ? `Listening to the radio with ${chosen} chosen…`
+        : "Listening to the radio…";
   return (
     <div className="min-w-0 py-1 px-1" data-testid="radio-pill">
       <div className="flex items-center gap-2">
@@ -414,7 +411,7 @@ export function RadioPill() {
             aria-live="polite"
             className={cn(!pill.text && "text-muted-foreground", (pill.error || lost) && !pill.text && "text-caution-ink")}
           >
-            {pill.text || pill.error || lost || waiting}
+            {pill.text ? `Heard: ${pill.text}` : pill.error || lost || waiting}
           </span>
         </button>
         {!pill.listening && <CloseButton label="Put away" onClick={away} data-testid="radio-pill-close" />}
@@ -500,7 +497,10 @@ function RadioCaptions() {
       {listening && input && !input.lost ? (
         <Waveform live className="mt-0.5 size-5 shrink-0 justify-center [&>span]:w-0.5" />
       ) : (
-        <Mic className={cn("mt-0.5 size-5 shrink-0", listening ? "animate-pulse text-tint" : "text-muted-foreground")} aria-hidden="true" />
+        <Radio
+          className={cn("mt-0.5 size-5 shrink-0", listening ? "animate-pulse text-tint" : "text-muted-foreground")}
+          aria-hidden="true"
+        />
       )}
       <span className={cn("flex min-w-0 flex-1 flex-col", TEXT.detail)} aria-live="polite">
         {error && <span className="text-caution-ink">{error}</span>}
@@ -531,7 +531,7 @@ function RadioCaptions() {
   );
 }
 
-/** The radio's lines over the map (MapBanners): the microphone's pill, a
+/** The radio's lines over the map (MapBanners): Comms assist's pill, a
  *  call to us, and the captions while listened to on and on. In a chunk
  *  of its own, loaded once the radio is first listened to. */
 export default function RadioLayer() {
@@ -539,7 +539,7 @@ export default function RadioLayer() {
   // With the ATC copilot on, a call to us is its card (features/atc).
   const atc = useAtcListen((s) => s.value !== "off");
   const captions = useAtcRadio((s) => s.mode === "radio" || (!!s.error && s.mode !== "once" && s.pill === null));
-  // The microphone's pill is the mic's own circle grown (RadioPill, in
+  // Comms assist's pill is the radio button's own circle grown (RadioPill, in
   // MapControls), not a line here.
   return (
     <>

@@ -29,7 +29,8 @@ struct LogbookEntriesModelTests {
                 await asked.update(id, r)
                 if refuse { throw Refused() }
             },
-            delete: { await asked.delete($0) }))
+            delete: { await asked.delete($0) }),
+        pending: PendingDeletes(defaults: UserDefaults(suiteName: "test-\(UUID().uuidString)")!))
         model.entries = [entry(1), entry(2, route: nil)]
         return model
     }

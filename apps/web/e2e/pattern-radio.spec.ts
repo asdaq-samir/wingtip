@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { settle, sideDrawer, slow, openTab, openSection } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * The briefing's Pattern & Radio (PatternRadio, features/plan/lib/pattern, features/plan/lib/radio):

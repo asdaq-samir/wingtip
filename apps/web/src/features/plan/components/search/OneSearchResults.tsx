@@ -9,6 +9,7 @@ import { useKeyHint } from "../../../../lib/shortcutKeys";
 import type { AirportSearchRow } from "../../../../lib/useAirportSearch";
 import AirportPreview from "../preview/AirportPreview";
 import type { AirplaneHit, DoHit, OneSearchModel } from "../../hooks/useOneSearch";
+import { useVoiceInput } from "../../../voice";
 import { AirportIcon, Matched, QuickAction, ResultGroup, ResultRow, RoundIcon, RowLine } from "./ResultRows";
 
 /** A Do row's glyph: the arrow for Direct To, the Brief's, Nearest's, the
@@ -64,6 +65,8 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
   const topAirplane = topAirport ? null : (airplanes[0] ?? null);
   const moreAirports = topAirport ? airports.slice(1) : airports;
   const moreAirplanes = topAirplane ? airplanes.slice(1) : airplanes;
+  // Why the mic heard nothing (features/voice), here as the search's own.
+  const unheard = useVoiceInput((s) => (s.error?.field === "search" ? s.error.text : null));
   const none = airports.length + waypoints.length + airplanes.length + does.length === 0;
 
   const airportRow = (r: AirportSearchRow, top: boolean) => {
@@ -205,6 +208,11 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
       {problem && (
         <p role="alert" className={cn("appear text-destructive-ink", TEXT.note)} data-testid="one-search-problem">
           {problem}
+        </p>
+      )}
+      {unheard && (
+        <p role="alert" className={cn("appear text-destructive-ink", TEXT.note)} data-testid="one-search-voice-problem">
+          {unheard}
         </p>
       )}
       <CommandList

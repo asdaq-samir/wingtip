@@ -66,6 +66,7 @@ struct AirportAlertCard: View {
 /// (/api/airport/{ident}/notams). A picture opens full screen in the
 /// app's viewer; the others open the card's own tab or the NOTAM list.
 struct AirportTiles: View {
+    @Environment(\.lookAccent) private var accent
     let place: AirportPlace
     let photos: AirportPhotos?
     @Binding var shown: ShownPicture?
@@ -134,7 +135,7 @@ struct AirportTiles: View {
 
     private func face(_ words: String, systemImage: String) -> some View {
         ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous).fill(Color.accentColor.opacity(0.14))
+            RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous).fill(accent.opacity(0.14))
             Image(systemName: systemImage)
                 .font(.largeTitle)
                 .foregroundStyle(.tint)

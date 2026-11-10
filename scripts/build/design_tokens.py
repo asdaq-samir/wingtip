@@ -4,8 +4,8 @@
 One source for Wingtip's design language (colours, type, spacing, radii,
 materials, motion, tap targets), written into each platform in its own
 idiom: CSS custom properties and a TypeScript module for the web, Swift
-constants (Dynamic Type styles, and the AccentColor colour set) for iOS,
-Compose values (Color, Typography, Dp) for Android. Standard library only,
+constants (Dynamic Type styles) for iOS, Compose values (Color,
+Typography, Dp) for Android. Standard library only,
 so it needs nothing installed and nothing to pin; run it through
 scripts/build/design-tokens.sh, which CI runs with --check.
 
@@ -19,8 +19,10 @@ from pathlib import Path
 
 import design_tokens_feel as feel
 import design_tokens_haptic as haptic
+import design_tokens_stock as stock
 import design_tokens_system as system
 import design_tokens_typography as typography
+from design_tokens_webtype import fixed, rem, web_class
 from design_tokens_colour import hex6, rgba
 from design_tokens_formats import gen_formats
 
@@ -29,7 +31,6 @@ SOURCE = ROOT / "design" / "tokens.json"
 WEB_CSS = ROOT / "apps/web/src/styles/tokens.css"
 WEB_TS = ROOT / "apps/web/src/lib/tokens.ts"
 IOS_SWIFT = ROOT / "apps/ios/Wingtip/Design/Generated/Tokens.swift"
-IOS_ACCENT = ROOT / "apps/ios/Wingtip/Assets.xcassets/AccentColor.colorset/Contents.json"
 ANDROID_KT = ROOT / "apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/Tokens.kt"
 # The figure formats' examples, beside the engine's shared fixtures, for
 # every app's formatter tests.
@@ -40,6 +41,7 @@ EXT = "app.wingtipmaps"
 # The colour groups every app takes as plain named colours (not by theme).
 SHARED = ("chart", "category", "brand", "strip", "badge", "weather", "score", "signal")
 NATIVE = ("color", "look", "native", "all")
+NATIVE_WEB = ("color", "look", "native", "web")
 
 
 # ---------------------------------------------------------------- reading
@@ -155,10 +157,6 @@ def flat_colours(tree, group):
 # ---------------------------------------------------------------- web
 
 
-def rem(px):
-    return ("%.4f" % (px / 16)).rstrip("0").rstrip(".") + "rem"
-
-
 def css_block(selector, decls):
     lines = ["%s {" % selector]
     lines += ["  --%s: %s;" % (k, v) for k, v in decls]
@@ -186,6 +184,8 @@ def gen_css(tree):
     root += [("space-%s" % k, rem(v)) for k, v in space.items() if k != "unit"]
     root += [("radius-%s" % k, rem(v) if k == "card" else "%gpx" % v) for k, v in radius.items() if k not in ("base", "cockpit", "ink")]
     root += [("type-%s" % k, rem(t["$value"]["fontSize"])) for k, t in tokens(tree["type"]).items() if "fontSize" in t["$value"]]
+    # A fixed role's leading, beside its size, so the Native look can set both (design_tokens_stock).
+    root += [("lead-%s" % k, rem(t["$value"]["lineHeight"])) for k, t in tokens(tree["type"]).items() if fixed(t)]
     # The named colours too, for a class on the page (fill-(--chart-casing)) where lib/tokens' values cannot reach.
     root += [("%s-%s" % (g, k), hex6(c)) for g in SHARED for k, c in flat_colours(tree, "color." + g).items()]
     root += [
@@ -222,52 +222,14 @@ def gen_css(tree):
         "/* Chart ink, not in sunlight, whose own tokens win. */\n" + css_block(':root[data-brand="ink"]', ink_all),
         css_block(':root[data-brand="ink"]:not(.dark):not([data-chart-light="bright"])', decls("color", "look", "ink", "light")),
         css_block(':root.dark[data-brand="ink"]:not([data-chart-light="bright"])', decls("color", "look", "ink", "dark")),
-        "/* Native: the platform's own face, and its system colours but in sunlight. */\n"
-        + css_block(':root[data-brand="native"]', [("brand-font", font_stack(tree, "font.system").rsplit(",", 1)[0])]),
-        *system.css(tree, ':root[data-brand="native"]:not([data-chart-light="bright"])', decls(*NATIVE), css_block),
+        "/* Native: shadcn's stock theme and Tailwind's stock corners, shadows and type, but in sunlight. */\n"
+        + css_block(':root[data-brand="native"]', stock.css(tree)),
+        css_block(':root[data-brand="native"]:not(.dark):not([data-chart-light="bright"])', decls(*NATIVE_WEB, "light")),
+        css_block(':root.dark[data-brand="native"]:not([data-chart-light="bright"])', decls(*NATIVE_WEB, "dark")),
         "/* Sunlight, over day, night and every look. */\n"
         + css_block(':root[data-chart-light="bright"],\n:root.dark[data-chart-light="bright"]', decls("color", "theme", "sunlight")),
     ]
     return "\n\n".join(blocks) + "\n"
-
-
-TAILWIND_SIZES = {12: "text-xs", 14: "text-sm", 16: "text-base", 18: "text-lg", 20: "text-xl"}
-
-
-def web_class(role):
-    """A role's Tailwind classes, as lib/text.ts used them: the touch size
-    with its leading where the mouse's is the same; else the mouse's
-    named size (whose leading index.css sets on a touch screen) with the
-    touch size beside it. The face, case, spacing and digits come with
-    the label, word and figure, and their weight with them; the other
-    roles leave the weight to the words they are on."""
-    v = role["$value"]
-    web = role.get("$extensions", {}).get(EXT, {}).get("web", {})
-    out = []
-    styled = "textCase" in v or v.get("tabular")
-    if "{font.display}" == v.get("fontFamily"):
-        out.append("font-display")
-    if "fontSize" in v:
-        size, lead = v["fontSize"], v.get("lineHeight")
-        mouse = web.get("mouse")
-        if mouse is None or mouse == size:
-            out.append("text-[%s]" % rem(size))
-            if lead:
-                out.append("leading-[%s]" % rem(lead))
-        else:
-            out.append(TAILWIND_SIZES.get(mouse, "text-[%s]" % rem(mouse)))
-            out.append("pointer-coarse:text-[%s]" % rem(size))
-            if web.get("touchLeading") and lead:
-                out.append("pointer-coarse:leading-[%s]" % rem(lead))
-    if styled:
-        out.append({400: "font-normal", 500: "font-medium", 600: "font-semibold", 700: "font-bold"}[v["fontWeight"]])
-    if v.get("textCase") == "uppercase":
-        out.append("uppercase")
-    if "letterSpacing" in v:
-        out.append("tracking-[%gem]" % v["letterSpacing"])
-    if v.get("tabular"):
-        out.append("tabular-nums")
-    return " ".join(out)
 
 
 def ts_obj(d, indent="  "):
@@ -289,7 +251,7 @@ def gen_ts(tree):
         if k.startswith("ink-")
     }
     roles = tokens(tree["type"])
-    classes = {(camel(k) if "-" in k else k): q(web_class(r)) for k, r in roles.items()}
+    classes = {(camel(k) if "-" in k else k): q(web_class(k, r)) for k, r in roles.items()}
     points = {camel(k): r["$value"]["fontSize"] for k, r in roles.items() if "fontSize" in r["$value"]}
     motion = {camel(k): (q(t["$value"]) if isinstance(t["$value"], list) else t["$value"]) for k, t in tokens(tree["motion"]).items()}
     radius = {camel(k): t["$value"] for k, t in tokens(tree["radius"]).items()}
@@ -462,23 +424,6 @@ def gen_swift(tree, sch):
     return "\n".join(L) + "\n"
 
 
-def gen_accent(sch):
-    def comp(c):
-        return {
-            "color-space": "srgb",
-            "components": {"red": "0x%02X" % c[0], "green": "0x%02X" % c[1], "blue": "0x%02X" % c[2], "alpha": "1.000"},
-        }
-
-    doc = {
-        "colors": [
-            {"color": comp(sch["light"]["tint"]), "idiom": "universal"},
-            {"appearances": [{"appearance": "luminosity", "value": "dark"}], "color": comp(sch["dark"]["tint"]), "idiom": "universal"},
-        ],
-        "info": {"author": "scripts/build/design-tokens.sh (design/tokens.json color.theme tint) -- do not edit", "version": 1},
-    }
-    return json.dumps(doc, indent=2) + "\n"
-
-
 # ---------------------------------------------------------------- Android
 
 
@@ -586,7 +531,6 @@ def main():
         WEB_CSS: gen_css(tree),
         WEB_TS: gen_ts(tree),
         IOS_SWIFT: gen_swift(tree, sch),
-        IOS_ACCENT: gen_accent(sch),
         ANDROID_KT: gen_kotlin(tree, sch),
         FORMATS: gen_formats(tokens(tree["format"]), camel, BANNER),
     }

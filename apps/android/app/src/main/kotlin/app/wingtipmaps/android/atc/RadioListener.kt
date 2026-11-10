@@ -13,6 +13,7 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.core.content.ContextCompat
+import app.wingtipmaps.android.voice.VoiceInput
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,8 +46,9 @@ interface AtcListener {
  * 2026-11-09); never createSpeechRecognizer, which may send the audio to
  * the recognizer service's servers. Where the phone has no on-device
  * recognizer (below Android 12, or none installed), voice is not offered:
- * canListen is false and the ATC copilot, its setting and the strip's
- * microphone are hidden. Main thread only, as the recognizer is.
+ * canListen is false and the ATC copilot, its setting and the search's
+ * microphone (Ask by voice, VoiceInput, a feature apart) are hidden.
+ * Main thread only, as the recognizer is.
  */
 class RadioListener private constructor(private val context: Context) : AtcListener {
     private val _heard = MutableStateFlow<List<Heard>>(emptyList())
@@ -64,6 +66,9 @@ class RadioListener private constructor(private val context: Context) : AtcListe
     override fun start() {
         if (_listening.value) return
         if (!ready()) return
+        // The radio takes the microphone: a question being said ends
+        // (Ask by voice, a feature apart).
+        VoiceInput.of(context).finish()
         _listening.value = true
         AtcListenService.keep(context, true)
         listen()
@@ -76,7 +81,7 @@ class RadioListener private constructor(private val context: Context) : AtcListe
     }
 
     override suspend fun once(): String? {
-        if (_listening.value || !ready()) return null
+        if (_listening.value || VoiceInput.of(context).listening.value || !ready()) return null
         val answer = CompletableDeferred<String?>()
         waiting = answer
         listen()

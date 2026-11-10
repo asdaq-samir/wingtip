@@ -12,6 +12,8 @@ import {
   slow,
   pressDryRunStart,
 } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * What a pilot cannot be without in the air, in one journey (the owner,

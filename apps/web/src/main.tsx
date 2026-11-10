@@ -7,7 +7,9 @@ import { createBrowserRouter, Navigate, redirect } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
-import { chartQuery, courseQuery, overlayTilesQuery, queryClient } from "./lib/queryClient";
+import { chartQuery, courseQuery, flightsQuery, overlayTilesQuery, queryClient } from "./lib/queryClient";
+import { api } from "./lib/api/client";
+import { flushPendingDeletes } from "./lib/pendingDeletes";
 import { routeOf, stopsOf } from "./lib/identSchema";
 import AppToaster from "./components/AppToaster";
 import { BrandLook } from "./lib/brand";
@@ -274,3 +276,9 @@ void engineLoaded.catch((error) => {
   console.error(error);
 });
 void faceLoaded.then(render, render);
+
+// The deletes whose Undo was still up when the tab was last closed, sent
+// now (lib/pendingDeletes); the lists fetched again once any is.
+void flushPendingDeletes({ flight: api.flights.remove }).then((sent) => {
+  if (sent) void queryClient.invalidateQueries({ queryKey: flightsQuery.queryKey });
+});

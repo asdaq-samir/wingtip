@@ -12,6 +12,7 @@ import SwiftUI
 /// and the radio. Large type throughout, one column to AX5. Its state is
 /// Emergency's; every figure is the engine's.
 struct EmergencySheet: View {
+    @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(DryRun.self) private var dryRun
@@ -118,7 +119,7 @@ struct EmergencySheet: View {
                     let on = checklist.isTicked(s, i)
                     Button { checklist.toggle(s, i) } label: {
                         HStack {
-                            Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Color.accentColor : Color.secondary).symbolSwap()
+                            Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? accent : Color.secondary).symbolSwap()
                             Text(item.challenge).foregroundStyle(on ? .secondary : .primary)
                             Spacer()
                             if let response = item.response { Text(response).foregroundStyle(.secondary) }

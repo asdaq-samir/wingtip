@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { settle, sideDrawer, slow, openTab, openSection } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * When the flight gets to each TFR and special-use area on the route,

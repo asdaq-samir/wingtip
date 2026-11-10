@@ -21,6 +21,32 @@
   @media (prefers-contrast: more) {
     @slot;
   }
+  /* And in the Native look (lib/brand), whose stock popover and drawer
+     are solid, with no frost (the owner, 2026-11-10: "Native means how
+     they come out of the box"). */
+  &:where([data-brand="native"] *) {
+    @slot;
+  }
+}
+/* The Native look alone (lib/brand): a class here puts a component back
+   to shadcn's stock where Wingtip's own is unconditional (menuLook, the
+   buttons' words, the label role), the brand looks unchanged. */
+@custom-variant native (&:where([data-brand="native"] *));
+/* What Wingtip adds to the stock components and the Native look leaves
+   out, as shadcn ships them: a press's give, a hover's lift, the motions
+   a figure or a banner comes in with (feel.css). */
+@custom-variant branded (&:where(:root:not([data-brand="native"]) *));
+/* A touch screen's own sizes -- iOS's 17-point rows, 44-point controls
+   grown to a finger, a press's fade -- are Wingtip's: Tailwind's own
+   pointer-coarse, but not in the Native look, where every stock component
+   keeps the one size shadcn gives it. The 44-point hit areas stay there
+   (the pseudo-elements below), as they change nothing that is seen. */
+@custom-variant pointer-coarse {
+  @media (pointer: coarse) {
+    &:where(:root:not([data-brand="native"]) *) {
+      @slot;
+    }
+  }
 }
 /* The header at the bottom of the screen (useNavEdge): the page's root
    says data-nav="bottom" once that edge has been picked, or "auto",
@@ -155,9 +181,9 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
    17-point row 24.3 and a 15-point line 21.4. Every text-* class reads
    its line height from these, so a touch size set beside one (lib/text.ts,
    the stock controls) takes its leading with it. An explicit leading-*
-   still wins. */
+   still wins. Not in the Native look, which keeps Tailwind's own. */
 @media (pointer: coarse) {
-  :root {
+  :root:not([data-brand="native"]) {
     --text-xs--line-height: calc(1em + 5px);
     --text-sm--line-height: calc(1em + 5px);
     --text-base--line-height: calc(1em + 5px);
@@ -317,15 +343,6 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
   box-shadow: var(--depth-card);
 }
 
-/* The Native look (lib/brand): the browser's own form controls in the
-   system's accent, and its system colours (Canvas, LinkText) for either
-   scheme. next-themes' inline color-scheme on <html> still wins, so
-   Canvas follows the pilot's Appearance (System follows the device's). */
-html[data-brand="native"] {
-  color-scheme: light dark;
-  accent-color: auto;
-}
-
 @layer base {
   /* One weight for emphasis: <b> and <strong> at 600, as every
      font-semibold heading, figure and name is, rather than the
@@ -348,13 +365,19 @@ html[data-brand="native"] {
   * {
     @apply border-border outline-ring;
   }
+  /* The Native look's outline as shadcn's base layer sets it: the ring
+     at half strength, and no outline of ours on what has none. */
+  :where([data-brand="native"]) * {
+    @apply outline-ring/50;
+  }
   /* A keyboard's focus seen on everything, in the ring token at full
      strength (3:1 or more on every surface in every look,
      looksContrast.test.ts; WCAG 2.4.7, 1.4.11): what has no ring of its
      own -- a plain button, a link, a list row -- gets this outline; what
      draws its own ring (the stock components' focus-visible:ring) sets
-     outline-none over it. At half strength the ring was 2:1 on white. */
-  :focus-visible {
+     outline-none over it. At half strength the ring was 2:1 on white.
+     Not in the Native look: the browser's own focus ring there, as stock. */
+  :root:not([data-brand="native"]) :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
@@ -551,25 +574,25 @@ body[data-map-sheet][data-map-panel="full"] [data-slot="toast"][data-type="loadi
    back, a short shared-axis slide and fade over motion.page on the
    sheet's ease-out. The
    rest of the screen, the map under it, is not captured as the page's
-   root would be. */
+   root would be. The Native look takes the browser's own cross-fade. */
 :root {
   view-transition-name: none;
 }
-::view-transition-group(.page-step),
-::view-transition-group(.page-back) {
+html:not([data-brand="native"])::view-transition-group(.page-step),
+html:not([data-brand="native"])::view-transition-group(.page-back) {
   animation-duration: var(--motion-page);
   animation-timing-function: var(--motion-sheet-ease);
 }
-::view-transition-old(.page-step) {
+html:not([data-brand="native"])::view-transition-old(.page-step) {
   animation: var(--motion-page) var(--motion-sheet-ease) both page-out;
 }
-::view-transition-new(.page-step) {
+html:not([data-brand="native"])::view-transition-new(.page-step) {
   animation: var(--motion-page) var(--motion-sheet-ease) both page-in;
 }
-::view-transition-old(.page-back) {
+html:not([data-brand="native"])::view-transition-old(.page-back) {
   animation: var(--motion-page) var(--motion-sheet-ease) both page-back-out;
 }
-::view-transition-new(.page-back) {
+html:not([data-brand="native"])::view-transition-new(.page-back) {
   animation: var(--motion-page) var(--motion-sheet-ease) both page-back-in;
 }
 @keyframes page-out {

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Mic, Search } from "lucide-react";
+import { useEffect, useEffectEvent } from "react";
+import { Search } from "lucide-react";
 import { cn } from "cn";
 import { PANEL_FIELD } from "../../../../components/panelField";
 import { CommandField } from "../../../../components/ui/command";
@@ -7,16 +7,9 @@ import { Kbd } from "../../../../components/ui/kbd";
 import { isSearchKey } from "../../../../hooks/use-shortcuts";
 import { useIsDesktop } from "../../../../hooks/use-desktop";
 import { askSearch, searchKeys } from "../../../../lib/oneSearch";
-import { useAtcRadio } from "../../../../lib/atcRadio";
-import { useCanListen } from "../../../../lib/speechLocal";
 import { TEXT } from "../../../../lib/text";
+import { useVoice, VoiceButton } from "../../../voice";
 import type { OneSearchModel } from "../../hooks/useOneSearch";
-
-/** The listening code (lib/atcListening), its own chunk, fetched once the
- *  field is drawn so the microphone's tap starts listening at once: Safari
- *  lets a page listen only straight from the tap (AskCard the same). */
-let listening: typeof import("../../../../lib/atcListening") | null = null;
-const load = () => import("../../../../lib/atcListening").then((m) => (listening = m));
 
 /**
  * The sheet's first row (the owner's one-search design, 2026-11-09), where
@@ -24,8 +17,9 @@ const load = () => import("../../../../lib/atcListening").then((m) => (listening
  * airports, airplanes, or ask", on Base UI's Autocomplete (the list is
  * OneSearchResults, in the sheet's body, inside the same Autocomplete
  * root: the arrows and Enter go from the field to its rows); the
- * microphone beside it, on-device speech as the map's is, what is said
- * typed into the field, as the field's own trailing button; and Cancel
+ * microphone beside it, Ask by voice (features/voice): on-device speech,
+ * the words appearing in the field as they are said, as a phone's
+ * dictation types them, as the field's own trailing button; and Cancel
  * beside it while the field is in use, as iOS's search fields have it. The
  * account button went to the title row over it (SheetTitle), so the field
  * runs the sheet's width, as Apple Maps' on the web does (the owner's
@@ -34,12 +28,18 @@ const load = () => import("../../../../lib/atcListening").then((m) => (listening
  */
 export default function OneSearchField({ model, inputRef }: { model: OneSearchModel; inputRef: React.RefObject<HTMLInputElement | null> }) {
   const desktop = useIsDesktop();
-  const voice = useCanListen();
-  const [hearing, setHearing] = useState(false);
-  const using = model.focused || !!model.typed || model.direct;
+  // What is said typed in the field once a pause ends it, the field
+  // focused to go on from there.
+  const voice = useVoice("search", (said) => {
+    model.setTyped(said);
+    inputRef.current?.focus();
+  });
+  const using = model.focused || !!model.typed || model.direct || voice.listening;
+  // The words as they are said, in the field.
+  const typeSaid = useEffectEvent((words: string) => model.setTyped(words));
   useEffect(() => {
-    if (voice) void load();
-  }, [voice]);
+    if (voice.listening && voice.words) typeSaid(voice.words);
+  }, [voice.listening, voice.words]);
   // ⌘K anywhere, a field's too: the search, or out of it again.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -51,26 +51,6 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [model, inputRef]);
-  // What the microphone heard, once the pause ends it, typed in the field;
-  // the map's pill put away, its chips being the radio's commands.
-  useEffect(() => {
-    if (!hearing) return;
-    return useAtcRadio.subscribe((s) => {
-      const pill = s.pill;
-      if (!pill || pill.listening) return;
-      setHearing(false);
-      useAtcRadio.setState({ pill: null });
-      if (pill.text) {
-        model.setTyped(pill.text);
-        inputRef.current?.focus();
-      }
-    });
-  }, [hearing, model, inputRef]);
-  const hear = () => {
-    setHearing(true);
-    if (listening) void listening.listenOnce([]);
-    else void load().then((m) => m.listenOnce([]));
-  };
   return (
     <div className="flex w-full items-center gap-2" role="search">
       {/* 41 tall, as Maps' field is, a white card on the sheet's grey; its
@@ -78,7 +58,7 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
           nothing grows to it). */}
       <label
         className={cn(
-          "relative flex h-[2.5625rem] min-w-0 flex-1 items-center gap-2 rounded-full pr-1 pl-3.5 text-muted-foreground",
+          "relative flex h-[2.5625rem] min-w-0 flex-1 items-center gap-2 rounded-full pr-0.5 pl-3.5 text-muted-foreground",
           PANEL_FIELD,
           // Focused, the tint's ring round it, as Apple's field has.
           "focus-within:ring-2 focus-within:ring-tint",
@@ -94,14 +74,19 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
-          placeholder={model.placeholder}
+          placeholder={voice.listening ? voice.prompt : model.placeholder}
           aria-label={model.placeholder}
+          // Open only while its results are in the sheet (PlanSidebar's
+          // search page): the Autocomplete is always open, inline, and
+          // said "expanded" with no list to point at (axe's
+          // aria-required-attr, aria-controls missing).
+          {...(model.typed || model.direct ? {} : { "aria-expanded": false })}
           data-testid="search-airports"
           onFocus={model.focus}
           // The APG combobox's keys (docs/design/web.md §1) are Base UI's
           // as they are, the first row highlighted for Enter (the root's
-          // autoHighlight), and the clear the search field's own (Safari's
-          // ⓧ, as Apple's field has); Escape lets the field go.
+          // autoHighlight), and the clear the search field's own; Escape
+          // lets the field go.
           onKeyDown={(e) => {
             if (e.key === "Escape") {
               e.preventDefault();
@@ -113,18 +98,20 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
         {!model.typed && desktop && !using && <Kbd aria-hidden="true">{searchKeys()}</Kbd>}
         {/* The microphone, the field's trailing button: on-device speech
             only (lib/speechLocal), so none where the browser has no
-            recognizer. In the tint. */}
-        {voice && (
-          <button
-            type="button"
-            aria-label="Search by voice"
-            onClick={hear}
-            disabled={hearing}
-            data-testid="one-search-mic"
-            className="grid size-9 shrink-0 place-items-center rounded-full text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
-          >
-            <Mic className={cn("size-5", hearing && "animate-pulse")} strokeWidth={2.2} aria-hidden="true" />
-          </button>
+            recognizer. In the tint, pressed while it listens. */}
+        {voice.offered && (
+          <VoiceButton
+            field="search"
+            label="Search by voice"
+            onPress={() => {
+              // The search opened as the mic is tapped, so the words show
+              // in the field and why nothing was heard under it.
+              if (!voice.listening) model.focus();
+              voice.press();
+            }}
+            testId="one-search-mic"
+            className="size-9"
+          />
         )}
       </label>
       {using && (

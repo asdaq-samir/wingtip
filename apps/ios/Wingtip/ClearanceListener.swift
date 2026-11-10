@@ -54,9 +54,11 @@ final class ClearanceListener {
         return last
     }
 
-    /// The microphone open for one question to the assistant (hearOnce).
+    /// The microphone open for one thing said to the radio's own screens
+    /// -- a readback (hearOnce). The pilot asking the app by voice is
+    /// VoiceInput's, apart from the radio.
     private(set) var hearingOnce = false
-    /// The words of that question so far.
+    /// The words of it so far.
     private var heardOnce: String?
 
     /// As many transmissions as are kept.
@@ -109,6 +111,8 @@ final class ClearanceListener {
             return false
         }
         stop()
+        // The radio takes the microphone: a question being said ends.
+        VoiceInput.shared.finish()
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.record, mode: .measurement, options: .duckOthers)
@@ -216,15 +220,15 @@ final class ClearanceListener {
         }
     }
 
-    /// One thing said, for a question to the assistant (AskView): the
-    /// microphone until the words settle -- a pause after the last of
+    /// One thing said for the radio's screens, a readback (ClearanceSheet,
+    /// AtcCopilot): the microphone until the words settle -- a pause after the last of
     /// them, or `longestOnce` -- then closed again. Nothing heard goes in
     /// the radio's log, and nothing is kept. Nil with `problem` set where
     /// the microphone cannot be had, or when the radio is being listened
     /// to, which it would have to be stopped for.
     func hearOnce(words: [String] = []) async -> String? {
         guard !listening else {
-            problem = "The radio is being listened to; stop it to ask by voice."
+            problem = "The radio is being listened to; stop it to read back by voice."
             return nil
         }
         guard await openMicrophone(), let recognizer else { return nil }
@@ -333,7 +337,7 @@ final class ClearanceListener {
 
 /// A continuation resumed once, whichever of the recognizer's callbacks
 /// (a final result, an error, a cancel) gets there first.
-private final class Once<T: Sendable>: @unchecked Sendable {
+final class Once<T: Sendable>: @unchecked Sendable {
     private let lock = NSLock()
     private var continuation: CheckedContinuation<T, Never>?
 
@@ -352,8 +356,8 @@ private final class Once<T: Sendable>: @unchecked Sendable {
 
 /// The request being heard, for the microphone's tap on the audio thread
 /// to append to while the main actor moves it on from one transmission
-/// to the next.
-private final class Feed: @unchecked Sendable {
+/// to the next (the radio's, and Ask by voice's own, VoiceInput).
+final class Feed: @unchecked Sendable {
     private let lock = NSLock()
     private var request: SFSpeechAudioBufferRecognitionRequest?
 

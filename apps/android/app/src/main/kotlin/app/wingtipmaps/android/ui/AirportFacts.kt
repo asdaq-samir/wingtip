@@ -13,7 +13,9 @@ import app.wingtipmaps.android.engine.generated.windCalm
  * minutes to fly it at the airplane's cruise speed with no wind
  * (`fuel_estimate`: the book's figures before the nav log's), and whether
  * the field's wind is calm (`wind_calm`). The distance is always said
- * where there is a start: from own ship, else "From KMSN" (`fromIdent`). The METAR's wind is from the
+ * where there is a start: from own ship, else "From KMSN" (`fromIdent`),
+ * but not from the field itself: its own card, the departure, says no
+ * "From KMSN 0 nm" with no fix to measure from. The METAR's wind is from the
  * true direction (AC 00-45H, the METAR's wind group). Nothing is worked
  * out here: with no airplane there is no time, and with nowhere to start
  * no distance. A rule that fails leaves its figure out.
@@ -36,7 +38,8 @@ data class AirportFacts(
     companion object {
         fun of(place: AirportPlace, from: From?, cruiseTasKt: Double?): AirportFacts {
             val metar = place.metar
-            val distance = from?.let { Engine.distanceNm(it.lat, it.lon, place.lat, place.lon).getOrNull() }
+            val start = from?.takeUnless { it.ident != null && it.ident.equals(place.ident, ignoreCase = true) }
+            val distance = start?.let { Engine.distanceNm(it.lat, it.lon, place.lat, place.lon).getOrNull() }
             val minutes = distance?.takeIf { cruiseTasKt != null }?.let { Engine.fuelEstimate(it, cruiseTasKt = cruiseTasKt).getOrNull()?.minutes }
             return AirportFacts(
                 category = metar?.flightCategory,
@@ -47,7 +50,7 @@ data class AirportFacts(
                 longestRunwayFt = place.runways.filterNot { it.closed }.mapNotNull { it.lengthFt }.maxOrNull(),
                 distanceNm = distance,
                 minutes = minutes,
-                fromIdent = from?.ident,
+                fromIdent = start?.ident,
             )
         }
     }

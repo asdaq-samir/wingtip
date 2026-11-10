@@ -6,6 +6,7 @@ import SwiftUI
 /// FAA's procedures for the field, none picked until the pilot picks.
 /// Picked, the planner flies it and plans the descent to it.
 struct ProceduresRow: View {
+    @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     let ident: String
     /// The kinds this field takes: "departure" for the route's departure,
@@ -40,7 +41,7 @@ struct ProceduresRow: View {
                             Label(picked?.name ?? kind.capitalized, systemImage: "chevron.down")
                                 .labelStyle(.titleAndIcon)
                                 .font(.subheadline)
-                                .foregroundStyle(picked == nil ? Color.secondary : Color.accentColor)
+                                .foregroundStyle(picked == nil ? Color.secondary : accent)
                                 .siriSees(picked.flatMap { $0.kind == "approach" ? SiriSaw.approach($0) : nil })
                         }
                     }

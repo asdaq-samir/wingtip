@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { settle, sideDrawer, slow, openTab, openSection, controlsInSight } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * The briefing's Risk Assessment (lib/frat): what the briefing raises

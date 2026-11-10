@@ -37,9 +37,19 @@ export function useGlProbe(name: string, layers: string[], fields: (f: MapGeoJSO
                 ? map.project(f.geometry.coordinates[Math.floor(f.geometry.coordinates.length / 2)] as [number, number])
                 : null;
         const row: Record<string, unknown> = at ? { ...pick(f), x: Math.round(at.x * 10) / 10, y: Math.round(at.y * 10) / 10 } : pick(f);
-        // An area's box on the map too, for a test to find a place inside it.
-        if (f.geometry.type === "Polygon") {
-          const ring = (f.geometry.coordinates[0] as [number, number][]).map((p) => map.project(p));
+        // An area's box on the map too, for a test to find a place inside
+        // it, and a line's, for a test to see where it lies (the route
+        // fitted clear of the sheet): the box of the piece the map drew.
+        const outline =
+          f.geometry.type === "Polygon"
+            ? (f.geometry.coordinates[0] as [number, number][])
+            : f.geometry.type === "LineString"
+              ? (f.geometry.coordinates as [number, number][])
+              : f.geometry.type === "MultiLineString"
+                ? (f.geometry.coordinates.flat() as [number, number][])
+                : null;
+        if (outline) {
+          const ring = outline.map((p) => map.project(p));
           row.box = [
             Math.min(...ring.map((p) => p.x)),
             Math.min(...ring.map((p) => p.y)),

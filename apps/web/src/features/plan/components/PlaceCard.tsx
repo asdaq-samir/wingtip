@@ -56,16 +56,16 @@ function away(from: LatLon, to: LatLon): string {
 
 /** The line under the name, how far the field is at the pilot's ask --
  *  "18 nm NE of C81" -- and whether it may be landed at without asking.
- *  Nothing where there is nothing to measure from. */
+ *  Nothing where there is nothing to measure from, nor where the start is
+ *  the field itself: the departure's own card, with no fix, said "here of KMSN", as the phones said "From KMSN 0 nm". */
 function subtitleOf(place: AirportPlace, from: { point: LatLon; name: string | null } | null): string {
+  const itself = !!from?.name && (sameField(from.name, place.ident) || distanceNm(from.point, place) < 0.5);
   return [
-    from ? (from.name ? `${away(from.point, place)} of ${from.name}` : away(from.point, place)) : null,
+    from && !itself ? (from.name ? `${away(from.point, place)} of ${from.name}` : away(from.point, place)) : null,
     // Its elevation beside the distance, at the owner's ask (2026-10-29):
-    // the field's from the FAA's airport file (NASR APT_BASE ELEV, feet
-    // MSL), what a pilot sets the pattern altitude from.
+    // the field's from the FAA's airport file (NASR APT_BASE ELEV, feet MSL), what a pilot sets the pattern altitude from.
     place.elevation_ft != null ? `Elevation ${feet(place.elevation_ft)}` : null,
-    // A field the armed services own (the FAA's airport file): one most
-    // pilots may not land at without the service's permission, or a civil
+    // A field the armed services own (the FAA's airport file): one most pilots may not land at without the service's permission, or a civil
     // airport sharing it -- not a description, a field to keep out of.
     place.military === "military"
       ? "Military, permission required"

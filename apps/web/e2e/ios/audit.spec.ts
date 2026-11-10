@@ -15,6 +15,11 @@ import {
   typeFindings,
   type Insets,
 } from "./metrics";
+import {} from "../helpers";
+import { pickAirplane } from "../startState";
+
+// An airplane picked: these read its figures (the setup picks none).
+test.beforeEach(({ page }) => pickAirplane(page));
 
 /**
  * The iOS audit, one test per screen on each iOS project
