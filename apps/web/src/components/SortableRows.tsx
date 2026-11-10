@@ -1,124 +1,78 @@
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { GripVertical } from "lucide-react";
-import {
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DraggableAttributes,
-  type DraggableSyntheticListeners,
-} from "@dnd-kit/core";
-import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { cn } from "cn";
-import { SortItem } from "./swipeRow";
-import IconButton from "./IconButton";
+import { Button, GridList, GridListItem, useDragAndDrop } from "react-aria-components";
 
-// Apart from Favorites' strips and tiles, which the first load draws:
-// dnd-kit (about 48 KB) comes with the lists in full that a pilot edits,
-// loaded when one is opened (FavoritesList, AircraftFavoritesList), and the
-// first load back under CI's budget (scripts/first-load.mjs, 2026-11-05).
+// Apart from Favorites' strips and tiles, which the first load draws: the
+// lists in full that a pilot edits are loaded when one is opened
+// (FavoritesList, AircraftFavoritesList), and React Aria's drag and drop
+// with them.
 
-/** The rows a list's handles drag: dnd-kit's sortable (as the route's
- *  stops are, RouteBox), round the ListGroup that draws them, each row a
- *  `SortableRow` -- a drag by the handle, the list making room under it,
- *  VoiceOver told where it is, and the move made once, at the drop. */
+/**
+ * The rows a list's handles drag, while the list is being edited: React
+ * Aria's GridList with its own drag and drop (web.md section 3), round the
+ * rows a ListGroup draws, each a `SortableRow`. A mouse or a finger drags a
+ * row by its handle, the list showing where it will go; a keyboard picks
+ * the focused row up with Enter, moves it with the arrow keys, puts it down
+ * with Enter or lets it go with Escape, and VoiceOver is told each step in
+ * React Aria's own words. The move is made once, at the drop. It was
+ * dnd-kit's sortable, whose keyboard drag said nothing a reader could use.
+ */
 export function SortableRows({
+  label,
   ids,
   onMove,
   children,
 }: {
+  /** The list's name, said as the grid's. */
+  label: string;
   ids: string[];
   onMove: (from: number, to: number) => void;
   children: ReactNode;
 }) {
-  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+  const { dragAndDropHooks } = useDragAndDrop({
+    getItems: (keys) => [...keys].map((key) => ({ "text/plain": String(key) })),
+    onReorder: ({ keys, target }) => {
+      const from = ids.indexOf(String([...keys][0]));
+      const at = ids.indexOf(String(target.key));
+      if (from < 0 || at < 0) return;
+      // Before or after the row it was let go on, counted once the row
+      // moved has left its own place.
+      const to = (target.dropPosition === "after" ? at + 1 : at) - (from < at ? 1 : 0);
+      if (to !== from) onMove(from, to);
+    },
+  });
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={({ active, over }) => {
-        if (!over || active.id === over.id) return;
-        const from = ids.indexOf(`${active.id}`),
-          to = ids.indexOf(`${over.id}`);
-        if (from >= 0 && to >= 0) onMove(from, to);
-      }}
-    >
-      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-        {children}
-      </SortableContext>
-    </DndContext>
+    <GridList aria-label={label} dragAndDropHooks={dragAndDropHooks} className="outline-none" data-testid="sortable-rows">
+      {children}
+    </GridList>
   );
 }
 
-const SortHandle = createContext<{
-  ref: (node: HTMLElement | null) => void;
-  attributes: DraggableAttributes;
-  listeners: DraggableSyntheticListeners;
-} | null>(null);
-
-/** One of a `SortableRows`' rows, lifted over the others while dragged. */
-export function SortableRow({ id, children }: { id: string; children: ReactNode }) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id });
-  // The row's own box is what moves (SwipeToDelete's, by SortItem), not a
-  // box round it: wrapped, each row was the first and the last of its own,
-  // and lost the reach over the group's gaps that a list's rows have, a
-  // band above and below every Favorite that a tap did nothing on (the
-  // owner's screenshot, 2026-10-28).
-  const item = useMemo(
-    () => ({
-      ref: setNodeRef,
-      style: { transform: CSS.Translate.toString(transform), transition },
-      className: cn(isDragging && "relative z-10 bg-card shadow-lg"),
-    }),
-    [setNodeRef, transform, transition, isDragging],
-  );
+/** One of a `SortableRows`' rows, a hairline over each but the first as
+ *  the group's own rows have, dimmed while it is the one dragged. */
+export function SortableRow({ id, label, children }: { id: string; label: string; children: ReactNode }) {
   return (
-    <SortItem.Provider value={item}>
-      <SortHandle.Provider value={{ ref: setActivatorNodeRef, attributes, listeners }}>{children}</SortHandle.Provider>
-    </SortItem.Provider>
+    <GridListItem
+      id={id}
+      textValue={label}
+      className="relative border-border outline-none not-first:border-t data-[dragging]:opacity-40 data-[drop-target]:bg-tint/10 data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring data-[focus-visible]:ring-inset"
+    >
+      {children}
+    </GridListItem>
   );
 }
 
-/** The handle after a row being edited, in a `SortableRow`: dragged, its
- *  row goes with it (dnd-kit); and the arrow keys a place at a time, as
- *  they did, besides dnd-kit's own Space to lift and drop. */
-export function MoveHandle({
-  label,
-  index,
-  count,
-  onMove,
-}: {
-  label: string;
-  index: number;
-  count: number;
-  onMove: (from: number, to: number) => void;
-}) {
-  const sort = useContext(SortHandle);
+/** The handle at the end of a row being edited, React Aria's drag button:
+ *  dragged, its row goes with it; to a keyboard or VoiceOver it starts the
+ *  row's drag. 36 points, its 44 a pseudo-element round it. */
+export function MoveHandle({ label }: { label: string }) {
   return (
-    <IconButton
-      label={label}
-      className="touch-none"
-      {...sort?.attributes}
-      {...sort?.listeners}
-      ref={sort?.ref}
-      onKeyDown={(e) => {
-        if (e.key === "ArrowUp" && index > 0) {
-          e.preventDefault();
-          onMove(index, index - 1);
-          return;
-        }
-        if (e.key === "ArrowDown" && index < count - 1) {
-          e.preventDefault();
-          onMove(index, index + 1);
-          return;
-        }
-        sort?.listeners?.onKeyDown?.(e);
-      }}
+    <Button
+      slot="drag"
+      aria-label={label}
+      className="relative inline-flex size-9 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground outline-none after:absolute after:-inset-1 after:content-[''] hover:bg-muted data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring"
     >
-      <GripVertical className="size-5 text-muted-foreground" />
-    </IconButton>
+      <GripVertical className="size-5" aria-hidden />
+    </Button>
   );
 }

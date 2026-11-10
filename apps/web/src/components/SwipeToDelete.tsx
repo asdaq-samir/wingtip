@@ -1,4 +1,4 @@
-import { cloneElement, useCallback, useContext, useMemo, useRef, type ReactNode } from "react";
+import { cloneElement, useMemo, useRef, type ReactNode } from "react";
 import { Share, Trash2 } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "./ui/button";
@@ -6,7 +6,7 @@ import type { HeldAction } from "./popups/HeldMenu";
 import { usePopups } from "./popupsChunk";
 import { TEXT } from "../lib/text";
 import { useConfirm } from "./useConfirm";
-import { SortItem, SwipeRow } from "./swipeRow";
+import { SwipeRow } from "./swipeRow";
 import { cancelled, shareOrCopy } from "../lib/share";
 import { showError } from "../lib/problems";
 import { describeError } from "../lib/api/client";
@@ -38,16 +38,6 @@ export function SwipeToDelete({
   children: ReactNode;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
-  // In a sortable list, this box is the one that moves (SortItem).
-  const sort = useContext(SortItem);
-  const sortRef = sort?.ref;
-  const setScroller = useCallback(
-    (node: HTMLDivElement | null) => {
-      scroller.current = node;
-      sortRef?.(node);
-    },
-    [sortRef],
-  );
   const shareIt = () => {
     if (!share) return;
     shareOrCopy(share).catch((err) => {
@@ -64,14 +54,10 @@ export function SwipeToDelete({
     <div
       // Made to slide sideways, its Delete past its end: the iOS
       // audit's sideways-scroll rule passes over it (data-slides).
-      ref={setScroller}
+      ref={scroller}
       data-testid="swipe-row"
       data-slides=""
-      style={sort?.style}
-      className={cn(
-        "group/swipe flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] first:rounded-t-lg last:rounded-b-lg [&::-webkit-scrollbar]:hidden",
-        sort?.className,
-      )}
+      className="group/swipe flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] first:rounded-t-lg last:rounded-b-lg [&::-webkit-scrollbar]:hidden"
     />
   );
   const body = (

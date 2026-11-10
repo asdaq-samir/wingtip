@@ -239,20 +239,49 @@ async function touchHold(page: Page, from: Locator, to: Locator) {
   };
 }
 
-// Held past the drag's quarter second and well short of the menu's half,
-// a slow runner's lag included.
-async function touchDrag(page: Page, from: Locator, to: Locator) {
-  const moveOn = await touchHold(page, from, to);
-  await page.waitForTimeout(320);
-  await moveOn();
-}
+// A pill dragged is the browser's own drag (React Aria's useDrag and
+// useDrop, pointDrag): a mouse's drag here, as Chromium starts none from a
+// touch screen's events sent by the test. The keyboard's is React Aria's:
+// Enter on the pill picks it up, Tab goes from one pill to the next, Enter
+// puts it down there.
+test("any point dragged anywhere, by a mouse or the keyboard, the ends too: before the departure it is the departure, after the destination the destination", async ({
+  page,
+}) => {
+  await page.route(
+    (url) => /\/(checkpoints|navlog|briefing)$/.test(url.pathname),
+    (route) => route.abort(),
+  );
+  await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KRYV,KMSN");
+  await settle(page);
+  await openPanel(page);
+  const lines = sideDrawer(page).getByTestId("route-slide");
+  const stopsAre = (list: string) => new RegExp(`[?&]stops=(${list.replaceAll(",", "%2C")}|${list})(&|$)`);
+
+  await lines.getByTestId("route-dest").dragTo(lines.getByTestId("route-dep"));
+  await expect(page).toHaveURL(/[?&]dep=KDLH(&|$)/);
+  await expect(page).toHaveURL(/[?&]dest=KMSN(&|$)/);
+  await expect(page).toHaveURL(stopsAre("C81,KRYV"));
+
+  // KDLH, the departure now, picked up and put down on the destination.
+  const departure = lines.getByTestId("route-dep");
+  const destination = lines.getByTestId("route-dest");
+  await departure.focus();
+  await page.keyboard.press("Enter");
+  for (let i = 0; i < 6; i++) {
+    if (await destination.evaluate((el) => el === document.activeElement)) break;
+    await page.keyboard.press("Tab");
+  }
+  await expect(destination).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
+  await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
+  await expect(page).toHaveURL(stopsAre("KRYV,KMSN"));
+});
 
 test.describe("on a touch screen", () => {
   test.use({ hasTouch: true });
 
-  test("any point dragged anywhere, the ends too: before the departure it is the departure, after the destination the destination; held, its menu, which a move puts away for the drag", async ({
-    page,
-  }) => {
+  test("a pill held opens its menu, whose Move Down moves the stop a place without a drag", async ({ page }) => {
     await page.route(
       (url) => /\/(checkpoints|navlog|briefing)$/.test(url.pathname),
       (route) => route.abort(),
@@ -261,30 +290,13 @@ test.describe("on a touch screen", () => {
     await settle(page);
     await openPanel(page);
     const lines = sideDrawer(page).getByTestId("route-slide");
-    const stopsAre = (list: string) => new RegExp(`[?&]stops=(${list.replaceAll(",", "%2C")}|${list})(&|$)`);
-
-    await touchDrag(page, lines.getByTestId("route-dest"), lines.getByTestId("route-dep"));
-    await expect(page).toHaveURL(/[?&]dep=KDLH(&|$)/);
-    await expect(page).toHaveURL(/[?&]dest=KMSN(&|$)/);
-    await expect(page).toHaveURL(stopsAre("C81,KRYV"));
-
-    await touchDrag(page, lines.getByTestId("route-dep"), lines.getByTestId("route-dest"));
-    await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
-    await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
-    await expect(page).toHaveURL(stopsAre("KRYV,KMSN"));
-
-    // Held past the menu's half second, then moved: the menu goes, and the
-    // stop goes where it was taken.
-    const menu = page.getByRole("menuitem", { name: "Remove", exact: true });
-    const moveOn = await touchHold(
-      page,
-      lines.getByRole("group", { name: "Stop 1 KRYV" }),
-      lines.getByRole("group", { name: "Stop 2 KMSN" }),
-    );
-    await expect(menu).toBeVisible();
-    await moveOn();
-    await expect(menu).toHaveCount(0);
-    await expect(page).toHaveURL(stopsAre("KMSN,KRYV"));
+    const stop = lines.getByRole("group", { name: "Stop 1 KRYV" });
+    // Held past the menu's half second and let go where it was put down.
+    const letGo = await touchHold(page, stop, stop);
+    await expect(page.getByRole("menuitem", { name: "Remove", exact: true })).toBeVisible();
+    await letGo();
+    await page.getByRole("menuitem", { name: "Move Down", exact: true }).click();
+    await expect(page).toHaveURL(/[?&]stops=(KMSN%2CKRYV|KMSN,KRYV)(&|$)/);
   });
 });
 

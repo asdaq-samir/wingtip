@@ -15,7 +15,8 @@ import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
  * Airplane, the pilot's own, which a tap changes through the search, and the
  * airplanes kept, which a tap opens -- and with Edit, a minus before each
  * to let it go and a handle after each to drag it up or down the list (or
- * move it with the arrow keys). Add a Favorite asks the search for one more.
+ * pick it up with Enter and move it with the arrow keys). Add a Favorite
+ * asks the search for one more.
  */
 export default function AircraftFavoritesList({
   onBack,
@@ -76,37 +77,43 @@ export default function AircraftFavoritesList({
           </SwipeToDelete>
         )}
       </ListGroup>
-      <SortableRows ids={favorites.map((a) => a.hex)} onMove={move}>
-        <ListGroup title="Airplanes">
-          {favorites.length === 0 && <ListRow muted title="A star on an airplane's card adds it here" />}
-          {favorites.map((a, index) => (
-            <SortableRow key={a.hex} id={a.hex}>
-              <SwipeToDelete label={`Remove ${a.name} from Favorites`} onDelete={() => remove(a)} share={planeLink(a)}>
-                {editing ? (
+      <ListGroup title="Airplanes">
+        {favorites.length === 0 && <ListRow muted title="A star on an airplane's card adds it here" />}
+        {/* Edited, the rows are React Aria's GridList, dragged by their
+            handles (SortableRows); at rest, each opens its card. */}
+        {editing && favorites.length > 0 ? (
+          <SortableRows label="Favorite airplanes" ids={favorites.map((a) => a.hex)} onMove={move}>
+            {favorites.map((a) => (
+              <SortableRow key={a.hex} id={a.hex} label={a.name}>
+                <SwipeToDelete label={`Remove ${a.name} from Favorites`} onDelete={() => remove(a)} share={planeLink(a)}>
                   <ListRow
                     media={<RemoveMinus label={`Remove ${a.name} from Favorites…`} />}
                     title={name(a)}
                     description={a.type ?? undefined}
                     data-testid="aircraft-favorites-row"
                   >
-                    <MoveHandle label={`Move ${a.name}`} index={index} count={favorites.length} onMove={move} />
+                    <MoveHandle label={`Move ${a.name}`} />
                   </ListRow>
-                ) : (
-                  <ListRow
-                    media={<PlaneMark small kind={keptKind(a)} />}
-                    chevron
-                    title={name(a)}
-                    description={a.type ?? undefined}
-                    onClick={() => onOpen(a.hex)}
-                    data-testid="aircraft-favorites-row"
-                  />
-                )}
-              </SwipeToDelete>
-            </SortableRow>
-          ))}
-          <ListRow media={<Plus className="size-5" />} title="Add a Favorite" onClick={onAdd} data-testid="aircraft-favorites-add" />
-        </ListGroup>
-      </SortableRows>
+                </SwipeToDelete>
+              </SortableRow>
+            ))}
+          </SortableRows>
+        ) : (
+          favorites.map((a) => (
+            <SwipeToDelete key={a.hex} label={`Remove ${a.name} from Favorites`} onDelete={() => remove(a)} share={planeLink(a)}>
+              <ListRow
+                media={<PlaneMark small kind={keptKind(a)} />}
+                chevron
+                title={name(a)}
+                description={a.type ?? undefined}
+                onClick={() => onOpen(a.hex)}
+                data-testid="aircraft-favorites-row"
+              />
+            </SwipeToDelete>
+          ))
+        )}
+        <ListRow media={<Plus className="size-5" />} title="Add a Favorite" onClick={onAdd} data-testid="aircraft-favorites-add" />
+      </ListGroup>
     </div>
   );
 }
