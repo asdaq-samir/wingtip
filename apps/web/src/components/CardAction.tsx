@@ -67,7 +67,10 @@ export function CardAction({
   // Apple's Maps on the web draws a place's Call and Website (the owner's
   // screenshot, 2026-10-26).
   const look = cn(
-    "h-auto min-w-0 flex-col gap-0.5 rounded-xl px-1 py-1.5 [&_svg:not([class*='size-'])]:size-[20px]",
+    // No edge on any, Fly Here's filled one too: the stock button's
+    // clear one inset its fill a point, out of line with the tiles beside
+    // and under it (the sheet audit's F-B2).
+    "h-auto min-w-0 flex-col gap-0.5 rounded-xl border-0 px-1 py-1.5 [&_svg:not([class*='size-'])]:size-[20px]",
     !filled &&
       cn(
         GLASS_BUTTON,

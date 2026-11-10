@@ -85,7 +85,8 @@ export default function SearchResultsPage() {
           : "No fields found nearby."
         : null;
   return (
-    <div className="flex flex-col gap-3 px-4 pt-2 pb-4" data-testid="search-results">
+    // Its sides the page's own sixteen (TabPage), not 32 (F-P1).
+    <div className="flex flex-col gap-3 pt-2 pb-4" data-testid="search-results">
       <span ref={anchor} hidden />
       <FilterChips />
       <p className={cn("text-muted-foreground", TEXT.note)}>Near {sent.near.label}</p>

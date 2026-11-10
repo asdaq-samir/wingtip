@@ -585,8 +585,8 @@ export default function PlaceCard({
             disabled={!place}
             raise={{ onExpand: raise, onLower }}
             barRef={tabsRef}
-            // Pinned under the card's compact head as it scrolls, its sections a tap away (one scrolling rule).
-            className="sticky top-[calc(var(--head-room,0px)+3.5rem)] z-10 mt-3 scroll-mt-28 bg-background py-1 in-data-[sheet]:bg-[var(--sheet)]"
+            // Pinned under the card's 48-point compact head (PinnedCardBar) as it scrolls, its sections a tap away.
+            className="sticky top-[calc(var(--head-room,0px)-var(--under-pad,0px)+48px)] z-10 mt-3 scroll-mt-28 bg-background py-1 in-data-[sheet]:bg-[var(--sheet)]"
           />
           <CardTabPanel value="radio" className="space-y-0">
             {place && <PlaceInfoTab place={place} where={where} services={services} />}

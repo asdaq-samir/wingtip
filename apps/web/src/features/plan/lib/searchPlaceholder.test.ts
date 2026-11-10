@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { placeholderOf } from "./searchPlaceholder";
+import { placeholderOf, shortPlaceholder } from "./searchPlaceholder";
 
 const pick = (label: string, fixes = false) => ({ label, fixes, onPick: () => {} });
 
@@ -12,5 +12,12 @@ describe("placeholderOf", () => {
     expect(placeholderOf(false, null, "home")).toBe("Search for your home airport");
     expect(placeholderOf(false, null, "favorite")).toBe("Search for an airport to keep");
     expect(placeholderOf(false, null, "place")).toBe("Search airports, airplanes, or ask");
+  });
+});
+
+describe("shortPlaceholder", () => {
+  it("cuts the default to what fits, the rest as they are", () => {
+    expect(shortPlaceholder("Search airports, airplanes, or ask")).toBe("Search or ask");
+    expect(shortPlaceholder("Direct to which airport?")).toBe("Direct to which airport?");
   });
 });

@@ -119,7 +119,7 @@ export default function MapSettings({ weather }: { weather?: ReactNode }) {
         {overlay.startsWith("google") && googleSession.isError && (
           // Where it happens: a key restricted to another site, the Map Tiles
           // API off or no quota leave Google's map blank otherwise.
-          <p role="alert" className={cn("px-1 text-destructive-ink", TEXT.note)} data-testid="google-problem">
+          <p role="alert" className={cn("text-destructive-ink", TEXT.note)} data-testid="google-problem">
             Google's map didn't load. Check that this site and the Map Tiles API are allowed for the key.
           </p>
         )}

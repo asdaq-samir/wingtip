@@ -304,11 +304,11 @@ export function StripNote({ children, status = false }: { children: ReactNode; s
   );
 }
 
-/** A pill's row of small tiles, along it, sliding sideways where more
- *  than fit. */
-export function PillStrip({ children, testId }: { children: ReactNode; testId?: string }) {
+const STRIP = "-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain px-1 [scrollbar-width:none]";
+/** A pill's row of small tiles, sliding sideways where more than fit (`className`: strips laid into it). */
+export function PillStrip({ children, testId, className }: { children: ReactNode; testId?: string; className?: string }) {
   return (
-    <div className="-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain px-1 [scrollbar-width:none]" data-testid={testId}>
+    <div className={cn(STRIP, className)} data-testid={testId}>
       {children}
     </div>
   );

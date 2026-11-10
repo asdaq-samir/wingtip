@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { FavoriteStrip, PillSection } from "../../../../components/Favorites";
+import { FavoriteStrip, PillSection, PillStrip } from "../../../../components/Favorites";
 import TabPage from "../../../../components/TabPage";
 import { useAsk } from "../../../../lib/ask/useAsk";
 import { AircraftFavoriteStrip } from "../../aircraftTabChunk";
@@ -62,26 +62,33 @@ export default function SearchHome({ vm, model }: { vm: PlanWorkspaceModel; mode
         </Suspense>
       )}
       <PillSection large title="Favorites" onMore={() => openList("favorites")} testId="pill-section-favorites">
-        <FavoriteStrip
-          home={home}
-          favorites={favorites}
-          onOpen={(a) => selectPlace(a.ident)}
-          onAddHome={() => addFromPill("home")}
-          onAddFavorite={() => askFor("favorite")}
-        />
-        <Suspense fallback={null}>
-          <AircraftFavoriteStrip
-            onOpen={(hex) => selectFlight(hex)}
-            onAddMine={() => {
-              pickView("traffic");
-              addFromPill("mine");
-            }}
-            onAddFavorite={() => {
-              pickView("traffic");
-              addFromPill("airplane");
-            }}
+        {/* Home and the airports, then the Airplane and the airplanes, in one
+            row sliding sideways, as Apple Maps' Favorites are (the sheet
+            audit's F-L2): they stood in two rows, a tile each. Each strip's
+            own box laid out of the way (display: contents), its tiles in
+            this one. */}
+        <PillStrip testId="pill-favorites-row" className="[&>div]:contents">
+          <FavoriteStrip
+            home={home}
+            favorites={favorites}
+            onOpen={(a) => selectPlace(a.ident)}
+            onAddHome={() => addFromPill("home")}
+            onAddFavorite={() => askFor("favorite")}
           />
-        </Suspense>
+          <Suspense fallback={null}>
+            <AircraftFavoriteStrip
+              onOpen={(hex) => selectFlight(hex)}
+              onAddMine={() => {
+                pickView("traffic");
+                addFromPill("mine");
+              }}
+              onAddFavorite={() => {
+                pickView("traffic");
+                addFromPill("airplane");
+              }}
+            />
+          </Suspense>
+        </PillStrip>
       </PillSection>
       <PillSection large title="Recents" onMore={() => openList("recents")} testId="airport-recents">
         <RecentCards onPick={(airport) => void pickPlace(airport)} />

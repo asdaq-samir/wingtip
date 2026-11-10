@@ -146,8 +146,10 @@ close does.
 
 ### Motion
 
-- Sheets and side panels: ease-out, 0.3 s, no spring, transform only, one
-  detent per throw (decision 0018).
+- Sheets and side panels: the stock Drawer's own slide, 0.45 s on
+  `cubic-bezier(0.32, 0.72, 0, 1)`, no spring, transform only, one detent
+  per throw (decision 0018; the owner kept the stock sheet's motion,
+  2026-11-10, MapPanel).
 - Base UI animates with CSS transitions on `[data-starting-style]` and
   `[data-ending-style]`, which can reverse mid-way; `onOpenChangeComplete`
   fires once the animation ends ([Base UI animation][bui-animation]).
@@ -363,7 +365,7 @@ outlines its mark.
 **Motion.** Desktop: the side panel's content changes in place, with a
 short cross-fade (`<ViewTransition>` on the card) and no slide of the
 panel. Phone: the sheet keeps its detent; the card arrives with the
-sheet's 0.3 s ease-out if the sheet must rise.
+sheet's own 0.45 s slide if the sheet must rise.
 
 **Avoid.** A modal over the map on desktop (the map must stay usable
 beside the card); a card without its own URL (`?place=`); assuming an

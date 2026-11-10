@@ -149,6 +149,7 @@ export default function MapPanel(props: Props) {
     moving,
     barInPill: !flying,
     titleInPill: !!props.title && barShown,
+    grabberOver: bottomSheet,
     footShown,
     pillChrome,
     halfChrome,
@@ -284,8 +285,7 @@ export default function MapPanel(props: Props) {
     children,
   };
   const grabber = <SheetGrabber label={label} size={size} ask={ask} at={bottomSheet ? "top" : "bottom"} />;
-  // On a phone the light grey of Apple Maps' web sheet (2026-11-10): the
-  // look's --sheet, Canvas in Native.
+  // On a phone the light grey of Apple Maps' web sheet (2026-11-10): the look's --sheet, Canvas in Native.
   const look = onPhone
     ? GLASS_SHEET
     : cn(MATERIAL, "w-(--size-panel) lg:w-(--size-panel-wide) ring-1 ring-inset ring-black/5 shadow-float dark:ring-white/10");

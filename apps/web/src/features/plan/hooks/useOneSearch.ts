@@ -9,7 +9,7 @@ import { SCREENS, type ScreenId } from "../../../lib/navigation/generated/screen
 import { wantScreen } from "../../../lib/navigation/wanted";
 import { takeSearchAsk, useSearchAsk, useSearchPick } from "../../../lib/oneSearch";
 import { usePickScope } from "./usePickScope";
-import { placeholderOf } from "../lib/searchPlaceholder";
+import { searchWords } from "../lib/searchPlaceholder";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
 import { aircraftListQuery, aircraftProfilesQuery, pilotQuery } from "../../../lib/queryClient";
 import type { AirportSearchRow } from "../../../lib/useAirportSearch";
@@ -361,8 +361,6 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     [input],
   );
 
-  const placeholder = placeholderOf(direct, pick, picking);
-
   return {
     typed,
     direct,
@@ -373,7 +371,8 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     /** A search sent, its list shown while the field is let go. */
     sent: !!sent && !focused,
     send,
-    placeholder,
+    // The field's words, shown short and said whole.
+    ...searchWords(direct, pick, picking),
     answered: search.answered,
     airports,
     waypoints,
