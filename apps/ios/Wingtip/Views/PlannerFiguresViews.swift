@@ -20,7 +20,7 @@ struct WithinMark: View {
     let ok: Bool
     var body: some View {
         Image(systemName: ok ? "checkmark.circle.fill" : "xmark.circle.fill")
-            .foregroundStyle(ok ? .green : .red)
+            .foregroundStyle(ok ? WingtipInk.go : WingtipInk.problem)
             .accessibilityLabel(ok ? "Within" : "Outside")
     }
 }

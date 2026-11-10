@@ -197,11 +197,11 @@ extension Due {
         return dueAtHours.map { "At \(Format.hours($0))" } ?? ""
     }
 
-    /// Past is red, within the reminders' 30 days (or 10 hours) orange,
-    /// further off green, as the web's lib/paperwork says it.
+    /// Past in the problem ink, within the reminders' 30 days (or 10
+    /// hours) in caution, further off in go, as the web's lib/paperwork says it.
     var tone: Color {
-        if let d = daysLeft { return d < 0 ? .red : d <= 30 ? .orange : .green }
-        if let h = hoursLeft { return h <= 0 ? .red : h <= 10 ? .orange : .green }
+        if let d = daysLeft { return d < 0 ? WingtipInk.problem : d <= 30 ? WingtipInk.caution : WingtipInk.go }
+        if let h = hoursLeft { return h <= 0 ? WingtipInk.problem : h <= 10 ? WingtipInk.caution : WingtipInk.go }
         return .secondary
     }
 }
