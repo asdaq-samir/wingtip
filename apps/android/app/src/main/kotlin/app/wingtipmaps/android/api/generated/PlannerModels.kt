@@ -595,6 +595,9 @@ data class AirportInView (
  */
 @Serializable
 data class PinWeather (
+    @SerialName("ceiling_cover")
+    val ceilingCover: String? = null,
+
     @SerialName("ceiling_ft")
     val ceilingFt: Double? = null,
 

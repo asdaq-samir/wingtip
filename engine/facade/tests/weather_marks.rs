@@ -14,8 +14,19 @@ fn fixture() -> Value {
     serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap()
 }
 
+/// The rule `name` asked `input`, its input and answer held to the
+/// contract (engine/contract/engine.schema.json), as tests/contract.rs
+/// holds the other fixtures'; the answer.
 fn ask(name: &str, input: &Value) -> Value {
-    serde_json::from_str(&call(name, &input.to_string()).unwrap_or_else(|e| panic!("{name}: {e}"))).unwrap()
+    let answer: Value = serde_json::from_str(&call(name, &input.to_string()).unwrap_or_else(|e| panic!("{name}: {e}"))).unwrap();
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../contract/engine.schema.json");
+    let mut schema: Value = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+    schema["required"] = json!([]);
+    let validator = jsonschema::draft7::new(&schema).expect("the contract is a draft 7 schema");
+    let asked = json!({ name: { "input": input, "answer": answer } });
+    let errors: Vec<String> = validator.iter_errors(&asked).map(|e| e.to_string()).collect();
+    assert!(errors.is_empty(), "{name}: not of the contract's shape: {errors:?}");
+    answer
 }
 
 #[test]

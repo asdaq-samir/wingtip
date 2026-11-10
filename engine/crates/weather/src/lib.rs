@@ -23,6 +23,7 @@ pub mod notam;
 pub mod notam_rank;
 pub mod ready;
 pub mod rvr;
+pub mod sky;
 pub mod taf;
 pub mod tfr;
 pub mod validity;

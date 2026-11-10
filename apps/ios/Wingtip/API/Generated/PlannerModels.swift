@@ -380,6 +380,7 @@ struct APIAirportInView: Codable, Equatable, Sendable {
 /// engine's wind_arrow) and a runway end has a heading.
 // MARK: - APIPinWeather
 struct APIPinWeather: Codable, Equatable, Sendable {
+    var ceilingCover: String?
     var ceilingFt: Double?
     var ceilingUnknown: Bool?
     var crosswindKt, visibilitySm, windDirTrueDeg, windGustKt: Double?

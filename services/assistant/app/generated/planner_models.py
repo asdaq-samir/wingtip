@@ -2360,6 +2360,9 @@ class PinWeather(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
+    ceiling_cover: Annotated[
+        Literal['BKN', 'OVC', 'VV'] | None, Field(title='Ceiling Cover')
+    ] = None
     ceiling_ft: Annotated[float | None, Field(title='Ceiling Ft')] = None
     ceiling_unknown: Annotated[bool | None, Field(title='Ceiling Unknown')] = False
     crosswind_kt: Annotated[float | None, Field(title='Crosswind Kt')] = None
