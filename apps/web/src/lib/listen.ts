@@ -205,3 +205,27 @@ function startOn(recognition: WebRecognition, track: MediaStreamTrack | null) {
   }
   recognition.start();
 }
+
+/**
+ * One thing said, as the words so far: `text` heard under `id` put into
+ * `said` and the whole read back in order. The same words again under a
+ * new number, or the last words with more after them, are the last
+ * result over again, not a new one: Safari's recognizer gives a finished
+ * phrase again as a new result, and again after it starts itself afresh,
+ * and the pill read "Plan a trip to Las Vegas Plan a trip to Las Vegas"
+ * (the owner's screenshot, 2026-11-03). Both the radio heard once
+ * (lib/atcListening) and the pilot's own voice (features/voice) use it.
+ */
+export function saidSoFar(said: Map<number, string>, id: number, text: string): string {
+  const last = [...said.keys()].filter((k) => k < id).sort((a, b) => b - a)[0];
+  if (last !== undefined) {
+    const before = said.get(last)!.toLowerCase(),
+      now = text.toLowerCase();
+    if (now === before || now.startsWith(before) || before.startsWith(now)) said.delete(last);
+  }
+  said.set(id, text);
+  return [...said.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map((e) => e[1])
+    .join(" ");
+}

@@ -8,6 +8,7 @@ import { usePointerHover } from "../../../../hooks/use-pointer-hover";
 import { useKeyHint } from "../../../../lib/shortcutKeys";
 import AirportPreview from "../preview/AirportPreview";
 import type { DoHit, OneSearchModel } from "../../hooks/useOneSearch";
+import { useVoiceInput } from "../../../voice";
 
 /** A Do row's glyph: the arrow for Direct To, the Brief's, Nearest's, the
  *  emergency's in red, the assistant's, a screen's. */
@@ -39,12 +40,19 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
   const hover = usePointerHover();
   // A row's key as the pilot presses it (lib/shortcutKeys), none when off.
   const hint = useKeyHint();
+  // Why the mic heard nothing (features/voice), here as the search's own.
+  const unheard = useVoiceInput((s) => (s.error?.field === "search" ? s.error.text : null));
   const none = airports.length + waypoints.length + airplanes.length + does.length === 0;
   return (
     <div className="flex flex-col gap-2 px-4 pt-2 pb-4" data-testid="one-search-results">
       {problem && (
         <p role="alert" className={cn("appear text-destructive-ink", TEXT.note)} data-testid="one-search-problem">
           {problem}
+        </p>
+      )}
+      {unheard && (
+        <p role="alert" className={cn("appear text-destructive-ink", TEXT.note)} data-testid="one-search-voice-problem">
+          {unheard}
         </p>
       )}
       <CommandList

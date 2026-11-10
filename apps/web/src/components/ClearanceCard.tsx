@@ -260,9 +260,9 @@ export default function ClearanceCard({
     error ?? readbackProblem ?? (found.isError ? "The places in it could not be looked up; check the connection and try again." : null);
   const mic = useCanListen();
 
-  const hearState = onRadio ? "Listening…" : heardIt ? (heardAt ? `Heard ${time(heardAt)}` : "Heard") : NOT_YET;
+  const hearState = onRadio ? "Listening to the radio…" : heardIt ? (heardAt ? `Heard ${time(heardAt)}` : "Heard") : NOT_YET;
   const readbackState = readingBack ? (
-    "Listening…"
+    "Listening for your read back…"
   ) : !check ? (
     NOT_YET
   ) : check.items.length === 0 ? (

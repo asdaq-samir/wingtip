@@ -97,7 +97,7 @@ export function AtisRows() {
               <Radio />
             </RowBadge>
           }
-          title={listening ? "Listening…" : "Listen to ATIS"}
+          title={listening ? "Listening to the radio…" : "Listen to ATIS"}
           description={
             listening
               ? heard ||

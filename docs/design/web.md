@@ -735,13 +735,16 @@ The pattern is a form that reads what is spoken or typed, with the
 standards' status messages (WCAG 4.1.3) and the APG's dialog only where a
 step must be confirmed.
 
-**Structure, top to bottom.** The listening pill with live words and
-chips when the mic is on (memory: mic listening pill); the clearance as
+**Structure, top to bottom.** Comms assist's pill (the radio's mark,
+"Listening to the radio…", then "Heard: " with the words and the chips)
+when the radio is heard once; never the mic's look, which is Ask by
+voice's (features/voice: a Base UI Toggle pressed while it listens, the
+words typed into its field; the owner's split, 2026-11-10); the clearance as
 the engine reads it, element by element (limit, route, altitude,
 frequency, transponder code); the read-back text; Use This Route.
 
 **Stock parts.** `ClearanceCard`, shadcn Textarea and Field for typed
-input, Base UI Toggle for the mic, `FrequencyButton`.
+input, `FrequencyButton`.
 
 **Primary action.** Use This Route, filled, under the clearance.
 
