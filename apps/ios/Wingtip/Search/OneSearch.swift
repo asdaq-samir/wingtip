@@ -9,7 +9,7 @@ struct SearchHost {
     var card: (String) -> Void
     /// The plan in sight: the sheet's root.
     var showPlan: () -> Void
-    /// A page of the account menu's, or the Airplane page for a type.
+    /// Settings (the account button's), or the Airplane page for a type.
     var page: (SheetPage) -> Void
     /// A screen by its name (a Do row).
     var screen: (Screen) -> Void

@@ -9,7 +9,7 @@ struct SearchBarItems: ToolbarContent {
     /// One line heard and done (the sheet's FieldRunner); nil where speech
     /// cannot be recognised on this iPhone, which then has no microphone.
     let hear: (() -> Void)?
-    /// A page the account menu opens.
+    /// A page of the sheet's stack: Settings, the account button's.
     let open: (SheetPage) -> Void
 
     var body: some ToolbarContent {
@@ -18,7 +18,7 @@ struct SearchBarItems: ToolbarContent {
             if let hear {
                 MicButton(listening: VoiceInput.shared.listening, busy: model.busy, action: hear)
             }
-            AccountMenu(open: open)
+            AccountButton(open: open)
         }
     }
 }
@@ -52,73 +52,28 @@ struct MicButton: View {
 }
 
 /// The account button, Setup's home now the tabs are gone (the owner's
-/// design, 2026-11-09): a stock menu of Setup's rows -- the account, the
-/// flying screens, the pilot's records, the minimums and the rest -- each
-/// opening its page on the sheet's stack, and Settings, the page with the
-/// map's switches, the alerts, the look and the chart.
-struct AccountMenu: View {
+/// design, 2026-11-09): a tap opens Settings on the sheet's stack, with
+/// nothing in between (the owner, 2026-11-10: "When tapping the avatar
+/// just open the settings"). Settings holds what the menu did: the
+/// account and signing in or out, the flying screens, the pilot's
+/// records, the minimums, the look and the rest (SetupView).
+struct AccountButton: View {
     let open: (SheetPage) -> Void
     @Environment(Session.self) private var session
-    @Environment(Plan.self) private var plan
-    @State private var signingIn = false
 
     private var initials: String {
         StripData.initials(name: session.pilot?.displayName ?? session.pilot?.fullName, email: session.pilot?.email)
     }
 
     var body: some View {
-        Menu {
-            Section {
-                if let pilot = session.pilot {
-                    Text(pilot.displayName)
-                    Button(role: .destructive) { Task { await session.signOut(); plan.forgetPilot() } } label: {
-                        Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
-                    }
-                } else {
-                    Button { signingIn = true } label: { Label("Sign In", systemImage: "person.crop.circle.badge.plus") }
-                        .disabled(!session.loaded)
-                }
-            }
-            Section("Flying") {
-                Button { PendingCommand.shared.command = .open(.emergency) } label: {
-                    Label(Screen.emergency.title, systemImage: "exclamationmark.triangle.fill")
-                }
-                item(.screen(.checklists), Screen.checklists.title, "checklist")
-                item(.screen(.flights), Screen.flights.title, "tray.full")
-                item(.screen(.airplanes), Screen.airplanes.title, WingtipIcon.airplane)
-                item(.practice, "Practice", "figure.walk.motion")
-            }
-            if session.signedIn {
-                Section("Pilot") {
-                    item(.screen(.logbook), "Logbook and Currency", "book")
-                    item(.training, "Training", "graduationcap")
-                    item(.instructing, "Instructing", "person.2")
-                    item(.screen(.coach), Screen.coach.title, "brain.head.profile")
-                }
-            }
-            Section {
-                item(.screen(.minimums), Screen.minimums.title, "cloud.sun")
-                item(.screen(.guide), Screen.guide.title, "questionmark.circle")
-                item(.screen(.downloads), Screen.downloads.title, "arrow.down.circle")
-                item(.screen(.about), Screen.about.title, "info.circle")
-            }
-            Section {
-                item(.screen(.setup), "Settings", WingtipIcon.settings)
-            }
-        } label: {
+        Button { open(.screen(.setup)) } label: {
             if initials.isEmpty {
                 Image(systemName: WingtipIcon.account)
             } else {
                 Text(initials).font(WingtipType.detail.weight(.semibold))
             }
         }
-        .menuOrder(.fixed)
         .accessibilityLabel(session.pilot.map { "\($0.displayName), account and settings" } ?? "Account and Settings")
-        .accessibilityIdentifier("account-menu")
-        .sheet(isPresented: $signingIn) { SignInView() }
-    }
-
-    private func item(_ page: SheetPage, _ title: String, _ systemImage: String) -> some View {
-        Button { open(page) } label: { Label(title, systemImage: systemImage) }
+        .accessibilityIdentifier("account-button")
     }
 }

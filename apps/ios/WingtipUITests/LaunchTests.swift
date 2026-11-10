@@ -25,4 +25,18 @@ final class LaunchTests: XCTestCase {
         shot.lifetime = .keepAlways
         add(shot)
     }
+
+    /// The account button beside the one search opens Settings at once,
+    /// with no menu in between (the owner, 2026-11-10).
+    @MainActor
+    func testTheAccountButtonOpensSettings() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-layout", "plan", "-screen", "fpl"]
+        app.launch()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 30), "the app did not come to the foreground")
+        let account = app.buttons["account-button"]
+        XCTAssertTrue(account.waitForExistence(timeout: 20), "no account button")
+        account.tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10), "Settings did not open")
+    }
 }
