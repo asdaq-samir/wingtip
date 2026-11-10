@@ -693,6 +693,18 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
         c.ask("logbook_read_check", case["input"].clone());
     }
 
+    // The airport weather marks (airportWeatherMarks.json).
+    let marks = fixture("airportWeatherMarks.json");
+    for case in marks["leastCrosswind"].as_array().unwrap() {
+        c.ask("least_crosswind", case["input"].clone());
+    }
+    for case in marks["windArrow"].as_array().unwrap() {
+        c.ask("wind_arrow", case["input"].clone());
+    }
+    for case in marks["windBarb"].as_array().unwrap() {
+        c.ask("wind_barb", json!({ "speed_kt": case["speed_kt"] }));
+    }
+
     // Every fixture above was asked, and these are the names it reaches:
     // a name dropped from it fails here rather than going unchecked.
     assert!(c.checked.len() >= 30, "only {} names were checked: {:?}", c.checked.len(), c.checked);

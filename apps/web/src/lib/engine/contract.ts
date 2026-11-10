@@ -562,6 +562,34 @@ export type IsaTempCAnswer = number;
  */
 export type KeptKind = "briefing" | "weather" | "notams" | "airports" | "plates" | "plan" | "go_no_go" | "weather_loop";
 export type KneeboardRadioAnswer = [string, number][];
+/**
+ * A runway's ends as [ident, true heading], either null.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "EndHeadings".
+ */
+export type EndHeadings = [string | null, number | null][] | null;
+/**
+ * A METAR's wind; null, missing or empty for none.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "MetarWindIn".
+ */
+export type MetarWindIn = {
+  wind_dir_true_deg?: number | null;
+  wind_speed_kt?: number | null;
+  wind_gust_kt?: number | null;
+} | null;
+export type LeastCrosswindAnswer = {
+  /**
+   * The end it is on, null for a variable wind or calm.
+   */
+  end: string | null;
+  /**
+   * Knots, unsigned, steady or gust whichever is more.
+   */
+  crosswind_kt: number;
+} | null;
 export type LegalCruisingAltitudesAnswer = number[];
 export type LogbookCsvWriteAnswer = string;
 /**
@@ -757,29 +785,11 @@ export type RunwayCalmAnswer = boolean;
 export type RunwayCrosswindAnswer = number;
 export type RunwayEndHeadingAnswer = number | null;
 export type RunwayEndKeyAnswer = string;
-/**
- * A runway's ends as [ident, true heading], either null.
- *
- * This interface was referenced by `EngineContract`'s JSON-Schema
- * via the `definition` "EndHeadings".
- */
-export type EndHeadings = [string | null, number | null][] | null;
 export type RunwayEndsTrafficAnswer = {
   ident: string | null;
   heading_true_deg: number | null;
   traffic: "left" | "right";
 }[];
-/**
- * A METAR's wind; null, missing or empty for none.
- *
- * This interface was referenced by `EngineContract`'s JSON-Schema
- * via the `definition` "MetarWindIn".
- */
-export type MetarWindIn = {
-  wind_dir_true_deg?: number | null;
-  wind_speed_kt?: number | null;
-  wind_gust_kt?: number | null;
-} | null;
 /**
  * The field's last wind, for a calm one; both members needed where it is not empty.
  *
@@ -2121,6 +2131,13 @@ export interface EngineContract {
     answer: KneeboardRadioAnswer;
   };
   /**
+   * Of a field's runways, each on the end the wind favours, the least crosswind, steady or gust, whichever is more: the runway a pilot would pick to keep the wind most nearly down it. A variable wind is all crosswind (AIM 7-1-28); calm is none. null with no wind or no runway end with a heading.
+   */
+  least_crosswind: {
+    input: LeastCrosswindInput;
+    answer: LeastCrosswindAnswer;
+  };
+  /**
    * Every legal cruising altitude for a magnetic course from the floor up to the ceiling, ascending: under VFR 14 CFR 91.159(a)'s thousands plus 500 under Class A (71.33), and every 500 ft up to rule_from_ft (3,000 ft over the lowest ground); under IFR 91.179(b)'s thousands (FAA Order JO 7110.65 TBL 4-5-1) to FL410.
    */
   legal_cruising_altitudes: {
@@ -3059,11 +3076,25 @@ export interface EngineContract {
     answer: WeatherWorseAnswer;
   };
   /**
+   * Whether a field's wind earns its arrow on the map (10 kt or more, or gusting: the owner's pick, 2026-11-10) and whether it warns: its least crosswind more than the airplane's maximum demonstrated crosswind (the POH's, 14 CFR 23.233(a) before amendment 23-64). Never over with no airplane or no figure.
+   */
+  wind_arrow: {
+    input: WindArrowInput;
+    answer: WindArrowAnswer;
+  };
+  /**
    * The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends, light and variable left out; null with no level left, never calm. A list for "altitudes".
    */
   wind_at_altitude: {
     input: WindAtAltitudeInput;
     answer: WindAtAltitudeAnswer;
+  };
+  /**
+   * A station model's wind barb: the wind to the nearest 5 kt in flags (50 kt), barbs (10 kt) and half-barbs (5 kt), a circle for calm (FAA-H-8083-28A, 25.2.3.4.5).
+   */
+  wind_barb: {
+    input: WindBarbInput;
+    answer: WindBarbAnswer;
   };
   /**
    * Whether a wind is calm, a speed of 0 (AIM 7-1-28); no speed is not calm.
@@ -7024,6 +7055,18 @@ export interface KeptAgeAnswer {
 export interface KneeboardRadioInput {
   frequencies: FieldFrequency[];
 }
+export interface LeastCrosswindInput {
+  runways?:
+    | {
+        end_headings?: EndHeadings;
+      }[]
+    | null;
+  metar?: MetarWindIn;
+  /**
+   * The field's magnetic variation, east positive, to turn a runway's number true where its end has no true heading.
+   */
+  variation_deg: number;
+}
 export interface LegalCruisingAltitudesInput {
   floor_ft: number;
   ceiling_ft?: number | null;
@@ -10391,6 +10434,22 @@ export interface WeatherWorseItem {
   line: string;
   source: string;
 }
+export interface WindArrowInput {
+  speed_kt?: number | null;
+  gust_kt?: number | null;
+  /**
+   * The field's least crosswind (least_crosswind).
+   */
+  crosswind_kt?: number | null;
+  /**
+   * The picked airplane's maximum demonstrated crosswind; null with none picked or no figure.
+   */
+  demonstrated_kt?: number | null;
+}
+export interface WindArrowAnswer {
+  shown: boolean;
+  over: boolean;
+}
 export interface WindAtAltitudeInput {
   /**
    * A station's levels by altitude in feet, as the weather store keeps them.
@@ -10412,6 +10471,15 @@ export interface WindAtAltitudeInput {
 export interface WindAloft {
   wind_dir_true_deg: number;
   wind_speed_kt: number;
+}
+export interface WindBarbInput {
+  speed_kt: number;
+}
+export interface WindBarbAnswer {
+  calm: boolean;
+  flags: number;
+  barbs: number;
+  half_barbs: number;
 }
 export interface WindCalmInput {
   speed_kt?: number | null;

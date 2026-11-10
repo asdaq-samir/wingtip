@@ -879,6 +879,11 @@ extension Engine {
         try rule("kneeboard_radio", EngineContract.KneeboardRadioInput(frequencies: frequencies))
     }
 
+    /// Of a field's runways, each on the end the wind favours, the least crosswind, steady or gust, whichever is more: the runway a pilot would pick to keep the wind most nearly down it. A variable wind is all crosswind (AIM 7-1-28); calm is none. null with no wind or no runway end with a heading.
+    static func leastCrosswind(runways: [EngineContract.LeastCrosswindInputRunwaysItem]? = nil, metar: EngineContract.MetarWindIn? = nil, variationDeg: Double) throws -> EngineContract.LeastCrosswindAnswer? {
+        try rule("least_crosswind", EngineContract.LeastCrosswindInput(runways: runways, metar: metar, variationDeg: variationDeg))
+    }
+
     /// Every legal cruising altitude for a magnetic course from the floor up to the ceiling, ascending: under VFR 14 CFR 91.159(a)'s thousands plus 500 under Class A (71.33), and every 500 ft up to rule_from_ft (3,000 ft over the lowest ground); under IFR 91.179(b)'s thousands (FAA Order JO 7110.65 TBL 4-5-1) to FL410.
     static func legalCruisingAltitudes(floorFt: Double, ceilingFt: Double? = nil, magneticCourseDeg: Double, ruleFromFt: Double? = nil, rules: String? = nil) throws -> [Double] {
         try rule("legal_cruising_altitudes", EngineContract.LegalCruisingAltitudesInput(floorFt: floorFt, ceilingFt: ceilingFt, magneticCourseDeg: magneticCourseDeg, ruleFromFt: ruleFromFt, rules: rules))
@@ -1549,9 +1554,19 @@ extension Engine {
         try rule("weather_worse", EngineContract.WeatherWorseInput(then: then, now: now))
     }
 
+    /// Whether a field's wind earns its arrow on the map (10 kt or more, or gusting: the owner's pick, 2026-11-10) and whether it warns: its least crosswind more than the airplane's maximum demonstrated crosswind (the POH's, 14 CFR 23.233(a) before amendment 23-64). Never over with no airplane or no figure.
+    static func windArrow(speedKt: Double? = nil, gustKt: Double? = nil, crosswindKt: Double? = nil, demonstratedKt: Double? = nil) throws -> EngineContract.WindArrowAnswer {
+        try rule("wind_arrow", EngineContract.WindArrowInput(speedKt: speedKt, gustKt: gustKt, crosswindKt: crosswindKt, demonstratedKt: demonstratedKt))
+    }
+
     /// The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends, light and variable left out; null with no level left, never calm. A list for "altitudes".
     static func windAtAltitude(levels: [String: EngineContract.WindAtAltitudeInputLevelsValue], altitudeFt: Double? = nil, altitudes: [Double]? = nil) throws -> JSONValue? {
         try rule("wind_at_altitude", EngineContract.WindAtAltitudeInput(levels: levels, altitudeFt: altitudeFt, altitudes: altitudes))
+    }
+
+    /// A station model's wind barb: the wind to the nearest 5 kt in flags (50 kt), barbs (10 kt) and half-barbs (5 kt), a circle for calm (FAA-H-8083-28A, 25.2.3.4.5).
+    static func windBarb(speedKt: Double) throws -> EngineContract.WindBarbAnswer {
+        try rule("wind_barb", EngineContract.WindBarbInput(speedKt: speedKt))
     }
 
     /// Whether a wind is calm, a speed of 0 (AIM 7-1-28); no speed is not calm.

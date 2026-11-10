@@ -5519,6 +5519,39 @@ enum EngineContract {
         var frequencies: [EngineContract.FieldFrequency]
     }
 
+    struct LeastCrosswindAnswer: Codable, Equatable, Sendable {
+        /// The end it is on, null for a variable wind or calm.
+        var end: String?
+        /// Knots, unsigned, steady or gust whichever is more.
+        var crosswindKt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case end
+            case crosswindKt = "crosswind_kt"
+        }
+    }
+
+    struct LeastCrosswindInput: Codable, Equatable, Sendable {
+        var runways: [EngineContract.LeastCrosswindInputRunwaysItem]?
+        var metar: EngineContract.MetarWindIn?
+        /// The field's magnetic variation, east positive, to turn a runway's number true where its end has no true heading.
+        var variationDeg: Double
+
+        enum CodingKeys: String, CodingKey {
+            case runways
+            case metar
+            case variationDeg = "variation_deg"
+        }
+    }
+
+    struct LeastCrosswindInputRunwaysItem: Codable, Equatable, Sendable {
+        var endHeadings: [[JSONValue]]??
+
+        enum CodingKeys: String, CodingKey {
+            case endHeadings = "end_headings"
+        }
+    }
+
     struct LegalCruisingAltitudesInput: Codable, Equatable, Sendable {
         var floorFt: Double
         var ceilingFt: Double?
@@ -10352,6 +10385,27 @@ enum EngineContract {
         }
     }
 
+    struct WindArrowAnswer: Codable, Equatable, Sendable {
+        var shown: Bool
+        var over: Bool
+    }
+
+    struct WindArrowInput: Codable, Equatable, Sendable {
+        var speedKt: Double?
+        var gustKt: Double?
+        /// The field's least crosswind (least_crosswind).
+        var crosswindKt: Double?
+        /// The picked airplane's maximum demonstrated crosswind; null with none picked or no figure.
+        var demonstratedKt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case speedKt = "speed_kt"
+            case gustKt = "gust_kt"
+            case crosswindKt = "crosswind_kt"
+            case demonstratedKt = "demonstrated_kt"
+        }
+    }
+
     struct WindAtAltitudeInput: Codable, Equatable, Sendable {
         /// A station's levels by altitude in feet, as the weather store keeps them.
         var levels: [String: EngineContract.WindAtAltitudeInputLevelsValue]
@@ -10374,6 +10428,28 @@ enum EngineContract {
             case windDirTrueDeg = "wind_dir_true_deg"
             case windSpeedKt = "wind_speed_kt"
             case tempC = "temp_c"
+        }
+    }
+
+    struct WindBarbAnswer: Codable, Equatable, Sendable {
+        var calm: Bool
+        var flags: Int
+        var barbs: Int
+        var halfBarbs: Int
+
+        enum CodingKeys: String, CodingKey {
+            case calm
+            case flags
+            case barbs
+            case halfBarbs = "half_barbs"
+        }
+    }
+
+    struct WindBarbInput: Codable, Equatable, Sendable {
+        var speedKt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case speedKt = "speed_kt"
         }
     }
 

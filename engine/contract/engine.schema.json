@@ -13131,6 +13131,75 @@
       ],
       "additionalProperties": false
     },
+    "least_crosswind": {
+      "description": "Of a field's runways, each on the end the wind favours, the least crosswind, steady or gust, whichever is more: the runway a pilot would pick to keep the wind most nearly down it. A variable wind is all crosswind (AIM 7-1-28); calm is none. null with no wind or no runway end with a heading.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "LeastCrosswindInput",
+          "type": "object",
+          "properties": {
+            "runways": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "end_headings": {
+                    "$ref": "#/definitions/EndHeadings"
+                  }
+                }
+              }
+            },
+            "metar": {
+              "$ref": "#/definitions/MetarWindIn"
+            },
+            "variation_deg": {
+              "type": "number",
+              "description": "The field's magnetic variation, east positive, to turn a runway's number true where its end has no true heading."
+            }
+          },
+          "required": [
+            "variation_deg"
+          ]
+        },
+        "answer": {
+          "title": "LeastCrosswindAnswer",
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "end": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "The end it is on, null for a variable wind or calm."
+                },
+                "crosswind_kt": {
+                  "type": "number",
+                  "description": "Knots, unsigned, steady or gust whichever is more."
+                }
+              },
+              "required": [
+                "end",
+                "crosswind_kt"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "legal_cruising_altitudes": {
       "description": "Every legal cruising altitude for a magnetic course from the floor up to the ceiling, ascending: under VFR 14 CFR 91.159(a)'s thousands plus 500 under Class A (71.33), and every 500 ft up to rule_from_ft (3,000 ft over the lowest ground); under IFR 91.179(b)'s thousands (FAA Order JO 7110.65 TBL 4-5-1) to FL410.",
       "x-tool": true,
@@ -23447,6 +23516,65 @@
       ],
       "additionalProperties": false
     },
+    "wind_arrow": {
+      "description": "Whether a field's wind earns its arrow on the map (10 kt or more, or gusting: the owner's pick, 2026-11-10) and whether it warns: its least crosswind more than the airplane's maximum demonstrated crosswind (the POH's, 14 CFR 23.233(a) before amendment 23-64). Never over with no airplane or no figure.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "WindArrowInput",
+          "type": "object",
+          "properties": {
+            "speed_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "gust_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "crosswind_kt": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The field's least crosswind (least_crosswind)."
+            },
+            "demonstrated_kt": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The picked airplane's maximum demonstrated crosswind; null with none picked or no figure."
+            }
+          }
+        },
+        "answer": {
+          "title": "WindArrowAnswer",
+          "type": "object",
+          "properties": {
+            "shown": {
+              "type": "boolean"
+            },
+            "over": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "shown",
+            "over"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "wind_at_altitude": {
       "description": "The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends, light and variable left out; null with no level left, never calm. A list for \"altitudes\".",
       "type": "object",
@@ -23524,6 +23652,53 @@
                 ]
               }
             }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "wind_barb": {
+      "description": "A station model's wind barb: the wind to the nearest 5 kt in flags (50 kt), barbs (10 kt) and half-barbs (5 kt), a circle for calm (FAA-H-8083-28A, 25.2.3.4.5).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "WindBarbInput",
+          "type": "object",
+          "properties": {
+            "speed_kt": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "speed_kt"
+          ]
+        },
+        "answer": {
+          "title": "WindBarbAnswer",
+          "type": "object",
+          "properties": {
+            "calm": {
+              "type": "boolean"
+            },
+            "flags": {
+              "type": "integer"
+            },
+            "barbs": {
+              "type": "integer"
+            },
+            "half_barbs": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "calm",
+            "flags",
+            "barbs",
+            "half_barbs"
           ]
         }
       },
@@ -24266,6 +24441,7 @@
     "isa_temp_c",
     "kept_age",
     "kneeboard_radio",
+    "least_crosswind",
     "legal_cruising_altitudes",
     "logbook_csv_read",
     "logbook_csv_write",
@@ -24400,7 +24576,9 @@
     "weather_held_until",
     "weather_in_force",
     "weather_worse",
+    "wind_arrow",
     "wind_at_altitude",
+    "wind_barb",
     "wind_calm",
     "wind_components",
     "wind_pick",

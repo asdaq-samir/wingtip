@@ -1,0 +1,60 @@
+{
+  "x-call": "wingtip_brief::runway::marks::call",
+  "description": "Whether a field's wind earns its arrow on the map (10 kt or more, or gusting: the owner's pick, 2026-11-10) and whether it warns: its least crosswind more than the airplane's maximum demonstrated crosswind (the POH's, 14 CFR 23.233(a) before amendment 23-64). Never over with no airplane or no figure.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "WindArrowInput",
+      "type": "object",
+      "properties": {
+        "speed_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "gust_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "crosswind_kt": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The field's least crosswind (least_crosswind)."
+        },
+        "demonstrated_kt": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The picked airplane's maximum demonstrated crosswind; null with none picked or no figure."
+        }
+      }
+    },
+    "answer": {
+      "title": "WindArrowAnswer",
+      "type": "object",
+      "properties": {
+        "shown": {
+          "type": "boolean"
+        },
+        "over": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "shown",
+        "over"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}
