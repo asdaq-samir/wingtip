@@ -211,6 +211,8 @@ export function PointGrip({ ident, index }: { ident: string; index: number }) {
       }}
       aria-label={`Move ${pointName(ident)}`}
       data-testid="route-grip"
+      // Its drag the row's (dnd-kit), not the stock sheet's.
+      data-base-ui-swipe-ignore=""
       data-ident={ident}
       data-dragging={drag.isDragging ? "" : undefined}
       data-over={drop.isOver && !drag.isDragging ? "" : undefined}

@@ -9,10 +9,9 @@ import { SIZE } from "../lib/tokens";
  * size.refresh-pull points with everything in it scrolled to its start,
  * and let go, it asks again (`onRefresh`), a spinner at its top until the
  * answer is in. It lays out nothing of its own (display: contents), only
- * the gap the pull opens. On a phone's sheet it is marked for the sheet's
- * drag (data-pull-refresh, sheet/engine's sheetTakes): all the way out
- * the pull is the card's; below that the sheet takes the finger, as it
- * did, and the card lets it go.
+ * the gap the pull opens. On a phone's sheet a pull at a list's start is
+ * also the stock Drawer's to take the sheet down by, as an iOS sheet's
+ * scrolled-to-the-top list hands its drag to the sheet.
  */
 export default function PullToRefresh({
   onRefresh,
@@ -87,7 +86,7 @@ export default function PullToRefresh({
 
   const ready = pull >= SIZE.refreshPull / 2;
   return (
-    <div ref={ref} className="contents" data-pull-refresh="" data-testid={testId} aria-busy={busy || undefined}>
+    <div ref={ref} className="contents" data-testid={testId} aria-busy={busy || undefined}>
       {(pull > 0 || busy) && (
         <div
           className="flex shrink-0 items-center justify-center overflow-hidden text-muted-foreground"

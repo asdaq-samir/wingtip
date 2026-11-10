@@ -101,6 +101,8 @@ export function MoveHandle({
     <IconButton
       label={label}
       className="touch-none"
+      // Its drag the row's (dnd-kit), not the stock sheet's.
+      data-base-ui-swipe-ignore=""
       {...sort?.attributes}
       {...sort?.listeners}
       ref={sort?.ref}

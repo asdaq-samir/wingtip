@@ -189,8 +189,10 @@ export async function openConsole(page: Page) {
   // The account button's menu, its first row the account page (Setup).
   await page.getByTestId("account-button").click();
   await page.getByTestId("account-menu-setup").click();
-  await expect(page.getByTestId("console-sheet")).toBeVisible();
+  // At the pill (the developer's page rests there) the account page is
+  // under the pill's edge: all the way up first, then in sight.
   await grabberTo(page, "full");
+  await expect(page.getByTestId("console-sheet")).toBeVisible();
 }
 
 /** Setup's page all the way out, its Controls on top (QuickControls):

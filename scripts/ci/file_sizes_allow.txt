@@ -32,7 +32,6 @@ apps/web/e2e/tracking.spec.ts 906
 apps/web/src/components/ApproachDebrief.tsx 426
 apps/web/src/components/ClearanceCard.tsx 546
 apps/web/src/components/Favorites.tsx 480
-apps/web/src/components/MapPanel.tsx 797
 apps/web/src/components/MapSettings.tsx 434
 apps/web/src/components/RadioLayer.tsx 550
 apps/web/src/components/audioGear.ts 1484

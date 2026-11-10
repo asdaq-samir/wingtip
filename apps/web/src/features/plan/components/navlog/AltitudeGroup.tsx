@@ -550,14 +550,13 @@ export function AltitudeProfile({
       <div ref={graph} className="relative h-56 max-h-full min-h-16 shrink-0">
         {chart(shownAt !== null && shownAt !== cruise ? shownAt : null, scaleTop)}
         {/* The graph is the control, as ForeFlight's profile is (the owner's
-            recording, "yes" to building it): a drag up or down on it moves
-            a dashed line and its altitude across the ground, the ground
-            tinted against it, the scale zooming to keep it in sight, onto
-            the legal altitudes alone -- moved by their CSS as the finger
-            goes, nothing drawn again ("notice how smooth theirs is"), the
-            plan asked once it lifts. To VoiceOver and the keyboard a
-            slider, up and down a legal altitude at a time. Its drags its
-            own, not the sheet's (touch-action none). */}
+            recording, "yes" to building it): a drag up or down moves a dashed
+            line and its altitude across the ground, tinted against it, the
+            scale zooming to keep it in sight, onto the legal altitudes alone,
+            by their CSS as the finger goes ("notice how smooth theirs is"),
+            the plan asked once it lifts. To VoiceOver and the keyboard a
+            slider, a legal altitude a step. Its drags its own, not the stock
+            sheet's (touch-action none, data-base-ui-swipe-ignore). */}
         {!wheelHidden && shownAt !== null && altitudes.length > 0 && (
           <div
             role="slider"
@@ -575,6 +574,7 @@ export function AltitudeProfile({
             onKeyDown={stepKey}
             className="absolute inset-0 cursor-ns-resize touch-none rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
             data-testid="altitude-wheel"
+            data-base-ui-swipe-ignore=""
           />
         )}
         {corner}

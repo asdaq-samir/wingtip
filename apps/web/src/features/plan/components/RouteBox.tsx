@@ -1172,8 +1172,8 @@ function Pill({
   const pill = (
     // A group, not dnd-kit's button: the picker inside it is the button,
     // and a button in a button is nothing a reader can use (axe's
-    // nested-interactive). Still focusable, for the keyboard's reordering
-    // (KeyboardSensor) and its Delete.
+    // nested-interactive). Still focusable for the keyboard's reordering
+    // and Delete; held and moved, its drag not the stock sheet's.
     <span
       ref={setNodeRef}
       {...attributes}
@@ -1182,13 +1182,13 @@ function Pill({
       aria-label={`${label} ${ident}`}
       aria-keyshortcuts="Delete"
       data-point={index}
+      data-base-ui-swipe-ignore=""
       onPointerDown={press}
       onPointerMove={slide}
       onPointerUp={letGo}
       onPointerCancel={letGo}
-      // Moved, never scaled: across lines the pills differ in width, and
-      // dnd-kit's rect strategy scales one to another's, stretching its
-      // ident while it is dragged.
+      // Moved, never scaled: dnd-kit's rect strategy scales a pill to
+      // another line's width, stretching its ident while it is dragged.
       style={{ transform: CSS.Translate.toString(transform), transition }}
       className={cn(
         // A swipe up or down scrolls the lines; a hold, then a move, drags;
