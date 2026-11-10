@@ -202,6 +202,8 @@ end, and nothing on this page describes a Google app from memory.
   | a switch | none | `ToggleOn` / `ToggleOff` | the stock `Switch` |
 
 - No haptics for scrolling, loading or arriving data.
+- The system's haptics switch alone governs them: Remove animations no
+  longer turns them off (the owner, 2026-11-10).
 
 ### 1.7 Touch targets
 
