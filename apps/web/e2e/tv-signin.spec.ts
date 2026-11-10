@@ -67,11 +67,17 @@ test("on the phone, the TV's address opens a box for its code, and the code sign
   await expect(box.getByRole("heading", { name: "Sign in a TV" })).toBeVisible();
   // Off the address, so a reload does not ask again.
   await expect(page).not.toHaveURL(/tv-link/);
-  await box.getByTestId("tv-link-code").fill("bcdf-ghj9");
-  await box.getByTestId("tv-link-approve").click();
+  // Base UI's OTP Field: a slot a character, sent once the eighth is in,
+  // typed in lower case and shown, and sent, in capitals.
+  const slots = box.getByTestId("tv-link-code").getByRole("textbox", { name: /^Character/ });
+  await expect(slots).toHaveCount(8);
+  await slots.first().click();
+  await page.keyboard.type("bcdfghj9");
   await expect(box.getByTestId("tv-link-error")).toContainText("No TV is showing that code now");
-  await box.getByTestId("tv-link-code").fill("bcdf-ghjk");
-  await box.getByTestId("tv-link-approve").click();
+  // Refused, the slots are empty for the code again.
+  await expect(slots.first()).toHaveValue("");
+  await slots.first().click();
+  await page.keyboard.type("bcdfghjk");
   await expect(box.getByTestId("tv-link-done")).toContainText("The TV is signing in as");
-  expect(typed).toEqual(["bcdf-ghj9", "bcdf-ghjk"]);
+  expect(typed).toEqual(["BCDF-GHJ9", "BCDF-GHJK"]);
 });

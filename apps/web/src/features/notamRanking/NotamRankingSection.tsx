@@ -2,26 +2,17 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "cn";
 import { PillSection } from "../../components/Favorites";
 import KeptAge from "../../components/KeptAge";
-import SourceChips from "../../components/SourceChips";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { Skeleton } from "../../components/ui/skeleton";
 import { describeError } from "../../lib/api/client";
-import type { RankedNotam } from "../../lib/api/types";
 import { notamCredit, notamNone } from "../../lib/notamCoverage";
 import { TEXT } from "../../lib/text";
 import { useNotamRanking } from "./useNotamRanking";
-
-/** One NOTAM: its line on why it bears on the flight, and its chip, which
- *  opens the NOTAM as sent. */
-function Line({ notam, testId }: { notam: RankedNotam; testId: string }) {
-  return (
-    <li className="flex flex-col gap-1" data-testid={testId} data-notam={notam.id} data-worded={notam.worded ? "1" : undefined}>
-      <p className={cn("tabular-nums", TEXT.prose, notam.in_force === false && "text-muted-foreground")}>{notam.why}</p>
-      <SourceChips sources={[{ id: notam.id, label: notam.label, text: notam.raw }]} testId={`${testId}-source`} />
-    </li>
-  );
-}
+import NotamLine from "./NotamLine";
+import NotamToolbar from "./NotamToolbar";
+import { useNotamMarks } from "./notamMarks";
+import { ALL_NOTAMS, arrangeNotams } from "./notamView";
 
 /**
  * The Brief's NOTAMs that matter (useNotamRanking): the top three the
@@ -30,10 +21,20 @@ function Line({ notam, testId }: { notam: RankedNotam; testId: string }) {
  * under them (lib/notamCoverage), and none heard said as such, never as
  * no NOTAMs. Where the briefer could not write the lines, the engine's
  * own reasons stand and a sentence says so, in place (lib/problems).
+ * Filtered, sorted, pinned and marked read as the pilot asks (web.md §6,
+ * NotamToolbar, NotamLine): what the filters leave out is counted, with
+ * Show All, so a NOTAM is folded or filtered by the pilot, never dropped.
  */
 export default function NotamRankingSection() {
-  const { shown, top, rest, answer, error, pending, fetchedAt, failed } = useNotamRanking();
+  const { shown, answer, error, pending, fetchedAt, failed } = useNotamRanking();
+  const filter = useNotamMarks((s) => s.filter);
+  const sort = useNotamMarks((s) => s.sort);
+  const pinned = useNotamMarks((s) => s.pinned);
+  const read = useNotamMarks((s) => s.read);
+  const setFilter = useNotamMarks((s) => s.setFilter);
   if (!shown) return null;
+  const all = answer?.notams ?? [];
+  const { top, rest, hidden } = arrangeNotams(all, filter, sort, { pinned, read });
   const since = answer?.coverage_since;
   return (
     <PillSection title="NOTAMs that matter" testId="brief-notams">
@@ -51,7 +52,22 @@ export default function NotamRankingSection() {
           {/* The ranking kept on this device, with its age, where it could
               not be asked again (no signal). */}
           <KeptAge kind="notams" atMs={fetchedAt} failed={failed} />
-          {top.length === 0 && rest.length === 0 && (
+          {all.length > 0 && <NotamToolbar />}
+          {hidden > 0 && (
+            <p className={cn("flex items-center gap-2 text-muted-foreground", TEXT.note)} data-testid="brief-notams-hidden">
+              {hidden} hidden by the filter
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative h-auto px-1 text-tint after:absolute after:inset-x-0 after:-inset-y-3 after:content-['']"
+                onClick={() => setFilter(ALL_NOTAMS)}
+                data-testid="brief-notams-show-all"
+              >
+                Show All
+              </Button>
+            </p>
+          )}
+          {all.length === 0 && (
             <p className={cn("text-muted-foreground", TEXT.prose)} data-testid="brief-notams-empty">
               {notamNone(since)}
             </p>
@@ -59,7 +75,7 @@ export default function NotamRankingSection() {
           {top.length > 0 && (
             <ol className="flex flex-col gap-3" data-testid="brief-notams-top">
               {top.map((n) => (
-                <Line key={n.id} notam={n} testId="brief-notam" />
+                <NotamLine key={n.id} notam={n} testId="brief-notam" />
               ))}
             </ol>
           )}
@@ -81,7 +97,7 @@ export default function NotamRankingSection() {
               <CollapsibleContent>
                 <ol className="flex flex-col gap-3 pt-1" data-testid="brief-notams-rest">
                   {rest.map((n) => (
-                    <Line key={n.id} notam={n} testId="brief-notam-folded" />
+                    <NotamLine key={n.id} notam={n} testId="brief-notam-folded" />
                   ))}
                 </ol>
               </CollapsibleContent>

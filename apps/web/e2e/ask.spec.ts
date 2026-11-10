@@ -152,7 +152,37 @@ test("the Brief's words come with their chips, and a reading the model could not
   await expect(panel.getByTestId("brief-notam-folded")).toHaveCount(1);
   await expect(panel.getByTestId("brief-notams-credit")).toHaveText("FAA NOTAM feed since 19 Oct 2026");
   await expect(panel.getByTestId("brief-weather-words-unavailable")).toHaveText("The model could not be reached.");
-  await expect(page.locator("[data-sonner-toast]")).toHaveCount(0);
+  await expect(page.locator("[data-slot=toast]")).toHaveCount(0);
+});
+
+test("the Brief's NOTAMs fold their raw text as sent, filter by when, and pin one to the top", async ({ page }) => {
+  await mockAi(page, []);
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openBrief(page);
+  const panel = sideDrawer(page);
+  const top = panel.getByTestId("brief-notam");
+  await expect(top).toContainText("Runway 09/27 at KDLH is closed", { timeout: slow(30000) });
+  // The plain words first; the NOTAM as sent folded under its name.
+  await expect(panel.getByTestId("brief-notam-raw")).toHaveCount(0);
+  await panel.getByTestId("brief-notam-source").click();
+  await expect(panel.getByTestId("brief-notam-raw")).toHaveText("!DLH 11/012 DLH RWY 09/27 CLSD");
+
+  // Later ones filtered out: counted, with Show All, never dropped.
+  await panel.getByTestId("notam-filter").click();
+  await page.getByTestId("notam-filter-later").click();
+  await page.keyboard.press("Escape");
+  await expect(panel.getByTestId("brief-notams-hidden")).toContainText("1 hidden by the filter");
+  await expect(panel.getByTestId("brief-notams-more")).toHaveCount(0);
+  await panel.getByTestId("brief-notams-show-all").click();
+  await expect(panel.getByTestId("brief-notams-hidden")).toHaveCount(0);
+
+  // The folded one pinned from its menu: first, above the top one.
+  await panel.getByTestId("brief-notams-more").click();
+  await panel.getByTestId("brief-notam-folded-menu").click();
+  await page.getByTestId("notam-pin").click();
+  await expect(top.first()).toHaveAttribute("data-notam", "C81 11/004");
+  await expect(top.first()).toHaveAttribute("data-pinned", "");
 });
 
 test("the route's AI button opens the AI brief, its Ask at its foot, and the menu has no Ask of its own", async ({ page }) => {

@@ -4,8 +4,13 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import type { RankedNotam, RankedNotams } from "../../lib/api/types";
 import NotamRankingSection from "./NotamRankingSection";
 import { runwaysOfPicks, splitRanking } from "./useNotamRanking";
+import { useNotamMarks } from "./notamMarks";
+import { ALL_NOTAMS } from "./notamView";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  useNotamMarks.setState({ pinned: [], read: [], filter: ALL_NOTAMS, sort: "rank" });
+});
 
 const notam = (id: string, top: boolean, why: string, over: Partial<RankedNotam> = {}): RankedNotam => ({
   id,
@@ -88,5 +93,27 @@ describe("the NOTAMs that matter", () => {
     state.value = { shown: true, ...splitRanking(unworded), answer: unworded, error: null, pending: false };
     render(<NotamRankingSection />);
     expect(screen.getByTestId("brief-notams-unworded")).toBeTruthy();
+  });
+
+  test("a NOTAM's raw text is folded under its name, as sent; a pinned one is first and a read one folds", () => {
+    state.value = { shown: true, ...splitRanking(ANSWER), answer: ANSWER, error: null, pending: false };
+    useNotamMarks.setState({ pinned: ["OSH 11/030"], read: ["OSH 11/012"] });
+    render(<NotamRankingSection />);
+    const lines = screen.getAllByTestId("brief-notam");
+    expect(lines.map((l) => l.getAttribute("data-notam"))).toEqual(["OSH 11/030", "OSH 11/015", "ZAU 11/301"]);
+    expect(screen.queryByTestId("brief-notam-raw")).toBeNull();
+    fireEvent.click(screen.getAllByTestId("brief-notam-source")[1]!);
+    expect(screen.getByTestId("brief-notam-raw").textContent).toBe("!OSH 11/015 RAW");
+    fireEvent.click(screen.getByTestId("brief-notams-more"));
+    expect(screen.getAllByTestId("brief-notam-folded").map((l) => l.getAttribute("data-notam"))).toEqual(["OSH 11/012", "C81 11/004"]);
+  });
+
+  test("what the filter leaves out is counted, and Show All brings it back", () => {
+    state.value = { shown: true, ...splitRanking(ANSWER), answer: ANSWER, error: null, pending: false };
+    useNotamMarks.setState({ filter: { ...ALL_NOTAMS, when: ["now"] } });
+    render(<NotamRankingSection />);
+    expect(screen.getByTestId("brief-notams-hidden").textContent).toContain("1 hidden by the filter");
+    fireEvent.click(screen.getByTestId("brief-notams-show-all"));
+    expect(screen.queryByTestId("brief-notams-hidden")).toBeNull();
   });
 });

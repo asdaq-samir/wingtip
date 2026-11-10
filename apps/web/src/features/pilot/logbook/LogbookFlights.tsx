@@ -1,7 +1,10 @@
+import { lazy, Suspense, useState } from "react";
 import { Plus } from "lucide-react";
 import { EditToggle, RemoveMinus } from "../../../components/Favorites";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
-import IconButton from "../../../components/IconButton";
+import { Button } from "../../../components/ui/button";
+import { useConfirm } from "../../../components/useConfirm";
+import { useIsDesktop } from "../../../hooks/use-desktop";
 import QueryState from "../../../components/QueryState";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../../components/ResponsivePopover";
 import { SwipeToDelete } from "../../../components/SwipeToDelete";
@@ -11,6 +14,10 @@ import { said } from "../../../lib/endorsements";
 import EntryForm from "./EntryForm";
 import { blankEntry, requestOf } from "./logbookEntry";
 import { useLogbookFlights, type LogbookFlightsModel } from "./useLogbookFlights";
+
+// A desktop's table on a chunk of its own (TanStack Table's model and the
+// sort): a phone draws the list below and never loads it.
+const LogbookTable = lazy(() => import("./LogbookTable"));
 
 /** A flight's row: the day and route, the airplane, landings and remarks
  *  under, the hours at its end; tapped, its form in its place. */
@@ -49,17 +56,32 @@ function EntryRow({ e, vm }: { e: LogbookEntry; vm: LogbookFlightsModel }) {
 }
 
 /**
- * The logbook's flights, newest first: the plus logs one in its popover,
+ * The logbook's flights, newest first: Add Entry logs one in its popover,
  * filled in with the airplane picked for planning; a row tapped is changed
  * in the row (Save, or Cancel and Escape to leave it), as the minimums and
  * the squawks are; a swipe or Edit's minus takes one out, Undo in the
- * list giving it back.
+ * list giving it back. On a desktop the flights are a table, sorted by
+ * any column (LogbookTable); on a phone, this list.
  */
 export default function LogbookFlights({ aircraft }: { aircraft?: string }) {
   const vm = useLogbookFlights();
   const { entries } = vm;
   // A new flight the gateway refused, back in the plus's form.
   const newRefused = vm.refused && vm.refused.id == null ? vm.refused : null;
+  const desktop = useIsDesktop();
+  // A new flight typed into and not saved: the popover asks before it
+  // closes on it (a press outside, Escape), rather than losing it.
+  const [typed, setTyped] = useState(false);
+  const [askClose, closeDialog] = useConfirm({
+    title: "Discard This Flight?",
+    description: "What you typed is not logged.",
+    confirmLabel: "Discard",
+    destructive: true,
+    onConfirm: () => {
+      setTyped(false);
+      vm.setAdding(false);
+    },
+  });
   return (
     <ListGroup
       title="Flights"
@@ -67,21 +89,35 @@ export default function LogbookFlights({ aircraft }: { aircraft?: string }) {
         <span className="flex items-center gap-1">
           {/* Every list's Edit (EditToggle). */}
           {(entries?.length ?? 0) > 0 && <EditToggle editing={vm.editing} onToggle={vm.toggleEditing} testId="logbook-edit" />}
-          <ResponsivePopover open={vm.adding} onOpenChange={vm.setAdding}>
+          {/* The screen's primary, by its name at the group's top right
+              (web.md §9), where a bare plus was. */}
+          <ResponsivePopover
+            open={vm.adding}
+            onOpenChange={(open) => {
+              if (!open && typed) askClose();
+              else vm.setAdding(open);
+            }}
+          >
             <ResponsivePopoverTrigger asChild>
-              <IconButton label="Log a flight" className="text-tint" data-testid="logbook-add">
-                <Plus />
-              </IconButton>
+              <Button size="sm" className="relative after:absolute after:-inset-y-1.5 after:inset-x-0" data-testid="logbook-add">
+                <Plus aria-hidden="true" />
+                Add Entry
+              </Button>
             </ResponsivePopoverTrigger>
-            <ResponsivePopoverContent title="Log a flight" className="w-80 p-3" align="end">
+            <ResponsivePopoverContent title="Add Entry" className="w-80 p-3" align="end">
               <EntryForm
                 initial={newRefused?.entry ?? blankEntry(aircraft)}
                 problem={newRefused?.problem}
                 saving={vm.saving}
-                onSave={vm.add}
+                onSave={(entry) => {
+                  setTyped(false);
+                  vm.add(entry);
+                }}
+                onDirtyChange={setTyped}
               />
             </ResponsivePopoverContent>
           </ResponsivePopover>
+          {closeDialog}
         </span>
       }
     >
@@ -89,7 +125,11 @@ export default function LogbookFlights({ aircraft }: { aircraft?: string }) {
       {!entries ? (
         <QueryState row query={vm.asked} fetching="Fetching your logbook…" failed="Your logbook could not be fetched." />
       ) : !entries.length ? (
-        <ListRow muted title="No flights logged yet: the plus logs one." />
+        <ListRow muted title="No flights logged yet: Add Entry logs one." />
+      ) : desktop ? (
+        <Suspense fallback={null}>
+          <LogbookTable entries={entries} vm={vm} />
+        </Suspense>
       ) : (
         entries.map((e) => <EntryRow key={e.id} e={e} vm={vm} />)
       )}
