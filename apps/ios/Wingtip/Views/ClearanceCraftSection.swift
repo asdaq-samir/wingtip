@@ -3,7 +3,9 @@ import SwiftUI
 /// The clearance heard, laid out as CRAFT (cleared to, route, altitude,
 /// frequency, transponder; AIM 4-4-3 lists what a clearance holds, in
 /// that order), each place as the planner or the kept packs found it:
-/// sure, a guess (orange, with a question mark) or not found (red).
+/// sure, or one to check (in caution, with "Check"; not found, in the
+/// problem's ink). Every value is in the figure's tabular digits; one to
+/// check is changed in the transcript's words under it.
 struct ClearanceCraftSection: View {
     let clearance: Clearance
     let found: ClearancePlaces?
@@ -42,8 +44,15 @@ struct ClearanceCraftSection: View {
     }
 
     private func placeText(_ place: ClearancePlaces.Place) -> Text {
-        guard let ident = place.ident else { return Text("“\(place.said)”?").foregroundStyle(WingtipInk.problem) }
-        return place.sure == true ? Text(ident) : Text("\(ident)?").foregroundStyle(WingtipInk.caution)
+        guard let ident = place.ident else { return Text("“\(place.said)” · Check").foregroundStyle(WingtipInk.problem) }
+        return place.sure == true ? Text(ident) : Text("\(ident) · Check").foregroundStyle(WingtipInk.caution)
+    }
+
+    /// Whether any place found is a guess or not found: one to check.
+    static func unsure(_ found: ClearancePlaces?) -> Bool {
+        guard let found else { return false }
+        let places = [found.limit].compactMap { $0 } + (found.route ?? []).flatMap { $0 }
+        return places.contains { $0.ident == nil || $0.sure != true }
     }
 
     private var routeText: Text {
@@ -95,7 +104,7 @@ struct ClearanceCraftSection: View {
     /// One CRAFT line, its figures said in words to VoiceOver where the
     /// screen writes them as figures.
     private func craft(_ name: String, _ value: Text, spoken: String?) -> some View {
-        LabeledContent(name) { value.multilineTextAlignment(.trailing).fontWeight(.semibold) }
+        LabeledContent(name) { value.multilineTextAlignment(.trailing).font(.body.weight(.semibold).monospacedDigit()) }
             .accessibilityElement(children: spoken == nil ? .combine : .ignore)
             .accessibilityLabel(spoken.map { "\(name), \($0)" } ?? "")
     }

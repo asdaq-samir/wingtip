@@ -34,7 +34,13 @@ private struct FrequencyActions: ViewModifier {
     func body(content: Content) -> some View {
         if let figure {
             content
-                .contextMenu { FrequencyCopyButton(figure: figure) }
+                // Held: Copy, over the figure itself large, as a context
+                // menu previews what it acts on (HIG Context menus).
+                .contextMenu {
+                    FrequencyCopyButton(figure: figure)
+                } preview: {
+                    Text(figure).font(WingtipType.figure).padding(WingtipSpace.xl)
+                }
                 .accessibilityAction(named: "Copy \(figure)") { FrequencyCopy.copy(figure) }
         } else {
             content
