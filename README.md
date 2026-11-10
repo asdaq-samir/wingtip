@@ -41,9 +41,18 @@ go or no-go. On the web, the iPhone and Android.
   goes quiet, so silence never reads as a clear sky.
 - **Traffic.** ADS-B traffic on the map, and airplanes you follow.
 - **Dry run.** Fly the route on the map before you fly it.
+- **Weather on the map.** Each field wears its flight category, its
+  wind as an arrow (red past your airplane's demonstrated crosswind) and,
+  close in, a station model; a field whose forecast gets worse by your
+  arrival is marked, and the app tells you when the route's weather
+  turns worse after the Brief.
+- **One search, like Apple Maps.** Airports, waypoints, airplanes and
+  questions from one field, typed or asked by voice (recognised on the
+  phone); each thing opens as a card over it.
 - **iPhone and Android apps.** Native SwiftUI and Jetpack Compose, with
-  instruments, alerts ahead and a glide ring in flight, and an Apple
-  Watch app.
+  instruments and alerts ahead in flight, on-device AI where the phone
+  has it, and an Apple Watch app. Four looks on each, Native (the
+  platform as it comes) among them.
 - **AI assistant.** Ask about your flight in your own words; every figure
   in the answer is the planner's, cited, and Claude only writes the words.
 - **For students and instructors.** Logbook, currency, endorsements,
@@ -106,7 +115,7 @@ stack goes live with `scripts/dev/go-live.sh`.
 
 ```
 apps/        web/ (React), ios/ (SwiftUI), android/ (Compose)
-engine/      the Rust engine: facade/, crates/ (eleven domains), contract/, bindings/
+engine/      the Rust engine: facade/, crates/ (thirteen domains), contract/, bindings/
 services/    planner/, ingest/, weather/, assistant/, gateway/, jobs/, Dockerfile.base
 ml/          the notebooks and their image
 infra/       AWS CloudFormation, the server's compose file, CI's, local HTTPS
@@ -124,6 +133,7 @@ docs/        the docs below, and the architecture diagrams
 | [LOCAL-DEV.md](docs/LOCAL-DEV.md) | Running it, the phone, the jobs, the developer scripts |
 | [DATA.md](docs/DATA.md) | The database, the data folder, the chart model |
 | [CI.md](docs/CI.md) | What CI runs and what gates a merge |
+| [versions.md](docs/versions.md) | What each part pins, the upgrades coming, and how one lands |
 | [README-AWS.md](docs/README-AWS.md) | The AWS design and how to deploy it |
 | [decisions/](docs/decisions/README.md) | The owner's standing decisions and why, so none is undone by accident |
 | [CONTRIBUTING.md](.github/CONTRIBUTING.md) | Where a change goes and how it lands |

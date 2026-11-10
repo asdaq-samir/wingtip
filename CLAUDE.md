@@ -11,7 +11,7 @@ shell per app round it (the owner, 2026-11-03). Four layers, each with
 one job (the owner kept both server languages on this split, 2026-11-06):
 
 - **The Rust engine** (`engine/facade`, wingtip-engine, a facade over
-  eleven domain crates in `engine/crates`, layered as engine/README.md
+  thirteen domain crates in `engine/crates`, layered as engine/README.md
   says). Every aviation rule or figure lives there once: altitudes,
   winds, runways, fuel, weather limits, Go / No-Go, altitude selection, holds, procedures,
   the clearance reader, the debrief, a pilot's currency (14 CFR 61.56,
@@ -110,7 +110,8 @@ one job (the owner kept both server languages on this split, 2026-11-06):
   - **Live for the owner first** (the owner, 2026-11-08, standing): as
     soon as a wave's code is merged into `claude/integration`, before any
     lengthy test or CI, it goes live on the owner's local stack so they
-    can try it on the phone (https://10.0.0.87:8443). The stack runs from
+    can try it on the phone (`PHONE_BASE_URL` in `.env`, which go-live.sh
+    keeps at the Mac's address). The stack runs from
     a worktree of its own, `~/Developer/wingtip-live` on
     `claude/integration`, with `data/`, `.env` and
     `infra/local-https/certs/` linked from the main checkout and the same
@@ -225,7 +226,7 @@ them). The table is what it runs:
 | `services/assistant/` | `ruff check app tests && pytest tests/` (in `services/assistant`, after `pip install -r requirements-dev.txt`); `python -m app.openapi` after a schema or route change |
 | `services/jobs/` | `ruff check charts && pytest charts/tests/` (in `services/jobs`; CI runs them in its `test` job) |
 | `services/gateway/` | `mvn -B test` (needs Docker, for Testcontainers) |
-| `apps/ios/` (the native app) | On the Mac mini (Xcode and XcodeGen are there): `xcodegen` in `apps/ios/`, then `xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme Wingtip -destination "platform=iOS Simulator,name=<newest iPhone>" test` through `scripts/dev/one-at-a-time.sh`; `native-ios.yml` runs the same, iPad included (docs/NATIVE.md) |
+| `apps/ios/` (the native app) | On the Mac mini (Xcode and XcodeGen are there): `xcodegen` in `apps/ios/`, then `xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme Wingtip -destination "platform=iOS Simulator,name=<newest iPhone>" test` through `scripts/dev/one-at-a-time.sh`; a pull request's CI runs it on the iPhone alone, and `native-ios.yml` at night on the iPhone, iPad and iPhone Duo with the full card suites (docs/NATIVE.md) |
 | `apps/android/` (the native app) | On the Mac mini: `./gradlew testDebugUnitTest lintDebug assembleDebug` in `apps/android/` (the build runs on Temurin 25, `gradle/gradle-daemon-jvm.properties`; any JDK starts it), after `engine/bindings/ffi/build-android.sh`; `native-android.yml` builds the engine for each ABI, runs the unit tests, lint and a debug APK, then the instrumented tests on an emulator (docs/NATIVE-ANDROID.md) |
 | any source file (the `arch` area, from the root) | `python3 scripts/ci/file_sizes.py --base origin/main` (no new or grown file over 400 lines past `scripts/ci/file_sizes_allow.txt`, a list that only shrinks), `scripts/build/toolchain.sh --check` (every version the repo states is `.tool-versions`'), `python3 scripts/ci/brand_guard.py` (no raw colour, type size, padding or corner in the apps outside `design/tokens.json`, past `scripts/ci/brand_guard_allow.txt`), then `scripts/ci/dead_python.sh` (vulture at 80% over services/, ml/ and scripts/; what it cannot see used is in `scripts/ci/vulture_allow.py` with why). CI's `rules-boundary` job also runs `python3 scripts/ci/rules_boundary.py` (no aviation figure outside the engine) |
 
@@ -236,7 +237,9 @@ Each toolchain has one version, on the Mac, in the images and in CI:
 `.tool-versions` (Java, Python, Rust, Node, Xcode, Gradle, Maven and the
 formatters). CI's setup actions and the scripts read it; bump it there and
 run `scripts/build/toolchain.sh`, which writes the places that cannot read
-it (images, pom, Gradle, `rust-toolchain.toml`, `.nvmrc`, docs).
+it (images, pom, Gradle, `rust-toolchain.toml`, `.nvmrc`, docs). What each
+part pins, what is held back and why, and the upgrades coming:
+docs/versions.md.
 
 A pre-push hook runs the quick ones for what a push changes against
 origin/main: `tsc` and ESLint for `apps/web/`, ruff for Python, `cargo check`
@@ -277,17 +280,22 @@ Guidelines first.
 - Hit areas are 44 points, but controls never grow to get there: a
   pseudo-element (`after:absolute after:-inset-…`) makes the area, and
   rows sit at `gap-2` so the areas meet.
-- Stock components over hand-rolled ones, on every platform (shadcn/ui and
-  Radix on the web, SwiftUI, Material 3): the platform's own component even
-  when it is only in a release candidate, never a copy of our own; bump to
-  stable when it ships (the owner, 2026-11-09).
-- Tappable things are the blue tint; type sizes come from `lib/text.ts`.
+- Stock components over hand-rolled ones, on every platform (shadcn on
+  Base UI and React Aria on the web, SwiftUI, Material 3): the platform's
+  own component even when it is only in a release candidate, never a copy
+  of our own; bump to stable when it ships (the owner, 2026-11-09). Used
+  as they come, with no look or behaviour of ours on top: their own
+  states, motion, gestures and haptics (2026-11-10). The Native look is
+  each platform out of the box; the brand looks change only the tokens.
+- Tappable things are the look's tint (the brand's blue; Native's is the
+  platform's own); type sizes come from `lib/text.ts`.
 - Every colour, type role, spacing, corner, material, motion and tap
   target is a token in `design/tokens.json`, generated into each app by
   `scripts/build/design-tokens.sh` (CI fails on a stale copy): change a
   value there, never in `styles/tokens.css`, `lib/tokens.ts`,
   `Design/Generated` or `design/generated`.
-- Panels are Liquid Glass sheets with detents, like Apple Maps.
+- Panels are sheets with detents, like Apple Maps: the platform's stock
+  sheet as it comes (decision 0018's amendments).
 - Errors show where they happen (`lib/problems`), not in a toast.
 - Discrete settings are menus or segmented controls, not sliders.
 

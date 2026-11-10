@@ -17,6 +17,7 @@ Each fact lives in one doc; the others link to it.
 | [decisions/](decisions/README.md) | The owner's standing decisions, one page each with the reason, so none is undone by accident |
 | [LEARNING-GUIDE.md](LEARNING-GUIDE.md) | Why it is built this way, concept by concept, to build something like it yourself |
 | [privacy-inventory.md](privacy-inventory.md) | What the app collects, what leaves the device, and the stores' privacy forms |
+| [versions.md](versions.md) | What each part pins today, the version rules, the upgrades coming and what blocks each, and how an upgrade lands |
 
 ## Each part
 
@@ -34,11 +35,17 @@ Each fact lives in one doc; the others link to it.
 | [apps/web/README.md](../apps/web/README.md) | The web app: its layout, the fast test loop, the map |
 | [NATIVE.md](NATIVE.md) | The iPhone, iPad and Apple Watch app: SwiftUI over the engine, its build and tests |
 | [NATIVE-ANDROID.md](NATIVE-ANDROID.md) | The Android app: Compose and MapLibre over the engine, its build and tests |
+| [ios-27.md](ios-27.md), [ios-27-ai.md](ios-27-ai.md) | What iOS 27 offers the iPhone app, and its on-device AI |
+| [android-ai.md](android-ai.md) | What Android offers for on-device AI, and what the app uses |
 
 ## The product
 
 | Doc | Read it for |
 |---|---|
+| [navigation.md](navigation.md) | Every screen and card on each app, how it is reached and in how many taps |
+| [design/web.md](design/web.md), [design/ios.md](design/ios.md), [design/android.md](design/android.md) | Each platform's design reference, screen by screen: the one search, the card and scrolling rules, the looks (Native among them), what is stock and what is still built by hand |
+| [design/icons.md](design/icons.md) | The icon concepts and each platform's symbol for them |
+| [legal/](legal/privacy.md) | The privacy policy, terms, credits and support pages |
 | [store/listing.md](store/listing.md) | The App Store and Google Play listings and review notes; [store/privacy-labels.md](store/privacy-labels.md) the stores' privacy answers, [store/preview-video.md](store/preview-video.md) the App Preview's plan |
 | [GOOGLE-MAPS.md](GOOGLE-MAPS.md) | The map's imagery under the chart: the USGS's, and Google's with the owner's key |
 | [TV.md](TV.md) | The TV apps (parked): the site's remote-control mode and the deleted Tizen and webOS shells |
