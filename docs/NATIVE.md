@@ -31,7 +31,8 @@ behind Compose and MapLibre, is [NATIVE-ANDROID.md](NATIVE-ANDROID.md).
 - `apps/ios/Wingtip`: the app. `Config` (the host), `Session` (who is signed
   in), `Charts` (which chart, from `/api/chart`, kept for offline),
   `Tiles` (the tile address, the store on disk, the MapKit overlay) and
-  `Views` (the map under the system sheet with the four tabs).
+  `Views` (the map under the system sheet with the plan under the one
+  search, `Search`).
 - `apps/ios/WingtipTests`: Swift Testing.
 
 ## Rules
@@ -257,7 +258,7 @@ owner, 2026-11-03):
 - **A string catalog** (`Wingtip/Localizable.xcstrings`,
   `SWIFT_EMIT_LOC_STRINGS`): every `Text` gathered at build, so a second
   language is a column, not a rewrite.
-- **Scene restoration**: the tab a scene was on comes back with it
+- **Scene restoration**: the pages a scene was on come back with it
   (`@SceneStorage` in `RootView`).
 - **A UI smoke test** (`WingtipUITests/LaunchTests`): the app launched
   and its first screen shown, run by the runner with the unit tests.

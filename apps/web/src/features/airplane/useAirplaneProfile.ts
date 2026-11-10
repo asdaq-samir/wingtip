@@ -1,12 +1,13 @@
 import { startTransition, useMemo, useOptimistic, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { choiceOf, profileOfRegistered, tailOf } from "../../lib/aircraftChoice";
+import { choiceOf, profileOfRegistered, tailChoice, tailOf } from "../../lib/aircraftChoice";
 import { api } from "../../lib/api/client";
 import { airplaneFigures, bookOf, handbookOf, type FigureKey } from "../../lib/airplane/figures";
 import { readFigure } from "../../lib/airplane/figureWords";
 import { closeAirplaneProfile, useProfileOpen } from "../../lib/airplane/profileStore";
 import { fromDevice, type FigureChanges } from "../../lib/airplane/saveFigures";
 import { useSaveFigures } from "../../lib/airplane/useSaveFigures";
+import { wantScreen } from "../../lib/navigation/wanted";
 import { usePreferences } from "../../lib/preferences";
 import { aircraftListQuery, aircraftProfilesQuery, pilotQuery } from "../../lib/queryClient";
 import { ownOfRecord, ownWith, resettable, typeWords } from "./profileModel";
@@ -101,10 +102,25 @@ export function useAirplaneProfile() {
     }
     if (Object.keys(changes).length) keep(changes);
   };
+  // Fly This Airplane (the one search, 2026-11-09): this N-number the
+  // plan's airplane -- its record where it is the pilot's, else its type's
+  // book under its N-number with the figures kept for it here -- and the
+  // plan shown, flown for it. Its type unknown, it is flown on the
+  // pilot's own figures alone, which the plan asks for where missing.
+  const flying = tailOf(flown) === tail;
+  const fly = () => {
+    usePreferences
+      .getState()
+      .setAircraft(record ? choiceOf(record, profiles ?? []) : tailChoice(tail, profileName, usePreferences.getState().tailFigures[tail]));
+    closeAirplaneProfile();
+    wantScreen("fpl");
+  };
   const photo = usePhotoRead((typed) => setDrafts((d) => ({ ...d, ...typed })));
   return {
     open: !!open,
     close: closeAirplaneProfile,
+    flying,
+    fly,
     tail,
     focus: open?.focus ?? null,
     type: typeWords(record, registered, book?.type),

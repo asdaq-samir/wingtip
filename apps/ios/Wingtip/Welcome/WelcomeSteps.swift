@@ -59,7 +59,7 @@ struct WelcomeHomeStep: View {
                     Button("No Home Airport", role: .destructive) { model.pickHome(nil) }
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                TextField(AirportQuery.prompt, text: $model.homeQuery)
+                TextField("Identifier, name or town", text: $model.homeQuery)
                     .textInputAutocapitalization(.characters).autocorrectionDisabled()
                     .borderedField()
                     .submitLabel(.search)

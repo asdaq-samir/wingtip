@@ -29,12 +29,8 @@ test("signed in, each console fits the screen's width: nothing but a table's own
   // developer's buttons, and on a phone ran off the right edge). Wide
   // tables scroll inside their own container, which is the one thing
   // allowed past the edge.
-  for (const [path, button] of [
-    ["/app/plan", "setup-button"],
-    ["/app/dev", "setup-button"],
-  ] as const) {
+  for (const path of ["/app/plan", "/app/dev"]) {
     await page.goto(path);
-    void button;
     await openConsole(page);
     await openAccount(page);
     // Who is signed in, the role menu's title.
@@ -62,7 +58,7 @@ test(
   async ({ page }) => {
     await page.goto("/app/plan");
     await settle(page);
-    // Opened as the tabs alone, at the owner's ask (MapPanel).
+    // Opened as the one search alone, at the owner's ask (MapPanel).
     await expect(page.locator('[data-slot="map-panel"]')).toHaveAttribute("data-panel", "peek");
     expect(await consoleSheet(page).count()).toBe(0);
 
@@ -70,12 +66,12 @@ test(
     await openConsole(page);
     const pilot = consoleSheet(page);
     await expect(pilot).toBeVisible();
-    // Settings is a tab of the bar, the tab up while the console is out:
-    // on a phone the console is the panel's layer, under the tab bar, in
-    // the search bar's place; elsewhere a sheet.
+    // The account page, from the account button's menu beside the search:
+    // on a phone the panel's layer, under the search, its own close at its
+    // head.
     const phone = page.viewportSize()!.width < 768;
     await showTabs(page);
-    await expect(page.getByTestId("setup-button")).toHaveAttribute("aria-selected", "true");
+    await expect(pilot.getByTestId("console-close")).toBeVisible();
     if (phone) expect(await pilot.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))).toBe(true);
     // The role, a menu, in Personal's Account row, at the owner's ask: Pilot
     // (chosen here), Developer for a developer, and Sign out last; who is

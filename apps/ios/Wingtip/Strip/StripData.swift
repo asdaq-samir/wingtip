@@ -176,16 +176,6 @@ enum StripData {
         }
     }
 
-    /// The screens the field's chips offer, each handled as typed: how a
-    /// pilot finds the rest without tabs (the web's stripSuggestions).
-    static func suggestions(routed: Bool, dest: String) -> [String] {
-        if routed {
-            return ["Brief me", "Weather at \(dest)", "Nav log", "Routes", "Altitude", "Procedures", "Stops", "Nearest fuel",
-                    "File flight plan", "Dry run", "Clearance", "My airplane", "Saved flights"]
-        }
-        return ["Nearest fuel", "Nearest airports", "Saved flights", "Favorites", "Recents", "My airplane", "Logbook", "Setup"]
-    }
-
     /// A chip on a field's card: its label in capitals and the words it
     /// says in full (for VoiceOver).
     struct Chip: Equatable, Sendable {

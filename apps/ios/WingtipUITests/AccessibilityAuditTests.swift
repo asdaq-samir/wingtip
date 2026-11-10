@@ -2,12 +2,13 @@ import XCTest
 
 /// Apple's accessibility audit (XCUIApplication.performAccessibilityAudit,
 /// the checks Accessibility Inspector runs) over the screens a pilot
-/// reaches without the planner: each tab of the sheet over the map, and
-/// the strip layout's sheet. A label missing from a control, text that
+/// reaches without the planner: the plan under the one search, the search
+/// up with its suggestions, the Airplane and Settings pages, and the strip
+/// layout's sheet. A label missing from a control, text that
 /// does not grow with Dynamic Type, too little contrast or a hit area too
 /// small fails here, on the runner, before a pilot with VoiceOver or
 /// large text meets it. Launched as LaunchTests and FlowTests launch the
-/// app (-tab, -fresh), and with no planner asked, so it runs offline.
+/// app (-screen, -fresh), and with no planner asked, so it runs offline.
 ///
 /// The exceptions are in `known`, each with why; anything else fails.
 final class AccessibilityAuditTests: XCTestCase {
@@ -27,14 +28,24 @@ final class AccessibilityAuditTests: XCTestCase {
     /// runs of 2026-11-09 on the iPhone 18 Pro Max, each looked at in its
     /// screenshot:
     @MainActor
-    private static func known(_ issue: XCUIAccessibilityAuditIssue, screen: String, screenHeight: CGFloat) -> Bool {
+    private static func known(_ issue: XCUIAccessibilityAuditIssue, screen: String, screenHeight: CGFloat, keyboard: CGRect) -> Bool {
         guard let element = issue.element else { return unnamedUnderGlass(issue, screen: screen) }
         let id = element.identifier, type = element.elementType
+        // The system keyboard's own bar, up with the search focused: its
+        // empty prediction cells are buttons with no description, Apple's
+        // to name (found 2026-11-09, the one search up: three side by side,
+        // across the iPhone 18 Pro Max's keyboard at y 609 and the iPad
+        // Pro 13-inch (M5)'s at y 979). The search's screen alone, unnamed
+        // and unlabelled buttons in the screen's lower half alone, so a
+        // control of the app's with no label still fails.
+        if issue.auditType == .sufficientElementDescription, screen == "airport", type == .button,
+           element.label.isEmpty, id.isEmpty, element.frame.minY > screenHeight / 2 { return true }
+        if !keyboard.isNull, keyboard.contains(CGPoint(x: element.frame.midX, y: element.frame.midY)) { return true }
         switch issue.auditType {
         case .hitRegion:
             // MapKit's own Legal link at the map's foot, its size Apple's.
             if type == .link && element.label == "Legal" { return true }
-            // FPL's radio glyph: its 44-point area is its contentShape, as
+            // The plan's radio glyph: its 44-point area is its contentShape, as
             // CLAUDE.md has every small control make it (nothing grows),
             // which the audit, measuring the drawn glyph, does not see.
             return id == "mic"
@@ -42,8 +53,8 @@ final class AccessibilityAuditTests: XCTestCase {
             // An inactive control (Plan, Fly before a route or an airplane
             // is given) is exempt from contrast, WCAG 2.2 1.4.3.
             if !element.isEnabled { return true }
-            // A row scrolled under the floating tab bar's glass at the
-            // sheet's foot, faint there on purpose until scrolled up.
+            // A row scrolled under the glass at the sheet's foot (the
+            // route's figures), faint there on purpose until scrolled up.
             if element.frame.maxY > screenHeight - 64 { return true }
             // The audit's near miss on the system's own secondary and
             // destructive colours, Apple's to set.
@@ -74,7 +85,7 @@ final class AccessibilityAuditTests: XCTestCase {
     }
 
     /// Setup's rows under the glass, on SwiftUI nodes the audit cannot
-    /// name. The list scrolls under the floating tab bar and the navigation
+    /// name. The list scrolls under the sheet's foot and the navigation
     /// bar, faded by the soft scroll edge as iOS 26's own lists are (the
     /// look the owner kept), and whichever row rests there is reported for
     /// its contrast and text size with no element, so the exception by the
@@ -84,6 +95,7 @@ final class AccessibilityAuditTests: XCTestCase {
     /// the navigation bar were reported in their place. Setup alone, and
     /// those two checks alone, so an unnamed issue anywhere else still
     /// fails.
+    @MainActor
     private static func unnamedUnderGlass(_ issue: XCUIAccessibilityAuditIssue, screen: String) -> Bool {
         if unnamedMapLabel(issue) { return true }
         return screen == "setup" && (issue.auditType == .contrast || issue.auditType == .dynamicType)
@@ -101,6 +113,7 @@ final class AccessibilityAuditTests: XCTestCase {
     /// none with it hidden, over three launches each, the strip and the
     /// status bar ruled out the same way. The iPad alone, and that check
     /// alone, so unnamed text on the iPhone still fails.
+    @MainActor
     private static func unnamedMapLabel(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
         UIDevice.current.userInterfaceIdiom == .pad && issue.auditType == .elementDetection
     }
@@ -114,8 +127,9 @@ final class AccessibilityAuditTests: XCTestCase {
     private func audit(_ app: XCUIApplication, _ screen: String, _ types: XCUIAccessibilityAuditType = atDefaultSize) throws {
         var kept: [String] = []
         let height = app.frame.height
+        let keyboard = app.keyboards.firstMatch.exists ? app.keyboards.firstMatch.frame : .null
         try app.performAccessibilityAudit(for: types) { issue in
-            if Self.known(issue, screen: screen, screenHeight: height) { return true }
+            if Self.known(issue, screen: screen, screenHeight: height, keyboard: keyboard) { return true }
             kept.append("\(screen): \(issue.compactDescription) – \(issue.element?.debugDescription ?? "no element")")
             return false
         }
@@ -124,17 +138,17 @@ final class AccessibilityAuditTests: XCTestCase {
 
     /// The sheet brought up to its full height, so the audit reads what
     /// the pilot sees there: at the pill's or half height the rest of the
-    /// sheet is laid out under the screen's foot (and under the floating
-    /// tab bar), and every text there was reported cut short or faint.
+    /// sheet is laid out under the screen's foot, and every text there was
+    /// reported cut short or faint.
     /// Dragged from `from` (a fraction of the screen's height inside the
     /// sheet's top) to near the top.
     /// Just inside the sheet's top at its two first sizes: the strip's
-    /// pill (132 points, RootView.pill) and the tabs' half.
+    /// pill (132 points, RootView.pill) and the plan's half.
     private static let pill = 0.9
     private static let half = 0.53
 
     /// Not on an iPad, whose full-screen layout has no sheet to raise
-    /// (SplitLayout: the tabs in the sidebar, the figures over the map):
+    /// (SplitLayout: the plan in the sidebar, the figures over the map):
     /// there the drag only panned the map. It waits instead for the map to
     /// show, past its reveal (ChartMap.revealCap, 2.5 s), so the audit
     /// reads the map and not the loading mark.
@@ -149,15 +163,25 @@ final class AccessibilityAuditTests: XCTestCase {
         sleep(2)
     }
 
+    /// The plan, the one search up with its suggestions (what was the
+    /// Airport tab), and the pages that were the Airplane and Setup tabs.
     @MainActor
-    func testTheTabsPassTheAudit() throws {
-        for tab in ["fpl", "airport", "airplane", "setup"] {
+    func testThePlanAndTheSearchPassTheAudit() throws {
+        for screen in ["fpl", "airport", "airplane", "setup"] {
             // The layout said, as the simulator keeps the last one picked.
-            let app = launch(["-layout", "tabs", "-tab", tab])
-            raiseTheSheet(app, from: Self.half)
-            try audit(app, tab)
+            let app = launch(["-layout", "plan", "-screen", screen])
+            if screen == "fpl" { raiseTheSheet(app, from: Self.half) } else { settle() }
+            try audit(app, screen)
             app.terminate()
         }
+    }
+
+    /// A page or the search opened by its link brings the sheet up by
+    /// itself (RootView.openScreen): the audit waits for it to settle, and
+    /// on the iPad for the map past its reveal, as raiseTheSheet does.
+    @MainActor
+    private func settle() {
+        sleep(UIDevice.current.userInterfaceIdiom == .pad ? 4 : 2)
     }
 
     @MainActor
@@ -169,11 +193,11 @@ final class AccessibilityAuditTests: XCTestCase {
 
     /// At the largest accessibility text size, where a figure cut short or
     /// text that does not grow is what the audit finds: the strip, and the
-    /// plan tab whose figures sit side by side at the default sizes.
+    /// plan, whose figures sit side by side at the default sizes.
     @MainActor
     func testTheLargestTextPassesTheAudit() throws {
         let largest = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
-        for (screen, arguments) in [("strip, largest text", ["-layout", "strip"]), ("fpl, largest text", ["-layout", "tabs", "-tab", "fpl"])] {
+        for (screen, arguments) in [("strip, largest text", ["-layout", "strip"]), ("fpl, largest text", ["-layout", "plan", "-screen", "fpl"])] {
             let app = launch(arguments + largest)
             raiseTheSheet(app, from: arguments.contains("strip") ? Self.pill : Self.half)
             try audit(app, screen, .all)

@@ -9,6 +9,7 @@ import {
   MapPinPlus,
   MoveUpRight,
   Navigation,
+  PlaneTakeoff,
   Phone,
   Repeat2,
   Route,
@@ -20,7 +21,6 @@ import {
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 import DirectToIcon from "./glyphs/DirectToIcon";
-import { AirplaneGlyph, AirportGlyph, GearGlyph, RouteGlyph, type TabGlyph } from "./glyphs/tabGlyphs";
 
 /**
  * One concept, one glyph: the web's half of the icon concept table
@@ -28,8 +28,7 @@ import { AirplaneGlyph, AirportGlyph, GearGlyph, RouteGlyph, type TabGlyph } fro
  * Material Symbol for the same concept, so a pilot who moves between the
  * apps finds each thing by the same shape. A screen asks for the concept
  * (ICON.profile), never for a lucide name, so a glyph is changed here
- * once. The tab bar's glyphs are the app's own (tabGlyphs), drawn with a
- * filled face for the tab that is up.
+ * once.
  */
 type Glyph = LucideIcon | ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -58,6 +57,8 @@ export const ICON = {
   directTo: DirectToIcon,
   /** Fly here: the route from the airplane to this field. */
   flyHere: DirectToIcon,
+  /** Depart from this field: the route's start. */
+  departFrom: PlaneTakeoff,
   /** Put the point or field in the route. */
   addToRoute: MapPinPlus,
   /** Hold at the point. */
@@ -73,9 +74,3 @@ export const ICON = {
   /** A course line's direction, where no D-arrow fits. */
   course: MoveUpRight,
 } satisfies Record<string, Glyph>;
-
-/** The panel's tabs' glyphs, by tab. */
-export const TAB_ICON = { fpl: RouteGlyph, airport: AirportGlyph, airplane: AirplaneGlyph, setup: GearGlyph } satisfies Record<
-  string,
-  TabGlyph
->;

@@ -25,11 +25,13 @@ test(
     await page.goto("/app/dev");
     await settle(page);
     // The training workspace is the page -- the console stays off screen
-    // until its tab is picked. At rest the training's figures alone, as
-    // FPL's with a route; the pill its tabs: Train, Perf and Setup.
+    // until the account button's menu opens it. At rest the training's
+    // figures alone, as the plan's with a route; the pill its places, Train
+    // and Perf, and the account button (DevBar).
     if ((page.viewportSize()?.width ?? 0) < 768) await expect(sideDrawer(page).getByTestId("train-figures")).toBeVisible();
     await showTabs(page);
-    await expect(sideDrawer(page).getByTestId("tab-bar").getByRole("button")).toHaveText(["Train", "Perf", "Setup"]);
+    await expect(sideDrawer(page).getByTestId("dev-tabs").getByRole("tab")).toHaveText(["Train", "Perf"]);
+    await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();
     await expect(page.getByTestId("tab-train")).toHaveAttribute("aria-selected", "true");
     // Its tabs half way (the figures are the pill's); down again, the pill.
     await grabberTo(page, "peek");

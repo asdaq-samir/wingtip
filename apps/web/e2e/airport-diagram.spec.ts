@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { grabberTo, settle, settled, sideDrawer, slow } from "./helpers";
+import { settle, settled, sideDrawer, slow } from "./helpers";
 
 // A route's handler still running as the test ends -- the Recents and
 // Saved planned ahead at idle ask the planner then -- found the page
@@ -98,7 +98,7 @@ test("an airport's card has its diagram as a row, and a tap shows it full screen
   await expect(card(page)).toBeVisible();
 });
 
-test("the card's runways are a page of the pictures across its top, the FAA's diagram cropped to them, its elevation in its details, the same all the way up", async ({
+test("the card's runways are a page of its pictures under its title and actions, the FAA's diagram cropped to them, its elevation in its details", async ({
   page,
 }) => {
   await withDiagram(page, "drawn");
@@ -106,45 +106,27 @@ test("the card's runways are a page of the pictures across its top, the FAA's di
   await noPhotos(page);
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
-  // Half way, as every card opens, as Maps opens a place: the pictures
-  // across its top (the owner's pick of the redesign, A2).
+  // Half way, as every card opens; no picture over its top, its pictures
+  // lower in it (the owner, 2026-11-09).
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
   const sketch = card(page).getByTestId("place-runway-sketch");
   // KDLH's runways, named for a screen reader.
   await expect(sketch).toHaveAttribute("aria-label", /^KDLH runways .*09\/27.*, north up\./, { timeout: slow(15000) });
-  // The ident over the pictures, and under it with nothing to measure
+  // The ident at the top, and under it with nothing to measure
   // from only the elevation (places.spec has the distance).
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
   await expect(card(page).getByTestId("place-line")).toHaveText(/^Elevation [\d,]+ ft$/);
   await expect(sketch.getByTestId("place-diagram-runways")).toHaveAttribute("src", "/api/planner/airport-diagram/2610/runways/KDLH.png");
   await expect(card(page).getByTestId("place-elevation")).toContainText(/^Elevation[\d,]+ ft$/);
-  const layout = async () => {
-    const [head, box, call] = await Promise.all(
-      [card(page).getByTestId("place-head"), sketch, card(page).getByTestId("place-call")].map(async (l) => (await l.boundingBox())!),
-    );
-    // Inside the pictures, the actions under them.
-    expect(box.y).toBeGreaterThanOrEqual(head.y - 0.5);
-    expect(box.y + box.height).toBeLessThanOrEqual(head.y + head.height + 0.5);
-    expect(head.y + head.height).toBeLessThanOrEqual(call.y);
-    return [Math.round(box.y - head.y), Math.round(call.y - head.y)];
-  };
-  const half = await layout();
-  // All the way up, the same head, the owner's "the top half stay the
-  // same as half card".
-  await grabberTo(page, "full");
-  await expect.poll(() => layout()).toEqual(half);
-
-  // A tap shows the picture alone, the name and buttons gone and the
-  // full-screen button in their place (the owner's ask, 2026-11-02); a
-  // tap again brings them back.
-  const shade = card(page).getByTestId("place-name").locator("..");
-  await sketch.click();
-  await expect(shade).toHaveCSS("opacity", "0");
-  await expect(card(page).getByTestId("place-close").locator("..")).toHaveCSS("opacity", "0");
-  await sketch.click();
-  await expect(shade).toHaveCSS("opacity", "1");
-  await expect(card(page).getByTestId("place-diagram-open")).toHaveCount(0);
-  await sketch.click();
+  // The title, then the actions, then the pictures lower in the card.
+  const [name, call, pictures] = await Promise.all(
+    [card(page).getByTestId("place-name"), card(page).getByTestId("place-call"), card(page).getByTestId("place-pictures")].map(
+      async (l) => (await l.boundingBox())!,
+    ),
+  );
+  expect(name.y).toBeLessThan(call.y);
+  expect(call.y).toBeLessThan(pictures.y);
+  // A click on the runways' page opens its lightbox.
   await card(page).getByTestId("place-diagram-open").click();
   await expect(page.getByTestId("airport-diagram-viewer").getByRole("heading", { name: "KDLH airport diagram" })).toBeVisible();
 });
@@ -320,7 +302,6 @@ test("a tap on the card's sketch of a field the FAA draws no diagram for shows t
   await settle(page);
   const thumbnail = card(page).getByTestId("place-runway-sketch");
   await expect(thumbnail).toHaveAccessibleName(/Runways sketch$/);
-  await thumbnail.click();
   await card(page).getByTestId("place-diagram-open").click();
   const viewer = page.getByTestId("airport-sketch-viewer");
   await expect(viewer.getByRole("heading", { name: "C81 runways" })).toBeVisible();

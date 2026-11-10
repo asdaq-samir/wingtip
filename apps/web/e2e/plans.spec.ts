@@ -1,19 +1,18 @@
 import { test, expect } from "@playwright/test";
 import {
-  slow,
+  closeCard,
+  closeNavLog,
+  controlsInSight,
+  expectDrawerOpen,
+  grabberTo,
+  navLogSheet,
+  openNavLog,
+  openProfile,
+  openSection,
+  openTab,
   settle,
   sideDrawer,
-  expectDrawerOpen,
-  openTab,
-  openSection,
-  grabberTo,
-  controlsInSight,
-  showTabs,
-  openNavLog,
-  navLogSheet,
-  closeNavLog,
-  closeCard,
-  openProfile,
+  slow,
 } from "./helpers";
 import { fillTime } from "./ariaFields";
 
@@ -279,11 +278,10 @@ test("plan page: no legal altitude is the route's own problem: its chip says so 
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
 
-  // At rest the route says so, a red mark on its tab in the pill:
-  // nothing over the map.
-  await expect(page.getByTestId("tab-mark-fpl")).toHaveAttribute("data-finding", "stop", { timeout: slow(30000) });
-  await showTabs(page);
-  await expect(page.getByTestId("tab-fpl")).toHaveAccessibleName(/^FPL, warning$/);
+  // The route says so in its own altitude (no tab to mark since the one
+  // search, 2026-11-09): nothing over the map.
+  await controlsInSight(page);
+  await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/no legal altitude/, { timeout: slow(30000) });
   await expect(page.locator("[data-problem-banner]")).toHaveCount(0);
   await expect(page.locator("[data-sonner-toast]", { hasText: "No legal" })).toHaveCount(0);
   // The figures in the pill, under its profile, at the pilot's ask: the
@@ -418,8 +416,8 @@ test("plan page: Class B avoided with no legal altitude offers the waypoint roun
     });
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH&class_b=0");
-  await expect(page.getByTestId("tab-mark-fpl")).toHaveAttribute("data-finding", "stop", { timeout: slow(30000) });
   await controlsInSight(page);
+  await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/no legal altitude/, { timeout: slow(30000) });
   const problem = page.getByTestId("route-problem");
   await openProfile(page);
   await expect(problem.getByRole("listitem")).toHaveText([
@@ -456,8 +454,8 @@ test("plan page: no legal altitude's own altitude field takes a tap", async ({ p
     }),
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await expect(page.getByTestId("tab-mark-fpl")).toHaveAttribute("data-finding", "stop", { timeout: slow(30000) });
   await controlsInSight(page);
+  await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/no legal altitude/, { timeout: slow(30000) });
   const field = page.getByTestId("altitude-input");
   await expect(field).toBeVisible();
   await expect

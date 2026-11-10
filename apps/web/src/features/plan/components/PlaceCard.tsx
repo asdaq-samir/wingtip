@@ -1,20 +1,20 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, useEffectEvent } from "react";
 import { usePrefetchQuery, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { Star } from "lucide-react";
-import { ACTION } from "../../../lib/cardActions";
 import { FAVORITE_STAR_ON } from "../../../lib/mapChrome";
 import { cn } from "cn";
 import { useKeptAirport, usePreferences } from "../../../lib/preferences";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { shareOrCopy } from "../../../lib/share";
 import { CardHead, PanelCard } from "../../../components/PanelCard";
-import { PhotoHead, type HeadSlide } from "../../../components/PhotoHead";
+import { CardTitle } from "../../../components/CardTitle";
+import { CardPictures, type CardSlide } from "../../../components/CardPictures";
 import RoundButton from "../../../components/RoundButton";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { CardTabBar, CardTabPanel } from "../../../components/CardTabs";
 import { Tabs } from "../../../components/ui/tabs";
 import { useCardTab } from "../lib/cardTab";
-import { CardAction as Action } from "../../../components/CardAction";
+import PlaceActions from "./place/PlaceActions";
 import { ApiError } from "../../../lib/api/client";
 import type { AirportPin, AirportPlace, ClassBAirport } from "../../../lib/api/types";
 import { compassPoint } from "../../../lib/compass";
@@ -36,7 +36,6 @@ import { sameField } from "../../../lib/procedures";
 import { airportQuery, photosQuery, servicesQuery } from "../../../lib/queryClient";
 import { StopStrip, type SuggestedStop } from "./StopServices";
 import { PhotoSlide } from "../../../components/PictureSlides";
-import { mapsLink } from "./place/mapsLink";
 import { PlaceChartsTab } from "./place/PlaceChartsTab";
 import { PlaceInfoTab } from "./place/PlaceInfoTab";
 import { PlaceRunwaysTab } from "./place/PlaceRunwaysTab";
@@ -134,6 +133,7 @@ export default function PlaceCard({
   from,
   onClose,
   onFlyHere,
+  onDepartFrom,
   onAddStop,
   onExpand,
   onLower,
@@ -148,7 +148,9 @@ export default function PlaceCard({
   from: { point: LatLon; name: string | null } | null;
   onClose: () => void;
   onFlyHere: (place: AirportPlace) => void;
-  /** Add Stop: the field the route's next stop, before its destination
+  /** Depart From: the field the route's departure, the rest kept. */
+  onDepartFrom: (place: AirportPlace) => void;
+  /** Add as Stop: the field the route's next stop, before its destination
    *  (or the end a half route lacks, or the first point of a new one);
    *  none where it is in the route already. */
   onAddStop?: (place: AirportPlace) => void;
@@ -196,6 +198,7 @@ export default function PlaceCard({
   // the tap looked lost under it, at the pilot's ask for no lag. The card
   // goes with the route; it is a new card (keyed by its ident) after.
   const [flying, setFlying] = useState(false);
+
   // Every frequency, the title's All tapped; the first few until then.
   // The tab picked, kept for the airport while the page is open
   // (useCardTab); Charts where the card opens on its approaches.
@@ -404,29 +407,28 @@ export default function PlaceCard({
       )}
     </div>
   );
-  const slides: (HeadSlide | null | undefined)[] = [
+  const slides: (CardSlide | null | undefined)[] = [
     photos && {
       key: "aerial",
       open: () => setPicture("aerial"),
-      openLabel: `${ident4} from the air, full screen`,
-      openTestId: "place-aerial-open",
-      picture: <PhotoSlide flush src={photos.aerial_url} alt="" label={`${ident4} from the air`} testId="place-aerial" />,
+      label: `${ident4} from the air, full screen`,
+      testId: "place-aerial-open",
+      picture: <PhotoSlide src={photos.aerial_url} alt="" label={`${ident4} from the air`} testId="place-aerial" />,
     },
     {
       key: "diagram",
       picture: runwaysSlide,
-      openTestId: "place-diagram-open",
+      testId: "place-diagram-open",
       open: place && sketched ? () => setDiagramOpen(place.airport_diagram_url ? "faa" : "sketch") : undefined,
-      openLabel: place?.airport_diagram_url ? `${ident4} airport diagram, full screen` : `${ident4} runways sketch, full screen`,
+      label: place?.airport_diagram_url ? `${ident4} airport diagram, full screen` : `${ident4} runways sketch, full screen`,
     },
     photos?.photo && {
       key: "photo",
       open: () => setPicture("photo"),
-      openLabel: `${ident4} from the ground, full screen`,
-      openTestId: "place-photo-open",
+      label: `${ident4} from the ground, full screen`,
+      testId: "place-photo-open",
       picture: (
         <PhotoSlide
-          flush
           src={photos.photo.url}
           alt=""
           label={`${ident4} from the ground`}
@@ -459,129 +461,85 @@ export default function PlaceCard({
   const share = () =>
     void shareOrCopy({ title: place?.name ?? ident, url: `${location.origin}/app/plan?place=${place?.ident ?? ident}` }).catch(() => {});
   return (
-    <PanelCard testId="place-card" flush={!(error && !place)}>
+    <PanelCard testId="place-card">
       {place || !error ? (
         <>
           {/* The head and the actions from the first frame, live once the
               answer is in: the card one shape while its answer comes, at
               the pilot's ask. */}
-          <PhotoHead
+          <CardTitle
             title={ident4}
             testId="place-head"
             titleTestId="place-name"
             subtitleTestId="place-where"
             // The name, and the town on a line of its own under it, at the
             // owner's ask (2026-10-29: "keep the city on next line").
-            subtitle={name && name !== ident4 ? name : where || " "}
+            subtitle={name && name !== ident4 ? name : where || " "}
             line={
               <>
                 {name && name !== ident4 && where && (
-                  <p className={cn("truncate text-white/90", TEXT.prose)} data-testid="place-town">
+                  <p className={cn("truncate text-foreground/80", TEXT.prose)} data-testid="place-town">
                     {where}
                   </p>
                 )}
                 {line && (
-                  <p className={cn("line-clamp-2 text-white/80", TEXT.note)} data-testid="place-line">
+                  <p className={cn("line-clamp-2 text-muted-foreground", TEXT.note)} data-testid="place-line">
                     {line}
                   </p>
                 )}
               </>
             }
-            label={`${ident4}: its runways${photos ? ", from the air" : ""}${photos?.photo ? ", from the ground" : ""}`}
-            slides={slides}
             onClose={onClose}
             onShare={share}
             closeTestId="place-close"
             shareTestId="place-share"
             pill={{ line: pillLine || undefined, picture: pillPicture }}
-            // The share at the left and the star beside the close, at the
-            // owner's ask (2026-10-29), the star's place in the actions
-            // the address's.
-            shareAtLeft
-            beside={(look) => <FavoriteButton ident={kept?.ident ?? ident} place={place ?? null} className={look} />}
-          >
-            {diagramOpen === "faa" && place?.airport_diagram_url && (
-              <FaaChart
-                title={`${place.ident} airport diagram`}
-                url={place.airport_diagram_url}
-                airport={place.ident}
+            beside={<FavoriteButton ident={kept?.ident ?? ident} place={place ?? null} />}
+          />
+          {/* The pictures' lightboxes (Base UI Dialogs), opened from the
+              pictures lower in the card (CardPictures). */}
+          {diagramOpen === "faa" && place?.airport_diagram_url && (
+            <FaaChart
+              title={`${place.ident} airport diagram`}
+              url={place.airport_diagram_url}
+              airport={place.ident}
+              onClose={() => setDiagramOpen(null)}
+            />
+          )}
+          {picture && photos && (
+            <Suspense fallback={null}>
+              <PictureViewer
+                title={`${ident4} ${picture === "aerial" ? "from the air" : "from the ground"}`}
+                pages={[
+                  picture === "aerial" || !photos.photo
+                    ? { src: photos.aerial_url, width: 900, height: 600 }
+                    : { src: photos.photo.url, width: photos.photo.width ?? 900, height: photos.photo.height ?? 600 },
+                ]}
+                onClose={() => setPicture(null)}
+              />
+            </Suspense>
+          )}
+          {diagramOpen === "sketch" && place && (
+            <Suspense fallback={null}>
+              <SketchViewer
+                ident={place.ident}
+                runways={place.runways}
+                lat={place.lat}
+                lon={place.lon}
                 onClose={() => setDiagramOpen(null)}
               />
-            )}
-            {picture && photos && (
-              <Suspense fallback={null}>
-                <PictureViewer
-                  title={`${ident4} ${picture === "aerial" ? "from the air" : "from the ground"}`}
-                  pages={[
-                    picture === "aerial" || !photos.photo
-                      ? { src: photos.aerial_url, width: 900, height: 600 }
-                      : { src: photos.photo.url, width: photos.photo.width ?? 900, height: photos.photo.height ?? 600 },
-                  ]}
-                  onClose={() => setPicture(null)}
-                />
-              </Suspense>
-            )}
-            {diagramOpen === "sketch" && place && (
-              <Suspense fallback={null}>
-                <SketchViewer
-                  ident={place.ident}
-                  runways={place.runways}
-                  lat={place.lat}
-                  lon={place.lon}
-                  onClose={() => setDiagramOpen(null)}
-                />
-              </Suspense>
-            )}
-          </PhotoHead>
-          {/* Four equal, as Maps' are under a place's photos: Fly Here
-              filled, the Direct-To's symbol on it; Add Stop beside it, at
-              the pilot's ask, the field the route's next stop; Call, the
-              field's own phone from the FAA's airport file, greyed where it
-              lists none; and the address in Maps, the star's place
-              until the owner moved the star up by the close (2026-10-29). */}
-          <div className={cn("grid gap-2 pt-3", onAddStop ? "grid-cols-4" : "grid-cols-3")} data-testid="place-actions">
-            <Action
-              icon={<ACTION.flyHere.icon />}
-              label={ACTION.flyHere.label}
-              filled
-              busy={flying}
-              disabled={!place}
-              testId="fly-here"
-              onClick={() => {
-                if (place) {
-                  setFlying(true);
-                  onFlyHere(place);
-                }
-              }}
-            />
-            {onAddStop && (
-              <Action
-                icon={<ACTION.addStop.icon />}
-                label={ACTION.addStop.label}
-                disabled={!place}
-                onClick={() => {
-                  if (place) onAddStop(place);
-                }}
-                testId="place-add-stop"
-              />
-            )}
-            <Action
-              icon={<ACTION.call.icon />}
-              label={ACTION.call.label}
-              disabled={!place?.phone}
-              href={place?.phone ? `tel:${place.phone}` : undefined}
-              spoken={place?.phone ? `Call ${place.phone}` : "Call: no phone listed"}
-              testId="place-call"
-            />
-            <Action
-              icon={<ACTION.address.icon />}
-              label={ACTION.address.label}
-              disabled={!place}
-              href={place ? mapsLink(place) : undefined}
-              spoken={place?.address ? `Address in Maps: ${place.address}` : "Open in Maps"}
-              testId="place-address-action"
-            />
-          </div>
+            </Suspense>
+          )}
+          <PlaceActions
+            place={place ?? null}
+            flying={flying}
+            onFlyHere={(p) => {
+              setFlying(true);
+              onFlyHere(p);
+            }}
+            onDepartFrom={onDepartFrom}
+            onAddStop={onAddStop}
+          />
           {place && stop && <StopStrip ident={place.ident} stop={stop} />}
         </>
       ) : (
@@ -616,7 +574,9 @@ export default function PlaceCard({
             disabled={!place}
             raise={{ onExpand: raise, onLower }}
             barRef={tabsRef}
-            className="mt-3 scroll-mt-16"
+            // Held at the top as the card scrolls on a desktop, its sections
+            // always a click away (the owner, 2026-11-09).
+            className="mt-3 scroll-mt-16 lg:sticky lg:top-0 lg:z-10 lg:bg-background/95 lg:py-1 lg:backdrop-blur"
           />
           <CardTabPanel value="radio" className="space-y-0">
             {place && <PlaceInfoTab place={place} where={where} services={services} />}
@@ -643,6 +603,17 @@ export default function PlaceCard({
             {place && <PlaceChartsTab place={place} sketched={sketched} startOn={startOn} />}
           </CardTabPanel>
         </Tabs>
+      )}
+      {/* The field from the air, its runways and from the ground, lower in
+          the card, a click each to its lightbox (the owner, 2026-11-09). */}
+      {place && (
+        <div className="pt-6">
+          <CardPictures
+            slides={slides}
+            label={`${ident4}: its runways${photos ? ", from the air" : ""}${photos?.photo ? ", from the ground" : ""}`}
+            testId="place-pictures"
+          />
+        </div>
       )}
       {isLoading && !known && <p className={cn("pt-4 text-muted-foreground", TEXT.prose)}>Fetching the airport…</p>}
       {/* Where the planner could not be reached, the way to ask again, in

@@ -10,6 +10,7 @@ import { useGlView } from "../../../../lib/map/gl/useGlView";
 import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
 import { GL_FONT_BOLD, TAP } from "../../../../lib/map/gl/layers/common";
 import MapMarksList from "./MapMarksList";
+import AirportHover from "./AirportHover";
 import { CHART } from "../../../../lib/tokens";
 
 const SELECTED = "airport-selected";
@@ -162,5 +163,11 @@ function TileAirports(props: Props) {
   });
   // The same fields for a screen reader and a keyboard, which cannot see
   // the canvas's symbols: the reporting ones in sight, each opening its card.
-  return <MapMarksList fields={inView ?? []} onSelect={props.onSelect} />;
+  // And a mouse resting on a mark, its preview (AirportHover).
+  return (
+    <>
+      <MapMarksList fields={inView ?? []} onSelect={props.onSelect} />
+      <AirportHover layer="airports" />
+    </>
+  );
 }

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { closeCard, drawn, grabberTo, settle, showTabs, sideDrawer, slow, stripShows } from "./helpers";
+import { closeCard, drawn, grabberTo, openConsole, settle, showSearch, showTraffic, sideDrawer, slow, stripShows } from "./helpers";
 
 /**
  * Tracking an airplane, as FlightAware and ForeFlight do, at the pilot's
@@ -127,20 +127,18 @@ test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-test("Aircraft is a tab, finds an airplane by its callsign, and a tap on one tracks it: its card, its path, the map on it", async ({
+test("the traffic, from the one search's Do, finds an airplane by its callsign, and a tap on one tracks it: its card, its path, the map on it", async ({
   page,
 }) => {
   await sky(page);
   await page.goto("/app/plan");
   await settle(page);
-  // Out of the tabs alone, which a fresh load opens as.
+  // Out of the pill a fresh load opens as.
   await grabberTo(page, "full");
-  // The tab bar's Aircraft, at the pilot's ask, where it was a button under Nearest's.
-  await showTabs(page);
-  await page.getByTestId("tab-aircraft").click();
-  await showTabs(page);
-  await expect(page.getByTestId("tab-aircraft")).toHaveAttribute("aria-selected", "true");
-  // A tab tapped opens at the pill's size (TabBar); its list all the way up.
+  // The traffic about, the one search's Do (it was the Airplane tab).
+  await showTraffic(page);
+  await expect(page).toHaveURL(/[?&]aircraft=1/);
+  // Its list all the way up.
   await grabberTo(page, "full");
   const list = page.getByTestId("aircraft-card");
   // No list of everything about, nor its filters, at the owner's ask
@@ -463,16 +461,14 @@ test("an airplane's past flights are listed on its card, and one is drawn on the
   await flight.getByTestId("replay-speed").getByText("200×").click();
   await flight.getByTestId("replay-play").click();
   await expect(flight.getByTestId("replay-now")).toContainText(/ft · 100 kt · S/);
-  // Another tab and back, at the owner's ask: the past flight still out
-  // over the Aircraft tab, its replay on where it was.
-  await showTabs(page);
-  await page.getByTestId("tab-fpl").click();
+  // The search and back to the traffic, at the owner's ask: the past
+  // flight still out over the traffic, its replay on where it was.
+  await showSearch(page);
   await expect(flight).toHaveCount(0);
-  await showTabs(page);
-  await page.getByTestId("tab-aircraft").click();
+  await showTraffic(page);
   await expect(page).toHaveURL(/[?&]past=\d+/);
   await expect(flight.getByTestId("replay-now")).toContainText(/ft · 100 kt · S/);
-  // At the pill's size, as a tab tapped opens; its controls all the way up.
+  // Its controls all the way up.
   await grabberTo(page, "full");
   await flight.getByTestId("replay-stop").click();
   await expect(flight.getByTestId("replay-now")).toHaveCount(0);
@@ -611,7 +607,7 @@ test("an airplane opened is in the Aircraft card's Recents, and one starred on i
   await expect(page.getByTestId("flight-card").getByTestId("flight-favorite")).toHaveAttribute("aria-pressed", "true");
 });
 
-test("an airplane's card on Aircraft is still open after Setup and back to Aircraft", async ({ page }) => {
+test("an airplane's card over the traffic is still open after the account page and back", async ({ page }) => {
   // The owner's notice: "When I open an aircraft card and go to setup and
   // come back, to aircraft tab, the card is not there anymore". Aircraft
   // was taken for the tab up tapped again, which puts its card away.
@@ -620,11 +616,9 @@ test("an airplane's card on Aircraft is still open after Setup and back to Aircr
   await settle(page);
   const card = page.getByTestId("flight-card");
   await expect(card.getByTestId("flight-favorite")).toBeVisible({ timeout: slow(15_000) });
-  await showTabs(page);
-  await page.getByTestId("setup-button").click();
+  await openConsole(page);
   await expect(sideDrawer(page).getByTestId("setup-page")).toBeVisible();
-  await showTabs(page);
-  await page.getByTestId("tab-aircraft").click();
+  await sideDrawer(page).getByTestId("console-close").click();
   await expect(sideDrawer(page).getByTestId("setup-page")).toBeHidden();
   await expect(page).toHaveURL(/[?&]flight=a0b7d8/);
   await expect(card.getByTestId("flight-favorite")).toBeVisible();
@@ -790,9 +784,9 @@ test("an airplane not heard now has its last flight sketched, on the ground wher
   const card = page.getByTestId("flight-card");
   await expect(card.getByTestId("flight-chip")).toHaveText(/^Landed LWM \d{1,2} [A-Z][a-z]{2}$/, { timeout: slow(15_000) });
   await expect(card.getByTestId("flight-state")).toHaveText("GND");
-  // No photo of it on Planespotters: a quiet stand-in on the tint across
-  // the top, not an empty box; its last flight sketched a page across.
-  await expect(card.getByTestId("flight-photo-none")).toBeInViewport();
+  // No photo of it on Planespotters: its last flight sketched, the one
+  // picture of its strip.
+  await expect(card.getByTestId("flight-photo-open")).toHaveCount(0);
   await expect(card.getByTestId("trail-sketch")).toBeAttached();
   // Its airport: where it landed.
   await expect(card.getByTestId("flight-airport")).toContainText("LWM");
@@ -801,7 +795,7 @@ test("an airplane not heard now has its last flight sketched, on the ground wher
   await expect(page.getByTestId("past-flight-card").getByTestId("past-flight-name")).toHaveText("LCI → LWM");
 });
 
-test("an airplane's photo is across its card's top, the photographer named on it and the photo linked to its page, its sketch a swipe across", async ({
+test("an airplane's photo is in its card's pictures, the photographer named on it and the photo linked to its page, its sketch a swipe across", async ({
   page,
 }) => {
   // The owner's ask: "I also like the idea of having the actual airframe
@@ -837,17 +831,13 @@ test("an airplane's photo is across its card's top, the photographer named on it
   const photo = card.getByTestId("flight-photo");
   await expect(photo).toBeVisible({ timeout: slow(15_000) });
   await expect(card.getByTestId("flight-photo-credit")).toHaveText("© Jane Spotter · Planespotters");
-  // A tap shows it alone, its credit kept, and its full-screen button is
-  // the link to its page, as Planespotters' terms ask.
-  await photo.click();
+  // The picture is the link to its page, as Planespotters' terms ask.
   const link = card.getByTestId("flight-photo-open");
   await expect(link).toHaveAttribute("href", "https://www.planespotters.net/photo/1773250/n14511");
   await expect(link).toHaveAttribute("target", "_blank");
   await expect(link).not.toHaveAttribute("rel", /nofollow/);
-  await expect(card.getByTestId("flight-photo-credit")).toBeVisible();
-  await photo.click();
-  // The photo first, as Maps opens a place on its photos; where it has
-  // flown a page across.
+  // Lower in the card, under its details; the photo the strip's first.
+  await link.scrollIntoViewIfNeeded();
   await expect(photo).toBeInViewport({ ratio: 0.9 });
   // The stock carousel's own next page (PictureSlides), as a swipe is.
   await card

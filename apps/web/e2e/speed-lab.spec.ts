@@ -46,7 +46,7 @@ async function probes(page: Page) {
       for (const e of list.getEntries()) w.__long.push({ t: e.startTime, d: e.duration });
     }).observe({ type: "longtask", buffered: true });
     const look = () => {
-      if (document.querySelector("[data-testid=tab-bar]")) w.__search = performance.now();
+      if (document.querySelector("[data-testid=search-airports]")) w.__search = performance.now();
       else requestAnimationFrame(look);
     };
     requestAnimationFrame(look);
@@ -100,7 +100,7 @@ test("the nightly speed lab", async ({ page }, info) => {
   for (let run = 0; run < RUNS; run++) {
     // Opening the app, and the map's own steps on it.
     await page.goto("/app/plan");
-    await page.getByTestId("tab-bar").first().waitFor({ timeout: 60_000 });
+    await page.getByTestId("search-airports").first().waitFor({ timeout: 60_000 });
     keep("open_app", await page.evaluate(() => (window as unknown as { __search: number }).__search));
     await page.locator("[data-chart-zoom]").first().waitFor({ state: "attached", timeout: 60_000 });
     await page.waitForTimeout(3000);

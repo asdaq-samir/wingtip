@@ -4,6 +4,7 @@ import { Button } from "./ui/button";
 import { GLASS_BUTTON } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
 import { Spinner } from "./ui/spinner";
+import { Kbd } from "./ui/kbd";
 
 /**
  * One of a card's actions under its head -- the airport card's Fly Here,
@@ -31,6 +32,7 @@ export function CardAction({
   href,
   testId,
   pressed,
+  keys,
   ...trigger
 }: {
   icon: ReactNode;
@@ -54,6 +56,9 @@ export function CardAction({
    *  which turns on the compositor while the page is busy drawing what
    *  the tap asked for. */
   busy?: boolean;
+  /** Its key on a desktop, shown beside its word (aria-keyshortcuts too):
+   *  the airport card's F, D and S. */
+  keys?: string;
 } & Omit<ComponentProps<"button">, "children" | "onClick" | "disabled">) {
   // Its sides four points in, not the stock button's ten: the room a
   // word needs to stay on its one line (below) at the text sizes a reader
@@ -82,7 +87,14 @@ export function CardAction({
           the card's tiles ran off the half sheet. Wrapped, not cut
           short, only where even that is too narrow, a 320-point Slide Over:
           HIG says not to truncate a button's title. */}
-      <span className={cn("max-w-full text-center leading-tight font-semibold", TEXT.note)}>{label}</span>
+      <span className={cn("max-w-full text-center leading-tight font-semibold", TEXT.note)}>
+        {label}
+        {keys && (
+          <Kbd aria-hidden="true" className="ml-1 align-middle">
+            {keys}
+          </Kbd>
+        )}
+      </span>
     </>
   );
   // A link where it leaves the app, the stock button's look on it.
@@ -120,6 +132,7 @@ export function CardAction({
       aria-label={spoken}
       aria-busy={busy || undefined}
       aria-pressed={pressed}
+      aria-keyshortcuts={keys}
       className={look}
     >
       {face}

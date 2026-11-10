@@ -5,7 +5,7 @@ import TrailSketch, { type SketchField } from "./TrailSketch";
 /**
  * Where an airplane has flown, sketched -- its flight now, or where it is
  * not heard its last -- a page of the pictures across its card's top
- * (FlightCard's PhotoHead), after its photo: drawn in the top of the box,
+ * (FlightCard's pictures, CardPictures), after its photo: drawn in the top of the box,
  * clear of its name set over the box's foot.
  */
 export default function AirplaneSketch({

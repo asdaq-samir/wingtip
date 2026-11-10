@@ -229,7 +229,7 @@ struct RouteExtrasSection: View {
                 }
                 .onDelete { at in at.map { plan.extras.holds[$0].fix }.forEach { plan.setHold(at: $0, nil) } }
                 ForEach(plan.procedures) { pick in
-                    NavigationLink(value: "fixes:\(pick.ident):\(pick.id)") {
+                    NavigationLink(value: SheetPage.flight("fixes:\(pick.ident):\(pick.id)")) {
                         LabeledContent("\(pick.name) fixes", value: plan.extras.procedureDirect["\(pick.ident):\(pick.id)"].map { "Direct \($0)" } ?? pick.ident)
                     }
                 }
@@ -237,9 +237,9 @@ struct RouteExtrasSection: View {
                 SectionTitle("Route")
             }
             Section(title: "In Flight") {
-                NavigationLink(value: "nearest") { Label("Nearest for a Diversion", systemImage: WingtipIcon.nearest) }
-                NavigationLink(value: "notes") { Label("Checkpoint Notes", systemImage: "text.bubble") }
-                NavigationLink(value: "file") { Label("File Flight Plan", systemImage: WingtipIcon.send) }
+                NavigationLink(value: SheetPage.flight("nearest")) { Label("Nearest for a Diversion", systemImage: WingtipIcon.nearest) }
+                NavigationLink(value: SheetPage.flight("notes")) { Label("Checkpoint Notes", systemImage: "text.bubble") }
+                NavigationLink(value: SheetPage.flight("file")) { Label("File Flight Plan", systemImage: WingtipIcon.send) }
             }
         }
     }

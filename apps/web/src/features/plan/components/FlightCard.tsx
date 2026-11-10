@@ -3,7 +3,8 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { BadgeCheck, ChartLine, Crosshair, Fan, IdCard, Plane, Route, Star, UserRound } from "lucide-react";
 import { cn } from "cn";
 import { PanelCard } from "../../../components/PanelCard";
-import { PhotoHead, type HeadSlide } from "../../../components/PhotoHead";
+import { CardTitle } from "../../../components/CardTitle";
+import { CardPictures, type CardSlide } from "../../../components/CardPictures";
 import { PhotoSlide } from "../../../components/PictureSlides";
 import { FAVORITE_STAR_ON } from "../../../lib/mapChrome";
 import RoundButton from "../../../components/RoundButton";
@@ -447,18 +448,18 @@ export default function FlightCard({
   // The photo first, as Maps opens a place on its photos, where
   // Planespotters has one; else the airplane's shape on the tint, a
   // quiet stand-in, not an empty box. Where it has flown a swipe across.
-  const slides: HeadSlide[] = [
+  // Its photo where Planespotters has one, linked to its page as their
+  // terms ask, and where it has flown: lower in the card, under its
+  // details (the owner, 2026-11-09: no photo at the card's top).
+  const slides: (CardSlide | null)[] = [
     photo
       ? {
-          // Planespotters' terms: the photo linked to its page, from the
-          // full-screen button once it is shown alone.
           key: "photo",
           href: photo.link,
-          openLabel: `${name}'s photo on Planespotters`,
-          openTestId: "flight-photo-open",
+          label: `${name}'s photo on Planespotters`,
+          testId: "flight-photo-open",
           picture: (
             <PhotoSlide
-              flush
               src={photo.src}
               alt={name}
               label={`${name}'s photo`}
@@ -469,19 +470,10 @@ export default function FlightCard({
             />
           ),
         }
-      : {
-          key: "none",
-          picture: (
-            <div
-              className="flex size-full items-start justify-center bg-linear-to-b from-primary/55 to-primary/15 pt-10"
-              data-testid="flight-photo-none"
-            >
-              <Plane className="size-20 text-white/55" strokeWidth={1.25} aria-hidden="true" />
-            </div>
-          ),
-        },
+      : null,
     {
       key: "trail",
+      label: `Where ${name} has flown`,
       picture: (
         <AirplaneSketch
           points={trail}
@@ -518,24 +510,19 @@ export default function FlightCard({
   const { data: tower } = useQuery(departuresQuery(plane?.callsign ?? registration));
   const towerLine = departureLine(tower?.events[0]);
   return (
-    <PanelCard testId="flight-card" flush>
-      <PhotoHead
+    <PanelCard testId="flight-card">
+      <CardTitle
         title={name}
         testId="flight-head"
         titleTestId="flight-name"
         subtitleTestId="flight-what"
         subtitle={[model, operator].filter(Boolean).join(" · ") || "\u00a0"}
-        label={`${name}: ${photo ? "its photo, and " : ""}where it has flown`}
-        slides={slides}
         onClose={onClose}
         onShare={share}
         closeTestId="flight-close"
         shareTestId="flight-share"
         pill={{ line: pillLine || undefined, picture: photo?.src, tint: !photo }}
-        // As the airport card's (2026-10-29): the share at the left, the
-        // star beside the close, the actions the three left.
-        shareAtLeft
-        beside={(look) => <FavoriteButton kept={kept} className={look} />}
+        beside={<FavoriteButton kept={kept} />}
       />
       <div className="grid grid-cols-3 gap-2 pt-3" data-testid="flight-actions">
         {/* Follow filled, the card's first thing to do; nothing to follow
@@ -659,6 +646,9 @@ export default function FlightCard({
             {towerLine && <ListRow title="Tower" description={towerLine} data-testid="flight-tower" />}
           </ListGroup>
         </PillSection>
+      </div>
+      <div className="pt-5">
+        <CardPictures slides={slides} label={`${name}: ${photo ? "its photo, and " : ""}where it has flown`} testId="flight-pictures" />
       </div>
       {/* The ones before the flight it is on, each replayed (PastFlights), and a day to look back from. */}
       <div className="pt-5">

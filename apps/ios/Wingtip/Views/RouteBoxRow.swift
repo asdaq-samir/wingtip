@@ -12,9 +12,9 @@ import SwiftUI
 struct RouteBoxRow: View {
     @Environment(Plan.self) private var plan
     @Binding var altitude: String
-    var focused: FocusState<FPLView.Field?>.Binding
-    /// A page of FPL's: pushed on the iPhone, the inspector on the iPad.
-    let open: (FPLView.Page) -> Void
+    var focused: FocusState<PlanView.Field?>.Binding
+    /// A page of the plan's: pushed on the iPhone, the inspector on the iPad.
+    let open: (Screen) -> Void
     let fly: () -> Void
     /// "FL-045" fits at the larger sizes too.
     @ScaledMetric(relativeTo: .body) private var altitudeWidth = 92.0
@@ -43,7 +43,7 @@ struct RouteBoxRow: View {
                 // No airplane picked: the chip asks for one, tinted as a
                 // tap is, rather than flying a type unasked (docs/decisions/0011).
                 Button { open(.airplane) } label: {
-                    Label("Airplane", systemImage: WingtipIcon.tabAirplane)
+                    Label("Airplane", systemImage: WingtipIcon.airplane)
                 }
                 .font(WingtipType.row)
                 // Its own tap in the row, the tint's blue, and a 44-point
@@ -96,7 +96,7 @@ struct RouteBoxRow: View {
     /// owner's warn-never-limit.
     private var more: some View {
         Menu {
-            Button { open(.navLog) } label: { Label("Nav Log", systemImage: WingtipIcon.navLog) }
+            Button { open(.navlog) } label: { Label("Nav Log", systemImage: WingtipIcon.navLog) }
                 .disabled(plan.legs.isEmpty)
             Divider()
             Button(role: .destructive) { plan.clear() } label: { Label("Clear Route", systemImage: WingtipIcon.close) }

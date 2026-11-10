@@ -4,9 +4,9 @@ import SwiftUI
 /// though it is then of the regular width) and on an iPad in a narrow
 /// Split View, the map under the system sheet with its detents, the
 /// owner's Apple Maps model; on an iPad of the regular width, as Maps lays
-/// out on the iPad, the map across the screen with the tabs in the
-/// sidebar at its left, a field's card, the profile and the brief in the
-/// inspector at its right, and the figures along its foot.
+/// out on the iPad, the map across the screen with the plan and the one
+/// search in the sidebar at its left, a field's card, the profile and the
+/// brief in the inspector at its right, and the figures along its foot.
 enum RootLayout: Equatable {
     case sheet
     case split
@@ -21,10 +21,9 @@ enum RootLayout: Equatable {
         horizontal == .regular && vertical == .regular ? .split : .sheet
     }
 
-    /// Which of the Airport tab's pages open in the inspector on iPad: a
-    /// field's card and the airspace over a point, as Maps opens a place
-    /// beside the map. Its lists stay in the sidebar, where they were
-    /// opened.
+    /// Which of the fields' pages open in the inspector on iPad: a field's
+    /// card and the airspace over a point, as Maps opens a place beside
+    /// the map. The lists stay in the sidebar, where they were opened.
     static func inspects(_ route: AirportRoute) -> Bool {
         switch route {
         case .airport, .airspace: true
@@ -33,19 +32,8 @@ enum RootLayout: Equatable {
     }
 }
 
-/// The Airport tab's search, typed: kept in one place, as the iPad's
-/// sidebar folds the system's search field away (neither the tab's nor
-/// the column's .searchable shows there) and the tab draws its own.
-@MainActor
-@Observable
-final class AirportQuery {
-    static let shared = AirportQuery()
-    static let prompt = "Identifier, name or town"
-    var text = ""
-}
-
 /// A second-level card, which the iPad shows in the inspector beside the
-/// map rather than over the tab: a field's or a point's (as AirportRoute
+/// map rather than over the plan: a field's or a point's (as AirportRoute
 /// writes it), the profile, the brief, or the flight's own cards
 /// (FlightUI's: an airplane, a hold, a flown track and its replay).
 enum SideCard: Hashable {
@@ -53,7 +41,7 @@ enum SideCard: Hashable {
     case profile
     case brief
     case flight
-    /// The pilot's saved flights (FPL's Flights button).
+    /// The pilot's saved flights (the plan's Flights button).
     case flights
 }
 
@@ -61,7 +49,7 @@ extension EnvironmentValues {
     /// Set in the iPad's layout: the flight's cards go to the inspector.
     @Entry var splitLayout = false
     /// Opens a card in the inspector; nil on the iPhone, where it is
-    /// pushed in the tab.
+    /// pushed on the sheet's stack.
     var openCard: (@MainActor (SideCard) -> Void)? {
         get { self[OpenCardKey.self] }
         set { self[OpenCardKey.self] = newValue }
@@ -85,65 +73,25 @@ private struct CloseCardKey: EnvironmentKey {
     static let defaultValue: (@MainActor () -> Void)? = nil
 }
 
-/// A link to a second-level card: pushed in its tab on the iPhone, opened
-/// in the inspector on the iPad.
-struct CardLink<Label: View>: View {
-    let card: SideCard
-    let label: () -> Label
-    @Environment(\.openCard) private var openCard
-
-    init(_ card: SideCard, @ViewBuilder label: @escaping () -> Label) {
-        self.card = card
-        self.label = label
-    }
-
-    var body: some View {
-        if let openCard {
-            Button { openCard(card) } label: { label() }
-        } else {
-            NavigationLink(value: Self.page(card)) { label() }
-        }
-    }
-
-    /// The tab's own page for it, as FPL's stack names them.
-    static func page(_ card: SideCard) -> String {
-        switch card {
-        case .airport(let text): text
-        case .profile: "profile"
-        case .brief: "brief"
-        case .flight: "flight"
-        case .flights: "flights"
-        }
-    }
-}
-
-/// The iPad's layout: stock SwiftUI throughout. The tabs in the
-/// NavigationSplitView's sidebar (on iPadOS 26 a floating glass card over
-/// the map, with the tab bar at its top), the map as its detail across
-/// the screen, the second-level card in the system inspector, and the
+/// The iPad's layout: stock SwiftUI throughout. The plan under the one
+/// search in the NavigationSplitView's sidebar (on iPadOS 26 and later a
+/// floating glass card over the map), the map as its detail across the
+/// screen, the second-level card in the system inspector, and the
 /// flight's figures along the foot of the map.
 struct SplitLayout<Map: View>: View {
     let map: Map
-    @Binding var tab: RootView.Tabs
-    /// The Airport tab's stack: a field or a point picked there goes to
-    /// the inspector instead (RootLayout.inspects).
-    @Binding var airports: [String]
+    /// The sheet's stack, the sidebar's here: a field or a point pushed on
+    /// it opens in the inspector instead (RootLayout.inspects).
+    @Binding var path: [SheetPage]
+    let search: OneSearchModel
     @Binding var card: SideCard?
-    @Environment(Plan.self) private var plan
+    let openScreen: (Screen) -> Void
+    let ask: (String?) -> Void
     @State private var columns: NavigationSplitViewVisibility = .all
-    /// Ask (AskView) over the sidebar's tabs, as the iPhone's sheet has it
-    /// (RootView's SheetView).
-    @State private var asking = false
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columns) {
-            // A tab's own navigation bar is folded into the column's in
-            // the sidebar, which showed none of its title or buttons: the
-            // column's bar carries them instead.
-            SheetView(tab: $tab, airports: sidebarAirports, pill: false, asking: $asking)
-                .navigationTitle(Self.title(tab))
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar { if tab == .fpl { fplItems } }
+            PlanSheet(path: sidebarPath, card: .constant(nil), search: search, openScreen: openScreen, ask: ask)
                 .navigationSplitViewColumnWidth(min: 320, ideal: 375, max: 420)
         } detail: {
             map
@@ -166,6 +114,13 @@ struct SplitLayout<Map: View>: View {
         .environment(\.splitLayout, true)
         .environment(\.openCard, { card = $0 })
         .environment(\.closeCard, { close() })
+        // A card's action done in the inspector (Fly Here, Fly This
+        // Airplane): the card put away and the plan in the sidebar shown.
+        .environment(\.showPlan, {
+            search.close()
+            path = []
+            close()
+        })
         // A flight's card (an airplane tapped, a hold, a flown track) opens
         // here; put away from inside, the inspector closes with it.
         .onChange(of: FlightUI.shared.card) { _, next in
@@ -178,16 +133,16 @@ struct SplitLayout<Map: View>: View {
         }
     }
 
-    /// Airport's stack, as the sidebar sees it: a field or a point pushed
-    /// there opens in the inspector instead.
-    private var sidebarAirports: Binding<[String]> {
+    /// The sheet's stack, as the sidebar sees it: a field or a point
+    /// pushed there opens in the inspector instead.
+    private var sidebarPath: Binding<[SheetPage]> {
         Binding(
-            get: { airports },
+            get: { path },
             set: { next in
-                if next.count > airports.count, let last = next.last, RootLayout.inspects(AirportRoute(last)) {
+                if next.count > path.count, let last = next.last?.airportRoute, RootLayout.inspects(AirportRoute(last)) {
                     card = .airport(last)
                 } else {
-                    airports = next
+                    path = next
                 }
             })
     }
@@ -231,22 +186,6 @@ struct SplitLayout<Map: View>: View {
         }
     }
 
-    /// Each tab's title, as its own stack has it.
-    static func title(_ tab: RootView.Tabs) -> String {
-        switch tab {
-        case .fpl: "Flight Plan"
-        case .airport: "Airport"
-        case .airplane: "Airplane"
-        case .setup: "Setup"
-        }
-    }
-
-    /// FPL's own bar, in the column's: Share, the saved flights (in the
-    /// inspector) and the stops' Edit.
-    private var fplItems: some ToolbarContent {
-        FPLToolbar(plan: plan, flights: { card = .flights })
-    }
-
     private var closeItem: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             CloseButton { close() }
@@ -254,20 +193,11 @@ struct SplitLayout<Map: View>: View {
     }
 }
 
-#Preview("CardLink") {
-    NavigationStack {
-        List {
-            CardLink(.profile) { Text("Profile") }
-            CardLink(.brief) { Text("Brief") }
-        }
-    }
-}
-
 #Preview("SplitLayout") {
-    @Previewable @State var tab: RootView.Tabs = .fpl
-    @Previewable @State var airports: [String] = []
+    @Previewable @State var path: [SheetPage] = []
     @Previewable @State var card: SideCard? = nil
-    SplitLayout(map: Color(.secondarySystemBackground).ignoresSafeArea(), tab: $tab, airports: $airports, card: $card)
+    SplitLayout(map: Color(.secondarySystemBackground).ignoresSafeArea(), path: $path, search: OneSearchModel(), card: $card,
+                openScreen: { _ in }, ask: { _ in })
         .environment(Session())
         .environment(Charts())
         .environment(Plan())

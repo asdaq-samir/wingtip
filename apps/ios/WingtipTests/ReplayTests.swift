@@ -124,16 +124,4 @@ struct RootLayoutTests {
         #expect(!RootLayout.inspects(.list(.favorites)))
         #expect(!RootLayout.inspects(AirportRoute(AirportRoute.nearFrom(lat: 43.1, lon: -70.9, label: "Dover, NH").text)))
     }
-
-    @Test func aCardsLinkIsFPLsOwnPageOnTheIPhone() throws {
-        #expect(CardLink<EmptyView>.page(.profile) == "profile")
-        #expect(CardLink<EmptyView>.page(.brief) == "brief")
-        #expect(CardLink<EmptyView>.page(.flights) == "flights")
-    }
-
-    @Test func theSidebarsBarIsTitledForItsTab() throws {
-        #expect(SplitLayout<EmptyView>.title(.fpl) == "Flight Plan")
-        #expect(SplitLayout<EmptyView>.title(.airport) == "Airport")
-        #expect(RootView.Tabs(rawValue: "airport") == .airport)
-    }
 }

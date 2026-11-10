@@ -1,5 +1,5 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { grabberTo, openBrief, panelTabs, settle, settled, sideDrawer } from "./helpers";
+import { firstRow, grabberTo, openBrief, panelTabs, settle, settled, sideDrawer } from "./helpers";
 
 /**
  * The map's panel dragged by a finger from anywhere on its body, as an
@@ -95,7 +95,7 @@ test("a drag held still before it is let go sets the sheet down where it is, not
   // Down 110 from half, nearer half than the pill, held and let go: half
   // again. Its moves alone, let go at once, would have thrown it to the
   // pill (the engine's SPEED_WINDOW).
-  const box = (await panel.getByTestId("tab-bar").boundingBox())!;
+  const box = (await firstRow(page).boundingBox())!;
   await fingerDrag(page, { x: box.x + box.width / 2, y: box.y + box.height / 2 }, 110, 600);
   await expect(panel).toHaveAttribute("data-panel", "half");
 });
@@ -109,12 +109,12 @@ test("a throw takes the sheet one size: from the pill half way, not all the way 
   await settle(page);
   const panel = sideDrawer(page);
   await expect(panel).toHaveAttribute("data-panel", "peek");
-  // A finger's flick on the tab bar: two moves as fast as they can be
+  // A finger's flick on the first row (the one search's): two moves as fast as they can be
   // sent, let go at once -- thrown well past the next size.
   const flick = async (dy: number) => {
-    // From the sheet at rest, its tabs where they stay.
+    // From the sheet at rest, its first row where it stays.
     await settled(panel);
-    const box = (await panel.getByTestId("tab-bar").boundingBox())!;
+    const box = (await firstRow(page).boundingBox())!;
     const at = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
     const cdp = await page.context().newCDPSession(page);
     const touch = (type: string, p?: { x: number; y: number }) =>
@@ -139,10 +139,10 @@ async function detents(page: Page) {
   return { peek, half, full };
 }
 
-/** The tab bar's middle, where a finger takes the sheet. */
+/** The first row's middle, where a finger takes the sheet. */
 async function onTabs(page: Page) {
   await settled(sideDrawer(page));
-  const box = (await sideDrawer(page).getByTestId("tab-bar").boundingBox())!;
+  const box = (await firstRow(page).boundingBox())!;
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 

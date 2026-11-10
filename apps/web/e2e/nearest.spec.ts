@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, grabberTo, settle, showTabs, sideDrawer, slow } from "./helpers";
+import { closeCard, grabberTo, settle, showPlan, showSearch, sideDrawer, slow } from "./helpers";
 
 /**
  * Nearest as a card of the panel's (NearestCard), at the pilot's ask: half
@@ -40,15 +40,10 @@ test("Nearest opens as a card half way up, a field over it as a layer, and its c
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  // Airport's pill's NEAREST, its title the list in full: four tabs,
-  // Nearest folded into Airport, at the owner's pick of the redesign.
+  // The one search's own page's Nearest, its title the list in full (the
+  // one-search design, 2026-11-09: what the Airport tab listed).
   await grabberTo(page, "peek");
-  await showTabs(page);
-  await page.getByTestId("tab-airport").click();
-  // The menu at the strip's heading's right: the nearest fields (the
-  // Favorites first).
-  await sideDrawer(page).getByTestId("airport-strip-shows").click();
-  await page.getByTestId("airport-shows-nearest").click();
+  await showSearch(page);
   // With no position yet, the strip offers to show it.
   await sideDrawer(page)
     .getByTestId("nearest-strip-position")
@@ -78,20 +73,18 @@ test("Nearest opens as a card half way up, a field over it as a layer, and its c
   await expect(sideDrawer(page).getByTestId("place-card")).toBeVisible();
   await closeCard(page, "place-close");
   await expect(card).toBeVisible();
-  // Its Back, as every list in full has one (it had no way out but a
-  // tab): Airport's start, the strip again; then the list once more.
+  // Its Back, as every list in full has one: the search's own page, the
+  // strip again; then the list once more.
   await card.getByTestId("nearest-page-close").click();
   await expect(card).toHaveCount(0);
   await expect(page).not.toHaveURL(/[?&]near=/);
   await expect(sideDrawer(page).getByTestId("pill-section-nearest-more")).toBeVisible();
   await sideDrawer(page).getByTestId("pill-section-nearest-more").click();
   await expect(card).toBeVisible();
-  // Back to the route by its own tab.
-  await showTabs(page);
-  await page.getByTestId("tab-fpl").click();
+  // Back to the route by the search's Cancel: the plan under it.
+  await showPlan(page);
   await expect(card).toHaveCount(0);
-  // All the way up still, as another tab tapped there stays (TabBar):
-  // the route's nav log.
+  // All the way up still: the route's nav log.
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
   await expect(sideDrawer(page).getByTestId("navlog-scroller")).toBeVisible();
 });

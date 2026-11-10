@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { settle, grabberTo, showTabs } from "./helpers";
+import { grabberTo, searchAirports, settle, showTabs } from "./helpers";
 
 /**
  * Fly Here as an EFB's Direct-To, at the pilot's ask: from where the
@@ -13,14 +13,13 @@ test("Fly Here goes direct from the present position, not from Home", async ({ p
   await page.goto("/app/plan?home=KMSN");
   await expect(page).not.toHaveURL(/[?&]home=/, { timeout: 10_000 });
   await settle(page);
-  // Airport's search, at the pill out of the tabs alone.
+  // The one search, at the pill: the sheet's first row.
   await grabberTo(page, "peek");
   await showTabs(page);
-  await page.getByTestId("tab-airport").click();
   const search = page.getByTestId("search-airports");
   await search.click();
   await search.fill("KDLH");
-  await page.getByTestId("search-result").filter({ hasText: "KDLH" }).first().click();
+  await searchAirports(page).filter({ hasText: "KDLH" }).first().click();
   await page.getByTestId("place-card").getByTestId("fly-here").click();
   await expect(page).toHaveURL(/[?&]dest=KDLH/, { timeout: 15_000 });
   await expect(page).toHaveURL(/[?&]dep=%4042\.3246%2C-88\.0741/);

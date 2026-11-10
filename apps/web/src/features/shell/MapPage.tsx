@@ -9,11 +9,9 @@ import {
   useState,
   type CSSProperties,
   type ReactNode,
-  useEffectEvent,
 } from "react";
 import { showError } from "../../lib/problems";
 import { patched, useSearchParamsNow } from "../../lib/useSearchParamsNow";
-import { cn } from "cn";
 import { Shown } from "../../lib/shown";
 import DevGuard from "../../components/DevGuard";
 import MapPanel from "../../components/MapPanel";
@@ -30,9 +28,9 @@ import { AutoLogbookHost } from "../logbook-auto";
 import { SharedFlightHost } from "../shared-flight";
 import { BootMap, PlanWorkspace } from "../plan";
 import { loadTrainWorkspace } from "../chart-labels";
-import { useIsDesktop } from "../../hooks/use-desktop";
+import { isDesktopNow, useIsDesktop } from "../../hooks/use-desktop";
 import { useShortcuts } from "../../hooks/use-shortcuts";
-import PaletteHost from "./palette/PaletteHost";
+import ConsoleLayer from "./ConsoleLayer";
 import type { WorkspacePieces } from "./workspace";
 
 /** Setup's pill (the switches, the account), with the console's code
@@ -89,7 +87,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
   const { title, panel: panelLabel, console: consoleLabel, Workspace, route } = MODES[mode];
   const navBar = usePreferences((s) => s.navBar);
   const edge = useNavEdge();
-  useShortcuts(useIsDesktop()); // a desktop's keys: / the search, 1 to 4 the tabs, B, N, D, Escape back
+  useShortcuts(useIsDesktop()); // a desktop's keys: / the search, B, N, D, Escape back
   const [searchParams, setSearchParams] = useSearchParamsNow();
   // The route in the panel: the address's, unless the pilot has typed
   // over it -- and a draft belongs to the address it was typed over. The
@@ -142,7 +140,11 @@ export default function MapPage({ mode }: { mode: Mode }) {
         ? "half"
         : ["past", "aircraft", "near", "saved", "list"].some((key) => searchParams.has(key))
           ? "full"
-          : "peek",
+          : // A desktop's side panel out from the start, the search and the
+            // plan in it (the one-search design's Desktop, 2026-11-09).
+            isDesktopNow()
+            ? "half"
+            : "peek",
   );
   // The airport index downloaded ahead of the first search, which at rest
   // is out of sight (lib/airportIndex).
@@ -190,8 +192,9 @@ export default function MapPage({ mode }: { mode: Mode }) {
     );
   }, []);
 
-  // The console, Setup: its button the tab bar's last tab (TabBar), on both
-  // pages, and what it opens a layer of the map's panel itself (below), as
+  // The console, the account page: opened from the account button's menu
+  // beside the search (AccountButton), on both pages, a layer of the map's
+  // panel itself (below), as
   // an airport's card is: it pulls out as the route's sheet does -- the
   // pill and all the way -- dragged from anywhere on it. It was a sheet of
   // its own past a phone's width, and a form sheet on an iPad.
@@ -201,14 +204,13 @@ export default function MapPage({ mode }: { mode: Mode }) {
   const consoleOpen = useConsoleOpen((s) => s.open);
   const setConsoleOpen = useConsoleOpen((s) => s.setOpen);
   // The sheet is drawn once, with no trigger of its own: its button is the
-  // tab bar's Settings (TabBar), opened from and given the focus back on
-  // closing.
+  // account button (`data-console-button`), given the focus back on closing.
   const consoleButton = () => document.querySelector<HTMLElement>("[data-console-button]");
   // The layer put away: the one under it shows at the height the panel
-  // is, and the focus goes back to the Settings tab it was opened from.
+  // is, and the focus goes back to the account button it was opened from.
   const closeConsole = useCallback(() => {
     setConsoleOpen(false);
-    // Once the tab bar's row is back over the panel's head.
+    // Once the search's row is back over the panel's head.
     window.setTimeout(() => consoleButton()?.focus({ preventScroll: true }));
   }, [setConsoleOpen]);
   const consoleInPanel = useMemo(() => ({ close: closeConsole }), [closeConsole]);
@@ -268,7 +270,8 @@ export default function MapPage({ mode }: { mode: Mode }) {
   );
   // The panel's top row with it out: the workspace's head, or the route's
   // row; none over a card alone or the console's layer.
-  const topRowOf = (pieces: WorkspacePieces, routeRow: ReactNode) => (pieces.alone || consoleLayer ? null : (pieces.head ?? routeRow));
+  const topRowOf = (pieces: WorkspacePieces, routeRow: ReactNode) =>
+    pieces.alone || consoleLayer ? null : pieces.head !== undefined ? pieces.head : routeRow;
 
   return (
     // The fallback is the page's own background rather than a spinner:
@@ -312,11 +315,10 @@ export default function MapPage({ mode }: { mode: Mode }) {
                 {/* The emergency assistant (features/emergency); an airplane's profile, from any N-number (features/airplane). */}
                 <EmergencyHost />
                 <AirplaneProfileHost />
-                {/* A flight ended on own ship's GPS, offered for the logbook (features/logbook-auto); the ⌘K palette. */}
+                {/* A flight ended on own ship's GPS, offered for the logbook (features/logbook-auto). */}
                 <AutoLogbookHost />
                 {/* A flight another pilot sent, previewed before it is used (features/shared-flight). */}
                 <SharedFlightHost />
-                <PaletteHost />
                 {/* Dev mode's refusal: someone it is not for, on the dev page, is taken to the map. */}
                 <DevGuard />
                 {/* For a keyboard: past the panel to the map in one press.
@@ -345,39 +347,40 @@ export default function MapPage({ mode }: { mode: Mode }) {
                 >
                   <MapInsetsContext.Provider value={insets}>{pieces.map}</MapInsetsContext.Provider>
                 </main>
-                <MapPanel
-                  label={consoleLayer ? consoleLabel : panelLabel}
-                  controls={pieces.alone || consoleLayer ? undefined : pieces.controls}
-                  state={panel}
-                  onStateChange={setPanel}
-                  onInsetsChange={changeInsets}
-                  // The pill: the workspace's own (a card's summary, the route's
-                  // one line), or else the top row itself -- the same element, so
-                  // a search bar typed into keeps its focus as the sheet comes up.
-                  // The console's layer (Setup) has none: at rest it is the tabs.
-                  compact={consoleLayer ? undefined : (pieces.compact ?? topRow)}
-                  toEdge={!!pieces.toEdge}
-                  // The tab bar over a card alone too, as iOS keeps its tab bar on
-                  // every screen: the tabs were gone while one was open. Setup has
-                  // no pill of its own: at rest it is the tabs, for the way back to
-                  // the others.
-                  bar={pieces.bar}
-                  layer={consoleLayer ? "console" : pieces.alone ? "card" : "tab"}
-                  foot={consoleLayer ? undefined : pieces.foot}
-                  cardOver={!!pieces.cardOver}
-                  flying={!!pieces.flying}
-                  // Kept too where the row holds the workspace's actions: one can
-                  // own a card in the panel (Train's Filter, a ResponsivePopover),
-                  // and the card's own coming up hides the head -- built again,
-                  // the card went with it the moment it opened (dev-page.spec,
-                  // 2026-11-05).
-                  top={topRow}
-                  kept={pieces.route != null || pieces.actions != null ? routeRow : undefined}
-                >
-                  {setupDrawn && consoleLayerOf(pieces)}
-                  {/* Under the console while it is out, kept as it is. */}
-                  <div className={consoleLayer ? "hidden" : "contents"}>{pieces.sidebar}</div>
-                </MapPanel>
+                {(pieces.around ?? ((panelNode: ReactNode) => panelNode))(
+                  <MapPanel
+                    label={consoleLayer ? consoleLabel : panelLabel}
+                    controls={pieces.alone || consoleLayer ? undefined : pieces.controls}
+                    state={panel}
+                    onStateChange={setPanel}
+                    onInsetsChange={changeInsets}
+                    // The pill: the workspace's own (a card's summary, the route's
+                    // one line), or else the top row itself -- the same element, so
+                    // a search bar typed into keeps its focus as the sheet comes up.
+                    // The console's layer (the account page) has none: at rest it is
+                    // the search's row.
+                    compact={consoleLayer ? undefined : (pieces.compact ?? topRow)}
+                    toEdge={!!pieces.toEdge}
+                    // The first row (the one search) over a card alone too, and over
+                    // the account page, for the way back to the rest.
+                    bar={pieces.bar}
+                    layer={consoleLayer ? "console" : pieces.alone ? "card" : "tab"}
+                    foot={consoleLayer ? undefined : pieces.foot}
+                    cardOver={!!pieces.cardOver}
+                    flying={!!pieces.flying}
+                    // Kept too where the row holds the workspace's actions: one can
+                    // own a card in the panel (Train's Filter, a ResponsivePopover),
+                    // and the card's own coming up hides the head -- built again,
+                    // the card went with it the moment it opened (dev-page.spec,
+                    // 2026-11-05).
+                    top={topRow}
+                    kept={pieces.route != null || pieces.actions != null ? routeRow : undefined}
+                  >
+                    {setupDrawn && consoleLayerOf(pieces)}
+                    {/* Under the console while it is out, kept as it is. */}
+                    <div className={consoleLayer ? "hidden" : "contents"}>{pieces.sidebar}</div>
+                  </MapPanel>,
+                )}
               </div>
             );
           }}
@@ -396,72 +399,6 @@ function BootMapPage() {
         <BootMap />
       </main>
     </div>
-  );
-}
-
-/**
- * Setup's page in the map's panel, a tab's body as the others' are: named
- * for the console it is (a region, no longer a dialog: the focus stays on
- * the tab picked, as it does for the others), hidden while another tab is
- * up, and Escape going back to the tab before it -- heard here, inside
- * the panel, before the panel hears it and lowers itself, and wherever
- * the focus has gone while it is up; not when a menu open in it took the
- * key first.
- */
-function ConsoleLayer({
-  label,
-  detent,
-  edge,
-  onClose,
-  shown,
-  children,
-}: {
-  label: string;
-  detent: "medium" | "large";
-  edge: "top" | "bottom";
-  onClose: () => void;
-  /** Setup the tab up: put away it is kept, hidden. */
-  shown: boolean;
-  children: ReactNode;
-}) {
-  const layer = useRef<HTMLElement>(null);
-  // The caller's close at the key, not the one it opened with.
-  const close = useEffectEvent(onClose);
-  useEffect(() => {
-    const node = layer.current;
-    if (!node || !shown) return;
-    const onKey = (event: globalThis.KeyboardEvent) => {
-      // A card over it (SheetCard) is put away first, by its own Escape,
-      // which prevents the default.
-      if (event.key !== "Escape" || event.defaultPrevented) return;
-      event.preventDefault();
-      close();
-    };
-    // On the layer first, ahead of the panel's own Escape; on the document
-    // too, for when a tap on the map or on the panel's bare parts has
-    // taken the focus out (the layer is no modal), where the key would
-    // otherwise be lost or lower the panel. A menu's own Escape has
-    // already prevented the default by the time either hears it.
-    node.addEventListener("keydown", onKey);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      node.removeEventListener("keydown", onKey);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [shown]);
-  return (
-    <section
-      ref={layer}
-      aria-label={label}
-      // Named for the suite only while it is up: put away it is there,
-      // hidden, for the next tap on Setup.
-      data-testid={shown ? "console-sheet" : undefined}
-      data-detent={detent}
-      data-edge={edge}
-      className={cn("min-h-0 flex-1 flex-col print:hidden", shown ? "flex" : "hidden")}
-    >
-      {children}
-    </section>
   );
 }
 

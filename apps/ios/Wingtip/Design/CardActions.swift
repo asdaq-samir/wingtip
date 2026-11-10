@@ -6,20 +6,23 @@ import Foundation
 /// found "Add Stop" and "Add to Route" for one action and each app with its
 /// own set. The first of a card's actions is its filled one.
 ///
-/// - Fly Here: a new route from the airplane to this field.
+/// - Fly Here: the field the route's destination, the plan shown.
+/// - Depart From: the field the route's departure, the plan shown (the
+///   owner's one-search design, 2026-11-09).
 /// - Direct To: from the airplane to the point, then on along the route.
-/// - Add Stop: the field a landing on the way, as Maps' Add Stop.
+/// - Add as Stop: the field a landing on the way, as Maps' Add Stop.
 /// - Add to Route: the point a turn on the way, where it bends the route
 ///   least; not a landing.
 /// - Hold Here: a hold at the point (AIM 5-3-8).
 enum CardAction: String, CaseIterable, Sendable {
-    case flyHere, directTo, addStop, addToRoute, holdHere, call, address, copy
+    case flyHere, departFrom, directTo, addStop, addToRoute, holdHere, call, address, copy
 
     var title: String {
         switch self {
         case .flyHere: "Fly Here"
+        case .departFrom: "Depart From"
         case .directTo: "Direct To"
-        case .addStop: "Add Stop"
+        case .addStop: "Add as Stop"
         case .addToRoute: "Add to Route"
         case .holdHere: "Hold Here"
         case .call: "Call"
@@ -32,6 +35,7 @@ enum CardAction: String, CaseIterable, Sendable {
     var systemImage: String {
         switch self {
         case .flyHere, .directTo: WingtipIcon.directTo
+        case .departFrom: WingtipIcon.departFrom
         case .addStop, .addToRoute: WingtipIcon.addToRoute
         case .holdHere: WingtipIcon.holdHere
         case .call: WingtipIcon.call
@@ -51,7 +55,7 @@ enum CardKind: Sendable {
 
     var actions: [CardAction] {
         switch self {
-        case .airport: [.flyHere, .addStop, .call, .address]
+        case .airport: [.flyHere, .departFrom, .addStop, .call, .address]
         case .point: [.directTo, .addToRoute, .holdHere]
         case .navaid: [.directTo, .addToRoute, .copy]
         }

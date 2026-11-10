@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// The rows an airport's card is made of, as the web app's are
 /// (FrequencyRow, RunwayRow, StopServices): a glyph on a coloured badge,
@@ -135,6 +136,44 @@ struct RunwayRowView: View {
             }
         }
         .accessibilityElement(children: .combine)
+        // Held, the runway's details as iOS previews a row: each end's
+        // true heading and pattern side as the planner sends them
+        // (wingtip.pattern; 14 CFR 91.126(b)(1) for the side), and Copy.
+        .contextMenu {
+            Button { UIPasteboard.general.string = RunwayDetails.words(runway) } label: { Label("Copy", systemImage: WingtipIcon.copy) }
+        } preview: {
+            RunwayDetails(runway: runway)
+        }
+    }
+}
+
+/// A runway's details, the preview of its row held: its ends, each one's
+/// true heading and which side its pattern is flown, its length, width
+/// and surface, and the wind across it now, as the planner gives them.
+struct RunwayDetails: View {
+    let runway: Runway
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+            Text("Runway \(runway.ends ?? "—")").font(.headline)
+            ForEach(runway.runwayEnds ?? [], id: \.ident) { end in
+                LabeledContent("Runway \(end.ident)") {
+                    Text([end.headingTrueDeg.map { "\(Format.heading($0))T" }, end.traffic.map { "\($0) traffic" }]
+                        .compactMap { $0 }.joined(separator: " · "))
+                }
+            }
+            Text(Self.words(runway)).font(.subheadline).foregroundStyle(.secondary)
+            if let wind = runway.wind { Text(AirportWords.runwayWind(wind)).font(.subheadline) }
+        }
+        .padding(WingtipSpace.lg)
+        .frame(width: 320, alignment: .leading)
+    }
+
+    /// The runway in one line: its ends, length by width, and surface.
+    static func words(_ runway: Runway) -> String {
+        let size = [runway.lengthFt.map { Format.altitude(Double($0)) }, runway.widthFt.map { "\($0) ft wide" }].compactMap { $0 }.joined(separator: " × ")
+        let detail = AirportWords.runwayDetail(runway)
+        return ["Runway \(runway.ends ?? "—")", size, detail].filter { !$0.isEmpty }.joined(separator: ", ")
     }
 }
 

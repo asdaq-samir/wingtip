@@ -5,5 +5,5 @@
  * (components/PlaneMarks) and the search's own fields, no part of the
  * first screen.
  */
-export { default as AircraftCard, AircraftRecentsPage } from "./components/AircraftCard";
+export { default as AircraftCard, AircraftFavoriteStrip, AircraftRecentsPage } from "./components/AircraftCard";
 export { default as AircraftPill } from "./components/AircraftPill";

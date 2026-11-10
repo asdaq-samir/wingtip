@@ -1,8 +1,6 @@
 import { Suspense, useCallback, useDeferredValue, useMemo } from "react";
-import { TAB_ICON } from "../../lib/icons";
 import { TEXT } from "../../lib/text";
-import TabBar, { type BarTab } from "../../components/TabBar";
-import type { PanelTab } from "./hooks/useTabCards";
+import { CommandRoot } from "../../components/ui/command";
 import { MAX_STOPS, routeName } from "../../lib/identSchema";
 import type { WorkspaceProps } from "../shell";
 import { ShareMenu } from "./ShareMenuLazy";
@@ -30,18 +28,9 @@ import PlanSidebar from "./components/workspace/PlanSidebar";
 import FlightFoot from "./components/workspace/FlightFoot";
 import RouteHead from "./components/workspace/RouteHead";
 import RouteControls from "./components/workspace/RouteControls";
-import TabSearchField from "./components/workspace/SearchFields";
-
-const PLANNER_TABS: BarTab<PanelTab>[] = [
-  // FPL first and Airplane third, swapped back at the owner's ask ("Swap
-  // fpl and aircraft tab positions").
-  { value: "fpl", label: "FPL", icon: TAB_ICON.fpl },
-  { value: "airport", label: "Airport", icon: TAB_ICON.airport },
-  { value: "aircraft", label: "Airplane", icon: TAB_ICON.airplane },
-  // Nearest is Airport's now, its strip under the Favorites and its list
-  // in full from the strip's title, at the owner's pick of the redesign
-  // ("make it 4 tabs, combining the nearest into airport").
-];
+import ListSearchField from "./components/workspace/SearchFields";
+import OneSearchField from "./components/search/OneSearchField";
+import { useOneSearch } from "./hooks/useOneSearch";
 
 /**
  * The planner: two idents in, a charted course with checkpoints and a
@@ -64,6 +53,9 @@ const PLANNER_TABS: BarTab<PanelTab>[] = [
  */
 export default function PlanWorkspace({ panel, setPanel, children }: WorkspaceProps) {
   const vm = usePlanWorkspace({ panel, setPanel });
+  // The one search over the sheet (the owner's one-search design,
+  // 2026-11-09): its field the sheet's first row, its results the body's.
+  const search = useOneSearch(vm);
   const {
     aircraft,
     aircraftChoices,
@@ -78,7 +70,6 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     changeAircraft,
     changeDepart,
     closeNavLogCard,
-    closeSheet,
     course,
     crossings,
     depart,
@@ -105,18 +96,15 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     insertStopAfter,
     landedStops,
     landings,
-    list,
     listEdit,
     marks,
     metarColour,
     navLogShown,
-    nearOpen,
     noApproaches,
     openNavLogCard,
     paywalled,
     pickPattern,
     pickProcedures,
-    pickTab,
     pickTail,
     pickedPatterns,
     pickedProcedures,
@@ -138,7 +126,6 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     routed,
     runwayFitInputs,
     s,
-    savedOpen,
     selectPlace,
     selectPointAt,
     selected,
@@ -154,8 +141,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     showFuelStops,
     stale,
     stopsShown,
-    tab,
-    tabUp,
+    view,
     tankFigures,
     tightLeg,
     unflyable,
@@ -582,10 +568,18 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // Recents and what answers, or Nearest's list; Aircraft's list. A card --
         // an airport's, the airspace's, an airplane's -- over the tab it was
         // opened from, its close back to it.
-        sidebar: <PlanSidebar vm={vm} navLog={navLog} briefContents={briefContents} briefNotice={briefNotice} />,
-        // The tab's head: FPL's the route's box (`route`, below); the others'
-        // the search bar, the whole width (Settings is a tab, not a gear).
-        head: tab === "fpl" ? undefined : <TabSearchField vm={vm} />,
+        sidebar: <PlanSidebar vm={vm} model={search} navLog={navLog} briefContents={briefContents} briefNotice={briefNotice} />,
+        // Under the one search: the plan's the route's box (`route`, below);
+        // the traffic's and Nearest's their own fields; the search's page
+        // none, its field the first row.
+        head: view === "plan" ? undefined : view === "traffic" || vm.nearOpen ? <ListSearchField vm={vm} /> : null,
+        // The one search's Autocomplete round the whole panel, so its field
+        // (the first row) and its list (the body) are one combobox.
+        around: (panel) => (
+          <CommandRoot value={vm.query} onValueChange={search.setTyped} autoHighlight>
+            {panel}
+          </CommandRoot>
+        ),
         // A card over the tab: its card alone, the tab's head gone while it is
         // open, at the pilot's ask.
         alone: cardOpen || briefShown || navLogShown || profileShown || stopsShown,
@@ -599,20 +593,9 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         cardOver: cardOpen || briefShown || navLogShown || profileShown || stopsShown,
         toEdge: !!place,
         flying,
-        // The planner's tabs, the panel's first row, and at rest the pill
-        // itself, at the pilot's ask: no search bar or route under them
-        // (MapPanel).
-        bar: (
-          <TabBar
-            tabs={PLANNER_TABS}
-            tab={tab}
-            onPick={pickTab}
-            onUp={tabUp}
-            onClose={closeSheet}
-            listOver={!!list || savedOpen || nearOpen}
-            marks={s.unflyable ? { fpl: "stop" } : undefined}
-          />
-        ),
+        // The one search, the panel's first row, and at rest the pill
+        // itself (MapPanel), where the tabs were.
+        bar: <OneSearchField model={search} inputRef={vm.searchInput} />,
         // The route's figures -- the distance, the time en route, the arrival
         // and the fuel -- pinned at FPL's foot while there is a route, at every
         // height, the pill too, at the pilot's ask: they were the last of the
@@ -634,7 +617,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // body's room half way, and grew with the sheet under a finger.
         // Under the nav log's card too, its side view and figures with it, as
         // FPL is "route, navlog, profile and calculations".
-        foot: tab === "fpl" && !place && !heldPoint && !flight && !briefShown ? routed && <FlightFoot vm={vm} /> : undefined,
+        foot: view === "plan" && !place && !heldPoint && !flight && !briefShown ? routed && <FlightFoot vm={vm} /> : undefined,
         // The route as one box of pills, in place of the two airport fields,
         // the top row to itself, at the pilot's ask: its close and its
         // Procedures beside it went to the chips' row (Approaches) and the

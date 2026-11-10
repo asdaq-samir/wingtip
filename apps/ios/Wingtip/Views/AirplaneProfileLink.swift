@@ -12,6 +12,8 @@ extension View {
     /// The airplane's profile (AirplaneProfileView) over this screen while
     /// `ask` is set; its close comes back here.
     func airplaneProfile(_ ask: Binding<ProfileAsk?>) -> some View {
+        // Its own stock sheet, half way then full (its own detents), as
+        // the airport card's is.
         sheet(item: ask) { asked in AirplaneProfileView(tail: asked.tail, focus: asked.focus) }
     }
 }

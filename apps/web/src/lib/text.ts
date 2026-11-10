@@ -20,7 +20,7 @@ import { TYPE_CLASS, TYPE_POINTS } from "./tokens";
  * scripts/build/design-tokens.sh (lib/tokens TYPE_CLASS).
  */
 export const TEXT = {
-  /** A name set over a card's picture (PhotoHead), with font-bold: iOS's
+  /** A card's name at its top (CardTitle), with font-bold: iOS's
    *  Title 1, 28 on 34, as Maps sets a place's over its photos. */
   hero: TYPE_CLASS.hero,
   /** A card's name -- an airport's, the airspace's, Nearest's, a console

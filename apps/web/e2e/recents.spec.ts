@@ -1,5 +1,5 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { clearTheRoute, grabberTo, settle, sideDrawer, stripShows, airportSearch } from "./helpers";
+import { airportSearch, clearTheRoute, grabberTo, settle, sideDrawer, stripShows } from "./helpers";
 
 /**
  * The Recents taken off one at a time, by a swipe to the left that
@@ -42,13 +42,13 @@ async function swipeLeft(row: Locator) {
   await expect.poll(() => row.evaluate((el) => el.scrollLeft)).toBeGreaterThan(40);
 }
 
-/** Airport's Recents in full, all the way up: the list their title
- *  opens, where they are taken off (tiles under the search, from the
- *  strip's filter). */
+/** The airports' Recents in full, all the way up: the list their title
+ *  opens, where they are taken off (tiles on the one search's own page). */
 async function airportRecentsList(page: Page) {
   await airportSearch(page);
   await grabberTo(page, "full");
-  await stripShows(page, "airport-strip-shows", "airport-shows-recents");
+  // The Recents a section of the one search's own page (no filter).
+  await expect(sideDrawer(page).getByTestId("search-home")).toBeVisible();
   await sideDrawer(page).getByTestId("airport-recents-more").click();
   await expect(sideDrawer(page).getByTestId("airport-recents-page")).toBeVisible();
 }
@@ -153,10 +153,11 @@ test("the airports' Recents are tiles with their chart's symbols, newest first, 
   await airportSearch(page);
   await grabberTo(page, "full");
   const panel = sideDrawer(page);
-  // As the Favorites' tiles, from the strip's filter: each its chart
+  // As the Favorites' tiles: each its chart
   // symbol and its ident, its town under it with own ship off, at the
   // owner's ask ("Recents should also have symbols instead of a list").
-  await stripShows(page, "airport-strip-shows", "airport-shows-recents");
+  // The Recents a section of the one search's own page (no filter).
+  await expect(sideDrawer(page).getByTestId("search-home")).toBeVisible();
   const section = panel.getByTestId("airport-recents");
   const tiles = section.getByTestId("airport-recent");
   await expect(tiles).toHaveCount(5);
@@ -172,7 +173,8 @@ test("the airports' Recents are tiles with their chart's symbols, newest first, 
   await grabberTo(page, "full");
   // The title, in the tint, as the Favorites' is: the list, where they are
   // taken off.
-  await stripShows(page, "airport-strip-shows", "airport-shows-recents");
+  // The Recents a section of the one search's own page (no filter).
+  await expect(sideDrawer(page).getByTestId("search-home")).toBeVisible();
   const all = panel.getByTestId("airport-recents-more");
   await expect(all).toHaveText("Recents");
   await all.click();
