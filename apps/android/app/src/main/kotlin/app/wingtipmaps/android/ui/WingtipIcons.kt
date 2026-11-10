@@ -8,6 +8,7 @@ import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.AddLocation
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.CellTower
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Flight
@@ -68,6 +69,11 @@ object WingtipIcons {
     val send = Icons.AutoMirrored.Filled.Send
     /** A stream given up (the trip planner's Stop). */
     val stop = Icons.Filled.Stop
+    /** The radio listened to (atc/RadioListener): a mast with its waves
+     *  either side, Material's match for iOS's
+     *  antenna.radiowaves.left.and.right, never the mic, which is Ask by
+     *  voice's (the owner, 2026-11-10). */
+    val radio = Icons.Filled.CellTower
     val airplane = Icons.Filled.Flight
     val setup = Icons.Filled.Settings
 

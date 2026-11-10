@@ -400,7 +400,11 @@ placement wins, and the difference is noted.
 - **Structure, top to bottom**:
   1. A `SearchBar` at the top of the map, in the status bar's inset. It
      has the leading search glyph, the placeholder ("Airports, fixes,
-     places"), and a trailing mic when the voice ask is on.
+     places"), and a trailing mic when the voice ask is on: Ask by voice
+     (`voice/VoiceInput`), a stock icon toggle checked while it listens,
+     the words typed into the field as said. The radio's listening has
+     its own mark (`cell_tower`), words and indicator (the owner,
+     2026-11-10: two features, no shared look).
   2. Tapping it expands to `ExpandedFullScreenSearchBar`, driven by
      `rememberSearchBarState()`, the slot-based API that is stable in
      1.5. Inside, in order:
