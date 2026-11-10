@@ -46,8 +46,10 @@ export function ReadyAction({ item, ready, onDone }: { item: Item; ready: Ready;
 }
 
 /**
- * Ready to fly, the Brief's first row: the engine's one line, then at most
- * three one-line actions that each fix in place (the owner's look and go),
+ * Ready to fly, the Brief's last part (docs/design/web.md §5: the checks
+ * left before departure, after the verdict, decision 0012): the engine's
+ * one line, then at most three one-line actions that each fix in place
+ * (the owner's look and go),
  * and every check folded under a tap with its line, its detail and where
  * its limit comes from, and the next FAA data cycle. A caution at most:
  * the pilot can always fly (warn, never limit).
