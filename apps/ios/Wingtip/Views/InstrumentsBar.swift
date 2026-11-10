@@ -10,7 +10,6 @@ import SwiftUI
 /// else was: no panel or control moves for it.
 struct InstrumentsBar: View {
     @Environment(\.dynamicTypeSize) private var typeSize
-    @State private var nearest = false
     private var flight: InFlight { .shared }
 
     var body: some View {
@@ -53,7 +52,9 @@ struct InstrumentsBar: View {
                     Text(problem).font(.footnote).foregroundStyle(WingtipInk.caution).lineLimit(3)
                 }
                 HStack(alignment: .center, spacing: WingtipSpace.sm) {
-                    Button { nearest = true } label: {
+                    // The one Nearest list, a card over the plan: the map
+                    // under the plan's sheet presents nothing (Navigator).
+                    Button { PendingCommand.shared.command = .open(.nearest) } label: {
                         Label("Nearest", systemImage: "airplane.arrival")
                             .font(.subheadline.weight(.semibold))
                     }
@@ -84,14 +85,6 @@ struct InstrumentsBar: View {
             // size they would not fit, so the bar stops there.
             .dynamicTypeSize(...DynamicTypeSize.accessibility2)
             .accessibilityIdentifier("instruments-bar")
-            .sheet(isPresented: $nearest) {
-                NavigationStack {
-                    // The system's own close, in the glass toolbar (CloseButton).
-                    DiversionView().closeButton { nearest = false }
-                }
-                .cardZoomStack()
-                .presentationDetents([.medium, .large])
-            }
         } else if flight.fix != nil, let problem = flight.problem {
             // The engine could not say whether the airplane is flying: said
             // where the bar would be, not hidden as if on the ground.

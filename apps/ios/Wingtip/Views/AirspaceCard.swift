@@ -54,7 +54,7 @@ struct AirspaceCard: View {
                         .disabled(!plan.routed)
                         Button {
                             plan.drop(named.ident, at: at, then: .hold, from: nil)
-                            FlightUI.shared.card = .hold(named.ident)
+                            Navigator.shared.push(.hold(named.ident))
                         } label: {
                             CardActionLabel(.holdHere)
                         }
@@ -127,7 +127,6 @@ struct AirspaceCard: View {
             }
         }
         .navigationTitle("Airspace")
-        .navigationBarTitleDisplayMode(.inline)
         .task(id: "\(lat),\(lon)") {
             await load()
             // Each area's status from SFDPS, asked again each minute while

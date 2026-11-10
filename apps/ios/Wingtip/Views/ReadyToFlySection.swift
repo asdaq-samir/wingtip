@@ -7,12 +7,7 @@ import SwiftUI
 /// (`ready_to_fly`); this draws them.
 struct ReadyToFlyRows: View {
     @Environment(\.lookAccent) private var accent
-    @Environment(\.dismiss) private var dismiss
     private var model: ReadyToFly { .shared }
-    /// The airplane picker and the altitude wheel, opened by their fixes
-    /// from the line's row, as PickAirplaneRow opens the picker.
-    @State private var picking = false
-    @State private var altitude = false
     @State private var allOpen = false
 
     var body: some View {
@@ -24,7 +19,6 @@ struct ReadyToFlyRows: View {
             }
             .foregroundStyle(FindingStyle.colour(answer.finding))
             .accessibilityElement(children: .combine)
-            .readyToFlyPickers(picking: $picking, altitude: $altitude)
             ForEach(answer.actions, id: \.key) { item in action(item) }
             DisclosureGroup(isExpanded: $allOpen) {
                 ForEach(answer.items, id: \.key) { item in
@@ -72,14 +66,15 @@ struct ReadyToFlyRows: View {
         }
     }
 
-    /// The fixes that ask the pilot open the screens that already ask it:
-    /// the airplane picker, the altitude wheel, the route's fields on FPL
-    /// (back to them). The rest the model does in place.
+    /// The fixes that ask the pilot open the pages that already ask it, in
+    /// this card's stack with Back (Navigator.push): the Airplane page,
+    /// the profile's altitude wheel; the route's fields are the plan's
+    /// (back to it). The rest the model does in place.
     private func run(_ fix: String) {
         switch fix {
-        case "pick_airplane": picking = true
-        case "set_altitude": altitude = true
-        case "set_route": dismiss()
+        case "pick_airplane": Navigator.shared.push(.screen(.airplane))
+        case "set_altitude": Navigator.shared.push(.screen(.profile))
+        case "set_route": Navigator.shared.showPlan()
         default: Task { await model.run(fix) }
         }
     }
@@ -117,42 +112,50 @@ struct ReadyToFlySection: View {
     }
 }
 
-/// The check over a dry run's or a flight's start, once per flight while
-/// something is missing: the same rows, and "Fly anyway", since the pilot
-/// may always fly (warn, never limit). Hosted at the root beside the
-/// welcome (one view presents one sheet at a time), and given the app's
-/// models for a start from outside the screen.
+/// The app's models handed to Ready to Fly at the root, so a start from
+/// outside the screen (the Control Center's flight) is answered too.
 struct ReadyToFlyHost: ViewModifier {
     @Environment(Plan.self) private var plan
     @Environment(Charts.self) private var charts
     @Environment(OwnShip.self) private var ownShip
     @Environment(Verdict.self) private var verdict
     @Environment(Session.self) private var session
+
+    func body(content: Content) -> some View {
+        content.task { ReadyToFly.shared.attach(plan: plan, charts: charts, ownShip: ownShip, verdict: verdict, session: session) }
+    }
+}
+
+/// The check over a dry run's or a flight's start, once per flight while
+/// something is missing: one stock alert (the owner's card rule,
+/// 2026-11-10: "Ready to Fly is one section, plus one stock prompt"), its
+/// line and the most pressing actions said, and "Fly Anyway", since the
+/// pilot may always fly (warn, never limit); Open the Brief shows the
+/// section with each fix a tap. From the top of the stack (TopHosts).
+struct ReadyToFlyPrompt: ViewModifier {
+    /// Whether this view is the top of the stack, the one that presents.
+    let active: Bool
     private var model: ReadyToFly { .shared }
 
     func body(content: Content) -> some View {
         content
-            .sheet(isPresented: Binding(get: { model.asking }, set: { if !$0 { model.notYet() } })) {
-                NavigationStack {
-                    List { Section { ReadyToFlyRows() } }
-                        .navigationTitle("Ready to Fly")
-                        .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) { Button("Not Yet") { model.notYet() } }
-                            ToolbarItem(placement: .confirmationAction) { Button("Fly Anyway") { model.flyAnyway() } }
-                        }
+            .alert("Ready to Fly?", isPresented: Binding(get: { active && model.asking }, set: { if !$0 { model.notYet() } })) {
+                Button("Fly Anyway") { model.flyAnyway() }
+                Button("Open the Brief") {
+                    model.notYet()
+                    Navigator.shared.open(.screen(.brief))
                 }
-                .presentationDetents([.medium, .large])
+                Button("Not Yet", role: .cancel) { model.notYet() }
+            } message: {
+                Text(Self.message(model.answer))
             }
-            .task { model.attach(plan: plan, charts: charts, ownShip: ownShip, verdict: verdict, session: session) }
     }
-}
 
-extension View {
-    /// The existing airplane picker and altitude wheel, over the screen.
-    func readyToFlyPickers(picking: Binding<Bool>, altitude: Binding<Bool>) -> some View {
-        sheet(isPresented: picking) { AircraftView() }
-            .sheet(isPresented: altitude) { NavigationStack { ProfileCard().navigationBarTitleDisplayMode(.inline) } }
+    /// The engine's line, then the actions it puts first, one a line, as
+    /// the section has them.
+    static func message(_ answer: EngineContract.ReadyToFlyAnswer?) -> String {
+        guard let answer else { return "Checking what's on this device…" }
+        return ([answer.line] + answer.actions.map(\.line)).joined(separator: "\n")
     }
 }
 

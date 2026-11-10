@@ -61,7 +61,7 @@ extension RootView {
         case .aircraft(let hex):
             // The airplane's card, tracked from its next report on.
             Tracking.shared.track(hex)
-            FlightUI.shared.card = .airplane(hex)
+            nav.open(.traffic(hex.lowercased()))
         case .open(let screen):
             openScreen(screen)
         case .fly(let tail):
@@ -69,7 +69,7 @@ extension RootView {
         case .approach(let pick):
             approach(pick)
         case .airplane(let tail):
-            search.profileTail = tail
+            nav.open(.tail(ProfileAsk(tail: tail.uppercased())))
         case .keepForAir:
             keepForAir()
         case .sharedFlight(let link):
@@ -90,15 +90,13 @@ extension RootView {
         }
     }
 
-    /// The route's Brief: in the inspector on the iPad, the strip's own
-    /// page there (BriefAsk), else a page over the plan.
+    /// The route's Brief: the strip's own page there (BriefAsk), else its
+    /// card (the iPad's inspector).
     func openBrief() {
-        if layout == .split {
-            sideCard = .brief
-        } else if layoutName == "strip" {
+        if layout == .sheet, layoutName == "strip" {
             BriefAsk.shared.ask()
         } else {
-            path = [.screen(.brief)]
+            nav.open(.screen(.brief))
         }
     }
 }

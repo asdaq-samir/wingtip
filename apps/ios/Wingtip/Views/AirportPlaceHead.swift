@@ -222,7 +222,7 @@ struct AirportFacts: View {
 
 extension EnvironmentValues {
     /// Whether a card is at its full height: its sheet at the large
-    /// detent (PlaceCardSheet, the airplane's profile), or a card with no
+    /// detent (CardHost), or a card with no
     /// detents (the iPad's inspector, a page pushed), which is always.
     @Entry var cardExpanded = true
 }

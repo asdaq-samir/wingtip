@@ -29,11 +29,10 @@ struct PilotGuideView: View {
             }
             Section("Practice") { PracticeRows() }
             Section("More") {
-                NavigationLink("Your airplane in the day's air") { AirplaneInTheAirView().navigationBarTitleDisplayMode(.inline) }
+                NavigationLink("Your airplane in the day's air") { AirplaneInTheAirView() }
             }
         }
         .navigationTitle("Guide")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -52,7 +51,6 @@ struct AirplaneInTheAirView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .navigationTitle("Your Airplane in the Day's Air")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -159,7 +157,6 @@ struct DrillView: View {
             }
         }
         .navigationTitle(deck.title)
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             guard !started else { return }
             started = true
@@ -239,7 +236,6 @@ struct LostCommsView: View {
             }
         }
         .navigationTitle("Lost Communications")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

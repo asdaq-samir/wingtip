@@ -4,11 +4,17 @@ import UIKit
 /// A field on the chart: its mark in the sectional's own symbology, as
 /// the web map draws it over the chart (lib/map/airportMark.ts
 /// sectionalAirportSvg), its ident beside it in the field's ink, and its
-/// flight category a pip where it reports one.
+/// weather where it reports (FieldWeatherMark): the flight category's
+/// halo, the wind and the ↓, as Settings' Airport Weather asks.
 final class AirportAnnotation: NSObject, MKAnnotation {
     let ident: String
     let kind: String
-    let category: String?
+    /// The flight category as the in-view answer gave it; the weather
+    /// joined on later (FieldWeatherMarks) says it where that did not.
+    private let pinCategory: String?
+    /// The field's weather as its mark draws it, nil until it is in.
+    var weather: FieldWeatherMark?
+    var category: String? { weather?.category ?? pinCategory }
     /// The class of airspace at the field's surface (B, C, D, E, G), for
     /// how soon its mark must show.
     let airspaceClass: String?
@@ -28,7 +34,7 @@ final class AirportAnnotation: NSObject, MKAnnotation {
     init(_ pin: AirportPin, onRoute: Bool = false) {
         ident = pin.ident
         kind = pin.kind
-        category = pin.flightCategory
+        pinCategory = pin.flightCategory
         airspaceClass = pin.airspaceClass
         primaryOf = pin.primaryOf
         towered = pin.towered
@@ -63,8 +69,15 @@ final class AirportAnnotation: NSObject, MKAnnotation {
         return .defaultLow
     }
 
-    /// The field's flight category as its pip draws it (FlightCategory).
+    /// The field's flight category as its halo draws it (FlightCategory).
     var colour: UIColor { FlightCategory.mark(category) }
+
+    /// What VoiceOver says of the mark: "KJVL, IFR, wind 220 at 18
+    /// gusting 26", and the ↓ where it shows.
+    var spoken: String {
+        guard let weather else { return "\(ident), \(SpokenFigures.flightCategory(category))" }
+        return "\(ident), \(weather.spoken)"
+    }
 }
 
 /// The mark: the sectional's symbol (SectionalSymbol) with the ident to
@@ -77,6 +90,13 @@ final class AirportMarkView: MKAnnotationView {
     private let label = UILabel()
     /// The ring round the field whose card is open (SelectedHalo).
     private let halo = SelectedHalo()
+    /// The wind, the station model's lines and the ↓ (FieldWeatherLayer).
+    private let weatherLayer = FieldWeatherLayer()
+    /// Settings' Airport Weather, the map's zoom and its heading, as the
+    /// coordinator last told them (`weather(_:zoom:heading:on:)`).
+    static var choice = AirportWeatherChoice()
+    static var zoom: Double = 0
+    static var heading: Double = 0
     /// The ident of the field whose card is open, whose mark wears the
     /// ring and is never dropped for another: one at a time, as one card
     /// is open at a time.
@@ -88,18 +108,22 @@ final class AirportMarkView: MKAnnotationView {
 
     override init(annotation: (any MKAnnotation)?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
-        symbol.frame = CGRect(x: 0, y: (Self.height - Self.box) / 2, width: Self.box, height: Self.box)
+        // The symbol's image is wider than the box, for its halo; centred
+        // on the box's middle, the frame MapKit collides kept the box's.
+        let side = SectionalSymbol.side
+        symbol.frame = CGRect(x: (Self.box - side) / 2, y: (Self.height - side) / 2, width: side, height: side)
         label.font = UIFont.systemFont(ofSize: 12, weight: .bold)
         // A halo round the words, white by day and the night's ground in
         // dark appearance (NightPalette.halo), as the web map's LABEL_HALO.
         label.haloFollowing(self)
         halo.place(round: CGPoint(x: Self.box / 2, y: Self.height / 2))
         layer.addSublayer(halo)
+        layer.addSublayer(weatherLayer)
         addSubview(symbol)
         addSubview(label)
         canShowCallout = false
         // A tap opens the field's card, so VoiceOver has it as a button
-        // named with its weather, which the pip's colour alone would not
+        // named with its weather, which the halo's colour alone would not
         // tell.
         isAccessibilityElement = true
         accessibilityTraits = .button
@@ -135,7 +159,8 @@ final class AirportMarkView: MKAnnotationView {
     private func show() {
         guard let field = annotation as? AirportAnnotation else { return }
         let ink = SectionalInk.airport(towered: field.towered)
-        symbol.image = SectionalSymbol.image(towered: field.towered, kind: field.kind, use: field.use, category: field.category)
+        let choice = Self.choice
+        symbol.image = SectionalSymbol.image(towered: field.towered, kind: field.kind, use: field.use, category: field.category, style: choice.style)
         label.text = field.ident
         label.textColor = ink
         label.sizeToFit()
@@ -145,7 +170,11 @@ final class AirportMarkView: MKAnnotationView {
         // The symbol's middle on the field, the ident running off to its
         // right.
         centerOffset = CGPoint(x: width / 2 - Self.box / 2, y: 0)
-        accessibilityLabel = "\(field.ident), \(SpokenFigures.flightCategory(field.category))"
+        let middle = CGPoint(x: Self.box / 2, y: Self.height / 2)
+        weatherLayer.show(field.weather, choice: choice, station: choice.station(zoom: Self.zoom), heading: Self.heading, middle: middle,
+                          symbolRadius: SectionalSymbol.reach(kind: field.kind, use: field.use, halo: field.category != nil && choice.style == .halo),
+                          linesAt: CGPoint(x: Self.box + Self.gap, y: label.frame.maxY - 1))
+        accessibilityLabel = field.spoken
         // MapKit drops the lesser of two marks that collide, by these, as
         // the web map's symbol collision does (glOverlays' airportMarksLayer:
         // a busy area keeps its biggest fields, the rest come in as it is
@@ -155,6 +184,27 @@ final class AirportMarkView: MKAnnotationView {
         collisionMode = .rectangle
         halo.isHidden = !picked
         zPriority = picked ? .max : .defaultUnselected
+    }
+
+    /// The weather drawn again on every mark in view, as a setting, the
+    /// zoom's side of the station model's or the map's heading changes;
+    /// nothing done while all three are the same.
+    static func weather(_ choice: AirportWeatherChoice, zoom: Double, heading: Double, on map: MKMapView) {
+        let station = choice.station(zoom: zoom) != Self.choice.station(zoom: Self.zoom)
+        let turned = abs(heading - Self.heading) > 0.5
+        let changed = choice != Self.choice
+        Self.zoom = zoom
+        guard changed || station || turned else { return }
+        Self.choice = choice
+        Self.heading = heading
+        for case let field as AirportAnnotation in map.annotations {
+            (map.view(for: field) as? AirportMarkView)?.show()
+        }
+    }
+
+    /// The field's weather put on its view, as it comes in.
+    static func weather(of field: AirportAnnotation, on map: MKMapView) {
+        (map.view(for: field) as? AirportMarkView)?.show()
     }
 
     /// The ring moved to `ident`'s mark from the one that wore it, as its
@@ -207,82 +257,5 @@ final class SelectedHalo: CALayer {
             ring.frame = bounds
             ring.path = path
         }
-    }
-}
-
-/// The sectional's airport symbol (FAA Aeronautical Chart User's Guide,
-/// VFR Terms and Symbols, Airports: blue for a field with a control
-/// tower, magenta for every other) as ForeFlight draws it and the web map
-/// (sectionalAirportSvg, the owner's screenshot over Madison,
-/// 2026-11-08): a ring in the field's ink round a white disc with a dot
-/// of the ink in its middle, inside a white halo, sized by the field; a
-/// private field (NASR FACILITY_USE_CODE PR) the guide's circle with an
-/// R, a military one with an M; the field's flight category a small pip
-/// at its lower right where it reports one. Drawn once for each look and
-/// kept.
-enum SectionalSymbol {
-    /// The disc's radius by the field's size, the big fields the biggest
-    /// so the small ones don't crowd the chart at a distance (web
-    /// SECTIONAL_RADIUS).
-    static func radius(_ kind: String) -> CGFloat {
-        switch kind {
-        case "large": return 8.5
-        case "medium": return 7.5
-        case "small": return 6.5
-        default: return 6
-        }
-    }
-
-    /// The symbol's size at a zoom (Leaflet's level, MapExtras.zoom), as the
-    /// web map's icon-size: 0.7 a few states across, 1 at 10, 1.25 from 13.
-    static func scale(zoom: Double) -> CGFloat {
-        if zoom <= 4 { return 0.7 }
-        if zoom <= 10 { return CGFloat(0.7 + 0.3 * (zoom - 4) / 6) }
-        if zoom <= 13 { return CGFloat(1 + 0.25 * (zoom - 10) / 3) }
-        return 1.25
-    }
-
-    @MainActor private static var drawn: [String: UIImage] = [:]
-
-    @MainActor
-    static func image(towered: Bool?, kind: String, use: String?, category: String?) -> UIImage {
-        let key = "\(towered.map { $0 ? "t" : "u" } ?? "-")|\(kind)|\(use ?? "")|\(category ?? "")"
-        if let kept = drawn[key] { return kept }
-        let ink = SectionalInk.airport(towered: towered)
-        let pip = category.map { FlightCategory.mark($0) }
-        let box = AirportMarkView.box
-        let image = UIGraphicsImageRenderer(size: CGSize(width: box, height: box)).image { context in
-            let cg = context.cgContext
-            let middle = CGPoint(x: box / 2, y: box / 2)
-            func circle(_ at: CGPoint, _ r: CGFloat) -> CGRect { CGRect(x: at.x - r, y: at.y - r, width: 2 * r, height: 2 * r) }
-            let r: CGFloat = use == nil ? radius(kind) : 7
-            // The halo, 2.5 points past the ring.
-            cg.setFillColor(UIColor.white.cgColor)
-            cg.fillEllipse(in: circle(middle, r + 2.5))
-            cg.setStrokeColor(ink.cgColor)
-            if let use {
-                cg.setLineWidth(2)
-                cg.strokeEllipse(in: circle(middle, r))
-                let letter = NSAttributedString(string: use == "military" ? "M" : "R", attributes: [
-                    .font: UIFont.systemFont(ofSize: 9.5, weight: .heavy), .foregroundColor: ink,
-                ])
-                let size = letter.size()
-                letter.draw(at: CGPoint(x: middle.x - size.width / 2, y: middle.y - size.height / 2))
-            } else {
-                cg.setLineWidth(2.6)
-                cg.strokeEllipse(in: circle(middle, r))
-                cg.setFillColor(ink.cgColor)
-                cg.fillEllipse(in: circle(middle, r * 0.42))
-            }
-            if let pip {
-                cg.setFillColor(pip.cgColor)
-                cg.setStrokeColor(UIColor.white.cgColor)
-                cg.setLineWidth(1.3)
-                cg.addEllipse(in: circle(CGPoint(x: middle.x + r * 0.78, y: middle.y + r * 0.78), 3.4))
-                cg.drawPath(using: .fillStroke)
-            }
-        }
-        drawn[key] = image
-        return image
     }
 }

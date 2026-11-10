@@ -28,7 +28,7 @@ struct NotamListView: View {
                 ForEach(NotamFilter.places(shown, source: source), id: \.title) { place in
                     Section {
                         ForEach(place.notams, id: \.id) { notam in
-                            NavigationLink { NotamDetailView(notam: notam).navigationBarTitleDisplayMode(.inline) } label: { NotamRow(notam: notam) }
+                            NavigationLink { NotamDetailView(notam: notam) } label: { NotamRow(notam: notam) }
                         }
                     } header: {
                         Text("\(place.title) · \(place.notams.count)")
@@ -276,7 +276,6 @@ struct NotamDetailView: View {
         }
         .listStyle(.insetGrouped)
         .navigationTitle(notam.kind == "tfr" ? "TFR" : notam.id)
-        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .pinnedTrailing) {
                 ShareLink(item: notam.raw) { Label("Share", systemImage: WingtipIcon.share) }

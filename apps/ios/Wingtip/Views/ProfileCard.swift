@@ -3,7 +3,7 @@ import SwiftUI
 
 /// The route from the side, as the web app's Profile card has it: the
 /// ground and the airspace under the line, the altitude flown across
-/// them, a wheel of altitudes to fly instead -- the planner's legal ones
+/// them, a menu of altitudes to fly instead -- the planner's legal ones
 /// named for their plans, and every 500 ft besides, "Outside the limits",
 /// flown with its warnings, never refused (the owner's rule) -- the four
 /// plans by name, and the altitude's cautions.
@@ -111,7 +111,6 @@ struct ProfileCard: View {
             AltitudeWhySection(line: plan.altitude, flownFt: plan.altitudeFt, choice: plan.altitudeChoice)
         }
         .navigationTitle(plan.altitudeFt.map { Format.cruiseAltitude($0) } ?? "Profile")
-        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             // The dry run from the profile's corner, as the web app has it.
             ToolbarItem(placement: .topBarTrailing) {
@@ -130,31 +129,25 @@ struct ProfileCard: View {
         .onChange(of: plan.altitudeFt) { _, _ in picked = nil }
     }
 
-    /// The system's wheel of the engine's altitudes, highest first, opening
-    /// on the one the planner picked: each row its altitude, its plan's
-    /// name or "Outside the limits", and its time en route.
+    /// The engine's altitudes, highest first, in the system's menu picker,
+    /// opening on the one the planner picked: each row its altitude, its
+    /// plan's name or "Outside the limits", and its time en route. A menu
+    /// rather than a wheel in the card's list (the owner's scrolling rule,
+    /// 2026-11-10: the wheel's spin fought the sheet's drag; HIG Pickers).
     private var altitudeWheel: some View {
-        Picker("Cruise altitude", selection: Binding(get: { picked ?? plan.altitudeFt ?? altitudes.last ?? 0 }, set: { fly($0) })) {
+        Picker("Cruise Altitude", selection: Binding(get: { picked ?? plan.altitudeFt ?? altitudes.last ?? 0 }, set: { fly($0) })) {
             ForEach(altitudes, id: \.self) { altitude in
                 let ete = plan.altitude?.altitudeFigures?.first(where: { $0.altitudeFt == altitude })?.eteMin
-                HStack {
-                    Text(Format.cruiseAltitude(altitude)).monospacedDigit().bold()
-                    if let name = name(of: altitude) {
-                        Text(name).foregroundStyle(legal.contains(altitude) ? Color.secondary : WingtipInk.caution)
-                    }
-                    if let ete {
-                        Spacer()
-                        Text(Format.duration(ete)).foregroundStyle(.secondary).monospacedDigit()
-                    }
-                }
-                // "FL-045" read as the feet it stands for.
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel([Format.spokenAltitude(altitude), name(of: altitude), ete.map(SpokenFigures.minutes)].compactMap { $0 }.joined(separator: ", "))
-                .tag(altitude)
+                Text([Format.cruiseAltitude(altitude), name(of: altitude), ete.map(Format.duration)].compactMap { $0 }.joined(separator: " · "))
+                    .monospacedDigit()
+                    // "FL-045" read as the feet it stands for.
+                    .accessibilityLabel([Format.spokenAltitude(altitude), name(of: altitude), ete.map(SpokenFigures.minutes)].compactMap { $0 }.joined(separator: ", "))
+                    .tag(altitude)
             }
         }
-        .pickerStyle(.wheel)
-        .frame(height: 160)
+        .pickerStyle(.menu)
+        .padding(.horizontal, WingtipSpace.lg)
+        .padding(.vertical, WingtipSpace.sm)
     }
 
     /// An altitude off the wheel: a plan's where it is one's, else the

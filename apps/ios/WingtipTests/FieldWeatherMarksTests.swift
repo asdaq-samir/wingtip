@@ -1,0 +1,125 @@
+import Foundation
+import Testing
+@testable import Wingtip
+
+/// The airport weather marks (the owner's pick, 2026-11-10) as the map
+/// asks the engine for them through wt_call, against the shared fixture
+/// the engine's, the web's and Android's tests read too
+/// (apps/web/src/lib/fixtures/airportWeatherMarks.json): the arrow shown
+/// or not, red or not, the barb's parts, and the ↓ shown or not.
+@MainActor
+struct FieldWeatherMarksTests {
+    private final class FixtureBundle {}
+
+    private struct Fixture: Decodable {
+        struct Arrow: Decodable {
+            let why: String
+            let input: EngineContract.WindArrowInput
+            let answer: EngineContract.WindArrowAnswer
+        }
+
+        struct Barb: Decodable {
+            let why: String
+            let speedKt: Double
+            let answer: EngineContract.WindBarbAnswer
+
+            enum CodingKeys: String, CodingKey {
+                case why, answer
+                case speedKt = "speed_kt"
+            }
+        }
+
+        struct Reading: Decodable {
+            let ident: String
+            let ceilingFt: Double?
+            let visibilitySm: Double?
+
+            enum CodingKeys: String, CodingKey {
+                case ident
+                case ceilingFt = "ceiling_ft"
+                case visibilitySm = "visibility_sm"
+            }
+
+            var field: EngineContract.WorseField {
+                .init(ident: ident, ceilingFt: ceilingFt, visibilitySm: visibilitySm, ceilingUnknown: nil, arrival: true)
+            }
+        }
+
+        struct Worse: Decodable {
+            let why: String
+            let now: [Reading]
+            let atEta: [Reading]
+            let badged: [String]
+        }
+
+        let windArrow: [Arrow]
+        let windBarb: [Barb]
+        let worseByArrival: [Worse]
+    }
+
+    private func fixture() throws -> Fixture {
+        let url = try #require(Bundle(for: FixtureBundle.self).url(forResource: "airportWeatherMarks", withExtension: "json"))
+        return try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
+    }
+
+    @Test func theArrowShowsAndGoesRedAsTheEngineSays() throws {
+        for example in try fixture().windArrow {
+            let i = example.input
+            let mark = FieldWeatherMarks.mark(.init(ident: "KJVL", category: "VFR", windDirTrueDeg: 220, windSpeedKt: i.speedKt, windGustKt: i.gustKt,
+                                                    crosswindKt: i.crosswindKt),
+                                              demonstratedKt: i.demonstratedKt, worse: false)
+            #expect(mark.arrow == example.answer.shown, "\(example.why)")
+            #expect(mark.arrowRed == example.answer.over, "\(example.why)")
+        }
+    }
+
+    @Test func noAirplaneIsNeverRed() {
+        let plan = Plan()
+        #expect(FieldWeatherMarks.demonstratedKt(plan) == nil)
+        let mark = FieldWeatherMarks.mark(.init(ident: "KJVL", windDirTrueDeg: 220, windSpeedKt: 18, windGustKt: 26, crosswindKt: 17),
+                                          demonstratedKt: FieldWeatherMarks.demonstratedKt(plan), worse: false)
+        #expect(mark.arrow && !mark.arrowRed)
+    }
+
+    @Test func theBarbIsTheEngines() throws {
+        for example in try fixture().windBarb {
+            let mark = FieldWeatherMarks.mark(.init(ident: "KJVL", windDirTrueDeg: 220, windSpeedKt: example.speedKt), demonstratedKt: nil, worse: false)
+            #expect(mark.calm == example.answer.calm, "\(example.why)")
+            #expect(mark.feathers == Feathers(flags: example.answer.flags, barbs: example.answer.barbs, halfBarbs: example.answer.halfBarbs), "\(example.why)")
+        }
+    }
+
+    @Test func theBadgeShowsWhereTheTafIsWorseByArrival() throws {
+        for example in try fixture().worseByArrival {
+            let badged = FieldWeatherMarks.worse(now: example.now.map(\.field), atEta: example.atEta.map(\.field))
+            #expect(badged == Set(example.badged), "\(example.why)")
+        }
+    }
+
+    @Test func voiceOverSaysTheCategoryAndTheWind() {
+        let mark = FieldWeatherMarks.mark(.init(ident: "KJVL", category: "IFR", windDirTrueDeg: 220, windSpeedKt: 18, windGustKt: 26),
+                                          demonstratedKt: nil, worse: false)
+        #expect(mark.spoken == "IFR, wind 220 at 18 gusting 26")
+        #expect(mark.windLabel == "18G26")
+    }
+
+    @Test func theStationLinesAreTheReportsFigures() {
+        #expect(FieldWeatherMarks.visibilityLine(2, wx: "BR") == "2 SM BR")
+        #expect(FieldWeatherMarks.visibilityLine(0.5, wx: nil) == "0.5 SM")
+        #expect(FieldWeatherMarks.ceilingLine(800, unknown: false) == "CIG 008")
+        #expect(FieldWeatherMarks.ceilingLine(nil, unknown: true) == "CIG ///")
+        #expect(FieldWeatherMarks.ceilingLine(nil, unknown: false) == nil)
+    }
+
+    @Test func theStationModelShowsCloseInOrAlways() {
+        var choice = AirportWeatherChoice()
+        #expect(choice.style == .halo && choice.stationClose && choice.windArrows && choice.worse)
+        #expect(!choice.station(zoom: 9) && choice.station(zoom: 10))
+        choice.stationClose = false
+        #expect(!choice.station(zoom: 12))
+        choice.style = .station
+        #expect(choice.station(zoom: 5))
+        choice.style = .off
+        #expect(!choice.station(zoom: 12))
+    }
+}

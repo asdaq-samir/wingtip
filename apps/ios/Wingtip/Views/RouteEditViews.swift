@@ -1,32 +1,15 @@
 import CoreLocation
 import SwiftUI
 
-/// The sheets and alerts of the flight's extras, over the tabs: an
-/// airplane's card, a hold, a pilot's flown
-/// track; and the alerts that ask for a point's altitude or a fix off it.
+/// The alerts of the flight's extras: a point's altitude, a fix off it,
+/// a procedure's fix's crossing altitude, and what the engine refused of
+/// one. The cards it once held (an airplane, a hold, a flown track, a leg)
+/// are Navigator's, as every card is.
 @MainActor
 @Observable
 final class FlightUI {
     static let shared = FlightUI()
 
-    enum Card: Identifiable, Equatable {
-        case airplane(String)
-        case hold(String)
-        case flown(Int, String)
-        /// A leg of the route tapped on the map, by its index (RouteLegSheet).
-        case leg(Int)
-
-        var id: String {
-            switch self {
-            case .airplane(let hex): return "airplane:\(hex)"
-            case .hold(let fix): return "hold:\(fix)"
-            case .flown(let id, _): return "flown:\(id)"
-            case .leg(let index): return "leg:\(index)"
-            }
-        }
-    }
-
-    var card: Card?
     /// The point whose altitude is asked for.
     var altitudeAt: String?
     /// The point a fix is made off.
@@ -38,46 +21,12 @@ final class FlightUI {
     var problem: String?
 }
 
-/// The sheets over the tabs, as Maps stacks a place's card over its
-/// own: half way up with the map live above, all the way up on a drag.
-struct FlightSheets: ViewModifier {
-    /// On iPad the inspector holds them (SplitLayout), not a sheet.
-    @Environment(\.splitLayout) private var split
-    @Environment(Plan.self) private var plan
-
-    func body(content: Content) -> some View {
-        @Bindable var ui = FlightUI.shared
-        @Bindable var emergency = Emergency.shared
-        content
-            .sheet(item: split ? .constant(nil) : $ui.card, onDismiss: {
-                // Its card put away, the airplane is no longer tracked.
-                if case .airplane = FlightUI.shared.card {} else { Tracking.shared.track(nil) }
-            }) { card in
-                Group {
-                    switch card {
-                    case .airplane(let hex): AirplaneCard(hex: hex)
-                    case .hold(let fix): HoldSheet(fix: fix)
-                    case .flown(let id, let title): FlownTrackView(flight: id, title: title)
-                    case .leg(let index): RouteLegSheet(index: index)
-                    }
-                }
-                .presentationDetents([.medium, .large])
-                .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-            }
-            .modifier(PointAlerts())
-            // The emergency assistant, from the instruments bar, the pilot's
-            // words or the emergency checklist; no map button (decision 0010).
-            // Full screen, its own map in its top third (docs/design/ios.md §8).
-            .fullScreenCover(item: $emergency.open) { _ in
-                EmergencySheet(airplane: LocalChecklists.airplane(of: plan))
-            }
-    }
-}
-
 /// The alerts that ask for one figure or two, as iOS asks: a point's own
 /// altitude, a fix off a point (its course and distance), and a
 /// procedure's fix's crossing altitude.
 struct PointAlerts: ViewModifier {
+    /// Whether this view is the top of the stack, the one that presents.
+    let active: Bool
     @Environment(Plan.self) private var plan
     @State private var typed = ""
     @State private var course = ""
@@ -143,7 +92,7 @@ struct PointAlerts: ViewModifier {
 
     /// Whether one of the alerts is up, its subject set; put away, cleared.
     private func shown(_ subject: ReferenceWritableKeyPath<FlightUI, String?>) -> Binding<Bool> {
-        Binding(get: { FlightUI.shared[keyPath: subject] != nil }, set: { if !$0 { FlightUI.shared[keyPath: subject] = nil } })
+        Binding(get: { active && FlightUI.shared[keyPath: subject] != nil }, set: { if !$0 { FlightUI.shared[keyPath: subject] = nil } })
     }
 
     /// A waypoint's is flown to it; an airport's is what a flight landing
@@ -219,7 +168,7 @@ struct RouteExtrasSection: View {
                 RoutePointMenu(ident: plan.dep, role: .departure)
                 RoutePointMenu(ident: plan.dest, role: .destination)
                 ForEach(plan.extras.holds) { hold in
-                    Button { FlightUI.shared.card = .hold(hold.fix) } label: {
+                    Button { Navigator.shared.push(.hold(hold.fix)) } label: {
                         VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text("Hold at \(hold.fix)").foregroundStyle(.primary)
                             Text(hold.words).font(.footnote).foregroundStyle(.secondary)
@@ -236,7 +185,8 @@ struct RouteExtrasSection: View {
                 Text("Route")
             }
             Section("In Flight") {
-                NavigationLink(value: SheetPage.flight("nearest")) { Label("Nearest for a Diversion", systemImage: WingtipIcon.nearest) }
+                // The one Nearest list, with Divert (NearestView).
+                NavigationLink(value: SheetPage.screen(.nearest)) { Label("Nearest for a Diversion", systemImage: WingtipIcon.nearest) }
                 NavigationLink(value: SheetPage.flight("notes")) { Label("Checkpoint Notes", systemImage: "text.bubble") }
                 NavigationLink(value: SheetPage.flight("file")) { Label("File Flight Plan", systemImage: WingtipIcon.send) }
             }
@@ -245,8 +195,8 @@ struct RouteExtrasSection: View {
 }
 
 /// The pages FPL opens by name beyond its own (its navigationDestination's
-/// default): a procedure's fixes, nearest for a diversion, the checkpoints'
-/// notes and filing with Flight Service.
+/// default): a procedure's fixes, the checkpoints' notes and filing with
+/// Flight Service.
 struct FlightPage: View {
     let name: String
 
@@ -256,7 +206,6 @@ struct FlightPage: View {
             ProcedureFixesView(ident: parts.count > 1 ? parts[1] : "", id: parts.count > 2 ? parts[2] : "")
         } else {
             switch name {
-            case "nearest": DiversionView()
             case "notes": CheckpointNotesView()
             case "file": FlightServiceView()
             default: EmptyView()
@@ -281,12 +230,15 @@ struct HoldSheet: View {
     @State private var legNm = 4.0
     @State private var length = "2T"
     @State private var problem: String?
+    /// The form as it opened, so Cancel asks only after an edit.
+    @State private var opened: String?
+    @State private var askingCancel = false
 
     static let legMinutes = [1.0, 1.5, 2, 3]
     static let legMiles = [2.0, 3, 4, 5, 10]
 
-    /// Put away, whether a sheet (iPhone) or the inspector (iPad) holds it.
-    private func dismiss() { FlightUI.shared.card = nil }
+    /// Done: back where it was opened from, a card's stack or the plan.
+    private func dismiss() { Navigator.shared.finish(.hold(fix)) }
     static let lengths = ["1T", "2T", "3T", "4T", "10M", "15M", "20M", "30M"]
 
     /// "2 turns", "1 turn", "10 min".
@@ -299,62 +251,72 @@ struct HoldSheet: View {
     /// The leg flown to it, for the course and the altitude it is reached at.
     private var legIn: Leg? { plan.legs.first { $0.to.uppercased() == fix.uppercased() } }
 
+    /// An edit form, as HIG Sheets has one: Cancel at the leading edge,
+    /// Add or Change at the trailing, nothing changed until it is tapped.
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    Picker("The course is", selection: $inbound) {
-                        Text("Inbound").tag(true)
-                        Text("Outbound").tag(false)
-                    }
-                    .pickerStyle(.segmented)
-                    LabeledContent("Course") {
-                        TextField("270", text: $course).keyboardType(.numberPad).multilineTextAlignment(.trailing).font(.body.monospacedDigit())
-                    }
-                    Picker("Turns", selection: $right) {
-                        Text("Right").tag(true)
-                        Text("Left").tag(false)
-                    }
-                    .pickerStyle(.segmented)
+        Form {
+            Section {
+                Picker("The course is", selection: $inbound) {
+                    Text("Inbound").tag(true)
+                    Text("Outbound").tag(false)
                 }
-                Section {
-                    Picker("Legs by", selection: $timed) {
-                        Text("Time").tag(true)
-                        Text("Distance").tag(false)
+                .pickerStyle(.segmented)
+                LabeledContent("Course") {
+                    TextField("270", text: $course).keyboardType(.numberPad).multilineTextAlignment(.trailing).font(.body.monospacedDigit())
+                }
+                Picker("Turns", selection: $right) {
+                    Text("Right").tag(true)
+                    Text("Left").tag(false)
+                }
+                .pickerStyle(.segmented)
+            }
+            Section {
+                Picker("Legs by", selection: $timed) {
+                    Text("Time").tag(true)
+                    Text("Distance").tag(false)
+                }
+                .pickerStyle(.segmented)
+                if timed {
+                    Picker("Leg time", selection: $legMin) {
+                        ForEach(Self.legMinutes, id: \.self) { Text("\(String(format: "%g", $0)) min").tag($0) }
                     }
-                    .pickerStyle(.segmented)
-                    if timed {
-                        Picker("Leg time", selection: $legMin) {
-                            ForEach(Self.legMinutes, id: \.self) { Text("\(String(format: "%g", $0)) min").tag($0) }
-                        }
-                    } else {
-                        Picker("Leg distance", selection: $legNm) {
-                            ForEach(Self.legMiles, id: \.self) { Text("\(String(format: "%g", $0)) nm").tag($0) }
-                        }
-                    }
-                    Picker("Hold for", selection: $length) {
-                        ForEach(Self.lengths, id: \.self) { Text(Self.lengthWords($0)).tag($0) }
-                    }
-                    if let problem {
-                        Text("The leg time for this altitude couldn't be worked out: \(problem)").foregroundStyle(WingtipInk.caution)
+                } else {
+                    Picker("Leg distance", selection: $legNm) {
+                        ForEach(Self.legMiles, id: \.self) { Text("\(String(format: "%g", $0)) nm").tag($0) }
                     }
                 }
-                Section {
-                    Button(was == nil ? "Add Hold" : "Change Hold") { set() }
-                        .disabled(degrees == nil)
-                    if was != nil {
-                        Button("Remove Hold", role: .destructive) { plan.setHold(at: fix, nil); dismiss() }
-                    }
+                Picker("Hold for", selection: $length) {
+                    ForEach(Self.lengths, id: \.self) { Text(Self.lengthWords($0)).tag($0) }
+                }
+                if let problem {
+                    Text("The leg time for this altitude couldn't be worked out: \(problem)").foregroundStyle(WingtipInk.caution)
                 }
             }
-            .navigationTitle("Hold at \(fix)")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { CloseButton { dismiss() } }
+            if was != nil {
+                Section {
+                    Button("Remove Hold", role: .destructive) { plan.setHold(at: fix, nil); dismiss() }
+                }
             }
-            .onAppear(perform: fill)
+        }
+        .navigationTitle("Hold at \(fix)")
+        .navigationBarTitleDisplayMode(.inline)
+        // Cancel is the form's way out, asking first after an edit.
+        .formGuard(edited: edited)
+        .toolbar {
+            FormCancel(edited: edited, cancel: { dismiss() }, asking: $askingCancel)
+            ToolbarItem(placement: .confirmationAction) {
+                Button(was == nil ? "Add" : "Change") { set() }.disabled(degrees == nil)
+            }
+        }
+        .onAppear {
+            fill()
+            if opened == nil { opened = formKey }
         }
     }
+
+    /// Everything the form holds, one line, to tell an edit.
+    private var formKey: String { "\(course)|\(inbound)|\(right)|\(timed)|\(legMin)|\(legNm)|\(length)" }
+    private var edited: Bool { opened.map { $0 != formKey } ?? false }
 
     private var degrees: Int? {
         let digits = course.filter(\.isNumber)
@@ -446,7 +408,6 @@ struct ProcedureFixesView: View {
             }
         }
         .navigationTitle(pick?.name ?? id)
-        .navigationBarTitleDisplayMode(.inline)
         .task {
             guard let pick else { return }
             do { drawing = try await Planner.procedure(ident, id: id, transition: pick.transition) } catch { problem = error.localizedDescription }

@@ -96,6 +96,10 @@ struct ChartMap: UIViewRepresentable {
     /// Setup's Military fields and Private fields.
     @AppStorage(MapExtrasInput.Keys.military) var militaryFields = false
     @AppStorage(MapExtrasInput.Keys.privateFields) var privateFields = false
+    /// Settings' Airport Weather, and the plan's part of the marks: the ↓
+    /// fields and the airplane's crosswind (FieldWeatherState).
+    var airportWeather = AirportWeatherSetting()
+    var fieldWeather = FieldWeatherInput()
     /// The legs a hazard tapped in the Brief is on (HazardLegsViews.swift).
     var hazardLegs: HazardLegs?
     /// The height the sheet covers at the foot of the map now: the map
@@ -155,6 +159,7 @@ struct ChartMap: UIViewRepresentable {
         context.coordinator.open(map, bottomInset: bottomInset)
         context.coordinator.onRegion = onRegion
         context.coordinator.useFields(military: militaryFields, privateFields: privateFields, on: map)
+        context.coordinator.weather.update(map, choice: airportWeather.choice, input: fieldWeather, zoom: Coordinator.zoom(of: map))
         context.coordinator.show(traffic, ownFt: ownFt, on: map)
         context.coordinator.flight?.update(map, flight)
         context.coordinator.extras.update(map, extras, tiles: context.coordinator.overlay)
@@ -345,6 +350,8 @@ struct ChartMap: UIViewRepresentable {
         private var fetching: Task<Void, Never>?
         private var shown: [String: AirportAnnotation] = [:]
         let extras = MapExtrasState()
+        /// The fields' weather on their marks (FieldWeatherState).
+        let weather = FieldWeatherState()
         /// The chart's renderer and the course's, kept to restyle when
         /// the appearance or the setting changes; MapKit asks for a
         /// renderer once per overlay.
@@ -606,6 +613,7 @@ struct ChartMap: UIViewRepresentable {
                     }
                 }
                 overlays.moved(mapView, chart: overlay, live: true)
+                weather.moved(mapView, zoom: zoom)
                 let view = ViewBox(mapView.region)
                 guard liveAirports.wants(view, zoom: zoom) else { return }
                 let wide = view.widened
@@ -643,6 +651,7 @@ struct ChartMap: UIViewRepresentable {
                 extras.regionChanged(mapView)
                 overlays.moved(mapView, chart: overlay, live: false)
                 overlays.runways(mapView, fields: shownPins, chart: overlay)
+                weather.rested(mapView)
             }
             fetching?.cancel()
             let region = mapView.region
@@ -725,7 +734,11 @@ struct ChartMap: UIViewRepresentable {
         @MainActor
         private func showFields(on map: MKMapView) {
             let kept = AirportPin.shown(pins, military: fieldUse.military, privateFields: fieldUse.privateFields)
-            show(kept.map { AirportAnnotation($0, onRoute: routeIdents.contains($0.ident)) }, on: map)
+            show(kept.map { pin in
+                let field = AirportAnnotation(pin, onRoute: routeIdents.contains(pin.ident))
+                field.weather = weather.mark(pin.ident)
+                return field
+            }, on: map)
         }
 
         /// The marks drawn again as the route changes, for which stand on

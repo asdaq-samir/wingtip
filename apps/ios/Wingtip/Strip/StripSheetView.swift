@@ -97,9 +97,9 @@ struct StripSheetView: View {
         // The Go / No-Go for the head, asked as the Brief asks it.
         .task(id: verdict.key(for: plan)) { await verdict.refresh(plan: plan, signedIn: session.signedIn) }
         .onChange(of: plan.tail, initial: true) { _, tail in listener.tail = tail }
-        // An airplane's card, a point pressed on the map, a hold, a flown
-        // track, over the strip as over the tabs.
-        .modifier(FlightSheets())
+        // A thing's card over the strip, as over the plan, and the alerts
+        // and the emergency assistant from the one presenter on screen.
+        .cardHost(search: search)
     }
 
     private var home: some View {
@@ -160,6 +160,9 @@ struct StripSheetView: View {
                 case .instructing: _ = open(.instructor)
                 case .notams: path.append(.brief)
                 case .practice, .training, .contact, .leg, .flight: _ = open(.setup)
+                // A thing's card over the strip, as over the plan (Navigator).
+                case .traffic, .tail, .hold, .flown, .ask, .mapSettings, .clearance, .welcome, .sharedFlight, .flightLogged:
+                    Navigator.shared.open(page)
                 }
             },
             screen: { openScreen($0) },
@@ -241,7 +244,8 @@ struct StripSheetView: View {
                     }
                 }
             }
-        case .leg(let leg): LegDetailView(leg: leg)
+        // The one Route Leg card, the plan's and the map's.
+        case .leg(let leg): RouteLegView(index: RouteLegModel.index(of: leg, at: plan.legs.firstIndex(of: leg) ?? 0, plan: plan))
         case .list(let shows):
             AirportListView(shows: shows, nearest: search.nearest)
         }

@@ -20,14 +20,12 @@ struct RootView: View {
     @Environment(\.undoManager) private var undoManager
     @State var detent: PresentationDetent = .medium
     @State private var sheetUp = true
-    /// The sheet's stack over the plan: the pages a scene was on come back
-    /// with it (SceneStorage), as Apple restores state, so a restored scene
-    /// lands where the pilot left it. A launch argument's screen
-    /// (`-screen airport`, for CI's pictures and the UI tests) wins.
+    /// The card and the pages in it (Navigator): the pages a scene was on
+    /// come back with it (SceneStorage), as Apple restores state, so a
+    /// restored scene lands where the pilot left it. A launch argument's
+    /// screen (`-screen airport`, for CI's pictures and the UI tests) wins.
     @SceneStorage("pages") private var scenePages: String?
-    @State var path: [SheetPage] = []
-    /// A field's or a point's card, its own sheet over the plan's (PlanSheet).
-    @State var placeCard: PlaceCard?
+    var nav: Navigator { .shared }
     /// The one search, the sheet's (OneSearchModel): kept here, so a link,
     /// Siri and the map can bring it up.
     @State var search = OneSearchModel()
@@ -46,13 +44,6 @@ struct RootView: View {
     /// The height the sheet covers at the foot of the screen, as it is now.
     @State private var sheetHeight: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Ask (AskView) up, with the question the search sent where there is
-    /// one: a sheet over the plan's sheet on the iPhone, so the system
-    /// presents it, since one view presents one sheet at a time; over the
-    /// map on the iPad.
-    @State var asking: AskOpen?
-    /// The iPad's inspector card (SplitLayout).
-    @State var sideCard: SideCard?
     /// What Siri or a Shortcut asked for (the App Intents), done here once
     /// the app is on the screen: the owner's ask, 2026-11-03, Siri and
     /// Shortcuts through App Intents.
@@ -73,7 +64,7 @@ struct RootView: View {
             emergency: Emergency.shared.line(from: dryRun.fix ?? ownShip.fix),
             onTraffic: { plane in
                 Tracking.shared.track(plane.hex, plane: plane)
-                FlightUI.shared.card = .airplane(plane.hex.lowercased())
+                Navigator.shared.open(.traffic(plane.hex.lowercased()))
             },
             onDragged: { Tracking.shared.follow = false })
     }
@@ -91,10 +82,9 @@ struct RootView: View {
                     .sheet(isPresented: $sheetUp) {
                         Group {
                             if layoutName == "strip" {
-                                StripSheetView(detent: $detent, opened: $path, search: search)
+                                StripSheetView(detent: $detent, opened: Bindable(nav).planPath, search: search)
                             } else {
-                                PlanSheet(path: $path, card: $placeCard, search: search, openScreen: { openScreen($0) }, ask: { ask($0) })
-                                    .sheet(item: $asking) { AskView(first: $0.question) }
+                                PlanSheet(search: search, openScreen: { openScreen($0) }, ask: { ask($0) })
                             }
                         }
                         // How much of the map the sheet covers, for the map's
@@ -106,37 +96,40 @@ struct RootView: View {
                         // on iOS 26; the material on iOS 18 (Design/Glass.swift).
                         .sheetGlass()
                         .interactiveDismissDisabled()
-                        // The welcome, once per install, over the planner's sheet;
-                        // its flight shown half way up on the plan (WelcomeHost).
-                        .modifier(WelcomeHost(opened: { path = []; detent = .medium }))
-                        // Ready to fly over a dry run's or a flight's start (ReadyToFlyHost).
-                        .modifier(ReadyToFlyHost())
-                        // A flight another pilot sent, previewed (SharedFlightHost).
-                        .modifier(SharedFlightHost())
                         // The system sheet settles at its detents with its own
                         // feel; no tap of ours is added to a stock part (the
                         // owner, 2026-11-10).
                     }
             case .split:
-                SplitLayout(map: map, path: $path, search: search, card: $sideCard, openScreen: { openScreen($0) }, ask: { ask($0) })
-                    .sheet(item: $asking) { AskView(first: $0.question) }
-                    .modifier(WelcomeHost(opened: { path = [] }))
-                    .modifier(ReadyToFlyHost())
-                    .modifier(SharedFlightHost())
+                SplitLayout(map: map, search: search, openScreen: { openScreen($0) }, ask: { ask($0) })
+                    // No sheet over the iPad's layout: its alerts and the
+                    // emergency assistant from the root itself.
+                    .modifier(TopHosts(active: true))
             }
         }
+        // Ready to Fly given the app's models, for a start from anywhere.
+        .modifier(ReadyToFlyHost())
+        // The welcome, a shared flight, the flight just logged and the
+        // clearance, each a card when its model asks (CardTriggers).
+        .modifier(CardTriggers())
+        .onChange(of: layout, initial: true) { _, now in nav.split = now == .split }
         // The scene's pages kept and brought back (SceneStorage); a launch
         // argument's screen (CI's pictures, the UI tests) wins over them.
         .onAppear {
+            nav.split = layout == .split
             let arguments = CommandLine.arguments
             if let at = arguments.firstIndex(of: "-layout"), at + 1 < arguments.count { layoutName = arguments[at + 1] }
             if let at = arguments.firstIndex(of: "-screen"), at + 1 < arguments.count, let screen = Screen(rawValue: arguments[at + 1]) {
                 openScreen(screen)
+            } else if let at = arguments.firstIndex(of: "-card"), at + 1 < arguments.count, let page = SheetPage(stored: arguments[at + 1]) {
+                // A card as a scene keeps it (`-card @KOSH`, `-card +map`),
+                // for the card rule's UI tests (CardRuleTests).
+                nav.open(page)
             } else {
-                path = SheetPage.restore(scenePages)
+                nav.restore(SheetPage.restore(scenePages))
             }
         }
-        .onChange(of: path) { _, now in scenePages = SheetPage.store(now) }
+        .onChange(of: nav.stored) { _, now in scenePages = SheetPage.store(now) }
         // The search up, the sheet up with it, clear of the keyboard.
         .onChange(of: search.presented) { _, up in if up, layout == .sheet, detent != .large { detent = .large } }
         // The picked look's tint, the brand's blue by default (Look).
@@ -147,28 +140,24 @@ struct RootView: View {
         .modifier(KeyboardShortcuts(search: { search.presented = true }, open: { openScreen($0) }))
     }
 
-    /// A field or a point opened from the map: its card on the sheet's
-    /// stack, half way up, on the iPhone; in the inspector on the iPad.
+    /// A field or a point opened from the map: its card over the plan,
+    /// half way up, on the iPhone (a field tapped after another takes its
+    /// place rather than piling up); in the inspector on the iPad.
     func open(_ route: String) {
-        if layout == .split {
-            sideCard = .airport(route)
-            return
-        }
         search.close()
-        if layoutName == "strip" {
+        if layout == .sheet, layoutName == "strip" {
             // The strip pushes its cards on its own stack (StripSheetView).
-            path.append(.airport(route))
+            nav.planPath.append(.airport(route))
         } else {
-            // Its own sheet, half way up; a field tapped after another
-            // takes its place rather than piling up.
-            placeCard = PlaceCard(route: route)
+            nav.open(.airport(route))
         }
     }
 
-    /// Ask, with the question the search sent where there is one.
+    /// Ask, with the question the search sent where there is one: its
+    /// card, as every thing's is.
     func ask(_ question: String?) {
         search.close()
-        asking = AskOpen(question: question)
+        nav.open(.ask(question))
     }
 
     /// The height of the map the sheet covers: none beside the sidebar.
@@ -177,13 +166,7 @@ struct RootView: View {
     }
 
     /// The point held on the map, whichever holds its card.
-    private var heldRoute: String? {
-        if layout == .split {
-            if case .airport(let text) = sideCard { return text }
-            return nil
-        }
-        return placeCard?.route ?? path.last(where: { $0.airportRoute != nil })?.airportRoute
-    }
+    private var heldRoute: String? { nav.heldRoute }
 
     /// The map with its buttons and banners, under the sheet or beside
     /// the sidebar.
@@ -212,12 +195,17 @@ struct RootView: View {
                 onWaypoint: plan.course != nil ? { (ident: String, at: CLLocationCoordinate2D, action: CardAction) in
                     plan.drop(ident, at: at, then: action == .directTo ? .direct : .add, from: action == .directTo ? dryRun.fix ?? ownShip.fix : nil)
                 } : nil),
-            // A tap on the course opens its nearest leg's sheet, that leg
-            // cased in green while it is open (RouteLegSheet).
+            // A tap on the course opens its nearest leg's card, that leg
+            // cased in green while it is in sight (RouteLegView).
             routeLegs: RouteLegInput(
                 legs: plan.course != nil ? RouteLegModel.mapLegs(plan) : [],
-                selected: { if case .leg(let index) = FlightUI.shared.card { return index }; return nil }(),
-                onSelect: { index in FlightUI.shared.card = .leg(index) }),
+                selected: { if case .leg(let index) = nav.top { return index }; return nil }(),
+                onSelect: { index in Navigator.shared.open(.leg(index)) }),
+            // The route's fields worse by the flight's time there, and the
+            // airplane's demonstrated crosswind for the wind arrows' red.
+            fieldWeather: FieldWeatherInput(
+                worse: FieldWeatherMarks.worse(plan.briefing, fields: Set([plan.dep, plan.dest] + plan.stops).subtracting([""])),
+                demonstratedKt: FieldWeatherMarks.demonstratedKt(plan)),
             hazardLegs: plan.hazardLegs,
             bottomInset: mapInset,
             onReveal: {
@@ -311,12 +299,6 @@ struct RootView: View {
             // opens with one waiting (the intents run before this has drawn).
             .task(id: pending.command) { await apply(pending.take()) }
     }
-}
-
-/// Ask opened, with the question the one search sent where there is one.
-struct AskOpen: Identifiable {
-    let id = UUID()
-    var question: String?
 }
 
 #Preview("RootView") {

@@ -8,43 +8,40 @@ struct SharedFlightView: View {
     let model: SharedFlightModel
 
     var body: some View {
-        NavigationStack {
-            List {
-                if model.gone {
-                    ContentUnavailableView("This flight is no longer shared.", systemImage: "link",
-                                           description: Text("Its pilot stopped sharing it."))
-                } else if let plan = model.plan {
-                    Section { planRows(plan) }
-                    if let totals = model.totals {
-                        Section("Totals") {
-                            LabeledContent("Distance", value: Format.distance(totals.distanceNm))
-                            LabeledContent("Time En Route", value: totals.eteMin.map(Format.duration) ?? "—")
-                            LabeledContent("Fuel", value: Format.fuel(totals.fuelGal))
-                        }
+        List {
+            if model.gone {
+                ContentUnavailableView("This flight is no longer shared.", systemImage: "link",
+                                       description: Text("Its pilot stopped sharing it."))
+            } else if let plan = model.plan {
+                Section { planRows(plan) }
+                if let totals = model.totals {
+                    Section("Totals") {
+                        LabeledContent("Distance", value: Format.distance(totals.distanceNm))
+                        LabeledContent("Time En Route", value: totals.eteMin.map(Format.duration) ?? "—")
+                        LabeledContent("Fuel", value: Format.fuel(totals.fuelGal))
                     }
-                    if !model.navLog.isEmpty {
-                        Section("Nav Log") { ForEach(model.navLog, id: \.sequenceNo) { SharedNavLogRow(point: $0) } }
-                    }
-                } else if model.loading {
-                    ProgressView().frame(maxWidth: .infinity)
                 }
-                ProblemLine(model.problem)
+                if !model.navLog.isEmpty {
+                    Section("Nav Log") { ForEach(model.navLog, id: \.sequenceNo) { SharedNavLogRow(point: $0) } }
+                }
+            } else if model.loading {
+                ProgressView().frame(maxWidth: .infinity)
             }
-            .navigationTitle("Shared Flight")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(model.gone ? "Close" : "Not Now") { model.notNow() }
-                }
-                if !model.gone {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Use This Plan") { model.use(on: route) }.disabled(model.plan == nil)
-                    }
-                }
-            }
-            .task(id: model.link) { await model.load() }
+            ProblemLine(model.problem)
         }
-        .presentationDetents([.medium, .large])
+        .navigationTitle("Shared Flight")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button(model.gone ? "Close" : "Not Now") { model.notNow() }
+            }
+            if !model.gone {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Use This Plan") { model.use(on: route) }.disabled(model.plan == nil)
+                }
+            }
+        }
+        .task(id: model.link) { await model.load() }
     }
 
     @ViewBuilder private func planRows(_ plan: SharedPlan) -> some View {
@@ -73,17 +70,6 @@ private struct SharedNavLogRow: View {
                   point.fuelGal.map { Format.fuel($0) }].compactMap { $0 }.joined(separator: "  "))
                 .font(.footnote.monospacedDigit())
                 .foregroundStyle(.secondary)
-        }
-    }
-}
-
-/// The preview over whatever is up, when a link asks for it.
-struct SharedFlightHost: ViewModifier {
-    private var model: SharedFlightModel { .shared }
-
-    func body(content: Content) -> some View {
-        content.sheet(isPresented: Binding(get: { model.showing }, set: { if !$0 { model.notNow() } })) {
-            SharedFlightView(model: model)
         }
     }
 }
