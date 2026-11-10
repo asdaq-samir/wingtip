@@ -623,25 +623,6 @@ body[data-map-sheet][data-map-panel="full"] [data-slot="toast"][data-type="loadi
   scroll-padding-bottom: var(--foot-room, 0px);
 }
 
-/* The map panel's head frosted with the sheet's own colour, a line under
-   it, while content is scrolled under it (MapPanel's data-under); a card's
-   own head under it -- the Brief's title and pages (PanelTabs) -- frosted
-   with it, the line under that one alone ("local"). Plain glass at rest. */
-[data-head-band],
-[data-under-band] {
-  transition:
-    background-color var(--motion-quick),
-    box-shadow var(--motion-quick);
-}
-[data-head-band][data-under],
-[data-head-band][data-under] ~ [data-panel-body] [data-under-band] {
-  background-color: var(--sheet);
-  box-shadow: 0 1px 0 var(--color-border);
-}
-[data-head-band][data-under="local"] {
-  box-shadow: none;
-}
-
 /* What floats over the chart -- the map's buttons, its banners, the
    panel's pill -- frosted as Apple's Maps on the web frosts its own: the
    page's ground at 80% over a 15-point blur, a hairline and a soft shade,

@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { cn } from "cn";
 import { PanelSize, type PanelState } from "../../lib/mapChrome";
 import { SheetCardHost } from "../SheetCard";
@@ -92,10 +92,18 @@ export interface PartsProps {
   sizes: ReturnType<typeof useSheetDetents>;
   panelSize: { size: PanelState; to: (size: PanelState) => void; card: boolean };
   setHead: (node: HTMLDivElement | null) => void;
-  setBody: (node: HTMLDivElement | null) => void;
   setFoot: (node: HTMLDivElement | null) => void;
   onFootTap: () => void;
 }
+
+/** Back by the Drawer's snap offset and the finger's movement (its own
+ *  CSS variables on the popup), on its curve, held still under a finger. */
+const FOLLOW =
+  "[transform:translateY(calc(-1*(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px))))] transition-transform duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] group-data-swiping/sheet:transition-none motion-reduce:transition-none";
+/** The body cut off at a bottom sheet's figures, or past a top sheet's
+ *  edge, by the same offset. */
+const CUT_BOTTOM = "[clip-path:inset(0_0_max(0px,calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px)))_0)]";
+const CUT_TOP = "[clip-path:inset(0_0_max(0px,calc(-1*(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px))))_0)]";
 
 /**
  * What the sheet holds, the same in the Drawer and the side panel: the
@@ -104,38 +112,11 @@ export interface PartsProps {
  * figures pinned at its foot -- in the pill its one row.
  */
 export function SheetParts(p: PartsProps) {
-  const { atPill, fromBottom, size, sizes, footShown, cardsUp, setHead, setBody, setFoot } = p;
+  const { atPill, fromBottom, size, sizes, footShown, cardsUp, setHead, setFoot } = p;
   const headerShown = !p.flying && !cardsUp && (atPill ? !p.bar : p.top != null || !p.barShown);
   const headContent = atPill ? p.compact : p.top;
   const keptHere = p.kept != null && headerShown && headContent === p.kept;
   const under = !atPill;
-  const [headNode, setHeadNode] = useState<HTMLDivElement | null>(null);
-
-  // Scrolled up, a page's content runs on under the head and is seen
-  // through it (--head-room, the under-head utility); while there is
-  // content under the head, the head is frosted over it (data-under).
-  useEffect(() => {
-    const panel = headNode?.closest<HTMLElement>("[data-slot=map-panel]");
-    if (!headNode || !panel || !under) return;
-    const frost = (scroller: Element | undefined) => {
-      if (scroller && scroller.scrollTop > 0) headNode.setAttribute("data-under", scroller.hasAttribute("data-local-head") ? "local" : "");
-      else headNode.removeAttribute("data-under");
-    };
-    const onScroll = (event: Event) => {
-      const at = event.target;
-      if (at instanceof HTMLElement && at.classList.contains("under-head") && panel.contains(at)) frost(at);
-    };
-    const frame = requestAnimationFrame(() =>
-      frost([...panel.querySelectorAll<HTMLElement>(".under-head")].find((el) => el.checkVisibility?.() ?? el.offsetParent !== null)),
-    );
-    document.addEventListener("scroll", onScroll, { capture: true, passive: true });
-    return () => {
-      cancelAnimationFrame(frame);
-      document.removeEventListener("scroll", onScroll, { capture: true });
-      headNode.removeAttribute("data-under");
-    };
-  }, [headNode, under, p.layer, cardsUp]);
-
   // Where the panel's top-right button sits, one place in every panel.
   const topSheet = p.onPhone && !fromBottom;
   const headPad = topSheet ? "max(0.5rem, env(safe-area-inset-top))" : "0.25rem";
@@ -145,17 +126,20 @@ export function SheetParts(p: PartsProps) {
     "--corner-inset": `calc(${headPad} - ${bodyPad} + (2.5625rem - 36px) / 2)`,
   } as CSSProperties;
   const pillFoot = size === "peek" && !!(p.bar || p.compact);
+  // On a phone, what stays in sight at the sheet's free edge while the
+  // popup, laid out at its full height, slides: moved back by the Drawer's
+  // own offset and the finger's (its CSS variables), on its curve, and the
+  // body cut off where those parts begin. A bottom sheet's figures; a top
+  // sheet's head and body.
+  const follows = p.onPhone ? FOLLOW : undefined;
 
   return (
     <>
       <div
-        ref={(node) => {
-          setHead(node);
-          setHeadNode(node);
-        }}
+        ref={setHead}
         data-head-band=""
         style={vars}
-        className={cn("relative flex shrink-0 flex-col", under && "z-20", topSheet && "pt-[env(safe-area-inset-top)]")}
+        className={cn("relative flex shrink-0 flex-col", under && "z-20", topSheet && "pt-[env(safe-area-inset-top)]", topSheet && follows)}
       >
         {p.bar && (
           <div className={cn("flex h-[4.25rem] shrink-0 px-2 pb-1.5", ROW_PAD, !p.barShown && "hidden")}>
@@ -199,9 +183,10 @@ export function SheetParts(p: PartsProps) {
         </div>
       </div>
       <div
-        ref={setBody}
         className={cn(
           "flex min-h-0 flex-1 flex-col",
+          topSheet && cn(follows, CUT_TOP),
+          p.onPhone && fromBottom && footShown && CUT_BOTTOM,
           size !== "peek" && !fromBottom && "pb-4",
           SHEET_BELOW,
           p.resting && "invisible",
@@ -244,6 +229,7 @@ export function SheetParts(p: PartsProps) {
             // as they are (the owner, 2026-11-05). What gives way in the
             // pill (data-pill-hides) is put away there.
             "relative z-10 flex shrink-0 flex-col justify-center border-t print:hidden",
+            fromBottom && follows,
             fromBottom || size !== "half" ? "pb-1" : "pb-4",
             size === "half" ? "min-h-0" : "min-h-[3.875rem]",
             ROW_PAD,

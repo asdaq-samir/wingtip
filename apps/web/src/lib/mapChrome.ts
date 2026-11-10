@@ -88,7 +88,7 @@ export const GLASS_SHEET = "bg-[var(--sheet)] shadow-(--depth-sheet)";
 
 /** The app's sheet-sized move, in seconds (design/tokens.json motion.sheet):
  *  a point picked flown to, own ship found. The map's sheet itself moves
- *  on the stock Drawer's own time (sheet/useSheetFollow's DRAWER_MS), and
+ *  on the stock Drawer's own time (sheet/insets' DRAWER_MS), and
  *  the map follows it on that. */
 export const SHEET_SECONDS = MOTION.sheet;
 

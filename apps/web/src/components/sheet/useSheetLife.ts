@@ -1,6 +1,5 @@
 import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import type { PanelState } from "../../lib/mapChrome";
-import { DRAWER_MS } from "./insets";
 
 const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
 
@@ -10,42 +9,57 @@ const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
  * (the content there as the sheet comes) and, going down, kept till the
  * sheet has landed, so what half showed is not gone before the sheet has
  * moved (the owner, "seems to remove content before sliding down to
- * pill"). A size asked for here (`tell`) is told to the page once landed;
- * the page's own (`pageState`) is gone to and not told back.
+ * pill"). Landed is the Drawer's own word: its popup's slide ended
+ * (`landed`, from the popup's transitionend), or at once where nothing
+ * slides (`still`: the side panel, Reduce Motion, the same height). A size
+ * asked for here (`tell`) is told to the page once landed; the page's own
+ * (`pageState`) is gone to and not told back.
  */
-export function useSheetLife(pageState: PanelState, tellPage: (state: PanelState) => void) {
+export function useSheetLife(
+  pageState: PanelState,
+  tellPage: (state: PanelState) => void,
+  still: (target: PanelState) => boolean = () => false,
+) {
   const [snap, setSnap] = useState(pageState);
   const [size, setSize] = useState(pageState);
   const [moving, setMoving] = useState(false);
   const snapRef = useRef(snap);
   const sizeRef = useRef(size);
-  const timer = useRef(0);
   const asked = useRef<PanelState | null>(null);
+  const stillRef = useRef(still);
+  useEffect(() => {
+    stillRef.current = still;
+  });
+
+  const landed = useCallback(() => {
+    const target = snapRef.current;
+    sizeRef.current = target;
+    setSize(target);
+    setMoving(false);
+    if (asked.current === target) {
+      asked.current = null;
+      tellPage(target);
+    }
+  }, [tellPage]);
 
   const go = useCallback(
     (target: PanelState, tell: boolean) => {
-      window.clearTimeout(timer.current);
+      const at = snapRef.current;
       asked.current = tell ? target : null;
       snapRef.current = target;
       setSnap(target);
+      if (target === at || stillRef.current(target)) {
+        landed();
+        return;
+      }
       setMoving(true);
       if (RANK[target] >= RANK[sizeRef.current]) {
         sizeRef.current = target;
         startTransition(() => setSize(target));
       }
-      timer.current = window.setTimeout(() => {
-        sizeRef.current = target;
-        setSize(target);
-        setMoving(false);
-        if (asked.current === target) {
-          asked.current = null;
-          tellPage(target);
-        }
-      }, DRAWER_MS + 40);
     },
-    [tellPage],
+    [landed],
   );
-  useEffect(() => () => window.clearTimeout(timer.current), []);
   useEffect(() => {
     if (pageState !== snapRef.current) go(pageState, false);
   }, [pageState, go]);
@@ -65,5 +79,5 @@ export function useSheetLife(pageState: PanelState, tellPage: (state: PanelState
     };
   }, []);
 
-  return { snap, size, moving, ready, go, snapRef, sizeRef };
+  return { snap, size, moving, ready, go, landed, snapRef, sizeRef };
 }
