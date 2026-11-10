@@ -1,9 +1,9 @@
 package app.wingtipmaps.android.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -12,22 +12,18 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,13 +33,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
@@ -57,6 +50,8 @@ import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.search.Remembered
 import app.wingtipmaps.android.search.SearchMemory
+import app.wingtipmaps.android.ui.sheet.CardExit
+import app.wingtipmaps.android.ui.sheet.CardPage
 
 /**
  * A field's card, laid out as Google Maps' place sheet on Android is in
@@ -65,21 +60,22 @@ import app.wingtipmaps.android.search.SearchMemory
  * tabs -- Overview, Reviews, Photos, About -- above the picture previews,
  * the details in Material 3 Expressive containers with no rules between
  * them, and the actions as pills docked at the sheet's foot, Directions
- * first): Material's large flexible top app bar, "KOSH · Wittman
- * Regional" large over its town, shrinking as the card scrolls, with the
- * star and the close; the facts row -- Weather, Wind, Longest Runway,
+ * first): the card's bar where the search was (CardPage), ← and "KOSH ·
+ * Wittman Regional" large over its town, shrinking as the card scrolls,
+ * with the star and ✕; the facts row -- Weather, Wind, Longest Runway,
  * Distance (from own ship, else "From KMSN", the route's departure) --
  * as containers, under a card of the field's closures and TFRs where it
  * has any (FieldAlertCard); the sections in a tab row, Overview's the
  * pictures (AirportSections); and the actions docked at the foot: Fly Here
  * filled, with its time at the airplane's cruise speed, then Depart From,
  * Add as Stop, Diagram, Call and Address. The planner's words throughout,
- * every figure the planner's or the engine's (AirportFacts). A pull
- * fetches the card again; Back closes it with the predictive gesture.
+ * every figure the planner's or the engine's (AirportFacts). Back
+ * closes it with the predictive gesture.
+ * The same card from the search, the map, a list, the plan and a link.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun AirportCard(ident: String, plan: Plan, onClose: () -> Unit, onDone: () -> Unit, model: AirportModel = viewModel()) {
+fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, model: AirportModel = viewModel()) {
     val context = LocalContext.current
     val state by model.state.collectAsStateWithLifecycle()
     val planState by plan.state.collectAsStateWithLifecycle()
@@ -96,29 +92,15 @@ fun AirportCard(ident: String, plan: Plan, onClose: () -> Unit, onDone: () -> Un
     val from = fix?.let { AirportFacts.From(it.lat, it.lon) } ?: state.departure?.let { AirportFacts.From(it.lat, it.lon, it.ident) }
     val cruise = airplane.value(FigureKey.CRUISE)
     val facts = remember(place, from, cruise) { place?.let { AirportFacts.of(it, from, cruise) } }
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     var section by rememberSaveable(ident) { mutableIntStateOf(0) }
     var diagram by remember { mutableStateOf(false) }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize().nestedScroll(scroll.nestedScrollConnection),
-        containerColor = Color.Transparent,
-        contentWindowInsets = WindowInsets(0),
-        topBar = {
-            LargeFlexibleTopAppBar(
-                title = { Text(place?.let { "${it.ident} · ${it.name}" } ?: ident.uppercase(), maxLines = 2, overflow = TextOverflow.Ellipsis) },
-                subtitle = place?.let { p -> listOfNotNull(p.municipality, p.region).joinToString(", ").ifEmpty { null }?.let { where -> { Text(where) } } },
-                // Close at the end, as every level's title row has it
-                // (decision 0015), never a back arrow at the start.
-                actions = {
-                    if (place != null) Star(place)
-                    IconButton(onClick = onClose) { Icon(WingtipIcons.close, contentDescription = stringResource(R.string.close)) }
-                },
-                windowInsets = WindowInsets(0),
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                scrollBehavior = scroll,
-            )
-        },
+    // The field's name and ← where the search was, ✕ at the end (CardPage).
+    CardPage(
+        title = place?.let { "${it.ident} · ${it.name}" } ?: ident.uppercase(),
+        exit = exit,
+        subtitle = place?.let { p -> listOfNotNull(p.municipality, p.region).joinToString(", ").ifEmpty { null } },
+        actions = { if (place != null) Star(place) },
         bottomBar = {
             if (place != null) {
                 Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
@@ -127,7 +109,9 @@ fun AirportCard(ident: String, plan: Plan, onClose: () -> Unit, onDone: () -> Un
             }
         },
     ) { padding ->
-        PullToRefreshBox(isRefreshing = state.loading && place != null, onRefresh = model::refresh, enabled = place != null, modifier = Modifier.padding(padding)) {
+        // The card is fetched as it opens; no pull to refresh in a sheet,
+        // whose drag down is the sheet's (the scrolling rule, 2026-11-10).
+        Box(Modifier.padding(padding)) {
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
                 state.problem?.let { item(key = "problem") { ProblemLine(it, Modifier.padding(horizontal = WingtipSpace.Lg)) } }
                 if (place == null) {
@@ -142,8 +126,10 @@ fun AirportCard(ident: String, plan: Plan, onClose: () -> Unit, onDone: () -> Un
                     }
                 }
                 facts?.let { f -> item(key = "facts") { FactsRow(f) } }
-                item(key = "tabs") {
-                    SecondaryScrollableTabRow(selectedTabIndex = section, containerColor = Color.Transparent, edgePadding = WingtipSpace.Lg) {
+                // The sections' tabs pin under the bar as the card scrolls (the
+                // scrolling rule, 2026-11-10), in the sheet's own colour.
+                stickyHeader(key = "tabs") {
+                    SecondaryScrollableTabRow(selectedTabIndex = section, containerColor = BottomSheetDefaults.ContainerColor, edgePadding = WingtipSpace.Lg) {
                         AirportSection.entries.forEach { s ->
                             Tab(selected = section == s.ordinal, onClick = { section = s.ordinal }, text = { Text(stringResource(s.title)) })
                         }

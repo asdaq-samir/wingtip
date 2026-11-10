@@ -19,7 +19,8 @@ not timed on a device.
   somewhere opens that place: a field's name its card, the figures their
   nav log, a waypoint its menu. Closing goes back to where the pilot was
   (one level, never a Back button: `lib/openCards` on the web, `closesBack`
-  on iOS, the sheet's close and system Back on Android).
+  on iOS; on Android the card's ← and system Back, its ✕ closing every
+  card, since the card rule of 2026-11-10).
 - **Two taps at most** to every screen from the map and its sheet. A deeper
   screen gets a way in from a list that already holds its kind, never a new
   place on the screen; moving a panel or a control is the owner's call.
@@ -212,24 +213,33 @@ map with the sheet at rest: the search or a row of the plan is 1.
 No tabs since the one search (the owner, 2026-11-09): the sheet's first row
 is the search ("Search airports, airplanes, or ask"), the microphone and the
 account button; under it the flight's card, Favorites, Recents and Nearest,
-or the plan, or a card. On a tablet or an unfolded phone the same sits in
-Material's list and detail panes beside the map. Taps are counted from the
-map with the sheet at rest; typing in the search is not counted.
+or the plan. Since the card rule (the owner, 2026-11-10) every card and
+page takes the search's place with its name and ← (Google Maps' "← KOSH"),
+opens at half, and goes on the sheet's own stack: ← and Back one level,
+✕ every card back to the search. On a tablet or an unfolded phone the same
+sits in Material's list and detail panes beside the map, the cards in the
+detail pane. Taps are counted from the map with the sheet at rest; typing
+in the search is not counted.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
-| Plan (was FPL; its legs are the nav log) | the flight's card | 1 → 1 | Route fields, stops, VFR/IFR as before; **Add a Stop opens the search for the stop; each field of the route opens its card** |
-| Nav Log | the flight's card → Nav Log (or the figures) | 1 → 2 (the plan scrolls to its legs) | as the plan |
-| Brief | the flight's card → Brief; or search "brief" → Brief | 2 → 2 | Departure hour; **Ready to Fly at its head** |
-| Airport card (was the Airport tab) | search → the field; or tap it on the map | 1 → 1 + typing (map 1) | **Fly Here (with its time), Depart From, Add as Stop, Diagram, Call, Address at its foot; the star for Favorites; Overview with its pictures, Weather, Frequencies (tap to copy), Runways, Approaches, NOTAMs** |
-| Airplane (was the Airplane tab), checklists | the flight's card → Airplane → Checklist | 2 → 3 | Ticks; Edit as text |
-| An airplane's card | search → the airplane (yours, an N-number from the FAA registry, a type) | -- → 1 + typing | **Fly This Airplane; its figures, each a tap to edit; its checklists** |
-| Settings (was Setup) | the account button, opening Settings with no menu between (the owner, 2026-11-10) | 1 → 1 | Layout, theme, account (Sign In, Sign Out), minimums, the map, the copilots |
-| Logbook, Coach | account → Settings' Logbook / Coach row; closing goes back to Settings | 2 → 2 | Logbook entries edited in the row; Delete with an Undo row |
-| Downloads, Passenger Briefing, About | account → Settings' row; closing goes back to Settings | 2 → 2 | Downloads delete with no confirm or Undo |
-| Emergency | Instruments bar; search "emergency" → Emergency Assistant; Airplane → Emergency Assistant | 1 | Its frequencies copy |
+| Plan (was FPL; its legs are the nav log) | the flight's card | 1 → 1 | Route fields, stops, VFR/IFR as before; Add a Stop and a point's Add a Stop After open the one search for the stop; each field of the route opens its card |
+| Nav Log, Profile | the flight's card → Nav Log (or the figures); "profile" in the search opens the nav log's altitudes (no side view on Android) | 2 → 2 | as the plan |
+| A leg | a leg on the map, a nav log row, or a strip checkpoint: the one leg card | 1 / 2 | Direct, Remove |
+| Brief | the flight's card → Brief; or search "brief" | 2 → 2 | Departure hour; Ready to Fly at its head |
+| Airport card | search → the field; tap it on the map; a list row; the plan's field | 1 + typing (map 1) | Fly Here (with its time), Depart From, Add as Stop, Diagram, Call, Address at its foot; the star; Overview, Weather, Frequencies, Runways, Approaches, NOTAMs under pinned tabs |
+| A fix, VOR, airspace, traffic, What's Here | tap it on the map; an alert; a point's More Info | 1 | its actions |
+| Airplane card (the one airplane card) | the flight's card → Airplane; search → an airplane; Ready to Fly's Pick an Airplane; a logbook N-number | 2 → 2 | The flown airplane's picker, registration, passengers, Your Airplanes; every figure a tap to edit; Fly This Airplane |
+| Checklists | Airplane → Checklists tab → a checklist (on the card's stack) | 3 → 3 | Ticks; Edit as text |
+| Settings | the account button | 1 → 1 | Layout, theme, account (Sign In, Sign Out), minimums, the copilots |
+| Map Settings (was Settings' Map section) | account → Map Settings; or search "map" / "layers" | 1 → 2 (+ typing 0) | Weather loop, layers, traffic, Airport Weather, glide ring, receiver, spoken alerts |
+| Logbook, Coach | account → Logbook → Coach, each on Settings' stack | 2 / 3 | Logbook entries edited in the row; Delete with an Undo |
+| Downloads, Passenger Briefing, About | account → Settings' row, on its stack | 2 → 2 | Downloads delete with no confirm or Undo |
+| Clearance | search "clearance" or "radio"; the strip's chip | typing / 1 | Listen, Enter the Route |
+| Dry run | the plan's Dry Run; or search "dry run" (with a route) | 2 / typing | Play, speed, forecast; Back ends it |
+| Emergency (the one full-screen page) | Instruments bar; search "emergency"; Airplane → Emergency Assistant | 1 | Its frequencies copy; ✕ at the app bar's start |
 | Alerts ahead, a copilot message | the banner | 1 | Tapped: the Ahead sheet, More Info on a Class B, C or D; the message's Fly to and More Info |
-| Nearest, Ask | Instruments bar; the sparkle; Nearest also under the search | 1 | -- |
+| Nearest, Ask | Instruments bar; the sparkle; Nearest also under the search | 1 | a field opens on Nearest's stack |
 
 ## Contextual actions: where each lives
 
@@ -270,7 +280,7 @@ change or another branch's work:
    sheet (Android) with it; a fix needs the planner to say one. TFRs,
    special-use areas, terrain and obstacles have no card on Android.
 4. **Android's route Undo row** shows only on the plan (an edit from the
-   map's Route Leg sheet makes one there); the point menu is not on the
+   map's leg card makes one there); the point menu is not on the
    departure or in the strip layout, and has no Set Altitude… (no
    per-point altitude on Android).
 5. **Logbook delete differs underneath:** the web deletes at once and its

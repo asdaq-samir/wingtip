@@ -3,6 +3,7 @@ package app.wingtipmaps.android.atc
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -84,6 +85,8 @@ fun AtcCopilotHost(plan: Plan, flying: Boolean, fix: OwnShip.Fix?) {
     val card = state.card
     val noPosition = stringResource(R.string.atc_direct_needs_position)
     val haptics = rememberHaptics()
+    // Back puts the ATC card away, as its close does.
+    BackHandler(enabled = card != null, onBack = model::dismiss)
     when {
         card != null -> AtcCardView(
             card, state.kept, state.problem,

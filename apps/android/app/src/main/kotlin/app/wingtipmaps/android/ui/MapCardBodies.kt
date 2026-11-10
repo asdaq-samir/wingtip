@@ -30,7 +30,7 @@ import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapStyle
 
 // The bodies of the map's cards for the chart's own marks: an airspace
-// volume, a VOR, a fix or a VFR waypoint (MapCardSheet holds them).
+// volume, a VOR, a fix or a VFR waypoint (ThingCard holds them).
 
 /** The sectional's ink of each class (MapStyle.AIRSPACE_INK). */
 private fun classInk(cls: String) = ink(MapStyle.AIRSPACE_INK[cls]?.colour ?: MapStyle.MAGENTA)

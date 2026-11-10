@@ -1,7 +1,9 @@
 package app.wingtipmaps.android.aircraft
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -19,6 +21,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -29,9 +34,11 @@ import app.wingtipmaps.android.api.generated.gateway.AircraftDto
 import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
-import app.wingtipmaps.android.ui.sheet.WingtipSheet
+import app.wingtipmaps.android.ui.sheet.CardExit
+import app.wingtipmaps.android.ui.sheet.CardPage
+import app.wingtipmaps.android.ui.sheet.DiscardDialog
 
-/** The Airplane page's row that opens Your Airplanes. */
+/** The flown airplane's card's row that opens Your Airplanes. */
 @Composable
 fun YourAirplanesRow(onOpen: () -> Unit) {
     ListItem(
@@ -45,12 +52,13 @@ fun YourAirplanesRow(onOpen: () -> Unit) {
 }
 
 /**
- * Your Airplanes: the pilot's airplanes, each opened to change or delete
- * it, and Add Airplane; one airplane's form in the same sheet, its title
- * saying which, closing back to the list.
+ * Your Airplanes, a page on the airplane card's stack (CardPage): the
+ * pilot's airplanes, each opened to change or delete it, and Add
+ * Airplane; one airplane's form in the same page, its title saying which,
+ * ← and Back closing it back to the list.
  */
 @Composable
-fun YourAirplanesSheet(onClose: () -> Unit, model: AircraftModel = viewModel()) {
+fun YourAirplanesPage(exit: CardExit, model: AircraftModel = viewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     val editing = state.editing
     val title = when {
@@ -58,9 +66,23 @@ fun YourAirplanesSheet(onClose: () -> Unit, model: AircraftModel = viewModel()) 
         editing.id == null -> stringResource(R.string.add_airplane)
         else -> stringResource(R.string.edit_airplane)
     }
-    WingtipSheet(title = title, onClose = { if (editing != null) model.close() else onClose() }, full = true) {
+    // The form is a level of its own: Back comes back to the list first,
+    // asking before it throws away a change not saved.
+    val started = remember(editing?.id, editing != null) { editing?.form }
+    val changed = editing != null && editing.form != started
+    var asking by remember { mutableStateOf(false) }
+    val leaveForm = { if (changed) asking = true else model.close() }
+    BackHandler(enabled = editing != null) { leaveForm() }
+    val back = CardExit(back = { if (editing != null) leaveForm() else exit.back() }, close = { if (changed) asking = true else exit.close() })
+    if (asking) {
+        DiscardDialog(onDiscard = {
+            asking = false
+            model.close()
+        }, onKeep = { asking = false })
+    }
+    CardPage(title = title, exit = back) { padding ->
         Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
+            Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
         ) {
             if (editing != null) AirplaneEditor(editing, state.problem, model) else AirplaneList(state, model)

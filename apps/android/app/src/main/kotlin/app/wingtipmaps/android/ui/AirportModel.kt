@@ -156,12 +156,6 @@ class AirportModel : ViewModel() {
         }
     }
 
-    /** The open field's card asked again: its METAR and what SWIM says
-     *  now, from a pull on the card. */
-    fun refresh() {
-        _state.value.place?.ident?.let(::open)
-    }
-
     /** The card closed: what its close and Back at the pill do. */
     fun close() = _state.update { it.copy(place = null, query = "", loading = false) }
 

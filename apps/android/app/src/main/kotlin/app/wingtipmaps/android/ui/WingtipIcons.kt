@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.ui
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.filled.ShowChart
@@ -41,6 +42,10 @@ import androidx.compose.ui.unit.dp
  */
 object WingtipIcons {
     val close = Icons.Filled.Close
+
+    /** A card's ← in the bar that takes the search's place: back one level. */
+    val back = Icons.AutoMirrored.Filled.ArrowBack
+
     val share = Icons.Filled.Share
     val more = Icons.Filled.MoreVert
 

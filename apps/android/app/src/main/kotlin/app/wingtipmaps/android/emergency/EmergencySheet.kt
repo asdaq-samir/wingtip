@@ -3,20 +3,25 @@ package app.wingtipmaps.android.emergency
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,6 +31,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -37,22 +44,25 @@ import app.wingtipmaps.android.ui.BriefModel
 import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
+import app.wingtipmaps.android.ui.WingtipIcons
 import app.wingtipmaps.android.ui.largeType
-import app.wingtipmaps.android.ui.sheet.FlexibleSheet
 
 /**
- * The emergency assistant, one sheet over the map (the web's
- * EmergencySheet): the best fields within a glide, the airplane's own
+ * The emergency assistant, the app's one full-screen page (the card rule,
+ * the owner, 2026-11-10; the web's EmergencySheet): the best fields within a glide, the airplane's own
  * checklist opened at the emergency, and the transponder, the radio, the
  * MAYDAY and the phones. Opened from flying mode's Emergency, the pilot's
  * own words and the emergency checklists, never a map button (decision
  * 0010).
  *
- * Android's idiom: a page at the whole height under a medium flexible top
- * bar titled Emergency with Close (FlexibleSheet), on Material's standard
- * motion scheme rather than the app's expressive one, so nothing on it
- * bounces or delays what the pilot reads.
+ * Android's idiom: Material's full-screen dialog, the whole window under
+ * a top app bar titled Emergency with its ✕ at the bar's start, where a
+ * full-screen dialog keeps its close; Back closes it too. On Material's
+ * standard motion scheme rather than the app's expressive one, so nothing
+ * on it bounces or delays what the pilot reads. It covers the map whole,
+ * so there is nothing behind it to dim.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EmergencySheet(
     state: EmergencyModel.State,
@@ -63,16 +73,26 @@ fun EmergencySheet(
     airplanePicker: @Composable () -> Unit = {},
 ) {
     MaterialTheme(motionScheme = MotionScheme.standard()) {
-        FlexibleSheet(title = stringResource(R.string.emergency), onClose = onClose) { padding ->
-            Column(
-                Modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
-                verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
-            ) {
-                FieldsList(state, model::pick, onShowPosition, askGlide)
-                // No airplane: general guidance and the picker, never an
-                // airplane's checklist (NoAirplaneGuidance).
-                if (state.guidance.isNotEmpty()) NoAirplaneGuidance(state, airplanePicker) else EmergencyChecklist(state, model::pickSection, model::tick)
-                ActionsList(state, model::souls, model::fuel)
+        Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                topBar = {
+                    TopAppBar(
+                        title = { Text(stringResource(R.string.emergency)) },
+                        navigationIcon = { IconButton(onClick = onClose) { Icon(WingtipIcons.close, contentDescription = stringResource(R.string.close)) } },
+                    )
+                },
+            ) { padding ->
+                Column(
+                    Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
+                    verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
+                ) {
+                    FieldsList(state, model::pick, onShowPosition, askGlide)
+                    // No airplane: general guidance and the picker, never an
+                    // airplane's checklist (NoAirplaneGuidance).
+                    if (state.guidance.isNotEmpty()) NoAirplaneGuidance(state, airplanePicker) else EmergencyChecklist(state, model::pickSection, model::tick)
+                    ActionsList(state, model::souls, model::fuel)
+                }
             }
         }
     }

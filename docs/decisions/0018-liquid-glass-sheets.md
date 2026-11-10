@@ -22,3 +22,11 @@ The owner: these rules were made for hand-built sheets. Where an app now uses th
 ## Source
 
 The owner, 2026-10-15 ("The pill should not go straight to full"), 2026-10-20, 2026-10-22 and 2026-10-23.
+
+## Amended 2026-11-10
+
+The owner approved the scrolling rule. On Android every card opens at
+half -- the standard sheet's peek is half the window while a card is
+open -- and grows to the whole height when pulled up; with no card open
+the peek is the search again. Back with a card open closes the card and
+never just lowers the sheet.

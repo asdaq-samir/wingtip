@@ -27,6 +27,12 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import app.wingtipmaps.android.design.generated.WingtipSpace
 
@@ -51,6 +57,23 @@ class MapSheetState internal constructor(internal val sheet: SheetState) {
     internal suspend fun lower() = sheet.partialExpand()
 }
 
+/** The map sheet's content, for the card rule's UI tests. */
+const val MAP_SHEET_TAG = "map-sheet"
+
+/** Where the map's sheet rests (SheetValue's name: PartiallyExpanded,
+ *  Expanded), a semantics property only tests read, never TalkBack. */
+val SheetDetent = SemanticsPropertyKey<String>("SheetDetent")
+var SemanticsPropertyReceiver.sheetDetent by SheetDetent
+
+/** Half the window: where a card opens on the sheet before it is pulled
+ *  up to the whole height (the scrolling rule, 2026-11-10: every card
+ *  opens at half and grows), the sheet's peek while a card is open. */
+@Composable
+fun halfWindow(): Dp {
+    val window = LocalWindowInfo.current.containerSize
+    return with(LocalDensity.current) { (window.height / 2).toDp() }
+}
+
 // BottomSheetScaffold and its SheetState are still ExperimentalMaterial3Api
 // in material3 1.5.0-rc01; MapSheetState keeps the opt-in to this file.
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,10 +95,13 @@ fun rememberMapSheetState(): MapSheetState {
  * and rises over the keyboard, so a field in the sheet is never typed
  * into under it. The standard sheet has no back handling of its own, so
  * Back, with the system's predictive gesture, brings an expanded sheet
- * down to its peek before the screen's own handlers (a card popped) and
- * then the app's exit.
+ * down to its peek, then the app's exit -- but only with no card open
+ * (`lowerOnBack`): while a card covers the search, Back closes the card
+ * and never just lowers the sheet (the card rule, 2026-11-10).
  *
  * @param peek how much shows at rest, the navigation bar included.
+ * @param lowerOnBack whether Back lowers the expanded sheet: not while a
+ *   card is open.
  * @param body what lies under the sheet, given what the sheet covers at
  *   its peek, where the map centres what it shows.
  * @param sheet the sheet's content, under the stock handle; a child with
@@ -89,11 +115,12 @@ fun MapSheet(
     state: MapSheetState,
     peek: Dp,
     modifier: Modifier = Modifier,
+    lowerOnBack: Boolean = true,
     snackbars: SnackbarHostState = remember { SnackbarHostState() },
     body: @Composable (covered: Dp) -> Unit,
     sheet: @Composable ColumnScope.() -> Unit,
 ) {
-    PredictiveBackHandler(enabled = state.expanded) { progress ->
+    PredictiveBackHandler(enabled = state.expanded && lowerOnBack) { progress ->
         progress.collect {}
         state.lower()
     }
@@ -111,7 +138,10 @@ fun MapSheet(
                 .windowInsetsPadding(WindowInsets.ime.exclude(WindowInsets.navigationBars).only(WindowInsetsSides.Bottom)),
             sheetContent = {
                 // Clear of a cutout or a navigation bar at the side in landscape.
-                Column(Modifier.weight(1f).fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))) {
+                Column(
+                    Modifier.weight(1f).fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                        .testTag(MAP_SHEET_TAG).semantics { sheetDetent = state.sheet.currentValue.name },
+                ) {
                     sheet()
                 }
             },

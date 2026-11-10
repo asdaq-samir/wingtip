@@ -1158,3 +1158,78 @@ Left hand-built, with no stock equivalent:
   Android 8 to 11 show the window's background, as before. Adding
   `core-splashscreen` for those versions is left for a decision.
 
+
+## 7. One card rule and one scrolling rule (2026-11-10)
+
+The owner approved both rules the same day ("Ok let's try that
+recommendation", "Let's try the scrolling recommendations"). Where §3 or
+§5 says a card or a page is a sheet over the map, read this instead.
+
+**Cards cover the search, Google Maps' way.** A thing -- a field, an
+airplane, a VOR, a fix, an airspace, traffic, What's Here, a leg of the
+route, the Map Settings -- opens as one card on the docked sheet's own
+stack (`ui/SheetNav`, Navigation Compose's NavHost in
+`ui/SheetPages`; on a wide window the list-detail scaffold's detail
+pane). While it is open its bar takes the search's place: ← and its name,
+its actions, ✕ at the end (`ui/sheet/CardPage`), and the card fills the
+sheet. ← and system Back go back one level; ✕ closes every card, back to
+the search and the plan under it. The same card opens from the search,
+a map tap, a list, the plan and a link (`ui/SheetCards`, one `when` over
+`ui/SheetPage`). Pages -- the Brief, Nearest, Ask, Settings, the Logbook
+and its Coach, Downloads, the passenger briefing, About, the clearance,
+Your Airplanes, a checklist -- are the same kind of card. What opens
+inside a card goes on its stack (`SheetNav.push`): Settings → Map
+Settings, the Logbook → Coach, the airplane → a checklist or Your
+Airplanes, Nearest → a field. The strip layout shows the same cards in
+its sheet in place of the strip.
+
+- **Back:** closes the top card at once, never just lowers the sheet
+  while a card is open (`MapSheet`'s `lowerOnBack`); with none open it
+  lowers the sheet, then leaves. The assistant's answer, the dry run and
+  the ATC card each close on Back too.
+- **One leg card:** `route/RouteLegCard`, from the map's line, the nav
+  log's row and the strip's checkpoint, with Direct, Remove and every nav
+  log figure. `LegSheet`, `RouteLegSheet` and `RouteLegHost` are gone.
+- **One airplane card:** `airplane/AirplaneCard` for every airplane;
+  with no N-number nor type it is the airplane flown now, its picker,
+  registration and rows above its figures (`ui/FlownAirplaneRows`). The
+  plan's Airplane, a link, Ready to Fly's Pick an Airplane and the
+  logbook's N-numbers open it. The old Airplane page and its sheets are
+  gone.
+- **One modal family:** `ui/sheet/WingtipSheet`, only for tasks (Add
+  Flight, a flight logged, a photo read, the welcome, a shared flight's
+  preview, the Downloads map). `FlexibleSheet`, `CardSheet`, `Over`,
+  `OverRequests` and `OverSheet` are gone.
+- **Questions** are the stock `AlertDialog`: Ready to Fly's prompt, a
+  source report (`ui/SourceDialog`), the offer to keep airplanes, a
+  delete, a discard.
+- **Emergency** is the one full-screen page: Material's full-screen
+  dialog, ✕ at the start of its app bar, where a full-screen dialog keeps
+  its close.
+- **One search field:** Add a Stop and a point's Add a Stop After open
+  the one search for the stop (`SearchControl.stopAfter`); the point
+  menu's own field is gone.
+- **By name:** "dry run" flies the dry run (with a route), "profile"
+  opens the nav log's altitudes (Android draws no side view), "map" and
+  "layers" open Map Settings, "clearance" and "radio" the clearance.
+
+**Scrolling.** Every card and page has Material 3 Expressive's large
+flexible top app bar with `exitUntilCollapsed`, the plan included (its
+route's name, ✕, no ←), so the title, ← and ✕ never scroll away. The
+airport card's tabs pin under it (a `stickyHeader`). Every card opens
+at half -- the sheet's peek is half the window while a card is open
+(`halfWindow`) -- and grows to full when pulled up, the sheet's nested
+scroll taking the drag before the card's list. No pull to refresh in a
+sheet: the airport card, the map's cards and the Brief fetch by
+themselves. The checklists tab scrolls; each page of Settings is its own
+back stack entry, with its own scroll and title state; the welcome
+starts each page at its top. A form with an edit not saved asks before a
+swipe or Back throws it away (`DiscardDialog`): Add Flight and Your
+Airplanes' form.
+
+Tests: `ui/CardRuleTest` (instrumented, table-driven: every card from
+each way in opens the same test id with ← and ✕ in its bar and the
+search gone, at half; ✕ and one Back close it; scrolled to its end the
+bar stays; a page opened inside a page comes back to it; Emergency is
+full screen) and `ui/SheetNavTest` on CI's emulator; `SheetPageTest`,
+`OpenScreenTest`, `CardRequestsTest` and `SearchControlTest` on the JVM.

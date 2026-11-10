@@ -25,12 +25,15 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
 /**
- * Where the docked sheet's pages are: Navigation Compose's back stack
- * (the NavHost, SheetPagesHost) on a phone, and on a tablet or an
- * unfolded phone a card in the list-detail scaffold's navigator
- * (WidePanes), so Back and its predictive gesture are the stock ones. The
- * stack is Home, perhaps the plan, perhaps one card on top: a card shown
- * takes the place of another, the plan shown drops a card.
+ * Where the docked sheet's cards and pages are (the card rule, the owner,
+ * 2026-11-10): Navigation Compose's back stack (the NavHost,
+ * SheetPagesHost) on a phone and in the strip layout, and on a tablet or
+ * an unfolded phone the list-detail scaffold's navigator (WidePanes), the
+ * cards in its detail pane, so Back and its predictive gesture are the
+ * stock ones. The stack is Home, perhaps the plan, then the cards and
+ * pages over the search: one shown from the map, the search or a link
+ * takes the place of those there ([show]); one opened from inside a card
+ * goes on top of it ([push]), and Back steps down to it.
  */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Stable
@@ -41,28 +44,28 @@ class SheetNav internal constructor(
 ) {
     internal var wide by mutableStateOf(false)
 
-    // The sheet raised from its peek as a page is shown.
-    internal var onShown: () -> Unit = {}
+    // The sheet brought to where the page shown opens: a card at half,
+    // the plan raised from the peek.
+    internal var onShown: (SheetPage) -> Unit = {}
 
     /** The page on top of the NavHost's stack. */
     var top: SheetPage by mutableStateOf(SheetPage.Home)
         internal set
 
-    /** Whether the plan is on the stack, on top or under a card. */
+    /** Whether the plan is on the stack, on top or under the cards. */
     var planShown by mutableStateOf(false)
         internal set
 
     /** The card in the wide layout's detail pane, or none. */
     val card: SheetPage? get() = panes.currentDestination?.contentKey?.let(SheetPage::of)
 
-    /** Whether a field's card is up, in either layout. */
-    val airportShown: Boolean get() = (if (wide) card else top) is SheetPage.Airport
+    /** What the pilot sees on top, in either layout. */
+    val shown: SheetPage get() = (if (wide) card else null) ?: top
 
-    // Read from the stack itself, for a show that follows another at once.
-    private val planOnStack: Boolean
-        get() = listOfNotNull(nav.currentBackStackEntry, nav.previousBackStackEntry).any { it.page() == SheetPage.Plan }
+    /** Whether a card or a page covers the search. */
+    val covered: Boolean get() = shown.covers
 
-    // A NavHost has set its graph (none in the strip layout).
+    // A NavHost has set its graph.
     private val hosted: Boolean get() = nav.currentBackStackEntry != null
 
     /** Whether a NavHost has its graph, waiting the few frames the sheet's
@@ -75,13 +78,23 @@ class SheetNav internal constructor(
         return hosted
     }
 
-    /** `page` shown, once a NavHost is there to show it (a link opened
-     *  as the app starts comes before the sheet's content is composed). */
-    fun show(page: SheetPage) {
+    /** `page` shown from the map, the search or a link: the cards over
+     *  the search closed first, so it is the one card there. */
+    fun show(page: SheetPage) = go(page) { showNow(page) }
+
+    /** `page` opened from inside a card or a page, on top of it, so Back
+     *  comes back to it. */
+    fun push(page: SheetPage) = go(page) { pushNow(page) }
+
+    /** A page asked for by its name: on top of the page it was asked from,
+     *  else shown as the one card. */
+    fun open(page: SheetPage) = if (covered && page.covers) push(page) else show(page)
+
+    private fun go(page: SheetPage, step: suspend () -> Unit) {
         scope.launch {
             if (!awaitHost()) return@launch
-            showNow(page)
-            onShown()
+            step()
+            onShown(page)
         }
     }
 
@@ -93,34 +106,63 @@ class SheetNav internal constructor(
             }
             page == SheetPage.Plan -> {
                 dropCards()
-                if (planOnStack) nav.popBackStack<SheetPage.Plan>(inclusive = false) else nav.navigate(SheetPage.Plan) { popUpTo<SheetPage.Home>() }
+                if (planOnStack()) nav.popBackStack<SheetPage.Plan>(inclusive = false) else nav.navigate(SheetPage.Plan) { popUpTo<SheetPage.Home>() }
             }
             wide -> {
                 dropCards()
                 panes.navigateTo(ListDetailPaneScaffoldRole.Detail, page.key)
             }
-            planOnStack -> nav.navigate(page) { popUpTo<SheetPage.Plan>() }
-            else -> nav.navigate(page) { popUpTo<SheetPage.Home>() }
+            planOnStack() -> nav.navigate(CardRoute(page.key)) { popUpTo<SheetPage.Plan>() }
+            else -> nav.navigate(CardRoute(page.key)) { popUpTo<SheetPage.Home>() }
         }
     }
 
-    /** `page` closed, back one level from it. */
-    fun close(page: SheetPage) {
+    private suspend fun pushNow(page: SheetPage) {
         when {
-            page.isCard && wide -> scope.launch { dropCards() }
-            page == SheetPage.Plan -> nav.popBackStack<SheetPage.Plan>(inclusive = true)
+            !page.covers -> showNow(page)
+            wide -> panes.navigateTo(ListDetailPaneScaffoldRole.Detail, page.key)
+            else -> nav.navigate(CardRoute(page.key))
+        }
+    }
+
+    /** Back one level: the card on top closed, or the plan. */
+    fun back() {
+        when {
+            wide && card != null -> scope.launch { panes.navigateBack(BackNavigationBehavior.PopUntilContentChange) }
             else -> nav.popBackStack()
         }
     }
 
-    /** A card moved to where the layout now shows it, as the window
+    /** Every card and page closed, back to the search and what is under it. */
+    fun closeAll() {
+        if (wide) {
+            scope.launch { dropCards() }
+            return
+        }
+        if (!top.covers) return
+        if (!nav.popBackStack<SheetPage.Plan>(inclusive = false)) nav.popBackStack<SheetPage.Home>(inclusive = false)
+    }
+
+    /** The plan closed, back to what the search shows with nothing typed. */
+    fun closePlan() {
+        nav.popBackStack<SheetPage.Plan>(inclusive = true)
+    }
+
+    // Read from the stack itself, for a show that follows another at once.
+    internal fun planOnStack(): Boolean = runCatching { nav.getBackStackEntry<SheetPage.Plan>() }.isSuccess
+
+    /** The cards moved to where the layout now shows them, as the window
      *  crosses Material's medium width (a phone unfolded or folded). */
     internal suspend fun relayout() {
         if (!awaitHost()) return
-        if (wide && top.isCard) {
-            val shown = top
-            nav.popBackStack()
-            panes.navigateTo(ListDetailPaneScaffoldRole.Detail, shown.key)
+        if (wide && top.covers) {
+            val cards = ArrayDeque<SheetPage>()
+            while (true) {
+                val page = nav.currentBackStackEntry?.page()?.takeIf { it.covers } ?: break
+                cards.addFirst(page)
+                nav.popBackStack()
+            }
+            cards.forEach { panes.navigateTo(ListDetailPaneScaffoldRole.Detail, it.key) }
         } else if (!wide) {
             card?.let { shown ->
                 dropCards()
@@ -137,13 +179,12 @@ class SheetNav internal constructor(
 
 /**
  * The sheet's pages for the root: an airplane's card asked for anywhere
- * (ProfileOpen) shown as a page, and the map's ring round a field let go
- * once its card is closed. `active` false in the strip layout, which has
- * no pages and shows its cards over the map.
+ * (ProfileOpen) opened as a card, and the map's ring round a field let go
+ * once its card is closed.
  */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun rememberSheetNav(wide: Boolean, active: Boolean, airports: AirportModel, onShown: () -> Unit): SheetNav {
+fun rememberSheetNav(wide: Boolean, airports: AirportModel, onShown: (SheetPage) -> Unit): SheetNav {
     val nav = rememberNavController()
     val panes = rememberListDetailPaneScaffoldNavigator<String>()
     val scope = rememberCoroutineScope()
@@ -155,16 +196,15 @@ fun rememberSheetNav(wide: Boolean, active: Boolean, airports: AirportModel, onS
     LaunchedEffect(sheet) {
         nav.currentBackStackEntryFlow.collect { entry ->
             sheet.top = entry.page()
-            sheet.planShown = sheet.top == SheetPage.Plan || nav.previousBackStackEntry?.page() == SheetPage.Plan
+            sheet.planShown = sheet.planOnStack()
         }
     }
     LaunchedEffect(sheet, wide) { sheet.relayout() }
-    LaunchedEffect(sheet) { snapshotFlow { sheet.airportShown }.drop(1).collect { if (!it) airports.close() } }
+    LaunchedEffect(sheet) { snapshotFlow { sheet.shown is SheetPage.Airport }.drop(1).collect { if (!it) airports.close() } }
     val profile by ProfileOpen.at.collectAsStateWithLifecycle()
-    LaunchedEffect(profile, active) {
+    LaunchedEffect(profile) {
         val at = profile ?: return@LaunchedEffect
-        if (!active) return@LaunchedEffect
-        sheet.show(SheetPage.of(at))
+        sheet.open(SheetPage.of(at))
         ProfileOpen.close()
     }
     return sheet

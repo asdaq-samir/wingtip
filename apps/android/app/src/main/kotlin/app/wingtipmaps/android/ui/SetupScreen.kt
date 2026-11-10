@@ -33,15 +33,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Config
-import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.account.DeleteAccountButton
 import app.wingtipmaps.android.account.ExportRow
 import app.wingtipmaps.android.ai.OnPhoneAiRow
-import app.wingtipmaps.android.airplane.GlideRingRow
 import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.atc.AtcSettingRow
 import app.wingtipmaps.android.atc.RadioListener
@@ -51,12 +48,7 @@ import app.wingtipmaps.android.design.ChoiceGroup
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.flight.SpokenAlerts
-import app.wingtipmaps.android.flight.Traffic
-import app.wingtipmaps.android.map.MapLayersStore
-import app.wingtipmaps.android.map.WeatherLoopRows
 import app.wingtipmaps.android.pilot.MinimumsRows
-import app.wingtipmaps.android.receiver.ReceiverSettingRows
 import app.wingtipmaps.android.strip.StripData
 import app.wingtipmaps.android.welcome.WelcomeMemory
 
@@ -67,17 +59,14 @@ import app.wingtipmaps.android.welcome.WelcomeMemory
  * theme), the account -- signed in, the pilot's address and Sign Out;
  * signed out, an address and the emailed link, which opens the app and
  * signs it in (Session.open) -- what falls due, the pilot's minimums,
- * what the map draws and the copilots. The server the build talks to is
+ * the Map Settings card and the copilots. The server the build talks to is
  * shown, for a tester with more than one. Each section under one
  * SectionTitle. The Logbook and Coach (signed in), Downloads, the
  * passenger briefing and About are rows that open their pages
  * (SettingsPages), each in one place.
  */
 @Composable
-fun SetupScreen(session: Session) {
-    // The plan the root holds (the activity's one Plan), for the glide
-    // ring's airplane.
-    val plan: Plan = viewModel()
+fun SetupScreen(session: Session, onMapSettings: () -> Unit) {
     val pilot by session.pilot.collectAsStateWithLifecycle()
     val loaded by session.loaded.collectAsStateWithLifecycle()
     val problem by session.problem.collectAsStateWithLifecycle()
@@ -138,21 +127,10 @@ fun SetupScreen(session: Session) {
         SectionTitle(stringResource(R.string.personal_minimums))
         MinimumsRows()
 
-        SectionTitle(stringResource(R.string.map))
-        // The radar and satellite loop and its speed (map/WeatherLoop).
-        WeatherLoopRows()
-        // What the map draws and the traffic over it, one group.
-        MapLayerRows()
-        // Each reporting field's weather: halo, dot or station model.
-        AirportWeatherRows()
-        // Off unless kept on; on by itself in an emergency (GlideRing).
-        GlideRingRow(plan)
-        // A Stratux, Sentry or the like on the cockpit's Wi-Fi: its traffic
-        // and FIS-B weather with no internet.
-        ReceiverSettingRows()
-        val spoken = remember(context) { SpokenAlerts.of(context) }
-        val spokenOn by spoken.on.collectAsStateWithLifecycle()
-        SwitchSettingRow(stringResource(R.string.speak_alerts), spokenOn, index = 0, count = 1, onChange = spoken::setOn)
+        // What the map draws and the traffic over it: the Map Settings
+        // card, on this page's stack (MapSettingsRows), as "map" or
+        // "layers" typed in the search opens it.
+        SettingsGroup { ActionSettingRow(stringResource(R.string.map_settings), index = 0, count = 1, onClick = onMapSettings) }
         // The in-flight copilot: off, shown, or shown and said (a setting
         // of three is a segmented control, decision 0017).
         SectionTitle(stringResource(R.string.copilot))
@@ -193,32 +171,6 @@ fun SetupScreen(session: Session) {
 private fun <T> Segmented(choices: List<Pair<T, String>>, selected: T?, onPick: (T) -> Unit) {
     ChoiceGroup(choices, selected, onPick = onPick)
 }
-
-/**
- * What the map draws over the chart (MapLayersStore, kept across
- * launches), the web's map settings' "On the Map" rows in its words and
- * order: Airspace, VORs and Fixes, Terminal Area Charts, Private Fields,
- * Military Fields.
- */
-@Composable
-private fun MapLayerRows() {
-    val context = LocalContext.current
-    val store = remember(context) { MapLayersStore.of(context) }
-    val layers by store.layers.collectAsStateWithLifecycle()
-    val traffic = remember(context) { Traffic.of(context) }
-    val trafficOn by traffic.on.collectAsStateWithLifecycle()
-    SettingsGroup {
-        SwitchSettingRow(stringResource(R.string.layer_airspace), layers.airspace, 0, MAP_ROWS) { store.set(MapLayersStore.Switch.AIRSPACE, it) }
-        SwitchSettingRow(stringResource(R.string.layer_navaids), layers.navaids, 1, MAP_ROWS) { store.set(MapLayersStore.Switch.NAVAIDS, it) }
-        SwitchSettingRow(stringResource(R.string.layer_tac), layers.tac, 2, MAP_ROWS) { store.set(MapLayersStore.Switch.TAC, it) }
-        SwitchSettingRow(stringResource(R.string.layer_private), layers.privateFields, 3, MAP_ROWS) { store.set(MapLayersStore.Switch.PRIVATE_FIELDS, it) }
-        SwitchSettingRow(stringResource(R.string.layer_military), layers.military, 4, MAP_ROWS) { store.set(MapLayersStore.Switch.MILITARY, it) }
-        SwitchSettingRow(stringResource(R.string.traffic), trafficOn, 5, MAP_ROWS) { traffic.setOn(it) }
-    }
-}
-
-/** The map's group: its five layers and the traffic. */
-private const val MAP_ROWS = 6
 
 /**
  * Who is signed in, as Android's settings head their account: the

@@ -2,25 +2,20 @@ package app.wingtipmaps.android.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -28,25 +23,19 @@ import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.strip.StripCard
-import app.wingtipmaps.android.strip.StripData
 
 /**
- * The plan's head, as the owner's canvas draws it (2026-11-09): the route
- * with its close (back to what the search shows with nothing typed), the
+ * The plan's head, as the owner's canvas draws it (2026-11-09), under the
+ * plan's bar with the route's name and its close (PlanPage): the
  * figures the strip has (FiguresStrip: To, Dist, ETE, Fuel, the engine's
  * fuel), and the altitude and the airplane under them. Every figure the
  * planner's or the engine's, written by Format; with no airplane picked
  * the line says so and is the way to pick one (decision 0011).
  */
 @Composable
-fun PlanHead(state: Plan.State, tail: String?, onClose: () -> Unit) {
+fun PlanHead(state: Plan.State, tail: String?) {
     StripCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(vertical = WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
-            Row(Modifier.fillMaxWidth().padding(start = WingtipSpace.Lg), verticalAlignment = Alignment.CenterVertically) {
-                val title = if (state.dep.isEmpty() && state.dest.isEmpty()) stringResource(R.string.plan) else StripData.routeName(state.dep, state.dest, state.stops)
-                Text(title, style = MaterialTheme.typography.headlineSmallEmphasized, modifier = Modifier.weight(1f).semantics { heading() })
-                IconButton(onClick = onClose) { Icon(WingtipIcons.close, contentDescription = stringResource(R.string.close)) }
-            }
             if (state.routed) FiguresStrip(state)
             val altitude = (state.altitudeFt ?: state.legs.firstOrNull()?.altitudeFt)?.let(Format::cruiseAltitude)
             val airplane = listOfNotNull(tail, state.aircraft.uppercase().ifEmpty { null }).joinToString(" · ").ifEmpty { null }

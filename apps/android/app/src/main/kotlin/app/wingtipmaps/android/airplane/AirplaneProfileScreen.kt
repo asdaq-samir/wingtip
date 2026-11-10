@@ -2,6 +2,7 @@ package app.wingtipmaps.android.airplane
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,10 +44,11 @@ import app.wingtipmaps.android.ui.SectionTitle
  * tap to edit in place, a figure of the pilot's over a book figure with
  * Reset to Book Figure under it, then its endurance (EnduranceSection).
  * Opened at `focus` from an ask's Edit.
- * The Figures section of the airplane's card (AirplaneCard).
+ * The Figures section of the airplane's card (AirplaneCard), `head` over
+ * the figures in the same scroll (the flown airplane's own rows).
  */
 @Composable
-fun AirplaneProfileScreen(airplane: AirplaneNow, focus: String?, model: AirplaneProfileModel = viewModel()) {
+fun AirplaneProfileScreen(airplane: AirplaneNow, focus: String?, model: AirplaneProfileModel = viewModel(), head: @Composable ColumnScope.() -> Unit = {}) {
     val context = LocalContext.current
     val own = remember(context) { OwnAirplanes.of(context) }
     val signedIn by own.signedIn.collectAsStateWithLifecycle()
@@ -61,6 +63,7 @@ fun AirplaneProfileScreen(airplane: AirplaneNow, focus: String?, model: Airplane
         Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
         verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
     ) {
+        head()
         if (airplane.name == null) {
             Text(stringResource(R.string.no_airplane_line), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             return@Column

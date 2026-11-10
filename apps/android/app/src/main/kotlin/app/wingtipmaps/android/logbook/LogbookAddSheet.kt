@@ -32,7 +32,9 @@ import java.time.LocalDate
 @Composable
 fun LogbookAddSheet(state: LogbookModel.State, model: LogbookModel) {
     var form by rememberSaveable(stateSaver = FormSaver) { mutableStateOf(LogbookForm.new(LocalDate.now())) }
-    WingtipSheet(title = stringResource(R.string.logbook_add_flight), onClose = model::closeAdd, full = true) {
+    // Anything typed past today's date is an edit to ask about before a swipe throws it away.
+    val edited = form != LogbookForm.new(LocalDate.now())
+    WingtipSheet(title = stringResource(R.string.logbook_add_flight), onClose = model::closeAdd, full = true, edited = edited) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding().padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),

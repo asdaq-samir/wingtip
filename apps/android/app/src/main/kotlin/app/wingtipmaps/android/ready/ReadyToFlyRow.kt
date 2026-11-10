@@ -97,7 +97,6 @@ fun ReadyToFlyRow(plan: Plan, onSetRoute: (() -> Unit)?, model: ReadyToFlyModel 
             )
         }
     }
-    fixer.Sheets()
 }
 
 /** The engine's one line, with its finding's glyph and colour. */

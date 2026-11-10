@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.strip
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,7 +33,8 @@ import app.wingtipmaps.android.ui.WingtipIcons
  * The assistant's last answer, a card over the strip: "Ask" at its head
  * with Stop while it is answering and the close that forgets the
  * conversation; the answer's words as they stream, with the chips of the
- * reports they rest on, and why where the stream broke.
+ * reports they rest on, and why where the stream broke. Back closes it,
+ * as its close does, before anything under it.
  */
 @Composable
 internal fun AnswerCard(
@@ -44,6 +46,7 @@ internal fun AnswerCard(
     onSource: (AssistantSource) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    BackHandler(onBack = onClose)
     StripCard(modifier = modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = WingtipSpace.Lg, end = WingtipSpace.Xs, top = WingtipSpace.Xs, bottom = WingtipSpace.Md), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

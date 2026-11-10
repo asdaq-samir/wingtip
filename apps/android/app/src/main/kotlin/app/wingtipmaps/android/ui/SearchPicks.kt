@@ -14,13 +14,14 @@ import app.wingtipmaps.android.search.SearchPick
  * as Stop are; a fix or navaid goes into the route, or is flown direct to
  * with no route; an airplane opens its profile, where Fly This Airplane
  * is; an action runs. Opened for Add a Stop (`addingStop`), a field or a
- * fix picked is the route's next stop, before the destination, and the
- * plan shows it. Route edits are Plan's, with their Undo.
+ * fix picked is the route's next stop, before the destination (or after
+ * the point it was opened from, `stopAfter`), and the plan shows it. Route edits are Plan's, with their Undo.
  */
 class SearchPicks(
     private val plan: Plan,
     private val fix: OwnShip.Fix?,
     private val addingStop: Boolean,
+    private val stopAfter: String?,
     private val onAirport: (String) -> Unit,
     private val onPlan: () -> Unit,
     private val ask: (String) -> Unit,
@@ -50,14 +51,15 @@ class SearchPicks(
         onPlan()
     }
 
-    /** The route's last stop: just before its destination. */
+    /** After the point asked, else the route's last stop: just before its
+     *  destination. */
     private fun addStop(ident: String) {
         val s = plan.state.value
         if (!s.routed) {
             say(noRoute(ident))
             return
         }
-        plan.addStopAfter(s.stops.lastOrNull() ?: s.dep, ident)
+        plan.addStopAfter(stopAfter ?: s.stops.lastOrNull() ?: s.dep, ident)
         onPlan()
     }
 }
