@@ -54,9 +54,8 @@ struct DownloadsMapView: View {
             ProblemLine(model.problem)
         }
         .padding()
-        // Over the chart, not a scroller: the sheet's glass behind it,
-        // solid with Reduce Transparency on (Design/Glass.swift).
-        .glassBackground()
+        // Over the chart, not a scroller: the system's material behind it.
+        .background(.regularMaterial)
         .confirmationDialog(picked.map { "Download \($0.name)?" } ?? "", isPresented: $asking, titleVisibility: .visible) {
             if let picked {
                 Button("Download \(DownloadsView.size(model.size(of: picked)))") { Task { await model.download(picked.id) } }

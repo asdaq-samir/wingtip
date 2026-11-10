@@ -30,7 +30,6 @@ struct NavLogPage: View {
         }
         // A long list: its rows soften under the bar, and
         // the bar folds away while it scrolls down (iOS 27).
-        .glassScrollEdges()
         .navigationBarMinimizesOnScroll()
     }
 

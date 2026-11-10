@@ -8,90 +8,26 @@ import SwiftUI
 /// on iOS 26. design/tokens.json's material says the same: iOS uses its
 /// system materials.
 extension View {
-    /// A floating control or card over the map: glass in `shape`; on iOS
-    /// 18, `material` behind it. `interactive` for a button, whose glass
-    /// answers the touch as the system's does. With Reduce Transparency on,
-    /// the sheet's solid colour instead (FloatingGlass).
+    /// A floating control or card over the map: the system's glass in
+    /// `shape` on iOS 26; on iOS 18, `material` behind it. Reduce
+    /// Transparency, Increase Contrast and the rest are the system's to
+    /// apply to both, as they are to its own (the owner, 2026-11-10:
+    /// stock as is).
+    @ViewBuilder
     func floatingGlass<S: Shape>(in shape: S, material: Material = .regularMaterial, interactive: Bool = false) -> some View {
-        modifier(FloatingGlass(shape: shape, material: material, interactive: interactive))
+        if #available(iOS 26.0, *) {
+            glassEffect(interactive ? .regular.interactive() : .regular, in: shape)
+        } else {
+            background(material, in: shape)
+        }
     }
 
     /// The planner's sheet over the map: on iOS 26 the system's Liquid
     /// Glass sheet and its own corners, untouched; on iOS 18 the regular
-    /// material, so the map shows through as it does on iOS 26. With
-    /// Reduce Transparency on, solid.
-    func sheetGlass() -> some View { modifier(SheetGlass()) }
-
-    /// A bar or a backdrop of `material` that is not glass (the strip's
-    /// foot, the figures pill), solid with Reduce Transparency on.
-    func glassBackground(_ material: Material = .regularMaterial) -> some View {
-        modifier(GlassBackground(material: material))
-    }
-}
-
-/// Reduce Transparency asks for no see-through surfaces: a pilot who has
-/// it on finds words over a busy chart hard to read through glass. The
-/// system frosts its own glass and materials a little under it; these go
-/// to the token's solid sheet colour, so every glass in the app follows
-/// from here.
-private struct FloatingGlass<S: Shape>: ViewModifier {
-    let shape: S
-    let material: Material
-    let interactive: Bool
-    @Environment(\.accessibilityReduceTransparency) private var solid
-
-    func body(content: Content) -> some View {
-        if solid {
-            content.background(WingtipInk.sheet, in: shape)
-        } else if #available(iOS 26.0, *) {
-            content.glassEffect(interactive ? .regular.interactive() : .regular, in: shape)
-        } else {
-            content.background(material, in: shape)
-        }
-    }
-}
-
-private struct SheetGlass: ViewModifier {
-    @Environment(\.accessibilityReduceTransparency) private var solid
-
-    func body(content: Content) -> some View {
-        if solid {
-            content.presentationBackground(WingtipInk.sheet)
-        } else if #available(iOS 26.0, *) {
-            content
-        } else {
-            content.presentationBackground(.regularMaterial)
-        }
-    }
-}
-
-private struct GlassBackground: ViewModifier {
-    let material: Material
-    @Environment(\.accessibilityReduceTransparency) private var solid
-
-    func body(content: Content) -> some View {
-        if solid { content.background(WingtipInk.sheet) } else { content.background(material) }
-    }
-}
-
-extension View {
-    /// Words scrolled under the glass stay readable: on iOS 26 the soft
-    /// scroll-edge effect at every edge of the scrollers inside, which
-    /// fades the content as it passes under the bar, the figures or the
-    /// sheet's head, as the system's own lists do. Nothing on iOS 18,
-    /// whose bars are opaque once scrolled under.
+    /// material, so the map shows through as it does on iOS 26.
     @ViewBuilder
-    func glassScrollEdges() -> some View {
-        if #available(iOS 27.0, *) {
-            // iOS 27's HIG (Scroll views, June 2026): prefer the automatic
-            // style, more opaque under a bar of many controls or a pinned
-            // header, over the soft one, which needs its legibility proved.
-            scrollEdgeEffectStyle(.automatic, for: .all)
-        } else if #available(iOS 26.0, *) {
-            scrollEdgeEffectStyle(.soft, for: .all)
-        } else {
-            self
-        }
+    func sheetGlass() -> some View {
+        if #available(iOS 26.0, *) { self } else { presentationBackground(.regularMaterial) }
     }
 }
 
@@ -144,7 +80,7 @@ extension View {
     /// A bar of actions at the foot of a scrolling page: on iOS 26 the
     /// system's bar (safeAreaBar), with no backdrop of its own, the words
     /// scrolled under it softened by the scroll-edge effect; on iOS 18 a
-    /// material behind it, solid with Reduce Transparency on.
+    /// material behind it.
     func glassFoot<Bar: View>(@ViewBuilder _ bar: () -> Bar) -> some View { modifier(GlassFoot(bar: bar())) }
 }
 
@@ -155,7 +91,7 @@ private struct GlassFoot<Bar: View>: ViewModifier {
         if #available(iOS 26.0, *) {
             content.safeAreaBar(edge: .bottom, spacing: 0) { bar }
         } else {
-            content.safeAreaInset(edge: .bottom, spacing: 0) { bar.glassBackground() }
+            content.safeAreaInset(edge: .bottom, spacing: 0) { bar.background(.regularMaterial) }
         }
     }
 }

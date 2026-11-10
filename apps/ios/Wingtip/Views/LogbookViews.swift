@@ -130,7 +130,6 @@ struct LogbookView: View {
         }
         .navigationTitle("Logbook")
         .navigationBarTitleDisplayMode(.large)
-        .glassScrollEdges()
         .navigationBarMinimizesOnScroll()
         .searchable(text: $query, prompt: "Route, airplane or remarks")
         .toolbar {

@@ -35,13 +35,13 @@ struct PlanSheet: View {
         .cardZoomStack()
         .environment(\.showPlan, { showPlan() })
         // The route's figures at the sheet's foot with a route, on every
-        // page and size (the web's FlightLine); over the map on the iPad.
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+        // page and size (the web's FlightLine), in the system's bar
+        // (safeAreaBar, glassFoot); over the map on the iPad.
+        .glassFoot {
             if plan.routed, !split {
                 FiguresStrip()
                     .padding(.vertical, WingtipSpace.sm)
                     .frame(maxWidth: .infinity)
-                    .glassBackground()
             }
         }
         // An airplane's card, a point pressed on the map, a hold, a flown

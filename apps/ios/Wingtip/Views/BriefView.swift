@@ -179,7 +179,8 @@ struct BriefView: View {
                     }
                 } else if let problem = plan.briefingProblem {
                     ContentUnavailableView("No briefing", systemImage: "exclamationmark.triangle", description: Text(problem))
-                } else {
+                } else if plan.routed {
+                    // Only a route has a briefing to fetch.
                     Section("METARs") {
                         ForEach(0..<4, id: \.self) { _ in
                             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
@@ -197,7 +198,7 @@ struct BriefView: View {
                 if plan.routed {
                     Section {
                         NavigationLink {
-                            PassengerBriefingView(flight: PassengerBriefingModel.flight(idents: plan.idents)).closesBack()
+                            PassengerBriefingView(flight: PassengerBriefingModel.flight(idents: plan.idents)).navigationBarTitleDisplayMode(.inline)
                         } label: {
                             Label("Passenger Briefing", systemImage: "person.2")
                         }
@@ -207,7 +208,6 @@ struct BriefView: View {
         }
         .siriSees(SiriSaw.flight(plan))
         .navigationTitle("Brief")
-        .glassScrollEdges()
         .navigationBarMinimizesOnScroll()
         .navigationBarTitleDisplayMode(.inline)
         // The flight started from the Brief's foot (its Live Activity).
