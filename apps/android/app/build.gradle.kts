@@ -169,6 +169,15 @@ dependencies {
     implementation(libs.androidx.lifecycle.process)
     // Add from a Photo: the page scanned by Google's document scanner.
     implementation(libs.play.services.mlkit.document.scanner)
+    // The app's AI (docs/android-ai.md): its actions for Gemini and the
+    // system's agents (AppFunctions, ai/functions/), Gemini Nano through
+    // ML Kit's Prompt API, and the text of a photographed page read on
+    // the phone.
+    implementation(libs.androidx.appfunctions)
+    ksp(libs.androidx.appfunctions.compiler)
+    implementation(libs.mlkit.genai.prompt)
+    implementation(libs.play.services.mlkit.text.recognition)
+    implementation(libs.kotlinx.coroutines.play.services)
     // The frames drawn and the janky ones, for the diagnostics (diagnostics/).
     implementation(libs.androidx.metrics.performance)
     debugImplementation(libs.androidx.compose.ui.tooling)

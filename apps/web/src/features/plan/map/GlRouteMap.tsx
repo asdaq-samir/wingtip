@@ -31,6 +31,7 @@ import { RouteGl, type GlCandidate, type GlCheckpoint, type GlEndpoint } from ".
 import type { GlLeg } from "../../../lib/map/gl/legTap";
 import { TfrGl } from "./layers/TfrGl";
 import { FlownTrackGl, LegHighlightGl, OwnTrailGl, ReplayGl } from "./layers/TracksGl";
+import { ForecastRunGl } from "../forecastRun/ForecastRunGl";
 import { TrafficGl } from "./layers/TrafficGl";
 import { WeatherGl } from "./layers/WeatherGl";
 import { WeatherLoopGl } from "../../weather-loop";
@@ -182,6 +183,7 @@ function Layers(p: GlRouteMapProps) {
           <FuelStopsGl stops={p.fuelStops} onSelect={p.onSelectPlace} />
           <FlownTrackGl course={course} />
           {dryRunning && <ReplayGl asOwnShip />}
+          {dryRunning && <ForecastRunGl />}
           <PatternsGl patterns={p.patterns} />
           <ProceduresGl drawings={p.procedures} crossings={p.crossings} directs={p.directs} onFix={p.onProcedureFix} />
           <LessonGl />

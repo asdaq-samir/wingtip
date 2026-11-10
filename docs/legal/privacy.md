@@ -58,10 +58,17 @@ Some features are written by Claude, an AI model made by Anthropic: Ask, the wri
 - **Checkpoint descriptions:** the checkpoint and the checkpoints around it.
 - **The mock oral:** the flight's plan as text and the answers you type.
 - **Flight watch:** what changed on a watched flight's route.
+- **A page you photograph** (a handbook page, a logbook page, a clearance you wrote down), to read its figures for you to check: the photo and today's date, only where your phone cannot read it itself (below). It is not kept.
 
 We do not send your name, email address or account to Anthropic. We do not keep your Ask conversations: each one stays on your device. Anthropic receives this as our service provider and handles it under its commercial terms. What Claude writes can be wrong; the app says so where it shows it.
 
 Some phones write a few of these on the device instead, with Apple's own on-device model, where the iPhone has one; nothing is sent for those.
+
+On an Android phone that has Google's Gemini Nano (through Android's AICore; Setup's On-Phone AI says whether yours does), the app does these on the phone first and sends nothing to Anthropic for them: Ask, the words beside the Brief, an airport's weather, the route's NOTAMs, the nav log and the Coach's debriefs, a drafted logbook remark, and the reading of a photographed page (its text is read by Google's on-device text recognition, then by Gemini Nano). Ask's look-ups still ask our planner for the airport, the route or the NOTAMs, as the screens do. Where the phone has no Gemini Nano, these come from Claude as above, or not at all when you are signed out.
+
+## Assistants on your phone
+
+On Android 16 and later, Google's Gemini and other assistants on your phone that Android allows can ask Wingtip Maps for an airport's card, its frequencies and approaches, the nearest airports, your planned route and its NOTAMs, the Brief's verdict, and your airplanes and logbook entries, and can open the app on a route, an airport or a screen. The app answers on your phone, only when you ask the assistant; what the assistant then does with the answer is under its maker's privacy policy (Google's, for Gemini). When you ask an assistant about what is on your screen, the app gives it the route you have planned, as a link. The app's shortcuts (a long press on its icon) open its screens and send nothing.
 
 ## Faults and speed
 

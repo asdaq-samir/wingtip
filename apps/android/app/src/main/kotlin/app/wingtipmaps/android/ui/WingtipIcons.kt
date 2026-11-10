@@ -46,6 +46,10 @@ object WingtipIcons {
     val myLocationOff = Icons.Outlined.NearMe
     val myLocation = Icons.Filled.NearMe
     val brief = Icons.Filled.AutoAwesome
+
+    /** Words made by AI (In Plain Words, Ask on the phone): the sparkle
+     *  Material and Gemini both mark AI with. */
+    val ai = Icons.Filled.AutoAwesome
     val navLog = Icons.Filled.FormatListNumbered
     val profile = Icons.AutoMirrored.Filled.ShowChart
     val mapLayers = Icons.Filled.Layers

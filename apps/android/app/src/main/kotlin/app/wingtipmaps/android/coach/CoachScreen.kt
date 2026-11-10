@@ -39,6 +39,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.ai.AiSources
+import app.wingtipmaps.android.ai.AiTask
+import app.wingtipmaps.android.ai.AiWordsRow
 import app.wingtipmaps.android.api.generated.ProficiencyPlan
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.LocalWingtipPalette
@@ -119,6 +122,13 @@ private fun LazyListScope.plan(plan: ProficiencyPlan, state: CoachModel.State) {
     }
     if (plan.weakAreas.isNotEmpty()) {
         item { SectionTitle(stringResource(R.string.coach_debriefs)) }
+        // What the debriefs found, in plain words, over the areas themselves.
+        item(key = "ai-debrief") {
+            AiWordsRow(
+                AiTask.DEBRIEF, key = plan.weakAreas.joinToString { it.key },
+                sources = { AiSources.debrief(plan.weakAreas.map { w -> CoachLines.weakTitle(w) to CoachLines.evidence(plan, w).map(CoachLines::evidenceLine) }) },
+            )
+        }
         items(plan.weakAreas, key = { "w:" + it.key }) { w ->
             var open by rememberSaveable(w.key) { mutableStateOf(false) }
             ListItem(

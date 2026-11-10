@@ -29,6 +29,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.ai.AiDraftButton
+import app.wingtipmaps.android.ai.AiSources
+import app.wingtipmaps.android.ai.AiTask
 import app.wingtipmaps.android.airplane.ProfileOpen
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -73,6 +76,12 @@ fun LogbookEntryRow(e: LogbookEntryDto, state: LogbookModel.State, model: Logboo
             Field(R.string.flight_logged_night_full_stop, form.nightLandings, Modifier.weight(1f), KeyboardType.Number) { form = form.copy(nightLandings = it) }
         }
         Field(R.string.logbook_remarks, form.remarks, Modifier.fillMaxWidth(), single = false) { form = form.copy(remarks = it) }
+        // A remark drafted from the entry's own facts, into the field to edit.
+        AiDraftButton(
+            AiTask.LOGBOOK_REMARK, key = e.id.toString(), label = stringResource(R.string.ai_draft_remark),
+            sources = { AiSources.logbook(form.date, form.route, form.airplane, form.total, form.night, form.dayLandings, form.nightLandings, e.approaches) },
+            onDraft = { form = form.copy(remarks = it) },
+        )
         ProblemLine(state.editProblem)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             Button(onClick = { model.save(form) }, enabled = !state.saving) {

@@ -24,7 +24,17 @@ final class DryRun {
     private(set) var problem: String?
 
     /// The flight flown on paper, its reports' times from its start, s.
-    private var points: [Replay.Point] = []
+    private(set) var points: [Replay.Point] = []
+    /// When each nav log row is reached, s from the start (the engine's
+    /// `row_t`), and each landing's time: what the forecast run sends.
+    private(set) var rowT: [Double] = []
+    private(set) var landings: [EngineContract.DryRunAnswerLandingsItem] = []
+    /// The course flown, for its fields' places.
+    private(set) var course: Course?
+    /// When the run's clock starts. The iPhone's plan keeps no departure
+    /// time, so it is the moment the run began, as the web's run starts
+    /// now when no departure is set; the forecast run plays from it.
+    private(set) var startedAt: Date?
     private var ticking: Task<Void, Never>?
 
     var totalS: Double { points.last?.t ?? 0 }
@@ -32,14 +42,18 @@ final class DryRun {
 
     /// The plan flown from its departure; nothing where its rows cannot be
     /// laid out from the legs the nav log has (one still on its way).
-    func start(course: Course, checkpoints: [Checkpoint], legs: [Leg]) {
-        let flown: [Replay.Point]?
-        do { flown = try Self.run(course: course, checkpoints: checkpoints, legs: legs); problem = nil } catch {
+    func start(course: Course, checkpoints: [Checkpoint], legs: [Leg], at now: Date = Date()) {
+        let flown: Flown?
+        do { flown = try Self.flight(course: course, checkpoints: checkpoints, legs: legs); problem = nil } catch {
             problem = "The dry run couldn't be flown: \(error.localizedDescription)"
             return
         }
-        guard let run = flown, run.count >= 2 else { return }
-        points = run
+        guard let flown, flown.points.count >= 2 else { return }
+        points = flown.points
+        rowT = flown.rowT
+        landings = flown.landings
+        self.course = course
+        startedAt = now
         flownS = 0
         running = true
         place()
@@ -60,6 +74,10 @@ final class DryRun {
         fix = nil
         flownS = 0
         points = []
+        rowT = []
+        landings = []
+        course = nil
+        startedAt = nil
     }
 
     private func tick() {
@@ -182,6 +200,18 @@ final class DryRun {
     /// Nil where the rows do not make one a leg; thrown where the engine
     /// refuses them, which the dry run says (DryRun.problem).
     static func run(course: Course, checkpoints: [Checkpoint], legs: [Leg]) throws -> [Replay.Point]? {
+        try flight(course: course, checkpoints: checkpoints, legs: legs)?.points
+    }
+
+    /// The run as flown: its reports, when it reaches each row and where
+    /// it lands, each from 0 s.
+    struct Flown {
+        let points: [Replay.Point]
+        let rowT: [Double]
+        let landings: [EngineContract.DryRunAnswerLandingsItem]
+    }
+
+    static func flight(course: Course, checkpoints: [Checkpoint], legs: [Leg]) throws -> Flown? {
         guard let rows = rows(course: course, checkpoints: checkpoints, legs: legs) else { return nil }
         // The rows carry the planner's own models (a leg, a checkpoint), in
         // its snake case, which the contract leaves open: written so, and
@@ -189,8 +219,9 @@ final class DryRun {
         let asked: [EngineContract.NavLogRow] = try Engine.recoded(rows, encoder: Planner.snakeEncoder)
         let answer = try Engine.dryRun(rows: asked, startS: 0, line: course.courseLine.map { $0.map(JSONValue.number) })
         let heights = rows.contains { $0.kind == "toc" }
-        return answer.points.map {
+        let points = answer.points.map {
             Replay.Point(t: $0.t, lat: $0.lat, lon: $0.lon, altFt: heights ? $0.altFt : nil, gsKt: $0.gsKt, trackDeg: $0.trackDeg)
         }
+        return Flown(points: points, rowT: answer.rowT, landings: answer.landings)
     }
 }

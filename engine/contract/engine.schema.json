@@ -7553,6 +7553,529 @@
       ],
       "additionalProperties": false
     },
+    "forecast_run": {
+      "description": "The dry run played against the forecast: for each point of the run (its time, place and altitude), the forecast ceiling and visibility then (the TAF that speaks for it, within 25 nm, and the NWS Gridded LAMP's hour, the worse of the two), the winds aloft at its altitude from the GFS period for that time, and the SIGMETs, G-AIRMET snapshots (90 minutes either side) and SPC Day 1 convective outlook areas over it then; each leg's worst flight category (AIM 7-1-7); each landing's TAF from an hour before to an hour after it is in (14 CFR 91.169(a)(2)'s window) and the departure's an hour on; and an alert, cited, where it first meets forecast weather under 14 CFR 91.155's VFR minimums (flown VFR; Class C, D and E's figures and 91.155(c)'s 1,000 ft ceiling held throughout, the safer reading) or under the pilot's own, or enters an advisory area. Warned, never refused.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ForecastRunInput",
+          "type": "object",
+          "properties": {
+            "track": {
+              "type": "array",
+              "description": "The run's points, in time order.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "t": {
+                    "type": "number",
+                    "description": "s since 1970."
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  },
+                  "alt_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "ft MSL."
+                  },
+                  "row": {
+                    "type": "integer",
+                    "description": "The nav log's row the airplane is flying to: its leg."
+                  },
+                  "modelled": {
+                    "type": "array",
+                    "description": "The Gridded LAMP's forecast hours at this point.",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "valid": {
+                          "type": "number"
+                        },
+                        "ceiling_ft": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "visibility_sm": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "valid",
+                        "ceiling_ft",
+                        "visibility_sm"
+                      ]
+                    }
+                  },
+                  "winds": {
+                    "type": "array",
+                    "description": "Each GFS period's winds at the station nearest this point.",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "use_from": {
+                          "type": "number"
+                        },
+                        "use_to": {
+                          "type": "number"
+                        },
+                        "levels": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "required": [
+                        "use_from",
+                        "use_to",
+                        "levels"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "t",
+                  "lat",
+                  "lon",
+                  "alt_ft",
+                  "row"
+                ]
+              }
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ident": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "departure",
+                      "stop",
+                      "destination"
+                    ]
+                  },
+                  "t": {
+                    "type": "number"
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "ident",
+                  "role",
+                  "t",
+                  "lat",
+                  "lon"
+                ]
+              }
+            },
+            "tafs": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              },
+              "description": "TAF stations as the weather store keeps them."
+            },
+            "sigmets": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "gairmets": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "outlooks": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              },
+              "description": "SPC outlook areas: {label, valid_from, valid_to, coords}."
+            },
+            "rules": {
+              "type": "string",
+              "enum": [
+                "VFR",
+                "IFR"
+              ]
+            },
+            "minimums": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "ceiling_ft": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "visibility_sm": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "required": [
+            "track"
+          ]
+        },
+        "answer": {
+          "title": "ForecastRunAnswer",
+          "type": "object",
+          "properties": {
+            "samples": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "t": {
+                    "type": "number"
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  },
+                  "category": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "VFR",
+                      "MVFR",
+                      "IFR",
+                      "LIFR",
+                      null
+                    ],
+                    "description": "AIM 7-1-7's flight category; null where the forecast does not settle it."
+                  },
+                  "ceiling_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "Feet above the ground."
+                  },
+                  "ceiling_unknown": {
+                    "type": "boolean"
+                  },
+                  "visibility_sm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "source": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Whose forecast it is: \"TAF KMSN\", \"TAF KMSN, 12 nm away\" or \"NWS Gridded LAMP, modelled for 1500Z\"."
+                  },
+                  "wind_dir_true_deg": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "wind_speed_kt": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "areas": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "description": "Indexes into areas."
+                  }
+                },
+                "required": [
+                  "t",
+                  "lat",
+                  "lon",
+                  "category",
+                  "ceiling_ft",
+                  "ceiling_unknown",
+                  "visibility_sm",
+                  "source",
+                  "wind_dir_true_deg",
+                  "wind_speed_kt",
+                  "areas"
+                ]
+              }
+            },
+            "legs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "row": {
+                    "type": "integer"
+                  },
+                  "from_t": {
+                    "type": "number"
+                  },
+                  "to_t": {
+                    "type": "number"
+                  },
+                  "category": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "VFR",
+                      "MVFR",
+                      "IFR",
+                      "LIFR",
+                      null
+                    ],
+                    "description": "AIM 7-1-7's flight category; null where the forecast does not settle it."
+                  },
+                  "worst_t": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "row",
+                  "from_t",
+                  "to_t",
+                  "category",
+                  "worst_t"
+                ]
+              }
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ident": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "departure",
+                      "stop",
+                      "destination"
+                    ]
+                  },
+                  "t": {
+                    "type": "number"
+                  },
+                  "category": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "VFR",
+                      "MVFR",
+                      "IFR",
+                      "LIFR",
+                      null
+                    ],
+                    "description": "AIM 7-1-7's flight category; null where the forecast does not settle it."
+                  },
+                  "ceiling_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "Feet above the ground."
+                  },
+                  "ceiling_unknown": {
+                    "type": "boolean"
+                  },
+                  "visibility_sm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "source": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Whose forecast it is: \"TAF KMSN\", \"TAF KMSN, 12 nm away\" or \"NWS Gridded LAMP, modelled for 1500Z\"."
+                  }
+                },
+                "required": [
+                  "ident",
+                  "role",
+                  "t",
+                  "category",
+                  "ceiling_ft",
+                  "ceiling_unknown",
+                  "visibility_sm",
+                  "source"
+                ]
+              }
+            },
+            "areas": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "vfr_minimums",
+                      "pilot_minimums",
+                      "sigmet",
+                      "gairmet",
+                      "outlook"
+                    ]
+                  },
+                  "words": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string"
+                  },
+                  "low_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "high_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "valid_from": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "valid_to": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "coords": {
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 2,
+                      "maxItems": 2
+                    }
+                  }
+                },
+                "required": [
+                  "kind",
+                  "words",
+                  "source",
+                  "low_ft",
+                  "high_ft",
+                  "valid_from",
+                  "valid_to",
+                  "coords"
+                ]
+              }
+            },
+            "alerts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "t": {
+                    "type": "number"
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "vfr_minimums",
+                      "pilot_minimums",
+                      "sigmet",
+                      "gairmet",
+                      "outlook"
+                    ]
+                  },
+                  "words": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string",
+                    "description": "The rule and the product it is held to."
+                  }
+                },
+                "required": [
+                  "t",
+                  "lat",
+                  "lon",
+                  "kind",
+                  "words",
+                  "source"
+                ]
+              }
+            }
+          },
+          "required": [
+            "samples",
+            "legs",
+            "fields",
+            "areas",
+            "alerts"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "frd_near": {
       "description": "A point named as the pilot's own point off the nearest fix a pilot knows (a navaid or a VFR waypoint) within max_nm (40 by default), else the nearest of any kind: its course magnetic, a VOR's radial by the station's own variation (AIM 1-1-3), any other by the World Magnetic Model's at now_s, to the degree, and its distance to a tenth of a mile; null with no fix near.",
       "type": "object",
@@ -23551,6 +24074,7 @@
     "flight_category",
     "floor_caution",
     "forecast_hour",
+    "forecast_run",
     "frd_near",
     "frd_read",
     "frd_write",

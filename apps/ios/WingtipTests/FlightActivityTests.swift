@@ -83,6 +83,17 @@ final class FlightActivityTests: XCTestCase {
         XCTAssertTrue(lines.spoken.contains("33.6 gal planned left"))
     }
 
+    func testNarrowIslandsFigureIsShort() {
+        let lines = FlightActivityLines(FlightActivityContent.state(inputs(progress: progress())))
+        // Under an hour it is the usual figure.
+        XCTAssertEqual(lines.compactNarrow, "12m")
+        var long = lines.state
+        long.nextEteMin = 85
+        XCTAssertEqual(FlightActivityLines(long).compact, "1h 25m")
+        XCTAssertEqual(FlightActivityLines(long).compactNarrow, "1:25")
+        XCTAssertEqual(FlightActivityLines(FlightActivityContent.state(inputs(progress: nil))).compactNarrow, "—")
+    }
+
     func testFrequencyIsTheNewestHandedUs() {
         let older = AtcCopilot.Card(id: 1, text: "", at: now, items: [.init(kind: "frequency", mhz: "120.1", facility: "center")])
         let newer = AtcCopilot.Card(id: 2, text: "", at: now, items: [.init(kind: "squawk", code: "4521")])

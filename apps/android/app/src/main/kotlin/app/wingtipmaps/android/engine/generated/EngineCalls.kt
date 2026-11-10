@@ -643,6 +643,12 @@ fun Engine.forecastHour(hoursAhead: Double? = null): Result<String> =
     rule("forecast_hour", EngineContract.ForecastHourInput(hoursAhead = hoursAhead))
 
 /**
+ * The dry run played against the forecast: for each point of the run (its time, place and altitude), the forecast ceiling and visibility then (the TAF that speaks for it, within 25 nm, and the NWS Gridded LAMP's hour, the worse of the two), the winds aloft at its altitude from the GFS period for that time, and the SIGMETs, G-AIRMET snapshots (90 minutes either side) and SPC Day 1 convective outlook areas over it then; each leg's worst flight category (AIM 7-1-7); each landing's TAF from an hour before to an hour after it is in (14 CFR 91.169(a)(2)'s window) and the departure's an hour on; and an alert, cited, where it first meets forecast weather under 14 CFR 91.155's VFR minimums (flown VFR; Class C, D and E's figures and 91.155(c)'s 1,000 ft ceiling held throughout, the safer reading) or under the pilot's own, or enters an advisory area. Warned, never refused.
+ */
+fun Engine.forecastRun(track: List<EngineContract.ForecastRunInputTrackItem>, fields: List<EngineContract.ForecastRunInputFieldsItem>? = null, tafs: List<Map<String, JsonElement>>? = null, sigmets: List<Map<String, JsonElement>>? = null, gairmets: List<Map<String, JsonElement>>? = null, outlooks: List<Map<String, JsonElement>>? = null, rules: String? = null, minimums: EngineContract.ForecastRunInputMinimums? = null): Result<EngineContract.ForecastRunAnswer> =
+    rule("forecast_run", EngineContract.ForecastRunInput(track = track, fields = fields, tafs = tafs, sigmets = sigmets, gairmets = gairmets, outlooks = outlooks, rules = rules, minimums = minimums))
+
+/**
  * A point named as the pilot's own point off the nearest fix a pilot knows (a navaid or a VFR waypoint) within max_nm (40 by default), else the nearest of any kind: its course magnetic, a VOR's radial by the station's own variation (AIM 1-1-3), any other by the World Magnetic Model's at now_s, to the degree, and its distance to a tenth of a mile; null with no fix near.
  */
 fun Engine.frdNear(lat: Double, lon: Double, maxNm: Double? = null, nowS: Double, fixes: List<EngineContract.RouteOptionsFix>): Result<EngineContract.FrdNearAnswer?> =

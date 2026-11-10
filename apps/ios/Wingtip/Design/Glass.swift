@@ -103,7 +103,12 @@ extension View {
     /// whose bars are opaque once scrolled under.
     @ViewBuilder
     func glassScrollEdges() -> some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 27.0, *) {
+            // iOS 27's HIG (Scroll views, June 2026): prefer the automatic
+            // style, more opaque under a bar of many controls or a pinned
+            // header, over the soft one, which needs its legibility proved.
+            scrollEdgeEffectStyle(.automatic, for: .all)
+        } else if #available(iOS 26.0, *) {
             scrollEdgeEffectStyle(.soft, for: .all)
         } else {
             self

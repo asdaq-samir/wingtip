@@ -1,0 +1,182 @@
+{
+  "_about": "The dry run against the forecast (engine forecast_run): a run east from KAAA past an FM group to IFR, into a convective SIGMET and an SPC slight risk. Expected values from 14 CFR 91.155 and the products' own times. The departure's hour on reaches the FM group at 0100Z, so it is warned of too.",
+  "input": {
+    "track": [
+      {
+        "t": 600,
+        "lat": 45.0,
+        "lon": -93.0,
+        "alt_ft": 3500,
+        "row": 1,
+        "modelled": [
+          {
+            "valid": 0,
+            "ceiling_ft": null,
+            "visibility_sm": 10
+          }
+        ],
+        "winds": [
+          {
+            "use_from": 0,
+            "use_to": 7200,
+            "levels": {
+              "3000": {
+                "wind_dir_true_deg": 270,
+                "wind_speed_kt": 10
+              },
+              "6000": {
+                "wind_dir_true_deg": 270,
+                "wind_speed_kt": 20
+              }
+            }
+          }
+        ]
+      },
+      {
+        "t": 3000,
+        "lat": 45.0,
+        "lon": -92.0,
+        "alt_ft": 3500,
+        "row": 1,
+        "modelled": [],
+        "winds": []
+      },
+      {
+        "t": 4000,
+        "lat": 45.0,
+        "lon": -93.0,
+        "alt_ft": 3500,
+        "row": 2,
+        "modelled": [],
+        "winds": []
+      }
+    ],
+    "fields": [
+      {
+        "ident": "AAA",
+        "role": "departure",
+        "t": 0,
+        "lat": 45.0,
+        "lon": -93.0
+      },
+      {
+        "ident": "AAA",
+        "role": "destination",
+        "t": 4200,
+        "lat": 45.0,
+        "lon": -93.0
+      }
+    ],
+    "tafs": [
+      {
+        "icaoId": "KAAA",
+        "lat": 45.0,
+        "lon": -93.0,
+        "elevation_ft": 900,
+        "fcsts": [
+          {
+            "timeFrom": 0,
+            "timeTo": 3600,
+            "change": "",
+            "ceiling_ft": null,
+            "ceiling_unknown": false,
+            "visibility_sm": 6
+          },
+          {
+            "timeFrom": 3600,
+            "timeTo": 7200,
+            "change": "FM",
+            "ceiling_ft": 800,
+            "ceiling_unknown": false,
+            "visibility_sm": 2
+          }
+        ]
+      }
+    ],
+    "sigmets": [
+      {
+        "hazard": "CONVECTIVE",
+        "type": "SIGMET",
+        "valid_from": 1000,
+        "valid_to": 5000,
+        "altitude_low_ft": null,
+        "altitude_high_ft": null,
+        "coords": [
+          [
+            44.0,
+            -92.5
+          ],
+          [
+            46.0,
+            -92.5
+          ],
+          [
+            46.0,
+            -91.5
+          ],
+          [
+            44.0,
+            -91.5
+          ]
+        ]
+      }
+    ],
+    "gairmets": [],
+    "outlooks": [
+      {
+        "label": "SLGT",
+        "valid_from": 0,
+        "valid_to": 86400,
+        "coords": [
+          [
+            44.0,
+            -92.5
+          ],
+          [
+            46.0,
+            -92.5
+          ],
+          [
+            46.0,
+            -91.5
+          ],
+          [
+            44.0,
+            -91.5
+          ]
+        ]
+      }
+    ],
+    "rules": "VFR",
+    "minimums": {
+      "ceiling_ft": 2000,
+      "visibility_sm": 5
+    }
+  },
+  "expect": {
+    "legs": [
+      [
+        1,
+        "VFR"
+      ],
+      [
+        2,
+        "IFR"
+      ]
+    ],
+    "alert_kinds": [
+      "vfr_minimums",
+      "pilot_minimums",
+      "sigmet",
+      "outlook",
+      "vfr_minimums",
+      "pilot_minimums",
+      "vfr_minimums",
+      "pilot_minimums"
+    ],
+    "wind_first": [
+      270,
+      12
+    ]
+  }
+}

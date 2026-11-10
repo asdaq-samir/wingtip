@@ -49,7 +49,7 @@ struct TripPlannerView: View {
             ProblemLine(trip.problem)
             HStack(spacing: WingtipSpace.sm) {
                 TextField("Describe the trip", text: $text)
-                    .textFieldStyle(.roundedBorder)
+                    .borderedField()
                     .submitLabel(.send)
                     .onSubmit(send)
                 if trip.busy {

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The dry run (dryrun/): the plan flown on paper over the map, and its forecast mode. -->
+<resources>
+    <string name="dry_run">Dry Run</string>
+    <string name="dry_run_play">Play the dry run</string>
+    <string name="dry_run_pause">Pause the dry run</string>
+    <string name="dry_run_close">End the dry run</string>
+    <plurals name="dry_run_speed">
+        <item quantity="one">Dry run speed, %1$d time real time</item>
+        <item quantity="other">Dry run speed, %1$d times real time</item>
+    </plurals>
+    <string name="dry_run_times">%1$d×</string>
+    <string name="dry_run_flown">Flown %1$s</string>
+    <string name="dry_run_forecast">Forecast</string>
+    <string name="dry_run_forecast_on">Played against the forecast</string>
+    <string name="dry_run_forecast_off">Played without the forecast</string>
+    <string name="forecast_fetching">Fetching the forecast for the run…</string>
+    <string name="forecast_leg">%1$s, %2$s</string>
+    <string name="forecast_strip">The run\'s legs by forecast category</string>
+    <string name="forecast_source">Source: %1$s</string>
+    <string name="forecast_ceiling">ceiling %1$s AGL</string>
+    <string name="forecast_ceiling_unknown">ceiling not known</string>
+    <string name="forecast_no_ceiling">no ceiling</string>
+    <string name="forecast_visibility">visibility %1$s</string>
+    <string name="forecast_wind">wind aloft %1$s at %2$s</string>
+    <string name="forecast_wind_unknown">wind aloft not known</string>
+    <string name="forecast_no_category">No forecast here</string>
+</resources>

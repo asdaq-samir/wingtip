@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What Gemini and the system's agents are told of the app's functions
+     as a whole (AppFunctions' app metadata, the manifest's
+     android.app.appfunctions.app_metadata): how to use them together,
+     and what the pilot is shown they let an agent do. The instructions
+     are written here, not as a resource: the library reads them as text.
+     Gemini Nano in the app's own Ask is told the same (ai/OnPhoneAsk). -->
+<AppFunctionAppMetadata xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:instructions="Wingtip Maps is a flight planner for pilots. Its figures (altitudes, winds, fuel, distances, weather minimums, the Go / No-Go) come from the app's engine and the FAA's data; read them out as given and never work one out yourself. Nothing in the app is a limit: where a plan is past one, the app warns and the pilot decides. Find an airport before reading its frequencies or approaches; plan a route before asking for its NOTAMs or Brief."
+    app:displayDescription="@string/ai_app_display" />
