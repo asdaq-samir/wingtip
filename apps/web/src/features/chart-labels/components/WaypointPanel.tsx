@@ -269,17 +269,20 @@ export function WaypointActions({ rated, filters, counts, onFilterChange, canUnd
       </ResponsivePopover>
       <ToolbarButton text="Undo" icon={<Undo2 />} onClick={onUndo} disabled={!canUndo} data-testid="undo-button" />
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+        <DropdownMenuTrigger
+          render={
+            <ToolbarButton
+              text="More"
+              label="More actions"
+              data-testid="training-more-button"
+              icon={<Ellipsis className={retrain.running ? "animate-pulse" : undefined} />}
+            />
+          }
+        >
           {/* Pulsing while a retrain runs, as the retrain button did. */}
-          <ToolbarButton
-            text="More"
-            label="More actions"
-            data-testid="training-more-button"
-            icon={<Ellipsis className={retrain.running ? "animate-pulse" : undefined} />}
-          />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-56">
-          <DropdownMenuItem onSelect={retrain.start} disabled={!retrain.canStart} data-testid="retrain-button">
+          <DropdownMenuItem onClick={retrain.start} disabled={!retrain.canStart} data-testid="retrain-button">
             <BrainCircuit />
             {retrain.running
               ? "Retraining…"
@@ -290,7 +293,7 @@ export function WaypointActions({ rated, filters, counts, onFilterChange, canUnd
                   : "Retrain the model"}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onSelect={askReset} disabled={rated === 0} data-testid="reset-ratings-button">
+          <DropdownMenuItem variant="destructive" onClick={askReset} disabled={rated === 0} data-testid="reset-ratings-button">
             <Eraser />
             Reset all ratings
           </DropdownMenuItem>

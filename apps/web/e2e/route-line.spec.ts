@@ -141,12 +141,12 @@ test("FPL's route line folds to the way picked, As typed at first, and a chip ta
   await expect(page).toHaveURL(/[?&]stops=KEAU(&|$)/);
   await expect(page).toHaveURL(/[?&]fuel=KEAU(&|$)/);
   await expect.poll(() => planned.some((stops) => stops.includes("KEAU")), { timeout: slow(15_000) }).toBe(true);
-  await expect(chips.filter({ hasText: "Avoid Weather" })).toHaveAttribute("data-state", "on");
+  await expect(chips.filter({ hasText: "Avoid Weather" })).toHaveAttribute("data-pressed", "");
 
   // As typed: the route as typed again.
   await chips.filter({ hasText: "As typed" }).click();
   await expect(page).not.toHaveURL(/[?&]stops=/);
-  await expect(chips.filter({ hasText: "As typed" })).toHaveAttribute("data-state", "on");
+  await expect(chips.filter({ hasText: "As typed" })).toHaveAttribute("data-pressed", "");
 });
 
 test("the routes stay open until their row folds them, to the way picked", async ({ page }) => {

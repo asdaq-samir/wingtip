@@ -1,13 +1,13 @@
-import * as React from "react";
 import { cn } from "cn";
-import { Accordion as AccordionPrimitive } from "radix-ui";
+import type * as React from "react";
+import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 
-function Accordion({ className, ...props }: React.ComponentProps<typeof AccordionPrimitive.Root>) {
+function Accordion({ className, ...props }: AccordionPrimitive.Root.Props) {
   return <AccordionPrimitive.Root data-slot="accordion" className={cn("flex w-full flex-col", className)} {...props} />;
 }
 
-function AccordionItem({ className, ...props }: React.ComponentProps<typeof AccordionPrimitive.Item>) {
+function AccordionItem({ className, ...props }: AccordionPrimitive.Item.Props) {
   return <AccordionPrimitive.Item data-slot="accordion-item" className={cn("not-last:border-b", className)} {...props} />;
 }
 
@@ -16,7 +16,7 @@ function AccordionTrigger({
   children,
   label,
   ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Trigger> & {
+}: AccordionPrimitive.Trigger.Props & {
   /** What names the trigger, laid over it in the header rather than
    *  inside it, so a control among it (a flag beside a section's title)
    *  is not a button inside a button. Name the trigger from it with
@@ -28,7 +28,7 @@ function AccordionTrigger({
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
-          "group/accordion-trigger relative flex flex-1 items-start justify-between rounded-md border border-transparent py-4 text-left text-sm font-medium transition-all outline-none hover:underline pointer-coarse:active:opacity-60 pointer-coarse:active:duration-0 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-ring focus-visible:after:border-ring disabled:pointer-events-none disabled:opacity-50 **:data-[slot=accordion-trigger-icon]:ml-auto **:data-[slot=accordion-trigger-icon]:size-4 **:data-[slot=accordion-trigger-icon]:text-tint",
+          "group/accordion-trigger relative flex flex-1 items-start justify-between rounded-md border border-transparent py-4 text-left text-sm font-medium transition-all outline-none hover:underline pointer-coarse:active:opacity-60 pointer-coarse:active:duration-0 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-ring focus-visible:after:border-ring aria-disabled:pointer-events-none aria-disabled:opacity-50 **:data-[slot=accordion-trigger-icon]:ml-auto **:data-[slot=accordion-trigger-icon]:size-4 **:data-[slot=accordion-trigger-icon]:text-tint",
           label && "col-start-1 row-start-1",
           className,
         )}
@@ -49,9 +49,9 @@ function AccordionTrigger({
   );
 }
 
-function AccordionContent({ className, children, ...props }: React.ComponentProps<typeof AccordionPrimitive.Content>) {
+function AccordionContent({ className, children, ...props }: AccordionPrimitive.Panel.Props) {
   return (
-    <AccordionPrimitive.Content
+    <AccordionPrimitive.Panel
       data-slot="accordion-content"
       // Clipped for the open/close animation, as shadcn's overflow-hidden
       // clipped it, but without becoming a scroll container: a sticky
@@ -63,16 +63,16 @@ function AccordionContent({ className, children, ...props }: React.ComponentProp
       className="overflow-y-clip text-sm data-open:animate-accordion-down data-closed:animate-accordion-up"
       {...props}
     >
-      {/* No fixed height on the inner div: Radix measures the content
-          once, as the section opens, and a height pinned to that
-          measurement clipped whatever arrived afterwards -- a table
-          filling in from a query, a chart growing to its rows. The
-          open/close animation is the Content's own, from zero to that
-          measured height, and it ends at `auto`. */}
+      {/* No fixed height on the inner div, where shadcn pins it to
+          --accordion-panel-height: that is measured once, as the section
+          opens, and a height pinned to it clipped whatever arrived
+          afterwards -- a table filling in from a query, a chart growing
+          to its rows. The open/close animation is the Panel's own, from
+          zero to that measured height, and it ends at `auto`. */}
       <div className={cn("pt-0 pb-4 [&_a]:text-tint [&_a]:underline [&_a]:underline-offset-3 [&_p:not(:last-child)]:mb-4", className)}>
         {children}
       </div>
-    </AccordionPrimitive.Content>
+    </AccordionPrimitive.Panel>
   );
 }
 

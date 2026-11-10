@@ -378,10 +378,9 @@ function PictureChoices({
     <section className="flex flex-col">
       <SectionTitle className="px-1 pb-1.5">{title}</SectionTitle>
       <ToggleGroup
-        type="single"
-        value={value}
+        value={[value]}
         onValueChange={(v) => {
-          if (v) onChange(v);
+          if (v[0]) onChange(v[0]);
         }}
         aria-label={title}
         data-testid={testId}
@@ -394,14 +393,14 @@ function PictureChoices({
             aria-label={o.label}
             className={cn(
               "group flex h-auto min-w-0 flex-col items-stretch gap-1 rounded-lg border-0 bg-transparent p-0 shadow-none",
-              "hover:bg-transparent data-[state=on]:bg-transparent",
+              "hover:bg-transparent data-pressed:bg-transparent",
             )}
           >
             <span
               aria-hidden="true"
               className={cn(
                 "relative block aspect-[4/3] overflow-hidden rounded-lg bg-muted ring-1 ring-border",
-                "group-data-[state=on]:ring-[3px] group-data-[state=on]:ring-tint",
+                "group-data-pressed:ring-[3px] group-data-pressed:ring-tint",
                 o.className,
               )}
             >
@@ -421,7 +420,7 @@ function PictureChoices({
             </span>
             <span
               className={cn(
-                "truncate text-center text-foreground group-data-[state=on]:font-semibold group-data-[state=on]:text-tint",
+                "truncate text-center text-foreground group-data-pressed:font-semibold group-data-pressed:text-tint",
                 TEXT.note,
               )}
             >

@@ -205,9 +205,9 @@ test("spoken, each alert ahead is said once as it comes, and turned on it says s
   // since the owner's "alerts can go to overlay settings" (2026-11-05).
   await openMapSettings(page);
   const mode = page.getByTestId("map-settings").getByTestId("alerts-mode");
-  await expect(mode.getByRole("radio", { name: "On" })).toBeChecked();
-  await mode.getByRole("radio", { name: "Spoken" }).click();
-  await expect(mode.getByRole("radio", { name: "Spoken" })).toBeChecked();
+  await expect(mode.getByRole("button", { name: "On" })).toHaveAttribute("aria-pressed", "true");
+  await mode.getByRole("button", { name: "Spoken" }).click();
+  await expect(mode.getByRole("button", { name: "Spoken" })).toHaveAttribute("aria-pressed", "true");
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("map-settings")).toHaveCount(0);
   // Turned on in the air: it says so, then what is ahead.

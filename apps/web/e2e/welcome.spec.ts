@@ -29,7 +29,7 @@ test("a new pilot is welcomed once, and the sample flight opens with its nav log
   await welcome.getByTestId("welcome-next").click();
   await expect(welcome.getByTestId("welcome-home")).toBeVisible();
   await welcome.getByTestId("welcome-next").click();
-  await welcome.getByTestId("welcome-rules").getByRole("radio", { name: "IFR" }).click();
+  await welcome.getByTestId("welcome-rules").getByRole("button", { name: "IFR" }).click();
   await welcome.getByTestId("welcome-next").click();
   // The location's page, where the browser still has its question: Not Now passes it.
   const notNow = welcome.getByTestId("welcome-not-now");

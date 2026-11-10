@@ -151,7 +151,7 @@ test("each card's Share is its own: the Brief's prints the briefing, the nav log
   const drawer = sideDrawer(page);
   const menu = page.getByRole("menu");
   await openBrief(page);
-  await page.getByTestId("tab-share").click();
+  await page.getByTestId("card-share").click();
   await expect(menu.getByTestId("print-briefing")).toBeVisible();
   await expect(menu.getByTestId("print-kneeboard")).toHaveCount(0);
   await expect(menu.getByTestId("route-clear")).toHaveCount(0);
@@ -161,7 +161,7 @@ test("each card's Share is its own: the Brief's prints the briefing, the nav log
   await closeCard(page, "brief-close");
   await expect(drawer.getByTestId("brief-card")).toHaveCount(0);
   await openNavLog(page);
-  await page.getByTestId("tab-share").click();
+  await page.getByTestId("card-share").click();
   await expect(menu.getByTestId("print-kneeboard")).toHaveText("Print the nav log");
   await expect(menu.getByTestId("print-briefing")).toHaveCount(0);
   await expect(menu.getByTestId("route-clear")).toHaveCount(0);
@@ -233,7 +233,7 @@ test("plan page: the Brief is a tab after the Nav Log, its narrative written by 
 test("plan page: the drawer closes the way the stock components close, and nothing else", async ({ page }) => {
   // This app binds no key of its own to the drawer. A hand-written
   // Escape listener used to, and it is gone: a phone's drawer is a
-  // Radix Sheet and closes on Escape by itself, a desktop's is
+  // stock Sheet and closes on Escape by itself, a desktop's is
   // shadcn's panel and toggles on Cmd/Ctrl+B. Whatever those do is
   // what this does.
   await page.goto("/app/plan?dep=C81&dest=KDLH");

@@ -13,8 +13,9 @@ import type { AirportSearchRow } from "../lib/useAirportSearch";
  * in (RouteBox) -- so the two look and behave alike (the owner's "one
  * look, common code", 2026-10-27). Groups of the caller's own first (the
  * suggested waypoints, the pilot's own point, the recents), then the
- * search's airports and waypoints. cmdk's list, inside the caller's
- * Command, which keeps the arrows and Enter on the field being typed in.
+ * search's airports and waypoints. Base UI's Autocomplete list, inside
+ * the caller's Command, which keeps the arrows and Enter on the field
+ * being typed in.
  * Dimmed while its rows answer something older than the field.
  */
 export default function AirportResults({
@@ -22,7 +23,6 @@ export default function AirportResults({
   answered,
   onAirport,
   onWaypoint,
-  id,
   className,
   empty,
   children,
@@ -32,17 +32,16 @@ export default function AirportResults({
   answered: boolean;
   onAirport: (airport: RecentAirport) => void;
   onWaypoint: (ident: string) => void;
-  /** The list's id, for a field's aria-controls. */
-  id?: string;
   className?: string;
-  /** What it says where the search has nothing (cmdk's CommandEmpty). */
+  /** What it says where the search has nothing (CommandEmpty), shown
+   *  only then. */
   empty?: ReactNode;
   /** Groups before the search's (PickerGroup). */
   children?: ReactNode;
 }) {
   return (
-    <CommandList id={id} className={cn("max-h-none overflow-visible", !answered && "opacity-60", className)} aria-busy={!answered}>
-      {empty}
+    <CommandList className={cn("max-h-none overflow-visible", !answered && "opacity-60", className)} aria-busy={!answered}>
+      {rows.length === 0 && empty}
       {children}
       <SearchRows rows={rows} onAirport={onAirport} onWaypoint={onWaypoint} />
     </CommandList>
@@ -53,17 +52,15 @@ export default function AirportResults({
  *  in small capitals. */
 export function PickerGroup({ heading, children }: { heading: string; children: ReactNode }) {
   return (
-    <CommandGroup heading={heading} className={GROUP}>
+    <CommandGroup heading={heading} className="p-0" headingClassName={HEADING}>
       {children}
     </CommandGroup>
   );
 }
 
-// The group's heading is cmdk's own element, reached only by its
-// attribute's selector, so GROUP_HEADING's note sizes (TEXT.note, 12 and
-// 13) are written out here under it.
-const GROUP =
-  "p-0 **:[[cmdk-group-heading]]:px-1 **:[[cmdk-group-heading]]:pb-1.5 **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wide **:[[cmdk-group-heading]]:text-xs pointer-coarse:**:[[cmdk-group-heading]]:text-(length:--type-note)";
+// The group's heading at GROUP_HEADING's note sizes (TEXT.note, 12 and 13).
+const HEADING =
+  "px-1 pt-0 pb-1.5 font-semibold uppercase tracking-wide text-muted-foreground text-xs pointer-coarse:text-(length:--type-note)";
 
 /** The search's own rows: the airports, then a stop's waypoints -- flown
  *  through, not kept among the recent airports. */
@@ -128,7 +125,7 @@ export function AirportRow({
     // row is the control, not a control grown to its hit area.
     <CommandItem
       value={airport.ident}
-      onSelect={onSelect}
+      onClick={onSelect}
       className="min-h-13 gap-3 rounded-lg px-2 py-2"
       data-testid={testId ?? "airport-result"}
     >

@@ -140,9 +140,7 @@ export function AtisRows() {
           ))}
         {reading && (
           <Collapsible>
-            <CollapsibleTrigger asChild>
-              <ListRow title="Transcript" chevron data-testid="place-atis-transcript" />
-            </CollapsibleTrigger>
+            <CollapsibleTrigger render={<ListRow title="Transcript" chevron data-testid="place-atis-transcript" />} />
             <CollapsibleContent>
               <ListRow
                 title={

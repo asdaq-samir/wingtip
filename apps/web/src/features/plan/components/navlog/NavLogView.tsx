@@ -459,7 +459,7 @@ export default function NavLogView({
   // have it, beside it (PaidPrompt), rather than writing.
   const wandSlot = descriptionsHidden ? null : descriptionsPaywall ? (
     <Popover>
-      <PopoverTrigger asChild>{wand}</PopoverTrigger>
+      <PopoverTrigger render={wand} />
       <PopoverContent className="w-80 p-0" data-testid="descriptions-paywall">
         {descriptionsPaywall}
       </PopoverContent>

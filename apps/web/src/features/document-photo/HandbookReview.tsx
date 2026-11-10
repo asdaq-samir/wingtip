@@ -1,7 +1,7 @@
 import { useId } from "react";
 import FieldHit from "../../components/FieldHit";
 import { ListGroup, ListRow } from "../../components/GroupedList";
-import { Input } from "../../components/ui/input";
+import { NumberField } from "../../components/ui/number-field";
 import { FlagLines } from "./PhotoSheet";
 import { tenth, type HandbookItem } from "./reads";
 import type { DocumentPhoto } from "./useDocumentPhoto";
@@ -20,18 +20,16 @@ function FigureRow({ figure, onChange }: { figure: Figure; onChange: (value: num
       value={
         <span className="flex items-center gap-1.5">
           <FieldHit htmlFor={id}>
-            <Input
+            <NumberField
               id={id}
-              type="number"
-              inputMode="decimal"
-              step="any"
               defaultValue={figure.value}
-              className="h-8 w-24 text-right"
+              className="h-8 w-24"
+              inputClassName="text-right"
               aria-label={`${figure.label} in ${figure.unit}`}
               data-testid={`figure-${figure.path}`}
-              onBlur={(e) => {
-                const v = Number(e.target.value);
-                if (e.target.value !== "" && v !== figure.value) onChange(v);
+              // Taken as it is left, as React Aria's field gives it.
+              onChange={(v) => {
+                if (v != null && v !== figure.value) onChange(v);
               }}
             />
           </FieldHit>

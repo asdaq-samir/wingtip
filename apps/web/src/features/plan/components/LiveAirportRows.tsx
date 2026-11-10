@@ -51,9 +51,7 @@ export function DigitalAtisRows({ ident }: { ident: string }) {
                 />
               ))}
             <Collapsible>
-              <CollapsibleTrigger asChild>
-                <ListRow title="As sent" chevron data-testid="place-datis-sent" />
-              </CollapsibleTrigger>
+              <CollapsibleTrigger render={<ListRow title="As sent" chevron data-testid="place-datis-sent" />} />
               <CollapsibleContent>
                 <ListRow
                   title={

@@ -238,7 +238,7 @@ export default function WeatherAlongRoute({
                       >
                         <span>{metar?.raw && station?.raw ? "METAR and TAF" : metar?.raw ? "METAR" : "TAF"}</span>
                         <ChevronRight
-                          className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-90"
+                          className="size-4 text-muted-foreground transition-transform group-data-panel-open:rotate-90"
                           aria-hidden
                         />
                       </CollapsibleTrigger>

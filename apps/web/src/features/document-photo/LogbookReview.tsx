@@ -1,7 +1,6 @@
-import { useId } from "react";
-import FieldHit from "../../components/FieldHit";
+import { useState } from "react";
 import { ListGroup, ListRow } from "../../components/GroupedList";
-import { Input } from "../../components/ui/input";
+import { DateField } from "../../components/ui/date-field";
 import { said } from "../../lib/endorsements";
 import { FlagLines } from "./PhotoSheet";
 import { loggable, tenth } from "./reads";
@@ -10,24 +9,23 @@ import type { DocumentPhoto } from "./useDocumentPhoto";
 /** The date of a row the page gave none for, or one the engine says is
  *  wrong: the one figure a row cannot be logged without. */
 function DateRow({ value, onChange, testId }: { value: string; onChange: (value: string) => void; testId: string }) {
-  const id = useId();
+  // Sent as it is left, as the native field's was: each segment typed is
+  // not a day to check the row against.
+  const [typed, setTyped] = useState(value);
   return (
     <ListRow
       title="Date"
       value={
-        <FieldHit htmlFor={id}>
-          <Input
-            id={id}
-            type="date"
-            defaultValue={value}
-            aria-label="Date flown"
-            className="h-8 w-40"
-            data-testid={testId}
-            onBlur={(e) => {
-              if (e.target.value && e.target.value !== value) onChange(e.target.value);
-            }}
-          />
-        </FieldHit>
+        <DateField
+          defaultValue={value}
+          aria-label="Date flown"
+          className="h-8 w-40"
+          data-testid={testId}
+          onChange={setTyped}
+          onBlur={() => {
+            if (typed && typed !== value) onChange(typed);
+          }}
+        />
       }
     />
   );

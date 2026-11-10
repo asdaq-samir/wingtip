@@ -1,11 +1,10 @@
-import { lazy, Suspense, useId } from "react";
+import { lazy, Suspense } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GraduationCap, Mail, MailX, Target, Users } from "lucide-react";
-import FieldHit from "../../components/FieldHit";
 import { cn } from "cn";
 import { ConsolePages, PageRow } from "../../components/ConsolePages";
 import { ListGroup, ListRow } from "../../components/GroupedList";
-import { Input } from "../../components/ui/input";
+import { DateField as StockDateField } from "../../components/ui/date-field";
 import TogglePill from "../../components/TogglePill";
 import { api } from "../../lib/api/client";
 import type { Currency } from "../../lib/api/types";
@@ -54,19 +53,14 @@ function DateField({
   onChange: (v: string | null) => void;
   testId: string;
 }) {
-  const id = useId();
   return (
-    <FieldHit htmlFor={id}>
-      <Input
-        id={id}
-        type="date"
-        aria-label={label}
-        value={value ?? ""}
-        className="h-8 w-40"
-        data-testid={testId}
-        onChange={(e) => onChange(e.target.value || null)}
-      />
-    </FieldHit>
+    <StockDateField
+      aria-label={label}
+      value={value ?? ""}
+      className="h-8 w-40"
+      data-testid={testId}
+      onChange={(day) => onChange(day || null)}
+    />
   );
 }
 

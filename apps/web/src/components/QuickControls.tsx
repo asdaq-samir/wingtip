@@ -113,7 +113,7 @@ export default function QuickControls() {
  *  own. */
 const TILE = cn(
   "group flex h-auto min-h-14 w-full min-w-0 items-center justify-start gap-2.5 rounded-2xl bg-card px-2.5 py-2 text-left outline-none",
-  "lift active:bg-wash-press focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 data-[state=on]:bg-card",
+  "lift active:bg-wash-press focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 data-pressed:bg-card",
 );
 
 function Face({ icon, label, value, menu = false }: { icon: ReactNode; label: string; value: string; menu?: boolean }) {
@@ -121,7 +121,7 @@ function Face({ icon, label, value, menu = false }: { icon: ReactNode; label: st
     <>
       <span
         aria-hidden="true"
-        className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-foreground group-data-[state=on]:bg-primary group-data-[state=on]:text-primary-foreground [&_svg]:size-4"
+        className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-foreground group-data-pressed:bg-primary group-data-pressed:text-primary-foreground [&_svg]:size-4"
       >
         {icon}
       </span>
@@ -165,7 +165,7 @@ function MenuTile<V extends string>({
       options={options}
       align="start"
       trigger={
-        <button type="button" aria-label={`${label}: ${words}`} data-testid={testId} data-state={on ? "on" : "off"} className={TILE}>
+        <button type="button" aria-label={`${label}: ${words}`} data-testid={testId} data-pressed={on ? "" : undefined} className={TILE}>
           <Face icon={icon} label={label} value={words} menu />
         </button>
       }

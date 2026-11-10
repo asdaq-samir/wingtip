@@ -78,7 +78,7 @@ export function SaveFlightButton(flight: FlightToSave) {
 
   return (
     <DropdownMenuItem
-      onSelect={() => request && save.mutate(request)}
+      onClick={() => request && save.mutate(request)}
       disabled={!request || saving || saved}
       data-testid="save-flight-button"
     >
@@ -100,7 +100,7 @@ export function ReviewAskItem({ flight, onAsk }: { flight: FlightToSave; onAsk: 
   const request = useSaveRequest(flight);
   if (!pilot || !training?.instructors.some((l) => l.accepted)) return null;
   return (
-    <DropdownMenuItem disabled={!request} onSelect={onAsk} data-testid="ask-review">
+    <DropdownMenuItem disabled={!request} onClick={onAsk} data-testid="ask-review">
       <GraduationCap />
       Ask for a solo cross-country review
     </DropdownMenuItem>
@@ -144,10 +144,6 @@ export function ReviewAskSheet({ flight, onDone }: { flight: FlightToSave; onDon
       align="end"
       className="w-96 max-w-[calc(100vw-2rem)] p-3"
       data-testid="review-sheet"
-      // Opened as the Share menu goes, whose focus goes back to its button
-      // as it closes: taken for a move outside, it shut the sheet just
-      // opened, now and then. A tap outside or Escape still closes it.
-      onFocusOutside={(e) => e.preventDefault()}
       description="Your instructor reviews its planning and the weather, and endorses it for the airplane and the day (14 CFR 61.93(c)(3), (d))."
     >
       <div className="space-y-3">

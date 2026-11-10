@@ -147,7 +147,7 @@ function Line({ line, onOpen }: { line: GlanceLine; onOpen: (tab: PanelTab) => v
         <span className="min-w-0 flex-1 font-medium" data-testid="brief-line-words">
           {line.line}
         </span>
-        <ChevronRight className="mt-0.5 size-5 shrink-0 text-tint transition-transform group-data-[state=open]:rotate-90" aria-hidden />
+        <ChevronRight className="mt-0.5 size-5 shrink-0 text-tint transition-transform group-data-panel-open:rotate-90" aria-hidden />
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-2 px-3.5 pb-3" data-testid="brief-line-why">
         <p className={cn("rounded-lg bg-muted px-3 py-2", TEXT.detail)}>
@@ -281,7 +281,7 @@ export default function BriefGlance({
             <span className="min-w-0 flex-1" data-testid="brief-rest-words">
               {lines.rest.line}
             </span>
-            <ChevronRight className="size-5 shrink-0 text-tint transition-transform group-data-[state=open]:rotate-90" aria-hidden />
+            <ChevronRight className="size-5 shrink-0 text-tint transition-transform group-data-panel-open:rotate-90" aria-hidden />
           </CollapsibleTrigger>
           <CollapsibleContent className="px-3.5 pb-2">
             {lines.rest.items.map((i) => (

@@ -3,13 +3,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { done } from "../../lib/doneNote";
-import FieldHit from "../../components/FieldHit";
 import RowField from "../../components/RowField";
 import { invalidProps } from "../../lib/fieldError";
+import { ariaInvalid } from "../../components/ui/ariaInvalid";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import QueryState from "../../components/QueryState";
 import TogglePill from "../../components/TogglePill";
-import { Input } from "../../components/ui/input";
+import { DateField } from "../../components/ui/date-field";
 import PullDown from "../../components/PullDown";
 import { Textarea } from "../../components/ui/textarea";
 import { api } from "../../lib/api/client";
@@ -187,17 +187,22 @@ export default function SquawksPage({ aircraft }: { aircraft: Aircraft }) {
         </div>
         <ListRow id={foundId} title="Found on">
           <RowField id={foundId} error={errors.reportedOn?.message}>
-            <FieldHit htmlFor={foundId}>
-              <Input
-                id={foundId}
-                type="date"
-                className="h-8 w-40"
-                max={today()}
-                aria-label="Found on"
-                {...register("reportedOn")}
-                {...invalidProps(foundId, errors.reportedOn?.message)}
-              />
-            </FieldHit>
+            <Controller
+              control={control}
+              name="reportedOn"
+              render={({ field }) => (
+                <DateField
+                  id={foundId}
+                  className="h-8 w-40"
+                  max={today()}
+                  aria-label="Found on"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  {...ariaInvalid(foundId, errors.reportedOn?.message)}
+                />
+              )}
+            />
           </RowField>
         </ListRow>
         <ListRow title="Inoperative equipment">

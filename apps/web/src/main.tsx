@@ -13,7 +13,6 @@ import DoneNotes from "./components/DoneNotes";
 import { BrandLook } from "./lib/brand";
 import ErrorAlert from "./components/ErrorAlert";
 import PageError from "./components/PageError";
-import { TooltipProvider } from "./components/ui/tooltip";
 import { registerSW } from "virtual:pwa-register";
 import { followDynamicType } from "./features/shell/dynamicType";
 import { prepareAnnouncer } from "./lib/announce";
@@ -25,6 +24,8 @@ import { startLoadLog } from "./lib/loadLog";
 import MapPage from "./features/shell/MapPage";
 import { prefetchRouteMap } from "./features/plan/routeMapChunk";
 import { prefetchRouteBox } from "./features/plan/routeBoxChunk";
+import { prefetchShareMenu } from "./features/plan/shareMenuChunk";
+import { loadPopups } from "./components/popupsChunk";
 import "./index.css";
 // Barlow, the face of both looks (lib/brand), in the first stylesheet
 // rather than fetched once the app has drawn: drawn first in the system's
@@ -67,6 +68,9 @@ if (tv) startTv(tv);
 // fetched while the page draws.
 prefetchRouteMap();
 prefetchRouteBox();
+// The menus, popovers and tooltips (popupsChunk), and the route's menu.
+void loadPopups().catch(() => {});
+prefetchShareMenu();
 
 // What goes wrong on the pilot's device, to the gateway's diagnostics
 // (lib/errorReports): before anything else can throw.
@@ -245,21 +249,17 @@ const render = () =>
         (and what the Toaster below already reads). */}
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="wingtip.theme" disableTransitionOnChange>
         <QueryClientProvider client={queryClient}>
-          {/* One instance for the whole app, the same as sonner's own
-          Toaster below -- every icon-only button's own Tooltip shares
-          this one delay/grouping context (hover one, then another
-          shows instantly) instead of each re-running its own
-          default-delay timer independently. */}
-          <TooltipProvider>
+          {/* No tooltip provider: each tooltip opens at once (its trigger's
+          delay 0, popups/IconTip), as the provider's did, and the
+          provider would bring Base UI's tooltips into the first load
+          (popupsChunk). */}
+          <>
             <RouterProvider router={router} />
             <AppToaster />
             <DoneNotes />
-            {/* Inside the provider too: its close is the app's CloseButton,
-            whose Tooltip outside one threw and blanked the page the
-            first time an alert opened on a phone. */}
             <ErrorAlert />
             <BrandLook />
-          </TooltipProvider>
+          </>
         </QueryClientProvider>
       </ThemeProvider>
     </React.StrictMode>,

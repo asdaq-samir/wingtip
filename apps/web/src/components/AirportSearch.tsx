@@ -1,9 +1,8 @@
 import { useEffect, type RefObject } from "react";
-import { Command as CommandPrimitive } from "cmdk";
 import { Search } from "lucide-react";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
-import { Command, CommandEmpty } from "./ui/command";
+import { Command, CommandEmpty, CommandField } from "./ui/command";
 import AirportResults, { AirportRow, PickerGroup } from "./AirportResults";
 import { FavoriteTiles } from "./FavoriteTiles";
 import { usePreferences, type RecentAirport } from "../lib/preferences";
@@ -17,8 +16,9 @@ import ClearButton from "./ClearButton";
  * What AirportPicker opens: the field, Favorites and Recents until
  * something is typed, and the lookup's rows -- shadcn's `Command`, so its
  * keyboard handling (Up/Down/Enter/Escape, the highlighted row,
- * `aria-activedescendant`) is cmdk's. A chunk of its own (AirportPicker's
- * `Search`), as cmdk is no part of what the first screen draws.
+ * `aria-activedescendant`) is Base UI's Autocomplete's. A chunk of its own
+ * (AirportPicker's `Search`), as it is no part of what the first screen
+ * draws.
  */
 export default function AirportSearch({
   query,
@@ -64,10 +64,13 @@ export default function AirportSearch({
 
   return (
     // The server already filters (an ident, a word of a name or a town),
-    // so cmdk's own filter is off: it would drop a row whose name matched
-    // but whose ident, the `value`, did not.
+    // so the list's own filter is off (Command's): it would drop a row
+    // whose name matched but whose ident did not. The first row lit, as a
+    // search's is, for Enter to take.
     <Command
-      shouldFilter={false}
+      autoHighlight="always"
+      value={query}
+      onValueChange={setQuery}
       className="gap-4 overflow-visible bg-transparent"
       // Room under the last row for the keyboard, so it scrolls above it.
       style={onPhone && keyboard > 0 ? { paddingBottom: keyboard } : undefined}
@@ -82,15 +85,13 @@ export default function AirportSearch({
           className={cn("flex h-11 min-w-0 flex-1 items-center gap-2 rounded-full bg-foreground/8 px-4 text-muted-foreground", TEXT.row)}
         >
           <Search className="size-5 shrink-0" aria-hidden="true" />
-          <CommandPrimitive.Input
+          <CommandField
             ref={input}
             // Short enough for a phone's field, as Maps' "Search Maps"
             // is: "Search airports and waypoints" was cut at "wayp".
             // Its label says the whole of it.
             placeholder={fixes ? "Search" : `Search for a ${ariaLabel.toLowerCase()}`}
             aria-label={fixes ? "Search airports and waypoints" : `Search for a ${ariaLabel.toLowerCase()}`}
-            value={query}
-            onValueChange={setQuery}
             className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
             onKeyDown={(e) => {
               // What was typed goes through when the rows are not the
@@ -98,6 +99,7 @@ export default function AirportSearch({
               // (a private strip, say).
               if (e.key === "Enter" && typed && !(answered && rows.length > 0)) {
                 e.preventDefault();
+                e.preventBaseUIHandler();
                 onPick(typed);
               }
             }}

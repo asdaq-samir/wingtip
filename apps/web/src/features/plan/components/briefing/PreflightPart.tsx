@@ -63,7 +63,7 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart, narr
           under the Go / No-Go. */}
       <SectionTitle className="mt-2 px-1 print:hidden">Before You Go</SectionTitle>
       <SectionsOpen.Provider value={printing}>
-        <Accordion type="multiple" value={folds} onValueChange={setFolds} data-testid="before-you-go">
+        <Accordion multiple value={folds} onValueChange={(v) => setFolds(v as string[])} data-testid="before-you-go">
           {narrative}
 
           <AirspaceSection vm={vm} />

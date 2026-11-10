@@ -18,7 +18,7 @@ const SCALE_KEY = ["0 not a feature", "3 workable", "5 unmistakable"].map((term)
  *  ringed. */
 const RATING = cn(
   "h-10 w-full cursor-pointer rounded-md border border-transparent bg-clip-padding px-0 text-base font-bold select-none pointer-coarse:text-(length:--type-row)",
-  "data-[state=on]:ring-2 data-[state=on]:ring-foreground data-[state=on]:ring-offset-2 data-[state=on]:ring-offset-background",
+  "data-pressed:ring-2 data-pressed:ring-foreground data-pressed:ring-offset-2 data-pressed:ring-offset-background",
 );
 
 /**
@@ -72,18 +72,17 @@ export default function RatingCard({
       </div>
       {/* Six across the card, eight apart: each 40 tall, its 44-point hit
           area its own (index.css), not grown to it. One rating of six, so
-          the stock ToggleGroup: to VoiceOver a radio group with the one
-          given checked, Left and Right moving along it (Up and Down are
+          the stock ToggleGroup: to VoiceOver a group of toggles with the
+          one given pressed, Left and Right moving along it (Up and Down are
           the page's, walking the points). A tap on the one
           already given rates it again, as before, and moves on. */}
       <ToggleGroup
-        type="single"
-        value={rating === null ? "" : `${rating}`}
+        value={rating === null ? [] : [`${rating}`]}
         aria-label="Rate this waypoint"
         orientation="horizontal"
-        onValueChange={(v) => onRate(v ? (Number(v) as Rating) : rating!)}
+        onValueChange={(v) => onRate(v[0] ? (Number(v[0]) as Rating) : rating!)}
         // The group's own 44 a pseudo-element behind it, as Segmented's
-        // track has: Radix makes it a radio group, a control of its own
+        // track has: a group of toggles, a control of its own
         // to the iOS audit, and its row is 40 (isolate keeps the area over
         // the card). The row does not grow.
         className="relative isolate grid w-full grid-cols-6 gap-2 rounded-none after:absolute after:inset-x-0 after:-inset-y-0.5 after:-z-10 after:content-['']"

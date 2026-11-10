@@ -26,7 +26,7 @@ const finds = (typed: string, name: string) => !typed || name.toLowerCase().incl
 
 /**
  * The command palette (⌘K, Ctrl K; the owner, 2026-11-09), on the stock
- * shadcn Command over cmdk: one field that finds an airport (its card
+ * shadcn Command, on Base UI's Autocomplete inside a Base UI Dialog: one field that finds an airport (its card
  * opened, as the Airport tab's search does), opens any screen a link can
  * (design/screens.json's list, generated into lib/navigation), and runs
  * the common actions -- Direct To, the Brief, Nearest, the emergency
@@ -73,13 +73,19 @@ export default function CommandPalette({ mode }: { mode: PaletteMode }) {
       description="Find an airport, open a screen or run an action."
       className="max-w-lg shadow-overlay"
     >
-      <Command shouldFilter={false} className="bg-transparent" data-testid="command-palette">
+      <Command
+        // The highlight always on a row, as a palette's is, so Enter takes
+        // the first one shown without an arrow first (cmdk's way).
+        autoHighlight="always"
+        value={typed}
+        onValueChange={(v) => {
+          setTyped(v);
+          setProblem(null);
+        }}
+        className="bg-transparent"
+        data-testid="command-palette"
+      >
         <CommandInput
-          value={typed}
-          onValueChange={(v) => {
-            setTyped(v);
-            setProblem(null);
-          }}
           placeholder={direct ? "Direct to which airport?" : "Search airports, screens and actions"}
           data-testid="command-palette-input"
         />
@@ -104,7 +110,7 @@ export default function CommandPalette({ mode }: { mode: PaletteMode }) {
           {actions.length > 0 && (
             <PickerGroup heading="Actions">
               {actions.map((a) => (
-                <CommandItem key={a.id} value={`action-${a.id}`} onSelect={() => run(a.id)} data-testid={`command-palette-${a.id}`}>
+                <CommandItem key={a.id} value={`action-${a.id}`} onClick={() => run(a.id)} data-testid={`command-palette-${a.id}`}>
                   {a.icon}
                   <span className={TEXT.row}>{a.label}</span>
                   {a.keys && <CommandShortcut>{a.keys}</CommandShortcut>}
@@ -115,7 +121,7 @@ export default function CommandPalette({ mode }: { mode: PaletteMode }) {
           {screens.length > 0 && (
             <PickerGroup heading="Go To">
               {screens.map((id) => (
-                <CommandItem key={id} value={`screen-${id}`} onSelect={() => run(id)} data-testid={`command-palette-screen-${id}`}>
+                <CommandItem key={id} value={`screen-${id}`} onClick={() => run(id)} data-testid={`command-palette-screen-${id}`}>
                   <span className={TEXT.row}>{SCREENS[id].title}</span>
                   {SCREEN_KEYS[id] && <CommandShortcut>{SCREEN_KEYS[id]}</CommandShortcut>}
                 </CommandItem>

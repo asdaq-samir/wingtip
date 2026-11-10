@@ -36,7 +36,7 @@ test("a field reached hours from now picks its runway into the forecast wind, an
   await expect(wind).toContainText("090° 14 kt");
   expect(asked).toContain("KDLH");
   // Duluth's 09 into the easterly.
-  await expect(kdlh.getByRole("radio", { name: /^Runway 9, into the wind/ })).toBeVisible();
+  await expect(kdlh.getByRole("button", { name: /^Runway 9, into the wind/ })).toBeVisible();
 });
 
 test("a runway picked into an earlier wind follows the wind, where one the pilot picked stays", async ({ page }) => {
@@ -50,7 +50,9 @@ test("a runway picked into an earlier wind follows the wind, where one the pilot
   await settle(page);
   await openTab(page, "Nav Log");
   const kdlh = sideDrawer(page).getByRole("region", { name: "KDLH · Arrive" });
-  await expect(kdlh.getByRole("radio", { name: /^Runway 9, into the wind/ })).toBeChecked({ timeout: slow(60_000) });
+  await expect(kdlh.getByRole("button", { name: /^Runway 9, into the wind/ })).toHaveAttribute("aria-pressed", "true", {
+    timeout: slow(60_000),
+  });
   await expect(page).toHaveURL(/[?&]pattern=([^&]*%2C)?KDLH%3A9(%2C|&|$)/);
 
   // Picked by the pilot: an address that says none was picked for the
@@ -60,12 +62,14 @@ test("a runway picked into an earlier wind follows the wind, where one the pilot
   await settle(page);
   await openTab(page, "Nav Log");
   await expect(kdlh.getByTestId("field-wind")).toContainText("090° 14 kt", { timeout: slow(60_000) });
-  await expect(kdlh.getByRole("radio", { name: /^Runway 27/ })).toBeChecked();
+  await expect(kdlh.getByRole("button", { name: /^Runway 27/ })).toHaveAttribute("aria-pressed", "true");
   await expect(page).not.toHaveURL(/land%3AKDLH/);
 
   await page.goto(`/app/plan?dep=C81&dest=KDLH&depart=${depart()}&pattern=KDLH%3A27`);
   await settle(page);
   await openTab(page, "Nav Log");
-  await expect(kdlh.getByRole("radio", { name: /^Runway 9, into the wind/ })).toBeChecked({ timeout: slow(60_000) });
+  await expect(kdlh.getByRole("button", { name: /^Runway 9, into the wind/ })).toHaveAttribute("aria-pressed", "true", {
+    timeout: slow(60_000),
+  });
   await expect(page).toHaveURL(/[?&]auto=[^&]*land%3AKDLH/);
 });

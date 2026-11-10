@@ -15,6 +15,7 @@ import {
   closeCard,
   openProfile,
 } from "./helpers";
+import { fillTime } from "./ariaFields";
 
 /**
  * What the nav log is computed from: the altitude plans and a pilot's
@@ -136,7 +137,7 @@ test("plan page: a departure time gives every checkpoint its time, and the nav l
   when.setHours(15, 0, 0, 0);
   const pad = (n: number) => String(n).padStart(2, "0");
   const isoDay = `${when.getFullYear()}-${pad(when.getMonth() + 1)}-${pad(when.getDate())}`;
-  // shadcn's date picker: the day from the calendar in its popover
+  // The date picker: the day from React Aria's calendar in its popover
   // (the next month's, when the day after tomorrow falls there), then
   // the time in the box beside it. No native datetime-local control.
   expect(await page.locator('input[type="datetime-local"]').count()).toBe(0);
@@ -144,12 +145,12 @@ test("plan page: a departure time gives every checkpoint its time, and the nav l
   await page.getByTestId("depart-date").click();
   const calendar = page.locator('[data-slot="calendar"]');
   await expect(calendar).toBeVisible();
-  const day = calendar.locator(`td[data-day="${isoDay}"] button`);
-  if ((await day.count()) === 0) await calendar.getByRole("button", { name: /next month/i }).click();
+  const day = calendar.locator(`[data-day="${isoDay}"]:not([data-outside-month])`);
+  if ((await day.count()) === 0) await calendar.getByRole("button", { name: /^next/i }).click();
   await day.click();
   await expect(page).toHaveURL(/[?&]depart=/);
   // The time under the calendar, and Done.
-  await page.getByTestId("depart-time").fill("15:00");
+  await fillTime(page.getByTestId("depart-time"), "15:00");
   await page.getByTestId("depart-done").click();
   await expect(calendar).toHaveCount(0);
   await expect(page.getByTestId("depart-date")).toContainText("15:00");

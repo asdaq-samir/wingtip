@@ -124,7 +124,7 @@ export default function ProcedureMenu({
   // app's other lists are: a reader hears the one picked and its place
   // ("selected, 2 of 5"), where each row was a button with aria-pressed
   // and a tick drawn by hand. The arrow keys move between the choices
-  // without picking one: a radio group picks the one they reach (Radix's,
+  // without picking one: a radio group picks the one they reach (Base UI's,
   // as the WAI-ARIA radio pattern has it), and a pick here plans the
   // route again and closes the menu. A tap or Space picks.
   const arrowing = useRef(false);
@@ -246,9 +246,10 @@ export default function ProcedureMenu({
           />
         }
         data-testid="procedure-menu"
-        onCloseAutoFocus={(event) => {
-          if (toSheet.current) event.preventDefault();
+        finalFocus={() => {
+          const keep = toSheet.current;
           toSheet.current = false;
+          return !keep;
         }}
       >
         {page && "procedure" in page ? (

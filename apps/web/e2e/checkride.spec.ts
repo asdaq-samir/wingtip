@@ -1,5 +1,6 @@
 import { test, expect, type Route } from "@playwright/test";
 import { library, openConsole, showTabs } from "./helpers";
+import { fillDate } from "./ariaFields";
 
 /**
  * The Logbook's Checkride page (CheckridePage): 61.109's experience as
@@ -144,7 +145,7 @@ test("experience item by item, a report's codes looked up, and an endorsement da
   await expect(codes.first()).toContainText("National Airspace System: Airspace classes and associated requirements and limitations.");
   await expect(codes.nth(1)).toContainText("Diversion");
 
-  await console.getByTestId("endorsement-solo-90").fill("2026-09-01");
+  await fillDate(console.getByTestId("endorsement-solo-90"), "2026-09-01");
   await expect.poll(() => sent.at(-1)?.url ?? "").toContain("/api/training/endorsements/solo-90");
   await expect(console.getByTestId("endorsement").filter({ has: page.getByTestId("endorsement-solo-90") })).toContainText(
     /Good to 30 Nov 2026|Ran out 30 Nov 2026/,

@@ -14,6 +14,9 @@
     // Loaded whole with import() and drawn by name (TrainWorkspace's
     // dev chunk), which knip does not follow.
     "src/features/chart-labels/dev/DevPanel.tsx": ["exports"],
+    // The popups' chunk (components/popupsChunk): loaded whole with
+    // import() and drawn off the module by name, which knip does not follow.
+    "src/components/popups/**": ["exports"],
     // BootMap, the same: routeMapChunk loads RouteMap.tsx with import()
     // and reads it off the module (m.BootMap), which knip 6 no longer
     // follows to GlRouteMap's GlBootMap.

@@ -368,49 +368,20 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
    the drawer has there: an accordion trigger, which opened a briefing
    section nobody touched. While one is open the cards take their own
    taps back; the chart loses the wheel under a toast for that long.
-   The panel out is <body>'s data-map-panel (MapPanel), and a dialog open
-   its data-scroll-locked, which the stock dialogs' scroll lock sets
-   (react-remove-scroll-bar), rather than a :has() looking for either: at
-   the top of the page it restyled all of it at every data-state changed
-   anywhere, a quarter of a second of a phone's each time a tab was
-   picked (measured 2026-10-07). */
-body:is([data-map-panel="full"], [data-scroll-locked]) [data-sonner-toast] {
+   The panel out is <body>'s data-map-panel (MapPanel); a dialog, menu or
+   popover open marks what is outside it data-base-ui-inert (Base UI's
+   marker, on the page's root or the toaster itself), rather than a :has()
+   looking for either: at the top of the page it restyled all of it at
+   every state change anywhere, a quarter of a second of a phone's each
+   time a tab was picked (measured 2026-10-07). Base UI keeps the page's
+   taps from under a modal layer with a backdrop of its own, not by
+   <body>'s pointer-events, and locks the scroll by overflow alone, so
+   Radix's scroll-lock variable and the sheet that stood in for its
+   pointer-events are gone with it. */
+body[data-map-panel="full"] [data-sonner-toast],
+[data-base-ui-inert] [data-sonner-toast],
+[data-sonner-toaster][data-base-ui-inert] [data-sonner-toast] {
   pointer-events: auto;
-}
-/* The scroll lock's own variable kept on <body>: the lock sets it there
-   as a stock dialog, menu or select opens (react-remove-scroll-bar), and
-   inherited, every element under it had its style worked out again,
-   opening and closing. An override of 0px on #root (2026-10-08) stopped
-   it only while the lock's value differed: a phone has no scroll bar,
-   the lock's value is 0px too, and Chrome then shares the body's
-   variables with #root, so the page restyled all the same -- 1,012
-   elements, 220-460 ms of a phone's (CPU 4x slower) each way, set to 0px;
-   none with 15px (traced 2026-10-13). Registered as not inherited, it is
-   the body's alone, whatever its value: 5-20 ms. Nothing reads it; the
-   page under the body never scrolls, so has no scroll bar to make room
-   for. */
-@property --removed-body-scroll-bar-size {
-  syntax: "*";
-  inherits: false;
-}
-/* The same for the page's taps. A stock menu, select or dialog keeps
-   them from the page under it by setting <body>'s pointer-events to none
-   as it opens (Radix's DismissableLayer), and that being inherited too,
-   every element of the page had its style worked out again opening and
-   closing: 100 ms of a phone's each way, the most of what opening the
-   Share menu cost (measured 2026-10-11). Here the body keeps its own,
-   and a sheet over the whole screen under the open layer, behind the
-   scroll lock's attribute that layer sets, takes the taps instead: one
-   element restyled, not the page. A tap on it is outside the layer, so
-   it closes the layer as before, and reaches nothing under it. */
-body {
-  pointer-events: auto !important;
-}
-body[data-scroll-locked]::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 50;
 }
 
 /* Touch targets. Apple asks for 44 points on both sides of anything a

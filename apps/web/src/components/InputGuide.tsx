@@ -43,12 +43,10 @@ export default function InputGuide({ label }: { label: string | null | undefined
         {guide.how}
         <ChevronDown className={cn("size-4 transition-transform motion-reduce:transition-none", open && "rotate-180")} aria-hidden="true" />
       </CollapsibleTrigger>
-      <CollapsibleContent asChild>
-        <ol className={cn("list-decimal pl-5 text-foreground/80", TEXT.note)} data-testid="input-guide-steps">
-          {guide.steps.map((step) => (
-            <li key={step}>{step}</li>
-          ))}
-        </ol>
+      <CollapsibleContent render={<ol className={cn("list-decimal pl-5 text-foreground/80", TEXT.note)} data-testid="input-guide-steps" />}>
+        {guide.steps.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
       </CollapsibleContent>
     </Collapsible>
   );

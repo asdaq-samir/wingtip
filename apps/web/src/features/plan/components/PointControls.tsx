@@ -107,49 +107,49 @@ export function PointMenuItems({
   later: ReturnType<typeof useAfterMenu>["later"];
   testId: string;
 }) {
-  const { Item, Label, Separator, Shortcut } = kit;
+  const { Item, Group, Label, Separator, Shortcut } = kit;
   return (
-    <>
+    <Group>
       <Label>{a.ident}</Label>
       {a.onChange && (
-        <Item onSelect={later(a.onChange, true)} data-testid={`${testId}-change`}>
+        <Item onClick={later(a.onChange, true)} data-testid={`${testId}-change`}>
           <Pencil aria-hidden="true" />
           Change
         </Item>
       )}
       {a.onDirect && (
-        <Item onSelect={a.onDirect} data-testid={`${testId}-direct`}>
+        <Item onClick={a.onDirect} data-testid={`${testId}-direct`}>
           <MoveUpRight aria-hidden="true" />
           {a.direct ? "Fly as Planned" : "Direct To"}
         </Item>
       )}
       {a.onAltitude && (
-        <Item onSelect={later(a.onAltitude)} data-testid={`${testId}-altitude`}>
+        <Item onClick={later(a.onAltitude)} data-testid={`${testId}-altitude`}>
           <MoveVertical aria-hidden="true" />
           Set Altitude…
           {a.altitude != null && <Shortcut className="flex items-center gap-1 tracking-normal tabular-nums">{a.altitude}</Shortcut>}
         </Item>
       )}
       {a.onFix && (
-        <Item onSelect={later(a.onFix)} data-testid={`${testId}-fix`}>
+        <Item onClick={later(a.onFix)} data-testid={`${testId}-fix`}>
           <Crosshair aria-hidden="true" />
           Create a Fix from Here…
         </Item>
       )}
       {a.onHold && (
-        <Item onSelect={later(a.onHold)} data-testid={`${testId}-hold`}>
+        <Item onClick={later(a.onHold)} data-testid={`${testId}-hold`}>
           <Repeat2 aria-hidden="true" />
           {a.held ? "Change Hold…" : "Hold Here…"}
         </Item>
       )}
       {a.onInfo && (
-        <Item onSelect={later(a.onInfo)} data-testid={`${testId}-info`}>
+        <Item onClick={later(a.onInfo)} data-testid={`${testId}-info`}>
           <Info aria-hidden="true" />
           More Info
         </Item>
       )}
       {a.onAddAfter && (
-        <Item onSelect={later(a.onAddAfter, true)} data-testid={`${testId}-add-after`}>
+        <Item onClick={later(a.onAddAfter, true)} data-testid={`${testId}-add-after`}>
           <Plus aria-hidden="true" />
           Add a Stop After
         </Item>
@@ -158,13 +158,13 @@ export function PointMenuItems({
         <>
           <Separator />
           {/* The one word, at the pilot's ask of the pill's menu. */}
-          <Item variant="destructive" onSelect={a.onRemove} data-testid={`${testId}-remove`}>
+          <Item variant="destructive" onClick={a.onRemove} data-testid={`${testId}-remove`}>
             <Trash2 aria-hidden="true" />
             Remove
           </Item>
         </>
       )}
-    </>
+    </Group>
   );
 }
 
@@ -179,39 +179,41 @@ export function PointMenuItems({
  * 36 with a 20-point glyph, as every icon button is).
  */
 export function PointMenu({ testId = "point-menu", face, ...actions }: PointActions & { testId?: string; face?: ReactNode }) {
-  const { later, onCloseAutoFocus } = useAfterMenu();
+  const { later, finalFocus } = useAfterMenu();
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        {face ? (
-          <button
-            type="button"
-            aria-label={`${actions.ident}: more`}
-            data-testid={testId}
-            data-point-mark=""
-            // A round glass button round the symbol, as the app's other
-            // buttons are, so it reads as one, at the owner's pick (option A,
-            // 2026-10-22: "make the airport icons actually look like
-            // selectable buttons"): 36 round its 22, the icon buttons' own
-            // size, a bit bigger at the owner's ask ("Make the airport button
-            // outline a bit bigger", it was 32), its 44 a pseudo-element,
-            // centred on the route's line as the bare symbol was, and on the
-            // point's two lines, at the owner's ask ("Center it on the two
-            // lines"): its column centres it (ProceduresRoute).
-            className={cn(
-              "relative -mx-1 grid size-9 shrink-0 place-items-center rounded-full outline-none after:absolute after:-inset-1 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-              GLASS_BUTTON,
-            )}
-          >
-            {face}
-          </button>
-        ) : (
-          <RoundButton label={`${actions.ident}: more`} className="shrink-0" data-testid={testId}>
-            <Ellipsis className="size-5" aria-hidden="true" />
-          </RoundButton>
-        )}
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align={face ? "start" : "end"} className="min-w-56" onCloseAutoFocus={onCloseAutoFocus}>
+      <DropdownMenuTrigger
+        render={
+          face ? (
+            <button
+              type="button"
+              aria-label={`${actions.ident}: more`}
+              data-testid={testId}
+              data-point-mark=""
+              // A round glass button round the symbol, as the app's other
+              // buttons are, so it reads as one, at the owner's pick (option A,
+              // 2026-10-22: "make the airport icons actually look like
+              // selectable buttons"): 36 round its 22, the icon buttons' own
+              // size, a bit bigger at the owner's ask ("Make the airport button
+              // outline a bit bigger", it was 32), its 44 a pseudo-element,
+              // centred on the route's line as the bare symbol was, and on the
+              // point's two lines, at the owner's ask ("Center it on the two
+              // lines"): its column centres it (ProceduresRoute).
+              className={cn(
+                "relative -mx-1 grid size-9 shrink-0 place-items-center rounded-full outline-none after:absolute after:-inset-1 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+                GLASS_BUTTON,
+              )}
+            >
+              {face}
+            </button>
+          ) : (
+            <RoundButton label={`${actions.ident}: more`} className="shrink-0" data-testid={testId}>
+              <Ellipsis className="size-5" aria-hidden="true" />
+            </RoundButton>
+          )
+        }
+      />
+      <DropdownMenuContent align={face ? "start" : "end"} className="min-w-56" finalFocus={finalFocus}>
         <PointMenuItems actions={actions} kit={DROPDOWN} later={later} testId={testId} />
       </DropdownMenuContent>
     </DropdownMenu>

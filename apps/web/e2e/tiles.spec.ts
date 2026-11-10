@@ -92,13 +92,13 @@ for (const path of ["/app/dev"] as const) {
     await expect.poll(kinds, { timeout: slow(15000) }).toBe("sec");
 
     await openMapSettings(page);
-    await page.getByTestId("base-chart-select").getByRole("radio", { name: "IFR low" }).click();
+    await page.getByTestId("base-chart-select").getByRole("button", { name: "IFR low" }).click();
     // The terminal sheet's row is the IFR area chart over the IFR charts.
     await expect(page.getByTestId("map-settings").getByText("IFR Area Charts")).toBeVisible();
     await expect.poll(kinds, { timeout: slow(10000) }).toBe("ifr_low");
     await expect.poll(() => ifrDrawn, { timeout: slow(45000) }).toBeGreaterThan(0);
 
-    await page.getByTestId("base-chart-select").getByRole("radio", { name: "Sectional" }).click();
+    await page.getByTestId("base-chart-select").getByRole("button", { name: "Sectional" }).click();
     await expect.poll(kinds, { timeout: slow(10000) }).toBe("sec");
     await expect(page.getByTestId("map-settings").getByText("Terminal Area Charts")).toBeVisible();
   });

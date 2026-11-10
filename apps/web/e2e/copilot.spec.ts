@@ -43,7 +43,7 @@ test("the copilot is a choice beside the alerts in the map's settings", async ({
   await settle(page);
   await openMapSettings(page);
   const mode = page.getByTestId("map-settings").getByTestId("copilot-mode");
-  await expect(mode.getByRole("radio", { name: "On" })).toBeChecked();
+  await expect(mode.getByRole("button", { name: "On" })).toHaveAttribute("aria-pressed", "true");
 });
 
 test("flying the dry run, Oshkosh gone IFR is said with a field to go to and its METAR under a tap", async ({ page }) => {
@@ -65,7 +65,7 @@ test("with the copilot off nothing is said in flight", async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
   await openMapSettings(page);
-  await page.getByTestId("map-settings").getByTestId("copilot-mode").getByRole("radio", { name: "Off" }).click();
+  await page.getByTestId("map-settings").getByTestId("copilot-mode").getByRole("button", { name: "Off" }).click();
   await page.keyboard.press("Escape");
   await startDryRun(page);
   await expect(page.getByTestId("flying-head")).toBeVisible({ timeout: slow(10_000) });

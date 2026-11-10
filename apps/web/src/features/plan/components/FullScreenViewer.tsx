@@ -40,9 +40,7 @@ export default function FullScreenViewer({
         {/* Under the status bar, the close where every panel has it. */}
         <div className="flex shrink-0 items-center gap-4 pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.75rem,env(safe-area-inset-right))] pb-2 pl-[max(1rem,env(safe-area-inset-left))]">
           <DialogTitle className={cn("min-w-0 flex-1 truncate font-semibold", TEXT.title)}>{title}</DialogTitle>
-          <DialogClose asChild>
-            <CloseButton data-testid={closeTestId} />
-          </DialogClose>
+          <DialogClose render={<CloseButton data-testid={closeTestId} />} />
         </div>
         {children}
       </DialogContent>

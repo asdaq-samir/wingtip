@@ -99,17 +99,19 @@ export function VorCard({ vor }: { vor: VorPin }) {
       {(vor.remarks ?? []).length > 0 && (
         <ListGroup>
           <Collapsible>
-            <CollapsibleTrigger asChild>
-              <ListRow
-                title={
-                  <span className={cn(vor.restricted && "text-amber-700 dark:text-amber-400")}>
-                    {vor.restricted ? "Restrictions" : "Remarks"}
-                  </span>
-                }
-                chevron
-                data-testid="vor-remarks"
-              />
-            </CollapsibleTrigger>
+            <CollapsibleTrigger
+              render={
+                <ListRow
+                  title={
+                    <span className={cn(vor.restricted && "text-amber-700 dark:text-amber-400")}>
+                      {vor.restricted ? "Restrictions" : "Remarks"}
+                    </span>
+                  }
+                  chevron
+                  data-testid="vor-remarks"
+                />
+              }
+            />
             <CollapsibleContent>
               {(vor.remarks ?? []).map((remark) => (
                 <ListRow

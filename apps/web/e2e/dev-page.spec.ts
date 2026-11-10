@@ -30,7 +30,7 @@ test(
     if ((page.viewportSize()?.width ?? 0) < 768) await expect(sideDrawer(page).getByTestId("train-figures")).toBeVisible();
     await showTabs(page);
     await expect(sideDrawer(page).getByTestId("tab-bar").getByRole("button")).toHaveText(["Train", "Perf", "Setup"]);
-    await expect(page.getByTestId("tab-train")).toHaveAttribute("aria-current", "page");
+    await expect(page.getByTestId("tab-train")).toHaveAttribute("aria-selected", "true");
     // Its tabs half way (the figures are the pill's); down again, the pill.
     await grabberTo(page, "peek");
     await expectDrawerClosed(page);
@@ -64,7 +64,7 @@ test(
     await page.keyboard.press("Escape");
     await expect(devMl).toHaveCount(0);
     await showTabs(page);
-    await expect(page.getByTestId("tab-train")).toHaveAttribute("aria-current", "page");
+    await expect(page.getByTestId("tab-train")).toHaveAttribute("aria-selected", "true");
     await showTabs(page);
     await page.getByTestId("tab-perf").click();
     await grabberTo(page, "full");
@@ -115,7 +115,7 @@ test("dev page: the waypoint drawer is a worklist -- every candidate in flight o
   // the route (RatingCard).
   await rows.nth(2).click();
   await expect(rows.nth(2)).toHaveAttribute("data-selected", "true");
-  await expect(drawer.getByTestId("rating-card").getByRole("radio", { name: "Rate 5" })).toBeVisible();
+  await expect(drawer.getByTestId("rating-card").getByRole("button", { name: "Rate 5" })).toBeVisible();
 
   // Down, with focus in the list, walks the list top to bottom.
   await page.keyboard.press("ArrowDown");
@@ -165,7 +165,7 @@ test("a retrain confirmed from the panel's More opens Perf, to follow it", async
   await page.getByRole("button", { name: "Retrain", exact: true }).click();
 
   await showTabs(page);
-  await expect(page.getByTestId("tab-perf")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("tab-perf")).toHaveAttribute("aria-selected", "true");
   await expect(sideDrawer(page).getByTestId("retrain-row")).toContainText("Retrain");
   await expect(consoleSheet(page)).toHaveCount(0);
   // The snapshot is polled: a fetch of one still in flight as the page

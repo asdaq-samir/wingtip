@@ -13,7 +13,7 @@ const map = (page: Page) => page.getByTestId("gl-map");
 const layers = (page: Page) => map(page).getAttribute("data-layers");
 
 async function pickTerrain(page: Page, name: "Flat" | "Shaded" | "3D") {
-  await beforeTheRoute(page, () => page.getByTestId("terrain-select").getByRole("radio", { name }).click());
+  await beforeTheRoute(page, () => page.getByTestId("terrain-select").getByRole("button", { name }).click());
 }
 
 test("the relief is shaded over the chart, and stood up in 3D with the route at its altitudes", async ({ page }) => {

@@ -134,14 +134,14 @@ test("a picked approach is taught: briefed a step at a time, flown fix by fix wi
   await expect.poll(async () => (await drawn(page, "lesson")).length).toBeGreaterThan(0);
 
   // Fly: the airplane taken fix by fix, a coaching word at each.
-  await lesson.getByTestId("approach-lesson-steps").getByRole("radio", { name: "Fly" }).click();
+  await lesson.getByTestId("approach-lesson-steps").getByRole("button", { name: "Fly" }).click();
   const fly = lesson.getByTestId("approach-fly");
   await expect(fly.getByTestId("approach-coach")).toBeVisible();
   for (let i = 0; i < 3; i++) await fly.getByTestId("approach-fly-next").click();
   await expect(fly.getByTestId("approach-coach")).toHaveText("Descend on the 3.00° path, about 480 ft/min at 90 kt, and start the timer.");
   await expect(fly.getByTestId("approach-profile-airplane")).toBeVisible();
   // At 120 kt, the rate for it.
-  await fly.getByTestId("approach-fly-speed").getByRole("radio", { name: "120 kt" }).click();
+  await fly.getByTestId("approach-fly-speed").getByRole("button", { name: "120 kt" }).click();
   await expect(fly.getByTestId("approach-coach")).toContainText("about 640 ft/min at 120 kt");
   await fly.getByTestId("approach-fly-next").click();
   await expect(fly.getByTestId("approach-coach")).toContainText(
@@ -149,7 +149,7 @@ test("a picked approach is taught: briefed a step at a time, flown fix by fix wi
   );
 
   // Quiz: one question answered, and what it says after.
-  await lesson.getByTestId("approach-lesson-steps").getByRole("radio", { name: "Quiz" }).click();
+  await lesson.getByTestId("approach-lesson-steps").getByRole("button", { name: "Quiz" }).click();
   const quiz = lesson.getByTestId("approach-quiz");
   await expect(quiz.getByTestId("approach-quiz-question")).toHaveText("What's the minimum altitude at DL?");
   await quiz.getByTestId("approach-quiz-choice").filter({ hasText: "3,300 ft" }).click();

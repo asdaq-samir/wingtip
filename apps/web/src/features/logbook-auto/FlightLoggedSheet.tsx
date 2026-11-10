@@ -4,7 +4,9 @@ import FieldHit from "../../components/FieldHit";
 import { ListChoices, ListGroup, ListRow } from "../../components/GroupedList";
 import SheetDialog from "../../components/SheetDialog";
 import { Button } from "../../components/ui/button";
+import { DateField } from "../../components/ui/date-field";
 import { Input } from "../../components/ui/input";
+import { NumberField } from "../../components/ui/number-field";
 import SkeletonLines from "../../components/SkeletonLines";
 import type { LogbookDraft } from "../../lib/api/types";
 import { FINDING_TONE } from "../../lib/findings";
@@ -41,28 +43,37 @@ function FigureRow({
   testId: string;
 }) {
   const id = useId();
-  return (
-    <ListRow
-      title={title}
-      description={description}
-      value={
-        <FieldHit htmlFor={id}>
-          <Input
-            id={id}
-            type={type}
-            aria-label={title}
-            value={value}
-            data-testid={testId}
-            inputMode={type === "number" ? "decimal" : undefined}
-            step={type === "number" ? "any" : undefined}
-            min={type === "number" ? 0 : undefined}
-            className={cn("h-8 text-right", type === "number" ? "w-20" : "w-36")}
-            onChange={(e) => onChange(e.target.value)}
-          />
-        </FieldHit>
-      }
-    />
-  );
+  // A figure on React Aria's number field and a day on its date field,
+  // where the native ones were; their values the strings they gave.
+  const field =
+    type === "number" ? (
+      <FieldHit htmlFor={id}>
+        <NumberField
+          id={id}
+          aria-label={title}
+          value={value === "" ? null : Number(value)}
+          minValue={0}
+          data-testid={testId}
+          className="h-8 w-20"
+          inputClassName="text-right"
+          onChange={(v) => onChange(v == null ? "" : String(v))}
+        />
+      </FieldHit>
+    ) : type === "date" ? (
+      <DateField aria-label={title} value={String(value)} data-testid={testId} className="h-8 w-36" onChange={onChange} />
+    ) : (
+      <FieldHit htmlFor={id}>
+        <Input
+          id={id}
+          aria-label={title}
+          value={value}
+          data-testid={testId}
+          className="h-8 w-36 text-right"
+          onChange={(e) => onChange(e.target.value)}
+        />
+      </FieldHit>
+    );
+  return <ListRow title={title} description={description} value={field} />;
 }
 
 /** The draft, each figure changeable and its reason under it. */

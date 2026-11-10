@@ -1,15 +1,8 @@
-import { Fragment, useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
+import { cloneElement, useState, type ComponentProps, type ReactElement, type ReactNode } from "react";
 import { ChevronsUpDown } from "lucide-react";
 import { cn } from "cn";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
 import { TEXT } from "../lib/text";
+import { loadPopups, usePopups } from "./popupsChunk";
 
 /** One of a pull-down's choices. */
 export interface PullDownOption<V extends string> {
@@ -24,29 +17,8 @@ export interface PullDownOption<V extends string> {
   apart?: boolean;
 }
 
-/**
- * Every pick-one choice in the app, as iOS's pull-down button is: the one
- * picked in the tint with the up-and-down chevron, and a tap the menu of
- * them, the picked one's checkmark on the left (the owner's "one pull-down
- * for every pick-one", 2026-10-27). It was three things -- Radix's Select
- * with its own list, radio items in a DropdownMenu, and the procedures'
- * menu -- each looking its own. The stock DropdownMenu's radio group
- * underneath, so it is a menu to a screen reader and the keyboard, its
- * look the app's one menu look (ui/menuLook).
- */
-export default function PullDown<V extends string>({
-  label,
-  value,
-  options,
-  onChange,
-  placeholder,
-  testId,
-  align = "end",
-  trigger,
-  className,
-  contentClassName,
-  top,
-}: {
+/** A pull-down's props. */
+export interface PullDownProps<V extends string> {
   /** What is picked, to a screen reader: "Time aloft", said with the one
    *  picked ("Time aloft: 1 h"). */
   label: string;
@@ -66,69 +38,78 @@ export default function PullDown<V extends string>({
   contentClassName?: string;
   /** Before the choices, a band under it. */
   top?: ReactNode;
-}) {
+}
+
+/** The tinted words with the up-and-down chevron: the trigger, unless the
+ *  caller gives its own. */
+export function PullDownWords<V extends string>({
+  label,
+  value,
+  options,
+  placeholder,
+  testId,
+  className,
+  ...button
+}: Pick<PullDownProps<V>, "label" | "value" | "options" | "placeholder" | "testId" | "className"> & ComponentProps<"button">) {
   const picked = options.find((o) => o.value === value);
   const words = picked ? (picked.text ?? (typeof picked.label === "string" ? picked.label : picked.value)) : (placeholder ?? "");
-  // Open only while its trigger is in sight: the sheet it is on lowered
-  // to the pill under an open menu left the menu over the tab bar, its
-  // first choice alone above the screen's foot (the owner's screenshot,
-  // 2026-10-27: Setup's Theme menu, "System", over the tabs). An
-  // IntersectionObserver counts the sheet's clip as out of sight.
-  const [open, setOpen] = useState(false);
-  const button = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    const el = button.current;
-    if (!open || !el || typeof IntersectionObserver === "undefined") return;
-    const watch = new IntersectionObserver(([seen]) => {
-      if (seen && !seen.isIntersecting) setOpen(false);
-    });
-    watch.observe(el);
-    return () => watch.disconnect();
-  }, [open]);
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild ref={button}>
-        {trigger ?? (
-          // Its 44-point area a pseudo-element round the words, never a
-          // bigger button (index.css's rule for every control).
-          <button
-            type="button"
-            aria-label={`${label}: ${words}`}
-            data-testid={testId}
-            className={cn(
-              "relative inline-flex min-w-0 items-center gap-1 rounded-sm text-tint outline-none",
-              // Eleven over and under the words' 22, 44 in all.
-              "after:absolute after:-inset-x-2 after:-inset-y-[11px] after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-              "[&_svg]:shrink-0",
-              TEXT.row,
-              className,
-            )}
-          >
-            <span className={cn("flex min-w-0 items-center gap-1.5 truncate", !picked && "text-muted-foreground")}>
-              {picked?.label ?? placeholder}
-            </span>
-            <ChevronsUpDown className="size-4" aria-hidden="true" />
-          </button>
-        )}
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align={align} className={contentClassName}>
-        {top && (
-          <>
-            {top}
-            <DropdownMenuSeparator />
-          </>
-        )}
-        <DropdownMenuRadioGroup value={value} onValueChange={(v) => onChange(v as V)} aria-label={label}>
-          {options.map((o) => (
-            <Fragment key={o.value}>
-              <DropdownMenuRadioItem value={o.value} data-testid={o.testId} aria-label={o.text}>
-                {o.label}
-              </DropdownMenuRadioItem>
-              {o.apart && <DropdownMenuSeparator />}
-            </Fragment>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    // Its 44-point area a pseudo-element round the words, never a bigger
+    // button (index.css's rule for every control).
+    <button
+      type="button"
+      aria-label={`${label}: ${words}`}
+      data-testid={testId}
+      {...button}
+      className={cn(
+        "relative inline-flex min-w-0 items-center gap-1 rounded-sm text-tint outline-none",
+        // Eleven over and under the words' 22, 44 in all.
+        "after:absolute after:-inset-x-2 after:-inset-y-[11px] after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+        "[&_svg]:shrink-0",
+        TEXT.row,
+        className,
+      )}
+    >
+      <span className={cn("flex min-w-0 items-center gap-1.5 truncate", !picked && "text-muted-foreground")}>
+        {picked?.label ?? placeholder}
+      </span>
+      <ChevronsUpDown className="size-4" aria-hidden="true" />
+    </button>
+  );
+}
+
+/**
+ * Every pick-one choice in the app, as iOS's pull-down button is: the one
+ * picked in the tint with the up-and-down chevron, and a tap the menu of
+ * them, the picked one's checkmark on the left (the owner's "one pull-down
+ * for every pick-one", 2026-10-27). It was three things -- a Select
+ * with its own list, radio items in a DropdownMenu, and the procedures'
+ * menu -- each looking its own. The stock DropdownMenu's radio group
+ * underneath, so it is a menu to a screen reader and the keyboard, its
+ * look the app's one menu look (ui/menuLook).
+ */
+export default function PullDown<V extends string>(props: PullDownProps<V>) {
+  // The menu is on the popups' chunk (popupsChunk): until it is in, the
+  // trigger alone, and a tap on it opens the menu once it is.
+  const popups = usePopups();
+  const [asked, setAsked] = useState(false);
+  if (popups) return <popups.PullDownMenu {...props} defaultOpen={asked} />;
+  const ask = () => {
+    setAsked(true);
+    void loadPopups();
+  };
+  const { trigger } = props;
+  return trigger ? (
+    cloneElement(trigger as ReactElement<{ onClick?: () => void }>, { onClick: ask })
+  ) : (
+    <PullDownWords
+      label={props.label}
+      value={props.value}
+      options={props.options}
+      placeholder={props.placeholder}
+      testId={props.testId}
+      className={props.className}
+      onClick={ask}
+    />
   );
 }

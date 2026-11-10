@@ -61,8 +61,8 @@ test("the USGS's imagery over the chart, credited, at the strength picked; no Go
   await settle(page);
   await openMapSettings(page);
   const overlay = page.getByTestId("overlay-select");
-  await expect(overlay.getByRole("radio")).toHaveText(["None", "Imagery"]);
-  await overlay.getByRole("radio", { name: "Imagery" }).click();
+  await expect(overlay.getByRole("button")).toHaveText(["None", "Imagery"]);
+  await overlay.getByRole("button", { name: "Imagery" }).click();
   // The map's own layer, not the choice's picture of it.
   const imagery = () => page.getByTestId("gl-map").getAttribute("data-imagery");
   await expect.poll(imagery, { timeout: slow(15000) }).toMatch(/^usgs /);
@@ -70,10 +70,10 @@ test("the USGS's imagery over the chart, credited, at the strength picked; no Go
   // Half to begin with, then full; over the base chart and the terminal
   // sheet, on purpose (its slot, BaseGl).
   await expect.poll(imagery).toBe("usgs 0.6");
-  await page.getByTestId("overlay-strength").getByRole("radio", { name: "Full" }).click();
+  await page.getByTestId("overlay-strength").getByRole("button", { name: "Full" }).click();
   await expect.poll(imagery).toBe("usgs 1");
   // Off: gone, its credit too.
-  await overlay.getByRole("radio", { name: "None" }).click();
+  await overlay.getByRole("button", { name: "None" }).click();
   await expect.poll(imagery).toBeNull();
   await expect(page.getByTestId("overlay-strength")).toHaveCount(0);
 });
@@ -85,12 +85,12 @@ test("Google's map or its satellite over the chart where the deployment has a ke
   await page.goto("/app/plan");
   await settle(page);
   await openMapSettings(page);
-  await page.getByTestId("overlay-select").getByRole("radio", { name: "Google" }).click();
+  await page.getByTestId("overlay-select").getByRole("button", { name: "Google" }).click();
   await expect.poll(() => asked.some((u) => u.includes("/v1/createSession?key=AIza-test")), { timeout: slow(15000) }).toBe(true);
   await expect.poll(() => asked.some((u) => /\/v1\/2dtiles\/\d+\/\d+\/\d+\?session=test-session&key=AIza-test/.test(u))).toBe(true);
   await expect(page.locator(".maplibregl-ctrl-attrib", { hasText: "Google Maps · Map data ©2026 Google" })).toBeVisible();
   // Its satellite: a session of its own, with Google's roads over it.
-  await page.getByTestId("google-overlay-select").getByRole("radio", { name: "Satellite" }).click();
+  await page.getByTestId("google-overlay-select").getByRole("button", { name: "Satellite" }).click();
   await expect.poll(() => asked.filter((u) => u.includes("/v1/createSession")).length).toBe(2);
 });
 
@@ -105,7 +105,7 @@ test("a saved Google overlay where there is no key is off, with no Strength row 
   await page.goto("/app/plan");
   await settle(page);
   await openMapSettings(page);
-  await expect(page.getByTestId("overlay-select").getByRole("radio", { name: "None" })).toBeChecked();
+  await expect(page.getByTestId("overlay-select").getByRole("button", { name: "None" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("overlay-strength")).toHaveCount(0);
   await expect(page.getByTestId("google-overlay-select")).toHaveCount(0);
 });
@@ -121,7 +121,7 @@ test("Google's session refused says so in the settings; a kept session of anothe
   await page.goto("/app/plan");
   await settle(page);
   await openMapSettings(page);
-  await page.getByTestId("overlay-select").getByRole("radio", { name: "Google" }).click();
+  await page.getByTestId("overlay-select").getByRole("button", { name: "Google" }).click();
   await expect.poll(() => asked.some((u) => u.includes("/v1/createSession?key=AIza-new")), { timeout: slow(15000) }).toBe(true);
   expect(asked.some((u) => u.includes("session=old-session"))).toBe(false);
   // The key refused for the satellite: the settings say so, beside the choice.
@@ -129,7 +129,7 @@ test("Google's session refused says so in the settings; a kept session of anothe
     (url) => url.hostname === "tile.googleapis.com",
     (route) => route.fulfill({ status: 403, json: {} }),
   );
-  await page.getByTestId("google-overlay-select").getByRole("radio", { name: "Satellite" }).click();
+  await page.getByTestId("google-overlay-select").getByRole("button", { name: "Satellite" }).click();
   await expect(page.getByTestId("google-problem")).toBeVisible({ timeout: slow(30000) });
 });
 

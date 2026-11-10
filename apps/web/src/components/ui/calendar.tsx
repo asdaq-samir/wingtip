@@ -1,174 +1,181 @@
-import * as React from "react";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { cn } from "cn";
-import { DayPicker, getDefaultClassNames, type DayButton, type Locale } from "react-day-picker";
+import {
+  Button as AriaButton,
+  Calendar as AriaCalendar,
+  CalendarCell,
+  CalendarGrid,
+  CalendarGridBody,
+  CalendarGridHeader,
+  CalendarHeaderCell,
+  CalendarHeading,
+  CalendarMonthPicker,
+  CalendarYearPicker,
+  type CalendarProps,
+  type DateValue,
+} from "react-aria-components";
+import { parseDate, type CalendarDate } from "@internationalized/date";
 
-import { Button, buttonVariants } from "@/components/ui/button";
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from "lucide-react";
+import PullDown from "../PullDown";
+import { buttonVariants } from "./button";
 
-function Calendar({
+/** The month's arrows: React Aria's own buttons, its slots paging the
+ *  grid, in a ghost icon button's look. */
+const NAV = cn(
+  buttonVariants({ variant: "ghost", size: "icon" }),
+  "pointer-events-auto size-(--cell-size) p-0 select-none data-disabled:opacity-50 pointer-coarse:m-1 pointer-coarse:size-9",
+);
+
+/**
+ * shadcn's React Aria calendar (its aria-vega style), a month's grid of
+ * days for the pickers that want one (DepartPicker, PastFlights), where it
+ * was react-day-picker's. Ours: a finger's 44 a day (--cell-size), the
+ * day's number at iOS's 20, the arrows an icon button's 36 with their 44
+ * round them (index.css), and the month and year as the app's one
+ * pull-down (PullDown), where shadcn's are its own Select.
+ */
+function Calendar<T extends DateValue>({
   className,
-  classNames,
-  showOutsideDays = true,
   captionLayout = "label",
-  buttonVariant = "ghost",
-  locale,
-  formatters,
-  components,
   ...props
-}: React.ComponentProps<typeof DayPicker> & { buttonVariant?: React.ComponentProps<typeof Button>["variant"] }) {
-  const defaultClassNames = getDefaultClassNames();
-
+}: Omit<CalendarProps<T>, "visibleDuration" | "className"> & {
+  className?: string;
+  /** The month and year as menus to jump by, or the month's name alone. */
+  captionLayout?: "label" | "dropdown";
+}) {
   return (
-    <DayPicker
-      showOutsideDays={showOutsideDays}
+    <AriaCalendar
+      {...props}
+      data-slot="calendar"
       className={cn(
-        "group/calendar bg-background p-3 [--cell-radius:var(--radius-md)] [--cell-size:--spacing(8)] pointer-coarse:[--cell-size:--spacing(11)] in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent",
-        String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
-        String.raw`rtl:**:[.rdp-button\_previous>svg]:rotate-180`,
+        "group/calendar w-fit bg-background p-3 [--cell-radius:var(--radius-md)] [--cell-size:--spacing(8)] pointer-coarse:[--cell-size:--spacing(11)] in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent",
         className,
       )}
-      captionLayout={captionLayout}
-      locale={locale}
-      formatters={{ formatMonthDropdown: (date) => date.toLocaleString(locale?.code, { month: "short" }), ...formatters }}
-      classNames={{
-        root: cn("w-fit", defaultClassNames.root),
-        months: cn("relative flex flex-col gap-4 md:flex-row", defaultClassNames.months),
-        month: cn("flex w-full flex-col gap-4", defaultClassNames.month),
-        nav: cn(
-          // Clear to the pointer but for its buttons: across the caption's
-          // whole width, it took the month and year menus' taps.
-          "pointer-events-none absolute inset-x-0 top-0 flex w-full items-center justify-between gap-1 *:pointer-events-auto",
-          defaultClassNames.nav,
-        ),
-        button_previous: cn(
-          buttonVariants({ variant: buttonVariant }),
-          // An icon button's 36 to a finger, its glyph 20, its 44 the hit
-          // area round it (index.css), as every icon button in the app.
-          "size-(--cell-size) p-0 select-none aria-disabled:opacity-50 pointer-coarse:m-1 pointer-coarse:size-9",
-          defaultClassNames.button_previous,
-        ),
-        button_next: cn(
-          buttonVariants({ variant: buttonVariant }),
-          "size-(--cell-size) p-0 select-none aria-disabled:opacity-50 pointer-coarse:m-1 pointer-coarse:size-9",
-          defaultClassNames.button_next,
-        ),
-        month_caption: cn("flex h-(--cell-size) w-full items-center justify-center px-(--cell-size)", defaultClassNames.month_caption),
-        dropdowns: cn(
-          "flex h-(--cell-size) w-full items-center justify-center gap-1.5 text-sm font-medium pointer-coarse:text-(length:--type-row) pointer-coarse:font-semibold",
-          defaultClassNames.dropdowns,
-        ),
-        dropdown_root: cn(
-          // The month and year menus a finger's 44 tall: the menu is the
-          // invisible select laid over the root, which was its text's 22.
-          "relative rounded-(--cell-radius) pointer-coarse:flex pointer-coarse:h-11 pointer-coarse:items-center",
-          defaultClassNames.dropdown_root,
-        ),
-        dropdown: cn("absolute inset-0 bg-popover opacity-0", defaultClassNames.dropdown),
-        caption_label: cn(
-          "font-medium select-none",
-          captionLayout === "label"
-            ? "text-sm pointer-coarse:text-(length:--type-row)"
-            : "flex items-center gap-1 rounded-(--cell-radius) text-sm pointer-coarse:text-(length:--type-row) [&>svg]:size-3.5 [&>svg]:text-muted-foreground",
-          defaultClassNames.caption_label,
-        ),
-        month_grid: cn("w-full border-collapse", defaultClassNames.month_grid),
-        weekdays: cn("flex", defaultClassNames.weekdays),
-        weekday: cn(
-          // A note's size and its iOS leading (TEXT.note, 13 on 18 to a
-          // finger), where the stock 0.8rem stood on the browser's 1.5.
-          "flex-1 rounded-(--cell-radius) text-xs pointer-coarse:text-(length:--type-note) pointer-coarse:leading-[1.125rem] font-normal text-muted-foreground select-none",
-          defaultClassNames.weekday,
-        ),
-        week: cn("mt-2 flex w-full", defaultClassNames.week),
-        week_number_header: cn("w-(--cell-size) select-none", defaultClassNames.week_number_header),
-        week_number: cn("text-[0.8rem] text-muted-foreground select-none", defaultClassNames.week_number),
-        day: cn(
-          "group/day relative aspect-square h-full w-full rounded-(--cell-radius) p-0 text-center select-none [&:last-child[data-selected=true]_button]:rounded-r-(--cell-radius)",
-          props.showWeekNumber
-            ? "[&:nth-child(2)[data-selected=true]_button]:rounded-l-(--cell-radius)"
-            : "[&:first-child[data-selected=true]_button]:rounded-l-(--cell-radius)",
-          defaultClassNames.day,
-        ),
-        range_start: cn(
-          "relative isolate z-0 rounded-l-(--cell-radius) bg-muted after:absolute after:inset-y-0 after:right-0 after:w-4 after:bg-muted",
-          defaultClassNames.range_start,
-        ),
-        range_middle: cn("rounded-none", defaultClassNames.range_middle),
-        range_end: cn(
-          "relative isolate z-0 rounded-r-(--cell-radius) bg-muted after:absolute after:inset-y-0 after:left-0 after:w-4 after:bg-muted",
-          defaultClassNames.range_end,
-        ),
-        today: cn("rounded-(--cell-radius) bg-muted text-foreground data-[selected=true]:rounded-none", defaultClassNames.today),
-        outside: cn("text-muted-foreground aria-selected:text-muted-foreground", defaultClassNames.outside),
-        disabled: cn("text-muted-foreground opacity-50", defaultClassNames.disabled),
-        hidden: cn("invisible", defaultClassNames.hidden),
-        ...classNames,
-      }}
-      components={{
-        Root: ({ className, rootRef, ...props }) => {
-          return <div data-slot="calendar" ref={rootRef} className={cn(className)} {...props} />;
-        },
-        Chevron: ({ className, orientation, ...props }) => {
-          if (orientation === "left") {
-            return <ChevronLeftIcon className={cn("size-4 pointer-coarse:size-5", className)} {...props} />;
-          }
+    >
+      <div className="relative flex flex-col gap-4">
+        {/* Clear to the pointer but for its buttons: across the caption's
+            whole width, it took the month and year menus' taps. */}
+        <header className="pointer-events-none absolute inset-x-0 top-0 flex w-full items-center justify-between gap-1">
+          <AriaButton slot="previous" className={NAV}>
+            <ChevronLeftIcon className="size-4 pointer-coarse:size-5" />
+          </AriaButton>
+          <AriaButton slot="next" className={NAV}>
+            <ChevronRightIcon className="size-4 pointer-coarse:size-5" />
+          </AriaButton>
+        </header>
+        <div className="flex w-full flex-col gap-4">
+          <div className="flex h-(--cell-size) w-full items-center justify-center gap-3 px-(--cell-size) text-sm font-medium pointer-coarse:text-(length:--type-row) pointer-coarse:font-semibold">
+            {captionLayout === "dropdown" ? (
+              <>
+                <CalendarMonthPicker>
+                  {(p) => (
+                    <PullDown
+                      label={p["aria-label"]}
+                      value={String(p.value)}
+                      options={p.items.map((i) => ({ value: String(i.id), label: i.formatted }))}
+                      onChange={(v) => p.onChange(Number(v))}
+                      align="center"
+                    />
+                  )}
+                </CalendarMonthPicker>
+                <CalendarYearPicker>
+                  {(p) => (
+                    <PullDown
+                      label={p["aria-label"]}
+                      value={String(p.value)}
+                      options={p.items.map((i) => ({ value: String(i.id), label: i.formatted }))}
+                      onChange={(v) => p.onChange(Number(v))}
+                      align="center"
+                    />
+                  )}
+                </CalendarYearPicker>
+              </>
+            ) : (
+              <CalendarHeading className="select-none" />
+            )}
+          </div>
+          <CalendarGrid className="w-full border-collapse">
+            <CalendarGridHeader>
+              {(day) => (
+                // A note's size and its iOS leading (TEXT.note, 13 on 18
+                // to a finger), where the stock 0.8rem stood on 1.5.
+                <CalendarHeaderCell className="rounded-(--cell-radius) text-xs font-normal text-muted-foreground select-none pointer-coarse:text-(length:--type-note) pointer-coarse:leading-[1.125rem]">
+                  {day}
+                </CalendarHeaderCell>
+              )}
+            </CalendarGridHeader>
+            <CalendarGridBody>
+              {(date) => (
+                <CalendarCell
+                  date={date}
+                  data-day={date.toString()}
+                  className="group/day relative mt-2 aspect-square size-(--cell-size) cursor-default rounded-(--cell-radius) p-0 text-center outline-none select-none data-outside-month:text-muted-foreground data-disabled:text-muted-foreground data-disabled:opacity-50 data-unavailable:text-muted-foreground data-unavailable:line-through"
+                >
+                  {({ formattedDate, isSelected, isFocusVisible }) => (
+                    // A day's number in its cell's colour (muted outside the
+                    // month), not the ghost button's tint: only the chosen
+                    // day is in the tint, filled. 20 points to a finger, as
+                    // iOS's calendar sets its days.
+                    <div
+                      data-selected-single={isSelected}
+                      className={cn(
+                        buttonVariants({ variant: "ghost", size: "icon" }),
+                        "relative isolate z-10 flex aspect-square size-full min-w-(--cell-size) border-0 leading-none font-normal text-inherit pointer-coarse:text-xl pointer-coarse:leading-[1.5625rem]",
+                        isFocusVisible && "z-10 ring-2 ring-ring",
+                        "data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground",
+                      )}
+                    >
+                      {formattedDate}
+                    </div>
+                  )}
+                </CalendarCell>
+              )}
+            </CalendarGridBody>
+          </CalendarGrid>
+        </div>
+      </div>
+    </AriaCalendar>
+  );
+}
 
-          if (orientation === "right") {
-            return <ChevronRightIcon className={cn("size-4 pointer-coarse:size-5", className)} {...props} />;
-          }
+/** "2026-11-09" as the calendar's day, or undefined for none or nonsense. */
+function dayOf(iso: string | null | undefined): CalendarDate | undefined {
+  if (!iso) return undefined;
+  try {
+    return parseDate(iso);
+  } catch {
+    return undefined;
+  }
+}
 
-          return <ChevronDownIcon className={cn("size-4", className)} {...props} />;
-        },
-        DayButton: ({ ...props }) => <CalendarDayButton locale={locale} {...props} />,
-        WeekNumber: ({ children, ...props }) => {
-          return (
-            <td {...props}>
-              <div className="flex size-(--cell-size) items-center justify-center text-center">{children}</div>
-            </td>
-          );
-        },
-        ...components,
-      }}
+/**
+ * The calendar with ISO days in and out ("2026-11-09"), for the pickers
+ * that load it on their first opening: its date type stays in this chunk
+ * with it, not in the page that opens it.
+ */
+function DayCalendar({
+  value,
+  min,
+  max,
+  onChange,
+  ...props
+}: Omit<CalendarProps<CalendarDate>, "value" | "minValue" | "maxValue" | "onChange" | "visibleDuration" | "className"> & {
+  value: string | null;
+  min?: string;
+  max?: string;
+  onChange: (iso: string) => void;
+  captionLayout?: "label" | "dropdown";
+}) {
+  return (
+    <Calendar
       {...props}
+      value={dayOf(value) ?? null}
+      defaultFocusedValue={dayOf(value) ?? dayOf(max)}
+      minValue={dayOf(min)}
+      maxValue={dayOf(max)}
+      onChange={(day: CalendarDate) => onChange(day.toString())}
     />
   );
 }
 
-function CalendarDayButton({
-  className,
-  day,
-  modifiers,
-  locale,
-  ...props
-}: React.ComponentProps<typeof DayButton> & { locale?: Partial<Locale> }) {
-  const defaultClassNames = getDefaultClassNames();
-
-  const ref = React.useRef<HTMLButtonElement>(null);
-  React.useEffect(() => {
-    if (modifiers.focused) ref.current?.focus();
-  }, [modifiers.focused]);
-
-  // A day's number in its cell's colour (muted outside the month), not
-  // the ghost button's tint: only the chosen day is in the tint, filled.
-  // 20 points to a finger, as iOS's calendar sets its days.
-  return (
-    <Button
-      ref={ref}
-      variant="ghost"
-      size="icon"
-      data-day={day.date.toLocaleDateString(locale?.code)}
-      data-selected-single={modifiers.selected && !modifiers.range_start && !modifiers.range_end && !modifiers.range_middle}
-      data-range-start={modifiers.range_start}
-      data-range-end={modifiers.range_end}
-      data-range-middle={modifiers.range_middle}
-      className={cn(
-        "relative isolate z-10 flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 border-0 leading-none font-normal text-inherit pointer-coarse:text-xl pointer-coarse:leading-[1.5625rem] group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-2 group-data-[focused=true]/day:ring-ring data-[range-end=true]:rounded-(--cell-radius) data-[range-end=true]:rounded-r-(--cell-radius) data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground data-[range-middle=true]:rounded-none data-[range-middle=true]:bg-muted data-[range-middle=true]:text-foreground data-[range-start=true]:rounded-(--cell-radius) data-[range-start=true]:rounded-l-(--cell-radius) data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground dark:hover:text-foreground [&>span]:text-xs [&>span]:opacity-70",
-        defaultClassNames.day,
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
-export { Calendar, CalendarDayButton };
+export { Calendar, DayCalendar };

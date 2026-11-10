@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Lightbulb } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
-import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover";
+import { usePopups } from "./popupsChunk";
 import { TEXT } from "../lib/text";
 import { TIPS, unseen, useTips, useWelcomeOpen, type TipSpec } from "../lib/firstRunTips";
 
@@ -25,7 +25,7 @@ function inSight(el: Element): boolean {
  *  waits for it to go. */
 const somethingOpen = () =>
   !!document.querySelector(
-    "[role='dialog'][data-state='open'], [role='alertdialog'][data-state='open'], [role='menu'], [data-slot='popover-content']:not([data-tip-content])",
+    "[role='dialog'][data-open], [role='alertdialog'][data-open], [role='menu'], [data-slot='popover-content']:not([data-tip-content])",
   );
 
 /**
@@ -91,13 +91,16 @@ export default function TipHost() {
     return () => window.clearInterval(timer);
   }, [waitingKey]);
 
+  const popups = usePopups();
   const done = () => {
     if (current) see(current.id);
     anchor.current = null;
     setCurrent(null);
   };
 
-  if (!current) return null;
+  // The popover is on the popups' chunk (popupsChunk); a tip waits for it.
+  if (!current || !popups) return null;
+  const { Popover, PopoverContent } = popups;
   return (
     <Popover
       open
@@ -106,14 +109,14 @@ export default function TipHost() {
       }}
       modal={false}
     >
-      <PopoverAnchor virtualRef={anchor as React.RefObject<HTMLElement>} />
       <PopoverContent
         side="bottom"
         align="start"
         sideOffset={10}
         collisionPadding={12}
+        anchor={anchor}
         className="w-80 max-w-[calc(100vw-2rem)] gap-0.5 p-3"
-        onOpenAutoFocus={(e) => e.preventDefault()}
+        initialFocus={false}
         data-tip-content=""
         data-testid="tip"
         aria-label={current.title}

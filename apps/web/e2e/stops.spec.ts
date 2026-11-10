@@ -16,6 +16,7 @@ import {
   waypointMarks,
   mapStill,
 } from "./helpers";
+import { fillTime } from "./ariaFields";
 
 /**
  * A route that lands on the way, as Maps' Add Stop: a stop added in the
@@ -90,7 +91,7 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   const leave = sideDrawer(page).getByTestId("procedures").getByRole("region", { name: "KMSN · Depart" });
   await expect(arrive).toBeVisible();
   await expect(leave).toBeVisible();
-  const takeoff = leave.getByRole("radiogroup", { name: "KMSN takeoff runway" });
+  const takeoff = leave.getByRole("group", { name: "KMSN takeoff runway" });
   await expect(takeoff).toBeVisible();
   const runway = takeoff.getByTestId("procedure-pattern").and(page.locator(":not([disabled])")).last();
   const name = (await runway.innerText()).trim();
@@ -189,7 +190,7 @@ test("the route's box reads its points with an arrow between each two, a tap on 
   await page.keyboard.press("Delete");
   await expect(page).not.toHaveURL(/[?&]dep=/);
   await showTabs(page);
-  await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-selected", "true");
   await expect(sideDrawer(page).getByTestId("route-type")).toBeVisible();
 });
 
@@ -363,20 +364,20 @@ test("a stop is left again at the time picked on its Depart step, 30 minutes aft
   await inSheet(page, leaves);
   await leaves.click();
   await expect(page.getByTestId("depart-clear")).toHaveCount(0);
-  await page.getByTestId("depart-time").fill(hhmm(planned + 15));
+  await fillTime(page.getByTestId("depart-time"), hhmm(planned + 15));
   await page.getByTestId("depart-done").click();
   await expect(page).toHaveURL(/ground=KMSN%3A45|ground=KMSN:45/);
   await expect.poll(at).toBe(planned + 15);
   // Back to 30 minutes after it lands, the default: the address says
   // nothing of it.
   await leaves.click();
-  await page.getByTestId("depart-time").fill(hhmm(planned));
+  await fillTime(page.getByTestId("depart-time"), hhmm(planned));
   await page.getByTestId("depart-done").click();
   await expect(page).not.toHaveURL(/ground=/);
   // Before it lands: brought to the landing, and said so where it was
   // picked (the audit's finding: it snapped back silently).
   await leaves.click();
-  await page.getByTestId("depart-time").fill(hhmm(planned - 60));
+  await fillTime(page.getByTestId("depart-time"), hhmm(planned - 60));
   await expect(page.getByTestId("depart-range")).toContainText("From landing");
   await page.getByTestId("depart-done").click();
   await expect(page).toHaveURL(/ground=KMSN%3A0|ground=KMSN:0/);
@@ -567,7 +568,7 @@ test("a hold is set from a point's menu, course, turns, legs and how long, and i
   // The course flown to Duluth offered as the inbound course, once its
   // leg is in: straight ahead, a direct entry.
   await sheet.getByTestId("hold-course").fill("270");
-  await sheet.getByTestId("hold-turns").getByRole("radio", { name: "Left" }).click();
+  await sheet.getByTestId("hold-turns").getByRole("button", { name: "Left" }).click();
   await sheet.getByTestId("hold-length").click();
   await page.getByTestId("hold-length-3T").click();
   await sheet.getByTestId("hold-set").click();
@@ -908,8 +909,8 @@ test("a VFR waypoint on the chart is a magenta triangle with its ident, and its 
   }).toPass({ timeout: slow(15000) });
   // What it is beside its ident, where it is on a line of its own: in its
   // popup over the chart, or on a phone its card in the map's sheet
-  // (MapPopup), its name and line in the bar's row beside the close.
-  const popup = page.locator(".maplibregl-popup, [data-sheet-card], [data-testid=tab-card-head]");
+  // (MapPopup), its name and line in its head beside its close.
+  const popup = page.locator(".maplibregl-popup, [data-sheet-card]");
   await expect(popup.getByText("VFR waypoint", { exact: true })).toBeVisible();
   await expect(popup.getByText("3 nm SW of Campbell", { exact: true })).toBeVisible();
   // And the map holds still under the open card, once it has panned it
@@ -953,5 +954,5 @@ test("a round trip's field is a Depart step and an Arrive step, each with its ru
   const route = sideDrawer(page).getByTestId("procedures");
   await expect(route.getByRole("region", { name: "C81 · Depart" })).toBeVisible({ timeout: slow(60000) });
   await expect(route.getByRole("region", { name: "C81 · Arrive" })).toBeVisible({ timeout: slow(60000) });
-  await expect(route.getByRole("region", { name: "C81 · Depart" }).getByRole("radiogroup", { name: "C81 takeoff runway" })).toBeVisible();
+  await expect(route.getByRole("region", { name: "C81 · Depart" }).getByRole("group", { name: "C81 takeoff runway" })).toBeVisible();
 });

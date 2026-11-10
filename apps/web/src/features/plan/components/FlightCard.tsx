@@ -5,12 +5,12 @@ import { cn } from "cn";
 import { PanelCard } from "../../../components/PanelCard";
 import { PhotoHead, type HeadSlide } from "../../../components/PhotoHead";
 import { PhotoSlide } from "../../../components/PictureSlides";
-import { FAVORITE_STAR_ON, useCardTitle } from "../../../lib/mapChrome";
+import { FAVORITE_STAR_ON } from "../../../lib/mapChrome";
 import RoundButton from "../../../components/RoundButton";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { PillSection } from "../../../components/Favorites";
 import { RowBadge } from "../../../components/RowBadge";
-import { Toggle as TogglePrimitive } from "radix-ui";
+import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
 import { bearingDeg, distanceNm } from "../../../lib/geo";
 import { useOwnFix, type Fix } from "../../../lib/map/position/ownShip";
@@ -364,12 +364,6 @@ export default function FlightCard({
   const squawk = plane?.squawk ?? null;
   const meaning = squawkMeaning(squawk);
   const rate = plane?.vertical_fpm ?? 0;
-  // Its name the title over the card in the pill's bar (TabBar), as an
-  // airport's ident is.
-  useEffect(() => {
-    useCardTitle.setState({ title: name });
-    return () => useCardTitle.setState({ title: null });
-  }, [name]);
   const model = detail?.description ? nameCase(detail.description) : (detail?.type ?? plane?.type ?? null);
   const operator = detail?.operator ? nameCase(detail.operator) : null;
   // Its flights found (Earlier flights' list, the same question): the
@@ -548,16 +542,21 @@ export default function FlightCard({
       <div className="grid grid-cols-3 gap-2 pt-3" data-testid="flight-actions">
         {/* Follow filled, the card's first thing to do; nothing to follow
             where it is not heard now: greyed, not pressed. */}
-        <TogglePrimitive.Root asChild pressed={following} disabled={!plane} onPressedChange={(on) => useTracking.setState({ follow: on })}>
-          <CardAction
-            icon={<Crosshair />}
-            label={following ? "Following" : "Follow"}
-            filled
-            pressed={following}
-            testId="flight-follow"
-            spoken={following ? `Stop following ${name}` : `Follow ${name} on the map`}
-          />
-        </TogglePrimitive.Root>
+        <TogglePrimitive
+          pressed={following}
+          disabled={!plane}
+          onPressedChange={(on) => useTracking.setState({ follow: on })}
+          render={
+            <CardAction
+              icon={<Crosshair />}
+              label={following ? "Following" : "Follow"}
+              filled
+              pressed={following}
+              testId="flight-follow"
+              spoken={following ? `Stop following ${name}` : `Follow ${name} on the map`}
+            />
+          }
+        />
         <AircraftAlertMenu hex={hex} name={name} airborne={!!plane} from={fromField ?? null} to={toField ?? null} />
         <CardAction
           icon={<ChartLine />}

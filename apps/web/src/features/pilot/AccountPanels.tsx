@@ -8,10 +8,13 @@ import { Info, Plus } from "lucide-react";
 import FieldHit from "../../components/FieldHit";
 import RowField from "../../components/RowField";
 import { invalidProps } from "../../lib/fieldError";
+import { ariaInvalid } from "../../components/ui/ariaInvalid";
 import IconButton from "../../components/IconButton";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
+import { DateField } from "../../components/ui/date-field";
 import { Input } from "../../components/ui/input";
+import { NumberField } from "../../components/ui/number-field";
 import NumberRow from "./NumberRow";
 import { useAirplanes } from "./airplanes/useAirplanes";
 import { Spinner } from "../../components/ui/spinner";
@@ -227,18 +230,23 @@ function VorCheckGroup({ aircraft }: { aircraft: Aircraft }) {
       />
       <ListRow id={`${id}-on`} title="Checked on">
         <RowField id={`${id}-on`} error={errors.checkedOn?.message}>
-          <FieldHit htmlFor={`${id}-on`}>
-            <Input
-              id={`${id}-on`}
-              type="date"
-              className="h-8 w-40"
-              max={today}
-              {...register("checkedOn")}
-              {...invalidProps(`${id}-on`, errors.checkedOn?.message)}
-              aria-label="VOR check date"
-              data-testid="vor-check-date"
-            />
-          </FieldHit>
+          <Controller
+            control={control}
+            name="checkedOn"
+            render={({ field }) => (
+              <DateField
+                id={`${id}-on`}
+                className="h-8 w-40"
+                max={today}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                {...ariaInvalid(`${id}-on`, errors.checkedOn?.message)}
+                aria-label="VOR check date"
+                data-testid="vor-check-date"
+              />
+            )}
+          />
         </RowField>
       </ListRow>
       <ListRow title="How">
@@ -276,16 +284,22 @@ function VorCheckGroup({ aircraft }: { aircraft: Aircraft }) {
       <ListRow id={`${id}-error`} title="Bearing error">
         <RowField id={`${id}-error`} error={errors.errorDeg?.message}>
           <FieldHit htmlFor={`${id}-error`}>
-            <Input
-              id={`${id}-error`}
-              type="number"
-              inputMode="decimal"
-              step="any"
-              className="h-8 w-24 text-right"
-              {...register("errorDeg")}
-              {...invalidProps(`${id}-error`, errors.errorDeg?.message)}
-              aria-label="Bearing error in degrees"
-              data-testid="vor-check-error"
+            <Controller
+              control={control}
+              name="errorDeg"
+              render={({ field }) => (
+                <NumberField
+                  id={`${id}-error`}
+                  className="h-8 w-24"
+                  inputClassName="text-right"
+                  value={field.value === "" ? null : Number(field.value)}
+                  onChange={(v) => field.onChange(v == null ? "" : String(v))}
+                  onBlur={field.onBlur}
+                  {...ariaInvalid(`${id}-error`, errors.errorDeg?.message)}
+                  aria-label="Bearing error in degrees"
+                  data-testid="vor-check-error"
+                />
+              )}
             />
           </FieldHit>
         </RowField>
@@ -361,7 +375,6 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
   const id = useId();
   const recorded = aircraft.inspections;
   const {
-    register,
     control,
     handleSubmit,
     formState: { errors },
@@ -426,17 +439,23 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
           }
         >
           <RowField id={`${id}-${d.key}`} error={errors[d.key]?.message}>
-            <FieldHit htmlFor={`${id}-${d.key}`}>
-              <Input
-                id={`${id}-${d.key}`}
-                type="date"
-                className="h-8 w-40"
-                max={today}
-                {...register(d.key)}
-                {...invalidProps(`${id}-${d.key}`, errors[d.key]?.message)}
-                data-testid={`inspection-${d.key}-date`}
-              />
-            </FieldHit>
+            <Controller
+              control={control}
+              name={d.key}
+              render={({ field }) => (
+                <DateField
+                  id={`${id}-${d.key}`}
+                  aria-label={d.title}
+                  className="h-8 w-40"
+                  max={today}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  {...ariaInvalid(`${id}-${d.key}`, errors[d.key]?.message)}
+                  data-testid={`inspection-${d.key}-date`}
+                />
+              )}
+            />
           </RowField>
         </ListRow>
       ))}
@@ -461,15 +480,21 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
           </>
         }
       >
-        <FieldHit htmlFor={`${id}-battery`}>
-          <Input
-            id={`${id}-battery`}
-            type="date"
-            className="h-8 w-40"
-            {...register("eltBatteryDueOn")}
-            data-testid="inspection-eltBattery-date"
-          />
-        </FieldHit>
+        <Controller
+          control={control}
+          name="eltBatteryDueOn"
+          render={({ field }) => (
+            <DateField
+              id={`${id}-battery`}
+              aria-label="ELT battery replace by"
+              className="h-8 w-40"
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              data-testid="inspection-eltBattery-date"
+            />
+          )}
+        />
       </ListRow>
       {/* Whether the 100-hour is owed at all: carrying anyone for hire, or
           flight instruction for hire in an airplane the instructor
@@ -510,16 +535,22 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
       >
         <RowField id={`${id}-at`} error={errors.hundredHourAtHours?.message}>
           <FieldHit htmlFor={`${id}-at`}>
-            <Input
-              id={`${id}-at`}
-              type="number"
-              inputMode="decimal"
-              step="any"
-              min={0}
-              className="h-8 w-28 text-right"
-              {...register("hundredHourAtHours")}
-              {...invalidProps(`${id}-at`, errors.hundredHourAtHours?.message)}
-              data-testid="inspection-hundredHourAt"
+            <Controller
+              control={control}
+              name="hundredHourAtHours"
+              render={({ field }) => (
+                <NumberField
+                  id={`${id}-at`}
+                  minValue={0}
+                  className="h-8 w-28"
+                  inputClassName="text-right"
+                  value={field.value === "" ? null : Number(field.value)}
+                  onChange={(v) => field.onChange(v == null ? "" : String(v))}
+                  onBlur={field.onBlur}
+                  {...ariaInvalid(`${id}-at`, errors.hundredHourAtHours?.message)}
+                  data-testid="inspection-hundredHourAt"
+                />
+              )}
             />
           </FieldHit>
         </RowField>
@@ -527,16 +558,22 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
       <ListRow id={`${id}-now`} title="Hours now">
         <RowField id={`${id}-now`} error={errors.hoursNow?.message}>
           <FieldHit htmlFor={`${id}-now`}>
-            <Input
-              id={`${id}-now`}
-              type="number"
-              inputMode="decimal"
-              step="any"
-              min={0}
-              className="h-8 w-28 text-right"
-              {...register("hoursNow")}
-              {...invalidProps(`${id}-now`, errors.hoursNow?.message)}
-              data-testid="inspection-hoursNow"
+            <Controller
+              control={control}
+              name="hoursNow"
+              render={({ field }) => (
+                <NumberField
+                  id={`${id}-now`}
+                  minValue={0}
+                  className="h-8 w-28"
+                  inputClassName="text-right"
+                  value={field.value === "" ? null : Number(field.value)}
+                  onChange={(v) => field.onChange(v == null ? "" : String(v))}
+                  onBlur={field.onBlur}
+                  {...ariaInvalid(`${id}-now`, errors.hoursNow?.message)}
+                  data-testid="inspection-hoursNow"
+                />
+              )}
             />
           </FieldHit>
         </RowField>
@@ -566,6 +603,7 @@ export function AircraftPanel() {
   const formId = useId();
   const {
     register,
+    control,
     handleSubmit,
     reset,
     setValue,
@@ -682,7 +720,21 @@ export function AircraftPanel() {
           // from md up, and a small plus beside the heading as the only way
           // to add one; then a row that opened the form, and which one the
           // nav log flew was said only under the route.
-          <ResponsivePopover open={formOpen} onOpenChange={(open) => (open ? setAdding(true) : cancelEdit())}>
+          <ResponsivePopover
+            open={formOpen}
+            onOpenChange={(open, details) => {
+              // A row, tapped while the form is open, is not "outside": it
+              // switches the form to that airplane, where the stock
+              // dismissal would have closed it on the press and reopened it
+              // empty on the click.
+              if (!open && details?.reason === "outside-press") {
+                const at = details.event.target;
+                if (at instanceof Element && at.closest("[data-aircraft-edit]")) return details.cancel();
+              }
+              if (open) setAdding(true);
+              else cancelEdit();
+            }}
+          >
             {/* The one flown a radio group's choice (ListChoices): arrow keys
               between the airplanes, VoiceOver's "selected", and iOS's tick. */}
             <ListChoices
@@ -722,7 +774,7 @@ export function AircraftPanel() {
                         onClick={() => edit(a)}
                         className="mr-1.5 shrink-0 text-tint"
                         // Not "outside" the open form: tapped with it open, the
-                        // form switches to this airplane (see onInteractOutside).
+                        // form switches to this airplane (see the popover's onOpenChange).
                         data-aircraft-edit
                       >
                         <Info className="size-5" />
@@ -773,13 +825,6 @@ export function AircraftPanel() {
                   {editingId ? "Save" : "Add"}
                 </Button>
               }
-              // A row, tapped while the form is open, is not "outside": it
-              // switches the form to that airplane, where the stock
-              // dismissal would have closed it on the press and reopened it
-              // empty on the click.
-              onInteractOutside={(e) => {
-                if ((e.target as Element | null)?.closest?.("[data-aircraft-edit]")) e.preventDefault();
-              }}
             >
               <form id={formElementId} className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
                 {/* What the gateway refused of the last save, over the
@@ -840,7 +885,8 @@ export function AircraftPanel() {
                     unit="kt"
                     placeholder="74"
                     name="Climb TAS in knots"
-                    field={register("climbTasKt")}
+                    control={control}
+                    field="climbTasKt"
                     error={errors.climbTasKt?.message}
                   />
                   <NumberRow
@@ -849,7 +895,8 @@ export function AircraftPanel() {
                     unit="kt"
                     placeholder="110"
                     name="Cruise TAS in knots"
-                    field={register("cruiseTasKt")}
+                    control={control}
+                    field="cruiseTasKt"
                     error={errors.cruiseTasKt?.message}
                   />
                 </ListGroup>
@@ -861,7 +908,8 @@ export function AircraftPanel() {
                     unit="gph"
                     placeholder="11"
                     name="Climb fuel burn in gallons per hour"
-                    field={register("climbFuelBurnGph")}
+                    control={control}
+                    field="climbFuelBurnGph"
                     error={errors.climbFuelBurnGph?.message}
                   />
                   <NumberRow
@@ -870,7 +918,8 @@ export function AircraftPanel() {
                     unit="gph"
                     placeholder="8.5"
                     name="Cruise fuel burn in gallons per hour"
-                    field={register("fuelBurnGph")}
+                    control={control}
+                    field="fuelBurnGph"
                     error={errors.fuelBurnGph?.message}
                   />
                 </ListGroup>
@@ -887,7 +936,8 @@ export function AircraftPanel() {
                     unit="%"
                     placeholder="65"
                     name="Cruise power in percent"
-                    field={register("cruisePowerPct")}
+                    control={control}
+                    field="cruisePowerPct"
                     error={errors.cruisePowerPct?.message}
                   />
                 </ListGroup>
@@ -899,7 +949,8 @@ export function AircraftPanel() {
                     unit="gal"
                     placeholder="40"
                     name="Usable fuel in gallons"
-                    field={register("usableFuelGal")}
+                    control={control}
+                    field="usableFuelGal"
                     error={errors.usableFuelGal?.message}
                   />
                 </ListGroup>

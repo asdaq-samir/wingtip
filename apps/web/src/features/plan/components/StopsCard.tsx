@@ -31,7 +31,7 @@ const PILL = cn(
   "after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
   TEXT.detail,
   "bg-foreground/8 text-foreground hover:bg-foreground/8 hover:text-foreground",
-  "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground hover:data-[state=on]:bg-primary hover:data-[state=on]:text-primary-foreground",
+  "data-pressed:bg-primary data-pressed:text-primary-foreground hover:data-pressed:bg-primary hover:data-pressed:text-primary-foreground",
 );
 
 /** What none of the fields has, for the empty list's line. */
@@ -198,12 +198,8 @@ export default function StopsCard({
   }, [picked, pickedShown]);
   return (
     <div className="flex min-h-0 flex-1 flex-col px-4 pt-[var(--corner-inset,0.75rem)] print:hidden" data-testid="stops-card">
-      {/* The close for the card's own keys and readers (CardClose); the
-          bar over the card shows its title, "Stops", and its own close. */}
-      <CardClose onClose={onClose} testId="stops-close" />
       <div className="flex items-center gap-3">
-        {/* Wider than a phone there is no bar over the card: the title here. */}
-        <h2 className={cn("sr-only font-bold tracking-tight md:not-sr-only", TEXT.card)} data-testid="stops-name">
+        <h2 className={cn("font-bold tracking-tight", TEXT.card)} data-testid="stops-name">
           Stops
         </h2>
         <PullDown
@@ -224,17 +220,19 @@ export default function StopsCard({
             ...STOP_RADII.map((nm) => ({ value: `${nm}`, label: `Within ${nm} nm`, testId: "stops-distance-option" })),
           ]}
         />
+        {/* Its close at the head's end, inline with its name (CardClose). */}
+        <CardClose onClose={onClose} testId="stops-close" className="ml-auto -mr-1" />
       </div>
       {/* Sideways past the card's edge, as Maps' filter pills scroll. One
-          kind at a time, so the stock ToggleGroup: to VoiceOver a radio
-          group, the arrow keys moving between the kinds, and a tap on the
+          kind at a time, so the stock ToggleGroup: to VoiceOver a group
+          of toggles, the one picked pressed, the arrow keys moving between
+          the kinds, and a tap on the
           one picked keeping it. As wide as the card, not its pills
           (w-auto), or it would not scroll. */}
       <ToggleGroup
-        type="single"
-        value={pick}
+        value={[pick]}
         onValueChange={(v) => {
-          if (v) setPick(v as StopPick);
+          if (v[0]) setPick(v[0] as StopPick);
         }}
         aria-label="Kind of stop"
         className="-mx-4 mt-3 w-auto items-stretch overflow-x-auto rounded-none px-4 py-1.5 [scrollbar-width:none]"

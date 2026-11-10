@@ -100,7 +100,7 @@ export const SCREENS: Screen[] = [
       await page.getByTestId("navlog-fuel").waitFor({ timeout: slow(120000) });
       await openTab(page, tab);
       if (tab === "En route") await openSection(page, "Along the Route");
-      await expect(sideDrawer(page).locator('[role="tabpanel"][data-state="active"]').getByTestId(shown).first()).toBeVisible({
+      await expect(sideDrawer(page).locator('[role="tabpanel"]:not([hidden]):not([inert])').getByTestId(shown).first()).toBeVisible({
         timeout: slow(30000),
       });
       // And the briefing in: the Brief's Go / No-Go says what it found, and
@@ -144,7 +144,7 @@ export const SCREENS: Screen[] = [
       const rows = sideDrawer(page).locator("[data-waypoint-row]");
       await expect.poll(() => rows.count(), { timeout: slow(60000) }).toBeGreaterThan(10);
       await rows.nth(2).click();
-      await expect(sideDrawer(page).getByTestId("rating-card").getByRole("radio", { name: "Rate 5" })).toBeVisible();
+      await expect(sideDrawer(page).getByTestId("rating-card").getByRole("button", { name: "Rate 5" })).toBeVisible();
     },
   },
   {

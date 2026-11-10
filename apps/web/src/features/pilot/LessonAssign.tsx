@@ -4,6 +4,7 @@ import { Check, X } from "lucide-react";
 import { cn } from "cn";
 import FieldHit from "../../components/FieldHit";
 import { ListChoices, ListGroup, ListRow } from "../../components/GroupedList";
+import { DateField } from "../../components/ui/date-field";
 import { Input } from "../../components/ui/input";
 import { api } from "../../lib/api/client";
 import type { ApproachLesson, FlightSummary, Training } from "../../lib/api/types";
@@ -136,16 +137,7 @@ function AssignForm({ studentId, onDone, onCancel }: { studentId: number; onDone
           </FieldHit>
         </ListRow>
         <ListRow id={ids.due} title="Due" description="Optional">
-          <FieldHit htmlFor={ids.due}>
-            <Input
-              id={ids.due}
-              type="date"
-              value={due}
-              onChange={(e) => setDue(e.target.value)}
-              className="h-8 w-40"
-              data-testid="lesson-due"
-            />
-          </FieldHit>
+          <DateField id={ids.due} aria-label="Due" value={due} onChange={setDue} className="h-8 w-40" data-testid="lesson-due" />
         </ListRow>
       </ListGroup>
       {typed &&

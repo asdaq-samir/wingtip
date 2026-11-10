@@ -4,7 +4,7 @@ import { OctagonAlert, TriangleAlert } from "lucide-react";
 import AccordionSection from "../../../../components/AccordionSection";
 import AfterPaint from "../../../../components/AfterPaint";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
-import { Input } from "../../../../components/ui/input";
+import { NumberField as StockNumberField } from "../../../../components/ui/number-field";
 import type { AircraftProfile, Briefing, Course } from "../../../../lib/api/types";
 import { runwayChecks, type RunwayDistance } from "../../lib/runwayCheck";
 import { useRunwayPicks } from "../../lib/useRunwayPicks";
@@ -47,17 +47,15 @@ function NumberField({
       htmlFor={id}
       className="relative isolate flex items-center gap-1.5 after:absolute after:inset-x-0 after:-inset-y-1.5 after:-z-10 after:content-['']"
     >
-      <Input
+      <StockNumberField
         id={id}
-        type="number"
-        inputMode="decimal"
-        min={0}
-        step="any"
+        minValue={0}
         aria-label={label}
         data-testid={testId}
-        className="h-8 w-24 text-right tabular-nums"
-        value={Number.isFinite(value) ? value : ""}
-        onChange={(e) => onChange(e.target.value === "" ? 0 : Number(e.target.value))}
+        className="h-8 w-24"
+        inputClassName="text-right"
+        value={Number.isFinite(value) ? value : null}
+        onChange={(v) => onChange(v ?? 0)}
       />
       <span className={cn("w-6 text-muted-foreground", TEXT.detail)}>{unit}</span>
     </label>

@@ -119,20 +119,30 @@ export default function SignInModal({
             <>
               <div className="flex flex-col gap-2">
                 {providers.includes("google") && (
-                  <Button asChild variant="outline" className="justify-start gap-3">
-                    <a href="/oauth2/authorization/google">
-                      <GoogleLogo className="size-4" />
-                      Continue with Google
-                    </a>
-                  </Button>
+                  <Button
+                    variant="outline"
+                    className="justify-start gap-3"
+                    nativeButton={false}
+                    render={
+                      <a href="/oauth2/authorization/google">
+                        <GoogleLogo className="size-4" />
+                        Continue with Google
+                      </a>
+                    }
+                  />
                 )}
                 {providers.includes("apple") && (
-                  <Button asChild variant="outline" className="justify-start gap-3">
-                    <a href="/oauth2/authorization/apple">
-                      <AppleLogo className="size-4" />
-                      Continue with Apple
-                    </a>
-                  </Button>
+                  <Button
+                    variant="outline"
+                    className="justify-start gap-3"
+                    nativeButton={false}
+                    render={
+                      <a href="/oauth2/authorization/apple">
+                        <AppleLogo className="size-4" />
+                        Continue with Apple
+                      </a>
+                    }
+                  />
                 )}
               </div>
               <div className={`flex items-center gap-3 text-muted-foreground ${TEXT.note}`}>

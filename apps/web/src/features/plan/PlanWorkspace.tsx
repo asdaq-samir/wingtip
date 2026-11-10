@@ -5,8 +5,8 @@ import TabBar, { type BarTab } from "../../components/TabBar";
 import type { PanelTab } from "./hooks/useTabCards";
 import { MAX_STOPS, routeName } from "../../lib/identSchema";
 import type { WorkspaceProps } from "../shell";
-import ShareMenu from "./components/ShareMenu";
-import type { RouteCard } from "../../lib/openCards";
+import { ShareMenu } from "./shareMenuChunk";
+import { RouteShareMenu, type RouteCard } from "../../lib/openCards";
 import { CardHead } from "../../components/PanelCard";
 import type { BriefingPart } from "./components/briefing/sections";
 import PaidPrompt from "../../components/PaidPrompt";
@@ -75,7 +75,6 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     briefLine,
     briefShown,
     cardOpen,
-    cardTitle,
     changeAircraft,
     changeDepart,
     closeNavLogCard,
@@ -383,9 +382,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           cardHead={
             navLogShown ? (
               <CardHead
-                // As the Brief's head: the route's name, and the line under it --
-                // "Nav log" is the tab bar's title over it already (the owner's
-                // "Profile and Navlog titles appear twice").
+                // As the Brief's head: the route's name, and the line under
+                // it (the owner's "Profile and Navlog titles appear twice").
                 name={routeName(planned.dep, planned.dest, planned.stops)}
                 line={briefLine}
                 nameTestId="navlog-name"
@@ -540,119 +538,127 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     ],
   );
 
+  // On its own chunk with the menus it opens (shareMenuChunk), its room
+  // kept until it is in.
   const shareMenu = (align: "start" | "end", testId?: string, card?: RouteCard) => (
-    <ShareMenu
-      align={align}
-      testId={testId}
-      card={card}
-      planned={planned}
-      course={course}
-      selected={selected}
-      altitudeFt={s.nav?.altitude_ft ?? undefined}
-      routed={routed}
-      local={!!s.local}
-      fileable={fileable}
-      onFile={fileFlightPlan}
-      saving={(askReview) => (
-        <Suspense fallback={null}>
-          <SaveFlightButton {...flightToSave} />
-          <ReviewAskItem flight={flightToSave} onAsk={askReview} />
-        </Suspense>
-      )}
-      reviewSheet={(done) => (
-        <Suspense fallback={null}>
-          <ReviewAskSheet flight={flightToSave} onDone={done} />
-        </Suspense>
-      )}
-      // Plan again in the route's own menu, at the owner's pick ("A") to
-      // keep the route box's row on one line; Share marked where it is due.
-      planAgain={card === undefined && routed && !s.local ? { stale, onPlan: () => setLoad((n) => n + 1) } : undefined}
-      onShowFuel={card === undefined && fuelHidden ? showFuelStops : undefined}
-      onNavLog={card === undefined && routed && course ? openNavLogCard : undefined}
-    />
+    <Suspense fallback={<div className={card === undefined ? "size-8 shrink-0" : "size-9 shrink-0"} />}>
+      <ShareMenu
+        align={align}
+        testId={testId}
+        card={card}
+        planned={planned}
+        course={course}
+        selected={selected}
+        altitudeFt={s.nav?.altitude_ft ?? undefined}
+        routed={routed}
+        local={!!s.local}
+        fileable={fileable}
+        onFile={fileFlightPlan}
+        saving={(askReview) => (
+          <Suspense fallback={null}>
+            <SaveFlightButton {...flightToSave} />
+            <ReviewAskItem flight={flightToSave} onAsk={askReview} />
+          </Suspense>
+        )}
+        reviewSheet={(done) => (
+          <Suspense fallback={null}>
+            <ReviewAskSheet flight={flightToSave} onDone={done} />
+          </Suspense>
+        )}
+        // Plan again in the route's own menu, at the owner's pick ("A") to
+        // keep the route box's row on one line; Share marked where it is due.
+        planAgain={card === undefined && routed && !s.local ? { stale, onPlan: () => setLoad((n) => n + 1) } : undefined}
+        onShowFuel={card === undefined && fuelHidden ? showFuelStops : undefined}
+        onNavLog={card === undefined && routed && course ? openNavLogCard : undefined}
+      />
+    </Suspense>
   );
 
-  return children({
-    // The map stays mounted beside the briefing (the arrow walk still
-    // pans it) but stays off the paper: the drawer is the printed page.
-    map: <PlanMap vm={vm} />,
-    // The tab's body (TabBar): FPL's nav log, kept mounted under whatever
-    // is open over it and on paper; Airport's search, its Favorites and
-    // Recents and what answers, or Nearest's list; Aircraft's list. A card --
-    // an airport's, the airspace's, an airplane's -- over the tab it was
-    // opened from, its close back to it.
-    sidebar: <PlanSidebar vm={vm} navLog={navLog} briefContents={briefContents} briefNotice={briefNotice} />,
-    // The tab's head: FPL's the route's box (`route`, below); the others'
-    // the search bar, the whole width (Settings is a tab, not a gear).
-    head: tab === "fpl" ? undefined : <TabSearchField vm={vm} />,
-    // A card over the tab: its card alone, the tab's head gone while it is
-    // open, at the pilot's ask.
-    alone: cardOpen || briefShown || navLogShown || profileShown || stopsShown,
-    // An airport's or a point's card over another tab -- a field tapped on
-    // the route from FPL -- its bar the card's kind and Back to the tab, at
-    // the owner's ask ("unless going from another tab ... the back button
-    // should get it back to fpl"); on its own tab, the tabs.
-    // Any card, an airplane's too, its bar its name with Back and the close,
-    // at the owner's ask ("For the airport card it should replace tabs with
-    // a back close button and title as the airport id").
-    cardOver: cardOpen || briefShown || navLogShown || profileShown || stopsShown,
-    toEdge: !!place,
-    flying,
-    // The planner's tabs, the panel's first row, and at rest the pill
-    // itself, at the pilot's ask: no search bar or route under them
-    // (MapPanel).
-    bar: (
-      <TabBar
-        tabs={PLANNER_TABS}
-        tab={tab}
-        over={(place || heldPoint) && tab !== "airport" ? "airport" : undefined}
-        title={cardTitle}
-        onPick={pickTab}
-        onUp={tabUp}
-        onClose={closeSheet}
-        routeShare={(card) => shareMenu("start", "tab-share", card)}
-        listOver={!!list || savedOpen || nearOpen}
-        marks={s.unflyable ? { fpl: "stop" } : undefined}
-      />
-    ),
-    // The route's figures -- the distance, the time en route, the arrival
-    // and the fuel -- pinned at FPL's foot while there is a route, at every
-    // height, the pill too, at the pilot's ask: they were the last of the
-    // route's head, out of sight at rest. FPL's alone, at the owner's ask
-    // ("Fpl can show calculations but other tabs should show something
-    // else"): the other tabs' pills are their search bars (MapPanel's
-    // headInPill).
-    // FPL's figures pinned at the sheet's foot at every height, the pill's
-    // too, growing as it comes up, at the owner's asks ("While dragging fpl
-    // keep the calculations pinned at the bottom"; "Why can't the half card
-    // have calculations pinned at the very bottom as the full card, just
-    // make them bigger smoothly as expanded").
-    // A dry run's chart in the side view's place and its size, at every
-    // height: still as the sheet is dragged, the nav log coming out over it,
-    // as the side view is, at the owner's ask ("the dry run drags up instead
-    // of staying still like the profile"); all the way up the log scrolls
-    // over it and follows the run (NavLogView), at the owner's ask ("I wanna
-    // be able to do the dry run with navlog in full fpl"). It took the
-    // body's room half way, and grew with the sheet under a finger.
-    // Under the nav log's card too, its side view and figures with it, as
-    // FPL is "route, navlog, profile and calculations".
-    foot: tab === "fpl" && !place && !heldPoint && !flight && !briefShown ? routed && <FlightFoot vm={vm} /> : undefined,
-    // The route as one box of pills, in place of the two airport fields,
-    // the top row to itself, at the pilot's ask: its close and its
-    // Procedures beside it went to the chips' row (Approaches) and the
-    // Share menu (Clear the route). An airport twice (a round trip with its
-    // stop taken out) keeps the box, its notice saying what to change.
-    // Whatever the tab: MapPanel keeps it under the others' heads (`kept`).
-    // Once the route is whole, folded away (lib/preferences RouteEdit, the
-    // owner's A and B of the FPL canvas, 2026-11-05: "keeping the route box
-    // on top after a destination is known is redundant because the plan
-    // at the bottom can have dragables"): the route on one line, a tap the
-    // box again (A), or its name over the plan whose rows change it (B);
-    // the airplane, the altitude and the route's buttons under either, as
-    // they were under the box. The box again while a stop is typed in
-    // from the list or a problem, and while it is opened from the head;
-    // with no route either, the head folded (the owner, 2026-11-05).
-    route: <RouteHead vm={vm} controls={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />} />,
-    console: <PilotPanel />,
-  });
+  // The route's Share menu for its cards' heads (CardClose): the Brief's,
+  // the nav log's and the profile's.
+  const routeShare = (card: RouteCard) => shareMenu("start", "card-share", card);
+  return (
+    <RouteShareMenu.Provider value={routeShare}>
+      {children({
+        // The map stays mounted beside the briefing (the arrow walk still
+        // pans it) but stays off the paper: the drawer is the printed page.
+        map: <PlanMap vm={vm} />,
+        // The tab's body (TabBar): FPL's nav log, kept mounted under whatever
+        // is open over it and on paper; Airport's search, its Favorites and
+        // Recents and what answers, or Nearest's list; Aircraft's list. A card --
+        // an airport's, the airspace's, an airplane's -- over the tab it was
+        // opened from, its close back to it.
+        sidebar: <PlanSidebar vm={vm} navLog={navLog} briefContents={briefContents} briefNotice={briefNotice} />,
+        // The tab's head: FPL's the route's box (`route`, below); the others'
+        // the search bar, the whole width (Settings is a tab, not a gear).
+        head: tab === "fpl" ? undefined : <TabSearchField vm={vm} />,
+        // A card over the tab: its card alone, the tab's head gone while it is
+        // open, at the pilot's ask.
+        alone: cardOpen || briefShown || navLogShown || profileShown || stopsShown,
+        // An airport's or a point's card over another tab -- a field tapped on
+        // the route from FPL -- its bar the card's kind and Back to the tab, at
+        // the owner's ask ("unless going from another tab ... the back button
+        // should get it back to fpl"); on its own tab, the tabs.
+        // Any card, an airplane's too, its bar its name with Back and the close,
+        // at the owner's ask ("For the airport card it should replace tabs with
+        // a back close button and title as the airport id").
+        cardOver: cardOpen || briefShown || navLogShown || profileShown || stopsShown,
+        toEdge: !!place,
+        flying,
+        // The planner's tabs, the panel's first row, and at rest the pill
+        // itself, at the pilot's ask: no search bar or route under them
+        // (MapPanel).
+        bar: (
+          <TabBar
+            tabs={PLANNER_TABS}
+            tab={tab}
+            onPick={pickTab}
+            onUp={tabUp}
+            onClose={closeSheet}
+            listOver={!!list || savedOpen || nearOpen}
+            marks={s.unflyable ? { fpl: "stop" } : undefined}
+          />
+        ),
+        // The route's figures -- the distance, the time en route, the arrival
+        // and the fuel -- pinned at FPL's foot while there is a route, at every
+        // height, the pill too, at the pilot's ask: they were the last of the
+        // route's head, out of sight at rest. FPL's alone, at the owner's ask
+        // ("Fpl can show calculations but other tabs should show something
+        // else"): the other tabs' pills are their search bars (MapPanel's
+        // headInPill).
+        // FPL's figures pinned at the sheet's foot at every height, the pill's
+        // too, growing as it comes up, at the owner's asks ("While dragging fpl
+        // keep the calculations pinned at the bottom"; "Why can't the half card
+        // have calculations pinned at the very bottom as the full card, just
+        // make them bigger smoothly as expanded").
+        // A dry run's chart in the side view's place and its size, at every
+        // height: still as the sheet is dragged, the nav log coming out over it,
+        // as the side view is, at the owner's ask ("the dry run drags up instead
+        // of staying still like the profile"); all the way up the log scrolls
+        // over it and follows the run (NavLogView), at the owner's ask ("I wanna
+        // be able to do the dry run with navlog in full fpl"). It took the
+        // body's room half way, and grew with the sheet under a finger.
+        // Under the nav log's card too, its side view and figures with it, as
+        // FPL is "route, navlog, profile and calculations".
+        foot: tab === "fpl" && !place && !heldPoint && !flight && !briefShown ? routed && <FlightFoot vm={vm} /> : undefined,
+        // The route as one box of pills, in place of the two airport fields,
+        // the top row to itself, at the pilot's ask: its close and its
+        // Procedures beside it went to the chips' row (Approaches) and the
+        // Share menu (Clear the route). An airport twice (a round trip with its
+        // stop taken out) keeps the box, its notice saying what to change.
+        // Whatever the tab: MapPanel keeps it under the others' heads (`kept`).
+        // Once the route is whole, folded away (lib/preferences RouteEdit, the
+        // owner's A and B of the FPL canvas, 2026-11-05: "keeping the route box
+        // on top after a destination is known is redundant because the plan
+        // at the bottom can have dragables"): the route on one line, a tap the
+        // box again (A), or its name over the plan whose rows change it (B);
+        // the airplane, the altitude and the route's buttons under either, as
+        // they were under the box. The box again while a stop is typed in
+        // from the list or a problem, and while it is opened from the head;
+        // with no route either, the head folded (the owner, 2026-11-05).
+        route: <RouteHead vm={vm} controls={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />} />,
+        console: <PilotPanel />,
+      })}
+    </RouteShareMenu.Provider>
+  );
 }

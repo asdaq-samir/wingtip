@@ -38,15 +38,17 @@ export default function EmergencyChecklist({ vm }: { vm: EmergencyModel }) {
   const shown = sections[section]!;
   const menu = (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="relative text-tint after:absolute after:-inset-1.5"
-          data-testid="emergency-checklist-pick"
-        >
-          Other <ChevronDown className="size-4" aria-hidden />
-        </Button>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="sm"
+            className="relative text-tint after:absolute after:-inset-1.5"
+            data-testid="emergency-checklist-pick"
+          />
+        }
+      >
+        Other <ChevronDown className="size-4" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuRadioGroup

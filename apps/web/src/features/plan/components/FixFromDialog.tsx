@@ -56,10 +56,7 @@ export default function FixFromDialog({
       title={`A fix from ${at}`}
       description={`Its magnetic course from ${at}, a VOR's radial, and how far. Flown over next${ident ? `: ${ident}` : "."}`}
       action={{ label: "Add", form, disabled: !valid, testId: "fix-from-add" }}
-      onOpenAutoFocus={(e) => {
-        e.preventDefault();
-        (e.currentTarget as HTMLElement).querySelector("input")?.focus();
-      }}
+      initialFocus={(sheet) => sheet.querySelector("input")}
     >
       <form
         id={form}

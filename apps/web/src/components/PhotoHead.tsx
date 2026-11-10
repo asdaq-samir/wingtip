@@ -228,11 +228,15 @@ export function PhotoHead({
         {bare && inSight && (inSight.open || inSight.href) && (
           <div className="absolute right-4 bottom-3 z-10">
             {inSight.href ? (
-              <RoundButton asChild label={inSight.openLabel ?? "Full screen"} className={OVER_PICTURE}>
-                <a href={inSight.href} target="_blank" rel="noopener" data-testid={inSight.openTestId}>
-                  <Maximize2 className="size-5" strokeWidth={2} />
-                </a>
-              </RoundButton>
+              <RoundButton
+                label={inSight.openLabel ?? "Full screen"}
+                className={OVER_PICTURE}
+                render={
+                  <a href={inSight.href} target="_blank" rel="noopener" data-testid={inSight.openTestId}>
+                    <Maximize2 className="size-5" strokeWidth={2} />
+                  </a>
+                }
+              />
             ) : (
               <RoundButton
                 label={inSight.openLabel ?? "Full screen"}

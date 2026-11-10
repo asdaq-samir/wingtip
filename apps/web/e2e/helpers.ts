@@ -41,29 +41,12 @@ export async function settle(page: Page) {
  *  `data-panel`: peek at rest, half or full when it is out. */
 export const sideDrawer = (page: Page) => page.locator('[data-slot="map-panel"]');
 
-/** The tab bar's tabs in sight: the sheet's first row at half and all the
- *  way up, minimized to the tab up's name over a card (TabBar), tapped to
- *  show them all. Not in the pill, which is one row (MapPanel): the sheet
- *  half way for them. */
+/** The tab bar's tabs in sight: the sheet's first row, static over a
+ *  card as the platform's own tabs are (TabBar), at the pill too. */
 export async function showTabs(page: Page) {
   // From the sheet at rest: settling to the pill it keeps the half's
-  // layout, tabs and all, until it lands (MapPanel), and tabs seen then
-  // were gone a moment later under the route's figures.
+  // layout until it lands (MapPanel).
   await settled(sideDrawer(page));
-  // An airport's or an airplane's card over its pictures has its own
-  // share and close out of the pill, the minimized bar left out over it
-  // (MapPanel's ownHead): its bar is the pill's.
-  if (await sideDrawer(page).locator("[data-picture-head]").isVisible()) await grabberTo(page, "peek");
-  const title = page.getByTestId("tab-title");
-  // The minimized line can turn back into the tabs by itself as it is
-  // tapped -- the card it named put away by the step before -- so the tap
-  // is tried, and what is asked is the tabs in sight.
-  // Tapped again until the tabs show: a tap can land as the card it named
-  // is put away by the step before.
-  await expect(async () => {
-    if (await title.isVisible()) await title.click({ timeout: 2000 }).catch(() => {});
-    await expect(title).toBeHidden({ timeout: 1500 });
-  }).toPass({ timeout: 15_000 });
   if (!(await page.getByTestId("tab-bar").isVisible())) await grabberTo(page, "half");
 }
 
@@ -165,8 +148,8 @@ export async function openBrief(page: Page) {
   await expect(card).toBeVisible();
 }
 
-/** The Brief put away, by the minimized tab bar's close or, wider, its
- *  own (closeCard), which go back one at a time: from a page to the
+/** The Brief put away, by its own close (closeCard), which goes back
+ *  one at a time: from a page to the
  *  Brief's cards (BriefGlance), then FPL's route and nav log again. */
 async function closeBrief(page: Page) {
   const card = sideDrawer(page).getByTestId("brief-card");
@@ -201,7 +184,7 @@ export async function openConsole(page: Page) {
   // Setup is the panel's on every screen and both pages (MapPage), which
   // at the pill is out of sight.
   // Opened at the pill's size, Setup's pill; all the way up for the rest.
-  await expect(settings).toHaveAttribute("aria-current", "page");
+  await expect(settings).toHaveAttribute("aria-selected", "true");
   await grabberTo(page, "full");
 }
 
@@ -546,7 +529,7 @@ export async function openSection(page: Page, title: string) {
     return;
   }
   await openBrief(page);
-  const here = panel.locator(`[role="tabpanel"][data-state="active"] [data-title="${title}"]`).first();
+  const here = panel.locator(`[role="tabpanel"]:not([inert]) [data-title="${title}"]`).first();
   if (!(await here.isVisible().catch(() => false))) {
     await briefPage(page, "Preflight");
     // Round the phases again until it is on one: a section drawn once the
@@ -575,9 +558,9 @@ export async function openSection(page: Page, title: string) {
     await here.scrollIntoViewIfNeeded({ timeout: 2000 });
   }).toPass({ timeout: 10000 });
   // A folded one -- Preflight's under its checks -- opened.
-  if ((await here.getAttribute("data-state")) === "closed") {
+  if ((await here.getAttribute("data-open")) === null) {
     await here.locator('[data-slot="accordion-trigger"]').first().click();
-    await expect(here).toHaveAttribute("data-state", "open");
+    await expect(here).toHaveAttribute("data-open", "");
   }
 }
 
@@ -710,20 +693,11 @@ export async function tapNear(page: Page, mark: Locator | (() => Promise<{ x: nu
   }).toPass({ timeout: slow(20_000) });
 }
 
-/** A card put away by its way back: on a phone with the sheet up, the
- *  minimized tab bar's close (TabBar), which goes back one card -- no Back,
- *  at the owner's ask ("close button should behave as the back button");
- *  elsewhere the card's own close. */
+/** A card put away by its way back: its own close in its head, inline
+ *  with its name (CardClose), which goes back one card -- no Back, at the
+ *  owner's ask ("close button should behave as the back button"). */
 export async function closeCard(page: Page, closeTestId: string) {
-  const bar = page.getByTestId("tab-close");
-  if (await bar.isVisible()) {
-    await bar.click();
-    return;
-  }
-  // Else the card's own close, out of sight but for a keyboard (CardClose).
-  const close = page.getByTestId(closeTestId);
-  await close.focus();
-  await page.keyboard.press("Enter");
+  await page.getByTestId(closeTestId).click();
 }
 
 /** The console's Personal tab, where who is signed in and the mode are
@@ -814,11 +788,10 @@ export async function airportMark(page: Page, ident: string): Promise<DrawnAirpo
   return (await airportMarks(page)).find((m) => m.ident === ident) ?? null;
 }
 
-/** A card's own close in the map's sheet: on a phone the tab bar's, which
- *  names the card and goes back one level (SheetCard, barNamed); from md up
- *  the card's own, by its test id. */
+/** A card's own close in the map's sheet, by its test id: in its head on
+ *  every screen, the tabs over it static (TabBar). */
 export function cardClose(page: Page, testId: string) {
-  return (page.viewportSize()?.width ?? 0) < 768 ? page.getByTestId("tab-close") : page.getByTestId(testId);
+  return page.getByTestId(testId);
 }
 
 /** What a map layer has drawn now, as its probe records it (useGlProbe):

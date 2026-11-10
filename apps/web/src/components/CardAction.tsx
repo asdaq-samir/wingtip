@@ -88,10 +88,21 @@ export function CardAction({
   // A link where it leaves the app, the stock button's look on it.
   if (href && !disabled) {
     return (
-      <Button asChild variant={filled ? "default" : "secondary"} className={look}>
-        <a href={href} target={href.startsWith("tel:") ? undefined : "_blank"} rel="noreferrer" data-testid={testId} aria-label={spoken}>
-          {face}
-        </a>
+      <Button
+        variant={filled ? "default" : "secondary"}
+        className={look}
+        nativeButton={false}
+        render={
+          <a
+            href={href}
+            target={href.startsWith("tel:") ? undefined : "_blank"}
+            rel="noreferrer"
+            data-testid={testId}
+            aria-label={spoken}
+          />
+        }
+      >
+        {face}
       </Button>
     );
   }

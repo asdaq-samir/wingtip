@@ -13,7 +13,7 @@ import { pastFlightsQuery } from "./pastFlightsQuery";
 
 // The stock calendar, as the departure's picker has it (DepartPicker):
 // its own chunk, asked for once a day is to be picked.
-const Calendar = lazy(() => import("../../../components/ui/calendar").then((m) => ({ default: m.Calendar })));
+const DayCalendar = lazy(() => import("../../../components/ui/calendar").then((m) => ({ default: m.DayCalendar })));
 
 /** How far back a day may be picked: adsb.lol's archive (wingtip.traffic
  *  ARCHIVE_DAYS), today among them. */
@@ -166,16 +166,13 @@ export default function PastFlights({
         <ResponsivePopoverContent title="Flights before a date" className="w-auto p-0" align="start" closeButton={false}>
           <div className="flex flex-col items-center gap-3 pb-3" data-testid="past-flights-picker">
             <Suspense fallback={<div className="h-[21rem] w-[17rem]" />}>
-              <Calendar
-                mode="single"
-                required
-                selected={picked}
-                defaultMonth={picked ?? today}
-                startMonth={earliest}
-                endMonth={today}
-                disabled={{ before: earliest, after: today }}
-                onSelect={(day) => {
-                  setFrom(isoDay(day));
+              <DayCalendar
+                aria-label="Flights before a date"
+                value={from}
+                min={isoDay(earliest)}
+                max={isoDay(today)}
+                onChange={(day) => {
+                  setFrom(day);
                   setPicking(false);
                 }}
               />

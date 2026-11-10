@@ -168,27 +168,40 @@ export default function ShareMenu({
   return (
     // The review's sheet, from the menu's item, placed by the Share
     // button: the menu has gone by the time it opens (as Print waits).
-    <ResponsivePopover open={askingReview} onOpenChange={setAskingReview}>
+    <ResponsivePopover
+      open={askingReview}
+      onOpenChange={(open, details) => {
+        // The review's sheet opens as the Share menu goes, whose focus goes
+        // back to its button as it closes: taken for a move outside, it
+        // shut the sheet just opened, now and then. A tap outside or
+        // Escape still closes it.
+        if (!open && details?.reason === "focus-out") return details.cancel();
+        setAskingReview(open);
+      }}
+    >
       <DropdownMenu>
         <ResponsivePopoverAnchor asChild>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger
+            render={
+              <RoundButton
+                label={planAgain?.stale.length ? `${SHARE_LABEL[card]}: ${planAgain.stale.join(", ")}` : SHARE_LABEL[card]}
+                className={card === "route" ? "size-[32px]" : undefined}
+                data-testid={testId}
+              />
+            }
+          >
             {/* The route box's a size down, as the box's other buttons are. */}
-            <RoundButton
-              label={planAgain?.stale.length ? `${SHARE_LABEL[card]}: ${planAgain.stale.join(", ")}` : SHARE_LABEL[card]}
-              className={card === "route" ? "size-[32px]" : undefined}
-              data-testid={testId}
-            >
-              <span className="relative">
-                {card === "route" ? <Ellipsis className="size-[18px]" strokeWidth={2.4} /> : <Share className="size-5" strokeWidth={2} />}
-                {!!planAgain?.stale.length && (
-                  <span
-                    aria-hidden="true"
-                    data-testid="plan-again-mark"
-                    className="absolute -top-0.5 -right-1 size-2 rounded-full bg-caution"
-                  />
-                )}
-              </span>
-            </RoundButton>
+
+            <span className="relative">
+              {card === "route" ? <Ellipsis className="size-[18px]" strokeWidth={2.4} /> : <Share className="size-5" strokeWidth={2} />}
+              {!!planAgain?.stale.length && (
+                <span
+                  aria-hidden="true"
+                  data-testid="plan-again-mark"
+                  className="absolute -top-0.5 -right-1 size-2 rounded-full bg-caution"
+                />
+              )}
+            </span>
           </DropdownMenuTrigger>
         </ResponsivePopoverAnchor>
         <DropdownMenuContent align={align} className="min-w-56 print:hidden">
@@ -196,13 +209,13 @@ export default function ShareMenu({
               Profile's (the owner, 2026-11-04: "Navlog can be moved to the
               more button"). The assistant's Ask is the AI brief's own. */}
           {onNavLog && (
-            <DropdownMenuItem onSelect={onNavLog} data-testid="route-navlog">
+            <DropdownMenuItem onClick={onNavLog} data-testid="route-navlog">
               <ListOrdered />
               Nav log
             </DropdownMenuItem>
           )}
           {routed && onShowFuel && (
-            <DropdownMenuItem onSelect={onShowFuel} data-testid="route-show-fuel">
+            <DropdownMenuItem onClick={onShowFuel} data-testid="route-show-fuel">
               <Fuel />
               Show Fuel Stops
             </DropdownMenuItem>
@@ -213,14 +226,14 @@ export default function ShareMenu({
             <DropdownMenuCheckboxItem
               checked={includeTail}
               onCheckedChange={(on) => setIncludeTail(on === true)}
-              onSelect={(e) => e.preventDefault()}
+              closeOnClick={false}
               data-testid="share-include-tail"
             >
               Include {tail}
             </DropdownMenuCheckboxItem>
           )}
           {routed && (
-            <DropdownMenuItem onSelect={() => void share()} data-testid="share-link">
+            <DropdownMenuItem onClick={() => void share()} data-testid="share-link">
               <Link2 />
               Share link
             </DropdownMenuItem>
@@ -237,47 +250,59 @@ export default function ShareMenu({
                       own link, and a download needs one too. */}
                   {points.length > 0 &&
                     (packHref && !sentPack ? (
-                      <DropdownMenuItem asChild data-testid="open-foreflight">
-                        <a href={openInForeFlight(new URL(packHref, packOrigin(window.location)).href)} onClick={sendPack}>
-                          <Send />
-                          Open in ForeFlight
-                        </a>
-                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        data-testid="open-foreflight"
+                        render={
+                          <a href={openInForeFlight(new URL(packHref, packOrigin(window.location)).href)} onClick={sendPack}>
+                            <Send />
+                            Open in ForeFlight
+                          </a>
+                        }
+                      />
                     ) : (
-                      <DropdownMenuItem asChild data-testid="open-foreflight">
-                        <a href={foreflightRoute(points, altitudeFt, sentPack)}>
-                          <Send />
-                          Open in ForeFlight
-                        </a>
-                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        data-testid="open-foreflight"
+                        render={
+                          <a href={foreflightRoute(points, altitudeFt, sentPack)}>
+                            <Send />
+                            Open in ForeFlight
+                          </a>
+                        }
+                      />
                     ))}
                   {/* Sent once and since deleted in ForeFlight: again. */}
                   {packHref && sentPack && (
-                    <DropdownMenuItem asChild data-testid="foreflight-pack">
-                      <a href={openInForeFlight(new URL(packHref, packOrigin(window.location)).href)}>
-                        <MapPinned />
-                        Send the checkpoints again
-                      </a>
-                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      data-testid="foreflight-pack"
+                      render={
+                        <a href={openInForeFlight(new URL(packHref, packOrigin(window.location)).href)}>
+                          <MapPinned />
+                          Send the checkpoints again
+                        </a>
+                      }
+                    />
                   )}
                   {packHref && (
-                    <DropdownMenuItem asChild data-testid="export-foreflight">
-                      <a href={packHref} download>
-                        <FileArchive />
-                        Checkpoints for ForeFlight (.zip)
-                      </a>
-                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      data-testid="export-foreflight"
+                      render={
+                        <a href={packHref} download>
+                          <FileArchive />
+                          Checkpoints for ForeFlight (.zip)
+                        </a>
+                      }
+                    />
                   )}
                   <DropdownMenuSeparator />
                 </>
               )}
               {saving(() => setTimeout(() => setAskingReview(true), 150))}
-              <DropdownMenuItem disabled={!fileable} onSelect={onFile} data-testid="file-flight-plan">
+              <DropdownMenuItem disabled={!fileable} onClick={onFile} data-testid="file-flight-plan">
                 <FileText />
                 File flight plan
               </DropdownMenuItem>
               {planAgain && (
-                <DropdownMenuItem onSelect={planAgain.onPlan} data-testid="plan-again" data-stale={planAgain.stale.length ? "" : undefined}>
+                <DropdownMenuItem onClick={planAgain.onPlan} data-testid="plan-again" data-stale={planAgain.stale.length ? "" : undefined}>
                   <RotateCw />
                   Refresh
                   {planAgain.stale.length > 0 && <span aria-hidden="true" className="ml-auto size-2 rounded-full bg-caution" />}
@@ -290,7 +315,7 @@ export default function ShareMenu({
               kneeboard card -- the nav log, radio and patterns on one
               half-letter page to fly with. */}
           {card === "brief" && (
-            <DropdownMenuItem disabled={!routed} onSelect={() => setTimeout(() => window.print(), 150)} data-testid="print-briefing">
+            <DropdownMenuItem disabled={!routed} onClick={() => setTimeout(() => window.print(), 150)} data-testid="print-briefing">
               <Printer />
               Print the briefing
             </DropdownMenuItem>
@@ -299,7 +324,7 @@ export default function ShareMenu({
             <DropdownMenuItem
               disabled={!routed}
               data-testid="print-kneeboard"
-              onSelect={() => setTimeout(() => void import("../lib/printKneeboard").then((m) => m.printKneeboard()), 150)}
+              onClick={() => setTimeout(() => void import("../lib/printKneeboard").then((m) => m.printKneeboard()), 150)}
             >
               <Printer />
               Print the nav log

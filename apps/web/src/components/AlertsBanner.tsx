@@ -54,7 +54,7 @@ export default function AlertsBanner() {
         )}
       >
         <Icon className="shrink-0" />
-        {/* The first alert, a tap opening the rest under it: Radix's
+        {/* The first alert, a tap opening the rest under it: Base UI's
             disclosure (shadcn's Collapsible), so what opens is beside the
             button that opens it, not inside it, and a screen reader is
             told which it controls. */}

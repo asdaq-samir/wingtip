@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ComponentProps, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { cn } from "cn";
 import { SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
 import { SHEET_CORNERS } from "../lib/mapChrome";
@@ -39,6 +39,7 @@ export function PhoneSheetContent({
   onPointerMove,
   onPointerUp,
   onPointerCancel,
+  ref,
   ...props
 }: Omit<ComponentProps<typeof SheetContent>, "side" | "glass"> & { edge: NavEdge }) {
   const close = useRef<HTMLButtonElement>(null);
@@ -139,7 +140,11 @@ export function PhoneSheetContent({
     // list scrolled under its foot stood square past them (the owner's
     // screenshot of an approach's runways).
     <SheetContent
-      ref={setSheet}
+      ref={(node: HTMLDivElement | null) => {
+        setSheet(node);
+        if (typeof ref === "function") ref(node);
+        else if (ref) ref.current = node;
+      }}
       side={edge}
       glass
       data-floating=""
@@ -167,7 +172,7 @@ export function PhoneSheetContent({
           moved: false,
         };
       }}
-      onPointerMove={(event: PointerEvent<HTMLDivElement>) => {
+      onPointerMove={(event) => {
         onPointerMove?.(event);
         const p = press.current;
         if (!p || event.pointerId !== p.id) return;

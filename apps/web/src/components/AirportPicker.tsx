@@ -7,7 +7,7 @@ import { Button } from "./ui/button";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "./ResponsivePopover";
 import { useIsMobile } from "../hooks/use-mobile";
 
-// The search it opens (AirportSearch: cmdk, the lookup's rows, the
+// The search it opens (AirportSearch: Base UI's Autocomplete, the lookup's rows, the
 // Favorites' tiles) on a chunk of its own, not the first load's: the
 // first screen draws the button alone (scripts/first-load.mjs's budget,
 // 2026-11-09). Asked for a moment after the page has drawn, and at a
@@ -48,7 +48,7 @@ interface Props {
  * DEP or DEST as shadcn's own combobox: a button showing the ident that
  * opens a `Command` -- its search box, its list, its keyboard handling
  * (Up/Down/Enter/Escape, the highlighted row, `aria-activedescendant`)
- * all cmdk's -- with the airport lookup as the list. Typing "duluth"
+ * all Base UI's Autocomplete's -- with the airport lookup as the list. Typing "duluth"
  * surfaces KDLH the same as typing "KDL" would, for a pilot who does
  * not have every ident memorised; an ident the lookup does not know
  * (a private strip, say) still goes through on Enter. This replaced a
@@ -114,12 +114,14 @@ export default function AirportPicker({
           aria-invalid={invalid}
           data-testid={testId}
           onPointerDown={prefetchSearch}
-          // A tap the caller's (`onTap`), not the trigger's opening:
-          // Radix's own toggle runs only where nothing prevented it.
+          // A tap the caller's (`onTap`), not the trigger's opening: the
+          // trigger's own toggle is kept from running (preventDefault on a
+          // phone's card, Base UI's handler from md up).
           onClick={
             onTap
               ? (e) => {
                   e.preventDefault();
+                  (e as { preventBaseUIHandler?: () => void }).preventBaseUIHandler?.();
                   onTap();
                 }
               : undefined
@@ -161,10 +163,7 @@ export default function AirportPicker({
         style={onPhone ? { maxHeight: "calc(100dvh - 1rem - env(safe-area-inset-top))" } : undefined}
         // The field focused as it opens, as the search bar is on its tap:
         // the sheet's own first focus went to the sheet itself.
-        onOpenAutoFocus={(e) => {
-          e.preventDefault();
-          input.current?.focus();
-        }}
+        initialFocus={input}
       >
         {/* Its own wait, the card empty a moment at a first open before
             the chunk is in hand, not the panel round it. */}

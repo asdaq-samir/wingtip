@@ -5,6 +5,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -42,7 +43,7 @@ type NearField = { ident: string; name: string | null; lat: number; lon: number;
  * N654FL…" takes off (not while it is in the air), lands, comes near own
  * ship (5, 10 or 20 nm) or near an airport (Home, a Favorite, or the
  * fields it left and is bound for) -- each ticked while it waits and
- * untied by a tap, as iOS's menus do. The stock menu (Radix's, shadcn's),
+ * untied by a tap, as iOS's menus do. The stock menu (Base UI's, shadcn's),
  * its choices of how near and which airport in menus of their own.
  * Watched while the app is open (AircraftAlerts).
  */
@@ -90,17 +91,21 @@ export default function AircraftAlertMenu({
   const waiting = alerts.length > 0;
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <CardAction
-          icon={waiting ? <BellRing /> : <Bell />}
-          label="Alert"
-          filled={waiting}
-          testId="flight-alert"
-          spoken={waiting ? `Alert: ${alertsLine(alerts)}` : `Alert for ${name}`}
-        />
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        render={
+          <CardAction
+            icon={waiting ? <BellRing /> : <Bell />}
+            label="Alert"
+            filled={waiting}
+            testId="flight-alert"
+            spoken={waiting ? `Alert: ${alertsLine(alerts)}` : `Alert for ${name}`}
+          />
+        }
+      />
       <DropdownMenuContent align="start" className="w-72" data-testid="flight-alert-menu">
-        <DropdownMenuLabel className={cn("font-normal text-muted-foreground", TEXT.note)}>Tell me when {name}…</DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className={cn("font-normal text-muted-foreground", TEXT.note)}>Tell me when {name}…</DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuCheckboxItem
           checked={!!takeoff}
@@ -108,7 +113,7 @@ export default function AircraftAlertMenu({
           data-testid="flight-alert-takeoff"
           onCheckedChange={(on) => (on ? set({ kind: "takeoff" }) : unset("takeoff"))}
           // Ticked, the menu stays open, as iOS's does for a choice of several.
-          onSelect={(event) => event.preventDefault()}
+          closeOnClick={false}
         >
           <span className="flex flex-col">
             Takes off
@@ -119,7 +124,7 @@ export default function AircraftAlertMenu({
           checked={!!of("land")}
           data-testid="flight-alert-land"
           onCheckedChange={(on) => (on ? set({ kind: "land" }) : unset("land"))}
-          onSelect={(event) => event.preventDefault()}
+          closeOnClick={false}
         >
           Lands
         </DropdownMenuCheckboxItem>
@@ -156,9 +161,6 @@ export default function AircraftAlertMenu({
             <span className="text-muted-foreground">{nearField?.airport?.ident ?? "Off"}</span>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
-            <DropdownMenuLabel className={cn("font-normal text-muted-foreground", TEXT.note)}>
-              Within {NEAR_AIRPORT_NM} nm of
-            </DropdownMenuLabel>
             <DropdownMenuRadioGroup
               value={nearField?.airport?.ident ?? "off"}
               onValueChange={(value) => {
@@ -167,6 +169,9 @@ export default function AircraftAlertMenu({
                 else set({ kind: "near-airport", airport: { ident: field.ident, name: field.name, lat: field.lat, lon: field.lon } });
               }}
             >
+              <DropdownMenuLabel className={cn("font-normal text-muted-foreground", TEXT.note)}>
+                Within {NEAR_AIRPORT_NM} nm of
+              </DropdownMenuLabel>
               <DropdownMenuRadioItem value="off">Off</DropdownMenuRadioItem>
               {fields.map((field) => (
                 <DropdownMenuRadioItem key={field.ident} value={field.ident} data-testid={`flight-alert-airport-${field.ident}`}>

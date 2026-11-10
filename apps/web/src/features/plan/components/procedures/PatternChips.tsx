@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode, type RefObject } from "react";
 import { ChevronRight, Wind } from "lucide-react";
 import { cn } from "cn";
 import { ToggleGroup, ToggleGroupItem } from "../../../../components/ui/toggle-group";
@@ -17,8 +17,8 @@ export const NONE = "none";
 
 /**
  * Choices laid out as chips, as iOS's filters are, one of them picked:
- * shadcn's ToggleGroup (Radix: a radio group to a screen reader, arrow
- * keys between them), a tap on the one picked keeping it. Each chip is 32
+ * shadcn's ToggleGroup (Base UI: a group of toggles to a screen reader,
+ * the one picked pressed, arrow keys between them), a tap on the one picked keeping it. Each chip is 32
  * high; its 44-point hit area a pseudo-element six round it, meeting its
  * neighbours' across the twelve between them, along a row and between
  * the rows they wrap to, the chip not grown.
@@ -67,7 +67,7 @@ export function Chips({
     const box = row.current;
     if (!box) return;
     const show = () => {
-      const on = box.querySelector<HTMLElement>("[data-state=on]");
+      const on = box.querySelector<HTMLElement>("[data-pressed]");
       if (!on) return;
       // Where it lies in the line's scroll, by layout: the chips slide in
       // as the line opens (`enter`), and their place on screen then was
@@ -98,10 +98,9 @@ export function Chips({
       )}
     >
       <ToggleGroup
-        type="single"
-        value={value}
+        value={[value]}
         onValueChange={(v) => {
-          if (v) onChange(v);
+          if (v[0]) onChange(v[0]);
         }}
         aria-label={label}
         spacing={3}
@@ -306,8 +305,7 @@ export function PatternChips({
             unpicking it. The tray's body, its head the glyph (the block's
             runway-line-toggle). */}
         <ToggleGroup
-          type="single"
-          value={c.id}
+          value={[c.id]}
           aria-label={label ?? `${a.ident} ${landing ? "runway" : "traffic pattern"}`}
           // Square where it meets the head, as the open line's body is.
           className={cn(TRAY_BODY, "rounded-l-none")}
@@ -431,6 +429,6 @@ export function PatternChips({
 /** A runway line's open chips, the content of its tray's Collapsible
  *  where the line folds to a runway picked (`folds`); where it does not
  *  (none picked yet) it is the line itself, with nothing to open it. */
-function LineContent({ folds, children }: { folds: boolean; children: ReactNode }) {
-  return folds ? <CollapsibleContent asChild>{children}</CollapsibleContent> : children;
+function LineContent({ folds, children }: { folds: boolean; children: ReactElement }) {
+  return folds ? <CollapsibleContent render={children} /> : children;
 }

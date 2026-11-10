@@ -328,7 +328,7 @@ test("a tap on the card's sketch of a field the FAA draws no diagram for shows t
   // Not the Runways tab, which the tap used to open: the card still half
   // way, on its first tab.
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
-  await expect(card(page).getByTestId("place-tab-runways")).not.toHaveAttribute("data-state", "active");
+  await expect(card(page).getByTestId("place-tab-runways")).not.toHaveAttribute("data-active");
   await viewer.getByTestId("airport-sketch-close").click();
   await expect(viewer).toHaveCount(0);
 });

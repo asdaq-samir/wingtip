@@ -1,7 +1,7 @@
 import { Children, Fragment, useId, type ComponentProps, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Check, ChevronRight, ExternalLink } from "lucide-react";
-import { RadioGroup as RadioGroupPrimitive } from "radix-ui";
+import { Radio as RadioPrimitive } from "@base-ui/react/radio";
 import { RadioGroup } from "./ui/radio-group";
 import { cn } from "cn";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemSeparator, ItemTitle } from "./ui/item";
@@ -80,7 +80,7 @@ export function ListGroup({
  * With `id`, the name is the control's label, so a tap on the words
  * works it. With `href`, the whole row is a link out, marked as one;
  * with `to`, a link to one of the app's own pages, with the chevron.
- * With `onClick` (or as a trigger's `asChild` child, which hands it
+ * With `onClick` (or as a trigger's `render` element, which hands it
  * one), the whole row is a button, and `chevron` marks it as opening
  * something, as an iOS row does; the rest of the props (a name, a test
  * id, a trigger's own, `disabled`) go on that button. A row that does
@@ -129,11 +129,11 @@ export function ListRow({
   href?: string;
   to?: string;
   chevron?: boolean;
-  /** A row that is a checkbox: shadcn's (Radix's) at its start, the whole
+  /** A row that is a checkbox: shadcn's (Base UI's) at its start, the whole
    *  row its label, so a tap anywhere on it ticks it. The row's test id
    *  goes on the checkbox, which carries `aria-checked`. */
   checkbox?: { checked: boolean; onChange: (checked: boolean) => void };
-  /** A row that is one of a radio group's choices, this its value: Radix's
+  /** A row that is one of a radio group's choices, this its value: Base UI's
    *  radio item (arrow keys between the choices, `aria-checked`), marked
    *  with iOS's checkmark in the tint, as a list's one choice is on iOS
    *  (the HIG), not a radio's dot. Inside a `ListChoices`. */
@@ -142,8 +142,7 @@ export function ListRow({
 } & Omit<ComponentProps<"button">, "title" | "value" | "children">) {
   const choice = !!checkbox || radio !== undefined || buttonProps["aria-pressed"] !== undefined;
   // A radio's mark, iOS's checkmark, shown by the item's own state.
-  const mark =
-    radio !== undefined ? <Check className="size-4 text-tint invisible group-data-[state=checked]:visible" aria-hidden /> : media;
+  const mark = radio !== undefined ? <Check className="size-4 text-tint invisible group-data-checked:visible" aria-hidden /> : media;
   const opens = chevron || to !== undefined;
   const action = href !== undefined || (!!buttonProps.onClick && !opens && !choice);
   // The words wrap, where the stock Item cuts its title at one line and
@@ -191,82 +190,87 @@ export function ListRow({
   if (to !== undefined) {
     return (
       <Item
-        asChild
         size="sm"
         className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 no-underline! hover:bg-muted/50 pointer-coarse:active:bg-muted"
-      >
-        {/* What a wrapper hands a row (a sheet's Close, its click) goes
-            on the link; a button's own attributes do not. */}
-        <Link
-          to={to}
-          className={buttonProps.className}
-          aria-label={buttonProps["aria-label"]}
-          onClick={buttonProps.onClick as ComponentProps<typeof Link>["onClick"]}
-          data-testid={(buttonProps as { "data-testid"?: string })["data-testid"]}
-        >
-          {body}
-        </Link>
-      </Item>
+        // What a wrapper hands a row (a sheet's Close, its click) goes on
+        // the link; a button's own attributes do not.
+        render={
+          <Link
+            to={to}
+            className={buttonProps.className}
+            aria-label={buttonProps["aria-label"]}
+            onClick={buttonProps.onClick as ComponentProps<typeof Link>["onClick"]}
+            data-testid={(buttonProps as { "data-testid"?: string })["data-testid"]}
+          >
+            {body}
+          </Link>
+        }
+      />
     );
   }
   if (href) {
     return (
       // no-underline!: a section's own links are underlined (the
       // accordion's content styles every <a>), and a row is not prose.
-      <Item asChild size="sm" className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 no-underline!">
-        {/* A click handler goes on the link too, run before it opens: a
-            row that copies what the site it opens is to be given (the
-            Brief's Open in 1800wxbrief), in the tap's own gesture. */}
-        <a
-          href={href}
-          target="_blank"
-          rel="noreferrer"
-          onClick={buttonProps.onClick as ComponentProps<"a">["onClick"]}
-          data-testid={(buttonProps as { "data-testid"?: string })["data-testid"]}
-        >
-          {body}
-        </a>
-      </Item>
+      // A click handler goes on the link too, run before it opens: a row
+      // that copies what the site it opens is to be given (the Brief's
+      // Open in 1800wxbrief), in the tap's own gesture.
+      <Item
+        size="sm"
+        className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 no-underline!"
+        render={
+          <a
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            onClick={buttonProps.onClick as ComponentProps<"a">["onClick"]}
+            data-testid={(buttonProps as { "data-testid"?: string })["data-testid"]}
+          >
+            {body}
+          </a>
+        }
+      />
     );
   }
   if (checkbox) {
     // A label round the row, so a tap anywhere on it is a tap on the box.
     return (
       <Item
-        asChild
         size="sm"
         className="min-h-11 cursor-pointer rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 hover:bg-muted/50 pointer-coarse:active:bg-muted"
-      >
-        <label className={buttonProps.className}>{body}</label>
-      </Item>
+        render={<label className={buttonProps.className}>{body}</label>}
+      />
     );
   }
   if (radio !== undefined) {
     return (
       <Item
-        asChild
         size="sm"
         className="group min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted"
-      >
-        <RadioGroupPrimitive.Item value={radio} asChild disabled={buttonProps.disabled}>
-          <button type="button" {...buttonProps}>
+        render={
+          <RadioPrimitive.Root
+            value={radio}
+            nativeButton
+            disabled={buttonProps.disabled}
+            render={<button type="button" {...buttonProps} />}
+          >
             {body}
-          </button>
-        </RadioGroupPrimitive.Item>
-      </Item>
+          </RadioPrimitive.Root>
+        }
+      />
     );
   }
   if (buttonProps.onClick) {
     return (
       <Item
-        asChild
         size="sm"
         className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted"
-      >
-        <button type="button" {...buttonProps}>
-          {body}
-        </button>
-      </Item>
+        render={
+          <button type="button" {...buttonProps}>
+            {body}
+          </button>
+        }
+      />
     );
   }
   // A plain row keeps its test id, its class and whether it is the one
@@ -285,7 +289,7 @@ export function ListRow({
 
 /**
  * A list's one choice, as iOS has it: its rows (`ListRow` with `radio`)
- * a Radix radio group -- arrow keys between them, one checked, the
+ * a Base UI radio group -- arrow keys between them, one checked, the
  * group named -- around the grouped list.
  */
 export function ListChoices({
@@ -300,7 +304,7 @@ export function ListChoices({
   children: ReactNode;
 }) {
   return (
-    <RadioGroup value={value} onValueChange={onChange} aria-label={label} className="block">
+    <RadioGroup value={value} onValueChange={(v) => onChange(String(v))} aria-label={label} className="block">
       {children}
     </RadioGroup>
   );

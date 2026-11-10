@@ -1,7 +1,6 @@
 import {
   Fragment,
   useEffect,
-  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -10,7 +9,6 @@ import {
   type PointerEvent,
   type ReactNode,
 } from "react";
-import { Command as CommandPrimitive } from "cmdk";
 import { ArrowRight, Coffee, Fuel, PlaneLanding, PlaneTakeoff, Plus, Route, Trash2, TriangleAlert } from "lucide-react";
 import {
   DndContext,
@@ -35,7 +33,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { PointMenuItems } from "./PointControls";
 import { CONTEXT_MENU, useAfterMenu } from "./pointMenu";
 import { InputGroup } from "../../../components/ui/input-group";
-import { Popover, PopoverAnchor, PopoverContent } from "../../../components/ui/popover";
+import { CommandField, CommandRoot } from "../../../components/ui/command";
+import { Popover, PopoverContent } from "../../../components/ui/popover";
+import type { BaseUIEvent } from "@base-ui/react/types";
 import type { Detour, FuelStopSuggestion } from "../../../lib/api/types";
 import { MAX_STOPS, frdOf, identOf, isPosition, pointName, stopOf } from "../../../lib/identSchema";
 import { prefersReducedMotion } from "../../../lib/motion";
@@ -213,7 +213,9 @@ export default function RouteBox({
     typedNow.current = typed;
   }, [typed]);
   const field = useRef<HTMLInputElement>(null);
-  const listId = useId();
+  // The box, which the suggestions are placed under (their popover's
+  // anchor) and a press in which is not one outside them.
+  const [boxEl, setBoxEl] = useState<HTMLDivElement | null>(null);
   // Where the field is: before point `at` (a stop typed in there, or at 0
   // with no departure, the departure), or null -- after the last point,
   // where what is typed is the destination.
@@ -457,10 +459,10 @@ export default function RouteBox({
     onDone?.();
   };
 
-  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const onKeyDown = (e: BaseUIEvent<KeyboardEvent<HTMLInputElement>>) => {
     if (e.key === "Enter") {
-      // The first suggestion, once they answer what is typed (cmdk's own
-      // Enter, on its highlighted row); else what was typed -- but what is
+      // The first suggestion, once they answer what is typed (the list's
+      // own Enter, on its highlighted row); else what was typed -- but what is
       // no row's ident (a town's name, "madison", or a short one, "reno",
       // which stopOf takes for an ident) takes the first airport shown at
       // once, before the planner's waypoints answer: it was put in as
@@ -468,18 +470,18 @@ export default function RouteBox({
       const word = typed.trim().toUpperCase();
       const exact = rows.some((r) => r.ident === word);
       if (open && rows.length > 0 && (answered || !exact)) {
-        // cmdk takes Enter on its highlighted row, but typed key by key,
-        // as a phone's keyboard does, the rows change under it and none
-        // stays highlighted, so Return did nothing (the FPL audit's A1,
-        // 2026-11-08). With none highlighted the first row shown is the
-        // one Return takes, as Maps' search does; its click is its select.
-        // By the suggestions' own popover: cmdk gives its list an id of
-        // its own, so the one asked for (listId) found nothing.
+        // The list takes Enter on its highlighted row, but typed key by
+        // key, as a phone's keyboard does, the rows change under it and
+        // none stays highlighted, so Return did nothing (the FPL audit's
+        // A1, 2026-11-08, under cmdk). With none highlighted the first row
+        // shown is the one Return takes, as Maps' search does; its click
+        // is its select. By the suggestions' own popover.
         const list = document.querySelector('[data-testid="route-suggestions"]');
-        if (list && !list.querySelector("[cmdk-item][data-selected=true]")) {
-          const first = list.querySelector<HTMLElement>("[cmdk-item]:not([data-disabled=true])");
+        if (list && !list.querySelector("[role=option][data-highlighted]")) {
+          const first = list.querySelector<HTMLElement>("[role=option]:not([data-disabled])");
           if (first) {
             e.preventDefault();
+            e.preventBaseUIHandler();
             first.click();
             return;
           }
@@ -508,22 +510,18 @@ export default function RouteBox({
     change(arrayMove(points, ids.indexOf(String(active.id)), ids.indexOf(String(over.id))));
   };
 
-  // A plain field in cmdk's root, which takes its arrows and Enter as they
-  // bubble: cmdk's own field names a list that is not in the page while
-  // the suggestions are put away. After the last point it fills the rest
+  // The list's own field (Base UI's Autocomplete), which keeps its arrows
+  // and Enter on the suggestions while they are out. After the last point it fills the rest
   // of the line, so a tap anywhere after the destination types there; at
   // an arrow, a stop's width.
   const typing = (
     <>
-      <input
+      <CommandField
         ref={field}
-        value={typed}
-        onChange={(e) => setTyped(e.target.value.toUpperCase())}
         onKeyDown={onKeyDown}
-        role="combobox"
+        // Out only while the suggestions are: the list is always "open"
+        // to Base UI (inline), its popover the box's own.
         aria-expanded={open}
-        aria-controls={listId}
-        aria-autocomplete="list"
         // Idents, not anything AutoFill knows (the iOS audit's P19).
         autoComplete="off"
         // What was typed goes in when the box is left -- unless a suggestion
@@ -622,39 +620,45 @@ export default function RouteBox({
       </button>
     );
   return (
-    // The box's own presses are its pills', not the panel's drag. cmdk's
-    // root round the box and its suggestions: the field moves the
-    // highlight with the arrows and takes it with Enter.
-    <CommandPrimitive
-      shouldFilter={false}
-      loop
-      className="min-w-0"
-      onPointerDown={(e) => e.stopPropagation()}
-      // Delete (or Backspace) on a focused pill takes it out, as its menu
-      // does (Pill).
-      onKeyDown={(event) => {
-        const point = (event.target as HTMLElement).dataset.point;
-        if (point === undefined || (event.key !== "Delete" && event.key !== "Backspace")) return;
-        event.preventDefault();
-        remove(Number(point));
-      }}
-    >
-      <Popover
-        open={open}
-        onOpenChange={(next) => {
-          if (!next) {
-            setDismissed(typed);
-            onAddingChange(false);
-          }
+    // The box's own presses are its pills', not the panel's drag. The
+    // list's root (Base UI's Autocomplete) round the box and its
+    // suggestions: the field moves the highlight with the arrows and takes
+    // it with Enter.
+    <CommandRoot value={typed} onValueChange={(v) => setTyped(v.toUpperCase())}>
+      {/* eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- the presses and keys of the pills and the field inside it, caught as they bubble (as cmdk's root caught them). */}
+      <div
+        className="min-w-0"
+        onPointerDown={(e) => e.stopPropagation()}
+        // Delete (or Backspace) on a focused pill takes it out, as its menu
+        // does (Pill).
+        onKeyDown={(event) => {
+          const point = (event.target as HTMLElement).dataset.point;
+          if (point === undefined || (event.key !== "Delete" && event.key !== "Backspace")) return;
+          event.preventDefault();
+          remove(Number(point));
         }}
       >
-        <PopoverAnchor asChild>
+        <Popover
+          open={open}
+          onOpenChange={(next, details) => {
+            // A press in the box is not outside: it types there.
+            if (!next && details.reason === "outside-press" && boxEl?.contains(details.event.target as Node)) {
+              details.cancel();
+              return;
+            }
+            if (!next) {
+              setDismissed(typed);
+              onAddingChange(false);
+            }
+          }}
+        >
           {/* The search bar's field, as Maps' is with no route: its grey,
               no line round it, its corners round, the pills on it in the
               sheet's own colour -- one line tall, a second as the route
               needs it, at the pilot's ask, where it was two however short
               the route and a short one left a line of grey empty under it. */}
           <InputGroup
+            ref={setBoxEl}
             onMouseDown={(e) => {
               if (isRoom(e)) e.preventDefault();
             }}
@@ -842,95 +846,92 @@ export default function RouteBox({
               </div>
             )}
           </InputGroup>
-        </PopoverAnchor>
-        {/* The airport search's own list (AirportResults), its rows and
+          {/* The airport search's own list (AirportResults), its rows and
             groups as the picker's sheet has them, under the box: the typing
             stays in the box, where the picker's sheet from the top would
             take the focus to a field of its own. As tall as there is room,
             the sheet's list as long. */}
-        <PopoverContent
-          align="start"
-          sideOffset={6}
-          className="w-(--radix-popper-anchor-width) max-w-[calc(100vw-16px)] gap-0 p-2"
-          style={keyboard > 0 ? { paddingBottom: keyboard } : undefined}
-          // The typing stays in the box.
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          onInteractOutside={(e) => {
-            if (field.current?.closest("[data-slot=input-group]")?.contains(e.target as Node)) e.preventDefault();
-          }}
-          data-testid="route-suggestions"
-        >
-          <AirportResults
-            id={listId}
-            rows={typed.trim() ? rows : NO_ROWS}
-            answered={!typed.trim() || answered}
-            onAirport={(airport) => pick(airport.ident, airport)}
-            onWaypoint={(ident) => pick(ident)}
+          <PopoverContent
+            align="start"
+            sideOffset={6}
+            anchor={boxEl}
+            className="w-(--anchor-width) max-w-[calc(100vw-16px)] gap-0 p-2"
+            style={keyboard > 0 ? { paddingBottom: keyboard } : undefined}
+            // The typing stays in the box.
+            initialFocus={false}
+            data-testid="route-suggestions"
           >
-            {!typed.trim() && via && via.length > 0 && (
-              <PickerGroup heading="Suggested">
-                {via.map((d) => (
-                  <AirportRow
-                    key={d.ident}
-                    waypoint
-                    testId="picker-suggestion"
-                    onSelect={() => pick(d.ident)}
-                    airport={{
-                      ident: d.ident,
-                      name: d.kind,
-                      municipality: [`+${Math.round(d.added_nm)} nm`, d.description].filter(Boolean).join(" · "),
-                    }}
-                  />
-                ))}
-              </PickerGroup>
-            )}
-            {ownPoint && (
-              <PickerGroup heading="Your point">
-                <AirportRow
-                  waypoint
-                  airport={{ ident: ownPoint, name: frdWords(ownPoint) }}
-                  onSelect={() => pick(ownPoint)}
-                  testId="route-own-point"
-                />
-              </PickerGroup>
-            )}
-          </AirportResults>
-        </PopoverContent>
-      </Popover>
-      {unknownPoint && (
-        // Under the box, in the destructive red its pill is drawn in, with
-        // the one thing to do that the pill's tap does not: Remove.
-        <div className="flex items-center gap-2 px-2 pt-1.5" role="alert" data-testid="route-unknown">
-          <TriangleAlert className="size-4 shrink-0 text-destructive" aria-hidden="true" />
-          <p className={cn("min-w-0 flex-1 text-destructive", TEXT.detail)}>
-            {unknownPoint.ident
-              ? `${unknownPoint.ident} isn't an airport or waypoint we know. Tap it to change it.`
-              : "A point of the route isn't an airport or waypoint we know."}
-          </p>
-          {unknownPoint.ident && points.includes(unknownPoint.ident) && (
-            <button
-              type="button"
-              onClick={() => remove(points.indexOf(unknownPoint.ident!))}
-              data-testid="route-unknown-remove"
-              className={cn(
-                "relative shrink-0 rounded-full px-1.5 font-semibold text-tint outline-none after:absolute after:-inset-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-                TEXT.detail,
-              )}
+            <AirportResults
+              rows={typed.trim() ? rows : NO_ROWS}
+              answered={!typed.trim() || answered}
+              onAirport={(airport) => pick(airport.ident, airport)}
+              onWaypoint={(ident) => pick(ident)}
             >
-              Remove
-            </button>
-          )}
-        </div>
-      )}
-      <PointAltitudeDialog
-        point={editing}
-        onClose={() => setEditing(null)}
-        onSet={(ident, feet) => {
-          onAltitudeChange(ident, feet);
-          setEditing(null);
-        }}
-      />
-    </CommandPrimitive>
+              {!typed.trim() && via && via.length > 0 && (
+                <PickerGroup heading="Suggested">
+                  {via.map((d) => (
+                    <AirportRow
+                      key={d.ident}
+                      waypoint
+                      testId="picker-suggestion"
+                      onSelect={() => pick(d.ident)}
+                      airport={{
+                        ident: d.ident,
+                        name: d.kind,
+                        municipality: [`+${Math.round(d.added_nm)} nm`, d.description].filter(Boolean).join(" · "),
+                      }}
+                    />
+                  ))}
+                </PickerGroup>
+              )}
+              {ownPoint && (
+                <PickerGroup heading="Your point">
+                  <AirportRow
+                    waypoint
+                    airport={{ ident: ownPoint, name: frdWords(ownPoint) }}
+                    onSelect={() => pick(ownPoint)}
+                    testId="route-own-point"
+                  />
+                </PickerGroup>
+              )}
+            </AirportResults>
+          </PopoverContent>
+        </Popover>
+        {unknownPoint && (
+          // Under the box, in the destructive red its pill is drawn in, with
+          // the one thing to do that the pill's tap does not: Remove.
+          <div className="flex items-center gap-2 px-2 pt-1.5" role="alert" data-testid="route-unknown">
+            <TriangleAlert className="size-4 shrink-0 text-destructive" aria-hidden="true" />
+            <p className={cn("min-w-0 flex-1 text-destructive", TEXT.detail)}>
+              {unknownPoint.ident
+                ? `${unknownPoint.ident} isn't an airport or waypoint we know. Tap it to change it.`
+                : "A point of the route isn't an airport or waypoint we know."}
+            </p>
+            {unknownPoint.ident && points.includes(unknownPoint.ident) && (
+              <button
+                type="button"
+                onClick={() => remove(points.indexOf(unknownPoint.ident!))}
+                data-testid="route-unknown-remove"
+                className={cn(
+                  "relative shrink-0 rounded-full px-1.5 font-semibold text-tint outline-none after:absolute after:-inset-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+                  TEXT.detail,
+                )}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        )}
+        <PointAltitudeDialog
+          point={editing}
+          onClose={() => setEditing(null)}
+          onSet={(ident, feet) => {
+            onAltitudeChange(ident, feet);
+            setEditing(null);
+          }}
+        />
+      </div>
+    </CommandRoot>
   );
 }
 
@@ -992,24 +993,26 @@ function FuelStopChip({
   }
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          data-testid="route-fuel-stop"
-          aria-label={`Suggested ${reason === "break" ? "stop" : "fuel stop"} ${ident}`}
-          className={chip}
-        >
-          {face}
-        </button>
+      <DropdownMenuTrigger
+        render={
+          <button
+            type="button"
+            data-testid="route-fuel-stop"
+            aria-label={`Suggested ${reason === "break" ? "stop" : "fuel stop"} ${ident}`}
+            className={chip}
+          />
+        }
+      >
+        {face}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         {onAdd && (
-          <DropdownMenuItem onSelect={onAdd} data-testid="route-fuel-stop-add">
+          <DropdownMenuItem onClick={onAdd} data-testid="route-fuel-stop-add">
             <Plus />
             Add to Route
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem variant="destructive" onSelect={onHide} data-testid="route-fuel-stop-remove">
+        <DropdownMenuItem variant="destructive" onClick={onHide} data-testid="route-fuel-stop-remove">
           <Trash2 />
           Remove
         </DropdownMenuItem>
@@ -1097,14 +1100,14 @@ function Pill({
   // once the menu has closed, the focus left to the search, or it took the
   // focus from the search as it opened, which closed it (useAfterMenu).
   const [changing, setChanging] = useState(false);
-  const { later, onCloseAutoFocus } = useAfterMenu();
+  const { later, finalFocus } = useAfterMenu();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   // A finger's hold, as iOS's: the pill lifts at a quarter second (the
   // drag's, RouteBox's sensors), its menu at half -- unless it has moved
   // first, which makes it a drag; moved with the menu out, the menu goes
-  // and the drag goes on. Radix's own hold (700 ms) is put off by any
+  // and the drag goes on. A context menu's own hold is put off by any
   // move at all, and a finger is never quite still: this one allows it
-  // eight points, and opens where Radix's would.
+  // eight points, and opens where the menu's own would.
   const hold = useRef<{ timer: number; x: number; y: number } | null>(null);
   const menuOut = useRef(false);
   const letGo = () => {
@@ -1132,7 +1135,7 @@ function Pill({
     onDragMove: ({ active, delta }) => {
       if (active.id !== id || Math.hypot(delta.x, delta.y) <= 8) return;
       letGo();
-      // Radix closes its menu on Escape's key; dnd-kit cancels a drag on
+      // The menu closes on Escape's key; dnd-kit cancels a drag on
       // Escape's code, which this has none of.
       if (menuOut.current) document.dispatchEvent(new globalThis.KeyboardEvent("keydown", { key: "Escape" }));
     },
@@ -1230,12 +1233,12 @@ function Pill({
         menuOut.current = open;
       }}
     >
-      <ContextMenuTrigger asChild>{pill}</ContextMenuTrigger>
+      <ContextMenuTrigger render={pill} />
       {/* FPL's "⋯"'s items, in its words and order (PointMenuItems), at
           the audit's finding: the altitude there after Set altitude…, a
           waypoint's cruise as a flight level, an airport's pattern in feet,
           the plan's until the pilot sets their own. */}
-      <ContextMenuContent onCloseAutoFocus={onCloseAutoFocus}>
+      <ContextMenuContent finalFocus={finalFocus}>
         <PointMenuItems
           kit={CONTEXT_MENU}
           later={later}

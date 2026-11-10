@@ -83,9 +83,9 @@ test("Preflight's checks are the Go / No-Go's and 14 CFR 91.103's, a tile each, 
   await expect(drawer.getByTestId("verdict-weather")).toHaveAttribute("data-looked", "true");
   // The loading's opens its own section here, folded until then.
   const balance = drawer.locator('[data-tab="preflight"] [data-title="Weight & Balance"]');
-  await expect(balance).toHaveAttribute("data-state", "closed");
+  await expect(balance).not.toHaveAttribute("data-open");
   await drawer.getByTestId("verdict-balance").click();
-  await expect(balance).toHaveAttribute("data-state", "open");
+  await expect(balance).toHaveAttribute("data-open", "");
   await expect(drawer.getByTestId("preflight-count")).toHaveText("2 of 10 looked at");
 });
 

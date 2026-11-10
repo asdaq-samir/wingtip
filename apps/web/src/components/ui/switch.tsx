@@ -1,12 +1,7 @@
-import * as React from "react";
 import { cn } from "cn";
-import { Switch as SwitchPrimitive } from "radix-ui";
+import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
 
-function Switch({
-  className,
-  size = "default",
-  ...props
-}: React.ComponentProps<typeof SwitchPrimitive.Root> & { size?: "sm" | "default" }) {
+function Switch({ className, size = "default", ...props }: SwitchPrimitive.Root.Props & { size?: "sm" | "default" }) {
   // To a finger, iOS's own switch: a 51 by 31 track and a 27-point thumb
   // with its shadow, where shadcn's is 32 by 18 -- the pilot's one
   // exception to stock controls' stock size (the iOS audit's "switch

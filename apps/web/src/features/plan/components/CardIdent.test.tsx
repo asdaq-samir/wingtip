@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
  * A card's ident takes what was typed on Return, and a suggestion only once
- * an arrow has chosen it (cmdk lights the first row by itself, which must
+ * an arrow has chosen it (a row lit by itself, as cmdk lit the first, must
  * not stand in for the pilot's typing).
  */
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
@@ -14,7 +14,7 @@ vi.mock("../../../lib/useAirportSearch", () => ({ useAirportSearch: (...a: unkno
 const { default: CardIdent } = await import("./CardIdent");
 
 beforeAll(() => {
-  // cmdk and Radix want these of a browser.
+  // Base UI wants these of a browser.
   globalThis.ResizeObserver ??= class {
     observe() {}
     unobserve() {}

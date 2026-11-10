@@ -7,6 +7,7 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import QueryState from "../../components/QueryState";
 import { trainingQuery } from "../../lib/queryClient";
 import { Button } from "../../components/ui/button";
+import { DateField } from "../../components/ui/date-field";
 import { Input } from "../../components/ui/input";
 import { Textarea } from "../../components/ui/textarea";
 import { api } from "../../lib/api/client";
@@ -328,17 +329,14 @@ export default function CheckridePage() {
               }
               data-testid="endorsement"
             >
-              <FieldHit htmlFor={`endorsement-day-${kind.code}`}>
-                <Input
-                  id={`endorsement-day-${kind.code}`}
-                  type="date"
-                  aria-label={`${kind.label}, the day endorsed`}
-                  className="h-8 w-40"
-                  value={on?.endorsedOn ?? ""}
-                  data-testid={`endorsement-${kind.code}`}
-                  onChange={(e) => endorse.mutate({ code: kind.code, on: e.target.value || null })}
-                />
-              </FieldHit>
+              <DateField
+                id={`endorsement-day-${kind.code}`}
+                aria-label={`${kind.label}, the day endorsed`}
+                className="h-8 w-40"
+                value={on?.endorsedOn ?? ""}
+                data-testid={`endorsement-${kind.code}`}
+                onChange={(day) => endorse.mutate({ code: kind.code, on: day || null })}
+              />
             </ListRow>
           );
         })}

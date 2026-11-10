@@ -52,39 +52,40 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
       className={grouped ? undefined : "mt-2 mb-1 rounded-xl bg-card"}
       data-testid="route-line"
     >
-      <CollapsibleTrigger asChild>
-        <button
-          type="button"
-          data-testid="route-line-toggle"
-          data-disclosure=""
-          aria-label={open ? "Routes: fold" : `Routes: ${words(picked)}, ${others} more`}
-          className={cn(
-            "flex min-h-11 w-full items-center gap-2.5 px-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            TEXT.row,
-          )}
-        >
-          <Route className="size-5 shrink-0 text-tint" aria-hidden />
-          {open ? (
-            <span className="flex-1 font-semibold">Routes</span>
-          ) : (
-            <span className="min-w-0 flex-1 truncate" data-testid="route-line-picked" data-key={picked.key}>
-              {picked.label}
-              {picked.time && <span className="font-semibold"> {picked.time}</span>}
-            </span>
-          )}
-          {!open && others > 0 && <span className={cn("shrink-0 text-muted-foreground", TEXT.detail)}>{others} more</span>}
-          <ChevronDown
-            className={cn("size-4 shrink-0 text-tint transition-transform motion-reduce:transition-none", open && "rotate-180")}
-            aria-hidden
+      <CollapsibleTrigger
+        render={
+          <button
+            type="button"
+            data-testid="route-line-toggle"
+            data-disclosure=""
+            aria-label={open ? "Routes: fold" : `Routes: ${words(picked)}, ${others} more`}
+            className={cn(
+              "flex min-h-11 w-full items-center gap-2.5 px-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              TEXT.row,
+            )}
           />
-        </button>
+        }
+      >
+        <Route className="size-5 shrink-0 text-tint" aria-hidden />
+        {open ? (
+          <span className="flex-1 font-semibold">Routes</span>
+        ) : (
+          <span className="min-w-0 flex-1 truncate" data-testid="route-line-picked" data-key={picked.key}>
+            {picked.label}
+            {picked.time && <span className="font-semibold"> {picked.time}</span>}
+          </span>
+        )}
+        {!open && others > 0 && <span className={cn("shrink-0 text-muted-foreground", TEXT.detail)}>{others} more</span>}
+        <ChevronDown
+          className={cn("size-4 shrink-0 text-tint transition-transform motion-reduce:transition-none", open && "rotate-180")}
+          aria-hidden
+        />
       </CollapsibleTrigger>
       <CollapsibleContent>
         <ToggleGroup
-          type="single"
-          value={line.picked}
+          value={[line.picked]}
           onValueChange={(v) => {
-            if (v) line.onPick(v);
+            if (v[0]) line.onPick(v[0]);
           }}
           aria-label="Routes"
           className="flex w-full justify-start gap-2 overflow-x-auto px-3 pb-3 [scrollbar-width:none]"
@@ -98,7 +99,7 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
               data-key={c.key}
               className={cn(
                 "h-auto min-w-24 max-w-44 shrink-0 flex-col items-start gap-0.5 rounded-xl border border-border bg-background px-2.5 py-2 text-left",
-                "data-[state=on]:border-2 data-[state=on]:border-tint data-[state=on]:bg-tint/12",
+                "data-pressed:border-2 data-pressed:border-tint data-pressed:bg-tint/12",
               )}
             >
               {(airplane || c.time) && (

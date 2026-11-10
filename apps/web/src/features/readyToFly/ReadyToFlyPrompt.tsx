@@ -54,12 +54,10 @@ export function ReadyToFlyPrompt({ dryPlaying }: { /** A dry run playing (the pl
       <AlertDialogContent data-testid="ready-prompt">
         <AlertDialogHeader>
           <AlertDialogTitle>{answer.line}</AlertDialogTitle>
-          <AlertDialogDescription asChild>
-            <div className="flex flex-col gap-2 text-left">
-              {answer.actions.map((item) => (
-                <ReadyAction key={item.key} item={item} ready={ready} onDone={() => setOpen(false)} />
-              ))}
-            </div>
+          <AlertDialogDescription render={<div className="flex flex-col gap-2 text-left" />}>
+            {answer.actions.map((item) => (
+              <ReadyAction key={item.key} item={item} ready={ready} onDone={() => setOpen(false)} />
+            ))}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

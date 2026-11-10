@@ -72,7 +72,7 @@ export function ReadyToFly() {
       <Collapsible className={CARD} data-testid="ready-all">
         <CollapsibleTrigger className={cn(TRIGGER, "items-center", TEXT.row)}>
           <span className="min-w-0 flex-1">Every check</span>
-          <ChevronRight className="size-5 shrink-0 text-tint transition-transform group-data-[state=open]:rotate-90" aria-hidden />
+          <ChevronRight className="size-5 shrink-0 text-tint transition-transform group-data-panel-open:rotate-90" aria-hidden />
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-2 px-3.5 pb-3">
           {answer.items.map((item) => (

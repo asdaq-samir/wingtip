@@ -34,10 +34,10 @@ test("under IFR the altitude is chosen from the minimum IFR altitude by directio
   await openProfile(page);
   const popover = page.getByTestId("profile-card");
   const rules = popover.getByTestId("flight-rules");
-  await expect(rules.getByRole("radio", { name: "VFR" })).toHaveAttribute("aria-checked", "true");
+  await expect(rules.getByRole("button", { name: "VFR" })).toHaveAttribute("aria-pressed", "true");
   await expect(popover).toContainText("14 CFR 91.159");
 
-  await rules.getByRole("radio", { name: "IFR" }).click();
+  await rules.getByRole("button", { name: "IFR" }).click();
   await expect.poll(() => asked.at(-1)).toBe("ifr");
   // Put away to read the chip beside the airplane, which the card covers.
   await closeCard(page, "profile-close");

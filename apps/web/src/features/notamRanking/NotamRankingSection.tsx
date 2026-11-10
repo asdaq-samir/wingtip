@@ -65,16 +65,18 @@ export default function NotamRankingSection() {
           )}
           {rest.length > 0 && (
             <Collapsible>
-              <CollapsibleTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="group relative -ml-2 self-start text-tint after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']"
-                  data-testid="brief-notams-more"
-                >
-                  {rest.length} more
-                  <ChevronDown className="transition-transform group-data-[state=open]:rotate-180" aria-hidden />
-                </Button>
+              <CollapsibleTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="group relative -ml-2 self-start text-tint after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']"
+                    data-testid="brief-notams-more"
+                  />
+                }
+              >
+                {rest.length} more
+                <ChevronDown className="transition-transform group-data-panel-open:rotate-180" aria-hidden />
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <ol className="flex flex-col gap-3 pt-1" data-testid="brief-notams-rest">

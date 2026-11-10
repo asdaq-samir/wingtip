@@ -78,7 +78,7 @@ export function DryRunControls({
   // drag-able in the dry run?"): a finger or a pointer on it puts the
   // airplane where it points along the course, the run held while it does
   // and going on as it was once let go; the arrow keys step it five miles.
-  // shadcn's Slider (Radix's) over the chart, its track and thumb unseen:
+  // shadcn's Slider (Base UI's) over the chart, its track and thumb unseen:
   // the chart's own marks say where the run is. Across the chart's own
   // width, inside its twelve points each side (PastFlightChart), a tenth
   // of a mile a step for the finger.
@@ -200,7 +200,8 @@ export function DryRunControls({
           max={Math.max(tenth(last), tenth(first) + 0.1)}
           step={0.1}
           value={[tenth(nowNm ?? first)]}
-          onValueChange={([nm]) => {
+          onValueChange={(v) => {
+            const nm = Array.isArray(v) ? v[0] : v;
             if (nm !== undefined) seekNm(nm);
           }}
           onPointerDown={grab}

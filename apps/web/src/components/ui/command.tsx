@@ -1,20 +1,65 @@
 "use client";
 
 import * as React from "react";
-import { Command as CommandPrimitive } from "cmdk";
+import { Autocomplete as AutocompletePrimitive } from "@base-ui/react/autocomplete";
 import { cn } from "cn";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { InputGroup, InputGroupAddon } from "@/components/ui/input-group";
-import { SearchIcon, CheckIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 
-function Command({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) {
+/**
+ * shadcn's Command, on Base UI's Autocomplete where it was on cmdk: a field
+ * that keeps the arrows and Enter on a list of items, each a thing to do
+ * (its `onClick`, which Enter on the highlighted one runs too). The list
+ * is inline (`inline open`), drawn where the caller puts it -- in the page,
+ * a dialog or a popover of the caller's own -- and never filtered here:
+ * every list in the app is filtered by its caller (the airport lookup on
+ * the server, the palette by its own words), as cmdk's `shouldFilter`
+ * was off everywhere. The field's words are the caller's (`value`,
+ * `onValueChange`); an item taken does not write itself into the field,
+ * as an autocomplete's would, since a pick here is an action.
+ */
+type CommandRootProps = Omit<
+  AutocompletePrimitive.Root.Props<unknown>,
+  "inline" | "open" | "filter" | "items" | "mode" | "onValueChange"
+> & { onValueChange?: (value: string) => void };
+
+/** The list's keyboard and state alone, no box of its own: round a field
+ *  and a popover of the caller's (a route's box, a card's ident). */
+function CommandRoot({ onValueChange, ...props }: CommandRootProps) {
   return (
-    <CommandPrimitive
-      data-slot="command"
-      className={cn("flex size-full flex-col overflow-hidden rounded-xl! bg-popover p-1 text-popover-foreground", className)}
+    <AutocompletePrimitive.Root
+      inline
+      open
+      filter={null}
+      onValueChange={(next, details) => {
+        if (details.reason === "item-press") return;
+        onValueChange?.(next);
+      }}
       {...props}
     />
+  );
+}
+
+function Command({
+  className,
+  style,
+  children,
+  ...props
+}: CommandRootProps & { className?: string; style?: React.CSSProperties; "data-testid"?: string }) {
+  const { "data-testid": testId, ...root } = props;
+  return (
+    <CommandRoot {...root}>
+      <div
+        data-slot="command"
+        data-testid={testId}
+        className={cn("flex size-full flex-col overflow-hidden rounded-xl! bg-popover p-1 text-popover-foreground", className)}
+        style={style}
+      >
+        {children}
+      </div>
+    </CommandRoot>
   );
 }
 
@@ -24,23 +69,31 @@ function CommandDialog({
   children,
   className,
   ...props
-}: React.ComponentProps<typeof Dialog> & { title?: string; description?: string; className?: string }) {
+}: Omit<React.ComponentProps<typeof Dialog>, "children"> & {
+  title?: string;
+  description?: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
     <Dialog {...props}>
-      <DialogHeader className="sr-only">
-        <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>{description}</DialogDescription>
-      </DialogHeader>
-      <DialogContent className={cn("top-1/3 translate-y-0 overflow-hidden rounded-xl! p-0", className)}>{children}</DialogContent>
+      <DialogContent className={cn("top-1/3 translate-y-0 overflow-hidden rounded-xl! p-0", className)}>
+        <DialogHeader className="sr-only">
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        {children}
+      </DialogContent>
     </Dialog>
   );
 }
 
-function CommandInput({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Input>) {
+/** The field, in shadcn's input group with its glass. */
+function CommandInput({ className, ...props }: AutocompletePrimitive.Input.Props) {
   return (
     <div data-slot="command-input-wrapper" className="p-1 pb-0">
       <InputGroup className="h-8! rounded-lg! border-input/30 bg-input/30 shadow-none! *:data-[slot=input-group-addon]:pl-2!">
-        <CommandPrimitive.Input
+        <AutocompletePrimitive.Input
           data-slot="command-input"
           className={cn(
             "w-full text-sm pointer-coarse:text-(length:--type-row) outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
@@ -56,9 +109,13 @@ function CommandInput({ className, ...props }: React.ComponentProps<typeof Comma
   );
 }
 
-function CommandList({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.List>) {
+/** A plain field of the caller's own as the list's field (a route's box,
+ *  a card's ident): Base UI's Input with its own props and element. */
+const CommandField = AutocompletePrimitive.Input;
+
+function CommandList({ className, ...props }: AutocompletePrimitive.List.Props) {
   return (
-    <CommandPrimitive.List
+    <AutocompletePrimitive.List
       data-slot="command-list"
       className={cn("no-scrollbar max-h-72 scroll-py-1 overflow-x-hidden overflow-y-auto outline-none", className)}
       {...props}
@@ -66,46 +123,59 @@ function CommandList({ className, ...props }: React.ComponentProps<typeof Comman
   );
 }
 
-function CommandEmpty({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Empty>) {
+/** What the list says where it has nothing: drawn by the caller where its
+ *  own count is none, as the list is the caller's to fill. */
+function CommandEmpty({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <CommandPrimitive.Empty
+    <div
       data-slot="command-empty"
+      role="status"
       className={cn("py-6 text-center text-sm pointer-coarse:text-(length:--type-detail)", className)}
       {...props}
     />
   );
 }
 
-function CommandGroup({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Group>) {
+function CommandGroup({
+  className,
+  heading,
+  headingClassName,
+  children,
+  ...props
+}: AutocompletePrimitive.Group.Props & { heading?: React.ReactNode; headingClassName?: string }) {
   return (
-    <CommandPrimitive.Group
-      data-slot="command-group"
-      className={cn(
-        "overflow-hidden p-1 text-foreground **:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1.5 **:[[cmdk-group-heading]]:text-xs **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:text-muted-foreground",
-        className,
+    <AutocompletePrimitive.Group data-slot="command-group" className={cn("overflow-hidden p-1 text-foreground", className)} {...props}>
+      {heading !== undefined && (
+        <AutocompletePrimitive.GroupLabel
+          data-slot="command-group-heading"
+          className={cn("px-2 py-1.5 text-xs font-medium text-muted-foreground", headingClassName)}
+        >
+          {heading}
+        </AutocompletePrimitive.GroupLabel>
       )}
-      {...props}
-    />
+      {children}
+    </AutocompletePrimitive.Group>
   );
 }
 
-function CommandSeparator({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Separator>) {
-  return <CommandPrimitive.Separator data-slot="command-separator" className={cn("-mx-1 h-px w-auto bg-border", className)} {...props} />;
+function CommandSeparator({ className, ...props }: AutocompletePrimitive.Separator.Props) {
+  return (
+    <AutocompletePrimitive.Separator data-slot="command-separator" className={cn("-mx-1 h-px w-auto bg-border", className)} {...props} />
+  );
 }
 
-function CommandItem({ className, children, ...props }: React.ComponentProps<typeof CommandPrimitive.Item>) {
+function CommandItem({ className, children, ...props }: AutocompletePrimitive.Item.Props) {
   return (
-    <CommandPrimitive.Item
+    <AutocompletePrimitive.Item
       data-slot="command-item"
       className={cn(
-        "group/command-item relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm pointer-coarse:text-(length:--type-row) outline-hidden select-none in-data-[slot=dialog-content]:rounded-lg! data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-selected:bg-muted data-selected:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-selected:**:[svg]:text-foreground",
+        "group/command-item relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm pointer-coarse:text-(length:--type-row) outline-hidden select-none in-data-[slot=dialog-content]:rounded-lg! data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:bg-muted data-highlighted:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-highlighted:**:[svg]:text-foreground",
         className,
       )}
       {...props}
     >
       {children}
-      <CheckIcon className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" />
-    </CommandPrimitive.Item>
+    </AutocompletePrimitive.Item>
   );
 }
 
@@ -114,7 +184,7 @@ function CommandShortcut({ className, ...props }: React.ComponentProps<"span">) 
     <span
       data-slot="command-shortcut"
       className={cn(
-        "ml-auto text-xs pointer-coarse:text-(length:--type-note) tracking-widest text-muted-foreground group-data-selected/command-item:text-foreground",
+        "ml-auto text-xs pointer-coarse:text-(length:--type-note) tracking-widest text-muted-foreground group-data-highlighted/command-item:text-foreground",
         className,
       )}
       {...props}
@@ -122,4 +192,16 @@ function CommandShortcut({ className, ...props }: React.ComponentProps<"span">) 
   );
 }
 
-export { Command, CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, CommandShortcut, CommandSeparator };
+export {
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandField,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandRoot,
+  CommandSeparator,
+  CommandShortcut,
+};

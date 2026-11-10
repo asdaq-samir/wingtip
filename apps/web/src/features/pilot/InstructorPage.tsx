@@ -9,9 +9,11 @@ import ConsoleClose from "../../components/ConsoleClose";
 import FieldHit from "../../components/FieldHit";
 import RowField from "../../components/RowField";
 import { invalidProps } from "../../lib/fieldError";
+import { ariaInvalid } from "../../components/ui/ariaInvalid";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import Segmented from "../../components/Segmented";
 import { Button } from "../../components/ui/button";
+import { DateField } from "../../components/ui/date-field";
 import { Input } from "../../components/ui/input";
 import { Textarea } from "../../components/ui/textarea";
 import { api } from "../../lib/api/client";
@@ -141,16 +143,22 @@ function CertificateForm({ instructor, onDone }: { instructor: Instructor; onDon
         </ListRow>
         <ListRow id={ids.until} title={untilKind === "RE" ? "Recent experience through" : "Certificate expires"}>
           <RowField id={ids.until} error={errors.until?.message}>
-            <FieldHit htmlFor={ids.until}>
-              <Input
-                id={ids.until}
-                type="date"
-                {...register("until")}
-                className="h-8 w-40"
-                {...invalidProps(ids.until, errors.until?.message)}
-                data-testid="cfi-until"
-              />
-            </FieldHit>
+            <Controller
+              control={control}
+              name="until"
+              render={({ field }) => (
+                <DateField
+                  id={ids.until}
+                  aria-label={untilKind === "RE" ? "Recent experience through" : "Certificate expires"}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  className="h-8 w-40"
+                  {...ariaInvalid(ids.until, errors.until?.message)}
+                  data-testid="cfi-until"
+                />
+              )}
+            />
           </RowField>
         </ListRow>
         <ListRow

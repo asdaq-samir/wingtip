@@ -559,9 +559,9 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
     // its name in the text's colour, its reason and its figure in grey, the
     // whole row the fold's tap, 44 at the least.
     <Accordion
-      type="multiple"
+      multiple
       value={printing ? steps.map((step) => step.key) : open}
-      onValueChange={setOpen}
+      onValueChange={(v) => setOpen(v as typeof open)}
       className="rounded-lg border border-border bg-card"
       data-testid="altitude-steps"
     >

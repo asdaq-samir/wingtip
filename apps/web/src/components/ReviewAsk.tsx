@@ -2,6 +2,7 @@ import { useId, useState } from "react";
 import FieldHit from "./FieldHit";
 import { ListGroup, ListRow } from "./GroupedList";
 import { Input } from "./ui/input";
+import { DateField } from "./ui/date-field";
 import PullDown from "./PullDown";
 import { Textarea } from "./ui/textarea";
 import type { InstructorLink } from "../lib/api/types";
@@ -67,17 +68,15 @@ export function ReviewAskForm({
         </FieldHit>
       </ListRow>
       <ListRow id={ids.on} title="Day of the flight">
-        <FieldHit htmlFor={ids.on}>
-          <Input
-            id={ids.on}
-            type="date"
-            value={flightOn}
-            min={localDay()}
-            className="h-8 w-40"
-            onChange={(e) => setFlightOn(e.target.value || localDay())}
-            data-testid="review-day"
-          />
-        </FieldHit>
+        <DateField
+          id={ids.on}
+          aria-label="Day of the flight"
+          value={flightOn}
+          min={localDay()}
+          className="h-8 w-40"
+          onChange={(day) => setFlightOn(day || localDay())}
+          data-testid="review-day"
+        />
       </ListRow>
       <div className="p-2">
         <Textarea

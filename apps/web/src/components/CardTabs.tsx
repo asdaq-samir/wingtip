@@ -51,9 +51,9 @@ export function CardTabBar<T extends string>({
   barRef?: RefObject<HTMLDivElement | null>;
   className?: string;
 }) {
-  // Which tab was open as this one was pressed: Radix picks a tab on the
-  // press, before the click, so the click alone cannot tell "the open one
-  // tapped again".
+  // Which tab was open as this one was pressed, read at the click: the
+  // tab is picked by then (Base UI's on its click, ahead of this one), so
+  // the click alone cannot tell "the open one tapped again".
   const openWhenPressed = useRef<T | null>(null);
   const isUp = () => barRef?.current?.closest("[data-panel]")?.getAttribute("data-panel") === "full";
   return (

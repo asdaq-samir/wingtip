@@ -6,6 +6,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -45,16 +46,18 @@ export function AccountMenu() {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            data-testid="role-menu"
-            className={cn("relative -mr-2 px-2 font-normal text-tint after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
-          >
-            {devMode.on ? "Developer" : "Pilot"}
-            <ChevronDown className="text-muted-foreground" />
-          </Button>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="sm"
+              data-testid="role-menu"
+              className={cn("relative -mr-2 px-2 font-normal text-tint after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
+            />
+          }
+        >
+          {devMode.on ? "Developer" : "Pilot"}
+          <ChevronDown className="text-muted-foreground" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-44">
           {/* Who is signed in, the menu's title on top, at the owner's ask
@@ -62,12 +65,14 @@ export function AccountMenu() {
             title on top?"), where it was a line under Account. */}
           {pilot && (
             <>
-              <DropdownMenuLabel
-                className={cn("max-w-64 truncate font-normal text-muted-foreground", TEXT.note)}
-                data-testid="pilot-address"
-              >
-                {pilot.displayName}
-              </DropdownMenuLabel>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel
+                  className={cn("max-w-64 truncate font-normal text-muted-foreground", TEXT.note)}
+                  data-testid="pilot-address"
+                >
+                  {pilot.displayName}
+                </DropdownMenuLabel>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
             </>
           )}
@@ -85,10 +90,10 @@ export function AccountMenu() {
               <DropdownMenuSeparator />
               {/* A copy of everything the account keeps, as one file: the
                 right to take one's data away, beside deleting it. */}
-              <DropdownMenuItem onSelect={() => exportAccount.mutate()} disabled={exportAccount.isPending} data-testid="export-account">
+              <DropdownMenuItem onClick={() => exportAccount.mutate()} disabled={exportAccount.isPending} data-testid="export-account">
                 Export my data
               </DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onSelect={() => logout.mutate()} disabled={logout.isPending}>
+              <DropdownMenuItem variant="destructive" onClick={() => logout.mutate()} disabled={logout.isPending}>
                 Sign out
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -97,7 +102,7 @@ export function AccountMenu() {
                 disabled={deleteAccount.isPending}
                 // After the menu has closed: a dialog opened while it still
                 // holds the focus has its own taken back.
-                onSelect={() => setTimeout(askDelete)}
+                onClick={() => setTimeout(askDelete)}
               >
                 Delete account…
               </DropdownMenuItem>

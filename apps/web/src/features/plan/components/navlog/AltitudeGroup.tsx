@@ -760,13 +760,13 @@ export function AltitudeProfile({
               GROUP_HEADING,
             )}
           >
-            <ChevronRight className="size-4 text-tint transition-transform group-data-[state=open]:rotate-90" aria-hidden />
+            <ChevronRight className="size-4 text-tint transition-transform group-data-panel-open:rotate-90" aria-hidden />
             How the altitude was chosen
           </CollapsibleTrigger>
           {/* Kept in the page folded, as the <details> it replaced kept it:
               the reasoning is found by the page's own search and read by
               its text while closed, which the specs and a find-in-page do. */}
-          <CollapsibleContent forceMount className="data-[state=closed]:hidden">
+          <CollapsibleContent keepMounted>
             <AltitudeReasoning nav={nav} legs={legs} plansAbove />
           </CollapsibleContent>
         </Collapsible>

@@ -93,10 +93,7 @@ export default function PointAltitudeDialog({
       }
       // The field focused, for the figure to be typed at once: an alert
       // focuses its Cancel.
-      onOpenAutoFocus={(e) => {
-        e.preventDefault();
-        (e.currentTarget as HTMLElement).querySelector("input")?.focus();
-      }}
+      initialFocus={(sheet) => sheet.querySelector("input")}
     >
       <form
         id={form}

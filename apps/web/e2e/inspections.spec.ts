@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { library, openConsole, showTabs } from "./helpers";
+import { fillDate } from "./ariaFields";
 
 /**
  * An airplane's inspections and tests in its form (the Library's
@@ -63,8 +64,8 @@ test("an airplane's inspections say how long each is good for, and are saved tog
   await expect(page.getByTestId("inspection-eltBattery")).toHaveText("By 2099-06-01");
   await expect(page.getByTestId("inspection-hundredHour")).toHaveText(", 50.5 h to go");
 
-  await page.getByTestId("inspection-annualOn-date").fill("2026-09-20");
-  await page.getByTestId("inspection-transponderCheckOn-date").fill("2025-03-02");
+  await fillDate(page.getByTestId("inspection-annualOn-date"), "2026-09-20");
+  await fillDate(page.getByTestId("inspection-transponderCheckOn-date"), "2025-03-02");
   await page.getByTestId("inspection-hoursNow").fill("1262.3");
   await page.getByTestId("inspections-save").click();
   await expect
@@ -151,7 +152,7 @@ test("an AD is kept on the airplane with its next due day, and comes up in the L
   await console.getByTestId("due-item-title").fill("Oil filter adapter");
   await console.getByTestId("due-item-reference").fill("AD 2011-10-09");
   await console.getByTestId("due-item-method").fill("Inspect each 100 h");
-  await console.getByTestId("due-item-dueOn").fill("2099-12-01");
+  await fillDate(console.getByTestId("due-item-dueOn"), "2099-12-01");
   await console.getByTestId("due-item-save").click();
   await expect
     .poll(() => written[0])

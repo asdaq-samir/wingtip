@@ -25,24 +25,26 @@ export default function MenuPick<T extends string | number>({
   const label = choices.find((c) => c.value === value)?.label ?? choices[0]?.label;
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label={`${name}: ${label}`}
-          data-testid={testId}
-          className={cn(
-            "relative flex h-8 items-center gap-0.5 rounded-full bg-foreground/8 px-2.5 font-semibold text-tint outline-none after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-            TEXT.detail,
-          )}
-        >
-          {label}
-          <ChevronDown className="size-4" aria-hidden="true" />
-        </button>
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        render={
+          <button
+            type="button"
+            aria-label={`${name}: ${label}`}
+            data-testid={testId}
+            className={cn(
+              "relative flex h-8 items-center gap-0.5 rounded-full bg-foreground/8 px-2.5 font-semibold text-tint outline-none after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+              TEXT.detail,
+            )}
+          >
+            {label}
+            <ChevronDown className="size-4" aria-hidden="true" />
+          </button>
+        }
+      />
       <DropdownMenuContent align="end">
         <DropdownMenuRadioGroup
           value={String(value)}
-          onValueChange={(v) => {
+          onValueChange={(v: string) => {
             const picked = choices.find((c) => String(c.value) === v);
             if (picked) onPick(picked.value);
           }}

@@ -68,7 +68,7 @@ export function LoopBar() {
               max={Math.max(0, loop.frames.length - 1)}
               step={1}
               value={[Math.max(0, loop.shown)]}
-              onValueChange={([i]) => loop.seek(i ?? 0)}
+              onValueChange={(v) => loop.seek((Array.isArray(v) ? v[0] : v) ?? 0)}
               disabled={!loop.ready}
               // The thumb's 44-point reach round its 16, a pseudo-element's.
               thumb={{

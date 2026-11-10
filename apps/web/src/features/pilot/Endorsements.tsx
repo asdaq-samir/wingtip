@@ -49,25 +49,27 @@ export function SignedRow({
   voiding?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  // Its words and Void under it at a tap: shadcn's Collapsible (Radix),
+  // Its words and Void under it at a tap: shadcn's Collapsible (Base UI's),
   // which tells a screen reader what the row opens.
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger asChild>
-        <ListRow
-          title={kind?.label ?? e.code}
-          description={
-            <>
-              <span className="block">
-                {[who, kind?.rule, e.voided ? "Voided" : `Signed ${said(e.signedOn)}`].filter(Boolean).join(" · ")}
-              </span>
-              {!e.voided && <GoodTo until={e.until} />}
-            </>
-          }
-          value={open ? "Hide" : "Read"}
-          data-testid="signed-endorsement"
-        />
-      </CollapsibleTrigger>
+      <CollapsibleTrigger
+        render={
+          <ListRow
+            title={kind?.label ?? e.code}
+            description={
+              <>
+                <span className="block">
+                  {[who, kind?.rule, e.voided ? "Voided" : `Signed ${said(e.signedOn)}`].filter(Boolean).join(" · ")}
+                </span>
+                {!e.voided && <GoodTo until={e.until} />}
+              </>
+            }
+            value={open ? "Hide" : "Read"}
+            data-testid="signed-endorsement"
+          />
+        }
+      />
       <CollapsibleContent>
         <SignedWords text={e.text} signature={e.signature} />
         {onVoid && !e.voided && (

@@ -211,7 +211,7 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
   // stepping the way the course runs rather than the way the list does
   // -- has a button of its own, on the map or in this drawer, and each
   // was a letter or a key that had to be kept out of the way of typing.
-  // Skipped while a field has focus, and for a press a Radix layer
+  // Skipped while a field has focus, and for a press a stock layer
   // already used (its own list walks with the same arrows), which it
   // marks by preventing the default or keeping focus inside itself.
   useEffect(() => {

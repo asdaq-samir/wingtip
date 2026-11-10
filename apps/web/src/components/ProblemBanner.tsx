@@ -38,7 +38,7 @@ export default function ProblemBanner() {
       >
         <CircleAlert className="shrink-0" />
         {/* The one line, a tap opening each problem under it where there
-            are several: shadcn's Collapsible (Radix), the list beside the
+            are several: shadcn's Collapsible (Base UI's), the list beside the
             button that opens it rather than inside it. */}
         <Collapsible
           open={open}
@@ -54,14 +54,12 @@ export default function ProblemBanner() {
             <span className={cn("block max-w-full", !open && "truncate")}>{title}</span>
           </CollapsibleTrigger>
           {problems.length > 1 && (
-            <CollapsibleContent asChild>
-              <ul className="list-disc pb-1 pl-4">
-                {problems.map((p) => (
-                  <li key={p.id} data-problem-item="">
-                    {p.title}
-                  </li>
-                ))}
-              </ul>
+            <CollapsibleContent render={<ul className="list-disc pb-1 pl-4" />}>
+              {problems.map((p) => (
+                <li key={p.id} data-problem-item="">
+                  {p.title}
+                </li>
+              ))}
             </CollapsibleContent>
           )}
         </Collapsible>

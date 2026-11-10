@@ -163,9 +163,7 @@ export function PlaceInfoTab({
               fuel and the address in A2's Details. shadcn's Collapsible. */}
           {!!services?.fuel_notes.length && (
             <Collapsible>
-              <CollapsibleTrigger asChild>
-                <ListRow title="Fuel remarks" chevron data-testid="services-fuel-remarks" />
-              </CollapsibleTrigger>
+              <CollapsibleTrigger render={<ListRow title="Fuel remarks" chevron data-testid="services-fuel-remarks" />} />
               <CollapsibleContent>
                 {services.fuel_notes.map((note) => (
                   <ListRow key={note} title={<span className={cn("text-muted-foreground", TEXT.detail)}>{note}</span>} />

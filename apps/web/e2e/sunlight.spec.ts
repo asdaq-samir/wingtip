@@ -43,8 +43,8 @@ test("Sunlight On: the page is marked bright, the figure strip is solid white wi
   // Off, from the map's settings: the page as it was, and kept so.
   await openMapSettings(page);
   const sunlight = page.getByTestId("sunlight-select");
-  await expect(sunlight.getByRole("radio", { name: "On" })).toHaveAttribute("aria-checked", "true");
-  await sunlight.getByRole("radio", { name: "Off" }).click();
+  await expect(sunlight.getByRole("button", { name: "On" })).toHaveAttribute("aria-pressed", "true");
+  await sunlight.getByRole("button", { name: "Off" }).click();
   await expect(html).toHaveAttribute("data-chart-light", "normal");
   expect(await strip.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgb(255, 255, 255)");
   await page.reload();

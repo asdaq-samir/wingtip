@@ -7,6 +7,8 @@ import IconButton from "../../components/IconButton";
 import PullDown from "../../components/PullDown";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Input } from "../../components/ui/input";
+import { DateField } from "../../components/ui/date-field";
+import { NumberField } from "../../components/ui/number-field";
 import { useConfirm } from "../../components/useConfirm";
 import { api } from "../../lib/api/client";
 import type { Aircraft, DueItem, DueItemRequest } from "../../lib/api/types";
@@ -168,31 +170,25 @@ export default function DueItemsGroup({ aircraft }: { aircraft: Aircraft }) {
           {field("reference", draft.kind === "AD" ? "AD number" : "Reference", draft.kind === "AD" ? "AD 2011-10-09" : "", 60)}
           {field("method", "Method of compliance", "Inspect each 100 h", 200)}
           <ListRow id={`${id}-on`} title="Next due on">
-            <FieldHit htmlFor={`${id}-on`}>
-              <Input
-                id={`${id}-on`}
-                type="date"
-                className="h-8 w-40"
-                value={draft.dueOn}
-                onChange={(e) => set({ dueOn: e.target.value })}
-                aria-label="Next due on"
-                data-testid="due-item-dueOn"
-              />
-            </FieldHit>
+            <DateField
+              id={`${id}-on`}
+              className="h-8 w-40"
+              value={draft.dueOn}
+              onChange={(dueOn) => set({ dueOn })}
+              aria-label="Next due on"
+              data-testid="due-item-dueOn"
+            />
           </ListRow>
           <ListRow id={`${id}-at`} title="Next due at hours">
             <FieldHit htmlFor={`${id}-at`}>
-              <Input
+              <NumberField
                 id={`${id}-at`}
-                type="number"
-                inputMode="decimal"
-                step="any"
-                min={0}
-                className="h-8 w-28 text-right"
-                value={draft.dueAtHours}
-                onChange={(e) => set({ dueAtHours: e.target.value })}
+                className="h-8 w-28"
+                inputClassName="text-right"
+                value={draft.dueAtHours === "" ? null : Number(draft.dueAtHours)}
+                onChange={(v) => set({ dueAtHours: v == null ? "" : String(v) })}
                 aria-label="Next due at hours of time in service"
-                aria-invalid={problem === "Hours cannot be negative"}
+                isInvalid={problem === "Hours cannot be negative"}
                 data-testid="due-item-dueAtHours"
               />
             </FieldHit>

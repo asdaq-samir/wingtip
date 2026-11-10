@@ -209,34 +209,34 @@ export function FieldStep({
               content. Its open state stays the page's (useOpenRunwayLines),
               as the list is drawn again as the sheet moves. */}
           <Collapsible
-            asChild
             open={foldable && lineOpen}
             onOpenChange={(next) =>
               useOpenRunwayLines.setState((st) => ({
                 open: next ? [...st.open, part.line.key] : st.open.filter((k) => k !== part.line.key),
               }))
             }
+            render={<div className="flex min-w-0 flex-1 items-start" />}
           >
-            <div className="flex min-w-0 flex-1 items-start">
-              {foldable ? (
-                <CollapsibleTrigger asChild>
+            {foldable ? (
+              <CollapsibleTrigger
+                render={
                   <button
                     type="button"
                     data-testid="runway-line-toggle"
                     data-disclosure=""
                     aria-label={lineOpen ? `${a.ident}: fold the runways` : `${a.ident}: all the runways`}
                     className={cn(TRAY_HEAD, "outline-none focus-visible:ring-2 focus-visible:ring-ring")}
-                  >
-                    <Glyph className="size-5" aria-hidden />
-                  </button>
-                </CollapsibleTrigger>
-              ) : (
-                <span className={TRAY_HEAD}>
-                  <Glyph className="size-5" aria-label={part.role === "Arrive" ? "landing" : "takeoff"} role="img" />
-                </span>
-              )}
-              <div className="min-w-0 flex-1">{part.chips(adds.length > 0 ? adds : null)}</div>
-            </div>
+                  />
+                }
+              >
+                <Glyph className="size-5" aria-hidden />
+              </CollapsibleTrigger>
+            ) : (
+              <span className={TRAY_HEAD}>
+                <Glyph className="size-5" aria-label={part.role === "Arrive" ? "landing" : "takeoff"} role="img" />
+              </span>
+            )}
+            <div className="min-w-0 flex-1">{part.chips(adds.length > 0 ? adds : null)}</div>
           </Collapsible>
           {part.leaves && <span className="shrink-0">{part.leaves}</span>}
         </div>
@@ -264,70 +264,77 @@ export function FieldStep({
     const tank = row ? tanks.get(row.key) : a.role === "Departure" ? tanks.get("departure") : undefined;
     return (
       // The field a stock Collapsible, its arrow the trigger: aria-expanded
-      // and aria-controls Radix's, and the landing's or the takeoff's body
+      // and aria-controls Base UI's, and the landing's or the takeoff's body
       // its content. A stop's second part, in a section of its own, is
       // shown with it (a Collapsible has one content).
-      <Collapsible key={key} asChild open={opened} onOpenChange={(next) => toggleField(key, a.ident, next)}>
-        <li
-          className={cn("relative", asCards && cn(POINT_CARD, "isolate"), asCards && !last && CARD_GAP)}
-          data-testid="route-field"
-          data-ident={a.ident}
-        >
-          {asCards && <CardThread first={leads} last={last} />}
-          {!last && !asCards && (
-            <span aria-hidden="true" className="absolute top-3 bottom-0 left-[calc(0.875rem-1px)] w-0.5" style={ROUTE_LINE} />
-          )}
-          <section aria-label={`${a.ident} · ${first.role}`} className={cn(!(opened && parts[1]) && !asCards && "pb-5")}>
-            {/* The airport's lines: a tap anywhere on them -- its symbol, its
-                ident, its fuel, its wind, its time -- opens it, at the
-                owner's ask ("it should expand when tapped anywhere on the
-                airport information next to the symbol or the symbol
-                itself"): the arrow by the symbol is the button, its area
-                stretched over the lines (before:inset-0); the menu and a
-                time to pick lie over it, their own. */}
-            <div className="relative flex gap-2.5">
-              {/* A fuel stop's pump on top of its symbol, at the owner's ask
-                  ("instead of fuel symbol next to airport id, can we put it
-                  on top of the airport symbol?"). */}
-              {/* The symbol is the field's menu, over the lines' tap that
-                  opens them (z-10), at the owner's ask ("Use the airport
-                  icon as the more button"). */}
-              {/* Centred on the two lines, at the owner's ask ("Center it
-                  on the two lines"): the column as tall as they are. */}
-              <div className="relative z-10 flex w-7 shrink-0 items-center justify-center">
-                {((face) => (asCards ? <CardMark>{face}</CardMark> : face))(
-                  end.menu(
-                    <span className="relative">
-                      {mark}
-                      {a.role === "Stop" && isFuelStop(a.ident) && (
-                        <span className="absolute -top-1.5 -right-1.5 grid size-4 place-items-center rounded-full bg-caution text-white ring-2 ring-background">
-                          <Fuel className="size-2.5" strokeWidth={2.6} aria-label="fuel stop" role="img" />
-                        </span>
-                      )}
-                    </span>,
-                  ),
-                )}
-              </div>
-              {/* Two lines, as a waypoint's row and the list before had them,
-                  at the owner's ask ("line up the time with airport id and
-                  elevation with wind like before"): the ident and the time,
-                  then the wind and the elevation. */}
-              <div
-                className={cn(
-                  "grid min-w-0 flex-1 items-center gap-x-2",
-                  end.grip ? "grid-cols-[minmax(0,1fr)_auto_auto]" : "grid-cols-[minmax(0,1fr)_auto]",
-                )}
-              >
-                <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-1.5">
-                  {/* The disclosure, iOS's small chevron by the symbol, not
-                      an icon button (data-disclosure): the Collapsible's
-                      trigger, the arrow turned by its open state. */}
-                  {/* A card's without its arrow, at the owner's ask (2026-11-05:
-                      "Now that it's a card, we don't need the expanding
-                      arrow next to airport", then "It should still become
-                      a smaller card with a tap"): its tap over the lines
-                      alone. */}
-                  <CollapsibleTrigger asChild>
+      <Collapsible
+        key={key}
+        open={opened}
+        onOpenChange={(next) => toggleField(key, a.ident, next)}
+        render={
+          <li
+            className={cn("relative", asCards && cn(POINT_CARD, "isolate"), asCards && !last && CARD_GAP)}
+            data-testid="route-field"
+            data-ident={a.ident}
+          />
+        }
+      >
+        {asCards && <CardThread first={leads} last={last} />}
+        {!last && !asCards && (
+          <span aria-hidden="true" className="absolute top-3 bottom-0 left-[calc(0.875rem-1px)] w-0.5" style={ROUTE_LINE} />
+        )}
+        <section aria-label={`${a.ident} · ${first.role}`} className={cn(!(opened && parts[1]) && !asCards && "pb-5")}>
+          {/* The airport's lines: a tap anywhere on them -- its symbol, its
+                        ident, its fuel, its wind, its time -- opens it, at the
+                        owner's ask ("it should expand when tapped anywhere on the
+                        airport information next to the symbol or the symbol
+                        itself"): the arrow by the symbol is the button, its area
+                        stretched over the lines (before:inset-0); the menu and a
+                        time to pick lie over it, their own. */}
+          <div className="relative flex gap-2.5">
+            {/* A fuel stop's pump on top of its symbol, at the owner's ask
+                          ("instead of fuel symbol next to airport id, can we put it
+                          on top of the airport symbol?"). */}
+            {/* The symbol is the field's menu, over the lines' tap that
+                          opens them (z-10), at the owner's ask ("Use the airport
+                          icon as the more button"). */}
+            {/* Centred on the two lines, at the owner's ask ("Center it
+                          on the two lines"): the column as tall as they are. */}
+            <div className="relative z-10 flex w-7 shrink-0 items-center justify-center">
+              {((face) => (asCards ? <CardMark>{face}</CardMark> : face))(
+                end.menu(
+                  <span className="relative">
+                    {mark}
+                    {a.role === "Stop" && isFuelStop(a.ident) && (
+                      <span className="absolute -top-1.5 -right-1.5 grid size-4 place-items-center rounded-full bg-caution text-white ring-2 ring-background">
+                        <Fuel className="size-2.5" strokeWidth={2.6} aria-label="fuel stop" role="img" />
+                      </span>
+                    )}
+                  </span>,
+                ),
+              )}
+            </div>
+            {/* Two lines, as a waypoint's row and the list before had them,
+                          at the owner's ask ("line up the time with airport id and
+                          elevation with wind like before"): the ident and the time,
+                          then the wind and the elevation. */}
+            <div
+              className={cn(
+                "grid min-w-0 flex-1 items-center gap-x-2",
+                end.grip ? "grid-cols-[minmax(0,1fr)_auto_auto]" : "grid-cols-[minmax(0,1fr)_auto]",
+              )}
+            >
+              <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-1.5">
+                {/* The disclosure, iOS's small chevron by the symbol, not
+                              an icon button (data-disclosure): the Collapsible's
+                              trigger, the arrow turned by its open state. */}
+                {/* A card's without its arrow, at the owner's ask (2026-11-05:
+                              "Now that it's a card, we don't need the expanding
+                              arrow next to airport", then "It should still become
+                              a smaller card with a tap"): its tap over the lines
+                              alone. */}
+                <CollapsibleTrigger
+                  render={
                     <button
                       type="button"
                       data-testid="field-toggle"
@@ -348,67 +355,67 @@ export function FieldStep({
                         "group static grid shrink-0 place-items-center text-tint outline-none before:absolute before:inset-x-0 before:-top-3 before:bottom-0 before:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
                         asCards ? "-ml-1.5 size-0" : "-ml-0.5 size-4",
                       )}
-                    >
-                      {!asCards && <ChevronRight className="size-4 transition-transform group-data-[state=open]:rotate-90" aria-hidden />}
-                    </button>
-                  </CollapsibleTrigger>
-                  {/* The size the list's names were ("the font size is bigger
-                      than it used to be for airport id"). */}
-                  {asCards && edit?.onReplace && pointIndex(a.ident, a.role) !== undefined ? (
-                    <h3 className="min-w-0">
-                      <CardIdent
-                        value={a.ident}
-                        label={`${a.ident}, change`}
-                        testId="field-ident"
-                        onCommit={(v) => {
-                          const at = pointIndex(a.ident, a.role);
-                          if (at !== undefined && !sameField(v, a.ident)) edit.onReplace!(at, v);
-                        }}
-                      />
-                    </h3>
-                  ) : (
-                    <h3 className={cn("truncate font-semibold", TEXT.row)}>{a.ident}</h3>
-                  )}
-                  {tank && (
-                    <FuelGauge
-                      gal={tank.gal}
-                      usable={tank.usable}
-                      tone={tank.low ? "low" : a.role === "Stop" && isFuelStop(a.ident) ? "fuel" : undefined}
                     />
-                  )}
-                </div>
-                <div className="relative z-10 col-start-2 row-start-1 justify-self-end">{end.time}</div>
-                <p
-                  className={cn("col-start-1 row-start-2 flex min-w-0 items-center gap-1 font-semibold text-tint tabular-nums", TEXT.note)}
-                  data-testid="field-wind"
+                  }
                 >
-                  {end.direct
-                    ? "Direct to"
-                    : wind && (
-                        <>
-                          <Wind className="size-3.5 shrink-0" aria-hidden />
-                          <span aria-hidden="true">{wind}</span>
-                          <span className="sr-only">{`Wind ${reported === "calm" ? "calm" : reported ? reported.spoken : ""}`}</span>
-                        </>
-                      )}
-                </p>
-                <div className="col-start-2 row-start-2 justify-self-end">{end.elevation}</div>
-                {end.grip && <div className="relative z-10 col-start-3 row-span-2 row-start-1 self-center">{end.grip}</div>}
+                  {!asCards && <ChevronRight className="size-4 transition-transform group-data-panel-open:rotate-90" aria-hidden />}
+                </CollapsibleTrigger>
+                {/* The size the list's names were ("the font size is bigger
+                              than it used to be for airport id"). */}
+                {asCards && edit?.onReplace && pointIndex(a.ident, a.role) !== undefined ? (
+                  <h3 className="min-w-0">
+                    <CardIdent
+                      value={a.ident}
+                      label={`${a.ident}, change`}
+                      testId="field-ident"
+                      onCommit={(v) => {
+                        const at = pointIndex(a.ident, a.role);
+                        if (at !== undefined && !sameField(v, a.ident)) edit.onReplace!(at, v);
+                      }}
+                    />
+                  </h3>
+                ) : (
+                  <h3 className={cn("truncate font-semibold", TEXT.row)}>{a.ident}</h3>
+                )}
+                {tank && (
+                  <FuelGauge
+                    gal={tank.gal}
+                    usable={tank.usable}
+                    tone={tank.low ? "low" : a.role === "Stop" && isFuelStop(a.ident) ? "fuel" : undefined}
+                  />
+                )}
               </div>
+              <div className="relative z-10 col-start-2 row-start-1 justify-self-end">{end.time}</div>
+              <p
+                className={cn("col-start-1 row-start-2 flex min-w-0 items-center gap-1 font-semibold text-tint tabular-nums", TEXT.note)}
+                data-testid="field-wind"
+              >
+                {end.direct
+                  ? "Direct to"
+                  : wind && (
+                      <>
+                        <Wind className="size-3.5 shrink-0" aria-hidden />
+                        <span aria-hidden="true">{wind}</span>
+                        <span className="sr-only">{`Wind ${reported === "calm" ? "calm" : reported ? reported.spoken : ""}`}</span>
+                      </>
+                    )}
+              </p>
+              <div className="col-start-2 row-start-2 justify-self-end">{end.elevation}</div>
+              {end.grip && <div className="relative z-10 col-start-3 row-span-2 row-start-1 self-center">{end.grip}</div>}
             </div>
-            {/* A card's runways and procedures nearly its whole width, at
-                the owner's ask ("we can use all card width for runway and
-                arrival approach buttons"), right of the line down its
-                marks (CARD_BODY): the arrival and the approach then fit
-                on the runway's line. */}
-            <CollapsibleContent className={asCards ? CARD_BODY : "pl-9.5"}>{partBody(first)}</CollapsibleContent>
+          </div>
+          {/* A card's runways and procedures nearly its whole width, at
+                        the owner's ask ("we can use all card width for runway and
+                        arrival approach buttons"), right of the line down its
+                        marks (CARD_BODY): the arrival and the approach then fit
+                        on the runway's line. */}
+          <CollapsibleContent className={asCards ? CARD_BODY : "pl-9.5"}>{partBody(first)}</CollapsibleContent>
+        </section>
+        {opened && parts[1] && (
+          <section aria-label={`${a.ident} · ${parts[1].role}`} className={asCards ? CARD_BODY : "pl-9.5 pb-5"}>
+            {partBody(parts[1])}
           </section>
-          {opened && parts[1] && (
-            <section aria-label={`${a.ident} · ${parts[1].role}`} className={asCards ? CARD_BODY : "pl-9.5 pb-5"}>
-              {partBody(parts[1])}
-            </section>
-          )}
-        </li>
+        )}
       </Collapsible>
     );
   };

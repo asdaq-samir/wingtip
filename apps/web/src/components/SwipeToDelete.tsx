@@ -1,8 +1,9 @@
-import { useCallback, useContext, useMemo, useRef, type ReactNode } from "react";
+import { cloneElement, useCallback, useContext, useMemo, useRef, type ReactNode } from "react";
 import { Share, Trash2 } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "./ui/button";
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "./ui/context-menu";
+import type { HeldAction } from "./popups/HeldMenu";
+import { usePopups } from "./popupsChunk";
 import { TEXT } from "../lib/text";
 import { useConfirm } from "./useConfirm";
 import { SortItem, SwipeRow } from "./swipeRow";
@@ -59,71 +60,73 @@ export function SwipeToDelete({
   // iOS's minus slides its row over: focused, it scrolls into sight, and
   // goes back under as the focus leaves it.
   const row = useMemo(() => ({ reveal: () => deleteButton.current?.focus() }), []);
+  const trigger = (
+    <div
+      // Made to slide sideways, its Delete past its end: the iOS
+      // audit's sideways-scroll rule passes over it (data-slides).
+      ref={setScroller}
+      data-testid="swipe-row"
+      data-slides=""
+      style={sort?.style}
+      className={cn(
+        "group/swipe flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] first:rounded-t-lg last:rounded-b-lg [&::-webkit-scrollbar]:hidden",
+        sort?.className,
+      )}
+    />
+  );
+  const body = (
+    <>
+      <div
+        className="w-full shrink-0 snap-start"
+        // A tap on a row whose Delete is out covers it again, as iOS's
+        // does, rather than opening what the row opens.
+        onClickCapture={(event) => {
+          if ((scroller.current?.scrollLeft ?? 0) > 4) {
+            event.preventDefault();
+            event.stopPropagation();
+            cover();
+          }
+        }}
+      >
+        {children}
+      </div>
+      <button
+        ref={deleteButton}
+        type="button"
+        aria-label={label}
+        onClick={onDelete}
+        onBlur={cover}
+        data-testid="swipe-delete"
+        // The light theme's red in the dark too: the dark theme's
+        // lighter one gave the white word 2.9:1 (the iOS audit's P15),
+        // this one 4.8.
+        className={cn(
+          "w-20 shrink-0 snap-end bg-destructive font-medium text-white outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+          TEXT.row,
+        )}
+      >
+        Delete
+      </button>
+    </>
+  );
+  // Every list's menu the same two, at the owner's word (2026-10-28): "all
+  // the lists should only have two options the words Share and Remove with
+  // their icons. That's it". From a long press or a right click, on the
+  // popups' chunk (popupsChunk); until that is in, the row alone.
+  const popups = usePopups();
+  const actions: HeldAction[] = [
+    ...(share ? [{ label: "Share", icon: <Share />, onClick: shareIt, testId: "swipe-menu-share" }] : []),
+    { label: "Remove", icon: <Trash2 />, onClick: onDelete, destructive: true, spoken: label, testId: "swipe-menu-delete" },
+  ];
   return (
     <SwipeRow.Provider value={row}>
-      <ContextMenu>
-        <ContextMenuTrigger asChild>
-          <div
-            // Made to slide sideways, its Delete past its end: the iOS
-            // audit's sideways-scroll rule passes over it (data-slides).
-            ref={setScroller}
-            data-testid="swipe-row"
-            data-slides=""
-            style={sort?.style}
-            className={cn(
-              "group/swipe flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] first:rounded-t-lg last:rounded-b-lg [&::-webkit-scrollbar]:hidden",
-              sort?.className,
-            )}
-          >
-            <div
-              className="w-full shrink-0 snap-start"
-              // A tap on a row whose Delete is out covers it again, as iOS's
-              // does, rather than opening what the row opens.
-              onClickCapture={(event) => {
-                if ((scroller.current?.scrollLeft ?? 0) > 4) {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  cover();
-                }
-              }}
-            >
-              {children}
-            </div>
-            <button
-              ref={deleteButton}
-              type="button"
-              aria-label={label}
-              onClick={onDelete}
-              onBlur={cover}
-              data-testid="swipe-delete"
-              // The light theme's red in the dark too: the dark theme's
-              // lighter one gave the white word 2.9:1 (the iOS audit's P15),
-              // this one 4.8.
-              className={cn(
-                "w-20 shrink-0 snap-end bg-destructive font-medium text-white outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
-                TEXT.row,
-              )}
-            >
-              Delete
-            </button>
-          </div>
-        </ContextMenuTrigger>
-        {/* Every list's menu the same two, at the owner's word (2026-10-28):
-          "all the lists should only have two options the words Share and
-          Remove with their icons. That's it". */}
-        <ContextMenuContent className="min-w-48">
-          {share && (
-            <ContextMenuItem onSelect={shareIt} data-testid="swipe-menu-share">
-              <Share />
-              Share
-            </ContextMenuItem>
-          )}
-          <ContextMenuItem variant="destructive" onSelect={onDelete} aria-label={label} data-testid="swipe-menu-delete">
-            <Trash2 />
-            Remove
-          </ContextMenuItem>
-        </ContextMenuContent>
-      </ContextMenu>
+      {popups ? (
+        <popups.HeldMenu trigger={trigger} actions={actions}>
+          {body}
+        </popups.HeldMenu>
+      ) : (
+        cloneElement(trigger, undefined, body)
+      )}
     </SwipeRow.Provider>
   );
 }

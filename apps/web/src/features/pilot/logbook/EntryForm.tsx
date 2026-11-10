@@ -2,7 +2,9 @@ import { useState, type KeyboardEvent } from "react";
 import { cn } from "cn";
 import TogglePill from "../../../components/TogglePill";
 import { Button } from "../../../components/ui/button";
+import { DateField } from "../../../components/ui/date-field";
 import { Input } from "../../../components/ui/input";
+import { NumberField } from "../../../components/ui/number-field";
 import type { LogbookEntryRequest } from "../../../lib/api/types";
 import { TEXT } from "../../../lib/text";
 
@@ -35,22 +37,53 @@ export default function EntryForm({
     e.stopPropagation();
     onCancel();
   };
-  const field = (key: keyof LogbookEntryRequest, label: string, type: "text" | "number" | "date" = "text") => (
-    <label className={cn("grid grid-cols-[8rem_1fr] items-center gap-2", TEXT.detail)}>
-      <span>{label}</span>
-      <Input
-        type={type}
-        inputMode={type === "number" ? "decimal" : undefined}
-        step={type === "number" ? "any" : undefined}
-        min={type === "number" ? 0 : undefined}
-        className="h-8"
-        data-testid={`logbook-${key}`}
-        value={(entry[key] as string | number | null | undefined) ?? ""}
-        onChange={(e) => setEntry({ ...entry, [key]: type === "number" ? Number(e.target.value || 0) : e.target.value })}
-        onKeyDown={escape}
-      />
-    </label>
-  );
+  // React Aria's own fields' Escape: its events stop where they are heard
+  // already, and say so if told to again.
+  const escapeAria = (e: { key: string; preventDefault: () => void }) => {
+    if (e.key !== "Escape" || !onCancel) return;
+    e.preventDefault();
+    onCancel();
+  };
+  const field = (key: keyof LogbookEntryRequest, label: string, type: "text" | "number" | "date" = "text") => {
+    const now = entry[key] as string | number | null | undefined;
+    // A figure on React Aria's number field and the day on its date
+    // field, where the native ones were, each named by its label.
+    const control =
+      type === "number" ? (
+        <NumberField
+          aria-label={label}
+          className="h-8"
+          minValue={0}
+          data-testid={`logbook-${key}`}
+          value={now == null || now === "" ? null : Number(now)}
+          onChange={(v) => setEntry({ ...entry, [key]: v ?? 0 })}
+          onKeyDown={escapeAria}
+        />
+      ) : type === "date" ? (
+        <DateField
+          aria-label={label}
+          className="h-8"
+          data-testid={`logbook-${key}`}
+          value={String(now ?? "")}
+          onChange={(day) => setEntry({ ...entry, [key]: day })}
+          onKeyDown={escapeAria}
+        />
+      ) : (
+        <Input
+          className="h-8"
+          data-testid={`logbook-${key}`}
+          value={now ?? ""}
+          onChange={(e) => setEntry({ ...entry, [key]: e.target.value })}
+          onKeyDown={escape}
+        />
+      );
+    return (
+      <label className={cn("grid grid-cols-[8rem_1fr] items-center gap-2", TEXT.detail)}>
+        <span>{label}</span>
+        {control}
+      </label>
+    );
+  };
   return (
     <form
       className="space-y-2.5"

@@ -57,25 +57,27 @@ export default function FixBranch({
           <span className="size-2.5 rotate-45 border-2 border-white bg-procedure outline outline-1 outline-procedure" />
         </span>
         {fixes.length > 0 ? (
-          <CollapsibleTrigger asChild>
-            <button
-              type="button"
-              aria-label={`${name}, its fixes`}
-              data-testid="fix-branch-toggle"
-              className={cn(
-                "group relative flex min-w-0 flex-1 flex-col items-start text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                "after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']",
-              )}
-            >
-              <span className={cn("flex max-w-full items-center gap-1 font-semibold text-tint", TEXT.row)}>
-                <span className="truncate">{name}</span>
-                <ChevronRight className="size-4 shrink-0 transition-transform group-data-[state=open]:rotate-90" aria-hidden="true" />
-              </span>
-              <span className={cn("text-muted-foreground", TEXT.note)}>
-                {kind}
-                {count}
-              </span>
-            </button>
+          <CollapsibleTrigger
+            render={
+              <button
+                type="button"
+                aria-label={`${name}, its fixes`}
+                data-testid="fix-branch-toggle"
+                className={cn(
+                  "group relative flex min-w-0 flex-1 flex-col items-start text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']",
+                )}
+              />
+            }
+          >
+            <span className={cn("flex max-w-full items-center gap-1 font-semibold text-tint", TEXT.row)}>
+              <span className="truncate">{name}</span>
+              <ChevronRight className="size-4 shrink-0 transition-transform group-data-panel-open:rotate-90" aria-hidden="true" />
+            </span>
+            <span className={cn("text-muted-foreground", TEXT.note)}>
+              {kind}
+              {count}
+            </span>
           </CollapsibleTrigger>
         ) : (
           <div className="flex min-w-0 flex-1 flex-col items-start">

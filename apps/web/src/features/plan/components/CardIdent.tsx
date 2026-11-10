@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from "react";
-import { Command as CommandPrimitive } from "cmdk";
 import { cn } from "cn";
 import AirportResults from "../../../components/AirportResults";
-import { Popover, PopoverAnchor, PopoverContent } from "../../../components/ui/popover";
+import { CommandField, CommandRoot } from "../../../components/ui/command";
+import { Popover, PopoverContent } from "../../../components/ui/popover";
 import { usePreferences, type RecentAirport } from "../../../lib/preferences";
 import { TEXT } from "../../../lib/text";
 import { useAirportSearch, type AirportSearchRow } from "../../../lib/useAirportSearch";
@@ -57,17 +57,29 @@ export default function CardIdent({
 }) {
   const [draft, setDraft] = useState(value);
   const input = useRef<HTMLInputElement | null>(null);
-  const focusIn = useCallback((el: HTMLInputElement | null) => {
-    input.current = el;
-    el?.focus();
-  }, []);
-  const keep = useCallback((el: HTMLInputElement | null) => {
-    input.current = el;
-  }, []);
+  // What the suggestions are placed under: the field, or its box with the
+  // copy of its words (Base UI's Positioner takes it as `anchor`).
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const focusIn = useCallback(
+    (el: HTMLInputElement | null) => {
+      input.current = el;
+      if (wide) setAnchor(el);
+      el?.focus();
+    },
+    [wide],
+  );
+  const keep = useCallback(
+    (el: HTMLInputElement | null) => {
+      input.current = el;
+      if (wide) setAnchor(el);
+    },
+    [wide],
+  );
   // The airports and waypoints that answer what is typed, under the field,
   // as the route box offers them (the owner, 2026-11-06: "route cards are
   // not showing ... airport suggestion with the search as you type"): the
-  // same search and list, cmdk's arrows and Enter on the field.
+  // same search and list, Base UI's Autocomplete's arrows and Enter on the
+  // field.
   const [typing, setTyping] = useState(false);
   const [dismissed, setDismissed] = useState<string | null>(null);
   const searching = suggest && typing && draft.trim() !== "" && draft !== value;
@@ -82,8 +94,9 @@ export default function CardIdent({
   // Set as a suggestion is taken, so the blur after it puts in nothing
   // more: its draft, read in that blur, is still what was half typed.
   const picked = useRef(false);
-  // Set once an arrow has moved the highlight since the last typing: cmdk
-  // lights the first row by itself, which Return must not take for the pilot.
+  // Set once an arrow has moved the highlight since the last typing: a row
+  // lit by itself (as cmdk lit the first) must not be taken by Return for
+  // the pilot.
   const arrowed = useRef(false);
   const commit = () => {
     setTyping(false);
@@ -110,8 +123,7 @@ export default function CardIdent({
   // characters cut KUGN's N off in the semibold capitals (the owner's
   // screenshot, 2026-11-05).
   const box = (
-    <input
-      value={draft}
+    <CommandField
       aria-label={label}
       data-testid={testId}
       placeholder={placeholder}
@@ -122,27 +134,23 @@ export default function CardIdent({
       spellCheck={false}
       enterKeyHint="done"
       size={1}
-      onChange={(e) => {
-        picked.current = false;
-        arrowed.current = false;
-        setDraft(e.target.value.toUpperCase());
-        setTyping(true);
-      }}
       onFocus={() => {
         picked.current = false;
       }}
       onBlur={commit}
       onKeyDown={(e) => {
         if (e.key === "ArrowDown" || e.key === "ArrowUp") arrowed.current = true;
-        // Return takes a suggestion only once an arrow has chosen it (cmdk's
-        // own Enter on the root, after this); else the typing, and cmdk is
-        // not let to take the row it lit by default.
+        // Return takes a suggestion only once an arrow has chosen it (the
+        // list's own Enter, after this); else the typing, and the list is
+        // not let to take a row lit by itself.
         if (e.key === "Enter") {
           if (open && arrowed.current) return;
+          e.preventBaseUIHandler();
           e.stopPropagation();
           e.currentTarget.blur();
         }
         if (e.key === "Escape") {
+          e.preventBaseUIHandler();
           setDraft(value);
           setTyping(false);
           e.currentTarget.blur();
@@ -159,7 +167,7 @@ export default function CardIdent({
   const field = wide ? (
     box
   ) : (
-    <span className="inline-grid min-w-0">
+    <span ref={setAnchor} className="inline-grid min-w-0">
       <span
         aria-hidden="true"
         className={cn(
@@ -174,21 +182,30 @@ export default function CardIdent({
     </span>
   );
   return (
-    <CommandPrimitive shouldFilter={false} loop className={wide ? "flex min-w-0 flex-1" : "contents"}>
+    <CommandRoot
+      value={draft}
+      onValueChange={(next) => {
+        picked.current = false;
+        arrowed.current = false;
+        setDraft(next.toUpperCase());
+        setTyping(true);
+      }}
+    >
       <Popover
         open={open}
         onOpenChange={(next) => {
           if (!next) setDismissed(draft);
         }}
       >
-        <PopoverAnchor asChild>{field}</PopoverAnchor>
+        {field}
         <PopoverContent
+          anchor={anchor}
           align="start"
           sideOffset={6}
           className="w-72 max-w-[calc(100vw-16px)] gap-0 p-2"
           // The typing stays in the field: a press on a row would take the
           // focus first, and the field's blur put in the half typed.
-          onOpenAutoFocus={(e) => e.preventDefault()}
+          initialFocus={false}
           onPointerDown={(e) => e.preventDefault()}
           onMouseDown={(e) => e.preventDefault()}
           data-testid={`${testId}-suggestions`}
@@ -201,6 +218,6 @@ export default function CardIdent({
           />
         </PopoverContent>
       </Popover>
-    </CommandPrimitive>
+    </CommandRoot>
   );
 }

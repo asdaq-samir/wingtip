@@ -116,8 +116,9 @@ describe("the clearance card", () => {
     const { state } = card();
     expect(["hear", "readback", "enter", "compare"].map(state)).toEqual(["Not yet", "Not yet", "Not yet", "Not yet"]);
     expect(screen.getByTestId("clearance-text")).toBeTruthy();
-    // A folded row's detail is in the page hidden, its contents not drawn.
-    expect(screen.getByTestId("clearance-detail-readback").hidden).toBe(true);
+    // A folded row's detail is not drawn (Base UI's Collapsible leaves its
+    // panel out of the page while it is shut).
+    expect(screen.queryByTestId("clearance-detail-readback")).toBeNull();
     expect(screen.queryByTestId("clearance-readback-text")).toBeNull();
     expect((screen.getByTestId("clearance-enter") as HTMLButtonElement).disabled).toBe(true);
     expect(screen.queryByTestId("clearance-error")).toBeNull();
@@ -268,7 +269,7 @@ describe("Listen through, in the Hear row", () => {
     // A browser that can listen on the device: the microphones and the picker are shown.
     vi.stubGlobal("SpeechRecognition", LocalSpeech);
     await speechAnswered();
-    // Radix's menu measures itself, which jsdom cannot.
+    // The stock menu measures itself, which jsdom cannot.
     vi.stubGlobal(
       "ResizeObserver",
       class {
@@ -289,7 +290,7 @@ describe("Listen through, in the Hear row", () => {
     expect(audioInput.find).toHaveBeenCalled();
     const menu = await hear.findByTestId("listen-input");
     expect(menu.getAttribute("aria-label")).toBe("Listen through: Choose");
-    fireEvent.keyDown(menu, { key: "Enter" });
+    fireEvent.click(menu);
     const options = await screen.findAllByTestId("listen-input-option");
     expect(options.map((o) => o.textContent)).toEqual(["iPhone Microphone", "GMA 350c"]);
     fireEvent.click(options[1]!);

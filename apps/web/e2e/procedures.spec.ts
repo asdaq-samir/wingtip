@@ -50,23 +50,23 @@ test("a field's traffic pattern is picked by its runway, kept in the address and
   await expect(destination.getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(20000) });
   await openRunways(destination);
   const runway = destination
-    .getByRole("radio", { name: /^Runway / })
-    .and(page.locator(':not([disabled]):not([aria-checked="true"])'))
+    .getByRole("button", { name: /^Runway / })
+    .and(page.locator(':not([disabled]):not([aria-pressed="true"])'))
     .first();
   const name = (await runway.innerText()).trim();
   await runway.click();
   // The line folded to the runway picked.
   const folded = destination.locator("[data-folded]");
   await expect(folded).toHaveText(name);
-  await expect(folded).toHaveAttribute("aria-checked", "true");
+  await expect(folded).toHaveAttribute("aria-pressed", "true");
   await expect(page).toHaveURL(new RegExp(`[?&]pattern=[^&]*KDLH(%3A|:)${name}(%2C|,|&|$)`));
   await expect.poll(circuitsOf(page), { timeout: slow(10000) }).toContain("pattern-at-KDLH");
 
   // No None: every landing is on a runway (the owner's "Why is none even an
   // option?"), and the chip picked tapped again keeps it.
   await openRunways(destination);
-  await expect(destination.getByRole("radio", { name: /None/ })).toHaveCount(0);
-  await destination.getByRole("radio", { name: new RegExp(`^Runway ${name}\\b`) }).click();
+  await expect(destination.getByRole("button", { name: /None/ })).toHaveCount(0);
+  await destination.getByRole("button", { name: new RegExp(`^Runway ${name}\\b`) }).click();
   await expect(page).toHaveURL(new RegExp(`[?&]pattern=[^&]*KDLH(%3A|:)${name}(%2C|,|&|$)`));
 });
 
@@ -83,14 +83,14 @@ test("a runway line opened stays open until folded, and folds with its field", a
   // landing late leaves be: then opened from its fold, and left alone.
   await openRunways(destination);
   await destination
-    .getByRole("radio", { name: /^Runway / })
-    .and(page.locator(':not([disabled]):not([aria-checked="true"])'))
+    .getByRole("button", { name: /^Runway / })
+    .and(page.locator(':not([disabled]):not([aria-pressed="true"])'))
     .first()
     .click();
   await destination.locator("[data-folded]").click();
   await page.waitForTimeout(3000);
   await expect(destination.locator("[data-folded]")).toHaveCount(0);
-  await expect(destination.getByRole("radio", { name: /^Runway / }).nth(1)).toBeVisible();
+  await expect(destination.getByRole("button", { name: /^Runway / }).nth(1)).toBeVisible();
   // The field folded and opened again: its runways folded to the one picked.
   const toggle = procedures.locator('[data-testid="field-toggle"][data-ident="KDLH"]');
   await toggle.click();
@@ -343,7 +343,7 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await openTab(page, "Nav Log");
   const procedures = page.getByTestId("procedures");
   const kdlh = procedures.getByRole("region", { name: "KDLH · Arrive" });
-  await expect(kdlh.getByRole("radio", { name: /^Runway 27/ })).toHaveAttribute("aria-checked", "true", { timeout: slow(20000) });
+  await expect(kdlh.getByRole("button", { name: /^Runway 27/ })).toHaveAttribute("aria-pressed", "true", { timeout: slow(20000) });
   await expect.poll(circuitsOf(page), { timeout: slow(10000) }).toContain("pattern-at-KDLH");
   // The ILS to 9 added from its pull-down, from DLH: the runway is 9,
   // landed straight in, and no pattern drawn.
@@ -361,7 +361,7 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await expect(page).toHaveURL(/[?&]pattern=[^&]*KDLH(%3A|:)9(%2C|,|&|$)/);
   await settled(sideDrawer(page));
   await openTab(page, "Nav Log");
-  await expect(kdlh.getByRole("radio", { name: /^Runway 9\b/ })).toHaveAttribute("aria-checked", "true");
+  await expect(kdlh.getByRole("button", { name: /^Runway 9\b/ })).toHaveAttribute("aria-pressed", "true");
   await expect(kdlh.locator("[data-testid=procedure-kind][data-kind=approach]")).toContainText("ILS 09 · DLH");
   // The field's arrival, a pull-down beside it once the list is in.
   await kdlh.locator("[data-testid=procedure-kind][data-kind=arrival]").click();
@@ -388,12 +388,12 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await page.keyboard.press("Escape");
   // Said in the runway's chip's name, the info button gone (the owner's
   // "No need for info button").
-  await expect(kdlh.getByRole("radio", { name: /Straight in/ })).toBeVisible();
+  await expect(kdlh.getByRole("button", { name: /Straight in/ })).toBeVisible();
   await expect.poll(circuitsOf(page)).not.toContain("pattern-at-KDLH");
   // Its plate has no circling line: no other runway. By its number: the
   // live wind may name 27 into it first.
   await openRunways(kdlh);
-  await expect(kdlh.getByRole("radio", { name: /^Runway 27\b.*, no circling on the ILS 09/ })).toBeDisabled();
+  await expect(kdlh.getByRole("button", { name: /^Runway 27\b.*, no circling on the ILS 09/ })).toBeDisabled();
 
   // One that publishes circling minimums: 27 is a circle to land.
   circling = true;
@@ -402,11 +402,11 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await openTab(page, "Nav Log");
   await expect(kdlh.getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(20000) });
   await openRunways(kdlh);
-  const circle = kdlh.getByRole("radio", { name: /^Runway 27/ });
+  const circle = kdlh.getByRole("button", { name: /^Runway 27/ });
   await expect(circle).toBeEnabled({ timeout: slow(20000) });
   await circle.click();
   await expect(page).toHaveURL(/[?&]pattern=[^&]*KDLH(%3A|:)27(%2C|,|&|$)/);
-  await expect(kdlh.getByRole("radio", { name: /Circle to land/ })).toBeVisible();
+  await expect(kdlh.getByRole("button", { name: /Circle to land/ })).toBeVisible();
   await expect.poll(circuitsOf(page)).not.toContain("pattern-at-KDLH");
 });
 
@@ -432,15 +432,15 @@ test("the destination's runway into the wind is picked as the route comes in, an
   await openTab(page, "Nav Log");
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
   await expect(kdlh.getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(20000) });
-  await expect(kdlh.getByRole("radio", { name: /^Runway 9, into the wind/ })).toHaveAttribute("aria-checked", "true", {
+  await expect(kdlh.getByRole("button", { name: /^Runway 9, into the wind/ })).toHaveAttribute("aria-pressed", "true", {
     timeout: slow(60_000),
   });
   await expect(page).not.toHaveURL(/NONE/);
   await expect(page).not.toHaveURL(/[?&]procs=/);
   await openRunways(kdlh);
   const other = kdlh
-    .getByRole("radio", { name: /^Runway / })
-    .and(page.locator(':not([disabled]):not([aria-checked="true"])'))
+    .getByRole("button", { name: /^Runway / })
+    .and(page.locator(':not([disabled]):not([aria-pressed="true"])'))
     .first();
   const name = (await other.innerText()).trim();
   await other.click();
@@ -478,7 +478,7 @@ test("a field typed as ORD is KORD, its arrivals offered and its runways one lin
   // The runway picked scrolled into sight, in the line's middle where it
   // can be, its neighbours either side (the owner's ask), or as near as
   // the line's end lets it.
-  const nineLeft = kord.getByRole("radio", { name: /^Runway 9L/ });
+  const nineLeft = kord.getByRole("button", { name: /^Runway 9L/ });
   await expect(nineLeft).toBeInViewport();
   await expect
     .poll(() =>

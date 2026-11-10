@@ -132,13 +132,12 @@ export default function AirplaneProfileSheet() {
       }}
       title={vm.tail}
       testId="airplane-profile"
-      onOpenAutoFocus={(event) => {
+      initialFocus={(sheet) => {
         // On the figure it was opened for, where it was one.
-        const field = vm.focus && (event.currentTarget as HTMLElement).querySelector<HTMLInputElement>(`[data-figure="${vm.focus}"] input`);
-        if (!field) return;
-        event.preventDefault();
-        field.focus();
+        const field = vm.focus && sheet.querySelector<HTMLInputElement>(`[data-figure="${vm.focus}"] input`);
+        if (!field) return null;
         field.scrollIntoView({ block: "center" });
+        return field;
       }}
     >
       <div className="flex flex-col gap-5">

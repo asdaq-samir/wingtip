@@ -1,7 +1,6 @@
-import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "cn";
-import { Slot } from "radix-ui";
+import { Button as ButtonPrimitive } from "@base-ui/react/button";
 
 // The words at iOS's sizes on a touch screen -- 17 points on a button,
 // 15 on a small one, 13 on the smallest -- and at 14 and 12 with a mouse
@@ -42,17 +41,16 @@ const buttonVariants = cva(
   },
 );
 
+// Base UI's Button: another element in its place through `render` (a link
+// with `nativeButton={false}`), where Radix's Slot took `asChild`.
 function Button({
   className,
   variant = "default",
   size = "default",
-  asChild = false,
   ...props
-}: React.ComponentProps<"button"> & VariantProps<typeof buttonVariants> & { asChild?: boolean }) {
-  const Comp = asChild ? Slot.Root : "button";
-
+}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
   return (
-    <Comp
+    <ButtonPrimitive
       data-slot="button"
       data-variant={variant}
       data-size={size}

@@ -128,15 +128,17 @@ function Step({
   return (
     <Collapsible open={open} onOpenChange={onOpenChange}>
       <div className="flex items-center gap-2 pr-2">
-        <CollapsibleTrigger asChild>
-          <ListRow
-            title={title}
-            value={<span data-testid={`clearance-state-${id}`}>{state}</span>}
-            chevron
-            data-testid={`clearance-row-${id}`}
-            className="min-w-0 flex-1"
-          />
-        </CollapsibleTrigger>
+        <CollapsibleTrigger
+          render={
+            <ListRow
+              title={title}
+              value={<span data-testid={`clearance-state-${id}`}>{state}</span>}
+              chevron
+              data-testid={`clearance-row-${id}`}
+              className="min-w-0 flex-1"
+            />
+          }
+        />
         {control}
       </div>
       <CollapsibleContent className={cn("flex flex-col gap-2 px-3 pb-3", TEXT.detail)} data-testid={`clearance-detail-${id}`}>

@@ -128,9 +128,9 @@ export default function PanelTabs({
       root.style.removeProperty("--head-room");
     };
   }, [localHead]);
-  // The tab that was up as a finger or a key pressed one, before Radix
-  // makes the pressed one the tab up (on its mouse down or key down, ahead
-  // of the click): whether the tap was on the tab already up.
+  // The tab that was up as a finger or a key pressed one, read at its
+  // click, by when Base UI has made the pressed one the tab up: whether
+  // the tap was on the tab already up.
   const upWhenPressed = useRef<PanelTab | null>(null);
   const scrolls = useRef<Partial<Record<PanelTab | "overview", number>>>({});
   // The section a row in another tab asked for (GoToTab), scrolled to
@@ -289,7 +289,10 @@ export default function PanelTabs({
                     <TabsContent
                       key={t}
                       value={t}
-                      forceMount
+                      // Kept, and laid out where Base UI would hide it:
+                      // tab-away keeps a page's layout for its return.
+                      keepMounted
+                      hidden={false}
                       data-testid={`panel-${t}`}
                       data-tab={t}
                       inert={away}
