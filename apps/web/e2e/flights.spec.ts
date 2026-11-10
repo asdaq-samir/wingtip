@@ -11,6 +11,8 @@ import {
   showTabs,
   sideDrawer,
 } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * "Save this flight", at the head of the briefing drawer's sections, for
