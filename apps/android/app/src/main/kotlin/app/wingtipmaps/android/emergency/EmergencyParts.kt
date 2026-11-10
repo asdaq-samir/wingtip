@@ -1,14 +1,12 @@
 package app.wingtipmaps.android.emergency
 
 import android.content.Intent
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -29,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.core.net.toUri
@@ -75,10 +72,11 @@ internal fun EmergencyChecklist(state: EmergencyModel.State, onSection: (Int) ->
         val key = "$section:$i"
         val done = key in state.ticked
         ListItem(
+            checked = done,
+            onCheckedChange = { onTick(key) },
             leadingContent = { Checkbox(checked = done, onCheckedChange = null) },
             trailingContent = item.response?.let { r -> { Text(r, fontWeight = FontWeight.SemiBold) } },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            modifier = Modifier.toggleable(value = done, role = Role.Checkbox) { onTick(key) },
             content = { Text(item.challenge, color = if (done) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface) },
         )
     }
@@ -148,10 +146,16 @@ internal fun ActionsList(state: EmergencyModel.State, onSouls: (String) -> Unit,
 
 @Composable
 private fun Plain(title: String, line: String?, bold: Boolean = false, tint: Boolean = false, onClick: (() -> Unit)? = null) {
-    ListItem(
-        supportingContent = line?.let { { Text(it) } },
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = if (onClick != null) Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick) else Modifier.fillMaxWidth(),
-        content = { Text(title, fontWeight = if (bold) FontWeight.SemiBold else null, color = if (tint) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface) },
-    )
+    val supporting: (@Composable () -> Unit)? = line?.let { { Text(it) } }
+    val colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+    val headline: @Composable () -> Unit = {
+        Text(title, fontWeight = if (bold) FontWeight.SemiBold else null, color = if (tint) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+    }
+    // Material's clickable list item where the row does something, its
+    // plain one where it does not.
+    if (onClick != null) {
+        ListItem(onClick = onClick, supportingContent = supporting, colors = colors, modifier = Modifier.fillMaxWidth(), content = headline)
+    } else {
+        ListItem(supportingContent = supporting, colors = colors, modifier = Modifier.fillMaxWidth(), content = headline)
+    }
 }

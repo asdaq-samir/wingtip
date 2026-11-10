@@ -7,9 +7,9 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * The route as it was before the last edit that took something from it
  * or changed it -- a stop removed, moved or added, a Direct To, the route
- * replaced by Fly Here -- for the Undo row in the route's list (the
- * iPhone's UndoBar and its PlanHistory): one step back, kept until the
- * next edit or until the row's time is up; and the edit undone, for Redo,
+ * replaced by Fly Here -- for the Undo of the edit's Snackbar
+ * (RouteUndoSnackbar; the iPhone's PlanHistory): one step back, kept
+ * until the next edit or until the Snackbar is let go; and the edit undone, for Redo,
  * kept until the next edit. Plan writes them and applies them; the words
  * are the screen's.
  */
@@ -66,7 +66,7 @@ class RouteUndo {
         return now
     }
 
-    /** The row's time up: that edit kept, unless a newer one came since. */
+    /** The Snackbar let go: that edit kept, unless a newer one came since. */
     fun dismiss(id: Long) {
         if (_note.value?.id == id) _note.value = null
     }

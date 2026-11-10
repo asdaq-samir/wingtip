@@ -19,6 +19,7 @@ import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
@@ -79,6 +80,8 @@ fun rememberMapSheetState(): MapSheetState {
  *   its peek, where the map centres what it shows.
  * @param sheet the sheet's content, under the stock handle; a child with
  *   Modifier.weight(1f) fills it to the top.
+ * @param snackbars the screen's Snackbars (an edit's Undo), shown by the
+ *   scaffold's own host, over the sheet.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,6 +89,7 @@ fun MapSheet(
     state: MapSheetState,
     peek: Dp,
     modifier: Modifier = Modifier,
+    snackbars: SnackbarHostState = remember { SnackbarHostState() },
     body: @Composable (covered: Dp) -> Unit,
     sheet: @Composable ColumnScope.() -> Unit,
 ) {
@@ -96,7 +100,7 @@ fun MapSheet(
     Box(modifier.fillMaxSize()) {
         body(peek)
         BottomSheetScaffold(
-            scaffoldState = rememberBottomSheetScaffoldState(bottomSheetState = state.sheet),
+            scaffoldState = rememberBottomSheetScaffoldState(bottomSheetState = state.sheet, snackbarHostState = snackbars),
             sheetPeekHeight = peek,
             // Transparent and empty: the map behind it takes every touch
             // the sheet does not.

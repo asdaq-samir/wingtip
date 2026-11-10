@@ -1,8 +1,6 @@
 package app.wingtipmaps.android.ui
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -10,7 +8,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import app.wingtipmaps.android.design.generated.WingtipColors
-import app.wingtipmaps.android.design.generated.WingtipSpace
 
 /**
  * The flight categories' colours, one set from the tokens for the map's
@@ -34,17 +31,16 @@ object FlightCategory {
         if (category.equals("LIFR", ignoreCase = true)) WingtipColors.Category.LifrChip else mark(category)
 }
 
-/** A field's flight category as a chip: its name in white on its colour,
- *  the name itself there, so the category is never told by the colour
- *  alone. */
+/** A field's flight category as Material's badge with text: its name in
+ *  white on its colour, the name itself there, so the category is never
+ *  told by the colour alone. */
 @Composable
 fun CategoryChip(category: String, modifier: Modifier = Modifier) {
-    Surface(
-        color = FlightCategory.chip(category),
+    Badge(
+        containerColor = FlightCategory.chip(category),
         contentColor = Color.White,
-        shape = MaterialTheme.shapes.extraSmall,
         modifier = modifier.semantics { contentDescription = "Flight category $category" },
     ) {
-        Text(category.uppercase(), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = WingtipSpace.Sm, vertical = WingtipSpace.Unit / 2))
+        Text(category.uppercase())
     }
 }

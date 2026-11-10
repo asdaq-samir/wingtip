@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.search
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.buildAnnotatedString
@@ -173,11 +171,12 @@ private fun ResultRow(
     onClick: () -> Unit,
 ) {
     ListItem(
+        onClick = onClick,
         leadingContent = glyph?.let { { Icon(it, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) } },
         supportingContent = supporting?.takeIf { it.isNotEmpty() }?.let { { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
         trailingContent = trailing,
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick),
+        modifier = Modifier.fillMaxWidth(),
         content = {
             Text(
                 buildAnnotatedString {

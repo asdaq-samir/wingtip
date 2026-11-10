@@ -1,7 +1,6 @@
 package app.wingtipmaps.android.copilot
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +11,7 @@ import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,11 +25,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -93,15 +94,23 @@ fun CopilotBanner(plan: Plan.State, flying: Boolean, fix: OwnShip.Fix?, ahead: L
                 // The line opens to its why: a button that says so, and whether
                 // it is open, to TalkBack.
                 val state = stringResource(if (open) R.string.said_expanded else R.string.said_collapsed)
-                Column(
-                    Modifier.weight(1f).clickable(role = Role.Button, onClickLabel = stringResource(R.string.said_show_why)) { open = !open }
-                        .semantics { stateDescription = state }.padding(vertical = WingtipSpace.Sm),
-                    verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
+                val showWhy = stringResource(R.string.said_show_why)
+                // Material's clickable surface, clear, over the line.
+                Surface(
+                    onClick = { open = !open },
+                    color = Color.Transparent,
+                    contentColor = LocalContentColor.current,
+                    modifier = Modifier.weight(1f).semantics {
+                        stateDescription = state
+                        onClick(label = showWhy, action = null)
+                    },
                 ) {
-                    Text(shown.title, color = ink, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium, maxLines = if (open) Int.MAX_VALUE else 2, overflow = TextOverflow.Ellipsis)
-                    if (open) {
-                        shown.detail.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
-                        shown.sources.forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    Column(Modifier.padding(vertical = WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
+                        Text(shown.title, color = ink, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium, maxLines = if (open) Int.MAX_VALUE else 2, overflow = TextOverflow.Ellipsis)
+                        if (open) {
+                            shown.detail.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+                            shown.sources.forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        }
                     }
                 }
                 TextButton(onClick = { model.dismiss(); open = false }) { Text(stringResource(R.string.ok)) }

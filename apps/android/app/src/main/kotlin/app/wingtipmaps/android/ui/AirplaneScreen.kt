@@ -1,12 +1,10 @@
 package app.wingtipmaps.android.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
@@ -34,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.lifecycle.ViewModel
@@ -55,7 +52,6 @@ import app.wingtipmaps.android.checklist.ChecklistScreen
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.documents.AddFromPhotoRow
 import app.wingtipmaps.android.documents.HandbookPhotoSheet
-import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.plan.FlightChoices
@@ -133,11 +129,12 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
         ChecklistKind.entries.forEach { kind ->
             val normal = kind == ChecklistKind.NORMAL
             ListItem(
+                onClick = { checklist = kind },
                 supportingContent = {
                     Text(stringResource(if (normal) R.string.checklist_normal_line else R.string.checklist_emergency_line), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { checklist = kind },
+                modifier = Modifier.fillMaxWidth(),
                 content = { Text(stringResource(if (normal) R.string.checklist_normal else R.string.checklist_emergency)) },
             )
         }
@@ -233,9 +230,11 @@ private fun PassengersRow() {
     val choices = remember(context) { FlightChoices.of(context) }
     val aboard by choices.passengers.collectAsStateWithLifecycle()
     ListItem(
+        checked = aboard,
+        onCheckedChange = choices::setPassengers,
         trailingContent = { Switch(checked = aboard, onCheckedChange = null) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.fillMaxWidth().toggleable(value = aboard, role = Role.Switch, onValueChange = choices::setPassengers),
+        modifier = Modifier.fillMaxWidth(),
         content = { Text(stringResource(R.string.passengers_aboard)) },
     )
 }

@@ -16,7 +16,7 @@ import org.junit.Test
 
 /** The logbook edited where it is shown: a row opened, changed and saved
  *  through the gateway's PUT, a bad figure said in the row, and a delete
- *  that waits on its Undo row before it is sent. */
+ *  that waits on its Snackbar's Undo before it is sent. */
 class LogbookModelTest {
     @get:Rule val main = MainRule()
 

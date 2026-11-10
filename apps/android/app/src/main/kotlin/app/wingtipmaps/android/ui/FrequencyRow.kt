@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,7 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -46,7 +46,12 @@ fun FrequencyRow(name: String, frequency: String, line: String? = null) {
             copied = false
         }
     }
+    val copyLabel = stringResource(R.string.frequency_copy, frequency)
     ListItem(
+        onClick = {
+            CardIntents.copy(context, name, frequency)
+            copied = true
+        },
         supportingContent = line?.let { { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
@@ -59,10 +64,7 @@ fun FrequencyRow(name: String, frequency: String, line: String? = null) {
             }
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = stringResource(R.string.frequency_copy, frequency)) {
-            CardIntents.copy(context, name, frequency)
-            copied = true
-        },
+        modifier = Modifier.fillMaxWidth().semantics { onClick(label = copyLabel, action = null) },
         content = { Text(name) },
     )
 }

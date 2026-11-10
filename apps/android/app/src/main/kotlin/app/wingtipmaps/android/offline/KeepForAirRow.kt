@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.offline
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDone
@@ -15,7 +14,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
@@ -45,12 +43,13 @@ fun KeepForAirRow(plan: Plan, keeper: KeepForAirModel = viewModel(), downloads: 
         else -> stringResource(R.string.keep_for_air)
     }
     ListItem(
+        onClick = { keeper.keep(plan, downloads) },
+        enabled = !keeping,
         leadingContent = {
             if (keeping) Loading(Modifier.size(WingtipSpace.Xl))
             else Icon(if (keptMb != null) Icons.Filled.CloudDone else Icons.Filled.CloudDownload, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.clickable(enabled = !keeping, role = Role.Button) { keeper.keep(plan, downloads) },
         content = { Text(words, color = MaterialTheme.colorScheme.primary) },
     )
 }
