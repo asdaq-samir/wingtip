@@ -1447,6 +1447,12 @@ behaviour; only the content, its order and the brand tokens are ours.
 | `SectionTitle` and `Section(title:)` | `Section("…")`, with `.headerProminence(.increased)` set once at the root |
 | The forecast run's hand-drawn bars | Swift Charts: `BarMark` per leg, `RuleMark` at the run's time now |
 | `MapLoading`'s turning mark | `ProgressView`; the mark is kept only on the static launch screen (and as the launch image in About) |
+| `PlanHistory`'s own past and future stacks | Each route change registered on the window's `UndoManager` with the route as it was (`levelsOfUndo` 50); an Undo puts it back and the system makes that the Redo |
+| Glass's Reduce Transparency overrides and `glassScrollEdges` | Plain `glassEffect` and materials, and the system's default scroll-edge effect; the system adapts them to the accessibility settings |
+| `closesBack` and the app-wide `UINavigationController` gesture override | The system's Back button and edge swipe on pushed pages; the close stays on sheets and cards presented over the map |
+| The route's figures in a hand-backed inset | `safeAreaBar` (`glassFoot`) |
+| Haptics off under Reduce Motion | The system's haptics switch alone decides; a tap is not motion |
+| `SaveLabel`'s drawn-on checkmark | The button's own words ("Saving…"), the saved flight showing in the list |
 
 The altitude stays a read-only Swift Charts profile with the system's
 `Picker(.wheel)` of the engine's altitudes beside it (on an iPad or a
@@ -1464,7 +1470,7 @@ the legal altitudes is said under it.
 | Checklist ticks (checklists, emergency, passenger briefing) | iOS has no checkbox (`ToggleStyle.checkbox` is macOS only); the circle-and-tick row is what Reminders draws by hand too |
 | `FactsRow` | Maps' facts row (a caption over each value, four across) has no public SwiftUI view; it is a `Grid`/`HStack` of `Text` |
 | `MapChip` and the captions over pictures | Stock `Label`/`Text` on the system's glass (`glassEffect`), which a line over a busy chart needs to be read; no capsule is drawn |
-| `ClosesBack` (a close in place of the Back chevron) | Not a component but the owner's navigation rule (decision 0015); the system's Back would be the stock way. Left for the owner |
+| The Reduce Motion branches of `Symbols.swift` and `CardZoom.swift` | Kept for now: neither the SDK's interfaces nor Apple's pages read on 2026-11-10 say that `symbolEffect` or the zoom navigation transition change under Reduce Motion by themselves; remove them once that is shown |
 
 ---
 

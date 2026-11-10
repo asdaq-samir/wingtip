@@ -130,15 +130,15 @@ final class AccessibilityAuditTests: XCTestCase {
 
     @MainActor
     private func audit(_ app: XCUIApplication, _ screen: String, _ types: XCUIAccessibilityAuditType = atDefaultSize) throws {
-        var kept: [String] = []
         let height = app.frame.height
         let keyboard = app.keyboards.firstMatch.exists ? app.keyboards.firstMatch.frame : .null
         try app.performAccessibilityAudit(for: types) { issue in
             if Self.known(issue, screen: screen, screenHeight: height, keyboard: keyboard) { return true }
-            kept.append("\(screen): \(issue.compactDescription) – \(issue.element?.debugDescription ?? "no element")")
+            // Said as it is found: the audit throws once it is done, so a
+            // list printed after it never was.
+            print("audit kept \(screen): \(issue.compactDescription) – \(issue.element?.debugDescription ?? "no element")")
             return false
         }
-        if !kept.isEmpty { print(kept.joined(separator: "\n")) }
     }
 
     /// The sheet brought up to its full height, so the audit reads what
