@@ -81,8 +81,8 @@ enum SheetPage: Hashable {
     }
 }
 
-/// What each page of the sheet's stack draws, its close going back one
-/// level (closesBack); a card grows out of the row it was opened from.
+/// What each page of the sheet's stack draws, the system's Back going
+/// back one level; a card grows out of the row it was opened from.
 struct SheetPageView: View {
     let page: SheetPage
     let nearest: [NearestAirport]
@@ -91,18 +91,18 @@ struct SheetPageView: View {
     var body: some View {
         switch page {
         case .airport(let text):
-            AirportDestination(route: AirportRoute(text), nearest: nearest).closesBack().zoomsFrom(text)
+            AirportDestination(route: AirportRoute(text), nearest: nearest).navigationBarTitleDisplayMode(.inline).zoomsFrom(text)
         case .screen(let screen):
-            ScreenPage(screen: screen, nearest: nearest).closesBack()
+            ScreenPage(screen: screen, nearest: nearest).navigationBarTitleDisplayMode(.inline)
         case .leg(let leg):
-            LegDetailView(leg: leg).closesBack().zoomsFrom(leg.id)
+            LegDetailView(leg: leg).navigationBarTitleDisplayMode(.inline).zoomsFrom(leg.id)
         case .flight(let name):
-            FlightPage(name: name).closesBack()
-        case .notams(let source): NotamListView(source: source).closesBack()
-        case .practice: PracticeView().closesBack()
-        case .training: TrainingView().closesBack()
-        case .instructing: InstructorView().closesBack()
-        case .contact: ContactView().closesBack()
+            FlightPage(name: name).navigationBarTitleDisplayMode(.inline)
+        case .notams(let source): NotamListView(source: source).navigationBarTitleDisplayMode(.inline)
+        case .practice: PracticeView().navigationBarTitleDisplayMode(.inline)
+        case .training: TrainingView().navigationBarTitleDisplayMode(.inline)
+        case .instructing: InstructorView().navigationBarTitleDisplayMode(.inline)
+        case .contact: ContactView().navigationBarTitleDisplayMode(.inline)
         }
     }
 }

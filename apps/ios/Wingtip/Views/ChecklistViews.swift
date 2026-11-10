@@ -88,12 +88,12 @@ struct ChecklistRows: View {
 
     var body: some View {
         NavigationLink {
-            ChecklistView(airplane: airplane, kind: .normal).closesBack()
+            ChecklistView(airplane: airplane, kind: .normal).navigationBarTitleDisplayMode(.inline)
         } label: {
             Label("Checklist", systemImage: "checklist")
         }
         NavigationLink {
-            ChecklistView(airplane: airplane, kind: .emergency).closesBack()
+            ChecklistView(airplane: airplane, kind: .emergency).navigationBarTitleDisplayMode(.inline)
         } label: {
             Label("Emergency", systemImage: "exclamationmark.triangle")
         }

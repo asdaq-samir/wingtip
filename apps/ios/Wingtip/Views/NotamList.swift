@@ -28,7 +28,7 @@ struct NotamListView: View {
                 ForEach(NotamFilter.places(shown, source: source), id: \.title) { place in
                     Section {
                         ForEach(place.notams, id: \.id) { notam in
-                            NavigationLink { NotamDetailView(notam: notam).closesBack() } label: { NotamRow(notam: notam) }
+                            NavigationLink { NotamDetailView(notam: notam).navigationBarTitleDisplayMode(.inline) } label: { NotamRow(notam: notam) }
                         }
                     } header: {
                         Text("\(place.title) · \(place.notams.count)")

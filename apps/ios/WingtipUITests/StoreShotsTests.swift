@@ -58,8 +58,8 @@ final class StoreShotsTests: XCTestCase {
         tail.tap()
         tail.typeText("N3429J\n")
         Thread.sleep(forTimeInterval: 8)
-        // The Airplane page closed: back to the plan under it.
-        app.buttons["Close"].firstMatch.tap()
+        // The Airplane page left by the system's Back: the plan under it.
+        app.navigationBars.buttons.element(boundBy: 0).tap()
         plan(app)
         // The sheet drawn down to its lowest detent, so the chart and the
         // route over it fill the screen.
@@ -77,7 +77,7 @@ final class StoreShotsTests: XCTestCase {
         let navLog = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Nav Log'")).firstMatch
         XCTAssertTrue(navLog.waitForExistence(timeout: Self.planner))
         save(app, "03-navlog", settle: 8)
-        app.buttons["Close"].firstMatch.tap()
+        app.navigationBars.buttons.element(boundBy: 0).tap()
         Thread.sleep(forTimeInterval: 2)
         let brief = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'Brief'")).firstMatch
         XCTAssertTrue(brief.waitForExistence(timeout: Self.planner))

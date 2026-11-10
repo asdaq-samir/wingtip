@@ -54,7 +54,7 @@ struct AirplaneProfileView: View {
                 if let record = Airplanes.shared.record(model.tail) {
                     Section {
                         NavigationLink("Checklists, Squawks and Inspections") {
-                            OwnAircraftPage(record: record) { Task { await Airplanes.shared.loadRecords(signedIn: session.signedIn) } }.closesBack()
+                            OwnAircraftPage(record: record) { Task { await Airplanes.shared.loadRecords(signedIn: session.signedIn) } }.navigationBarTitleDisplayMode(.inline)
                         }
                     }
                 }

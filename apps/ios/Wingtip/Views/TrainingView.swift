@@ -174,7 +174,7 @@ struct TrainingView: View {
                 }
                 if !taken.isEmpty {
                     NavigationLink("Ask for a Review") {
-                        ReviewAskView(instructors: taken) { request in await act { try await Gateway.askReview(request) } }.closesBack()
+                        ReviewAskView(instructors: taken) { request in await act { try await Gateway.askReview(request) } }.navigationBarTitleDisplayMode(.inline)
                     }
                 }
             }

@@ -190,7 +190,7 @@ struct AirplaneCard: View {
             // inspector (iPad) holds it.
             .closeButton { FlightUI.shared.card = nil }
             // A flown flight's card grows out of its row (CardZoom).
-            .navigationDestination(for: PastFlightSummary.self) { flight in PastFlightCard(hex: hex, flight: flight).closesBack().zoomsFrom(flight) }
+            .navigationDestination(for: PastFlightSummary.self) { flight in PastFlightCard(hex: hex, flight: flight).navigationBarTitleDisplayMode(.inline).zoomsFrom(flight) }
             .task(id: hex) { await load() }
             // Its latest tower departure event, by the ident it files
             // under: its callsign, else its registration (the web's FlightCard).

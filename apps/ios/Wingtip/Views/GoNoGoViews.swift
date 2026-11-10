@@ -181,9 +181,9 @@ struct GoNoGoSection: View {
         case .section(let anchor)?:
             Button { open(anchor) } label: { content }.buttonStyle(.plain)
         case .loading?:
-            NavigationLink { LoadingView().closesBack() } label: { content }
+            NavigationLink { LoadingView().navigationBarTitleDisplayMode(.inline) } label: { content }
         case .risk?:
-            NavigationLink { RiskView().closesBack() } label: { content }
+            NavigationLink { RiskView().navigationBarTitleDisplayMode(.inline) } label: { content }
         case .airplane?:
             AirplaneFiguresLink { content }
         case nil:
@@ -232,9 +232,9 @@ struct FindingFold: View {
             case .section(let anchor)?:
                 Button("See the reports") { open(anchor) }
             case .loading?:
-                NavigationLink("See the loading") { LoadingView().closesBack() }
+                NavigationLink("See the loading") { LoadingView().navigationBarTitleDisplayMode(.inline) }
             case .risk?:
-                NavigationLink("See the risk assessment") { RiskView().closesBack() }
+                NavigationLink("See the risk assessment") { RiskView().navigationBarTitleDisplayMode(.inline) }
             case .airplane?:
                 AirplaneFiguresLink { Text("See the Airplane's Figures") }
             case nil:

@@ -52,7 +52,7 @@ struct InstructorView: View {
                     if instructor.students.isEmpty { Text("None yet").foregroundStyle(.secondary) }
                     ForEach(instructor.students) { s in
                         NavigationLink {
-                            StudentView(row: s, instructor: instructor) { await act { try await Gateway.instructor() } }.closesBack()
+                            StudentView(row: s, instructor: instructor) { await act { try await Gateway.instructor() } }.navigationBarTitleDisplayMode(.inline)
                         } label: {
                             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                 Text(s.name)
@@ -223,7 +223,7 @@ struct StudentView: View {
                             training = next
                             await onChange()
                         }
-                        .closesBack()
+                        .navigationBarTitleDisplayMode(.inline)
                     } label: {
                         VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text(kind.label)
@@ -279,7 +279,7 @@ struct ReviewSection: View {
             }
             NavigationLink("Endorse This Flight") {
                 SignView(kind: kind, studentId: studentId, studentName: studentName, instructor: instructor,
-                         initial: Endorsing.reviewFields(review), reviewId: review.id) { next in await onDone(next) }.closesBack()
+                         initial: Endorsing.reviewFields(review), reviewId: review.id) { next in await onDone(next) }.navigationBarTitleDisplayMode(.inline)
             }
             if declining {
                 TextField("Why, and what to change", text: $note, axis: .vertical).lineLimit(2...5)

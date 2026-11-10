@@ -151,7 +151,7 @@ extension View {
     /// The existing airplane picker and altitude wheel, over the screen.
     func readyToFlyPickers(picking: Binding<Bool>, altitude: Binding<Bool>) -> some View {
         sheet(isPresented: picking) { AircraftView() }
-            .sheet(isPresented: altitude) { NavigationStack { ProfileCard().closesBack() } }
+            .sheet(isPresented: altitude) { NavigationStack { ProfileCard().navigationBarTitleDisplayMode(.inline) } }
     }
 }
 

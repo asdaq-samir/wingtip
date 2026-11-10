@@ -77,7 +77,7 @@ struct StripSheetView: View {
                 .navigationDestination(for: StripPage.self) { page in
                     pageView(page)
                         .navigationTitle(page.title)
-                        .closesBack()
+                        .navigationBarTitleDisplayMode(.inline)
                 }
                 // A card's own links (a field's NOTAMs, Ready to Fly's
                 // Brief) push here as they do on the plan's sheet.

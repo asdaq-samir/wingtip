@@ -39,17 +39,17 @@ struct SetupView: View {
             // and the drills, each a row here as well as in its home.
             Section("Flying") {
                 EmergencyAssistantRow()
-                NavigationLink { ChecklistsPage().closesBack() } label: { SettingsLabel(Screen.checklists.title, systemImage: "checklist", colour: WingtipColor.Badge.ground) }
-                NavigationLink { FlightsView().closesBack() } label: { SettingsLabel(Screen.flights.title, systemImage: "tray.full", colour: WingtipColor.Badge.tower) }
-                NavigationLink { OwnAircraftListView().closesBack() } label: { SettingsLabel(Screen.airplanes.title, systemImage: WingtipIcon.airplane, colour: WingtipColor.Badge.approach) }
-                NavigationLink { PracticeView().closesBack() } label: { SettingsLabel("Practice", systemImage: "figure.walk.motion", colour: WingtipColor.Badge.traffic) }
+                NavigationLink { ChecklistsPage().navigationBarTitleDisplayMode(.inline) } label: { SettingsLabel(Screen.checklists.title, systemImage: "checklist", colour: WingtipColor.Badge.ground) }
+                NavigationLink { FlightsView().navigationBarTitleDisplayMode(.inline) } label: { SettingsLabel(Screen.flights.title, systemImage: "tray.full", colour: WingtipColor.Badge.tower) }
+                NavigationLink { OwnAircraftListView().navigationBarTitleDisplayMode(.inline) } label: { SettingsLabel(Screen.airplanes.title, systemImage: WingtipIcon.airplane, colour: WingtipColor.Badge.approach) }
+                NavigationLink { PracticeView().navigationBarTitleDisplayMode(.inline) } label: { SettingsLabel("Practice", systemImage: "figure.walk.motion", colour: WingtipColor.Badge.traffic) }
             }
             if session.signedIn {
                 Section("Pilot") {
-                    NavigationLink { LogbookView().closesBack() } label: { SettingsLabel("Logbook and Currency", systemImage: "book", colour: WingtipColor.Badge.fuel) }
-                    NavigationLink { TrainingView().closesBack() } label: { SettingsLabel("Training", systemImage: "graduationcap", colour: WingtipColor.Badge.lodging) }
-                    NavigationLink { InstructorView().closesBack() } label: { SettingsLabel("Instructing", systemImage: "person.2", colour: WingtipColor.Badge.ground) }
-                    NavigationLink { CoachView().closesBack() } label: { SettingsLabel("Coach", systemImage: "brain.head.profile", colour: WingtipColor.Badge.food) }
+                    NavigationLink { LogbookView().navigationBarTitleDisplayMode(.inline) } label: { SettingsLabel("Logbook and Currency", systemImage: "book", colour: WingtipColor.Badge.fuel) }
+                    NavigationLink { TrainingView().navigationBarTitleDisplayMode(.inline) } label: { SettingsLabel("Training", systemImage: "graduationcap", colour: WingtipColor.Badge.lodging) }
+                    NavigationLink { InstructorView().navigationBarTitleDisplayMode(.inline) } label: { SettingsLabel("Instructing", systemImage: "person.2", colour: WingtipColor.Badge.ground) }
+                    NavigationLink { CoachView().navigationBarTitleDisplayMode(.inline) } label: { SettingsLabel("Coach", systemImage: "brain.head.profile", colour: WingtipColor.Badge.food) }
                 }
             }
             // The weather the pilot will not take off or land in, kept
@@ -57,8 +57,8 @@ struct SetupView: View {
             // Here alone (docs/decisions/0014, one home per control): the
             // Brief's own link to it is gone (the UI audit, 2026-11-09).
             Section {
-                NavigationLink { MinimumsView().closesBack() } label: { SettingsLabel("Personal Minimums", systemImage: "cloud.sun", colour: WingtipColor.Badge.weather) }
-                NavigationLink { PilotGuideView().closesBack() } label: { SettingsLabel("Guide", systemImage: "questionmark.circle", colour: WingtipColor.Badge.rule) }
+                NavigationLink { MinimumsView().navigationBarTitleDisplayMode(.inline) } label: { SettingsLabel("Personal Minimums", systemImage: "cloud.sun", colour: WingtipColor.Badge.weather) }
+                NavigationLink { PilotGuideView().navigationBarTitleDisplayMode(.inline) } label: { SettingsLabel("Guide", systemImage: "questionmark.circle", colour: WingtipColor.Badge.rule) }
                 // The first launch's welcome, shown again from here alone.
                 Button("Show Welcome Again") { WelcomeModel.shared.again() }
             }
@@ -127,7 +127,7 @@ struct SetupView: View {
                     LabeledContent("Edition", value: "Fetching…")
                 }
                 // Regions' charts kept for flying with no signal.
-                NavigationLink { DownloadsView().closesBack() } label: { SettingsLabel("Downloads", systemImage: "arrow.down.circle", colour: WingtipColor.Badge.chart) }
+                NavigationLink { DownloadsView().navigationBarTitleDisplayMode(.inline) } label: { SettingsLabel("Downloads", systemImage: "arrow.down.circle", colour: WingtipColor.Badge.chart) }
                 ProblemLine(charts.problem)
             }
             Section {
@@ -136,7 +136,7 @@ struct SetupView: View {
                 // The build, the data's cycles, the planning aid's words,
                 // the credits, the legal pages and the demo flight, as
                 // Settings > General > About has them.
-                NavigationLink { AboutView().closesBack() } label: { SettingsLabel("About", systemImage: "info.circle", colour: WingtipColor.Badge.other) }
+                NavigationLink { AboutView().navigationBarTitleDisplayMode(.inline) } label: { SettingsLabel("About", systemImage: "info.circle", colour: WingtipColor.Badge.other) }
             }
         }
         .listStyle(.insetGrouped)

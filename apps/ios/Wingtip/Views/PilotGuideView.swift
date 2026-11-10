@@ -29,7 +29,7 @@ struct PilotGuideView: View {
             }
             Section("Practice") { PracticeRows() }
             Section("More") {
-                NavigationLink("Your airplane in the day's air") { AirplaneInTheAirView().closesBack() }
+                NavigationLink("Your airplane in the day's air") { AirplaneInTheAirView().navigationBarTitleDisplayMode(.inline) }
             }
         }
         .navigationTitle("Guide")

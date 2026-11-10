@@ -26,7 +26,7 @@ struct DiversionView: View {
             Section(fields.isEmpty ? "" : "Nearest to you") {
                 ForEach(fields) { field in
                     HStack {
-                        NavigationLink { AirportCard(ident: field.ident).closesBack().zoomsFrom(field.ident) } label: { NearestRow(field: field).cardSource(field.ident) }
+                        NavigationLink { AirportCard(ident: field.ident).navigationBarTitleDisplayMode(.inline).zoomsFrom(field.ident) } label: { NearestRow(field: field).cardSource(field.ident) }
                     }
                     .swipeActions(edge: .leading) {
                         Button("Divert") { divert(field.ident) }.tint(WingtipInk.caution)
@@ -39,7 +39,7 @@ struct DiversionView: View {
             ProblemLine(problem)
             // The checkride's diversion from here, worked by the planner.
             Section {
-                NavigationLink { DiversionDrillView().closesBack() } label: { Label("Diversion Drill", systemImage: "timer") }
+                NavigationLink { DiversionDrillView().navigationBarTitleDisplayMode(.inline) } label: { Label("Diversion Drill", systemImage: "timer") }
             }
         }
         .navigationTitle("Nearest")
