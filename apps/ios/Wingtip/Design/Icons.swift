@@ -27,9 +27,13 @@ enum WingtipIcon {
     static let copy = "doc.on.doc"
     static let send = "paperplane"
 
-    // The panel's tabs (TAB_ICON).
-    static let tabFPL = flightPlan
-    static let tabAirport = "airplane.departure"
-    static let tabAirplane = "airplane"
-    static let tabSetup = "gearshape"
+    // The one search's rows and the airport card's (the one-search
+    // design, 2026-11-09): what was each tab's glyph is now its kind's.
+    static let departFrom = "airplane.departure"
+    static let airplane = "airplane"
+    static let settings = "gearshape"
+    static let account = "person.crop.circle"
+    static let microphone = "mic"
+    static let ask = "sparkles"
+    static let waypoint = "triangle"
 }

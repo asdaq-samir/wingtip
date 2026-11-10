@@ -1,0 +1,150 @@
+import SwiftUI
+
+/// The fields' pages a card or the one search opens (AirportRoute): a
+/// field's card, the airspace over a point, a list of fields in full, the
+/// fields near a town, and the row a near field is drawn in. Each row
+/// opens its field's card on the sheet's stack (SheetPage.airport).
+
+/// What the stack opens, by its route.
+struct AirportDestination: View {
+    let route: AirportRoute
+    let nearest: [NearestAirport]
+
+    var body: some View {
+        switch route {
+        case .airport(let ident): AirportCard(ident: ident, distanceNm: nearest.first { $0.ident == ident }?.distanceNm)
+        case .airspace(let lat, let lon): AirspaceCard(lat: lat, lon: lon)
+        case .list(let shows): AirportListView(shows: shows, nearest: nearest)
+        case .nearFrom(let lat, let lon, let label): NearFromView(lat: lat, lon: lon, label: label)
+        }
+    }
+}
+
+/// A strip's list in full: the Favorites to change and put in order, the
+/// Recents to take off, the nearest fields.
+struct AirportListView: View {
+    let shows: AirportShelf.Shows
+    let nearest: [NearestAirport]
+    private var shelf: AirportShelf { .shared }
+
+    var body: some View {
+        List {
+            switch shows {
+            case .favorites:
+                if shelf.favorites.isEmpty { Text("No Favorites").foregroundStyle(.secondary) }
+                ForEach(shelf.favorites) { field in NavigationLink(value: SheetPage.airport(field.ident)) { keptRow(field) }.cardSource(field.ident).airportPreview(field.ident).siriSees(SiriSaw.airport(field.ident)) }
+                    .onDelete { shelf.removeFavorites(at: $0) }
+                    .onMove { shelf.moveFavorites(from: $0, to: $1) }
+            case .recents:
+                if shelf.recents.isEmpty { Text("No Recents").foregroundStyle(.secondary) }
+                ForEach(shelf.recents) { field in NavigationLink(value: SheetPage.airport(field.ident)) { keptRow(field) }.cardSource(field.ident).airportPreview(field.ident).siriSees(SiriSaw.airport(field.ident)) }
+                    .onDelete { shelf.removeRecents(at: $0) }
+            case .nearest:
+                if nearest.isEmpty { Text("Waiting for the position").foregroundStyle(.secondary) }
+                ForEach(nearest) { field in NavigationLink(value: SheetPage.airport(field.ident)) { NearestRow(field: field) }.cardSource(field.ident).airportPreview(field.ident).siriSees(SiriSaw.airport(field.ident)) }
+            }
+        }
+        .navigationTitle(shows.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if shows == .favorites, !shelf.favorites.isEmpty { EditButton() }
+            if shows == .recents, !shelf.recents.isEmpty { Button("Clear") { shelf.clearRecents() } }
+        }
+    }
+
+    private func keptRow(_ field: KeptAirport) -> some View {
+        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+            Text(field.ident).font(.headline)
+            Text([field.name, field.municipality].compactMap { $0 }.joined(separator: " · ")).font(.subheadline).foregroundStyle(.secondary)
+        }
+    }
+}
+
+/// The fields nearest a town or an address typed in the search, nearest
+/// first, as the planner measures them from it.
+struct NearFromView: View {
+    let lat: Double
+    let lon: Double
+    let label: String
+    @State private var fields: [NearestAirport]?
+    @State private var problem: String?
+
+    var body: some View {
+        List {
+            if let fields {
+                Section(title: "Nearest \(label)") {
+                    ForEach(fields) { field in NavigationLink(value: SheetPage.airport(field.ident)) { NearestRow(field: field) }.cardSource(field.ident).airportPreview(field.ident).siriSees(SiriSaw.airport(field.ident)) }
+                }
+            } else if let problem {
+                ProblemLine(problem)
+            } else {
+                Skeleton(rows: 4, label: "Fetching the nearest fields")
+            }
+        }
+        .navigationTitle("Nearest")
+        .navigationBarTitleDisplayMode(.inline)
+        .task(id: label) {
+            do { fields = try await Planner.nearest(lat: lat, lon: lon, limit: 25) } catch { problem = error.localizedDescription }
+        }
+    }
+}
+
+/// A field near the phone: its identifier and name, how far and which
+/// way (true, as the planner gives it), and its longest runway, with its
+/// flight category's colour.
+struct NearestRow: View {
+    let field: NearestAirport
+    /// Differentiate Without Color: the category's code beside the ident,
+    /// where the ring's colour alone says it otherwise.
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var withoutColour
+
+    var body: some View {
+        let bearing = field.bearingDeg.truncatingRemainder(dividingBy: 360)
+        HStack(spacing: WingtipSpace.md) {
+            Circle().strokeBorder(Color(uiColor: FlightCategory.mark(field.flightCategory)), lineWidth: 2.5).frame(width: 12, height: 12)
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                HStack(spacing: WingtipSpace.sm) {
+                    Text(field.ident).font(.headline)
+                    if withoutColour, let category = field.flightCategory { Text(category).font(.caption.weight(.semibold)).foregroundStyle(.secondary) }
+                }
+                Text([field.name, field.longestRunwayFt.map { Format.altitude(Double($0)) }].compactMap { $0 }.joined(separator: " · "))
+                    .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: WingtipSpace.xxs) {
+                Text(Format.distance(field.distanceNm, decimals: 0)).font(.body.monospacedDigit())
+                Text("\(Format.heading(bearing))T").font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
+            }
+        }
+        // One row, read as a pilot would say it: the ident, its weather,
+        // the field, the runway, how far and which way.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel([field.ident, SpokenFigures.flightCategory(field.flightCategory), field.name,
+                             field.longestRunwayFt.map { "longest runway \(SpokenFigures.feet(Double($0)))" },
+                             SpokenFigures.nauticalMiles(field.distanceNm.rounded()), "bearing \(SpokenFigures.degrees(bearing)) true"]
+                .compactMap { $0 }.joined(separator: ", "))
+    }
+}
+
+private enum PreviewData {
+    static let nearest = [
+        NearestAirport(bearingDeg: 312, distanceNm: 3.2, flightCategory: "VFR", ident: "KDLH", kind: "large_airport",
+                       lat: 46.842, lon: -92.194, longestRunwayFt: 10162, municipality: "Duluth", name: "Duluth Intl"),
+        NearestAirport(bearingDeg: 174, distanceNm: 8.9, flightCategory: "MVFR", ident: "KSUW", kind: "medium_airport",
+                       lat: 46.690, lon: -92.095, longestRunwayFt: 5100, municipality: "Superior", name: "Richard I Bong"),
+        NearestAirport(bearingDeg: 52, distanceNm: 22.7, ident: "KTWM", kind: "small_airport", lat: 47.049, lon: -91.745,
+                       longestRunwayFt: 4000, municipality: "Two Harbors", name: "Richard B Helgeson"),
+    ]
+}
+
+#Preview("AirportDestination") {
+    NavigationStack { AirportDestination(route: .list(.nearest), nearest: PreviewData.nearest) }
+}
+
+#Preview("AirportListView") {
+    NavigationStack { AirportListView(shows: .nearest, nearest: PreviewData.nearest) }
+}
+
+#Preview("NearestRow") {
+    List { ForEach(PreviewData.nearest) { NearestRow(field: $0) } }
+}

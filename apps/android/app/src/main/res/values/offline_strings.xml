@@ -2,7 +2,6 @@
 <!-- Setup → Downloads (offline/): the charts of a region kept for flying with no signal. -->
 <resources>
     <string name="offline_downloads">Downloads</string>
-    <string name="offline_downloads_line">Charts kept for flying with no signal</string>
     <string name="offline_on_phone">On This Phone</string>
     <string name="offline_charts">Charts</string>
     <string name="offline_sheets">Sectional Sheets</string>

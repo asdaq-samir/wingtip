@@ -9,7 +9,7 @@ import SwiftUI
 /// the last bubble, and the answer's text appends as it streams. A
 /// question is typed, or said once through the microphone
 /// (ClearanceListener.hearOnce). Presented as a sheet, from the sparkle
-/// button beside the microphone on the map (RootView's owner places it):
+/// button on the map or the one search's "Ask: …" (RootView places it):
 /// `.sheet(isPresented:) { AskView() }`, with Plan, OwnShip, Session and
 /// Verdict in the environment as the root puts them.
 struct AskView: View {
@@ -30,6 +30,9 @@ struct AskView: View {
     @State private var micProblem: String?
     @FocusState private var typing: Bool
     private var listener: ClearanceListener { ClearanceListener.shared }
+    /// The question the one search sent ("Ask: …"), asked as the sheet
+    /// opens; nil opened from the map's sparkle or a link.
+    var first: String?
 
     /// What a pilot asks first, offered while there is nothing to read.
     static let suggestions = [
@@ -54,6 +57,7 @@ struct AskView: View {
             .closeButton { dismiss() }
             .toolbar { ToolbarItem(placement: .topBarLeading) { AskWherePicker() } }
             .sheet(item: $source) { source in SourceSheet(source: source) }
+            .task { if let first, client.turns.isEmpty { send(first) } }
             .onDisappear { client.cancel() }
         }
     }

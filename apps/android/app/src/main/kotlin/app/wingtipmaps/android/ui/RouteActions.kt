@@ -13,6 +13,7 @@ import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.map.MapPick
+import app.wingtipmaps.android.route.departFrom
 
 /**
  * What a card's actions do with the route (Plan's route edits) and the
@@ -29,11 +30,12 @@ class RouteActions(
     private val context: Context,
     private val haptics: Haptics? = null,
 ) {
-    /** Where Fly Here starts: the airplane, else the route's departure. */
+    /** Where Fly Here starts: the airplane, else the route's departure;
+     *  none, and the plan asks where from. */
     private val from: String? get() = fix?.let(Plan::positionIdent) ?: plan.state.value.dep.ifEmpty { null }
 
     fun canAirport(action: CardAction, place: AirportPlace?): Boolean = when (action) {
-        CardAction.FLY_HERE -> place != null && from != null
+        CardAction.FLY_HERE, CardAction.DEPART_FROM -> place != null
         CardAction.ADD_STOP -> place != null && routed
         CardAction.CALL -> !place?.phone.isNullOrBlank()
         CardAction.ADDRESS -> place != null
@@ -42,10 +44,11 @@ class RouteActions(
 
     fun airport(action: CardAction, place: AirportPlace) {
         when (action) {
-            CardAction.FLY_HERE -> from?.let {
-                plan.flyHere(place.ident, it)
+            CardAction.FLY_HERE -> {
+                plan.flyHere(place.ident, from.orEmpty())
                 haptics?.tap(WingtipHaptic.DIRECT_TO)
             }
+            CardAction.DEPART_FROM -> plan.departFrom(place.ident)
             CardAction.ADD_STOP -> plan.addToRoute(Plan.ChartPoint(place.ident, place.lat, place.lon))
             CardAction.CALL -> place.phone?.let { CardIntents.call(context, it) }
             CardAction.ADDRESS -> CardIntents.address(context, place.lat, place.lon, place.address ?: place.name)

@@ -11,14 +11,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * The screen's layout, the tabs or the strip (StripLayout: one field and
+ * The screen's layout, the plan under the one search (the owner's of
+ * 2026-11-09) or the strip (StripLayout: one field and
  * the flight as one strip, the owner's pick of 2026-11-04), kept in
  * SharedPreferences under the web app's key "layout" and held in one
  * StateFlow, so the root and Setup's Screen row, which sits inside
  * either layout, see the same value the moment it changes.
  */
 object LayoutPreference {
-    const val TABS = "tabs"
+    const val PLAN = "plan"
     const val STRIP = "strip"
     private const val KEY = "layout"
 
@@ -27,7 +28,7 @@ object LayoutPreference {
     /** The layout as kept, read once from disk the first time it is asked. */
     fun flow(context: Context): StateFlow<String?> {
         if (state.value == null) {
-            state.value = context.getSharedPreferences("wingtip", Context.MODE_PRIVATE).getString(KEY, TABS) ?: TABS
+            state.value = context.getSharedPreferences("wingtip", Context.MODE_PRIVATE).getString(KEY, PLAN) ?: PLAN
         }
         return state.asStateFlow()
     }
@@ -38,7 +39,7 @@ object LayoutPreference {
     }
 }
 
-/** The layout as a Compose state, "tabs" until the disk has been read. */
+/** The layout as a Compose state, "plan" until the disk has been read. */
 @Composable
 fun rememberLayout(): State<String?> {
     val context = LocalContext.current

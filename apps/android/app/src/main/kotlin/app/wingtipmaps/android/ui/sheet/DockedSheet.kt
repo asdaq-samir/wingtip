@@ -60,7 +60,7 @@ import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.roundToInt
 
-/** Where the docked sheet rests: the pill (the figures and the tabs'
+/** Where the docked sheet rests: the pill (the one search's
  *  names), half the screen, or the whole of it (decision 0018). */
 enum class SheetStop { PILL, HALF, FULL }
 

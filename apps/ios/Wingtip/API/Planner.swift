@@ -181,9 +181,11 @@ enum Planner {
         try await fetch(TrafficAnswer.self, "/api/traffic", ["lat": String(lat), "lon": String(lon), "radius": String(Int(radiusNm.rounded()))])
     }
 
-    /// Fields by ident or name as they are typed (/api/airports/search).
-    static func search(_ q: String) async throws -> [AirportSuggestion] {
-        return try await fetch(APIAirportSearch.self, "/api/airports/search", ["q": q]).airports
+    /// Fields by ident or name as they are typed (/api/airports/search);
+    /// with `fixes`, the named fixes too (VFR and GPS waypoints, `kind`
+    /// "fix"), for the one search's Waypoints group.
+    static func search(_ q: String, fixes: Bool = false) async throws -> [AirportSuggestion] {
+        return try await fetch(APIAirportSearch.self, "/api/airports/search", ["q": q, "fixes": fixes ? "true" : nil]).airports
     }
 
     /// A field's card: its weather, runways, frequencies and pattern

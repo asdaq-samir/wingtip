@@ -14,17 +14,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
-import app.wingtipmaps.android.ui.sheet.WingtipSheet
+import app.wingtipmaps.android.ui.sheet.CardSheet
 import kotlinx.coroutines.launch
 
 /**
- * Where the airplane's profile opens over whatever the pilot was on
- * (ProfileOpen), so closing it goes back there; and, once signed in, the
+ * Where the airplane's card (AirplaneCard) opens over whatever the pilot
+ * was on (ProfileOpen), so closing it goes back there, its Fly This
+ * Airplane showing the plan (`onFlown`); and, once signed in, the
  * offer to keep with the account the airplanes kept on this phone while
  * signed out. The pilot's airplanes are asked again at every sign-in or out.
  */
 @Composable
-fun AirplaneProfileHost(plan: Plan, session: Session) {
+fun AirplaneProfileHost(plan: Plan, session: Session, inSheet: Boolean, onFlown: () -> Unit) {
     val context = LocalContext.current
     val own = remember(context) { OwnAirplanes.of(context) }
     val pilot by session.pilot.collectAsStateWithLifecycle()
@@ -40,10 +41,12 @@ fun AirplaneProfileHost(plan: Plan, session: Session) {
             dismissButton = { TextButton(onClick = own::notNow) { Text(stringResource(R.string.not_now)) } },
         )
     }
+    // The card is the docked sheet's own page where there is one
+    // (`inSheet`: PlanSheet, the wide panes); else a card sheet over the map.
+    if (inSheet) return
     val at by ProfileOpen.at.collectAsStateWithLifecycle()
     val open = at ?: return
-    val airplane = rememberAirplaneOf(open.tail, plan)
-    WingtipSheet(title = airplane.name ?: stringResource(R.string.profile_airplane), onClose = ProfileOpen::close, full = true) {
-        AirplaneProfileScreen(airplane, open.focus)
+    CardSheet(onClose = ProfileOpen::close) {
+        AirplaneCard(open, plan, onClose = ProfileOpen::close, onFlown = { ProfileOpen.close(); onFlown() })
     }
 }

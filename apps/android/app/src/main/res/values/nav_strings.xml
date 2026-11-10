@@ -5,7 +5,6 @@
      logbook's edit in the row, the frequencies' Copy and the alerts' fixes.
      The verbs are every platform's: Edit, Delete, Move, Undo, Copy. -->
 <resources>
-    <string name="checklists_line">The airplane picked\'s checklists</string>
     <string name="emergency_assistant_ground_line">The nearest fields, the checklist, 7700 and 121.5</string>
 
     <string name="undo">Undo</string>
@@ -27,6 +26,7 @@
     <string name="undo_moved">Moved %1$s</string>
     <string name="undo_added">Added %1$s</string>
     <string name="undo_fly_here">New route to %1$s</string>
+    <string name="undo_depart_from">Departing %1$s</string>
 
     <string name="logbook_deleted">Deleted %1$s</string>
     <string name="logbook_remarks">Remarks</string>

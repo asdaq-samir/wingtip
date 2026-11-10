@@ -64,7 +64,7 @@ fun LogbookEntryRow(e: LogbookEntryDto, state: LogbookModel.State, model: Logboo
     Column(Modifier.fillMaxWidth().padding(vertical = WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
         Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             Field(R.string.flight_logged_date, form.date, Modifier.weight(1f)) { form = form.copy(date = it) }
-            Field(R.string.tab_airplane, form.airplane, Modifier.weight(1f), letters = true) { form = form.copy(airplane = it) }
+            Field(R.string.airplane, form.airplane, Modifier.weight(1f), letters = true) { form = form.copy(airplane = it) }
         }
         Field(R.string.flight_logged_route, form.route, Modifier.fillMaxWidth(), letters = true) { form = form.copy(route = it) }
         Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {

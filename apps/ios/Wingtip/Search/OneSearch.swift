@@ -1,0 +1,131 @@
+import SwiftUI
+
+/// Where the one search's picks go, the host's to say: the plan's sheet
+/// pushes pages on its stack (PlanSheet), the strip on its own.
+@MainActor
+struct SearchHost {
+    /// A field's or a point's card, or a list of fields, as AirportRoute
+    /// writes it.
+    var card: (String) -> Void
+    /// The plan in sight: the sheet's root.
+    var showPlan: () -> Void
+    /// A page of the account menu's, or the Airplane page for a type.
+    var page: (SheetPage) -> Void
+    /// A screen by its name (a Do row).
+    var screen: (Screen) -> Void
+    /// A screen by the word typed or said (FieldCommands); why not where
+    /// it cannot open yet.
+    var field: (FieldScreen) -> String?
+    /// The question for the assistant.
+    var ask: (String) -> Void
+}
+
+extension View {
+    /// The one search on this screen of a NavigationStack (the owner's
+    /// one-search design, 2026-11-09): the system's search field in the
+    /// bar, "Search airports, airplanes, or ask", its suggestions grouped
+    /// in the system's list under it, the microphone and the account
+    /// button beside it. The iPhone's sheet, its strip and the iPad's
+    /// sidebar all put it here, so there is one search.
+    func oneSearch(_ model: OneSearchModel, host: SearchHost) -> some View {
+        modifier(OneSearch(model: model, host: host))
+    }
+}
+
+/// The one search, stock throughout: `.searchable` in the stack's
+/// navigation bar drawer, always shown, with `.searchSuggestions`, as
+/// iOS 18 to 27 draw them (SwiftUI's SearchFieldPlacement and
+/// searchSuggestions, unchanged in the iOS 27.2 SDK).
+struct OneSearch: ViewModifier {
+    @Bindable var model: OneSearchModel
+    let host: SearchHost
+    @Environment(Plan.self) private var plan
+    @Environment(OwnShip.self) private var ownShip
+    @Environment(Session.self) private var session
+    @State private var profile: ProfileAsk?
+    private var listener: ClearanceListener { .shared }
+
+    private var runner: FieldRunner {
+        FieldRunner(plan: plan, ownShip: ownShip, session: session, open: host.field,
+                    card: { host.card($0) }, ask: { host.ask($0) }, showPlan: { host.showPlan() })
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .searchable(text: $model.text, isPresented: $model.presented,
+                        placement: .navigationBarDrawer(displayMode: .always), prompt: Text(OneSearchModel.prompt))
+            .searchSuggestions {
+                if let problem = model.problem {
+                    Section { ProblemLine(problem) }
+                }
+                SearchSuggestions(model: model, pick: pick)
+            }
+            // Idents, names, N-numbers and questions alike: nothing
+            // corrected or capitalised for the pilot (FieldCommands reads
+            // three letters in capitals as a field, small as a word).
+            .autocorrectionDisabled()
+            .onSubmit(of: .search) { Task { await send(model.text) } }
+            .onChange(of: model.text) { _, _ in model.problem = nil; model.typed() }
+            .toolbar {
+                SearchBarItems(model: model, hear: listener.canListen ? { Task { await hear() } } : nil, open: host.page)
+            }
+            .airplaneProfile($profile)
+            .task { await model.loadTypes() }
+            // The nearest fields from where the airplane is, asked again
+            // once it has moved a mile.
+            .task(id: ownShip.fix.map { "\(($0.coordinate.latitude * 60).rounded()),\(($0.coordinate.longitude * 60).rounded())" }) {
+                await model.findNearest(ownShip.fix)
+            }
+            .accessibilityIdentifier("one-search")
+    }
+
+    private func pick(_ picked: SearchPick) {
+        model.close()
+        switch picked {
+        case .airport(let route): host.card(route)
+        case .plan: host.showPlan()
+        case .directTo(let ident): runner.directTo(ident)
+        case .airplane(let tail): profile = ProfileAsk(tail: tail.uppercased())
+        case .types: host.page(.screen(.airplane))
+        case .action(let action):
+            switch action {
+            case .route(let dep, let stops, let dest):
+                Task { if let why = await runner.route(dep: dep, stops: stops, dest: dest) { model.problem = why; model.presented = true } }
+            case .directTo(let ident): runner.directTo(ident)
+            case .open(let screen): host.screen(screen)
+            case .ask(let words): host.ask(words)
+            }
+        }
+    }
+
+    /// The line sent: done, the search put away; else why not, under the
+    /// field where it was typed.
+    private func send(_ line: String) async {
+        guard !model.busy, !line.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        model.busy = true
+        defer { model.busy = false }
+        if let why = await runner.run(line) {
+            model.problem = why
+        } else {
+            model.close()
+        }
+    }
+
+    /// One line said: the route's idents given the recognizer as words to
+    /// listen for, so "KMSN" is not "Kay Em Ess En"; the words shown in
+    /// the field, then done as typed.
+    private func hear() async {
+        model.problem = nil
+        model.hearing = true
+        let said = await listener.hearOnce(words: plan.idents.filter { !$0.isEmpty })
+        model.hearing = false
+        guard let said, !said.isEmpty else {
+            model.presented = true
+            model.problem = listener.problem ?? "Nothing was heard."
+            return
+        }
+        model.text = said
+        model.presented = true
+        await send(said)
+    }
+}

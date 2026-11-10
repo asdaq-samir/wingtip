@@ -1,11 +1,10 @@
 import Foundation
 
-/// What a line typed or said into the one field means (StripFieldRow): a
+/// What a line typed or said into the one search means (OneSearch): a
 /// route of idents, a place by name, one of the app's screens by its
 /// word, a field's card, or a question for the assistant. The web app's
 /// features/strip/fieldCommands.ts, rule for rule, with its cases as
-/// tests (StripTests); pure, so the doing is the sheet's
-/// (StripSheetView).
+/// tests (StripTests); pure, so the doing is FieldRunner's.
 ///
 /// The order matters: a screen's word first ("brief", "my airplane"), so
 /// "brief me" opens the Brief rather than asking about a field called

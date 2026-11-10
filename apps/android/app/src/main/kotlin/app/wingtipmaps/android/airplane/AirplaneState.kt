@@ -23,15 +23,17 @@ object NotNow {
     }
 }
 
-/** Where the airplane's profile is open, and at which figure (null: closed). */
+/** Where the airplane's profile is open, and at which figure (null:
+ *  closed): by its N-number, or by a type of the planner's with none (the
+ *  one search's Airplanes). */
 object ProfileOpen {
-    data class At(val tail: String?, val focus: String? = null)
+    data class At(val tail: String?, val focus: String? = null, val type: String? = null)
 
     private val _at = MutableStateFlow<At?>(null)
     val at: StateFlow<At?> = _at.asStateFlow()
 
-    fun open(tail: String?, focus: String? = null) {
-        _at.value = At(tail?.trim()?.uppercase()?.ifEmpty { null }, focus)
+    fun open(tail: String?, focus: String? = null, type: String? = null) {
+        _at.value = At(tail?.trim()?.uppercase()?.ifEmpty { null }, focus, type?.trim()?.ifEmpty { null })
     }
 
     fun close() {
@@ -54,17 +56,20 @@ fun rememberAirplaneNow(plan: Plan): AirplaneNow {
 }
 
 /** The airplane of `tail` as its profile shows it: the one flown where it
- *  is that one (or no N-number is asked), else the pilot's record of that
- *  N-number over its type's book, or the N-number alone with no figures. */
+ *  is that one (or no N-number nor type is asked), else the pilot's record
+ *  of that N-number over its type's book, or the N-number alone with no
+ *  figures; by `type` alone, that type's book. */
 @Composable
-fun rememberAirplaneOf(tail: String?, plan: Plan): AirplaneNow {
+fun rememberAirplaneOf(tail: String?, plan: Plan, type: String? = null): AirplaneNow {
     val now = rememberAirplaneNow(plan)
     val context = LocalContext.current
     val records by remember(context) { OwnAirplanes.of(context) }.records.collectAsStateWithLifecycle()
     val books by AirplaneBook.profiles.collectAsStateWithLifecycle()
-    val other = remember(tail, records, books) {
+    val other = remember(tail, type, records, books) {
         val record = tail?.let { records[OwnRecord.key(it, "")] }
-        AirplaneNow.of("", tail, record, record?.let { AirplaneBook.of(books, it.type) })
+        if (tail == null && type != null) AirplaneNow.of(type, null, null, AirplaneBook.of(books, type))
+        else AirplaneNow.of("", tail, record, record?.let { AirplaneBook.of(books, it.type) })
     }
-    return if (tail == null || tail.equals(now.tail, ignoreCase = true)) now else other
+    val isNow = if (tail == null) type == null || (type.equals(now.aircraft, ignoreCase = true) && now.tail == null) else tail.equals(now.tail, ignoreCase = true)
+    return if (isNow) now else other
 }

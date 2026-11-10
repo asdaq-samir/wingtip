@@ -44,7 +44,7 @@ import app.wingtipmaps.android.ui.CardAction
 import app.wingtipmaps.android.ui.WingtipIcons
 
 /**
- * A point of the route's menu, at the end of its row in the FPL tab
+ * A point of the route's menu, at the end of its row in the plan
  * (Material's overflow: the row's tap still opens the leg): its card,
  * the destination's Brief, Direct To (Fly as Planned once flown direct),
  * Hold Here, Add a Stop After…, Move Up and Down, and Remove in the error

@@ -16,41 +16,55 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
+import app.wingtipmaps.android.about.AboutScreen
 import app.wingtipmaps.android.api.AssistantClient
 import app.wingtipmaps.android.api.AssistantSource
+import app.wingtipmaps.android.briefing.PassengerScreen
 import app.wingtipmaps.android.clearance.ClearanceSheet
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
-import app.wingtipmaps.android.strip.StripModel
+import app.wingtipmaps.android.logbook.LogbookScreen
+import app.wingtipmaps.android.navigation.Over
+import app.wingtipmaps.android.offline.DownloadsScreen
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
 /**
- * A screen over the strip, which has no tabs: an airport's card, the
- * airplane, Setup or Ask, each the tabs layout's own screen in a sheet
- * with its title and its close (decision 0015).
+ * A screen in a sheet over the map (Over), the same in both layouts: the
+ * airplane, the account menu's pages
+ * -- Settings, the Logbook, Downloads, the passenger briefing, About --
+ * Ask, and the clearance card, each with its title and a close that goes
+ * back to where it was opened (decision 0015).
+ *
+ * @param onToPlan the sheet closed onto the plan: after About's demo flight.
  */
 @Composable
-fun StripOver(over: StripModel.Over, plan: Plan, session: Session, ownShip: OwnShip, assistant: AssistantClient, onClose: () -> Unit) {
+fun OverSheet(over: Over, plan: Plan, session: Session, ownShip: OwnShip, assistant: AssistantClient, onClose: () -> Unit, onToPlan: () -> Unit) {
     // The clearance card is its own sheet, with Listen in its bar.
-    if (over == StripModel.Over.Clearance) {
+    if (over == Over.Clearance) {
         val fix by ownShip.fix.collectAsStateWithLifecycle()
         ClearanceSheet(plan, fix, onClose)
         return
     }
     val title = when (over) {
-        is StripModel.Over.Airport -> over.ident
-        StripModel.Over.Airplane -> stringResource(R.string.tab_airplane)
-        StripModel.Over.Setup -> stringResource(R.string.tab_setup)
-        StripModel.Over.Ask -> stringResource(R.string.ask)
-        StripModel.Over.Clearance -> stringResource(R.string.clearance)
+        Over.Airplane -> stringResource(R.string.airplane)
+        Over.Settings -> stringResource(R.string.settings)
+        Over.Logbook -> stringResource(R.string.logbook)
+        Over.Downloads -> stringResource(R.string.offline_downloads)
+        Over.Passengers -> stringResource(R.string.passenger_briefing)
+        Over.About -> stringResource(R.string.about)
+        Over.Ask -> stringResource(R.string.ask)
+        Over.Clearance -> stringResource(R.string.clearance)
     }
     WingtipSheet(title = title, onClose = onClose, full = true) {
         when (over) {
-            is StripModel.Over.Airport -> AirportScreen(over.ident, plan = plan, onDone = onClose)
-            StripModel.Over.Airplane -> AirplaneScreen(plan)
-            StripModel.Over.Setup -> SetupScreen(session, onToMap = onClose)
-            StripModel.Over.Ask -> AskScreen(plan = plan, session = session, ownShip = ownShip, client = assistant)
-            StripModel.Over.Clearance -> {}
+            Over.Airplane -> AirplaneScreen(plan)
+            Over.Settings -> SetupScreen(session)
+            Over.Logbook -> LogbookScreen()
+            Over.Downloads -> DownloadsScreen()
+            Over.Passengers -> PassengerScreen(plan)
+            Over.About -> AboutScreen(onDemo = onToPlan)
+            Over.Ask -> AskScreen(plan = plan, session = session, ownShip = ownShip, client = assistant)
+            Over.Clearance -> {}
         }
     }
 }

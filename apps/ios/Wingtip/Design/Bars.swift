@@ -17,9 +17,8 @@ extension ToolbarItemPlacement {
 
 extension View {
     /// A long list's navigation bar folds away while it scrolls down and
-    /// comes back on the way up (iOS 27's toolbarMinimizationBehavior),
-    /// as the tab bar under it already does on iOS 26
-    /// (tabBarMinimizesOnScroll): more of the nav log, the Brief or the
+    /// comes back on the way up (iOS 27's toolbarMinimizationBehavior):
+    /// more of the nav log, the Brief or the
     /// logbook in sight at the sheet's height. Nothing moves; the bar and
     /// its buttons return the moment the pilot scrolls back. Before iOS 27
     /// the bar stays as it is.

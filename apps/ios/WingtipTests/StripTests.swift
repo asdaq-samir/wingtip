@@ -224,13 +224,6 @@ struct StripDataTests {
         #expect(numbers["c1"] == 1 && numbers["c8"] == 8)
     }
 
-    @Test func theSuggestionsFollowWhetherARouteIsPlanned() throws {
-        #expect(StripData.suggestions(routed: true, dest: "KDLH").prefix(2) == ["Brief me", "Weather at KDLH"])
-        #expect(StripData.suggestions(routed: false, dest: "").first == "Nearest fuel")
-        #expect(StripData.suggestions(routed: false, dest: "").allSatisfy { FieldCommands.read($0) != nil })
-        #expect(StripData.suggestions(routed: true, dest: "KDLH").allSatisfy { FieldCommands.read($0) != nil })
-    }
-
     @Test func theWeatherLineIsTheCategoryAndTheWindReported() throws {
         var metar = Metar()
         #expect(StripData.weatherLine(nil) == nil)

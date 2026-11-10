@@ -10,7 +10,7 @@ import app.wingtipmaps.android.Plan
  * (DemoFlight in apps/ios), so all three show the same thing.
  *
  * The airplane is the planner's stock Cessna 172 profile, set as the
- * Airplane tab's menu sets one: the pilot asked for this flight by name,
+ * Airplane page's menu sets one: the pilot asked for this flight by name,
  * so it is their pick, not an airplane assumed (decision 0011).
  */
 object DemoFlight {

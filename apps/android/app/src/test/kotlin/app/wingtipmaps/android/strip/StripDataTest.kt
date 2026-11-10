@@ -78,10 +78,4 @@ class StripDataTest {
         assertEquals("P", StripData.initialsOf(pilot(displayName = "", email = "pilot@example.com")))
         assertEquals("", StripData.initialsOf(null))
     }
-
-    @Test
-    fun theSuggestionsFollowTheRoute() {
-        assertEquals("Weather at KDLH", StripData.suggestions(state)[1])
-        assertEquals("Nearest fuel", StripData.suggestions(Plan.State()).first())
-    }
 }

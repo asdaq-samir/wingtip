@@ -53,7 +53,6 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.api.AssistantClient
-import app.wingtipmaps.android.api.AssistantContext
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.api.AssistantTurn
 import app.wingtipmaps.android.api.Gateway
@@ -61,6 +60,7 @@ import app.wingtipmaps.android.api.generated.assistant.Context
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.strip.StripModel
 import app.wingtipmaps.android.trip.TripPlannerCard
 import app.wingtipmaps.android.trip.TripPlannerModel
 import kotlinx.serialization.json.encodeToJsonElement
@@ -99,15 +99,8 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantC
     val tripModel: TripPlannerModel = viewModel()
     val list = rememberLazyListState()
 
-    // The context as the app has it: the plan on the page, the airplane's
-    // last fix, and the pilot where one is signed in. The departure time
-    // is the plan's, else the planner's own now.
-    val context = AssistantContext(
-        dep = planState.dep, dest = planState.dest, stops = planState.stops, aircraft = planState.aircraft,
-        altitudeFt = planState.altitudeFt ?: planState.legs.firstOrNull()?.altitudeFt, depart = planState.depart,
-        ownShip = fix?.let { AssistantContext.OwnShipFix(it.lat, it.lon, it.altitudeFt, it.trackDeg, it.groundspeedKt) },
-        pilot = pilot?.let { AssistantContext.PilotRecord(homeBase = it.homeBase) },
-    )
+    // The context as the app has it (StripModel.contextOf).
+    val context = StripModel.contextOf(planState, fix, pilot)
 
     fun send(words: String) {
         if (words.isBlank()) return

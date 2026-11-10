@@ -177,13 +177,4 @@ object StripData {
         val first = if (heading != null) "MH ${Format.headingFigures(heading)}" else "MC ${Format.headingFigures(leg.magneticCourseDeg)}"
         return "$first · ${Format.distance(leg.distanceNm)}"
     }
-
-    /** The screens the field's chips offer, each handled as typed: how a
-     *  pilot finds the rest without tabs (the web's stripSuggestions). */
-    fun suggestions(state: Plan.State): List<String> = if (state.routed) {
-        listOf("Brief me", "Weather at ${state.dest}", "Nav log", "Routes", "Altitude", "Procedures", "Stops", "Nearest fuel",
-            "File flight plan", "Dry run", "Clearance", "My airplane", "Saved flights")
-    } else {
-        listOf("Nearest fuel", "Nearest airports", "Saved flights", "Favorites", "Recents", "My airplane", "Logbook", "Setup")
-    }
 }
