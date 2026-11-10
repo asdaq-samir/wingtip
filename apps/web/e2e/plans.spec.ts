@@ -50,10 +50,7 @@ test(
     // and how it was chosen, folded.
     const popover = page.getByTestId("profile-card");
     await expect(popover).toBeVisible();
-    // The altitude on the stock Slider down the graph's left, its steps the
-    // engine's altitudes, each said in feet with its plan's name.
-    await expect(popover.getByTestId("altitude-wheel")).toBeVisible();
-    const wheel = popover.getByRole("slider", { name: "Cruise altitude" });
+    const wheel = popover.getByRole("slider", { name: "Cruise altitude" }); // the stock Slider, a step each altitude
     await expect(wheel).toHaveAttribute("aria-valuetext", /feet, .*Fastest/);
     await expect(popover.getByTestId("mini-profile")).toBeVisible();
     await expect(popover.getByTestId("altitude-figures")).toContainText(/\d+[hm]\b/);

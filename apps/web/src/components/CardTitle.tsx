@@ -3,6 +3,8 @@ import { Share } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
 import RoundButton from "./RoundButton";
+import RefreshButton from "./RefreshButton";
+import type { LiveCard } from "../lib/liveRefresh";
 import { closeTopCard, useHeldCard, type PillHead } from "../lib/openCards";
 import { TEXT } from "../lib/text";
 
@@ -21,6 +23,7 @@ export function CardTitle({
   line,
   onClose,
   onShare,
+  refresh,
   beside,
   pill,
   testId,
@@ -34,6 +37,9 @@ export function CardTitle({
   line?: ReactNode;
   onClose: () => void;
   onShare?: () => void;
+  /** A live card's Refresh, before the star: what it shows asked again,
+   *  and kept fresh by itself (RefreshButton). */
+  refresh?: LiveCard;
   /** A round button before the close (the star). */
   beside?: ReactNode;
   pill?: PillHead;
@@ -67,6 +73,7 @@ export function CardTitle({
             <Share className="size-5" strokeWidth={2} />
           </RoundButton>
         )}
+        {refresh && <RefreshButton card={refresh} label={`Refresh ${title}`} />}
         {beside}
         <CloseButton
           onClick={() => {

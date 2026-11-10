@@ -19,8 +19,7 @@ import RatingGuide from "../components/RatingGuide";
 import { TEXT } from "../../../lib/text";
 import { useRetrain } from "./useRetrain";
 import SpeedPage from "./SpeedPage";
-import { grouped } from "../../../lib/format";
-import { ago } from "../../../lib/format";
+import { ago, grouped } from "../../../lib/format";
 import { WINDS_MODELLED } from "../../../lib/windsAloft";
 
 const mae = (n: number) => n.toFixed(4);
@@ -1084,13 +1083,7 @@ function SystemTab({
             asked, where it was an icon beside the tabs. */}
         <ListGroup>
           <ListRow
-            media={
-              refreshing ? (
-                <Spinner className="size-5" role={undefined} aria-label={undefined} aria-hidden />
-              ) : (
-                <RefreshCw className="size-5" />
-              )
-            }
+            media={refreshing ? <Spinner className="size-5" aria-hidden /> : <RefreshCw className="size-5" />}
             title="Check again"
             description="It checks by itself every 30 seconds"
             onClick={onRefresh}
