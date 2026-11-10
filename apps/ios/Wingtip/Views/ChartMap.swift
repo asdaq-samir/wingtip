@@ -140,7 +140,6 @@ struct ChartMap: UIViewRepresentable {
             try? await Task.sleep(for: Self.revealCap)
             coordinator.reveal()
         }
-        if !WelcomeModel.wanted() { context.coordinator.locations.requestWhenInUseAuthorization() } // the welcome asks first
         let flight = FlightMapLayer()
         flight.attach(map)
         context.coordinator.flight = flight
@@ -342,7 +341,6 @@ struct ChartMap: UIViewRepresentable {
         var fitted = 0
         var flight: FlightMapLayer?
         let legLayer = RouteLegLayer()
-        let locations = CLLocationManager()
         private var followed = false
         private var fetching: Task<Void, Never>?
         private var shown: [String: AirportAnnotation] = [:]

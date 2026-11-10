@@ -65,7 +65,9 @@ struct EmergencySheet: View {
         }
         // One warning as it opens, never again while it is up (HIG Haptics).
         .sensoryFeedback(.warning, trigger: opened)
-        .onAppear { opened += 1 }
+        // The position, asked for now if it never was: the nearest fields
+        // and the glide need it.
+        .onAppear { opened += 1; ownShip.askLocation() }
     }
 
     /// Direct To the field, as the radio's and the search's Direct To do

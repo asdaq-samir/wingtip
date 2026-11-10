@@ -23,6 +23,7 @@ struct AirportDestination: View {
 /// A strip's list in full: the Favorites to change and put in order, the
 /// Recents to take off, the nearest fields.
 struct AirportListView: View {
+    @Environment(OwnShip.self) private var ownShip
     let shows: AirportShelf.Shows
     let nearest: [NearestAirport]
     private var shelf: AirportShelf { .shared }
@@ -46,6 +47,8 @@ struct AirportListView: View {
         }
         .navigationTitle(shows.title)
         .navigationBarTitleDisplayMode(.inline)
+        // Nearest needs the position: asked for here the first time.
+        .onAppear { if shows == .nearest { ownShip.askLocation() } }
         .toolbar {
             if shows == .favorites, !shelf.favorites.isEmpty { EditButton() }
             if shows == .recents, !shelf.recents.isEmpty { Button("Clear") { shelf.clearRecents() } }
@@ -139,10 +142,12 @@ private enum PreviewData {
 
 #Preview("AirportDestination") {
     NavigationStack { AirportDestination(route: .list(.nearest), nearest: PreviewData.nearest) }
+        .environment(OwnShip())
 }
 
 #Preview("AirportListView") {
     NavigationStack { AirportListView(shows: .nearest, nearest: PreviewData.nearest) }
+        .environment(OwnShip())
 }
 
 #Preview("NearestRow") {
