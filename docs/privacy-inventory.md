@@ -6,7 +6,7 @@ to the site), App Store Connect's App Privacy answers,
 Google Play's Data safety form and the iOS app's privacy manifest
 (`PrivacyInfo.xcprivacy`). Change it
 whenever the code changes what leaves a device or what the server keeps.
-Last checked against the code on 2026-11-09 (Siri and camera look-ups added).
+Last checked against the code on 2026-11-09 (Siri and camera look-ups; the iPhone's flight files and configurable widgets).
 
 "Collected" is App Store Connect's meaning: sent off the device and kept
 longer than it takes to answer the request.
@@ -127,6 +127,26 @@ longer than it takes to answer the request.
   Nothing of it is stored on a server. Opened, the link's page is served
   with the route in its preview's title (`SharePreviewController`), and
   the receiver's app plans nothing until they choose Use This Plan.
+- **A flight saved as a file (iPhone)** (Share, Save as File: `Route/FlightFile.swift`,
+  a `.wingtip` file, `app.wingtipmaps.flight`): the same plain link's
+  plan, with the nav log and its totals where the plan has them, written
+  where the pilot saves it (Files) or sent by their own share sheet
+  (AirDrop, Mail); the N-number only where they tick it. Nothing of it
+  goes to a server. Opened, it shows the Shared Flight preview and plans
+  nothing until Use This Plan. The kneeboard's PDF saved the same way
+  stays as the pilot sends it.
+- **The iPhone's widgets** (`WingtipWidgets`). Next Flight reads the plan
+  on the page and the saved flights' routes and totals from the App Group
+  the app writes (`Shared/WidgetStore.swift`), on the phone. Airport
+  Weather asks the planner for the field the pilot picked
+  (`/api/airport/{ident}`, public, as the airport card does), and Next
+  Flight for a saved flight's departure; the ident is all that is sent,
+  and nothing is kept. Currency Status reads the pilot's currency from
+  the gateway (`/api/logbook/currency`) with the app's own session: the
+  app's cookie jar is kept in the App Group's container
+  (`WidgetStore.cookies`) so the widget can, still on the phone. Each
+  widget keeps its last answer in the App Group, and the currency is
+  dropped there when the gateway says no one is signed in.
 
 ## Who else receives what
 

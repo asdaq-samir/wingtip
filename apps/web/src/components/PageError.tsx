@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useRouteError } from "react-router-dom";
+import { useRouteError } from "react-router";
 import { cn } from "cn";
 import { Button } from "./ui/button";
 import { reportOf, sendReport } from "../lib/errorReports";

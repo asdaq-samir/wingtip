@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { BrainCircuit, ExternalLink, RefreshCw } from "lucide-react";
 import { done } from "../../../lib/doneNote";
 import { showError } from "../../../lib/problems";

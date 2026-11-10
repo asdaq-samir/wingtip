@@ -27,7 +27,7 @@ here=$(cd "$(dirname "$0")/../.." && pwd)
 # Docker Desktop's CLI, where a shell's PATH lacks it (an agent's, a
 # launchd job's). The Rust is all in the container: no cargo here.
 command -v docker >/dev/null || PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin
-image=${RUST_IMAGE:-rust:1.99-slim-bookworm@sha256:f2c004e3d2d8b547e8cf7ffbc29205385f4e71d23e53e4e383065db5e9f822cd}
+image=${RUST_IMAGE:-rust:1.99-slim-trixie@sha256:f6c4a35d21dbb3c89d7a8d056c193e94fc09037f2b58dd858b09c39a47dd02d7}
 binaryen=version_133
 binaryen_sha256=2dc9c7813f5375db93d96ead4b78222fcc3e2677bbb832297af4797782a37489
 out=apps/web/src/lib/engine/wingtip-engine.wasm

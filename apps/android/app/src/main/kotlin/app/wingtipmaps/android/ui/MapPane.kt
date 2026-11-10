@@ -91,6 +91,8 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     // whose sheet is open (RouteLegModel), cased in green.
     val routePoints = remember(state.course) { RoutePoints.of(state.course) }
     val selectedLeg by viewModel<RouteLegModel>().selected.collectAsStateWithLifecycle()
+    // The field whose card is open in the Airport tab, ringed on the map.
+    val openField = viewModel<AirportModel>().state.collectAsStateWithLifecycle().value.place?.ident
     val density = LocalDensity.current
     val template = remember(info, density.density) { Charts.template(info, density.density) }
     val base = remember(info) { Charts.base(info) }
@@ -212,6 +214,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             // emergency assistant is open (GlideRing).
             glide = if (ownShip.on && GlideRing.shown(ringKept == true, emergencyFrom != null)) inFlight.glide?.ring.orEmpty() else emptyList(),
             emergency = if (emergencyFrom != null && ownShip.on) EmergencyLine.of(emergency) else null,
+            selectedField = openField,
             follow = ownShip.following,
             onDragged = { ownShip.following = false },
             onRevealed = { revealed = true },

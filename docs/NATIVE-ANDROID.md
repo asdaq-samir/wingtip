@@ -12,7 +12,7 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
 - `apps/android/`: a Gradle project of one module, `app`, in the Kotlin DSL,
   every version in the catalog `gradle/libs.versions.toml`, on Gradle
   9.9.0 and AGP 9.5.1, whose built-in Kotlin compiles the app (no Kotlin
-  Android plugin), for API 37, on Java 25 (the gateway's LTS): Gradle
+  Android plugin), for API 37 (compiled against 37.2, the newest minor SDK), on Java 25 (the gateway's LTS): Gradle
   runs on the Temurin 25 that `gradle/gradle-daemon-jvm.properties`
   names, fetched once into `~/.gradle/jdks` by the foojay resolver, and
   the app compiles to Java 25 bytecode, which AGP 9.5's D8 dexes. Every
@@ -276,7 +276,8 @@ of the location type with Android's persistent notification; the path
 flown (OwnTrail); the airplane tracked and its watches (Tracking,
 Traffic); the cycle packs on the device and the engine's in-view readers
 through JNI entries appended to the shim (Packs.kt, CyclePacks,
-InView); the pilot's records in Room; and notification channels. The
+InView); the pilot's records in Room 3 (androidx.room3, over the
+framework's SQLite driver); and notification channels. The
 map draws own ship as the blue dot and the path under the route, with
 the location button over the map (`ui/MapButtons`) as Apple Maps has
 it: a tap turns the reading on and follows, a drag lets go, a tap again

@@ -110,6 +110,52 @@ grep for `iOS 27` alone misses them.
 | The Dynamic Island's figure has a short form when the island is narrow | FlightActivityWidget `CompactFigure`; `FlightActivityLines.compactNarrow` ("1:25" for "1h 25m"), tested in FlightActivityTests | `isDynamicIslandLimitedInWidth` | The usual figure |
 | The weather loop does not start by itself when the system asks apps to do less | WeatherLoop.loaded() | `UIApplication.systemPrefersReducedResourceUsage` | Unchanged (Reduce Motion still applies) |
 
+## Flight files and configurable widgets
+
+Both were owner-approved on 2026-11-09 and built on their own branch
+(`claude/files-widgets-halo`).
+
+- **Flight files.** A Wingtip flight is a file of the app's own type,
+  `app.wingtipmaps.flight` (`.wingtip`, JSON, conforming to `public.json`),
+  exported in project.yml's `UTExportedTypeDeclarations` and opened as
+  its owner (`CFBundleDocumentTypes`). It holds the shared flight's plain
+  link (`SharedPlan`, `?open=shared`: route, stops, altitude, departure
+  time, airplane type, rules, the N-number only where ticked) and the nav
+  log with its totals (`Route/FlightFile.swift`). The route's Share menu
+  gains **Save as File**, with the flight and the kneeboard's PDF. On
+  iOS 27 they are saved through the system's file exporter,
+  `fileExporter(isPresented:document:contentType:defaultFilename:onCompletion:onCancellation:)`
+  with a `WritableDocument` written by the SDK's `FileWrapperDocumentWriter`
+  (`Route/FileSaving.swift`). Below iOS 27 the share sheet takes the file
+  (Save to Files, AirDrop, Mail). `FileDocument` is not used. A file opened
+  from Files, AirDrop or Mail comes in through `onOpenURL`, as GPX and KML
+  already do (`Links`), and shows the Shared Flight preview with Use This
+  Plan and Not Now. It never replaces the plan without asking.
+- **No `DocumentGroup` scene.** The SDK's new initializers,
+  `DocumentGroup(viewer:makeReadableDocument:)` and
+  `DocumentGroup(editor:makeDocument:)`, open each file in a document
+  scene of its own. On the iPhone that scene takes the screen from the
+  planner, and the owner's choice is that a file opens as the preview
+  over the plan. A `DocumentGroup` is worth adding if Wingtip ever edits
+  flight files in place, on the iPad or the Mac.
+- **Configurable widgets** (`AppIntentConfiguration` with a
+  `WidgetConfigurationIntent` each, `WingtipWidgets/WidgetIntents.swift`):
+  - **Next Flight** picks the plan on the page, the app's snapshot as
+    before, or a saved flight. The app lists the saved flights in the App
+    Group (`Shared/WidgetStore.swift`). The widget asks the planner for a
+    saved flight's departure weather itself.
+  - **Airport Weather** picks a field: the home base and Favorites are
+    offered first, and any ident can be typed. The widget asks the planner
+    for its METAR and TAF every half hour (`WidgetFetch`).
+  - **Currency Status** reads `/api/logbook/currency` with the pilot's own
+    session. The app's cookie jar moved into the App Group's container for
+    this. The widget shows the Logbook's words (`Shared/CurrencyWords.swift`):
+    one currency, picked in its settings, on the small widget and the Lock
+    Screen, and all of them on the medium.
+
+  The App Group was already on both targets. Each widget keeps its last
+  answer and says so when it shows it.
+
 No panel or control moved. The tint and tokens are unchanged. Dynamic Type,
 Reduce Motion and Reduce Transparency still go through the same modifiers.
 
@@ -147,24 +193,6 @@ framework, and Core AI.
   only for metrics. `UIRequiresFullScreen` is not set, and the app has a
   launch screen, which the 27 SDK requires. Nothing needs to change. A check
   in iPhone Mirroring on the owner's Mac is still to do.
-- **Widgets configured through App Intents (owner-approved: Next Flight,
-  Home Airport Weather, Currency Status).** `AppIntentConfiguration` dates
-  from iOS 17 and is stock. These widgets need data the widget does not have
-  today:
-  - several saved flights in the App Group, so the pilot can pick one;
-  - the widget fetching a field's weather itself (today it reads only the
-    app's snapshot);
-  - currency, which is still worked out in the gateway's Java and moves into
-    the engine under #482.
-
-  This is a feature of its own, on its own branch.
-- **Document-based saved flights and kneeboards (owner-approved).** The SDK
-  has `DocumentGroup` with `ReadableDocument` and `WritableDocument`. Using
-  it needs four things: a file type of our own (`UTExportedTypeDeclarations`
-  in project.yml), a second scene beside the planner's `WindowGroup`, a
-  decision on what opening a flight file does (load it into the planner, or
-  show it read-only), and kneeboard export. That is a feature of its own,
-  not part of the look.
 - **`swipeActionsContainer()`.** Every swipe action in the app is on a
   `List` row, where swipe actions already work.
 - **`systemExtraLargePortrait`.** The app's widgets have no layout at that

@@ -92,7 +92,7 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.test-root == 'true'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       # The FAA's reference files the tests read (data/raw), kept between
       # runs: fetched cold they were most of the planner's suite, 131 s of
       # it against 11 s warm (#452), and the suite failed when the FAA was
@@ -109,7 +109,7 @@ jobs:
             !data/raw/chart_tiles.nosync
           key: tests-raw-root-v1-${{ steps.week.outputs.week }}
           restore-keys: tests-raw-root-v1-
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version-file: .tool-versions
       - run: pip install uv
@@ -134,9 +134,9 @@ jobs:
         id: machete
         with:
           path: ~/.cargo/bin/cargo-machete
-          key: cargo-machete-0.9.1-${{ runner.os }}-${{ runner.arch }}
+          key: cargo-machete-0.9.2-${{ runner.os }}-${{ runner.arch }}
       - if: steps.machete.outputs.cache-hit != 'true'
-        run: cargo install --locked cargo-machete@0.9.1
+        run: cargo install --locked cargo-machete@0.9.2
       - run: cargo machete engine
       # The Rust as rustfmt writes it (engine/rustfmt.toml).
       - run: rustup component add rustfmt && scripts/dev/format.sh --check rust
@@ -187,7 +187,7 @@ jobs:
         run: |
           uv pip install --system pdoc
           PYTHONPATH=services/planner python -m pdoc services/planner/wingtip -o "$RUNNER_TEMP"/pdoc-wingtip --no-show-source
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: pdoc-wingtip
           path: ${{ runner.temp }}/pdoc-wingtip
@@ -212,8 +212,8 @@ jobs:
       run:
         working-directory: apps/web
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version-file: .tool-versions
           cache: npm
@@ -296,9 +296,9 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.test-gateway == 'true'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: ./.github/actions/hub-mirror
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad  # v6
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78  # v6.2.0
         with:
           distribution: temurin
           java-version-file: .tool-versions
@@ -343,7 +343,7 @@ jobs:
       run:
         working-directory: services/planner
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       # The planner's reference data (data/raw), the charts and their
       # tiles included, kept between runs, keyed by the ISO week so a new
       # NASR cycle is fetched within a week of it. The charts too: the
@@ -360,7 +360,7 @@ jobs:
           path: data/raw
           key: tests-raw-planner-v2-${{ steps.week.outputs.week }}
           restore-keys: tests-raw-planner-v2-
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version-file: .tool-versions
       - run: pip install uv
@@ -383,8 +383,8 @@ jobs:
       run:
         working-directory: services/ingest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version-file: .tool-versions
       - run: pip install uv
@@ -409,8 +409,8 @@ jobs:
       run:
         working-directory: services/assistant
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version-file: .tool-versions
       - run: pip install uv
@@ -431,8 +431,8 @@ jobs:
       run:
         working-directory: services/weather
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version-file: .tool-versions
       - run: pip install uv
@@ -482,7 +482,7 @@ jobs:
       site: ${{ steps.plan.outputs.site }}
       docs-only: ${{ steps.docsonly.outputs.only }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       # The paths-filter block below is generated from scripts/areas.yml, the
       # table check.sh and the pre-push hook read; a hand edit, or an edit
       # of the table without `python3 scripts/areas.py write`, stops here.
@@ -523,7 +523,7 @@ jobs:
             echo "all=true" >> "$GITHUB_OUTPUT"
             echo "everything: event $EVENT, last green ${sha:0:7}, compare '$status'"
           fi
-      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
         id: filter
         with:
           # Ignored on a pull request, which diffs against its base.
@@ -874,9 +874,9 @@ jobs:
         # shards of everything at night or by hand.
         shard: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]' || '[1]') }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: ./.github/actions/hub-mirror
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550  # v4.8.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -1203,7 +1203,7 @@ jobs:
       # .tool-versions has it and the suite's packages, from the same lock file.
       # The gateway reads the page from disk when it is asked for, so it is
       # started before the page is there, and the step below waits for it.
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         if: ${{ !(github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
         with:
           node-version-file: .tool-versions
@@ -1600,8 +1600,8 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550  # v4.8.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -1649,7 +1649,7 @@ jobs:
         with:
           path: apps/web/node_modules
           key: e2e-node-modules-pw1.65.0-${{ hashFiles('apps/web/package-lock.json') }}
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         if: steps.keys.outputs.page != ''
         with:
           node-version-file: .tool-versions
@@ -1666,7 +1666,7 @@ jobs:
           npx vite build --outDir dist --emptyOutDir
           printf 'FROM scratch\nCOPY . /page/\n' | docker build -q -t "$PAGE" -f - dist
           docker push -q "$PAGE"
-      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4.4.1
         if: steps.keys.outputs.missing != '' || steps.keys.outputs.playwright != ''
         # Docker Hub's base images (maven, node, python, temurin) through
         # Google's public mirror of it first: Docker Hub's limit on pulls
@@ -1740,8 +1740,8 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
-      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4.4.1
         # Docker Hub's base images (maven, node, python, temurin) through
         # Google's public mirror of it first: Docker Hub's limit on pulls
         # from a runner's address refused maven's manifest (429 Too Many
@@ -1752,7 +1752,7 @@ jobs:
           buildkitd-config-inline: |
             [registry."docker.io"]
               mirrors = ["mirror.gcr.io"]
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550  # v4.8.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -1784,7 +1784,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294  # v5.0.0
         with:
           fail-on-severity: high
@@ -1815,7 +1815,7 @@ jobs:
     name: Rules boundary
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: No aviation rule outside the engine
         run: python3 scripts/ci/rules_boundary.py
       # The privacy policy, terms and support page the site serves are
@@ -1840,10 +1840,10 @@ jobs:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: The engine's worked examples
         run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine --test flight_critical
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version-file: .tool-versions
       - run: pip install uv && uv pip install --system -r services/planner/requirements-dev.txt
@@ -1864,7 +1864,7 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.arch == 'true'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: No new or grown source file over the budget
         env:
           BASE: ${{ github.base_ref || 'main' }}
@@ -1900,7 +1900,7 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.site == 'true'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - run: python3 apps/site/build.py
       - run: python3 apps/site/check.py
 
@@ -1912,7 +1912,7 @@ jobs:
     name: Doc links
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Relative links and anchors in *.md
         run: python3 scripts/ci/check_links.py
 
@@ -1921,9 +1921,9 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.docs == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad  # v6
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78  # v6.2.0
         with:
           distribution: temurin
           java-version-file: .tool-versions
@@ -1934,7 +1934,7 @@ jobs:
         working-directory: services/gateway
         run: mvn -q javadoc:javadoc
 
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: documentation
           retention-days: 30
@@ -1946,7 +1946,7 @@ jobs:
       # change with Redoc's bundle.
       - name: API reference (planner, gateway, assistant)
         run: scripts/build/api-reference.sh "$RUNNER_TEMP"/api-reference
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: api-reference
           retention-days: 30
@@ -1962,9 +1962,9 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.infra == 'true'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: ./.github/actions/hub-mirror
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version-file: .tool-versions
       - run: pip install cfn-lint==1.60.0
@@ -1979,7 +1979,7 @@ jobs:
       - name: caddy validate (infra/server/Caddyfile)
         run: |
           docker run --rm -e ORIGIN_HOST=origin.app.example.com -e PUBLIC_HOST=app.example.com -e ORIGIN_SECRET=x \
-            -v "$PWD/infra/server/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2.10-alpine \
+            -v "$PWD/infra/server/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee \
             caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 
   # The phone apps, built and tested as their own workflows build them on
@@ -2027,7 +2027,7 @@ jobs:
       # Two commits deep: a pull request's checkout is its merge with
       # main, and the merge's first parent is the main it was made on --
       # so the comparison is with exactly the main this would land on.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 2
       - uses: ./.github/actions/hub-mirror
@@ -2195,7 +2195,7 @@ jobs:
       matrix:
         suite: [wingtip, planner]
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       # The reference data the test jobs keep, restored with the same paths
       # they save (a cache's paths are part of its key), never saved here.
       - name: The week, for the reference data's cache
@@ -2216,7 +2216,7 @@ jobs:
           path: data/raw
           key: tests-raw-planner-v2-${{ steps.week.outputs.week }}
           restore-keys: tests-raw-planner-v2-
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version-file: .tool-versions
       - run: pip install uv
@@ -2246,8 +2246,8 @@ jobs:
       run:
         working-directory: apps/web
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version-file: .tool-versions
           cache: npm
@@ -2285,7 +2285,7 @@ jobs:
       issues: write
       actions: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         continue-on-error: true
         with:

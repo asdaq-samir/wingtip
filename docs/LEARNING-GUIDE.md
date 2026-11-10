@@ -151,7 +151,7 @@ FROM node:26-slim AS web
 COPY apps/web/ ./
 RUN npx vite build --outDir /web/dist
 
-FROM maven:3.9.16-eclipse-temurin-25 AS build
+FROM maven:3.10.0-eclipse-temurin-25 AS build
 COPY services/gateway/src ./src
 RUN mvn -q package -DskipTests
 
@@ -200,7 +200,7 @@ deleting one only forces a re-download on the next build. `python:3.15-slim`
 is the base of `wingtip-base`, which is in turn the base of every Python
 image above; each is stored once, which is why image sizes are not
 additive. `node:26-slim` and `maven:...` are build-only and
-never ship. `postgres:18-bookworm` is the database; `postgres:18` and
+never ship. `postgres:18-trixie` is the database; `postgres:18` and
 `testcontainers/ryuk` are started by the JUnit suite ([Section 8](#8-what-gets-tested-and-what-deliberately-doesnt)).
 Intermediate build stages such as `eclipse-temurin:25-jre` do not appear
 in the list at all under the containerd image store.

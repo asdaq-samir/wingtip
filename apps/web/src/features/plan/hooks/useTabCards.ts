@@ -1,5 +1,5 @@
 import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useEffectEvent } from "react";
-import type { SetURLSearchParams } from "react-router-dom";
+import type { SetURLSearchParams } from "react-router";
 import { useConsoleOpen, type PanelState } from "../../../lib/mapChrome";
 import type { TrafficAircraft } from "../../../lib/api/types";
 import { pointOf } from "../../../lib/airspace";

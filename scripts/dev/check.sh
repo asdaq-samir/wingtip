@@ -46,9 +46,9 @@ PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:$HO
 # Each toolchain at .tool-versions' version, the one the images and CI run.
 tool() { "$here/scripts/build/toolchain.sh" get "$1"; }
 RUST=$(tool rust) PYTHON=$(tool python) JAVA=$(tool java) MAVEN=$(tool maven) NODE=$(tool nodejs)
-RUST_IMAGE=rust:$RUST-slim-bookworm
+RUST_IMAGE=rust:$RUST-slim-$(tool debian)
 # CI's (ci.yml's test job).
-CARGO_MACHETE=0.9.1
+CARGO_MACHETE=0.9.2
 
 # The areas and the paths that belong to each are scripts/areas.yml's, the
 # one table the pre-push hook and CI's changes filter read too.

@@ -478,6 +478,15 @@ def faa_chart(*, url: str, airport: str | None = None) -> m.ChartPages:
     return _FAA_CHART.validate_python(found)
 
 
+_FORECAST_DRY_RUN = _Answer(m.ForecastRun)
+
+
+def forecast_dry_run(*, body: m.ForecastRunAsk | dict[str, Any]) -> m.ForecastRun:
+    """POST /api/forecast/run: Forecast Dry Run"""
+    found = _send('POST', '/api/forecast/run', query={}, body=_body(body), headers={})
+    return _FORECAST_DRY_RUN.validate_python(found)
+
+
 _GO_NO_GO = _Answer(m.GoNoGo)
 
 

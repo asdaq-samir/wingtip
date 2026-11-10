@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { createSearchParams, useNavigate, useSearchParams, type SetURLSearchParams } from "react-router-dom";
+import { createSearchParams, useNavigate, useSearchParams, type SetURLSearchParams } from "react-router";
 
 /**
  * React Router's `useSearchParams`, except that a change written as a

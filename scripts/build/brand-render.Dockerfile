@@ -3,9 +3,9 @@
 # (scripts/build/store-frames.sh). librsvg draws the SVGs, Pillow sizes,
 # rounds and packs them; Barlow, the brand's text face (design/tokens.json
 # font.brand), sets the store art's words. Pinned so the Mac and CI draw
-# the same pixels: the base by tag, Pillow by version, Barlow by the
+# the same pixels: the base by digest, Pillow by version, Barlow by the
 # google/fonts commit and its checksum.
-FROM python:3.15-slim-bookworm
+FROM python:3.15-slim-trixie@sha256:65a65fc7b30b06cb6df4930fd4650697cb23f4c2698ab81fc87e4b031bc36928
 RUN apt-get update \
  && apt-get install -y --no-install-recommends librsvg2-bin fontconfig \
  && rm -rf /var/lib/apt/lists/*

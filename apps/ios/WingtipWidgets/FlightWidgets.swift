@@ -4,22 +4,24 @@ import WidgetKit
 /// The next flight on the Home Screen and the Lock Screen (a WidgetKit
 /// timeline widget, Apple's way to put an app's one fact where the
 /// phone is glanced at): the route with its distance, time and fuel,
-/// the Brief's Go / No-Go, and the departure's weather, from the
-/// snapshot the app keeps in the App Group (WidgetSnapshot, WidgetFeed).
-/// The widget never asks the planner: the app's own answer is the one
-/// shown, with when it last changed, and the system is asked to draw it
-/// again every quarter hour so a snapshot the app has moved on from is
-/// not read as fresh for long.
+/// the Brief's Go / No-Go, and the departure's weather. Its settings
+/// (NextFlightIntent, App Intents' widget configuration) pick the plan on
+/// the app's page, from the snapshot the app keeps in the App Group
+/// (WidgetSnapshot, WidgetFeed), or one of the pilot's saved flights,
+/// whose departure's weather the widget asks the planner for itself
+/// (NextFlightProvider). The system is asked to draw it again every
+/// quarter hour so an answer the app has moved on from is not read as
+/// fresh for long.
 struct FlightWidget: Widget {
     static let kind = "FlightWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: Self.kind, provider: FlightProvider()) { entry in
+        AppIntentConfiguration(kind: Self.kind, intent: NextFlightIntent.self, provider: NextFlightProvider()) { entry in
             FlightWidgetView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Next Flight")
-        .description("The route, its Go / No-Go and the departure's weather, as last planned.")
+        .description("The route, its Go / No-Go and the departure's weather: the plan on the page or a saved flight.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular])
     }
 }
@@ -28,28 +30,6 @@ struct FlightEntry: TimelineEntry {
     let date: Date
     /// Nil with no flight planned.
     let flight: WidgetSnapshot?
-}
-
-/// One entry per timeline, the snapshot as it stands: the app reloads
-/// the timeline the moment the snapshot changes (WidgetFeed), so there
-/// is nothing to schedule ahead.
-struct FlightProvider: TimelineProvider {
-    /// How long the entry stands before the system asks again.
-    static let refreshAfter: TimeInterval = 15 * 60
-
-    func placeholder(in context: Context) -> FlightEntry {
-        FlightEntry(date: Date(), flight: .sample)
-    }
-
-    func getSnapshot(in context: Context, completion: @escaping (FlightEntry) -> Void) {
-        completion(FlightEntry(date: Date(), flight: context.isPreview ? .sample : WidgetSnapshot.read()))
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<FlightEntry>) -> Void) {
-        let now = Date()
-        let entry = FlightEntry(date: now, flight: WidgetSnapshot.read())
-        completion(Timeline(entries: [entry], policy: .after(now.addingTimeInterval(Self.refreshAfter))))
-    }
 }
 
 /// The widget by its family: a card on the Home Screen, small or
@@ -177,7 +157,7 @@ private struct NoFlight: View {
         VStack(alignment: .leading, spacing: WingtipSpace.xs) {
             HStack(spacing: WingtipSpace.sm) {
                 Image(systemName: "airplane")
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(WingtipInk.tint)
                 Text("No flight planned")
                     .font(.headline)
             }
@@ -191,7 +171,7 @@ private struct NoFlight: View {
     }
 }
 
-/// "C81 → KDLH", with the airplane symbol in the map's blue, as the Live
+/// "C81 → KDLH", with the airplane symbol in the brand's tint, as the Live
 /// Activity's RouteLine writes it.
 private struct RouteTitle: View {
     let flight: WidgetSnapshot
@@ -199,7 +179,7 @@ private struct RouteTitle: View {
     var body: some View {
         HStack(spacing: WingtipSpace.sm) {
             Image(systemName: "airplane")
-                .foregroundStyle(.blue)
+                .foregroundStyle(WingtipInk.tint)
             Text(FlightWords.route(flight))
                 .font(.headline)
                 .lineLimit(1)
@@ -268,9 +248,9 @@ enum VerdictMark {
 
     static func colour(_ verdict: String?) -> Color {
         switch verdict {
-        case "ok": return .green
-        case "caution": return .orange
-        case "stop": return .red
+        case "ok": return WingtipInk.go
+        case "caution": return WingtipInk.caution
+        case "stop": return WingtipInk.problem
         default: return .secondary
         }
     }

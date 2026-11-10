@@ -1,5 +1,5 @@
 import { Children, Fragment, useId, type ComponentProps, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Check, ChevronRight, ExternalLink } from "lucide-react";
 import { Radio as RadioPrimitive } from "@base-ui/react/radio";
 import { RadioGroup } from "./ui/radio-group";

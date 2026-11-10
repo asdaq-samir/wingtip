@@ -25,7 +25,7 @@ jobs:
     runs-on: ${{ vars.MAC_RUNNER || 'macos-26' }}
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       # .tool-versions' Xcode (scripts/ci/select-xcode.sh, DEVELOPER_DIR for
       # the steps after), before anything builds: the engine's Apple targets
       # link against its SDK too. iPhone Duo's own layout (to the screen's
@@ -147,7 +147,7 @@ jobs:
           xcrun simctl io "$ipad" screenshot "$RUNNER_TEMP/screens/ipad-airport.png"
       - name: The screens
         if: always()
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882  # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: native-ios-screens
           path: ${{ runner.temp }}/screens
@@ -155,7 +155,7 @@ jobs:
           retention-days: 7
       - name: The log, on failure
         if: failure()
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882  # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: native-ios-log
           path: ${{ runner.temp }}/xcodebuild.log

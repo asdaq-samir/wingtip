@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { SetURLSearchParams } from "react-router-dom";
+import type { SetURLSearchParams } from "react-router";
 import type { PanelState } from "../../../lib/mapChrome";
 import { useRadioActions } from "../../../lib/atcRadio";
 import { lessonOf } from "../../../lib/lessonLink";

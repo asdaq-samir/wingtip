@@ -179,6 +179,7 @@ struct RootView: View {
             flight: flightLayer,
             extras: MapExtrasInput(
                 held: heldRoute.flatMap { AirportRoute($0).heldPoint },
+                selectedField: heldRoute.flatMap { AirportRoute($0).field },
                 waypoints: waypointsOn, classB: classBOn, plates: platesOn, approaches: plan.procedures,
                 // A finger held on the chart: the airspace there, half way
                 // up, as a field's card opens.

@@ -426,10 +426,7 @@ export default defineConfig({
             { name: "maplibre", test: /node_modules\/maplibre-gl\// },
             // TanStack's query client alone: its table (the nav log's and the
             // kneeboard's, both lazy) stays with them, out of the first load.
-            {
-              name: "react",
-              test: /node_modules\/(react|react-dom|react-router|react-router-dom|@tanstack\/(react-query|query-core)|scheduler)\//,
-            },
+            { name: "react", test: /node_modules\/(react|react-dom|react-router|@tanstack\/(react-query|query-core)|scheduler)\// },
           ],
         },
       },

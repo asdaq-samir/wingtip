@@ -6,8 +6,13 @@ What leaves the device and why is [privacy-inventory.md](privacy-inventory.md).
 
 ## The database
 
-The gateway owns the `db` container's Postgres 18 (`postgres:18-bookworm`,
-volume `pgdata_pg18`). Nothing else writes it. Its schema is Flyway's
+The gateway owns the `db` container's Postgres 18 (`postgres:18-trixie`,
+volume `pgdata_pg18`). Nothing else writes it. A volume made before
+2026-11-09, under the bookworm image (glibc 2.36), has its text indexes
+rebuilt and its collation version refreshed once by
+`scripts/dev/pg-refresh-collation.sh`, which `go-live.sh` and `dev.sh up`
+run; until then Postgres warns of a collation version mismatch on every
+connection. Its schema is Flyway's
 versioned SQL migrations, not generated from code:
 
 - Add a migration as

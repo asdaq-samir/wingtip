@@ -45,7 +45,7 @@ The long-running ones restart with Docker (`restart: unless-stopped`).
 | `ingest` | The live feeds, read always: FAA SWIM (STDDS, FNS, TFMS, ITWS, SFDPS) and the followed airplanes' adsb.fi rounds, written into the live store | none |
 | `weather` | Fetches the weather on a schedule (METAR, TAF, PIREP, SIGMET, G-AIRMET, GFS winds aloft, GLMP, TFRs, the radar's time) into the weather store | none |
 | `assistant` | Every Claude call (the assistant, the Brief's narrative, the words, the checkpoint notes, the mock oral) over the planner's figures; holds the Anthropic key | 8085 |
-| `db` | PostgreSQL 18 (`postgres:18-bookworm`): the gateway's records | not published |
+| `db` | PostgreSQL 18 (`postgres:18-trixie`): the gateway's records | not published |
 | `mailpit` | The local inbox the sign-in mail goes to (Amazon SES on AWS) | 8025 |
 | `dev-services` | A sidecar holding the Docker socket, so the developer console can start `ml` and the jobs | none |
 

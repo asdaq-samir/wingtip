@@ -84,8 +84,8 @@ enum WingtipColor {
         static let caution = rgb(0xFFB000)
         /// The ground in a profile, the nav log's and the side view's.
         static let terrain = rgb(0x8B6F47)
-        /// The ring round the field whose card is open and round a point picked on the chart.
-        static let selected = rgb(0xFF3B00)
+        /// The ring round the field whose card is open and round a point picked on the chart: the brand's Taxiway Yellow (the owner, 2026-11-09), cased in chart.casing and an edge of chart.shade, as a picked point's ring, so it holds over the sectional's pale greens and its towns' yellow.
+        static let selected = rgb(0xF2B600)
         /// The course's magenta a step darker, for a chip with white words on it (6:1; the course's own is 3.8:1): a way's name and time on its line.
         static let courseChip = rgb(0xB000B0)
         /// A traffic pattern's legs and arrows, in teal so they stand apart from the route's magenta (ForeFlight draws its in a cyan).

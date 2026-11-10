@@ -31,10 +31,11 @@ junit = "4.13.2"
 androidxTestRunner = "1.7.0"
 androidxTestJunit = "1.3.0"
 # The flight pieces (flight/, records/, notify/): the fused location
-# provider, Room for the records with KSP for its compiler (KSP2, whose
-# version is its own since 2.3), DataStore for the few switches.
+# provider, Room 3 (androidx.room3) for the records with KSP for its
+# compiler (KSP2, whose version is its own since 2.3), DataStore for the
+# few switches.
 playServicesLocation = "21.4.0"
-room = "2.8.5"
+room3 = "3.0.3"
 ksp = "2.3.13"
 datastore = "1.3.0"
 # The geoid model that turns the GPS's height above the ellipsoid into
@@ -106,12 +107,12 @@ androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version
 # fix a second from GPS with the phone's other sensors, as Core Location
 # gives the iPhone's.
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
-# Room, for the pilot's records on the device (records/Records.kt), the
-# twin of the iOS app's SwiftData store; ktx for its suspending DAO and
-# flows, the compiler through KSP.
-androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
-androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
-androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+# Room 3, for the pilot's records on the device (records/Records.kt), the
+# twin of the iOS app's SwiftData store: Kotlin-first, its DAOs suspending
+# or flows with no ktx artifact, SQLite through a SQLiteDriver, the
+# compiler through KSP (Room 3 has no annotation processor).
+androidx-room3-runtime = { group = "androidx.room3", name = "room3-runtime", version.ref = "room3" }
+androidx-room3-compiler = { group = "androidx.room3", name = "room3-compiler", version.ref = "room3" }
 # DataStore preferences, for a flight piece's switches (the traffic layer
 # on or off, flight/Traffic.kt), in place of SharedPreferences.
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }

@@ -127,9 +127,9 @@ object WingtipColors {
         /** The ground in a profile, the nav log's and the side view's. */
         val Terrain = Color(0xFF8B6F47)
         const val TERRAIN_HEX = "#8b6f47"
-        /** The ring round the field whose card is open and round a point picked on the chart. */
-        val Selected = Color(0xFFFF3B00)
-        const val SELECTED_HEX = "#ff3b00"
+        /** The ring round the field whose card is open and round a point picked on the chart: the brand's Taxiway Yellow (the owner, 2026-11-09), cased in chart.casing and an edge of chart.shade, as a picked point's ring, so it holds over the sectional's pale greens and its towns' yellow. */
+        val Selected = Color(0xFFF2B600)
+        const val SELECTED_HEX = "#f2b600"
         /** The course's magenta a step darker, for a chip with white words on it (6:1; the course's own is 3.8:1): a way's name and time on its line. */
         val CourseChip = Color(0xFFB000B0)
         const val COURSE_CHIP_HEX = "#b000b0"

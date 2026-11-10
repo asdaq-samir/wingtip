@@ -104,6 +104,7 @@ up() {
     say "Look at a service's log with: make logs s=<service>   (planner, gateway, ingest, weather, assistant, db)" >&2
     exit 1
   fi
+  scripts/dev/pg-refresh-collation.sh
 
   say ""
   say "Wingtip Maps is up."

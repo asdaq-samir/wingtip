@@ -1,5 +1,5 @@
 import { use, useCallback, useContext, useSyncExternalStore } from "react";
-import { UNSAFE_DataRouterContext, UNSAFE_LocationContext } from "react-router-dom";
+import { UNSAFE_DataRouterContext, UNSAFE_LocationContext } from "react-router";
 
 /**
  * One key of the address, the component drawn again only when that key

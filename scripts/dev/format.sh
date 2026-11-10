@@ -39,7 +39,7 @@ SWIFTFORMAT=$(tool swiftformat)
 KTLINT=$(tool ktlint)
 # Each release binary's sum, beside the version it is the sum of: a bump in
 # .tool-versions changes it here too, or --check says so.
-SWIFTFORMAT_SUM="0.64.2 103b784eeb7bfcbdce12d07f7464a5c12bfdcc6d8d417b6989125fdc2dbf07ae"
+SWIFTFORMAT_SUM="0.64.6 70e6b2057647fb1c54d620ebbb6649274de56534c57f91f67461a129ebaaba3e"
 KTLINT_SUM="1.8.0 a3fd620207d5c40da6ca789b95e7f823c54e854b7fade7f613e91096a3706d75"
 SWIFTFORMAT_SHA256=${SWIFTFORMAT_SUM#* }
 KTLINT_SHA256=${KTLINT_SUM#* }

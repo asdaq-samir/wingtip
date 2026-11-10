@@ -73,7 +73,10 @@ class UpstreamRoutesTest {
             Map.entry("POST /api/read-document", "assistant signed-in csrf"),
             // The radar and satellite loop's frames, public as the map's
             // other weather is.
-            Map.entry("GET /api/weather/loop", "planner public csrf"));
+            Map.entry("GET /api/weather/loop", "planner public csrf"),
+            // The dry run played against the forecast: public, and a POST
+            // with no CSRF cookie, as the clearance's places are.
+            Map.entry("POST /api/forecast/run", "planner public no-csrf"));
 
     @Test
     void theEmergencyFieldsArePublicFromThePlanner() {

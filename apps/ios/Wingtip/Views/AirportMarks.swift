@@ -75,6 +75,12 @@ final class AirportMarkView: MKAnnotationView {
     static let reuse = "airport"
     private let symbol = UIImageView()
     private let label = UILabel()
+    /// The ring round the field whose card is open (SelectedHalo).
+    private let halo = SelectedHalo()
+    /// The ident of the field whose card is open, whose mark wears the
+    /// ring and is never dropped for another: one at a time, as one card
+    /// is open at a time.
+    static var selected: String?
     /// The symbol's box, the mark's height, and the gap to the ident.
     static let box: CGFloat = 26
     static let height: CGFloat = 30
@@ -87,6 +93,8 @@ final class AirportMarkView: MKAnnotationView {
         // A halo round the words, white by day and the night's ground in
         // dark appearance (NightPalette.halo), as the web map's LABEL_HALO.
         label.haloFollowing(self)
+        halo.place(round: CGPoint(x: Self.box / 2, y: Self.height / 2))
+        layer.addSublayer(halo)
         addSubview(symbol)
         addSubview(label)
         canShowCallout = false
@@ -139,8 +147,63 @@ final class AirportMarkView: MKAnnotationView {
         // the web map's symbol collision does (glOverlays' airportMarksLayer:
         // a busy area keeps its biggest fields, the rest come in as it is
         // zoomed): no clusters, which hid O'Hare in a count over Chicago.
-        displayPriority = field.priority
+        let picked = field.ident == Self.selected
+        displayPriority = picked ? .required : field.priority
         collisionMode = .rectangle
+        halo.isHidden = !picked
+        zPriority = picked ? .max : .defaultUnselected
+    }
+
+    /// The ring moved to `ident`'s mark from the one that wore it, as its
+    /// card opens or closes; nothing done while it is the same.
+    static func select(_ ident: String?, on map: MKMapView) {
+        guard ident != selected else { return }
+        let was = selected
+        selected = ident
+        for case let field as AirportAnnotation in map.annotations where field.ident == was || field.ident == ident {
+            (map.view(for: field) as? AirportMarkView)?.show()
+        }
+    }
+}
+
+/// The ring round the field whose card is open, as the web map draws it
+/// (AirportsGl's RING): the brand's Taxiway Yellow (chart.selected, the
+/// owner, 2026-11-09) 3 points wide, 20 from the field, cased in white
+/// (chart.casing) and then the shade's dark edge at about half strength
+/// (chart.shade), as a picked point's ring is. Yellow alone is about
+/// 1.6:1 on the sectional's yellow towns and 1.4:1 on its pale greens;
+/// the dark edge holds on every part of the chart, by day and dimmed at
+/// night. Drawn outside the mark's frame, so it does not change what
+/// MapKit collides.
+final class SelectedHalo: CALayer {
+    static let radius: CGFloat = 20
+
+    override init() {
+        super.init()
+        for (colour, width) in [(WingtipColor.Chart.shade.withAlphaComponent(0.55), 9.0), (WingtipColor.Chart.casing, 6), (WingtipColor.Chart.selected, 3)] {
+            let ring = CAShapeLayer()
+            ring.fillColor = nil
+            ring.strokeColor = colour.cgColor
+            ring.lineWidth = width
+            addSublayer(ring)
+        }
+        isHidden = true
+    }
+
+    override init(layer: Any) { super.init(layer: layer) }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+
+    /// Centred on the symbol's middle.
+    func place(round middle: CGPoint) {
+        let r = Self.radius
+        frame = CGRect(x: middle.x - r, y: middle.y - r, width: 2 * r, height: 2 * r)
+        let path = UIBezierPath(ovalIn: bounds).cgPath
+        for case let ring as CAShapeLayer in sublayers ?? [] {
+            ring.frame = bounds
+            ring.path = path
+        }
     }
 }
 

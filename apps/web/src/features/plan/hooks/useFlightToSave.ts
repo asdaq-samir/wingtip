@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from "react";
-import type { SetURLSearchParams } from "react-router-dom";
+import type { SetURLSearchParams } from "react-router";
 import type { PanelState } from "../../../lib/mapChrome";
 import type { AircraftChoice } from "../../../lib/api/types";
 import { NO_PLAN, useBriefPlan } from "../../../lib/briefPlan";

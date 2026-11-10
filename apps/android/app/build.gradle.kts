@@ -45,8 +45,14 @@ val appId: String =
 
 android {
     namespace = "app.wingtipmaps.android"
-    // Android 17, the newest stable API.
-    compileSdk = 37
+    // Android 17 at its newest minor SDK, 37.2 (the platform's stable
+    // release in Google's SDK repository, 2026-11-09): the APIs added in
+    // the year's minor releases, while targetSdk stays 37 below.
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 2
+        }
+    }
 
     defaultConfig {
         applicationId = appId
@@ -162,9 +168,8 @@ dependencies {
     // switch, and the process lifecycle the clock and the notifications read.
     implementation(libs.play.services.location)
     implementation(libs.androidx.core.location.altitude)
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room3.runtime)
+    ksp(libs.androidx.room3.compiler)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.lifecycle.process)
     // Add from a Photo: the page scanned by Google's document scanner.
