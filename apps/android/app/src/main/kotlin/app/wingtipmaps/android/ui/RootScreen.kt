@@ -21,7 +21,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
@@ -101,7 +100,6 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     // The screen's Snackbars: a route edit's Undo (RouteUndoSnackbar).
     val snackbars = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     val resources = LocalResources.current
     val search = rememberSearchControl()
     var picked by remember { mutableStateOf<MapPick?>(null) }
@@ -193,7 +191,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val searchRow: @Composable (String?) -> Unit = { problem ->
         OneSearch(
             plan, ownShip.ownShip, pilot, flying, problem ?: strips.problem, search,
-            onLine = doLine, onPick = picks::pick, onProblem = strip::say, onSignOut = { session.signOut(context) },
+            onLine = doLine, onPick = picks::pick, onProblem = strip::say,
         )
     }
     val answer: @Composable () -> Unit = {
@@ -276,7 +274,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         }
     }
     val over by OverRequests.shown.collectAsStateWithLifecycle()
-    over?.let { OverSheet(it, plan, session, ownShip.ownShip, assistant, onClose = OverRequests::close, onToPlan = { OverRequests.close(); showPlan() }) }
+    over?.let { OverSheet(it, plan, session, ownShip.ownShip, assistant, onClose = OverRequests::close, onToPlan = { OverRequests.closeAll(); showPlan() }) }
     picked?.let { pick -> MapCardSheet(pick, plan, onClose = { picked = null }, onToPlan = { picked = null; showPlan() }) }
     source?.let { shown -> SourceSheet(shown, onClose = { source = null }) }
     RouteLegHost(plan, ownShipOn = ownShip.on, model = legs)

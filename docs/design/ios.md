@@ -1180,6 +1180,12 @@ reader could not parse plays a warning notification once.
     go and no-go colours stay as they are in every look.
   - Night follows the system.
 
+**Opened from** the account button beside the one search, by its tap
+alone: a page pushed on the sheet's stack, no menu between (the owner,
+2026-11-10: "When tapping the avatar just open the settings"). What the
+menu held -- the account and signing in or out, the Flying and Pilot
+pages, Minimums, Guide, Downloads and About -- are this page's rows.
+
 **Structure, top to bottom (inset-grouped `List`):**
 
 1. **The account row:** the photo or initials, the name, and "Account,

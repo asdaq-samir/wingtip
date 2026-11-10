@@ -874,6 +874,12 @@ placement wins, and the difference is noted.
      connected `ToggleButton` group, never a slider (0017).
   5. Downloads (`offline/`), Minimums, Checklists and About as rows
      with chevrons.
+- **Opened from** the account button beside the one search, by its tap
+  alone (`account/AccountButton`), no menu between (the owner,
+  2026-11-10). What its menu held is on this page: Sign In or Sign Out
+  under the account, the Logbook and Coach rows signed in, and
+  Downloads, the passenger briefing and About near the foot
+  (`ui/SettingsPages`), each closing back to Settings.
 - **Primary action**: none. Settings save as they change.
 - **Haptics**: `ToggleOn` and `ToggleOff` from the stock `Switch`.
 - **Avoid**:
@@ -1093,7 +1099,7 @@ this page was written. Where §3 speaks of the FPL, Airport, Airplane and
 Setup tabs, read: one search as the sheet's first row with its
 microphone and the account button; the plan as the sheet's main
 content; the airport and airplane cards opened from the search; and
-Setup's settings on the account menu's Settings page.
+Setup's settings on Settings, the page the account button opens.
 
 ## 6. Stock components, and what is left hand-built
 

@@ -4,7 +4,7 @@ import SwiftUI
 /// 2026-11-09): the plan at its root under the one search, with the
 /// microphone and the account button beside the field, and every page
 /// pushed over it -- a field's card, the Brief, the nav log, the
-/// airplane, the account menu's pages -- each closing back one level. In
+/// airplane, Settings and its pages -- each closing back one level. In
 /// the iPhone's system sheet and the iPad's sidebar alike.
 struct PlanSheet: View {
     @Environment(Plan.self) var plan

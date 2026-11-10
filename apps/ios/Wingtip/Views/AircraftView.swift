@@ -6,7 +6,7 @@ import SwiftUI
 /// registry for its type and flown on the planner's figures for it. The
 /// types the planner has figures for are listed under them. A page of the
 /// sheet's stack: the route box's Airplane, the one search's types and
-/// the account menu open it.
+/// Settings open it.
 struct AircraftView: View {
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session

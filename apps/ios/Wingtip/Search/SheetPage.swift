@@ -2,7 +2,7 @@ import SwiftUI
 
 /// A page of the sheet's one stack (PlanSheet), over the plan at its root:
 /// a field's or a point's card, a screen by its name (design/screens.json),
-/// a leg of the nav log, the route's own pages, and the account menu's
+/// a leg of the nav log, the route's own pages, and Settings and its
 /// pages that have no link of their own. One typed path, so the map's ring
 /// round the field whose card is up, a link and Siri all read and set it.
 enum SheetPage: Hashable {
