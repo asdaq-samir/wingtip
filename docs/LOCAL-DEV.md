@@ -259,6 +259,7 @@ All in `scripts/dev/`, each with its usage at its top.
 | `backup-db.sh`, `install-backup.sh` | The nightly database dump (below) |
 | `install-hooks.sh` | Installs the pre-push hook (tsc and ESLint, ruff, `cargo check` for what a push changes) |
 | `rename-local.sh` | Once, on a Mac that ran the stack before the rename to Wingtip |
+| `mcp_token.py` | A token for the connector (`/mcp`) from the stack's own sign-in, as Claude gets one; the Inspector and Claude or ChatGPT through a tunnel are in [MCP-CONNECTOR.md](MCP-CONNECTOR.md) |
 
 ### The nightly database backup
 
