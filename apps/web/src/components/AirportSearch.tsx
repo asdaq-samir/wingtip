@@ -10,7 +10,6 @@ import { useAirportSearch } from "../lib/useAirportSearch";
 import { useIsMobile } from "../hooks/use-mobile";
 import { useKeyboardInset } from "../hooks/use-viewport";
 import CloseButton from "./CloseButton";
-import ClearButton from "./ClearButton";
 
 /**
  * What AirportPicker opens: the field, Favorites and Recents until
@@ -92,7 +91,9 @@ export default function AirportSearch({
             // Its label says the whole of it.
             placeholder={fixes ? "Search" : `Search for a ${ariaLabel.toLowerCase()}`}
             aria-label={fixes ? "Search airports and waypoints" : `Search for a ${ariaLabel.toLowerCase()}`}
-            className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
+            // The search field's own clear.
+            type="search"
+            className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
             onKeyDown={(e) => {
               // What was typed goes through when the rows are not the
               // answer to it yet, and when the lookup has nothing for it
@@ -104,15 +105,6 @@ export default function AirportSearch({
               }
             }}
           />
-          {query && (
-            <ClearButton
-              label="Clear the search"
-              onClear={() => {
-                setQuery("");
-                input.current?.focus();
-              }}
-            />
-          )}
         </div>
         <CloseButton onClick={onClose} data-testid="picker-close" />
       </div>
