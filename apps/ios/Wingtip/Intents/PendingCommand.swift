@@ -37,6 +37,9 @@ final class PendingCommand {
         /// A flight another pilot sent, previewed before anything is
         /// planned (SharedFlightModel).
         case sharedFlight(SharedFlightLink)
+        /// An airplane's profile, by its N-number, as a link's `?airplane=`
+        /// opens it (design/screens.json).
+        case airplane(tail: String)
         /// The route flown with an airplane, by its N-number (FlyAirplaneIntent).
         case fly(tail: String)
         /// An approach put on the route at its field and the Brief opened
