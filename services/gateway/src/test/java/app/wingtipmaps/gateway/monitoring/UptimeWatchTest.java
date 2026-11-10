@@ -2,6 +2,7 @@ package app.wingtipmaps.gateway.monitoring;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import app.wingtipmaps.gateway.service.SubscriptionService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -28,11 +29,16 @@ class UptimeWatchTest {
     }
 
     private static UptimeWatch watch(Fake probe) {
+        return watch(probe, SubscriptionService.ClaudeFeatures.EVERYONE);
+    }
+
+    private static UptimeWatch watch(Fake probe, SubscriptionService.ClaudeFeatures claude) {
         return new UptimeWatch(
                 probe,
                 null,
                 "http://planner:8000/",
                 "http://assistant:8000",
+                claude,
                 "http://weather:8000",
                 8080,
                 Duration.ofMinutes(5));
@@ -67,5 +73,14 @@ class UptimeWatchTest {
         probe.answers.put("http://planner:8000/", new HealthProbe.Answer(503, ""));
         watch(probe).check(T0);
         assertThat(probe.asked).doesNotContain("http://planner:8000/api/status/feeds");
+    }
+
+    /** Off, the default, the assistant is not started (docs/decisions/0035),
+     *  so it is not asked after nor missed. */
+    @Test
+    void withTheClaudeFeaturesOffTheAssistantIsNotWatched() {
+        Fake probe = new Fake();
+        watch(probe, SubscriptionService.ClaudeFeatures.OFF).check(Instant.parse("2026-11-10T14:00:00Z"));
+        assertThat(probe.asked).doesNotContain("http://assistant:8000/").contains("http://planner:8000/");
     }
 }
