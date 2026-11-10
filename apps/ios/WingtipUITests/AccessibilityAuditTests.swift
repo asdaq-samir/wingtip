@@ -116,8 +116,17 @@ final class AccessibilityAuditTests: XCTestCase {
     private static let pill = 0.9
     private static let half = 0.53
 
+    /// Not on an iPad, whose full-screen layout has no sheet to raise
+    /// (SplitLayout: the tabs in the sidebar, the figures over the map):
+    /// there the drag only panned the map. It waits instead for the map to
+    /// show, past its reveal (ChartMap.revealCap, 2.5 s), so the audit
+    /// reads the map and not the loading mark.
     @MainActor
     private func raiseTheSheet(_ app: XCUIApplication, from: Double) {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            sleep(4)
+            return
+        }
         let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: from))
         start.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05)))
         sleep(2)
