@@ -80,7 +80,10 @@ final class LogbookEntriesModel {
 
     func undo() {
         guard let removed else { return }
-        if entries != nil { entries?.insert(removed.entry, at: min(removed.at, entries?.count ?? 0)) }
+        // The place worked out before the insert: read inside the insert's
+        // own argument, `entries` is read while it is being modified, which
+        // Swift's exclusivity check stops the app for.
+        if let count = entries?.count { entries?.insert(removed.entry, at: min(removed.at, count)) }
         self.removed = nil
     }
 

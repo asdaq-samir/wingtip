@@ -82,10 +82,15 @@ extension View {
     /// 2026-11-09, item 2). The content scrolls under the glass and comes
     /// to rest above it. iOS 18's docked bar insets the content itself, and
     /// the iPad's sidebar (`floating` false) has its bar at the top.
+    /// The inset is the bar's own height above the home indicator
+    /// (FloatingTabBar), not more: the soft scroll edge covers the whole
+    /// inset, and with 64 points on top of the home indicator's 34 it
+    /// began some 50 points above the bar and faded rows the bar does
+    /// not cover (the accessibility audit's contrast check, 2026-11-09).
     @ViewBuilder
     func clearOfTabBar(_ floating: Bool = true) -> some View {
         if #available(iOS 26.0, *), floating {
-            safeAreaPadding(.bottom, WingtipSize.tabBar).glassScrollEdges()
+            safeAreaPadding(.bottom, FloatingTabBar.height).glassScrollEdges()
         } else {
             self
         }
@@ -117,6 +122,17 @@ extension View {
             self
         }
     }
+}
+
+/// The system tab bar's height above the home indicator, as UIKit lays
+/// out its own bar (49 points on an iPhone): the floating bar's top sits
+/// that far above the safe area's foot (its frame in the accessibility
+/// tree, 873 of 956 points on the iPhone 18 Pro Max, is these 49 and the
+/// home indicator's 34). Asked of a UITabBar rather than written down, so
+/// it follows the system.
+@MainActor
+enum FloatingTabBar {
+    static let height: CGFloat = UITabBar().sizeThatFits(CGSize(width: CGFloat.greatestFiniteMagnitude, height: 0)).height
 }
 
 /// Neighbouring glass that merges as Maps' own does: on iOS 26 the
