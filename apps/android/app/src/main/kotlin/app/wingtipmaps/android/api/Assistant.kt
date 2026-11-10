@@ -204,7 +204,7 @@ object Assistant {
     fun words(e: Exception): String = when {
         e is Planner.Failure && e.status == 404 -> NOT_HERE
         e is Planner.Failure -> e.message ?: "The planner answered ${e.status}."
-        e is IOException -> "The assistant could not be reached: ${e.message}"
+        e is IOException -> Problems.say("The assistant could not be reached", e)
         else -> e.message ?: "The assistant could not answer."
     }
 

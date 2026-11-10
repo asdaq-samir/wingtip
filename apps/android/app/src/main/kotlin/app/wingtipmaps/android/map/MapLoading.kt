@@ -9,14 +9,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.ui.ProblemLine
 
 /**
  * The map's area while the chart loads: Material's own loading indicator
@@ -28,10 +27,10 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
  * owner, 2026-11-10: stock components in place of the hand-drawn turning
  * mark). Where the chart could not be fetched at all (the first launch
  * with no connection), the indicator gives way to why, where the map
- * would be ([problem]).
+ * would be ([problem]), with Try Again ([onRetry]).
  */
 @Composable
-fun MapLoading(shown: Boolean, bottomInset: Dp, modifier: Modifier = Modifier, problem: String? = null) {
+fun MapLoading(shown: Boolean, bottomInset: Dp, modifier: Modifier = Modifier, problem: String? = null, onRetry: (() -> Unit)? = null) {
     AnimatedVisibility(visible = shown, enter = EnterTransition.None, exit = fadeOut(tween(REVEAL_FADE_MS)), modifier = modifier) {
         Box(
             Modifier
@@ -43,13 +42,9 @@ fun MapLoading(shown: Boolean, bottomInset: Dp, modifier: Modifier = Modifier, p
             if (problem == null) {
                 Loading()
             } else {
-                Text(
-                    problem,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = WingtipSpace.Xxl),
-                )
+                // One plain sentence (Problems) and Try Again, the app's
+                // one error style, centred where the map would be.
+                ProblemLine(problem, Modifier.padding(horizontal = WingtipSpace.Xxl), onRetry = onRetry)
             }
         }
     }

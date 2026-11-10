@@ -245,7 +245,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             onPick = onPick,
             onView = onView,
         )
-        MapLoading(shown = !revealed, bottomInset = covered, problem = if (info == null) chartProblem else null, modifier = Modifier.fillMaxSize())
+        MapLoading(shown = !revealed, bottomInset = covered, problem = if (info == null) chartProblem else null, onRetry = charts::load, modifier = Modifier.fillMaxSize())
         MapButtons(ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk, modifier = Modifier.align(Alignment.TopEnd))
         // The receiver heard: "Stratux · 12 targets · GPS"; under it the
         // radar or satellite loop's bar while one is on.

@@ -3,6 +3,7 @@ package app.wingtipmaps.android.coach
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.Gateway
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.CoachAsk
 import app.wingtipmaps.android.api.generated.CoachDebrief
 import app.wingtipmaps.android.api.generated.CoachEndorsement
@@ -92,7 +93,7 @@ class CoachModel(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            _state.update { it.copy(problem = "Your logbook could not be fetched: ${e.message}") }
+            _state.update { it.copy(problem = Problems.say("Your logbook could not be fetched", e)) }
         }
     }
 
@@ -169,7 +170,7 @@ class CoachModel(
          *  sign-in's ask where the session is gone. */
         fun said(e: Exception, what: String): String = when {
             e is Gateway.Refusal && e.status == 401 -> "Sign in for your plan."
-            else -> "$what: ${e.message}"
+            else -> Problems.say(what, e)
         }
 
         private suspend fun <T> quietly(read: suspend () -> T?): T? = try {

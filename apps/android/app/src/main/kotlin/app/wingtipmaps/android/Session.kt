@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Pilot
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.deleteAccount
 import app.wingtipmaps.android.checklist.ChecklistStore
 import app.wingtipmaps.android.plan.KeptPlan
@@ -34,6 +35,12 @@ class Session : ViewModel() {
     private val _problem = MutableStateFlow<String?>(null)
     val problem: StateFlow<String?> = _problem.asStateFlow()
 
+    /** Whether the problem is the account's own check failing, which Try
+     *  Again asks again ([refresh]); a link or a deletion is asked again
+     *  by its own button. */
+    private val _checkFailed = MutableStateFlow(false)
+    val checkFailed: StateFlow<Boolean> = _checkFailed.asStateFlow()
+
     /** A sign-in link has been asked for and the gateway took the ask. */
     private val _linkSent = MutableStateFlow(false)
     val linkSent: StateFlow<Boolean> = _linkSent.asStateFlow()
@@ -51,12 +58,14 @@ class Session : ViewModel() {
         try {
             _pilot.value = Gateway.me()
             _problem.value = null
+            _checkFailed.value = false
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             // Offline, or the gateway down: the last answer stands, and the
             // chart is still the pilot's from its cache.
-            _problem.value = e.message ?: "The gateway could not be reached."
+            _problem.value = Problems.say("Your account could not be checked", e)
+            _checkFailed.value = true
         }
         _loaded.value = true
     }
@@ -70,7 +79,7 @@ class Session : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _problem.value = "The link could not be sent: ${e.message}"
+                _problem.value = Problems.say("The link could not be sent", e)
                 _linkSent.value = false
             }
         }
@@ -88,7 +97,7 @@ class Session : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _problem.value = "The sign-in link did not work: ${e.message}"
+                _problem.value = Problems.say("The sign-in link did not work", e)
             }
         }
     }
@@ -130,7 +139,7 @@ class Session : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _problem.value = "The account could not be deleted: ${e.message}"
+                _problem.value = Problems.say("The account could not be deleted", e)
             } finally {
                 _deleting.value = false
             }

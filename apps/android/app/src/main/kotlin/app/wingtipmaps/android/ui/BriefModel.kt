@@ -6,6 +6,7 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.airplane.FigureKey
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.GoNoGo
 import app.wingtipmaps.android.api.generated.GoNoGoAsk
 import app.wingtipmaps.android.api.generated.VerdictItem
@@ -77,7 +78,7 @@ class BriefModel : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(loading = false, problem = "The brief could not be fetched: ${e.message}") }
+                _state.update { it.copy(loading = false, problem = Problems.say("The brief could not be fetched", e)) }
             }
         }
     }

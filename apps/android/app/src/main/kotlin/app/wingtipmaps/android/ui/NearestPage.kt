@@ -30,6 +30,7 @@ import app.wingtipmaps.android.airplane.AskFigures
 import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.api.NearestAirport
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.nearest
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.engine.generated.glideReaches
@@ -64,7 +65,7 @@ fun NearestPage(ownShip: OwnShip, plan: Plan, exit: CardExit, onOpen: (String) -
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            problem = "The nearest fields could not be found. ${e.message ?: ""}".trim()
+            problem = Problems.say("The nearest fields could not be found", e)
         }
     }
     val openWord = stringResource(R.string.said_open)

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.ForecastRunAsk
 import app.wingtipmaps.android.pilot.MinimumsStore
 import kotlinx.coroutines.CancellationException
@@ -76,7 +77,7 @@ class ForecastRun(app: Application) : AndroidViewModel(app) {
                 throw e
             } catch (e: Exception) {
                 asked = null
-                _state.update { it.copy(loading = false, problem = e.message ?: "The forecast couldn't be fetched.") }
+                _state.update { it.copy(loading = false, problem = Problems.say("The forecast couldn't be fetched", e)) }
             }
         }
     }

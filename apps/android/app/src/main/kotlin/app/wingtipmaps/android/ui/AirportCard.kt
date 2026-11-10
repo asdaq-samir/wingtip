@@ -113,7 +113,7 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
         // whose drag down is the sheet's (the scrolling rule, 2026-11-10).
         Box(Modifier.padding(padding)) {
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
-                state.problem?.let { item(key = "problem") { ProblemLine(it, Modifier.padding(horizontal = WingtipSpace.Lg)) } }
+                state.problem?.let { item(key = "problem") { ProblemLine(it, Modifier.padding(horizontal = WingtipSpace.Lg), onRetry = { model.open(ident) }) } }
                 if (place == null) {
                     if (state.loading) item(key = "loading") { LoadingRow(Modifier.padding(WingtipSpace.Lg)) }
                     return@LazyColumn

@@ -3,6 +3,7 @@ package app.wingtipmaps.android.logbook
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.Gateway
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.addLogbook
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryRequest
@@ -67,7 +68,7 @@ class LogbookModel(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            _state.update { it.copy(loading = false, problem = "The logbook could not be fetched: ${e.message}") }
+            _state.update { it.copy(loading = false, problem = Problems.say("The logbook could not be fetched", e)) }
         }
     }
 
@@ -103,7 +104,7 @@ class LogbookModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(saving = false, editProblem = "The entry could not be saved: ${e.message}") }
+                _state.update { it.copy(saving = false, editProblem = Problems.say("The entry could not be saved", e)) }
             }
         }
     }
@@ -134,7 +135,7 @@ class LogbookModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(saving = false, addProblem = "The flight could not be added: ${e.message}") }
+                _state.update { it.copy(saving = false, addProblem = Problems.say("The flight could not be added", e)) }
             }
         }
     }
@@ -171,7 +172,7 @@ class LogbookModel(
                 _state.update { s ->
                     s.copy(
                         entries = s.entries.toMutableList().apply { add(r.index.coerceAtMost(size), r.entry) },
-                        problem = "The entry could not be deleted: ${e.message}",
+                        problem = Problems.say("The entry could not be deleted", e),
                     )
                 }
             }
