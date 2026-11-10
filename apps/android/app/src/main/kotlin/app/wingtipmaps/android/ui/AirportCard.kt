@@ -68,7 +68,9 @@ import app.wingtipmaps.android.search.SearchMemory
  * first): Material's large flexible top app bar, "KOSH · Wittman
  * Regional" large over its town, shrinking as the card scrolls, with the
  * star and the close; the facts row -- Weather, Wind, Longest Runway,
- * Distance -- as containers; the sections in a tab row, Overview's the
+ * Distance (from own ship, else "From KMSN", the route's departure) --
+ * as containers, under a card of the field's closures and TFRs where it
+ * has any (FieldAlertCard); the sections in a tab row, Overview's the
  * pictures (AirportSections); and the actions docked at the foot: Fly Here
  * filled, with its time at the airplane's cruise speed, then Depart From,
  * Add as Stop, Diagram, Call and Address. The planner's words throughout,
@@ -87,8 +89,11 @@ fun AirportCard(ident: String, plan: Plan, onClose: () -> Unit, onDone: () -> Un
     LaunchedEffect(ident) { if (ident.isNotEmpty()) model.open(ident) }
     val place = state.place?.takeIf { it.ident.equals(ident, ignoreCase = true) }
     LaunchedEffect(place?.ident) { if (place != null) model.loadPhotos() }
-    // Where Fly Here starts: the airplane, else the route's departure.
-    val from = fix?.let { it.lat to it.lon } ?: planState.course?.departure?.let { it.lat to it.lon }
+    // Where the distance and Fly Here start: the airplane, else the
+    // route's departure, its place the course's or its own card's.
+    val known = planState.course?.departure?.let { AirportModel.Departure(it.ident, it.lat, it.lon) }
+    LaunchedEffect(planState.dep, known) { model.departFrom(planState.dep, known) }
+    val from = fix?.let { AirportFacts.From(it.lat, it.lon) } ?: state.departure?.let { AirportFacts.From(it.lat, it.lon, it.ident) }
     val cruise = airplane.value(FigureKey.CRUISE)
     val facts = remember(place, from, cruise) { place?.let { AirportFacts.of(it, from, cruise) } }
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -129,6 +134,13 @@ fun AirportCard(ident: String, plan: Plan, onClose: () -> Unit, onDone: () -> Un
                     if (state.loading) item(key = "loading") { Skeleton(Modifier.padding(WingtipSpace.Lg)) }
                     return@LazyColumn
                 }
+                // Closures and TFRs first, as Maps puts its live cards.
+                val alerts = FieldAlerts.of(state.notams)
+                if (alerts.isNotEmpty()) {
+                    item(key = "alerts") {
+                        FieldAlertCard(place.ident, alerts, onOpen = { section = AirportSection.NOTAMS.ordinal }, Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm))
+                    }
+                }
                 facts?.let { f -> item(key = "facts") { FactsRow(f) } }
                 item(key = "tabs") {
                     SecondaryScrollableTabRow(selectedTabIndex = section, containerColor = Color.Transparent, edgePadding = WingtipSpace.Lg) {
@@ -137,7 +149,7 @@ fun AirportCard(ident: String, plan: Plan, onClose: () -> Unit, onDone: () -> Un
                         }
                     }
                 }
-                airportSection(AirportSection.entries[section], place, state, model)
+                airportSection(AirportSection.entries[section], place, state)
             }
         }
     }
@@ -174,7 +186,7 @@ private fun FactsRow(f: AirportFacts) {
         stringResource(R.string.fact_weather) to (f.category ?: stringResource(R.string.fact_no_report)),
         wind?.let { stringResource(R.string.fact_wind) to it },
         f.longestRunwayFt?.let { stringResource(R.string.fact_longest_runway) to Format.altitude(it.toDouble()) },
-        f.distanceNm?.let { stringResource(R.string.fact_distance) to Format.distance(it) },
+        f.distanceNm?.let { (f.fromIdent?.let { from -> stringResource(R.string.fact_from, from) } ?: stringResource(R.string.fact_distance)) to Format.distance(it) },
     )
     LazyRow(contentPadding = PaddingValues(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         facts.forEach { (name, value) ->
