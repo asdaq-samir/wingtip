@@ -1,8 +1,10 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// "To 19 Dec 2026" in green, or "Ended …" or "Not current" in red: a day
-/// the gateway worked out, against today.
+/// "To 19 Dec 2026" in the go ink, or "Ended …" or "Not current" in the
+/// problem ink: a day the gateway worked out, against today, with a
+/// symbol beside the colour so it is never the only sign (HIG
+/// Accessibility).
 struct UntilText: View {
     let date: String?
     /// A currency still to come (instrument currency from approaches flown
@@ -13,24 +15,29 @@ struct UntilText: View {
     var body: some View {
         let current = Day.current(date)
         if current, let from, from > Day.today() {
-            Text("From \(Day.said(from))")
+            Label("From \(Day.said(from))", systemImage: "exclamationmark.triangle.fill")
                 .monospacedDigit()
                 .foregroundStyle(WingtipInk.caution)
         } else {
-            Text(date.map { current ? "To \(Day.said($0))" : "Ended \(Day.said($0))" } ?? "Not current")
+            Label(date.map { current ? "To \(Day.said($0))" : "Ended \(Day.said($0))" } ?? "Not current",
+                  systemImage: current ? "checkmark.circle.fill" : "xmark.octagon.fill")
                 .monospacedDigit()
                 .foregroundStyle(current ? WingtipInk.go : WingtipInk.problem)
         }
     }
 }
 
-/// The pilot's logbook and their currency (the web app's LogbookPanel):
-/// where they stand first -- passengers by day and at night (14 CFR
-/// 61.57(a), (b)), the flight review (61.56) and the medical with the
-/// dates they give, instrument currency (61.57(c), (d)) with the last
-/// proficiency check -- all worked out by the gateway; then the totals,
-/// the file in and out, and the flights, newest first, each opened to
-/// change in its own row (LogbookEntriesModel) and swiped away with an Undo.
+/// The pilot's logbook and their currency, laid out as Health's Summary
+/// (docs/design/ios.md §9): a large title with the search and Add; what
+/// falls due, then the currency pinned -- passengers by day and at night
+/// (14 CFR 61.57(a), (b)), the flight review (61.56) and the medical with
+/// the dates they give, instrument currency (61.57(c), (d)) with the last
+/// proficiency check -- each a status word, its date and a symbol, all
+/// worked out by the gateway; then this month's highlights, the trend of
+/// hours by week, month or year, the totals, and the flights grouped by
+/// month, newest first, each opened to change in its own row
+/// (LogbookEntriesModel) and swiped away with an Undo. Import and Export
+/// sit under More, as Files keeps its file actions.
 struct LogbookView: View {
     @Environment(Session.self) private var session
     @Environment(Plan.self) private var plan
@@ -48,6 +55,12 @@ struct LogbookView: View {
     /// A file read, shown before its flights go in.
     @State private var preview: (name: String, read: LogbookCSV.Imported)?
     @State private var sending = false
+    /// The search over the flights' route, airplane, type and remarks.
+    @State private var query = ""
+    @State private var period = LogbookSummary.Period.month
+    /// The CSV on its way to Files (iOS 27's exporter; the share sheet before).
+    @State private var saving: SavedFile?
+    @State private var sharing: URL?
 
     var body: some View {
         List {
@@ -57,6 +70,10 @@ struct LogbookView: View {
                 comingUpSection
                 currencySection
                 instrumentSection
+                if let entries = flights.entries, !entries.isEmpty, query.isEmpty {
+                    LogbookHighlightsSection(entries: entries)
+                    LogbookTrendSection(entries: entries, period: $period)
+                }
                 if let currency, currency.flights > 0 {
                     Section(title: "Totals") {
                         LabeledContent("Total", value: Format.hours(currency.totalHours))
@@ -70,52 +87,76 @@ struct LogbookView: View {
                 // same day, airplane, route and time).
                 Section(title: "File") {
                     if let imported { Text(imported).font(.footnote).foregroundStyle(.secondary) }
-                    if let preview {
-                        previewRows(preview.name, preview.read)
-                    } else {
-                        Button { importing = true } label: { Label("Import a Logbook", systemImage: "square.and.arrow.down") }
-                        if let exportFile { ShareLink(item: exportFile) { Label("Export as CSV", systemImage: "square.and.arrow.up") } }
-                    }
+                    if let preview { previewRows(preview.name, preview.read) }
                     LogbookPhotoRow { await load() }
                 }
-                Section(title: "Flights") {
-                    if let removed = flights.removed {
+                if let removed = flights.removed {
+                    Section {
                         UndoRow(words: "Removed \(LogbookEntriesModel.title(removed.entry))", undo: flights.undo,
                                 done: { Task { await keep(removed.entry) } })
                     }
-                    if let entries = flights.entries {
-                        if entries.isEmpty { Text("No flights logged yet: the plus logs one.").foregroundStyle(.secondary) }
-                        ForEach(entries) { e in
-                            // Tapped, the flight opens in its row to change (Edit);
-                            // its N-number, a tap of its own, opens the airplane's profile.
-                            LogbookRow(entry: e) { if flights.editingID == e.id { flights.cancelEdit() } else { flights.edit(e) } }
-                                .siriSees(SiriSaw.logbookEntry(e.id))
-                                .contextMenu {
-                                    Button("Edit", systemImage: "pencil") { flights.edit(e) }
-                                    Button("Delete", systemImage: "trash", role: .destructive) { delete(e) }
-                                }
-                                .swipeActions {
-                                    Button("Delete", systemImage: "trash", role: .destructive) { delete(e) }
-                                }
-                            if flights.editingID == e.id { LogbookEntryEditRows(model: flights) { await load() } }
+                }
+                if let entries = flights.entries {
+                    let months = LogbookSummary.months(entries, matching: query)
+                    if entries.isEmpty {
+                        ContentUnavailableView {
+                            Label("No Flights Yet", systemImage: "book.closed")
+                        } description: {
+                            Text("Flights you log, or the ones Wingtip drafts after you land, show here.")
+                        } actions: {
+                            Button("Log a Flight") { adding = .blank(aircraft: plan.tail) }.glassProminentButton()
                         }
-                    } else if problem == nil {
-                        ProgressView()
+                    } else if months.isEmpty {
+                        ContentUnavailableView.search(text: query)
                     }
+                    ForEach(months) { month in
+                        Section(title: month.title) {
+                            ForEach(month.entries) { e in
+                                // Tapped, the flight opens in its row to change (Edit);
+                                // its N-number, a tap of its own, opens the airplane's profile.
+                                LogbookRow(entry: e) { if flights.editingID == e.id { flights.cancelEdit() } else { flights.edit(e) } }
+                                    .siriSees(SiriSaw.logbookEntry(e.id))
+                                    .contextMenu {
+                                        Button("Edit", systemImage: "pencil") { flights.edit(e) }
+                                        Button("Delete", systemImage: "trash", role: .destructive) { delete(e) }
+                                    }
+                                    .swipeActions {
+                                        Button("Delete", systemImage: "trash", role: .destructive) { delete(e) }
+                                    }
+                                if flights.editingID == e.id { LogbookEntryEditRows(model: flights) { await load() } }
+                            }
+                        }
+                    }
+                } else if problem == nil {
+                    Section { Skeleton(rows: 3, label: "Fetching your logbook") }
                 }
             }
             ProblemLine(problem)
         }
         .navigationTitle("Logbook")
+        .navigationBarTitleDisplayMode(.large)
         .glassScrollEdges()
         .navigationBarMinimizesOnScroll()
-        .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $query, prompt: "Route, airplane or remarks")
         .toolbar {
             if session.signedIn {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button { importing = true } label: { Label("Import a Logbook", systemImage: "square.and.arrow.down") }
+                        Button { export() } label: { Label("Export as CSV", systemImage: "square.and.arrow.up") }
+                            .disabled(exportFile == nil)
+                    } label: {
+                        Label("More", systemImage: "ellipsis")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { adding = .blank(aircraft: plan.tail) } label: { Label("Log a Flight", systemImage: "plus") }
                 }
             }
+        }
+        .modifier(SaveFileExporter(saving: $saving) { sharing = $0 })
+        .sheet(isPresented: Binding(get: { sharing != nil }, set: { if !$0 { sharing = nil } })) {
+            if let sharing { ActivityView(items: [sharing]).presentationDetents([.medium, .large]) }
         }
         .sheet(isPresented: Binding(get: { adding != nil }, set: { if !$0 { adding = nil } })) {
             NavigationStack {
@@ -124,6 +165,7 @@ struct LogbookView: View {
                     await load()
                 }
             }
+            .presentationDetents([.medium, .large])
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.commaSeparatedText, .plainText]) { result in
             Task { await bringIn(result) }
@@ -249,6 +291,12 @@ struct LogbookView: View {
                 do { currency = try await Gateway.setCurrencyDates(next) } catch { problem = error.localizedDescription }
             }
         })
+    }
+
+    /// The CSV written for today, handed to Files (SaveFileExporter).
+    private func export() {
+        guard let exportFile, let data = try? Data(contentsOf: exportFile) else { return }
+        saving = SavedFile(data: data, type: .commaSeparatedText, name: exportFile.lastPathComponent)
     }
 
     /// Off the list at once; any earlier delete's Undo gone with it, and kept.
