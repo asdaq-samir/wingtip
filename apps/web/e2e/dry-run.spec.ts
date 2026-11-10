@@ -1,28 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
-import {
-  chartZoom,
-  grabberTo,
-  openPanel,
-  openProfile,
-  closeProfile,
-  settle,
-  settled,
-  sideDrawer,
-  slow,
-  pressDryRunStart,
-  pickAirplane,
-} from "./helpers";
-
-// An airplane picked, as a pilot picks one: these read its times, fuel or
-// figures, which with none are not shown (the setup picks none).
-test.beforeEach(async ({ page }) => pickAirplane(page));
+import { chartZoom, grabberTo, openPanel, openProfile, closeProfile, settle, settled, sideDrawer, slow, pressDryRunStart } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * The planned flight's dry run flies own ship, as if a pilot were flying
  * the route (lib/map/position/ownShip's simulateFix): the location arrow on, own
  * ship moving along the course with the plan's heading, and put back as
- * the pilot had it -- here off, no GPS asked -- when the run is closed;
- * nothing of it kept as where the pilot has flown (ownTrail).
+ * the pilot had it -- here off, no GPS asked -- when the run is closed; nothing of it kept as where the pilot has flown (ownTrail).
  */
 test("the dry run flies own ship along the route, and gives it back as it was", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -39,8 +24,7 @@ test("the dry run flies own ship along the route, and gives it back as it was", 
   // The airplane followed: the location arrow is the whole route's button
   // (the owner's "Can the locator button change to fit line during dry
   // run when plane is centered on the screen"). Tapped, the map takes the
-  // route, and the arrow comes back to bring the airplane to the middle.
-  // Each tap goes out to the route and back in on the airplane (the
+  // route, and the arrow comes back to bring the airplane to the middle. Each tap goes out to the route and back in on the airplane (the
   // owner's "toggling the zoom in and out is not working"): the base
   // chart's level in use, its top tile container's.
   const level = () => chartZoom(page);

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { openBrief, openPanel, openProfile, pickAirplane, settle, sideDrawer, slow } from "./helpers";
+import { openBrief, openPanel, openProfile, settle, sideDrawer, slow } from "./helpers";
+import { pickAirplane } from "./startState";
 
 /**
  * Ready to fly (the engine's ready_to_fly, features/readyToFly): the

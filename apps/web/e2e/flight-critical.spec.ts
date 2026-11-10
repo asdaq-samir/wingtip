@@ -11,12 +11,9 @@ import {
   sideDrawer,
   slow,
   pressDryRunStart,
-  pickAirplane,
 } from "./helpers";
-
-// An airplane picked, as a pilot picks one: these read its times, fuel or
-// figures, which with none are not shown (the setup picks none).
-test.beforeEach(async ({ page }) => pickAirplane(page));
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * What a pilot cannot be without in the air, in one journey (the owner,

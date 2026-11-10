@@ -1,9 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
-import { settle, sideDrawer, slow, openBrief, pickAirplane } from "./helpers";
-
-// An airplane picked, as a pilot picks one: these read its times, fuel or
-// figures, which with none are not shown (the setup picks none).
-test.beforeEach(async ({ page }) => pickAirplane(page));
+import { settle, sideDrawer, slow, openBrief } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * The Brief at a glance (the owner's rule, 2026-11-03: "a pilot doesn't

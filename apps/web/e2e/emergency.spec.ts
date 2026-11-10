@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-import { consoleSheet, openPanel, openProfile, pickAirplane, settle, sideDrawer, slow, pressDryRunStart } from "./helpers";
+import { consoleSheet, openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart } from "./helpers";
+import { pickAirplane } from "./startState";
 
 /**
  * The emergency assistant (features/emergency), reached with no map button

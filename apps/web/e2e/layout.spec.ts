@@ -3,7 +3,6 @@ import {
   closeSidebarWithTheStockKey,
   expectDrawerClosed,
   firstRow,
-  fromRest,
   grabberTo,
   openBrief,
   openPanel,
@@ -15,6 +14,7 @@ import {
   sideDrawer,
   slow,
 } from "./helpers";
+import { fromRest } from "./startState";
 
 /**
  * The regressions this file exists to catch (see playwright.config.ts

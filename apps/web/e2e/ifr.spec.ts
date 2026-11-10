@@ -1,26 +1,10 @@
 import { test, expect } from "@playwright/test";
-import {
-  closeCard,
-  closeNavLog,
-  controlsInSight,
-  emptyPlan,
-  openNavLog,
-  openProfile,
-  openSection,
-  openTab,
-  settle,
-  slow,
-  pickAirplane,
-} from "./helpers";
+import { closeCard, closeNavLog, controlsInSight, emptyPlan, openNavLog, openProfile, openSection, openTab, settle, slow } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
-// An airplane picked, as a pilot picks one: these read its times, fuel or
-// figures, which with none are not shown (the setup picks none).
-test.beforeEach(async ({ page }) => pickAirplane(page));
-
-// A route's handler still running as the test ends -- the Recents and
-// Saved planned ahead at idle ask the planner then -- found the page
-// closed and failed the test (navlog-fit.spec, CI, 2026-10-28): the
-// handlers taken off, their errors let go, as each test ends.
+// A route's handler still running as the test ends -- the Recents and Saved planned ahead at idle ask the planner then -- found the page
+// closed and failed the test (navlog-fit.spec, CI, 2026-10-28): the handlers taken off, their errors let go, as each test ends.
 test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });

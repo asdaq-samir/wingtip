@@ -13,17 +13,13 @@ import {
   settle,
   sideDrawer,
   slow,
-  pickAirplane,
 } from "./helpers";
+import { pickAirplane } from "./startState";
 import { fillTime } from "./ariaFields";
-
-// An airplane picked, as a pilot picks one: these read its times, fuel or
-// figures, which with none are not shown (the setup picks none).
-test.beforeEach(async ({ page }) => pickAirplane(page));
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
- * What the nav log is computed from: the altitude plans and a pilot's
- * own altitude, a departure time's winds and ETAs, and the airplane
+ * What the nav log is computed from: the altitude plans and a pilot's own altitude, a departure time's winds and ETAs, and the airplane
  * picked in the drawer's header.
  */
 
@@ -31,8 +27,7 @@ test(
   "plan page: the nav log's altitude opens the planner's own reasoning, and the briefing's Cruise Altitude section carries the same steps",
   { tag: "@smoke" },
   async ({ page }) => {
-    // Three re-plans, each allowed 30 s below, inside the default 30 s for
-    // the whole test: 18 s on a quiet machine, and past the limit in a
+    // Three re-plans, each allowed 30 s below, inside the default 30 s for the whole test: 18 s on a quiet machine, and past the limit in a
     // full run, where the other workers are asking the planner too.
     test.slow();
     await page.goto("/app/plan?dep=C81&dest=KDLH");

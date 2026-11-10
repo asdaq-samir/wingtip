@@ -1,9 +1,7 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, grabberTo, sideDrawer, slow, pickAirplane } from "./helpers";
-
-// An airplane picked, as a pilot picks one: these read its times, fuel or
-// figures, which with none are not shown (the setup picks none).
-test.beforeEach(async ({ page }) => pickAirplane(page));
+import { controlsInSight, grabberTo, sideDrawer, slow } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * Every pick-one choice is the app's one pull-down (components/PullDown),
