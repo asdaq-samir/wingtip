@@ -52,15 +52,14 @@ struct DryRunControls: View {
                 Spacer(minLength: 0)
                 SpeedPicker(name: "Dry run speed", speed: $dryRun.speed)
                 // Forecast mode: the run meets the weather forecast for when it
-                // gets there. Filled on a tinted disc while on, the pressed look.
-                Button { forecast.on.toggle() } label: {
-                    Image(systemName: forecast.on ? "cloud.sun.fill" : "cloud.sun").symbolSwap().frame(width: 32, height: 32)
-                        .background { if forecast.on { Circle().fill(.tint.opacity(0.2)) } }
-                        .contentShape(Rectangle().inset(by: -6))
+                // gets there. The system's button toggle, which draws its own
+                // on look and says on or off to VoiceOver.
+                Toggle(isOn: Binding(get: { forecast.on }, set: { forecast.on = $0 })) {
+                    Label("Forecast mode", systemImage: forecast.on ? "cloud.sun.fill" : "cloud.sun").symbolSwap()
                 }
-                .accessibilityLabel("Forecast mode")
-                .accessibilityValue(forecast.on ? "On" : "Off")
-                .accessibilityAddTraits(forecast.on ? .isSelected : [])
+                .toggleStyle(.button)
+                .labelStyle(.iconOnly)
+                .contentShape(.interaction, Rectangle().inset(by: -6))
             }
             if dryRun.totalS > 0 {
                 Slider(value: Binding(get: { dryRun.flownS }, set: { dryRun.scrub(to: $0) }), in: 0...dryRun.totalS) {

@@ -201,17 +201,26 @@ struct StripFieldCard: View {
                 HStack(spacing: WingtipSpace.sm) {
                     ForEach(radio, id: \.label) { chip in
                         Button(chip.label) { onOpen(point.name) }
-                            .buttonStyle(.inkChip)
                             .accessibilityLabel(chip.words)
                             .frequencyActions(FrequencyCopy.figure(in: chip.words))
+                            .contentShape(.interaction, Rectangle().inset(by: -WingtipSpace.sm))
                     }
                     if clearance {
-                        Button("Clearance", action: onClearance).buttonStyle(.inkChip).accessibilityLabel("The clearance card")
+                        Button("Clearance", action: onClearance).accessibilityLabel("The clearance card")
+                            .contentShape(.interaction, Rectangle().inset(by: -WingtipSpace.sm))
                     }
                     if plates {
-                        Button("Plates") { onPlates(point.name) }.buttonStyle(.inkChip).accessibilityLabel("The approach plates")
+                        Button("Plates") { onPlates(point.name) }.accessibilityLabel("The approach plates")
+                            .contentShape(.interaction, Rectangle().inset(by: -WingtipSpace.sm))
                     }
                 }
+                // The system's bordered capsule buttons, small (the owner,
+                // 2026-11-10: stock over the hand-built ink chips), each
+                // with a 44-point hit area round its 28 points: the button
+                // does not grow, and the 8-point gap lets the areas meet.
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+                .controlSize(.small)
                 .padding(.vertical, WingtipSpace.sm)
             }
         }

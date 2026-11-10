@@ -14,6 +14,8 @@ struct AircraftView: View {
     @State private var own: [OwnAircraftRecord] = []
     @State private var typed = ""
     @State private var problem: String?
+    /// Why what was typed could not be flown, said under the field.
+    @State private var tailProblem: String?
 
     var body: some View {
         List {
@@ -28,10 +30,14 @@ struct AircraftView: View {
                         .textInputAutocapitalization(.characters).autocorrectionDisabled()
                         .font(.body.monospaced())
                         .onSubmit(fly)
+                    // The system's prominent button, never dimmed: what is not
+                    // an N-number is said under the field when Fly is tapped
+                    // (warn, never limit; lib/problems' where it happens).
                     Button("Fly") { fly() }
-                        .buttonStyle(ProminentButtonStyle())
-                        .disabled((try? Registered.isNNumber(typed.uppercased())) != true)
+                        .buttonStyle(.borderedProminent)
+                        .buttonBorderShape(.capsule)
                 }
+                ProblemLine(tailProblem)
                 // No airplane: the route's own figures alone, none
                 // assumed (docs/decisions/0011); the plan's start.
                 Button { plan.flyNoAirplane() } label: {
@@ -94,7 +100,17 @@ struct AircraftView: View {
             }
             Section("Types the Planner Has Figures for") {
                 if profiles.isEmpty {
-                    if let problem { ProblemLine(problem) } else { Skeleton(label: "Fetching the types") }
+                    if let problem {
+                        ProblemLine(problem)
+                    } else {
+                        ForEach(0..<3, id: \.self) { _ in
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                                Text("Airplane type").font(.headline)
+                                Text("Cruise speed · fuel burn · ceiling").font(.subheadline).foregroundStyle(.secondary)
+                            }
+                            .loading("Fetching the types")
+                        }
+                    }
                 }
                 ForEach(profiles, id: \.name) { profile in
                     HStack {
@@ -125,8 +141,12 @@ struct AircraftView: View {
 
     private func fly() {
         let tail = typed.uppercased().trimmingCharacters(in: .whitespaces)
-        // Fly is only enabled for an N-number the engine has read as one.
-        guard (try? Registered.isNNumber(tail)) == true else { return }
+        // Flown only as an N-number the engine has read as one; else why not.
+        guard (try? Registered.isNNumber(tail)) == true else {
+            tailProblem = tail.isEmpty ? "Type the airplane's N-number." : "\(tail) isn't an N-number."
+            return
+        }
+        tailProblem = nil
         Task { await plan.fly(tail: tail, own: own, profiles: profiles) }
     }
 }

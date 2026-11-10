@@ -50,11 +50,16 @@ struct StripAnswerCard: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: WingtipSpace.sm) {
                         ForEach(answer.sources) { s in
-                            Button(s.label) { source = s }.buttonStyle(.inkChip)
+                            Button(s.label) { source = s }
                                 .accessibilityLabel("Source: \(s.label)")
                                 .accessibilityHint("Shows the report as sent")
+                                // 44 points to tap round the small button.
+                                .contentShape(.interaction, Rectangle().inset(by: -WingtipSpace.sm))
                         }
                     }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.capsule)
+                    .controlSize(.small)
                     .padding(.vertical, WingtipSpace.sm)
                 }
             }

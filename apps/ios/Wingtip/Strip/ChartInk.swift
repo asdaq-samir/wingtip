@@ -162,31 +162,3 @@ extension View {
 
     func inkCard() -> some View { modifier(InkCard()) }
 }
-
-/// A chip: a 999-radius capsule, 32 points tall, its words the tint's in
-/// condensed capitals, white (the card's colour) or filled with the tint
-/// when it is the one picked. The 44-point hit area is round it, not in
-/// it: the chip does not grow, and rows of chips sit at an 8-point gap
-/// so the areas meet.
-struct InkChipStyle: ButtonStyle {
-    @Environment(\.chartInk) private var ink
-    var filled = false
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .condensedCaps()
-            .lineLimit(1)
-            .padding(.horizontal, WingtipSpace.md)
-            .frame(height: WingtipSize.chip)
-            .foregroundStyle(filled ? Color.white : ink.tint)
-            .background(filled ? ink.tint : ink.card, in: Capsule())
-            .overlay(Capsule().strokeBorder(ink.tint.opacity(filled ? 0 : 0.5), lineWidth: 1))
-            .opacity(configuration.isPressed ? 0.6 : 1)
-            .contentShape(Rectangle().inset(by: -(WingtipSize.tapTarget - WingtipSize.chip) / 2))
-    }
-}
-
-extension ButtonStyle where Self == InkChipStyle {
-    static var inkChip: InkChipStyle { InkChipStyle() }
-    static var inkChipFilled: InkChipStyle { InkChipStyle(filled: true) }
-}
