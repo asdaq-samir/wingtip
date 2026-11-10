@@ -118,3 +118,13 @@ export function tailOf(a: AircraftChoice): string | null {
   const name = shortName(a.label).toUpperCase();
   return N_NUMBER.test(name) ? name : null;
 }
+
+/** An airplane the FAA's registry has, picked by its N-number -- in the
+ *  picker under the route, or its profile's Fly This Airplane: flown on its
+ *  type's stock profile, none where its type has none (its own figures
+ *  then, never another airplane's), named by its N-number, with the
+ *  figures the pilot set for it on this device over the book's. */
+export function tailChoice(tail: string, profile: string, kept?: Partial<AircraftChoice>): AircraftChoice {
+  const label = profile ? `${tail} · ${profile.toUpperCase()}` : tail;
+  return { profile, label, tail, ...kept };
+}

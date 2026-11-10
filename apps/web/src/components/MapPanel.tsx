@@ -37,13 +37,13 @@ interface Props {
   /** The row under it, in sight at rest too: the airplane and the
    *  departure time, the rating's progress. */
   controls?: ReactNode;
-  /** What the panel holds at rest with no tab bar: a capsule's own row
+  /** What the panel holds at rest with no first row (`bar`): a capsule's own row
    *  (the training route with a way to its options). With a bar the pill
    *  is the bar alone. */
   compact?: ReactNode;
   /** The body: the nav log and the briefing, the training list. */
   children: ReactNode;
-  /** The planner's tab bar (TabBar), or the strip's ribbon: the sheet's
+  /** The planner's one search, the developer's places (DevBar): the sheet's
    *  first row, and at rest the pill itself. */
   bar?: ReactNode;
   /** What the panel is showing: a tab of the planner, a card open alone
@@ -58,7 +58,7 @@ interface Props {
   /** The body down to the sheet's own edge, over the home indicator's
    *  inset (PlaceCard). The inset's height is `--half-foot` to it. */
   toEdge?: boolean;
-  /** The airplane flying the route (useFlyingMode): the tab bar, the top
+  /** The airplane flying the route (useFlyingMode): the first row, the top
    *  row and the controls put away, the pill its foot alone. */
   flying?: boolean;
   state: PanelState;
@@ -305,9 +305,9 @@ export default function MapPanel({
   // is the figures (the tabs layout with a route) or the strip's field.
   const barShown = !!bar && !(onPhone && keyboard) && !flying;
   const pictureCard = useOpenCards((s) => s.picture);
-  // The tabs stay as they are with a card over them, static as the
-  // platform's own (TabBar): the card names itself and has its own close.
-  const barHere = barShown && !(atPill && footShown);
+  // The first row stays over a card and in the pill over the figures: the
+  // one search always a tap away (the one-search design, 2026-11-09).
+  const barHere = barShown;
   // The head's row: in the pill only without a tab bar (whose pill is the
   // bar or the figures); out of it wherever there is a top row or no bar.
   const headerShown = !flying && !cardsUp && (atPill ? !bar : top != null || !barShown);
@@ -685,8 +685,8 @@ export default function MapPanel({
         className={cn("relative flex shrink-0 touch-none flex-col", under && "z-20", !fromBottom && "pt-[env(safe-area-inset-top)]")}
       >
         {bar && (
-          // The tabs are not the sheet's handle: a press on them is a tab's,
-          // the sheet dragged by its grabber (TabBar).
+          // The first row is not the sheet's handle: a press on it is its
+          // field's or its buttons', the sheet dragged by its grabber.
           <div
             onPointerDown={(event) => event.stopPropagation()}
             className={cn(
@@ -702,7 +702,7 @@ export default function MapPanel({
             <PanelSize.Provider value={panelSize}>{bar}</PanelSize.Provider>
           </div>
         )}
-        {/* Under the tab bar, the route's box and its buttons a shade
+        {/* Under the first row, the route's box and its buttons a shade
                   darker (SHEET_BELOW), for the clear glass to stand off it. */}
         <div className={cn("relative flex flex-col", bar && barHere && !atPill && SHEET_BELOW, !headerShown && kept == null && "hidden")}>
           {(headerShown || kept != null) && (

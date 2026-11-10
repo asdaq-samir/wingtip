@@ -10,30 +10,31 @@ import { patched } from "../../../lib/useSearchParamsNow";
 import { usePickAirplaneRequest } from "./usePickAirplaneRequest";
 
 /**
- * The planner's tabs and the cards open over them, apart from the route
- * the workspace plans (PlanWorkspace): what changed at almost every one of
- * the owner's asks about the panel on 2026-10-12, nine of that day's
- * twelve commits to the workspace, which is otherwise the route's.
+ * What the planner's sheet shows under its one search (the owner's
+ * approved one-search design, 2026-11-09, which replaced the FPL, Airport,
+ * Airplane and Setup tabs) and the cards open over it, apart from the
+ * route the workspace plans (PlanWorkspace).
  */
 
-/** The tab bar's places (TabBar): FPL, the route's box and its nav log;
- *  Airport, the search and the nearest fields; Aircraft, the traffic. */
-export type PanelTab = "fpl" | "airport" | "aircraft";
+/** The sheet's three places under the search: the plan (the route, its
+ *  figures and its nav log, the sheet's main content); the search's own
+ *  page (nothing typed: the flight, Favorites, Recents and Nearest; typed:
+ *  the results, grouped); and the traffic about, opened from the search's
+ *  Do or an airplane tapped on the map. */
+export type PanelView = "plan" | "search" | "traffic";
 
-/** The address's keys of what is open over a tab: an airport's card, the
- *  airspace over a point held, an airplane, its past flight, Nearest's
- *  list and its place, FPL's saved flights, and a tab's other lists in
- *  full (`list`). */
-// Nearest's list among them, Airport's card now (four tabs), and FPL's
-// saved flights.
+/** The address's keys of what is open over the sheet: an airport's card,
+ *  the airspace over a point held, an airplane, its past flight, Nearest's
+ *  list and its place, the saved flights, the lists in full (`list`) and
+ *  the Brief. */
 const CARD_KEYS = ["place", "at", "flight", "past", "near", "nearAt", "nearName", "saved", "list", "brief"] as const;
 
-/** A tab's list in full, from its strip's title, in the address
- *  (`?list=favorites`): Airport's Favorites and Recents, FPL's routes
- *  planned, Aircraft's Favorites and Recents. Saved and Nearest have keys
- *  of their own (`saved`, `near`). */
+/** A list in full, from its section's title, in the address
+ *  (`?list=favorites`): the airports' Favorites and Recents, the routes
+ *  planned, the airplanes' Favorites and Recents. Saved and Nearest have
+ *  keys of their own (`saved`, `near`). */
 const LISTS = ["favorites", "recents", "routes", "aircraft-favorites", "aircraft-recents"] as const;
-export type TabList = (typeof LISTS)[number];
+export type PanelList = (typeof LISTS)[number];
 
 /**
  * The cards the address holds, so a link or Back lands on them: an
@@ -53,9 +54,9 @@ export function useAddressCards(searchParams: URLSearchParams, setSearchParams: 
   // Aircraft card's. A reload starts clean, cards and lists alike
   // (features/shell/freshLoad).
   const listParam = searchParams.get("list");
-  const list = (LISTS as readonly string[]).includes(listParam ?? "") ? (listParam as TabList) : null;
+  const list = (LISTS as readonly string[]).includes(listParam ?? "") ? (listParam as PanelList) : null;
   const openList = useCallback(
-    (name: TabList) => {
+    (name: PanelList) => {
       setSearchParams(
         (prev) => {
           return patched(prev, { list: name });
@@ -200,24 +201,22 @@ export function useAddressCards(searchParams: URLSearchParams, setSearchParams: 
 }
 
 /**
- * The tab up and the ways to change it: Aircraft and Nearest's list are
- * the address's (`aircraft`, `flight`, `near`), so a link or Back lands on
- * them; FPL and Airport are picked, FPL with a route and Airport without
- * one until then. A new route -- Fly Here, a link, one typed -- brings FPL
- * to the front (`route` changing, `hasRoute`).
+ * The place up under the search and the ways to change it. The traffic
+ * and an airplane's card are the address's (`aircraft`, `flight`), and so
+ * are the search's lists in full (`list`, `saved`, `near`), so a link or
+ * Back lands on them; the plan and the search are picked. With a route the
+ * plan is up, the sheet's main content, and a new route -- Fly Here, a
+ * link, one typed -- brings it back to the front; with none, the search's
+ * own page is.
  *
- * Each tab keeps what was open over it when it was left -- an airport's
- * card, an airplane's, a past flight and where its replay was, Nearest's
- * list and its place typed -- and opens it again on coming back, at the owner's ask
- * ("the cards should stay where they are when coming back to the tab"),
- * as each of an iOS app's tabs keeps its own screen. Not past a reload.
+ * Each place keeps what was open over it when it was left -- an airport's
+ * card, an airplane's, a past flight and where its replay was -- and opens
+ * it again on coming back, as before. Not past a reload.
  */
-export function usePanelTabs({
+export function usePanelView({
   cards,
   route,
   hasRoute,
-  panel,
-  setPanel,
   searchParams,
   setSearchParams,
 }: {
@@ -225,63 +224,42 @@ export function usePanelTabs({
   /** The route as the address has it, any change of which is a new one. */
   route: string;
   hasRoute: boolean;
-  panel: PanelState;
-  setPanel: (state: PanelState) => void;
   searchParams: URLSearchParams;
   setSearchParams: SetURLSearchParams;
 }) {
   const { place, heldPoint, flight, past, aircraftOpen, nearOpen, list } = cards;
   const savedOpen = searchParams.get("saved") === "1";
-  // FPL's Brief, a card over it (PlanWorkspace's briefOpen).
-  const briefOpen = searchParams.get("brief") === "1";
-  const [tabPick, setTabPick] = useState<PanelTab | null>(null);
+  const [viewPick, setViewPick] = useState<PanelView | null>(null);
   const [routeSeen, setRouteSeen] = useState(route);
   if (route !== routeSeen) {
     setRouteSeen(route);
-    if (hasRoute) setTabPick("fpl");
+    if (hasRoute) setViewPick("plan");
   }
-  // FPL first, at the owner's ask ("Fpl should be the default selected").
-  // A field, a point or an airplane opened while Setup is up -- a tap on
-  // the map, which Setup leaves in sight on a phone -- puts Setup away and
-  // opens its card on its own tab, at the owner's notice ("When selecting
-  // airport marker while being on setup tab doesn't open the [airport]
-  // tab"): an airplane's is Aircraft (below), a field's or a point's
-  // Airport.
-  const consoleOpen = useConsoleOpen((st) => st.open);
+  // A field, a point or an airplane opened while the account's page is up
+  // -- a tap on the map, which it leaves in sight on a phone -- puts the
+  // page away and opens the card.
   const opened = `${place ?? ""}|${heldPoint ? JSON.stringify(heldPoint) : ""}|${flight ?? ""}`;
-  const [openedSeen, setOpenedSeen] = useState(opened);
-  if (opened !== openedSeen) {
-    setOpenedSeen(opened);
-    if (consoleOpen && (place || heldPoint) && !flight) setTabPick("airport");
-  }
-  // Before the frame is drawn: after it, Setup stood a frame over the card
-  // just opened, its tab already the card's.
+  // Before the frame is drawn: after it, the account's page stood a frame
+  // over the card just opened.
   const closeConsole = useEffectEvent(() => {
     if ((place || heldPoint || flight) && useConsoleOpen.getState().open) useConsoleOpen.getState().setOpen(false);
   });
-  // Once per card opened, not as the console opens over one already open.
+  // Once per card opened, not as the page opens over one already open.
   useLayoutEffect(() => closeConsole(), [opened]);
-  // Nearest's list is Airport's (four tabs, at the owner's pick). An
-  // airport's card or a point's opened before any tab was picked -- a
-  // link, a tap on the chart -- is over FPL, the tab up, its Back to it
-  // (the owner's "tapping the airport from FPL then it can have the back
-  // button should get it back to fpl").
-  // A list in full is its tab's: Airport's for its Favorites and Recents
-  // -- a link or a reload landing on one lands on Airport -- FPL's for the
-  // routes; Aircraft's by the address's `aircraft` already.
-  const tab: PanelTab =
+  // The traffic by the address; the search's lists in full are the
+  // search's; else the place picked, the plan where there is a route and
+  // the search's page where there is none.
+  const view: PanelView =
     flight || aircraftOpen
-      ? "aircraft"
-      : nearOpen || list === "favorites" || list === "recents"
-        ? "airport"
-        : list === "routes"
-          ? "fpl"
-          : (tabPick ?? "fpl");
+      ? "traffic"
+      : nearOpen || savedOpen || list === "favorites" || list === "recents" || list === "routes"
+        ? "search"
+        : (viewPick ?? (hasRoute ? "plan" : "search"));
 
-  const keptCards = useRef<Partial<Record<PanelTab, [string, string][]>>>({});
+  const keptCards = useRef<Partial<Record<PanelView, [string, string][]>>>({});
   const keptReplay = useRef<{ hex: string; id: number; at: number | null; playing: boolean } | null>(null);
   // The address's past flight drawn on the map (features/plan/map/pastFlight), and
-  // let go with its card; back on its tab, the replay where it was,
+  // let go with its card; back on its place, the replay where it was,
   // playing if it was.
   useEffect(() => {
     if (flight && past) {
@@ -292,15 +270,15 @@ export function usePanelTabs({
     } else clearPastFlight();
   }, [flight, past]);
 
-  // A tab picked from the tab bar: Aircraft's list from the address, FPL and Airport by the pick, the card open over the tab it
-  // was on kept for it and the one kept for the tab picked opened again.
-  // The tab up picked again (tabUp, closeSheet) puts its card away. At
-  // the height the panel is, at the pilot's ask: a pill stays a pill.
-  const pickTab = useCallback(
-    (next: PanelTab) => {
-      const leaving = next !== tab;
+  // A place picked -- the flight's card, the search focused, the traffic
+  // from the search's Do -- the card open over the one it was on kept for
+  // it and the one kept for the place picked opened again. The place up
+  // picked again puts its card away. At the height the panel is.
+  const pickView = useCallback(
+    (next: PanelView) => {
+      const leaving = next !== view;
       if (leaving) {
-        keptCards.current[tab] = CARD_KEYS.flatMap((key) => {
+        keptCards.current[view] = CARD_KEYS.flatMap((key) => {
           const value = searchParams.get(key);
           return value ? [[key, value] as [string, string]] : [];
         });
@@ -308,59 +286,33 @@ export function usePanelTabs({
         if (flight && past && replay.hex === flight && replay.id === past) {
           keptReplay.current = { hex: flight, id: past, at: replay.at, playing: replay.playing };
         }
-      } else delete keptCards.current[tab];
+      } else delete keptCards.current[view];
       const back = leaving ? (keptCards.current[next] ?? []) : [];
-      setTabPick(next);
+      setViewPick(next);
       setSearchParams(
         (prev) => {
           const out = new URLSearchParams(prev);
           for (const key of [...CARD_KEYS, "aircraft", "near"]) out.delete(key);
-          if (next === "aircraft") out.set("aircraft", "1");
+          if (next === "traffic") out.set("aircraft", "1");
           for (const [key, value] of back) out.set(key, value);
           return out;
-          // In the same commit as the pick and Setup put away (TabBar), not in
-          // the router's transition after them: in between, the tab bar drew
-          // the tab the address still had -- Airport for a card, a list or
-          // Nearest left open on it -- a frame on the way from Setup to FPL
-          // (the owner, 2026-11-05: "Why does the airport tab get selected
-          // momentarily when going from airport to setup to fpl?").
         },
+        // In the same commit as the pick, not in the router's transition
+        // after it: in between, the sheet drew the place the address still
+        // had for a frame.
         { replace: true, flushSync: true },
       );
     },
-    [setSearchParams, searchParams, tab, flight, past],
+    [setSearchParams, searchParams, view, flight, past],
   );
-
-  // The tab up tapped again where the tab bar has no panel to size (the
-  // panel's own does, TabBar), or over a list in full (TabBar's
-  // `listOver`): on the pill, half way; out already, a card or a list over
-  // it put away, as an iOS tab tapped again goes back to its first screen.
-  const tabUp = useCallback(() => {
-    if (panel === "peek") {
-      setPanel("half");
-      return;
-    }
-    if (place || heldPoint || flight || nearOpen || savedOpen || briefOpen || list) pickTab(tab);
-  }, [place, heldPoint, flight, nearOpen, savedOpen, briefOpen, list, pickTab, tab, panel, setPanel]);
-
-  // The minimized tab bar's close, at the owner's ask: a card open over
-  // the tab put away, as the tab tapped again does, and the sheet down to
-  // its pill.
-  const closeSheet = useCallback(() => {
-    if (place || heldPoint || flight || nearOpen || savedOpen || briefOpen || list) pickTab(tab);
-    setPanel("peek");
-  }, [place, heldPoint, flight, nearOpen, savedOpen, briefOpen, list, pickTab, tab, setPanel]);
 
   // The workspace's own picks (a card's button, the radio's "nearest", a
   // route cleared) come with an address change -- a card put away, a list
   // opened -- which the router makes in a transition. The pick in the same
-  // transition, so the two land in one commit: picked at once, the tab
-  // bar drew the new tab under the old address for a frame, the card it
-  // still had marked over it (`over`), as FPL over Airport's card did on
-  // the way from Setup (the owner, 2026-11-05). Transitions started in one
+  // transition, so the two land in one commit. Transitions started in one
   // event share their lane, so they commit together.
-  const pickLater = useCallback((next: PanelTab) => startTransition(() => setTabPick(next)), []);
+  const pickLater = useCallback((next: PanelView) => startTransition(() => setViewPick(next)), []);
   // "Pick an airplane" asked from a screen that needs one (lib/pickAirplane).
-  usePickAirplaneRequest(pickTab);
-  return { tab, setTabPick: pickLater, pickTab, tabUp, closeSheet };
+  usePickAirplaneRequest(pickView);
+  return { view, setViewPick: pickLater, pickView };
 }

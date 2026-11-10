@@ -6,3 +6,4 @@ export { default as LinkSignIn } from "./LinkSignIn";
 export { default as TvLink } from "./TvLink";
 export const loadPilotPanel = () => import("./PilotPanel");
 export const loadAccountPanels = () => import("./AccountPanels");
+export { default as AccountButton } from "./AccountButton";

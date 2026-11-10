@@ -48,6 +48,7 @@ enum class LinkKey(
     STOPS("stops"),
     PLACE("place"),
     FLIGHT("flight"),
+    AIRPLANE("airplane"),
     ALTITUDE_FT("altitude_ft"),
     DEPART("depart"),
     TYPE("type"),

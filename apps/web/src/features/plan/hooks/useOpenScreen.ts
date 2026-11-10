@@ -6,10 +6,14 @@ import { useConsoleOpen, type PanelState } from "../../../lib/mapChrome";
 import { SCREEN_LINK, screenOf, type ScreenId } from "../../../lib/navigation/generated/screens";
 import { stale, takeScreen, useWanted, wantScreen } from "../../../lib/navigation/wanted";
 import { patched } from "../../../lib/useSearchParamsNow";
-import type { PanelTab } from "./useTabCards";
+import { tailOf } from "../../../lib/aircraftChoice";
+import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
+import { usePreferences } from "../../../lib/preferences";
+import type { PanelView } from "./usePanelView";
 
-/** Setup's pages a screen is, as the path of page keys down to it
- *  (components/wantedPage): Setup alone is none. */
+/** The account page's pages a screen is (the account button's menu, which
+ *  took Setup's place), as the path of page keys down to it
+ *  (components/wantedPage): the page alone is none. */
 const SETUP_PAGES: Partial<Record<ScreenId, string[]>> = {
   setup: [],
   flights: ["flights"],
@@ -37,7 +41,7 @@ export function useOpenScreen({
   routed,
   searchParams,
   setSearchParams,
-  setTabPick,
+  setViewPick,
   setPanel,
   openBrief,
   openNavLogCard,
@@ -47,7 +51,7 @@ export function useOpenScreen({
   routed: boolean;
   searchParams: URLSearchParams;
   setSearchParams: SetURLSearchParams;
-  setTabPick: (tab: PanelTab) => void;
+  setViewPick: (view: PanelView) => void;
   setPanel: (state: PanelState) => void;
   openBrief: () => void;
   openNavLogCard: () => void;
@@ -79,19 +83,32 @@ export function useOpenScreen({
       return;
     }
     switch (screen) {
+      // The tabs that were (the one search, 2026-11-09): FPL is the plan,
+      // Airport the search's own page, Airplane the airplane picked's
+      // profile -- the traffic about where none is picked -- and Setup the
+      // account page (SETUP_PAGES, above).
       case "fpl":
-      case "airport":
-        setTabPick(screen);
+        setViewPick("plan");
         setPanel("half");
         return;
-      case "airplane":
+      case "airport":
+        setViewPick("search");
+        setPanel("half");
+        return;
+      case "airplane": {
+        const tail = tailOf(usePreferences.getState().aircraft);
+        if (tail) {
+          openAirplaneProfile(tail);
+          return;
+        }
         setSearchParams((prev) => patched(prev, { aircraft: "1" }), { replace: true });
         setPanel("half");
         return;
+      }
       case "brief":
       case "navlog":
       case "profile":
-        setTabPick("fpl");
+        setViewPick("plan");
         if (!routed) return;
         if (screen === "brief") openBrief();
         else if (screen === "navlog") openNavLogCard();
@@ -125,5 +142,5 @@ export function useOpenScreen({
       default:
         screen satisfies never;
     }
-  }, [wanted, routed, setSearchParams, setTabPick, setPanel, openBrief, openNavLogCard, openProfileCard, openNearest]);
+  }, [wanted, routed, setSearchParams, setViewPick, setPanel, openBrief, openNavLogCard, openProfileCard, openNearest]);
 }

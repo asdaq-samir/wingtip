@@ -1,16 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { isPaletteKey, onShortcut } from "./use-shortcuts";
+import { isSearchKey, onShortcut } from "./use-shortcuts";
 import { useWanted } from "../lib/navigation/wanted";
-import { closePalette, usePalette } from "../lib/palette";
+import { takeSearchAsk, useSearchAsk } from "../lib/oneSearch";
 
-/** A panel with its tabs, a search field and a close, all in sight. */
+/** A panel with its one search and a close, all in sight. */
 function page() {
   document.body.innerHTML = `
     <section data-slot="map-panel">
-      <button data-testid="tab-fpl">FPL</button><button data-testid="tab-airport">Airport</button>
-      <button data-testid="tab-aircraft">Airplane</button><button data-testid="setup-button">Setup</button>
-      <input type="search" aria-label="Search airports" />
+      <input type="search" aria-label="Search airports, airplanes, or ask" />
       <button data-back="">Back</button>
     </section>
     <input id="field" />`;
@@ -36,11 +34,15 @@ describe("a desktop's shortcuts", () => {
     expect(document.activeElement?.getAttribute("type")).toBe("search");
   });
 
-  it("1 to 4 open the panel's tabs, FPL, Airport, Airplane and Setup", () => {
-    const tapped: string[] = [];
-    for (const b of document.querySelectorAll("button")) b.addEventListener("click", () => tapped.push(b.textContent!));
-    for (const key of ["1", "2", "3", "4"]) press(key);
-    expect(tapped).toEqual(["FPL", "Airport", "Airplane", "Setup"]);
+  it("/ asks the one search for itself where no field is in sight", () => {
+    document.querySelector("input")!.remove();
+    expect(press("/").defaultPrevented).toBe(true);
+    expect(useSearchAsk.getState().ask?.mode).toBe("all");
+    takeSearchAsk();
+  });
+
+  it("no longer has number keys for tabs", () => {
+    expect(press("1").defaultPrevented).toBe(false);
   });
 
   it("Escape goes back one level by the top card's close", () => {
@@ -63,24 +65,24 @@ describe("a desktop's shortcuts", () => {
     expect(back).not.toHaveBeenCalled();
   });
 
-  it("B opens the Brief, N Nearest and D the palette for Direct To", () => {
+  it("B opens the Brief, N Nearest and D the search for Direct To", () => {
     expect(press("b").defaultPrevented).toBe(true);
     expect(useWanted.getState().screen).toBe("brief");
     press("N");
     expect(useWanted.getState().screen).toBe("nearest");
     press("d");
-    expect(usePalette.getState().open).toBe("direct");
-    closePalette();
+    expect(useSearchAsk.getState().ask?.mode).toBe("direct");
+    takeSearchAsk();
     const field = document.getElementById("field")!;
     field.focus();
     expect(press("b", field).defaultPrevented).toBe(false);
   });
 
-  it("knows ⌘K and Ctrl K for the palette, and not K alone", () => {
+  it("knows ⌘K and Ctrl K for the search, and not K alone", () => {
     const key = (init: KeyboardEventInit) => new KeyboardEvent("keydown", { key: "k", ...init });
-    expect(isPaletteKey(key({ metaKey: true }))).toBe(true);
-    expect(isPaletteKey(key({ ctrlKey: true }))).toBe(true);
-    expect(isPaletteKey(key({}))).toBe(false);
-    expect(isPaletteKey(key({ metaKey: true, shiftKey: true }))).toBe(false);
+    expect(isSearchKey(key({ metaKey: true }))).toBe(true);
+    expect(isSearchKey(key({ ctrlKey: true }))).toBe(true);
+    expect(isSearchKey(key({}))).toBe(false);
+    expect(isSearchKey(key({ metaKey: true, shiftKey: true }))).toBe(false);
   });
 });

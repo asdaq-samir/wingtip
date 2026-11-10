@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-/** The developer's places, the training page's tab bar's (TabBar): the
+/** The developer's places, the training page's first row's (DevBar): the
  *  ratings that train the chart model, and how good the models are. */
 export type DevTab = "train" | "perf";
 

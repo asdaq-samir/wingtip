@@ -7,16 +7,17 @@ import { airportQuery, queryClient } from "../../../lib/queryClient";
 import { useTabSearch } from "../lib/tabSearch";
 import { useAirportSearch } from "../../../lib/useAirportSearch";
 import { patched } from "../../../lib/useSearchParamsNow";
-import type { PanelTab } from "./useTabCards";
+import type { PanelView } from "./usePanelView";
 
 /**
- * The search bars of the planner's tabs (usePlanWorkspace): Airport's,
- * which opens a field's card or makes it Home or a Favorite; Aircraft's
- * and Nearest's, whose text lives in features/plan/lib/tabSearch; the Adds that focus
- * them without moving the panel; and Favorites brought in by a link.
+ * The planner's search fields (usePlanWorkspace): the one search, whose
+ * airport opens its card or is made Home or a Favorite; the traffic's and
+ * Nearest's, whose text lives in features/plan/lib/tabSearch; the Adds
+ * that focus them without moving the panel; and Favorites brought in by a
+ * link.
  */
 export function useSearchPanel({
-  tab,
+  view,
   selectPlace,
   listAway,
   panel,
@@ -24,7 +25,7 @@ export function useSearchPanel({
   searchParams,
   setSearchParams,
 }: {
-  tab: PanelTab;
+  view: PanelView;
   selectPlace: (ident: string | null) => void;
   /** A list in full put away, where it is the one open. */
   listAway: (name: "favorites") => void;
@@ -33,13 +34,12 @@ export function useSearchPanel({
   searchParams: URLSearchParams;
   setSearchParams: SetURLSearchParams;
 }) {
-  // The route's box and its nav log are FPL's, a route or none -- with none
-  // the box is empty to type one in, at the pilot's ask.
-  const started = tab === "fpl";
   const [query, setQuery] = useState("");
   const [picking, setPicking] = useState<"place" | "home" | "favorite">("place");
   const searchInput = useRef<HTMLInputElement>(null);
-  const search = useAirportSearch(query, !started);
+  // The one search's airports and, with them, the waypoints and navaids
+  // (its Waypoints and Navaids group), asked while it is the place up.
+  const search = useAirportSearch(query, view === "search", true);
   const { addRecentAirport: addRecent, setHomeAirport, toggleFavoriteAirport, moveFavoriteAirport } = usePreferences.getState();
   const home = usePreferences((p) => p.homeAirport);
   const favorites = usePreferences((p) => p.favoriteAirports);

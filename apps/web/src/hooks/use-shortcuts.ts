@@ -1,32 +1,30 @@
 import { useEffect } from "react";
-import { openPalette } from "../lib/palette";
+import { askSearch } from "../lib/oneSearch";
 import { wantScreen } from "../lib/navigation/wanted";
 import type { ScreenId } from "../lib/navigation/generated/screens";
 
 /**
  * The keyboard's ways round the planner, as a desktop's web apps have
- * them (the UI audit, 2026-11-09): `/` to the search, 1 to 4 for the
- * panel's tabs (FPL, Airport, Airplane, Setup) and Escape back one level
- * -- the close at the panel's top right, which goes back one card, one
- * list or one page (decision 0015) -- wherever the focus is outside a
- * field. A key a field, a menu or a dialog has used is left alone. And
- * the common actions a letter each, as the command palette shows them
- * (features/shell/palette): B the Brief, N Nearest, D Direct To (the
- * palette, to pick where). ⌘K or Ctrl K, the palette itself, is the
- * palette's own (PaletteHost), on every screen with a keyboard.
+ * them (the UI audit, 2026-11-09): `/` to the one search and Escape back
+ * one level -- the close at the panel's top right, which goes back one
+ * card, one list or one page (decision 0015) -- wherever the focus is
+ * outside a field. A key a field, a menu or a dialog has used is left
+ * alone. And the common actions a letter each, as the search's Do shows
+ * them: B the Brief, N Nearest, D Direct To (the search, asked for the
+ * airport). ⌘K or Ctrl K, the search itself, is the search field's own
+ * (OneSearchField), on every screen with a keyboard.
  */
-const TAB_KEYS: Record<string, string> = { "1": "tab-fpl", "2": "tab-airport", "3": "tab-aircraft", "4": "setup-button" };
 /** The letters for the screens a pilot opens most (lib/navigation). */
 export const SCREEN_KEYS: Partial<Record<ScreenId, string>> = { brief: "B", nearest: "N" };
-/** And for Direct To, which the palette asks the airport of. */
+/** And for Direct To, which the search asks the airport of. */
 export const DIRECT_KEY = "D";
 
-/** The panel's search field in sight: the tab's own. */
+/** The panel's search field in sight: the one search, or a list's own. */
 const SEARCH = '[data-slot="map-panel"] input[type="search"]';
 
 /** Whether the key is a field's or a menu's: typed text, a list's own
  *  keys, a dialog over the page. */
-function typing(target: EventTarget | null): boolean {
+export function typing(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   return (
     target.isContentEditable ||
@@ -37,18 +35,12 @@ function typing(target: EventTarget | null): boolean {
 const visible = (el: Element | null): el is HTMLElement =>
   el instanceof HTMLElement && (el.checkVisibility?.() ?? el.getClientRects().length > 0);
 
-/** The search field asked for: the one in sight, else Airport's, its tab
- *  opened first. */
+/** The search field asked for: the one in sight, else the one search's,
+ *  which takes the ask (lib/oneSearch). */
 function focusSearch(doc: Document): boolean {
   const here = [...doc.querySelectorAll(SEARCH)].find(visible);
-  if (here) {
-    here.focus();
-    return true;
-  }
-  const airport = doc.querySelector('[data-testid="tab-airport"]');
-  if (!visible(airport)) return false;
-  airport.click();
-  requestAnimationFrame(() => [...doc.querySelectorAll(SEARCH)].find(visible)?.focus());
+  if (here) here.focus();
+  else askSearch();
   return true;
 }
 
@@ -81,20 +73,13 @@ export function onShortcut(event: KeyboardEvent): void {
   if (screen || letter === DIRECT_KEY) {
     event.preventDefault();
     if (screen) wantScreen(screen);
-    else openPalette("direct");
-    return;
-  }
-  const tab = TAB_KEYS[event.key];
-  const button = tab ? doc.querySelector(`[data-testid="${tab}"]`) : null;
-  if (visible(button)) {
-    event.preventDefault();
-    button.click();
+    else askSearch("direct");
   }
 }
 
-/** ⌘K on a Mac, Ctrl K elsewhere: the palette, from a field too (it is
- *  never a typed letter); PaletteHost listens for it. */
-export const isPaletteKey = (event: KeyboardEvent): boolean =>
+/** ⌘K on a Mac, Ctrl K elsewhere: the one search, from a field too (it
+ *  is never a typed letter); OneSearchField listens for it. */
+export const isSearchKey = (event: KeyboardEvent): boolean =>
   (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "k";
 
 /** The shortcuts on the page while `on` (a desktop's: useIsDesktop). */

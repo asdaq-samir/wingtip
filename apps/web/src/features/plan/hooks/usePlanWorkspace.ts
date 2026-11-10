@@ -20,7 +20,7 @@ import { bestStopIndex, distanceNm, type LatLon } from "../../../lib/geo";
 import { placeOf, useAirportIndex } from "../../../lib/airportIndex";
 import { useKeepOffline } from "../map/keepStatus";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
-import { usePanelTabs, type PanelTab, type TabList } from "./useTabCards";
+import { usePanelView, type PanelList } from "./usePanelView";
 import { usePreferences } from "../../../lib/preferences";
 import { useProgressToast } from "../../../lib/useProgressToast";
 import { patched, useSearchParamsNow } from "../../../lib/useSearchParamsNow";
@@ -30,7 +30,6 @@ import { holdsOf, holdsParam } from "../lib/routeHolds";
 import { picksOf } from "../../../lib/flightLink";
 import { proceduresOf, proceduresParam, sameField } from "../../../lib/procedures";
 import { checkpointsQuery, courseQuery, nearestQuery, procedureQuery, queryClient } from "../../../lib/queryClient";
-import { useStripShows } from "./useStripShows";
 import type { PointAltitude } from "../components/PointAltitudeDialog";
 import { loadFlightChart } from "../components/loadFlightChart";
 import { useDryRun } from "./useDryRun";
@@ -298,7 +297,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     cards,
     cardOpen,
     briefOpen,
-    setBackToTab,
+    setBackToView,
     closeCard,
     under,
     setUnder,
@@ -387,7 +386,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   });
 
   // The route's edits, each a change of the address (useRouteEdits).
-  const { setRoute, addStop, setPointAltitude, setStops, removeStop, insertStopAfter, acceptClassB, avoidClassB, flyAltitude } =
+  const { setRoute, addStop, departFrom, setPointAltitude, setStops, removeStop, insertStopAfter, acceptClassB, avoidClassB, flyAltitude } =
     useRouteEdits({ planned, routePoints, setSearchParams });
   // The stops the planner suggests, and keeping them (useSuggestedStops).
   const { fuelStops, fuelHidden, hideFuelStop, showFuelStops, tankFigures, fuelStopPins, keepFuelStops, addStopField } = useSuggestedStops({
@@ -473,9 +472,9 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     setRoute,
     setAddingStop,
   });
-  // Each tab's lists in full -- Airport's Favorites and Recents, FPL's
-  // routes planned, Aircraft's Favorites and Recents -- the address's
-  // (`list`, useAddressCards), kept for their tab as its cards are.
+  // The lists in full -- the airports' Favorites and Recents, the routes
+  // planned, the airplanes' Favorites and Recents -- the address's (`list`,
+  // useAddressCards), kept for their place as its cards are.
   const favoritesOpen = list === "favorites";
   const airportRecentsOpen = list === "recents";
   const routeRecentsOpen = list === "routes";
@@ -483,7 +482,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   const aircraftRecentsOpen = list === "aircraft-recents";
   // That list put away, where it is the one open: a search field's focus
   // and an Add take the list's place.
-  const listAway = (name: TabList) => {
+  const listAway = (name: PanelList) => {
     if (list === name) closeList();
   };
   // Each route the planner answers kept as FPL's Recents, newest first, at
@@ -506,33 +505,24 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
         ...(recentPicks ? { picks: recentPicks } : {}),
       });
   }, [answered, planned.dep, planned.dest, stopsKey, recentPicks]);
-  // The tab bar's place (TabBar) and what each tab keeps open over it
-  // (useTabCards): FPL, the route's box and its nav log; Airport, the
-  // search and the nearest fields; Aircraft, the traffic.
-  const {
-    tab: pickedTab,
-    setTabPick,
-    pickTab,
-    tabUp,
-    closeSheet,
-  } = usePanelTabs({
+  // The place up under the one search and what each keeps open over it
+  // (usePanelView): the plan, the route's box and its nav log; the search's
+  // own page and its results; the traffic.
+  const { view, setViewPick, pickView } = usePanelView({
     cards,
     route: `${planned.dep}|${planned.stops.join(",")}|${planned.dest}`,
     hasRoute: routed || !!planned.dep || !!planned.dest || planned.stops.length > 0,
-    panel,
-    setPanel,
     searchParams,
     setSearchParams,
   });
-  const tab: PanelTab = pickedTab;
-  // The tabs opened so far, each kept under the others once it has been
-  // (TabKept), as iOS keeps a tab's screen: back to one, it is as it was
-  // left, a list scrolled where it was. Built again from nothing at every
-  // switch, a switch to FPL was mostly its pills and pickers being made
-  // (50 to 80 ms at a phone's speed, the 23 Oct profile).
-  const [opened, setOpened] = useState(() => [tab]);
-  if (!opened.includes(tab)) setOpened([...opened, tab]);
-  // A field's or a point's card over the tab, the tab's own out of sight.
+  // The places opened so far, each kept under the others once it has been
+  // (TabKept): back to one, it is as it was left, a list scrolled where it
+  // was. Built again from nothing at every switch, a switch to the plan
+  // was mostly its pills and pickers being made (50 to 80 ms at a phone's
+  // speed, the 23 Oct profile).
+  const [opened, setOpened] = useState(() => [view]);
+  if (!opened.includes(view)) setOpened([...opened, view]);
+  // A field's or a point's card over the place up, its own out of sight.
   const cardUp = !!place || !!heldPoint;
   // A point dropped on the map (AirspaceCard) into the route as the
   // pilot's own point off the nearest fix, at the owner's pick (mock 2 of
@@ -570,11 +560,11 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
         { replace: true },
       );
       // FPL's list in sight, its new row and the hold's sheet with it.
-      setTabPick("fpl");
+      setViewPick("plan");
       setPanel("half");
       if (then === "hold") setHoldAsk(`${ident}@${Date.now()}`);
     },
-    [course, setSearchParams, setPanel, setTabPick],
+    [course, setSearchParams, setPanel, setViewPick],
   );
   // The cards over FPL, the Stops and the lists in full (useFplCards).
   const {
@@ -608,7 +598,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     openNearest,
     closeNearest,
   } = useFplCards({
-    tab,
+    view,
     routed,
     local: !!s.local,
     planned,
@@ -616,21 +606,16 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     fuelStopPins,
     briefOpen,
     closeCard,
-    setTabPick,
+    setViewPick,
     setPanel,
     searchParams,
     setSearchParams,
     setProceduresShown,
   });
-  // Airport's pill's NEAREST strip: the list's own question, shared, asked
-  // while the strip is in sight.
-  // Airport's strip in sight, at the pill or all the way up.
-  const airportPill = tab === "airport" && !place && !heldPoint && !nearOpen && !favoritesOpen && !airportRecentsOpen;
-  const showsNearest = useStripShows((st) => st.airport === "nearest");
-  const { data: nearStrip } = useQuery({
-    ...nearestQuery(nearOrigin?.lat ?? 0, nearOrigin?.lon ?? 0),
-    enabled: airportPill && showsNearest && !!nearOrigin,
-  });
+  // The search's own page in sight (SearchHome), its Nearest asked for
+  // while it is: the list's own question, shared.
+  const homeShown = view === "search" && !place && !heldPoint && !nearOpen && !favoritesOpen && !airportRecentsOpen;
+  const { data: nearStrip } = useQuery({ ...nearestQuery(nearOrigin?.lat ?? 0, nearOrigin?.lon ?? 0), enabled: homeShown && !!nearOrigin });
   // The search bars (useSearchPanel).
   const {
     query,
@@ -654,7 +639,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     setHomeAirport,
     toggleFavoriteAirport,
     moveFavoriteAirport,
-  } = useSearchPanel({ tab, selectPlace, listAway, panel, setPanel, searchParams, setSearchParams });
+  } = useSearchPanel({ view, selectPlace, listAway, panel, setPanel, searchParams, setSearchParams });
 
   // The route's close, at the pilot's ask: first it clears the route --
   // the address keeps nothing of it, and its box, the controls and the
@@ -668,29 +653,29 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   const clearRoute = useCallback(() => {
     const keeping = (prev: URLSearchParams, place?: string) => {
       const next = new URLSearchParams();
-      const view = prev.get("view");
-      if (view) next.set("view", view);
+      const height = prev.get("view");
+      if (height) next.set("view", height);
       if (place) next.set("place", place);
       return next;
     };
     if (hasPoints) {
       // Cleared: FPL's box empty to type another in.
       setSearchParams((prev) => keeping(prev), { replace: true });
-      setTabPick("fpl");
+      setViewPick("plan");
       return;
     }
     // The empty box closed: the airport it was flown to from (Fly Here),
     // or the search, on Airport.
-    setTabPick("airport");
+    setViewPick("search");
     if (under) setSearchParams((prev) => keeping(prev, under), { replace: true });
     setUnder(null);
-  }, [hasPoints, under, setSearchParams, setTabPick, setUnder]);
+  }, [hasPoints, under, setSearchParams, setViewPick, setUnder]);
 
-  // An airplane's card's close goes back to the tab it was opened over
-  // (usePlaceCards' closeFlight), by the tabs' own setter.
+  // An airplane's card's close goes back to the place it was opened over
+  // (usePlaceCards' closeFlight), by the view's own setter.
   useEffect(() => {
-    setBackToTab(setTabPick);
-  }, [setBackToTab, setTabPick]);
+    setBackToView(setViewPick);
+  }, [setBackToView, setViewPick]);
 
   // This page binds no keys of its own. Walking the nav log used to be
   // Up and Down on the document, which meant deciding by hand, on every
@@ -793,9 +778,9 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   // list over Airport, as the microphone's is; its D→ direct to the next
   // landing, as the Stops' Direct To goes (directToPoint).
   const flyNearest = useCallback(() => {
-    setTabPick("airport");
+    setViewPick("search");
     openNearest();
-  }, [setTabPick, openNearest]);
+  }, [setViewPick, openNearest]);
   const flyDirectTo = nextLanding(s.totals, `${planned.dest}`).to;
   const flyDirect = useMemo(
     () => (flyDirectTo ? { to: flyDirectTo, go: () => directToPoint(flyDirectTo) } : null),
@@ -817,9 +802,9 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   // view is drawn only then (sideView).
   const profileReady = routed && !!course && !s.local;
   const openProfile = useCallback(() => {
-    setTabPick("fpl");
+    setViewPick("plan");
     openProfileCard();
-  }, [setTabPick, openProfileCard]);
+  }, [setViewPick, openProfileCard]);
   // A caution on the pilot's own altitude, or one tight in its band, marked
   // on the Profile button where the caution is said, as the AI brief's mark
   // is on its own (the owner, 2026-11-05: "The red dot can be on profile
@@ -985,6 +970,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     addAt,
     addFromPill,
     addStop,
+    departFrom,
     addStopField,
     addingChange,
     addingStop,
@@ -1029,7 +1015,6 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     closePlace,
     closeProfileCard,
     closeSaved,
-    closeSheet,
     closeStops,
     course,
     crossings,
@@ -1122,7 +1107,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     pickPoint,
     pickProcedures,
     pickStopField,
-    pickTab,
+    pickView,
     pickTail,
     pickWay,
     pickedPatterns,
@@ -1208,9 +1193,8 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     stopsShown,
     stripsDrawn,
     suggestedAt,
-    tab,
+    view,
     tabTap,
-    tabUp,
     tankFigures,
     tightLeg,
     toggleFavoriteAirport,

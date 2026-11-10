@@ -13,7 +13,7 @@ import { patched } from "../../../lib/useSearchParamsNow";
 import type { ProceduresAt } from "../components/ProceduresRoute";
 import { panelNow } from "./panelNow";
 import type { PlannedRoute } from "./planAddress";
-import type { PanelTab } from "./useTabCards";
+import type { PanelView } from "./usePanelView";
 import { useOpenScreen } from "./useOpenScreen";
 
 /**
@@ -24,7 +24,7 @@ import { useOpenScreen } from "./useOpenScreen";
  * pins, and the microphone's commands that open them.
  */
 export function useFplCards({
-  tab,
+  view,
   routed,
   local,
   planned,
@@ -32,13 +32,13 @@ export function useFplCards({
   fuelStopPins,
   briefOpen,
   closeCard,
-  setTabPick,
+  setViewPick,
   setPanel,
   searchParams,
   setSearchParams,
   setProceduresShown,
 }: {
-  tab: PanelTab;
+  view: PanelView;
   /** A route on screen, planned or local. */
   routed: boolean;
   /** A local flight (usePlan's `local`). */
@@ -51,7 +51,7 @@ export function useFplCards({
   /** FPL's Brief in the address (`brief=1`). */
   briefOpen: boolean;
   closeCard: (close: () => void) => void;
-  setTabPick: (tab: PanelTab) => void;
+  setViewPick: (view: PanelView) => void;
   setPanel: (state: PanelState) => void;
   searchParams: URLSearchParams;
   setSearchParams: SetURLSearchParams;
@@ -62,18 +62,18 @@ export function useFplCards({
   const [navLogOpen, setNavLogOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   // The Brief in sight: FPL's, over a route.
-  const briefShown = briefOpen && tab === "fpl" && routed;
+  const briefShown = briefOpen && view === "plan" && routed;
   // The nav log, a card over FPL as the Brief is (NavLogView's cardHead).
-  const navLogShown = navLogOpen && tab === "fpl" && routed && !briefShown;
+  const navLogShown = navLogOpen && view === "plan" && routed && !briefShown;
   // The side view, a card over FPL as the nav log is (ProfileCard).
-  const profileShown = profileOpen && tab === "fpl" && routed && !briefShown && !navLogShown;
+  const profileShown = profileOpen && view === "plan" && routed && !briefShown && !navLogShown;
   // The map's Stops (StopsCard), a card over FPL as the Profile is, opened
   // from the Airport tab's Find Nearby (its button among the map's gave its
   // place to the radio's microphone, 2026-11-02).
   const stopsOpen = useStopsAlong((st) => st.open);
   const setStopsOpen = useStopsAlong((st) => st.setOpen);
   // With a route or none: with none, the stops are round the pilot.
-  const stopsShown = stopsOpen && tab === "fpl" && !briefShown && !navLogShown && !profileShown;
+  const stopsShown = stopsOpen && view === "plan" && !briefShown && !navLogShown && !profileShown;
   // The same whatever the tab: what FPL keeps under the others (TabKept).
   const briefHere = briefOpen && routed;
   const profileHere = profileOpen && routed && !briefHere && !(navLogOpen && routed);
@@ -203,14 +203,14 @@ export function useFplCards({
   // from its button.
   const openStops = useCallback(() => {
     setStopsOpen(true);
-    setTabPick("fpl");
+    setViewPick("plan");
     setNavLogOpen(false);
     setProfileOpen(false);
     setSearchParams((prev) => (prev.get("brief") || prev.get("place") ? patched(prev, { brief: null, place: null }) : prev), {
       replace: true,
     });
     if (panelNow.current !== "full") setPanel("half");
-  }, [setStopsOpen, setTabPick, setSearchParams, setPanel]);
+  }, [setStopsOpen, setViewPick, setSearchParams, setPanel]);
   // Find Nearby's tile (the Airport tab): the Stops round the pilot, that
   // kind picked.
   const setStopKind = usePreferences((p) => p.setStopKind);
@@ -273,7 +273,7 @@ export function useFplCards({
   useEffect(() => {
     useRadioActions.setState({
       nearest: () => {
-        setTabPick("airport");
+        setViewPick("search");
         openNearest();
       },
       showProcedure: async (ident, approach, runway) => {
@@ -284,9 +284,9 @@ export function useFplCards({
       },
     });
     return () => useRadioActions.setState({ nearest: null, showProcedure: null });
-  }, [setTabPick, openNearest, planned.dep, plannedStops, planned.dest, setProceduresShown]);
+  }, [setViewPick, openNearest, planned.dep, plannedStops, planned.dest, setProceduresShown]);
   // A screen asked for by name, by a link or from inside the app.
-  useOpenScreen({ routed, searchParams, setSearchParams, setTabPick, setPanel, openBrief, openNavLogCard, openProfileCard, openNearest });
+  useOpenScreen({ routed, searchParams, setSearchParams, setViewPick, setPanel, openBrief, openNavLogCard, openProfileCard, openNearest });
   return {
     briefShown,
     navLogShown,

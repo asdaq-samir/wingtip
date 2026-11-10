@@ -12,6 +12,7 @@
     { "key": "stops", "about": "The points between, idents comma-separated." },
     { "key": "place", "about": "A field's card, by its ident." },
     { "key": "flight", "about": "An airplane tracked, by its ICAO address (six hex digits)." },
+    { "key": "airplane", "about": "An airplane's profile, by its N-number." },
     { "key": "altitude_ft", "about": "A shared plan's cruise altitude, feet MSL." },
     { "key": "depart", "about": "A shared plan's departure time, an ISO 8601 instant in UTC; none for about now." },
     { "key": "type", "about": "A shared plan's airplane type, its designator (C172); shown, never assumed: the receiver flies their own." },
@@ -20,10 +21,10 @@
     { "key": "share", "about": "A saved flight shared by its pilot, by its token (GET /api/shared-flights/{token}); read-only, until they stop sharing it." }
   ],
   "screens": [
-    { "id": "fpl", "title": "FPL", "about": "The route, its altitude and its figures: the FPL tab.", "platforms": ["web", "ios", "android"], "shortcut": 6 },
-    { "id": "airport", "title": "Airport", "about": "The Airport tab: search, favorites, recents, nearest.", "platforms": ["web", "ios", "android"], "shortcut": 7 },
-    { "id": "airplane", "title": "Airplane", "about": "The Airplane tab: the airplane picked and the traffic.", "platforms": ["web", "ios", "android"], "shortcut": 8 },
-    { "id": "setup", "title": "Setup", "about": "The Setup tab.", "platforms": ["web", "ios", "android"], "shortcut": 15 },
+    { "id": "fpl", "title": "FPL", "about": "The plan: the route, its altitude and its figures, the sheet's main content under the one search.", "platforms": ["web", "ios", "android"], "shortcut": 6 },
+    { "id": "airport", "title": "Airport", "about": "The one search with nothing typed: the flight, favorites, recents, nearest.", "platforms": ["web", "ios", "android"], "shortcut": 7 },
+    { "id": "airplane", "title": "Airplane", "about": "The airplane picked's profile, or the traffic about where none is picked.", "platforms": ["web", "ios", "android"], "shortcut": 8 },
+    { "id": "setup", "title": "Setup", "about": "The account and settings page, the account button's.", "platforms": ["web", "ios", "android"], "shortcut": 15 },
     { "id": "brief", "title": "Brief", "about": "The route's Brief and its Go / No-Go (needs a route).", "platforms": ["web", "ios", "android"], "shortcut": 1 },
     { "id": "navlog", "title": "Nav Log", "about": "The nav log, leg by leg (needs a route). Android's FPL tab is its nav log.", "platforms": ["web", "ios", "android"], "shortcut": 5 },
     { "id": "profile", "title": "Profile", "about": "The route's side view and its altitudes (needs a route).", "platforms": ["web", "ios"] },

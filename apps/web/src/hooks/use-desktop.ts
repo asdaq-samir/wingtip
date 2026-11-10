@@ -22,3 +22,6 @@ export function useIsDesktop(): boolean {
     () => false,
   );
 }
+
+/** The same, read once outside a render: where the page starts. */
+export const isDesktopNow = (): boolean => typeof window !== "undefined" && window.matchMedia(QUERY).matches;

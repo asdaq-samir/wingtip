@@ -585,19 +585,14 @@ body[data-map-sheet][data-map-panel="full"] [data-sonner-toast][data-type="loadi
    <ViewTransition> round a page (the Brief's, the welcome's) names it for
    a typed page step alone, its class page-step forward and page-back
    back, a short shared-axis slide and fade over motion.page on the
-   sheet's ease-out; the map panel's tabs cross-fade the body, named
-   wingtip-tab only while the tab changes (<html data-vt="tab">). The
+   sheet's ease-out. The
    rest of the screen, the map under it, is not captured as the page's
    root would be. */
 :root {
   view-transition-name: none;
 }
-html[data-vt="tab"] [data-slot="map-panel"] [data-panel-body] {
-  view-transition-name: wingtip-tab;
-}
 ::view-transition-group(.page-step),
-::view-transition-group(.page-back),
-::view-transition-group(wingtip-tab) {
+::view-transition-group(.page-back) {
   animation-duration: var(--motion-page);
   animation-timing-function: var(--motion-sheet-ease);
 }
@@ -612,11 +607,6 @@ html[data-vt="tab"] [data-slot="map-panel"] [data-panel-body] {
 }
 ::view-transition-new(.page-back) {
   animation: var(--motion-page) var(--motion-sheet-ease) both page-back-in;
-}
-::view-transition-old(wingtip-tab),
-::view-transition-new(wingtip-tab) {
-  animation-duration: var(--motion-fade);
-  animation-timing-function: var(--motion-sheet-ease);
 }
 @keyframes page-out {
   to {

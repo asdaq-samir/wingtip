@@ -26,7 +26,7 @@ export function PictureSlides({
   testId?: string;
   /** What the pictures are of, for VoiceOver. */
   label: string;
-  /** Across a card's top (PhotoHead): square, the sheet's corners its
+  /** Across a box edge to edge: square, the sheet's corners its
    *  own, and the dots in its bottom right corner, clear of the name set
    *  over its foot. */
   flush?: boolean;
@@ -89,7 +89,7 @@ export function PictureSlides({
  * A photo filling a page of the box, its credit over its corner as its
  * licence asks: a tap opens it full screen (`onOpen`), or its source's page
  * (`href`), as each card's does; with neither, in a card's head, the head
- * opens it (PhotoHead's HeadSlide).
+ * opens it (CardPictures).
  */
 export function PhotoSlide({
   src,
@@ -134,7 +134,7 @@ export function PhotoSlide({
         </button>
       ) : (
         // In a card's head, whose tap shows it alone and whose full-screen
-        // button opens it (PhotoHead): a picture, not a control.
+        // click opens it (CardPictures): a picture, not a control.
         <div role="img" aria-label={label} className="absolute inset-0" data-testid={testId}>
           {picture}
         </div>

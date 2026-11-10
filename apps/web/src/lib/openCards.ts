@@ -97,7 +97,7 @@ export function closeTopCard(): boolean {
  * device's Back and the bar's, and its share for the bar's Share. A card
  * whose head is a picture with its own share and close on it says so
  * (`picture`), and the panel leaves the minimized bar out over it out of
- * the pill (PhotoHead), and what the pill shows of it (`pill`).
+ * the pill (CardTitle), and what the pill shows of it (`pill`).
  */
 export function useHeldCard(onClose: () => void, onShare?: CardShare, picture = false, pill?: PillHead) {
   // The caller's latest, read as the card is closed or shared.
