@@ -12,6 +12,10 @@ enum Gateway {
         let config = URLSessionConfiguration.default
         config.httpCookieAcceptPolicy = .always
         config.httpShouldSetCookies = true
+        // Kept in the App Group's cookie jar, so the Currency Status widget
+        // reads the gateway as the signed-in pilot (WidgetStore.cookies);
+        // on the phone still, in the app's own group.
+        config.httpCookieStorage = WidgetStore.cookies
         // A cache of the answers the gateway and the planner say may be
         // kept (Cache-Control: the chart's tiles for a cycle, the fields and
         // airspace of a box, a field's card for minutes), so a view come

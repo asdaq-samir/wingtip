@@ -34,7 +34,11 @@ final class SavedFlightsModel {
     static let nameLimit = 80
     static let notesLimit = 2000
 
-    private(set) var flights: [SavedFlight] = []
+    /// Each change handed to the widgets' settings (Next Flight's choice of
+    /// flight, WidgetFeed.saved).
+    private(set) var flights: [SavedFlight] = [] {
+        didSet { if flights != oldValue { WidgetFeed.shared.saved(flights) } }
+    }
     /// Why the list could not be had or the plan saved, under the list.
     private(set) var problem: String?
     private(set) var saving = false

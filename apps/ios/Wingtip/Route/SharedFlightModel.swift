@@ -4,7 +4,8 @@ import Observation
 /// The Shared Flight preview's state and its calls (docs/navigation.md,
 /// the `shared` screen): a flight another pilot sent, shown before anything
 /// is planned. A plain link's plan is in the link; a saved flight's is read
-/// from the gateway by its token, its filed nav log with it. Use This Plan
+/// from the gateway by its token, its filed nav log with it; a flight
+/// file's is in the file, its nav log with it where it was saved with one. Use This Plan
 /// plans it through the route command a shared route always took
 /// (PendingCommand.planRoute), then opens its nav log; Not Now leaves the
 /// pilot's own plan as it was.
@@ -49,7 +50,14 @@ final class SharedFlightModel {
     func open(_ link: SharedFlightLink) {
         self.link = link
         navLog = []; totals = nil; gone = false; problem = nil
-        if case .plan(let shared) = link { plan = shared } else { plan = nil }
+        switch link {
+        case .plan(let shared): plan = shared
+        case .saved: plan = nil
+        case .file(let file):
+            plan = file.plan
+            navLog = file.navLog.sorted { $0.sequenceNo < $1.sequenceNo }
+            totals = file.totals.map { Totals(distanceNm: $0.distanceNm, eteMin: $0.eteMin, fuelGal: $0.fuelGal) }
+        }
     }
 
     /// A saved flight's share read from the gateway; nothing for a plain link.

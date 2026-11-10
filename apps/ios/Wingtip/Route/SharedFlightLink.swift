@@ -2,12 +2,16 @@ import Foundation
 
 /// A flight another pilot sent, as its link carries it (design/screens.json's
 /// `shared` screen): the plan itself in the link's keys, or a saved flight's
-/// share token, read from the gateway (GET /api/shared-flights/{token}).
+/// share token, read from the gateway (GET /api/shared-flights/{token}),
+/// or a flight file that carries the same link.
 /// Opened as a preview first (SharedFlightModel); nothing is planned until
 /// the pilot taps Use This Plan.
 enum SharedFlightLink: Equatable, Sendable {
     case plan(SharedPlan)
     case saved(token: String)
+    /// A Wingtip flight file opened from Files, AirDrop or Mail: its link's
+    /// plan, and its nav log where it was saved with one (FlightFile).
+    case file(FlightFile)
 
     /// The link's own keys read into a shared flight; nil where it names
     /// neither a token nor both ends of a route.

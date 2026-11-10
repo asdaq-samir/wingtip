@@ -142,6 +142,23 @@ targets:
             CFBundleTypeRole: Viewer
             LSHandlerRank: Alternate
             LSItemContentTypes: [com.google.earth.kml]
+          # The app's own flight file (FlightFile, Save as File): opened
+          # from Files, AirDrop or Mail into the Shared Flight preview,
+          # never planned without the pilot's Use This Plan.
+          - CFBundleTypeName: Wingtip Flight
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Owner
+            LSItemContentTypes: [app.wingtipmaps.flight]
+        # The Wingtip flight file, the type this app owns and exports
+        # (UTType.wingtipFlight): JSON holding the shared flight's plain
+        # link and the nav log.
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: app.wingtipmaps.flight
+            UTTypeDescription: Wingtip Flight
+            UTTypeConformsTo: [public.json, public.data]
+            UTTypeTagSpecification:
+              public.filename-extension: [wingtip]
+              public.mime-type: [application/vnd.wingtipmaps.flight+json]
         UTImportedTypeDeclarations:
           - UTTypeIdentifier: com.topografix.gpx
             UTTypeDescription: GPS Exchange Format
@@ -177,9 +194,11 @@ targets:
         # iOS 15 and later want this entitlement for it.
         com.apple.developer.usernotifications.time-sensitive: true
         # The Home Screen widgets' snapshot of the next flight (WidgetFeed,
-        # FlightWidget in WingtipWidgets): one App Group the app writes and
-        # the extension reads, which the owner turns on for both app ids in
-        # the developer account.
+        # FlightWidget in WingtipWidgets), the saved flights and fields their
+        # settings offer (WidgetStore), and the gateway session's cookies
+        # the Currency Status widget reads with: one App Group the app
+        # writes and the extension reads, which the owner turns on for both
+        # app ids in the developer account.
         com.apple.security.application-groups: [group.app.wingtipmaps]
     settings:
       base:
@@ -209,6 +228,9 @@ targets:
       # the app writes it (formats.json): the Live Activity's words.
       - path: Wingtip/Design/Ink.swift
       - path: Wingtip/Format/Format.swift
+      # The gateway's host, for the weather and currency widgets' own asks
+      # (WidgetFetch), read from this extension's Info.plist (WingtipHost).
+      - path: Wingtip/Config.swift
     entitlements:
       path: WingtipWidgets/WingtipWidgets.entitlements
       properties:
@@ -217,6 +239,7 @@ targets:
       path: WingtipWidgets/Info.plist
       properties:
         CFBundleDisplayName: Wingtip Maps
+        WingtipHost: $(WINGTIP_HOST)
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:

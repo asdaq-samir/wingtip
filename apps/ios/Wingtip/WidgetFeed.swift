@@ -67,6 +67,37 @@ final class WidgetFeed {
         WidgetCenter.shared.reloadTimelines(ofKind: Self.kind)
     }
 
+    /// The pilot's saved flights as Next Flight's settings offer them
+    /// (WidgetStore), its timelines told where the list changed.
+    func saved(_ flights: [SavedFlight]) {
+        let listed = flights.map {
+            WidgetStore.SavedFlight(id: $0.id, title: SavedFlightsModel.title($0), dep: $0.departureIdent, dest: $0.destinationIdent,
+                                    stops: $0.stops, distanceNm: $0.totalDistanceNm, eteMin: $0.totalEteMin, fuelGal: $0.totalFuelGal,
+                                    plannedFor: $0.plannedFor)
+        }
+        if WidgetStore.write(listed) { WidgetCenter.shared.reloadTimelines(ofKind: Self.kind) }
+    }
+
+    /// Signed out or the account deleted: the widgets' copies of the
+    /// pilot's own -- saved flights, home base, currency -- forgotten, and
+    /// every widget drawn again without them.
+    func forgetPilot() {
+        WidgetStore.forgetPilot()
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// The home base and the Favorites, offered first in Home Airport
+    /// Weather's settings (WidgetStore); written only as they change.
+    func airports(homeBase: String?, favorites: [KeptAirport]) {
+        var offered = favorites.map { WidgetStore.Airport(ident: $0.ident, name: $0.name) }
+        if let home = homeBase?.trimmingCharacters(in: .whitespaces).uppercased(), !home.isEmpty {
+            let name = offered.first { $0.ident == home }?.name ?? home
+            offered.removeAll { $0.ident == home }
+            offered.insert(WidgetStore.Airport(ident: home, name: name), at: 0)
+        }
+        WidgetStore.write(offered)
+    }
+
     /// The field's card asked of the planner for its report -- its own,
     /// or one near enough to be said of it (NearbyMetar) -- no more than
     /// every `weatherEvery` and never twice at once; with no answer the

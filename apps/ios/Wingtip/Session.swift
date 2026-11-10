@@ -72,6 +72,7 @@ final class Session {
         pilot = nil
         Session.forgetPilot()
         Tracking.shared.forgetFavorites()
+        WidgetFeed.shared.forgetPilot()
     }
 
     /// The figures kept per N-number on this device, the pilot's own, and
@@ -101,6 +102,7 @@ final class Session {
         Tracking.shared.erase()
         let jar = Gateway.session.configuration.httpCookieStorage
         for cookie in jar?.cookies(for: Config.gateway) ?? [] { jar?.deleteCookie(cookie) }
+        WidgetFeed.shared.forgetPilot()
         pilot = nil
     }
 
