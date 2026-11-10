@@ -6,7 +6,7 @@ import { PlaneMark } from "../../../components/PlaneMarks";
 import { DropdownMenuCheckboxItem } from "../../../components/ui/dropdown-menu";
 import type { TrafficAircraft } from "../../../lib/api/types";
 import { inEmergency } from "../../../lib/fbo";
-import { useOwnShip, useOwnFix } from "../../../lib/map/position/ownShip";
+import { useOwnShip, useOwnFixShown } from "../../../lib/map/position/ownShip";
 import { useTracking } from "../../../lib/map/position/tracking";
 import { usePreferences } from "../../../lib/preferences";
 import { pickKeptAircraft } from "../lib/tabSearch";
@@ -14,6 +14,7 @@ import { TEXT } from "../../../lib/text";
 import { filterFor, QUESTIONS, questionOf, strip, useFilteredAircraft, useTrafficFocus, type Question } from "../hooks/useAircraftQuestion";
 import { useStripShows } from "../hooks/useStripShows";
 import { AircraftFavoriteStrip, AircraftRecentTiles } from "./AircraftCard";
+import { useShownStore } from "../../../lib/shown";
 
 /** The strip's title for each question: what it lists, the airport after
  *  it where it asks of one. */
@@ -60,9 +61,9 @@ export default function AircraftPill({
   /** The Recents in full, where they are taken off (AircraftRecentsPage). */
   onAllRecents: () => void;
 }) {
-  const seen = useTracking((s) => s.seen);
+  const seen = useShownStore(useTracking, (s) => s.seen);
   const planes = useSeenPlanes(seen);
-  const from = useOwnFix();
+  const from = useOwnFixShown();
   const setOwnShip = useOwnShip((s) => s.setEnabled);
   const { filter, field, kept: found } = useFilteredAircraft(planes, from);
   const change = usePreferences((s) => s.setAircraftFilter);

@@ -10,6 +10,7 @@ import { atisRows, glanceWords, heardAny, type AtisReading } from "../lib/atis";
 import { datisQuery, rvrQuery } from "../../../lib/liveReports";
 import { usePreferences } from "../../../lib/preferences";
 import { rvrRows } from "../lib/rvrRows";
+import { useShown } from "../../../lib/shown";
 
 /**
  * The field's D-ATIS, on the card's Weather tab, where the tower's data
@@ -19,7 +20,9 @@ import { rvrRows } from "../lib/rvrRows";
  * them. Nothing where the field has none.
  */
 export function DigitalAtisRows({ ident }: { ident: string }) {
-  const { data } = useQuery(datisQuery(ident));
+  // Asked each minute while its card is in sight, not under another tab
+  // (lib/shown), and again on its return once a minute old.
+  const { data } = useQuery({ ...datisQuery(ident), subscribed: useShown() });
   if (!data?.broadcasts.length) return null;
   return (
     <div className="pt-5" data-testid="place-datis">
@@ -78,7 +81,7 @@ export function DigitalAtisRows({ ident }: { ident: string }) {
  * (rvr_check, 14 CFR 91.175(h)(2)). Nothing where the field has none.
  */
 export function RvrRows({ ident }: { ident: string }) {
-  const { data } = useQuery(rvrQuery(ident));
+  const { data } = useQuery({ ...rvrQuery(ident), subscribed: useShown() });
   const minimumSm = usePreferences((s) => s.minimums.visibilitySm);
   if (!data?.runways.length) return null;
   const rows = rvrRows(data.runways, minimumSm);

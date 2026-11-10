@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { BadgeCheck, ChartLine, Crosshair, Fan, IdCard, Plane, Route, Star, UserRound } from "lucide-react";
 import { cn } from "cn";
@@ -13,7 +13,8 @@ import { RowBadge } from "../../../components/RowBadge";
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
 import { bearingDeg, distanceNm } from "../../../lib/geo";
-import { useOwnFix, type Fix } from "../../../lib/map/position/ownShip";
+import { useClock } from "../../../lib/useMinuteClock";
+import { useOwnFixShown, type Fix } from "../../../lib/map/position/ownShip";
 import { carriedOn, closestApproach, nearInHeight } from "../map/traffic";
 import { useTracking } from "../../../lib/map/position/tracking";
 import { alertsLine } from "../../../lib/aircraftAlerts";
@@ -37,6 +38,7 @@ import { shareOrCopy } from "../../../lib/share";
 import { aircraftKind } from "../../../lib/aircraftKind";
 import { departuresQuery } from "../../../lib/liveReports";
 import { departureLine } from "../lib/departureWords";
+import { useShownStore, useShown } from "../../../lib/shown";
 
 /** A link to the airplane on the planner, shared where the phone can,
  *  copied where it cannot. */
@@ -315,22 +317,18 @@ export default function FlightCard({
   /** Opens a field's card over this one: an end of its flight tapped. */
   onOpenAirport?: (ident: string) => void;
 }) {
-  const latest = useTracking((s) => (s.latest?.plane.hex === hex ? s.latest : null));
+  const latest = useShownStore(useTracking, (s) => (s.latest?.plane.hex === hex ? s.latest : null));
   const follow = useTracking((s) => s.follow);
-  const fix = useOwnFix();
-  const { data: detail } = useQuery(flightQuery(hex));
+  const fix = useOwnFixShown();
+  const { data: detail } = useQuery({ ...flightQuery(hex), subscribed: useShown() });
   // Its flight number's route, asked once a callsign is heard, with where
   // it is then, to say whether it is flying that route today.
   const callsign = latest?.plane.callsign ?? null;
   const firstAt = latest ? { lat: latest.plane.lat, lon: latest.plane.lon } : null;
   const { data: route } = useQuery(routeQuery(callsign, firstAt));
   const flying = route && route.plausible !== false ? route : null;
-  // The report's age, counted on.
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
+  // The report's age, counted on while its tab is in sight (useClock).
+  const now = useClock(1000);
   const plane = latest?.plane ?? null;
   const following = follow && !!plane;
   // What is kept of it, for the Aircraft card's Recents and Favorites,

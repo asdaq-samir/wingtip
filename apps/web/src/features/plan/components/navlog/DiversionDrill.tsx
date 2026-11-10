@@ -1,5 +1,5 @@
 // The drill's words are also the planner's (app/figures, GET /api/diversion, for the native app): the two change together.
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Timer, X } from "lucide-react";
 import { cn } from "cn";
@@ -8,6 +8,7 @@ import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger }
 import { Button } from "../../../../components/ui/button";
 import { Input } from "../../../../components/ui/input";
 import type { Leg } from "../../../../lib/api/types";
+import { useClock } from "../../../../lib/useMinuteClock";
 import { ALLOWANCES, divert, reasonable, stopwatch, type Diversion, type EstimateKey } from "../../../../lib/diversion";
 import { TEXT } from "../../../../lib/text";
 import { altFt } from "../../format";
@@ -49,18 +50,15 @@ function Answer({ ident, d }: { ident: string; d: Diversion }) {
 export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: string; lat: number; lon: number } }) {
   const id = useId();
   const [started, setStarted] = useState<number | null>(null);
-  const [now, setNow] = useState(0);
+
   const [stopped, setStopped] = useState<number | null>(null);
   const [field, setField] = useState<string | null>(null);
   const [typed, setTyped] = useState<Partial<Record<EstimateKey, string>>>({});
   // The fields nearest, as Nearest asks for them (nearestQuery), one
   // answer for both where they were asked under two keys.
   const nearest = useQuery({ ...nearestQuery(at.lat, at.lon), enabled: started != null });
-  useEffect(() => {
-    if (started == null || stopped != null) return;
-    const tick = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(tick);
-  }, [started, stopped]);
+  // Counting while the drill runs and FPL is in sight (useClock).
+  const now = useClock(1000, started != null && stopped == null);
 
   // A field under the point is where the airplane is, not a diversion.
   const fields = (nearest.data ?? []).filter((f) => f.distance_nm >= 2).slice(0, 6);
@@ -71,7 +69,6 @@ export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: stri
   const start = () => {
     const t = Date.now();
     setStarted(t);
-    setNow(t);
     setStopped(null);
     setField(null);
     setTyped({});
@@ -123,7 +120,7 @@ export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: stri
             >
               <p className={cn("flex items-center justify-between font-medium tabular-nums", TEXT.prose)} data-testid="diversion-clock">
                 <span>{checked ? "You took" : "On the clock"}</span>
-                <span>{stopwatch((stopped ?? now) - started)}</span>
+                <span>{stopwatch(Math.max(0, (stopped ?? now) - started))}</span>
               </p>
               <ListChoices value={field ?? ""} onChange={setField} label="Divert to">
                 {/* The nearest fields, with their longest runway and their

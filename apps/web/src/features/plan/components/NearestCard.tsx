@@ -16,7 +16,7 @@ import { glideRangeNm, reachesField, underway } from "../../../lib/map/position/
 import { useGlideRatio } from "../../../lib/map/position/useGlideRatio";
 import { AskFigure } from "../../../components/airplane/AskFigure";
 import { airportMarkSvg } from "../../../lib/map/marks/airportMark";
-import { positionNow, useOwnShip, useOwnFix } from "../../../lib/map/position/ownShip";
+import { positionNow, useOwnShip, useOwnFixShown } from "../../../lib/map/position/ownShip";
 import { nearestQuery } from "../../../lib/queryClient";
 import { inkOn } from "../../../lib/scoreScale";
 import { TEXT } from "../../../lib/text";
@@ -252,7 +252,7 @@ export default function NearestCard({
 }) {
   const enabled = useOwnShip((s) => s.enabled);
   const setEnabled = useOwnShip((s) => s.setEnabled);
-  const fix = useOwnFix();
+  const fix = useOwnFixShown();
   const origin = from ?? fix;
   const nearestAsked = useQuery({ ...nearestQuery(origin?.lat ?? 0, origin?.lon ?? 0), enabled: !!origin });
   const data = nearestAsked.data;

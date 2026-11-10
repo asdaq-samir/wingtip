@@ -1,5 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import { cn } from "cn";
+import { Shown, useShown } from "../lib/shown";
 
 /**
  * A tab's body kept under the others once it has been opened, as iOS keeps
@@ -16,11 +17,28 @@ import { cn } from "cn";
  * and starts its effects (0.5 s), so this stays. A part of it on a
  * chunk not yet in hand (the Aircraft tab's, aircraftTabChunk) waits
  * here, the tab empty a moment, not the panel round it.
+ *
+ * Kept is not working: what is inside reads whether it is in sight
+ * (lib/shown) and stops its polling, clocks and store reads while it is
+ * not.
  */
-export default function TabKept({ away, children }: { away: boolean; children: ReactNode }) {
+export default function TabKept({
+  away,
+  still = false,
+  children,
+}: {
+  away: boolean;
+  /** In place but at rest: Setup up over the tabs (MapPanel), which hides
+   *  them plainly; Setup's own layer says it is shown (MapPage). */
+  still?: boolean;
+  children: ReactNode;
+}) {
+  const shown = useShown() && !away && !still;
   return (
     <div inert={away} className={cn("flex min-h-0 flex-col", away ? "tab-away flex-none" : "flex-1")}>
-      <Suspense fallback={null}>{children}</Suspense>
+      <Shown.Provider value={shown}>
+        <Suspense fallback={null}>{children}</Suspense>
+      </Shown.Provider>
     </div>
   );
 }
