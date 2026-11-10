@@ -59,8 +59,10 @@ longer than it takes to answer the request.
   `SemanticContentDescriptor`) is read on the phone by Vision
   (`Intents/VisualLookup.swift`); only the idents found in it go to the
   planner (`/api/airport/{ident}`), and are not kept. "What does this NOTAM
-  mean for me" is written by Apple's on-device model from the NOTAM and
-  the engine's reasons (`Intents/AskIntents.swift`); nothing is sent.
+  mean for me" and the Brief's "NOTAMs in words" are written by Apple's
+  on-device model from the NOTAMs and the engine's reasons
+  (`Intents/AskIntents.swift`, `Words/NotamsInWords.swift`); nothing is
+  sent, and there is no server path for them.
 - **iCloud (iPhone).** Kept and watched airplanes and planned routes are
   in the pilot's own iCloud through SwiftData's CloudKit sync
   (`Records/Records.swift`); Apple's, not ours.
@@ -79,7 +81,7 @@ longer than it takes to answer the request.
 
 | Recipient | What | Personal |
 |---|---|---|
-| Anthropic (Claude) | Ask: the conversation (typed or spoken), the route, stops, airplane, altitude, departure time, the pilot's minimums, currency lines and home base, and the live position (3 decimals), altitude, track and groundspeed where known (`services/assistant/app/assistant.py`). The briefing and the Brief's words: the route, the nav log, the weather and NOTAM text on it, the airplane's type, and for the risk words the pilot's minimums and currency. A checkpoint note: the checkpoint and the route around it. The mock oral: the plan as text and the typed answers. Flight watch: what changed on the route. Nothing kept: the conversation is the client's | No name, address, account; a tail number only where the pilot typed it into a question |
+| Anthropic (Claude) | Ask: the conversation (typed or spoken), the route, stops, airplane, altitude, departure time, the pilot's minimums, currency lines and home base, and the live position (3 decimals), altitude, track and groundspeed where known (`services/assistant/app/assistant.py`). The briefing and the Brief's words: the route, the nav log, the weather and NOTAM text on it, the airplane's type, and for the risk words the pilot's minimums and currency. A checkpoint note: the checkpoint and the route around it. The mock oral: the plan as text and the typed answers. Flight watch: what changed on the route. A photographed page (handbook, logbook, clearance note; `POST /api/read-document`) and the date, except on an iPhone that reads it on the device (iOS 27, Apple Intelligence with vision: `Documents/OnDeviceDocumentReader.swift`), where the photo is not sent. Nothing kept: the conversation is the client's | No name, address, account; a tail number only where the pilot typed it into a question |
 | Amazon SES | The address a sign-in link is sent to, and the link; an instructor's address a student asks in, with the student's name and address; the endorsements and reviews between the two, to each | Yes, to deliver it |
 | The student's instructor | Once they take the student on: the student's name and address, 61.109 experience from their logbook, knowledge test codes, endorsements, and the saved flights the student puts to them | Yes: the student asks them in, and either ends it |
 | Google, Apple | Their own sign-in, when a pilot uses it | Their own |

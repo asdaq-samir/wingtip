@@ -81,8 +81,10 @@ Not collected, though the app uses them on the device:
   `OnDevice/`): what is on the screen is told to Siri as App Entities on
   the phone; a camera look-up's picture is read on the phone and only
   the airport idents in it go to the planner, unkept, as any airport
-  lookup does; the on-device model's words are written on the phone.
-  Nothing new is collected.
+  lookup does; the on-device model's words are written on the phone; a
+  photographed page is read on the phone where it can be (iOS 27,
+  `Documents/OnDeviceDocumentReader.swift`), else sent to the assistant
+  to read and not kept. Nothing new is collected.
 
 ### The privacy manifest
 

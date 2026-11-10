@@ -64,10 +64,11 @@ Some features are written by Claude, an AI model made by Anthropic: Ask, the wri
 - **Checkpoint descriptions:** the checkpoint and the checkpoints around it.
 - **The mock oral:** the flight's plan as text and the answers you type.
 - **Flight watch:** what changed on a watched flight's route.
+- **Reading a photographed page:** the photo of a handbook page, a logbook page or a clearance note you ask the app to read, and today's date. On an iPhone that can read it itself (Apple Intelligence on iOS 27), the page is read on the phone and the photo is not sent.
 
 We do not send your name, email address or account to Anthropic. We do not keep your Ask conversations: each one stays on your device. Anthropic receives this as our service provider and handles it under its commercial terms. What Claude writes can be wrong; the app says so where it shows it.
 
-Some phones write a few of these on the device instead, with Apple's own on-device model, where the iPhone has one; nothing is sent for those.
+Some phones write a few of these on the device instead, with Apple's own on-device model, where the iPhone has one; nothing is sent for those. On such an iPhone the NOTAMs in plain words, what a NOTAM means for your flight, and the photographed pages are always done on the phone.
 
 ## Faults and speed
 

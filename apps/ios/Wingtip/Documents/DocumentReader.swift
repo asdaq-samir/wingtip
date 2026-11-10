@@ -85,9 +85,23 @@ enum DocumentReader {
         ASReadAsk(image: jpeg.base64EncodedString(), kind: kind.rawValue, mediaType: "image/jpeg", today: today)
     }
 
-    /// The page read, through the gateway as the other assistant calls go;
+    /// The page read on the phone where it can (OnDeviceDocumentReader:
+    /// Apple's on-device model and Vision, iOS 27, the photo never sent),
+    /// else through the gateway as the other assistant calls go;
     /// CSRF-checked, as it is a paid call made for the pilot.
     static func read(_ kind: DocumentKind, image: UIImage) async throws -> DocumentAnswer {
+        if OnDeviceDocumentReader.unavailableWhy == nil {
+            do {
+                return try await OnDeviceDocumentReader.read(kind, image: image)
+            } catch {
+                Log.onDevice.notice("the page could not be read on the phone: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+        return try await server(kind, image: image)
+    }
+
+    /// The page read by the assistant (Claude), the photo sent.
+    static func server(_ kind: DocumentKind, image: UIImage) async throws -> DocumentAnswer {
         guard let jpeg = jpeg(image) else { throw Planner.Failure(status: 422, detail: "That photo could not be opened.") }
         let request = try await Planner.request("POST", "/api/read-document", json: ask(kind, jpeg: jpeg), csrf: true, timeout: timeout)
         return try DocumentAnswer(data: try await Planner.data(for: request))
