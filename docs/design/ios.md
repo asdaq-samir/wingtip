@@ -595,8 +595,11 @@ figures anywhere depend on a default type.
      is needed outside a `List` (iOS 27).
    - Swipe to delete.
    - "Add a Stop After" in each row's menu.
-   - After a delete or a change, the **Undo bar** under the route: never
-     a toast or an alert ([HIG Alerts][hig-alerts]).
+   - After a delete or a change, the system's **Undo**: the window's
+     `UndoManager`, so shake, Command-Z, the Edit menu and an Undo button
+     in the sheet's bar (`arrow.uturn.backward`, shown while there is
+     something to undo) all take it back. Never a toast or an alert
+     ([HIG Alerts][hig-alerts]).
 6. **Options:** flight rules, departure time and airplane, as menus
    (`Picker` with `.menu`), not sliders.
 
@@ -1420,6 +1423,48 @@ chosen by size class (`RootLayout.of`).
 [HIG Split views][hig-splitviews]; [HIG Designing for iPadOS][hig-ipados];
 [HIG iPhone Duo][hig-duo]; [WWDC26 102][wwdc-102];
 [WWDC26 269][wwdc-269]; [WWDC26 278][wwdc-278].
+
+---
+
+## 17. Stock components, and what is left hand-built
+
+The owner, 2026-11-10: "Do em all": every hand-built component replaced
+by a stock one, or redesigned round one. Stock components keep their own
+behaviour; only the content, its order and the brand tokens are ours.
+
+**Replaced (2026-11-10).**
+
+| Was hand-built | Now |
+|---|---|
+| Route-choice chips (`RouteChipButton`, its 2 s fold) | `Picker` with `.menu` (`RouteWayPicker`), on the plan and the strip's head. The menu has no fold, so the fold went |
+| The strip's chips (`InkChipStyle`) | `.bordered`, `.buttonBorderShape(.capsule)`, `.controlSize(.small)`, a 44-point `contentShape` round each |
+| `AskPill` | Deleted: nothing used it any more (the one search took its place) |
+| Forecast mode's tinted disc | `Toggle` with `.toggleStyle(.button)` |
+| `ProminentButtonStyle` (a dimmed Fly) | `.borderedProminent` that is never dimmed; what isn't an N-number is said under the field (warn, never limit) |
+| Undo bar and Undo rows | The window's `UndoManager` for the route, the logbook, saved flights and Favorites (airports and airplanes), with `UndoToolbarItem` in the bar while an undo stands. A deleted logbook flight or saved flight is sent to the gateway when its list is left |
+| `Skeleton` | `.redacted(reason: .placeholder)` over the rows' own layout (`loading(_:)`) |
+| Status capsules (the strip's verdict tag, Active Leg) | A coloured `Label`: symbol and word in the finding's or the tint's colour, as Weather states a condition |
+| `SectionTitle` and `Section(title:)` | `Section("…")`, with `.headerProminence(.increased)` set once at the root |
+| The forecast run's hand-drawn bars | Swift Charts: `BarMark` per leg, `RuleMark` at the run's time now |
+| `MapLoading`'s turning mark | `ProgressView`; the mark is kept only on the static launch screen (and as the launch image in About) |
+
+The altitude stays a read-only Swift Charts profile with the system's
+`Picker(.wheel)` of the engine's altitudes beside it (on an iPad or a
+wide window; under it on an iPhone, where beside would cut the rows). The
+wheel opens on the planner's pick; any row can be flown, and one outside
+the legal altitudes is said under it.
+
+**Left hand-built, and why.**
+
+| Component | Why there is no stock one |
+|---|---|
+| `RibbonLine` (the strip's route schematic) | A transit-map line of the route's points with the airplane riding it; no system control draws one |
+| `DiagramOwnShip`, `HoldDiagram`, the runway sketch (`Canvas`) | Aviation diagrams: the airport diagram with own ship, a hold's entry sectors, the runways' layout. Swift Charts has no geometry for them |
+| `DepartureWindowSection`'s hour tiles | An hourly strip of verdicts, as Weather's hourly forecast; SwiftUI has no hourly-forecast control |
+| Checklist ticks (checklists, emergency, passenger briefing) | iOS has no checkbox (`ToggleStyle.checkbox` is macOS only); the circle-and-tick row is what Reminders draws by hand too |
+| `FactsRow` | Maps' facts row (a caption over each value, four across) has no public SwiftUI view; it is a `Grid`/`HStack` of `Text` |
+| `MapChip` and the captions over pictures | Stock `Label`/`Text` on the system's glass (`glassEffect`), which a line over a busy chart needs to be read; no capsule is drawn |
+| `ClosesBack` (a close in place of the Back chevron) | Not a component but the owner's navigation rule (decision 0015); the system's Back would be the stock way. Left for the owner |
 
 ---
 

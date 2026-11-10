@@ -9,7 +9,7 @@
 apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/ChartMap.kt 739
 apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/MapStyle.kt 848
 apps/ios/Wingtip/Tiles/ChartTileOverlay.swift 420
-apps/ios/Wingtip/Views/AirplaneCard.swift 552
+apps/ios/Wingtip/Views/AirplaneCard.swift 551
 apps/ios/Wingtip/Views/AirportCard.swift 483
 apps/ios/Wingtip/Views/ChartMap.swift 758
 apps/ios/Wingtip/Views/ChartOverlays.swift 879
