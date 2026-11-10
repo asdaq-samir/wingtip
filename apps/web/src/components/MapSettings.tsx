@@ -5,6 +5,7 @@ import PullDown from "./PullDown";
 import Segmented from "./Segmented";
 import SwitchRow from "./SwitchRow";
 import GlideRingRow from "./GlideRingRow";
+import AirportWeatherSettings from "./AirportWeatherSettings";
 import MapPictureChoices from "./MapPictureChoices";
 import { MapAlertsGroup, MapSourcesGroup } from "./MapSettingsGroups";
 import { clearOwnTrail, useOwnTrail } from "../lib/map/position/ownTrail";
@@ -158,6 +159,9 @@ export default function MapSettings({ weather }: { weather?: ReactNode }) {
             service's permission. A joint-use field is drawn either way. */}
         <SwitchRow title="Military Fields" on={prefs.military} onChange={prefs.setMilitary} testId="military-toggle" />
       </ListGroup>
+      {/* Each field's weather over the chart: a halo, a dot or the station
+          model, the wind arrows and the getting-worse badge. */}
+      <AirportWeatherSettings />
       <MapAlertsGroup />
       <ListGroup title="Appearance">
         {/* The white paper chart dimmed in the dark theme, so it does not

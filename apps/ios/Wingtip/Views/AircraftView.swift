@@ -22,7 +22,7 @@ struct AircraftView: View {
             // Any airplane in the air, by its callsign, N-number or
             // address: its card, tracked on the map.
             Section {
-                NavigationLink { TrafficFindView().navigationBarTitleDisplayMode(.inline) } label: { Label("Find an Airplane", systemImage: "magnifyingglass") }
+                NavigationLink { TrafficFindView() } label: { Label("Find an Airplane", systemImage: "magnifyingglass") }
             }
             Section("Airplane") {
                 HStack {
@@ -95,7 +95,7 @@ struct AircraftView: View {
                     }
                     // Added, edited and deleted on their own page, with
                     // each one's checklist, squawks and inspections.
-                    NavigationLink("Your Airplanes") { OwnAircraftListView().navigationBarTitleDisplayMode(.inline) }
+                    NavigationLink("Your Airplanes") { OwnAircraftListView() }
                 }
             }
             Section("Types the Planner Has Figures for") {
@@ -128,7 +128,6 @@ struct AircraftView: View {
             }
         }
         .navigationTitle("Airplane")
-        .navigationBarTitleDisplayMode(.inline)
         .task {
             do { profiles = try await Planner.aircraftProfiles() } catch { problem = error.localizedDescription }
         }

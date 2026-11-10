@@ -5,12 +5,13 @@ import SwiftUI
 /// Airplane, the logbook's rows, an inline ask's Edit): its registration
 /// and type, and every figure with its source -- Book, Handbook Photo or
 /// You -- each editable in place, with Reset to Book Figure where the
-/// pilot's stands over the book's. A sheet; its close goes back to where
-/// the pilot was. Its state is AirplaneProfileModel's.
+/// pilot's stands over the book's. The one profile card (the owner's card
+/// rule, 2026-11-10): its own card from the plan or the search, pushed in
+/// the card it was opened from elsewhere, Back or its close going back to
+/// where the pilot was. Its state is AirplaneProfileModel's.
 struct AirplaneProfileView: View {
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
-    @Environment(\.dismiss) private var dismiss
     /// Back to the plan once flown, where the profile was opened over it.
     @Environment(\.showPlan) private var showPlan
     @State private var model: AirplaneProfileModel
@@ -20,72 +21,67 @@ struct AirplaneProfileView: View {
     /// five-figure moment still fit.
     @ScaledMetric(relativeTo: .body) private var fieldWidth = 96.0
 
-    /// Its sheet's height: half way first, as Maps' place card opens;
-    /// full where it opens on a figure to type.
-    @State private var detent: PresentationDetent
-
     init(tail: String, focus: OwnFigure? = nil) {
         _model = State(initialValue: AirplaneProfileModel(tail: tail))
         self.focus = focus
-        _detent = State(initialValue: focus == nil ? .medium : .large)
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    AirplanePlaceHead(model: model, fly: fly)
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color.clear)
+        Form {
+            Section {
+                AirplanePlaceHead(model: model, fly: fly)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            }
+            airplane
+            Section {
+                ForEach(OwnFigure.allCases) { figure in row(figure) }
+            } header: {
+                Text("Figures")
+            } footer: {
+                VStack(alignment: .leading, spacing: WingtipSpace.xs) {
+                    if let words = model.keptWords(signedIn: session.signedIn) { Text(words) }
+                    ProblemLine(model.problem)
                 }
-                airplane
+            }
+            EnduranceSection(model: model)
+            ProfilePhotoSection(model: model) { Task { await model.commitDrafts(plan: plan, signedIn: session.signedIn) } }
+            if let record = Airplanes.shared.record(model.tail) {
                 Section {
-                    ForEach(OwnFigure.allCases) { figure in row(figure) }
-                } header: {
-                    Text("Figures")
-                } footer: {
-                    VStack(alignment: .leading, spacing: WingtipSpace.xs) {
-                        if let words = model.keptWords(signedIn: session.signedIn) { Text(words) }
-                        ProblemLine(model.problem)
+                    NavigationLink("Checklists, Squawks and Inspections") {
+                        OwnAircraftPage(record: record) { Task { await Airplanes.shared.loadRecords(signedIn: session.signedIn) } }.navigationBarTitleDisplayMode(.inline)
                     }
                 }
-                EnduranceSection(model: model)
-                ProfilePhotoSection(model: model) { Task { await model.commitDrafts(plan: plan, signedIn: session.signedIn) } }
-                if let record = Airplanes.shared.record(model.tail) {
-                    Section {
-                        NavigationLink("Checklists, Squawks and Inspections") {
-                            OwnAircraftPage(record: record) { Task { await Airplanes.shared.loadRecords(signedIn: session.signedIn) } }.navigationBarTitleDisplayMode(.inline)
-                        }
-                    }
-                }
-            }
-            .navigationTitle(model.tail)
-            .navigationBarTitleDisplayMode(.inline)
-            // The N-number is the head's, large and centred, as Maps' card.
-            .toolbar(removing: .title)
-            .closeButton { focused = nil; dismiss() }
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Done") { focused = nil } }
-            }
-            .task {
-                await model.load(signedIn: session.signedIn)
-                focused = focus
-            }
-            // A figure is saved as the pilot leaves its field.
-            .onChange(of: focused) { old, _ in
-                if let old { Task { await model.commit(old, plan: plan, signedIn: session.signedIn) } }
             }
         }
-        .environment(\.cardExpanded, detent == .large)
-        .presentationDetents([.medium, .large], selection: $detent)
+        .navigationTitle(model.tail)
+        .navigationBarTitleDisplayMode(.inline)
+        // The N-number is the head's, large and centred, as Maps' card.
+        .toolbar(removing: .title)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Done") { focused = nil } }
+        }
+        .task {
+            await model.load(signedIn: session.signedIn)
+            focused = focus
+            // A figure to type wants the card full height.
+            if focus != nil { Navigator.shared.cardDetent = .large }
+        }
+        // A figure is saved as the pilot leaves its field.
+        .onChange(of: focused) { old, _ in
+            if let old { Task { await model.commit(old, plan: plan, signedIn: session.signedIn) } }
+        }
+        // A figure being typed is saved as the card goes.
+        .onDisappear {
+            if let typing = focused { Task { await model.commit(typing, plan: plan, signedIn: session.signedIn) } }
+        }
     }
 
     /// The plan flown with this airplane, then the plan shown.
     private func fly() {
         Task {
             await plan.fly(tail: model.tail, own: Airplanes.shared.records, names: Array(Airplanes.shared.books.keys))
-            dismiss()
-            showPlan?()
+            if let showPlan { showPlan() } else { Navigator.shared.showPlan() }
         }
     }
 

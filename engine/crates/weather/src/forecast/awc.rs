@@ -70,14 +70,6 @@ fn visibility(text: Option<&str>) -> Option<f64> {
 /// period's sky_condition elements and vert_vis_ft: a layer the station
 /// could not measure comes with no cloud_base_ft_agl, which as the lowest
 /// broken or overcast leaves the ceiling not known, never none.
-fn sky(el: &Element) -> (Option<f64>, bool) {
-    let layers: Vec<(String, Option<f64>)> = el
-        .all("sky_condition")
-        .map(|sc| (sc.attribute("sky_cover").unwrap_or("").to_owned(), num(sc.attribute("cloud_base_ft_agl"))))
-        .collect();
-    metar::sky_ceiling_of(layers.iter().map(|(c, b)| (c.as_str(), *b)), num(el.text_at(&["vert_vis_ft"])))
-}
-
 fn opt_text(out: &mut String, s: Option<&str>) {
     json::opt_string(out, s);
 }
@@ -106,7 +98,7 @@ pub fn metars(text: &str) -> Result<String, String> {
         if latest.get(ident).is_some_and(|(was, _)| *was >= observed) {
             continue;
         }
-        let (ceiling, unknown) = sky(el);
+        let (ceiling, unknown, cover) = crate::sky::sky(el);
         let vis = visibility(el.text_at(&["visibility_statute_mi"]));
         // The AWC's own category takes a layer it has no height for as no
         // ceiling, and calls "OVC/// 10SM" VFR; the ceiling is not known
@@ -130,6 +122,8 @@ pub fn metars(text: &str) -> Result<String, String> {
         whole(&mut r, ceiling);
         r.push_str(",\"ceiling_unknown\":");
         r.push_str(if unknown { "true" } else { "false" });
+        r.push_str(",\"ceiling_cover\":");
+        json::opt_string(&mut r, cover);
         r.push_str(",\"visibility_sm\":");
         json::opt_number(&mut r, vis);
         for (key, tag) in [
@@ -199,7 +193,7 @@ pub fn tafs(text: &str) -> Result<String, String> {
         for f in el.all("forecast") {
             let (Some(from), Some(to)) = (unix(f.text_at(&["fcst_time_from"])), unix(f.text_at(&["fcst_time_to"]))) else { continue };
             let change = f.text_at(&["change_indicator"]).unwrap_or("").trim().to_owned();
-            let (ceiling, unknown) = sky(f);
+            let (ceiling, unknown, _) = crate::sky::sky(f);
             let mut p = format!("{{\"timeFrom\":{from},\"timeTo\":{to},\"change\":");
             json::string(&mut p, &change);
             p.push_str(",\"probability\":");

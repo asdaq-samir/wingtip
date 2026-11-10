@@ -63,26 +63,6 @@ class PlacesFound(BaseModel):
     places: list[PlaceFound]
 
 
-class PinWeather(BaseModel):
-    """A field's METAR as the map's station model and wind arrow read it
-    (wingtip.map_weather): the wind (true, knots; no direction for a
-    variable one), the visibility in statute miles and the weather with it
-    as reported ("BR", "-TSRA"), the ceiling in feet AGL -- not known where
-    `ceiling_unknown` (14 CFR 1.1) -- and `crosswind_kt`, the least
-    crosswind on the field's runways, steady or gust (the engine's
-    least_crosswind), there only where the wind earns an arrow (the
-    engine's wind_arrow) and a runway end has a heading."""
-
-    wind_dir_true_deg: float | None = None
-    wind_speed_kt: float | None = None
-    wind_gust_kt: float | None = None
-    visibility_sm: float | None = None
-    wx: str | None = None
-    ceiling_ft: float | None = None
-    ceiling_unknown: bool = False
-    crosswind_kt: float | None = None
-
-
 class AirportPin(BaseModel):
     """A landing field the map can open a card for: the ident pilots use,
     where it is, and its size -- the bigger ones are kept when a wide
@@ -145,17 +125,6 @@ class NearestAirport(AirportPin):
 
 class NearestAirports(BaseModel):
     airports: list[NearestAirport]
-
-
-class AirportInView(AirportPin):
-    """A field on the map's own list (/api/airports/in-view): a pin, and
-    its METAR as the map's marks read it, None where it has no report."""
-
-    weather: PinWeather | None = None
-
-
-class AirportsInView(BaseModel):
-    airports: list[AirportInView]
 
 
 class WaypointPin(BaseModel):

@@ -55,7 +55,6 @@ struct PassengerBriefingView: View {
             }
         }
         .navigationTitle("Passengers")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

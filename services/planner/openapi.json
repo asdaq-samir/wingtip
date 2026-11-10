@@ -15410,6 +15410,22 @@
       "PinWeather": {
         "description": "A field's METAR as the map's station model and wind arrow read it\n(wingtip.map_weather): the wind (true, knots; no direction for a\nvariable one), the visibility in statute miles and the weather with it\nas reported (\"BR\", \"-TSRA\"), the ceiling in feet AGL -- not known where\n`ceiling_unknown` (14 CFR 1.1) -- and `crosswind_kt`, the least\ncrosswind on the field's runways, steady or gust (the engine's\nleast_crosswind), there only where the wind earns an arrow (the\nengine's wind_arrow) and a runway end has a heading.",
         "properties": {
+          "ceiling_cover": {
+            "anyOf": [
+              {
+                "enum": [
+                  "BKN",
+                  "OVC",
+                  "VV"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ceiling Cover"
+          },
           "ceiling_ft": {
             "anyOf": [
               {

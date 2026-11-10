@@ -3,60 +3,6 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
-/// The nearest fields for a diversion, from where the airplane is (the dry
-/// run's airplane while it flies): the planner's distance and bearing to
-/// each, and Divert, which plans the route from here to it -- its heading,
-/// time and fuel the planner's, as any route's are -- with the route as it
-/// was kept for Cancel.
-struct DiversionView: View {
-    @Environment(Plan.self) private var plan
-    @Environment(OwnShip.self) private var ownShip
-    @Environment(DryRun.self) private var dryRun
-    @Environment(\.dismiss) private var dismiss
-    @State private var fields: [NearestAirport] = []
-    @State private var problem: String?
-
-    private var fix: OwnShip.Fix? { dryRun.fix ?? ownShip.fix }
-
-    var body: some View {
-        List {
-            if fix == nil {
-                ContentUnavailableView("Finding your position…", systemImage: "location", description: Text("Nearest is from where the airplane is."))
-            }
-            Section(fields.isEmpty ? "" : "Nearest to you") {
-                ForEach(fields) { field in
-                    HStack {
-                        NavigationLink { AirportCard(ident: field.ident).navigationBarTitleDisplayMode(.inline).zoomsFrom(field.ident) } label: { NearestRow(field: field).cardSource(field.ident) }
-                    }
-                    .swipeActions(edge: .leading) {
-                        Button("Divert") { divert(field.ident) }.tint(WingtipInk.caution)
-                    }
-                    .contextMenu {
-                        Button { divert(field.ident) } label: { Label("Divert to \(field.ident)", systemImage: "arrow.uturn.right") }
-                    }
-                }
-            }
-            ProblemLine(problem)
-            // The checkride's diversion from here, worked by the planner.
-            Section {
-                NavigationLink { DiversionDrillView().navigationBarTitleDisplayMode(.inline) } label: { Label("Diversion Drill", systemImage: "timer") }
-            }
-        }
-        .navigationTitle("Nearest")
-        .navigationBarTitleDisplayMode(.inline)
-        .task(id: fix.map { "\(($0.coordinate.latitude * 60).rounded()),\(($0.coordinate.longitude * 60).rounded())" }) {
-            guard let at = fix?.coordinate else { return }
-            do { fields = try await Planner.nearest(lat: at.latitude, lon: at.longitude); problem = nil } catch { problem = "The nearest fields could not be found." }
-        }
-    }
-
-    private func divert(_ ident: String) {
-        guard let fix else { return }
-        plan.divert(to: ident, from: fix)
-        dismiss()
-    }
-}
-
 /// How to spot each checkpoint from the air, one line each, written on
 /// the pilot's tap (each is a billed call, so never on its own) and
 /// streamed as they come; a pilot's own edit is theirs from then on (the
@@ -100,7 +46,6 @@ struct CheckpointNotesView: View {
             }
         }
         .navigationTitle("Checkpoint notes")
-        .navigationBarTitleDisplayMode(.inline)
         .alert(editing.map { $0.name ?? $0.waypoint ?? $0.category } ?? "Note", isPresented: Binding(get: { editing != nil }, set: { if !$0 { editing = nil } })) {
             TextField("What you see there", text: $typed)
             Button("Save") { save() }
@@ -239,7 +184,6 @@ struct FlightServiceView: View {
             }
         }
         .navigationTitle("File Flight Plan")
-        .navigationBarTitleDisplayMode(.inline)
         .task {
             status = try? await Gateway.flightService()
             if aircraftId.isEmpty { aircraftId = plan.tail ?? "" }
@@ -292,83 +236,75 @@ struct FlownTrackView: View {
     private var replayKey: String { "flown:\(flight)" }
 
     var body: some View {
-        NavigationStack {
-            List {
-                if let track, !track.points.isEmpty {
-                    // Its replay, the airplane flown along it again on the
-                    // map, the track put there with it.
-                    ReplaySection(points: Replay.points(track.points), key: replayKey, onPlay: {
-                        if Tracking.shared.flown.isEmpty { Tracking.shared.flown = points }
-                    })
-                    Section {
-                        if let first = points.first, let last = points.last {
-                            LabeledContent("Flown", value: FlightWords.lasted(last.t - first.t))
-                        }
-                        if let top = points.compactMap(\.altFt).max() { LabeledContent("Highest", value: Format.altitude(top)) }
-                    }
-                    // Its debrief against the flight's nav log, the planner's (POST /api/debrief).
-                    DebriefSections(flight: flight, points: track.points)
-                    Section {
-                        Button(Tracking.shared.flown.isEmpty ? "Show on the Map" : "Hide from the Map") {
-                            Tracking.shared.flown = Tracking.shared.flown.isEmpty ? points : []
-                        }
-                        Button("Delete the Track", role: .destructive) {
-                            Task {
-                                do { try await Gateway.deleteTrack(flight); self.track = nil; Tracking.shared.flown = []; Replay.shared.clear(replayKey) } catch { problem = error.localizedDescription }
-                            }
-                        }
-                    }
-                } else if loaded {
-                    ContentUnavailableView("No track kept", systemImage: "point.topleft.down.to.point.bottomright.curvepath",
-                                           description: Text(OwnTrail.shared.points.count > 1
-                                               ? "Keep the path this iPhone flew, or put in a GPX file."
-                                               : "Put in the flight's track from a GPX file."))
-                }
+        List {
+            if let track, !track.points.isEmpty {
+                // Its replay, the airplane flown along it again on the
+                // map, the track put there with it.
+                ReplaySection(points: Replay.points(track.points), key: replayKey, onPlay: {
+                    if Tracking.shared.flown.isEmpty { Tracking.shared.flown = points }
+                })
                 Section {
-                    // The path the phone flew (OwnTrail), kept as the flight's
-                    // track with no file to find: the debrief from the
-                    // airplane's own GPS, as ForeFlight's track logs are.
-                    if OwnTrail.shared.points.count > 1 {
-                        Button("Keep the Path This iPhone Flew") {
-                            let saved = OwnTrail.shared.asSavedTrack
-                            Task {
-                                do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = error.localizedDescription }
-                            }
+                    if let first = points.first, let last = points.last {
+                        LabeledContent("Flown", value: FlightWords.lasted(last.t - first.t))
+                    }
+                    if let top = points.compactMap(\.altFt).max() { LabeledContent("Highest", value: Format.altitude(top)) }
+                }
+                // Its debrief against the flight's nav log, the planner's (POST /api/debrief).
+                DebriefSections(flight: flight, points: track.points)
+                Section {
+                    Button(Tracking.shared.flown.isEmpty ? "Show on the Map" : "Hide from the Map") {
+                        Tracking.shared.flown = Tracking.shared.flown.isEmpty ? points : []
+                    }
+                    Button("Delete the Track", role: .destructive) {
+                        Task {
+                            do { try await Gateway.deleteTrack(flight); self.track = nil; Tracking.shared.flown = []; Replay.shared.clear(replayKey) } catch { problem = error.localizedDescription }
                         }
                     }
-                    Button("Put In a GPX File…") { importing = true }
-                    ProblemLine(problem)
                 }
+            } else if loaded {
+                ContentUnavailableView("No track kept", systemImage: "point.topleft.down.to.point.bottomright.curvepath",
+                                       description: Text(OwnTrail.shared.points.count > 1
+                                           ? "Keep the path this iPhone flew, or put in a GPX file."
+                                           : "Put in the flight's track from a GPX file."))
             }
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                // The card's own close, whether a sheet (iPhone) or the
-                // inspector (iPad) holds it.
-                ToolbarItem(placement: .topBarTrailing) { CloseButton { FlightUI.shared.card = nil } }
+            Section {
+                // The path the phone flew (OwnTrail), kept as the flight's
+                // track with no file to find: the debrief from the
+                // airplane's own GPS, as ForeFlight's track logs are.
+                if OwnTrail.shared.points.count > 1 {
+                    Button("Keep the Path This iPhone Flew") {
+                        let saved = OwnTrail.shared.asSavedTrack
+                        Task {
+                            do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = error.localizedDescription }
+                        }
+                    }
+                }
+                Button("Put In a GPX File…") { importing = true }
+                ProblemLine(problem)
             }
-            .task {
-                do { track = try await Gateway.track(flight) } catch { problem = error.localizedDescription }
-                loaded = true
+        }
+        .navigationTitle(title)
+        .task {
+            do { track = try await Gateway.track(flight) } catch { problem = error.localizedDescription }
+            loaded = true
+        }
+        .onDisappear { Replay.shared.clear(replayKey) }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [UTType(filenameExtension: "gpx") ?? .xml, .xml]) { result in
+            guard case .success(let url) = result else { return }
+            let reading = url.startAccessingSecurityScopedResource()
+            defer { if reading { url.stopAccessingSecurityScopedResource() } }
+            let found: [SavedTrackPoint]?
+            do { found = try GPXTrack.points(try Data(contentsOf: url)) } catch {
+                problem = "The file couldn't be read: \(error.localizedDescription)"
+                return
             }
-            .onDisappear { Replay.shared.clear(replayKey) }
-            .fileImporter(isPresented: $importing, allowedContentTypes: [UTType(filenameExtension: "gpx") ?? .xml, .xml]) { result in
-                guard case .success(let url) = result else { return }
-                let reading = url.startAccessingSecurityScopedResource()
-                defer { if reading { url.stopAccessingSecurityScopedResource() } }
-                let found: [SavedTrackPoint]?
-                do { found = try GPXTrack.points(try Data(contentsOf: url)) } catch {
-                    problem = "The file couldn't be read: \(error.localizedDescription)"
-                    return
-                }
-                guard let read = found, !read.isEmpty else {
-                    problem = "No track points with their times in that file."
-                    return
-                }
-                let saved = SavedTrack(points: read, source: "gpx")
-                Task {
-                    do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = error.localizedDescription }
-                }
+            guard let read = found, !read.isEmpty else {
+                problem = "No track points with their times in that file."
+                return
+            }
+            let saved = SavedTrack(points: read, source: "gpx")
+            Task {
+                do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = error.localizedDescription }
             }
         }
     }
@@ -556,13 +492,6 @@ private enum PreviewData {
         Leg.preview(from: "KHIB", to: "KGPZ", distanceNm: 31.8, altitudeFt: 4500, trueCourseDeg: 296, magneticHeadingDeg: 293, wcaDeg: -4, trueHeadingDeg: 292, magneticVariationDeg: -1, climbMin: 6, groundspeedKt: 106, eteMin: 18, fuelGal: 3.3, tasKt: 112),
     ]
     static let totals = Totals.preview(distanceNm: 94.2, eteMin: 54, fuelGal: 8.4, fuelMarginGal: 35.6, fuelRequiredGal: 12.4, usableFuelGal: 48)
-}
-
-#Preview("DiversionView") {
-    NavigationStack { DiversionView() }
-        .environment(Plan())
-        .environment(OwnShip())
-        .environment(DryRun())
 }
 
 #Preview("CheckpointNotesView") {

@@ -100,110 +100,103 @@ struct AirplaneCard: View {
     private var link: URL { Config.gateway.appending(path: "/app/plan").appending(queryItems: [URLQueryItem(name: "flight", value: hex)]) }
 
     var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    VStack(alignment: .leading, spacing: WingtipSpace.xs) {
-                        Text(detail?.description.map(FlightWords.nameCase) ?? detail?.type ?? plane?.type ?? name).font(.title3.weight(.semibold))
-                        if let op = detail?.operator { Text(FlightWords.nameCase(op)).foregroundStyle(.secondary) }
-                    }
-                    HStack(spacing: WingtipSpace.md) {
-                        Button { if let kept { tracking.toggleFavorite(kept, undo: undoManager) } } label: {
-                            Label(tracking.isFavorite(hex) ? "Favorite" : "Add to Favorites", systemImage: tracking.isFavorite(hex) ? "star.fill" : "star")
-                        }
-                        .disabled(kept == nil)
-                        // Nothing to follow where it is not heard now.
-                        Button {
-                            tracking.follow.toggle()
-                        } label: {
-                            Label(tracking.follow && plane != nil ? "Following" : "Follow", systemImage: "scope")
-                        }
-                        .disabled(plane == nil)
-                        Menu {
-                            Toggle("Tell me when it takes off", isOn: watchBinding(.takeoff))
-                            Toggle("Tell me when it lands", isOn: watchBinding(.land))
-                        } label: {
-                            Label("Alert", systemImage: tracking.watching(hex, .takeoff) || tracking.watching(hex, .land) ? "bell.fill" : "bell").symbolSwap()
-                        }
-                        ShareLink(item: link, subject: Text(name)) { Label("Share", systemImage: "square.and.arrow.up") }
-                    }
-                    .labelStyle(.iconOnly)
-                    .glassButton()
-                    .font(.body)
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: WingtipSpace.xs) {
+                    Text(detail?.description.map(FlightWords.nameCase) ?? detail?.type ?? plane?.type ?? name).font(.title3.weight(.semibold))
+                    if let op = detail?.operator { Text(FlightWords.nameCase(op)).foregroundStyle(.secondary) }
                 }
-                if let plane {
-                    Section("Now") {
-                        NowFlightRow(plane: plane, detail: detail, route: route?.plausible == false ? nil : route)
-                        if let towerLine {
-                            Label(towerLine, systemImage: "building.columns").font(.subheadline).foregroundStyle(.secondary)
-                        }
+                HStack(spacing: WingtipSpace.md) {
+                    Button { if let kept { tracking.toggleFavorite(kept, undo: undoManager) } } label: {
+                        Label(tracking.isFavorite(hex) ? "Favorite" : "Add to Favorites", systemImage: tracking.isFavorite(hex) ? "star.fill" : "star")
+                    }
+                    .disabled(kept == nil)
+                    // Nothing to follow where it is not heard now.
+                    Button {
+                        tracking.follow.toggle()
+                    } label: {
+                        Label(tracking.follow && plane != nil ? "Following" : "Follow", systemImage: "scope")
+                    }
+                    .disabled(plane == nil)
+                    Menu {
+                        Toggle("Tell me when it takes off", isOn: watchBinding(.takeoff))
+                        Toggle("Tell me when it lands", isOn: watchBinding(.land))
+                    } label: {
+                        Label("Alert", systemImage: tracking.watching(hex, .takeoff) || tracking.watching(hex, .land) ? "bell.fill" : "bell").symbolSwap()
+                    }
+                    ShareLink(item: link, subject: Text(name)) { Label("Share", systemImage: "square.and.arrow.up") }
+                }
+                .labelStyle(.iconOnly)
+                .glassButton()
+                .font(.body)
+            }
+            if let plane {
+                Section("Now") {
+                    NowFlightRow(plane: plane, detail: detail, route: route?.plausible == false ? nil : route)
+                    if let towerLine {
+                        Label(towerLine, systemImage: "building.columns").font(.subheadline).foregroundStyle(.secondary)
                     }
                 }
-                Section(plane != nil ? "Earlier" : "Last flights") {
-                    if history == nil, problem == nil {
-                        Text("Fetching its flights…").foregroundStyle(.secondary)
-                    }
-                    ForEach(flights.filter { !(plane != nil && $0.inAir) }) { flight in
-                        NavigationLink(value: flight) { PastFlightRow(flight: flight, type: detail?.type ?? plane?.type ?? history?.type) }.cardSource(flight)
-                    }
-                    if history != nil, flights.isEmpty {
-                        Text("No flights heard in the last six weeks").foregroundStyle(.secondary)
-                    }
-                    if let unread = history?.unreadDays, unread > 0 {
-                        Text(unread >= 7 ? "adsb.lol's flight history can't be read now, so only flights followed in this app are listed."
-                            : "\(unread == 1 ? "One day" : "\(unread) days") could not be read from adsb.lol just now, so their flights are missing.")
+            }
+            Section(plane != nil ? "Earlier" : "Last flights") {
+                if history == nil, problem == nil {
+                    Text("Fetching its flights…").foregroundStyle(.secondary)
+                }
+                ForEach(flights.filter { !(plane != nil && $0.inAir) }) { flight in
+                    NavigationLink(value: flight) { PastFlightRow(flight: flight, type: detail?.type ?? plane?.type ?? history?.type) }
+                }
+                if history != nil, flights.isEmpty {
+                    Text("No flights heard in the last six weeks").foregroundStyle(.secondary)
+                }
+                if let unread = history?.unreadDays, unread > 0 {
+                    Text(unread >= 7 ? "adsb.lol's flight history can't be read now, so only flights followed in this app are listed."
+                        : "\(unread == 1 ? "One day" : "\(unread) days") could not be read from adsb.lol just now, so their flights are missing.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+                if history?.nextUntil != nil {
+                    Button(fetchingMore ? "Fetching earlier flights…" : "Show earlier flights") { Task { await more() } }
+                        .disabled(fetchingMore)
+                }
+                ProblemLine(problem)
+            }
+            Section("Airplane") {
+                if let model = detail?.description { LabeledContent("Model", value: FlightWords.nameCase(model)) }
+                if let op = detail?.operator { LabeledContent("Operator", value: FlightWords.nameCase(op)) }
+                LabeledContent("Registration") { RegistrationText(detail?.registration ?? plane?.registration) }
+                LabeledContent("Type", value: [detail?.type ?? plane?.type, detail?.year].compactMap { $0 }.joined(separator: " · ").nonEmpty ?? "—")
+                LabeledContent("ICAO address", value: hex.uppercased())
+                LabeledContent("Callsign", value: plane?.callsign ?? "—")
+                if let based { LabeledContent("Based at", value: [based.ident, FlightWords.place(based)].compactMap { $0 }.joined(separator: " · ")) }
+            }
+            if let route {
+                // Its flight number's scheduled route, not the flight
+                // plan filed, which the FAA does not publish openly.
+                Section("Scheduled Route") {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                        Text(route.airports.map(\.ident).joined(separator: " → ")).font(.headline)
+                        Text([route.airports.compactMap { $0.location ?? $0.name }.joined(separator: " to "),
+                              route.plausible == false ? "not where it is flying now" : nil].compactMap { $0 }.joined(separator: " · "))
                             .font(.footnote).foregroundStyle(.secondary)
                     }
-                    if history?.nextUntil != nil {
-                        Button(fetchingMore ? "Fetching earlier flights…" : "Show earlier flights") { Task { await more() } }
-                            .disabled(fetchingMore)
-                    }
-                    ProblemLine(problem)
                 }
-                Section("Airplane") {
-                    if let model = detail?.description { LabeledContent("Model", value: FlightWords.nameCase(model)) }
-                    if let op = detail?.operator { LabeledContent("Operator", value: FlightWords.nameCase(op)) }
-                    LabeledContent("Registration") { RegistrationText(detail?.registration ?? plane?.registration) }
-                    LabeledContent("Type", value: [detail?.type ?? plane?.type, detail?.year].compactMap { $0 }.joined(separator: " · ").nonEmpty ?? "—")
-                    LabeledContent("ICAO address", value: hex.uppercased())
-                    LabeledContent("Callsign", value: plane?.callsign ?? "—")
-                    if let based { LabeledContent("Based at", value: [based.ident, FlightWords.place(based)].compactMap { $0 }.joined(separator: " · ")) }
-                }
-                if let route {
-                    // Its flight number's scheduled route, not the flight
-                    // plan filed, which the FAA does not publish openly.
-                    Section("Scheduled Route") {
-                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                            Text(route.airports.map(\.ident).joined(separator: " → ")).font(.headline)
-                            Text([route.airports.compactMap { $0.location ?? $0.name }.joined(separator: " to "),
-                                  route.plausible == false ? "not where it is flying now" : nil].compactMap { $0 }.joined(separator: " · "))
-                                .font(.footnote).foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                if let faa = detail?.faa { FAARecordSection(faa: faa) }
             }
-            .navigationTitle(name)
-            .navigationBarTitleDisplayMode(.inline)
-            // The card's own close, whether a sheet (iPhone) or the
-            // inspector (iPad) holds it.
-            .closeButton { FlightUI.shared.card = nil }
-            // A flown flight's card grows out of its row (CardZoom).
-            .navigationDestination(for: PastFlightSummary.self) { flight in PastFlightCard(hex: hex, flight: flight).navigationBarTitleDisplayMode(.inline).zoomsFrom(flight) }
-            .task(id: hex) { await load() }
-            // Its latest tower departure event, by the ident it files
-            // under: its callsign, else its registration (the web's FlightCard).
-            .task(id: plane?.callsign ?? detail?.registration ?? plane?.registration) {
-                let ident = (plane?.callsign ?? detail?.registration ?? plane?.registration)?.trimmingCharacters(in: .whitespaces) ?? ""
-                guard ident.count >= 2 else { towerLine = nil; return }
-                towerLine = LiveWords.departureLine((try? await Planner.liveDepartures(ident))?.first)
-            }
-            .task(id: plane?.callsign) {
-                guard let callsign = plane?.callsign?.trimmingCharacters(in: .whitespaces), !callsign.isEmpty else { return }
-                route = try? await Planner.flightRoute(callsign: callsign, lat: plane?.lat, lon: plane?.lon)
-            }
+            if let faa = detail?.faa { FAARecordSection(faa: faa) }
         }
-        .cardZoomStack()
+        .navigationTitle(name)
+        // A flown flight's card, pushed in this one.
+        .navigationDestination(for: PastFlightSummary.self) { flight in PastFlightCard(hex: hex, flight: flight) }
+        .task(id: hex) { await load() }
+        // Its latest tower departure event, by the ident it files
+        // under: its callsign, else its registration (the web's FlightCard).
+        .task(id: plane?.callsign ?? detail?.registration ?? plane?.registration) {
+            let ident = (plane?.callsign ?? detail?.registration ?? plane?.registration)?.trimmingCharacters(in: .whitespaces) ?? ""
+            guard ident.count >= 2 else { towerLine = nil; return }
+            towerLine = LiveWords.departureLine((try? await Planner.liveDepartures(ident))?.first)
+        }
+        .task(id: plane?.callsign) {
+            guard let callsign = plane?.callsign?.trimmingCharacters(in: .whitespaces), !callsign.isEmpty else { return }
+            route = try? await Planner.flightRoute(callsign: callsign, lat: plane?.lat, lon: plane?.lon)
+        }
     }
 
     private func watchBinding(_ kind: AirplaneWatch.Kind) -> Binding<Bool> {
@@ -379,7 +372,6 @@ struct PastFlightCard: View {
             }
         }
         .navigationTitle("\(flight.origin?.ident ?? "?") → \(flight.inAir ? "Now" : flight.destination?.ident ?? "?")")
-        .navigationBarTitleDisplayMode(.inline)
         .task(id: flight.id) {
             do {
                 points = try await Planner.pastFlight(hex, id: flight.id).points

@@ -95,8 +95,11 @@ const SECTIONAL_RADIUS: Record<"large" | "medium" | "small" | "other", number> =
  * its middle, inside a white halo that keeps it off the chart's own
  * print; a private field (closed to the public, NASR FACILITY_USE_CODE
  * PR) the guide's circle with an "R", a military one an "M", a heliport
- * an "H". The field's weather (its METAR's flight category) a small pip
- * at its lower right, where there is a report.
+ * an "H". The field's weather (its METAR's flight category) a halo round
+ * it in the category's colour, where there is a report (the owner's pick,
+ * 2026-11-10, in place of the pip at its lower right): a ring some 4.5 pt
+ * wide, cased in white, which holds in sunlight over the chart's print,
+ * the symbol inside it keeping its towered blue or non-towered magenta.
  */
 export function sectionalAirportSvg(
   towered: boolean,
@@ -105,7 +108,8 @@ export function sectionalAirportSvg(
   weather: string | null,
 ): string {
   const ink = towered ? TOWERED_BLUE : UNTOWERED_MAGENTA;
-  const box = 26;
+  // Room for the halo outside the symbol's own white edge.
+  const box = weather ? 36 : 26;
   const letter = use === "private" ? "R" : use === "military" ? "M" : use === "heliport" ? "H" : null;
   const r = letter ? 7 : SECTIONAL_RADIUS[size];
   const halo = `<circle r="${r}" fill="${CHART.casing}" stroke="${CHART.casing}" stroke-width="5"/>`;
@@ -113,9 +117,26 @@ export function sectionalAirportSvg(
     ? `${halo}<circle r="${r}" fill="${CHART.casing}" stroke="${ink}" stroke-width="2"/>` +
       `<text y="3.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="9.5" font-weight="800" fill="${ink}">${letter}</text>`
     : `${halo}<circle r="${r}" fill="${CHART.casing}" stroke="${ink}" stroke-width="2.6"/><circle r="${(r * 0.42).toFixed(2)}" fill="${ink}"/>`;
-  const at = (r * 0.78).toFixed(2);
-  const pip = weather
-    ? `<circle data-weather="" cx="${at}" cy="${at}" r="3.4" fill="${text(weather)}" stroke="${CHART.casing}" stroke-width="1.3"/>`
+  // Just outside the symbol's white edge (r + 2.5): a white casing under
+  // the category's colour, so it reads over a town's yellow or a lake.
+  const at = (r + 2.5 + HALO_WIDTH / 2).toFixed(2);
+  const weatherHalo = weather
+    ? `<circle r="${at}" fill="none" stroke="${CHART.casing}" stroke-width="${HALO_WIDTH + 2}"/>` +
+      `<circle data-weather="" r="${at}" fill="none" stroke="${text(weather)}" stroke-width="${HALO_WIDTH}"/>`
     : "";
-  return `<svg width="${box}" height="${box}" viewBox="${-box / 2} ${-box / 2} ${box} ${box}">${symbol}${pip}</svg>`;
+  return `<svg width="${box}" height="${box}" viewBox="${-box / 2} ${-box / 2} ${box} ${box}">${weatherHalo}${symbol}</svg>`;
+}
+
+/** The halo's stroke, px: some 4.5 pt, to stay visible in sunlight (the
+ *  owner's pick, 2026-11-10). */
+const HALO_WIDTH = 4.5;
+
+/** ForeFlight's dot in place of the chart's symbol (the Map card's
+ *  Airport Weather "Dot"): a disc in the field's flight category's colour,
+ *  cased in white. */
+export function weatherDotSvg(weather: string): string {
+  return (
+    `<svg width="22" height="22" viewBox="-11 -11 22 22"><circle data-weather="" r="8" fill="${text(weather)}"` +
+    ` stroke="${CHART.casing}" stroke-width="2.5"/></svg>`
+  );
 }

@@ -1,7 +1,6 @@
 import { memo, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { hm } from "../../../lib/format";
-import { threeFigures } from "../../../lib/format";
+import { feet, hm, threeFigures } from "../../../lib/format";
 import { Badge } from "../../../components/ui/badge";
 import { chartQuery, classBQuery } from "../../../lib/queryClient";
 import { pointName } from "../../../lib/identSchema";
@@ -20,7 +19,6 @@ import { usePreferences } from "../../../lib/preferences";
 import type { StopKind } from "../../../lib/stopKinds";
 import type { StopPin } from "../../../lib/map/marks/stopPins";
 import { inkOn, scoreColor } from "../../../lib/scoreScale";
-import { feet } from "../../../lib/format";
 import type { NavLogRow, RouteLeg } from "./navlog/rows";
 import { useTerrainView } from "../map/terrain/useTerrainView";
 import { useRouteAloft } from "../hooks/useRouteAloft";
@@ -425,6 +423,7 @@ export default memo(function RouteMap({
       onSelectPoint={onSelectPoint}
       chipped={chippedFields}
       routeBox={routeBox}
+      briefing={airportWeather}
       chippedIdents={chipped}
       courseLine={courseLine}
       cruiseFt={cruiseFt}

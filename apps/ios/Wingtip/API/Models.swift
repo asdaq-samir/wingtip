@@ -25,8 +25,10 @@ typealias ChartLayer = APIChartLayer
 /// `towered` whether it has a control tower (NASR APT_BASE's TWR_TYPE_CODE),
 /// blue on the sectional and every other field magenta (FAA Aeronautical
 /// Chart User's Guide, VFR Terms and Symbols, Airports), nil where the
-/// answer does not say.
-typealias AirportPin = APIAirportPin
+/// answer does not say. The map's own list's (/api/airports/in-view), so
+/// a reporting field carries its METAR's parts the marks draw (`weather`,
+/// PinWeather); the packs' answer has none.
+typealias AirportPin = APIAirportInView
 
 extension AirportPin {
     /// The fields the map draws, as the web app's AirportsLayer does: the

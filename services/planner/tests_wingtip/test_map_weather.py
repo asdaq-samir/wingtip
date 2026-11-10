@@ -16,13 +16,14 @@ def test_a_fields_open_runways_ends_with_their_true_headings(tmp_path, monkeypat
         ]
     ).to_csv(path, index=False)
     monkeypatch.setattr(airports, "RUNWAYS_CACHE_PATH", path)
-    monkeypatch.setattr(airports, "load_runways", lambda: pd.read_csv(path, low_memory=False))
+    monkeypatch.setattr(map_weather, "load_runways", lambda: pd.read_csv(path, low_memory=False))
     assert map_weather.end_headings("kdlh") == [[["09L", 87.0], ["27R", 267.0]], [["03", None], ["21", None]]]
     assert map_weather.end_headings("1D2") == []
 
 
 def test_no_metar_no_marks_and_a_light_wind_no_crosswind(monkeypatch):
-    assert map_weather.marks_of(["KDLH"], 46.8, -92.2, None) == {}
+    kdlh = {"ident": "KDLH", "lat": 46.8, "lon": -92.2}
+    assert map_weather.marks_of(kdlh, None) == {}
     monkeypatch.setattr(map_weather, "end_headings", lambda ident: [[["18", 180.0], ["36", 360.0]]])
-    marks = map_weather.marks_of(["KDLH"], 46.8, -92.2, {"wind_dir_true_deg": 270, "wind_speed_kt": 6})
+    marks = map_weather.marks_of(kdlh, {"wind_dir_true_deg": 270, "wind_speed_kt": 6})
     assert marks["crosswind_kt"] is None and marks["ceiling_unknown"] is False

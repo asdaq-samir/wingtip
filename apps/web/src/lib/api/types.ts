@@ -135,7 +135,7 @@ export type DepartureWindowRun = Schemas["Window"];
 export type OralGrade = Assistant["OralGrade"];
 export type OralGradeRequest = Assistant["OralGradeRequest"];
 export type OralCitation = Assistant["OralCitation"];
-export type AirportPin = Schemas["AirportPin"];
+export type AirportPin = Schemas["AirportInView"];
 export type AirportsInView = Schemas["AirportsInView"];
 /** The cycle's overlay tiles' archive (lib/map/sources/overlayTiles). */
 export type OverlayTiles = Schemas["OverlayTiles"];

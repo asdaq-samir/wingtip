@@ -1,0 +1,155 @@
+import { useEffect, useMemo } from "react";
+import type { ExpressionSpecification, SymbolLayerSpecification } from "maplibre-gl";
+import type { AirportPin } from "../../../../lib/api/types";
+import { EMPTY, useGlData, useGlLayer, useGlMap } from "../../../../lib/map/gl/glLayer";
+import { glZoom } from "../../../../lib/map/gl/glStyle";
+import { GL_FONT_BOLD, LABEL_HALO } from "../../../../lib/map/gl/layers/common";
+import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
+import { weatherMarksOf } from "../../../../lib/map/marks/airportWeather";
+import { useAirportWeatherPrefs } from "../../../../lib/map/marks/airportWeatherPrefs";
+import { WORSE_ID } from "../../../../lib/map/marks/stationModel";
+import { useDemonstratedCrosswind } from "../../../../lib/map/marks/useDemonstratedCrosswind";
+import { CHART } from "../../../../lib/tokens";
+
+const SOURCE = "airport-weather";
+
+/** The station model from zoom 10, where the chart's fields stand apart
+ *  enough for its lines beside each (the owner's pick, 2026-11-10: "about
+ *  10 on web and Android"); with the look Station, from 7, a region's
+ *  scale, where the fields' own symbols start keeping only a little apart
+ *  (glOverlays' icon-padding) and the lines give way where they don't fit. */
+const STATION_CLOSE = 10;
+const STATION_ALWAYS = 7;
+
+const ROTATE_ON_MAP = { "icon-rotation-alignment": "map", "icon-allow-overlap": true, "icon-ignore-placement": true } as const;
+
+/** The barb, from the field toward where the wind is from. */
+const BARB: SymbolLayerSpecification = {
+  id: "airport-wx-barb",
+  type: "symbol",
+  source: SOURCE,
+  filter: ["has", "barb"],
+  layout: { "icon-image": ["get", "barb"], "icon-rotate": ["get", "dir"], ...ROTATE_ON_MAP },
+};
+
+/** Visibility and weather over the ceiling, left of the field (its ident
+ *  is to its right); they give way where they don't fit. */
+const LINES: SymbolLayerSpecification = {
+  id: "airport-wx-lines",
+  type: "symbol",
+  source: SOURCE,
+  filter: ["!=", ["get", "lines"], ""],
+  layout: {
+    "text-field": ["get", "lines"],
+    "text-font": GL_FONT_BOLD,
+    "text-size": 11,
+    "text-anchor": "right",
+    "text-justify": "right",
+    "text-offset": [-1.5, 0],
+    "text-padding": 1,
+  },
+  paint: { "text-color": CHART.fixInk, ...LABEL_HALO },
+};
+
+/** The arrow, the way the wind blows, at any zoom the station model's
+ *  barb is not drawn at (which then takes its place and its red). */
+const ARROW: SymbolLayerSpecification = {
+  id: "airport-wx-arrow",
+  type: "symbol",
+  source: SOURCE,
+  filter: ["has", "arrow"],
+  layout: { "icon-image": ["get", "arrow"], "icon-rotate": ["+", ["get", "dir"], 180] as ExpressionSpecification, ...ROTATE_ON_MAP },
+};
+
+/** "18G26" under the field, red where the arrow is. */
+const GUSTS: SymbolLayerSpecification = {
+  id: "airport-wx-gusts",
+  type: "symbol",
+  source: SOURCE,
+  filter: ["!=", ["get", "gusts"], ""],
+  layout: {
+    "text-field": ["get", "gusts"],
+    "text-font": GL_FONT_BOLD,
+    "text-size": 11,
+    "text-anchor": "top",
+    "text-offset": [0, 1.3],
+    "text-padding": 1,
+  },
+  paint: { "text-color": ["case", ["get", "over"], CHART.warning, CHART.fixInk] as ExpressionSpecification, ...LABEL_HALO },
+};
+
+/** The amber ↓ at a plan's field whose weather gets worse by the pilot's
+ *  time there, at its upper left. */
+const WORSE: SymbolLayerSpecification = {
+  id: "airport-wx-worse",
+  type: "symbol",
+  source: SOURCE,
+  filter: ["get", "worse"],
+  layout: { "icon-image": WORSE_ID, "icon-offset": [-13, -13], "icon-allow-overlap": true, "icon-ignore-placement": true },
+};
+
+const LAYERS = [BARB, LINES, ARROW, GUSTS, WORSE];
+
+/**
+ * The airport weather marks over the chart's fields (the owner's pick,
+ * 2026-11-10): the station model's barb and its two lines when zoomed in
+ * close (or at every zoom with the look Station), the wind arrow and its
+ * "18G26" where the engine's wind_arrow gives one (red past the picked
+ * airplane's demonstrated crosswind; where the barb is drawn, the barb red
+ * in its place, as on the iPhone), and the amber ↓ at the plan's fields
+ * whose weather gets worse by the pilot's time there. The halo and the dot
+ * are the airports' own symbols' (glOverlays). Under the airports' layer,
+ * so a field's symbol is never covered. The fields are the METARs the map
+ * already asks for (AirportsGl), each with its weather.
+ */
+export default function AirportWeatherGl({ fields, worse }: { fields: AirportPin[]; worse: string[] }) {
+  const { map } = useGlMap();
+  const prefs = useAirportWeatherPrefs();
+  const demonstrated = useDemonstratedCrosswind();
+  useGlLayer("marks", { [SOURCE]: { type: "geojson", data: EMPTY } }, LAYERS, "airports");
+  const data = useMemo<GeoJSON.FeatureCollection>(() => {
+    const badged = new Set(worse);
+    const features: GeoJSON.Feature[] = [];
+    const seen = new Set<string>();
+    for (const f of fields) {
+      if (seen.has(f.ident) || (!f.weather && !badged.has(f.ident))) continue;
+      seen.add(f.ident);
+      const marks = f.weather ? weatherMarksOf(f.weather, demonstrated) : null;
+      const properties: Record<string, unknown> = { ident: f.ident, worse: badged.has(f.ident), lines: marks?.lines ?? "" };
+      if (marks) {
+        Object.assign(properties, { dir: marks.dir, over: marks.over, gusts: marks.gusts });
+        if (marks.barb) properties.barb = marks.barb;
+        if (marks.arrow) properties.arrow = marks.arrow;
+      }
+      features.push({ type: "Feature", properties, geometry: { type: "Point", coordinates: [f.lon, f.lat] } });
+    }
+    return { type: "FeatureCollection", features };
+  }, [fields, worse, demonstrated]);
+  useGlData(SOURCE, data);
+  // The settings on the layers: which are drawn, and from which zoom.
+  const { look, stationClose, windArrows, worseByArrival } = prefs;
+  useEffect(() => {
+    if (!map.style) return;
+    const on = look !== "off";
+    const station = on && (look === "station" || stationClose);
+    const from = glZoom(look === "station" ? STATION_ALWAYS : STATION_CLOSE);
+    const show = (id: string, shown: boolean) => map.getLayer(id) && map.setLayoutProperty(id, "visibility", shown ? "visible" : "none");
+    for (const id of [BARB.id, LINES.id]) {
+      show(id, station);
+      if (map.getLayer(id)) map.setLayerZoomRange(id, from, 24);
+    }
+    // Close in, the station model's barb takes the arrow's place, red on
+    // the same rule (the iPhone's way): the arrow only farther out.
+    show(ARROW.id, on && windArrows);
+    if (map.getLayer(ARROW.id)) map.setLayerZoomRange(ARROW.id, 0, station ? from : 24);
+    show(GUSTS.id, on && windArrows);
+    show(WORSE.id, on && worseByArrival);
+  }, [map, look, stationClose, windArrows, worseByArrival]);
+  // The specs' view of the marks drawn (data-airport-weather, useGlProbe).
+  useGlProbe("airport-weather", [BARB.id, LINES.id, ARROW.id, GUSTS.id, WORSE.id], (f) => ({
+    ident: f.properties.ident,
+    layer: f.layer.id,
+    over: f.properties.over === true,
+  }));
+  return null;
+}

@@ -3,8 +3,10 @@ import SwiftUI
 
 /// A flight's height against time and its ground speed where known,
 /// Swift Charts: the replay's moment a cursor across it, with a dot on
-/// each trace where the airplane is, and a finger drawn along it moves
-/// the replay there (the web app's PastFlightChart). The speed is held to
+/// each trace where the airplane is, and a tap on it moves the replay
+/// there (the web app's PastFlightChart); the slider under it scrubs. A
+/// tap, not a drag, so the chart never fights the card's own drag (the
+/// owner's scrolling rule, 2026-11-10). The speed is held to
 /// the lower half, so the two read apart where both run level, as the
 /// web app's are.
 struct FlightProfileChart: View {
@@ -12,9 +14,8 @@ struct FlightProfileChart: View {
     let points: [Replay.Point]
     /// The replay's airplane, where it is.
     var cursor: Replay.Point?
-    /// A finger on the profile: the moment under it, s since 1970.
+    /// A tap on the profile: the moment under it, s since 1970.
     var onScrub: ((Double) -> Void)?
-    @State private var picked: Date?
 
     /// At most this many points drawn: a long flight's thousands of
     /// reports drawn again with each tick of a replay were the cost, not
@@ -61,9 +62,10 @@ struct FlightProfileChart: View {
         .chartYScale(domain: 0...top)
         .chartYAxisLabel("ft")
         .chartXAxis { AxisMarks(values: .automatic(desiredCount: 4)) { _ in AxisGridLine(); AxisValueLabel(format: .dateTime.hour().minute()) } }
-        .chartXSelection(value: $picked)
-        .onChange(of: picked) { _, date in
-            if let date { onScrub?(date.timeIntervalSince1970) }
+        .chartGesture { proxy in
+            SpatialTapGesture().onEnded { tap in
+                if let date: Date = proxy.value(atX: tap.location.x) { onScrub?(date.timeIntervalSince1970) }
+            }
         }
         .accessibilityLabel("Profile, highest \(SpokenFigures.feet(points.compactMap(\.altFt).max() ?? 0))")
         // Where the replay's airplane is, as the figures over the chart say

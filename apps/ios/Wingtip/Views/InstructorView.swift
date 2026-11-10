@@ -52,7 +52,7 @@ struct InstructorView: View {
                     if instructor.students.isEmpty { Text("None yet").foregroundStyle(.secondary) }
                     ForEach(instructor.students) { s in
                         NavigationLink {
-                            StudentView(row: s, instructor: instructor) { await act { try await Gateway.instructor() } }.navigationBarTitleDisplayMode(.inline)
+                            StudentView(row: s, instructor: instructor) { await act { try await Gateway.instructor() } }
                         } label: {
                             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                 Text(s.name)
@@ -82,7 +82,6 @@ struct InstructorView: View {
             ProblemLine(problem)
         }
         .navigationTitle("Instructing")
-        .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Stop instructing here?", isPresented: $askingStop, titleVisibility: .visible) {
             Button("Stop Instructing", role: .destructive) { Task { await act { try await Gateway.stopInstructing() } } }
         } message: {
@@ -200,7 +199,6 @@ struct StudentView: View {
             ProblemLine(problem)
         }
         .navigationTitle(row.name)
-        .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
         .refreshable { await load() }
     }
@@ -223,7 +221,6 @@ struct StudentView: View {
                             training = next
                             await onChange()
                         }
-                        .navigationBarTitleDisplayMode(.inline)
                     } label: {
                         VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text(kind.label)
@@ -279,7 +276,7 @@ struct ReviewSection: View {
             }
             NavigationLink("Endorse This Flight") {
                 SignView(kind: kind, studentId: studentId, studentName: studentName, instructor: instructor,
-                         initial: Endorsing.reviewFields(review), reviewId: review.id) { next in await onDone(next) }.navigationBarTitleDisplayMode(.inline)
+                         initial: Endorsing.reviewFields(review), reviewId: review.id) { next in await onDone(next) }
             }
             if declining {
                 TextField("Why, and what to change", text: $note, axis: .vertical).lineLimit(2...5)
@@ -381,7 +378,6 @@ struct SignView: View {
             ProblemLine(problem)
         }
         .navigationTitle(kind.label)
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear { if fields.isEmpty { fields = Dictionary(kind.fields.map { ($0.key, initial[$0.key] ?? "") }, uniquingKeysWith: { a, _ in a }) } }
     }
 }

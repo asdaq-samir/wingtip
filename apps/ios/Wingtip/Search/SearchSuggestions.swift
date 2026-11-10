@@ -57,7 +57,7 @@ struct SearchSuggestions: View {
             ForEach(model.nearest.prefix(5)) { field in
                 Button { pick(.airport(field.ident)) } label: { NearestRow(field: field) }
                     .foregroundStyle(.primary)
-                    .cardSource(field.ident)
+
                     .airportPreview(field.ident) { pick(.plan) }
             }
             if model.nearest.count > 5 {
@@ -77,7 +77,7 @@ struct SearchSuggestions: View {
                 ForEach(model.airports, id: \.ident) { field in
                     Button { pick(.airport(field.ident)) } label: { found(field) }
                         .foregroundStyle(.primary)
-                        .cardSource(field.ident)
+
                         .airportPreview(field.ident) { pick(.plan) }
                         // The UI tests' handle on a result (WingtipUITests/FlowTests).
                         .accessibilityIdentifier("airport-result-\(field.ident)")
@@ -143,7 +143,7 @@ struct SearchSuggestions: View {
             row(field.ident, [field.name, field.municipality].compactMap { $0 }.joined(separator: " · "), systemImage: WingtipIcon.departFrom)
         }
         .foregroundStyle(.primary)
-        .cardSource(field.ident)
+
         .airportPreview(field.ident) { pick(.plan) }
     }
 

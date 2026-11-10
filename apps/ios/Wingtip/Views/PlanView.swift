@@ -163,9 +163,6 @@ struct PlanView: View {
         .navigationTitle("Flight Plan")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { FPLToolbar(plan: plan, flights: { open(.flights) }) }
-        .sheet(isPresented: Binding(get: { ClearanceListener.shared.sheetShown }, set: { ClearanceListener.shared.sheetShown = $0 })) {
-            ClearanceSheet().presentationDetents([.medium, .large])
-        }
     }
 
     private func routeField(_ label: String, text: Binding<String>, field: Field) -> some View {

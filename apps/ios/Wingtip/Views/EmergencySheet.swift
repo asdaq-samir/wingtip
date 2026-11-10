@@ -4,7 +4,8 @@ import SwiftUI
 /// The emergency assistant, one screen (the web's EmergencySheet), laid
 /// out as docs/design/ios.md §8 has it: a full-screen cover (HIG
 /// Modality: for an urgent flow, "consider alternatives to sheets"), its
-/// Close at the leading top ending this view alone, the map in its top
+/// close at the top right, where iOS puts the system's close (the owner's
+/// card rule, 2026-11-10), ending this view alone, the map in its top
 /// third with the line to the field picked and the glide's reach, then on
 /// a solid ground squawk 7700 and Guard as two large tiles, the best
 /// fields each with its own Direct To, the airplane's own emergency
@@ -53,11 +54,14 @@ struct EmergencySheet: View {
                     .font(.title3)
                 }
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("card-emergency")
             .navigationTitle("Emergency")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                // Leading, as the doc's Close is: it ends this view only.
-                ToolbarItem(placement: .topBarLeading) { CloseButton { model.close() } }
+                // At the right, where every card's close is: it ends this
+                // view only.
+                ToolbarItem(placement: .topBarTrailing) { CloseButton { model.close() } }
             }
             .task(id: fix.map { Emergency.key($0, aircraft: emergencyAircraft, glideRatio: plan.figures.glideRatio) }) {
                 await model.refresh(fix: fix, aircraft: emergencyAircraft, glideRatio: plan.figures.glideRatio)

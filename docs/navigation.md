@@ -18,16 +18,18 @@ not timed on a device.
 - **Tap what you see.** Anything shown that is explained or changed
   somewhere opens that place: a field's name its card, the figures their
   nav log, a waypoint its menu. Closing goes back to where the pilot was
-  (one level, never a Back button: `lib/openCards` on the web, `closesBack`
-  on iOS; on Android the card's ← and system Back, its ✕ closing every
-  card, since the card rule of 2026-11-10).
+  (one level, never a Back button: `lib/openCards` on the web, the card's
+  close and the stack's Back on iOS (`Navigation/Navigator`); on Android
+  the card's ← and system Back, its ✕ closing every card, since the card
+  rule of 2026-11-10).
 - **Two taps at most** to every screen from the map and its sheet. A deeper
   screen gets a way in from a list that already holds its kind, never a new
   place on the screen; moving a panel or a control is the owner's call.
 - **One way in per platform.** Every screen opens by its name from one place:
   the web's `useOpenScreen` (`features/plan/hooks`) through
-  `lib/navigation/wanted`, iOS's `RootView.openScreen` through `ScreenAsk`
-  and `PendingCommand.open`, Android's `OpenScreen` through
+  `lib/navigation/wanted`, iOS's `RootView.openScreen` (through
+  `PendingCommand.open`; the strip's `ScreenAsk`), which opens the card
+  by `Navigator.open`, Android's `OpenScreen` through
   `ScreenRequests`. A link, a figure tapped and a shortcut row all use it.
   Each is a `switch`/`when` over the generated list, so a screen added to
   `design/screens.json` fails each app's build until that app opens it.
@@ -188,24 +190,37 @@ count.
 The one search (the owner's design of 2026-11-09) replaced the sheet's
 four tabs: the plan is the sheet's root, under one stock `.searchable`
 field ("Search airports, airplanes, or ask") with the microphone and the
-account button beside it, and every other screen is a page on the sheet's
-one stack (`Search/PlanSheet`, `SheetPage`), its close going back one
-level. The iPad's sidebar holds the same search and plan. Counted from the
-map with the sheet at rest: the search or a row of the plan is 1.
+account button beside it. Since the card rule (the owner, 2026-11-10)
+every thing and every page opens as **one card over the plan's sheet**,
+as Apple Maps opens a place over its search: the system sheet, half way
+for a thing (a field, an airplane, a leg, a hold, the Map card) and full
+for a page, the map live above it up to half height, its close at the
+right, one card at a time (a field tapped after another takes its place).
+What a card opens is pushed in the card's own stack with Back
+(`Navigation/Navigator`, `CardHost`, `SheetPage`). Only the emergency
+assistant is full screen, its close at the top right. Questions are the
+stock alert or confirmation dialog (Ready to Fly's prompt, a form's
+Discard Changes?). The iPad's sidebar holds the same search and plan, its
+pages pushed there and its things in the inspector. Counted from the map
+with the sheet at rest: the search or a row of the plan is 1.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
 | Plan (was FPL) | the sheet itself | 1 → **0** | From/To and altitude inline; stops Edit (delete, move), **Add a Stop (the search)**; each point's menu; Undo bar |
 | Search (was Airport) | the field | 1 | Nothing typed: Your Flight, Favorites (fields and airplanes), Recents, Nearest; typed: Airports, Waypoints and Navaids, Airplanes, Do (Direct To, screens, Ask) |
-| Airport card | Tap a field; a search row; hold for its preview | 1 | **Its own sheet (half, full) with Fly Here (the flight's time when planned), Depart, Add Stop, Diagram; the floating bar's Add to Plan, Favorite, Share, •••**; frequencies copy on hold, runways' details on hold |
-| Airplane profile | the search's N-number or own airplane; any N-number | 2 | **Fly This Airplane** in its head; every figure edited in place |
-| Airplane (was the tab) | the plan's Airplane button; the search's types | 2 | N-number typed, No Airplane |
+| Airport card | Tap a field; a search row; a list's row (Nearest, Favorites, Recents); hold for its preview; a link's `place=` | 1 | The one card from every way in: Fly Here (the flight's time when planned), Depart, Add Stop, Diagram; the floating bar's Add to Plan, Favorite, Share, •••; its sections' picker pinned under the bar once its head scrolls away; frequencies copy on hold |
+| Airplane profile | any N-number or airplane figure; the search's N-number or own airplane; a link's `airplane=` | 1–2 | **One profile card**: its own card from the plan or the search, pushed in the card it was tapped in; Fly This Airplane; every figure edited in place (an inline ask's Edit opens it at that figure) |
+| Airplane (was the tab) | the plan's Airplane button; the search's types; Pick an Airplane and Ready to Fly's fix (pushed in their card, with Back) | 2 | N-number typed, No Airplane |
+| Route Leg | a tap on the map's course; a nav log row (pushed in the Nav Log card) | 1 / 3 | **One card** from both: Direct To, Remove, then the leg's figures |
 | Figures strip | the sheet's foot, with a route | 0 | Tapped, the nav log |
 | Nav Log | the plan's ••• → Nav Log; the strip | 2 / 1 | -- |
-| Brief, Profile, Flights | the plan's row or bar; the search's Do; Settings' Flights row | 2 | Saved flights: swipe to delete with an Undo row |
+| Brief, Profile, Flights | the plan's row or bar; the search's Do; Settings' Flights row | 2 | Saved flights: swipe to delete with an Undo row; the Brief's one foot bar, Start Flight |
+| Nearest | the instruments bar; the search's All Nearest; the plan's Nearest for a Diversion; Siri | 1–2 | **One list** from every way in: Divert on a swipe or a hold, Diversion Drill |
+| Map card (new) | the map's own Map button; Settings' Map row | **1** (was 2, Settings) | The layers, airport weather, traffic, the weather loop and the alerts, each switch in place |
 | Settings (was Setup) | the account button, opening Settings with no menu between (the owner, 2026-11-10) | 1 → 1 | Every switch and picker in place; Sign In or the account's page with Sign Out |
-| Settings' pages (Logbook, Coach, Minimums, Guide, Downloads, About, Practice, Your Airplanes, Checklists) | the account button → row | 2 → 2 | Logbook entry edited in the row; swipe delete with an Undo row |
-| Emergency | the instruments bar; Settings' Emergency row; "mayday" in the search | 1 / 2 | Its frequencies copy |
+| Settings' pages (Logbook, Coach, Minimums, Guide, Downloads, About, Practice, Your Airplanes, Checklists, Map) | the account button → row (pushed in the Settings card) | 2 → 2 | Logbook entry edited in the row; swipe delete with an Undo row |
+| Hold, Clearance (forms) | a point's Hold Here…; the radio button | 2 / 1 | Cancel and Add / Done; with an edit, a swipe down is held and Cancel asks first |
+| Emergency | the instruments bar; Settings' Emergency row; "mayday" in the search | 1 / 2 | Full screen, close at the top right; its frequencies copy |
 | An alert ahead, a copilot message | the banner | 0 | Tapped: the airspace card; the message's Direct To and More Info |
 
 ### Android
@@ -290,7 +305,7 @@ change or another branch's work:
    Favorites are the fields starred on their cards and the pilot's own
    airplanes, kept on the phone (`design/screens.json`); that is the android-parity branch's,
    and saved flights' Edit follows it there.
-7. **Close inconsistencies left:** the iOS Pick an Airplane sheet has no
-   close button (the own-figures branch); Android's airport diagram is a
-   full-screen dialog with no swipe.
+7. **Close inconsistencies left:** Android's airport diagram is a
+   full-screen dialog with no swipe. (iOS's Pick an Airplane now pushes
+   the Airplane page in its card, with Back.)
 8. **Go / No-Go lines** opening their fix are the ready-to-fly branch's.

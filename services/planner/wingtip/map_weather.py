@@ -25,7 +25,13 @@ from .magnetic import magnetic_variation_deg
 from .single_flight import once
 
 #: The METAR's members the map's marks read, as the engine read them.
-METAR_KEYS = ("wind_dir_true_deg", "wind_speed_kt", "wind_gust_kt", "visibility_sm", "wx", "ceiling_ft", "ceiling_unknown")
+METAR_KEYS = ("wind_dir_true_deg", "wind_speed_kt", "wind_gust_kt", "visibility_sm", "wx", "ceiling_ft", "ceiling_cover", "ceiling_unknown")
+
+
+def load_runways() -> pd.DataFrame:
+    """OurAirports' runways table, held in memory after the first read
+    (wingtip.airports' own cache of its tables). Read-only."""
+    return airports._load_table(airports.RUNWAYS_URL, airports.RUNWAYS_CACHE_PATH)
 
 
 def _heading(value) -> float | None:
@@ -38,7 +44,7 @@ def _end_headings_of(_path: str, _mtime: float) -> dict[str, list[list]]:
     a runway, by the field's ident upper-cased: one pass over the table per
     file on disk (keyed as wingtip.airports' tables are), where get_runways
     scans the whole table for each field."""
-    frame: pd.DataFrame = airports.load_runways()
+    frame = load_runways()
     out: dict[str, list[list]] = {}
     for row in frame.itertuples(index=False):
         if getattr(row, "closed", 0) == 1 or not isinstance(row.airport_ident, str):
@@ -55,15 +61,15 @@ def _end_headings_of(_path: str, _mtime: float) -> dict[str, list[list]]:
 
 def end_headings(ident: str) -> list[list]:
     """A field's open runways, each its ends as [ident, true heading]."""
-    airports.load_runways()
+    load_runways()
     path = airports.RUNWAYS_CACHE_PATH
     return _end_headings_of(str(path), path.stat().st_mtime).get(ident.upper(), [])
 
 
-def marks_of(idents: list[str], lat: float, lon: float, metar: dict | None) -> dict:
+def marks_of(place: dict, metar: dict | None) -> dict:
     """The METAR's members the station model and the wind arrow read, and
-    `crosswind_kt`, the least crosswind on the field's runways (the first of
-    `idents` the runways table knows), where the engine's wind_arrow shows
+    `crosswind_kt`, the least crosswind on the place's runways (by its
+    ident, else its source ident, whichever the runways table knows), where the engine's wind_arrow shows
     the wind an arrow; None where it does not, or no runway end has a
     heading. Nothing at all with no METAR."""
     if not metar:
@@ -74,13 +80,14 @@ def marks_of(idents: list[str], lat: float, lon: float, metar: dict | None) -> d
     shown = ask("wind_arrow", speed_kt=metar.get("wind_speed_kt"), gust_kt=metar.get("wind_gust_kt"))["shown"]
     least = None
     if shown:
+        idents = (place.get("ident"), place.get("source_ident"))
         runways = next((r for r in (end_headings(i) for i in idents if i) if r), [])
         if runways:
             least = ask(
                 "least_crosswind",
                 runways=[{"end_headings": ends} for ends in runways],
                 metar={k: metar.get(k) for k in ("wind_dir_true_deg", "wind_speed_kt", "wind_gust_kt")},
-                variation_deg=magnetic_variation_deg(lat, lon),
+                variation_deg=magnetic_variation_deg(place["lat"], place["lon"]),
             )
     out["crosswind_kt"] = least["crosswind_kt"] if least else None
     return out

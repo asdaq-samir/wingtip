@@ -27,7 +27,7 @@ struct DownloadsView: View {
                     Text("Smaller").tag(1)
                 }
                 .pickerStyle(.segmented)
-                NavigationLink("Pick on the Map") { DownloadsMapView(model: model).navigationBarTitleDisplayMode(.inline) }
+                NavigationLink("Pick on the Map") { DownloadsMapView(model: model) }
             }
             regionSection("Sectional Sheets", group: "sheet")
             regionSection("States", group: "state")

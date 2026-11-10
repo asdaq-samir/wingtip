@@ -45,7 +45,8 @@ pub struct LeastCrosswind {
 /// a heading to judge it on.
 pub fn least_crosswind(runways: &[Ends], report: &Reported, variation_deg: f64) -> Option<LeastCrosswind> {
     let speed = report.speed_kt?;
-    let headed = |ends: &Ends| ends.iter().any(|(ident, h)| super::wind::end_heading_true_deg(ident.as_deref(), *h, variation_deg).is_some());
+    let headed =
+        |ends: &Ends| ends.iter().any(|(ident, h)| super::wind::end_heading_true_deg(ident.as_deref(), *h, variation_deg).is_some());
     if !runways.iter().any(headed) {
         return None;
     }
