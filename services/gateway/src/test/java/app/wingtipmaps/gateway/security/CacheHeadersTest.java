@@ -111,12 +111,15 @@ class CacheHeadersTest {
      */
     @Test
     void theSecurityHeadersAreWrittenBeforeAnAnswerIsPiped() {
-        List<Filter> filters = filterChains.getFilterChains().getFirst().getFilters();
-        assertThat(filters)
-                .filteredOn(HeaderWriterFilter.class::isInstance)
-                .singleElement()
-                .extracting(filter -> ReflectionTestUtils.getField(filter, "shouldWriteHeadersEagerly"))
-                .isEqualTo(true);
+        // Every chain: the app's, and the connector's two (security/mcp).
+        for (var chain : filterChains.getFilterChains()) {
+            List<Filter> filters = chain.getFilters();
+            assertThat(filters)
+                    .filteredOn(HeaderWriterFilter.class::isInstance)
+                    .singleElement()
+                    .extracting(filter -> ReflectionTestUtils.getField(filter, "shouldWriteHeadersEagerly"))
+                    .isEqualTo(true);
+        }
     }
 
     @Test

@@ -250,6 +250,20 @@ app:
       assistant: ${APP_SUBSCRIPTION_CAP_ASSISTANT:100}
       words: ${APP_SUBSCRIPTION_CAP_WORDS:1000}
     comped-emails: ${APP_SUBSCRIPTION_COMPED_EMAILS:}
+  # The MCP connector a pilot adds to their own Claude or ChatGPT
+  # (docs/design/mcp-connector.md, security/mcp): the MCP server's
+  # address, the audience of every token issued (blank: the public
+  # address's /mcp); the callbacks a client may register (Claude's,
+  # ChatGPT's, and a loopback one on any port for Claude Code and the MCP
+  # Inspector; RedirectUris says the forms); the RSA key, PKCS#8 PEM, its
+  # tokens are signed with (blank: one made at start, for a machine of
+  # one's own); and the token the planner's tools show to read a pilot's
+  # records (blank: refused).
+  mcp:
+    resource: ${MCP_RESOURCE_URL:}
+    redirect-uris: ${MCP_REDIRECT_URIS:https://claude.ai/api/mcp/auth_callback,https://chatgpt.com/connector_platform_oauth_redirect,https://chatgpt.com/connector/oauth/*,http://localhost,http://127.0.0.1}
+    signing-key: ${MCP_SIGNING_KEY:}
+    internal-token: ${MCP_INTERNAL_TOKEN:}
   magic-link:
     per-address-per-hour: ${APP_MAGIC_LINK_PER_ADDRESS_PER_HOUR:5}
     per-client-per-hour: ${APP_MAGIC_LINK_PER_CLIENT_PER_HOUR:20}
