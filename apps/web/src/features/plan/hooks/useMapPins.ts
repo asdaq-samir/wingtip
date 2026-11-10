@@ -91,7 +91,17 @@ export function useMapPins({
     [nearOrigin, nearFrom, nearestData],
   );
   // How far the card's airport is where own ship has no fix: from the
-  // route's departure (the card measures from a fix itself).
-  const measuredFrom = useMemo(() => (course ? { point: course.departure, name: course.departure.ident } : null), [course]);
+  // route's departure, the course's, or before a route is planned the
+  // departure typed alone (the card measures from a fix itself) -- so the
+  // card always says how far, as the phones' do ("From KMSN").
+  const measuredFrom = useMemo(
+    () =>
+      course
+        ? { point: course.departure, name: course.departure.ident }
+        : startPin
+          ? { point: { lat: startPin.lat, lon: startPin.lon }, name: startPin.ident }
+          : null,
+    [course, startPin],
+  );
   return { placePin, depAlone, startPin, fix, nearOrigin, nearestPoints, measuredFrom };
 }

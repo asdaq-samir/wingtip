@@ -40,6 +40,7 @@ import { PlaceChartsTab } from "./place/PlaceChartsTab";
 import { PlaceInfoTab } from "./place/PlaceInfoTab";
 import { PlaceRunwaysTab } from "./place/PlaceRunwaysTab";
 import { PlaceWeatherTab } from "./place/PlaceWeatherTab";
+import { PlaceAlerts } from "./place/PlaceNotams";
 import { useShown } from "../../../lib/shown";
 
 const SketchViewer = lazy(() => import("./SketchViewer"));
@@ -540,6 +541,8 @@ export default function PlaceCard({
             onDepartFrom={onDepartFrom}
             onAddStop={onAddStop}
           />
+          {/* Closures and TFRs near it first, as Maps' live cards (PlaceNotams). */}
+          <PlaceAlerts ident={ident} onOpen={() => setPicked("radio")} />
           {place && stop && <StopStrip ident={place.ident} stop={stop} />}
         </>
       ) : (
@@ -557,13 +560,10 @@ export default function PlaceCard({
         </div>
       )}
 
-      {/* The card's four tabs right under its actions, at the owner's ask
-          ("bring back the tabs after the buttons", 2026-10-29), from the
-          first frame, greyed until the answer comes as the actions are: a
-          tap would raise the sheet over pages with nothing in them yet.
-          Tapped, the panel all the way up, the open one tapped again up
-          there back half way (CardTabBar). Not over a card that could not
-          be had. */}
+      {/* The card's four tabs under its actions (the owner, 2026-10-29),
+          greyed until the answer comes: a tap would raise the sheet over
+          empty pages. Tapped, the panel all the way up, the open one
+          tapped again there back half way (CardTabBar). */}
       {!(error && !place) && (
         <Tabs value={tab} onValueChange={(next) => setPicked(next as typeof tab)} className="gap-0">
           <CardTabBar

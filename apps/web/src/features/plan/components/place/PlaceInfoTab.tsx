@@ -16,6 +16,7 @@ import { feet } from "../../../../lib/format";
 import { FrequencyRow } from "../FrequencyRow";
 import { StopServices } from "../StopServices";
 import { mapsLink } from "./mapsLink";
+import { PlaceNotamsSection } from "./PlaceNotams";
 
 /** The radio a pilot calls the field on, beside its airspace: the tower's
  *  where it has one, else the CTAF -- a UNICOM that is also the CTAF, or
@@ -120,6 +121,10 @@ export function PlaceInfoTab({
           ))}
         />
       </div>
+
+      {/* The field's own NOTAMs and the TFRs near it, the engine's order
+          (PlaceNotams), after its radio, before its details. */}
+      <PlaceNotamsSection ident={place.ident} />
 
       <CardSection title="Details" testId="place-details">
         <ListGroup>
