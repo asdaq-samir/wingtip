@@ -142,6 +142,9 @@ test("each row's miles over its groundspeed come to its minutes, a pattern's mil
   // 3.4 min" at 86 kt -- a minute's flying -- the pattern departure's 3.4 nm
   // and 2.3 min in its minutes and not its miles. And A5: the rows now add
   // up to the strip's distance, which counts the patterns.
+  // The phone's list says the miles and minutes in words; a desktop's
+  // table has them in columns (nav-log-desk.spec).
+  test.skip((page.viewportSize()?.width ?? 0) >= 1024, "the phone's list");
   await page.goto("/app/plan?dep=KUGN&dest=KOSH&pattern=KUGN%3A23%2CKOSH%3A27");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });

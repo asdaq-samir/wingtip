@@ -79,10 +79,10 @@ test(
     await input.press("Enter");
     await expect(page).toHaveURL(/[?&]altitude_ft=3500/);
     await expect(why).toHaveAccessibleName(/3,500 feet/, { timeout: slow(30000) });
-    // The log at it: said where the altitude is reached -- a top of climb's
-    // level, or the first leg's where the climb ends before its checkpoint.
+    // The log at it, where the altitude is reached -- a top of climb's level,
+    // or the first leg's ("3,500 ft" in a phone's list, under a desk's Alt).
     await openNavLog(page);
-    await expect(navLogSheet(page).getByTestId("navlog-list")).toContainText("3,500 ft", { timeout: slow(30000) });
+    await expect(navLogSheet(page).getByTestId(/^navlog-(list|table)$/)).toContainText(/3,500/, { timeout: slow(30000) });
     await closeNavLog(page);
     // No altitude box over FPL's list: the altitude is beside the airplane.
     await expect(sideDrawer(page).getByTestId("navlog-scroller")).not.toContainText("Cruise altitude");
