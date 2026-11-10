@@ -36,5 +36,6 @@ long | native-ios.yml | test | Each device's first screen | 20
 long | native-ios.yml | testflight | Archived, signed and uploaded to TestFlight | 21
 long | promote.yml | promote | This commit's images, as latest | 21
 
-# The workflows' lines in all, at most: set at the total on 2026-11-10.
-budget | 3089
+# The workflows' lines in all, at most: set at the total on 2026-11-10,
+# lowered when engine-wheel and test-python replaced six wheel builds.
+budget | 3069
