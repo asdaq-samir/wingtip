@@ -224,7 +224,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         SheetPagesHost(
             pages, backEnabled, modifier,
             // The strip's field and timeline are its Home and its plan.
-            home = { if (!stripLayout) Home(plan, answer, picks::pick) },
+            home = { if (!stripLayout) Home(plan, fix, answer, picks::pick) },
             plan = {
                 PlanPage(
                     plan, onClose = pages::closePlan, onField = { pages.push(SheetPage.Airport(it)) },

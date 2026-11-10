@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import SwiftUI
 
 /// The one search's state (the owner's one-search design, 2026-11-09):
 /// what is typed and whether the search is up, and what it found as it
@@ -15,9 +16,11 @@ import Observation
 @MainActor
 @Observable
 final class OneSearchModel {
-    static let prompt = "Search airports, airplanes, or ask"
+    /// The field's prompt, a key so the string catalog gathers it and a
+    /// second language translates it (Localizable.xcstrings).
+    static let prompt: LocalizedStringKey = "Search airports, airplanes, or ask"
     /// The field's prompt while Ask by voice listens, nothing said yet.
-    static let speak = "Speak your question"
+    static let speak: LocalizedStringKey = "Speak your question"
 
     var text = ""
     /// The search up: the field focused and its suggestions in sight.
