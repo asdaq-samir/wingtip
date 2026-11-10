@@ -2,6 +2,7 @@ import { isValidElement, useCallback, useEffect, useId, useMemo, useRef, useStat
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
+import { PinnedCardBar } from "./PinnedCardBar";
 import TabKept from "./TabKept";
 import { Dialog, DialogPortal } from "./ui/dialog";
 import { holdOpenCard, setCardPill, type OpenCard, type PillHead } from "../lib/openCards";
@@ -89,6 +90,7 @@ export function SheetCard({
   const host = useSheetCards((s) => s.host);
   const top = useSheetCards((s) => s.stack.at(-1)?.id === id);
   const card = useRef<HTMLDivElement>(null);
+  const named = useRef<HTMLHeadingElement>(null);
   // Its entry among the open cards, for what its content says the pill
   // shows of it (a map card's, MapCard's `pill`).
   const held = useRef<OpenCard | null>(null);
@@ -218,6 +220,11 @@ export function SheetCard({
             className="under-head relative min-h-0 flex-1 overflow-y-auto px-4 [--under-pad:var(--corner-inset,0.75rem)] pb-[max(1rem,env(safe-area-inset-bottom))] [scrollbar-width:none]"
             render={<section />}
           >
+            {/* Its name folding into a pinned compact head with its close as
+                it scrolls, by the one scrolling rule (PinnedCardBar). */}
+            {title !== undefined && !titleHidden && (
+              <PinnedCardBar title={title} watched={named} onClose={back ?? onClose} closeTestId="sheet-card-close" />
+            )}
             {/* Its name at the left at a card's size and the close at the right
           end of its row, as CardHead sets a place's; a form's Cancel and
           Save at the two ends, the name between them. */}
@@ -228,9 +235,10 @@ export function SheetCard({
               ) : (
                 <div className={cn("min-w-0 flex-1", leading && "text-center")}>
                   <h2
+                    ref={named}
                     id={headingId}
                     tabIndex={-1}
-                    className={cn("font-bold tracking-tight break-words text-foreground outline-none", TEXT.card)}
+                    className={cn("card-title-fold font-bold tracking-tight break-words text-foreground outline-none", TEXT.card)}
                   >
                     {title}
                   </h2>

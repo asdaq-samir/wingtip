@@ -110,9 +110,9 @@ export default function MapPanel(props: Props) {
   const raised = useSheetCards((s) => raisedFor(s.stack));
   const cardsUp = raised !== null;
   const footShown = !!foot && !cardsUp;
-  // A card or a page open (the account page too) is the whole sheet, its own head and ✕ at the
-  // top, by the one card rule (the owner, 2026-11-10); closed, the search is back.
-  const barShown = !!bar && !(onPhone && keyboard) && !flying && !cardsUp && layer === "tab";
+  // A card or a page open (the account page too) is the whole sheet, its own head and ✕ at the top
+  // (one card rule, 2026-11-10); closed, the search is back -- kept with the keyboard up, as it is typed in.
+  const barShown = !!bar && !flying && !cardsUp && layer === "tab";
   const toEdge = layer !== "console" && !!props.toEdge && !cardsUp;
 
   // Where the Drawer is going (its snap point) and the size laid out for:

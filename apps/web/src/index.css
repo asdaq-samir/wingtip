@@ -671,6 +671,70 @@ html:not([data-brand="native"])::view-transition-new(.page-back) {
   scroll-padding-bottom: var(--foot-room, 0px);
 }
 
+/* The one scrolling rule (the owner, 2026-11-10), as Apple Maps' cards
+   scroll. A card's large title folds into its pinned compact head
+   (PinnedCardBar) as the card scrolls: where the browser runs
+   scroll-driven animations, the title fades and shrinks and the bar comes
+   in with the scroll itself; elsewhere the bar shows once the title has
+   gone (data-shown, from an IntersectionObserver). Hidden, the bar is
+   neither seen nor hit nor read. */
+.card-pinned {
+  visibility: hidden;
+  opacity: 0;
+}
+[data-shown] > .card-pinned {
+  visibility: visible;
+  opacity: 1;
+}
+@supports (animation-timeline: scroll()) {
+  .card-pinned {
+    animation: card-pinned linear both;
+    animation-timeline: scroll(nearest block);
+    animation-range: 0 8rem;
+  }
+  .card-title-fold {
+    transform-origin: left center;
+    animation: card-title-fold linear both;
+    animation-timeline: scroll(nearest block);
+    animation-range: 0 6rem;
+  }
+}
+@keyframes card-pinned {
+  0%,
+  80% {
+    visibility: hidden;
+    opacity: 0;
+  }
+  100% {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+@keyframes card-title-fold {
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-title-fold {
+    animation: none;
+  }
+}
+
+/* At the pill and half way a phone's sheet body does not scroll: a drag
+   up on it is the Drawer's, which raises the sheet, and only all the way
+   up does the content scroll, a drag down from its top lowering it again
+   (the one scrolling rule). Base UI's Drawer gives a drag to a scroller
+   under the finger whenever there is one to scroll, and lets the sheet
+   have it only toward its closing edge, so the scrollers are no scrollers
+   there (overflow hidden, which its arbitration skips); a script, the
+   keyboard and a row brought into view still scroll them, and a row
+   focused under the sheet's edge brings it all the way up (MapPanel). */
+body[data-map-sheet]:is([data-map-panel="peek"], [data-map-panel="half"]) [data-panel-body] :is(.overflow-y-auto, .overflow-auto) {
+  overflow-y: hidden;
+}
+
 /* What floats over the chart -- the map's buttons, its banners, the
    panel's pill -- frosted as Apple's Maps on the web frosts its own: the
    page's ground at 80% over a 15-point blur, a hairline and a soft shade,

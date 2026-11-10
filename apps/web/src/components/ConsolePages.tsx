@@ -5,6 +5,7 @@ import { ListRow } from "./GroupedList";
 import { useShown } from "../lib/shown";
 import { holdOpenCard } from "../lib/openCards";
 import { useWantedPage } from "./wantedPage";
+import { useScrollPlace } from "../lib/scrollPlace";
 import CloseButton from "./CloseButton";
 
 /** The way to open one of a tab's pages, and the page back came from. */
@@ -59,10 +60,10 @@ export function ConsolePages({
       inBar: false,
     });
   }, [open]);
+  // Back, the list is where it was (useScrollPlace).
+  useScrollPlace(top, !!open);
   useEffect(() => {
-    if (!open) return;
-    top.current?.closest(".overflow-y-auto")?.scrollTo({ top: 0 });
-    title.current?.focus({ preventScroll: true });
+    if (open) title.current?.focus({ preventScroll: true });
   }, [open]);
   // A page asked for from outside (useWantedPage: the strip's field, its
   // profile menu, the Debrief card): opened as it is asked, or as this

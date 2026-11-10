@@ -1118,10 +1118,10 @@ function Pill({
       data-point={index}
       data-dragging={move.isDragging ? "" : undefined}
       data-over={move.isDropTarget ? "" : undefined}
-      data-base-ui-swipe-ignore=""
+      data-base-ui-swipe-ignore="x"
       className={cn(
-        // A swipe up or down scrolls the lines; a hold, then a move, drags;
-        // a hold alone, its menu. No callout of iOS's own over the hold.
+        // Up or down scrolls the lines or moves the sheet (swipe-ignore "x", the one scrolling
+        // rule); a hold, then a move, drags; a hold alone, its menu. No iOS callout over the hold.
         "inline-flex shrink-0 items-center rounded-full touch-pan-y select-none [-webkit-touch-callout:none]",
         move.isDragging && "opacity-40",
         move.isDropTarget && "bg-background ring-2 ring-tint",

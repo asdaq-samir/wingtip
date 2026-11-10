@@ -197,7 +197,11 @@ export default function StopsCard({
     return () => cancelAnimationFrame(frame);
   }, [picked, pickedShown]);
   return (
-    <div className="flex min-h-0 flex-1 flex-col px-4 pt-[var(--corner-inset,0.75rem)] print:hidden" data-testid="stops-card">
+    // Up under the panel's head from its corner, as every card is (under-head; one scrolling rule).
+    <div
+      className="under-head flex min-h-0 flex-1 flex-col px-4 [--under-pad:var(--corner-inset,0.75rem)] print:hidden"
+      data-testid="stops-card"
+    >
       <div className="flex items-center gap-3">
         <h2 className={cn("font-bold tracking-tight", TEXT.card)} data-testid="stops-name">
           Stops
@@ -235,7 +239,7 @@ export default function StopsCard({
           if (v[0]) setPick(v[0] as StopPick);
         }}
         aria-label="Kind of stop"
-        className="-mx-4 mt-3 w-auto items-stretch overflow-x-auto rounded-none px-4 py-1.5 [scrollbar-width:none]"
+        className="-mx-4 mt-3 w-auto items-stretch overflow-x-auto overscroll-x-contain rounded-none px-4 py-1.5 [scrollbar-width:none]"
       >
         {PICK_ORDER.map((kind) => (
           <ToggleGroupItem

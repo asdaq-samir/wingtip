@@ -669,7 +669,7 @@ export default function NavLogView({
     <div ref={watchFit} data-testid={onDesk ? "navlog-table" : undefined}>
       {onDesk && <NavLogAge />}
       <Table
-        containerClassName={cn(fits ? "overflow-x-visible" : "overflow-x-auto", "print:overflow-visible")}
+        containerClassName={cn(fits ? "overflow-x-visible" : "overflow-x-auto overscroll-x-contain", "print:overflow-visible")}
         className={cn(
           // The cells' padding halved and the waypoint's name free to wrap
           // (see its column), so the five columns fit the drawer without a

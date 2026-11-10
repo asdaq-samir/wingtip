@@ -35,9 +35,8 @@ const SearchResultsPage = lazy(() => import("../search/SearchResultsPage"));
 /** The saved flights in full, FPL's card (the console's list, loaded as
  *  it opens). */
 const SavedFlights = lazy(() => loadAccountPanels().then((m) => ({ default: m.FlightsPanel })));
-// The Favorites in full, airports' and airplanes', when one is opened:
-// their drag to reorder (React Aria's GridList, SortableRows) is kept out of the first
-// load (scripts/first-load.mjs's budget, 2026-11-05).
+// The Favorites in full, airports' and airplanes', when opened: their drag to reorder (GridList,
+// SortableRows) kept out of the first load (scripts/first-load.mjs's budget, 2026-11-05).
 const FavoritesList = lazy(() => import("../../../../components/FavoritesList"));
 const AircraftFavoritesList = lazy(() => import("../AircraftFavoritesList"));
 // Nearest's list in full, when it is opened; its strip is the pill's.
@@ -192,9 +191,8 @@ export default function PlanSidebar({
               : addStop
         }
         stop={suggestedAt?.stop}
-        // The route's destination: when the flight lands there -- the time
-        // en route and on the ground at its stops (Totals.ground_min) after
-        // it leaves, as the figures' ETA -- for the hour its forecast marks.
+        // The route's destination: when the flight lands there -- en route and on the ground at its
+        // stops (Totals.ground_min) after it leaves, as the figures' ETA -- for its forecast's hour.
         arrival={
           !s.local && sameField(place, `${planned.dest}`) && s.totals?.ete_min != null
             ? { depart: depart || null, minutes: s.totals.ete_min + (s.totals.ground_min ?? 0) }
@@ -320,8 +318,10 @@ export default function PlanSidebar({
               </Suspense>
             </TabPage>
           ) : model.typed || model.direct ? (
-            // A search sent, its results (Apple's list); else the suggestions.
-            <TabPage testId="search-page">{model.sent ? <SearchResultsPage /> : <OneSearchResults model={model} />}</TabPage>
+            // A search sent, its results, else the suggestions: each its own scroll box (one scrolling rule).
+            <TabPage key={model.sent ? "results" : "suggestions"} testId="search-page">
+              {model.sent ? <SearchResultsPage /> : <OneSearchResults model={model} />}
+            </TabPage>
           ) : (
             stripsDrawn && <SearchHome vm={vm} model={model} />
           )}

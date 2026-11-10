@@ -1,20 +1,19 @@
 import { ChevronRight, CircleMinus, House, ListFilter, Plus } from "lucide-react";
-import { useEffect, type CSSProperties, type ReactNode, useEffectEvent } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import { airportMarkSvg } from "../lib/map/marks/airportMark";
 import { colourOf } from "../lib/map/marks/flightCategory";
 import type { AirspaceClass, RecentAirport } from "../lib/preferences";
 import { useAirspace } from "../lib/useAirspace";
-import { holdOpenCard } from "../lib/openCards";
 import { useRowRemove } from "./rowRemove";
 import { useAway } from "../lib/useAway";
 import { SECTION_TITLE, TEXT } from "../lib/text";
 import { Button } from "./ui/button";
 import PullDown from "./PullDown";
 import IconButton from "./IconButton";
-import CloseButton from "./CloseButton";
 import { airportQuery } from "../lib/queryClient";
+export { ListPageHead } from "./ListPageHead";
 
 /** A row's small round mark, the tile's at a list row's size. */
 export function Mark({ icon, className, style }: { icon: ReactNode; className?: string; style?: CSSProperties }) {
@@ -173,38 +172,6 @@ export function PillSection({
   );
 }
 
-/** A list in full's head, every list's: its name, what acts on the whole
- *  list (Edit, Clear), and at its right the close, which goes back to the
- *  section it came from -- no Back on the left, at the owner's ask
- *  ("remove the back buttons, because close button should behave as the
- *  back button", 2026-10-22). It is a device's Back too (lib/openCards,
- *  lib/backNavigation), as a card's close is: Android's Back put the sheet down and
- *  left the list open. */
-export function ListPageHead({
-  title,
-  backLabel,
-  onBack,
-  action,
-  testId,
-}: {
-  title: string;
-  /** The close's name to a screen reader: where it goes back to. */
-  backLabel: string;
-  onBack: () => void;
-  action?: ReactNode;
-  testId?: string;
-}) {
-  const back = useEffectEvent(onBack);
-  useEffect(() => holdOpenCard({ close: () => back(), inBar: false }), []);
-  return (
-    <div className="flex items-center gap-2" data-testid={testId}>
-      <h3 className={cn("flex-1 font-bold", TEXT.title)}>{title}</h3>
-      {action}
-      <CloseButton label={backLabel} onClick={onBack} className="-mr-1" data-testid={testId && `${testId}-close`} />
-    </div>
-  );
-}
-
 /**
  * A tab's one strip, the list it shows picked from the filter menu at its
  * heading's right, at the owner's asks ("for aircraft we can have the
@@ -341,7 +308,7 @@ export function StripNote({ children, status = false }: { children: ReactNode; s
  *  than fit. */
 export function PillStrip({ children, testId }: { children: ReactNode; testId?: string }) {
   return (
-    <div className="-mx-1 flex gap-3 overflow-x-auto px-1 [scrollbar-width:none]" data-testid={testId}>
+    <div className="-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain px-1 [scrollbar-width:none]" data-testid={testId}>
       {children}
     </div>
   );

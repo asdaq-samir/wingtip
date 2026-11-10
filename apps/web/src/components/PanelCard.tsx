@@ -2,6 +2,7 @@ import { useContext, useEffect, useRef, type ReactNode } from "react";
 import { Share } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
+import { PinnedCardBar } from "./PinnedCardBar";
 import RoundButton from "./RoundButton";
 import { closeTopCard, useHeldCard, RouteShareMenu, type CardShare } from "../lib/openCards";
 import { TEXT } from "../lib/text";
@@ -92,21 +93,32 @@ export function CardHead({
   /** Between the name and the close. */
   children?: ReactNode;
 }) {
+  // Its name folding into a pinned compact head as the card scrolls, with
+  // its close, by the one scrolling rule (PinnedCardBar).
+  const named = useRef<HTMLHeadingElement>(null);
   return (
-    <div className="flex items-start gap-2">
-      <div className="min-w-0 flex-1">
-        <h2 tabIndex={-1} className={cn("font-bold tracking-tight text-foreground outline-none", TEXT.card)} data-testid={nameTestId}>
-          {name}
-        </h2>
-        {line != null && (
-          <p className={cn("text-muted-foreground", TEXT.note, lineClassName)} data-testid={lineTestId}>
-            {line}
-          </p>
-        )}
+    <>
+      <PinnedCardBar title={name} watched={named} onClose={() => closeTopCard() || onClose()} closeTestId={closeTestId} />
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <h2
+            ref={named}
+            tabIndex={-1}
+            className={cn("card-title-fold font-bold tracking-tight text-foreground outline-none", TEXT.card)}
+            data-testid={nameTestId}
+          >
+            {name}
+          </h2>
+          {line != null && (
+            <p className={cn("text-muted-foreground", TEXT.note, lineClassName)} data-testid={lineTestId}>
+              {line}
+            </p>
+          )}
+        </div>
+        {children}
+        <CardClose onClose={onClose} onShare={onShare} testId={closeTestId} className="-mr-1" />
       </div>
-      {children}
-      <CardClose onClose={onClose} onShare={onShare} testId={closeTestId} className="-mr-1" />
-    </div>
+    </>
   );
 }
 

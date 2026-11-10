@@ -932,7 +932,7 @@ The owner's rule: a screenshot of another app means ours should show this.
 | One round button at the bottom left (Look Around) | The radio's microphone, where it already was |
 | Privacy \| Terms \| Legal \| Imagery at the map's bottom right, over the sheet | `MapCredits`: one MapLibre AttributionControl at the bottom right, riding the sheet's top, Privacy \| Terms \| Legal then each drawn source's credit (imagery, Google, the traffic, the overlay tiles' FAA cycle); gone all the way up, where the footer has them |
 | A place picked: its card is the whole sheet, no search | Any card (a field, an airplane, a point, the Brief, the Map card) hides the title row and the search; its ✕ goes back to the search with the query kept |
-| A place card scrolled: its title and ✕ stay in sight | `PinnedCardBar`: once a card's head (`CardTitle`) has scrolled out, its name and ✕ pinned at the card's top on the sheet's colour, a line of no height until then so it takes no room or tap: the airport's, the airplane's and the Stops' cards |
+| A place card scrolled: its title and ✕ stay in sight | `PinnedCardBar`: as a card's head scrolls out, its large title folds away and its name and ✕ come in pinned at the card's top on the sheet's colour, scroll-linked where the browser runs scroll-driven animations (index.css `card-pinned`, `card-title-fold`), else once the head has gone; a line of no height until then, taking no room or tap. Every card with a head has it: `CardTitle` (airport, airplane, Stops), `CardHead` (Brief, Nav Log, Profile, Nearest, airspace, past flight), `SheetCard` (Map card and the cards in the sheet) and the lists in full (`ListPageHead`). The airport card's tabs pin under it, each tab keeping its own place in the scroll (`useTabScroll`) |
 | Place card: big title, "kind · place" with the place a link, Share and ✕, four action tiles, photos sliding | The airport card: the ident, "name · town" with the town a link, Share and ✕, Fly Here (filled), Depart From, Add as Stop, Weather; the pictures as a sliding row |
 | Typing: top hit with inline action pills, suggestion rows, places | `OneSearchResults`: one white group, the top hit with Fly Here and Depart From pills, Search Nearby and Ask as suggestions, the match in bold |
 | One search field (the one card rule, 2026-11-10) | The traffic's airplane and Nearest's place are the one search's field scoped to them (`listSearchOf`, OneSearchField's `list`); the route's points and the traffic's airport ask it for an airport (`askSearchPick`, AirportPicker), its placeholder what they ask for; the developer's page, with no one search, keeps the picker's own |
@@ -940,6 +940,34 @@ The owner's rule: a screenshot of another app means ours should show this.
 | Typing, scrolled: the title and the field go up with the list, nothing pinned, the keyboard up | `sheet/useScrollAway`: all the way up with the search in use, the head pulled up by as much as the list has scrolled, back at its top; the field never leaves the page, so it keeps its focus |
 | A sent search: ✕ on the title row, chips, rows with thumbnails, Filters page, numbered map marks | The sent search's list, its chips and Filters page on one filter state, and the results as their own clustered MapLibre layer over the chart (the chart's own airport symbols untouched) |
 | Map-type button: "Choose Map" card in the sheet, picture tiles | The Map card in the sheet (`MapSettingsButton`), chart picture tiles from committed crops (`public/map-tiles/`), every setting of the old menu under it |
+
+**The one scrolling rule (the owner, 2026-11-10).** Every card, page and
+sheet scrolls one way on a phone:
+
+- The title and ✕ always in view, the large title folding into the
+  pinned head (above).
+- At the pill and half way a drag up on the body raises the sheet; the
+  body scrolls only all the way up, a drag down from its top lowering it.
+  Base UI's Drawer hands a drag to any scroller under the finger that can
+  scroll, and lets the sheet have it only toward its closing edge, so
+  below full the body's scrollers are made no scrollers (`overflow-y:
+  hidden`, which its arbitration skips; index.css). A script, the keyboard
+  and a row brought into view still scroll them, and a row focused under
+  the sheet's edge raises the sheet (MapPanel). Nothing sits below the
+  screen to be scrolled to at half.
+- Sideways rows scroll sideways only: the Embla carousels (`CardPictures`,
+  `RecentCards`) and the route's pills carry `data-base-ui-swipe-ignore="x"`
+  (an up or down drag the sheet's), and every native sideways row
+  `overscroll-x-contain`. The upright altitude Slider and the sortable
+  rows' grips keep `""`: their own drag is up and down.
+- Back is where you were, new starts at the top: the airport card's tabs
+  each keep their place, Settings' list its place after a page
+  (`useScrollPlace`), and the suggestions, a sent search's results and its
+  Filters page each their own scroll box.
+- A form with something typed asks before a swipe, Cancel, Escape or a tap
+  beside it throws it away (`useDiscardGuard`: Set Altitude, A Fix From).
+- The search row stays while the keyboard is up, as it is typed in (it
+  went with the keyboard, the field and the keyboard with it).
 
 **Desktop.** Apple Maps on the web uses a left side panel there; Wingtip
 keeps its side panel, with the same title row over the same search.

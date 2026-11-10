@@ -1,4 +1,6 @@
+import { useRef } from "react";
 import { cn } from "cn";
+import { useScrollPlace } from "../../../../lib/scrollPlace";
 import { ChartMark } from "../../../../components/Favorites";
 import type { NearestAirport } from "../../../../lib/api/types";
 import { chipFillOf } from "../../../../lib/map/marks/flightCategory";
@@ -62,8 +64,17 @@ export default function SearchResultsPage() {
   const filtering = useSearchResults((s) => s.draft !== null);
   const open = useSearchResults((s) => s.open);
   const { rows, all, loading, failed } = useSearchResultRows();
+  // The Filters page starts at its top; closed, the list is where it was.
+  const anchor = useRef<HTMLSpanElement>(null);
+  useScrollPlace(anchor, filtering);
   if (!sent) return null;
-  if (filtering) return <FiltersPage />;
+  if (filtering)
+    return (
+      <>
+        <span ref={anchor} hidden />
+        <FiltersPage />
+      </>
+    );
   const note = loading
     ? "Searching…"
     : failed
@@ -75,6 +86,7 @@ export default function SearchResultsPage() {
         : null;
   return (
     <div className="flex flex-col gap-3 px-4 pt-2 pb-4" data-testid="search-results">
+      <span ref={anchor} hidden />
       <FilterChips />
       <p className={cn("text-muted-foreground", TEXT.note)}>Near {sent.near.label}</p>
       {note ? (

@@ -14,6 +14,7 @@ import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { CardTabBar, CardTabPanel } from "../../../components/CardTabs";
 import { Tabs } from "../../../components/ui/tabs";
 import { useCardTab } from "../lib/cardTab";
+import { useTabScroll } from "../lib/tabScroll";
 import PlaceActions from "./place/PlaceActions";
 import PlaceSubtitle from "./place/PlaceSubtitle";
 import { ApiError } from "../../../lib/api/client";
@@ -201,10 +202,10 @@ export default function PlaceCard({
   // goes with the route; it is a new card (keyed by its ident) after.
   const [flying, setFlying] = useState(false);
 
-  // Every frequency, the title's All tapped; the first few until then.
-  // The tab picked, kept for the airport while the page is open
-  // (useCardTab); Charts where the card opens on its approaches.
+  // The tab picked, kept for the airport while the page is open (useCardTab), Charts where the
+  // card opens on its approaches; each tab its own place in the scroll (useTabScroll).
   const [tab, setPicked] = useCardTab<CardTab>(`place:${ident}`, "radio", startOn ? "diagrams" : null);
+  useTabScroll(tabsRef, tab);
   // A tab picked takes the panel all the way up, as the route's tabs do;
   // the bar back in sight if the card was scrolled past it, once the panel
   // is up, clear of the name's bar over the card (PhotoHead).
@@ -584,9 +585,8 @@ export default function PlaceCard({
             disabled={!place}
             raise={{ onExpand: raise, onLower }}
             barRef={tabsRef}
-            // Held at the top as the card scrolls on a desktop, its sections
-            // always a click away (the owner, 2026-11-09).
-            className="mt-3 scroll-mt-16 lg:sticky lg:top-0 lg:z-10 lg:bg-background/95 lg:py-1 lg:backdrop-blur"
+            // Pinned under the card's compact head as it scrolls, its sections a tap away (one scrolling rule).
+            className="sticky top-[calc(var(--head-room,0px)+3.5rem)] z-10 mt-3 scroll-mt-28 bg-background py-1 in-data-[sheet]:bg-[var(--sheet)]"
           />
           <CardTabPanel value="radio" className="space-y-0">
             {place && <PlaceInfoTab place={place} where={where} services={services} />}

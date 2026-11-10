@@ -162,7 +162,10 @@ count. By the one card rule (the owner, 2026-11-10) every thing and page
 is a card over the search with its ✕ (only Emergency fills the sheet's
 height), and Escape or a device's Back closes the top card or page first,
 then a level back, on a phone as on a desktop; with none open they lower
-the sheet.
+the sheet. By the one scrolling rule (same day) a card's name and ✕ stay
+pinned as it scrolls, so the way out is always one tap; below full a drag
+up on the sheet raises it before anything scrolls; back from a page, a
+list is where it was.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|

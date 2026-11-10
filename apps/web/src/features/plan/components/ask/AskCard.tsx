@@ -153,7 +153,7 @@ export default function AskSection() {
       )}
       {/* The first questions as outlined chips, until one is asked. */}
       {turns.length === 0 && !busy && (
-        <div className="flex gap-2 overflow-x-auto pb-1" data-testid="ask-suggestions">
+        <div className="flex gap-2 overflow-x-auto overscroll-x-contain pb-1" data-testid="ask-suggestions">
           <Button
             variant="outline"
             size="sm"

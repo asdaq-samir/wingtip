@@ -68,7 +68,7 @@ export function CardTitle({
           <h2
             ref={name}
             tabIndex={-1}
-            className={cn("truncate font-extrabold tracking-tight text-foreground outline-none", TEXT.hero)}
+            className={cn("card-title-fold truncate font-extrabold tracking-tight text-foreground outline-none", TEXT.hero)}
             data-testid={titleTestId}
           >
             {title}

@@ -1,15 +1,20 @@
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useState, type ReactNode, type RefObject } from "react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
 import { TEXT } from "../lib/text";
 
 /**
- * A card's name and its close, pinned at the top of the card once its own
- * head has scrolled out of sight, as Apple Maps keeps a place card's title
- * and ✕ (the owner, 2026-11-10): the search no longer sits over a card to
- * be the way out. A sticky line of no height at the card's top, so it
- * takes no room and no tap while the head is in sight; the bar hangs from
- * it only once the head (`watched`) has left the card's scroller.
+ * A card's name and its close, pinned at the top of the card as its own
+ * large head scrolls away, as Apple Maps folds a place card's title into a
+ * compact head with its ✕ (the one scrolling rule, the owner 2026-11-10):
+ * the title and the way out always in sight. A sticky line of no height at
+ * the card's top, so it takes no room and no tap while the head is in
+ * sight. Where the browser runs scroll-driven animations the bar fades in
+ * with the scroll itself, frame by frame, and the large title fades and
+ * shrinks as it goes (index.css's card-pinned and card-title-fold); else
+ * the bar shows once the head (`watched`) has left the card's scroller.
+ * Either way its name for the browser tests is card-head-pinned while it
+ * shows, and its close `${closeTestId}-pinned`.
  */
 export function PinnedCardBar({
   title,
@@ -17,7 +22,7 @@ export function PinnedCardBar({
   onClose,
   closeTestId,
 }: {
-  title: string;
+  title: ReactNode;
   watched: RefObject<HTMLElement | null>;
   onClose: () => void;
   closeTestId: string;
@@ -33,12 +38,13 @@ export function PinnedCardBar({
   }, [watched]);
   return (
     <div className="sticky top-[var(--head-room,0px)] z-20 -mx-4 h-0" data-testid={`${closeTestId}-bar`} data-shown={past || undefined}>
-      {past && (
-        <div className="flex items-center gap-2 bg-background px-4 py-1.5 shadow-sm in-data-[sheet]:bg-[var(--sheet)]">
-          <span className={cn("min-w-0 flex-1 truncate font-bold text-foreground", TEXT.title)}>{title}</span>
-          <CloseButton onClick={onClose} data-back="" data-testid={`${closeTestId}-pinned`} />
-        </div>
-      )}
+      <div
+        className="card-pinned flex items-center gap-2 bg-background px-4 py-1.5 shadow-sm in-data-[sheet]:bg-[var(--sheet)]"
+        data-testid={past ? "card-head-pinned" : undefined}
+      >
+        <span className={cn("min-w-0 flex-1 truncate font-bold text-foreground", TEXT.title)}>{title}</span>
+        <CloseButton onClick={onClose} data-back="" data-testid={`${closeTestId}-pinned`} />
+      </div>
     </div>
   );
 }

@@ -71,7 +71,7 @@ export default function DepartureWindowStrip() {
             value={m.selected ? [m.selected.depart] : []}
             onValueChange={(value) => m.pick(value[0] ?? null)}
             aria-label="Departure hours"
-            className="-mx-4 w-auto snap-x overflow-x-auto px-4 pb-1"
+            className="-mx-4 w-auto snap-x overflow-x-auto overscroll-x-contain px-4 pb-1"
             data-testid="departure-window-hours"
           >
             {m.hours.map((h) => {

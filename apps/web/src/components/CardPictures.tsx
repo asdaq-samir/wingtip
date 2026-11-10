@@ -38,7 +38,8 @@ export function CardPictures({
   const shown = slides.filter((s): s is CardSlide => !!s);
   if (!shown.length) return null;
   return (
-    <Carousel opts={{ align: "start", dragFree: true }} aria-label={label} data-testid={testId}>
+    // A sideways drag the row's, an up or down one the sheet's (the one scrolling rule).
+    <Carousel opts={{ align: "start", dragFree: true }} aria-label={label} data-base-ui-swipe-ignore="x" data-testid={testId}>
       {/* A tile 70% of the card's width, so the next one shows at the edge
           and says the row goes on; 12 points between, as Maps' have. */}
       <CarouselContent className="-ml-3">

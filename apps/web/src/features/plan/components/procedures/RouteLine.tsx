@@ -95,7 +95,7 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
             if (v[0]) line.onPick(v[0]);
           }}
           aria-label="Routes"
-          className="flex w-full justify-start gap-2 overflow-x-auto px-3 pb-3 [scrollbar-width:none]"
+          className="flex w-full justify-start gap-2 overflow-x-auto overscroll-x-contain px-3 pb-3 [scrollbar-width:none]"
         >
           {line.chips.map((c) => (
             <ToggleGroupItem

@@ -42,7 +42,7 @@ export default function FilterChips() {
     </Toggle>
   );
   return (
-    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]" data-testid="search-chips">
+    <div className="-mx-4 flex gap-2 overflow-x-auto overscroll-x-contain px-4 pb-1 [scrollbar-width:none]" data-testid="search-chips">
       <Button
         variant="outline"
         size="sm"
