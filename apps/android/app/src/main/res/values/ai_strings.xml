@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app's AI (ai/, docs/android-ai.md): In Plain Words on the
+     screens, Ask on the phone, pages read on the phone, Setup's On-Phone
+     AI, and what Gemini and the system's agents are told of the app. -->
+<resources>
+    <string name="ai_plain_words">In Plain Words</string>
+    <string name="ai_made_on_phone">Made on this phone by Gemini Nano. Nothing left it.</string>
+    <string name="ai_made_by_assistant">Made by Wingtip\'s assistant from the figures above.</string>
+    <plurals name="ai_left_out">
+        <item quantity="one">%d sentence left out: its figure was not the app\'s.</item>
+        <item quantity="other">%d sentences left out: their figures were not the app\'s.</item>
+    </plurals>
+    <string name="ai_draft_remark">Draft a Remark</string>
+    <string name="ai_on_phone">On-Phone AI</string>
+    <string name="ai_on_phone_ready">Gemini Nano is on this phone. Words, Ask and pages read stay on it.</string>
+    <string name="ai_on_phone_download">Gemini Nano can be added to this phone by Android. Until then, words come from Wingtip\'s assistant when you\'re signed in.</string>
+    <string name="ai_on_phone_downloading">Android is adding Gemini Nano to this phone…</string>
+    <string name="ai_on_phone_none">This phone has no Gemini Nano. Words come from Wingtip\'s assistant when you\'re signed in.</string>
+    <string name="ai_on_phone_checking">Checking for Gemini Nano…</string>
+    <string name="ai_get_nano">Add Gemini Nano</string>
+    <string name="ai_looking_up">Looking it up on the phone…</string>
+    <string name="ai_ask_on_phone">Answered on this phone</string>
+    <string name="ai_no_answer">No answer could be given on this phone from the app\'s figures. Try asking another way.</string>
+    <string name="ai_read_on_phone">Read on this phone by Gemini Nano; the photo was not sent.</string>
+    <!-- What Gemini and the system's agents show the pilot the app's
+         functions let them do (res/xml/app_functions_metadata.xml). -->
+    <string name="ai_app_display">Read airports, the route, NOTAMs, the Brief, your airplanes and logbook, and open the app on a route, an airport or the Emergency Assistant.</string>
+</resources>

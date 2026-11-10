@@ -194,8 +194,10 @@ struct BriefView: View {
                 }
             }
         }
+        .siriSees(SiriSaw.flight(plan))
         .navigationTitle("Brief")
         .glassScrollEdges()
+        .navigationBarMinimizesOnScroll()
         .navigationBarTitleDisplayMode(.inline)
         // The UI tests' sign the Brief is up (WingtipUITests/FlowTests).
         .accessibilityIdentifier("brief")
@@ -219,6 +221,8 @@ struct BriefView: View {
         .task(id: "\(verdict.key(for: plan))|\(session.signedIn)") {
             guard session.signedIn, plan.routed else { return }
             await window.refresh(try? DepartureWindow.ask(verdict.ask(for: plan), airplane: plan.airplaneChosen))
+            // The hour said to Siri with the ask ("tomorrow at 9"), picked.
+            if let when = BriefAsk.shared.takeDepart() { window.pick(nearest: when) }
         }
         // The words for the briefing on the page, written again when it
         // changes; the figures stay as they are while they are written.

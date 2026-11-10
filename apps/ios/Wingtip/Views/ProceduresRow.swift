@@ -41,6 +41,7 @@ struct ProceduresRow: View {
                                 .labelStyle(.titleAndIcon)
                                 .font(.subheadline)
                                 .foregroundStyle(picked == nil ? Color.secondary : Color.accentColor)
+                                .siriSees(picked.flatMap { $0.kind == "approach" ? SiriSaw.approach($0) : nil })
                         }
                     }
                 }

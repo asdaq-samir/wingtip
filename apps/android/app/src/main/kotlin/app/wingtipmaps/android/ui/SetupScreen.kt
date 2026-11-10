@@ -43,6 +43,7 @@ import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.about.AboutScreen
 import app.wingtipmaps.android.account.DeleteAccountButton
 import app.wingtipmaps.android.account.ExportRow
+import app.wingtipmaps.android.ai.OnPhoneAiRow
 import app.wingtipmaps.android.airplane.GlideRingRow
 import app.wingtipmaps.android.atc.AtcSettingRow
 import app.wingtipmaps.android.atc.RadioListener
@@ -208,6 +209,10 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
             SectionTitle(stringResource(R.string.atc))
             AtcSettingRow()
         }
+
+        // Where the app's AI words are made: Gemini Nano on this phone, or
+        // Wingtip's assistant (docs/android-ai.md).
+        OnPhoneAiRow()
 
         // The passenger briefing for the planned flight (#223), where the
         // field's "passenger briefing" opens Setup.

@@ -52,6 +52,20 @@ work = "2.12.0"
 # Glance, for the home screen's Next Flight widget (widget/), drawn in
 # Material 3's roles from the Wingtip palettes.
 glance = "1.2.0"
+# The app's AI on the phone (docs/android-ai.md), each the newest on Google
+# Maven on 2026-11-09. AppFunctions, Android's on-device MCP: the app's
+# actions and entities offered to Gemini and the system's agents
+# (ai/functions/), its KSP compiler writing the service and its schema;
+# the release candidate, the owner's rule for a stock component.
+appfunctions = "1.0.0-rc01"
+# ML Kit's Prompt API over Gemini Nano (AICore): the words, drafts and the
+# on-phone Ask with tools (ai/). Beta, the only release there is; the
+# Summarization, Proofreading and Rewriting APIs (1.0.0-beta1, May 2025,
+# on an older genai-common) are not used, as the Prompt API does each.
+genaiPrompt = "1.0.0-beta5"
+# ML Kit text recognition through Play services (no model in the app): a
+# photographed page read on the phone before Nano reads its figures.
+mlkitTextRecognition = "19.0.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -115,6 +129,12 @@ play-services-mlkit-document-scanner = { group = "com.google.android.gms", name 
 # JankStats: each frame's time and whether it was janky, on the activity's
 # window (diagnostics/FrameStats.kt).
 androidx-metrics-performance = { group = "androidx.metrics", name = "metrics-performance", version.ref = "metricsPerformance" }
+androidx-appfunctions = { group = "androidx.appfunctions", name = "appfunctions", version.ref = "appfunctions" }
+androidx-appfunctions-compiler = { group = "androidx.appfunctions", name = "appfunctions-compiler", version.ref = "appfunctions" }
+mlkit-genai-prompt = { group = "com.google.mlkit", name = "genai-prompt", version.ref = "genaiPrompt" }
+play-services-mlkit-text-recognition = { group = "com.google.android.gms", name = "play-services-mlkit-text-recognition", version.ref = "mlkitTextRecognition" }
+# Play services' Task awaited in a coroutine (the text recognizer's answer).
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
 androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }
 

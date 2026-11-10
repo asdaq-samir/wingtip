@@ -66,29 +66,36 @@ struct WingtipShortcuts: AppShortcutsProvider {
             shortTitle: "Direct to an Airport",
             systemImageName: "location.north.line")
         AppShortcut(
-            intent: DirectToPlaceIntent(),
+            intent: StartFlightIntent(),
             phrases: [
-                "Direct to a fix in \(.applicationName)",
-                "Go direct in \(.applicationName)",
+                "Start my flight in \(.applicationName)",
+                "Start flight in \(.applicationName)",
             ],
-            shortTitle: "Direct to a Fix",
-            systemImageName: "point.topleft.down.to.point.bottomright.curvepath")
+            shortTitle: "Start Flight",
+            systemImageName: "airplane.departure")
         AppShortcut(
-            intent: StartListeningIntent(),
+            intent: LogFlightIntent(),
             phrases: [
-                "Start recording in \(.applicationName)",
-                "Start recording the radio in \(.applicationName)",
-                "Listen to the radio in \(.applicationName)",
+                "Log this flight in \(.applicationName)",
+                "Log my flight in \(.applicationName)",
             ],
-            shortTitle: "Start Listening",
-            systemImageName: "mic")
+            shortTitle: "Log This Flight",
+            systemImageName: "book.closed")
         AppShortcut(
-            intent: StopListeningIntent(),
+            intent: ReadyToFlyIntent(),
             phrases: [
-                "Stop recording in \(.applicationName)",
-                "Stop listening to the radio in \(.applicationName)",
+                "Am I ready to fly in \(.applicationName)",
+                "Ready to fly in \(.applicationName)",
             ],
-            shortTitle: "Stop Listening",
-            systemImageName: "mic.slash")
+            shortTitle: "Ready to Fly",
+            systemImageName: "checkmark.seal")
+        AppShortcut(
+            intent: KeepForAirIntent(),
+            phrases: [
+                "Keep my flight for the air in \(.applicationName)",
+                "Keep for the air in \(.applicationName)",
+            ],
+            shortTitle: "Keep for the Air",
+            systemImageName: "arrow.down.circle")
     }
 }

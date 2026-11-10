@@ -26,6 +26,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.ai.AiSources
+import app.wingtipmaps.android.ai.AiTask
+import app.wingtipmaps.android.ai.AiWordsRow
 import app.wingtipmaps.android.brief.DepartureWindowStrip
 import app.wingtipmaps.android.brief.IcingRows
 import app.wingtipmaps.android.design.RefreshBox
@@ -81,6 +84,11 @@ fun BriefSheet(model: BriefModel, plan: Plan.State, signedIn: Boolean, onClose: 
                 // "When should I go?": the hours across, under the verdict.
                 DepartureWindowStrip(plan, signedIn)
                 state.risk?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                // The verdict and findings in plain words, on the pilot's tap,
+                // beside them (docs/android-ai.md).
+                if (state.verdict != null) {
+                    AiWordsRow(AiTask.BRIEF, key = state.route.orEmpty() + state.fetchedAtMs, sources = { AiSources.brief(state.verdict?.words, state.risk, state.items) })
+                }
                 if (state.items.isNotEmpty()) SectionTitle(stringResource(R.string.brief_findings))
                 state.items.forEach { item ->
                     // The finding said first, as its glyph shows it.

@@ -49,6 +49,12 @@ When you turn on the ATC copilot, or speak to the app, it listens through your d
 - **In the iPhone and Android apps, speech is recognised on your phone and never leaves it.** They use only the recognizer that runs on the phone itself: Apple's on-device speech recognition on the iPhone, and the phone's on-device speech recognizer on Android (Android 12 and later). Where a phone cannot do that, the app does not offer voice, and you type instead; it never falls back to a recognizer on someone's servers.
 - **In a web browser, the app uses the browser's own speech recognition.** Where the browser can promise that the audio stays on your computer or phone (Chrome, which may first download its English language pack), the app asks it to. Other browsers, such as Safari, may send the audio to their maker (Apple, for Safari) to be recognised, under that company's privacy policy. A browser with no speech recognition (Firefox) is not offered voice. Of the text, only the place names in a clearance you heard (a clearance limit, a route, a departure) go to our planner, to find them on the map; a question you ask aloud goes to Claude as any typed question does.
 
+## Siri and the camera on iPhone
+
+On an iPhone, Siri can act on what the app shows: the airports, waypoints, NOTAMs, approaches, frequencies, airplanes and logbook entries on the screen, and your flight. The app tells the phone which of these is on the screen so Siri knows what "this airport" means; that stays between the app and your iPhone under Apple's privacy policy for Siri, and nothing more is sent to us than when you tap the same thing.
+
+When you point the iPhone's camera at a chart, a plate, a weather printout or a sign and ask Siri about it, the picture is read on your phone. Only the airport identifiers found in it go to our planner, to find those airports; the picture is not sent to us.
+
 ## Features Claude writes
 
 Some features are written by Claude, an AI model made by Anthropic: Ask, the written briefing, the words beside the Brief's figures, checkpoint descriptions, the mock oral and the debrief's words. To write them, our server sends Anthropic:
@@ -58,10 +64,17 @@ Some features are written by Claude, an AI model made by Anthropic: Ask, the wri
 - **Checkpoint descriptions:** the checkpoint and the checkpoints around it.
 - **The mock oral:** the flight's plan as text and the answers you type.
 - **Flight watch:** what changed on a watched flight's route.
+- **A page you photograph** (a handbook page, a logbook page, a clearance you wrote down), to read its figures for you to check: the photo and today's date, only where your phone cannot read it itself (below; an iPhone with Apple Intelligence on iOS 27 reads it on the phone). It is not kept.
 
 We do not send your name, email address or account to Anthropic. We do not keep your Ask conversations: each one stays on your device. Anthropic receives this as our service provider and handles it under its commercial terms. What Claude writes can be wrong; the app says so where it shows it.
 
-Some phones write a few of these on the device instead, with Apple's own on-device model, where the iPhone has one; nothing is sent for those.
+Some phones write a few of these on the device instead, with Apple's own on-device model, where the iPhone has one; nothing is sent for those. On an iPhone with Apple Intelligence, the NOTAMs in plain words and what a NOTAM means for your flight are written only on the phone, and a photographed page is read on the phone first (iOS 27).
+
+On an Android phone that has Google's Gemini Nano (through Android's AICore; Setup's On-Phone AI says whether yours does), the app does these on the phone first and sends nothing to Anthropic for them: Ask, the words beside the Brief, an airport's weather, the route's NOTAMs, the nav log and the Coach's debriefs, a drafted logbook remark, and the reading of a photographed page (its text is read by Google's on-device text recognition, then by Gemini Nano). Ask's look-ups still ask our planner for the airport, the route or the NOTAMs, as the screens do. Where the phone has no Gemini Nano, these come from Claude as above, or not at all when you are signed out.
+
+## Assistants on your phone
+
+On Android 16 and later, Google's Gemini and other assistants on your phone that Android allows can ask Wingtip Maps for an airport's card, its frequencies and approaches, the nearest airports, your planned route and its NOTAMs, the Brief's verdict, and your airplanes and logbook entries, and can open the app on a route, an airport or a screen. The app answers on your phone, only when you ask the assistant; what the assistant then does with the answer is under its maker's privacy policy (Google's, for Gemini). When you ask an assistant about what is on your screen, the app gives it the route you have planned, as a link. The app's shortcuts (a long press on its icon) open its screens and send nothing.
 
 ## Faults and speed
 

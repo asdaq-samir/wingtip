@@ -30,7 +30,7 @@ struct AirportCard: View {
             if let place {
                 Section {
                     // The UI tests' sign the card is up (WingtipUITests/FlowTests).
-                    AirportHead(place: place).accessibilityIdentifier("airport-card-head")
+                    AirportHead(place: place).accessibilityIdentifier("airport-card-head").siriSees(SiriSaw.airport(place.ident))
                     KeptAgeLine(kind: .airports, key: ident)
                     AirportPictures(place: place, photos: photos, shown: $shown)
                         .listRowInsets(EdgeInsets())
@@ -40,7 +40,7 @@ struct AirportCard: View {
                     Picker("Section", selection: $tab) {
                         ForEach(CardTab.allCases) { Text($0.rawValue).tag($0) }
                     }
-                    .pickerStyle(.segmented)
+                    .tabsPicker()
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets())
                 }
@@ -66,7 +66,7 @@ struct AirportCard: View {
         .navigationTitle(ident)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .pinnedTrailing) {
                 if let place {
                     ShareLink(item: URL(string: "https://\(Config.host)/app/plan?place=\(place.ident)")!,
                               subject: Text(place.name)) { Image(systemName: WingtipIcon.share) }
@@ -277,7 +277,7 @@ struct AirportInfoTab: View {
         FlowProgramsSection()
         Section(place.airspaceClass.map { "Frequencies (Class \($0))" } ?? "Frequencies") {
             if place.frequencies.isEmpty { Text("None listed").foregroundStyle(.secondary) }
-            ForEach(Array(place.frequencies.enumerated()), id: \.offset) { _, f in FrequencyRowView(frequency: f) }
+            ForEach(Array(place.frequencies.enumerated()), id: \.offset) { _, f in FrequencyRowView(frequency: f).siriSees(SiriSaw.frequency(place.ident, f)) }
             // What some fields read out on so many clicks of the mic on
             // the CTAF: the weather, a radio check (wingtip.remarks).
             ForEach(place.radioNotes ?? [], id: \.self) { note in

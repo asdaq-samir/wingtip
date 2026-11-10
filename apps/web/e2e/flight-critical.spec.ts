@@ -1,5 +1,17 @@
 import { test, expect } from "@playwright/test";
-import { closeNavLog, navLogSheet, openMapSettings, openNavLog, openPanel, openProfile, settle, sideDrawer, slow } from "./helpers";
+import {
+  closeNavLog,
+  grabberTo,
+  navLogSheet,
+  openMapSettings,
+  openNavLog,
+  openPanel,
+  openProfile,
+  settle,
+  sideDrawer,
+  slow,
+  pressDryRunStart,
+} from "./helpers";
 
 /**
  * What a pilot cannot be without in the air, in one journey (the owner,
@@ -9,6 +21,10 @@ import { closeNavLog, navLogSheet, openMapSettings, openNavLog, openPanel, openP
  * Offline, lib/map/route/keepRoute). Tagged @flight-critical: CI's e2e
  * runs it on every pull request beside the smoke set (ci.yml, docs/CI.md).
  */
+
+// The worker keeps the charts: the suite blocks it, so mocks always apply
+// (playwright.config.ts), and this journey has none.
+test.use({ serviceWorkers: "allow" });
 
 test(
   "a planned flight's nav log and emergency keep working offline once its charts are kept",
@@ -32,6 +48,8 @@ test(
     const keeping = await page.evaluate(() => "serviceWorker" in navigator && window.isSecureContext);
     if (keeping) {
       await openMapSettings(page);
+      // The menu is the map's sheet: all the way up, its Offline group in reach.
+      await grabberTo(page, "full");
       const keep = page.getByTestId("keep-offline-toggle");
       if ((await keep.getAttribute("aria-checked")) !== "true") await keep.click();
       await page.keyboard.press("Escape");
@@ -55,11 +73,13 @@ test(
     await context.setOffline(false);
 
     // In flight (the dry run flies own ship), Emergency: the fields ranked,
-    // 7700 and the MAYDAY.
+    // 7700 and the MAYDAY. The sheet half way, as a pilot flies with it
+    // (the nav log left it all the way up), the flying head above it.
+    await grabberTo(page, "half");
     await openProfile(page);
     const start = sideDrawer(page).getByTestId("dry-run-start");
     await expect(start).toBeVisible({ timeout: slow(60_000) });
-    await start.click();
+    await pressDryRunStart(page, start);
     await expect(page.getByTestId("flying-head")).toBeVisible({ timeout: slow(10_000) });
     await page.getByTestId("flying-emergency").click();
     const sheet = page.getByTestId("emergency-sheet");

@@ -25,7 +25,7 @@ struct WelcomeAirplaneStep: View {
                     TextField("N-number", text: $model.typedTail)
                         .textInputAutocapitalization(.characters).autocorrectionDisabled()
                         .font(WingtipType.row.monospaced())
-                        .textFieldStyle(.roundedBorder)
+                        .borderedField()
                         .onSubmit { Task { await model.fly(model.typedTail, plan: plan) } }
                     Button("Fly") { Task { await model.fly(model.typedTail, plan: plan) } }
                         .glassButton()
@@ -61,7 +61,7 @@ struct WelcomeHomeStep: View {
                 }
                 TextField(AirportQuery.prompt, text: $model.homeQuery)
                     .textInputAutocapitalization(.characters).autocorrectionDisabled()
-                    .textFieldStyle(.roundedBorder)
+                    .borderedField()
                     .submitLabel(.search)
                 ForEach(model.homeFound) { field in
                     WelcomeChoice(title: field.ident,

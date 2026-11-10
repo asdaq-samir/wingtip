@@ -3,6 +3,7 @@ package app.wingtipmaps.android.documents
 import android.content.Context
 import android.net.Uri
 import app.wingtipmaps.android.Config
+import app.wingtipmaps.android.ai.read.OnPhoneReader
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.assistant.DocumentRead
@@ -20,7 +21,8 @@ import java.time.LocalDate
 import java.util.Base64
 
 /**
- * A photographed page read by the assistant (POST /api/read-document,
+ * A photographed page read on the phone where it can be (OnPhoneReader),
+ * else by the assistant (POST /api/read-document,
  * through the gateway's proxy as the assistant's other calls go): the
  * photo and what it is of, answered with what was read and the engine's
  * check of it. Nothing is saved by the read; the screens show every item
@@ -61,6 +63,10 @@ object Documents {
     /** The page read: the photo made a JPEG off the main thread, then
      *  posted with the pilot's session and the CSRF header. */
     suspend fun read(context: Context, page: Uri, kind: Kind, today: LocalDate = LocalDate.now()): DocumentRead {
+        // On the phone first: ML Kit's text recognizer and Gemini Nano,
+        // checked by the engine here (OnPhoneReader); the photo goes to the
+        // server only where this phone cannot read it (docs/android-ai.md).
+        OnPhoneReader.read(context, page, kind, today)?.let { return it }
         val jpeg = withContext(Dispatchers.IO) { PagePhoto.jpeg(context, page) }
         val (body, status) = Gateway.call("POST", Config.plannerPath("/api/read-document"), json = body(ask(kind, jpeg, today)))
         if (status != 200) throw Planner.Failure(status, Planner.detail(body))

@@ -30,7 +30,9 @@ const asked = new Set<string>();
 export function ReadyToFlyPrompt({ dryPlaying }: { /** A dry run playing (the plan's pastFlight). */ dryPlaying: boolean }) {
   const ready = useReadyToFly();
   const route = useBriefPlan((p) => (p.routed ? routeKeyOf(p) : null));
-  const ownShip = useOwnShip((s) => s.enabled);
+  // The pilot's own start only: the map turning own ship on as it opens
+  // (locateOnOpen) is no start, or every open on the ground would ask.
+  const ownShip = useOwnShip((s) => s.enabled && !s.byPage);
   const started = dryPlaying || ownShip;
   const was = useRef(started);
   const [open, setOpen] = useState(false);

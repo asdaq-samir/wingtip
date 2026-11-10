@@ -54,7 +54,7 @@ final class IntentsTests: XCTestCase {
 
     func testShortcutsWithinApplesTen() {
         let shortcuts = WingtipShortcuts.appShortcuts
-        XCTAssertEqual(shortcuts.count, 9)
+        XCTAssertEqual(shortcuts.count, 10)
         XCTAssertLessThanOrEqual(shortcuts.count, 10)
     }
 }

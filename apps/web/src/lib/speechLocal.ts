@@ -19,7 +19,6 @@
  * Where a browser has no recognizer at all (Firefox), voice is hidden and
  * a clearance is typed.
  */
-import { useEffect } from "react";
 import { create } from "zustand";
 
 /** The language the recognizer hears: US ATC phraseology (FAA Order
@@ -76,14 +75,16 @@ export function checkSpeech(): Promise<SpeechHere> {
   return asked;
 }
 
-/** Whether voice is offered here, for a screen, which shows its
- *  microphone once the browser has answered: false until then, and where
- *  there is no recognizer. */
+/** Whether voice is offered here, for a screen: wherever the browser has
+ *  a recognizer, kept on the device or not (the owner, 2026-11-09), so the
+ *  answer needs no ask. `available` is asked from the pilot's first tap
+ *  (readyLocally), never as a screen draws: a Chromium without the
+ *  on-device service behind it -- Playwright's headless shell, and other
+ *  builds of Chromium -- kills the whole page for that call ("No binder
+ *  found for interface media.mojom.OnDeviceSpeechRecognition", CI's e2e
+ *  run 42712886491 crashing on /app/plan's first draw). */
 export function useCanListen(): boolean {
-  useEffect(() => {
-    void checkSpeech();
-  }, []);
-  return useSpeechHere((s) => s.state !== "checking" && s.state !== "unavailable");
+  return recognitionClass() !== null;
 }
 
 /** Whether the recognizer is to be told to stay on the device. */

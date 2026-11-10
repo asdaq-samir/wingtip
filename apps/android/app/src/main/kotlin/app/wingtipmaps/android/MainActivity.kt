@@ -1,11 +1,14 @@
 package app.wingtipmaps.android
 
+import android.app.assist.AssistContent
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import app.wingtipmaps.android.ai.ScreenContext
+import app.wingtipmaps.android.plan.KeptPlan
 import app.wingtipmaps.android.ui.RootScreen
 import app.wingtipmaps.android.ui.WingtipTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +37,13 @@ class MainActivity : ComponentActivity() {
         // The launch's own link once: a rotation recreates the activity
         // with the same intent, and the route is not planned again for it.
         if (savedInstanceState == null) open(intent)
+    }
+
+    /** What is on the screen for Gemini's "ask about this screen" and the
+     *  system's assistants: the route planned (ScreenContext). */
+    override fun onProvideAssistContent(outContent: AssistContent) {
+        super.onProvideAssistContent(outContent)
+        ScreenContext.fill(outContent, KeptPlan(application).read())
     }
 
     override fun onNewIntent(intent: Intent) {

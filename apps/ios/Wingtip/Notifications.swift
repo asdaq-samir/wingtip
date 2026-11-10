@@ -1,3 +1,4 @@
+import AppIntents
 import Foundation
 import UIKit
 import UserNotifications
@@ -30,15 +31,18 @@ enum Notifications {
     /// Told as a time-sensitive notification where the app is not in
     /// front; false where it is, and the caller shows it on the screen
     /// instead. One id replaces an earlier notification of the same thing
-    /// (the same airplane near again) rather than stacking them.
+    /// (the same airplane near again) rather than stacking them. What it is
+    /// about (`about`: a field, the flight) is told to Siri on iOS 27, so
+    /// "what does this mean" asked over the notification is about it.
     @discardableResult
-    static func tell(_ title: String, _ body: String, id: String = UUID().uuidString) -> Bool {
+    static func tell(_ title: String, _ body: String, id: String = UUID().uuidString, about: [EntityIdentifier] = []) -> Bool {
         guard !inFront else { return false }
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
         content.sound = .default
         content.interruptionLevel = .timeSensitive
+        if #available(iOS 27, *), !about.isEmpty { content.appEntityIdentifiers = about }
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
         Log.records.notice("notified: \(title, privacy: .public)")
         return true
