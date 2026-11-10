@@ -138,8 +138,12 @@ extension View {
 
 private struct FigureFont: ViewModifier {
     @Environment(\.look) private var look
+    /// The token's size scaled as Title 1 is, redrawn as the text size
+    /// changes: WingtipType.figure, a UIFont scaled once, was not, and
+    /// Apple's audit found the emergency's squawk and Guard not growing.
+    @ScaledMetric(relativeTo: .title) private var size = WingtipType.figureSize
 
     func body(content: Content) -> some View {
-        content.font(look.isStock ? Font.title.bold().monospacedDigit() : WingtipType.figure)
+        content.font(look.isStock ? Font.title.bold().monospacedDigit() : Font.system(size: size, weight: .bold).monospacedDigit())
     }
 }

@@ -390,6 +390,12 @@ def gen_swift(tree, sch):
         L.append(
             "    %s %s: Font %s %s" % (decl, camel(k), "{" if decl == "static var" else "=", expr + (" }" if decl == "static var" else ""))
         )
+        if decl == "static var":
+            # The size alone, for a view's @ScaledMetric: SwiftUI redraws
+            # a scaled UIFont only when something else changes, and
+            # Apple's accessibility audit reports it as not growing.
+            L.append("    /// %s's size at the default text size, for @ScaledMetric(relativeTo: %s)." % (camel(k), IOS_STYLES[style]))
+            L.append("    static let %sSize: CGFloat = %g" % (camel(k), v["fontSize"]))
         if "letterSpacing" in v:
             L.append("    /// %s's letter spacing in points (%gem)." % (camel(k), v["letterSpacing"]))
             L.append("    static let %sTracking: CGFloat = %g" % (camel(k), round(v["letterSpacing"] * v["fontSize"], 2)))

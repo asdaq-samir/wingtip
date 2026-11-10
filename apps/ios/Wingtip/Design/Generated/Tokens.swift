@@ -699,6 +699,8 @@ enum WingtipType {
     static let labelTracking: CGFloat = 1.3
     /// A figure in the strip: 26 on 31, bold, tabular digits (the Flying screen's size). iOS scales it with Title 1.
     static var figure: Font { Font(UIFontMetrics(forTextStyle: .title1).scaledFont(for: UIFont.systemFont(ofSize: 26, weight: .bold))).monospacedDigit() }
+    /// figure's size at the default text size, for @ScaledMetric(relativeTo: .title).
+    static let figureSize: CGFloat = 26
 }
 
 enum WingtipSpace {

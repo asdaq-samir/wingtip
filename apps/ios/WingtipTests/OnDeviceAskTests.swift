@@ -152,9 +152,12 @@ struct OnDeviceAskTests {
 
     /// The runtime check: on this simulator or phone the model is there or
     /// is not; without it the answer is the engine's, never a failure.
+    /// The question names MSN: with no field named it is the destination's
+    /// (OnDeviceFacts.field), and KDLH is not among the fields held, so the
+    /// engine would rightly refuse with no sentence.
     @Test func theRealModelsAbsenceDegradesToTheEngine() async throws {
         guard let why = OnDeviceWords.unavailableWhy else { return }
-        let answer = await OnDeviceAsk(model: AppleAskModel()).answer("crosswind runway 36", facts: try Self.facts())
+        let answer = await OnDeviceAsk(model: AppleAskModel()).answer("crosswind at MSN runway 36", facts: try Self.facts())
         #expect(answer.origin == .engine)
         #expect(answer.why == why)
         #expect(!answer.words.sentences.isEmpty)
