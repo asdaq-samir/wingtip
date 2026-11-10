@@ -226,3 +226,26 @@ extension EnvironmentValues {
     /// detents (the iPad's inspector, a page pushed), which is always.
     @Entry var cardExpanded = true
 }
+
+/// What the card's head says of a field: its weather's colour -- its own
+/// report's, or with none the modelled one or a near station's, marked
+/// "≈" -- and a field to keep out of.
+enum AirportHead {
+    /// The category the chip shows, and whether it is the field's own.
+    static func category(_ place: AirportPlace) -> (category: String, own: Bool)? {
+        if let own = place.metar?.flightCategory { return (own, true) }
+        if place.metar == nil, let modelled = place.modelledWeather?.flightCategory { return (modelled, false) }
+        if place.metar == nil, let near = place.nearbyMetar, near.near, let category = near.metar.flightCategory { return (category, false) }
+        return nil
+    }
+
+    /// A field the armed services own (the FAA's airport file), or a
+    /// private one: a field most pilots may not land at unasked.
+    static func restriction(_ place: AirportPlace) -> String? {
+        switch place.military {
+        case "military": return "Military, permission required"
+        case "joint": return "Joint use"
+        default: return place.isPrivate == true ? "Private, permission required" : nil
+        }
+    }
+}

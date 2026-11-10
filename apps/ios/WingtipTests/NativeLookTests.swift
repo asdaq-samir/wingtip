@@ -83,4 +83,14 @@ struct NativeLookTests {
         let none = try Engine.endurance(usableGal: nil, burnGph: 10, reserve: EnduranceReserve.vfrDay.rawValue)
         #expect(none.minutes == nil)
     }
+
+    @Test func aTafIsCutAtItsChangeGroupsWordForWord() {
+        let taf = "KOSH 091720Z 0918/1018 27012G20KT P6SM SCT050 FM100200 30008KT P6SM BKN035 TEMPO 1004/1008 3SM -SHRA BKN020 PROB30 1010/1014 OVC008"
+        let periods = TafStrip.periods(taf)
+        #expect(periods.count == 4)
+        #expect(periods[1].hasPrefix("FM100200 "))
+        #expect(periods[2].hasPrefix("TEMPO "))
+        #expect(periods[3].hasPrefix("PROB30 "))
+        #expect(periods.joined(separator: " ") == taf)
+    }
 }

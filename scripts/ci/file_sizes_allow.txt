@@ -10,14 +10,14 @@ apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/ChartMap.kt 739
 apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/MapStyle.kt 848
 apps/ios/Wingtip/Tiles/ChartTileOverlay.swift 420
 apps/ios/Wingtip/Views/AirplaneCard.swift 552
-apps/ios/Wingtip/Views/AirportCard.swift 522
-apps/ios/Wingtip/Views/ChartMap.swift 760
+apps/ios/Wingtip/Views/AirportCard.swift 503
+apps/ios/Wingtip/Views/ChartMap.swift 758
 apps/ios/Wingtip/Views/ChartOverlays.swift 879
 apps/ios/Wingtip/Views/InFlightViews.swift 603
 apps/ios/Wingtip/Views/InstructorView.swift 413
 apps/ios/Wingtip/Views/OwnAircraftViews.swift 547
 apps/ios/Wingtip/Views/PlannerFiguresViews.swift 649
-apps/ios/Wingtip/Views/RouteEditViews.swift 456
+apps/ios/Wingtip/Views/RouteEditViews.swift 455
 apps/web/e2e/dry-run.spec.ts 462
 apps/web/e2e/helpers.ts 794
 apps/web/e2e/ifr.spec.ts 442
@@ -70,7 +70,7 @@ apps/web/src/lib/map/gl/glStyle.ts 577
 apps/web/src/lib/map/gl/layers/RouteExtrasGl.tsx 492
 apps/web/src/lib/preferences.ts 625
 apps/web/src/lib/queryClient.ts 469
-apps/web/vite.config.ts 473
+apps/web/vite.config.ts 470
 engine/crates/airspace/src/ahead.rs 1073
 engine/crates/airspace/src/rules.rs 553
 engine/crates/airspace/src/spoken.rs 560
