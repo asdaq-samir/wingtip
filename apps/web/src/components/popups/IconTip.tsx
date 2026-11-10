@@ -32,6 +32,12 @@ export function IconTip({ label, variant = "ghost", size = "icon", className, ch
       hideTimer.current = window.setTimeout(() => setOpen(false), 1500);
     },
   });
+  // A finger's hold alone: usePress, under useLongPress, also takes Enter
+  // and Space on the button (its keydown's default prevented, its press
+  // never a click), so a keyboard could press no icon button at all -- a
+  // card's ✕ among them (checkpoints.spec and flight-critical.spec's
+  // closeNavLog on run 42843021881). The keys stay the button's own.
+  const { onKeyDown: _keyDown, onKeyUp: _keyUp, ...holdProps } = longPressProps;
   return (
     <Tooltip
       open={open}
@@ -52,7 +58,7 @@ export function IconTip({ label, variant = "ghost", size = "icon", className, ch
             size={size}
             aria-label={label}
             className={cn(EXPANDED_BUTTON, className)}
-            {...mergeProps(props, longPressProps)}
+            {...mergeProps(props, holdProps)}
             onClick={(e) => {
               // The release of a long press read the label; it is not a tap.
               if (labelShown.current) {
