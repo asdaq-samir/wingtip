@@ -101,8 +101,7 @@ def test_the_metars_are_the_newest_report_per_station_from_the_cache_file():
     with patch("app.fetch.requests.get", return_value=METARS) as mock_get:
         aviationweather.fetch_source("metars")
     assert mock_get.call_args.args[0] == "https://aviationweather.gov/data/cache/metars.cache.xml.gz"
-    # wingtip's own User-Agent on every ask (wingtip.config.REQUEST_HEADERS).
-    assert mock_get.call_args.kwargs["headers"]["User-Agent"].startswith("wingtip-maps/")
+    assert mock_get.call_args.kwargs["headers"]["User-Agent"].startswith("wingtip-maps/")  # wingtip.config.REQUEST_HEADERS, every ask
     result = metar_for_idents(["KDLH", "KORD", "C81"])
     assert result["KDLH"]["flight_category"] == "VFR"  # the 0153Z SPECI, not the 0053Z METAR
     assert result["KDLH"]["ceiling_ft"] is None  # CLR
@@ -115,8 +114,7 @@ def test_the_metars_are_the_newest_report_per_station_from_the_cache_file():
         "wx": "",
         "ceiling_ft": 600,
         "ceiling_unknown": False,
-        # The ceiling layer's own cover, for the station model's "OVC 006".
-        "ceiling_cover": "OVC",
+        "ceiling_cover": "OVC",  # the ceiling layer's own, for the station model's "OVC 006"
         "visibility_sm": 2.0,
         "wind_dir_true_deg": None,
         "wind_speed_kt": None,
