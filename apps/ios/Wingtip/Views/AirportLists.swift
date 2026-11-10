@@ -24,6 +24,7 @@ struct AirportDestination: View {
 /// Recents to take off, the nearest fields.
 struct AirportListView: View {
     @Environment(OwnShip.self) private var ownShip
+    @Environment(\.undoManager) private var undoManager
     let shows: AirportShelf.Shows
     let nearest: [NearestAirport]
     private var shelf: AirportShelf { .shared }
@@ -34,7 +35,7 @@ struct AirportListView: View {
             case .favorites:
                 if shelf.favorites.isEmpty { Text("No Favorites").foregroundStyle(.secondary) }
                 ForEach(shelf.favorites) { field in NavigationLink(value: SheetPage.airport(field.ident)) { keptRow(field) }.cardSource(field.ident).airportPreview(field.ident).siriSees(SiriSaw.airport(field.ident)) }
-                    .onDelete { shelf.removeFavorites(at: $0) }
+                    .onDelete { shelf.removeFavorites(at: $0, undo: undoManager) }
                     .onMove { shelf.moveFavorites(from: $0, to: $1) }
             case .recents:
                 if shelf.recents.isEmpty { Text("No Recents").foregroundStyle(.secondary) }
@@ -50,8 +51,11 @@ struct AirportListView: View {
         // Nearest needs the position: asked for here the first time.
         .onAppear { if shows == .nearest { ownShip.askLocation() } }
         .toolbar {
-            if shows == .favorites, !shelf.favorites.isEmpty { EditButton() }
-            if shows == .recents, !shelf.recents.isEmpty { Button("Clear") { shelf.clearRecents() } }
+            UndoToolbarItem()
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if shows == .favorites, !shelf.favorites.isEmpty { EditButton() }
+                if shows == .recents, !shelf.recents.isEmpty { Button("Clear") { shelf.clearRecents() } }
+            }
         }
     }
 
@@ -81,7 +85,18 @@ struct NearFromView: View {
             } else if let problem {
                 ProblemLine(problem)
             } else {
-                Skeleton(rows: 4, label: "Fetching the nearest fields")
+                // The rows' own layout, greyed by the system while they come.
+                Section("Nearest \(label)") {
+                    ForEach(0..<4, id: \.self) { _ in
+                        LabeledContent {
+                            Text("Distance")
+                        } label: {
+                            Text("Ident").font(.headline)
+                            Text("The field's name · its longest runway")
+                        }
+                        .loading("Fetching the nearest fields")
+                    }
+                }
             }
         }
         .navigationTitle("Nearest")

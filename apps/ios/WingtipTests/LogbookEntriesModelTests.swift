@@ -62,20 +62,27 @@ struct LogbookEntriesModelTests {
         #expect(model.rowProblem == "Not kept: Invalid request: totalHours must be at least 0")
     }
 
-    @Test func aDeleteWaitsForItsUndo() async {
+    @Test func aDeleteWaitsForTheLogbookToBeLeft() async {
         let asked = Asked()
         let model = Self.model(asked)
-        #expect(model.delete(Self.entry(1)) == nil)
-        #expect(model.entries?.map(\.id) == [2] && model.removed?.entry.id == 1)
-        model.undo()
-        #expect(model.entries?.map(\.id) == [1, 2] && model.removed == nil)
+        let undo = UndoManager()
+        undo.groupsByEvent = false
+        undo.beginUndoGrouping()
+        model.delete(Self.entry(1), undo: undo)
+        undo.endUndoGrouping()
+        #expect(model.entries?.map(\.id) == [2] && model.removed.map(\.entry.id) == [1])
+        // The system's Undo puts it back, and its Redo takes it off again.
+        undo.undo()
+        #expect(model.entries?.map(\.id) == [1, 2] && model.removed.isEmpty)
+        undo.redo()
+        #expect(model.entries?.map(\.id) == [2] && model.removed.map(\.entry.id) == [1])
+        #expect(await asked.deletes.isEmpty)
 
-        _ = model.delete(Self.entry(1))
-        // A second delete hands back the first, for its delete to be sent.
-        #expect(model.delete(Self.entry(2))?.id == 1)
-        #expect(await model.keep(Self.entry(1)) == nil)
-        #expect(await asked.deletes == [1])
-        #expect(model.removed?.entry.id == 2)
+        // Two deletes held, both sent once the logbook is left.
+        model.delete(Self.entry(2))
+        #expect(await model.keepRemoved() == nil)
+        #expect(await asked.deletes == [1, 2])
+        #expect(model.removed.isEmpty)
     }
 
     @Test func theRowsWordsAreTheDayAndTheRoute() {

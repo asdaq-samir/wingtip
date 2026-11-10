@@ -96,14 +96,6 @@ struct StripSheetView: View {
         // The Go / No-Go for the head, asked as the Brief asks it.
         .task(id: verdict.key(for: plan)) { await verdict.refresh(plan: plan, signedIn: session.signedIn) }
         .onChange(of: plan.tail, initial: true) { _, tail in listener.tail = tail }
-        // "Route cleared · Undo" after the head's Clear Route, as the tabs
-        // have it (UndoBar): the strip's Clear had no way back (the UI
-        // audit, 2026-11-09).
-        .overlay(alignment: .bottom) {
-            UndoBar()
-                .padding(.bottom, WingtipSpace.xxl)
-                .animation(.default, value: plan.undoNote)
-        }
         // An airplane's card, a point pressed on the map, a hold, a flown
         // track, over the strip as over the tabs.
         .modifier(FlightSheets())

@@ -3,9 +3,9 @@ import Observation
 
 /// The logbook's flights as the Logbook screen lists them: one at a time
 /// opened in its own row to change (Edit, then Save sends PUT
-/// /api/logbook/{id}), and a delete held back behind its Undo row until
-/// the Undo is gone (docs/navigation.md), rather than a form and a
-/// "can't be undone" question.
+/// /api/logbook/{id}), and a delete held back, with the system's Undo,
+/// until the logbook is left (docs/navigation.md), rather than a form and
+/// a "can't be undone" question.
 @MainActor
 @Observable
 final class LogbookEntriesModel {
@@ -26,13 +26,14 @@ final class LogbookEntriesModel {
     /// Why the change was not kept, said in the row.
     private(set) var rowProblem: String?
     private(set) var sending = false
-    /// The flight just deleted and where it was, kept back until its Undo is gone.
-    private(set) var removed: (entry: LogbookEntry, at: Int)?
+    /// The flights deleted while the logbook is open and where each was,
+    /// the last last: kept back from the gateway while their Undo stands.
+    private(set) var removed: [(entry: LogbookEntry, at: Int)] = []
     @ObservationIgnored private let calls: Calls
 
     init(calls: Calls = .gateway) { self.calls = calls }
 
-    /// "28 Oct 2026 · KDLH KHIB": the row's and the Undo's words.
+    /// "28 Oct 2026 · KDLH KHIB": the row's words.
     static func title(_ e: LogbookEntry) -> String {
         Day.said(e.flownOn) + (e.route.map { $0.isEmpty ? "" : " · \($0)" } ?? "")
     }
@@ -66,35 +67,38 @@ final class LogbookEntriesModel {
         }
     }
 
-    /// Taken off the list at once, deleted once its Undo is gone: an Undo
-    /// puts it back with nothing asked of the gateway. A flight deleted
-    /// while another's Undo is up keeps that other's delete (its `keep`).
-    func delete(_ e: LogbookEntry) -> LogbookEntry? {
-        let earlier = removed?.entry
-        guard let at = entries?.firstIndex(where: { $0.id == e.id }) else { return earlier }
+    /// Taken off the list at once, deleted on the gateway once the
+    /// logbook is left (keepRemoved): the window's UndoManager puts it back
+    /// with nothing asked of the gateway, and shake, Command-Z and the
+    /// bar's Undo all do it.
+    func delete(_ e: LogbookEntry, undo: UndoManager? = nil) {
+        guard let at = entries?.firstIndex(where: { $0.id == e.id }) else { return }
         if editingID == e.id { cancelEdit() }
         entries?.remove(at: at)
-        removed = (e, at)
-        return earlier
+        removed.append((e, at))
+        undo?.register(self, named: "Delete Flight") { $0.undoDelete(undo: undo) }
     }
 
-    func undo() {
-        guard let removed else { return }
+    /// The last flight deleted put back where it was; its redo deletes it again.
+    func undoDelete(undo: UndoManager? = nil) {
+        guard let last = removed.popLast() else { return }
         // The place worked out before the insert: read inside the insert's
         // own argument, `entries` is read while it is being modified, which
         // Swift's exclusivity check stops the app for.
-        if let count = entries?.count { entries?.insert(removed.entry, at: min(removed.at, count)) }
-        self.removed = nil
+        if let count = entries?.count { entries?.insert(last.entry, at: min(last.at, count)) }
+        undo?.register(self, named: "Delete Flight") { $0.delete(last.entry, undo: undo) }
     }
 
-    /// The delete sent; nil once it is, else why not.
-    func keep(_ e: LogbookEntry) async -> String? {
-        if removed?.entry.id == e.id { removed = nil }
-        do {
-            try await calls.delete(e.id)
-            return nil
-        } catch {
-            return "\(Self.title(e)) could not be deleted: \(error.localizedDescription)"
+    /// The deletes sent, the logbook left; nil once they are, else why not.
+    func keepRemoved() async -> String? {
+        let sending = removed
+        removed = []
+        var why: String?
+        for (e, _) in sending {
+            do { try await calls.delete(e.id) } catch {
+                why = "\(Self.title(e)) could not be deleted: \(error.localizedDescription)"
+            }
         }
+        return why
     }
 }

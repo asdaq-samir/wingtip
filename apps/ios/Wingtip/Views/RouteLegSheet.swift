@@ -24,10 +24,11 @@ struct RouteLegSheet: View {
                             Image(systemName: "arrow.right").accessibilityLabel("to")
                             Text(sheet.to).lineLimit(1)
                             Spacer(minLength: WingtipSpace.sm)
+                            // Said in the tint, as a status in words, not a capsule.
                             if sheet.active {
-                                Text("Active Leg").font(WingtipType.label)
-                                    .padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xs)
-                                    .background(Color(uiColor: .secondarySystemFill), in: Capsule())
+                                Label("Active Leg", systemImage: "airplane")
+                                    .font(WingtipType.label)
+                                    .foregroundStyle(.tint)
                             }
                         }
                         .font(WingtipType.title)
@@ -47,6 +48,8 @@ struct RouteLegSheet: View {
             .navigationTitle("Route Leg")
             .navigationBarTitleDisplayMode(.inline)
             .closeButton { FlightUI.shared.card = nil }
+            // Remove taken back here as on the plan (UndoToolbarItem).
+            .toolbar { UndoToolbarItem() }
         }
     }
 

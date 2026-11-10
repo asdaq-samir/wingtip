@@ -154,12 +154,16 @@ final class Tracking {
 
     func isFavorite(_ hex: String) -> Bool { favorites.contains { $0.hex == hex.lowercased() } }
 
-    func toggleFavorite(_ kept: KeptAirplane) {
+    /// The star: an airplane made a Favorite or taken off; either way the
+    /// window's UndoManager, where given, turns it back.
+    func toggleFavorite(_ kept: KeptAirplane, undo: UndoManager? = nil) {
         let record = self.record(kept)
         record.favorite.toggle()
         if record.favorite { record.addedAt = Date() }
+        let name = record.favorite ? "Add Favorite" : "Remove Favorite"
         prune(record)
         saved()
+        undo?.register(self, named: name) { $0.toggleFavorite(kept, undo: undo) }
     }
 
     func remember(_ kept: KeptAirplane) {

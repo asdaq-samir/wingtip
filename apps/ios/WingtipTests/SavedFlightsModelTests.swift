@@ -4,8 +4,8 @@ import Testing
 
 /// What the Saved Flights screen's model sends and shows: a flight named
 /// and noted in its row (only what changed sent, blank to clear, the
-/// gateway's limits said in the row), and a delete held back behind its
-/// Undo and sent only once the Undo is gone.
+/// gateway's limits said in the row), and a delete held back behind the
+/// system's Undo and sent only once the list is left.
 @MainActor
 struct SavedFlightsModelTests {
     /// What the fake gateway was asked.
@@ -89,19 +89,23 @@ struct SavedFlightsModelTests {
         #expect(model.rowProblem == "A name is at most 80 characters.")
     }
 
-    @Test func aDeleteWaitsForItsUndo() async {
+    @Test func aDeleteWaitsForTheListToBeLeft() async {
         let asked = Asked()
         let model = await Self.model(asked, flights: [Self.flight(1), Self.flight(2)])
-        model.delete(model.flights[0])
-        #expect(model.flights.map(\.id) == [2] && model.removed?.flight.id == 1)
-        model.undo()
-        #expect(model.flights.map(\.id) == [1, 2] && model.removed == nil)
+        let undo = UndoManager()
+        undo.groupsByEvent = false
+        undo.beginUndoGrouping()
+        model.delete(model.flights[0], undo: undo)
+        undo.endUndoGrouping()
+        #expect(model.flights.map(\.id) == [2] && model.removed.map(\.flight.id) == [1])
+        #expect(undo.undoActionName == "Delete Flight")
+        undo.undo()
+        #expect(model.flights.map(\.id) == [1, 2] && model.removed.isEmpty)
         #expect(await asked.deletes.isEmpty)
 
         model.delete(model.flights[1])
-        guard let removed = model.removed else { Issue.record("no Undo"); return }
-        await model.keep(removed.flight)
+        await model.keepRemoved()
         #expect(await asked.deletes == [2])
-        #expect(model.removed == nil && model.flights.map(\.id) == [1])
+        #expect(model.removed.isEmpty && model.flights.map(\.id) == [1])
     }
 }

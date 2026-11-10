@@ -74,6 +74,7 @@ enum FlightWords {
 /// receivers: for knowing what is about, not for avoiding it.
 struct AirplaneCard: View {
     let hex: String
+    @Environment(\.undoManager) private var undoManager
     @State private var detail: FlightDetail?
     @State private var route: FlightRoute?
     @State private var flights: [PastFlightSummary] = []
@@ -108,9 +109,7 @@ struct AirplaneCard: View {
                         if let op = detail?.operator { Text(FlightWords.nameCase(op)).foregroundStyle(.secondary) }
                     }
                     HStack(spacing: WingtipSpace.md) {
-                        Button {
-                            if let kept { tracking.toggleFavorite(kept) }
-                        } label: {
+                        Button { if let kept { tracking.toggleFavorite(kept, undo: undoManager) } } label: {
                             Label(tracking.isFavorite(hex) ? "Favorite" : "Add to Favorites", systemImage: tracking.isFavorite(hex) ? "star.fill" : "star")
                         }
                         .disabled(kept == nil)

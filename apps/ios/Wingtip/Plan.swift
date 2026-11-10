@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import UIKit
 
 /// The route being planned and what the planner has said of it so far:
 /// the course as soon as its ends are found, then the nav log's lines as
@@ -74,10 +75,8 @@ final class Plan {
     /// The route's undo and redo (PlanHistory): each change taken in as
     /// it is planned or cleared, whichever button made it.
     private(set) var history = PlanHistory()
-    /// What the last change took away, for the Undo bar; nil once it goes.
-    private(set) var undoNote: UndoNote?
-    /// The window's, from SwiftUI's environment (RootView): shake to undo
-    /// and the Edit menu's Undo and Redo, for free.
+    /// The window's, from SwiftUI's environment (RootView): shake to undo,
+    /// the Edit menu's Undo and Redo and the bar's Undo (UndoToolbarItem).
     @ObservationIgnored weak var undoManager: UndoManager?
     /// Off while a kept plan is put back at launch: that is not the
     /// pilot's change to undo.
@@ -119,7 +118,7 @@ final class Plan {
     /// The route's idents in order, as the route box shows them.
     var idents: [String] { [dep] + stops + [dest] }
 
-    /// The route cleared at once, no question asked: the Undo bar, shake
+    /// The route cleared at once, no question asked: the bar's Undo, shake
     /// or the Edit menu brings it back (PlanHistory).
     func clear() {
         dep = ""; dest = ""; stops = []
@@ -139,15 +138,15 @@ final class Plan {
     }
 
     /// The route as it is now taken into the history: a change is a step
-    /// to undo, said in the Undo bar where it took something away.
+    /// to undo with the window's UndoManager, named for what it took away
+    /// ("Undo Route Cleared"), and said to VoiceOver where it took
+    /// something, as the bar's Undo comes up silently.
     private func remember() {
         guard remembering else { return }
         let (pushed, note) = history.observe(routeState)
         guard pushed else { return }
-        undoNote = note.map { UndoNote(words: $0) }
-        guard let undoManager else { return }
-        undoManager.registerUndo(withTarget: self) { plan in MainActor.assumeIsolated { plan.stepBack(registering: true) } }
-        undoManager.setActionName(note ?? "Route Change")
+        if let note { UIAccessibility.post(notification: .announcement, argument: note) }
+        undoManager?.register(self, named: note ?? "Route Change") { $0.stepBack(registering: true) }
     }
 
     /// One step back, the route as it was planned again; the step to redo
@@ -155,36 +154,25 @@ final class Plan {
     func stepBack(registering: Bool) {
         guard let state = history.undo() else { return }
         put(state)
-        if registering, let undoManager {
-            undoManager.registerUndo(withTarget: self) { plan in MainActor.assumeIsolated { plan.stepForward(registering: true) } }
-        }
+        if registering { undoManager?.register(self, named: undoManager?.undoActionName ?? "") { $0.stepForward(registering: true) } }
     }
 
     func stepForward(registering: Bool) {
         guard let state = history.redo() else { return }
         put(state)
-        if registering, let undoManager {
-            undoManager.registerUndo(withTarget: self) { plan in MainActor.assumeIsolated { plan.stepBack(registering: true) } }
-        }
+        if registering { undoManager?.register(self, named: undoManager?.redoActionName ?? "") { $0.stepBack(registering: true) } }
     }
 
     private func put(_ state: RouteState) {
-        undoNote = nil
         dep = state.dep; dest = state.dest; stops = state.stops; procedures = state.procedures; extras = state.extras
         ownAltitudeFt = state.ownAltitudeFt; ownAltitudeLegal = state.ownAltitudeLegal; altitudeChoice = state.altitudeChoice
         if routed { plan() } else { forgetPlanned() }
     }
 
-    /// The Undo bar put away, its time up.
-    func dismissUndoNote(_ note: UndoNote) {
-        if undoNote == note { undoNote = nil }
-    }
-
     /// No steps back: a signed-out pilot's routes are not the next one's.
     func forgetHistory() {
         history = PlanHistory(routeState)
-        undoNote = nil
-        undoManager?.removeAllActions(withTarget: self)
+        undoManager?.forget(self)
     }
 
     /// The plan's own kept answers (Kept) shown, from `at`, or fresh again

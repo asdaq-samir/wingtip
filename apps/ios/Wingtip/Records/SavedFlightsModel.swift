@@ -4,7 +4,7 @@ import Observation
 /// The Saved Flights screen's state and its calls: the pilot's flights
 /// from the gateway, one at a time named and noted in its own row (Edit,
 /// then Return or Save sends PATCH /api/flights/{id}), and a delete held
-/// back behind its Undo row until the Undo is gone (docs/navigation.md).
+/// back, with the system's Undo, until the list is left (docs/navigation.md).
 @MainActor
 @Observable
 final class SavedFlightsModel {
@@ -44,8 +44,9 @@ final class SavedFlightsModel {
     private(set) var saving = false
     /// The plans saved here, each drawing the button's checkmark (SaveLabel).
     private(set) var saves = 0
-    /// The flight just deleted and where it was, kept back until its Undo is gone.
-    private(set) var removed: (flight: SavedFlight, at: Int)?
+    /// The flights deleted while the list is open and where each was, the
+    /// last last: kept back from the gateway while their Undo stands.
+    private(set) var removed: [(flight: SavedFlight, at: Int)] = []
     /// The flight being named, and what is written in its row.
     private(set) var editingID: Int?
     var name = ""
@@ -140,27 +141,33 @@ final class SavedFlightsModel {
         }
     }
 
-    /// Taken off the list at once, deleted once its Undo is gone: an Undo
-    /// puts it back with nothing asked of the gateway.
-    func delete(_ flight: SavedFlight) {
-        if let removed { Task { await keep(removed.flight) } }
+    /// Taken off the list at once, deleted on the gateway once the list
+    /// is left (keepRemoved): the window's UndoManager puts it back with
+    /// nothing asked of the gateway, and shake, Command-Z and the bar's
+    /// Undo all do it.
+    func delete(_ flight: SavedFlight, undo: UndoManager? = nil) {
         guard let at = flights.firstIndex(where: { $0.id == flight.id }) else { return }
         if editingID == flight.id { cancelEdit() }
         flights.remove(at: at)
-        removed = (flight, at)
+        removed.append((flight, at))
+        undo?.register(self, named: "Delete Flight") { $0.undoDelete(undo: undo) }
     }
 
-    func undo() {
-        guard let removed else { return }
-        flights.insert(removed.flight, at: min(removed.at, flights.count))
-        self.removed = nil
+    /// The last flight deleted put back where it was; its redo deletes it again.
+    func undoDelete(undo: UndoManager? = nil) {
+        guard let last = removed.popLast() else { return }
+        flights.insert(last.flight, at: min(last.at, flights.count))
+        undo?.register(self, named: "Delete Flight") { $0.delete(last.flight, undo: undo) }
     }
 
-    /// The delete sent, once its Undo is gone or the list is left.
-    func keep(_ flight: SavedFlight) async {
-        if removed?.flight.id == flight.id { removed = nil }
-        do { try await calls.delete(flight.id) } catch {
-            problem = "\(Self.title(flight)) could not be deleted: \(error.localizedDescription)"
+    /// The deletes sent, the list left: nothing is held back after it.
+    func keepRemoved() async {
+        let sending = removed
+        removed = []
+        for (flight, _) in sending {
+            do { try await calls.delete(flight.id) } catch {
+                problem = "\(Self.title(flight)) could not be deleted: \(error.localizedDescription)"
+            }
         }
     }
 

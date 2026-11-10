@@ -44,12 +44,6 @@ struct PlanSheet: View {
                     .glassBackground()
             }
         }
-        // The Undo bar over the foot, where the edit was made.
-        .overlay(alignment: .bottom) {
-            UndoBar()
-                .padding(.bottom, plan.routed && !split ? WingtipSize.tapTarget + WingtipSpace.lg : WingtipSpace.lg)
-                .animation(.default, value: plan.undoNote)
-        }
         // An airplane's card, a point pressed on the map, a hold, a flown
         // track, over the plan.
         .modifier(FlightSheets())

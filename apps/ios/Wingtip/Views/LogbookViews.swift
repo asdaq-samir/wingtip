@@ -41,7 +41,8 @@ struct UntilText: View {
 struct LogbookView: View {
     @Environment(Session.self) private var session
     @Environment(Plan.self) private var plan
-    /// The flights listed, the one open in its row and the one just deleted.
+    @Environment(\.undoManager) private var undoManager
+    /// The flights listed, the one open in its row and the ones just deleted.
     @State private var flights = LogbookEntriesModel()
     @State private var currency: Currency?
     @State private var reminders: Reminders?
@@ -90,12 +91,6 @@ struct LogbookView: View {
                     if let preview { previewRows(preview.name, preview.read) }
                     LogbookPhotoRow { await load() }
                 }
-                if let removed = flights.removed {
-                    Section {
-                        UndoRow(words: "Removed \(LogbookEntriesModel.title(removed.entry))", undo: flights.undo,
-                                done: { Task { await keep(removed.entry) } })
-                    }
-                }
                 if let entries = flights.entries {
                     let months = LogbookSummary.months(entries, matching: query)
                     if entries.isEmpty {
@@ -128,7 +123,7 @@ struct LogbookView: View {
                         }
                     }
                 } else if problem == nil {
-                    Section { Skeleton(rows: 3, label: "Fetching your logbook") }
+                    fetchingRows
                 }
             }
             ProblemLine(problem)
@@ -139,6 +134,7 @@ struct LogbookView: View {
         .navigationBarMinimizesOnScroll()
         .searchable(text: $query, prompt: "Route, airplane or remarks")
         .toolbar {
+            UndoToolbarItem()
             if session.signedIn {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
@@ -172,8 +168,11 @@ struct LogbookView: View {
         }
         .task(id: session.signedIn) { await load() }
         .refreshable { await load() }
-        // Left with an Undo still up: the delete kept.
-        .onDisappear { if let removed = flights.removed { Task { await keep(removed.entry) } } }
+        // Left with deletes still to undo: they are sent, and their Undo goes.
+        .onDisappear {
+            undoManager?.forget(flights)
+            if !flights.removed.isEmpty { Task { await keepRemoved() } }
+        }
     }
 
     // What falls due, the pilot's and their airplanes', soonest first, each
@@ -299,14 +298,27 @@ struct LogbookView: View {
         saving = SavedFile(data: data, type: .commaSeparatedText, name: exportFile.lastPathComponent)
     }
 
-    /// Off the list at once; any earlier delete's Undo gone with it, and kept.
-    private func delete(_ e: LogbookEntry) {
-        if let earlier = flights.delete(e) { Task { await keep(earlier) } }
+    /// The logbook's rows in their own layout, greyed while they come.
+    private var fetchingRows: some View {
+        Section {
+            ForEach(0..<3, id: \.self) { _ in
+                VStack(alignment: .leading, spacing: WingtipSpace.xs) {
+                    LabeledContent("The day · the route", value: "Hours").font(WingtipType.title)
+                    Text("The airplane · its landings · remarks").foregroundStyle(.secondary)
+                }
+                .loading("Fetching your logbook")
+            }
+        }
     }
 
-    /// The delete sent once its Undo is gone, then the currency worked out again without it.
-    private func keep(_ e: LogbookEntry) async {
-        if let failed = await flights.keep(e) { problem = failed }
+    /// Off the list at once, the window's Undo bringing it back.
+    private func delete(_ e: LogbookEntry) {
+        flights.delete(e, undo: undoManager)
+    }
+
+    /// The deletes sent once the logbook is left, then the currency worked out again without them.
+    private func keepRemoved() async {
+        if let failed = await flights.keepRemoved() { problem = failed }
         await load()
     }
 
@@ -318,8 +330,9 @@ struct LogbookView: View {
         guard session.signedIn else { flights.entries = nil; currency = nil; return }
         do {
             let list = try await Gateway.logbook()
-            // A flight whose Undo is still up stays off the list.
-            flights.entries = list.filter { $0.id != flights.removed?.entry.id }
+            // A flight whose Undo still stands stays off the list.
+            let held = Set(flights.removed.map(\.entry.id))
+            flights.entries = list.filter { !held.contains($0.id) }
             currency = try await Gateway.currency()
             reminders = try? await Gateway.reminders()
             paperwork = try? await Gateway.paperwork()

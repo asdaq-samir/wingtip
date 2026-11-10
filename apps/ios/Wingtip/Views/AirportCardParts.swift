@@ -163,6 +163,7 @@ struct AirportCardToolbar: ToolbarContent {
     let plan: Plan
     let fix: OwnShip.Fix?
     let done: () -> Void
+    @Environment(\.undoManager) private var undoManager
     private var shelf: AirportShelf { .shared }
 
     var body: some ToolbarContent {
@@ -182,7 +183,7 @@ struct AirportCardToolbar: ToolbarContent {
                 Label("Add to Plan", systemImage: "plus")
             }
             let kept = shelf.isFavorite(place.ident)
-            Button { shelf.toggleFavorite(KeptAirport(place)) } label: {
+            Button { shelf.toggleFavorite(KeptAirport(place), undo: undoManager) } label: {
                 Label(kept ? "Remove from Favorites" : "Add to Favorites", systemImage: kept ? "star.fill" : "star")
             }
             ShareLink(item: URL(string: "https://\(Config.host)/app/plan?place=\(place.ident)")!, subject: Text(place.name)) {

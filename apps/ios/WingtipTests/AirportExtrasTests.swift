@@ -192,7 +192,17 @@ struct AirportExtrasTests {
         #expect(shelf.isFavorite("KDLH") && shelf.favorites.map(\.ident) == ["KDLH", "C81"])
         shelf.moveFavorites(from: IndexSet(integer: 1), to: 0)
         #expect(shelf.favorites.map(\.ident) == ["C81", "KDLH"])
-        shelf.toggleFavorite(dlh)
+        // Taken off, it is one system Undo from coming back.
+        let undo = UndoManager()
+        undo.groupsByEvent = false
+        undo.beginUndoGrouping()
+        shelf.toggleFavorite(dlh, undo: undo)
+        undo.endUndoGrouping()
+        #expect(!shelf.isFavorite("KDLH"))
+        #expect(undo.undoActionName == "Remove Favorite")
+        undo.undo()
+        #expect(shelf.favorites.map(\.ident) == ["C81", "KDLH"])
+        undo.redo()
         #expect(!shelf.isFavorite("KDLH"))
         shelf.opened(dlh)
         shelf.opened(c81)

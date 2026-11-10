@@ -1,13 +1,14 @@
 import SwiftUI
 
 /// The pilot's saved flights: each a tap back onto the page, named and
-/// noted in its own row (Edit), a swipe away with its Undo, and the plan
+/// noted in its own row (Edit), a swipe away with the system's Undo, and the plan
 /// on the page saved with the button at the top. Its state is the
 /// model's (SavedFlightsModel).
 struct FlightsView: View {
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.undoManager) private var undoManager
     /// The iPad's inspector's close, where it holds the list (SplitLayout).
     @Environment(\.closeCard) private var closeCard
     @State private var model = SavedFlightsModel()
@@ -18,10 +19,6 @@ struct FlightsView: View {
                 ContentUnavailableView("Sign in to save flights", systemImage: "person.crop.circle", description: Text("Your flights are kept with your account, on every device."))
             } else if model.flights.isEmpty {
                 ContentUnavailableView("No saved flights", systemImage: "tray", description: Text("Save the plan on the page with the button above."))
-            }
-            if let removed = model.removed {
-                UndoRow(words: "Removed \(SavedFlightsModel.title(removed.flight))", undo: model.undo,
-                        done: { Task { await model.keep(removed.flight) } })
             }
             ForEach(model.flights) { flight in
                 if model.editingID == flight.id {
@@ -41,14 +38,14 @@ struct FlightsView: View {
                         editButton(flight)
                         shareButtons(flight)
                         flownTrack(flight)
-                        Button("Delete", systemImage: "trash", role: .destructive) { model.delete(flight) }
+                        Button("Delete", systemImage: "trash", role: .destructive) { model.delete(flight, undo: undoManager) }
                     }
                     .swipeActions(edge: .leading) {
                         flownTrack(flight).tint(.accentColor)
                         editButton(flight)
                     }
                     .swipeActions(edge: .trailing) {
-                        Button("Delete", systemImage: "trash", role: .destructive) { model.delete(flight) }
+                        Button("Delete", systemImage: "trash", role: .destructive) { model.delete(flight, undo: undoManager) }
                     }
                 }
             }
@@ -57,6 +54,7 @@ struct FlightsView: View {
         .navigationTitle("Saved Flights")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            UndoToolbarItem()
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     guard let request = plan.saved() else { return }
@@ -69,8 +67,11 @@ struct FlightsView: View {
         }
         .task(id: session.signedIn) { await model.load() }
         .sheet(item: $model.sendingLink) { ActivityView(items: [$0.url]).presentationDetents([.medium, .large]) }
-        // Left with an Undo still up: the delete kept.
-        .onDisappear { if let removed = model.removed { Task { await model.keep(removed.flight) } } }
+        // Left with deletes still to undo: they are sent, and their Undo goes.
+        .onDisappear {
+            undoManager?.forget(model)
+            if !model.removed.isEmpty { Task { await model.keepRemoved() } }
+        }
     }
 
     private func editButton(_ flight: SavedFlight) -> some View {

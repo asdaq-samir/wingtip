@@ -1,8 +1,9 @@
 import SwiftUI
 
 /// The bar beside the one search: the microphone, then the account button
-/// (the Main artboard). Stock toolbar items, glass on iOS 26 and later as
-/// the system draws its bar's buttons.
+/// (the Main artboard), and the system's Undo at the left while an edit
+/// can be taken back (UndoToolbarItem). Stock toolbar items, glass on
+/// iOS 26 and later as the system draws its bar's buttons.
 struct SearchBarItems: ToolbarContent {
     let model: OneSearchModel
     /// One line heard and done (the sheet's FieldRunner); nil where speech
@@ -12,6 +13,7 @@ struct SearchBarItems: ToolbarContent {
     let open: (SheetPage) -> Void
 
     var body: some ToolbarContent {
+        UndoToolbarItem()
         ToolbarItemGroup(placement: .topBarTrailing) {
             if let hear {
                 MicButton(listening: model.hearing || ClearanceListener.shared.hearingOnce, busy: model.busy, action: hear)

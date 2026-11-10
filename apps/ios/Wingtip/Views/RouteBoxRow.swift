@@ -92,8 +92,8 @@ struct RouteBoxRow: View {
 
     /// The route's menu: the nav log and Clear (the web's ••• keeps them
     /// with Share; here Share has the bar's left, the owner's of 2026-11-09).
-    /// Clear asks nothing: "Route cleared · Undo" follows it (UndoBar), the
-    /// owner's warn-never-limit.
+    /// Clear asks nothing: the bar's Undo, shake or the Edit menu takes it
+    /// back (UndoToolbarItem), the owner's warn-never-limit.
     private var more: some View {
         Menu {
             Button { open(.navlog) } label: { Label("Nav Log", systemImage: WingtipIcon.navLog) }

@@ -37,7 +37,7 @@ struct PlanHistory: Equatable, Sendable {
 
     /// The route as it is now, taken in: a change is a step back (`pushed`),
     /// with what it took away in words where it took something (`note`,
-    /// for the Undo bar). The same route again is no step.
+    /// for the Undo's name). The same route again is no step.
     mutating func observe(_ next: RouteState) -> (pushed: Bool, note: String?) {
         guard next != now else { return (false, nil) }
         let note = Self.note(from: now, to: next)
@@ -65,7 +65,7 @@ struct PlanHistory: Equatable, Sendable {
         return again
     }
 
-    /// What a change took away, in the bar's words ("Route cleared", "KMSN
+    /// What a change took away, the Undo's name ("Route cleared", "KMSN
     /// removed"); nil for one that only added or changed a figure, which
     /// shake and the Edit menu still undo.
     static func note(from before: RouteState, to after: RouteState) -> String? {
@@ -81,13 +81,6 @@ struct PlanHistory: Equatable, Sendable {
     }
 }
 
-/// The words of the edit the Undo bar offers to take back; each its own,
-/// so the same words twice is a bar put up again.
-struct UndoNote: Equatable, Identifiable, Sendable {
-    let id = UUID()
-    let words: String
-}
-
 extension Plan {
     /// The route as the pilot has set it now.
     var routeState: RouteState {
@@ -96,7 +89,7 @@ extension Plan {
     }
 
     /// The last change taken back: through the window's UndoManager where
-    /// there is one, so shake and the Edit menu stay in step with the bar.
+    /// there is one, so shake, the Edit menu and the bar's Undo stay in step.
     func undo() {
         if let undoManager, undoManager.canUndo { undoManager.undo() } else { stepBack(registering: false) }
     }
