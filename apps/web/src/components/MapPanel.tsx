@@ -741,10 +741,8 @@ export default function MapPanel({
       <div
         ref={setBody}
         className={cn(
-          // No line over it at rest, on any tab: the head draws its own
-          // while content is scrolled under it (index.css, data-under),
-          // as iOS's sheets do (the owner, 2026-11-05: "why is there a
-          // separator for all the tabs?", then "Ok").
+          // No line over it at rest, on any tab: the head draws its own while content is scrolled under it
+          // (index.css, data-under), as iOS's sheets do (the owner, 2026-11-05: "why is there a separator for all the tabs?", then "Ok").
           "flex min-h-0 flex-1 flex-col",
           expanded && !fromBottom && "pb-4",
           SHEET_BELOW,
@@ -766,7 +764,9 @@ export default function MapPanel({
         data-panel-body=""
       >
         <div ref={setInnerNode} className="flex min-h-0 flex-1 flex-col">
-          <TabKept away={cardsUp}>{children}</TabKept>
+          <TabKept away={cardsUp} still={layer === "console"}>
+            {children}
+          </TabKept>
           <SheetCardHost shown={cardsUp} />
         </div>
       </div>

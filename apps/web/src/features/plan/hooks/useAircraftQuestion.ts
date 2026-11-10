@@ -10,6 +10,7 @@ import { usePreferences } from "../../../lib/preferences";
 import { grouped } from "../../../lib/format";
 import { airportQuery } from "../../../lib/queryClient";
 import { callEngine } from "../../../lib/engine/engine";
+import { useShown } from "../../../lib/shown";
 
 const NONE: TrafficAircraft[] = [];
 
@@ -65,6 +66,7 @@ export { useTrafficFocus } from "../../../lib/map/position/tracking";
  * owner's ask ("don't need the extra filters at the bottom").
  */
 export function useFilteredAircraft(seen: TrafficAircraft[], from: LatLon | null) {
+  const shown = useShown();
   const filter = asAsked({ ...keptFilter(usePreferences((s) => s.aircraftFilter)), kind: "any", band: "any", operator: "" });
   const ident = filter.place === "airport" ? filter.airport.trim().toUpperCase() : "";
   const { data: field, isError: noField } = useQuery({ ...airportQuery(ident), enabled: ident.length >= 3 });
@@ -79,6 +81,8 @@ export function useFilteredAircraft(seen: TrafficAircraft[], from: LatLon | null
     queryFn: () => api.traffic({ lat: center!.lat, lon: center!.lon, radius }),
     enabled: !!center,
     refetchInterval: FILTER_REFRESH_MS,
+    // Not while the Airplane strip is hidden; asked on its return (lib/shown).
+    subscribed: shown,
     meta: { silent: true },
   });
   const aroundPlanes = around?.aircraft;
@@ -98,6 +102,7 @@ export function useFilteredAircraft(seen: TrafficAircraft[], from: LatLon | null
     queryFn: () => api.trafficBased(basedAsk),
     enabled: basedAsk.length > 0,
     refetchInterval: (query) => ((query.state.data?.pending.length ?? 0) > 0 ? 5_000 : false),
+    subscribed: shown,
     meta: { silent: true },
   });
   const kept = placed.filter(

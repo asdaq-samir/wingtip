@@ -14,7 +14,7 @@ import {
 import { showError } from "../../lib/problems";
 import { patched, useSearchParamsNow } from "../../lib/useSearchParamsNow";
 import { cn } from "cn";
-import { PagesShown } from "../../components/pagesShown";
+import { Shown } from "../../lib/shown";
 import DevGuard from "../../components/DevGuard";
 import MapPanel from "../../components/MapPanel";
 import { ConsoleInPanelContext, useConsoleOpen, MapInsetsContext, NO_INSETS, type MapInsets, type PanelState } from "../../lib/mapChrome";
@@ -229,7 +229,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
   // an ordinary tab page"): put away, it is hidden rather than taken down,
   // and the next tap on Setup shows it at once -- where it was drawn anew
   // at each, a blank moment and then the page. Its own pages go back to
-  // its list as it is put away (ConsolePages' PagesShown).
+  // its list as it is put away (ConsolePages), its work stopped (lib/shown).
   const [setupDrawn, setSetupDrawn] = useState(false);
   if (layerDrawn && !setupDrawn) setSetupDrawn(true);
   const consoleLayerOf = (pieces: WorkspacePieces) => (
@@ -241,9 +241,9 @@ export default function MapPage({ mode }: { mode: Mode }) {
         onClose={closeConsole}
         shown={consoleLayer}
       >
-        <PagesShown.Provider value={consoleLayer}>
+        <Shown.Provider value={consoleLayer}>
           <AfterTheSheet>{pieces.console}</AfterTheSheet>
-        </PagesShown.Provider>
+        </Shown.Provider>
       </ConsoleLayer>
     </ConsoleInPanelContext.Provider>
   );

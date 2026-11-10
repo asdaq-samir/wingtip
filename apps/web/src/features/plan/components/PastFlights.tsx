@@ -10,6 +10,7 @@ import type { PastFlightSummary } from "../../../lib/api/types";
 import { TEXT } from "../../../lib/text";
 import { dayOf, lasted, placeOf, when, whenSaid } from "./pastFlightFormat";
 import { pastFlightsQuery } from "./pastFlightsQuery";
+import { useShown } from "../../../lib/shown";
 
 // The stock calendar, as the departure's picker has it (DepartPicker):
 // its own chunk, asked for once a day is to be picked.
@@ -58,6 +59,8 @@ export default function PastFlights({
   const [picking, setPicking] = useState(false);
   const { data, isError, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching } = useInfiniteQuery({
     ...pastFlightsQuery(hex, from),
+    // Not while its tab is out of sight (lib/shown).
+    subscribed: useShown(),
     // Days adsb.lol did not give just now are asked for again, a minute
     // apart, five times at most, while only the first page is out.
     refetchInterval: (query) => {

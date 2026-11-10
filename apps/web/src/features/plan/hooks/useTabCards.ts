@@ -170,10 +170,14 @@ export function useAddressCards(searchParams: URLSearchParams, setSearchParams: 
   }, [flight]);
   // Each put back on its own: `pick` changes with the panel's setter, and
   // putting `listing` back with it hid the traffic while the list was up.
+  // Not while Setup is up over the Airplane tab: the list is out of sight,
+  // and the traffic asked for it every few seconds with it (lib/shown).
+  const setupUp = useConsoleOpen((st) => st.open);
+  const listing = aircraftOpen && !setupUp;
   useEffect(() => {
-    useTracking.setState({ listing: aircraftOpen });
+    useTracking.setState({ listing });
     return () => useTracking.setState({ listing: false });
-  }, [aircraftOpen]);
+  }, [listing]);
   useEffect(() => {
     useTracking.setState({ pick: (hex, plane) => selectFlight(hex, plane) });
     return () => useTracking.setState({ pick: null });

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { browserStorage } from "../../storage";
+import { useShownStore } from "../../shown";
 
 /**
  * Own ship: the phone's position on the chart, from the browser's
@@ -116,6 +117,13 @@ export function useOwnShipNear(): { lat: number; lon: number } | null {
  *  measured from; null while it is off. */
 export function useOwnFix() {
   return useOwnShip((o) => (o.enabled ? o.fix : null));
+}
+
+/** The same, read only while in sight (lib/shown): a fix a
+ *  second is a render a second, which a tab kept hidden does without,
+ *  reading the fix again as it is back. */
+export function useOwnFixShown() {
+  return useShownStore(useOwnShip, (o) => (o.enabled ? o.fix : null));
 }
 
 /** Own ship as it was before a dry run took it over, to give back

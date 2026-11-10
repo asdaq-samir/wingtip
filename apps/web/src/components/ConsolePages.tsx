@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
 import { ListRow } from "./GroupedList";
-import { PagesShown } from "./pagesShown";
+import { useShown } from "../lib/shown";
 import { holdOpenCard } from "../lib/openCards";
 import { useWantedPage } from "./wantedPage";
 import CloseButton from "./CloseButton";
@@ -85,8 +85,8 @@ export function ConsolePages({
     const { path, took } = useWantedPage.getState();
     if (seen.wanted && path[0] === seen.wanted && seen.known.split(" ").includes(seen.wanted)) took();
   }, [seen]);
-  // Back to the list as the tab holding it is put away (PagesShown).
-  const shown = useContext(PagesShown);
+  // Back to the list as the tab holding it is put away (lib/shown).
+  const shown = useShown();
   const [wasShown, setWasShown] = useState(shown);
   if (shown !== wasShown) {
     setWasShown(shown);
