@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { cardClose, mapStill, settle, slow } from "./helpers";
+import { noCheckpoints } from "./startState";
 
 /**
  * A tap on the course opens its leg, as ForeFlight's does (the owner's
@@ -38,6 +39,7 @@ async function casedLegs(page: Page): Promise<number> {
 }
 
 test("a tap beside the course opens its Route Leg sheet, its figures the nav log's", async ({ page }) => {
+  await noCheckpoints(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   // The legs in, the nav log's figures with them.
