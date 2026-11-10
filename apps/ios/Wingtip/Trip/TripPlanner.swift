@@ -42,7 +42,9 @@ final class TripPlanner {
     /// airplane picked as "", and the rules as the assistant's default.
     func plan(_ text: String, context: AssistantContext) {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
+        // Claude's, so never asked while the server's Claude features are
+        // off (ServerFeatures); Ask offers no way here then.
+        guard !text.isEmpty, ServerFeatures.claudeOnNow else { return }
         stop()
         reset()
         asked = text; busy = true; status = "Reading the trip"
