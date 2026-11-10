@@ -1149,6 +1149,46 @@ enum EngineContract {
         var text: String
     }
 
+    /// A station's newest METAR as the weather store keeps it.
+    struct AwcMetarsReadAnswerValue: Codable, Equatable, Sendable {
+        var raw: String?
+        var observedAt: String?
+        var flightCategory: String?
+        var wx: String
+        var ceilingFt: Double?
+        var ceilingUnknown: Bool
+        /// The ceiling layer's cover as a METAR writes the ceiling (OVC008, VV002; FMH-1 ch. 9): BKN, OVC or VV for an obscuration; null with no ceiling or one of unknown height.
+        var ceilingCover: String?
+        var visibilitySm: Double?
+        var windDirTrueDeg: Double?
+        var windSpeedKt: Double?
+        var windGustKt: Double?
+        var altimeterInHg: Double?
+        var tempC: Double?
+        var dewpointC: Double?
+        var lat: Double?
+        var lon: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case raw
+            case observedAt = "observed_at"
+            case flightCategory = "flight_category"
+            case wx
+            case ceilingFt = "ceiling_ft"
+            case ceilingUnknown = "ceiling_unknown"
+            case ceilingCover = "ceiling_cover"
+            case visibilitySm = "visibility_sm"
+            case windDirTrueDeg = "wind_dir_true_deg"
+            case windSpeedKt = "wind_speed_kt"
+            case windGustKt = "wind_gust_kt"
+            case altimeterInHg = "altimeter_in_hg"
+            case tempC = "temp_c"
+            case dewpointC = "dewpoint_c"
+            case lat
+            case lon
+        }
+    }
+
     struct AwcMetarsReadInput: Codable, Equatable, Sendable {
         var text: String
     }

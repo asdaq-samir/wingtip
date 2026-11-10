@@ -1175,7 +1175,7 @@ export interface EngineContract {
     answer: AwcGairmetsReadAnswer;
   };
   /**
-   * The Aviation Weather Center's national metars cache file (XML) read into the shape the weather store keeps: {ident: report}, the newest per station: its text, time, flight category (only what the visibility settles where the ceiling is not known), ceiling (14 CFR 1.1), visibility, wind, altimeter, temperature and dewpoint, and where it is.
+   * The Aviation Weather Center's national metars cache file (XML) read into the shape the weather store keeps: {ident: report}, the newest per station: its text, time, flight category (only what the visibility settles where the ceiling is not known), ceiling (14 CFR 1.1) and its layer's cover, visibility, wind, altimeter, temperature and dewpoint, and where it is.
    */
   awc_metars_read: {
     input: AwcMetarsReadInput;
@@ -4020,7 +4020,33 @@ export interface AwcGairmetsReadInput {
 export interface AwcMetarsReadInput {
   text: string;
 }
-export interface AwcMetarsReadAnswer {}
+export interface AwcMetarsReadAnswer {
+  [k: string]: AwcMetar;
+}
+/**
+ * A station's newest METAR as the weather store keeps it.
+ */
+export interface AwcMetar {
+  raw: string | null;
+  observed_at: string | null;
+  flight_category: string | null;
+  wx: string;
+  ceiling_ft: number | null;
+  ceiling_unknown: boolean;
+  /**
+   * The ceiling layer's cover as a METAR writes the ceiling (OVC008, VV002; FMH-1 ch. 9): BKN, OVC or VV for an obscuration; null with no ceiling or one of unknown height.
+   */
+  ceiling_cover: "BKN" | "OVC" | "VV" | null;
+  visibility_sm: number | null;
+  wind_dir_true_deg: number | null;
+  wind_speed_kt: number | null;
+  wind_gust_kt: number | null;
+  altimeter_in_hg: number | null;
+  temp_c: number | null;
+  dewpoint_c: number | null;
+  lat: number | null;
+  lon: number | null;
+}
 export interface AwcPirepsReadInput {
   text: string;
 }

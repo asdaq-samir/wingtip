@@ -229,9 +229,9 @@ fun Engine.awcGairmetsRead(text: String): Result<List<Map<String, JsonElement>>>
     rule("awc_gairmets_read", EngineContract.AwcGairmetsReadInput(text = text))
 
 /**
- * The Aviation Weather Center's national metars cache file (XML) read into the shape the weather store keeps: {ident: report}, the newest per station: its text, time, flight category (only what the visibility settles where the ceiling is not known), ceiling (14 CFR 1.1), visibility, wind, altimeter, temperature and dewpoint, and where it is.
+ * The Aviation Weather Center's national metars cache file (XML) read into the shape the weather store keeps: {ident: report}, the newest per station: its text, time, flight category (only what the visibility settles where the ceiling is not known), ceiling (14 CFR 1.1) and its layer's cover, visibility, wind, altimeter, temperature and dewpoint, and where it is.
  */
-fun Engine.awcMetarsRead(text: String): Result<Map<String, JsonElement>> =
+fun Engine.awcMetarsRead(text: String): Result<Map<String, EngineContract.AwcMetarsReadAnswerValue>> =
     rule("awc_metars_read", EngineContract.AwcMetarsReadInput(text = text))
 
 /**

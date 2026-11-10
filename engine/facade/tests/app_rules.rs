@@ -1,9 +1,11 @@
 //! The small rules every app once wrote for itself (the simplicity
 //! measure of 2026-11-10: aircraft form limits, the traffic notice, the
 //! paperwork's due tone, the drills' boxes, the sphere's figures, the IFR
-//! alternate's window), each held to its shared fixture (apps/web/src/lib/fixtures) and its answers
-//! to the contract
-//! (engine/contract/engine.schema.json), asked by name as every host asks.
+//! alternate's window), each held to its shared fixture
+//! (apps/web/src/lib/fixtures) and its answers to the contract
+//! (engine/contract/engine.schema.json), asked by name as every host asks;
+//! and the AWC METARs' answer, typed in the contract with its ceiling's
+//! cover.
 
 mod common;
 
@@ -132,4 +134,16 @@ fn the_ifr_alternates_window() {
         close(&window["start"], &case["start"], "start");
         close(&window["end"], &case["end"], "end");
     }
+}
+
+#[test]
+fn a_metar_reads_with_its_ceilings_cover() {
+    let xml = "<response><data><METAR><raw_text>KMSN 101853Z 22012KT 10SM OVC008 05/02 A3001</raw_text>\
+        <station_id>KMSN</station_id><observation_time>2026-11-10T18:53:00Z</observation_time>\
+        <latitude>43.14</latitude><longitude>-89.34</longitude><wind_dir_degrees>220</wind_dir_degrees>\
+        <wind_speed_kt>12</wind_speed_kt><visibility_statute_mi>10+</visibility_statute_mi><altim_in_hg>30.01</altim_in_hg>\
+        <sky_condition sky_cover=\"OVC\" cloud_base_ft_agl=\"800\"/><flight_category>IFR</flight_category></METAR></data></response>";
+    let read = ask("awc_metars_read", json!({ "text": xml }));
+    assert_eq!(read["KMSN"]["ceiling_cover"], "OVC");
+    close(&read["KMSN"]["ceiling_ft"], &json!(800), "ceiling_ft");
 }

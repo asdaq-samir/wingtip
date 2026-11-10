@@ -1086,6 +1086,44 @@ object EngineContract {
         val text: String,
     )
 
+    /**
+     * A station's newest METAR as the weather store keeps it.
+     */
+    @Serializable
+    data class AwcMetarsReadAnswerValue(
+        val raw: String? = null,
+        @SerialName("observed_at")
+        val observedAt: String? = null,
+        @SerialName("flight_category")
+        val flightCategory: String? = null,
+        val wx: String,
+        @SerialName("ceiling_ft")
+        val ceilingFt: Double? = null,
+        @SerialName("ceiling_unknown")
+        val ceilingUnknown: Boolean,
+        /**
+         * The ceiling layer's cover as a METAR writes the ceiling (OVC008, VV002; FMH-1 ch. 9): BKN, OVC or VV for an obscuration; null with no ceiling or one of unknown height.
+         */
+        @SerialName("ceiling_cover")
+        val ceilingCover: String? = null,
+        @SerialName("visibility_sm")
+        val visibilitySm: Double? = null,
+        @SerialName("wind_dir_true_deg")
+        val windDirTrueDeg: Double? = null,
+        @SerialName("wind_speed_kt")
+        val windSpeedKt: Double? = null,
+        @SerialName("wind_gust_kt")
+        val windGustKt: Double? = null,
+        @SerialName("altimeter_in_hg")
+        val altimeterInHg: Double? = null,
+        @SerialName("temp_c")
+        val tempC: Double? = null,
+        @SerialName("dewpoint_c")
+        val dewpointC: Double? = null,
+        val lat: Double? = null,
+        val lon: Double? = null,
+    )
+
     @Serializable
     data class AwcMetarsReadInput(
         val text: String,
