@@ -1,0 +1,133 @@
+import { test, expect, type Page } from "@playwright/test";
+import { grabberTo, settled, sideDrawer, slow } from "./helpers";
+import { CARDS, type CardRow, type Check } from "./cardTable";
+import { go, hittable, scrollOf } from "./cardEntries";
+
+/**
+ * Scrolling every card, by the one scrolling rule (the owner, 2026-11-10;
+ * card-tests-spec): for each card of cardTable, scrolled to its end its name
+ * and ✕ stay on screen and take a tap (the pinned head); at half a finger's
+ * drag up on its body raises the sheet before the body scrolls, and all the
+ * way up a drag down from its top lowers it; at twice the text size its
+ * last row is still reached; a sideways row slides without moving the
+ * sheet; and its place is kept going back to it. A phone's sheet: the
+ * desktop's side panel has no detents to drag between. A check a card is
+ * excused from says why (cardTable's `not`).
+ */
+
+const panel = (page: Page) => sideDrawer(page);
+
+async function open(page: Page, row: CardRow) {
+  await row.entries[0]!.open(page);
+  await expect(page.getByTestId(row.card)).toBeVisible({ timeout: slow(20_000) });
+  await settled(panel(page));
+}
+
+/** A finger's drag, by the browser's own touch events (CDP), as traffic.spec drags the sheet. */
+async function drag(page: Page, from: { x: number; y: number }, dx: number, dy: number) {
+  const cdp = await page.context().newCDPSession(page);
+  const touch = (type: "touchStart" | "touchMove" | "touchEnd", q?: { x: number; y: number }) =>
+    cdp.send("Input.dispatchTouchEvent", { type, touchPoints: q ? [{ ...q, id: 1 }] : [] });
+  await touch("touchStart", from);
+  for (let i = 1; i <= 8; i++) await touch("touchMove", { x: from.x + (dx * i) / 8, y: from.y + (dy * i) / 8 });
+  await touch("touchEnd");
+}
+
+/** The middle of the card's body, a third of the way down what is on screen of it. */
+async function bodyPoint(page: Page, row: CardRow) {
+  const box = (await page.getByTestId(row.card).boundingBox())!;
+  const view = page.viewportSize()!;
+  const top = Math.max(box.y, 0);
+  const bottom = Math.min(box.y + box.height, view.height);
+  return { x: box.x + box.width / 2, y: top + (bottom - top) / 3 };
+}
+
+/** The reason a card is excused from a check, or none. */
+const excused = (row: CardRow, check: Check) => row.not?.[check];
+
+for (const row of CARDS) {
+  test.describe(`${row.name}`, () => {
+    test.beforeEach(({ page }) => {
+      test.skip(page.viewportSize()!.width >= 768, "a phone's sheet; the desktop's side panel has no detents");
+    });
+
+    test("scrolled to its end, its name and ✕ are still in sight and take a tap", async ({ page }) => {
+      test.skip(!!excused(row, "scroll"), excused(row, "scroll") ?? "");
+      await open(page, row);
+      await grabberTo(page, "full");
+      await scrollOf(page, row.card, "end");
+      await expect.poll(() => hittable(page, [`${row.close}-pinned`, row.close]), { timeout: slow(10_000) }).not.toBeNull();
+    });
+
+    test("at half a drag up on its body raises the sheet before the body scrolls", async ({ page }) => {
+      test.skip(!!excused(row, "dragUp"), excused(row, "dragUp") ?? "");
+      await open(page, row);
+      await grabberTo(page, "half");
+      const before = await scrollOf(page, row.card);
+      await drag(page, await bodyPoint(page, row), 0, -160);
+      await expect(panel(page)).toHaveAttribute("data-panel", "full");
+      await settled(panel(page));
+      expect((await scrollOf(page, row.card)).top).toBe(before.top);
+    });
+
+    test("all the way up, a drag down from its top lowers the sheet", async ({ page }) => {
+      test.skip(!!excused(row, "dragDown"), excused(row, "dragDown") ?? "");
+      await open(page, row);
+      await grabberTo(page, "full");
+      await scrollOf(page, row.card, 0);
+      await drag(page, await bodyPoint(page, row), 0, 200);
+      await expect(panel(page)).not.toHaveAttribute("data-panel", "full");
+    });
+
+    test("at twice the text size its last row is reached and takes a tap", async ({ page }) => {
+      test.skip(!!excused(row, "textSize"), excused(row, "textSize") ?? "");
+      await page.addInitScript(() => {
+        document.addEventListener("DOMContentLoaded", () => (document.documentElement.style.fontSize = "32px"));
+      });
+      await open(page, row);
+      await grabberTo(page, "full");
+      await scrollOf(page, row.card, "end");
+      const last = page.getByTestId(row.card).locator("button:visible, a:visible, [role=tab]:visible").last();
+      await last.scrollIntoViewIfNeeded();
+      await expect(last).toBeInViewport();
+      const hit = await last.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        const at = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return !!at && (el === at || el.contains(at));
+      });
+      expect(hit, "the last control is the topmost thing at its middle").toBe(true);
+    });
+
+    test("a sideways row slides sideways and leaves the sheet where it was", async ({ page }) => {
+      test.skip(!row.sideways, excused(row, "sideways") ?? "no sideways row");
+      await open(page, row);
+      await grabberTo(page, "full");
+      const strip = page.getByTestId(row.sideways!);
+      await strip.scrollIntoViewIfNeeded();
+      const first = strip.locator(":scope > * > * > *").first();
+      const was = (await first.boundingBox())!;
+      const box = (await strip.boundingBox())!;
+      await drag(page, { x: box.x + box.width * 0.8, y: box.y + box.height / 2 }, -box.width * 0.6, 0);
+      await expect.poll(async () => (await first.boundingBox())!.x, { timeout: slow(5_000) }).toBeLessThan(was.x - 10);
+      await expect(panel(page)).toHaveAttribute("data-panel", "full");
+    });
+
+    test("its place is kept going back to it; a new one of its kind starts at the top", async ({ page }) => {
+      test.skip(!row.inside, excused(row, "position") ?? "nothing opens inside it");
+      await open(page, row);
+      await grabberTo(page, "full");
+      const { max } = await scrollOf(page, row.card);
+      test.skip(max < 40, "too short to scroll at this size");
+      const at = (await scrollOf(page, row.card, Math.round(max / 2))).top;
+      await row.inside!.open(page);
+      await row.inside!.back(page);
+      await expect.poll(async () => (await scrollOf(page, row.card)).top, { timeout: slow(5_000) }).toBeGreaterThanOrEqual(at - 2);
+      if (row.card === "place-card") {
+        // Another field's card: from its top.
+        await go(page, "/app/plan?place=KMSP");
+        await expect(page.getByTestId(row.card)).toBeVisible({ timeout: slow(20_000) });
+        expect((await scrollOf(page, row.card)).top).toBeLessThanOrEqual(0);
+      }
+    });
+  });
+}
