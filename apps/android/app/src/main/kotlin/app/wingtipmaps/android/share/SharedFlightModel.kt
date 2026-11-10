@@ -80,7 +80,7 @@ class SharedFlightModel(app: Application) : AndroidViewModel(app) {
 
     /** Use This Plan: the route planned as the receiver's own -- its
      *  altitude, its departure time while still ahead, its flight rules --
-     *  on their own airplane, then its nav log (the FPL tab's legs). */
+     *  on their own airplane, then its nav log (the plan's legs). */
     fun use(plan: Plan) {
         val shown = _state.value as? State.Shown ?: return
         val p = shown.plan

@@ -49,19 +49,26 @@ import app.wingtipmaps.android.live.SpecialUseRows
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.offline.KeptForAir
+import app.wingtipmaps.android.ui.sheet.CardSheet
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 import kotlinx.coroutines.launch
 
 /**
  * The card of what was tapped on the map, as the web's map opens one in
  * its sheet (MapCard: AirspaceCardBody, VorCard, FixCard, WaypointCard,
- * the field's card, a traffic airplane's), in the one sheet with its
+ * a traffic airplane's; a field's is AirportCard), in the one sheet with its
  * title and its close: what it is, the figures a pilot reads off it, each
  * from the tapped feature's own fields or the engine (MapRules), and the
  * card kind's actions (CardActionRow), the same set as the web's.
  */
 @Composable
-fun MapCardSheet(pick: MapPick, plan: Plan, onClose: () -> Unit) {
+fun MapCardSheet(pick: MapPick, plan: Plan, onClose: () -> Unit, onToPlan: () -> Unit = onClose) {
+    // A field's card is the one AirportCard everywhere, its own top bar
+    // in a card sheet (the strip has no docked sheet to show it in).
+    if (pick is MapPick.Airport) {
+        CardSheet(onClose) { AirportCard(pick.ident, plan, onClose = onClose, onDone = onToPlan) }
+        return
+    }
     val title = when (pick) {
         is MapPick.Airport -> pick.ident
         is MapPick.Airspace -> stringResource(R.string.airspace_class, pick.airspaceClass)
@@ -79,13 +86,11 @@ fun MapCardSheet(pick: MapPick, plan: Plan, onClose: () -> Unit) {
         run()
         if (action != CardAction.CALL && action != CardAction.ADDRESS && action != CardAction.COPY) onClose()
     }
-    // Live cards refresh on a pull: a field's weather is asked again (its
-    // skeleton shows the fetch), traffic is heard again at once.
+    // Live cards refresh on a pull: traffic is heard again at once.
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var asked by remember { mutableIntStateOf(0) }
     var hearing by remember { mutableStateOf(false) }
-    val live = pick is MapPick.Airport || pick is MapPick.Plane
+    val live = pick is MapPick.Plane
     val refresh = {
         if (pick is MapPick.Plane) {
             scope.launch {
@@ -94,7 +99,6 @@ fun MapCardSheet(pick: MapPick, plan: Plan, onClose: () -> Unit) {
                 hearing = false
             }
         }
-        asked += 1
     }
     WingtipSheet(title = title, onClose = onClose) {
         RefreshBox(refreshing = hearing, onRefresh = refresh, enabled = live) {
@@ -103,7 +107,7 @@ fun MapCardSheet(pick: MapPick, plan: Plan, onClose: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
             ) {
                 when (pick) {
-                    is MapPick.Airport -> AirportCard(pick.ident, asked, actions, act)
+                    is MapPick.Airport -> {}
                     is MapPick.Airspace -> {
                         AirspaceCard(pick)
                         PointActions(CardKind.POINT, pick, actions, act)
@@ -164,30 +168,6 @@ internal fun Fact(name: String, value: String, description: Boolean = false) {
 }
 
 internal fun ink(hex: String) = Color(hex.toColorInt())
-
-/** A field's card, asked of the planner as it opens (the web's airport
- *  card) and again each time `asked` changes, with the airport card's
- *  actions; its skeleton while it comes. */
-@Composable
-private fun AirportCard(ident: String, asked: Int, actions: RouteActions, act: (CardAction, () -> Unit) -> Unit) {
-    // Kept for the air as it comes, and the kept card with its age where
-    // the network fails (KeptForAir).
-    val place by produceState<Result<KeptForAir.Had<AirportPlace>>?>(null, ident, asked) {
-        value = null
-        value = runCatching { KeptForAir.had(KeptForAir.AIRPORTS, ident.uppercase(), AirportPlace.serializer()) { Planner.place(ident) } }
-    }
-    when (val got = place) {
-        null -> Skeleton(rows = 4)
-        else -> got.fold(
-            { had ->
-                val field = had.value
-                CardActionRow(CardKind.AIRPORT, can = { actions.canAirport(it, field) }, onAction = { a -> act(a) { actions.airport(a, field) } })
-                PlaceCard(field, keptAtMs = had.fetchedAtMs.takeIf { had.kept })
-            },
-            { ProblemLine(it.message) },
-        )
-    }
-}
 
 /** An airplane heard (the web's traffic card): what it is, its height
  *  against own ship's as TCAS writes it (the engine's `traffic_marks`),

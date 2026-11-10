@@ -21,7 +21,7 @@ import app.wingtipmaps.android.navigation.generated.Screen
  * (ScreenRequests, the one way in OpenScreen keeps), so a screen deeper
  * than two taps gets a way in from a list that already holds its kind
  * (docs/navigation.md): Setup's Checklists, Coach and Emergency Assistant,
- * the Airplane tab's Emergency Assistant. Its title in the tint, as a
+ * the Airplane page's Emergency Assistant. Its title in the tint, as a
  * thing tapped is; the line under it says what is there.
  */
 @Composable
@@ -35,6 +35,6 @@ internal fun ScreenRow(screen: Screen, @StringRes title: Int, @StringRes line: I
 }
 
 /** The emergency assistant, on the ground too: two taps from the map
- *  (Setup's list, the Airplane tab's checklists), where it was three. */
+ *  (the Airplane page's checklists), where it was three. */
 @Composable
 internal fun EmergencyAssistantRow() = ScreenRow(Screen.EMERGENCY, R.string.emergency_assistant, R.string.emergency_assistant_ground_line)

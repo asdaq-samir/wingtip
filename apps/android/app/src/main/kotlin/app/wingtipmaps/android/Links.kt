@@ -28,7 +28,7 @@ object Links {
     /** One of the app's screens by its name. */
     data class Open(val screen: Screen) : Link
 
-    /** A field to open in the Airport tab. */
+    /** A field's card to open. */
     data class Place(val ident: String) : Link
 
     /** A flight another pilot sent (`open=shared`): its plan in the link,

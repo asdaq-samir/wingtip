@@ -66,7 +66,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/** The Airplane tab's model: the planner's airplane types
+/** The Airplane page's model: the planner's airplane types
  *  (/api/aircraft-profiles), asked once. */
 class AirplaneModel : ViewModel() {
     private val _profiles = MutableStateFlow<List<AircraftProfileSummary>>(emptyList())
@@ -90,7 +90,7 @@ class AirplaneModel : ViewModel() {
 }
 
 /**
- * The Airplane tab (decision 0020: "airplane", the FAA's word): one of
+ * The Airplane page, the plan's Airplane and a link's `airplane` (decision 0020: "airplane", the FAA's word): one of
  * the planner's airplane types picked from a menu (a discrete setting is
  * a menu, not a slider), the handbook figures the planner flies it on,
  * and its checklists; the pilot's own airplanes in Your Airplanes. The
@@ -107,7 +107,7 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
     var mine by remember { mutableStateOf(false) }
     val airplane = rememberAirplaneNow(plan)
     // The checklist asked for by its name (OpenScreen); with no airplane
-    // picked there is none, and the tab says to pick one.
+    // picked there is none, and the page says to pick one.
     val wanted by ScreenRequests.wanted.collectAsStateWithLifecycle()
     LaunchedEffect(wanted, state.airplane) {
         if (state.airplane && ScreenRequests.take(setOf(Screen.CHECKLISTS)) != null) checklist = ChecklistKind.NORMAL
@@ -158,7 +158,7 @@ fun AirplaneScreen(plan: Plan, model: AirplaneModel = viewModel()) {
 
 /**
  * One of the planner's airplane types, or No Airplane (the default: none
- * is assumed, decision 0011), from a menu: the Airplane tab's and the
+ * is assumed, decision 0011), from a menu: the Airplane page's and the
  * welcome's one picker.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -171,7 +171,7 @@ internal fun AirplanePicker(profiles: List<AircraftProfileSummary>, selected: St
             value = picked?.let(::label) ?: selected.uppercase().ifEmpty { stringResource(R.string.no_airplane) },
             onValueChange = {},
             readOnly = true,
-            label = { Text(stringResource(R.string.tab_airplane)) },
+            label = { Text(stringResource(R.string.airplane)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
         )

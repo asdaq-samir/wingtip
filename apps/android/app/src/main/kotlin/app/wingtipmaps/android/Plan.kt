@@ -166,7 +166,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
     /** The last edit that changed the route, for its Undo row. */
     val undo = RouteUndo()
 
-    private fun undoable(kind: RouteUndo.Kind, ident: String) {
+    internal fun undoable(kind: RouteUndo.Kind, ident: String) {
         val s = _state.value
         // No route before it: nothing to go back to.
         if (!s.routed) return

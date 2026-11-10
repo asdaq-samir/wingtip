@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -33,14 +34,16 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
  * app (the web's lib/cardActions.ts ACTION, docs/design/icons.md):
  *
  * - Fly Here: a new route from the airplane to this field.
+ * - Depart From: this field the route's departure.
  * - Direct To: from the airplane to the point, then on along the route.
- * - Add Stop: the field a landing on the way, as Maps' Add Stop.
+ * - Add as Stop: the field a landing on the way, as Maps' Add Stop.
  * - Add to Route: the point a turn on the way, where it bends the route
  *   least; not a landing.
  * - Hold Here: a hold at the point (AIM 5-3-8).
  */
 enum class CardAction(@StringRes val label: Int, val icon: ImageVector) {
     FLY_HERE(R.string.action_fly_here, WingtipIcons.flyHere),
+    DEPART_FROM(R.string.action_depart_from, WingtipIcons.departFrom),
     DIRECT_TO(R.string.action_direct_to, WingtipIcons.directTo),
     ADD_STOP(R.string.action_add_stop, WingtipIcons.addToRoute),
     ADD_TO_ROUTE(R.string.action_add_to_route, WingtipIcons.addToRoute),
@@ -53,7 +56,9 @@ enum class CardAction(@StringRes val label: Int, val icon: ImageVector) {
 /** Each kind of card's actions, in order (the web's CARD_ACTIONS); the
  *  first is the filled one. */
 enum class CardKind(val actions: List<CardAction>) {
-    AIRPORT(listOf(CardAction.FLY_HERE, CardAction.ADD_STOP, CardAction.CALL, CardAction.ADDRESS)),
+    /** Fly Here, Depart From and Add as Stop at the top (the owner's one
+     *  search, 2026-11-09), then Call and Address. */
+    AIRPORT(listOf(CardAction.FLY_HERE, CardAction.DEPART_FROM, CardAction.ADD_STOP, CardAction.CALL, CardAction.ADDRESS)),
 
     /** A point on the map: the airspace card's. */
     POINT(listOf(CardAction.DIRECT_TO, CardAction.ADD_TO_ROUTE, CardAction.HOLD_HERE)),
@@ -63,8 +68,9 @@ enum class CardKind(val actions: List<CardAction>) {
 }
 
 /**
- * A card's row of actions, as Maps lays a place's out: a tile each, its
- * glyph over its word, the first filled in the tint and the rest tonal.
+ * A card's actions, as Maps lays a place's out: a tile each, its glyph
+ * over its word, the first filled in the tint and the rest tonal, three
+ * to a row so each word fits a phone's width.
  * An action this card cannot do now -- Direct To with no position, Add to
  * Route with no route, Call with no telephone -- is left out, as the web
  * leaves its tile out, rather than shown dead.
@@ -73,8 +79,15 @@ enum class CardKind(val actions: List<CardAction>) {
 fun CardActionRow(kind: CardKind, can: (CardAction) -> Boolean, onAction: (CardAction) -> Unit, modifier: Modifier = Modifier) {
     val shown = kind.actions.filter(can)
     if (shown.isEmpty()) return
-    Row(modifier.fillMaxWidth().padding(vertical = WingtipSpace.Sm), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-        shown.forEach { action ->
+    Column(modifier.fillMaxWidth().padding(vertical = WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+        shown.chunked(PER_ROW).forEach { row -> ActionTiles(row, first = kind.actions.first(), onAction = onAction) }
+    }
+}
+
+@Composable
+private fun ActionTiles(row: List<CardAction>, first: CardAction, onAction: (CardAction) -> Unit) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+        row.forEach { action ->
             val content: @Composable () -> Unit = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(action.icon, contentDescription = null)
@@ -85,14 +98,19 @@ fun CardActionRow(kind: CardKind, can: (CardAction) -> Boolean, onAction: (CardA
             // A tile's corners draw in under the finger and spring back as
             // it lifts: the stock buttons' press shapes, from the theme's.
             val shapes = ButtonDefaults.shapes(shape = MaterialTheme.shapes.medium, pressedShape = MaterialTheme.shapes.extraSmall)
-            if (action == kind.actions.first()) {
+            if (action == first) {
                 Button(onClick = { onAction(action) }, shapes = shapes, modifier = Modifier.weight(1f), contentPadding = pad) { content() }
             } else {
                 FilledTonalButton(onClick = { onAction(action) }, shapes = shapes, modifier = Modifier.weight(1f), contentPadding = pad) { content() }
             }
         }
+        // A short last row keeps its tiles the width of the row above.
+        repeat(PER_ROW - row.size) { Spacer(Modifier.weight(1f)) }
     }
 }
+
+/** Tiles a row: three of the card's words fit a phone across. */
+private const val PER_ROW = 3
 
 /** The actions that leave the app: the telephone, the maps app, the
  *  clipboard. */

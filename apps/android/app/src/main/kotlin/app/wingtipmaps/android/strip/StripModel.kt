@@ -17,6 +17,8 @@ import app.wingtipmaps.android.engine.generated.ctafOf
 import app.wingtipmaps.android.engine.generated.frequencyOf
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.map.MapPick
+import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.plan.FlightChoices
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,37 +54,11 @@ class StripModel : ViewModel() {
 
     data class FieldCard(val ident: String, val name: String, val towered: Boolean, val chips: List<RadioChip>)
 
-    /** A screen over the strip, named on the ribbon with its close. */
-    sealed interface Over {
-        val title: String
-
-        data class Airport(val ident: String) : Over {
-            override val title get() = ident
-        }
-
-        data object Airplane : Over {
-            override val title get() = "Airplane"
-        }
-
-        data object Setup : Over {
-            override val title get() = "Setup"
-        }
-
-        data object Ask : Over {
-            override val title get() = "Ask"
-        }
-
-        data object Clearance : Over {
-            override val title get() = "Clearance"
-        }
-    }
-
     data class State(
         val cards: Map<String, FieldCard> = emptyMap(),
         /** Why the last line could not be done; null once one is. */
         val problem: String? = null,
         val busy: Boolean = false,
-        val over: Over? = null,
         /** The assistant's last answer shown as a card over the strip. */
         val answerShown: Boolean = false,
         /** Counts the lines done, so the sheet comes up for each. */
@@ -91,8 +67,6 @@ class StripModel : ViewModel() {
 
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state.asStateFlow()
-
-    fun open(over: Over?) = _state.update { it.copy(over = over) }
 
     fun dismissAnswer() = _state.update { it.copy(answerShown = false) }
 
@@ -153,7 +127,8 @@ class StripModel : ViewModel() {
         when (command) {
             is FieldCommand.Open -> return onOpen(command.screen)
             is FieldCommand.Field -> {
-                open(Over.Airport(command.ident))
+                // As a tap on the field on the map opens it (CardRequests).
+                CardRequests.open(MapPick.Airport(command.ident))
                 return null
             }
             is FieldCommand.Route -> return route(command, plan, pilot, fix)
@@ -168,7 +143,9 @@ class StripModel : ViewModel() {
         }
     }
 
-    private fun ask(question: String, assistant: AssistantClient, context: AssistantContext): String? {
+    /** A question put to the assistant as it is (the search's "Ask: …"),
+     *  its answer shown as a card over the sheet's content. */
+    fun ask(question: String, assistant: AssistantClient, context: AssistantContext): String? {
         assistant.ask(question, context)
         _state.update { it.copy(answerShown = true) }
         return null
@@ -239,6 +216,18 @@ class StripModel : ViewModel() {
             if (ctaf?.frequencyMhz != null) out += RadioChip("CTAF", "CTAF ${Format.frequency(ctaf.frequencyMhz)}")
         }
         out.toList()
+    }
+
+    companion object {
+        /** What the assistant is told of the flight: the plan on the page,
+         *  the airplane's last fix, and the pilot where one is signed in;
+         *  the departure time the plan's, else the planner's own now. */
+        fun contextOf(state: Plan.State, fix: OwnShip.Fix?, pilot: Pilot?) = AssistantContext(
+            dep = state.dep, dest = state.dest, stops = state.stops, aircraft = state.aircraft,
+            altitudeFt = state.altitudeFt ?: state.legs.firstOrNull()?.altitudeFt, depart = state.depart,
+            ownShip = fix?.let { AssistantContext.OwnShipFix(it.lat, it.lon, it.altitudeFt, it.trackDeg, it.groundspeedKt) },
+            pilot = pilot?.let { AssistantContext.PilotRecord(homeBase = it.homeBase) },
+        )
     }
 
     private fun frequencyOf(frequencies: List<EngineContract.FieldFrequency>, types: List<String>): EngineContract.FieldFrequency? =

@@ -46,7 +46,7 @@ fun EmergencyHost(plan: Plan, ownShip: OwnShipControl, model: EmergencyModel = v
         state, model, onShowPosition = { if (!ownShip.on) ownShip.tap() }, onClose = EmergencyOpen::close,
         askGlide = { AskFigures(now, "glide") },
     ) {
-        // The Airplane tab's own picker, here so the emergency stays open.
+        // The Airplane page's own picker, here so the emergency stays open.
         val types by airplanes.profiles.collectAsStateWithLifecycle()
         AirplanePicker(types, selected = planned.aircraft, onPick = plan::setAircraft)
     }

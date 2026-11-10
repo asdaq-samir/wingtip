@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * the words are the screen's.
  */
 class RouteUndo {
-    enum class Kind { REMOVED, MOVED, ADDED, DIRECT, FLY_HERE }
+    enum class Kind { REMOVED, MOVED, ADDED, DIRECT, FLY_HERE, DEPART_FROM }
 
     /** One edit: what it was and to which point, and all it changed --
      *  the route, its holds and its Direct. */

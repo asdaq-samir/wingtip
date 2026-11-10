@@ -32,7 +32,7 @@ interface ReadyWeather {
 
 /** The planner's, each answer kept for the air as it comes and the kept
  *  one given back where the network fails (KeptForAir): the field's card
- *  is the same one the Airport tab keeps. */
+ *  is the same one a field's card keeps. */
 object PlannerReadyWeather : ReadyWeather {
     override suspend fun field(ident: String, role: String) =
         ReadyFacts.fieldWeather(ident, role, KeptForAir.had(KeptForAir.AIRPORTS, ident, AirportPlace.serializer()) { Planner.place(ident) }.value)

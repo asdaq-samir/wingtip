@@ -118,7 +118,7 @@ class CopilotModel(
             fields = CopilotShapes.fields(got, firstSeen),
             rules = flight.rules,
             // The pilot's own minimums (Setup) and whether anyone is aboard
-            // (the Airplane tab), as the web's copilotInput passes them.
+            // (the Airplane page), as the web's copilotInput passes them.
             minimums = minimums, passengers = flight.passengers,
             fuelGal = if (fuel != null && burn != null) max(0.0, fuel - burn * hours) else null,
             burnGph = burn, tasKt = flight.tasKt, dest = flight.dest, alternate = flight.alternate,
