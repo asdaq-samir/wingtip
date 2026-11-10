@@ -98,26 +98,48 @@ private struct StripFigure: View {
     let value: String
     let warn: Bool
     @Environment(\.dynamicTypeSize) private var size
+    @Environment(\.figuresOnGlass) private var onGlass
+    /// What the strip shows for a figure it has not got (FiguresStrip).
+    static let placeholders: Set<String> = ["—", "?"]
 
     var body: some View {
         let layout = size.isAccessibilitySize ? AnyLayout(HStackLayout(spacing: WingtipSpace.sm)) : AnyLayout(VStackLayout(spacing: WingtipSpace.xxs))
+        // On glass the words take the tokens' ink, one weight heavier:
+        // over the glass the audit failed the names in the system's grey,
+        // in the tokens' grey and even in their black at the regular 11
+        // points, whose strokes are a pixel or two wide over a moving
+        // chart, and passed them semibold (the iPad Pro 13-inch,
+        // 2026-11-09). The figures go bold, and the dash of one not yet
+        // worked out heavy, a hairline the audit failed otherwise. The
+        // names stay set apart by their size.
+        let nameWeight: Font.Weight = onGlass ? .semibold : .regular
+        let nameInk = onGlass ? AnyShapeStyle(WingtipInk.text) : AnyShapeStyle(.secondary)
+        let valueInk = warn ? (onGlass ? WingtipInk.problem : Color.red) : (onGlass ? WingtipInk.text : Color.primary)
         layout {
-            Text(name).font(.caption2).foregroundStyle(.secondary)
+            Text(name).font(.caption2.weight(nameWeight)).foregroundStyle(nameInk)
             if size.isAccessibilitySize { Spacer(minLength: 0) }
             HStack(spacing: WingtipSpace.xs) {
                 // A mark with the red, for a pilot who does not see the
                 // colour (the owner's rule: warn, never limit).
                 if warn { Image(systemName: "exclamationmark.triangle.fill").font(.caption2) }
-                Text(value).font(.headline.monospacedDigit())
+                Text(value).font(.headline.monospacedDigit().weight(onGlass ? (Self.placeholders.contains(value) ? .heavy : .bold) : .semibold))
                     // ETE, fuel and distance roll as they count down.
                     .figureTransition(value)
             }
-            .foregroundStyle(warn ? Color.red : Color.primary)
+            .foregroundStyle(valueInk)
             .lineLimit(size.isAccessibilitySize ? nil : 1)
             .minimumScaleFactor(size.isAccessibilitySize ? 1 : 0.8)
         }
         .frame(maxWidth: .infinity)
     }
+}
+
+extension EnvironmentValues {
+    /// Set where the figures sit on clear glass over the map (the iPad's
+    /// strip at the map's foot, SplitLayout): they take the tokens' inks
+    /// (WingtipInk.text, .problem), which keep 4.5:1 there. On the iPhone
+    /// the strip is on the sheet's material and keeps the system's.
+    @Entry var figuresOnGlass = false
 }
 
 /// The strip's short headings in full for VoiceOver.

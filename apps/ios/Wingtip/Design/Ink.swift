@@ -19,6 +19,13 @@ enum WingtipInk {
     static let inactiveFill = Color(dynamic(\.muted))
     /// What is fine.
     static let go = Color(dynamic(\.goInk))
+    /// Words in the tokens' text colour, for text on clear glass over the
+    /// map (the iPad's figures, FiguresStrip): there the system's .primary
+    /// and .secondary turn vibrant and take on the chart behind, and the
+    /// accessibility audit of 2026-11-09 found the figures' names, and
+    /// even their dashes, under 4.5:1 (WCAG 2.2 1.4.3). The token stays
+    /// put: #0A0A0A by day, #EEF3F9 at night.
+    static let text = Color(dynamic(\.foreground))
     /// The solid surface glass falls back to under Reduce Transparency:
     /// the sheet's own colour, by day or at night.
     static let sheet = Color(dynamic(\.sheet))

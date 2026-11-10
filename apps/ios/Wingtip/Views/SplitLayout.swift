@@ -149,6 +149,7 @@ struct SplitLayout<Map: View>: View {
             map
                 .overlay(alignment: .bottom) {
                     FiguresStrip()
+                        .environment(\.figuresOnGlass, true)
                         .padding(.vertical, WingtipSpace.md)
                         .frame(maxWidth: 520)
                         .floatingGlass(in: floatingCard)
