@@ -45,6 +45,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
+import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.api.AssistantClient
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.api.AssistantTurn
@@ -91,6 +92,7 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantC
     var trip by rememberSaveable { mutableStateOf(false) }
     val tripModel: TripPlannerModel = viewModel()
     val list = rememberLazyListState()
+    val claude by ClaudeGate.on.collectAsStateWithLifecycle()
 
     // The context as the app has it (StripModel.contextOf).
     val context = StripModel.contextOf(planState, fix, pilot)
@@ -132,7 +134,7 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantC
                     )
                 }
             } else if (conversation.turns.isEmpty()) {
-                item { Suggestions(onAsk = ::send, onTrip = { trip = true }) }
+                item { Suggestions(onAsk = ::send, onTrip = if (claude) ({ trip = true }) else null) }
             }
             items(conversation.turns, key = { it.id }) { turn ->
                 TurnBubble(turn, onSource = { source = it })
@@ -167,15 +169,16 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantC
 }
 
 @Composable
-private fun Suggestions(onAsk: (String) -> Unit, onTrip: () -> Unit) {
+private fun Suggestions(onAsk: (String) -> Unit, onTrip: (() -> Unit)?) {
     Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         SectionTitle(stringResource(R.string.ask_about_flight))
         Text(
             stringResource(R.string.ask_help),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        // The first chip, as on the web: the trip planner.
-        AssistChip(onClick = onTrip, label = { Text(stringResource(R.string.trip_chip)) })
+        // The first chip, as on the web: the trip planner, Claude's alone,
+        // so not offered while the Claude features are off (ClaudeGate).
+        if (onTrip != null) AssistChip(onClick = onTrip, label = { Text(stringResource(R.string.trip_chip)) })
         askSuggestions.forEach { words ->
             AssistChip(onClick = { onAsk(words) }, label = { Text(words) })
         }

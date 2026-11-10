@@ -36,7 +36,7 @@
 # shares only the third-party ones.
 # CHECK_NO_CACHE=1 builds the images again without BuildKit's layer cache
 # (its cache mounts stay), for an image whose key missed a change.
-# Each image keeps its newest three tags; `docker volume rm` any of the
+# Each image keeps its newest tag alone; `docker volume rm` any of the
 # volumes at any time costs one cold run.
 set -euo pipefail
 
@@ -67,11 +67,16 @@ changed_paths() {
 
 sha() { shasum -a 256 | cut -c1-16; }
 
-# Keeps an image's newest three tags, so a lock that changes back and forth
-# between branches is still warm, and the disk is not filled with old ones.
+# Keeps an image's newest tag alone. It kept three, so a lock that changed
+# back and forth between branches stayed warm; but with an agent's worktree
+# per branch, each lock a few hundred MB to a few GB, the old tags filled
+# the disk faster than they saved time (2026-11-10), and a rebuild from
+# BuildKit's cache mounts (npm's, uv's, Cargo's downloads) takes a minute
+# or two. A tag a running check still uses is left: `docker image rm`
+# without -f refuses an image a container holds.
 prune_tags() {
   docker image ls "$1" --format '{{.CreatedAt}}|{{.Repository}}:{{.Tag}}' \
-    | sort -r | tail -n +4 | cut -d'|' -f2 | xargs -r docker image rm >/dev/null 2>&1 || true
+    | sort -r | tail -n +2 | cut -d'|' -f2 | xargs -r docker image rm >/dev/null 2>&1 || true
 }
 
 web_image() {
@@ -236,7 +241,8 @@ run_area() {
       key=$(worktree_key)
       # The target is a volume of this worktree's own, labelled with its path
       # so tidy-local.sh can remove it when the worktree is gone.
-      local tvol=wingtip-cargo-target-tests-$RUST-$(docker version -f '{{.Server.Arch}}')-$(worktree_hash)
+      local tvol
+      tvol=wingtip-cargo-target-tests-$RUST-$(docker version -f '{{.Server.Arch}}')-$(worktree_hash)
       docker volume inspect "$tvol" >/dev/null 2>&1 || docker volume create --label "wingtip.worktree=$here" "$tvol" >/dev/null
       docker run --rm -v "$here:/w/$key" \
         -v wingtip-cargo-registry:/usr/local/cargo/registry -v wingtip-cargo-git:/usr/local/cargo/git \
@@ -268,9 +274,12 @@ run_area() {
       local sdk=$HOME/Library/Android/sdk
       # .tool-versions' Java, the build's (gradle-daemon-jvm.properties): one
       # installed, else the Temurin Gradle fetched into ~/.gradle/jdks.
-      export JAVA_HOME=${JAVA_HOME:-$(ls -d /Library/Java/JavaVirtualMachines/*"$JAVA"*/Contents/Home "$HOME"/Library/Java/JavaVirtualMachines/*"$JAVA"*/Contents/Home "$HOME"/.gradle/jdks/*"$JAVA"*/*/Contents/Home 2>/dev/null | tail -1)}
+      export JAVA_HOME=${JAVA_HOME:-$(for d in /Library/Java/JavaVirtualMachines/*"$JAVA"*/Contents/Home "$HOME"/Library/Java/JavaVirtualMachines/*"$JAVA"*/Contents/Home "$HOME"/.gradle/jdks/*"$JAVA"*/*/Contents/Home; do [ -d "$d" ] && echo "$d"; done | sort | tail -1)}
       export ANDROID_HOME=${ANDROID_HOME:-$sdk}
-      export ANDROID_NDK_HOME=${ANDROID_NDK_HOME:-$(ls -d "$ANDROID_HOME"/ndk/* | sort -V | tail -1)}
+      # The NDK .tool-versions names (android-ndk), the app's ndkVersion:
+      # build-android.sh looks in the SDK for it whatever this says.
+      ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$(tool android-ndk)
+      export ANDROID_NDK_HOME
       phone_engine android apps/android/app/engine engine/bindings/ffi/build-android.sh
       (cd "$here/apps/android" && ./gradlew --quiet testDebugUnitTest lintDebug assembleDebug)
       ;;

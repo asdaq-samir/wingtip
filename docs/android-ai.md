@@ -16,10 +16,14 @@ The rules over all of it, as on the iPhone:
   screen says how many were.
 - **Warn, never limit.** The words and the agents never refuse a plan;
   the instructions every model is under say to warn, and the pilot decides.
-- **On the phone first.** Gemini Nano where the phone has it; Wingtip's
-  assistant (Claude, on the server) for a pilot signed in where it has
-  not; no AI at all is a working state, and every screen keeps its
-  figures.
+- **On the phone only, for now.** Gemini Nano where the phone has it.
+  Wingtip's assistant (Claude, on the server) is off until the
+  subscription is decided ([decision 0035](decisions/0035-claude-off-until-subscription.md)):
+  `ai/ClaudeGate.kt` reads the gateway's `claudeFeatures`, and while it
+  is off, or not yet known, no call goes to the server's assistant. A
+  feature with neither Nano nor Claude is hidden (`ai/AiOffered.kt`).
+  "Claude" in the table below applies only once the owner turns it on.
+  No AI at all is a working state, and every screen keeps its figures.
 - **No assumed airplane.** With none chosen, Nano is told to give no
   airplane figure (`OnPhoneAsk.contextWords`).
 

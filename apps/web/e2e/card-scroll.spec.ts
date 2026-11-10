@@ -67,7 +67,9 @@ for (const row of CARDS) {
       await drag(page, await bodyPoint(page, row), 0, -160);
       await expect(panel(page)).toHaveAttribute("data-panel", "full");
       await settled(panel(page));
-      expect((await scrollOf(page, row.card)).top).toBe(before.top);
+      // Not scrolled: at the top (0), or with nothing to scroll (-1) -- a body
+      // that fits at half has no scroller until the sheet grows.
+      expect(Math.max((await scrollOf(page, row.card)).top, 0)).toBe(Math.max(before.top, 0));
     });
 
     test("all the way up, a drag down from its top lowers the sheet", async ({ page }) => {

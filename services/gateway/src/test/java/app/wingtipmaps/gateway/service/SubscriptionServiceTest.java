@@ -260,6 +260,35 @@ class SubscriptionServiceTest {
         assertThat(service.sold()).isFalse();
     }
 
+    /** Off wins over everything (the owner, 2026-11-10): a machine of
+     *  one's own, a developer and a sold subscription all have no Claude
+     *  call, while the debrief, which asks no model, stays open. */
+    @Test
+    void with_claude_off_no_one_has_what_claude_writes_but_the_debrief_stays() {
+        SubscriptionService open = new SubscriptionService(
+                repository,
+                pilots,
+                new SignInOptions(List.of("email"), SignInOptions.Access.OPEN),
+                clock,
+                30,
+                Map.of(PaidFeature.NARRATIVE, 60),
+                "",
+                true,
+                SubscriptionService.ClaudeFeatures.OFF);
+        for (PaidFeature feature : PaidFeature.values()) {
+            if (feature.capped()) {
+                assertThat(open.refusal(null, feature))
+                        .map(SubscriptionService.Refusal::status)
+                        .contains(404);
+            }
+        }
+        assertThat(open.refusal(null, PaidFeature.DEBRIEF)).isEmpty();
+        Authentication developer = new MagicLinkAuthenticationToken("dev@example.com");
+        assertThat(unsold(SubscriptionService.ClaudeFeatures.OFF).refusal(developer, PaidFeature.ASSISTANT))
+                .map(SubscriptionService.Refusal::status)
+                .contains(404);
+    }
+
     @Test
     void with_no_subscription_sold_claude_features_kept_from_pilots_are_not_offered_rather_than_for_sale() {
         SubscriptionService service = unsold(SubscriptionService.ClaudeFeatures.OFF);

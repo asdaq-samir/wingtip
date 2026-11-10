@@ -2,190 +2,115 @@
 
 A flight planner for pilots, VFR and IFR: the FAA chart on a map that works like
 Maps on an iPhone, and the route, checkpoints and nav log for a flight.
-It is headed for an iOS app. README.md has the services and the layout.
+It is headed for an iOS app. README.md has the services and the layout,
+docs/README.md every doc, docs/decisions the owner's decisions and why.
 
 ## Architecture
 
-Functional core, imperative shell: one core every app shares, and a thin
-shell per app round it (the owner, 2026-11-03). Four layers, each with
-one job (the owner kept both server languages on this split, 2026-11-06):
+Functional core, imperative shell, four layers, each with one job
+(decisions 0001-0004; docs/ARCHITECTURE.md):
 
-- **The Rust engine** (`engine/facade`, wingtip-engine, a facade over
-  thirteen domain crates in `engine/crates`, layered as engine/README.md
-  says). Every aviation rule or figure lives there once: altitudes,
-  winds, runways, fuel, weather limits, Go / No-Go, altitude selection, holds, procedures,
-  the clearance reader, the debrief, a pilot's currency (14 CFR 61.56,
-  61.57: `engine/crates/pilot`, pilot/currency.rs, served by the
-  planner's /api/pilot/currency; the gateway's CurrencyService is gone)
-  and a student's 61.109 experience, endorsements and inspections, the altitude limits,
-  91.155's minimums, the filing form's items, night (14 CFR 1.1), the
-  planning cautions, the IFR alternate (91.169), congested areas, what is
-  ahead, the checkpoint pick and the radio calls' words. No network, no screen, no clock of its own. Each rule is a name asked
-  through `engine/facade/src/call.rs`, JSON in and out, declared in one
-  contract file beside its code (`engine/crates/<crate>/contract/<name>.json`),
-  from which the dispatch table and `engine/contract/engine.schema.json`
-  are generated.
+- **The Rust engine** (`engine/facade` over the domain crates in
+  `engine/crates`, layered as engine/README.md says). Every aviation rule
+  or figure lives there once. No network, no screen, no clock of its own.
+  Each rule is a name asked through `engine/facade/src/call.rs`, JSON in
+  and out, declared in one contract file beside its code
+  (`engine/crates/<crate>/contract/<name>.json`), from which the dispatch
+  table and `engine/contract/engine.schema.json` are generated.
 - **The planner** (FastAPI, `services/planner`: `app` over `wingtip`) works
   out a flight: it fetches the FAA's data, reads the weather and the live
-  feeds from the shared store, runs the chart model and chart vision,
-  and asks the engine every rule (`wingtip_native.call`). It fetches no
-  weather, reads no feed, calls no model and builds no tiles: those are
-  the services beside it (#535, the owner's split of 2026-11-08).
-- **The services beside the planner**, each its own image on wingtip's
-  base (`services/Dockerfile.base`) and each with no rule of its own:
-  `services/ingest` reads the live feeds always (the FAA's SWIM feeds:
-  STDDS radar, FNS NOTAMs, TFMS filed routes; the followed airplanes'
-  adsb.fi rounds); `services/weather` fetches the weather on a schedule
-  (METARs, TAFs, advisories, PIREPs, the GFS's winds aloft, GLMP, TFRs,
-  the radar's time); `services/assistant` makes every Claude call (the
-  assistant, the narrative, the words, the checkpoint notes, the mock
-  oral), holds the Anthropic key and asks the planner over HTTP for
-  every figure; `services/jobs` holds the one-off runs, `retrain` (the
-  chart model's training) and `charts` (the chart cycle's raster tiles,
-  packed as PMTiles, and the overlay vector tiles), behind compose's
-  `jobs` profile. **The shared store** is how they meet without a
-  message bus: ingest and weather write, the planner reads, on the data
-  volume they all mount (the live store `data/raw/live/live.sqlite`,
-  `wingtip.traffic.store`; the NOTAM and filed-route SQLite stores; the
-  weather store `data/raw/weather`, `wingtip.weather_store`; the chart
-  tiles) and in Postgres (the gateway's records), so no pilot's request
-  waits on a live fetch. The apps talk only to the gateway, which sends
-  the Claude paths to the assistant and the rest to the planner.
+  feeds from the shared store, runs the chart model and chart vision, and
+  asks the engine every rule (`wingtip_native.call`). It fetches no
+  weather, reads no feed, calls no model and builds no tiles.
+- **The services beside it** (`services/ingest`, `weather`, `assistant`,
+  `jobs`), each its own image on `services/Dockerfile.base`, hold no rule
+  of their own. Ingest and weather write the shared store (the data volume
+  and Postgres); the planner reads it, so no pilot's request waits on a
+  live fetch. The assistant makes every Claude call and asks the planner
+  for every figure. The apps talk only to the gateway, which sends the
+  Claude paths to the assistant and the rest to the planner.
 - **Spring Boot** (`services/gateway`) is who the pilot is and what they
   saved: accounts, sign-in, records, the public API, scheduled mail. It
-  holds no aviation logic: for a figure it asks the planner over HTTP
-  (`PlannerClient`: currency, 14 CFR 61.56 and 61.57, 61.109's
-  experience, the endorsements' days and 61.93(d)'s checks, the
-  inspections' due dates and 91.171's VOR check), which asks the engine.
-  AC 61-65K's endorsement texts (`EndorsementKind`) are still Java, in
-  #482. Add no new rule there.
+  holds no aviation logic and asks the planner for a figure (`PlannerClient`).
+  AC 61-65K's endorsement texts (`EndorsementKind`) are still Java (#482).
+  Add no new rule there.
 - **Each app is a shell that gets data, keeps state and draws**, and asks
   the engine the rest by name: the web through `callEngine`
   (apps/web/src/lib/engine, the engine built to WebAssembly), the iPhone
   through `wt_call`, Android through its JNI shim over `wt_call`. A rule
   found in a component, a hook, a Swift view, a Java service or a route
-  handler is a bug: move it into the engine and delete the copy. What
-  has not moved yet, and in what order, is issue #482.
+  handler is a bug: move it into the engine and delete the copy (#482).
 - **Screens are view and view model** (MVVM): the view draws, one hook (web)
   or observable model (iOS, Android) per screen holds its state and makes
   its calls. How a figure is written on the screen stays with each app.
 - **Data comes in at the edges**: the planner's endpoints, the shared
-  store that ingest and weather fill, and the cycle packs feed the
-  engine; the engine never fetches.
-- Adding or changing a rule: the Rust in the lowest crate that can hold
-  it and its one contract file beside it
-  (`engine/crates/<crate>/contract/<name>.json`: `"x-call"`, the function
-  that answers it; its description with its source; `"x-tool"`; its
-  input and answer), which the dispatcher (`engine/facade/build.rs`) and
-  the contract are both generated from -- no list to add it to; then
-  `cargo run -p wingtip-contract-gen` in engine/ (writes
-  `engine.schema.json`, never edited by hand; CI checks it matches),
-  `npm run types` in apps/web,
-  `scripts/build/engine-contract-apps.sh` (the phones' typed calls, which CI
-  checks match the contract), `scripts/build/assistant-client.sh` for an
-  `"x-tool"`, its test
-  against the shared fixtures (apps/web/src/lib/fixtures),
-  `scripts/build/build-engine-wasm.sh` (the `.wasm` is committed and CI checks
-  it matches), and the images that link it rebuilt (the planner, ingest,
-  weather and the jobs).
+  store and the cycle packs feed the engine; the engine never fetches.
+- **Adding or changing a rule** is engine/README.md's "The contract, and
+  adding a rule": the Rust in the lowest crate that can hold it, its
+  contract file, then `cargo run -p wingtip-contract-gen` in engine/,
+  `npm run types` in apps/web, `scripts/build/engine-contract-apps.sh`,
+  `scripts/build/assistant-client.sh` for an `"x-tool"`, its test against
+  the shared fixtures (apps/web/src/lib/fixtures),
+  `scripts/build/build-engine-wasm.sh` (the `.wasm` is committed), and
+  the images that link it rebuilt. CI checks every generated file matches.
 
 ## Branches
 
-- **Code first, validation at the end** (the owner, 2026-11-08, a
-  standing rule: "all code changes should be fast and all should be
-  tested at the end with the integration branch"). Waiting on CI is the
-  thing to avoid:
-  - Each piece of work is a `claude/<topic>` branch from `main`, pushed
-    once when the code is done. Pushing a `claude/` branch starts no CI
-    (ci.yml runs on pull requests and on `main`; native-*.yml also on
-    `claude/native-*`, so don't use that name). No pull request yet.
-  - Before that push, only a compile or type check of what changed
-    (`tsc --noEmit`, `cargo check`, ruff, a Kotlin or Swift compile) and
-    the generated files it needs. Tests are written with the code, not
-    run.
-  - Work that builds on an unmerged branch merges that branch in
-    (`git merge origin/<branch>`); nothing waits for a merge.
-  - The branches are merged into `claude/integration` as they finish,
-    conflicts resolved once there.
-  - **Live for the owner first** (the owner, 2026-11-08, standing): as
-    soon as a wave's code is merged into `claude/integration`, before any
-    lengthy test or CI, it goes live on the owner's local stack so they
-    can try it on the phone (`PHONE_BASE_URL` in `.env`, which go-live.sh
-    keeps at the Mac's address). The stack runs from
-    a worktree of its own, `~/Developer/wingtip-live` on
-    `claude/integration`, with `data/`, `.env` and
-    `infra/local-https/certs/` linked from the main checkout and the same
-    compose project (`wingtip`), so the main checkout stays on `main`:
-    `scripts/dev/go-live.sh` pulls the branch, rebuilds and restarts
-    the changed services and the web build, then says what is running.
-    It first runs `scripts/dev/tidy-local.sh`: worktrees and branches
-    already landed, stopped containers and dangling images go, and a
-    running agent's (locked) worktree or one with changes stays.
-    The owner is told what to try; the validation runs while they do.
-  - At the end of a wave, one validation pass on the integration branch
-    on the Mac: every suite, the image builds, the browser tests, the
-    phones (iPad included), screenshots. Its fixes are one commit set.
-    Only then a few grouped pull requests to `main`, which merge by
-    themselves once "CI passed" is green (auto-merge-agents.yml); nothing
-    merges red, and CI runs once on code that has already passed.
-- **Parallel work that merges cleanly** (the owner, 2026-11-08: "avoid
-  time wasted"):
-  - Split work by area, so two agents never own the same files. Each
-    brief names what the agent owns and what it must leave alone; a
-    change another agent's area needs goes in the report, not the code.
-  - Generated files are never merged by hand. On a conflict in
-    `engine/contract/engine.schema.json`,
-    `apps/web/src/lib/engine/contract.ts`, the `.wasm`, the API
-    documents and types, or the phones' generated models, take either
-    side and regenerate with the scripts (`cargo run -p
-    wingtip-contract-gen`, `npm run types`,
-    `scripts/build/build-engine-wasm.sh`, `engine-contract-apps.sh`,
-    `api-models-apps.sh`). The integration branch regenerates once after
-    each merge.
-  - Shared lists (`docker-compose.yml`,
-    `ci.yml`, `scripts/dev/check.sh`, the CloudFormation template, the
-    docs' service tables): add an entry in its own block, in the list's
-    order, and change no neighbouring line, so merges are additive.
-  - Branches don't merge `main` in during a wave; the integration branch
-    does, once.
-  - Moves and renames across the tree (a folder regroup, a package
-    rename) run alone, at the start or the end of a wave, never beside
-    other agents.
-  - The integration branch keeps a log of each conflict and how it was
-    resolved, for the end-of-wave pass and the pull requests.
-- **Fast turnover** (the owner, 2026-11-08, standing):
-  - Start every independent piece at once; start dependent pieces on
-    the branch they depend on, marking the seams (`TODO(<branch>)`)
-    for the integration merge to wire.
-  - Mechanical work (moves, renames, comment and doc cleanups, lint)
-    goes to a faster model; aviation rules and architecture stay on the
-    strongest one.
-  - The end-of-wave pass is one command, `scripts/dev/validate-wave.sh`
-    on `claude/integration`: every check area, the image builds, the
-    smoke browser tests and the phones, then one list of failures.
-  - Decisions the owner must make are gathered onto one page with a
-    recommendation each, not asked one at a time mid-wave; work that
-    doesn't depend on them goes on.
-  - Agent briefs are short and point at files rather than retyping
-    them; this file stays short, with the how-to in the skills.
-- Claude's review is on demand, not a gate (the owner, 2026-11-06): the
-  "review" label on a pull request asks for one. The aviation-check skill
-  is still applied to every figure or rule while writing it.
+Code first, validation at the end (decisions 0005 and 0006: "all code
+changes should be fast and all should be tested at the end with the
+integration branch"):
+
 - A session works only in a worktree of its own (`git worktree add
-  ../wingtip-<topic> -b claude/<topic> origin/main`, or the harness's);
-  the main checkout stays on `main`, and no session switches it or
-  commits on it.
-- Never push to `main`. Never force-push. Merge `main` into a branch to
-  bring it up to date; never rebase a pushed one.
-- On a pull request, an asked-for review is put right on the branch
-  ("Address review:" commits). CI failures are not chased push by push:
-  they are fixed in the end-of-wave pass, at most once more after it.
+  ../wingtip-<topic> -b claude/<topic> origin/main`, or from
+  `origin/claude/integration` when the wave's brief says so); the main
+  checkout stays on `main`, and no session switches it or commits on it.
+- Each piece of work is a `claude/<topic>` branch, pushed once when the
+  code is done, with no pull request yet. Pushing a `claude/` branch
+  starts no CI (`claude/native-*` does: don't use that name). Before that
+  push, only a compile or type check of what changed and the generated
+  files it needs; tests are written with the code, not run.
+- Work that builds on an unmerged branch merges that branch in; nothing
+  waits for a merge. Branches merge into `claude/integration` as they
+  finish.
+- **Live for the owner first:** once a wave is merged into
+  `claude/integration`, `scripts/dev/go-live.sh` (in
+  `~/Developer/wingtip-live`) tidies the Mac, rebuilds and puts it on the
+  owner's stack for the phone, before any lengthy test or CI. The owner
+  is told what to try.
+- **Then one validation pass**, `scripts/dev/validate-wave.sh` on
+  `claude/integration`, its fixes one commit set; then a few grouped pull
+  requests to `main`, which merge by themselves once "CI passed" is green
+  (auto-merge-agents.yml). Nothing merges red. CI failures are fixed in
+  that pass, at most once more after it; an asked-for review is put right
+  in "Address review:" commits.
+- **Parallel work merges cleanly:**
+  - Split work by area so two agents never own the same files; each brief
+    names what the agent owns and leaves alone, and a change another
+    area needs goes in the report, not the code.
+  - Generated files are never merged by hand: take either side and
+    regenerate (contract-gen, `npm run types`, the wasm,
+    `engine-contract-apps.sh`, `api-models-apps.sh`).
+  - Shared lists (`docker-compose.yml`, `ci.yml`, `check.sh`,
+    `scripts/areas.yml`, the CloudFormation template, the docs' tables):
+    add an entry in its own block, in order, changing no neighbour.
+  - Branches don't merge `main` in during a wave; the integration branch
+    does, once, and keeps a log of each conflict and how it was resolved.
+  - Moves and renames across the tree run alone, at a wave's start or end.
+- **Fast turnover:** start every independent piece at once, and a
+  dependent one on the branch it needs, with `TODO(<branch>)` seams.
+  Mechanical work goes to a faster model; aviation rules and architecture
+  stay on the strongest. Owner decisions are gathered onto one page with a
+  recommendation each, not asked mid-wave. Briefs are short and point at
+  files.
+- Never push to `main`. Never force-push. Merge to bring a branch up to
+  date; never rebase a pushed one.
+- Claude's review is on demand (the "review" label), not a gate. The
+  aviation-check skill is applied to every figure or rule while writing it.
 - Write to GitHub gently, as the `ship` skill says: one write at a time,
-  ten seconds apart, a long list as one issue's checklist. A burst of API
-  writes got the owner's account suspended in October 2026.
+  ten seconds apart, a long list as one issue's checklist (a burst got the
+  owner's account suspended in October 2026).
 - Issues: "ready" (nothing left for the owner to decide) or "owner" (the
-  owner decides, then labels it "ready"). Only the owner takes "owner"
-  off.
+  owner decides, then labels it "ready"). Only the owner takes "owner" off.
 - How to check, ship and review: the skills in `.claude/skills`.
 
 ## Never
@@ -198,104 +123,90 @@ one job (the owner kept both server languages on this split, 2026-11-06):
 - Move a panel or a control to another part of the screen without the
   owner saying so in the issue.
 
-## Checks — at the end, on the integration branch
+## Checks
 
-While writing code, run only a compile or type check of what changed
-(see Branches). The checks below are the end-of-wave validation, run
-once on `claude/integration` before the grouped pull requests; no test
-holds up a code change (the owner, 2026-11-06 and 2026-11-08).
+While writing code, only a compile or type check of what changed; the
+table is the end-of-wave validation, and no test holds up a code change.
+`scripts/dev/check.sh <area>` runs an area, `scripts/dev/check.sh
+all-changed` every area the branch and its uncommitted files touch. It
+runs in Docker (the phones on the host), each area in its own turn of
+`scripts/dev/one-at-a-time.sh`, warm from shared images and caches.
+`scripts/areas.yml` is the one table of areas, their paths and their
+checks, read by check.sh, the pre-push hook and CI. A change to
+`services/planner/wingtip` or `engine/` also checks ingest, weather and
+jobs, whose images build on `services/Dockerfile.base` (none starts
+without it).
 
-On the Mac, run them with `scripts/dev/check.sh all-changed` (the areas the
-branch and its uncommitted files touch, in parallel) or `scripts/dev/check.sh
-<area>` (web, py, planner, ingest, assistant, weather, jobs, engine, java,
-ios, android, arch); a change to `services/planner/wingtip` or `engine/` also
-checks ingest, weather and jobs, which copy wingtip in. It runs the table's commands in Docker, or on the host for the
-phones, each area in its own turn of `scripts/dev/one-at-a-time.sh`, warm from
-any worktree's first run: ready-made images per lockfile and requirements,
-and shared Cargo, npm, uv and Maven caches (the script's header lists
-them). The table is what it runs:
+| Area | What it runs | On a pull request / at night (docs/CI.md) |
+|---|---|---|
+| `web` (`apps/web/`) | `npm run types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx knip && npx vitest run` | all, and the `@smoke` browser tests / every browser test |
+| `py` (`services/planner/wingtip`, `tests_wingtip/`) | `ruff check wingtip tests_wingtip && lint-imports && pytest tests_wingtip/`, with the engine's wheel | all |
+| `planner` (`services/planner/` app) | `ruff check app tests && lint-imports && pytest tests/` | all |
+| `ingest`, `weather`, `assistant`, `jobs` | each service's ruff and pytest; the assistant's `python -m app.openapi` after a route change | all |
+| `engine` | `scripts/ci/engine_layers.py`, `cargo machete`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --profile ci` | all |
+| `java` (`services/gateway/`) | `mvn -B test` (Docker, for Testcontainers) | all |
+| `ios` (`apps/ios/`) | `xcodegen`, then `xcodebuild test` on the newest iPhone simulator (docs/NATIVE.md) | unit tests and `CardSmokeTests` on the iPhone / the full suites on the iPhone, iPad and iPhone Duo |
+| `android` (`apps/android/`) | `engine/bindings/ffi/build-android.sh`, then `./gradlew testDebugUnitTest lintDebug assembleDebug` (docs/NATIVE-ANDROID.md) | unit tests and lint / plus the instrumented tests on an emulator |
+| `site` (`apps/site/`) | `python3 apps/site/build.py && python3 apps/site/check.py` | all |
+| `arch` (any source file) | `scripts/ci/file_sizes.py --base origin/main` (no new or grown file over 400 lines), `scripts/build/toolchain.sh --check`, `scripts/ci/brand_guard.py` (no raw style value outside `design/tokens.json`), `scripts/ci/dead_python.sh`; CI adds `scripts/ci/rules_boundary.py` (no aviation figure outside the engine) | all |
 
-| Changed | Run, from that directory |
-|---|---|
-| `apps/web/` | `npm run types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx knip && npx vitest run`: ESLint holds the layers and feature boundaries (`boundaries/layers`, `eslint/boundaries.js`); knip finds unused files, exports, types and dependencies (`knip.jsonc`, which says why each thing it leaves out is left out) |
-| `services/planner/` (app) | `ruff check app tests && lint-imports && pytest tests/` (in `services/planner`; `lint-imports` holds `.importlinter`'s contracts: wingtip never imports app, no router imports another) |
-| `services/planner/wingtip`, `tests_wingtip/` | `ruff check wingtip tests_wingtip && lint-imports && pytest tests_wingtip/` (in `services/planner`) |
-| `engine/` (Rust, `wingtip_native`) | `python3 scripts/ci/engine_layers.py` (each crate uses only the crates engine/README.md's table allows), `cargo machete` (no unused dependency), `cargo clippy --workspace --all-targets -- -D warnings`, then the engine's `cargo test --profile ci` (`ci.yml`'s line); `maturin build -m engine/bindings/py/Cargo.toml` and install the wheel, then `pytest tests_wingtip/test_native.py` (in `services/planner`); every image that copies `services/planner/wingtip` is built FROM `services/Dockerfile.base`, which builds and installs it once (`services/planner/tests_wingtip/test_dockerfiles.py`), and none of them starts without it |
-| `services/ingest/` | `ruff check ingest tests && pytest tests/` (in `services/ingest`, after `pip install -r requirements-dev.txt` and the engine's wheel) |
-| `services/weather/` | `ruff check app tests && pytest tests/` (in `services/weather`, after `pip install -r requirements-dev.txt` and the engine's wheel) |
-| `services/assistant/` | `ruff check app tests && pytest tests/` (in `services/assistant`, after `pip install -r requirements-dev.txt`); `python -m app.openapi` after a schema or route change |
-| `services/jobs/` | `ruff check charts && pytest charts/tests/` (in `services/jobs`; CI runs them in its `test` job) |
-| `services/gateway/` | `mvn -B test` (needs Docker, for Testcontainers) |
-| `apps/ios/` (the native app) | On the Mac mini (Xcode and XcodeGen are there): `xcodegen` in `apps/ios/`, then `xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme Wingtip -destination "platform=iOS Simulator,name=<newest iPhone>" test` through `scripts/dev/one-at-a-time.sh`; a pull request's CI runs it on the iPhone alone, and `native-ios.yml` at night on the iPhone, iPad and iPhone Duo with the full card suites (docs/NATIVE.md) |
-| `apps/android/` (the native app) | On the Mac mini: `./gradlew testDebugUnitTest lintDebug assembleDebug` in `apps/android/` (the build runs on Temurin 25, `gradle/gradle-daemon-jvm.properties`; any JDK starts it), after `engine/bindings/ffi/build-android.sh`; `native-android.yml` builds the engine for each ABI, runs the unit tests, lint and a debug APK, then the instrumented tests on an emulator (docs/NATIVE-ANDROID.md) |
-| any source file (the `arch` area, from the root) | `python3 scripts/ci/file_sizes.py --base origin/main` (no new or grown file over 400 lines past `scripts/ci/file_sizes_allow.txt`, a list that only shrinks), `scripts/build/toolchain.sh --check` (every version the repo states is `.tool-versions`'), `python3 scripts/ci/brand_guard.py` (no raw colour, type size, padding or corner in the apps outside `design/tokens.json`, past `scripts/ci/brand_guard_allow.txt`), then `scripts/ci/dead_python.sh` (vulture at 80% over services/, ml/ and scripts/; what it cannot see used is in `scripts/ci/vulture_allow.py` with why). CI's `rules-boundary` job also runs `python3 scripts/ci/rules_boundary.py` (no aviation figure outside the engine) |
-
-Python wants `pip install -r requirements-dev.txt` (the app's suite) or
-`requirements-dev-wingtip.txt` (wingtip's) in `services/planner` first.
-
-Each toolchain has one version, on the Mac, in the images and in CI:
-`.tool-versions` (Java, Python, Rust, Node, Xcode, Gradle, Maven and the
-formatters). CI's setup actions and the scripts read it; bump it there and
-run `scripts/build/toolchain.sh`, which writes the places that cannot read
-it (images, pom, Gradle, `rust-toolchain.toml`, `.nvmrc`, docs). What each
-part pins, what is held back and why, and the upgrades coming:
-docs/versions.md.
-
-A pre-push hook runs the quick ones for what a push changes against
-origin/main: `tsc` and ESLint for `apps/web/`, ruff for Python, `cargo check`
-for `engine/`, and `scripts/dev/format.sh --check` for each language changed
-(each skipped with a note where its tool is missing). Format with
-`scripts/dev/format.sh` (one pinned formatter a language). Install
-it once per clone with `scripts/dev/install-hooks.sh`; skip it with `git push
---no-verify` or `SKIP_HOOKS=1`. It runs outside the lock and is no
-substitute for the table above.
-
-An API that changes changes its document, which the web app's types come
-from: `python -m app.openapi` in services/planner, or `WRITE_OPENAPI=1 mvn
--B test` in services/gateway; then `npm run types` in apps/web and
-`scripts/build/api-models-apps.sh` for the phones' models; commit them all.
-
-The browser tests (Playwright, `apps/web/e2e`) need the whole stack and run in
-the end-of-wave pass and CI; write or update the spec for a change a pilot
-sees, with the code.
-A pull request runs only the tests tagged `@smoke`, one per journey; the
-rest run every night (docs/CI.md). Tag a test `@smoke` only when it is the
-one that proves a journey end to end.
-On the owner's Mac run only the specs a change touches, and every browser
-run, test suite, image build and measurement through
-`scripts/dev/one-at-a-time.sh "<label>" <command>`: three run at once on
-the Mac mini while the owner's live stack is down and two while it is up,
-each waiting while free memory is short (the owner: "use the Mac
-effectively", 2026-11-09); `~/.config/wingtip/one-at-a-time` overrides it.
-Never wrap `scripts/dev/check.sh` in it (check.sh takes its own turns). And a
-speed measurement takes `--alone`, the whole machine (the `checks` skill).
-A quick check -- one type check, lint or unit run of a minute or two --
-runs outside it, so it isn't stuck behind long builds.
+- **Python outside check.sh** wants `pip install -r requirements-dev.txt`
+  (the app) or `requirements-dev-wingtip.txt` (wingtip) in `services/planner`.
+- **Toolchains:** one version each, in `.tool-versions`; bump it there and
+  run `scripts/build/toolchain.sh` (docs/versions.md).
+- **Formatting:** `scripts/dev/format.sh`, one pinned formatter a language;
+  `--check` to check.
+- **Pre-push hook** (`scripts/dev/install-hooks.sh` once per clone): `tsc`,
+  ESLint, ruff, `cargo check` and `format.sh --check` for what a push
+  changes. Skip it with `--no-verify` or `SKIP_HOOKS=1`; it is no
+  substitute for the table.
+- **An API that changes changes its document:** `python -m app.openapi`
+  (the planner, the assistant) or `WRITE_OPENAPI=1 mvn -B test` (the
+  gateway), then `npm run types` and `scripts/build/api-models-apps.sh`;
+  commit them all.
+- **Browser tests** (Playwright, `apps/web/e2e`) need the whole stack:
+  write or update the spec for a change a pilot sees, with the code. A
+  pull request runs only `@smoke`, one test per journey that proves it end
+  to end; the rest run at night. A new spec tags its one `@smoke` or is
+  listed in `scripts/ci/test_tiers_nightly.txt`.
+- **CI stays lean** (docs/CI.md, "Rules"; decision 0034): a pull request
+  in about 10 minutes, each check in one tier and run once, only what a
+  change touches, everything cached, newest versions, warnings fatal,
+  pushes batched, and never a timeout raised to get green. Also: no flaky
+  test kept on the PR, no live internet in PR tests, a red night fixed
+  first, CI calling the same scripts as the Mac, every failure named,
+  a rule tested once at the lowest level, least privilege, macOS for iOS
+  only, and small workflows. `rules-boundary` and `CI budget` enforce what
+  a script can check.
+- **On the owner's Mac**, every browser run, suite, image build and
+  measurement goes through `scripts/dev/one-at-a-time.sh "<label>"
+  <command>` (three at once with the live stack down, two with it up;
+  `~/.config/wingtip/one-at-a-time` overrides it; `--alone` for a speed
+  measurement). Never wrap `check.sh` in it. A
+  quick check of a minute or two runs outside it.
 
 ## The app on the phone
 
 Judge every screen at an iPhone's width against Apple's Human Interface
-Guidelines first.
+Guidelines first. How cards open, close and scroll, the one search and
+the airport weather marks: docs/design/rules.md, on all three apps.
 
 - Hit areas are 44 points, but controls never grow to get there: a
   pseudo-element (`after:absolute after:-inset-…`) makes the area, and
   rows sit at `gap-2` so the areas meet.
 - Stock components over hand-rolled ones, on every platform (shadcn on
   Base UI and React Aria on the web, SwiftUI, Material 3): the platform's
-  own component even when it is only in a release candidate, never a copy
-  of our own; bump to stable when it ships (the owner, 2026-11-09). Used
-  as they come, with no look or behaviour of ours on top: their own
-  states, motion, gestures and haptics (2026-11-10). The Native look is
-  each platform out of the box; the brand looks change only the tokens.
-- Tappable things are the look's tint (the brand's blue; Native's is the
-  platform's own); type sizes come from `lib/text.ts`.
+  own component even in a release candidate, never a copy of our own;
+  used as they come, with their own states, motion, gestures and haptics
+  (decision 0016). The Native look is each platform out of the box; the
+  brand looks change only the tokens.
+- Tappable things are the look's tint; type sizes come from `lib/text.ts`.
 - Every colour, type role, spacing, corner, material, motion and tap
   target is a token in `design/tokens.json`, generated into each app by
-  `scripts/build/design-tokens.sh` (CI fails on a stale copy): change a
-  value there, never in `styles/tokens.css`, `lib/tokens.ts`,
-  `Design/Generated` or `design/generated`.
-- Panels are sheets with detents, like Apple Maps: the platform's stock
-  sheet as it comes (decision 0018's amendments).
+  `scripts/build/design-tokens.sh`: change a value there, never in a
+  generated copy.
+- Panels are the platform's stock sheet with detents, like Apple Maps
+  (decision 0018).
 - Errors show where they happen (`lib/problems`), not in a toast.
 - Discrete settings are menus or segmented controls, not sliders.
 

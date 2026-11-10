@@ -73,6 +73,7 @@ class CoachModelTest {
         var training: TrainingDto? = null,
         val plan: ProficiencyPlan,
         val words: () -> CoachWordsAnswer,
+        val claude: Boolean = true,
     ) : CoachSource {
         var asked: CoachAsk? = null
         override suspend fun entries() = entries
@@ -84,6 +85,7 @@ class CoachModelTest {
         override suspend fun home() = "KMSN"
         override suspend fun plan(ask: CoachAsk): ProficiencyPlan { asked = ask; return plan }
         override suspend fun words(plan: ProficiencyPlan) = words()
+        override fun wordsOffered() = claude
     }
 
     private class Kept(var certificate: Certificate? = null) : CertificateKeeper {
@@ -128,6 +130,20 @@ class CoachModelTest {
         assertEquals(plan, s.plan)
         assertNull(s.words)
         assertEquals("The assistant could not be reached: there is no connection to Wingtip.", s.noWords)
+        assertTrue(!s.wording && !s.making)
+    }
+
+    @Test
+    fun withClaudeOffThePlanStandsAloneAndNoWordsAreAsked() {
+        var asked = 0
+        val model = model(Servers(plan = plan, words = { asked++; words }, claude = false))
+        model.make()
+        val s = model.state.value
+        assertEquals(plan, s.plan)
+        assertEquals(0, asked)
+        // Nothing said of the missing words: nothing is promised.
+        assertNull(s.words)
+        assertNull(s.noWords)
         assertTrue(!s.wording && !s.making)
     }
 

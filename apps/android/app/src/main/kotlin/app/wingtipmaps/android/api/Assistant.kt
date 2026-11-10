@@ -3,6 +3,7 @@ package app.wingtipmaps.android.api
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Config
+import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.ai.Nano
 import app.wingtipmaps.android.ai.OnPhoneAsk
 import kotlinx.coroutines.CancellationException
@@ -202,6 +203,7 @@ object Assistant {
 
     /** The planner's words for a call that failed, where it is said. */
     fun words(e: Exception): String = when {
+        e is ClaudeGate.Off -> e.message.orEmpty()
         e is Planner.Failure && e.status == 404 -> NOT_HERE
         e is Planner.Failure -> e.message ?: "The planner answered ${e.status}."
         e is IOException -> Problems.say("The assistant could not be reached", e)
@@ -212,6 +214,9 @@ object Assistant {
      *  changes nothing goes with the CSRF token where the session has
      *  one, as the gateway's own calls carry it. */
     fun stream(ask: Ask): Flow<AssistantLine> = flow {
+        // Never a billed call while the Claude features are off (ClaudeGate,
+        // the owner's decision of 2026-11-10).
+        ClaudeGate.require()
         val body = Gateway.json.encodeToString(ask).toRequestBody("application/json".toMediaType())
         val builder = Request.Builder().url(Config.gateway + Config.plannerPath("/api/assistant"))
             .header("Accept", "application/x-ndjson").post(body)
@@ -249,8 +254,14 @@ class AssistantClient : ViewModel() {
             try {
                 // On the phone first: Gemini Nano with the app's own tools
                 // where this phone has it (docs/android-ai.md), else the
-                // server's assistant as before.
-                val lines = if (Nano.ready()) OnPhoneAsk.stream(ask.messages, ask.context) else Assistant.stream(ask)
+                // server's assistant only while the Claude features are on
+                // (ClaudeGate); off, Ask is not offered (AiOffered) and
+                // a question asked anyway stops here.
+                val lines = when {
+                    Nano.ready() -> OnPhoneAsk.stream(ask.messages, ask.context)
+                    ClaudeGate.on.value -> Assistant.stream(ask)
+                    else -> throw ClaudeGate.Off()
+                }
                 lines.collect { line -> _conversation.update { it.take(line) } }
                 // A stream that ends with no "done" is cut off; the words so
                 // far stay, and the pilot is told the answer is short.

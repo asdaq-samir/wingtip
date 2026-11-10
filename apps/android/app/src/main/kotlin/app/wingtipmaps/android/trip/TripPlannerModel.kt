@@ -3,6 +3,7 @@ package app.wingtipmaps.android.trip
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Config
+import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
@@ -69,6 +70,9 @@ object TripPlan {
     const val UNREACHABLE = "The trip planner cannot be reached"
 
     fun stream(ask: TripAsk): Flow<TripMessage> = flow {
+        // Claude's alone, with no model on the phone: never asked while the
+        // Claude features are off (ClaudeGate), and Ask hides its chip then.
+        ClaudeGate.require()
         val body = Gateway.json.encodeToString(ask).toRequestBody("application/json".toMediaType())
         val builder = Request.Builder().url(Config.gateway + Config.plannerPath("/api/trip-plan"))
             .header("Accept", "application/x-ndjson").post(body)
@@ -87,6 +91,7 @@ object TripPlan {
     }.flowOn(Dispatchers.IO)
 
     fun words(e: Exception): String = when {
+        e is ClaudeGate.Off -> e.message.orEmpty()
         e is Planner.Failure && e.status == 401 -> SIGN_IN
         e is Planner.Failure -> e.message ?: UNREACHABLE
         e is IOException -> Problems.say(UNREACHABLE, e)

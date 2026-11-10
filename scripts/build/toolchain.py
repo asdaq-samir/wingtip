@@ -64,6 +64,7 @@ PLACES = [
     (["services/gateway/pom.xml"], r"<palantirJavaFormat>\s*<version>([^<]+)</version>", "palantir-java-format", "exact", None),
     (["apps/android/app/build.gradle.kts"], r"JavaVersion\.VERSION_(\d+)", "java", "exact", None),
     (["apps/android/app/build.gradle.kts"], r"JvmTarget\.JVM_(\d+)", "java", "exact", None),
+    (["apps/android/app/build.gradle.kts"], r'ndkVersion = "([^"]+)"', "android-ndk", "exact", None),
     (["apps/android/gradle/wrapper/gradle-wrapper.properties"], r"gradle-([\d.]+)-(?:all|bin)\.zip", "gradle", "exact", None),
     (
         ["apps/android/gradle/gradle-daemon-jvm.properties"],

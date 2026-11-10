@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.api.Problems
@@ -67,6 +68,9 @@ class Session : ViewModel() {
             _problem.value = Problems.say("Your account could not be checked", e)
             _checkFailed.value = true
         }
+        // Whether the server's Claude features are this pilot's, asked with
+        // every sign-in change: DEVELOPERS depends on who it is (ClaudeGate).
+        ClaudeGate.refresh(_pilot.value?.developer == true)
         _loaded.value = true
     }
 
@@ -115,6 +119,7 @@ class Session : ViewModel() {
             runCatching { Gateway.signOut() }
             forget(checklists)
             plan.clear()
+            ClaudeGate.refresh(developer = false)
         }
     }
 
@@ -136,6 +141,7 @@ class Session : ViewModel() {
                 _problem.value = null
                 forget(checklists)
                 plan.clear()
+                ClaudeGate.refresh(developer = false)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

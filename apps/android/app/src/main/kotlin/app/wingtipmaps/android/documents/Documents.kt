@@ -3,6 +3,7 @@ package app.wingtipmaps.android.documents
 import android.content.Context
 import android.net.Uri
 import app.wingtipmaps.android.Config
+import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.ai.read.OnPhoneReader
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
@@ -68,6 +69,9 @@ object Documents {
         // checked by the engine here (OnPhoneReader); the photo goes to the
         // server only where this phone cannot read it (docs/android-ai.md).
         OnPhoneReader.read(context, page, kind, today)?.let { return it }
+        // The server's reader is Claude's: not asked while the Claude
+        // features are off (ClaudeGate, the owner's decision of 2026-11-10).
+        ClaudeGate.require()
         val jpeg = withContext(Dispatchers.IO) { PagePhoto.jpeg(context, page) }
         val (body, status) = Gateway.call("POST", Config.plannerPath("/api/read-document"), json = body(ask(kind, jpeg, today)))
         if (status != 200) throw Planner.Failure(status, Planner.detail(body))
@@ -77,6 +81,7 @@ object Documents {
     /** Why a read failed, said where the page was asked for: the
      *  server's own words where it sent any. */
     fun words(e: Exception): String = when {
+        e is ClaudeGate.Off -> e.message.orEmpty()
         e is Planner.Failure && e.status == 503 -> e.detail ?: "The page reader can't be reached right now. Try again in a minute."
         e is Planner.Failure && e.status == 502 -> e.detail ?: "The figures read could not be checked."
         e is Planner.Failure && e.status == 413 -> "The photo is too large to send."

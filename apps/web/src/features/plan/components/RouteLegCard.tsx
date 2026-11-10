@@ -4,7 +4,7 @@ import CloseButton from "../../../components/CloseButton";
 import { CardAction } from "../../../components/CardAction";
 import DirectToIcon from "../../../lib/glyphs/DirectToIcon";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent } from "../../../components/ResponsivePopover";
+import { SheetCard } from "../../../components/SheetCard";
 import { Badge } from "../../../components/ui/badge";
 import { threeFigures } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";
@@ -38,32 +38,22 @@ export interface RouteLegView {
  * (the owner's screenshot, 2026-11-08): the leg's ends, Active Leg on
  * the one being flown, its actions in a row -- Direct to its end in the
  * tint, Remove in iOS's red -- then its Distance and its Course, magnetic.
- * A card in the map's panel on a phone, its title on top and Close, which
- * goes back to what was there, as FixCard is.
+ * A card in the map's panel over the search on every screen, its title on
+ * top and Close, which goes back to what was there (the one card rule,
+ * the owner 2026-11-10: a route leg is a thing, one card over the search;
+ * on a desktop it was a popover beside the panel).
  */
 export default function RouteLegCard({ open, onClose }: { open: RouteLegView | null; onClose: () => void }) {
+  if (!open) return null;
   return (
-    <ResponsivePopover
-      open={!!open}
-      onOpenChange={(next) => {
-        if (!next) onClose();
-      }}
+    <SheetCard
+      title="Route Leg"
+      onClose={onClose}
+      testId="route-leg-card"
+      action={<CloseButton onClick={onClose} data-testid="route-leg-close" />}
     >
-      {/* Beside the top of the screen on a desktop. */}
-      <ResponsivePopoverAnchor asChild>
-        <span aria-hidden="true" className="pointer-events-none fixed top-16 left-1/2 size-0" />
-      </ResponsivePopoverAnchor>
-      <ResponsivePopoverContent
-        title="Route Leg"
-        side="bottom"
-        align="center"
-        className="flex w-80 flex-col gap-3 p-3"
-        data-testid="route-leg-card"
-        action={<CloseButton onClick={onClose} data-testid="route-leg-close" />}
-      >
-        {open && <RouteLegBody leg={open} />}
-      </ResponsivePopoverContent>
-    </ResponsivePopover>
+      <RouteLegBody leg={open} />
+    </SheetCard>
   );
 }
 

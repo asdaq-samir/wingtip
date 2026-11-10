@@ -145,7 +145,11 @@ extension Planner {
 
     /// One "how to spot it" line per checkpoint, as they are written: each
     /// a billed call, so asked for only on the pilot's tap.
-    static func describeCheckpoints(dep: String, dest: String, stops: [String]) -> AsyncThrowingStream<NoteLine, any Error> {
+    /// Claude's, so nothing is asked while the server's Claude features
+    /// are off (ServerFeatures): the stream ends empty.
+    static func describeCheckpoints(dep: String, dest: String, stops: [String],
+                                    claudeOn: Bool = ServerFeatures.claudeOnNow) -> AsyncThrowingStream<NoteLine, any Error> {
+        guard claudeOn else { return AsyncThrowingStream { $0.finish() } }
         let ask = APIGenerateNotesRequest(departureIdent: dep, destinationIdent: dest, stops: stops)
         return lines({ try await request("POST", "/api/checkpoint-notes/generate", json: ask, csrf: true) }) {
             try snakeCase.decode(NoteLine.self, from: $0)

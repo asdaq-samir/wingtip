@@ -10,6 +10,7 @@ import SkeletonLines from "../../../../components/SkeletonLines";
 import { TEXT } from "../../../../lib/text";
 import SourceChips from "../../../../components/SourceChips";
 import { useAsk, type AskTurn } from "../../../../lib/ask/useAsk";
+import { useClaudeOn } from "../../../../lib/subscription";
 import { TripPlanner } from "../../../tripPlanner";
 import { useVoice, VoiceButton } from "../../../voice";
 
@@ -102,8 +103,17 @@ const FIRST_QUESTIONS = ["Brief me", "Is the weather within my minimums?", "What
  * The microphone is Ask by voice (features/voice): the words appear in
  * the field as they are said, as a phone's dictation types them, and are
  * sent as the pause ends them.
+ *
+ * Not there at all while the deployment keeps Claude off (useClaudeOn):
+ * the owner, 2026-11-10, "To keep the cost low, we only add the claude
+ * feature later when we decide about subscription model. For now just the
+ * free siri and gemini." The web has no free model of its own to ask.
  */
 export default function AskSection() {
+  return useClaudeOn() ? <AskConversation /> : null;
+}
+
+function AskConversation() {
   const turns = useAsk((s) => s.turns);
   const busy = useAsk((s) => s.busy);
   const [text, setText] = useState("");
