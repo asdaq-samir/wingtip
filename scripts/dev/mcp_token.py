@@ -32,7 +32,8 @@ REDIRECT = "http://127.0.0.1:33418/callback"
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
+    # The redirects are the flow's own steps, read one at a time here.
+    def redirect_request(self, *_):
         return None
 
 
