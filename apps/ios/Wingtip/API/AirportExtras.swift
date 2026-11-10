@@ -139,6 +139,12 @@ extension Planner {
         try await fetch(AirportPhotos.self, "/api/airport/\(ident)/photos")
     }
 
+    /// The field's own NOTAMs and the TFRs within 5 nm of it, the engine's
+    /// ranking (/api/airport/{ident}/notams, notams_ranked).
+    static func notams(_ ident: String) async throws -> APINotamsRanked {
+        try await fetch(APINotamsRanked.self, "/api/airport/\(ident)/notams")
+    }
+
     /// What the field offers on the ground (/api/airport/{ident}/services).
     static func services(_ ident: String) async throws -> AirportServices {
         try await fetch(AirportServices.self, "/api/airport/\(ident)/services")

@@ -117,14 +117,8 @@ class Plan(app: Application) : AndroidViewModel(app) {
     /** The route as typed, planned: idents upper-cased as the planner
      *  reads them, empty stops left out. */
     fun plan(dep: String, dest: String, stops: List<String>) {
-        _state.update {
-            it.copy(
-                dep = dep.trim().uppercase(),
-                dest = dest.trim().uppercase(),
-                stops = stops.map { s -> s.trim().uppercase() }.filter { s -> s.isNotEmpty() },
-                direct = null, was = null,
-            )
-        }
+        val upper = stops.map { s -> s.trim().uppercase() }.filter { s -> s.isNotEmpty() }
+        _state.update { it.copy(dep = dep.trim().uppercase(), dest = dest.trim().uppercase(), stops = upper, direct = null, was = null) }
         plan()
     }
 
@@ -174,9 +168,15 @@ class Plan(app: Application) : AndroidViewModel(app) {
     }
 
     /** Undo: the route, its holds and its Direct as they were before the
-     *  last edit, planned again. */
-    fun undoEdit() {
-        val n = undo.take() ?: return
+     *  last edit, planned again; Redo puts that edit back (the wide
+     *  window's route toolbar). Each keeps the route it leaves for the other. */
+    fun undoEdit() { undo.take()?.let { n -> undo.keepRedo(asNow(n)); reapply(n) } }
+
+    fun redoEdit() { undo.takeRedo()?.let { n -> undo.keepUndo(asNow(n)); reapply(n) } }
+
+    private fun asNow(n: RouteUndo.Note) = _state.value.let { s -> n.copy(route = RouteEdits.Route(s.dep, s.stops, s.dest), holds = s.holds, direct = s.direct, was = s.was) }
+
+    private fun reapply(n: RouteUndo.Note) {
         _state.update { it.copy(holds = n.holds) }
         plan(n.route.dep, n.route.dest, n.route.stops)
         _state.update { it.copy(direct = n.direct, was = n.was) }

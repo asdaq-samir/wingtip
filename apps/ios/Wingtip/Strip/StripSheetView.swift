@@ -79,6 +79,9 @@ struct StripSheetView: View {
                         .navigationTitle(page.title)
                         .closesBack()
                 }
+                // A card's own links (a field's NOTAMs, Ready to Fly's
+                // Brief) push here as they do on the plan's sheet.
+                .navigationDestination(for: SheetPage.self) { page in SheetPageView(page: page, nearest: []) }
         }
         .chartInkTheme()
         // A field tapped on the chart, or a point held: its card, half
@@ -99,7 +102,7 @@ struct StripSheetView: View {
         .overlay(alignment: .bottom) {
             UndoBar()
                 .padding(.bottom, WingtipSpace.xxl)
-                .animation(.easeOut(duration: WingtipMotion.sheet), value: plan.undoNote)
+                .animation(.default, value: plan.undoNote)
         }
         // An airplane's card, a point pressed on the map, a hold, a flown
         // track, over the strip as over the tabs.
@@ -114,7 +117,7 @@ struct StripSheetView: View {
                     StripAir(points: points, position: try? along.get(), fix: fix)
                     if case .failure(let error) = along {
                         Text("Your place on the strip couldn't be worked out: \(error.localizedDescription)")
-                            .font(ChartInk.note).foregroundStyle(.orange)
+                            .font(ChartInk.note).foregroundStyle(WingtipInk.caution)
                     }
                     radio
                 } else {
@@ -128,7 +131,7 @@ struct StripSheetView: View {
                             Label(stage, systemImage: "ellipsis").font(ChartInk.note).foregroundStyle(.secondary)
                         }
                         if let planProblem = plan.problem {
-                            Text(planProblem.brief ?? planProblem.detail).font(ChartInk.detail.weight(.semibold)).foregroundStyle(.orange)
+                            Text(planProblem.brief ?? planProblem.detail).font(ChartInk.detail.weight(.semibold)).foregroundStyle(WingtipInk.caution)
                         }
                         StripHead(onBrief: { path.append(.brief) }, onFile: { path.append(.file) })
                         StripList(points: points,
@@ -162,6 +165,7 @@ struct StripSheetView: View {
                 case .screen(let screen): openScreen(screen)
                 case .airport(let text): path.append(.airport(text))
                 case .instructing: _ = open(.instructor)
+                case .notams: path.append(.brief)
                 case .practice, .training, .contact, .leg, .flight: _ = open(.setup)
                 }
             },

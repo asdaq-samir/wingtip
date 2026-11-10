@@ -75,7 +75,9 @@ fun AirplaneCard(at: ProfileOpen.At, plan: Plan, onClose: () -> Unit, onFlown: (
             LargeFlexibleTopAppBar(
                 title = { Text(name) },
                 subtitle = type?.takeIf { it != name }?.let { t -> { Text(t) } },
-                navigationIcon = { IconButton(onClick = onClose) { Icon(WingtipIcons.close, contentDescription = stringResource(R.string.close)) } },
+                // Close at the end, as every level's title row has it
+                // (decision 0015), never a back arrow at the start.
+                actions = { IconButton(onClick = onClose) { Icon(WingtipIcons.close, contentDescription = stringResource(R.string.close)) } },
                 windowInsets = WindowInsets(0),
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 scrollBehavior = scroll,

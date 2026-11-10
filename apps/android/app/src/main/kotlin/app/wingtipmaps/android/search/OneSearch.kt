@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.ExpandedDockedSearchBarWithGap
 import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -29,8 +31,10 @@ import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,6 +54,7 @@ import app.wingtipmaps.android.atc.micAllowed
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.plan.FlightChoices
+import app.wingtipmaps.android.ui.isWide
 import kotlinx.coroutines.launch
 
 /**
@@ -190,14 +195,17 @@ fun OneSearch(
         }
     }
 
-    ExpandedFullScreenSearchBar(state = searchBarState, inputField = inputField) {
+    // The kinds the typed results are narrowed to by the filter chips.
+    var chosen by remember { mutableStateOf(emptySet<ResultKind>()) }
+    val results: @Composable ColumnScope.() -> Unit = {
         val typed = textFieldState.text.isNotBlank()
         val actions = remember(state.query, state.airports, state.waypoints, planState.routed, fix != null) {
             SearchGroups.actions(state.query, planState.routed, fix != null, (state.airports + state.waypoints).firstOrNull()?.ident)
         }
         LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
             if (typed) {
-                searchResults(state, actions, routed = planState.routed, hasFix = fix != null, onPick = pick)
+                kindFilters(chosen) { kind -> chosen = if (kind in chosen) chosen - kind else chosen + kind }
+                searchResults(state, actions, routed = planState.routed, hasFix = fix != null, chosen = chosen, onPick = pick)
             } else {
                 if (!control.addingStop) {
                     item(key = "flight") {
@@ -207,5 +215,14 @@ fun OneSearch(
                 nothingTyped(favorites, own.values, recents, state.nearest, state.nearestProblem, onPick = pick)
             }
         }
+    }
+    // A phone's search opens over the whole screen, as Material's does on
+    // a compact window; beside the map on a tablet or an unfolded phone it
+    // drops down from the bar instead, the map left in sight (Material's
+    // docked search for medium windows and wider).
+    if (isWide()) {
+        ExpandedDockedSearchBarWithGap(state = searchBarState, inputField = inputField, content = results)
+    } else {
+        ExpandedFullScreenSearchBar(state = searchBarState, inputField = inputField, content = results)
     }
 }

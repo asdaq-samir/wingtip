@@ -8,10 +8,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,6 +29,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,8 +54,9 @@ fun micAllowed(context: Context): Boolean =
  * The ATC copilot over the map, under the copilot's banner while the pilot
  * has it on (the web's AtcCopilot): the newest call to us as its card;
  * flying with no registration, a line saying so; flying without the
- * microphone allowed, or not listening, a line and a tap to start. The
- * microphone is asked for in the moment it is needed, as Android's
+ * microphone allowed, or not listening, a line and a tap to start; while
+ * it listens, a "Listening…" capsule on Material's floating toolbar with
+ * the words as they are heard and its Stop. The microphone is asked for in the moment it is needed, as Android's
  * guidance has it, never at launch.
  */
 @Composable
@@ -92,8 +101,31 @@ fun AtcCopilotHost(plan: Plan, flying: Boolean, fix: OwnShip.Fix?) {
         tail == null -> StatusLine(stringResource(R.string.atc_no_tail), button = null) {}
         !allowed -> StatusLine(stringResource(R.string.atc_allow_mic), stringResource(R.string.atc_allow)) { ask.launch(Manifest.permission.RECORD_AUDIO) }
         !listening -> StatusLine(error ?: stringResource(R.string.atc_not_listening), stringResource(R.string.atc_listen), caution = error != null, onTap = model::listen)
+        else -> {
+            val heard by model.heard.collectAsStateWithLifecycle()
+            ListeningCapsule(words = heard.lastOrNull()?.text, onStop = model::stop)
+        }
     }
 }
+
+/** Listening: the microphone, "Listening…" or the words now heard, and
+ *  Stop at the end, on Material's floating toolbar over the map. */
+@Composable
+private fun ListeningCapsule(words: String?, onStop: () -> Unit) {
+    HorizontalFloatingToolbar(expanded = true) {
+        Icon(Icons.Filled.Mic, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.CenterVertically))
+        Text(
+            words ?: stringResource(R.string.atc_listening),
+            Modifier.align(Alignment.CenterVertically).padding(horizontal = WingtipSpace.Sm).widthIn(max = CapsuleWords).semantics { liveRegion = LiveRegionMode.Polite },
+            style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
+        IconButton(onClick = onStop) { Icon(Icons.Filled.Stop, contentDescription = stringResource(R.string.atc_stop_listening)) }
+    }
+}
+
+/** The widest the heard words run before they are cut, so the capsule
+ *  stays a capsule over the map at a phone's width. */
+private val CapsuleWords = 220.dp
 
 /** One line over the map, with the tap that answers it where there is one. */
 @Composable

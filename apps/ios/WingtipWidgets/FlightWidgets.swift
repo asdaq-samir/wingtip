@@ -112,7 +112,8 @@ private struct MediumCard: View {
                         .lineLimit(3)
                 }
                 Spacer(minLength: 0)
-                Text("as of \(flight.updatedAt, style: .time)")
+                // Not live: when the app last had it (HIG Widgets).
+                Text("Updated \(Format.zulu(flight.updatedAt))")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
@@ -213,6 +214,8 @@ private struct WeatherLine: View {
                 Text(category)
                     .font(.caption.weight(.bold))
                     .foregroundStyle(Color(uiColor: FlightCategory.words(category)))
+                    // The tinted and clear Home Screens keep it, as a word.
+                    .widgetAccentable()
             }
             Text(flight.depWind ?? (flight.depFlightCategory == nil ? "No report" : ""))
                 .font(.caption)

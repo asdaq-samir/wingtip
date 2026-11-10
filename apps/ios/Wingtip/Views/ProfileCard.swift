@@ -1,3 +1,4 @@
+import Charts
 import SwiftUI
 
 /// The route from the side, as the web app's Profile card has it: the
@@ -53,7 +54,7 @@ struct ProfileCard: View {
                         HStack {
                             Text(Format.cruiseAltitude(altitude)).monospacedDigit().bold()
                             if let name = name(of: altitude) {
-                                Text(name).foregroundStyle(legal.contains(altitude) ? Color.secondary : Color.orange)
+                                Text(name).foregroundStyle(legal.contains(altitude) ? Color.secondary : WingtipInk.caution)
                             }
                             if let ete {
                                 Spacer()
@@ -92,7 +93,7 @@ struct ProfileCard: View {
                             Text("\(Format.cruiseAltitude(caution.altitudeFt)) \(caution.fromIdent) → \(caution.toIdent)").font(.subheadline.weight(.semibold))
                             ForEach(caution.reasons, id: \.self) { Text("• \($0)").font(.footnote) }
                         }
-                        .foregroundStyle(Color.orange)
+                        .foregroundStyle(WingtipInk.caution)
                     }
                 } header: {
                     Label("Cautions", systemImage: "exclamationmark.triangle")
@@ -158,56 +159,77 @@ struct ProfileCard: View {
     }
 }
 
-/// The side view itself, drawn: the ground in brown, Class B and C in
-/// their chart colours, the altitude line across.
+/// The side view itself, in Swift Charts (docs/design/ios.md §4): the
+/// ground as an area in the chart's terrain brown, Class B and C as faint
+/// bands in the sectional's airspace blue and magenta, and the altitude
+/// flown across them in the tint, its axes in feet and nautical miles.
+/// Swift Charts gives VoiceOver its Audio Graph; every figure is also in
+/// the rows (HIG Charts: never only in a chart). Nothing is worked out
+/// here: the planner's profile and the engine's legs, drawn.
 struct ProfileChart: View {
     let profile: RouteProfile?
     let legs: [Leg]
     let altitudeFt: Double?
     let selection: AltitudeSelection?
 
+    /// The altitude line's points along the route: the legs' own where
+    /// they are in, else one altitude across.
+    private var flown: [(nm: Double, ft: Double)] {
+        guard let profile else { return [] }
+        if legs.count > 1 {
+            var along = 0.0
+            var points = [(nm: 0.0, ft: legs[0].altitudeFt)]
+            for leg in legs {
+                along += leg.distanceNm
+                points.append((nm: min(along, profile.lengthNm), ft: leg.altitudeFt))
+            }
+            return points
+        }
+        return altitudeFt.map { [(nm: 0, ft: $0), (nm: profile.lengthNm, ft: $0)] } ?? []
+    }
+
     var body: some View {
-        Canvas { context, size in
-            guard let profile, profile.lengthNm > 0, !profile.terrain.isEmpty else { return }
+        if let profile, profile.lengthNm > 0, !profile.terrain.isEmpty {
             let highest = max(profile.terrain.map(\.groundFt).max() ?? 0, altitudeFt ?? 0, selection?.recommendedFt ?? 0, 3000)
             let top = (highest * 1.25 / 1000).rounded(.up) * 1000
-            let x = { (nm: Double) in CGFloat(nm / profile.lengthNm) * size.width }
-            let y = { (ft: Double) in size.height - CGFloat(max(0, min(1, ft / top))) * size.height }
-            // Airspace bands, Class B blue and Class C magenta as the chart
-            // draws them, faint.
-            for area in profile.airspace {
-                let colour: Color = area.airspaceClass == "B" ? Color.blue : area.airspaceClass == "C" ? Color.purple : Color.gray
-                let rect = CGRect(x: x(area.fromNm), y: y(area.ceilingFt ?? top), width: max(1, x(area.toNm) - x(area.fromNm)), height: max(1, y(area.floorFt) - y(area.ceilingFt ?? top)))
-                context.fill(Path(rect), with: .color(colour.opacity(0.12)))
-                context.stroke(Path(rect), with: .color(colour.opacity(0.5)), lineWidth: 1)
-            }
-            // The ground.
-            var ground = Path()
-            ground.move(to: CGPoint(x: 0, y: size.height))
-            for point in profile.terrain { ground.addLine(to: CGPoint(x: x(point.alongNm), y: y(point.groundFt))) }
-            ground.addLine(to: CGPoint(x: size.width, y: size.height))
-            ground.closeSubpath()
-            context.fill(ground, with: .color(Color(uiColor: WingtipColor.Chart.terrain).opacity(0.75)))
-            // The altitude line: the legs' own where they are in, else
-            // one altitude across.
-            var line = Path()
-            if legs.count > 1 {
-                var along = 0.0
-                line.move(to: CGPoint(x: 0, y: y(legs[0].altitudeFt)))
-                for leg in legs {
-                    along += leg.distanceNm
-                    line.addLine(to: CGPoint(x: x(min(along, profile.lengthNm)), y: y(leg.altitudeFt)))
+            Chart {
+                ForEach(Array(profile.airspace.enumerated()), id: \.offset) { _, area in
+                    RectangleMark(xStart: .value("From", area.fromNm), xEnd: .value("To", area.toNm),
+                                  yStart: .value("Floor", area.floorFt), yEnd: .value("Ceiling", min(area.ceilingFt ?? top, top)))
+                        .foregroundStyle(Self.colour(area.airspaceClass).opacity(0.14))
+                        .accessibilityLabel("Class \(area.airspaceClass), \(area.name)")
                 }
-            } else if let altitudeFt {
-                line.move(to: CGPoint(x: 0, y: y(altitudeFt)))
-                line.addLine(to: CGPoint(x: size.width, y: y(altitudeFt)))
+                ForEach(Array(profile.terrain.enumerated()), id: \.offset) { _, point in
+                    AreaMark(x: .value("Along", point.alongNm), y: .value("Ground", point.groundFt))
+                        .foregroundStyle(Color(uiColor: WingtipColor.Chart.terrain).opacity(0.75))
+                        .accessibilityLabel("Ground")
+                }
+                ForEach(Array(flown.enumerated()), id: \.offset) { _, point in
+                    LineMark(x: .value("Along", point.nm), y: .value("Altitude", point.ft), series: .value("Line", "Altitude"))
+                        .foregroundStyle(.tint)
+                        .lineStyle(StrokeStyle(lineWidth: 2.5, lineJoin: .round))
+                        .accessibilityLabel("Altitude")
+                }
             }
-            context.stroke(line, with: .color(.blue), style: StrokeStyle(lineWidth: 2.5, lineJoin: .round))
-            // The scale's top and the floor.
-            context.draw(Text(Format.altitude(top)).font(.caption2).foregroundStyle(.secondary), at: CGPoint(x: 28, y: 10))
+            .chartXScale(domain: 0...profile.lengthNm)
+            .chartYScale(domain: 0...top)
+            .chartXAxisLabel("nm")
+            .chartYAxisLabel("ft")
+            .padding(WingtipSpace.md)
+            .accessibilityLabel("The route from the side: the ground, the airspace and the altitude flown")
+        } else {
+            ContentUnavailableView("No Profile Yet", systemImage: "mountain.2", description: Text("Plan the route to see it from the side."))
         }
-        .background(Color(.secondarySystemBackground))
-        .accessibilityLabel("The route from the side: the ground, the airspace and the altitude flown")
+    }
+
+    /// Class B in the sectional's blue, C in its magenta (FAA Chart
+    /// User's Guide, Airspace), the rest grey.
+    static func colour(_ airspaceClass: String) -> Color {
+        switch airspaceClass {
+        case "B": Color(uiColor: WingtipColor.Chart.airspaceBlue)
+        case "C": Color(uiColor: WingtipColor.Chart.airspaceMagenta)
+        default: Color(uiColor: WingtipColor.Chart.fieldUnknown)
+        }
     }
 }
 

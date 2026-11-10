@@ -107,6 +107,11 @@ struct SplitLayout<Map: View>: View {
                 .toolbar(.hidden, for: .navigationBar)
                 .inspector(isPresented: inspectorShown) {
                     inspector
+                        // The cards' rows on a solid ground, not the map
+                        // through glass: glass is for controls (HIG
+                        // Materials; docs/design/ios.md §0), and the audit
+                        // found the Brief's words faint over the chart.
+                        .background(Color(.systemGroupedBackground))
                         .inspectorColumnWidth(min: 320, ideal: 375, max: 440)
                 }
         }
@@ -164,12 +169,18 @@ struct SplitLayout<Map: View>: View {
         case .airport(let text):
             NavigationStack {
                 AirportDestination(route: AirportRoute(text), nearest: []).toolbar { closeItem }
+                    // The card's own links (its NOTAMs, Ready to Fly's Brief)
+                    // push in the inspector, as they do in the iPhone's sheet.
+                    .navigationDestination(for: SheetPage.self) { page in SheetPageView(page: page, nearest: []) }
             }
             .id(text)
         case .profile:
             NavigationStack { ProfileCard().toolbar { closeItem } }
         case .brief:
-            NavigationStack { BriefView().toolbar { closeItem } }
+            NavigationStack {
+                BriefView().toolbar { closeItem }
+                    .navigationDestination(for: SheetPage.self) { page in SheetPageView(page: page, nearest: []) }
+            }
         case .flights:
             NavigationStack { FlightsView().toolbar { closeItem } }
         case .flight:

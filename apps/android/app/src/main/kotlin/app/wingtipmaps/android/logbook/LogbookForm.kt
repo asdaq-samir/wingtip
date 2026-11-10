@@ -46,6 +46,21 @@ data class LogbookForm(
     }
 
     companion object {
+        /** What a flight added by hand starts from: nothing flown yet, so
+         *  the columns the form does not ask for go to the gateway as
+         *  nought, as a blank paper line has them. */
+        val BLANK = LogbookEntryDto(
+            airHours = 0.0, approaches = 0, crossCountryHours = 0.0, dayLandings = 0, distanceNm = 0.0, dualHours = 0.0,
+            flownOn = "", fromTrack = false, holding = false, id = 0, instrumentHours = 0.0, longestLegNm = 0.0, nightHours = 0.0,
+            nightLandings = 0, soloHours = 0.0, totalHours = 0.0, touchAndGoes = 0, toweredLandings = 0, tracking = false,
+        )
+
+        /** Add Flight's fields: today's date, the rest for the pilot to
+         *  type, none guessed. */
+        fun new(today: LocalDate): LogbookForm = LogbookForm(
+            date = today.toString(), route = "", airplane = "", total = "", night = "", dayLandings = "", nightLandings = "", remarks = "",
+        )
+
         fun of(e: LogbookEntryDto) = LogbookForm(
             date = e.flownOn, route = e.route.orEmpty(), airplane = e.aircraft.orEmpty(), total = DraftEntry.tenths(e.totalHours),
             night = DraftEntry.tenths(e.nightHours), dayLandings = e.dayLandings.toString(), nightLandings = e.nightLandings.toString(),

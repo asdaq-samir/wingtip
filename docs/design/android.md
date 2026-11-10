@@ -154,12 +154,12 @@ end, and nothing on this page describes a Google app from memory.
     default and slow springs.
 - `MotionScheme.expressive()` is set on the theme, so every stock
   component uses it.
-- **The one exception is the docked sheet.** Decision 0018 and
-  `motion.sheet*` in the tokens say ease-out, no spring, 0.3 s from pill
-  to half, and one size per throw. The owner chose that, and it stands
-  on Android (`ui/sheet/DockedSheet`). Material's standard bottom sheet
-  allows a custom spec, so this is not a hand-rolled sheet. Giving the
-  sheet a spring needs an `owner` issue.
+- **The docked sheet included.** The owner (2026-11-09) had stock
+  components keep their stock behaviour: decision 0018's ease-out, half
+  stop and one size per throw were rules for a hand-built sheet. The
+  panel is Material's standard bottom sheet (`ui/sheet/MapSheet`,
+  `BottomSheetScaffold`), at its peek or expanded, on the motion
+  scheme's springs.
 - Use the system's **Remove animations** setting through Compose's
   animator duration scale. It already stills the stock springs.
 - Use the expressive scheme for a whole control and the standard scheme
@@ -195,8 +195,8 @@ end, and nothing on this page describes a Google app from memory.
   |---|---|---|---|
   | `direct-to` (Direct To / Fly Here taken) | `CONFIRM` | `Confirm` | keep |
   | `warning` (a rule warns) | `REJECT` | `Reject` | keep; a warning never blocks (decision 0008) |
-  | `detent` (the sheet settles a size) | `CONTEXT_CLICK` | `GestureThresholdActivate` when a drag crosses a size, then nothing on settle | a recommendation; change it in the tokens |
-  | `altitude` (a wheel's step) | `CLOCK_TICK` | `SegmentFrequentTick` on API 34+, with `CLOCK_TICK` as the fallback | a recommendation: the 34 constant is the one Android documents for a slider's or wheel's steps |
+  | `detent` (the sheet settles a size) | `CONTEXT_CLICK` | none: the stock sheet has no haptic of its own, and the owner had stock behaviour win (2026-11-09) | not used on Android |
+  | `altitude` (a wheel's step) | `SEGMENT_FREQUENT_TICK` (API 34+), `CLOCK_TICK` below | the same | the owner's pick, 2026-11-09 (`ui/AltitudeRow`) |
   | a switch | none | `ToggleOn` / `ToggleOff` | the stock `Switch` |
 
 - No haptics for scrolling, loading or arriving data.
@@ -533,9 +533,8 @@ placement wins, and the difference is noted.
 - **Primary action**:
   - Brief, on the route box's first line, where the owner put it.
   - On a medium or larger window, a `HorizontalFloatingToolbar` over
-    the map may carry Undo, Redo and Add Point only if the owner opens
-    an issue for it (0013). Until then, keep the controls where they
-    are.
+    the map carries Undo, Redo and Add Point while the plan is open
+    (`route/RouteToolbar`; the owner, 2026-11-09).
 - **Motion**: chips enter and leave with the motion scheme. A dragged
   row lifts by elevation and settles with the standard scheme.
 - **Haptics**:
@@ -988,9 +987,9 @@ Ask is not on the screen list, but it sits under every brief.
 - **Navigation**: the four tabs stay the panel's first row (0013). Do
   not swap them for a `NavigationRail` or `NavigationSuiteScaffold`
   without the owner.
-- **Foldables**: the half-open (tabletop) posture can put the map on
-  the top half and the panel on the bottom. That is an `owner`
-  decision, so only propose it.
+- **Foldables**: in the half-open (tabletop) posture the map is on the
+  top half and the panel on the bottom, split at the fold
+  (`ui/TabletopPanes`; the owner, 2026-11-09).
 - **Every window shape works**: no orientation lock, because the
   system ignores it on large screens at 36 and 37 (§1.9).
 - **Sources**:
@@ -1054,10 +1053,18 @@ each on a current phone, or a Google page, before matching it.
 - **Android 17**: no predictive-back changes beyond Android 16's were
   found.
 
-Recommendations here that need the owner, raised as `owner` issues
-rather than done:
+The owner settled the four recommendations that were left for him on
+2026-11-09: the sheet is Material's stock sheet with its springs (§1.5),
+the altitude menu ticks with `SEGMENT_FREQUENT_TICK` and the sheet has
+no haptic of its own (§1.6), wide windows get the floating route
+toolbar (§3.3), and a half-folded phone shows the map above the fold
+(§3.17).
 
-- a spring for the docked sheet (§1.5)
-- the haptics token changes for `detent` and `altitude` (§1.6)
-- a floating toolbar for route editing on wide windows (§3.3)
-- the tabletop posture (§3.17)
+## 5. Since the one search
+
+The owner's one search (2026-11-09) replaced the sheet's four tabs after
+this page was written. Where §3 speaks of the FPL, Airport, Airplane and
+Setup tabs, read: one search as the sheet's first row with its
+microphone and the account button; the plan as the sheet's main
+content; the airport and airplane cards opened from the search; and
+Setup's settings on the account menu's Settings page.

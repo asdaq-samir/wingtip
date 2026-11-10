@@ -6,7 +6,11 @@ import SwiftUI
 /// long, and where it may count toward WINGS -- all the engine's
 /// (proficiency_plan), with a short paragraph and a line a session from
 /// the assistant. It opens on what to do; the currencies and the evidence
-/// come under it. Every figure is shown as the engine gave it.
+/// come under it. Every figure is shown as the engine gave it. Laid out
+/// as Apple's Fitness Summary (docs/design/ios.md §10): a large title,
+/// the next lesson first with its one filled button, the trends of the
+/// last 90 days against the year's pace with their arrows and words, then
+/// practice, the sessions, what is due, the debriefs and the instructor.
 struct CoachView: View {
     @Environment(Session.self) private var session
     @State private var model = CoachModel()
@@ -22,23 +26,79 @@ struct CoachView: View {
                     }
                     .pickerStyle(.menu)
                 }
-                Section {
-                    Button { Task { await model.make(home: session.pilot?.homeBase) } } label: {
-                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                            Text(model.plan == nil ? "Make My Plan" : "Make It Again")
-                            Text(model.making ? "Reading your logbook…" : "From your logbook and the fields near \(home)")
-                                .font(WingtipType.note).foregroundStyle(.secondary)
-                        }
-                    }
-                    .disabled(!model.ready || model.making)
-                    ProblemLine(model.problem)
-                }
+                nextLesson
+                trendsSection
                 if let plan = model.plan { planSections(plan) }
+                Section(title: "Practice") { PracticeRows() }
+                Section(title: "Instructor") {
+                    NavigationLink(value: SheetPage.training) { Label("Training and Endorsements", systemImage: "graduationcap") }
+                    NavigationLink(value: SheetPage.instructing) { Label("Instructing", systemImage: "person.2") }
+                }
             }
         }
         .navigationTitle("Coach")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .task(id: session.signedIn) { if session.signedIn { await model.load() } }
+    }
+
+    /// The next lesson as Fitness puts its one card first: the plan's
+    /// first session, why it is suggested, and the one filled button that
+    /// makes the plan (again) from the logbook.
+    private var nextLesson: some View {
+        Section {
+            VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+                if let first = model.plan?.sessions.first {
+                    Text(first.practise).font(WingtipType.card)
+                    Text(model.sessionLines[first.id] ?? CoachModel.sessionDetail(first)).font(WingtipType.detail).foregroundStyle(.secondary)
+                } else {
+                    Text("Your Next Lesson").font(WingtipType.card)
+                    Text(model.making ? "Reading your logbook…" : "From your logbook and the fields near \(home)")
+                        .font(WingtipType.detail).foregroundStyle(.secondary)
+                }
+                Button { Task { await model.make(home: session.pilot?.homeBase) } } label: {
+                    Text(model.plan == nil ? "Make My Plan" : "Make It Again").frame(maxWidth: .infinity, minHeight: WingtipSize.tapTarget)
+                }
+                .glassProminentButton()
+                .disabled(!model.ready || model.making)
+                ProblemLine(model.problem)
+            }
+            .padding(.vertical, WingtipSpace.xs)
+        } header: {
+            SectionTitle("Next Lesson")
+        }
+    }
+
+    /// The last 90 days against the year's pace, each with its arrow and
+    /// words; with too few flights, how many more it takes.
+    @ViewBuilder private var trendsSection: some View {
+        if let entries = model.pilot?.entries {
+            Section(title: "Trends") {
+                if let trends = CoachTrends.trends(entries) {
+                    ForEach(trends) { t in
+                        Label {
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                                Text(t.title).font(WingtipType.row)
+                                Text(t.words).font(WingtipType.detail).foregroundStyle(.secondary)
+                            }
+                        } icon: {
+                            Image(systemName: Self.symbol(t.way)).foregroundStyle(t.way == .down ? WingtipInk.caution : Color.accentColor)
+                        }
+                        .accessibilityElement(children: .combine)
+                    }
+                } else {
+                    let more = CoachTrends.flightsToGo(entries)
+                    Text("Log \(more) more flight\(more == 1 ? "" : "s") this year to see your trends.").foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    private static func symbol(_ way: CoachTrends.Way) -> String {
+        switch way {
+        case .up: "arrow.up.circle.fill"
+        case .down: "arrow.down.circle.fill"
+        case .steady: "equal.circle.fill"
+        }
     }
 
     private var home: String {
@@ -65,7 +125,7 @@ struct CoachView: View {
         Section(title: "What Is Due") {
             ForEach(plan.due, id: \.key) { d in
                 LabeledContent {
-                    Text(CoachModel.statusWords(d)).monospacedDigit().foregroundStyle(tone(d.status))
+                    Label(CoachModel.statusWords(d), systemImage: symbol(d.status)).monospacedDigit().foregroundStyle(tone(d.status))
                 } label: {
                     Text(d.label)
                     Text("\(d.rule) · \(d.detail)")
@@ -106,6 +166,16 @@ struct CoachView: View {
                 Text("May count toward WINGS: \(wings.area), ACS \(wings.acs)").font(WingtipType.note).foregroundStyle(.secondary)
             }
             if let line { Text(line).font(WingtipType.detail) }
+        }
+    }
+
+    /// A symbol beside the colour, never colour alone (HIG Accessibility).
+    private func symbol(_ status: String) -> String {
+        switch status {
+        case "current": "checkmark.circle.fill"
+        case "due_soon", "pending": "exclamationmark.triangle.fill"
+        case "lapsed": "xmark.octagon.fill"
+        default: "questionmark.circle"
         }
     }
 

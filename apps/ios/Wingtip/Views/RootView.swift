@@ -113,8 +113,9 @@ struct RootView: View {
                         .modifier(ReadyToFlyHost())
                         // A flight another pilot sent, previewed (SharedFlightHost).
                         .modifier(SharedFlightHost())
-                        // The sheet settling at a size, felt (WingtipHaptic.detent).
-                        .sensoryFeedback(WingtipHaptic.detent, trigger: detent) { _, _ in !reduceMotion }
+                        // The system sheet settles at its detents with its own
+                        // feel; no tap of ours is added to a stock part (the
+                        // owner, 2026-11-10).
                     }
             case .split:
                 SplitLayout(map: map, path: $path, search: search, card: $sideCard, openScreen: { openScreen($0) }, ask: { ask($0) })
@@ -142,6 +143,8 @@ struct RootView: View {
         .lookTint()
         // The key actions' taps, none with Reduce Motion on (Feel).
         .modifier(FeelHost())
+        // ⌘F, ⌘B and ⌘L with a hardware keyboard (KeyboardShortcuts).
+        .modifier(KeyboardShortcuts(search: { search.presented = true }, open: { openScreen($0) }))
     }
 
     /// A field or a point opened from the map: its card on the sheet's
@@ -258,7 +261,7 @@ struct RootView: View {
                     // credit beside the internet's traffic it covers.
                     ReceiverChip()
                     if traffic.credited { MapChip(Traffic.credit(traffic.source)) }
-                    if traffic.on, !traffic.planes.isEmpty, let problem = traffic.marksProblem { MapChip(problem, colour: .orange) }
+                    if traffic.on, !traffic.planes.isEmpty, let problem = traffic.marksProblem { MapChip(problem, colour: WingtipInk.caution) }
                 }
                 .padding(.leading, WingtipSpace.md).padding(.top, WingtipSpace.md)
             }

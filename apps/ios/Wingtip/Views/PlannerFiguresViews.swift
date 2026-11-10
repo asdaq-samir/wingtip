@@ -20,7 +20,7 @@ struct WithinMark: View {
     let ok: Bool
     var body: some View {
         Image(systemName: ok ? "checkmark.circle.fill" : "xmark.circle.fill")
-            .foregroundStyle(ok ? .green : .red)
+            .foregroundStyle(ok ? WingtipInk.go : WingtipInk.problem)
             .accessibilityLabel(ok ? "Within" : "Outside")
     }
 }
@@ -49,7 +49,7 @@ struct DebriefSections: View {
                     Text("In the air")
                     if let planned = d.plannedMin { Text("\(Format.duration(planned)) planned") }
                 }
-                ForEach(d.notes, id: \.self) { note in Text(note).font(.subheadline).foregroundStyle(.orange) }
+                ForEach(d.notes, id: \.self) { note in Text(note).font(.subheadline).foregroundStyle(WingtipInk.caution) }
             } else if loaded, answer != nil {
                 Text("No flight in this track: it never went faster than taxiing.").foregroundStyle(.secondary)
             } else if let problem {
@@ -190,7 +190,7 @@ struct DiversionDrillView: View {
                     }
                     .pickerStyle(.menu)
                     if case .failure(let error) = Self.altitudes {
-                        Text("The altitudes couldn't be listed: \(error.localizedDescription)").foregroundStyle(.orange)
+                        Text("The altitudes couldn't be listed: \(error.localizedDescription)").foregroundStyle(WingtipInk.caution)
                     }
                     Button { start() } label: { Label("Start the Clock", systemImage: "timer") }
                         .disabled(fix == nil)
@@ -245,7 +245,7 @@ struct DiversionDrillView: View {
                 }
                 if checked, let answer {
                     if let line = answer.problem {
-                        Text(line).foregroundStyle(.red)
+                        Text(line).foregroundStyle(WingtipInk.problem)
                     } else {
                         Section(title: "To \(answer.to), Worked Out") {
                             ForEach(answer.steps, id: \.name) { step in LabeledContent(step.name, value: step.value).monospacedDigit() }

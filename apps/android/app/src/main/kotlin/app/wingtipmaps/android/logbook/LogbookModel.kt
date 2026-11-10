@@ -2,7 +2,10 @@ package app.wingtipmaps.android.logbook
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.api.Gateway
+import app.wingtipmaps.android.api.addLogbook
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
+import app.wingtipmaps.android.api.generated.gateway.LogbookEntryRequest
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,11 +20,13 @@ import kotlinx.coroutines.launch
  * (LogbookChanged). An entry is edited in its row (LogbookForm, Save or
  * Cancel) and deleted with an Undo row where it was: the delete is sent
  * only when the row's time is up (`deleteKept`), so Undo needs no server.
+ * A flight is added by hand from Add Flight (`add`), in the same fields.
  * Signed out, nothing.
  */
 class LogbookModel(
     private val source: LogbookSource = ServerLogbook,
     private val edits: LogbookEdits = ServerLogbookEdits,
+    private val adds: suspend (LogbookEntryRequest) -> LogbookEntryDto = { Gateway.addLogbook(it) },
 ) : ViewModel() {
     /** An entry taken out of the list and where it was, for its Undo. */
     data class Removed(val entry: LogbookEntryDto, val index: Int)
@@ -37,6 +42,12 @@ class LogbookModel(
         /** Why the open row was not saved, said in that row. */
         val editProblem: String? = null,
         val removed: Removed? = null,
+        /** Add Flight's sheet open, with why it was not saved. */
+        val adding: Boolean = false,
+        val addProblem: String? = null,
+        /** Counts each entry saved or added, for the screen's Confirm
+         *  haptic: it is felt once per save that reached the server. */
+        val saved: Int = 0,
     )
 
     private val _state = MutableStateFlow(State())
@@ -85,7 +96,7 @@ class LogbookModel(
                 _state.update { st ->
                     st.copy(
                         entries = st.entries.map { if (it.id == saved.id) saved else it }.sortedByDescending { it.flownOn },
-                        editing = null, saving = false,
+                        editing = null, saving = false, saved = st.saved + 1,
                     )
                 }
                 LogbookChanged.changed()
@@ -93,6 +104,37 @@ class LogbookModel(
                 throw e
             } catch (e: Exception) {
                 _state.update { it.copy(saving = false, editProblem = "The entry could not be saved: ${e.message}") }
+            }
+        }
+    }
+
+    fun openAdd() {
+        _state.update { it.copy(adding = true, addProblem = null) }
+    }
+
+    fun closeAdd() {
+        _state.update { it.copy(adding = false, addProblem = null) }
+    }
+
+    /** Add Flight's Save: the new entry sent, put in its place in the
+     *  list and the sheet closed; the currency read again from it. */
+    fun add(form: LogbookForm) {
+        val asked = form.request(LogbookForm.BLANK).getOrElse { why ->
+            _state.update { it.copy(addProblem = why.message) }
+            return
+        }
+        _state.update { it.copy(saving = true, addProblem = null) }
+        viewModelScope.launch {
+            try {
+                val added = adds(asked)
+                _state.update { st ->
+                    st.copy(entries = (st.entries + added).sortedByDescending { it.flownOn }, adding = false, saving = false, saved = st.saved + 1)
+                }
+                LogbookChanged.changed()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.update { it.copy(saving = false, addProblem = "The flight could not be added: ${e.message}") }
             }
         }
     }
@@ -137,6 +179,30 @@ class LogbookModel(
     }
 
     companion object {
+        /** An entry's time, at the row's end: "1.4 h". */
+        fun hours(e: LogbookEntryDto): String = "${DraftEntry.tenths(e.totalHours)} h"
+
+        /** Under an entry's headline, after the airplane: its landings and
+         *  remarks, "1 landing · Pattern work". */
+        fun details(e: LogbookEntryDto): String? {
+            val landings = e.dayLandings + e.nightLandings
+            return listOfNotNull(if (landings == 1) "1 landing" else "$landings landings", e.remarks?.ifBlank { null }).joinToString(" · ")
+        }
+
+        /** The month an entry is grouped under, from its ISO date
+         *  ("2026-11-09" under "2026-11"); a date that does not read is
+         *  grouped under itself. */
+        fun monthOf(e: LogbookEntryDto): String = e.flownOn.take(7)
+
+        /** The logbook's totals under its title, added up from the
+         *  entries as a paper logbook's page foot adds them: "12 flights ·
+         *  34.5 h · 20 landings". */
+        fun totals(entries: List<LogbookEntryDto>): String {
+            val landings = entries.sumOf { it.dayLandings + it.nightLandings }
+            val flights = if (entries.size == 1) "1 flight" else "${entries.size} flights"
+            return "$flights · ${DraftEntry.tenths(entries.sumOf { it.totalHours })} h · ${if (landings == 1) "1 landing" else "$landings landings"}"
+        }
+
         /** An entry's line: "KDPA KMSN · 1.4 h · 1 landing". */
         fun line(e: LogbookEntryDto): String {
             val landings = e.dayLandings + e.nightLandings

@@ -127,6 +127,15 @@ def airport_forecast_wind(*, ident: str, at: str) -> m.ForecastWind | None:
     return _AIRPORT_FORECAST_WIND.validate_python(found)
 
 
+_AIRPORT_NOTAMS = _Answer(m.NotamsRanked)
+
+
+def airport_notams(*, ident: str) -> m.NotamsRanked:
+    """GET /api/airport/{ident}/notams: Airport Notams"""
+    found = _send('GET', f"/api/airport/{_seg(ident)}/notams", query={}, body=None, headers={})
+    return _AIRPORT_NOTAMS.validate_python(found)
+
+
 _AIRPORT_PHOTOS_OF = _Answer(m.AirportPhotos)
 
 

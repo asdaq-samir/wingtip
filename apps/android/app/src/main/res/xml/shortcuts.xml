@@ -35,7 +35,7 @@
     <shortcut
         android:shortcutId="screen_emergency"
         android:enabled="true"
-        android:shortcutShortLabel="@string/screen_emergency"
+        android:shortcutShortLabel="@string/screen_emergency_short"
         android:shortcutLongLabel="@string/screen_emergency">
         <intent
             android:action="android.intent.action.VIEW"
@@ -143,7 +143,7 @@
     <shortcut
         android:shortcutId="screen_minimums"
         android:enabled="true"
-        android:shortcutShortLabel="@string/screen_minimums"
+        android:shortcutShortLabel="@string/screen_minimums_short"
         android:shortcutLongLabel="@string/screen_minimums">
         <intent
             android:action="android.intent.action.VIEW"
@@ -167,7 +167,7 @@
     <shortcut
         android:shortcutId="screen_passengers"
         android:enabled="true"
-        android:shortcutShortLabel="@string/screen_passengers"
+        android:shortcutShortLabel="@string/screen_passengers_short"
         android:shortcutLongLabel="@string/screen_passengers">
         <intent
             android:action="android.intent.action.VIEW"

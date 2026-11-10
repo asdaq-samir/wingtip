@@ -11,7 +11,32 @@ import Foundation
 /// `in_flight` answers (InFlight), carried as numbers and written on the
 /// screen by Format, as every figure is (FlightActivityLines).
 struct FlightActivityAttributes: ActivityAttributes {
+    /// Where the flight is, as Flighty's Live Activity changes with it
+    /// (Apple's "Spotlight on the Dynamic Island", docs/design/ios.md
+    /// §15): started on the ground and not yet flying, in the air, or
+    /// landed and at rest.
+    enum Phase: String, Codable, Hashable, Sendable {
+        case ready, airborne, arrived
+    }
+
     struct ContentState: Codable, Hashable, Sendable {
+        /// The flight's phase; nil in a state sent before phases, read as
+        /// in the air.
+        var phase: Phase?
+        /// How much of the route is flown, 0 to 1: the engine's miles along
+        /// it over its length (in_flight's along_nm and total_nm); nil
+        /// before the first fix.
+        var progress: Double?
+        /// The miles to the next point, the engine's (in_flight next).
+        var nextNm: Double?
+        /// Before departure: the departure's flight category as the Brief
+        /// had it, and the planner's time en route for the whole flight.
+        var depCategory: String?
+        var plannedEteMin: Double?
+        /// Arrived: when the airplane came to rest, and the minutes from
+        /// the activity's start to then (the block time as the phone saw it).
+        var landedAt: Date?
+        var blockMin: Double?
         /// The next point of the route ahead and the minutes to it at the
         /// speed being made good; nil past the last one or before a fix.
         var nextFix: String?

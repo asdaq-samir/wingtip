@@ -1,5 +1,5 @@
 import { useAirplaneChosen } from "../../../lib/preferences";
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { zoneName } from "../../../lib/format";
 import { cn } from "cn";
 import type { Totals } from "../../../lib/api/types";
@@ -9,9 +9,12 @@ import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger }
 import { TriangleAlert } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { nextLanding, shortFlights, tripFigures } from "../figures";
-import FuelBreakdown from "./FuelBreakdown";
 import { wantScreen } from "../../../lib/navigation/wanted";
 import type { Flown } from "./navlog/dryRun";
+
+/** What the fuel is made of, from the figure's first tap: its own chunk,
+ *  off the first load (scripts/first-load.mjs's budget). */
+const FuelBreakdown = lazy(() => import("./FuelBreakdown"));
 
 /**
  * The flight's figures, the last of the route's panel over the tabs, at
@@ -204,7 +207,9 @@ export default function FlightLine({
                     </button>
                   </ResponsivePopoverTrigger>
                   <ResponsivePopoverContent title={`Fuel to ${breakdown.to}`} className="w-72 p-3" side="top" align="end">
-                    <FuelBreakdown totals={breakdown.totals!} short={shortFlights(totals)} burnt={flown?.burntGal} />
+                    <Suspense fallback={null}>
+                      <FuelBreakdown totals={breakdown.totals!} short={shortFlights(totals)} burnt={flown?.burntGal} />
+                    </Suspense>
                     {f.alert && fuelStop && (
                       <Button
                         type="button"

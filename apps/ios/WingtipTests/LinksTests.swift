@@ -18,6 +18,8 @@ struct LinksTests {
 
     @Test func aPlaceOpensItsCardAndAFlightItsAirplane() throws {
         #expect(Links.command(for: URL(string: "https://wingtipmaps.app/app/plan?place=KDLH")!) == .weather(ident: "KDLH"))
+        // An airplane's profile by its N-number (design/screens.json's `airplane` key).
+        #expect(Links.command(for: URL(string: "https://wingtipmaps.app/app/plan?airplane=n3429j")!) == .airplane(tail: "N3429J"))
         #expect(Links.command(for: URL(string: "https://wingtipmaps.app/app/plan?flight=A1B2C3")!) == .aircraft(hex: "a1b2c3"))
     }
 

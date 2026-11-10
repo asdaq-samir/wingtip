@@ -2853,6 +2853,37 @@ enum EngineContract {
         var voided: Bool?
     }
 
+    struct EnduranceAnswer: Codable, Equatable, Sendable {
+        var minutes: Double?
+        var reserveMin: Double
+        var reserveGal: Double?
+        var afterReserveMin: Double?
+        var belowReserve: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case minutes
+            case reserveMin = "reserve_min"
+            case reserveGal = "reserve_gal"
+            case afterReserveMin = "after_reserve_min"
+            case belowReserve = "below_reserve"
+        }
+    }
+
+    struct EnduranceInput: Codable, Equatable, Sendable {
+        /// The airplane's usable fuel, gallons (its profile's); null or missing where it has none.
+        var usableGal: Double?
+        /// The airplane's cruise burn, gallons an hour (its profile's); null or missing where it has none.
+        var burnGph: Double?
+        /// The reserve kept back: vfr_day (30 min, 91.151(a)(1)), vfr_night (45 min, 91.151(a)(2)), ifr (45 min, 91.167(a)(3)) or none.
+        var reserve: String
+
+        enum CodingKeys: String, CodingKey {
+            case usableGal = "usable_gal"
+            case burnGph = "burn_gph"
+            case reserve
+        }
+    }
+
     struct FaaIdsInput: Codable, Equatable, Sendable {
         var ident: String
     }

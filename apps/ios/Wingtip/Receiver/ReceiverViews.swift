@@ -7,7 +7,7 @@ struct ReceiverChip: View {
 
     var body: some View {
         if receiver.mode == .auto, let summary = receiver.summary {
-            MapChip(summary, systemImage: "dot.radiowaves.left.and.right", colour: receiver.live ? nil : .orange)
+            MapChip(summary, systemImage: "dot.radiowaves.left.and.right", colour: receiver.live ? nil : WingtipInk.caution)
                 .accessibilityLabel("ADS-B receiver: \(summary)")
         }
     }

@@ -223,6 +223,8 @@ export function DryRunControls({
             const nm = Array.isArray(v) ? v[0] : v;
             if (nm !== undefined) seekNm(nm);
           }}
+          // Across, its own; up and down, still the stock sheet's.
+          data-base-ui-swipe-ignore="x"
           onPointerDown={grab}
           onPointerUp={letGo}
           onPointerCancel={letGo}

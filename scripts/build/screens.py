@@ -178,27 +178,53 @@ enum class LinkKey(
 """
 
 
-def shortcuts_of(spec, platform="android"):
-    """A platform's screens with a shortcut, in their order."""
-    return sorted((s for s in on(spec, platform) if "shortcut" in s), key=lambda s: s["shortcut"])
+# A shortcut's labels as Android's shortcut guide sizes them: the short
+# label ten characters at most, the long one 25
+# (developer.android.com/develop/ui/views/launch/shortcuts/best-practices).
+SHORT_LABEL_MAX = 10
+LONG_LABEL_MAX = 25
+
+
+def short_label(s):
+    """A shortcut's short label: its own `shortLabel`, else its title."""
+    return s.get("shortLabel", s["title"])
+
+
+def shortcuts_of(spec):
+    """Android's screens with a shortcut, in their order, each label held
+    to the launcher's lengths so none is cut short on the home screen."""
+    found = sorted((s for s in on(spec, "android") if "shortcut" in s), key=lambda s: s["shortcut"])
+    for s in found:
+        if len(short_label(s)) > SHORT_LABEL_MAX:
+            raise SystemExit(f"screens.json: {s['id']}'s shortcut label is over {SHORT_LABEL_MAX} characters; give it a shortLabel")
+        if len(s["title"]) > LONG_LABEL_MAX:
+            raise SystemExit(f"screens.json: {s['id']}'s title is over {LONG_LABEL_MAX} characters for a shortcut's long label")
+    return found
+
+
+def short_name(s):
+    """The string resource of a shortcut's short label."""
+    return f"screen_{s['id']}_short" if "shortLabel" in s else f"screen_{s['id']}"
 
 
 def web_shortcuts(spec):
     """The web app manifest's `shortcuts` (apps/web/vite.config.ts reads
     them): the web's screens with a shortcut, in their order, each its
-    link, as Android's are its app shortcuts. Chrome lists them on the
-    installed app's icon (a long press on Android, the taskbar's menu on a
-    desktop); Safari has none yet and ignores them."""
+    link and its short label, as Android's are its app shortcuts. Chrome
+    lists them on the installed app's icon (a long press on Android, the
+    taskbar's menu on a desktop); Safari has none yet and ignores them."""
     path = spec["link"]["path"]
     key = spec["link"]["key"]
+    found = sorted((s for s in on(spec, "web") if "shortcut" in s), key=lambda s: s["shortcut"])
     items = [
         {
             "name": s["title"],
+            "short_name": short_label(s),
             "description": s["about"],
             "url": f"{path}?{key}={s['id']}",
             "icons": [{"src": "icon-192.png", "sizes": "192x192", "type": "image/png"}],
         }
-        for s in shortcuts_of(spec, "web")
+        for s in found
     ]
     return json.dumps({"$comment": BANNER, "shortcuts": items}, indent=2, ensure_ascii=False) + "\n"
 
@@ -219,7 +245,7 @@ def android_shortcuts(spec):
         f"""    <shortcut
         android:shortcutId="screen_{s['id']}"
         android:enabled="true"
-        android:shortcutShortLabel="@string/screen_{s['id']}"
+        android:shortcutShortLabel="@string/{short_name(s)}"
         android:shortcutLongLabel="@string/screen_{s['id']}">
         <intent
             android:action="android.intent.action.VIEW"
@@ -246,7 +272,11 @@ def android_shortcuts(spec):
 
 
 def android_shortcut_words(spec):
-    rows = "\n".join(f'    <string name="screen_{s["id"]}">{xml_text(s["title"])}</string>' for s in shortcuts_of(spec))
+    rows = "\n".join(
+        f'    <string name="screen_{s["id"]}">{xml_text(s["title"])}</string>'
+        + (f'\n    <string name="{short_name(s)}">{xml_text(s["shortLabel"])}</string>' if "shortLabel" in s else "")
+        for s in shortcuts_of(spec)
+    )
     return f"""<?xml version="1.0" encoding="utf-8"?>
 <!-- {XML_BANNER} -->
 <resources>

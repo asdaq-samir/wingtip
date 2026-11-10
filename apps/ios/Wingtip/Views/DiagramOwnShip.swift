@@ -98,7 +98,7 @@ struct DiagramOwnShipView: View {
                     let k = fitted.width / diagram.size.width
                     Image(systemName: fix.trackDeg == nil ? "circle.fill" : "location.north.fill")
                         .font(WingtipType.card)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(Color(uiColor: WingtipColor.Chart.mapBlue))
                         .background(Circle().fill(.white).frame(width: disc, height: disc))
                         .rotationEffect(.degrees((diagram.graticule?.northDeg ?? 0) + (fix.trackDeg ?? 0)))
                         .position(x: at.x * k, y: at.y * k)

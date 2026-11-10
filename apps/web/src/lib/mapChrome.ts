@@ -86,23 +86,11 @@ export const GLASS = "liquid-glass";
  *  the chart -- as what is on it is read: the console, the dialogs. */
 export const GLASS_SHEET = "bg-[var(--sheet)] shadow-(--depth-sheet)";
 
-/** How long the sheet takes from the pill to half (SETTLE_POINTS), in
- *  seconds, at the owner's ask ("make the 8443 a bit fast to match Apple
- *  Maps"): Maps' sheet, measured frame by frame from the owner's screen
- *  recording, is 98% of the way in 0.17 to 0.23 s whatever the distance,
- *  and this curve is 98% of the way at 89% of its time -- 0.27 s here.
- *  It was 0.45 s. The map's own move to a route as the sheet settles
- *  (GlMapShell) takes it too, so the two arrive together. */
+/** The app's sheet-sized move, in seconds (design/tokens.json motion.sheet):
+ *  a point picked flown to, own ship found. The map's sheet itself moves
+ *  on the stock Drawer's own time (sheet/useSheetFollow's DRAWER_MS), and
+ *  the map follows it on that. */
 export const SHEET_SECONDS = MOTION.sheet;
-/** How far the sheet goes in SHEET_SECONDS: the pill to half on an iPhone
- *  16 Pro, the move the owner likes ("Pill to half card and back eases
- *  nicely but to/from full card snaps very quickly"). A longer move takes
- *  longer at that speed, between SETTLE_LEAST and SETTLE_MOST seconds --
- *  no longer than 0.35 s, as Maps' takes no longer for a longer move
- *  (half to all the way up, 546 points, took 0.75 s before). */
-export const SETTLE_POINTS = 273;
-export const SETTLE_LEAST = MOTION.sheetLeast;
-export const SETTLE_MOST = MOTION.sheetMost;
 
 /** The same corners as a class, for every sheet drawn with classes: a
  *  phone's floating sheet (PhoneSheetContent). Written out whole, as

@@ -9,8 +9,6 @@ import SwiftUI
 /// system's floating glass toolbar (AirportCardToolbar).
 struct AirportCard: View {
     let ident: String
-    /// The miles from the airplane, where the nearest list has the field.
-    var distanceNm: Double?
     @Environment(Plan.self) private var plan
     @Environment(Verdict.self) private var verdict
     @Environment(OwnShip.self) private var ownShip
@@ -24,6 +22,9 @@ struct AirportCard: View {
     @State private var problem: String?
     @State private var notFound = false
     @State private var photos: AirportPhotos?
+    /// The field's own NOTAMs and the TFRs over it, for the alert card
+    /// and the tile's count; nil until fetched or where they can't be.
+    @State private var notams: APINotamsRanked?
     @State private var tab: CardTab = .info
     @State private var shown: ShownPicture?
     private var shelf: AirportShelf { .shared }
@@ -38,14 +39,15 @@ struct AirportCard: View {
         List {
             if let place {
                 Section {
-                    AirportPlaceHead(place: place, photos: photos, distanceNm: distanceNm, shown: $shown)
+                    AirportPlaceHead(place: place, photos: photos, shown: $shown)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                 }
+                AirportAlertCard(ident: place.ident, notams: notams)
                 AirportReadyCard(ident: place.ident)
                 Section {
-                    AirportTiles(place: place, photos: photos, shown: $shown, tab: $tab)
+                    AirportTiles(place: place, photos: photos, shown: $shown, tab: $tab, notams: notams)
                 }
                 Section {
                     Picker("Section", selection: $tab) {
@@ -99,8 +101,10 @@ struct AirportCard: View {
         .task(id: "\(ident)|\(verdict.minimums.visibilitySm ?? -1)") { await live.watch(ident, minimumSm: verdict.minimums.visibilitySm) }
         .task(id: ident) {
             async let pictures = try? Planner.photos(ident)
+            async let notices = try? KeptForAir.answer(.notams, key: "field:\(ident)") { try await Planner.notams(ident) }.value
             await load()
             photos = await pictures
+            notams = await notices
             // The weather a report's freshness: asked again every five
             // minutes while the card is open, as the web app's is.
             while !Task.isCancelled {
@@ -132,29 +136,6 @@ struct AirportCard: View {
         parts.queryItems = [URLQueryItem(name: "q", value: place.name)] + (place.address.map { [URLQueryItem(name: "address", value: $0)] }
             ?? [URLQueryItem(name: "ll", value: AirportWords.point(place.lat, place.lon))])
         return parts.url!
-    }
-}
-
-/// What the card's head says of a field: its weather's colour -- its own
-/// report's, or with none the modelled one or a near station's, marked
-/// "≈" -- and a field to keep out of.
-enum AirportHead {
-    /// The category the chip shows, and whether it is the field's own.
-    static func category(_ place: AirportPlace) -> (category: String, own: Bool)? {
-        if let own = place.metar?.flightCategory { return (own, true) }
-        if place.metar == nil, let modelled = place.modelledWeather?.flightCategory { return (modelled, false) }
-        if place.metar == nil, let near = place.nearbyMetar, near.near, let category = near.metar.flightCategory { return (category, false) }
-        return nil
-    }
-
-    /// A field the armed services own (the FAA's airport file), or a
-    /// private one: a field most pilots may not land at unasked.
-    static func restriction(_ place: AirportPlace) -> String? {
-        switch place.military {
-        case "military": return "Military, permission required"
-        case "joint": return "Joint use"
-        default: return place.isPrivate == true ? "Private, permission required" : nil
-        }
     }
 }
 
@@ -198,32 +179,12 @@ struct AirportWeatherTab: View {
     let place: AirportPlace
 
     var body: some View {
-        Section {
-            if let metar = place.metar {
-                if let observed = metar.observedAt.flatMap({ AirportWords.observed($0) }) {
-                    LabeledContent("Observed", value: observed)
-                }
-                // The wind true, as reported.
-                if metar.windSpeedKt != nil {
-                    figure("wind", "Wind", AirportWords.windLine(dirTrueDeg: metar.windDirTrueDeg, speedKt: metar.windSpeedKt, gustKt: metar.windGustKt))
-                }
-                figure("eye", "Visibility", metar.visibilitySm.map { "\(AirportWords.plain($0)) sm" } ?? "—", spoken: metar.visibilitySm.map(SpokenFigures.statuteMiles))
-                figure("cloud", "Ceiling", metar.ceilingFt.map { Format.altitude($0) } ?? "None", spoken: metar.ceilingFt.map(SpokenFigures.feet))
-                if let temp = metar.tempC {
-                    CardRow(badge: RowBadge(systemImage: "thermometer.medium", colour: Badge.weather), title: "Temperature",
-                            detail: metar.dewpointC.map { "Dew point \(Int($0.rounded())) °C" }) {
-                        Text("\(Int(temp.rounded())) °C").fontWeight(.semibold)
-                            .accessibilityLabel("\(SpokenFigures.number(temp)) degrees Celsius")
-                    }
-                }
-                if let altimeter = metar.altimeterInHg {
-                    // Read as set on the altimeter: "two niner niner two".
-                    figure("gauge.with.dots.needle.33percent", "Altimeter", "\(Format.number(altimeter, decimals: 2)) inHg",
-                           spoken: "\(SpokenFigures.digits(Format.number(altimeter, decimals: 2))) inches")
-                }
-                // The report as sent, never reworded.
-                if let raw = metar.raw { Text(raw).font(.footnote.monospaced()).textSelection(.enabled) }
-            } else {
+        if let metar = place.metar {
+            // Weather's layout: the takeaway, the TAF's periods, the
+            // modules and the reports as sent (FieldWeather).
+            FieldWeatherSection(place: place, metar: metar)
+        } else {
+            Section {
                 ReceiverReportRows(ident: place.ident, otherwise: place.weatherUnavailable == true ? "The weather service could not be reached" : "No weather station reports from this field")
             }
         }
@@ -500,7 +461,7 @@ private enum PreviewData {
 
 #Preview("AirportPlaceHead") {
     @Previewable @State var shown: ShownPicture? = nil
-    List { AirportPlaceHead(place: PreviewData.place, photos: nil, distanceNm: 12, shown: $shown).listRowInsets(EdgeInsets()) }
+    List { AirportPlaceHead(place: PreviewData.place, photos: nil, shown: $shown).listRowInsets(EdgeInsets()) }
         .environment(Plan()).environment(OwnShip()).environment(Charts())
 }
 

@@ -5,11 +5,10 @@ import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.AirportSuggestion
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.airportNotams
 import app.wingtipmaps.android.api.airportPhotos
 import app.wingtipmaps.android.api.generated.AirportPhotos
 import app.wingtipmaps.android.api.generated.NotamsRanked
-import app.wingtipmaps.android.api.generated.NotamsRankedAsk
-import app.wingtipmaps.android.api.notamsRanked
 import app.wingtipmaps.android.offline.KeptForAir
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -34,10 +33,14 @@ class AirportModel : ViewModel() {
         /** When the card shown was fetched, where it is the one kept for
          *  the air; null when it is the network's own. */
         val keptAtMs: Long? = null,
-        /** The field's NOTAMs as sent, the engine's ranking's order, for
-         *  the card's NOTAMs; null until asked. */
-        val notams: List<String>? = null,
+        /** The field's own NOTAMs and the TFRs within 5 nm of it, the
+         *  engine's ranking, for the card's NOTAMs and its alert card;
+         *  null until fetched. */
+        val notams: NotamsRanked? = null,
         val notamsProblem: String? = null,
+        /** The route's departure where the card's distance is said from
+         *  it (no position): its ident and where it is; null for none. */
+        val departure: Departure? = null,
         /** The field's pictures for the card's carousel; none where the
          *  planner has none or could not be asked (the card does without). */
         val photos: AirportPhotos? = null,
@@ -45,10 +48,14 @@ class AirportModel : ViewModel() {
         val photosAsked: Boolean = false,
     )
 
+    /** A departure field's ident and place, the distance's start. */
+    data class Departure(val ident: String, val lat: Double, val lon: Double)
+
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state.asStateFlow()
 
     private var searching: Job? = null
+    private var departing: Job? = null
 
     /** Fields by ident or name as they are typed, asked a moment after
      *  the typing pauses, so a word is one ask rather than one per letter. */
@@ -85,8 +92,11 @@ class AirportModel : ViewModel() {
                 val had = KeptForAir.had(KeptForAir.AIRPORTS, ident.trim().uppercase(), AirportPlace.serializer()) { Planner.place(ident.trim().uppercase()) }
                 val place = had.value
                 _state.update {
-                    it.copy(place = place, keptAtMs = had.fetchedAtMs.takeIf { had.kept }, suggestions = emptyList(), query = place.ident, problem = null, loading = false, notams = null, photos = it.photos.takeIf { _ -> it.place?.ident == place.ident }, photosAsked = it.photosAsked && it.place?.ident == place.ident)
+                    it.copy(place = place, keptAtMs = had.fetchedAtMs.takeIf { had.kept }, suggestions = emptyList(), query = place.ident, problem = null, loading = false, notams = it.notams.takeIf { _ -> it.place?.ident == place.ident }, photos = it.photos.takeIf { _ -> it.place?.ident == place.ident }, photosAsked = it.photosAsked && it.place?.ident == place.ident)
                 }
+                // Asked with the card, not the tab: the alert card first on
+                // it reads them too.
+                loadNotams(place.ident)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -106,24 +116,43 @@ class AirportModel : ViewModel() {
     }
 
     /**
-     * The open field's NOTAMs, asked once a card: the planner's ranked
-     * NOTAMs (/api/notams/ranked) for a flight from the field to itself,
-     * which are the field's own, the engine's most important first. Kept
-     * for the air as the route's are (KeptForAir).
+     * The field's own NOTAMs and the TFRs within 5 nm of it, the engine's
+     * most important first (/api/airport/{ident}/notams), asked each time
+     * the card is (a pull asks them again). Kept for the air as the
+     * route's are (KeptForAir).
      */
-    fun loadNotams() {
-        val ident = _state.value.place?.ident ?: return
-        if (_state.value.notams != null) return
-        viewModelScope.launch {
-            try {
-                val ask = NotamsRankedAsk(dep = ident, dest = ident)
-                val had = KeptForAir.had(KeptForAir.NOTAMS, "$ident|local", NotamsRanked.serializer()) { Planner.notamsRanked(ask) }
-                _state.update { it.copy(notams = had.value.notams.sortedBy { n -> n.rank }.map { n -> n.raw }, notamsProblem = null) }
+    private suspend fun loadNotams(ident: String) {
+        try {
+            val had = KeptForAir.had(KeptForAir.NOTAMS, "$ident|field", NotamsRanked.serializer()) { Planner.airportNotams(ident) }
+            _state.update { if (it.place?.ident == ident) it.copy(notams = had.value, notamsProblem = null) else it }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            _state.update { if (it.place?.ident == ident) it.copy(notamsProblem = "The NOTAMs could not be fetched: ${e.message}") else it }
+        }
+    }
+
+    /**
+     * Where the route's departure is, for the card's distance when the
+     * phone has no position: the course's where it has one, else the
+     * field's own card (kept for the air as every card is). Nothing for
+     * no departure.
+     */
+    fun departFrom(ident: String, known: Departure?) {
+        val dep = ident.trim().uppercase()
+        departing?.cancel()
+        if (dep.isEmpty()) return _state.update { it.copy(departure = null) }
+        if (known != null) return _state.update { it.copy(departure = known) }
+        if (_state.value.departure?.ident == dep) return
+        departing = viewModelScope.launch {
+            val place = try {
+                KeptForAir.had(KeptForAir.AIRPORTS, dep, AirportPlace.serializer()) { Planner.place(dep) }.value
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Exception) {
-                _state.update { it.copy(notamsProblem = "The NOTAMs could not be fetched: ${e.message}") }
+            } catch (_: Exception) {
+                null
             }
+            _state.update { it.copy(departure = place?.let { p -> Departure(p.ident, p.lat, p.lon) }) }
         }
     }
 

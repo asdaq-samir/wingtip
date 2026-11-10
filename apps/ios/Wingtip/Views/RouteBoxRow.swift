@@ -72,7 +72,7 @@ struct RouteBoxRow: View {
             Button { open(.profile) } label: {
                 Label("Profile", systemImage: cautioned ? "exclamationmark.triangle.fill" : WingtipIcon.profile)
             }
-            .tint(cautioned ? .orange : nil)
+            .tint(cautioned ? WingtipInk.caution : nil)
             .accessibilityLabel(cautioned ? "Profile, your altitude has a caution" : "Profile")
             // The AI brief, marked where the planner says VFR is not
             // recommended.
@@ -80,7 +80,7 @@ struct RouteBoxRow: View {
             Button { open(.brief) } label: {
                 Label("Brief", systemImage: notRecommended ? "exclamationmark.octagon.fill" : WingtipIcon.brief)
             }
-            .tint(notRecommended ? .red : nil)
+            .tint(notRecommended ? WingtipInk.problem : nil)
             .accessibilityLabel(notRecommended ? "Brief, VFR flight not recommended" : "Brief")
             more
         }

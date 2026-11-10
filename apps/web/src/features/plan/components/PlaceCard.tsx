@@ -77,8 +77,8 @@ function subtitleOf(place: AirportPlace, from: { point: LatLon; name: string | n
 }
 
 /** How long the panel takes to come all the way up before the tabs' bar
- *  or the approaches are scrolled to: the sheet's settle and a frame
- *  (SETTLE_MOST is 0.35 s). */
+ *  or the approaches are scrolled to: the stock Drawer's settle (0.45 s,
+ *  sheet/useSheetFollow's DRAWER_MS) and a frame. */
 const RISEN_MS = 520;
 
 /** How old a report is, "14m ago", for the weather's line. */

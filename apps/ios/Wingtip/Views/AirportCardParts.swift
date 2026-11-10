@@ -28,28 +28,62 @@ struct AirportReadyCard: View {
     }
 }
 
+/// The live card under the head, as Maps puts its cards first: the
+/// field's NOTAMs that close it or a runway, and the TFRs over it, from
+/// its own list (/api/airport/{ident}/notams, the engine's ranking). Each
+/// line opens the list; none shows where none is in force or coming.
+struct AirportAlertCard: View {
+    let ident: String
+    let notams: APINotamsRanked?
+
+    var body: some View {
+        let alerts = (notams?.notams ?? []).filter { $0.closed || $0.kind == "tfr" }.prefix(3)
+        if !alerts.isEmpty {
+            Section {
+                ForEach(Array(alerts), id: \.id) { notam in
+                    NavigationLink(value: SheetPage.notams(.field(ident))) {
+                        Label {
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                                Text(NotamFilter.summary(notam)).font(.body).lineLimit(3)
+                                let when = NotamFilter.when(notam)
+                                if !when.isEmpty { Text(when).font(.subheadline.monospacedDigit()).foregroundStyle(.secondary) }
+                            }
+                        } icon: {
+                            Image(systemName: notam.kind == "tfr" ? "exclamationmark.octagon.fill" : "xmark.octagon.fill")
+                                .foregroundStyle(WingtipInk.caution)
+                        }
+                    }
+                    .accessibilityHint("Opens \(ident)'s NOTAMs")
+                }
+            }
+        }
+    }
+}
+
 /// The field's picture tiles, a row that pages as Maps' does, each titled
 /// over its picture: the approaches, the diagram, the field from the air
-/// and the ground, the frequencies and the NOTAMs (in the Brief, where
-/// the planner reads them for a route). A picture opens full screen in
-/// the app's viewer; the others open the card's own tab or the Brief.
+/// and the ground, the frequencies and the field's own NOTAMs
+/// (/api/airport/{ident}/notams). A picture opens full screen in the
+/// app's viewer; the others open the card's own tab or the NOTAM list.
 struct AirportTiles: View {
     let place: AirportPlace
     let photos: AirportPhotos?
     @Binding var shown: ShownPicture?
     @Binding var tab: AirportCard.CardTab
-    @Environment(Plan.self) private var plan
+    /// The field's own NOTAMs, for the tile's count.
+    let notams: APINotamsRanked?
     @ScaledMetric(relativeTo: .title3) private var height = 150.0
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: WingtipSpace.md) {
-                tileButton("Approaches", systemImage: "airplane.arrival", count: approaches) { tab = .charts }
+                // The diagram first (the owner's A2 pick), then the approaches.
                 if let cycle = place.airportDiagramCycle {
                     tileButton("Diagram", picture: Planner.diagramPath(ident: place.ident, cycle: cycle, runwaysOnly: true), fit: true) {
                         shown = .paths("\(place.ident) airport diagram", [Planner.diagramPath(ident: place.ident, cycle: cycle)])
                     }
                 }
+                tileButton("Approaches", systemImage: "airplane.arrival", count: approaches) { tab = .charts }
                 if let photos {
                     tileButton("From the Air", picture: photos.aerialUrl) { shown = .paths("\(place.ident) from the air", [photos.aerialUrl]) }
                     if let photo = photos.photo {
@@ -60,11 +94,12 @@ struct AirportTiles: View {
                     }
                 }
                 tileButton("Frequencies", systemImage: "antenna.radiowaves.left.and.right", count: place.frequencies.count) { tab = .info }
-                if plan.routed, plan.idents.contains(place.ident) {
-                    NavigationLink(value: SheetPage.screen(.brief)) { face("NOTAMs", systemImage: "exclamationmark.bubble") }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("NOTAMs, in the Brief")
+                let count = notams?.notams.count ?? 0
+                NavigationLink(value: SheetPage.notams(.field(place.ident))) {
+                    face(count > 0 ? "NOTAMs · \(count)" : "NOTAMs", systemImage: "exclamationmark.bubble")
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel(count > 0 ? "\(place.ident) NOTAMs, \(count)" : "\(place.ident) NOTAMs")
             }
             .scrollTargetLayout()
             .padding(.horizontal, WingtipSpace.lg)

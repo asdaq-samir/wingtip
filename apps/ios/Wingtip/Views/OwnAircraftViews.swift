@@ -135,7 +135,7 @@ struct AircraftFormView: View {
                     .autocorrectionDisabled(codes)
                     .font(codes ? .body.monospaced() : .body)
             }
-            if let p = problems[key] { Text(p).font(.footnote).foregroundStyle(.red) }
+            if let p = problems[key] { Text(p).font(.footnote).foregroundStyle(WingtipInk.problem) }
         }
     }
 
@@ -147,7 +147,7 @@ struct AircraftFormView: View {
                     Text(unit).foregroundStyle(.secondary)
                 }
             }
-            if let p = problems[key] { Text(p).font(.footnote).foregroundStyle(.red) }
+            if let p = problems[key] { Text(p).font(.footnote).foregroundStyle(WingtipInk.problem) }
         }
     }
 
@@ -347,7 +347,7 @@ struct VorCheckSection: View {
             if let last = record.vorCheck {
                 LabeledContent {
                     if !last.withinLimit {
-                        Text("Over \(last.limitDeg.formatted())°").foregroundStyle(.red)
+                        Text("Over \(last.limitDeg.formatted())°").foregroundStyle(WingtipInk.problem)
                     } else {
                         StandingText(through: last.goodThrough, good: "To", past: "Ended")
                     }
@@ -416,7 +416,7 @@ struct SquawksView: View {
                             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                 Text(s.text).foregroundStyle(.primary)
                                 Text([Day.said(s.reportedOn), Deferral.standing(s)].compactMap { $0 }.joined(separator: " · "))
-                                    .font(.footnote).foregroundStyle(s.inoperative && s.deferredFor == nil ? Color.red : Color.secondary)
+                                    .font(.footnote).foregroundStyle(s.inoperative && s.deferredFor == nil ? WingtipInk.problem : Color.secondary)
                             }
                         }
                     }

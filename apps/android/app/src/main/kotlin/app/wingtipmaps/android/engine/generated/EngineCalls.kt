@@ -529,6 +529,12 @@ fun Engine.endorsementsInForce(signed: List<EngineContract.EndorsementsInForceIn
     rule("endorsements_in_force", EngineContract.EndorsementsInForceInput(signed = signed))
 
 /**
+ * An airplane's endurance from its own figures: its usable fuel over its cruise burn, minutes, and the minutes left once the reserve is kept back -- 30 minutes at normal cruise by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)), or none. The reserve's fuel at the burn, gallons. Below the reserve the minutes left are 0 and below_reserve is true: a warning, never a refusal. Null where the airplane gives no usable fuel or no burn; never a stock airplane's figures.
+ */
+fun Engine.endurance(usableGal: Double? = null, burnGph: Double? = null, reserve: String): Result<EngineContract.EnduranceAnswer> =
+    rule("endurance", EngineContract.EnduranceInput(usableGal = usableGal, burnGph = burnGph, reserve = reserve))
+
+/**
  * The FAA identifiers an airport may go by in NASR (KSTL and STL).
  */
 fun Engine.faaIds(ident: String): Result<List<String>> =

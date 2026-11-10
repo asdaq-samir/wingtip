@@ -2741,6 +2741,37 @@ object EngineContract {
     )
 
     @Serializable
+    data class EnduranceAnswer(
+        val minutes: Double? = null,
+        @SerialName("reserve_min")
+        val reserveMin: Double,
+        @SerialName("reserve_gal")
+        val reserveGal: Double? = null,
+        @SerialName("after_reserve_min")
+        val afterReserveMin: Double? = null,
+        @SerialName("below_reserve")
+        val belowReserve: Boolean,
+    )
+
+    @Serializable
+    data class EnduranceInput(
+        /**
+         * The airplane's usable fuel, gallons (its profile's); null or missing where it has none.
+         */
+        @SerialName("usable_gal")
+        val usableGal: Double? = null,
+        /**
+         * The airplane's cruise burn, gallons an hour (its profile's); null or missing where it has none.
+         */
+        @SerialName("burn_gph")
+        val burnGph: Double? = null,
+        /**
+         * The reserve kept back: vfr_day (30 min, 91.151(a)(1)), vfr_night (45 min, 91.151(a)(2)), ifr (45 min, 91.167(a)(3)) or none.
+         */
+        val reserve: String,
+    )
+
+    @Serializable
     data class FaaIdsInput(
         val ident: String,
     )

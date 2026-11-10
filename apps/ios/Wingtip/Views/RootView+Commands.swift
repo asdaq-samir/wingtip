@@ -68,6 +68,8 @@ extension RootView {
             await fly(tail)
         case .approach(let pick):
             approach(pick)
+        case .airplane(let tail):
+            search.profileTail = tail
         case .keepForAir:
             keepForAir()
         case .sharedFlight(let link):

@@ -132,6 +132,26 @@ def along_route(path: list, start: datetime, end: datetime, near_nm: float = NEA
     return sorted(found, key=lambda t: t["along_track_nm"])
 
 
+def near_point(lat: float, lon: float, start: datetime, end: datetime, near_nm: float = NEAR_NM) -> list:
+    """The TFRs within `near_nm` of a point (a field), in force at some
+    time from `start` to `end`: each of all_tfrs()'s, with "crosses",
+    whether it covers the point, and "active_now", as along_route gives
+    them for a route."""
+    point = Point(lon, lat)
+    buffer_deg = near_nm / _NM_PER_DEG / max(0.2, math.cos(math.radians(lat)))
+    near = point.buffer(buffer_deg)
+    now = datetime.now(timezone.utc)
+    found = []
+    for tfr in all_tfrs():
+        try:
+            geometry = shape(tfr["geometry"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if near.intersects(geometry) and in_force(tfr, start, end):
+            found.append({**tfr, "crosses": geometry.contains(point), "active_now": in_force(tfr, now, now)})
+    return found
+
+
 def at_point(lat: float, lon: float) -> list:
     """The TFRs in force or to come over a point: each of all_tfrs()'s,
     with "active_now"."""

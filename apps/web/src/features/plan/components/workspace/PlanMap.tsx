@@ -1,11 +1,8 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState } from "react";
 import { cn } from "cn";
 import { RouteMap } from "../../routeMapChunk";
 import TipHost from "../../../../components/TipHost";
 import FirstFlight from "../FirstFlight";
-import Welcome from "../welcome/Welcome";
-import FixCard from "../FixCard";
-import RouteLegCard from "../RouteLegCard";
 import { FlyingHead } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 import { DRY_RUN, usePastFlight } from "../../map/pastFlight";
@@ -15,6 +12,12 @@ import { DRY_RUN, usePastFlight } from "../../map/pastFlight";
 import { ReadyToFlyPrompt } from "../../../readyToFly";
 
 const AssignedLesson = lazy(() => import("../AssignedLesson"));
+/** What the first screen does not draw, each its own chunk off the first
+ *  load (scripts/first-load.mjs's budget): a fix's card and a leg's, from
+ *  their first tap on, and the welcome, shown once to a new pilot. */
+const FixCard = lazy(() => import("../FixCard"));
+const RouteLegCard = lazy(() => import("../RouteLegCard"));
+const Welcome = lazy(() => import("../welcome/Welcome"));
 
 /** The map beside the briefing (PlanWorkspace's `map`), with what floats
  *  over it: the next checkpoint in flight, a fix's card, an assigned
@@ -68,6 +71,11 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
     stopFieldPins,
     wayLines,
   } = vm;
+  // Each card's chunk asked for at its first open, then kept.
+  const [fixSeen, setFixSeen] = useState(false);
+  if (openFix && !fixSeen) setFixSeen(true);
+  const [legSeen, setLegSeen] = useState(false);
+  if (openLeg && !legSeen) setLegSeen(true);
   return (
     <div className={cn("h-full w-full", panelOpen && "print:hidden")}>
       {/* Its own boundary: the map's chunk (routeMapChunk) comes after the
@@ -118,9 +126,18 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
           <FlyingHead run={dryRunning} rows={routeRows} />
         </Suspense>
       )}
-      <FixCard open={openFix} onClose={() => setOpenFixAt(null)} onDirect={directTo} onCross={setCrossing} />
+      {/* Kept from its first open on, so it eases out as it closes. */}
+      {fixSeen && (
+        <Suspense fallback={null}>
+          <FixCard open={openFix} onClose={() => setOpenFixAt(null)} onDirect={directTo} onCross={setCrossing} />
+        </Suspense>
+      )}
       {/* A leg of the course tapped (RouteGl): its Route Leg sheet. */}
-      <RouteLegCard open={openLeg} onClose={closeLeg} />
+      {legSeen && (
+        <Suspense fallback={null}>
+          <RouteLegCard open={openLeg} onClose={closeLeg} />
+        </Suspense>
+      )}
       {lessonOpen !== null && (
         <Suspense fallback={null}>
           <AssignedLesson key={lessonOpen} id={lessonOpen} aircraft={fitAircraft} onClose={closeLesson} />
@@ -129,7 +146,9 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
       {/* What to look for, a tip at a time, the first times (lib/firstRunTips). */}
       <TipHost />
       {/* The welcome first, once (useWelcome); then the first flight's card. */}
-      <Welcome routed={routed} onPlan={setRoute} onOpened={openNavLogCard} />
+      <Suspense fallback={null}>
+        <Welcome routed={routed} onPlan={setRoute} onOpened={openNavLogCard} />
+      </Suspense>
       <FirstFlight routed={routed} onPlan={setRoute} onPlanned={openNavLogCard} />
     </div>
   );

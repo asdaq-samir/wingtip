@@ -13,7 +13,6 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -56,10 +55,11 @@ enum class AirportSection(@StringRes val title: Int) {
  * TAF, the two in plain words, what the cockpit receiver heard where the
  * weather service has nothing, what SWIM says now -- its frequencies (each
  * copied with a tap), its runways, its approach plates (each
- * opening the FAA's PDF), and its NOTAMs as sent. Every figure the
+ * opening the FAA's PDF), and its own NOTAMs and the TFRs within 5 nm
+ * as sent, the engine's ranking, each with when it is in force. Every figure the
  * planner's, written by Format.
  */
-fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, state: AirportModel.State, model: AirportModel) {
+fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, state: AirportModel.State) {
     val pad = Modifier.padding(horizontal = WingtipSpace.Lg)
     when (section) {
         AirportSection.OVERVIEW -> {
@@ -107,13 +107,14 @@ fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, s
             Row(p.name, p.kind, pad.clickable(role = Role.Button) { context.startActivity(Intent(Intent.ACTION_VIEW, p.url.toUri())) })
         }
         AirportSection.NOTAMS -> {
-            item(key = "notams-ask") { LaunchedEffect(place.ident) { model.loadNotams() } }
             state.notamsProblem?.let { item(key = "notams-problem") { ProblemLine(it, pad) } }
-            val notams = state.notams
+            // An unread TFR list is said, so no TFR shown is not read as none.
+            if (state.notams?.unchecked?.contains("tfrs") == true) item(key = "notams-tfrs") { ProblemLine(stringResource(R.string.notams_tfrs_unchecked), pad) }
+            val notams = state.notams?.notams?.sortedBy { it.rank }
             when {
                 notams == null && state.notamsProblem == null -> item(key = "notams-loading") { Skeleton(pad) }
                 notams.isNullOrEmpty() -> item(key = "notams-none") { Row(stringResource(R.string.notams), stringResource(R.string.no_notams), pad) }
-                else -> notams.forEachIndexed { i, raw -> item(key = "n-$i") { Row(raw, null, pad) } }
+                else -> items(notams, key = { "n-" + it.id }) { n -> Row(n.raw, notamWhen(FieldAlerts.whenOf(n)), pad) }
             }
         }
     }
@@ -150,4 +151,12 @@ private fun Row(headline: String, supporting: String?, modifier: Modifier = Modi
         modifier = modifier.fillMaxWidth(),
         content = { Text(headline, style = MaterialTheme.typography.bodyLarge) },
     )
+}
+
+/** "In effect now, until Nov 12 1432Z", "From Nov 12 1400Z", or none. */
+@Composable
+fun notamWhen(w: FieldAlerts.When?): String? = when (w) {
+    is FieldAlerts.When.Now -> w.ends?.let { stringResource(R.string.notam_now_until, it) } ?: stringResource(R.string.notam_now)
+    is FieldAlerts.When.Coming -> w.ends?.let { stringResource(R.string.notam_from_until, w.starts, it) } ?: stringResource(R.string.notam_from, w.starts)
+    null -> null
 }

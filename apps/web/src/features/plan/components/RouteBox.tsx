@@ -1150,7 +1150,7 @@ function Pill({
     // A group, not a button: the picker inside it is the button, and a
     // button in a button is nothing a reader can use (axe's
     // nested-interactive). Still focusable, for the keyboard's drag
-    // (Enter) and its Delete.
+    // (Enter) and its Delete; held and moved, its drag not the sheet's.
     <span
       ref={self}
       {...joinProps(move.dragProps, move.dropProps, {
@@ -1166,6 +1166,7 @@ function Pill({
       data-point={index}
       data-dragging={move.isDragging ? "" : undefined}
       data-over={move.isDropTarget ? "" : undefined}
+      data-base-ui-swipe-ignore=""
       className={cn(
         // A swipe up or down scrolls the lines; a hold, then a move, drags;
         // a hold alone, its menu. No callout of iOS's own over the hold.

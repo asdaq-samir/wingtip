@@ -13,7 +13,7 @@ import MapBanners from "../MapBanners";
 import MapLoading from "../MapLoading";
 import { MapInsetsContext, SHEET_SECONDS, type MapInsets } from "../../lib/mapChrome";
 import { SheetCard } from "../SheetCard";
-import type { SheetTurn } from "../sheet/useSheetMotion";
+import { DRAWER_MS, type SheetTurn } from "../sheet/insets";
 import type { Course, OverlayTiles } from "../../lib/api/types";
 import { engineLoaded } from "../../lib/engine/engine";
 import { usePreferences } from "../../lib/preferences";
@@ -530,7 +530,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       // in to the point.
       const aim = flying.current;
       if (aim && map.isMoving()) {
-        map.flyTo({ ...aim, padding: padOf(to), duration: prefersReducedMotion() ? 0 : SHEET_SECONDS * 1000 });
+        map.flyTo({ ...aim, padding: padOf(to), duration: prefersReducedMotion() ? 0 : DRAWER_MS });
         return;
       }
       // Half way to all the way up and back the map stays put.
@@ -538,7 +538,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
         map.setPadding(padOf(to));
         return;
       }
-      const duration = prefersReducedMotion() ? 0 : SHEET_SECONDS * 1000;
+      const duration = prefersReducedMotion() ? 0 : DRAWER_MS;
       // The route in sight at its fitted size (or out from it): fitted again
       // to the room the sheet leaves at its new size, as the owner's rule
       // has it (2026-10-06, 2026-10-27: "Route in sight: refit it to what

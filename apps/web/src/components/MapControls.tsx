@@ -66,8 +66,6 @@ export default function MapControls() {
       )}
       data-testid="mic-circle"
       data-listening={pill || undefined}
-      // Riding the sheet's top (MapPanel's ride rule), on a phone.
-      data-rides={onPhone || undefined}
     >
       {/* In flight the mic alone grows to 60 points (FLYING_BUTTON), not
           the pill's chips. */}

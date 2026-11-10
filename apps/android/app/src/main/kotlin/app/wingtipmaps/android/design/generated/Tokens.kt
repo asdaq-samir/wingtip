@@ -743,7 +743,7 @@ object WingtipMotion {
  *  from API 30 has its fallback below that. */
 object WingtipHaptic {
     /** An altitude set: a wheel's detent, as a picker ticks. */
-    const val ALTITUDE = HapticFeedbackConstants.CLOCK_TICK
+    val ALTITUDE: Int get() = if (Build.VERSION.SDK_INT >= 34) HapticFeedbackConstants.SEGMENT_FREQUENT_TICK else HapticFeedbackConstants.CLOCK_TICK
     /** Direct To or Fly Here taken: the route has changed under the pilot. */
     val DIRECT_TO: Int get() = if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
     /** An alert or a copilot warning shown: felt as well as seen, in a busy cockpit. */

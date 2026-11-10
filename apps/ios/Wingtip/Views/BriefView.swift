@@ -41,6 +41,9 @@ struct BriefView: View {
     var body: some View {
         ScrollViewReader { reader in
             List {
+                // The verdict first, as Weather gives its takeaway before
+                // the detail (docs/design/ios.md §5).
+                if plan.routed { BriefVerdictHead() }
                 // What the phone holds for the flight before the signal
                 // goes, first (the engine's ready_to_fly).
                 ReadyToFlySection()
@@ -60,7 +63,7 @@ struct BriefView: View {
                     if let notRecommended = briefing.vfrNotRecommended, !notRecommended.isEmpty {
                         Section {
                             ForEach(Array(notRecommended.enumerated()), id: \.offset) { i, reason in
-                                Label(reason, systemImage: "xmark.octagon.fill").foregroundStyle(.red)
+                                Label(reason, systemImage: "xmark.octagon.fill").foregroundStyle(WingtipInk.problem)
                                     .id(rowId("vnr", i, anchorAt: weatherAt, anchor: VerdictTarget.weatherAnchor))
                             }
                         } header: { SectionTitle("VFR Flight Not Recommended") }
@@ -109,8 +112,8 @@ struct BriefView: View {
                                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     HStack {
                                         Text(tfr.title ?? tfr.notamId).font(.headline)
-                                        if tfr.crosses { Text("crosses").foregroundStyle(.red).font(.footnote.weight(.semibold)) }
-                                        if tfr.activeNow { Text("active now").foregroundStyle(.red).font(.footnote.weight(.semibold)) }
+                                        if tfr.crosses { Text("crosses").foregroundStyle(WingtipInk.problem).font(.footnote.weight(.semibold)) }
+                                        if tfr.activeNow { Text("active now").foregroundStyle(WingtipInk.problem).font(.footnote.weight(.semibold)) }
                                     }
                                     HStack(spacing: WingtipSpace.sm) {
                                         Text("\(Format.distance(tfr.alongTrackNm, decimals: 0)) along")
@@ -132,7 +135,7 @@ struct BriefView: View {
                                         Text("\(Format.distance(p.alongTrackNm, decimals: 0)) along").font(.headline)
                                         if let turbulence = p.turbulence { Text("turbulence \(turbulence)") }
                                         if let icing = p.icing { Text("icing \(icing)") }
-                                        if p.urgent == true { Text("URGENT").foregroundStyle(.red).bold() }
+                                        if p.urgent == true { Text("URGENT").foregroundStyle(WingtipInk.problem).bold() }
                                     }
                                     if let raw = p.raw { Text(raw).font(.footnote.monospaced()).foregroundStyle(.secondary) }
                                 }
@@ -199,6 +202,8 @@ struct BriefView: View {
         .glassScrollEdges()
         .navigationBarMinimizesOnScroll()
         .navigationBarTitleDisplayMode(.inline)
+        // The flight started from the Brief's foot (its Live Activity).
+        .glassFoot { if plan.routed { StartFlightBar() } }
         // The UI tests' sign the Brief is up (WingtipUITests/FlowTests).
         .accessibilityIdentifier("brief")
         // Pulled down: the briefing and the Go / No-Go asked afresh, the

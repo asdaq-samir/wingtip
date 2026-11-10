@@ -102,10 +102,33 @@ def ranked(
     timed, flight = windows(fields, depart, ete_min)
     for f in timed:
         f["runways"] = runways.get(f["ident"].upper(), [])
+    until = datetime.fromisoformat(flight["until"].replace("Z", "+00:00"))
+    return _rank(
+        fields, timed, flight, depart, lambda: tfr.along_route(path, depart - MARGIN, until), cruise_ft, lambda: airspaces_on(path)
+    )
+
+
+def at_field(ident: str, lat: float, lon: float, now: datetime) -> dict:
+    """One field's own NOTAMs and the TFRs within tfr.NEAR_NM of it, ranked
+    as ranked() ranks a route's, for its card: the field read as a stop
+    from an hour ago to DEFAULT_ETE_MIN and an hour ahead, the time a pilot
+    looking at it now is round it. No runway in use, cruise altitude or
+    route airspace: the card has no flight."""
+    fields = [(ident, "stop")]
+    timed, flight = windows(fields, now, DEFAULT_ETE_MIN)
+    for f in timed:
+        f["runways"] = []
+    until = datetime.fromisoformat(flight["until"].replace("Z", "+00:00"))
+    return _rank(fields, timed, flight, now, lambda: tfr.near_point(lat, lon, now - MARGIN, until), None, lambda: [])
+
+
+def _rank(fields, timed, flight, depart, tfrs_for, cruise_ft, airspaces_for) -> dict:
+    """The NOTAMs at `fields` and the TFRs `tfrs_for()` finds, asked of
+    the engine's notams_ranked, each given back with its text as sent."""
     found = notams.at_fields(list(dict.fromkeys(i for i, _ in fields)), now=depart.timestamp())
     unchecked: list[str] = []
     try:
-        tfrs = tfr.along_route(path, depart - MARGIN, datetime.fromisoformat(flight["until"].replace("Z", "+00:00")))
+        tfrs = tfrs_for()
     except tfr.TfrUnavailable:
         tfrs, unchecked = [], ["tfrs"]
     given = [
@@ -128,7 +151,7 @@ def ranked(
         "fields": timed,
         **flight,
         "cruise_ft": cruise_ft,
-        "airspaces": airspaces_on(path) if given else [],
+        "airspaces": airspaces_for() if given else [],
     }
     answer = engine("notams_ranked", **asked)
     for item in answer["ranked"]:

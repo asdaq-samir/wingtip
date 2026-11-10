@@ -178,6 +178,8 @@ export function PointGrip({ ident, index }: { ident: string; index: number }) {
         tabIndex={0}
         aria-label={`Move ${name}`}
         data-testid="route-grip"
+        // Its drag the row's, not the stock sheet's.
+        data-base-ui-swipe-ignore=""
         data-ident={ident}
         data-dragging={move.isDragging ? "" : undefined}
         className={cn(

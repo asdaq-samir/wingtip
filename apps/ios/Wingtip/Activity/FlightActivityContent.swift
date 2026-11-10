@@ -25,6 +25,16 @@ enum FlightActivityContent {
         /// The route's weather gone worse since the Brief (WeatherWatch).
         var weather: String? = nil
         var now: Date
+        /// The phase the activity is in (FlightActivity.observe).
+        var phase: FlightActivityAttributes.Phase = .airborne
+        /// The departure's flight category as the Brief had it, and the
+        /// planner's time en route, for the phase before departure.
+        var depCategory: String? = nil
+        var plannedEteMin: Double? = nil
+        /// When the airplane came to rest, and when the activity started,
+        /// for the arrived phase.
+        var landedAt: Date? = nil
+        var startedAt: Date? = nil
     }
 
     static func state(_ inputs: Inputs) -> FlightActivityAttributes.ContentState {
@@ -41,7 +51,23 @@ enum FlightActivityContent {
         }()
         // A message the alerts-ahead banner draws is not the copilot's own.
         let message = inputs.copilot.flatMap { $0.elsewhere ? nil : $0 }
+        // The share of the route flown, for the progress bar and arc: the
+        // engine's miles along over its length, held to 0...1.
+        let flown: Double? = progress.flatMap { $0.totalNm > 0 ? min(1, max(0, $0.alongNm / $0.totalNm)) : nil }
+        // The block time as the phone saw it: from the activity's start
+        // to the airplane at rest.
+        let block: Double? = {
+            guard let landed = inputs.landedAt, let started = inputs.startedAt, landed > started else { return nil }
+            return landed.timeIntervalSince(started) / 60
+        }()
         return FlightActivityAttributes.ContentState(
+            phase: inputs.phase,
+            progress: inputs.phase == .arrived ? 1 : flown,
+            nextNm: next?.distanceNm,
+            depCategory: inputs.depCategory,
+            plannedEteMin: inputs.plannedEteMin,
+            landedAt: inputs.landedAt,
+            blockMin: block,
             nextFix: next.map(\.name),
             nextEteMin: next?.eteMin,
             toGoNm: progress?.leftNm ?? inputs.routeNm,
@@ -73,7 +99,7 @@ enum FlightActivityContent {
     static func due(_ state: FlightActivityAttributes.ContentState, after last: FlightActivityAttributes.ContentState?,
                     every: TimeInterval) -> Bool {
         guard let last else { return true }
-        if state.nextFix != last.nextFix || state.frequency != last.frequency || state.copilot != last.copilot || state.weather != last.weather { return true }
+        if state.phase != last.phase || state.nextFix != last.nextFix || state.frequency != last.frequency || state.copilot != last.copilot || state.weather != last.weather { return true }
         return state.updatedAt.timeIntervalSince(last.updatedAt) >= every
     }
 }

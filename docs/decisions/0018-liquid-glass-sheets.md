@@ -15,6 +15,10 @@ Panels are Liquid Glass sheets with detents (pill, half, full), as in Apple Maps
 
 Motion is transform only, with one shape at every size and no backdrop change mid-motion.
 
+## Amended 2026-11-09
+
+The owner: these rules were made for hand-built sheets. Where an app now uses the platform's stock sheet, the stock sheet's own states, motion, haptics and back behaviour apply instead. On Android the panel is Material's standard bottom sheet (peek and expanded, the expressive motion scheme's springs), so the half stop, the 0.3 s ease-out and one-stop throws no longer hold there.
+
 ## Source
 
 The owner, 2026-10-15 ("The pill should not go straight to full"), 2026-10-20, 2026-10-22 and 2026-10-23.

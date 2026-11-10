@@ -12,7 +12,8 @@ import app.wingtipmaps.android.engine.generated.windCalm
  * route's departure) by the engine's WGS 84 geodesic (`distance_nm`), the
  * minutes to fly it at the airplane's cruise speed with no wind
  * (`fuel_estimate`: the book's figures before the nav log's), and whether
- * the field's wind is calm (`wind_calm`). The METAR's wind is from the
+ * the field's wind is calm (`wind_calm`). The distance is always said
+ * where there is a start: from own ship, else "From KMSN" (`fromIdent`). The METAR's wind is from the
  * true direction (AC 00-45H, the METAR's wind group). Nothing is worked
  * out here: with no airplane there is no time, and with nowhere to start
  * no distance. A rule that fails leaves its figure out.
@@ -26,11 +27,16 @@ data class AirportFacts(
     val longestRunwayFt: Int?,
     val distanceNm: Double?,
     val minutes: Double?,
+    /** The departure the distance is from; null where it is own ship's. */
+    val fromIdent: String? = null,
 ) {
+    /** Where the distance starts: own ship (no ident), else a departure. */
+    data class From(val lat: Double, val lon: Double, val ident: String? = null)
+
     companion object {
-        fun of(place: AirportPlace, from: Pair<Double, Double>?, cruiseTasKt: Double?): AirportFacts {
+        fun of(place: AirportPlace, from: From?, cruiseTasKt: Double?): AirportFacts {
             val metar = place.metar
-            val distance = from?.let { (lat, lon) -> Engine.distanceNm(lat, lon, place.lat, place.lon).getOrNull() }
+            val distance = from?.let { Engine.distanceNm(it.lat, it.lon, place.lat, place.lon).getOrNull() }
             val minutes = distance?.takeIf { cruiseTasKt != null }?.let { Engine.fuelEstimate(it, cruiseTasKt = cruiseTasKt).getOrNull()?.minutes }
             return AirportFacts(
                 category = metar?.flightCategory,
@@ -41,6 +47,7 @@ data class AirportFacts(
                 longestRunwayFt = place.runways.filterNot { it.closed }.mapNotNull { it.lengthFt }.maxOrNull(),
                 distanceNm = distance,
                 minutes = minutes,
+                fromIdent = from?.ident,
             )
         }
     }

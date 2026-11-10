@@ -48,6 +48,16 @@
     <string name="offer_line">The figures you gave %1$s on this phone, kept with your account.</string>
     <string name="offer_keep">Keep</string>
 
+    <!-- Endurance (the engine's endurance: 14 CFR 91.151(a), 91.167(a)(3)). -->
+    <string name="endurance">Endurance</string>
+    <string name="endurance_dry_tanks">To Dry Tanks</string>
+    <string name="endurance_vfr_day">After VFR Day Reserve</string>
+    <string name="endurance_vfr_night">After VFR Night Reserve</string>
+    <string name="endurance_ifr">After IFR Reserve</string>
+    <string name="endurance_reserve">%1$s reserve</string>
+    <string name="endurance_reserve_below">%1$s reserve, more than the tanks hold</string>
+    <string name="endurance_needs">Needed for the endurance</string>
+
     <string name="glide_ring">Glide Ring</string>
     <string name="glide_ring_line">Shown by itself in an emergency</string>
     <string name="glide_ring_no_airplane">Needs an airplane: choose one on the Airplane tab</string>

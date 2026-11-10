@@ -1,6 +1,7 @@
 import CoreLocation
 import Foundation
 import Observation
+import UIKit
 
 /// The route flown on the ground, as the web app's dry run flies it
 /// (navlog/dryRun.ts): the engine's `dry_run` flies the plan on paper
@@ -80,16 +81,32 @@ final class DryRun {
         startedAt = nil
     }
 
+    /// The run moved to a moment, s from its start (the scrubber).
+    func scrub(to t: Double) {
+        flownS = min(max(0, t), totalS)
+        place()
+    }
+
     private func tick() {
         ticking?.cancel()
         ticking = Task { [weak self] in
             while let self, !Task.isCancelled, self.running {
-                try? await Task.sleep(for: .milliseconds(500))
-                self.flownS = min(self.totalS, self.flownS + 0.5 * self.speed)
+                // Under Reduce Motion the airplane steps from one nav log
+                // row to the next every two seconds, rather than gliding
+                // (docs/design/ios.md §11).
+                let stepping = UIAccessibility.isReduceMotionEnabled
+                try? await Task.sleep(for: .milliseconds(stepping ? 2000 : 500))
+                self.flownS = stepping ? Self.nextStop(after: self.flownS, rowT: self.rowT, total: self.totalS)
+                    : min(self.totalS, self.flownS + 0.5 * self.speed)
                 self.place()
                 if self.done { self.running = false }
             }
         }
+    }
+
+    /// The next nav log row's time after `t`, else the run's end.
+    static func nextStop(after t: Double, rowT: [Double], total: Double) -> Double {
+        min(total, rowT.first { $0 > t + 0.5 } ?? total)
     }
 
     /// Where the airplane is `flownS` into the flight, between the run's

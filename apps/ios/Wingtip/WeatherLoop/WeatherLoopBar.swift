@@ -33,7 +33,7 @@ struct WeatherLoopBar: View {
             .accessibilityLabel(loop.playing ? "Pause" : "Play")
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 if let status {
-                    Text(status).font(.footnote).foregroundStyle(loop.failed ? .red : .primary)
+                    Text(status).font(.footnote).foregroundStyle(loop.failed ? WingtipInk.problem : Color.primary)
                 } else {
                     Slider(
                         value: Binding(get: { Double(max(0, loop.shown)) }, set: { loop.seek(Int($0.rounded())) }),
@@ -47,7 +47,7 @@ struct WeatherLoopBar: View {
                             Spacer(minLength: 0)
                             Text(time.old ? "Old: \(time.age)" : time.age)
                                 .fontWeight(time.old ? .semibold : .regular)
-                                .foregroundStyle(time.old ? Color.red : Color.secondary)
+                                .foregroundStyle(time.old ? WingtipInk.problem : Color.secondary)
                         }
                         .font(.caption)
                         .monospacedDigit()

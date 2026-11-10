@@ -3,6 +3,7 @@
   "shortcuts": [
     {
       "name": "Brief",
+      "short_name": "Brief",
       "description": "The route's Brief and its Go / No-Go (needs a route).",
       "url": "/app/plan?open=brief",
       "icons": [
@@ -15,6 +16,7 @@
     },
     {
       "name": "Nearest",
+      "short_name": "Nearest",
       "description": "The fields nearest the airplane.",
       "url": "/app/plan?open=nearest",
       "icons": [
@@ -27,6 +29,7 @@
     },
     {
       "name": "Emergency Assistant",
+      "short_name": "Emergency",
       "description": "The emergency assistant: the nearest fields, the checklist, 7700 and 121.5.",
       "url": "/app/plan?open=emergency",
       "icons": [
@@ -39,6 +42,7 @@
     },
     {
       "name": "Nav Log",
+      "short_name": "Nav Log",
       "description": "The nav log, leg by leg (needs a route). Android's FPL tab is its nav log.",
       "url": "/app/plan?open=navlog",
       "icons": [
@@ -51,6 +55,7 @@
     },
     {
       "name": "FPL",
+      "short_name": "FPL",
       "description": "The plan: the route, its altitude and its figures, the sheet's main content under the one search.",
       "url": "/app/plan?open=fpl",
       "icons": [
@@ -63,6 +68,7 @@
     },
     {
       "name": "Airport",
+      "short_name": "Airport",
       "description": "The one search with nothing typed: the flight, favorites, recents, nearest.",
       "url": "/app/plan?open=airport",
       "icons": [
@@ -75,6 +81,7 @@
     },
     {
       "name": "Airplane",
+      "short_name": "Airplane",
       "description": "The airplane picked's profile, or the traffic about where none is picked.",
       "url": "/app/plan?open=airplane",
       "icons": [
@@ -87,6 +94,7 @@
     },
     {
       "name": "Logbook",
+      "short_name": "Logbook",
       "description": "The pilot's logbook and currency.",
       "url": "/app/plan?open=logbook",
       "icons": [
@@ -99,6 +107,7 @@
     },
     {
       "name": "Checklists",
+      "short_name": "Checklists",
       "description": "The picked airplane's checklists.",
       "url": "/app/plan?open=checklists",
       "icons": [
@@ -111,6 +120,7 @@
     },
     {
       "name": "Coach",
+      "short_name": "Coach",
       "description": "The training coach.",
       "url": "/app/plan?open=coach",
       "icons": [
@@ -123,6 +133,7 @@
     },
     {
       "name": "Personal Minimums",
+      "short_name": "Minimums",
       "description": "The weather the pilot will not take off or land in.",
       "url": "/app/plan?open=minimums",
       "icons": [
@@ -135,6 +146,7 @@
     },
     {
       "name": "Setup",
+      "short_name": "Setup",
       "description": "The account and settings page, the account button's.",
       "url": "/app/plan?open=setup",
       "icons": [

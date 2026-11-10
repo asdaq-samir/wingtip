@@ -67,10 +67,9 @@ struct FlightSheets: ViewModifier {
             .modifier(PointAlerts())
             // The emergency assistant, from the instruments bar, the pilot's
             // words or the emergency checklist; no map button (decision 0010).
-            .sheet(item: $emergency.open) { _ in
+            // Full screen, its own map in its top third (docs/design/ios.md §8).
+            .fullScreenCover(item: $emergency.open) { _ in
                 EmergencySheet(airplane: LocalChecklists.airplane(of: plan))
-                    .presentationDetents([.medium, .large])
-                    .presentationBackgroundInteraction(.enabled(upThrough: .medium))
             }
     }
 }
@@ -337,7 +336,7 @@ struct HoldSheet: View {
                         ForEach(Self.lengths, id: \.self) { Text(Self.lengthWords($0)).tag($0) }
                     }
                     if let problem {
-                        Text("The leg time for this altitude couldn't be worked out: \(problem)").foregroundStyle(.orange)
+                        Text("The leg time for this altitude couldn't be worked out: \(problem)").foregroundStyle(WingtipInk.caution)
                     }
                 }
                 Section {
@@ -427,7 +426,7 @@ struct ProcedureFixesView: View {
                                     switch Result(catching: { try fix.charted() }) {
                                     case .success(let charted?): Text(charted).font(.subheadline).foregroundStyle(.secondary)
                                     case .success(nil): EmptyView()
-                                    case .failure: Text("Altitude not read").font(.subheadline).foregroundStyle(.orange)
+                                    case .failure: Text("Altitude not read").font(.subheadline).foregroundStyle(WingtipInk.caution)
                                     }
                                 }
                             }
@@ -443,7 +442,7 @@ struct ProcedureFixesView: View {
                     }
                 }
             } else {
-                Text(problem ?? "Fetching its fixes…").foregroundStyle(problem == nil ? Color.secondary : Color.red)
+                Text(problem ?? "Fetching its fixes…").foregroundStyle(problem == nil ? Color.secondary : WingtipInk.problem)
             }
         }
         .navigationTitle(pick?.name ?? id)

@@ -258,9 +258,9 @@ struct NowFlightRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: WingtipSpace.sm) {
             HStack {
-                Circle().fill(.green).frame(width: 8, height: 8)
+                Circle().fill(WingtipInk.go).frame(width: 8, height: 8)
                 Text(started.map { "In the air · \(FlightWords.lasted(Date().timeIntervalSince1970 - $0))" } ?? "In the air")
-                    .font(.subheadline.weight(.semibold)).foregroundStyle(.green)
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(WingtipInk.go)
                 Spacer()
                 if let type = detail?.type ?? plane.type { Text(type).font(.subheadline).foregroundStyle(.secondary) }
             }
@@ -282,7 +282,7 @@ struct NowFlightRow: View {
                 // sign of it.
                 Text("Squawk \(squawk)\(FlightWords.squawk(squawk).map { " · \($0)" } ?? "")")
                     .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(FlightWords.squawk(squawk) != nil ? Color.red : Color.secondary)
+                    .foregroundStyle(FlightWords.squawk(squawk) != nil ? WingtipInk.problem : Color.secondary)
                     .accessibilityLabel("Squawk \(SpokenFigures.digits(squawk))\(FlightWords.squawk(squawk).map { ", \($0)" } ?? "")")
             }
             if let fix = ownShip.fix {
@@ -330,7 +330,7 @@ struct PastFlightRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: WingtipSpace.sm) {
             HStack {
-                Text(FlightWords.ended(flight)).foregroundStyle(flight.landed || flight.inAir ? Color.green : Color.secondary)
+                Text(FlightWords.ended(flight)).foregroundStyle(flight.landed || flight.inAir ? WingtipInk.go : Color.secondary)
                 Spacer()
                 if let type { Text(type).foregroundStyle(.secondary) }
             }
@@ -369,7 +369,7 @@ struct PastFlightCard: View {
             Section { PastFlightRow(flight: flight, type: nil) }
             if points.isEmpty {
                 Section(title: "Profile") {
-                    Text(problem ?? "Fetching its track…").foregroundStyle(problem == nil ? Color.secondary : Color.red)
+                    Text(problem ?? "Fetching its track…").foregroundStyle(problem == nil ? Color.secondary : WingtipInk.problem)
                 }
             } else {
                 // Its replay, the airplane flown along it again on the map.
@@ -439,7 +439,7 @@ struct FlightProfileChart: View {
                 }
                 if let kt = point.gsKt {
                     LineMark(x: .value("Time", Date(timeIntervalSince1970: point.t)), y: .value("Feet", feet(kt)), series: .value("Trace", "Ground speed"))
-                        .foregroundStyle(Color.orange)
+                        .foregroundStyle(WingtipInk.caution)
                 }
             }
             if let cursor {
@@ -451,7 +451,7 @@ struct FlightProfileChart: View {
                 }
                 if let kt = cursor.gsKt {
                     PointMark(x: .value("Now", Date(timeIntervalSince1970: cursor.t)), y: .value("Feet", feet(kt)))
-                        .foregroundStyle(Color.orange).symbolSize(60)
+                        .foregroundStyle(WingtipInk.caution).symbolSize(60)
                 }
             }
         }
@@ -487,7 +487,7 @@ struct FAARecordSection: View {
                 }
             }
             LabeledContent(faa.nNumber) {
-                Text(faa.status ?? "—").foregroundStyle(faa.standing == "lapsed" ? Color.red : Color.primary)
+                Text(faa.status ?? "—").foregroundStyle(faa.standing == "lapsed" ? WingtipInk.problem : Color.primary)
             }
             if let expires = faa.expires { LabeledContent("Expires", value: expires) }
             if faa.manufacturer != nil || faa.model != nil {
