@@ -11,9 +11,8 @@ import {
 } from "./ui/alert-dialog";
 import { Button } from "./ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
-import { Sheet, SheetClose, SheetTrigger } from "./ui/sheet";
 import CloseButton from "./CloseButton";
-import { PhoneSheetBody, PhoneSheetContent, PhoneSheetHeader } from "./PhoneSheet";
+import { PhoneSheet, PhoneSheetBody, PhoneSheetClose, PhoneSheetContent, PhoneSheetHeader, PhoneSheetTrigger } from "./PhoneSheet";
 import { useIsMobile } from "../hooks/use-mobile";
 import { useNavEdge } from "../hooks/use-nav-edge";
 
@@ -129,8 +128,8 @@ export default function SheetDialog({
 
   if (onPhone) {
     return (
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        {trigger && <SheetTrigger render={trigger} />}
+      <PhoneSheet edge={edge} open={open} onOpenChange={onOpenChange}>
+        {trigger && <PhoneSheetTrigger render={trigger} />}
         <PhoneSheetContent
           ref={sheet}
           edge={edge}
@@ -145,10 +144,12 @@ export default function SheetDialog({
             description={description}
             leading={
               cancel ? (
-                <SheetClose render={<Button ref={out} type="button" variant="ghost" size="sm" className="-ml-2" />}>Cancel</SheetClose>
+                <PhoneSheetClose render={<Button ref={out} type="button" variant="ghost" size="sm" className="-ml-2" />}>
+                  Cancel
+                </PhoneSheetClose>
               ) : undefined
             }
-            end={cancel ? actionButton("-mr-1", true) : <SheetClose render={<CloseButton ref={out} data-testid="sheet-close" />} />}
+            end={cancel ? actionButton("-mr-1", true) : <PhoneSheetClose render={<CloseButton ref={out} data-testid="sheet-close" />} />}
           />
           <PhoneSheetBody edge={edge} data-dialog-body="" className="grid gap-4">
             {children}
@@ -156,7 +157,7 @@ export default function SheetDialog({
             {!cancel && acts && actionButton()}
           </PhoneSheetBody>
         </PhoneSheetContent>
-      </Sheet>
+      </PhoneSheet>
     );
   }
 

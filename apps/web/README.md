@@ -323,9 +323,9 @@ failing the same way used to stack three identical toasts. Its own
 that happened to toast last. Toasts have `pointer-events: none` on
 their container with `auto` restored on the toast itself
 (`index.css`), so the map keeps taking wheel/drag events with one on
-screen, and Radix's `onInteractOutside` (`components/ui/sheet.tsx`) is
-told to ignore a click inside the toaster, so closing a toast never
-closes the drawer under it.
+screen, and a press inside the toaster is not "outside" a dialog or a
+sheet (`components/ui/dismiss.ts`), so closing a toast never closes the
+sheet under it.
 
 **Styling.** Tailwind utilities and stock shadcn components. The only
 inline styles are colours computed from data (a rating, a flight
