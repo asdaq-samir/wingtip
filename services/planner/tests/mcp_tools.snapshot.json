@@ -1,0 +1,714 @@
+[
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Airport facts"
+    },
+    "description": "One US airport's facts as Wingtip's airport card shows them: elevation, the class of airspace at its surface, whether it is towered, runways (length, width, surface, lighting), frequencies, traffic pattern, lighting remarks, contact, and links to the FAA airport diagram and Chart Supplement page.",
+    "inputSchema": {
+      "properties": {
+        "ident": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Ident",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ident"
+      ],
+      "title": "airport_infoArguments",
+      "type": "object"
+    },
+    "name": "airport_info",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "airport_infoDictOutput",
+      "type": "object"
+    },
+    "title": "Airport facts"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Airport NOTAMs"
+    },
+    "description": "A US airport's NOTAMs and the TFRs within 5 nm of it, those in force from an hour ago to three hours ahead ranked first, each with its text as sent, what it closes or limits, its hours, and why it ranks where it does: part of the \"available information concerning that flight\" 14 CFR 91.103 has a pilot become familiar with.",
+    "inputSchema": {
+      "properties": {
+        "ident": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Ident",
+          "type": "string"
+        },
+        "limit": {
+          "default": 15,
+          "description": "How many to answer, best first, 1 to 50.",
+          "maximum": 50,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "ident"
+      ],
+      "title": "airport_notamsArguments",
+      "type": "object"
+    },
+    "name": "airport_notams",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "airport_notamsDictOutput",
+      "type": "object"
+    },
+    "title": "Airport NOTAMs"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Airport weather"
+    },
+    "description": "The weather at a US airport now: its latest METAR and its TAF as sent, and the METAR read (flight category, ceiling, visibility, wind, altimeter, temperature). A field with no report of its own gets the nearest report within 30 nm, or the NWS's modelled weather for the hour, each marked as such.",
+    "inputSchema": {
+      "properties": {
+        "ident": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Ident",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ident"
+      ],
+      "title": "airport_weatherArguments",
+      "type": "object"
+    },
+    "name": "airport_weather",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "airport_weatherDictOutput",
+      "type": "object"
+    },
+    "title": "Airport weather"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Flight briefing"
+    },
+    "description": "The Go / No-Go briefing for a planned flight, as Wingtip's Brief gives it: the line over the findings and each finding -- weather at the fields and along the route, TFRs and special-use airspace, the altitude, fuel, runways, weight and balance -- in words, and the risk assessment's score, level and factors.",
+    "inputSchema": {
+      "properties": {
+        "airplane_tail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The pilot's own airplane by tail number (my_airplanes lists them). Without one, no times or fuel.",
+          "title": "Airplane Tail"
+        },
+        "cruise_altitude_ft": {
+          "anyOf": [
+            {
+              "maximum": 45000,
+              "minimum": 500,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cruise altitude, feet MSL; Wingtip picks the legal fastest when omitted.",
+          "title": "Cruise Altitude Ft"
+        },
+        "depart_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Departure time, ISO 8601 (UTC when no offset); now when omitted.",
+          "title": "Depart At"
+        },
+        "departure": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Departure",
+          "type": "string"
+        },
+        "destination": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Destination",
+          "type": "string"
+        },
+        "rules": {
+          "default": "vfr",
+          "description": "VFR or IFR.",
+          "enum": [
+            "vfr",
+            "ifr"
+          ],
+          "title": "Rules",
+          "type": "string"
+        },
+        "stops": {
+          "default": [],
+          "description": "Airports or waypoints landed at or flown by, in order.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Stops",
+          "type": "array"
+        }
+      },
+      "required": [
+        "departure",
+        "destination"
+      ],
+      "title": "flight_briefingArguments",
+      "type": "object"
+    },
+    "name": "flight_briefing",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "flight_briefingDictOutput",
+      "type": "object"
+    },
+    "title": "Flight briefing"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "My airplanes"
+    },
+    "description": "The airplanes the signed-in pilot saved in Wingtip: tail number, type, cruise speed and fuel burn, usable fuel, equipment codes, inspections with the day each is good through, and open squawks.",
+    "inputSchema": {
+      "properties": {},
+      "title": "my_airplanesArguments",
+      "type": "object"
+    },
+    "name": "my_airplanes",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "my_airplanesDictOutput",
+      "type": "object"
+    },
+    "title": "My airplanes"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "My saved flights"
+    },
+    "description": "The flights the signed-in pilot saved in Wingtip, newest first: route, airplane, cruise altitude, distance, time and fuel, when planned for, the risk assessment saved with it, its name and notes.",
+    "inputSchema": {
+      "properties": {
+        "limit": {
+          "default": 10,
+          "description": "How many, newest first, 1 to 50.",
+          "maximum": 50,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        }
+      },
+      "title": "my_flightsArguments",
+      "type": "object"
+    },
+    "name": "my_flights",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "my_flightsDictOutput",
+      "type": "object"
+    },
+    "title": "My saved flights"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Nearest airports"
+    },
+    "description": "The landing fields nearest a position or an airport, nearest first: distance (nm) and true bearing, longest open runway, a frequency to call inbound, flight category where it reports, and the class of airspace at the surface. Filter by runway length, towered fields, or public-use fields.",
+    "inputSchema": {
+      "properties": {
+        "lat": {
+          "anyOf": [
+            {
+              "maximum": 90,
+              "minimum": -90,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Latitude, degrees north.",
+          "title": "Lat"
+        },
+        "limit": {
+          "default": 10,
+          "description": "How many to answer, 1 to 25.",
+          "maximum": 25,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "lon": {
+          "anyOf": [
+            {
+              "maximum": 180,
+              "minimum": -180,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Longitude, degrees east (negative west).",
+          "title": "Lon"
+        },
+        "min_runway_ft": {
+          "anyOf": [
+            {
+              "maximum": 20000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Longest open runway at least this, feet.",
+          "title": "Min Runway Ft"
+        },
+        "near": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "An airport identifier to search around; or give lat and lon.",
+          "title": "Near"
+        },
+        "public_only": {
+          "default": false,
+          "description": "Leave out private and military fields.",
+          "title": "Public Only",
+          "type": "boolean"
+        },
+        "towered_only": {
+          "default": false,
+          "description": "Only fields with a control tower.",
+          "title": "Towered Only",
+          "type": "boolean"
+        }
+      },
+      "title": "nearest_airportsArguments",
+      "type": "object"
+    },
+    "name": "nearest_airports",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "nearest_airportsDictOutput",
+      "type": "object"
+    },
+    "title": "Nearest airports"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Plan a route"
+    },
+    "description": "Plans a flight between US airports as Wingtip's nav log does: the cruise altitude (yours, or the legal fastest for the winds) and why, each leg's distance, true and magnetic course, magnetic heading, wind, ground speed, time and fuel, the totals with the reserve and the fuel margin, and the cautions. Times and fuel need one of the pilot's airplanes by tail number.",
+    "inputSchema": {
+      "properties": {
+        "airplane_tail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The pilot's own airplane by tail number (my_airplanes lists them). Without one, no times or fuel.",
+          "title": "Airplane Tail"
+        },
+        "cruise_altitude_ft": {
+          "anyOf": [
+            {
+              "maximum": 45000,
+              "minimum": 500,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cruise altitude, feet MSL; Wingtip picks the legal fastest when omitted.",
+          "title": "Cruise Altitude Ft"
+        },
+        "depart_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Departure time, ISO 8601 (UTC when no offset); now when omitted.",
+          "title": "Depart At"
+        },
+        "departure": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Departure",
+          "type": "string"
+        },
+        "destination": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Destination",
+          "type": "string"
+        },
+        "rules": {
+          "default": "vfr",
+          "description": "VFR or IFR.",
+          "enum": [
+            "vfr",
+            "ifr"
+          ],
+          "title": "Rules",
+          "type": "string"
+        },
+        "stops": {
+          "default": [],
+          "description": "Airports or waypoints landed at or flown by, in order.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Stops",
+          "type": "array"
+        }
+      },
+      "required": [
+        "departure",
+        "destination"
+      ],
+      "title": "plan_routeArguments",
+      "type": "object"
+    },
+    "name": "plan_route",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "plan_routeDictOutput",
+      "type": "object"
+    },
+    "title": "Plan a route"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read",
+            "wingtip:write"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Save flight to Wingtip"
+    },
+    "description": "Saves a planned flight to the signed-in pilot's Wingtip account, so it is in the app's Flights to open, brief and fly. It plans the route first, as plan_route does, and saves that plan. Adds a new flight; changes nothing already saved.",
+    "inputSchema": {
+      "properties": {
+        "airplane_tail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The pilot's own airplane by tail number (my_airplanes lists them). Without one, no times or fuel.",
+          "title": "Airplane Tail"
+        },
+        "cruise_altitude_ft": {
+          "anyOf": [
+            {
+              "maximum": 45000,
+              "minimum": 500,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cruise altitude, feet MSL; Wingtip picks the legal fastest when omitted.",
+          "title": "Cruise Altitude Ft"
+        },
+        "depart_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Departure time, ISO 8601 (UTC when no offset); now when omitted.",
+          "title": "Depart At"
+        },
+        "departure": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Departure",
+          "type": "string"
+        },
+        "destination": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Destination",
+          "type": "string"
+        },
+        "rules": {
+          "default": "vfr",
+          "description": "VFR or IFR.",
+          "enum": [
+            "vfr",
+            "ifr"
+          ],
+          "title": "Rules",
+          "type": "string"
+        },
+        "stops": {
+          "default": [],
+          "description": "Airports or waypoints landed at or flown by, in order.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Stops",
+          "type": "array"
+        }
+      },
+      "required": [
+        "departure",
+        "destination"
+      ],
+      "title": "save_flightArguments",
+      "type": "object"
+    },
+    "name": "save_flight",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "save_flightDictOutput",
+      "type": "object"
+    },
+    "title": "Save flight to Wingtip"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Search airports"
+    },
+    "description": "Finds US airports whose identifier or name starts with the text given (KDLH, Duluth, Chicago Exec), with each one's identifier, name, town and state. Use it to turn a place a pilot names into an identifier the other tools take.",
+    "inputSchema": {
+      "properties": {
+        "limit": {
+          "default": 10,
+          "description": "How many to answer, 1 to 25.",
+          "maximum": 25,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "query": {
+          "description": "An identifier, an airport's name or its town.",
+          "maxLength": 60,
+          "minLength": 2,
+          "title": "Query",
+          "type": "string"
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "title": "search_airportsArguments",
+      "type": "object"
+    },
+    "name": "search_airports",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "search_airportsDictOutput",
+      "type": "object"
+    },
+    "title": "Search airports"
+  }
+]

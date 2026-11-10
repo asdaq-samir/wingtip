@@ -29,6 +29,15 @@ x-python-healthcheck: &python-healthcheck
 # without one by saying the model cannot be reached.
 x-anthropic-api-key: &anthropic-api-key ${ANTHROPIC_API_KEY:-}
 
+# The gateway's public address, said once: where its emailed links point,
+# and the issuer of the connector's tokens that the planner checks
+# (docs/design/mcp-connector.md). The gateway's environment below says why
+# it is worked out this way.
+x-public-base-url: &public-base-url ${PHONE_BASE_URL:-${PUBLISH_ADDRESS:+${PHONE_BASE_URL:?set PHONE_BASE_URL=https://<this Mac's LAN address>:8443 in .env}}${APP_PUBLIC_BASE_URL:-http://localhost:8080}}
+# The secret the planner's connector shows the gateway's /internal/mcp
+# records with: this machine's own, and a real one in production.
+x-mcp-internal-token: &mcp-internal-token ${MCP_INTERNAL_TOKEN:-local-connector-secret}
+
 # Every long-running service below restarts with Docker (restart:
 # unless-stopped): after a reboot, Docker Desktop brings back whatever
 # was running -- the phone's ports included, since it is the same
@@ -298,6 +307,10 @@ services:
       # freshness is asked at WEATHER_URL (http://weather:8000 by default).
       FEED_ALERT_AFTER_MIN: ${FEED_ALERT_AFTER_MIN:-15}
       FEED_ALERT_WEBHOOK: ${FEED_ALERT_WEBHOOK:-}
+      # The connector (app.mcp): /mcp, its tokens issued by the gateway at
+      # its public address, the pilot's records asked of it with this secret.
+      MCP_ISSUER: *public-base-url
+      MCP_INTERNAL_TOKEN: *mcp-internal-token
       # The map's Google overlay (routers/basemaps): a browser key for
       # Google's Map Tiles API, none by default.
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
@@ -610,7 +623,12 @@ services:
       # so the link opens on the phone, and is required once
       # PUBLISH_ADDRESS publishes the gateway (the :? inside is read
       # only then).
-      APP_PUBLIC_BASE_URL: ${PHONE_BASE_URL:-${PUBLISH_ADDRESS:+${PHONE_BASE_URL:?set PHONE_BASE_URL=https://<this Mac's LAN address>:8443 in .env}}${APP_PUBLIC_BASE_URL:-http://localhost:8080}}
+      APP_PUBLIC_BASE_URL: *public-base-url
+      # The connector's authorization server (security/mcp): the secret its
+      # internal records ask for, and its signing key (blank: one made at
+      # start, so a restart signs Claude and ChatGPT out until they refresh).
+      MCP_INTERNAL_TOKEN: *mcp-internal-token
+      MCP_SIGNING_KEY: ${MCP_SIGNING_KEY:-}
       # Whose pilot is a developer: the address the e2e suite signs in
       # as (apps/web/e2e/auth.setup.ts), and whichever APP_DEVELOPER_EMAILS in
       # .env adds -- yours, comma-separated.
