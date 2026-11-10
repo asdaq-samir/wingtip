@@ -95,7 +95,10 @@ test(
     // not the wind's runway.
     await page.goto("/app/plan?dep=C81&dest=KDLH&pattern=C81:9,KDLH:27&auto=-");
     await settle(page);
-    const marker = page.locator(".maplibregl-marker", { hasText: /^1[01]$/ }).first();
+    // A checkpoint late on the route, so the log has rows above it: one
+    // the map shows, as its badges now give way to each other and a
+    // phone's view leaves some out until closer in (lib/map/gl/declutter).
+    const marker = page.locator('.maplibregl-marker:not([data-declutter="hidden"])', { hasText: /^(?:[89]|1\d)$/ }).first();
     await expect(marker).toBeVisible({ timeout: slow(15000) });
     // A DOM click, not a pointer one: the legs are still streaming in
     // and each re-draws the markers, so Playwright's wait for the marker

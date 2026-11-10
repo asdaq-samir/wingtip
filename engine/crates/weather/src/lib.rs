@@ -12,7 +12,9 @@
 //!   the 56-day charts, the obstacle file);
 //! - ready: ready to fly -- whether the device holds the charts, the
 //!   cycle packs, the weather and the NOTAMs the flight needs, and what to
-//!   fix while there is still a signal.
+//!   fix while there is still a signal;
+//! - worse: what counts as a route's weather getting worse between two
+//!   readings of its briefing (AIM 7-1-6, 7-1-7).
 
 pub mod cycles;
 pub mod forecast;
@@ -25,6 +27,7 @@ pub mod taf;
 pub mod tfr;
 pub mod validity;
 pub mod winds;
+pub mod worse;
 
 // The modules below this crate by the names they had when the engine was
 // one crate, so the code reads them as crate::json and so on.

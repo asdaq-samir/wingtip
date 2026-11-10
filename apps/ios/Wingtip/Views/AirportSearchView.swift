@@ -242,16 +242,16 @@ struct AirportListView: View {
             switch shows {
             case .favorites:
                 if shelf.favorites.isEmpty { Text("No Favorites").foregroundStyle(.secondary) }
-                ForEach(shelf.favorites) { field in NavigationLink(value: field.ident) { keptRow(field) }.cardSource(field.ident) }
+                ForEach(shelf.favorites) { field in NavigationLink(value: field.ident) { keptRow(field) }.cardSource(field.ident).siriSees(SiriSaw.airport(field.ident)) }
                     .onDelete { shelf.removeFavorites(at: $0) }
                     .onMove { shelf.moveFavorites(from: $0, to: $1) }
             case .recents:
                 if shelf.recents.isEmpty { Text("No Recents").foregroundStyle(.secondary) }
-                ForEach(shelf.recents) { field in NavigationLink(value: field.ident) { keptRow(field) }.cardSource(field.ident) }
+                ForEach(shelf.recents) { field in NavigationLink(value: field.ident) { keptRow(field) }.cardSource(field.ident).siriSees(SiriSaw.airport(field.ident)) }
                     .onDelete { shelf.removeRecents(at: $0) }
             case .nearest:
                 if nearest.isEmpty { Text("Waiting for the position").foregroundStyle(.secondary) }
-                ForEach(nearest) { field in NavigationLink(value: field.ident) { NearestRow(field: field) }.cardSource(field.ident) }
+                ForEach(nearest) { field in NavigationLink(value: field.ident) { NearestRow(field: field) }.cardSource(field.ident).siriSees(SiriSaw.airport(field.ident)) }
             }
         }
         .navigationTitle(shows.title)
@@ -283,7 +283,7 @@ struct NearFromView: View {
         List {
             if let fields {
                 Section(title: "Nearest \(label)") {
-                    ForEach(fields) { field in NavigationLink(value: field.ident) { NearestRow(field: field) }.cardSource(field.ident) }
+                    ForEach(fields) { field in NavigationLink(value: field.ident) { NearestRow(field: field) }.cardSource(field.ident).siriSees(SiriSaw.airport(field.ident)) }
                 }
             } else if let problem {
                 ProblemLine(problem)

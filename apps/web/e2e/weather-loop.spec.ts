@@ -73,7 +73,10 @@ test("the radar loop is turned on from the Map menu, plays once loaded, and scru
   await expect(page.getByTestId("weather-loop-time")).toContainText(/\d{4}Z/);
 
   // Scrubbed to the first frame: paused there, an hour old, said so.
+  // End, then Home: a key that leaves the frame where it is changes
+  // nothing, and the playing loop may be on the first frame already.
   await page.getByRole("slider", { name: "Radar frame" }).focus();
+  await page.keyboard.press("End");
   await page.keyboard.press("Home");
   await expect(page.getByTestId("weather-loop-play")).toHaveAccessibleName("Play");
   await expect(page.getByTestId("weather-loop-time")).toContainText(/Old: \d+m ago|Old: 1h/);

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { openPanel, openProfile, settle, sideDrawer, slow } from "./helpers";
+import { openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart } from "./helpers";
 
 /**
  * The emergency assistant (features/emergency), reached with no map button
@@ -16,7 +16,7 @@ async function flying(page: Page) {
   await openProfile(page);
   const start = sideDrawer(page).getByTestId("dry-run-start");
   await expect(start).toBeVisible({ timeout: slow(60_000) });
-  await start.click();
+  await pressDryRunStart(page, start);
   await expect(page.getByTestId("flying-head")).toBeVisible({ timeout: slow(10_000) });
 }
 

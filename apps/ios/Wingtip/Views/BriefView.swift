@@ -194,6 +194,7 @@ struct BriefView: View {
                 }
             }
         }
+        .siriSees(SiriSaw.flight(plan))
         .navigationTitle("Brief")
         .glassScrollEdges()
         .navigationBarMinimizesOnScroll()
@@ -211,6 +212,9 @@ struct BriefView: View {
             if plan.briefing == nil, plan.routed {
                 await plan.brief(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: plan.totals?.eteMin)
             }
+            // The route's weather is watched from the Brief on (WeatherWatch):
+            // notifications asked for here, where the pilot sees why.
+            if plan.routed { await Notifications.allow() }
         }
         // The forecast icing, asked once the briefing has the nav log's legs.
         .task(id: ForecastIcing.query(briefing: plan.briefing, legs: plan.legs)) { await icing.refresh(briefing: plan.briefing, legs: plan.legs) }
@@ -220,6 +224,8 @@ struct BriefView: View {
         .task(id: "\(verdict.key(for: plan))|\(session.signedIn)") {
             guard session.signedIn, plan.routed else { return }
             await window.refresh(try? DepartureWindow.ask(verdict.ask(for: plan), airplane: plan.airplaneChosen))
+            // The hour said to Siri with the ask ("tomorrow at 9"), picked.
+            if let when = BriefAsk.shared.takeDepart() { window.pick(nearest: when) }
         }
         // The words for the briefing on the page, written again when it
         // changes; the figures stay as they are while they are written.

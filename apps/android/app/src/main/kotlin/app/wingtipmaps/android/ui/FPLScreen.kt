@@ -38,6 +38,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.ai.AiSources
+import app.wingtipmaps.android.ai.AiTask
+import app.wingtipmaps.android.ai.AiWordsRow
 import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.airplane.AskFigures
 import app.wingtipmaps.android.airplane.rememberAirplaneNow
@@ -127,6 +130,10 @@ fun FPLScreen(plan: Plan) {
                 item {
                     Spacer(Modifier.height(WingtipSpace.Sm))
                     TotalsRows(totals, rememberAirplaneNow(plan))
+                }
+                // The route and its nav log in plain words, under the totals.
+                item(key = "ai-route") {
+                    AiWordsRow(AiTask.ROUTE, key = state.legs.hashCode().toString(), sources = { AiSources.route(state.legs, state.totals, state.aircraft) })
                 }
             }
             // The route kept for the air in one tap, once it has a course.

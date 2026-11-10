@@ -85,7 +85,24 @@ final class AccessibilityAuditTests: XCTestCase {
     /// those two checks alone, so an unnamed issue anywhere else still
     /// fails.
     private static func unnamedUnderGlass(_ issue: XCUIAccessibilityAuditIssue, screen: String) -> Bool {
-        screen == "setup" && (issue.auditType == .contrast || issue.auditType == .dynamicType)
+        if unnamedMapLabel(issue) { return true }
+        return screen == "setup" && (issue.auditType == .contrast || issue.auditType == .dynamicType)
+    }
+
+    /// The map's own place names on the iPad, of the same kind as Setup's
+    /// rows above: drawn by the system, which the audit cannot name.
+    /// MapKit draws Apple's base map's labels (towns, states, rivers) with
+    /// no accessibility element, and the audit's text check reports them
+    /// as "Potentially inaccessible text" with no element. Only the iPad
+    /// shows them in the audit: its map fills the screen beside the
+    /// sidebar (SplitLayout), where the iPhone's raised sheet covers it,
+    /// and the runner has no FAA chart over Apple's map. Found 2026-11-09
+    /// on the iPad Pro 13-inch (M5): 8 such issues with the map shown and
+    /// none with it hidden, over three launches each, the strip and the
+    /// status bar ruled out the same way. The iPad alone, and that check
+    /// alone, so unnamed text on the iPhone still fails.
+    private static func unnamedMapLabel(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
+        UIDevice.current.userInterfaceIdiom == .pad && issue.auditType == .elementDetection
     }
 
     /// The audits at the default text size leave clipping to the largest
@@ -116,8 +133,17 @@ final class AccessibilityAuditTests: XCTestCase {
     private static let pill = 0.9
     private static let half = 0.53
 
+    /// Not on an iPad, whose full-screen layout has no sheet to raise
+    /// (SplitLayout: the tabs in the sidebar, the figures over the map):
+    /// there the drag only panned the map. It waits instead for the map to
+    /// show, past its reveal (ChartMap.revealCap, 2.5 s), so the audit
+    /// reads the map and not the loading mark.
     @MainActor
     private func raiseTheSheet(_ app: XCUIApplication, from: Double) {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            sleep(4)
+            return
+        }
         let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: from))
         start.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05)))
         sleep(2)

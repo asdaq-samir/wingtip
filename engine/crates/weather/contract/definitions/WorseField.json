@@ -1,0 +1,39 @@
+{
+  "title": "WorseField",
+  "description": "A field's ceiling and visibility in one reading: its METAR's, or its TAF's for the flight's time there. The engine reads the flight category (AIM 7-1-7).",
+  "type": "object",
+  "properties": {
+    "ident": {
+      "type": "string"
+    },
+    "ceiling_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "visibility_sm": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "ceiling_unknown": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "The lowest broken, overcast or obscured layer sent with no height (14 CFR 1.1): not known, not none."
+    },
+    "arrival": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "A TAF where the flight lands (a stop or the destination): only those are compared."
+    }
+  },
+  "required": [
+    "ident"
+  ]
+}

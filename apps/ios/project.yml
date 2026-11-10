@@ -103,8 +103,17 @@ targets:
         # the position read on while the airplane is flying (OwnShip),
         # for the alerts ahead and the path flown (OwnTrail); and CloudKit's
         # silent pushes, so another device's records (Records) sync before
-        # the app is opened.
-        UIBackgroundModes: [audio, location, remote-notification]
+        # the app is opened; and iOS's background refresh, for the route's
+        # weather watched after the Brief (WeatherWatch, its one task).
+        UIBackgroundModes: [audio, location, remote-notification, fetch]
+        BGTaskSchedulerPermittedIdentifiers: [app.wingtipmaps.weather-watch]
+        # Apple's Private Cloud Compute as the AI's fallback after the
+        # on-device model (AppleModels, the owner's "Yes to AI cloud",
+        # 2026-11-09). NO until Apple assigns the account the Private Cloud
+        # Compute entitlement (developer.apple.com/private-cloud-compute:
+        # the Small Business Program, under 2 million first-time
+        # downloads); then YES, with the entitlement in Wingtip.entitlements.
+        WingtipPrivateCloudCompute: false
         NSLocalNetworkUsageDescription: With Traffic on, Wingtip Maps listens on the cockpit's Wi-Fi for an ADS-B receiver (Stratux, SkyEcho, Sentry).
         # A flight in progress on the Lock Screen and in the Dynamic Island
         # (FlightActivity, the WingtipWidgets extension): the next

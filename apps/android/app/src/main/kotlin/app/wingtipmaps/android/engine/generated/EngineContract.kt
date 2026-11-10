@@ -10132,6 +10132,47 @@ object EngineContract {
     )
 
     /**
+     * One reading of a route's weather: the METARs of its fields, the advisories near it and the TAFs for the flight's time at each field.
+     */
+    @Serializable
+    data class WeatherReading(
+        val metars: List<EngineContract.WorseField>? = null,
+        val advisories: List<EngineContract.WorseAdvisory>? = null,
+        val tafs: List<EngineContract.WorseField>? = null,
+    )
+
+    @Serializable
+    data class WeatherWorseAnswer(
+        val worse: List<EngineContract.WeatherWorseItem>,
+    )
+
+    @Serializable
+    data class WeatherWorseInput(
+        val then: EngineContract.WeatherReading,
+        val now: EngineContract.WeatherReading,
+    )
+
+    /**
+     * One way the weather got worse.
+     */
+    @Serializable
+    data class WeatherWorseItem(
+        /**
+         * The change and its new state ("metar:KMSN:IFR", "advisory:<key>", "taf:KDLH:MVFR"): an app tells a key once.
+         */
+        val key: String,
+        val kind: String,
+        val ident: String? = null,
+        val was: String? = null,
+        val now: String? = null,
+        /**
+         * The change in a pilot's words: "KMSN is IFR now; it was VFR at the briefing".
+         */
+        val line: String,
+        val source: String,
+    )
+
+    /**
      * The worst a TAF forecasts in a window, TEMPO and PROB groups included.
      */
     @Serializable
@@ -10351,5 +10392,50 @@ object EngineContract {
         val key: String,
         val typed: Double,
         val answer: Double,
+    )
+
+    /**
+     * A SIGMET, AIRMET or G-AIRMET in one reading (AIM 7-1-6).
+     */
+    @Serializable
+    data class WorseAdvisory(
+        /**
+         * What names the advisory from one reading to the next: its text as sent, or its hazard, severity and altitudes.
+         */
+        val key: String,
+        /**
+         * "SIGMET", "Convective SIGMET", "AIRMET" or "G-AIRMET", as the app words it.
+         */
+        val kind: String,
+        /**
+         * Its hazard as sent ("IFR", "TURB", "ICE").
+         */
+        val hazard: String? = null,
+        /**
+         * Whether the briefing places it on the route.
+         */
+        @SerialName("on_route")
+        val onRoute: Boolean? = null,
+    )
+
+    /**
+     * A field's ceiling and visibility in one reading: its METAR's, or its TAF's for the flight's time there. The engine reads the flight category (AIM 7-1-7).
+     */
+    @Serializable
+    data class WorseField(
+        val ident: String,
+        @SerialName("ceiling_ft")
+        val ceilingFt: Double? = null,
+        @SerialName("visibility_sm")
+        val visibilitySm: Double? = null,
+        /**
+         * The lowest broken, overcast or obscured layer sent with no height (14 CFR 1.1): not known, not none.
+         */
+        @SerialName("ceiling_unknown")
+        val ceilingUnknown: Boolean? = null,
+        /**
+         * A TAF where the flight lands (a stop or the destination): only those are compared.
+         */
+        val arrival: Boolean? = null,
     )
 }

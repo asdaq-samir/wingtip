@@ -99,7 +99,7 @@ class CoachApproachesEngineTest {
         val words = a.findings!!.map { it.text }
         assertTrue(words.toString(), words.any { it.startsWith("Missed approach started") })
         assertTrue(words.toString(), words.any { it.startsWith("Within full scale all the way") })
-        assertTrue(a.findings!!.none { it.tone == "stop" || it.tone == "caution" })
+        assertTrue(a.findings.none { it.tone == "stop" || it.tone == "caution" })
     }
 
     @Test fun noApproachesDrawnIsNoneFound() {

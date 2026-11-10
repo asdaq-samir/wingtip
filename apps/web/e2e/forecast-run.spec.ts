@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openPanel, openProfile, settle, sideDrawer, slow } from "./helpers";
+import { openPanel, openProfile, pressDryRunStart, settle, sideDrawer, slow } from "./helpers";
 
 /**
  * The dry run played against the forecast (features/plan/forecastRun):
@@ -58,7 +58,7 @@ test("forecast mode plays the dry run against the forecast: the legs' hours and 
   const panel = sideDrawer(page);
   const start = panel.getByTestId("dry-run-start");
   await expect(start).toBeVisible({ timeout: slow(60_000) });
-  await start.click();
+  await pressDryRunStart(page, start);
   await expect(panel.getByTestId("dry-run")).toBeVisible();
 
   const toggle = panel.getByTestId("dry-run-forecast");

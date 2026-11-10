@@ -99,6 +99,12 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="wingtipmaps" android:host="plan" />
             </intent-filter>
+            <!-- The app's shortcuts and App Actions' OPEN_APP_FEATURE, one
+                 per screen (res/xml/shortcuts.xml, generated from
+                 design/screens.json; docs/android-ai.md). -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
 
         <!-- Google's Map Tiles key for this app (build.gradle.kts's
@@ -109,6 +115,31 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="${googleMapsAndroidKey}" />
 
+        <!-- The app's actions and entities for Gemini and the system's
+             agents (AppFunctions, Android 16 and later; ai/functions/):
+             the service the AppFunctions compiler writes from
+             WingtipFunctions, bound only by the system
+             (BIND_APP_FUNCTION_SERVICE), with the schema it indexes. -->
+        <service
+            android:name=".ai.functions.WingtipFunctionService"
+            android:permission="android.permission.BIND_APP_FUNCTION_SERVICE"
+            android:exported="true"
+            tools:targetApi="36">
+            <property
+                android:name="android.app.appfunctions.schema"
+                android:value="app_functions_schema.xsd" />
+            <property
+                android:name="android.app.appfunctions.v2"
+                android:value="wingtip_functions.xml" />
+            <intent-filter>
+                <action android:name="android.app.appfunctions.AppFunctionService" />
+            </intent-filter>
+        </service>
+        <!-- What the agents are told of the functions together, and what
+             the pilot is shown they let an agent do. -->
+        <property
+            android:name="android.app.appfunctions.app_metadata"
+            android:resource="@xml/app_functions_metadata" />
         <!-- The foreground service that keeps the fixes coming with the
              screen off while the airplane is flying (flight/OwnShip.kt);
              started and stopped by OwnShip as the airplane reaches and

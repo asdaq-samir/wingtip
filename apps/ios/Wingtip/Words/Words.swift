@@ -70,6 +70,10 @@ extension Words {
 /// Which words endpoint, and which instructions on the device.
 enum WordsKind: String, Sendable {
     case notams, weather, risk, debrief, changes
+    /// On this iPhone only, the planner having no endpoint for them: a
+    /// logbook entry's remark (RemarkDraft) and why the plan flies its
+    /// altitude (AltitudeWhy).
+    case remark, altitude
 }
 
 /// What the words are asked for: the planner's body for its endpoint,
@@ -91,15 +95,19 @@ struct WordsAsk: Sendable {
 /// Where the words came from, for the caption over them: the pilot
 /// should know which model wrote what they read.
 enum WordsOrigin: Equatable, Sendable {
-    case planner, device, none
+    case planner, device, cloud, none
 
     var caption: String {
         switch self {
         case .planner: "From the planner"
         case .device: "On this iPhone"
+        case .cloud: "Apple's Private Cloud Compute"
         case .none: "No words"
         }
     }
+
+    /// Apple's words by the model that wrote them (ModelPlace).
+    static func apple(_ words: Words) -> WordsOrigin { ModelPlace.of(model: words.model) == .cloud ? .cloud : .device }
 }
 
 /// Words with where they came from.
@@ -212,11 +220,22 @@ struct OnDeviceWords: WordsProvider {
         case .risk:
             ask = "Say where the risk in this flight is, in the pilot's terms: the weather, the airplane, the pilot's own recency and minimums, the plan; and what would lower it, where the findings say. The most important first. Never say the flight is safe: the decision is the pilot in command's."
         case .notams:
-            ask = "Say which NOTAMs and TFRs matter for this flight, the most important first."
+            // Said plainly what each does -- a runway or taxiway closed, fuel
+            // not to be had, parachute jumping, a TFR -- as AIEvaluations'
+            // first run on the simulator (2026-11-09) found the model said
+            // a NOTAM "matters" a third of the time without saying what it was.
+            // And the NOTAM's contractions spelled out (RWY, TWY, CLSD): the
+            // second run (2026-11-09) still named the matter in 4 of 6, the
+            // misses keeping the NOTAM's own "RWY 18/36 CLSD".
+            ask = "Say which NOTAMs and TFRs matter for this flight, the most important first. For each, say in plain words what it does (for example a runway or a taxiway closed, fuel not available, parachute jumping, a temporary flight restriction) and why it matters for this flight, from its reasons. Spell out the NOTAM's contractions in plain words: RWY is runway, TWY is taxiway, CLSD is closed, U/S is unserviceable, AVBL is available, PJE is parachute jumping."
         case .debrief:
             ask = "Say how the flight went against its plan, as an instructor would debrief it, the most important first."
         case .changes:
             ask = "Say what changed in this flight's weather since the last look, and what it means for the flight."
+        case .remark:
+            ask = "Write the remark for this flight's logbook entry, as a pilot writes the Remarks column: one or two short sentences saying where the flight went and what was flown or practised (the approaches, the holds, the landings and whether at night), from the figures. No greeting, no opinion of how it went."
+        case .altitude:
+            ask = "Say why the plan flies this altitude, as an instructor would explain it to a student: the direction of flight and the cruising-altitude rule, the terrain and obstacles under it, the airspace, the clouds, the winds and the fuel, and the cautions, the most important first, each from its figure."
         }
         return """
         You write a few plain sentences for a pilot from the figures given, which are a flight planner's own. \(ask)
@@ -233,15 +252,22 @@ struct OnDeviceWords: WordsProvider {
         return "The figures, as JSON:\n\(json)\nWrite the sentences."
     }
 
+    /// The words from this iPhone's model, else Apple's Private Cloud
+    /// Compute where the phone's cannot run or none of its sentences
+    /// passed (AppleModels); the model each came from named on them.
     func words(_ ask: WordsAsk) async throws -> Words {
-        if let why = Self.unavailableWhy { throw WordsUnavailable(why: why) }
+        if let why = AppleModels.unavailableWhy { throw WordsUnavailable(why: why) }
         if ask.figures.isEmpty { return Words.checked([], sources: [], model: Self.model) }
         #if canImport(FoundationModels)
         if #available(iOS 26, *) {
-            let session = LanguageModelSession(instructions: Self.instructions(ask.kind))
-            let response = try await session.respond(to: Self.prompt(ask.figures), generating: WordsAnswer.self)
-            let sentences = response.content.sentences.map { WordsSentence(sources: $0.sources, text: $0.text) }
-            return Words.checked(sentences, sources: ask.figures, model: Self.model, most: 8)
+            return try await AppleModels.attempt(usable: { !$0.sentences.isEmpty }) { place in
+                let session = AppleModels.session(place, instructions: Self.instructions(ask.kind))
+                let response = try await session.respond(to: Self.prompt(ask.figures), generating: WordsAnswer.self)
+                let sentences = response.content.sentences.map { WordsSentence(sources: $0.sources, text: $0.text) }
+                // A sentence quoting a number none of its figures holds is
+                // dropped as well as one citing a figure not given (NumberGuard).
+                return NumberGuard.kept(Words.checked(sentences, sources: ask.figures, model: place.model, most: 8))
+            }.value
         }
         #endif
         throw WordsUnavailable(why: "Words on this iPhone need iOS 26.")
@@ -279,7 +305,8 @@ struct WordsFor: Sendable {
             Log.words.notice("the planner's \(ask.kind.rawValue, privacy: .public) words failed: \(error.localizedDescription, privacy: .public)")
         }
         do {
-            return SaidWords(words: try await device.words(ask), origin: .device)
+            let words = try await device.words(ask)
+            return SaidWords(words: words, origin: .apple(words))
         } catch {
             Log.words.notice("the iPhone's \(ask.kind.rawValue, privacy: .public) words failed: \(error.localizedDescription, privacy: .public)")
             let why = (error as? WordsUnavailable)?.why ?? "Apple's on-device model could not write them."

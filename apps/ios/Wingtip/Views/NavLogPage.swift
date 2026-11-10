@@ -16,7 +16,7 @@ struct NavLogPage: View {
                     // The nav log kept, shown with no signal, with its age.
                     KeptAgeLine(kind: .plan, key: ReadyToFly.flightKey(plan))
                     ForEach(Array(plan.legs.enumerated()), id: \.element.id) { i, leg in
-                        NavigationLink(value: leg) { LegRow(leg: leg, number: i + 1) }.cardSource(leg.id)
+                        NavigationLink(value: leg) { LegRow(leg: leg, number: i + 1) }.cardSource(leg.id).siriSees(SiriSaw.waypoint(leg.to))
                     }
                 } header: {
                     // The page is titled Nav Log; its section says at what.

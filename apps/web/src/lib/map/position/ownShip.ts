@@ -37,6 +37,10 @@ export interface Fix {
 
 interface OwnShip {
   enabled: boolean;
+  /** Turned on by the page itself (locateOnOpen, positionNow) rather than
+   *  by the pilot: the map finding where it is, not a start of flying
+   *  (features/readyToFly's prompt asks only at the pilot's own start). */
+  byPage: boolean;
   /** Flown by the planned flight's dry run, not the GPS (simulateFix):
    *  everything that follows own ship -- the map, the glide ring, what is
    *  ahead -- follows it as it would a pilot flying the route. */
@@ -181,6 +185,7 @@ export const useOwnShip = create<OwnShip>()(
   persist(
     (set) => ({
       enabled: false,
+      byPage: false,
       simulated: false,
       follow: true,
       fix: null,
@@ -191,12 +196,15 @@ export const useOwnShip = create<OwnShip>()(
       setEnabled: (enabled) => {
         if (enabled && !ownShipAvailable()) return;
         if (enabled) {
-          set({ enabled: true, error: null });
+          set({ enabled: true, byPage: quiet, error: null });
           startWatching(set);
         } else {
           // The last position kept, drawn grey (OwnShipGl); everything
           // that measures from own ship reads it only while it is on.
           stopWatching();
+          // The page's own start, if it was one, ends here: the next on
+          // is the pilot's.
+          quiet = false;
           set({ enabled: false, error: null });
         }
       },

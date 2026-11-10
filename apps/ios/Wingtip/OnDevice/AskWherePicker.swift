@@ -17,7 +17,7 @@ struct AskWherePicker: View {
             }
             // Why the model is not there, where it is not: the engine's
             // own words answer then.
-            if let why = OnDeviceWords.unavailableWhy {
+            if let why = AppleModels.unavailableWhy {
                 Text(why)
             }
         } label: {

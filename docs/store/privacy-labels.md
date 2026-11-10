@@ -77,6 +77,21 @@ Not collected, though the app uses them on the device:
 - **Favourites, recents and routes in iCloud** (`Records/Records.swift`,
   SwiftData with CloudKit): in the pilot's own iCloud private database,
   which the developer cannot read; Apple does not count it as collected.
+- **Siri, camera look-ups and Apple's on-device model** (`Intents/`,
+  `OnDevice/`): what is on the screen is told to Siri as App Entities on
+  the phone; a camera look-up's picture is read on the phone and only
+  the airport idents in it go to the planner, unkept, as any airport
+  lookup does; the on-device model's words are written on the phone; a
+  photographed page is read on the phone where it can be (iOS 27,
+  `Documents/OnDeviceDocumentReader.swift`), else sent to the assistant
+  to read and not kept. Nothing new is collected.
+- **Apple's Private Cloud Compute** (`Words/AppleModels.swift`, iOS 27,
+  off until the entitlement is assigned): where the on-device model
+  cannot answer, the same words, figures or page go to Apple's Private
+  Cloud Compute, which uses them for the request only and never stores
+  them. Apple is the processor and nothing reaches the developer, so it
+  is not "collected" in Apple's sense and no label changes; App Store
+  Connect's answers stay as above.
 
 ### The privacy manifest
 
@@ -107,6 +122,7 @@ Account button of its own yet (see listing.md).
 | App activity: Other actions | Yes, the count of Claude-written features for their cap | No | Yes | App functionality | the gateway |
 | App info and performance: Crash logs | Yes: the exits Android kept (`ApplicationExitInfo`: crashes, ANRs with their traces, low-memory kills) and an uncaught exception's stack, with the app's version, the Android version and phone or tablet; nothing of the pilot's; kept 30 days | No | No | App functionality (finding faults) | `diagnostics/ExitReasons.kt`, `CrashCatcher.kt`, `DiagnosticsReporter.kt` |
 | App info and performance: Diagnostics | Yes: the start-up time and the share of slow frames (JankStats), the same way; kept 400 days | No | No | App functionality (keeping the app fast) | `diagnostics/FrameStats.kt` |
+| Photos and videos: Photos | **No**: a page photographed for Add from a Photo is read on the phone where it has Gemini Nano (ML Kit text recognition, then Nano, `ai/read/OnPhoneReader.kt`); otherwise it is sent to be read and not kept, "processed ephemerally" | | | | `documents/` |
 | Audio: Voice or sound recordings | **No**: the radio is heard by the phone's on-device `SpeechRecognizer` only (`createOnDeviceSpeechRecognizer`, `atc/RadioListener.kt`) and read on the phone; nothing is sent by the app or to Google; without an on-device recognizer voice is not offered | | | | |
 
 "Shared" is Google's meaning: the recipients in the inventory (AWS,
@@ -114,6 +130,13 @@ Amazon SES, Anthropic for a written briefing with no personal data)
 process data for the app and are not sharing. The device's live
 position, sent to answer Nearest and the copilot and not kept, is
 "processed ephemerally" and not collected in Google's sense.
+
+AI on the phone (docs/android-ai.md) adds nothing to collect: where the
+phone has Gemini Nano, Ask, In Plain Words, a drafted remark and a page
+photographed are made on the phone (`ai/`), and without it they go to
+Claude as the inventory says. Gemini and the system's agents read what
+the pilot asks them for through AppFunctions (`ai/functions/`), answered
+on the phone; that is the agent's maker's collection, under its terms.
 
 Permissions Play will see, each with what it is for
 (`apps/android/app/src/main/AndroidManifest.xml`): location (the

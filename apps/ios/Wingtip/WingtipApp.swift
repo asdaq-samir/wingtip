@@ -13,6 +13,7 @@ struct WingtipApp: App {
     @State private var dryRun = DryRun()
     @State private var traffic = Traffic()
     @State private var verdict = Verdict()
+    @Environment(\.scenePhase) private var scenePhase
     /// iOS's hand-over of the chart downloads finished in the background.
     @UIApplicationDelegateAdaptor(OfflineAppDelegate.self) private var offlineDelegate
 
@@ -50,6 +51,11 @@ struct WingtipApp: App {
                 // verdict and the departure's weather, written to the App
                 // Group only as they change, on the same clock.
                 .task { await Ticker.shared.run(every: 15) { WidgetFeed.shared.update(plan: plan, verdict: verdict) } }
+                // The route's weather watched after the Brief (WeatherWatch):
+                // a look every quarter hour while the app runs, and iOS's
+                // background refresh asked for as it goes behind.
+                .task { await Ticker.shared.run(every: 60) { WeatherWatch.shared.tick(plan: plan) } }
+                .onChange(of: scenePhase) { _, phase in if phase == .background { WeatherWatch.schedule() } }
                 .task { await WatchLink.shared.run(plan: plan, ownShip: ownShip) }
                 // The cockpit's ADS-B receiver on the Wi-Fi, read once a
                 // second while the setting is Auto (Receiver).
@@ -72,6 +78,10 @@ struct WingtipApp: App {
                         Task { await session.open(url) }
                     }
                 }
+        }
+        .backgroundTask(.appRefresh(WeatherWatch.taskId)) {
+            await WeatherWatch.shared.look()
+            await WeatherWatch.schedule()
         }
     }
 }

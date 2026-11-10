@@ -97,6 +97,15 @@ private struct DraftRows: View {
                 }
             }
         }
+        Section(title: "Remarks") {
+            TextField("Remarks", text: Binding(get: { model.edits.remarks ?? e.remarks }, set: { model.edits.remarks = $0 }), axis: .vertical)
+                .lineLimit(1...4)
+            // A remark drafted from the track and the entry, into the field
+            // to edit; logged only with Log.
+            DraftRemarkButton(figures: {
+                RemarkDraft.figures(draft, entry: AutoLogbook.entryRequest(draft, edits: model.edits, byInstruments: model.byInstruments, flightId: nil))
+            }) { model.edits.remarks = $0 }
+        }
         if !model.flights.isEmpty {
             Section(title: "Debrief Against") {
                 Picker("Saved flight", selection: Binding(get: { model.linked }, set: { model.picked = .some($0) })) {

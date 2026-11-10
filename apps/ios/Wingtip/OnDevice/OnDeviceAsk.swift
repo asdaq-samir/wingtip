@@ -6,12 +6,13 @@ import FoundationModels
 
 /// Who wrote an answer the pilot reads, for the caption over it.
 enum AskOrigin: String, Equatable, Sendable {
-    case planner, device, engine
+    case planner, device, cloud, engine
 
     var caption: String {
         switch self {
         case .planner: "From the planner"
         case .device: "On this iPhone"
+        case .cloud: "Apple's Private Cloud Compute"
         case .engine: "The engine on this iPhone"
         }
     }
@@ -51,7 +52,7 @@ protocol AskModel: Sendable {
 /// Apple's on-device model (Foundation Models, iOS 26 with Apple
 /// Intelligence on), its tools the engine's rules (OnDeviceTools).
 struct AppleAskModel: AskModel {
-    var unavailableWhy: String? { OnDeviceWords.unavailableWhy }
+    var unavailableWhy: String? { AppleModels.unavailableWhy }
 
     static let instructions = """
     You answer a pilot's question in flight from a flight planner's figures. Call the tools for every figure you need: \
@@ -80,9 +81,15 @@ struct AppleAskModel: AskModel {
         #if canImport(FoundationModels)
         if #available(iOS 26, *) {
             let plan = log.figures.first { $0.id == "plan:route" }
-            let session = LanguageModelSession(tools: OnDeviceTools.all(facts, log: log), instructions: Self.instructions)
-            let response = try await session.respond(to: Self.prompt(question, earlier: earlier, plan: plan), generating: WordsAnswer.self)
-            return response.content.sentences.map { WordsSentence(sources: $0.sources, text: $0.text) }
+            // The phone's model, else Apple's Private Cloud Compute where it
+            // cannot run or fails (AppleModels); where it answered is logged.
+            let (sentences, place) = try await AppleModels.attempt { place in
+                let session = AppleModels.session(place, tools: OnDeviceTools.all(facts, log: log), instructions: Self.instructions)
+                let response = try await session.respond(to: Self.prompt(question, earlier: earlier, plan: plan), generating: WordsAnswer.self)
+                return response.content.sentences.map { WordsSentence(sources: $0.sources, text: $0.text) }
+            }
+            log.place = place
+            return sentences
         }
         #endif
         throw AskRefused(why: "Answers on this iPhone need iOS 26.")
@@ -110,7 +117,7 @@ struct OnDeviceAsk: Sendable {
             let sentences = try await model.sentences(question, earlier: earlier, facts: facts, log: log)
             let words = NumberGuard.kept(Words.checked(sentences, sources: log.sources, model: OnDeviceWords.model, most: Self.most))
             Log.onDevice.info("asked on the phone: tools \(log.called.joined(separator: ","), privacy: .public), \(sentences.count) sentences, \(words.sentences.count) kept")
-            if !words.sentences.isEmpty { return OnDeviceAnswer(words: words, origin: .device) }
+            if !words.sentences.isEmpty { return OnDeviceAnswer(words: words, origin: log.place == .cloud ? .cloud : .device) }
             return engine(question, facts: facts, why: "The model's words rested on no figure, so the engine's are given.")
         } catch {
             Log.onDevice.notice("the on-device model failed: \(error.localizedDescription, privacy: .public)")

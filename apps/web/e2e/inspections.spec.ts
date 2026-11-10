@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { library, openConsole, showTabs } from "./helpers";
 import { fillDate } from "./ariaFields";
+import { NO_OWN_FIGURES } from "./airplaneMocks";
 
 /**
  * An airplane's inspections and tests in its form (the Library's
@@ -15,6 +16,7 @@ test("an airplane's inspections say how long each is good for, and are saved tog
     id: 5,
     tailNumber: "N12345",
     typeDesignator: "C172",
+    figures: NO_OWN_FIGURES,
     cruiseTasKt: 110,
     fuelBurnGph: 8.5,
     cruisePowerPct: null,
@@ -93,6 +95,7 @@ test("an AD is kept on the airplane with its next due day, and comes up in the L
     id: 5,
     tailNumber: "N12345",
     typeDesignator: "C172",
+    figures: NO_OWN_FIGURES,
     cruiseTasKt: 110,
     fuelBurnGph: 8.5,
     cruisePowerPct: null,
@@ -178,6 +181,7 @@ test("an airplane's checklists are written from its handbook, kept on this devic
     id: 5,
     tailNumber: "N12345",
     typeDesignator: "C172",
+    figures: NO_OWN_FIGURES,
     cruiseTasKt: 110,
     fuelBurnGph: 8.5,
     cruisePowerPct: null,
@@ -241,6 +245,7 @@ test("a squawk is written with its 91.213(d) deferral, and fixed", async ({ page
     id: 5,
     tailNumber: "N12345",
     typeDesignator: "C172",
+    figures: NO_OWN_FIGURES,
     cruiseTasKt: 110,
     fuelBurnGph: 8.5,
     cruisePowerPct: null,

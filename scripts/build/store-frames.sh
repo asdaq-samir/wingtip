@@ -9,7 +9,11 @@
 set -euo pipefail
 here=$(cd "$(dirname "$0")/../.." && pwd)
 command -v docker >/dev/null || PATH="$PATH:/usr/local/bin:$HOME/.docker/bin"
-image=wingtip-brand-render
-docker build -q -t "$image" -f "$here/scripts/build/brand-render.Dockerfile" "$here/scripts/build" >/dev/null
-exec docker run --rm -u "$(id -u):$(id -g)" -v "$here:/repo" -w /repo "$image" \
+# x86-64 everywhere, emulated on the Mac: librsvg's text antialiasing
+# differs between arm64 and x86-64 builds (the Play feature graphic's
+# words drew differently on the Mac mini and CI's runner, 2026-11-09),
+# so one architecture draws every committed pixel.
+image=wingtip-brand-render-amd64
+docker build -q --platform linux/amd64 -t "$image" -f "$here/scripts/build/brand-render.Dockerfile" "$here/scripts/build" >/dev/null
+exec docker run --rm --platform linux/amd64 -u "$(id -u):$(id -g)" -v "$here:/repo" -w /repo "$image" \
   python3 scripts/build/store_frames.py "$@"

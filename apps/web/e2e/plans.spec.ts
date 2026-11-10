@@ -212,7 +212,7 @@ test("plan page: the nav log is computed for an airplane the pilot picks in its 
   // number is typed.
   const hint = page.getByTestId("aircraft-select-hint");
   await expect(hint).toHaveText("N-_____");
-  await expect(picker).toHaveAccessibleName("Airplane, N-number: none picked");
+  await expect(picker).toHaveAccessibleName("Airplane, N-number: none picked; pick one for times and fuel");
   // An N-number typed is added at once, its type looked up behind it (the
   // owner's "You can do the lookup in the background") -- here a made-up
   // Archer, flown on its type's profile once the registry answers -- and
