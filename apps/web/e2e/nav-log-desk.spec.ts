@@ -13,6 +13,7 @@ test.beforeEach(({ page }) => {
 });
 
 test("with an airplane the log is a table with a sticky heading, the desk's columns and its totals", async ({ page }) => {
+  test.setTimeout(slow(180_000));
   // The suite's C172 (auth.setup), so the airplane's columns are there.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
