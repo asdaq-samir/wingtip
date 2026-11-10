@@ -1,14 +1,16 @@
 import SwiftUI
 
-/// One leg in full, as the nav log's row opens in the web app: the
-/// course, the wind and its correction, the headings true and magnetic
-/// with the variation between them, the speeds, the time and the fuel,
-/// and where the climb and the descent fall. Every figure the planner's.
-struct LegDetailView: View {
+/// One leg's figures in full, the Route Leg card's sections under its
+/// ends and actions (RouteLegView), as the nav log's row opens in the web
+/// app: the course, the wind and its correction, the headings true and
+/// magnetic with the variation between them, the speeds, the time and the
+/// fuel, and where the climb and the descent fall. Every figure the
+/// planner's.
+struct LegFigureSections: View {
     let leg: Leg
 
     var body: some View {
-        List {
+        Group {
             // Each figure's accessibilityValue is the figure as a pilot says
             // it (SpokenFigures), where "090°" would be read as "ninety".
             Section("Course and Heading") {
@@ -55,13 +57,11 @@ struct LegDetailView: View {
                 }
             }
         }
-        .navigationTitle("\(leg.from) → \(leg.to)")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
-#Preview("LegDetailView") {
-    NavigationStack {
-        LegDetailView(leg: Leg.preview(from: "KDLH", to: "KHIB", distanceNm: 62.4, altitudeFt: 4500, trueCourseDeg: 318, magneticHeadingDeg: 315, wcaDeg: -4, trueHeadingDeg: 314, magneticVariationDeg: -1, climbMin: 6, groundspeedKt: 104, eteMin: 36, fuelGal: 5.1, tasKt: 112, wind: APIWind(windDirTrueDeg: 270, windSpeedKt: 12)))
+#Preview("LegFigureSections") {
+    List {
+        LegFigureSections(leg: Leg.preview(from: "KDLH", to: "KHIB", distanceNm: 62.4, altitudeFt: 4500, trueCourseDeg: 318, magneticHeadingDeg: 315, wcaDeg: -4, trueHeadingDeg: 314, magneticVariationDeg: -1, climbMin: 6, groundspeedKt: 104, eteMin: 36, fuelGal: 5.1, tasKt: 112, wind: APIWind(windDirTrueDeg: 270, windSpeedKt: 12)))
     }
 }

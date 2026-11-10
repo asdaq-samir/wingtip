@@ -33,9 +33,8 @@ struct DownloadsMapView: View {
                 picked = Self.sheet(at: at, in: sheets)
             }
         }
-        .safeAreaInset(edge: .bottom) { foot }
+        .glassFoot { foot }
         .navigationTitle("Pick on the Map")
-        .navigationBarTitleDisplayMode(.inline)
         .task { if model.catalog == nil { await model.load() } }
     }
 

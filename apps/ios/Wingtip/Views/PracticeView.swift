@@ -5,10 +5,10 @@ import SwiftUI
 struct PracticeRows: View {
     var body: some View {
         ProblemLine(Drills.decks, "The drills' cards")
-        NavigationLink { DrillView(deck: Drills.lightGun).navigationBarTitleDisplayMode(.inline) } label: { row("Light gun signals", "14 CFR 91.125") }
-        NavigationLink { DrillView(deck: Drills.vfrMinimums).navigationBarTitleDisplayMode(.inline) } label: { row("VFR weather minimums", "14 CFR 91.155") }
-        NavigationLink { LostCommsView().navigationBarTitleDisplayMode(.inline) } label: { row("Lost communications", "14 CFR 91.185: route, altitude, and when to leave") }
-        NavigationLink { HoldingView().navigationBarTitleDisplayMode(.inline) } label: { row("Holding entries", "AIM 5-3-8: the entry, and the legs in the wind") }
+        NavigationLink { DrillView(deck: Drills.lightGun) } label: { row("Light gun signals", "14 CFR 91.125") }
+        NavigationLink { DrillView(deck: Drills.vfrMinimums) } label: { row("VFR weather minimums", "14 CFR 91.155") }
+        NavigationLink { LostCommsView() } label: { row("Lost communications", "14 CFR 91.185: route, altitude, and when to leave") }
+        NavigationLink { HoldingView() } label: { row("Holding entries", "AIM 5-3-8: the entry, and the legs in the wind") }
     }
 
     private func row(_ title: String, _ detail: String) -> some View {
@@ -24,7 +24,6 @@ struct PracticeView: View {
     var body: some View {
         List { PracticeRows() }
             .navigationTitle("Practice")
-            .navigationBarTitleDisplayMode(.inline)
     }
 }
 

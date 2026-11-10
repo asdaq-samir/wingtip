@@ -12,10 +12,8 @@ the gridded LAMP wingtip.glmp holds an hour at a time. A card costs a few
 table lookups and a point-in-polygon test.
 """
 
-import functools
 import logging
 from datetime import datetime, timezone
-from pathlib import Path
 
 import numpy as np
 from fastapi import APIRouter, HTTPException, Query, Response
@@ -24,6 +22,7 @@ from wingtip import (
     airport_photos,
     airports,
     airspace,
+    airspace_primaries,
     altitude,
     faa_data,
     fixes,
@@ -31,6 +30,7 @@ from wingtip import (
     geo,
     geocode,
     glmp,
+    map_weather,
     nearby,
     pattern,
     places,
@@ -43,12 +43,12 @@ from wingtip import (
 )
 
 from ..router_basics import DIAGRAM_CACHE, load_route
+from ..schemas.airports_in_view import AirportsInView
 from ..schemas.airports import (
     AirportPhotos,
     AirportPlace,
     AirportServices,
     ForecastWind,
-    AirportsInView,
     ChartPages,
     NearestAirports,
     PlacesFound,
@@ -117,7 +117,7 @@ def airports_in_view(
     except weather.WeatherServiceError:
         metars = {}
     classes = _surface_classes(places)
-    primaries = _primaries()
+    primaries = airspace_primaries.primaries()
     towers = faa_data.towered_fields(altitude.DEFAULT_FAA_CACHE_DIR)
     return {
         "airports": [
@@ -129,31 +129,11 @@ def airports_in_view(
                 "airspace_class": cls,
                 "primary_of": primaries.get(p.get("faa_id") or ""),
                 "towered": p["ident"].upper() in towers or p.get("source_ident", "").upper() in towers,
+                "weather": map_weather.marks_of(p, metars.get(p["source_ident"])) or None,
             }
             for p, cls, (military, private) in zip(places, classes, _owners(places))
         ]
     }
-
-
-def _primaries() -> dict[str, str]:
-    """Each Class B, C and D's primary field, by the FAA location
-    identifier the airspace file names it by, to the highest class it is
-    the primary of; empty where the FAA's airspace cannot be had."""
-    try:
-        shp_path = Path(airspace.ensure_class_airspace_shapefile(altitude.DEFAULT_FAA_CACHE_DIR))
-        return _primaries_of(str(shp_path), shp_path.stat().st_mtime)
-    except (OSError, RuntimeError):
-        return {}
-
-
-@functools.lru_cache(maxsize=2)
-def _primaries_of(shp_path: str, _mtime: float) -> dict[str, str]:
-    found: dict[str, str] = {}
-    for polygon in airspace._load_all_controlled_airspace(shp_path):
-        ident, cls = polygon.get("ident"), polygon.get("class")
-        if ident and cls in ("B", "C", "D") and cls < found.get(ident, "Z"):
-            found[ident] = cls
-    return found
 
 
 def _surface_classes(places: list[dict]) -> list:

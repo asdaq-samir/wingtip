@@ -1,12 +1,14 @@
 import Foundation
 import Observation
 
-/// The Route Leg sheet's model: the leg tapped on the map (its index, the
-/// sheet held by FlightUI's card), its contents from the plan and the
-/// airplane's place on the route (RouteLegs.sheet), and its two actions,
-/// each the route list's own -- Direct to the leg's end (Plan.directTo,
-/// Cancel Direct where it is flown direct already) and a stop taken out.
-/// Each closes the sheet, as the web's does.
+/// The Route Leg card's model: the leg by its index on the map's line
+/// (SheetPage.leg, from the map's course or a nav log row), its contents
+/// from the plan and the airplane's place on the route (RouteLegs.sheet),
+/// the nav log's leg for its figures, and its two actions, each the route
+/// list's own -- Direct to the leg's end (Plan.directTo, Cancel Direct
+/// where it is flown direct already) and a stop taken out. Each closes
+/// the card, or goes back to the nav log it was opened from, as the web's
+/// does.
 @MainActor
 @Observable
 final class RouteLegModel {
@@ -27,16 +29,35 @@ final class RouteLegModel {
                                stops: plan.stops, dest: plan.dest, direct: plan.extras.direct)
     }
 
+    /// The nav log's leg for this one: the same index where the two are
+    /// one to one, else the leg between the same two points.
+    func navLeg(plan: Plan) -> Leg? {
+        let legs = Self.mapLegs(plan)
+        guard legs.indices.contains(index) else { return nil }
+        if legs.count == plan.legs.count { return plan.legs[index] }
+        let leg = legs[index]
+        return plan.legs.first { $0.from.uppercased() == leg.from.uppercased() && $0.to.uppercased() == leg.to.uppercased() }
+    }
+
+    /// The map's index of a nav log leg, the nav log's row's card: the
+    /// same where the two are one to one, else the leg between the same
+    /// two points; its own place in the nav log where neither is found.
+    static func index(of leg: Leg, at row: Int, plan: Plan) -> Int {
+        let legs = mapLegs(plan)
+        if legs.count == plan.legs.count { return row }
+        return legs.first { $0.from.uppercased() == leg.from.uppercased() && $0.to.uppercased() == leg.to.uppercased() }?.index ?? row
+    }
+
     func direct(_ sheet: RouteLegs.Sheet, plan: Plan, from fix: OwnShip.Fix?) {
         guard let direct = sheet.direct else { return }
         if direct.on { plan.cancelDirect() } else { plan.directTo(direct.ident, from: fix) }
-        FlightUI.shared.card = nil
+        Navigator.shared.finish(.leg(index))
     }
 
     func remove(_ sheet: RouteLegs.Sheet, plan: Plan) {
         guard let stop = sheet.remove else { return }
         plan.stops.removeAll { $0.uppercased() == stop.uppercased() }
         plan.plan()
-        FlightUI.shared.card = nil
+        Navigator.shared.finish(.leg(index))
     }
 }

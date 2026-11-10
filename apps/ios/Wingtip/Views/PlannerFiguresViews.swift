@@ -267,7 +267,6 @@ struct DiversionDrillView: View {
             }
         }
         .navigationTitle("Diversion Drill")
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             // The plan's cruise to start with, else the airplane's own
             // altitude to the nearest 500 ft: a choice to change, no rule.
@@ -389,7 +388,6 @@ struct HoldingView: View {
             ProblemLine(problem)
         }
         .navigationTitle("Holding Entries")
-        .navigationBarTitleDisplayMode(.inline)
         .task(id: asked) {
             // A pause while the pilot types, then the engine's answer.
             try? await Task.sleep(for: .milliseconds(300))

@@ -161,29 +161,10 @@ object MapStyle {
     val USES = listOf("", "private", "military", "heliport")
 
     /** A field's symbol's picture by what it is drawn as: towered or not,
-     *  its size, its weather pip's colour ("" for none) and its use (the
-     *  web's airportMarkId). */
+     *  its size, its weather pip (AirportWeatherMarks, "" for none) and
+     *  its use (the web's airportMarkId). */
     fun airportMarkId(towered: Boolean, size: String, pip: String, use: String): String =
         "apt|${if (towered) "t" else "u"}|$size|$pip|$use"
-
-    /** Each flight category's colour, the web's (lib/map/flightCategory
-     *  CATEGORY_COLOURS): green good, blue marginal, red instrument,
-     *  magenta worse, in the colours a pilot already reads them in. The
-     *  category itself is the planner's, worked out by the engine
-     *  (`flight_category`, AIM 7-1-7); only its colour is the app's. */
-    val CATEGORY_COLOURS: Map<String, String> = linkedMapOf(
-        "VFR" to WingtipColors.Category.VFR_HEX,
-        "MVFR" to WingtipColors.Category.MVFR_HEX,
-        "IFR" to WingtipColors.Category.IFR_HEX,
-        "LIFR" to WingtipColors.Category.LIFR_HEX,
-    )
-
-    /** The pips a field can wear: none, or a category's colour. */
-    val PIPS: List<String> = listOf("") + CATEGORY_COLOURS.values
-
-    /** A field's pip's colour by its METAR's category; none where it has
-     *  no report or a category the map has no colour for. */
-    fun pipOf(category: String?): String = category?.let { CATEGORY_COLOURS[it] } ?: ""
 
     // ---- The style ----------------------------------------------------
 
@@ -684,7 +665,7 @@ object MapStyle {
             put("text-font", e(FONT))
             put("text-size", e("interpolate", e("linear"), e("zoom"), farthest, 10, glZoom(10.0), 12, glZoom(13.0), 13))
             put("text-anchor", "left")
-            put("text-offset", e(1.15, 0))
+            put("text-offset", e(1.3, 0))
             // The ident gives way, the mark stays: a busy area keeps its fields.
             put("text-optional", true)
             put("text-padding", 1)

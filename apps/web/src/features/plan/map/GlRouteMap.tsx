@@ -7,6 +7,8 @@ import type { RouteWay } from "../../../lib/map/route/routeWays";
 import type { StopPin } from "../../../lib/map/marks/stopPins";
 import GlMapShell from "../../../components/map/GlMapShell";
 import { AirportsGl } from "./layers/AirportsGl";
+import { useWorseByArrival } from "./worseByArrival";
+import type { BriefingState } from "../hooks/usePlan";
 import { AirspaceGl } from "../../../components/map/layers/AirspaceGl";
 import { LandWaterGl, OverlayGl } from "../../../lib/map/gl/layers/BaseGl";
 import { ChartGl } from "../../../lib/map/gl/layers/ChartGl";
@@ -68,6 +70,9 @@ interface GlRouteMapProps {
   chipped: Point[];
   /** The route's box, for its reporting fields. */
   routeBox: { south: number; west: number; north: number; east: number } | null;
+  /** The route's briefing, for its fields whose weather gets worse by
+   *  the pilot's time there (useWorseByArrival). */
+  briefing: BriefingState;
   /** The idents the route and its chips draw, which the waypoints leave to them. */
   chippedIdents: Set<string>;
   /** The course and the plan's first cruise, for a weather area's card. */
@@ -148,6 +153,7 @@ function Layers(p: GlRouteMapProps) {
   const terrain = useTerrainView();
   // The radar and satellite loop under the advisories, while one is on.
   const loop = useWeatherLayers((s) => s.loop !== "off");
+  const worse = useWorseByArrival(p.briefing, course);
   return (
     <>
       <LandWaterGl />
@@ -166,7 +172,7 @@ function Layers(p: GlRouteMapProps) {
       <AirspaceGl />
       <NavaidsGl />
       <WaypointsGl exclude={p.chippedIdents} />
-      <AirportsGl selected={p.place} onSelect={p.onSelectPlace} others={p.chipped} route={p.routeBox} />
+      <AirportsGl selected={p.place} onSelect={p.onSelectPlace} others={p.chipped} route={p.routeBox} worse={worse} />
       {p.chart && <ClassBGl chart={p.chart} route={route} onPreview={setPreviewing} onSelectPlace={p.onSelectPlace} />}
       <StopFieldsGl fields={p.stopFields} onSelect={p.onPickStopField ?? p.onSelectPlace} />
       {course && (

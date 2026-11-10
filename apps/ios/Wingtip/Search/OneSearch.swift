@@ -42,7 +42,6 @@ struct OneSearch: ViewModifier {
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(Session.self) private var session
-    @State private var profile: ProfileAsk?
     private var voice: VoiceInput { .shared }
 
     private var runner: FieldRunner {
@@ -69,12 +68,6 @@ struct OneSearch: ViewModifier {
             .toolbar {
                 SearchBarItems(model: model, hear: voice.canListen ? { Task { await hear() } } : nil, open: host.page)
             }
-            .airplaneProfile($profile)
-            .onChange(of: model.profileTail, initial: true) { _, tail in
-                guard let tail else { return }
-                profile = ProfileAsk(tail: tail)
-                model.profileTail = nil
-            }
             .task { await model.loadTypes() }
             // The nearest fields from where the airplane is, asked again
             // once it has moved a mile.
@@ -90,7 +83,7 @@ struct OneSearch: ViewModifier {
         case .airport(let route): host.card(route)
         case .plan: host.showPlan()
         case .directTo(let ident): runner.directTo(ident)
-        case .airplane(let tail): profile = ProfileAsk(tail: tail.uppercased())
+        case .airplane(let tail): Navigator.shared.open(.tail(ProfileAsk(tail: tail.uppercased())))
         case .types: host.page(.screen(.airplane))
         case .action(let action):
             switch action {

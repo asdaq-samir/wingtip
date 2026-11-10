@@ -406,6 +406,16 @@
       "AircraftProfileSummary": {
         "description": "One of data/aircraft/*.json, for the nav log's aircraft picker.",
         "properties": {
+          "crosswind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DemonstratedCrosswind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "cruise_tas_kt": {
             "title": "Cruise Tas Kt",
             "type": "number"
@@ -1085,32 +1095,8 @@
         "title": "AirportFacilities",
         "type": "object"
       },
-      "AirportPhotos": {
-        "description": "The pictures an airport's card swipes through behind its diagram:\nits aerial from the USGS, every field's, and a photo from the ground\nwhere there is a free one.",
-        "properties": {
-          "aerial_url": {
-            "title": "Aerial Url",
-            "type": "string"
-          },
-          "photo": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/GroundPhoto"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "aerial_url"
-        ],
-        "title": "AirportPhotos",
-        "type": "object"
-      },
-      "AirportPin": {
-        "description": "A landing field the map can open a card for: the ident pilots use,\nwhere it is, and its size -- the bigger ones are kept when a wide\nview holds more than the map asks for. `flight_category` is the\nfield's METAR's (VFR, MVFR, IFR, LIFR), for the map's weather chip:\nNone where it has no reporting station, or the weather could not be\nasked. `military` is a field the armed services own (the FAA's\nairport file, wingtip.faa_data.military_fields): \"military\" where a civil\nairplane lands only with the service's permission, \"joint\" where a\ncivil airport shares it; None for every other field.",
+      "AirportInView": {
+        "description": "A field on the map's own list (/api/airports/in-view): a pin, and\nits METAR as the map's marks read it, None where it has no report.",
         "properties": {
           "airspace_class": {
             "anyOf": [
@@ -1207,6 +1193,16 @@
             "default": false,
             "title": "Towered",
             "type": "boolean"
+          },
+          "weather": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PinWeather"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -1216,7 +1212,31 @@
           "lon",
           "kind"
         ],
-        "title": "AirportPin",
+        "title": "AirportInView",
+        "type": "object"
+      },
+      "AirportPhotos": {
+        "description": "The pictures an airport's card swipes through behind its diagram:\nits aerial from the USGS, every field's, and a photo from the ground\nwhere there is a free one.",
+        "properties": {
+          "aerial_url": {
+            "title": "Aerial Url",
+            "type": "string"
+          },
+          "photo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GroundPhoto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "aerial_url"
+        ],
+        "title": "AirportPhotos",
         "type": "object"
       },
       "AirportPlace": {
@@ -1711,7 +1731,7 @@
         "properties": {
           "airports": {
             "items": {
-              "$ref": "#/components/schemas/AirportPin"
+              "$ref": "#/components/schemas/AirportInView"
             },
             "title": "Airports",
             "type": "array"
@@ -15385,6 +15405,111 @@
           "removed"
         ],
         "title": "PilotNotesForgotten",
+        "type": "object"
+      },
+      "PinWeather": {
+        "description": "A field's METAR as the map's station model and wind arrow read it\n(wingtip.map_weather): the wind (true, knots; no direction for a\nvariable one), the visibility in statute miles and the weather with it\nas reported (\"BR\", \"-TSRA\"), the ceiling in feet AGL -- not known where\n`ceiling_unknown` (14 CFR 1.1) -- and `crosswind_kt`, the least\ncrosswind on the field's runways, steady or gust (the engine's\nleast_crosswind), there only where the wind earns an arrow (the\nengine's wind_arrow) and a runway end has a heading.",
+        "properties": {
+          "ceiling_cover": {
+            "anyOf": [
+              {
+                "enum": [
+                  "BKN",
+                  "OVC",
+                  "VV"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ceiling Cover"
+          },
+          "ceiling_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ceiling Ft"
+          },
+          "ceiling_unknown": {
+            "default": false,
+            "title": "Ceiling Unknown",
+            "type": "boolean"
+          },
+          "crosswind_kt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crosswind Kt"
+          },
+          "visibility_sm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visibility Sm"
+          },
+          "wind_dir_true_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wind Dir True Deg"
+          },
+          "wind_gust_kt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wind Gust Kt"
+          },
+          "wind_speed_kt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wind Speed Kt"
+          },
+          "wx": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wx"
+          }
+        },
+        "title": "PinWeather",
         "type": "object"
       },
       "PipelineRun": {

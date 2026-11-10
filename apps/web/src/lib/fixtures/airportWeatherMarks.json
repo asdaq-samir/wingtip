@@ -1,0 +1,92 @@
+{
+  "about": "The airport weather marks on the map (the owner's pick, 2026-11-10): a field's least crosswind on its runways (least_crosswind), whether its wind earns an arrow and whether the arrow is red (wind_arrow), the station model's barb (wind_barb, FAA-H-8083-28A 25.2.3.4.5), and the getting-worse badge, a route field's METAR now against its TAF for the flight's time there (weather_worse, AIM 7-1-7). Read by the engine's tests (engine/facade/tests/weather_marks.rs), the web's (lib/map/marks/airportWeather.test.ts) and the phones'.",
+  "leastCrosswind": [
+    {
+      "why": "220 at 18 gusting 26 over 18/36 and 27/09: 40 degrees off runway 18, the gust's 26 sin 40 = 16.7, 17 kt; 27 leaves more (50 degrees off).",
+      "input": {
+        "runways": [{ "end_headings": [["18", 180], ["36", 360]] }, { "end_headings": [["27", 270], ["09", 90]] }],
+        "metar": { "wind_dir_true_deg": 220, "wind_speed_kt": 18, "wind_gust_kt": 26 },
+        "variation_deg": 0
+      },
+      "answer": { "end": "18", "crosswind_kt": 17 }
+    },
+    {
+      "why": "A runway's number turned true with the variation where its end has no true heading: 36 with 10 degrees east is 010 true, so a wind from 010 is straight down it.",
+      "input": {
+        "runways": [{ "end_headings": [["36", null], ["18", null]] }],
+        "metar": { "wind_dir_true_deg": 10, "wind_speed_kt": 15, "wind_gust_kt": null },
+        "variation_deg": 10
+      },
+      "answer": { "end": "36", "crosswind_kt": 0 }
+    },
+    {
+      "why": "A variable wind may blow straight across any runway: all of it, the gust's 15 kt, is crosswind (AIM 7-1-28).",
+      "input": {
+        "runways": [{ "end_headings": [["18", 180], ["36", 360]] }],
+        "metar": { "wind_dir_true_deg": null, "wind_speed_kt": 6, "wind_gust_kt": 15 },
+        "variation_deg": 0
+      },
+      "answer": { "end": null, "crosswind_kt": 15 }
+    },
+    {
+      "why": "A field with no runway end to judge the wind on (a heliport's H1) has no figure.",
+      "input": {
+        "runways": [{ "end_headings": [["H1", null]] }],
+        "metar": { "wind_dir_true_deg": 220, "wind_speed_kt": 18, "wind_gust_kt": null },
+        "variation_deg": 0
+      },
+      "answer": null
+    }
+  ],
+  "windArrow": [
+    {
+      "why": "9 kt steady: no arrow.",
+      "input": { "speed_kt": 9, "gust_kt": null, "crosswind_kt": 9, "demonstrated_kt": 5 },
+      "answer": { "shown": false, "over": false }
+    },
+    { "why": "10 kt: an arrow.", "input": { "speed_kt": 10, "gust_kt": null, "crosswind_kt": 4, "demonstrated_kt": 15 }, "answer": { "shown": true, "over": false } },
+    { "why": "6 gusting 16: an arrow for the gust.", "input": { "speed_kt": 6, "gust_kt": 16, "crosswind_kt": 10, "demonstrated_kt": 15 }, "answer": { "shown": true, "over": false } },
+    {
+      "why": "17 kt across against a 15 kt demonstrated crosswind: red.",
+      "input": { "speed_kt": 18, "gust_kt": 26, "crosswind_kt": 17, "demonstrated_kt": 15 },
+      "answer": { "shown": true, "over": true }
+    },
+    {
+      "why": "Exactly the demonstrated crosswind is not more than it.",
+      "input": { "speed_kt": 18, "gust_kt": 26, "crosswind_kt": 15, "demonstrated_kt": 15 },
+      "answer": { "shown": true, "over": false }
+    },
+    {
+      "why": "No airplane picked, or no figure for it: never red, nothing assumed.",
+      "input": { "speed_kt": 18, "gust_kt": 26, "crosswind_kt": 17, "demonstrated_kt": null },
+      "answer": { "shown": true, "over": false }
+    }
+  ],
+  "windBarb": [
+    { "why": "Calm is a circle.", "speed_kt": 0, "answer": { "calm": true, "flags": 0, "barbs": 0, "half_barbs": 0 } },
+    { "why": "2 kt keeps a half-barb, never drawn as calm.", "speed_kt": 2, "answer": { "calm": false, "flags": 0, "barbs": 0, "half_barbs": 1 } },
+    { "why": "12 kt is 10, one barb.", "speed_kt": 12, "answer": { "calm": false, "flags": 0, "barbs": 1, "half_barbs": 0 } },
+    { "why": "18 kt is 20, two barbs.", "speed_kt": 18, "answer": { "calm": false, "flags": 0, "barbs": 2, "half_barbs": 0 } },
+    { "why": "65 kt: a flag, a barb and a half-barb.", "speed_kt": 65, "answer": { "calm": false, "flags": 1, "barbs": 1, "half_barbs": 1 } }
+  ],
+  "worseByArrival": [
+    {
+      "why": "KDLH VFR now, its TAF IFR for the flight's time there: the badge.",
+      "now": [{ "ident": "KDLH", "ceiling_ft": 5000, "visibility_sm": 10 }],
+      "atEta": [{ "ident": "KDLH", "ceiling_ft": 800, "visibility_sm": 3 }],
+      "badged": ["KDLH"]
+    },
+    {
+      "why": "KMSN IFR now and better by then: no badge.",
+      "now": [{ "ident": "KMSN", "ceiling_ft": 800, "visibility_sm": 3 }],
+      "atEta": [{ "ident": "KMSN", "ceiling_ft": 4000, "visibility_sm": 10 }],
+      "badged": []
+    },
+    {
+      "why": "KRST VFR now and VFR by then, a lower ceiling still VFR: no badge (worse than VFR only).",
+      "now": [{ "ident": "KRST", "ceiling_ft": 9000, "visibility_sm": 10 }],
+      "atEta": [{ "ident": "KRST", "ceiling_ft": 5000, "visibility_sm": 10 }],
+      "badged": []
+    }
+  ]
+}

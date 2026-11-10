@@ -8,30 +8,20 @@ struct ProfileAsk: Identifiable, Hashable {
     var id: String { "\(tail)|\(focus?.rawValue ?? "")" }
 }
 
-extension View {
-    /// The airplane's profile (AirplaneProfileView) over this screen while
-    /// `ask` is set; its close comes back here.
-    func airplaneProfile(_ ask: Binding<ProfileAsk?>) -> some View {
-        // Its own stock sheet, half way then full (its own detents), as
-        // the airport card's is.
-        sheet(item: ask) { asked in AirplaneProfileView(tail: asked.tail, focus: asked.focus) }
-    }
-}
-
 /// An N-number, tapped to open its airplane's profile, wherever one is
 /// shown (the owner, 2026-11-09: "tapping any N-number opens that
 /// airplane's profile"): in the tint's blue, a 44-point area round it.
+/// The one profile card (AirplaneProfileView): pushed in the card it is
+/// in, with Back, or its own card from the plan (Navigator.push).
 struct TailButton<Label: View>: View {
     let tail: String
     @ViewBuilder var label: () -> Label
-    @State private var asked: ProfileAsk?
 
     var body: some View {
-        Button { asked = ProfileAsk(tail: tail.uppercased()) } label: { label() }
+        Button { Navigator.shared.push(.tail(ProfileAsk(tail: tail.uppercased()))) } label: { label() }
             .buttonStyle(.borderless)
             .contentShape(Rectangle().inset(by: -WingtipSpace.md))
             .accessibilityHint("Opens \(tail.uppercased())'s profile")
-            .airplaneProfile($asked)
     }
 }
 

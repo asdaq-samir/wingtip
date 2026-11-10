@@ -16,6 +16,8 @@
 //!   (crate::gonogo::runways);
 //! - `circuit`: the pattern's legs and its 45° entry, and the way out of
 //!   a field (web lib/trafficPattern, wingtip.pattern's circuits);
+//! - `marks`: the wind as the map marks a field: its least crosswind, its
+//!   arrow and its station model's barb;
 //! - `calls`: the rules by name, as crate::call lists them.
 //!
 //! Where the web's TypeScript and the planner's Python had drifted apart,
@@ -26,6 +28,7 @@
 
 pub mod calls;
 pub mod circuit;
+pub mod marks;
 pub mod performance;
 pub mod pick;
 pub mod wind;

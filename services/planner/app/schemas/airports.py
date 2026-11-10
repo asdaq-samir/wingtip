@@ -127,10 +127,6 @@ class NearestAirports(BaseModel):
     airports: list[NearestAirport]
 
 
-class AirportsInView(BaseModel):
-    airports: list[AirportPin]
-
-
 class WaypointPin(BaseModel):
     """A VFR waypoint on the sectional (VPBNG), for the map's diamond: a
     tap names it, and with a route open puts it in the stops."""

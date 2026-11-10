@@ -5417,6 +5417,36 @@ object EngineContract {
     )
 
     @Serializable
+    data class LeastCrosswindAnswer(
+        /**
+         * The end it is on, null for a variable wind or calm.
+         */
+        val end: String? = null,
+        /**
+         * Knots, unsigned, steady or gust whichever is more.
+         */
+        @SerialName("crosswind_kt")
+        val crosswindKt: Double,
+    )
+
+    @Serializable
+    data class LeastCrosswindInput(
+        val runways: List<EngineContract.LeastCrosswindInputRunwaysItem>? = null,
+        val metar: EngineContract.MetarWindIn? = null,
+        /**
+         * The field's magnetic variation, east positive, to turn a runway's number true where its end has no true heading.
+         */
+        @SerialName("variation_deg")
+        val variationDeg: Double,
+    )
+
+    @Serializable
+    data class LeastCrosswindInputRunwaysItem(
+        @SerialName("end_headings")
+        val endHeadings: List<List<JsonElement>>? = null,
+    )
+
+    @Serializable
     data class LegalCruisingAltitudesInput(
         @SerialName("floor_ft")
         val floorFt: Double,
@@ -10217,6 +10247,30 @@ object EngineContract {
     )
 
     @Serializable
+    data class WindArrowAnswer(
+        val shown: Boolean,
+        val over: Boolean,
+    )
+
+    @Serializable
+    data class WindArrowInput(
+        @SerialName("speed_kt")
+        val speedKt: Double? = null,
+        @SerialName("gust_kt")
+        val gustKt: Double? = null,
+        /**
+         * The field's least crosswind (least_crosswind).
+         */
+        @SerialName("crosswind_kt")
+        val crosswindKt: Double? = null,
+        /**
+         * The picked airplane's maximum demonstrated crosswind; null with none picked or no figure.
+         */
+        @SerialName("demonstrated_kt")
+        val demonstratedKt: Double? = null,
+    )
+
+    @Serializable
     data class WindAtAltitudeInput(
         /**
          * A station's levels by altitude in feet, as the weather store keeps them.
@@ -10235,6 +10289,21 @@ object EngineContract {
         val windSpeedKt: Double? = null,
         @SerialName("temp_c")
         val tempC: Double? = null,
+    )
+
+    @Serializable
+    data class WindBarbAnswer(
+        val calm: Boolean,
+        val flags: Int,
+        val barbs: Int,
+        @SerialName("half_barbs")
+        val halfBarbs: Int,
+    )
+
+    @Serializable
+    data class WindBarbInput(
+        @SerialName("speed_kt")
+        val speedKt: Double,
     )
 
     @Serializable

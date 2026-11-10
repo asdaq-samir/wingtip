@@ -252,6 +252,14 @@
     <string name="layer_tac">Terminal Area Charts</string>
     <string name="layer_private">Private Fields</string>
     <string name="layer_military">Military Fields</string>
+    <string name="airport_weather">Airport Weather</string>
+    <string name="airport_weather_off">Off</string>
+    <string name="airport_weather_halo">Halo</string>
+    <string name="airport_weather_dot">Dot</string>
+    <string name="airport_weather_station">Station</string>
+    <string name="airport_weather_station_close">Station Model When Zoomed In</string>
+    <string name="airport_weather_wind_arrows">Wind Arrows</string>
+    <string name="airport_weather_worse">Getting Worse by Arrival</string>
     <string name="speak_alerts">Speak Alerts Ahead</string>
     <string name="passenger_briefing">Passenger Briefing</string>
     <string name="passengers_briefed">Briefed: %1$d of %2$d</string>

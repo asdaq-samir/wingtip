@@ -14,6 +14,7 @@ struct AirportDestination: View {
         switch route {
         case .airport(let ident): AirportCard(ident: ident)
         case .airspace(let lat, let lon): AirspaceCard(lat: lat, lon: lon)
+        case .list(.nearest): NearestView()
         case .list(let shows): AirportListView(shows: shows, nearest: nearest)
         case .nearFrom(let lat, let lon, let label): NearFromView(lat: lat, lon: lon, label: label)
         }
@@ -23,33 +24,30 @@ struct AirportDestination: View {
 /// A strip's list in full: the Favorites to change and put in order, the
 /// Recents to take off, the nearest fields.
 struct AirportListView: View {
-    @Environment(OwnShip.self) private var ownShip
     @Environment(\.undoManager) private var undoManager
     let shows: AirportShelf.Shows
     let nearest: [NearestAirport]
     private var shelf: AirportShelf { .shared }
 
     var body: some View {
+        // Nearest is the one list (NearestView), wherever it is opened.
+        if shows == .nearest { NearestView() } else { kept }
+    }
+
+    private var kept: some View {
         List {
-            switch shows {
-            case .favorites:
+            if shows == .favorites {
                 if shelf.favorites.isEmpty { Text("No Favorites").foregroundStyle(.secondary) }
-                ForEach(shelf.favorites) { field in NavigationLink(value: SheetPage.airport(field.ident)) { keptRow(field) }.cardSource(field.ident).airportPreview(field.ident).siriSees(SiriSaw.airport(field.ident)) }
+                ForEach(shelf.favorites) { field in NavigationLink(value: SheetPage.airport(field.ident)) { keptRow(field) }.airportPreview(field.ident).siriSees(SiriSaw.airport(field.ident)) }
                     .onDelete { shelf.removeFavorites(at: $0, undo: undoManager) }
                     .onMove { shelf.moveFavorites(from: $0, to: $1) }
-            case .recents:
+            } else {
                 if shelf.recents.isEmpty { Text("No Recents").foregroundStyle(.secondary) }
-                ForEach(shelf.recents) { field in NavigationLink(value: SheetPage.airport(field.ident)) { keptRow(field) }.cardSource(field.ident).airportPreview(field.ident).siriSees(SiriSaw.airport(field.ident)) }
+                ForEach(shelf.recents) { field in NavigationLink(value: SheetPage.airport(field.ident)) { keptRow(field) }.airportPreview(field.ident).siriSees(SiriSaw.airport(field.ident)) }
                     .onDelete { shelf.removeRecents(at: $0) }
-            case .nearest:
-                if nearest.isEmpty { Text("Waiting for the position").foregroundStyle(.secondary) }
-                ForEach(nearest) { field in NavigationLink(value: SheetPage.airport(field.ident)) { NearestRow(field: field) }.cardSource(field.ident).airportPreview(field.ident).siriSees(SiriSaw.airport(field.ident)) }
             }
         }
         .navigationTitle(shows.title)
-        .navigationBarTitleDisplayMode(.inline)
-        // Nearest needs the position: asked for here the first time.
-        .onAppear { if shows == .nearest { ownShip.askLocation() } }
         .toolbar {
             UndoToolbarItem()
             ToolbarItemGroup(placement: .topBarTrailing) {
@@ -80,7 +78,7 @@ struct NearFromView: View {
         List {
             if let fields {
                 Section("Nearest \(label)") {
-                    ForEach(fields) { field in NavigationLink(value: SheetPage.airport(field.ident)) { NearestRow(field: field) }.cardSource(field.ident).airportPreview(field.ident).siriSees(SiriSaw.airport(field.ident)) }
+                    ForEach(fields) { field in NavigationLink(value: SheetPage.airport(field.ident)) { NearestRow(field: field) }.airportPreview(field.ident).siriSees(SiriSaw.airport(field.ident)) }
                 }
             } else if let problem {
                 ProblemLine(problem)
@@ -100,7 +98,6 @@ struct NearFromView: View {
             }
         }
         .navigationTitle("Nearest")
-        .navigationBarTitleDisplayMode(.inline)
         .task(id: label) {
             do { fields = try await Planner.nearest(lat: lat, lon: lon, limit: 25) } catch { problem = error.localizedDescription }
         }

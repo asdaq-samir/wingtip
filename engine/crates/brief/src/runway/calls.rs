@@ -187,7 +187,7 @@ fn runway_wind_of(i: In, v: &Value) -> R<RunwayWind> {
 }
 
 /// A runway's ends as [ident, true heading], either null.
-fn end_headings(i: In, v: &Value, key: &str) -> R<Vec<(Option<String>, Option<f64>)>> {
+pub(super) fn end_headings(i: In, v: &Value, key: &str) -> R<Vec<(Option<String>, Option<f64>)>> {
     i.list(v, key)?
         .iter()
         .map(|pair| match pair.as_array() {
@@ -210,7 +210,7 @@ fn end_headings(i: In, v: &Value, key: &str) -> R<Vec<(Option<String>, Option<f6
 
 /// A METAR's wind, None for none (null, missing or empty, as Python's
 /// truth takes it).
-fn reported(i: In, v: &Value, key: &str) -> R<Option<Reported>> {
+pub(super) fn reported(i: In, v: &Value, key: &str) -> R<Option<Reported>> {
     match i.obj(v, key)? {
         Some(m @ Value::Object(members)) if !members.is_empty() => Ok(Some(Reported {
             dir_true_deg: i.opt_num(m, "wind_dir_true_deg")?,

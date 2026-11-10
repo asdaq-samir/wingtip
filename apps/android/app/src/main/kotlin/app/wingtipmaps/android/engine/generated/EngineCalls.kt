@@ -1057,6 +1057,12 @@ fun Engine.kneeboardRadio(frequencies: List<EngineContract.FieldFrequency>): Res
     rule("kneeboard_radio", EngineContract.KneeboardRadioInput(frequencies = frequencies))
 
 /**
+ * Of a field's runways, each on the end the wind favours, the least crosswind, steady or gust, whichever is more: the runway a pilot would pick to keep the wind most nearly down it. A variable wind is all crosswind (AIM 7-1-28); calm is none. null with no wind or no runway end with a heading.
+ */
+fun Engine.leastCrosswind(runways: List<EngineContract.LeastCrosswindInputRunwaysItem>? = null, metar: EngineContract.MetarWindIn? = null, variationDeg: Double): Result<EngineContract.LeastCrosswindAnswer?> =
+    rule("least_crosswind", EngineContract.LeastCrosswindInput(runways = runways, metar = metar, variationDeg = variationDeg))
+
+/**
  * Every legal cruising altitude for a magnetic course from the floor up to the ceiling, ascending: under VFR 14 CFR 91.159(a)'s thousands plus 500 under Class A (71.33), and every 500 ft up to rule_from_ft (3,000 ft over the lowest ground); under IFR 91.179(b)'s thousands (FAA Order JO 7110.65 TBL 4-5-1) to FL410.
  */
 fun Engine.legalCruisingAltitudes(floorFt: Double, ceilingFt: Double? = null, magneticCourseDeg: Double, ruleFromFt: Double? = null, rules: String? = null): Result<List<Double>> =
@@ -1861,10 +1867,22 @@ fun Engine.weatherWorse(then: EngineContract.WeatherReading, now: EngineContract
     rule("weather_worse", EngineContract.WeatherWorseInput(then = then, now = now))
 
 /**
+ * Whether a field's wind earns its arrow on the map (10 kt or more, or gusting: the owner's pick, 2026-11-10) and whether it warns: its least crosswind more than the airplane's maximum demonstrated crosswind (the POH's, 14 CFR 23.233(a) before amendment 23-64). Never over with no airplane or no figure.
+ */
+fun Engine.windArrow(speedKt: Double? = null, gustKt: Double? = null, crosswindKt: Double? = null, demonstratedKt: Double? = null): Result<EngineContract.WindArrowAnswer> =
+    rule("wind_arrow", EngineContract.WindArrowInput(speedKt = speedKt, gustKt = gustKt, crosswindKt = crosswindKt, demonstratedKt = demonstratedKt))
+
+/**
  * The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends, light and variable left out; null with no level left, never calm. A list for "altitudes".
  */
 fun Engine.windAtAltitude(levels: Map<String, EngineContract.WindAtAltitudeInputLevelsValue>, altitudeFt: Double? = null, altitudes: List<Double>? = null): Result<JsonElement?> =
     rule("wind_at_altitude", EngineContract.WindAtAltitudeInput(levels = levels, altitudeFt = altitudeFt, altitudes = altitudes))
+
+/**
+ * A station model's wind barb: the wind to the nearest 5 kt in flags (50 kt), barbs (10 kt) and half-barbs (5 kt), a circle for calm (FAA-H-8083-28A, 25.2.3.4.5).
+ */
+fun Engine.windBarb(speedKt: Double): Result<EngineContract.WindBarbAnswer> =
+    rule("wind_barb", EngineContract.WindBarbInput(speedKt = speedKt))
 
 /**
  * Whether a wind is calm, a speed of 0 (AIM 7-1-28); no speed is not calm.

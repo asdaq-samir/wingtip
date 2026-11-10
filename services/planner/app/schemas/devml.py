@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from ..emergency.schemas import GlideFigures
+from .aircraft_figures import DemonstratedCrosswind
 
 
 class AirportSuggestion(BaseModel):
@@ -53,6 +54,10 @@ class AircraftProfileSummary(BaseModel):
     #: Its POH's fuel for start, taxi and takeoff, gal; None where the
     #: profile has none, and then none is assumed.
     taxi_fuel_gal: float | None = None
+    #: Its POH's maximum demonstrated crosswind, None where the profile
+    #: has none: the map's wind arrows are then never red, no other
+    #: airplane's figure assumed (the owner, 2026-11-09).
+    crosswind: DemonstratedCrosswind | None = None
 
 
 class AircraftProfiles(BaseModel):

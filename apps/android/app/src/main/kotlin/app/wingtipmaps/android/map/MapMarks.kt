@@ -38,6 +38,8 @@ object MapMarks {
     }
 
     /** What an action on the map says for a field: "KDLH, Duluth
-     *  International". */
-    fun label(pin: AirportPin): String = if (pin.name.isEmpty()) pin.ident else "${pin.ident}, ${pin.name}"
+     *  International", and its weather where it reports (StationMarks.said):
+     *  "KJVL, Southern Wisconsin Regional, IFR, wind 220 at 18 gusting 26". */
+    fun label(pin: AirportPin, weather: FieldWx? = null): String =
+        listOf(pin.ident, pin.name, weather?.let(StationMarks::said).orEmpty()).filter { it.isNotEmpty() }.joinToString(", ")
 }

@@ -8,6 +8,8 @@ import app.wingtipmaps.android.api.generated.OverlayTilesLayer
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.map.AirportWeatherMarks
+import app.wingtipmaps.android.map.AirportWeatherMode
 import app.wingtipmaps.android.map.MapLayers
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapRest
@@ -60,13 +62,20 @@ class MapParityTest {
     }
 
     @Test
-    fun aCategoryIsItsWebColourAndNoneIsNoPip() {
-        assertEquals("#1a7f37", MapStyle.pipOf("VFR"))
-        assertEquals("#1f6feb", MapStyle.pipOf("MVFR"))
-        assertEquals("#b3261e", MapStyle.pipOf("IFR"))
-        assertEquals("#a371f7", MapStyle.pipOf("LIFR"))
-        assertEquals("", MapStyle.pipOf(null))
-        assertEquals(5, MapStyle.PIPS.size)
+    fun aCategoryIsItsTokensRingOrDotByTheSettingAndNoneIsNoPip() {
+        val halo = AirportWeatherMode.HALO
+        assertEquals("h#1a7f37", AirportWeatherMarks.pipOf("VFR", halo))
+        assertEquals("h#1f6feb", AirportWeatherMarks.pipOf("MVFR", halo))
+        assertEquals("h#b3261e", AirportWeatherMarks.pipOf("IFR", halo))
+        assertEquals("h#a371f7", AirportWeatherMarks.pipOf("LIFR", AirportWeatherMode.STATION))
+        assertEquals("d#b3261e", AirportWeatherMarks.pipOf("IFR", AirportWeatherMode.DOT))
+        assertEquals("", AirportWeatherMarks.pipOf("IFR", AirportWeatherMode.OFF))
+        assertEquals("", AirportWeatherMarks.pipOf(null, halo))
+        assertEquals(9, AirportWeatherMarks.PIPS.size)
+        assertTrue(AirportWeatherMarks.isDot("d#b3261e"))
+        assertEquals("#b3261e", AirportWeatherMarks.inkOf("h#b3261e"))
+        assertEquals(emptyMap<String, String>(), AirportWeatherMarks.pips(mapOf("KORD" to "VFR"), AirportWeatherMode.OFF))
+        assertEquals(mapOf("KORD" to "h#1a7f37"), AirportWeatherMarks.pips(mapOf("KORD" to "VFR", "KMDW" to "XX"), halo))
     }
 
     @Test
