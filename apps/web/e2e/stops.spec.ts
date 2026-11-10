@@ -16,8 +16,13 @@ import {
   sideDrawer,
   slow,
   waypointMarks,
+  pickAirplane,
 } from "./helpers";
 import { fillTime } from "./ariaFields";
+
+// An airplane picked, as a pilot picks one: these read its times, fuel or
+// figures, which with none are not shown (the setup picks none).
+test.beforeEach(async ({ page }) => pickAirplane(page));
 
 /**
  * A route that lands on the way, as Maps' Add Stop: a stop added in the

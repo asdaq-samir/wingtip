@@ -4,6 +4,7 @@ import {
   airportSearch,
   closeSidebarWithTheStockKey,
   expectDrawerClosed,
+  fromRest,
   grabberTo,
   mapStill,
   openPanel,
@@ -29,8 +30,19 @@ import {
 // (CI's is localhost; locally, a localhost port forwarded to the stack).
 const origin = new URL(process.env.BASE_URL ?? "http://localhost:8080").origin;
 
-/** The course line's core, on screen. */
-const courseBox = async (page: Page) => (await page.locator('path[stroke="#e600e6"]').first().boundingBox())!;
+/** The course line's core, on screen: the box round every piece of it
+ *  the map drew (RouteGl's route-line probe), in the page's points. A
+ *  canvas has no path to measure, as Leaflet's SVG had. */
+const courseBox = (page: Page) =>
+  page.evaluate(() => {
+    const map = document.querySelector(".maplibregl-map")!.getBoundingClientRect();
+    const boxes = [...document.querySelectorAll<HTMLElement>('[data-gl-probe="route-line"]')].flatMap((p) =>
+      (JSON.parse(p.getAttribute("data-route-line") ?? "[]") as { box?: number[] }[]).flatMap((r) => (r.box ? [r.box] : [])),
+    );
+    if (!boxes.length) throw new Error("no course drawn");
+    const [x0, y0, x1, y1] = [0, 1, 2, 3].map((i) => (i < 2 ? Math.min : Math.max)(...boxes.map((b) => b[i]!)));
+    return { x: map.left + x0!, y: map.top + y0!, width: x1! - x0!, height: y1! - y0! };
+  });
 
 /** Nothing of `a` under `b`. */
 const apart = (a: { x: number; y: number; width: number; height: number }, b: { x: number; y: number; width: number; height: number }) =>
@@ -146,8 +158,9 @@ test("opened fresh, the map is on the pilot's position in the middle of what the
   await context.setGeolocation({ latitude: 42.3247, longitude: -88.0742 });
   await page.goto("/app/plan");
   await settle(page);
-  // Opened as the tabs alone (the owner's ask).
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
+  // Opened as the one search alone on a phone (the owner's ask); a
+  // desktop's side panel put away to start from the same rest.
+  await fromRest(page);
   await expect(page.getByTestId("my-position-button")).toHaveAttribute("aria-pressed", "true");
   await shipInTheMiddle(page);
   await closeSidebarWithTheStockKey(page);
@@ -182,6 +195,9 @@ test("reloaded where it was, the map opens on the position in the middle of what
   page,
   context,
 }) => {
+  // The pill's: a desktop's side panel opens out (the one-search design's
+  // Desktop, 2026-11-09), and route-fit's first test has it.
+  test.skip(page.viewportSize()!.width >= 1024, "a phone's pill; a desktop opens with its side panel out");
   // The owner's notice: "On a reload why is there animation in the maps
   // and the pill? It seems they are settling to their desired position".
   await context.grantPermissions(["geolocation"], { origin });
@@ -194,15 +210,18 @@ test("reloaded where it was, the map opens on the position in the middle of what
       JSON.stringify({ state: { enabled: true, follow: true, lastFix: { lat: 42.325, lon: -88.074 } }, version: 0 }),
     ),
   );
-  // Every place the map's pane is put, from the page's first frame: it
-  // moves when the map does, and only then.
+  // Every place the map's pane is put from the frame it is shown (its
+  // loading mark lifted, GlMapShell's data-revealed): it moves when the
+  // map does, and only then. Before that the pilot sees the mark, not the
+  // map, as it takes the sheet's room.
   await page.addInitScript(() => {
     const seen: string[] = [];
     (window as unknown as { __panes: string[] }).__panes = seen;
     const look = () => {
-      const at = document.querySelector<HTMLElement>("[data-testid=gl-map]")?.dataset.offset;
+      const map = document.querySelector<HTMLElement>("[data-testid=gl-map]");
+      const at = map?.dataset.revealed !== undefined ? map?.dataset.offset : undefined;
       if (at && at !== seen[seen.length - 1]) seen.push(at);
-      if (performance.now() < 6000) requestAnimationFrame(look);
+      if (performance.now() < 20_000) requestAnimationFrame(look);
     };
     requestAnimationFrame(look);
   });
@@ -211,8 +230,16 @@ test("reloaded where it was, the map opens on the position in the middle of what
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
   await shipInTheMiddle(page);
   await page.waitForTimeout(1500);
-  // Made there, and never moved: the first fix was put, not panned to.
-  expect(await page.evaluate(() => (window as unknown as { __panes: string[] }).__panes)).toHaveLength(1);
+  // Made there, and never moved: the first fix was put, not panned to. The
+  // fix a few metres from the kept one may set the map a fraction of a
+  // point over (MapLibre's offset to a tenth), which no eye sees as a slide.
+  const panes = await page.evaluate(() => (window as unknown as { __panes: string[] }).__panes);
+  expect(panes.length, "the map shown").toBeGreaterThan(0);
+  const [x0, y0] = panes[0]!.split(",").map(Number);
+  for (const pane of panes) {
+    const [x, y] = pane.split(",").map(Number);
+    expect(Math.hypot(x! - x0!, y! - y0!), `the map moved: ${panes.join(" → ")}`).toBeLessThan(1);
+  }
 });
 
 /** Counts the page's asks for the position, on window.__asks. */

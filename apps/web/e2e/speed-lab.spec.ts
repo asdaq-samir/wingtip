@@ -1,6 +1,10 @@
 import { writeFileSync } from "node:fs";
 import { test, type Page } from "@playwright/test";
-import { controlsInSight, noTips, openPanel } from "./helpers";
+import { controlsInSight, noTips, openPanel, pickAirplane } from "./helpers";
+
+// An airplane picked, as a pilot picks one: these read its times, fuel or
+// figures, which with none are not shown (the setup picks none).
+test.beforeEach(async ({ page }) => pickAirplane(page));
 
 /**
  * The nightly lab run for the speed trend (ci.yml, SpeedController): the

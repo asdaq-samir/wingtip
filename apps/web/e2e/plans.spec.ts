@@ -13,8 +13,13 @@ import {
   settle,
   sideDrawer,
   slow,
+  pickAirplane,
 } from "./helpers";
 import { fillTime } from "./ariaFields";
+
+// An airplane picked, as a pilot picks one: these read its times, fuel or
+// figures, which with none are not shown (the setup picks none).
+test.beforeEach(async ({ page }) => pickAirplane(page));
 
 /**
  * What the nav log is computed from: the altitude plans and a pilot's

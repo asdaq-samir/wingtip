@@ -16,7 +16,12 @@ import {
   navLogScroller,
   navLogSheet,
   settled,
+  pickAirplane,
 } from "./helpers";
+
+// An airplane picked, as a pilot picks one: these read its times, fuel or
+// figures, which with none are not shown (the setup picks none).
+test.beforeEach(async ({ page }) => pickAirplane(page));
 
 /**
  * The nav log's checkpoints: selected by a click, by Enter or by a pick

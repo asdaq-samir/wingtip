@@ -58,8 +58,11 @@ test(
   async ({ page }) => {
     await page.goto("/app/plan");
     await settle(page);
-    // Opened as the one search alone, at the owner's ask (MapPanel).
-    await expect(page.locator('[data-slot="map-panel"]')).toHaveAttribute("data-panel", "peek");
+    // Opened as the one search alone on a phone, at the owner's ask
+    // (MapPanel); a desktop's side panel out from the start, the search
+    // and the plan in it (the one-search design's Desktop, 2026-11-09).
+    const opened = page.viewportSize()!.width < 768 ? "peek" : "half";
+    await expect(page.locator('[data-slot="map-panel"]')).toHaveAttribute("data-panel", opened);
     expect(await consoleSheet(page).count()).toBe(0);
 
     await showTabs(page);
@@ -175,9 +178,15 @@ test("the navigation bar's edge is a setting: the panel moves to it, the map's b
   const box = (await (phone ? page.locator('[data-slot="map-panel"]') : pilot).boundingBox())!;
   // All the way up: the sheet to the screen's edge (MapPanel's "edge").
   if (phone) expect(Math.round(box.y)).toBeLessThanOrEqual(8);
-  // Beside a desktop's map, Setup is the panel's (MapPage's inPanel), its
-  // foot the panel's, eight in from the screen's.
-  else expect(viewport.height - Math.round(box.y + box.height)).toBeLessThanOrEqual(12);
+  // Beside a desktop's map, Setup is the panel's (MapPage's inPanel), and
+  // the panel runs the window's height, its float (FLOAT_PX, 16) in from
+  // the screen's foot.
+  else {
+    expect(await pilot.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))).toBe(true);
+    const panel = (await page.locator('[data-slot="map-panel"]').boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(panel.y + panel.height + 1);
+    expect(viewport.height - Math.round(panel.y + panel.height)).toBeLessThanOrEqual(17);
+  }
   await page.keyboard.press("Escape");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);

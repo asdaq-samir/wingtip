@@ -1,5 +1,21 @@
 import { test, expect, type Page } from "@playwright/test";
-import { chartZoom, grabberTo, openPanel, openProfile, closeProfile, settle, settled, sideDrawer, slow, pressDryRunStart } from "./helpers";
+import {
+  chartZoom,
+  grabberTo,
+  openPanel,
+  openProfile,
+  closeProfile,
+  settle,
+  settled,
+  sideDrawer,
+  slow,
+  pressDryRunStart,
+  pickAirplane,
+} from "./helpers";
+
+// An airplane picked, as a pilot picks one: these read its times, fuel or
+// figures, which with none are not shown (the setup picks none).
+test.beforeEach(async ({ page }) => pickAirplane(page));
 
 /**
  * The planned flight's dry run flies own ship, as if a pilot were flying

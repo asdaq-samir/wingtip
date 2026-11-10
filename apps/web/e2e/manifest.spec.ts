@@ -17,6 +17,13 @@ test("the manifest names the app, keeps one window and lists the screens' shortc
   const urls = manifest.shortcuts.map((s: { url: string }) => s.url);
   expect(urls[0]).toBe("/app/plan?open=brief");
   expect(urls).toContain("/app/plan?open=emergency");
+  // Its pictures for Chrome's richer install dialog, a phone's and a
+  // desktop's (manifest-screenshots.spec takes them), each served.
+  expect(manifest.screenshots.map((s: { form_factor: string; sizes: string }) => `${s.form_factor} ${s.sizes}`)).toEqual([
+    "wide 1280x800",
+    "narrow 390x844",
+  ]);
+  for (const shot of manifest.screenshots as { src: string }[]) expect((await request.get(`/app/${shot.src}`)).ok()).toBe(true);
 
   // Nearest's shortcut opens Nearest, as its link does.
   await page.goto("/app/plan?open=nearest");

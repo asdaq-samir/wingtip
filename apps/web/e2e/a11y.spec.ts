@@ -1,6 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect, type Page } from "@playwright/test";
-import { openConsole, openTab, settle, settled, showTabs, slow, consolePage, mapStill } from "./helpers";
+import { openConsole, openTab, settle, settled, showTabs, slow, consolePage, mapStill, pickAirplane } from "./helpers";
+
+// An airplane picked, as a pilot picks one: these read its times, fuel or
+// figures, which with none are not shown (the setup picks none).
+test.beforeEach(async ({ page }) => pickAirplane(page));
 
 /**
  * Accessibility by axe-core, beside the iOS audit's measured rules

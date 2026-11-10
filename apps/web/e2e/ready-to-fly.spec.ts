@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openBrief, openPanel, openProfile, settle, sideDrawer, slow } from "./helpers";
+import { openBrief, openPanel, openProfile, pickAirplane, settle, sideDrawer, slow } from "./helpers";
 
 /**
  * Ready to fly (the engine's ready_to_fly, features/readyToFly): the
@@ -13,7 +13,8 @@ import { openBrief, openPanel, openProfile, settle, sideDrawer, slow } from "./h
 test("the Brief ends on Ready to fly, its actions fixing in place", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120_000) });
+  // The plan in, with no airplane: its distance, never a fuel figure.
+  await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/DIST/i, { timeout: slow(120_000) });
   await openBrief(page);
   const ready = sideDrawer(page).getByTestId("ready-to-fly");
   await expect(ready).toBeVisible({ timeout: slow(30_000) });
@@ -38,6 +39,8 @@ test("the Brief ends on Ready to fly, its actions fixing in place", async ({ pag
 });
 
 test("starting a dry run with something to fix shows Ready to fly once, and the pilot flies anyway", async ({ page }) => {
+  // The dry run flies an airplane's speeds: one picked.
+  await pickAirplane(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);

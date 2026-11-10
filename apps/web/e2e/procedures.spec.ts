@@ -1,5 +1,9 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { cardClose, drawn, grabberTo, openTab, settle, settled, sideDrawer, slow } from "./helpers";
+import { cardClose, drawn, grabberTo, openTab, settle, settled, sideDrawer, slow, pickAirplane } from "./helpers";
+
+// An airplane picked, as a pilot picks one: these read its times, fuel or
+// figures, which with none are not shown (the setup picks none).
+test.beforeEach(async ({ page }) => pickAirplane(page));
 
 /** The traffic patterns the map draws, by name ("pattern-at-KDLH",
  *  "departure-at-C81": PatternsGl's lines). A line can come back once for

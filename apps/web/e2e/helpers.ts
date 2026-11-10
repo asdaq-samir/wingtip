@@ -791,3 +791,33 @@ export async function drawn(page: Page, name: string): Promise<Record<string, un
 export async function chartZoom(page: Page): Promise<number> {
   return Number(await page.getByTestId("gl-map").first().getAttribute("data-chart-zoom"));
 }
+
+/** An airplane picked before the page loads, as a pilot picks one (FPL's
+ *  airplane): the stock C172 unless another profile is named. The session
+ *  every spec starts from has none (auth.setup; the owner, 2026-11-09:
+ *  nothing assumes one), so a spec that reads an airplane's times, fuel or
+ *  figures picks it with this, in a beforeEach or at its start. Once a
+ *  tab: a spec that then picks another, or none, and reloads keeps it. */
+export async function pickAirplane(
+  page: Page,
+  airplane: { profile: string; label: string } = { profile: "c172", label: "C172 · Cessna 172" },
+) {
+  await page.addInitScript((picked) => {
+    if (sessionStorage.getItem("e2e.airplanePicked")) return;
+    sessionStorage.setItem("e2e.airplanePicked", "1");
+    const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":7}');
+    localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, aircraft: picked } }));
+  }, airplane);
+}
+
+/** The panel at rest, as a page opens on a phone: a desktop's side panel
+ *  opens out, the search and the plan in it (MapPage, the one-search
+ *  design's Desktop, 2026-11-09), so it is put away first there, for a
+ *  spec about the panel's pill and what the map does round it. */
+export async function fromRest(page: Page) {
+  if (page.viewportSize()!.width >= 1024) {
+    await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
+    await closeSidebarWithTheStockKey(page);
+  }
+  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
+}

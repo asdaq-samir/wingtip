@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { settle, sideDrawer, slow, openTab, openSection } from "./helpers";
+import { settle, sideDrawer, slow, openTab, openSection, pickAirplane } from "./helpers";
+
+// An airplane picked, as a pilot picks one: these read its times, fuel or
+// figures, which with none are not shown (the setup picks none).
+test.beforeEach(async ({ page }) => pickAirplane(page));
 
 /**
  * The briefing's Pattern & Radio (PatternRadio, features/plan/lib/pattern, features/plan/lib/radio):
