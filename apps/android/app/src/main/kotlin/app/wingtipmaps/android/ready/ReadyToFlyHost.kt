@@ -73,5 +73,4 @@ fun ReadyToFlyHost(plan: Plan, ownShipOn: Boolean, underway: Boolean, onSetRoute
             confirmButton = { TextButton(onClick = { open = false }) { Text(stringResource(R.string.ready_fly_anyway)) } },
         )
     }
-    fixer.Sheets()
 }

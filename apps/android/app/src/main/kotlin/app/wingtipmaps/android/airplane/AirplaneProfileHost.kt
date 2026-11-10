@@ -11,21 +11,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
-import app.wingtipmaps.android.ui.sheet.CardSheet
 import kotlinx.coroutines.launch
 
 /**
- * Where the airplane's card (AirplaneCard) opens over whatever the pilot
- * was on (ProfileOpen), so closing it goes back there, its Fly This
- * Airplane showing the plan (`onFlown`); and, once signed in, the
- * offer to keep with the account the airplanes kept on this phone while
- * signed out. The pilot's airplanes are asked again at every sign-in or out.
+ * Once signed in, the offer to keep with the account the airplanes kept
+ * on this phone while signed out, the stock confirmation dialog. The
+ * pilot's airplanes are asked again at every sign-in or out. The
+ * airplane's card itself opens on the sheet's stack (ProfileOpen, read by
+ * rememberSheetNav), in every layout.
  */
 @Composable
-fun AirplaneProfileHost(plan: Plan, session: Session, inSheet: Boolean, onFlown: () -> Unit) {
+fun AirplaneProfileHost(session: Session) {
     val context = LocalContext.current
     val own = remember(context) { OwnAirplanes.of(context) }
     val pilot by session.pilot.collectAsStateWithLifecycle()
@@ -40,13 +38,5 @@ fun AirplaneProfileHost(plan: Plan, session: Session, inSheet: Boolean, onFlown:
             confirmButton = { TextButton(onClick = { scope.launch { runCatching { own.keepOnAccount() } } }) { Text(stringResource(R.string.offer_keep)) } },
             dismissButton = { TextButton(onClick = own::notNow) { Text(stringResource(R.string.not_now)) } },
         )
-    }
-    // The card is the docked sheet's own page where there is one
-    // (`inSheet`: PlanSheet, the wide panes); else a card sheet over the map.
-    if (inSheet) return
-    val at by ProfileOpen.at.collectAsStateWithLifecycle()
-    val open = at ?: return
-    CardSheet(onClose = ProfileOpen::close) {
-        AirplaneCard(open, plan, onClose = ProfileOpen::close, onFlown = { ProfileOpen.close(); onFlown() })
     }
 }

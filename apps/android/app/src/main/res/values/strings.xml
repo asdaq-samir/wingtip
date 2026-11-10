@@ -86,6 +86,11 @@
 
     <!-- Sheets and their controls (decision 0015). -->
     <string name="close">Close</string>
+    <string name="back">Back</string>
+    <string name="discard_title">Discard Your Changes?</string>
+    <string name="discard_line">What you typed hasn\'t been saved.</string>
+    <string name="discard">Discard</string>
+    <string name="keep_editing">Keep Editing</string>
     <string name="share">Share</string>
     <string name="send">Send</string>
     <string name="stop">Stop</string>
@@ -102,9 +107,6 @@
     <string name="figure_mh">MH</string>
     <string name="figure_mc">MC</string>
     <string name="figure_required">REQUIRED</string>
-    <string name="figure_cruise">CRUISE</string>
-    <string name="figure_burn">BURN</string>
-    <string name="figure_ceiling">CEILING</string>
 
     <!-- What TalkBack says for a figure's name and for a control's state,
          where the written word is an abbreviation or nothing at all. -->
@@ -148,7 +150,6 @@
     <string name="under_reserve">Under the reserve the planner holds the flight to. Fly it with a fuel stop.</string>
 
     <!-- A leg (LegSheet). -->
-    <string name="leg_from">From</string>
     <string name="leg_altitude">Cruise Altitude</string>
     <string name="leg_true_course">True Course</string>
     <string name="leg_magnetic_course">Magnetic Course</string>
@@ -237,7 +238,7 @@
     <string name="email_sign_in_link">Email Me a Sign-In Link</string>
     <string name="check_email">Check your email: the link opens the app and signs you in.</string>
     <string name="coming_up">Coming Up</string>
-    <string name="map">Map</string>
+    <string name="map_settings">Map Settings</string>
     <!-- The radar and satellite loop (map/WeatherLoopBar). -->
     <string name="loop_kind">Radar and Satellite</string>
     <string name="loop_speed">Loop Speed</string>
@@ -525,7 +526,6 @@
     <string name="keep_for_air">Keep for the Air</string>
     <string name="keeping_for_air">Keeping for the Air…</string>
     <string name="kept_for_air">Kept for the Air: %1$s MB</string>
-    <string name="ready_airplane_line">Its fuel, performance and loading come from its own figures; none is assumed.</string>
     <!-- A flight shared by link (design/screens.json `shared`). -->
     <string name="shared_flight">Shared Flight</string>
     <string name="shared_use">Use This Plan</string>

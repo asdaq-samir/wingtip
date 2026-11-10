@@ -2,37 +2,26 @@ package app.wingtipmaps.android.ready
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
-import app.wingtipmaps.android.R
-import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.engine.CyclePacks
+import app.wingtipmaps.android.navigation.ScreenRequests
+import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.offline.DownloadsModel
 import app.wingtipmaps.android.offline.KeepForAirModel
 import app.wingtipmaps.android.receiver.Receiver
 import app.wingtipmaps.android.receiver.ReceiverMode
-import app.wingtipmaps.android.ui.AirplaneModel
-import app.wingtipmaps.android.ui.AirplanePicker
 import app.wingtipmaps.android.ui.BriefModel
 import app.wingtipmaps.android.ui.OwnShipControl
-import app.wingtipmaps.android.ui.sheet.WingtipSheet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -40,8 +29,8 @@ import kotlinx.coroutines.withContext
 
 /**
  * Each of ready_to_fly's fixes done in place, by the feature the app
- * already has for it: the airplane picked in the Airplane page's own
- * picker, the route's charts kept as Setup → Downloads keeps a box, the
+ * already has for it: the airplane picked on its one card (AirplaneCard,
+ * its picker at the head), the route's charts kept as Setup → Downloads keeps a box, the
  * cycle packs kept along the route as the plan keeps them, the Brief and
  * the fields' weather asked again, the NOTAMs fetched, the plan kept, the
  * system asked for location, the receiver listened for. A fix the phone
@@ -63,9 +52,6 @@ class ReadyFixer internal constructor(
     private val onSetRoute: (() -> Unit)?,
     private val doneState: MutableIntState,
 ) {
-    /** The airplane picker's sheet, open. */
-    var picking by mutableStateOf(false)
-
     /** Bumped when a fix that changes nothing the screen watches is done
      *  (or the system has answered for location), so the facts are
      *  gathered again. */
@@ -82,7 +68,8 @@ class ReadyFixer internal constructor(
         val line = state.course?.courseLine.orEmpty().filter { it.size == 2 }
         when (fix) {
             "set_route" -> onSetRoute?.invoke()
-            "pick_airplane" -> picking = true
+            // The one airplane card, its picker at its head.
+            "pick_airplane" -> ScreenRequests.ask(Screen.AIRPLANE)
             "download_charts" -> keepCharts(line)
             "update_packs" -> keepPacks(line)
             "refresh_weather" -> {
@@ -141,24 +128,6 @@ class ReadyFixer internal constructor(
             if (regions.isEmpty()) packs.refresh() else packs.keep(regions)
             model.busy("update_packs", false)
             doneState.intValue++
-        }
-    }
-
-    /** The Airplane page's picker in a sheet of its own, so the screen
-     *  under it stays where it was; asked, never assumed. */
-    @Composable
-    fun Sheets(airplanes: AirplaneModel = viewModel()) {
-        if (!picking) return
-        val types by airplanes.profiles.collectAsStateWithLifecycle()
-        val state by plan.state.collectAsStateWithLifecycle()
-        WingtipSheet(title = stringResource(R.string.pick_an_airplane), onClose = { picking = false }) {
-            Column(Modifier.padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl)) {
-                Text(stringResource(R.string.ready_airplane_line), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                AirplanePicker(types, selected = state.aircraft) { name ->
-                    plan.setAircraft(name)
-                    picking = false
-                }
-            }
         }
     }
 

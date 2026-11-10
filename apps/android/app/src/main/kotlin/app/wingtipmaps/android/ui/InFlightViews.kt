@@ -11,15 +11,11 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -28,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -45,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AheadAlert
 import app.wingtipmaps.android.api.NearestAirport
-import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.nearest
 import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipSize
@@ -60,8 +54,6 @@ import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
-import app.wingtipmaps.android.ui.sheet.WingtipSheet
-import kotlinx.coroutines.CancellationException
 import java.time.Instant
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -261,62 +253,6 @@ object InstrumentsWords {
     fun arrival(dest: EngineContract.InFlightAnswerDestination, etaS: Double): String {
         val line = "${dest.name} at ${zulu(etaS)}, ${dest.distanceNm.roundToInt()} nm"
         return dest.fuelLeftGal?.let { "$line, about ${Format.fuel(maxOf(0.0, it))} left by the plan" } ?: line
-    }
-}
-
-/**
- * Nearest, one tap from the bar (#218): the fields nearest the airplane,
- * the miles and the way to each, and which are within a still-air glide
- * at pattern height (the engine's glide_reaches, AC 90-66C's 1,000 ft
- * over the field) at the picked airplane's own glide ratio -- with none
- * (no airplane, or none in its profile) no field is said to be within a
- * glide. A tap opens the field's card.
- */
-@Composable
-fun NearestSheet(fix: OwnShip.Fix?, onOpen: (String) -> Unit, onClose: () -> Unit, ask: @Composable () -> Unit = {}) {
-    var fields by remember { mutableStateOf<List<NearestAirport>?>(null) }
-    var problem by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(fix == null) {
-        val at = fix ?: return@LaunchedEffect
-        try {
-            fields = Planner.nearest(at.lat, at.lon, limit = 10)
-            problem = null
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            problem = "The nearest fields could not be found. ${e.message ?: ""}".trim()
-        }
-    }
-    val openWord = stringResource(R.string.said_open)
-    WingtipSheet(title = stringResource(R.string.nearest), onClose = onClose) {
-        Column(Modifier.padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-            when {
-                fix == null -> Text("Finding your position…", style = MaterialTheme.typography.bodyMedium)
-                problem != null -> ProblemLine(problem)
-                fields == null -> Text("Fetching the nearest fields…", style = MaterialTheme.typography.bodyMedium)
-            }
-            // The airplane's glide ratio asked for where it is missing.
-            ask()
-            LazyColumn {
-                items(fields.orEmpty(), key = { it.ident }) { field ->
-                    // A glide the engine could not judge says so, never "out of reach".
-                    val reach = fix?.let { glideReaches(it, field, InFlight.shared.glideRatio) }
-                    val parts = listOfNotNull(
-                        "${Format.distance(field.distanceNm)} ${Format.heading(field.bearingDeg)}T",
-                        field.longestRunwayFt?.let { "${Format.altitude(it.toDouble())} runway" },
-                        reach?.fold({ if (it) "within a glide" else null }, { "glide not worked out" }),
-                    )
-                    ListItem(
-                        onClick = { onOpen(field.ident) },
-                        supportingContent = { Text(parts.joinToString(" · "), color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier.fillMaxWidth().semantics { onClick(label = openWord, action = null) },
-                        content = { Text("${field.ident}  ${field.name}", maxLines = if (largeType()) 3 else 1, overflow = TextOverflow.Ellipsis) },
-                    )
-                    HorizontalDivider()
-                }
-            }
-        }
     }
 }
 

@@ -5,7 +5,6 @@ import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,19 +16,15 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -37,11 +32,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -49,7 +42,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.coach.CoachScreen
 import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.rememberHaptics
@@ -59,16 +51,16 @@ import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
-import app.wingtipmaps.android.ui.WingtipIcons
-import app.wingtipmaps.android.ui.sheet.CardSheet
+import app.wingtipmaps.android.ui.sheet.CardExit
+import app.wingtipmaps.android.ui.sheet.CardPage
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
 /**
- * The pilot's logbook (LogbookModel), Material's way: a large flexible top
- * app bar with the totals under the title that collapses as the list
- * scrolls, what the currency says in a card at the top (the gateway's
+ * The pilot's logbook (LogbookModel), Material's way: a page over the
+ * search (CardPage), ← and a large flexible bar with the totals under the
+ * title that collapses as the list scrolls, what the currency says in a card at the top (the gateway's
  * words; nothing is worked out here), the Coach, then each entry, newest
  * first, under a sticky month header (LogbookEntryRow), each edited in its
  * row and deleted with Material's Snackbar offering its Undo. Add Flight, the extended
@@ -76,17 +68,16 @@ import java.time.format.DateTimeParseException
  * shrinks to its icon while the list scrolls; a flight is also added from
  * a recorded track ("Flight Logged") or a photo of a paper page.
  *
- * @param onClose the bar's Close (decision 0015); with none, the screen
- *   sits under its host's own title row and draws no bar of its own.
+ * @param onCoach the Coach opened on the page's own stack, so Back comes
+ *   back to the Logbook, as Settings' pages come back to Settings.
  */
 @Composable
-fun LogbookScreen(model: LogbookModel = viewModel(), onClose: (() -> Unit)? = null) {
+fun LogbookScreen(exit: CardExit, onCoach: () -> Unit, model: LogbookModel = viewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     var photo by remember { mutableStateOf(false) }
-    var coach by rememberSaveable { mutableStateOf(false) }
     // The Coach asked for by its name (OpenScreen), once the Logbook is open.
     val wanted by ScreenRequests.wanted.collectAsStateWithLifecycle()
-    LaunchedEffect(wanted) { if (ScreenRequests.take(setOf(Screen.COACH)) != null) coach = true }
+    LaunchedEffect(wanted) { if (ScreenRequests.take(setOf(Screen.COACH)) != null) onCoach() }
     // A save felt once it reached the server, not on coming back to a
     // logbook whose last save is already counted.
     val haptics = rememberHaptics()
@@ -97,26 +88,13 @@ fun LogbookScreen(model: LogbookModel = viewModel(), onClose: (() -> Unit)? = nu
     }
     val list = rememberLazyListState()
     val atTop by remember { derivedStateOf { list.firstVisibleItemIndex == 0 } }
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val snackbars = remember { SnackbarHostState() }
     DeletedSnackbar(state.removed, snackbars, model)
-    Scaffold(
-        modifier = Modifier.fillMaxSize().nestedScroll(scroll.nestedScrollConnection),
-        containerColor = Color.Transparent,
-        contentWindowInsets = WindowInsets(0),
+    CardPage(
+        title = stringResource(R.string.logbook),
+        exit = exit,
+        subtitle = state.entries.takeIf { it.isNotEmpty() }?.let { LogbookModel.totals(it) },
         snackbarHost = { SnackbarHost(snackbars) },
-        topBar = {
-            if (onClose != null) {
-                LargeFlexibleTopAppBar(
-                    title = { Text(stringResource(R.string.logbook)) },
-                    subtitle = state.entries.takeIf { it.isNotEmpty() }?.let { e -> { Text(LogbookModel.totals(e)) } },
-                    actions = { IconButton(onClick = onClose) { Icon(WingtipIcons.close, contentDescription = stringResource(R.string.close)) } },
-                    windowInsets = WindowInsets(0),
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                    scrollBehavior = scroll,
-                )
-            }
-        },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 text = { Text(stringResource(R.string.logbook_add_flight)) },
@@ -127,14 +105,12 @@ fun LogbookScreen(model: LogbookModel = viewModel(), onClose: (() -> Unit)? = nu
         },
     ) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), state = list, contentPadding = PaddingValues(bottom = WingtipSpace.Xl * 3)) {
-            item(key = "head") { LogbookHead(state, onCoach = { coach = true }, onPhoto = { photo = true }) }
+            item(key = "head") { LogbookHead(state, onCoach = onCoach, onPhoto = { photo = true }) }
             entries(state, model)
         }
     }
     if (photo) LogbookPhotoSheet(onClose = { photo = false })
     if (state.adding) LogbookAddSheet(state, model)
-    // The Coach in a sheet of its own, under its own collapsing bar.
-    if (coach) CardSheet(onClose = { coach = false }) { CoachScreen(onClose = { coach = false }) }
 }
 
 /** The list's head: what the currency says in a card, the Coach, then

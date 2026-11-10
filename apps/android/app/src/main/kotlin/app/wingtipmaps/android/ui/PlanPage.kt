@@ -70,6 +70,9 @@ import app.wingtipmaps.android.ready.ReadyToFlyRow
 import app.wingtipmaps.android.route.LegWords
 import app.wingtipmaps.android.route.RoutePointMenu
 import app.wingtipmaps.android.share.ShareRouteButton
+import app.wingtipmaps.android.strip.StripData
+import app.wingtipmaps.android.ui.sheet.CardExit
+import app.wingtipmaps.android.ui.sheet.CardPage
 import kotlinx.coroutines.launch
 
 /**
@@ -79,20 +82,22 @@ import kotlinx.coroutines.launch
  * Airplane, the route's fields with Add a Stop (RouteStops), Ready to Fly,
  * then all the FPL tab had, in its order: the route typed and planned,
  * Share and the dry run, the flight rules, and the nav log's legs as the
- * planner streams them, each opening its leg's figures (LegSheet), with
+ * planner streams them, each opening its leg's card (RouteLegCard, the
+ * map's own), with
  * the totals and its fuel check. Every figure on it is the planner's,
  * written by Format; a leg's cruise altitude is FL-045 as the cruise
  * controls write it (decision 0009).
  *
  * @param onClose back to what the search shows with nothing typed.
  * @param onField a field of the route's card.
+ * @param onLeg a leg's card, by its number from the departure.
+ * @param onAddStopAfter the search opened for a stop after a point.
  * @param onFind the search opened, for an end not given yet.
  * @param onAddStop the search opened for a stop.
  */
 @Composable
-fun PlanPage(plan: Plan, onClose: () -> Unit, onField: (String) -> Unit, onFind: () -> Unit, onAddStop: () -> Unit) {
+fun PlanPage(plan: Plan, onClose: () -> Unit, onField: (String) -> Unit, onLeg: (Int) -> Unit, onFind: () -> Unit, onAddStop: () -> Unit, onAddStopAfter: (String) -> Unit) {
     val state by plan.state.collectAsStateWithLifecycle()
-    var open by remember { mutableStateOf<Int?>(null) }
     val dryRun: DryRun = viewModel()
     val dryRunState by dryRun.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -107,40 +112,45 @@ fun PlanPage(plan: Plan, onClose: () -> Unit, onField: (String) -> Unit, onFind:
     }
     val pad = Modifier.padding(horizontal = WingtipSpace.Lg)
 
-    LazyColumn(state = list, modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-        item(key = "head") { Box(pad) { PlanHead(state, tail, onClose) } }
-        item(key = "doors") { Box(pad) { PlanButtons(state.routed, onBrief = { ScreenRequests.ask(Screen.BRIEF) }, onNavLog = { toLegs() }) } }
-        item(key = "stops") { Box(pad) { RouteStops(state, onField = onField, onFind = onFind, onAddStop = onAddStop) } }
-        if (state.routed) item(key = "ready") { Box(pad) { ReadyToFlyRow(plan, onSetRoute = null) } }
-        item(key = "route") { Box(pad) { RouteFields(plan, state, dryRun) } }
-        item(key = "rules") { Box(pad) { FlightRulesRow(onChanged = { if (state.routed) plan.plan() }) } }
-        // The cruise altitude, under the rules it is picked by (AltitudeRow).
-        item(key = "altitude") { Box(pad) { AltitudeRow(plan, state) } }
-        item(key = "problem") {
-            Column(pad) {
-                ProblemLine(state.problem ?: dryRunState.problem)
-                // The nav log kept for the air, shown with no signal: how old.
-                KeptAgeLine(KeptForAir.PLAN, state.plannedAtMs.takeIf { state.kept })
+    // The route's name large in the bar, folding into it as the plan
+    // scrolls, ✕ always in view (the scrolling rule, 2026-11-10); no ←, as
+    // the plan sits under the search.
+    val title = if (state.dep.isEmpty() && state.dest.isEmpty()) stringResource(R.string.plan) else StripData.routeName(state.dep, state.dest, state.stops)
+    CardPage(title = title, exit = CardExit.one(onClose), showBack = false) { padding ->
+        LazyColumn(state = list, modifier = Modifier.fillMaxSize().padding(padding), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+            item(key = "head") { Box(pad) { PlanHead(state, tail) } }
+            item(key = "doors") { Box(pad) { PlanButtons(state.routed, onBrief = { ScreenRequests.ask(Screen.BRIEF) }, onNavLog = { toLegs() }) } }
+            item(key = "stops") { Box(pad) { RouteStops(state, onField = onField, onFind = onFind, onAddStop = onAddStop) } }
+            if (state.routed) item(key = "ready") { Box(pad) { ReadyToFlyRow(plan, onSetRoute = null) } }
+            item(key = "route") { Box(pad) { RouteFields(plan, state, dryRun) } }
+            item(key = "rules") { Box(pad) { FlightRulesRow(onChanged = { if (state.routed) plan.plan() }) } }
+            // The cruise altitude, under the rules it is picked by (AltitudeRow).
+            item(key = "altitude") { Box(pad) { AltitudeRow(plan, state) } }
+            item(key = "problem") {
+                Column(pad) {
+                    ProblemLine(state.problem ?: dryRunState.problem)
+                    // The nav log kept for the air, shown with no signal: how old.
+                    KeptAgeLine(KeptForAir.PLAN, state.plannedAtMs.takeIf { state.kept })
+                }
             }
-        }
-        itemsIndexed(state.legs, key = { i, _ -> "leg-$i" }) { i, leg ->
-            Column(pad) {
-                LegRow(leg, onOpen = { open = i }) { RoutePointMenu(leg.to, plan) }
-                HorizontalDivider()
+            itemsIndexed(state.legs, key = { i, _ -> "leg-$i" }) { i, leg ->
+                Column(pad) {
+                    LegRow(leg, onOpen = { onLeg(i) }) { RoutePointMenu(leg.to, plan, onAddStopAfter) }
+                    HorizontalDivider()
+                }
             }
-        }
-        state.totals?.let { totals ->
-            item(key = "totals") { Column(pad) { TotalsRows(totals, rememberAirplaneNow(plan)) } }
-            // The route and its nav log in plain words, under the totals.
-            item(key = "ai-route") {
-                Box(pad) { AiWordsRow(AiTask.ROUTE, key = state.legs.hashCode().toString(), sources = { AiSources.route(state.legs, state.totals, state.aircraft) }) }
+            state.totals?.let { totals ->
+                item(key = "totals") { Column(pad) { TotalsRows(totals, rememberAirplaneNow(plan)) } }
+                // The route and its nav log in plain words, under the totals.
+                item(key = "ai-route") {
+                    Box(pad) { AiWordsRow(AiTask.ROUTE, key = state.legs.hashCode().toString(), sources = { AiSources.route(state.legs, state.totals, state.aircraft) }) }
+                }
             }
+            // The route kept for the air in one tap, once it has a course.
+            if (state.course != null) item(key = "keep-for-air") { Box(pad) { KeepForAirRow(plan) } }
+            item(key = "foot") { Spacer(Modifier.height(WingtipSpace.Xl)) }
         }
-        // The route kept for the air in one tap, once it has a course.
-        if (state.course != null) item(key = "keep-for-air") { Box(pad) { KeepForAirRow(plan) } }
-        item(key = "foot") { Spacer(Modifier.height(WingtipSpace.Xl)) }
     }
-    open?.let { i -> state.legs.getOrNull(i)?.let { LegSheet(number = null, leg = it, onClose = { open = null }) } }
 }
 
 /** Where the legs start in the plan's list of a routed plan (head,

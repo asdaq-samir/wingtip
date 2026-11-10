@@ -3,7 +3,6 @@ package app.wingtipmaps.android.coach
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,16 +21,12 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,7 +35,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -54,44 +48,26 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.LocalWingtipPalette
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
-import app.wingtipmaps.android.ui.WingtipIcons
+import app.wingtipmaps.android.ui.sheet.CardExit
+import app.wingtipmaps.android.ui.sheet.CardPage
 
 /**
  * The Logbook's Coach (the web's CoachPage): the pilot's own proficiency
- * plan, under Material's medium flexible top app bar, which collapses as
- * the list scrolls. On the pilot's ask, glance first: the certificate and
+ * plan, a page on the Logbook's stack (CardPage: ← and Material's medium
+ * flexible top app bar, which collapses as the list scrolls). On the pilot's ask, glance first: the certificate and
  * Make My Plan in one card at the top, the screen's one filled button,
  * then the reminders, the plan in a few words, the sessions -- what,
  * where, how long, with an instructor, where it may count toward WINGS,
  * and the model's line under each -- then what is due and when (14 CFR
  * 61.56, 61.57), then the weak areas with their evidence folded under
  * each. All of it the engine's (proficiency_plan) but the words.
- *
- * @param onClose the bar's Close (decision 0015); with none, the screen
- *   sits under its host's own title row and draws no bar of its own.
  */
 @Composable
-fun CoachScreen(onClose: (() -> Unit)? = null) {
+fun CoachScreen(exit: CardExit) {
     val context = LocalContext.current
     val model = viewModel { CoachModel(keeper = CertificatePreference.of(context)) }
     val state by model.state.collectAsStateWithLifecycle()
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    Scaffold(
-        modifier = Modifier.fillMaxSize().nestedScroll(scroll.nestedScrollConnection),
-        containerColor = Color.Transparent,
-        contentWindowInsets = WindowInsets(0),
-        topBar = {
-            if (onClose != null) {
-                MediumFlexibleTopAppBar(
-                    title = { Text(stringResource(R.string.coach)) },
-                    actions = { IconButton(onClick = onClose) { Icon(WingtipIcons.close, contentDescription = stringResource(R.string.close)) } },
-                    windowInsets = WindowInsets(0),
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                    scrollBehavior = scroll,
-                )
-            }
-        },
-    ) { padding ->
+    CardPage(title = stringResource(R.string.coach), exit = exit) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding).padding(horizontal = WingtipSpace.Lg), contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
             item(key = "make") { MakeCard(state, model) }
             state.plan?.let { plan(it, state) }

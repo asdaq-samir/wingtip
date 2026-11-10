@@ -2,22 +2,18 @@ package app.wingtipmaps.android.route
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,8 +22,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
@@ -52,14 +46,13 @@ import app.wingtipmaps.android.ui.WingtipIcons
  * flies from the airplane while it is under way, else from the departure.
  */
 @Composable
-fun RoutePointMenu(ident: String, plan: Plan) {
+fun RoutePointMenu(ident: String, plan: Plan, onAddStopAfter: (String) -> Unit) {
     val state by plan.state.collectAsStateWithLifecycle()
     val actions = PointActions.of(ident, state)
     if (actions.isEmpty()) return
     val inFlight by InFlight.shared.state.collectAsStateWithLifecycle()
     val haptics = rememberHaptics()
     var open by rememberSaveable(ident) { mutableStateOf(false) }
-    var adding by rememberSaveable(ident) { mutableStateOf(false) }
     val run: (Action) -> Unit = { action ->
         open = false
         when (action) {
@@ -72,7 +65,8 @@ fun RoutePointMenu(ident: String, plan: Plan) {
                 haptics.tap(WingtipHaptic.DIRECT_TO)
             }
             Action.HOLD_HERE -> PointActions.chartPoint(ident, state)?.let(plan::holdHere)
-            Action.ADD_STOP_AFTER -> adding = true
+            // The one search, for the stop: no field of its own.
+            Action.ADD_STOP_AFTER -> onAddStopAfter(ident)
             Action.MOVE_UP -> plan.moveStop(ident, -1)
             Action.MOVE_DOWN -> plan.moveStop(ident, 1)
             Action.REMOVE -> plan.removeStop(ident)
@@ -95,26 +89,6 @@ fun RoutePointMenu(ident: String, plan: Plan) {
             }
         }
     }
-    if (adding) AddStopAfterDialog(ident, onAdd = { plan.addStopAfter(ident, it); adding = false }, onClose = { adding = false })
-}
-
-/** Add a Stop After: the ident typed, added just after the point. */
-@Composable
-private fun AddStopAfterDialog(after: String, onAdd: (String) -> Unit, onClose: () -> Unit) {
-    var typed by rememberSaveable { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onClose,
-        title = { Text(stringResource(R.string.point_add_stop_after_title, after)) },
-        text = {
-            OutlinedTextField(
-                value = typed, onValueChange = { typed = it.uppercase() }, singleLine = true,
-                label = { Text(stringResource(R.string.point_stop_ident)) },
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Done),
-            )
-        },
-        confirmButton = { TextButton(onClick = { onAdd(typed) }, enabled = typed.isNotBlank()) { Text(stringResource(R.string.point_add)) } },
-        dismissButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.cancel)) } },
-    )
 }
 
 @Composable

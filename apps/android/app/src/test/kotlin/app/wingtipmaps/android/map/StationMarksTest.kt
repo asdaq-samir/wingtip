@@ -164,6 +164,13 @@ class StationMarksTest {
         assertEquals("CIG 008", StationLines.ceiling(800.0, false))
         assertEquals("CIG ///", StationLines.ceiling(null, true))
         assertNull(StationLines.ceiling(null, false))
+        // The layer's own cover where the planner sends it (ceiling_cover).
+        assertEquals("OVC 008", StationLines.ceiling(800.0, false, "OVC"))
+        assertEquals("BKN 025", StationLines.ceiling(2500.0, false, "BKN"))
+        assertEquals("VV 002", StationLines.ceiling(200.0, false, "VV"))
+        assertEquals("VV ///", StationLines.ceiling(null, true, "VV"))
+        assertEquals("CIG 008", StationLines.ceiling(800.0, false, null))
+        assertEquals("CIG 008", StationLines.ceiling(800.0, false, "SCT"))
     }
 
     @Test

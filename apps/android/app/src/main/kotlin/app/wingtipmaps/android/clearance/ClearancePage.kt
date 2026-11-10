@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -57,7 +58,8 @@ import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
 import app.wingtipmaps.android.ui.WingtipIcons
-import app.wingtipmaps.android.ui.sheet.WingtipSheet
+import app.wingtipmaps.android.ui.sheet.CardExit
+import app.wingtipmaps.android.ui.sheet.CardPage
 import java.util.Locale
 
 /**
@@ -69,14 +71,15 @@ import java.util.Locale
  * frequency, transponder; AIM 4-4-3); the pilot's read back checked by
  * the engine line by line; the route cleared against the one filed; and
  * Enter the Route, which plans it at the altitude to expect (else the
- * one to maintain). The transcript folds under them. Enter the Route,
- * the card's one filled button, and Read Back Again sit at the sheet's
- * foot, out of the scroll, where the thumb finds them every time
+ * one to maintain). A page over the search (CardPage), Listen in its bar,
+ * from the search's "clearance" or "radio" and the strip's chip alike.
+ * The transcript folds under them. Enter the Route, the card's one filled
+ * button, and Read Back Again sit at the page's foot, out of the scroll, where the thumb finds them every time
  * (Material's bottom action, Google's finding on big actions near the
  * thumb); the clearance understood is felt as Android's Confirm.
  */
 @Composable
-fun ClearanceSheet(plan: Plan, fix: OwnShip.Fix?, onClose: () -> Unit) {
+fun ClearancePage(plan: Plan, fix: OwnShip.Fix?, exit: CardExit, onEntered: () -> Unit) {
     val context = LocalContext.current
     val voice = remember(context) { RadioListener.canListen(context) }
     val radio = remember(context) { if (voice) RadioListener.of(context) else null }
@@ -117,8 +120,8 @@ fun ClearanceSheet(plan: Plan, fix: OwnShip.Fix?, onClose: () -> Unit) {
         if (understood && !wasUnderstood) haptics.tap(UNDERSTOOD)
         wasUnderstood = understood
     }
-    WingtipSheet(
-        title = stringResource(R.string.clearance), onClose = onClose, full = true,
+    CardPage(
+        title = stringResource(R.string.clearance), exit = exit,
         actions = {
             if (radio != null) {
                 FilledTonalButton(onClick = { if (listening) model.stopListening() else withMic(model::listen) }) {
@@ -127,9 +130,35 @@ fun ClearanceSheet(plan: Plan, fix: OwnShip.Fix?, onClose: () -> Unit) {
                 }
             }
         },
-    ) {
+        bottomBar = {
+            if (state.clearance != null && state.heard) {
+                // The card's actions at its foot, out of the scroll, as wide as
+                // the sheet; the sheet itself clears the gesture bar.
+                Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm),
+                        horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
+                    ) {
+                        if (radio != null) {
+                            OutlinedButton(onClick = { withMic(model::readBackAgain) }, modifier = Modifier.weight(1f)) {
+                                Text(stringResource(R.string.clearance_read_back_again))
+                            }
+                        }
+                        Button(
+                            onClick = {
+                                model.entry()?.let { e -> plan.useLeg(e.dep, e.dest, e.stops, e.altitudeFt ?: planned.altitudeFt, planned.depart) }
+                                onEntered()
+                            },
+                            enabled = state.ready,
+                            modifier = Modifier.weight(1f),
+                        ) { Text(stringResource(R.string.clearance_enter)) }
+                    }
+                }
+            }
+        },
+    ) { padding ->
         Column(
-            Modifier.weight(1f, fill = false).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Md),
+            Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Md),
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
         ) {
             // The flight the clearance is for, as the canvas heads it.
@@ -158,30 +187,6 @@ fun ClearanceSheet(plan: Plan, fix: OwnShip.Fix?, onClose: () -> Unit) {
                 }
             } else {
                 HeardLog(heardLog, model::type)
-            }
-        }
-        if (state.clearance != null && state.heard) {
-            // The card's actions at its foot, out of the scroll, as wide as
-            // the sheet; the sheet itself clears the gesture bar.
-            Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm),
-                    horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
-                ) {
-                    if (radio != null) {
-                        OutlinedButton(onClick = { withMic(model::readBackAgain) }, modifier = Modifier.weight(1f)) {
-                            Text(stringResource(R.string.clearance_read_back_again))
-                        }
-                    }
-                    Button(
-                        onClick = {
-                            model.entry()?.let { e -> plan.useLeg(e.dep, e.dest, e.stops, e.altitudeFt ?: planned.altitudeFt, planned.depart) }
-                            onClose()
-                        },
-                        enabled = state.ready,
-                        modifier = Modifier.weight(1f),
-                    ) { Text(stringResource(R.string.clearance_enter)) }
-                }
             }
         }
     }

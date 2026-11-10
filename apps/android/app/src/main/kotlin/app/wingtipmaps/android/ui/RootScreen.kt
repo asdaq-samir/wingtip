@@ -17,12 +17,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -32,25 +30,21 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.airplane.AirplaneProfileHost
-import app.wingtipmaps.android.airplane.AskFigures
-import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.api.AssistantClient
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.api.AssistantTurn
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.dryrun.DryRun
 import app.wingtipmaps.android.emergency.EmergencyHost
 import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.logbook.AutoLogbookHost
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.navigation.CardRequests
-import app.wingtipmaps.android.navigation.OverRequests
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.ready.ReadyToFlyHost
-import app.wingtipmaps.android.ready.ReadyToFlyRow
-import app.wingtipmaps.android.route.RouteLegHost
 import app.wingtipmaps.android.route.RouteLegModel
 import app.wingtipmaps.android.route.RouteToolbar
 import app.wingtipmaps.android.route.RouteUndoSnackbar
@@ -63,7 +57,7 @@ import app.wingtipmaps.android.strip.StripLayout
 import app.wingtipmaps.android.strip.StripModel
 import app.wingtipmaps.android.ui.OpenScreen.Where
 import app.wingtipmaps.android.ui.sheet.MapSheet
-import app.wingtipmaps.android.ui.sheet.WingtipSheet
+import app.wingtipmaps.android.ui.sheet.halfWindow
 import app.wingtipmaps.android.ui.sheet.rememberMapSheetState
 import app.wingtipmaps.android.welcome.WelcomeHost
 import app.wingtipmaps.android.widget.NextFlightFeed
@@ -71,19 +65,24 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 /**
- * The map under the docked sheet, as Apple Maps has it and the owner's
- * one search of 2026-11-09 draws it: the sheet's first row the one search
- * with its microphone and the account button (OneSearch), and under it
- * what the search shows with nothing typed, the plan, or a card
- * (SheetPages); on a tablet or an unfolded phone the same in Material's
- * list and detail panes beside the map (WidePanes), with the route's
- * floating toolbar over the map while the plan is open; on a half-folded
- * phone the map above the fold and the panel below (TabletopPanes); or
- * the strip layout
- * (Settings' Layout), with the same search. The sheet is Material's
- * standard bottom sheet (MapSheet), at its peek -- the search -- or
- * expanded; Back lowers it, then goes back a page, then leaves the app,
- * the system's predictive back showing where it goes.
+ * The map under the docked sheet, as Google Maps has it on Android and the
+ * card rule of 2026-11-10 lays it out: the sheet's first row the one
+ * search with its microphone and the account button (OneSearch), and
+ * under it what the search shows with nothing typed or the plan; a thing's
+ * card or a page -- a field, an airplane, a fix, a leg, the Brief,
+ * Settings -- takes the search's place with its name and ← (CardPage) and
+ * fills the sheet below, on the sheet's own stack (SheetNav, SheetCard),
+ * the same card from every way in. On a tablet or an unfolded phone the
+ * same sits in Material's list and detail panes beside the map
+ * (WidePanes), the cards in the detail pane, with the route's floating
+ * toolbar over the map while the plan is open; on a half-folded phone the
+ * map above the fold and the panel below (TabletopPanes); or the strip
+ * layout (Settings' Layout), whose sheet shows the same cards. The sheet
+ * is Material's standard bottom sheet (MapSheet), at its peek or
+ * expanded; Back closes the top card first, then the next, and only with
+ * no card open lowers the sheet, then leaves the app, the system's
+ * predictive back showing where it goes. Only the emergency assistant is
+ * full screen (EmergencyHost).
  *
  * @param pending a link opened in the app (MainActivity); `onHandled`
  *   once it has been taken.
@@ -95,6 +94,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val airports: AirportModel = viewModel()
     val strip: StripModel = viewModel()
     val assistant: AssistantClient = viewModel()
+    val dryRun: DryRun = viewModel()
     val ownShip = rememberOwnShipControl()
     val sheet = rememberMapSheetState()
     // The screen's Snackbars: a route edit's Undo (RouteUndoSnackbar).
@@ -102,10 +102,6 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val scope = rememberCoroutineScope()
     val resources = LocalResources.current
     val search = rememberSearchControl()
-    var picked by remember { mutableStateOf<MapPick?>(null) }
-    var asking by rememberSaveable { mutableStateOf(false) }
-    var nearestOpen by rememberSaveable { mutableStateOf(false) }
-    var briefOpen by rememberSaveable { mutableStateOf(false) }
     var source by remember { mutableStateOf<AssistantSource?>(null) }
     var raised by remember { mutableIntStateOf(0) }
     // Under way: own ship on and at flying speed (the engine's `underway`).
@@ -121,11 +117,25 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val strips by strip.state.collectAsStateWithLifecycle()
     val conversation by assistant.conversation.collectAsStateWithLifecycle()
 
-    // The sheet's pages (SheetNav), a page shown raising the sheet from its peek.
-    val raise: () -> Unit = { scope.launch { if (sheet.atPeek) sheet.expand() } }
-    val pages = rememberSheetNav(wide, active = !stripLayout, airports, onShown = raise)
-    val showPlan: () -> Unit = { if (stripLayout) raised++ else pages.show(SheetPage.Plan) }
-    val openField: (String) -> Unit = { ident -> if (stripLayout) picked = MapPick.Airport(ident) else pages.show(SheetPage.Airport(ident)) }
+    // The sheet's cards and pages (SheetNav): a card opens at half, its
+    // peek while it is open, and grows when pulled up; the plan raises the
+    // sheet from the search's peek (the strip's by `raised`).
+    val pages = rememberSheetNav(wide, airports) { page ->
+        when {
+            page.covers -> if (!stripLayout) scope.launch { sheet.lower() }
+            stripLayout -> raised++
+            else -> scope.launch { if (sheet.atPeek) sheet.expand() }
+        }
+    }
+    val showPlan: () -> Unit = {
+        if (stripLayout) {
+            pages.closeAll()
+            raised++
+        } else {
+            pages.show(SheetPage.Plan)
+        }
+    }
+    val openField: (String) -> Unit = { ident -> pages.show(SheetPage.Airport(ident)) }
 
     val link by pending.collectAsStateWithLifecycle()
     val shared: SharedFlightModel = viewModel()
@@ -153,11 +163,12 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         val screen = wanted ?: return@LaunchedEffect
         when (val where = OpenScreen.whereOf(screen)) {
             Where.Plan -> showPlan()
-            Where.Search -> search.open()
-            is Where.Sheet -> OverRequests.open(where.over)
-            Where.Brief -> briefOpen = true
-            Where.Nearest -> nearestOpen = true
-            Where.Ask -> asking = true
+            // The search is under the cards: they close for it.
+            Where.Search -> {
+                pages.closeAll()
+                search.open()
+            }
+            is Where.Page -> pages.open(where.page)
             Where.Emergency -> EmergencyOpen.open(EmergencyOpen.From.LINK)
             Where.None -> {}
         }
@@ -166,25 +177,27 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         if (!inside) ScreenRequests.take(setOf(screen))
     }
 
-    // A tap on the map: a field's card, a leg's sheet, or the card over the map.
-    val legs: RouteLegModel = viewModel()
-    val onPick: (MapPick) -> Unit = { pick ->
-        when (pick) {
-            is MapPick.RouteLeg -> legs.open(pick.index)
-            is MapPick.Airport -> openField(pick.ident)
-            else -> picked = pick
-        }
-    }
-    val onNearest = { nearestOpen = true }
+    // A tap on the map: the thing's one card, over the search (SheetPage.of).
+    val onPick: (MapPick) -> Unit = { pick -> pages.show(SheetPage.of(pick)) }
     val card by CardRequests.wanted.collectAsStateWithLifecycle()
-    LaunchedEffect(card) { CardRequests.take()?.let(onPick) }
+    LaunchedEffect(card) { CardRequests.take()?.let(pages::open) }
+    // The leg whose card is on top, cased in green on the map.
+    val legs: RouteLegModel = viewModel()
+    LaunchedEffect(pages.shown) {
+        val leg = pages.shown as? SheetPage.Leg
+        if (leg != null) legs.open(leg.index) else legs.close()
+    }
 
-    // The one search's line and picks, the same in both layouts.
+    // The one search's line and picks, the same in every layout.
     val routed = planState.routed
     val askContext = StripModel.contextOf(planState, fix, pilot)
-    val doLine: (String) -> Unit = { line -> strip.submit(line, plan, pilot, fix, assistant, askContext) { OpenScreen.field(it, routed) } }
+    val flyDryRun = {
+        dryRun.start(planState)
+        showPlan()
+    }
+    val doLine: (String) -> Unit = { line -> strip.submit(line, plan, pilot, fix, assistant, askContext) { OpenScreen.field(it, routed, flyDryRun) } }
     val picks = SearchPicks(
-        plan, fix, search.addingStop, onAirport = openField, onPlan = showPlan,
+        plan, fix, search.addingStop, search.stopAfter, onAirport = openField, onPlan = showPlan,
         ask = { q -> strip.ask(q, assistant, askContext) },
         say = strip::say, noRoute = { ident -> resources.getString(R.string.plan_a_route_first, ident) },
     )
@@ -204,15 +217,34 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             )
         }
     }
-    val pagesView: @Composable (Dp, Modifier, Boolean) -> Unit = { bar, modifier, backEnabled ->
-        SheetPagesHost(pages, plan, airports, bar, answer, picks::pick, search, backEnabled, modifier)
+    val cardView: @Composable (SheetPage) -> Unit = { page ->
+        SheetCard(page, pages, plan, session, ownShip.ownShip, ownShip.on, assistant, airports, showPlan)
+    }
+    val pagesView: @Composable (Modifier, Boolean) -> Unit = { modifier, backEnabled ->
+        SheetPagesHost(
+            pages, backEnabled, modifier,
+            // The strip's field and timeline are its Home and its plan.
+            home = { if (!stripLayout) Home(plan, answer, picks::pick) },
+            plan = {
+                PlanPage(
+                    plan, onClose = pages::closePlan, onField = { pages.push(SheetPage.Airport(it)) },
+                    onLeg = { pages.push(SheetPage.Leg(it)) }, onFind = search::open, onAddStop = search::addStop,
+                    onAddStopAfter = search::addStopAfter,
+                )
+            },
+            card = cardView,
+        )
     }
 
-    val mapView: @Composable (Dp) -> Unit = { covered -> MapPane(plan, ownShip, covered = covered, onPick = onPick, onAsk = { asking = true }, onNearest = onNearest) }
+    val mapView: @Composable (Dp) -> Unit = { covered ->
+        MapPane(plan, ownShip, covered = covered, onPick = onPick, onAsk = { pages.show(SheetPage.Ask) }, onNearest = { pages.show(SheetPage.Nearest) })
+    }
     if (stripLayout) {
-        StripLayout(plan = plan, session = session, ownShip = ownShip.ownShip, flying = flying, raise = raised, searchRow = searchRow, map = {
-            MapPane(plan, ownShip, covered = 0.dp, onPick = onPick, onAsk = null, onNearest = onNearest)
-        })
+        StripLayout(
+            plan = plan, session = session, ownShip = ownShip.ownShip, flying = flying, raise = raised, searchRow = searchRow,
+            covered = pages.covered, cards = { modifier -> pagesView(modifier, true) },
+            map = { MapPane(plan, ownShip, covered = 0.dp, onPick = onPick, onAsk = null, onNearest = { pages.show(SheetPage.Nearest) }) },
+        )
     } else if (wide) {
         WidePanes(
             pages,
@@ -220,10 +252,10 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
                 Column(Modifier.fillMaxSize()) {
                     searchRow(null)
                     // The list pane keeps Home or the plan; its Back waits on the card's.
-                    pagesView(0.dp, Modifier.fillMaxSize(), pages.card == null)
+                    pagesView(Modifier.fillMaxSize(), pages.card == null)
                 }
             },
-            detail = { shown -> SheetPageContent(shown, pages, plan, airports, answer, picks::pick, search) },
+            detail = cardView,
             // The route being worked on: its floating toolbar over the map,
             // an edit's Snackbar over that.
             map = {
@@ -239,51 +271,29 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         )
     } else if (fold != null) {
         TabletopPanes(fold, map = { Box(Modifier.fillMaxSize()) { mapView(0.dp); SnackbarHost(snackbars, Modifier.align(Alignment.BottomCenter)) } }) {
-            searchRow(null)
-            pagesView(0.dp, Modifier.weight(1f), true)
+            // A card takes the search's place, as on the phone's sheet.
+            if (!pages.covered) searchRow(null)
+            pagesView(Modifier.weight(1f), true)
         }
     } else {
         // Over the navigation bar (edge to edge): its peek is the search above it.
         val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        MapSheet(state = sheet, peek = SearchPeek + navigationBar, snackbars = snackbars, body = { covered -> mapView(covered) }) {
-            searchRow(null)
-            // Back lowers the expanded sheet first (MapSheet), then goes back a page.
-            pagesView(navigationBar, Modifier.weight(1f), sheet.atPeek)
+        val peek = if (pages.covered) halfWindow() else SearchPeek + navigationBar
+        MapSheet(state = sheet, peek = peek, snackbars = snackbars, lowerOnBack = !pages.covered, body = { covered -> mapView(covered) }) {
+            // A card takes the search's place, its name and ← where the search was.
+            if (!pages.covered) searchRow(null)
+            // Back closes a card at once; with none it lowers the expanded
+            // sheet first (MapSheet), then goes back a page.
+            pagesView(Modifier.weight(1f).padding(bottom = navigationBar), pages.covered || sheet.atPeek)
         }
     }
 
-    if (asking) {
-        WingtipSheet(title = stringResource(R.string.ask), onClose = { asking = false }, full = true) {
-            AskScreen(plan = plan, session = session, ownShip = ownShip.ownShip, client = assistant)
-        }
-    }
-    if (nearestOpen) {
-        NearestSheet(
-            fix = fix,
-            ask = { AskFigures(rememberAirplaneNow(plan), "glide") },
-            onOpen = { ident -> nearestOpen = false; openField(ident) },
-            onClose = { nearestOpen = false },
-        )
-    }
-    // The Brief by its name, with Ready to Fly at its head.
-    if (briefOpen) {
-        val brief: BriefModel = viewModel()
-        LaunchedEffect(planState.totals, planState.planning) { brief.brief(planState) }
-        BriefSheet(brief, planState, signedIn = pilot != null, onClose = { briefOpen = false }) {
-            ReadyToFlyRow(plan, onSetRoute = { briefOpen = false; showPlan() })
-        }
-    }
-    val over by OverRequests.shown.collectAsStateWithLifecycle()
-    over?.let { OverSheet(it, plan, session, ownShip.ownShip, assistant, onClose = OverRequests::close, onToPlan = { OverRequests.closeAll(); showPlan() }) }
-    picked?.let { pick -> MapCardSheet(pick, plan, onClose = { picked = null }, onToPlan = { picked = null; showPlan() }) }
-    source?.let { shown -> SourceSheet(shown, onClose = { source = null }) }
-    RouteLegHost(plan, ownShipOn = ownShip.on, model = legs)
+    source?.let { shown -> SourceDialog(shown, onClose = { source = null }) }
     // The strip has no plan to edit, so no Snackbar of its own.
     if (!stripLayout) RouteUndoSnackbar(plan, snackbars)
     EmergencyHost(plan, ownShip)
     SharedFlightHost(shared, plan)
-    // An airplane's card: in the sheet or the panes, else over the map.
-    AirplaneProfileHost(plan, session, inSheet = !stripLayout, onFlown = showPlan)
+    AirplaneProfileHost(session)
     ReadyToFlyHost(plan, ownShipOn = ownShip.on, underway = inFlight.underway, onSetRoute = if (stripLayout) null else showPlan)
     AutoLogbookHost(plan, session)
     NextFlightFeed(plan)

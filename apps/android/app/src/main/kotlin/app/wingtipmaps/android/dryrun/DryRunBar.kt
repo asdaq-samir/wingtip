@@ -2,6 +2,7 @@ package app.wingtipmaps.android.dryrun
 
 import android.os.Build
 import android.view.HapticFeedbackConstants
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -80,6 +81,8 @@ fun DryRunBar(rules: String, modifier: Modifier = Modifier) {
     val row = run.path?.rowAt(run.t)
     LaunchedEffect(row) { if (run.playing && row != null && row > 0) haptics.tap(PASSED) }
     if (!run.open) return
+    // Back ends the run, as its ✕ does: below any card open over it.
+    BackHandler(onBack = dryRun::close)
 
     Column(modifier.padding(horizontal = WingtipSpace.Md), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         HorizontalFloatingToolbar(expanded = true) {

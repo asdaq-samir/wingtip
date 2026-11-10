@@ -19,8 +19,6 @@
     <string name="point_move_down">Move Down</string>
     <string name="point_remove">Remove</string>
     <string name="point_add_stop_after_title">Add a Stop After %1$s</string>
-    <string name="point_add">Add</string>
-    <string name="point_stop_ident">Field, VOR or fix</string>
     <string name="undo_removed">Removed %1$s</string>
     <string name="undo_direct">Direct to %1$s</string>
     <string name="undo_moved">Moved %1$s</string>

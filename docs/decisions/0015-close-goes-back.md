@@ -18,3 +18,12 @@ A new detail view gets a title and a close, not a Back button.
 ## Source
 
 The owner's standing UI rule, 2026-10-22.
+
+## Amended 2026-11-10
+
+The owner approved the card rule. On Android a card or a page takes the
+search's place with its name and ← at the start, as Google Maps does
+("← KOSH"): ← and system Back go back one level, ✕ at the end closes
+every card back to the search. Close at the right still goes back one
+level on the web and the iPhone. Only the emergency assistant is full
+screen, its close where the platform's full-screen page keeps it.

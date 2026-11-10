@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.strip
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,6 +8,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -24,15 +24,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
-import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.api.AssistantClient
-import app.wingtipmaps.android.api.AssistantContext
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.api.AssistantTurn
 import app.wingtipmaps.android.design.Loading
@@ -41,15 +38,14 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.navigation.CardRequests
-import app.wingtipmaps.android.navigation.Over
-import app.wingtipmaps.android.navigation.OverRequests
-import app.wingtipmaps.android.ready.ReadyToFlyRow
+import app.wingtipmaps.android.navigation.ScreenRequests
+import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.ui.BriefModel
-import app.wingtipmaps.android.ui.BriefSheet
-import app.wingtipmaps.android.ui.LegSheet
 import app.wingtipmaps.android.ui.ProblemLine
-import app.wingtipmaps.android.ui.SourceSheet
+import app.wingtipmaps.android.ui.SheetPage
+import app.wingtipmaps.android.ui.SourceDialog
 import app.wingtipmaps.android.ui.sheet.MapSheet
+import app.wingtipmaps.android.ui.sheet.halfWindow
 import app.wingtipmaps.android.ui.sheet.rememberMapSheetState
 
 /**
@@ -60,9 +56,11 @@ import app.wingtipmaps.android.ui.sheet.rememberMapSheetState
  * head with the Brief's verdict and at most three actions (StripHead,
  * BriefModel), and the timeline (stripList). In the air the ribbon
  * carries the airplane and the next checkpoint large (StripAir). The
- * screens the search and the account button open -- a field's card, the
- * airplane, Settings, Ask -- and a checkpoint's leg and the Brief are each
- * a sheet with a close that goes back one level (the root's).
+ * cards and pages the search, the account button, a checkpoint and the
+ * verdict open -- a field, the airplane, a leg, Settings, the Brief, Ask --
+ * take the search's and the strip's place in this sheet, the same cards
+ * as the plan's sheet shows (`cards`, the root's stack), ← and Back
+ * closing each in turn.
  *
  * Mounted by the root beside the plan's sheet as a switch: the root owns
  * the map, own ship, the search and the permission asks, and hands them
@@ -76,6 +74,8 @@ fun StripLayout(
     flying: Boolean,
     map: @Composable () -> Unit,
     searchRow: @Composable (problem: String?) -> Unit,
+    covered: Boolean,
+    cards: @Composable (Modifier) -> Unit,
     raise: Int = 0,
     model: StripModel = viewModel(),
     assistant: AssistantClient = viewModel(),
@@ -102,8 +102,6 @@ fun StripLayout(
     val leaveMs = remember(state.legs, state.depart) { Plan.departMs(state.depart) ?: System.currentTimeMillis() }
     var unfolded by rememberSaveable { mutableStateOf(false) }
     var source by remember { mutableStateOf<AssistantSource?>(null) }
-    var briefOpen by rememberSaveable { mutableStateOf(false) }
-    var leg by remember { mutableStateOf<StripRow.Checkpoint?>(null) }
     val verdict = briefed.verdict.takeIf { state.routed }
 
     // The fields' cards for the chips, asked once each; the Brief once
@@ -128,15 +126,17 @@ fun StripLayout(
     val ask = conversation.turns.lastOrNull()?.takeIf { it.role == AssistantTurn.Role.ASSISTANT }
     val answerShown = ask != null && strip.answerShown
     val dismissAnswer = { assistant.clear(); model.dismissAnswer() }
-    // Back at the pill with the answer's card open closes the card before
-    // leaving the app; the sheet's own back lowers it first (MapSheet).
-    BackHandler(enabled = answerShown) { dismissAnswer() }
-
     // The foot is the handle and the field's row; in the air the ribbon
     // and the next checkpoint too, since they are what is glanced at.
     val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val peek = (if (flying && rows.isNotEmpty()) StripAirPeek else WingtipSize.TapTarget * 2 + WingtipSpace.Lg + WingtipSpace.Xs) + navigationBar
-    MapSheet(state = sheet, peek = peek, body = { Box(Modifier.fillMaxSize()) { map() } }) {
+    val foot = (if (flying && rows.isNotEmpty()) StripAirPeek else WingtipSize.TapTarget * 2 + WingtipSpace.Lg + WingtipSpace.Xs) + navigationBar
+    // A card opens at half, its peek while it is open, and grows when pulled up.
+    val peek = if (covered) halfWindow() else foot
+    MapSheet(state = sheet, peek = peek, lowerOnBack = !covered, body = { Box(Modifier.fillMaxSize()) { map() } }) {
+        // A card takes the search's and the strip's place, as on the plan's
+        // sheet (the root's cards: the sheet's own stack, SheetCard).
+        cards(if (covered) Modifier.weight(1f).padding(bottom = navigationBar) else Modifier.height(0.dp))
+        if (covered) return@MapSheet
         // The one search, the root's (OneSearch), as the plan's sheet has it.
         searchRow(positionProblem)
         if (flying && rows.isNotEmpty()) {
@@ -164,7 +164,7 @@ fun StripLayout(
                 item(key = "head") {
                     StripHead(
                         verdict = verdict, line = StripData.headLine(state), actions = briefed.actions, ways = emptyList(), wayKey = null, onWay = {},
-                        onAction = { briefOpen = true }, onBrief = { briefOpen = true },
+                        onAction = { ScreenRequests.ask(Screen.BRIEF) }, onBrief = { ScreenRequests.ask(Screen.BRIEF) },
                         problem = briefed.problem, modifier = Modifier.padding(horizontal = WingtipSpace.Lg),
                     )
                 }
@@ -184,22 +184,14 @@ fun StripLayout(
                     departDetail = emptyList(), arriveDetail = emptyList(),
                     unfolded = unfolded, onUnfold = { unfolded = true },
                     onField = { CardRequests.open(MapPick.Airport(it)) },
-                    onCheckpoint = { leg = it },
-                    onClearance = { OverRequests.open(Over.Clearance) },
+                    onCheckpoint = { row -> state.legs.indexOf(row.leg).takeIf { it >= 0 }?.let { CardRequests.open(MapPick.RouteLeg(it)) } },
+                    onClearance = { CardRequests.open(SheetPage.Clearance) },
                 )
             }
         }
     }
 
-    // Ready to fly at the Brief's head; a route is typed in the field, so
-    // its Plan the Route closes the Brief to the field.
-    if (briefOpen) {
-        BriefSheet(brief, state, signedIn = pilot != null, onClose = { briefOpen = false }) {
-            ReadyToFlyRow(plan, onSetRoute = { briefOpen = false })
-        }
-    }
-    leg?.let { row -> LegSheet(number = row.number, leg = row.leg, onClose = { leg = null }) }
-    source?.let { shown -> SourceSheet(shown, onClose = { source = null }) }
+    source?.let { shown -> SourceDialog(shown, onClose = { source = null }) }
 }
 
 /** The sheet's foot in the air: the field, the ribbon with the airplane

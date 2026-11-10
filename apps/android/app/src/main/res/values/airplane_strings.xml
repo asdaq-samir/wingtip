@@ -41,7 +41,6 @@
     <string name="profile_on_phone">Kept on this phone. Signed in, it is kept with your account.</string>
     <string name="profile_figures">Figures</string>
     <string name="profile_airplane">Airplane</string>
-    <string name="profile_open">Open the airplane\'s profile</string>
     <string name="profile_problem">The figure could not be saved: %1$s</string>
 
     <string name="offer_title">Keep your airplanes with your account?</string>

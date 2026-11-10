@@ -22,6 +22,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -97,8 +98,11 @@ fun WelcomeHost(plan: Plan, onOpen: (sample: Boolean) -> Unit) {
             progress = { (state.index + 1f) / state.steps.size },
             modifier = Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg).semantics { stateDescription = said },
         )
+        // Each page starts at its top: a scroll of its own per page (the
+        // scrolling rule, 2026-11-10), not the last page's place.
+        val scroll = key(state.index) { rememberScrollState() }
         Column(
-            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(top = WingtipSpace.Lg),
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(scroll).padding(horizontal = WingtipSpace.Lg).padding(top = WingtipSpace.Lg),
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Lg),
         ) {
             // A page gives way to the next with AnimatedContent's own transition.

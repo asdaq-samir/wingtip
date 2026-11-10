@@ -62,7 +62,8 @@ import kotlinx.coroutines.launch
  * The sheet's first row in both layouts, where the tabs were (the owner's
  * one search, 2026-11-09): Material's search bar, "Search airports,
  * airplanes, or ask", then the microphone as a button of its own and the
- * account button (AccountButton, Settings in one tap). Tapped, the bar opens
+ * account button (AccountButton, Settings in one tap). While a card is
+ * open its bar takes this row's place (CardPage). Tapped, the bar opens
  * full screen, as Material's does: with nothing typed the flight's card,
  * Favorites, Recents and Nearest; typing, the results grouped (Airports,
  * Waypoints and Navaids, Airplanes, Do), each one tap (SearchPick, done by
@@ -165,14 +166,19 @@ fun OneSearch(
         if (granted) hearOnce() else onProblem(allowMic)
     }
 
-    val placeholder = stringResource(
-        when {
-            listening -> R.string.voice_speak
-            control.addingStop -> R.string.search_add_stop
-            flying && voice -> R.string.search_hint_flying
-            else -> R.string.search_hint
-        },
-    )
+    val after = control.stopAfter
+    val placeholder = if (after != null && !listening) {
+        stringResource(R.string.point_add_stop_after_title, after)
+    } else {
+        stringResource(
+            when {
+                listening -> R.string.voice_speak
+                control.addingStop -> R.string.search_add_stop
+                flying && voice -> R.string.search_hint_flying
+                else -> R.string.search_hint
+            },
+        )
+    }
     val clear = stringResource(R.string.said_clear_search)
     val inputField: @Composable () -> Unit = {
         SearchBarDefaults.InputField(

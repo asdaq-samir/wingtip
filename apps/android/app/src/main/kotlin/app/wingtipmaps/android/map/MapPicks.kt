@@ -1,5 +1,7 @@
 package app.wingtipmaps.android.map
 
+import kotlinx.serialization.Serializable
+
 /**
  * What a tap on the map picked, from the tapped feature's own fields, as
  * the web's glOverlays builds a card from a feature (volumeOfTile,
@@ -8,14 +10,18 @@ package app.wingtipmaps.android.map
  * a VOR, a fix, a waypoint or an airspace volume; a field's card asks the
  * planner for the field as it opens (AirportModel.open), as the web's.
  * Plain Kotlin from a feature's properties as a map, so the tests read
- * them with no map.
+ * them with no map. Serializable, so a thing's card keeps its place on
+ * the sheet's back stack (SheetPage.Thing) across a rotation.
  */
+@Serializable
 sealed interface MapPick {
     /** A field, by its ident. */
+    @Serializable
     data class Airport(val ident: String) : MapPick
 
     /** A VOR, with the fields its card shows (NASR NAV_BASE as
      *  wingtip.fixes reads it, its remarks NAV_RMK one a line). */
+    @Serializable
     data class Vor(
         val ident: String,
         val name: String?,
@@ -34,12 +40,14 @@ sealed interface MapPick {
 
     /** A low enroute fix or a VFR waypoint: where it is, and the VORs in
      *  the tiles loaded round it, for its place off the nearest. */
+    @Serializable
     data class Point(val ident: String, val vfr: Boolean, val lat: Double, val lon: Double, val vors: List<Vor>) : MapPick
 
     /** A Class B, C or D volume (NASR's Class Airspace shapefile as the
      *  tiles carry it: CLASS, NAME, IDENT, the floor and ceiling, TNI,
      *  WKHR_CODE and WKHR_RMK), and where it was tapped, the point its
      *  card's actions send the route to. */
+    @Serializable
     data class Airspace(
         val id: String,
         val name: String,
@@ -58,13 +66,16 @@ sealed interface MapPick {
     }
 
     /** An airplane of the traffic, by its ICAO address. */
+    @Serializable
     data class Plane(val hex: String) : MapPick
 
     /** A point a finger was held on, or the map's centre asked of by
      *  TalkBack: What's Here, the airspace over it from the ground up. */
+    @Serializable
     data class Here(val lat: Double, val lon: Double) : MapPick
 
     /** A leg of the route's line, by its number from the departure. */
+    @Serializable
     data class RouteLeg(val index: Int) : MapPick
 
     companion object {

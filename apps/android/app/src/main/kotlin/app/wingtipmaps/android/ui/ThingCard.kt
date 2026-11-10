@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -14,12 +15,9 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,65 +39,47 @@ import app.wingtipmaps.android.live.DepartureLine
 import app.wingtipmaps.android.live.SpecialUseRows
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapStyle
-import app.wingtipmaps.android.ui.sheet.CardSheet
-import app.wingtipmaps.android.ui.sheet.WingtipSheet
-import kotlinx.coroutines.launch
+import app.wingtipmaps.android.ui.sheet.CardExit
+import app.wingtipmaps.android.ui.sheet.CardPage
 
 /**
- * The card of what was tapped on the map, as the web's map opens one in
- * its sheet (MapCard: AirspaceCardBody, VorCard, FixCard, WaypointCard,
- * a traffic airplane's; a field's is AirportCard), in the one sheet with its
- * title and its close: what it is, the figures a pilot reads off it, each
- * from the tapped feature's own fields or the engine (MapRules), and the
- * card kind's actions (CardActionRow), the same set as the web's.
+ * The card of a thing on the map, as the web's map opens one in its
+ * sheet (MapCard: AirspaceCardBody, VorCard, FixCard, WaypointCard, a
+ * traffic airplane's; a field's is AirportCard, a leg's RouteLegCard):
+ * one card over the search with its name and ← where the search was
+ * (CardPage), the same from a tap on the map, an alert or a route
+ * point's More Info (CardRequests): what it is, the figures a pilot reads
+ * off it, each from the tapped feature's own fields or the engine
+ * (MapRules), and the card kind's actions (CardActionRow), the same set
+ * as the web's.
  */
 @Composable
-fun MapCardSheet(pick: MapPick, plan: Plan, onClose: () -> Unit, onToPlan: () -> Unit = onClose) {
-    // A field's card is the one AirportCard everywhere, its own top bar
-    // in a card sheet (the strip has no docked sheet to show it in).
-    if (pick is MapPick.Airport) {
-        CardSheet(onClose) { AirportCard(pick.ident, plan, onClose = onClose, onDone = onToPlan) }
-        return
-    }
+fun ThingCard(pick: MapPick, plan: Plan, exit: CardExit) {
     val title = when (pick) {
-        is MapPick.Airport -> pick.ident
         is MapPick.Airspace -> stringResource(R.string.airspace_class, pick.airspaceClass)
         is MapPick.Vor -> pick.ident
         is MapPick.Point -> pick.ident
         is MapPick.Plane -> pick.hex.uppercase()
         is MapPick.Here -> stringResource(R.string.whats_here)
-        // A leg's sheet is its own (RouteLegHost), never a card.
-        is MapPick.RouteLeg -> ""
+        // A field's and a leg's cards are their own (SheetPage.of).
+        is MapPick.Airport -> pick.ident
+        is MapPick.RouteLeg -> stringResource(R.string.route_leg)
     }
     val actions = rememberRouteActions(plan)
     // An action that changes the route closes the card, so the route is
     // seen being planned; Call, Address and Copy leave it open.
     val act: (CardAction, () -> Unit) -> Unit = { action, run ->
         run()
-        if (action != CardAction.CALL && action != CardAction.ADDRESS && action != CardAction.COPY) onClose()
+        if (action != CardAction.CALL && action != CardAction.ADDRESS && action != CardAction.COPY) exit.close()
     }
-    // Live cards refresh on a pull: traffic is heard again at once.
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var hearing by remember { mutableStateOf(false) }
-    val live = pick is MapPick.Plane
-    val refresh = {
-        if (pick is MapPick.Plane) {
-            scope.launch {
-                hearing = true
-                Traffic.of(context).refresh()
-                hearing = false
-            }
-        }
-    }
-    WingtipSheet(title = title, onClose = onClose) {
-        PullToRefreshBox(isRefreshing = hearing, onRefresh = refresh, enabled = live) {
+    CardPage(title = title, exit = exit) { padding ->
+        // Traffic is heard again by itself; no pull to refresh in a sheet.
+        Box(Modifier.padding(padding)) {
             Column(
-                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Lg),
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Lg),
                 verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
             ) {
                 when (pick) {
-                    is MapPick.Airport -> {}
                     is MapPick.Airspace -> {
                         AirspaceCard(pick)
                         PointActions(CardKind.POINT, pick, actions, act)
@@ -119,7 +99,7 @@ fun MapCardSheet(pick: MapPick, plan: Plan, onClose: () -> Unit, onToPlan: () ->
                         HereCard(pick.lat, pick.lon)
                         SpecialUseRows(pick.lat, pick.lon)
                     }
-                    is MapPick.RouteLeg -> {}
+                    is MapPick.Airport, is MapPick.RouteLeg -> {}
                 }
             }
         }
