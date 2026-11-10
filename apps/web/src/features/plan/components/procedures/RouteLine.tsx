@@ -58,7 +58,12 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
             type="button"
             data-testid="route-line-toggle"
             data-disclosure=""
-            aria-label={open ? "Routes: fold" : `Routes: ${words(picked)}, ${others} more`}
+            // What it shows first, then what it is (WCAG 2.5.3, Label in Name).
+            aria-label={
+              open
+                ? "Routes: fold"
+                : `${picked.label}${picked.time ? ` ${picked.time}` : ""}${others > 0 ? ` ${others} more` : ""}, Routes: ${words(picked)}`
+            }
             className={cn(
               "flex min-h-11 w-full items-center gap-2.5 px-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
               TEXT.row,
@@ -75,6 +80,8 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
             {picked.time && <span className="font-semibold"> {picked.time}</span>}
           </span>
         )}
+        {/* A space between them in the words, as the gap is on screen. */}
+        {!open && others > 0 && " "}
         {!open && others > 0 && <span className={cn("shrink-0 text-muted-foreground", TEXT.detail)}>{others} more</span>}
         <ChevronDown
           className={cn("size-4 shrink-0 text-tint transition-transform motion-reduce:transition-none", open && "rotate-180")}

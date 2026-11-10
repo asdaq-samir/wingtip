@@ -49,6 +49,10 @@ const FuelBreakdown = lazy(() => import("./FuelBreakdown"));
  *  13), with the sheet (`grow`); TEXT's sizes, a mouse's and a finger's. */
 const { value: GROW_VALUE, unit: GROW_UNIT, name: GROW_NAME } = GROW_FIGURE;
 
+/** A figure as it is seen, first in its button's name (WCAG 2.5.3, Label
+ *  in Name), the words said for it after: "102 nm, Distance, …". */
+const seen = (f: { value: string; unit?: string }) => (f.unit ? `${f.value} ${f.unit}` : f.value);
+
 export default function FlightLine({
   totals,
   estimate,
@@ -184,7 +188,7 @@ export default function FlightLine({
                       type="button"
                       data-testid="fuel-breakdown-open"
                       data-alert={f.alert || undefined}
-                      aria-label={`${f.said}: what it is made of`}
+                      aria-label={`${seen(f)}, ${f.said}: what it is made of`}
                       className={cn(
                         "relative inline-flex max-w-full items-baseline after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']",
                         f.alert ? "text-destructive" : "text-tint",
@@ -248,7 +252,7 @@ export default function FlightLine({
                   type="button"
                   onClick={() => wantScreen("navlog")}
                   data-testid="dist-navlog"
-                  aria-label={`${f.said}: open the nav log`}
+                  aria-label={`${seen(f)}, ${f.said}: open the nav log`}
                   className="relative inline-flex max-w-full items-baseline text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
                 >
                   <span key={f.value} className="figure-roll min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
@@ -266,7 +270,7 @@ export default function FlightLine({
                   type="button"
                   onClick={() => setArrival(!arrival)}
                   data-testid="ete-eta-toggle"
-                  aria-label={`${f.said}: show the ${f.name === "ETE" ? "arrival" : "time en route"}`}
+                  aria-label={`${seen(f)}, ${f.said}: show the ${f.name === "ETE" ? "arrival" : "time en route"}`}
                   className="relative inline-flex max-w-full text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
                 >
                   <span key={f.value} className="figure-roll min-w-0 truncate" style={sized("value")} data-fitted={fitted}>

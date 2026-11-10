@@ -473,7 +473,7 @@ export default function PlaceCard({
             testId="place-head"
             titleTestId="place-name"
             subtitleTestId="place-where"
-            // The name · the town, the town a link (PlaceSubtitle).
+            twoLines
             subtitle={name && name !== ident4 ? <PlaceSubtitle name={name} where={where} place={place ?? null} /> : where || " "}
             line={
               <>

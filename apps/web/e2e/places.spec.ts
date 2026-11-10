@@ -393,19 +393,19 @@ test("an airport's card has four tabs right under its actions, in sight at half,
   );
   await page.goto("/app/plan?place=C81");
   await settle(page);
-  // Opened half way: the pictures, the actions and the tabs' bar whole in
-  // it, at the owner's ask ("bring back the tabs after the buttons").
+  // Opened half way: the actions whole in it, then the pictures and the tabs' bar (Apple Maps' card, 2026-11-10).
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
   await expect(card(page).getByTestId("fly-here")).toBeEnabled({ timeout: slow(15000) });
   await expect(card(page).getByTestId("place-actions")).toBeInViewport({ ratio: 1 });
   const tabs = card(page).getByRole("tab");
   await expect(tabs).toHaveText(["Info", "Weather", "Runways", "Charts"]);
   await expect(card(page).getByTestId("place-tab-radio")).toHaveAttribute("aria-selected", "true");
-  await expect(card(page).getByRole("tablist")).toBeInViewport({ ratio: 1 });
-  // Nothing between the actions and the bar: the weather is its tab's.
+  // No weather summary over the bar: the weather is its tab's.
   await expect(card(page).getByTestId("place-weather-summary")).toHaveCount(0);
 
-  // Runways: the panel all the way up, the pattern and the runways.
+  // All the way up, the bar in sight under the pictures; Runways: the pattern and the runways.
+  await grabberTo(page, "full");
+  await expect(card(page).getByRole("tablist")).toBeInViewport({ ratio: 1 });
   await card(page).getByTestId("place-tab-runways").click();
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
   const runways = card(page).getByRole("tabpanel").getByTestId("place-runways");
@@ -443,10 +443,9 @@ test("an airport's Info lists its first frequencies, and its title the way to ev
   await more.click();
   expect(await rows.count()).toBeGreaterThan(3);
   await expect(more).toHaveCount(0);
-  // Down past them to the Details' address: the one search still over
-  // the card, the way out of it.
+  // Down past them to the Details' address: the card's close still in sight, the way out of it.
   await card(page).getByTestId("place-address").scrollIntoViewIfNeeded();
-  await expect(page.getByTestId("search-airports")).toBeInViewport();
+  await expect(card(page).getByTestId("place-close").first()).toBeInViewport();
 });
 
 /** A field's procedures' list, not one procedure's drawing. */
@@ -691,8 +690,9 @@ test("an airport tapped on the chart while Setup is up puts Setup away and opens
   await expect(page).toHaveURL(/[?&]place=[A-Z0-9]+/);
   await expect(consoleSheet(page)).toHaveCount(0);
   await expect(card(page).getByTestId("place-name")).not.toBeEmpty();
-  // The account page put away for the card, the one search over it again.
-  await showTabs(page);
+  // The account page put away for the card, the card the whole sheet; closed, the title row and its button back.
+  await closeCard(page, "place-close");
+  await grabberTo(page, "half");
   await expect(page.getByTestId("account-button")).toBeVisible();
 });
 
@@ -1031,7 +1031,7 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await expect(card(page).getByTestId("place-favorite")).toHaveAttribute("aria-pressed", "true");
   await closeCard(page, "place-close");
   await search.click();
-  const kept = page.getByTestId("pill-favorites").getByRole("button", { name: /^KDLH, Class [BCDEG]$/ });
+  const kept = page.getByTestId("pill-favorites").getByRole("button", { name: /^KDLH\b.*Class [BCDEG]$/ });
   await expect(kept).toBeVisible();
 
   // Its tile opens its card, whose Fly Here goes from Home.
