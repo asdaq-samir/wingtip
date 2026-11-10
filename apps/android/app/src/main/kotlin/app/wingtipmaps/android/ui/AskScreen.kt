@@ -223,6 +223,10 @@ private fun TurnBubble(turn: AssistantTurn, onSource: (AssistantSource) -> Unit)
                 )
             }
         }
+        // Where the answer was made, when it was made on the phone.
+        if (turn.onPhone && !mine) {
+            Text(stringResource(R.string.ai_ask_on_phone), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         if (turn.sources.isNotEmpty()) {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                 turn.sources.forEach { source ->

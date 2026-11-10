@@ -1,6 +1,7 @@
 package app.wingtipmaps.android
 
 import android.app.Application
+import app.wingtipmaps.android.ai.OnPhoneAsk
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.diagnostics.Diagnostics
 import app.wingtipmaps.android.offline.KeptForAir
@@ -24,6 +25,9 @@ class WingtipApplication : Application() {
         // The answers kept for the air (KeptForAir), where every screen's
         // model can reach them: only a folder's name, nothing read yet.
         KeptForAir.of(this)
+        // Ask on the phone (Gemini Nano with the app's own tools): only the
+        // application kept, nothing asked of AICore until Ask is used.
+        OnPhoneAsk.attach(this)
         MapLibre.getInstance(this)
         HttpRequestUtil.setOkHttpClient(Gateway.client)
     }

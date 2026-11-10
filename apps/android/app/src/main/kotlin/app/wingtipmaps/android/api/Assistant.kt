@@ -3,6 +3,8 @@ package app.wingtipmaps.android.api
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Config
+import app.wingtipmaps.android.ai.Nano
+import app.wingtipmaps.android.ai.OnPhoneAsk
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -41,6 +43,10 @@ sealed interface AssistantLine {
     data object Done : AssistantLine
 
     data class Problem(val words: String) : AssistantLine
+
+    /** The answer is being made on the phone by Gemini Nano (ai/OnPhoneAsk),
+     *  not by the server; said under it. */
+    data object OnPhone : AssistantLine
 }
 
 /** A raw thing an answer rests on (a METAR, a NOTAM), shown to the pilot
@@ -57,6 +63,8 @@ data class AssistantTurn(
     val content: String,
     val sources: List<AssistantSource> = emptyList(),
     val problem: String? = null,
+    /** Made on the phone by Gemini Nano, nothing of it sent to a server. */
+    val onPhone: Boolean = false,
 ) {
     enum class Role(val wire: String) { USER("user"), ASSISTANT("assistant") }
 }
@@ -127,6 +135,7 @@ data class AssistantConversation(
             is AssistantLine.Sources -> replacingLast(last.copy(sources = last.sources + line.sources))
             AssistantLine.Done -> copy(status = null, answering = false)
             is AssistantLine.Problem -> replacingLast(last.copy(problem = line.words)).copy(status = null, answering = false)
+            AssistantLine.OnPhone -> replacingLast(last.copy(onPhone = true))
         }
     }
 
@@ -238,7 +247,11 @@ class AssistantClient : ViewModel() {
         val ask = Assistant.Ask(_conversation.value.messages, context)
         running = viewModelScope.launch {
             try {
-                Assistant.stream(ask).collect { line -> _conversation.update { it.take(line) } }
+                // On the phone first: Gemini Nano with the app's own tools
+                // where this phone has it (docs/android-ai.md), else the
+                // server's assistant as before.
+                val lines = if (Nano.ready()) OnPhoneAsk.stream(ask.messages, ask.context) else Assistant.stream(ask)
+                lines.collect { line -> _conversation.update { it.take(line) } }
                 // A stream that ends with no "done" is cut off; the words so
                 // far stay, and the pilot is told the answer is short.
                 if (_conversation.value.answering) _conversation.update { it.broke("The answer was cut off.") }

@@ -36,6 +36,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.ai.AiSources
+import app.wingtipmaps.android.ai.AiTask
+import app.wingtipmaps.android.ai.AiWordsRow
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -88,6 +91,10 @@ fun ReadyToFlyRow(plan: Plan, onSetRoute: (() -> Unit)?, model: ReadyToFlyModel 
                 ReadyItemRow(item, if (item.key == "notams") state.notams else emptyList())
                 // The NOTAMs kept for the air, shown with no signal: how old.
                 if (item.key == "notams") KeptAgeLine(KeptForAir.NOTAMS, state.notamsKeptAtMs)
+                // The NOTAMs that matter, in plain words, beside them as sent.
+                if (item.key == "notams" && state.notams.isNotEmpty()) {
+                    AiWordsRow(AiTask.NOTAMS, key = state.notams.joinToString().hashCode().toString(), sources = { AiSources.notams(state.notams) })
+                }
             }
             Text(
                 stringResource(R.string.ready_next_cycle, answer.nextCycleIdent, dayWords(answer.nextCycle)),
