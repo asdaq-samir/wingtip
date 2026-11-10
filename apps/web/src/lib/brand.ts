@@ -7,10 +7,11 @@ const INK: Brand = "ink";
  *  blue and the default (the owner, 2026-11-09: "the Wingtip brand look is
  *  the default on all three apps"); the Glass Cockpit, from the owner's
  *  brand canvas (2026-10-26); Chart ink, the app in the FAA sectional's
- *  own ink (2026-11-04); and Native, the browser's and the system's own
- *  colours and face (2026-11-10: "a native theme in addition to other
- *  themes we have"). Their colours are tokens on <html data-brand>
- *  (design/tokens.json's color.look); their typefaces load here. */
+ *  own ink (2026-11-04); and Native, the stock components as they come
+ *  out of the box, shadcn's own theme, corners, type and states (2026-11-10:
+ *  "Native means how they come out of the box, look and behavior wise").
+ *  Their colours are tokens on <html data-brand> (design/tokens.json's
+ *  color.look); their typefaces load here. */
 export const BRANDS: { value: Brand; label: string }[] = [
   { value: "wingtip", label: "Wingtip" },
   { value: "cockpit", label: "Glass Cockpit" },
@@ -25,7 +26,7 @@ export const BRANDS: { value: Brand; label: string }[] = [
 const FONTS: Record<Brand, () => Promise<unknown>> = {
   wingtip: () => Promise.resolve(),
   cockpit: () => Promise.resolve(),
-  // The system's own face (system-ui): nothing to fetch.
+  // shadcn's own face, Inter, which the page has already.
   native: () => Promise.resolve(),
   ink: () => Promise.all([import("@fontsource/barlow-condensed/latin-600.css"), import("@fontsource/barlow-condensed/latin-700.css")]),
 };

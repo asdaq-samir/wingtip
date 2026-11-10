@@ -32,6 +32,15 @@
   --type-caption: 0.6875rem;
   --type-label: 0.8125rem;
   --type-figure: 1.625rem;
+  --lead-hero: 2.125rem;
+  --lead-card: 1.75rem;
+  --lead-heading: 1.5625rem;
+  --lead-note: 1.125rem;
+  --lead-tab: 1.0625rem;
+  --lead-tab-bar: 1rem;
+  --lead-caption: 0.8125rem;
+  --lead-label: 1.0625rem;
+  --lead-figure: 1.9375rem;
   --chart-course: #e600e6;
   --chart-route-green: #52c41a;
   --chart-route-green-night: #3f9a1c;
@@ -318,39 +327,91 @@
   --ink-magenta: #ff5ac8;
 }
 
-/* Native: the platform's own face, and its system colours but in sunlight. */
+/* Native: shadcn's stock theme and Tailwind's stock corners, shadows and type, but in sunlight. */
 :root[data-brand="native"] {
-  --brand-font: system-ui;
+  --radius-badge: 6px;
+  --radius-control: 8px;
+  --radius-card: 0.875rem;
+  --radius-banner: 14px;
+  --radius-dialog: 14px;
+  --radius-sheet: 14px;
+  --depth-float: 0 4px 6px -1px rgb(0 0 0 / 0.102), 0 2px 4px -2px rgb(0 0 0 / 0.102);
+  --depth-overlay: 0 4px 6px -1px rgb(0 0 0 / 0.102), 0 2px 4px -2px rgb(0 0 0 / 0.102);
+  --depth-raised: 0 10px 15px -3px rgb(0 0 0 / 0.102), 0 4px 6px -4px rgb(0 0 0 / 0.102);
+  --depth-sheet: 0 10px 15px -3px rgb(0 0 0 / 0.102), 0 4px 6px -4px rgb(0 0 0 / 0.102);
+  --depth-card: 0 1px 3px 0 rgb(0 0 0 / 0.102), 0 1px 2px -1px rgb(0 0 0 / 0.102);
+  --glass-blur: 0px;
+  --glass-fill-light: 100%;
+  --glass-fill-dark: 100%;
+  --sheet-blur: 0px;
+  --feel-press-scale: 1;
+  --feel-lift: 0px;
+  --type-hero: 1.5rem;
+  --lead-hero: 2rem;
+  --type-card: 1.25rem;
+  --lead-card: 1.75rem;
+  --type-heading: 1.125rem;
+  --lead-heading: 1.75rem;
+  --type-note: 0.75rem;
+  --lead-note: 1rem;
+  --type-tab: 0.875rem;
+  --lead-tab: 1.25rem;
+  --type-tab-bar: 0.75rem;
+  --lead-tab-bar: 1rem;
+  --type-caption: 0.75rem;
+  --lead-caption: 1rem;
+  --type-label: 0.75rem;
+  --lead-label: 1rem;
+  --type-figure: 1.5rem;
+  --lead-figure: 2rem;
 }
 
-:root[data-brand="native"]:not([data-chart-light="bright"]) {
-  --background: Canvas;
-  --foreground: CanvasText;
-  --card: Canvas;
-  --card-foreground: CanvasText;
-  --popover: Canvas;
-  --popover-foreground: CanvasText;
-  --sheet: Canvas;
-  --primary: color-mix(in oklab, LinkText 80%, CanvasText);
-  --primary-foreground: Canvas;
-  --tint: color-mix(in oklab, LinkText 80%, CanvasText);
-  --tint-shade: color-mix(in oklab, LinkText 80%, CanvasText);
-  --ring: LinkText;
-  --secondary: color-mix(in srgb, CanvasText 5%, Canvas);
-  --secondary-foreground: CanvasText;
-  --muted: color-mix(in srgb, CanvasText 5%, Canvas);
-  --muted-foreground: color-mix(in srgb, CanvasText 58%, Canvas);
-  --muted-foreground-shade: color-mix(in srgb, CanvasText 58%, Canvas);
-  --accent: color-mix(in srgb, CanvasText 5%, Canvas);
-  --accent-foreground: CanvasText;
-  --border: color-mix(in srgb, CanvasText 12%, Canvas);
-  --input: color-mix(in srgb, CanvasText 45%, Canvas);
+:root[data-brand="native"]:not(.dark):not([data-chart-light="bright"]) {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --sheet: var(--background);
+  --tint: var(--primary);
+  --tint-shade: var(--primary);
+  --muted-foreground-shade: var(--muted-foreground);
 }
 
-@supports (color: AccentColor) {
-  :root[data-brand="native"]:not([data-chart-light="bright"]) {
-    --ring: AccentColor;
-  }
+:root.dark[data-brand="native"]:not([data-chart-light="bright"]) {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --sheet: var(--background);
+  --tint: var(--primary);
+  --tint-shade: var(--primary);
+  --muted-foreground-shade: var(--muted-foreground);
 }
 
 /* Sunlight, over day, night and every look. */

@@ -37,8 +37,16 @@ These hold on every screen below and win over any reference app.
 - **Brand tokens from `design/tokens.json` only**: the tint for what is
   tapped, the chart's own colours on the map, `lib/text` for type sizes.
   The looks are Wingtip (the default), Glass Cockpit, Chart ink and
-  Native, the browser's own: its system colours (Canvas, CanvasText,
-  LinkText, AccentColor for the ring and form controls) and `system-ui`.
+  Native. Native is the components as they come out of the box (the
+  owner, 2026-11-10): shadcn's stock theme for base-vega on neutral, its
+  own Inter and radius, Tailwind's stock shadows and type steps, the stock
+  hover, press and focus states, no frost, no press give, no touch sizes
+  of ours (the `pointer-coarse` variant is off there) and no page slide.
+  The 44-point hit areas stay, as pseudo-elements that change nothing
+  seen. The chart, the course, airspace, flight categories and the
+  caution, go and destructive states keep Wingtip's colours in every look.
+  Where a stock default is under WCAG's line it is reported, not
+  recoloured (`looksContrast.test.ts`'s `STOCK_SHORTFALLS`).
 - **The first load stays under 1.10 MB** (CI's `first-load.mjs --budget
   1100000`). Every screen below except the map, its sheet and the search
   field loads on its own chunk when first opened. A new library for a
