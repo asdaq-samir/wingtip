@@ -27,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -51,7 +52,6 @@ import app.wingtipmaps.android.airplane.FigureKey
 import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.design.LoadingRow
-import app.wingtipmaps.android.design.RefreshBox
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.format.Format
@@ -127,7 +127,7 @@ fun AirportCard(ident: String, plan: Plan, onClose: () -> Unit, onDone: () -> Un
             }
         },
     ) { padding ->
-        RefreshBox(refreshing = state.loading && place != null, onRefresh = model::refresh, enabled = place != null, modifier = Modifier.padding(padding)) {
+        PullToRefreshBox(isRefreshing = state.loading && place != null, onRefresh = model::refresh, enabled = place != null, modifier = Modifier.padding(padding)) {
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
                 state.problem?.let { item(key = "problem") { ProblemLine(it, Modifier.padding(horizontal = WingtipSpace.Lg)) } }
                 if (place == null) {

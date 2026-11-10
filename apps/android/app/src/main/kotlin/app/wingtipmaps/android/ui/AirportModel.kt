@@ -28,7 +28,7 @@ class AirportModel : ViewModel() {
         val suggestions: List<AirportSuggestion> = emptyList(),
         val place: AirportPlace? = null,
         val problem: String? = null,
-        /** A search or a field's card being fetched: its skeleton shows. */
+        /** A search or a field's card being fetched: its loading indicator shows. */
         val loading: Boolean = false,
         /** When the card shown was fetched, where it is the one kept for
          *  the air; null when it is the network's own. */

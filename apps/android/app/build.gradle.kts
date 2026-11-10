@@ -155,6 +155,10 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material3.adaptive.layout)
     implementation(libs.androidx.compose.material3.adaptive.navigation)
+    // The docked sheet's pages and their Back (ui/PlanSheet.kt).
+    implementation(libs.androidx.navigation.compose)
+    // The launch's splash screen from Android 8 on (MainActivity).
+    implementation(libs.androidx.core.splashscreen)
     // The home screen's Next Flight widget (widget/).
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)

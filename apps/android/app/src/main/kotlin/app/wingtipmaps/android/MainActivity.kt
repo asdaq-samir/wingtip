@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import app.wingtipmaps.android.ai.ScreenContext
 import app.wingtipmaps.android.plan.KeptPlan
 import app.wingtipmaps.android.ui.RootScreen
@@ -27,6 +28,9 @@ class MainActivity : ComponentActivity() {
     private val pending = MutableStateFlow<Links.Link?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // The launch's splash screen, the same from Android 8 on (the
+        // manifest's Theme.WingtipMaps.Starting), gone as the first frame draws.
+        installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContent {
