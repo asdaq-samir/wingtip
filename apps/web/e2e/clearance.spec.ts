@@ -172,9 +172,16 @@ test("the pilot's own words are chips: the nearest airports and a timer", { tag:
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   const pill = page.getByTestId("radio-pill");
+  // Tapped again only while it is still idle: the pill takes the button's
+  // place once listening starts, and a slow start (the listening code
+  // loading) had the next try wait on a button no longer there until the
+  // time ran out (run 42867578624), where a tap that landed would have
+  // stopped the listening instead.
+  const button = page.getByTestId("radio-button");
   await expect(async () => {
-    if (!(await pill.count())) await page.getByTestId("radio-button").click();
-    await expect(pill).toBeVisible({ timeout: 2000 });
+    if (!(await pill.count()) && (await button.getAttribute("aria-pressed", { timeout: 1000 })) !== "true")
+      await button.click({ timeout: 1000 });
+    await expect(pill).toBeVisible({ timeout: slow(5000) });
   }).toPass({ timeout: slow(20_000) });
   await expect(pill).toContainText("nearest airport", { timeout: slow(10_000) });
   // The timer counts in the pill once started, and stays as the chips go.

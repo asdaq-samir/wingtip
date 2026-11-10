@@ -3,6 +3,9 @@ import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
 import { TEXT } from "../../lib/text";
 
+/** A menu's or a select's trigger whose popup is open (Base UI sets both). */
+const OPEN_POPUP_TRIGGER = '[aria-expanded="true"]:is([aria-haspopup="menu"], [aria-haspopup="listbox"], [aria-haspopup="true"])';
+
 /**
  * Setup's page in the map's panel, a tab's body as the others' are: named
  * for the console it is (a region, no longer a dialog: the focus stays on
@@ -38,6 +41,13 @@ export default function ConsoleLayer({
       // A card over it (SheetCard) is put away first, by its own Escape,
       // which prevents the default.
       if (event.key !== "Escape" || event.defaultPrevented) return;
+      // A menu or a list just opened from a control in the layer, the focus
+      // still on its trigger: the popup takes the focus a moment after it
+      // opens, and until then the trigger's own Escape, which closes it and
+      // prevents the default, is heard by React only after this listener on
+      // the layer has. The key is the menu's, as it is once the focus is in
+      // it; the console stays (consoles.spec's role menu, run 42867578624).
+      if (event.target instanceof Element && event.target.closest(OPEN_POPUP_TRIGGER)) return;
       event.preventDefault();
       close();
     };
