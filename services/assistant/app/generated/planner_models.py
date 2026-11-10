@@ -2817,6 +2817,121 @@ class RouteTfr(BaseModel):
     title: Annotated[str | None, Field(title='Title')] = None
 
 
+class RunAlert(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    kind: Annotated[
+        Literal['vfr_minimums', 'pilot_minimums', 'sigmet', 'gairmet', 'outlook'] | None,
+        Field(title='Kind'),
+    ] = None
+    lat: Annotated[float | None, Field(title='Lat')] = None
+    lon: Annotated[float | None, Field(title='Lon')] = None
+    source: Annotated[str | None, Field(title='Source')] = None
+    t: Annotated[float | None, Field(title='T')] = None
+    words: Annotated[str | None, Field(title='Words')] = None
+
+
+class RunArea(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    coords: Annotated[list[list[float]] | None, Field(title='Coords')] = None
+    high_ft: Annotated[float | None, Field(title='High Ft')] = None
+    kind: Annotated[
+        Literal['sigmet', 'gairmet', 'outlook'] | None, Field(title='Kind')
+    ] = None
+    low_ft: Annotated[float | None, Field(title='Low Ft')] = None
+    source: Annotated[str | None, Field(title='Source')] = None
+    valid_from: Annotated[float | None, Field(title='Valid From')] = None
+    valid_to: Annotated[float | None, Field(title='Valid To')] = None
+    words: Annotated[str | None, Field(title='Words')] = None
+
+
+class RunField(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    ident: Annotated[str | None, Field(max_length=8, min_length=1, title='Ident')] = (
+        None
+    )
+    lat: Annotated[float | None, Field(ge=-90.0, le=90.0, title='Lat')] = None
+    lon: Annotated[float | None, Field(ge=-180.0, le=180.0, title='Lon')] = None
+    role: Annotated[
+        Literal['departure', 'stop', 'destination'] | None, Field(title='Role')
+    ] = None
+    t: Annotated[float | None, Field(title='T')] = None
+
+
+class RunFieldForecast(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    category: Annotated[
+        Literal['VFR', 'MVFR', 'IFR', 'LIFR'] | None, Field(title='Category')
+    ] = None
+    ceiling_ft: Annotated[float | None, Field(title='Ceiling Ft')] = None
+    ceiling_unknown: Annotated[bool | None, Field(title='Ceiling Unknown')] = None
+    ident: Annotated[str | None, Field(title='Ident')] = None
+    role: Annotated[
+        Literal['departure', 'stop', 'destination'] | None, Field(title='Role')
+    ] = None
+    source: Annotated[str | None, Field(title='Source')] = None
+    t: Annotated[float | None, Field(title='T')] = None
+    visibility_sm: Annotated[float | None, Field(title='Visibility Sm')] = None
+
+
+class RunLeg(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    category: Annotated[
+        Literal['VFR', 'MVFR', 'IFR', 'LIFR'] | None, Field(title='Category')
+    ] = None
+    from_t: Annotated[float | None, Field(title='From T')] = None
+    row: Annotated[int | None, Field(title='Row')] = None
+    to_t: Annotated[float | None, Field(title='To T')] = None
+    worst_t: Annotated[float | None, Field(title='Worst T')] = None
+
+
+class RunMinimums(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    ceiling_ft: Annotated[float | None, Field(title='Ceiling Ft')] = None
+    visibility_sm: Annotated[float | None, Field(title='Visibility Sm')] = None
+
+
+class RunPoint(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    alt_ft: Annotated[float | None, Field(title='Alt Ft')] = None
+    lat: Annotated[float | None, Field(ge=-90.0, le=90.0, title='Lat')] = None
+    lon: Annotated[float | None, Field(ge=-180.0, le=180.0, title='Lon')] = None
+    row: Annotated[int | None, Field(ge=0, title='Row')] = None
+    t: Annotated[float | None, Field(title='T')] = None
+
+
+class RunSample(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    areas: Annotated[list[int] | None, Field(title='Areas')] = None
+    category: Annotated[
+        Literal['VFR', 'MVFR', 'IFR', 'LIFR'] | None, Field(title='Category')
+    ] = None
+    ceiling_ft: Annotated[float | None, Field(title='Ceiling Ft')] = None
+    ceiling_unknown: Annotated[bool | None, Field(title='Ceiling Unknown')] = None
+    lat: Annotated[float | None, Field(title='Lat')] = None
+    lon: Annotated[float | None, Field(title='Lon')] = None
+    source: Annotated[str | None, Field(title='Source')] = None
+    t: Annotated[float | None, Field(title='T')] = None
+    visibility_sm: Annotated[float | None, Field(title='Visibility Sm')] = None
+    wind_dir_true_deg: Annotated[float | None, Field(title='Wind Dir True Deg')] = None
+    wind_speed_kt: Annotated[float | None, Field(title='Wind Speed Kt')] = None
+
+
 class RunwayEnd(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -4029,6 +4144,32 @@ class Forecast(BaseModel):
     min_ceiling_ft: Annotated[float | None, Field(title='Min Ceiling Ft')] = None
     min_visibility_sm: Annotated[float | None, Field(title='Min Visibility Sm')] = None
     stations: Annotated[list[ForecastStation] | None, Field(title='Stations')] = None
+
+
+class ForecastRun(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    alerts: Annotated[list[RunAlert] | None, Field(title='Alerts')] = None
+    areas: Annotated[list[RunArea] | None, Field(title='Areas')] = None
+    fields: Annotated[list[RunFieldForecast] | None, Field(title='Fields')] = None
+    legs: Annotated[list[RunLeg] | None, Field(title='Legs')] = None
+    samples: Annotated[list[RunSample] | None, Field(title='Samples')] = None
+    unavailable: Annotated[list[str] | None, Field(title='Unavailable')] = None
+
+
+class ForecastRunAsk(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    fields: Annotated[list[RunField] | None, Field(max_length=12, title='Fields')] = (
+        None
+    )
+    minimums: RunMinimums | None = None
+    rules: Annotated[Literal['VFR', 'IFR'] | None, Field(title='Rules')] = 'VFR'
+    track: Annotated[
+        list[RunPoint] | None, Field(max_length=600, min_length=1, title='Track')
+    ] = None
 
 
 class GAirmet(BaseModel):
