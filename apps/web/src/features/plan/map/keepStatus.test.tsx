@@ -14,7 +14,7 @@ import { toast } from "../../../lib/toast";
 import { useKeepRouteToast } from "./keepStatus";
 import { useSystemProblems } from "../../../lib/problems";
 
-vi.mock("../../../lib/toast", () => ({ toast: { loading: vi.fn(), success: vi.fn(), dismiss: vi.fn() } }));
+vi.mock("../../../lib/toast", () => ({ toast: { add: vi.fn(), close: vi.fn() } }));
 
 const layer = (kind: string): ChartLayer =>
   ({
@@ -166,26 +166,25 @@ describe("what a keep remembers, and stopping one", () => {
 
 describe("the keep's toast", () => {
   test("counts while it keeps, then says kept -- and an old keep is not news", async () => {
-    vi.mocked(toast.loading).mockClear();
-    vi.mocked(toast.success).mockClear();
+    vi.mocked(toast.add).mockClear();
     network(ok);
     await keep(COURSE, SEC);
     const quiet = renderHook(() => useKeepRouteToast());
-    expect(toast.success).not.toHaveBeenCalled();
+    expect(toast.add).not.toHaveBeenCalledWith(expect.objectContaining({ type: "success" }));
     quiet.unmount();
 
     renderHook(() => useKeepRouteToast());
     const done = keep(COURSE, SEC);
     await flush();
-    expect(toast.loading).toHaveBeenCalled();
+    expect(toast.add).toHaveBeenCalledWith(expect.objectContaining({ type: "loading" }));
     await act(async () => {
       await done;
     });
-    expect(toast.success).toHaveBeenCalledWith("Charts Saved Offline", expect.objectContaining({ id: "keep-route" }));
+    expect(toast.add).toHaveBeenCalledWith(expect.objectContaining({ title: "Charts Saved Offline", type: "success", id: "keep-route" }));
   });
 
   test("tiles that could not be fetched are a problem of their own, not part of the news that it kept", async () => {
-    vi.mocked(toast.success).mockClear();
+    vi.mocked(toast.add).mockClear();
     useSystemProblems.setState({ problems: [] });
     // Every other request fails: some kept, some not.
     let asked = 0;
@@ -198,7 +197,7 @@ describe("the keep's toast", () => {
     });
     const job = useKeepJob.getState();
     expect(job.status === "kept" && job.progress.failed).toBeGreaterThan(0);
-    const [, options] = vi.mocked(toast.success).mock.calls.at(-1)!;
+    const options = vi.mocked(toast.add).mock.calls.at(-1)![0];
     expect(String((options as { description?: string }).description)).not.toMatch(/not available|without a connection/);
     expect(useSystemProblems.getState().problems).toEqual([
       expect.objectContaining({ id: "keep-route", title: expect.stringMatching(/chart tiles not kept/) }),

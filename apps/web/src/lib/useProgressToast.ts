@@ -27,13 +27,13 @@ export function useProgressToast(progress: string | null) {
   useEffect(() => {
     if (!progress) {
       busySince.current = null;
-      if (shown.current) toast.dismiss(PROGRESS_ID);
+      if (shown.current) toast.close(PROGRESS_ID);
       shown.current = false;
       return;
     }
     const show = () => {
       shown.current = true;
-      toast.loading(progress, { id: PROGRESS_ID, duration: 4000 });
+      toast.add({ id: PROGRESS_ID, title: progress, type: "loading", timeout: 4000 });
     };
     if (shown.current) {
       show();
@@ -46,7 +46,7 @@ export function useProgressToast(progress: string | null) {
 
   useEffect(
     () => () => {
-      toast.dismiss(PROGRESS_ID);
+      toast.close(PROGRESS_ID);
     },
     [],
   );

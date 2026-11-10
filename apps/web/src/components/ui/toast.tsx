@@ -66,9 +66,8 @@ function Toasts() {
     <Toast.Root
       key={toast.id}
       toast={toast}
-      // A swipe removed a toast on the same touch that was meant to tap
-      // what was under it, so none: each goes by itself in a few seconds.
-      swipeDirection={[]}
+      // Base UI's own swipe to put it away, followed by the finger
+      // (its --toast-swipe-movement variables).
       data-slot="toast"
       // One with an Undo takes a tap (index.css); the rest let it through
       // to the map under them.
@@ -79,6 +78,7 @@ function Toasts() {
         "flex min-h-12 items-center gap-2 rounded-3xl px-4 py-2.5 transition-[opacity,transform] duration-200 ease-out",
         "data-limited:hidden data-ending-style:opacity-0 data-starting-style:opacity-0",
         "motion-safe:data-starting-style:translate-y-2 motion-reduce:transition-none",
+        "[transform:translate(var(--toast-swipe-movement-x),var(--toast-swipe-movement-y))]",
       )}
     >
       {toast.type === "success" && <Check className="size-4 shrink-0 text-tint" strokeWidth={2.5} aria-hidden />}
@@ -104,7 +104,6 @@ function Anchored({ className }: { className?: string }) {
           <Toast.Positioner key={toast.id} toast={toast} className="z-100">
             <Toast.Root
               toast={toast}
-              swipeDirection={[]}
               data-slot="toast"
               data-testid="done-note"
               className={cn(

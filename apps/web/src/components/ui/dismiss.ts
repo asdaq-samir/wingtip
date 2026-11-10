@@ -19,11 +19,8 @@ export function keepOpenOn(details: CloseDetails, places: string): boolean {
   return true;
 }
 
-/** A toast is not "outside" in the sense a sheet means. The toasts' stack is
- *  outside the sheet's tree, and the outside-press listener is on the
- *  document: tapping a toast's close button closed the drawer instead of
- *  the toast. On a phone that is the whole briefing disappearing because a
- *  pilot tried to dismiss a weather warning sitting on top of it. Toasts
- *  sit above every sheet by design, so a tap on one was always meant
- *  for it. */
+/** A toast is not "outside" in the sense a sheet means: the toasts' stack
+ *  is outside the sheet's tree, and the outside-press listener is on the
+ *  document, so a tap on a toast's Undo would close the sheet under it.
+ *  Toasts sit above every sheet, so a tap on one is meant for it. */
 export const TOAST = "[data-slot=toast-viewport]";

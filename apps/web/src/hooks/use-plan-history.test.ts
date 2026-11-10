@@ -17,7 +17,7 @@ vi.mock("../lib/toast", () => ({
       shown.toasts.set(id, { words, undo });
       return id;
     },
-    dismiss: (id: string) => shown.toasts.delete(id),
+    close: (id: string) => shown.toasts.delete(id),
   },
 }));
 

@@ -13,7 +13,7 @@ const { Part: Toaster } = fromChunk(
 
 /**
  * The app's one Toaster -- PageStatus's progress line (across every page
- * that has one) renders through it via toast.loading/dismiss, rather
+ * that has one) renders through it via toast.add/close, rather
  * than each page mounting its own floating status element.
  *
  * On the edge away from the header (useNavEdge): bottom-centre under a

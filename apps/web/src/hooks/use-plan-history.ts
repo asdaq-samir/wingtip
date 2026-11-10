@@ -9,7 +9,7 @@ let routeUndo: string | null = null;
 
 /** What it offered was done, or no longer applies. */
 const dismissRouteUndo = () => {
-  if (routeUndo) toast.dismiss(routeUndo);
+  if (routeUndo) toast.close(routeUndo);
   routeUndo = null;
 };
 

@@ -3,36 +3,25 @@ import { useSyncExternalStore, type ReactNode } from "react";
 /**
  * Brief news that goes by itself -- the progress line, "Charts Saved
  * Offline", "Route Cleared · Undo" -- as Base UI's Toast, the toast
- * shadcn's own page now opens (docs/design/web.md, gap 3), where it was
- * sonner. A confirmation with Undo is a toast with its action (Base UI's
- * `actionProps`, the web's stock confirmation, at the owner's ask,
- * 2026-11-10), and a confirmation of a control's ("Copied") an anchored
- * toast by that control (`done`). What went wrong is never a toast: it is
- * said where it happens (lib/problems).
+ * shadcn's own page now opens (docs/design/web.md, gap 3). A confirmation
+ * with Undo is a toast with its action (Base UI's `actionProps`, the web's
+ * stock confirmation, at the owner's ask, 2026-11-10), and a confirmation
+ * of a control's ("Copied") an anchored toast by that control (`done`).
+ * What went wrong is never a toast: it is said where it happens
+ * (lib/problems).
  *
- * The toast's code is fetched at the first toast, not in the first load
- * (issue #290): the manager and the Toaster are one chunk
+ * The calls are Base UI's own (`toast.add` and `toast.close` take the
+ * toast manager's options as they are), made through one queue: the
+ * toast's code is fetched at the first toast, not in the first load
+ * (issue #290) -- the managers and the Toaster are one chunk
  * (lib/toastManager, components/ui/toast), and AppToaster mounts the
  * Toaster once it is asked for. Base UI's manager tells only a Provider
  * already listening, so the calls made before then wait for it
  * (`toasterReady`) and are made in the order they were asked.
- *
- * Only what the app calls: a toast, success, loading and dismiss, with
- * sonner's shape (an id to update one in place, a line under the title,
- * how long it stays), so the callers did not change.
  */
 type Managers = typeof import("./toastManager");
-type Message = ReactNode;
-export interface ToastData {
-  id?: string;
-  description?: ReactNode;
-  /** How long it stays, ms; 0 until taken down. */
-  duration?: number;
-  /** Its one button (Undo): the toast goes once it is pressed. */
-  action?: { label: string; onClick: () => void; testId?: string };
-  /** Gone, by its time or its action. */
-  onClose?: () => void;
-}
+/** Base UI's own options for a toast (its manager's `add`). */
+type ToastOptions = Parameters<Managers["toastManager"]["add"]>[0];
 
 /** How long an Undo stays: long enough to read it and reach it. */
 export const UNDO_MS = 8_000;
@@ -81,30 +70,11 @@ const later = (call: (m: Managers) => void) => {
 
 let next = 1;
 
-function add(type: string | undefined, title: Message, data?: ToastData): string {
-  // Its own id where none is given, for its action to take it down by.
-  const id = data?.id ?? `toast-${next++}`;
-  const action = data?.action;
-  later(({ toastManager: m }) =>
-    m.add({
-      id,
-      title,
-      description: data?.description,
-      type,
-      // A loading toast stays till it is taken down or replaced, as sonner's.
-      timeout: data?.duration ?? (type === "loading" ? 0 : undefined),
-      onClose: data?.onClose,
-      actionProps: action && {
-        children: action.label,
-        // Base UI leaves the closing to the action's own handler.
-        onClick: () => {
-          action.onClick();
-          m.close(id);
-        },
-        ...(action.testId ? { "data-testid": action.testId } : {}),
-      },
-    }),
-  );
+/** A toast, by Base UI's options; its id (one given, or its own), to
+ *  update it in place or take it down by. */
+function add(options: ToastOptions): string {
+  const id = options.id ?? `toast-${next++}`;
+  later(({ toastManager: m }) => m.add({ ...options, id }));
   return id;
 }
 
@@ -117,32 +87,46 @@ function anchorOf(near: Element | null | undefined): Element | null {
   return r.width || r.height ? el : null;
 }
 
-export const toast = Object.assign((message: Message, data?: ToastData) => add(undefined, message, data), {
-  success(message: Message, data?: ToastData) {
-    return add("success", message, data);
-  },
-  loading(message: Message, data?: ToastData) {
-    return add("loading", message, data);
+export const toast = {
+  add,
+  /** Nothing to take down before a toast was ever asked for. */
+  close(id?: string) {
+    if (manager) later(({ toastManager: m }) => m.close(id));
   },
   /** What was just taken away and Undo, which gives it back: "KMSN
    *  Removed · Undo". Its id, to take it down when it no longer applies. */
-  undo(message: Message, onUndo: () => void, data?: Omit<ToastData, "action"> & { testId?: string }) {
-    const { testId, ...rest } = data ?? {};
-    return add("undo", message, { duration: UNDO_MS, ...rest, action: { label: "Undo", onClick: onUndo, testId } });
+  undo(title: ReactNode, onUndo: () => void, options: { testId?: string; onClose?: () => void } = {}): string {
+    const id = `toast-${next++}`;
+    return add({
+      id,
+      title,
+      type: "undo",
+      timeout: UNDO_MS,
+      onClose: options.onClose,
+      actionProps: {
+        children: "Undo",
+        // Base UI leaves the closing to the action's own handler.
+        onClick: () => {
+          onUndo();
+          toast.close(id);
+        },
+        ...(options.testId ? { "data-testid": options.testId } : {}),
+      },
+    });
   },
   /** A confirmation by the control that made it ("Flight Saved" by its
    *  Save, "Link Copied" by Share): Base UI's anchored toast, with the
    *  tint's tick, gone in two seconds; `near` the control, the one with
    *  the focus where none is given. */
-  done(message: Message, options: { detail?: ReactNode; near?: Element | null } = {}) {
+  done(title: ReactNode, options: { detail?: ReactNode; near?: Element | null } = {}) {
     const anchor = anchorOf(options.near);
     if (!anchor) {
-      add("success", message, { description: options.detail, duration: DONE_MS });
+      add({ title, description: options.detail, type: "success", timeout: DONE_MS });
       return;
     }
     later(({ anchoredManager: m }) =>
       m.add({
-        title: message,
+        title,
         description: options.detail,
         type: "success",
         timeout: DONE_MS,
@@ -150,8 +134,4 @@ export const toast = Object.assign((message: Message, data?: ToastData) => add(u
       }),
     );
   },
-  /** Nothing to take down before a toast was ever asked for. */
-  dismiss(id?: string) {
-    if (manager) later(({ toastManager: m }) => m.close(id));
-  },
-});
+};

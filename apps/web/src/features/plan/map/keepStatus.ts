@@ -48,20 +48,27 @@ export function useKeepRouteToast() {
     was.current = job.status;
     if (job.status === "keeping") {
       clearProblem(TOAST_ID);
-      toast.loading("Saving Charts Offline", {
+      toast.add({
         id: TOAST_ID,
+        title: "Saving Charts Offline",
+        type: "loading",
+        // Up until the keep is done.
+        timeout: 0,
         description: job.progress ? `${grouped(job.progress.done)} of ${grouped(job.progress.total)}` : undefined,
       });
     } else if (before === "keeping" && job.status === "kept") {
       const { total, failed } = job.progress;
       if (failed >= total) {
-        toast.dismiss(TOAST_ID);
+        toast.close(TOAST_ID);
         raiseProblem({ id: TOAST_ID, title: "Charts not kept: none of the tiles could be fetched" });
       } else {
         // The route's answers kept with them, and their size (keptForAir).
         const answers = keptRecordStore().getState().value;
-        toast.success("Charts Saved Offline", {
+        toast.add({
           id: TOAST_ID,
+          title: "Charts Saved Offline",
+          type: "success",
+          timeout: 2000,
           description: answers ? `With the briefing, NOTAMs and plates: ${megabytes(answers.bytes)}` : undefined,
         });
         // The tiles that could not be fetched are a problem, said where
@@ -71,11 +78,11 @@ export function useKeepRouteToast() {
           raiseProblem({ id: TOAST_ID, title: `${grouped(failed)} chart tiles not kept: those parts of the route need a connection` });
       }
     } else if (before === "keeping" && job.status === "failed") {
-      toast.dismiss(TOAST_ID);
+      toast.close(TOAST_ID);
       raiseProblem({ id: TOAST_ID, title: `Charts not kept: ${job.detail}` });
     } else if (job.status === "idle") {
       // Stopped, or the setting turned off: a failure said is gone too.
-      if (before === "keeping") toast.dismiss(TOAST_ID);
+      if (before === "keeping") toast.close(TOAST_ID);
       clearProblem(TOAST_ID);
     }
   }, [job]);

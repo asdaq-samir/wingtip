@@ -25,18 +25,18 @@ vi.mock("./toastManager", () => ({ toastManager: manager(""), anchoredManager: m
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-describe("lib/toast", () => {
+describe("lib/toast", { shuffle: false }, () => {
   it("asks for the toasts only at the first, and makes the calls in order once the Toaster listens", async () => {
     const { toast, loadToasts, toasterReady } = await import("./toast");
     // Nothing to take down before any toast: the chunk is not fetched for it.
-    toast.dismiss("progress");
+    toast.close("progress");
     await Promise.resolve();
     expect(calls).toEqual([]);
 
-    toast.loading("Drawing course", { id: "progress" });
-    toast.dismiss("progress");
-    toast.success("Link copied");
-    toast("Route changed");
+    toast.add({ id: "progress", title: "Drawing course", type: "loading", timeout: 0 });
+    toast.close("progress");
+    toast.add({ title: "Link copied", type: "success" });
+    toast.add({ title: "Route changed" });
     await loadToasts();
     await settle();
     // Base UI's manager tells only a Provider already listening: nothing
@@ -58,6 +58,7 @@ describe("lib/toast", () => {
     expect(shown.actionProps?.children).toBe("Undo");
     shown.actionProps!.onClick();
     expect(undo).toHaveBeenCalledTimes(1);
+    await settle();
     expect(calls.at(-1)).toBe(`close ${id}`);
   });
 
