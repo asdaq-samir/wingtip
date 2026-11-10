@@ -45,13 +45,17 @@ export function useSearchPanel({
   const favorites = usePreferences((p) => p.favoriteAirports);
   const pickPlace = useCallback(
     async (airport: RecentAirport) => {
-      setQuery("");
       (document.activeElement as HTMLElement | null)?.blur();
+      // A place's card: what was typed kept for the way back, as Apple
+      // Maps' card closed goes back to its search with its words (the card
+      // rule, 2026-11-10), as a waypoint's card already did.
       if (picking === "place") {
         addRecent(airport);
         selectPlace(airport.ident);
         return;
       }
+      // Home or a Favorite picked: the words let go with the ask.
+      setQuery("");
       // Where it is, for how far it is from own ship.
       const full = await queryClient.fetchQuery(airportQuery(airport.ident)).catch(() => null);
       const kept = full ? { ident: full.ident, name: full.name, municipality: full.municipality, lat: full.lat, lon: full.lon } : airport;
