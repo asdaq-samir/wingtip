@@ -85,6 +85,21 @@ textarea {
   margin-bottom: 0;
 }
 
+/* The credits' row (lib/map/gl/MapCredits) as Apple Maps on the web sets
+   its Privacy | Terms | Legal | Imagery: small grey words on a soft wash
+   of the sheet's colour, no box (the owner's screenshot, 2026-11-10). */
+.maplibregl-map .maplibregl-ctrl-attrib {
+  background-color: color-mix(in oklab, var(--sheet) 70%, transparent);
+  border-radius: 0.375rem 0 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  padding: 0.125rem 0.5rem;
+}
+.maplibregl-map .maplibregl-ctrl-attrib a {
+  color: var(--muted-foreground);
+}
+
 /* Clear of the map panel (MapPanel): its edge's corner controls sit
    past what the panel covers at rest (MapPage sets the insets), and past
    the home indicator, moving in the sheet's time (mapChrome's

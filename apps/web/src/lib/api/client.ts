@@ -516,9 +516,9 @@ export const api = {
       .then((r) => r.tfrs),
   /** When the planner fetched the METARs and TFRs the map draws. */
   mapAges: () => planner.GET("/api/map/ages").then(data<MapLayerAges>),
-  nearestAirports: (lat: number, lon: number) =>
+  nearestAirports: (lat: number, lon: number, limit = 10) =>
     planner
-      .GET("/api/airports/nearest", { params: { query: { lat, lon, limit: 10 } } })
+      .GET("/api/airports/nearest", { params: { query: { lat, lon, limit } } })
       .then(data<NearestAirports>)
       .then((r) => r.airports),
   /** What the emergency assistant ranks (features/emergency/emergency): the fields round own ship,

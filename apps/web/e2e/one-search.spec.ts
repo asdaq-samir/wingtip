@@ -4,8 +4,9 @@ import { airportSearch, emptyPlan, firstRow, grabberTo, searchAirports, settle, 
 /**
  * The one search (the owner's approved design, 2026-11-09), where the FPL,
  * Airport, Airplane and Setup tabs were: the sheet's first row one field,
- * "Search airports, airplanes, or ask", the microphone and the account
- * button beside it; nothing typed, the search's own page (the flight,
+ * "Search airports, airplanes, or ask", the microphone its trailing
+ * button, and over it the title row, the app's name with the account
+ * button at its right (the owner's Apple Maps screenshot, 2026-11-10); nothing typed, the search's own page (the flight,
  * Favorites, Recents, Nearest); typed, one list in groups -- Airports,
  * Waypoints and Navaids, Airplanes, Do -- and "Ask:"; an airport picked,
  * its card with Fly Here, Depart From and Add as Stop at its top, each
@@ -14,7 +15,7 @@ import { airportSearch, emptyPlan, firstRow, grabberTo, searchAirports, settle, 
  */
 
 test(
-  "the sheet's first row is the one search and the account button; typed, its results come in groups, and an airport's Depart From sets the plan",
+  "the sheet's title row holds the account button over the one search; typed, its results come in groups, and an airport's Depart From sets the plan",
   { tag: "@smoke" },
   async ({ page }) => {
     await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -23,13 +24,16 @@ test(
     // it, no tabs.
     await grabberTo(page, "half");
     const row = firstRow(page);
+    const title = sideDrawer(page).getByTestId("sheet-title");
     await expect(row.getByTestId("search-airports")).toHaveAttribute("placeholder", "Search airports, airplanes, or ask");
-    await expect(row.getByTestId("account-button")).toBeVisible();
+    await expect(title.getByTestId("account-button")).toBeVisible();
+    await expect(title.getByRole("heading", { name: "Wingtip Maps" })).toBeVisible();
+    await expect(row.getByTestId("account-button")).toHaveCount(0);
     await expect(sideDrawer(page).getByRole("tablist", { name: "Tabs" })).toHaveCount(0);
     await expect(sideDrawer(page).getByLabel("Departure", { exact: true })).toContainText("C81");
 
-    // Focused: the search's own page, the flight first, Cancel in the
-    // account button's place.
+    // Focused: the search's own page, the flight first, Cancel beside the
+    // field, the title row kept over it as Apple's is while typing.
     const search = await airportSearch(page);
     await search.click();
     const home = sideDrawer(page).getByTestId("search-home");
@@ -37,14 +41,18 @@ test(
     await expect(home.getByTestId("flight-summary-route")).toContainText("C81");
     await expect(home.getByTestId("pill-section-favorites")).toBeVisible();
     await expect(row.getByTestId("one-search-cancel")).toBeVisible();
-    await expect(row.getByTestId("account-button")).toHaveCount(0);
+    await expect(title.getByTestId("account-button")).toBeVisible();
 
-    // Typed: one list, grouped, the assistant last.
+    // Typed: one list, grouped as Apple Maps' results are (the owner's
+    // screenshot, 2026-11-10): the top hit with its quick actions, then the
+    // question for the assistant as a suggestion.
     await search.fill("osh");
     const results = sideDrawer(page).getByTestId("one-search-results");
     await expect(searchAirports(page).filter({ hasText: "KOSH" }).first()).toBeVisible({ timeout: slow(10_000) });
-    await expect(results.getByRole("group", { name: "Do" })).toBeVisible();
-    await expect(results.getByTestId("search-do-ask")).toContainText("Ask: “osh”");
+    const top = results.getByRole("group", { name: "Top Hit" });
+    await expect(top.getByTestId("search-top-fly-here")).toBeVisible();
+    await expect(top.getByTestId("search-top-depart-from")).toBeVisible();
+    await expect(results.getByRole("group", { name: "Suggestions" }).getByTestId("search-do-ask")).toContainText("Ask: “osh”");
 
     // KOSH picked: its card, the plan's three actions at its top.
     await searchAirports(page).filter({ hasText: "KOSH" }).first().click();
@@ -59,7 +67,7 @@ test(
     await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
     await expect(card).toHaveCount(0);
     await expect(sideDrawer(page).getByLabel("Departure", { exact: true })).toContainText("KOSH");
-    await expect(row.getByTestId("account-button")).toBeVisible();
+    await expect(title.getByTestId("account-button")).toBeVisible();
   },
 );
 
@@ -114,4 +122,16 @@ test("⌘K or Ctrl K focuses the one search from anywhere on a desktop", async (
   await page.locator("body").click({ position: { x: 1000, y: 400 } });
   await page.keyboard.press(process.platform === "darwin" ? "Meta+K" : "Control+K");
   await expect(page.getByTestId("search-airports")).toBeFocused();
+});
+
+test("the top hit's Fly Here plans the route to it from the result, with no card between", async ({ page }) => {
+  await page.goto("/app/plan?dep=C81");
+  await settle(page);
+  const search = await airportSearch(page);
+  await search.fill("KDLH");
+  const top = sideDrawer(page).getByTestId("one-search-results").getByRole("group", { name: "Top Hit" });
+  await expect(top.getByTestId("airport-result")).toContainText("KDLH", { timeout: slow(10_000) });
+  await top.getByTestId("search-top-fly-here").click();
+  await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
+  await expect(sideDrawer(page).getByTestId("place-card")).toHaveCount(0);
 });

@@ -29,6 +29,7 @@ import FlightFoot from "./components/workspace/FlightFoot";
 import RouteHead from "./components/workspace/RouteHead";
 import RouteControls from "./components/workspace/RouteControls";
 import ListSearchField from "./components/workspace/SearchFields";
+import SheetTitle from "./components/search/SheetTitle";
 import OneSearchField from "./components/search/OneSearchField";
 import { useOneSearch } from "./hooks/useOneSearch";
 
@@ -596,13 +597,12 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // The one search, the panel's first row, and at rest the pill
         // itself (MapPanel), where the tabs were.
         bar: <OneSearchField model={search} inputRef={vm.searchInput} />,
-        // The route's figures -- the distance, the time en route, the arrival
-        // and the fuel -- pinned at FPL's foot while there is a route, at every
-        // height, the pill too, at the pilot's ask: they were the last of the
-        // route's head, out of sight at rest. FPL's alone, at the owner's ask
-        // ("Fpl can show calculations but other tabs should show something
-        // else"): the other tabs' pills are their search bars (MapPanel's
-        // headInPill).
+        // Over it the app's name and the account (Apple Maps' web title, 2026-11-10).
+        title: <SheetTitle onClose={search.sent ? search.cancel : undefined} />,
+        titleAtFull: search.focused || !!search.typed,
+        // The route's figures pinned at FPL's foot at every height, the pill
+        // too, at the pilot's ask; FPL's alone, at the owner's ask ("Fpl can
+        // show calculations but other tabs should show something else").
         // FPL's figures pinned at the sheet's foot at every height, the pill's
         // too, growing as it comes up, at the owner's asks ("While dragging fpl
         // keep the calculations pinned at the bottom"; "Why can't the half card

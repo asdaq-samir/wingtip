@@ -305,9 +305,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
                 data-nav={navBar ?? "auto"}
                 data-mode={mode}
               >
-                {/* React hoists a rendered <title> into the document head
-              itself, so the browser tab says which page this is
-              without an effect writing document.title by hand. */}
+                {/* React hoists a rendered <title> into the head: the tab says which page this is. */}
                 <title>{title}</title>
                 {/* An emailed sign-in link lands here (#signin=…), finished in the app's own dialog. */}
                 <LinkSignIn />
@@ -361,9 +359,10 @@ export default function MapPage({ mode }: { mode: Mode }) {
                     // the search's row.
                     compact={consoleLayer ? undefined : (pieces.compact ?? topRow)}
                     toEdge={!!pieces.toEdge}
-                    // The first row (the one search) over a card alone too, and over
-                    // the account page, for the way back to the rest.
+                    // The first row (the one search), under its title; put away under a card (MapPanel).
                     bar={pieces.bar}
+                    title={pieces.title}
+                    titleAtFull={!!pieces.titleAtFull}
                     layer={consoleLayer ? "console" : pieces.alone ? "card" : "tab"}
                     foot={consoleLayer ? undefined : pieces.foot}
                     cardOver={!!pieces.cardOver}

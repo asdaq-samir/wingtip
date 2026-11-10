@@ -15,8 +15,10 @@ import { FLYING_BUTTON, FLYING_STACK, GLASS, useFlying } from "../lib/mapChrome"
  * stacks its own: the map's settings, the pilot's own position (the
  * location arrow), and full screen where it works. A zoom toggle, between the whole route and the
  * selected point, went: picking a waypoint brings the map to it. At the
- * bottom right, over the sheet or the panel's edge -- clear of it, and of
- * the chart credit in the corner.
+ * top right under a bottom sheet, as Apple Maps on the web has its map
+ * and location buttons (the owner's screenshot, 2026-11-10, which moved
+ * them from over the sheet's top); over a top sheet at the bottom right,
+ * riding its edge.
  *
  * Ghost buttons on the group's glass, eight apart inside it, so
  * each one's 44-point hit area (index.css) meets the next one's rather
@@ -92,25 +94,23 @@ export default function MapControls() {
         controls; still inside the map's own stacking context, under the
         panel and every portal. The map's right edge is the screen's, so
         clear of a landscape phone's notch there.
-        Just over the sheet at its small and medium heights, as Maps' ride
-        on its sheet (the owner's screenshot, 2026-10-26): the map's bottom
-        inset is what the sheet covers at rest (MapPanel), and they move
-        with it in the sheet's time; all the way up they give way
-        (index.css). Clear of the chart credit under them. */}
+        At the top right under a bottom sheet (nav-bottom), as Apple Maps on
+        the web (the owner's screenshot, 2026-11-10); with the sheet at the
+        top, just under its edge at the bottom right, riding it; all the way
+        up they give way (index.css). */}
       <div
         data-map-controls=""
         data-flying={flying || undefined}
-        className="absolute right-[max(0.5rem,env(safe-area-inset-right))] bottom-[calc(max(env(safe-area-inset-bottom),var(--sheet-cover,var(--map-inset-bottom,0px)))+1.5rem)] md:nav-bottom:top-[max(0.5rem,env(safe-area-inset-top))] md:nav-bottom:bottom-auto z-[1000] flex flex-col items-end gap-2"
+        className="absolute right-[max(0.5rem,env(safe-area-inset-right))] bottom-[calc(max(env(safe-area-inset-bottom),var(--sheet-cover,var(--map-inset-bottom,0px)))+1.5rem)] nav-bottom:top-[max(0.5rem,env(safe-area-inset-top))] nav-bottom:bottom-auto z-[1000] flex flex-col items-end gap-2"
       >
         {!onPhone && mic}
         <div
           className={cn(
-            // A capsule of Liquid Glass, as Maps' buttons are on iOS 26 and
-            // the panel's capsule is at rest: a circle round one button, a
-            // pill round more, and no hairlines between them.
-            // Round buttons on it, so one pressed or open is a circle in the
-            // circle, not a square.
-            "flex flex-col gap-2 rounded-full p-1 [&_button]:rounded-full",
+            // One soft rounded card of glass round them, as Apple Maps on
+            // the web groups its map button over its location arrow (the
+            // owner's screenshot, 2026-11-10); a button pressed or open a
+            // rounded square in it.
+            "flex flex-col gap-2 rounded-2xl p-1 [&_button]:rounded-xl",
             flying && FLYING_STACK,
             GLASS,
           )}

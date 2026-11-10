@@ -30,6 +30,7 @@ const searchHome = fromChunk(
 );
 const SearchHome = searchHome.Part;
 const OneSearchResults = lazy(() => import("../search/OneSearchResults"));
+const SearchResultsPage = lazy(() => import("../search/SearchResultsPage"));
 
 /** The saved flights in full, FPL's card (the console's list, loaded as
  *  it opens). */
@@ -319,9 +320,8 @@ export default function PlanSidebar({
               </Suspense>
             </TabPage>
           ) : model.typed || model.direct ? (
-            <TabPage testId="search-page">
-              <OneSearchResults model={model} />
-            </TabPage>
+            // A search sent, its results (Apple's list); else the suggestions.
+            <TabPage testId="search-page">{model.sent ? <SearchResultsPage /> : <OneSearchResults model={model} />}</TabPage>
           ) : (
             stripsDrawn && <SearchHome vm={vm} model={model} />
           )}

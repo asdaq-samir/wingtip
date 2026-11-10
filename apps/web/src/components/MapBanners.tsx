@@ -38,6 +38,10 @@ const AtcCopilot = lazy(() => import("../features/atc").then((m) => ({ default: 
  * could-not line went under the sheet's foot and the Stops button (the
  * iOS audit, landscape, 2026-10-28).
  *
+ * At the top under a bottom sheet, clear of the map's buttons, which stand
+ * at the top right there since the owner's Apple Maps screenshot
+ * (2026-11-10).
+ *
  * The radio's (RadioLayer) after what is ahead: a call to us with its
  * actions, and the captions while the app listens, once it first has.
  */
@@ -55,10 +59,10 @@ export default function MapBanners({ map }: { map: GlMap | null }) {
   return (
     <div
       className={cn(
-        "pointer-events-none absolute bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] z-[1000] flex flex-col items-center gap-2 nav-bottom:top-[max(0.5rem,env(safe-area-inset-top))] nav-bottom:right-[max(1rem,env(safe-area-inset-right))] nav-bottom:left-[calc(max(1rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] nav-bottom:bottom-auto",
+        "pointer-events-none absolute bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] z-[1000] flex flex-col items-center gap-2 nav-bottom:top-[max(0.5rem,env(safe-area-inset-top))] nav-bottom:left-[calc(max(1rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] nav-bottom:bottom-auto",
         flying
-          ? "right-[calc(max(0.5rem,env(safe-area-inset-right))+4.75rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+4.75rem)]"
-          : "right-[calc(max(0.5rem,env(safe-area-inset-right))+3.25rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+3.25rem)]",
+          ? "right-[calc(max(0.5rem,env(safe-area-inset-right))+4.75rem)] nav-bottom:right-[calc(max(0.5rem,env(safe-area-inset-right))+4.75rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+4.75rem)]"
+          : "right-[calc(max(0.5rem,env(safe-area-inset-right))+3.25rem)] nav-bottom:right-[calc(max(0.5rem,env(safe-area-inset-right))+3.25rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+3.25rem)]",
       )}
     >
       {/* The zoom level while it changes (ZoomBanner), first. */}

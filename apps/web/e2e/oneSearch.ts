@@ -59,6 +59,10 @@ export async function emptyPlan(page: Page) {
   await expect(sideDrawer(page).getByTestId("route-type")).toBeVisible();
 }
 
-/** What the one search found typed: its Airports group's rows
- *  (OneSearchResults), apart from its waypoints, airplanes and Do. */
-export const searchAirports = (page: Page) => sideDrawer(page).getByRole("group", { name: "Airports" }).getByTestId("airport-result");
+/** What the one search found typed: its airports' rows (OneSearchResults),
+ *  the top hit first and the Airports group after it, apart from its
+ *  waypoints, airplanes and Do. */
+export const searchAirports = (page: Page) =>
+  sideDrawer(page)
+    .getByRole("group", { name: /^(Top Hit|Airports)$/ })
+    .getByTestId("airport-result");

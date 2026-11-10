@@ -143,7 +143,8 @@ test("off, as it is unless shown, nothing is asked and nothing drawn", async ({ 
   await page.waitForTimeout(2000);
   expect(asks).toHaveLength(0);
   await expect(page.locator("svg[data-traffic]")).toHaveCount(0);
-  await expect(page.locator(".maplibregl-ctrl-attrib")).toHaveCount(0);
+  // The map's row keeps its legal links (MapCredits); the traffic's credit is not in it.
+  await expect(page.locator(".maplibregl-ctrl-attrib")).not.toContainText("adsb.lol");
 });
 
 test("the traffic is asked about wherever the map is panned, own ship or not, and further out for a map zoomed out", async ({

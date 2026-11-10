@@ -71,6 +71,7 @@ export interface PartsProps {
   controls?: ReactNode;
   compact?: ReactNode;
   bar?: ReactNode;
+  title?: ReactNode;
   foot?: ReactNode;
   children: ReactNode;
   layer: "tab" | "card" | "console";
@@ -86,6 +87,8 @@ export interface PartsProps {
   footShown: boolean;
   cardsUp: boolean;
   barShown: boolean;
+  /** The title row over the first row (MapPanel's `title`) in sight. */
+  titleShown: boolean;
   toEdge: boolean;
   edgeInset: number;
   halfChrome: number;
@@ -113,7 +116,7 @@ const CUT_TOP = "[clip-path:inset(0_0_max(0px,calc(-1*(var(--drawer-snap-point-o
  */
 export function SheetParts(p: PartsProps) {
   const { atPill, fromBottom, size, sizes, footShown, cardsUp, setHead, setFoot } = p;
-  const headerShown = !p.flying && !cardsUp && (atPill ? !p.bar : p.top != null || !p.barShown);
+  const headerShown = !p.flying && !cardsUp && (atPill ? !p.barShown : p.top != null || !p.barShown);
   const headContent = atPill ? p.compact : p.top;
   const keptHere = p.kept != null && headerShown && headContent === p.kept;
   const under = !atPill;
@@ -141,8 +144,24 @@ export function SheetParts(p: PartsProps) {
         style={vars}
         className={cn("relative flex shrink-0 flex-col", under && "z-20", topSheet && "pt-[env(safe-area-inset-top)]", topSheet && follows)}
       >
+        {/* The title row, Apple Maps' "Maps" on the web: the app's name
+            and the account button (the owner's screenshot, 2026-11-10). */}
+        {p.title && p.titleShown && (
+          <div className={cn("flex h-[3.25rem] shrink-0 items-center gap-2 px-4", ROW_PAD)} data-testid="sheet-title">
+            {p.title}
+          </div>
+        )}
         {p.bar && (
-          <div className={cn("flex h-[4.25rem] shrink-0 px-2 pb-1.5", ROW_PAD, !p.barShown && "hidden")}>
+          <div
+            className={cn(
+              "flex h-[4.25rem] shrink-0 px-2 pb-1.5",
+              p.titleShown ? "pt-1" : ROW_PAD,
+              !p.barShown && "hidden",
+              // All the way up on a phone the search alone is pinned at the
+              // top, a hairline under it, as Apple Maps' is.
+              p.onPhone && size === "full" && "border-b border-border",
+            )}
+          >
             <PanelSize.Provider value={p.panelSize}>{p.bar}</PanelSize.Provider>
           </div>
         )}

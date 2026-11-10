@@ -6,7 +6,7 @@ import { useAirportSearch } from "../lib/useAirportSearch";
 import { usePreferences, type RecentAirport } from "../lib/preferences";
 import { ListGroup, ListRow } from "./GroupedList";
 import { ClearList, RemovableRow } from "./RemovableRow";
-import { KeptMark, ListPageHead, PillSection, PillStrip, SmallAirportTile, StripNote } from "./Favorites";
+import { KeptMark, ListPageHead, PillSection, PillStrip, SmallAirportTile } from "./Favorites";
 import { placeLink } from "../lib/flightLink";
 import { useAway } from "../lib/useAway";
 import ClearButton from "./ClearButton";
@@ -176,19 +176,6 @@ export function SearchResults({
         ))}
       </ListGroup>
     </PillSection>
-  );
-}
-
-/** The airports opened last as tiles, one of the lists Airport's strip
- *  shows (AirportPill), at the owner's ask ("Recents should also have
- *  symbols instead of a list"); a word of what is kept while there are
- *  none. */
-export function RecentAirportTiles({ onPick }: { onPick: (airport: RecentAirport) => void }) {
-  const recents = usePreferences((s) => s.recentAirports);
-  return recents.length > 0 ? (
-    <RecentAirportStrip recents={recents} onPick={onPick} />
-  ) : (
-    <StripNote>None yet: the airports opened are kept here.</StripNote>
   );
 }
 

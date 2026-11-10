@@ -880,6 +880,38 @@ notifications before a tap; a different app per `start_url`.
 [mdn-share-target], [mdn-file-handlers], [mdn-env], [webdev-viewport],
 [chrome-viewport-resize], [bui-releases], [ra-122], [vercel-guidelines].
 
+### 15a. The map and its sheet: Apple Maps on the web (verified)
+
+**Reference, verified.** The research of 2026-11-09 could not render
+maps.apple.com (a script shell, see "Not verified"). On 2026-11-10 the
+owner sent screenshots of Apple Maps on the web (beta) in iPhone Safari,
+and these are the verified reference for the phone's map and sheet: the
+sheet at rest ([apple-maps-web-rest.jpg](reference/apple-maps-web-rest.jpg))
+and all the way up ([apple-maps-web-full.jpg](reference/apple-maps-web-full.jpg)),
+with a place card, the suggestions while typing, a sent search's results
+and filters, and the map-type card described in the owner's words. The
+owner's rule: a screenshot of another app means ours should show this.
+
+**What Wingtip shows, and where (built on `claude/web-applemaps`).**
+
+| Apple Maps on the web | Wingtip |
+|---|---|
+| Sheet at rest: grabber, "Maps BETA" title row, full-width white search field on a light grey sheet | Grabber, the title row (`SheetTitle`: the mark and "Wingtip Maps", `Wordmark`, with the account button at its right end, moved from beside the field), the one search full width with the microphone as its trailing button. The phone's sheet is `GLASS_SHEET` (the look's `--sheet`: `#f2f2f7` in Wingtip, the paper in Chart ink, Canvas in Native) and the field `bg-card` |
+| All the way up: the title gone, the field pinned with a hairline under it | The title row goes at the full detent (MapPanel `titleShown`), kept while the search is in use, as Apple's is while typing; a hairline under the field |
+| Large bold section titles, picture cards sliding sideways, a white card with a question and art | The search's page (`SearchHome`): Favorites, Recents and Nearest titled in bold (`PillSection large`); the Recents as picture cards of the sectional round each field (`RecentCards`, the chart's own tile, shadcn Carousel); Plan a Flight, "Where do you want to fly?", the mark as its art (`FlightSummary`) |
+| Sheet's foot: Privacy \| Terms \| Legal \| Imagery, the copyright | `SheetFooter`: Privacy \| Terms \| Legal (About, every data source and licence), "© year Wingtip Maps". No "manage your business" line: no page for schools or clubs exists |
+| One rounded card at the top right: map button over location | `MapControls`: the map's settings, the location arrow, the flown track and full screen in one rounded glass card at the top right under a bottom sheet (bottom right under a top sheet); the map's banners keep clear of it |
+| One round button at the bottom left (Look Around) | The radio's microphone, where it already was |
+| Privacy \| Terms \| Legal \| Imagery at the map's bottom right, over the sheet | `MapCredits`: one MapLibre AttributionControl at the bottom right, riding the sheet's top, Privacy \| Terms \| Legal then each drawn source's credit (imagery, Google, the traffic, the overlay tiles' FAA cycle); gone all the way up, where the footer has them |
+| A place picked: its card is the whole sheet, no search | Any card (a field, an airplane, a point, the Brief, the Map card) hides the title row and the search; its ✕ goes back to the search with the query kept |
+| Place card: big title, "kind · place" with the place a link, Share and ✕, four action tiles, photos sliding | The airport card: the ident, "name · town" with the town a link, Share and ✕, Fly Here (filled), Depart From, Add as Stop, Weather; the pictures as a sliding row |
+| Typing: top hit with inline action pills, suggestion rows, places | `OneSearchResults`: one white group, the top hit with Fly Here and Depart From pills, Search Nearby and Ask as suggestions, the match in bold |
+| A sent search: ✕ on the title row, chips, rows with thumbnails, Filters page, numbered map marks | The sent search's list, its chips and Filters page on one filter state, and the results as their own clustered MapLibre layer over the chart (the chart's own airport symbols untouched) |
+| Map-type button: "Choose Map" card in the sheet, picture tiles | The Map card in the sheet (`MapSettingsButton`), chart picture tiles from committed crops (`public/map-tiles/`), every setting of the old menu under it |
+
+**Desktop.** Apple Maps on the web uses a left side panel there; Wingtip
+keeps its side panel, with the same title row over the same search.
+
 ### 16. Desktop versus phone
 
 | | Desktop (≥ 1024 px, fine pointer) | Phone and touch tablet |
@@ -988,8 +1020,9 @@ its reason:
   Overview / Reviews / About tabs (documented only in Android help), the
   place panel's buttons and their order, and hover highlighting of pins
   from results. None is on Google's help pages read.
-- **Apple Maps on the web:** the place card's web layout; the page is a
-  script shell with no card in its HTML and no web app manifest. When
+- **Apple Maps on the web:** the page is a script shell with no card in
+  its HTML and no web app manifest. Its phone layout is now verified from
+  the owner's screenshots (section 15a); its desktop layout is not. When
   Look Around arrived on the web is not stated; only its shortcut is.
 - **Linear:** no full shortcut list page (`/docs/keyboard-shortcuts` is
   404), nothing on list density or how menus show shortcut hints.

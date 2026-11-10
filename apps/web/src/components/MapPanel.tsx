@@ -16,7 +16,7 @@ import { useIsDesktop } from "../hooks/use-desktop";
 import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { useKeyboardInset, useSafeArea, useWindowHeight } from "../hooks/use-viewport";
-import { GLASS, MATERIAL, PILL_RADIUS, SHEET_MARGIN, usePanelDragging, type MapInsets, type PanelState } from "../lib/mapChrome";
+import { GLASS_SHEET, MATERIAL, PILL_RADIUS, SHEET_MARGIN, usePanelDragging, type MapInsets, type PanelState } from "../lib/mapChrome";
 import { raisedFor, useSheetCards } from "../lib/sheetCards";
 import { FLOAT_PX, insetsOf, type Detents, type SheetTurn } from "./sheet/insets";
 import { useSheetDetents } from "./sheet/useSheetDetents";
@@ -47,6 +47,11 @@ interface Props {
   /** The planner's one search, the developer's places (DevBar): the
    *  sheet's first row, and at rest the pill itself. */
   bar?: ReactNode;
+  /** Over the first row, the app's name and the account (Apple Maps' web
+   *  title, 2026-11-10): on a phone gone all the way up, unless kept there
+   *  (`titleAtFull`, the search in use); on a desktop always. */
+  title?: ReactNode;
+  titleAtFull?: boolean;
   /** What the panel is showing: the workspace, a card open alone over it,
    *  or the console's layer (the account page). */
   layer?: "tab" | "card" | "console";
@@ -99,27 +104,28 @@ export default function MapPanel(props: Props) {
   const fromBottom = useNavEdge() === "bottom";
   const safe = useSafeArea();
   const windowHeight = useWindowHeight();
-  // With the keyboard up, what it covers is not there: the sheet sits on
-  // the keyboard, a field typed into in it in sight.
+  // With the keyboard up the sheet sits on it, the field typed into in sight.
   const keyboard = useKeyboardInset();
   const bottomSheet = onPhone && fromBottom;
   const raised = useSheetCards((s) => raisedFor(s.stack));
   const cardsUp = raised !== null;
   const footShown = !!foot && !cardsUp;
-  const barShown = !!bar && !(onPhone && keyboard) && !flying;
+  // A card open is the whole sheet, its own head at the top, as a place in
+  // Apple Maps on the web (the owner, 2026-11-10); closed, the search is back.
+  const barShown = !!bar && !(onPhone && keyboard) && !flying && !cardsUp && layer !== "card";
   const toEdge = layer !== "console" && !!props.toEdge && !cardsUp;
 
-  // Where the Drawer is going (its snap point) and the size the sheet is
-  // laid out for: the same, but on the way down to the pill the half's
-  // layout is kept until it lands, so nothing goes before the sheet does.
-  // Landed at once where nothing slides: the side panel, Reduce Motion,
-  // the sheet before its first frame, or a size of the same height.
+  // Where the Drawer is going (its snap point) and the size laid out for:
+  // the same, but going down to the pill the half's layout kept until it
+  // lands. Landed at once where nothing slides (side panel, Reduce Motion,
+  // before the first frame, the same height).
   const still = useRef({ onPhone, ready: false, detents: null as Detents | null, at: props.state as PanelState });
   const life = useSheetLife(props.state, props.onStateChange, (target) => {
     const now = still.current;
     return !now.onPhone || !now.ready || prefersReducedMotion() || (!!now.detents && now.detents[target] === now.detents[now.at]);
   });
   const { size, snap, moving } = life;
+  const titleShown = !!props.title && barShown && !(onPhone && size === "full" && !props.titleAtFull);
   const hasPill = !!bar || !!compact;
   const atPill = size === "peek" && hasPill;
 
@@ -142,6 +148,7 @@ export default function MapPanel(props: Props) {
     size,
     moving,
     barInPill: !flying,
+    titleInPill: !!props.title && barShown,
     footShown,
     pillChrome,
     halfChrome,
@@ -183,12 +190,9 @@ export default function MapPanel(props: Props) {
     return () => cancelAnimationFrame(frame);
   }, [moving]);
 
-  // Escape lowers it, once the key has gone everywhere and nothing else
-  // took it: Setup's page goes back a level (ConsoleLayer), a menu or a
-  // list the sheet opened closes first (each prevents the default). On a
-  // phone the Drawer says it (onOpenChange's "escape-key", below); the
-  // side panel is a plain region, which hears its own key, and on a
-  // desktop goes back one level by the panel's close first (backOne).
+  // Escape lowers it once nothing else took the key (a menu, Setup's page
+  // each prevent it): on a phone the Drawer says it ("escape-key"); the
+  // side panel hears its own, going back one level first (backOne).
   const lower = (event: Event) => {
     setTimeout(() => {
       if (event.defaultPrevented || life.sizeRef.current === "peek") return;
@@ -233,8 +237,7 @@ export default function MapPanel(props: Props) {
     }
   }, [raised, ask, life.sizeRef]);
 
-  // The panel's size on <body>, for the stylesheet's rules about what else
-  // is over the map (index.css).
+  // The panel's size on <body>, for index.css's rules over the map.
   useLayoutEffect(() => {
     document.body.dataset.mapPanel = size;
     return () => {
@@ -246,8 +249,7 @@ export default function MapPanel(props: Props) {
     return () => document.body.removeAttribute("data-map-sheet");
   }, [onPhone]);
 
-  // The map's buttons riding a phone's bottom sheet's top, at the height
-  // it is going to, on its curve.
+  // The map's buttons riding a phone's bottom sheet's top, on its curve.
   useSheetCover(bottomSheet ? detents[snap] : null);
 
   const panelSize = useMemo(() => ({ size, to: ask, card: layer === "card" }), [size, ask, layer]);
@@ -264,6 +266,7 @@ export default function MapPanel(props: Props) {
     footShown,
     cardsUp,
     barShown,
+    titleShown,
     toEdge,
     edgeInset,
     halfChrome,
@@ -280,8 +283,10 @@ export default function MapPanel(props: Props) {
     children,
   };
   const grabber = <SheetGrabber label={label} size={size} ask={ask} at={bottomSheet ? "top" : "bottom"} />;
+  // On a phone the light grey of Apple Maps' web sheet (2026-11-10): the
+  // look's --sheet, Canvas in Native.
   const look = onPhone
-    ? GLASS
+    ? GLASS_SHEET
     : cn(MATERIAL, "w-(--size-panel) lg:w-(--size-panel-wide) ring-1 ring-inset ring-black/5 shadow-float dark:ring-white/10");
   const common = {
     "data-slot": "map-panel",

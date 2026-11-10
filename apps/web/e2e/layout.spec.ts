@@ -91,7 +91,7 @@ test.describe("/app/plan", () => {
     }).toPass({ timeout: 10_000 });
     await page.getByTestId("sidebar-trigger-button").click();
     await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
-    await expect(firstRow(page).getByTestId("account-button")).toBeVisible();
+    await expect(sideDrawer(page).getByTestId("sheet-title").getByTestId("account-button")).toBeVisible();
     await grabberTo(page, "full");
 
     await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -228,11 +228,12 @@ test.describe("/app/plan", () => {
     await expect(header.getByRole("tablist")).toHaveCount(0);
     const headerBox = (await header.boundingBox())!;
     if (phone) expect(headerBox.y).toBeGreaterThan(viewport.height / 2);
-    // From md up the one search is the panel's first row (OneSearchField),
+    // From md up the one search is the panel's first row (OneSearchField)
+    // under its title row (the owner's Apple Maps screenshot, 2026-11-10),
     // the head under it.
     else {
       const bar = (await firstRow(page).boundingBox())!;
-      expect(bar.y).toBeLessThan(40);
+      expect(bar.y).toBeLessThan(100);
       expect(headerBox.y).toBeLessThan(bar.y + bar.height + 8);
     }
     const departureBox = (await header.getByLabel("Departure", { exact: true }).boundingBox())!;
@@ -271,14 +272,14 @@ for (const path of PAGES) {
     const first = page.locator("[data-map-controls] > div:not([data-map-food]) button").first();
     const firstBox = (await first.boundingBox())!;
     // On the map, flush with its right edge -- the same on both pages: on a
-    // phone just over the sheet, as Maps' ride on its sheet (2026-10-26),
-    // at the bottom under a desktop's card.
+    // phone at the top right, as Apple Maps on the web has them (the
+    // owner's screenshot, 2026-11-10), at the bottom under a desktop's card.
     expect(viewport.width - (firstBox.x + firstBox.width)).toBeLessThan(20);
     if (viewport.width < 768) {
       const sheet = (await page.locator("[data-slot=map-panel]").boundingBox())!;
       const group = (await page.locator("[data-map-controls]").boundingBox())!;
       expect(group.y + group.height).toBeLessThanOrEqual(sheet.y);
-      expect(sheet.y - (group.y + group.height)).toBeLessThan(60);
+      expect(group.y).toBeLessThan(80);
     } else {
       expect(firstBox.y).toBeGreaterThan(viewport.height / 2);
       // The mic a button of its own right over the group, at the same edge.
@@ -287,10 +288,12 @@ for (const path of PAGES) {
       expect(viewport.width - (mic.x + mic.width)).toBeLessThan(20);
     }
     // Never among the map's buttons, on either page: their first is the
-    // map's own, its sheet the map's settings, as Maps' is.
+    // map's own, its card the map's settings in the sheet (a desktop's side
+    // panel too), as Apple Maps' Choose Map card is (the owner, 2026-11-10).
     expect(await page.locator("[data-map-controls]").getByTestId("account-button").count()).toBe(0);
     await expect(first).toHaveAttribute("data-testid", "map-settings-button");
     await first.click();
+    await expect(sideDrawer(page).getByTestId("map-settings").getByRole("heading", { name: "Map", level: 2 })).toBeVisible();
     await expect(page.getByTestId("map-settings").getByTestId("base-chart-select")).toBeVisible();
     await expect(page.getByTestId("map-settings").getByTestId("waypoints-toggle")).toBeVisible();
     await page.keyboard.press("Escape");

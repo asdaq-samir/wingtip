@@ -30,6 +30,7 @@ import {
 import { RouteGl, type GlCandidate, type GlCheckpoint, type GlEndpoint } from "../../../lib/map/gl/layers/RouteGl";
 import type { GlLeg } from "../../../lib/map/gl/legTap";
 import { TfrGl } from "./layers/TfrGl";
+import { SearchResultsGl } from "./layers/SearchResultsGl";
 import { FlownTrackGl, LegHighlightGl, LegHoverGl, OwnTrailGl, ReplayGl } from "./layers/TracksGl";
 import { ForecastRunGl } from "../forecastRun/ForecastRunGl";
 import { TrafficGl } from "./layers/TrafficGl";
@@ -160,6 +161,8 @@ function Layers(p: GlRouteMapProps) {
       {loop && <WeatherLoopGl />}
       <WeatherGl line={p.courseLine} altitudeFt={p.cruiseFt} />
       <TfrGl />
+      {/* A search sent, its fields marked (the one search's results). */}
+      <SearchResultsGl />
       <AirspaceGl />
       <NavaidsGl />
       <WaypointsGl exclude={p.chippedIdents} />

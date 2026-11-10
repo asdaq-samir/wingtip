@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { AttributionControl, type RasterLayerSpecification } from "maplibre-gl";
+import type { RasterLayerSpecification } from "maplibre-gl";
 import { useEffect, useState } from "react";
 import { googleMapsQuery } from "../../../queryClient";
 import { usePreferences, type OverlayStrength } from "../../../preferences";
@@ -9,6 +9,7 @@ import { useShownOverlay } from "../../sources/useShownOverlay";
 import { useGlLayer, useGlMap, useGlPaint, type Slot } from "../glLayer";
 import { appZoomOf, glZoom } from "../glStyle";
 import { useGlView } from "../useGlView";
+import { MapCredits, useMapCredit } from "../MapCredits";
 
 /** OverlayTiles': how strongly the imagery covers the chart. */
 const OPACITY: Record<OverlayStrength, number> = { faint: 0.35, half: 0.6, full: 1 };
@@ -27,19 +28,6 @@ const CLOSE_MAX_ZOOM = 17;
 function useTiles(id: string, slot: Slot, url: string, maxzoom: number, paint: RasterLayerSpecification["paint"] = {}, minzoom = 0) {
   const source = { [id]: { type: "raster" as const, tiles: [url], tileSize: 256, maxzoom } };
   useGlLayer(slot, source, [{ id, type: "raster", source: id, minzoom, paint: { "raster-fade-duration": 0, ...paint } }]);
-}
-
-/** A credit at the map's foot, as the sources' terms ask. */
-function useCredit(html: string | null) {
-  const { map } = useGlMap();
-  useEffect(() => {
-    if (!html) return;
-    const control = new AttributionControl({ compact: false, customAttribution: html });
-    map.addControl(control, "bottom-left");
-    return () => {
-      map.removeControl(control);
-    };
-  }, [map, html]);
 }
 
 /** Which imagery is over the chart and how strongly, on the map's element
@@ -105,11 +93,21 @@ function useChartDrawnFirst(): boolean {
 export function OverlayGl() {
   const overlay = useShownOverlay();
   const strength = usePreferences((s) => s.overlayStrength);
-  if (overlay === "none") return <CloseBase />;
-  return overlay === "usgs" ? (
-    <Usgs opacity={OPACITY[strength]} />
-  ) : (
-    <Google key={overlay} kind={overlay === "google-map" ? "map" : "satellite"} opacity={OPACITY[strength]} />
+  // The map's one row of credits and legal links, with the imagery whose
+  // credit is most of it.
+  const drawn =
+    overlay === "none" ? (
+      <CloseBase />
+    ) : overlay === "usgs" ? (
+      <Usgs opacity={OPACITY[strength]} />
+    ) : (
+      <Google key={overlay} kind={overlay === "google-map" ? "map" : "satellite"} opacity={OPACITY[strength]} />
+    );
+  return (
+    <>
+      <MapCredits />
+      {drawn}
+    </>
   );
 }
 
@@ -117,7 +115,8 @@ function Usgs({ opacity }: { opacity: number }) {
   useTiles("overlay-usgs", "imagery", USGS_URL, 16);
   useGlPaint(["overlay-usgs"], { "raster-opacity": opacity });
   useImageryShown("usgs", opacity);
-  useCredit(
+  useMapCredit(
+    "imagery",
     'Imagery <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map" target="_blank" rel="noopener">USGS The National Map</a>',
   );
   return null;
@@ -171,7 +170,8 @@ function Google({ kind, opacity }: { kind: "map" | "satellite"; opacity: number 
       map.off("moveend", ask);
     };
   }, [map, google, session]);
-  useCredit(
+  useMapCredit(
+    "google",
     session ? `<span aria-label="Google Maps" data-testid="google-credit">Google Maps</span>${copyright ? ` · ${copyright}` : ""}` : null,
   );
   if (!google || !session) return null;

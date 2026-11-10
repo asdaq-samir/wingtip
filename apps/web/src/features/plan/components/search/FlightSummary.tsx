@@ -1,4 +1,4 @@
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { cn } from "cn";
 import { airplaneChosen } from "../../../../lib/preferences";
 import { flightLevel } from "../../../../lib/format/figures";
@@ -20,16 +20,26 @@ export default function FlightSummary({ vm, onOpen }: { vm: PlanWorkspaceModel; 
   const { planned, routed, s, estimate, depart, aircraft } = vm;
   const hasPoints = !!planned.dep || !!planned.dest || planned.stops.length > 0;
   if (!hasPoints) {
+    // Apple Maps' "Explore Guides / Where do you want to explore?" card on
+    // its web sheet (the owner's screenshot, 2026-11-10): a white card, its
+    // title and a grey question, the app's mark at its right for the art.
     return (
       <button
         type="button"
         onClick={onOpen}
         data-testid="flight-summary-new"
-        className="flex min-h-14 w-full items-center gap-3 rounded-2xl bg-card px-4 py-3 text-left text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="relative flex min-h-24 w-full items-center overflow-hidden rounded-2xl bg-card px-5 py-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <Plus className="size-5 shrink-0" aria-hidden="true" />
-        <span className={cn("flex-1 font-semibold", TEXT.row)}>Plan a Flight</span>
-        <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5 pr-20">
+          <span className={cn("font-bold text-foreground", TEXT.heading)}>Plan a Flight</span>
+          <span className={cn("text-muted-foreground", TEXT.prose)}>Where do you want to fly?</span>
+        </span>
+        <img
+          src={`${import.meta.env.BASE_URL}favicon.svg`}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 -right-4 size-28 -translate-y-1/2 opacity-90"
+        />
       </button>
     );
   }

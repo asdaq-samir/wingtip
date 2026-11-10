@@ -123,8 +123,11 @@ export function PillSection({
   right,
   children,
   testId,
+  large = false,
 }: {
   title: string;
+  /** A large bold title, as Apple Maps' web sheet's sections (2026-11-10). */
+  large?: boolean;
   /** The list in full, the title the way to it, in the tint with its
    *  chevron -- every section's alike, the tabs' Saved, Favorites and
    *  Recents as the cards' are -- at the owner's ask ("make saved,
@@ -142,7 +145,7 @@ export function PillSection({
   // capitals ("Section labels don't need to be bold or all caps") -- in
   // the text's own colour, or the tint where it opens more ("for
   // clickable sections you can make them blue").
-  const heading = SECTION_TITLE;
+  const heading = large ? cn("font-bold text-foreground", TEXT.card) : SECTION_TITLE;
   return (
     // Eight under the title, so its 44-point hit area (index.css) stays
     // its own over the tiles' (the iOS audit's P1).

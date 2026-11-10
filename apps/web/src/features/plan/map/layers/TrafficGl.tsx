@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { AttributionControl, type Marker } from "maplibre-gl";
+import type { Marker } from "maplibre-gl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { TrafficAircraft } from "../../../../lib/api/types";
 import { api } from "../../../../lib/api/client";
@@ -14,6 +14,7 @@ import { CARRY_S, agedBy, carriedOn, markTraffic, nearOwnHeight, ownShipHex, tra
 import { trafficCredit } from "../trafficCredit";
 import { reported, useTracking, useTrafficFocus, type Report } from "../../../../lib/map/position/tracking";
 import { useGlMap } from "../../../../lib/map/gl/glLayer";
+import { useMapCredit } from "../../../../lib/map/gl/MapCredits";
 import { appZoomOf, glZoom } from "../../../../lib/map/gl/glStyle";
 import { fadeInMarker, iconMarker, setMarkerIcon } from "../../../../lib/map/gl/htmlMarker";
 import { PastFlightGl, TrackedPathGl } from "./TracksGl";
@@ -102,13 +103,7 @@ function Traffic() {
   });
   // adsb.lol's licence (ODbL 1.0, 4.3) asks the map to credit it.
   const credit = trafficCredit(data?.source);
-  useEffect(() => {
-    const control = new AttributionControl({ compact: false, customAttribution: credit });
-    map.addControl(control, "bottom-left");
-    return () => {
-      map.removeControl(control);
-    };
-  }, [map, credit]);
+  useMapCredit("traffic", credit);
   useEffect(() => () => clearProblem(PROBLEM), []);
 
   const targets = useRef(new Map<string, Target>());

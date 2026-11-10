@@ -10,7 +10,6 @@ import { askSearch, searchKeys } from "../../../../lib/oneSearch";
 import { useAtcRadio } from "../../../../lib/atcRadio";
 import { useCanListen } from "../../../../lib/speechLocal";
 import { TEXT } from "../../../../lib/text";
-import { AccountButton } from "../../../pilot";
 import type { OneSearchModel } from "../../hooks/useOneSearch";
 
 /** The listening code (lib/atcListening), its own chunk, fetched once the
@@ -26,9 +25,11 @@ const load = () => import("../../../../lib/atcListening").then((m) => (listening
  * OneSearchResults, in the sheet's body, inside the same Autocomplete
  * root: the arrows and Enter go from the field to its rows); the
  * microphone beside it, on-device speech as the map's is, what is said
- * typed into the field; and the account button (AccountButton), which took
- * Setup's place -- Cancel in its place while the field is in use, as iOS's
- * search fields have it. ⌘K or Ctrl K focuses it from anywhere, its keys
+ * typed into the field, as the field's own trailing button; and Cancel
+ * beside it while the field is in use, as iOS's search fields have it. The
+ * account button went to the title row over it (SheetTitle), so the field
+ * runs the sheet's width, as Apple Maps' on the web does (the owner's
+ * screenshot, 2026-11-10). ⌘K or Ctrl K focuses it from anywhere, its keys
  * shown in it on a desktop: the command palette it replaced.
  */
 export default function OneSearchField({ model, inputRef }: { model: OneSearchModel; inputRef: React.RefObject<HTMLInputElement | null> }) {
@@ -77,8 +78,10 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
           nothing grows to it). */}
       <label
         className={cn(
-          "relative flex h-[2.5625rem] min-w-0 flex-1 items-center gap-2 rounded-full px-3.5 text-muted-foreground",
+          "relative flex h-[2.5625rem] min-w-0 flex-1 items-center gap-2 rounded-full pr-1 pl-3.5 text-muted-foreground",
           PANEL_FIELD,
+          // Focused, the tint's ring round it, as Apple's field has.
+          "focus-within:ring-2 focus-within:ring-tint",
           "before:absolute before:inset-x-0 before:-top-0.5 before:h-0.5 before:content-[''] after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:content-['']",
           TEXT.row,
         )}
@@ -97,8 +100,8 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
           onFocus={model.focus}
           // The APG combobox's keys (docs/design/web.md §1) are Base UI's
           // as they are, the first row highlighted for Enter (the root's
-          // autoHighlight), and the clear the search field's own; Escape
-          // lets the field go.
+          // autoHighlight), and the clear the search field's own (Safari's
+          // ⓧ, as Apple's field has); Escape lets the field go.
           onKeyDown={(e) => {
             if (e.key === "Escape") {
               e.preventDefault();
@@ -108,23 +111,23 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
           className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
         />
         {!model.typed && desktop && !using && <Kbd aria-hidden="true">{searchKeys()}</Kbd>}
+        {/* The microphone, the field's trailing button: on-device speech
+            only (lib/speechLocal), so none where the browser has no
+            recognizer. In the tint. */}
+        {voice && (
+          <button
+            type="button"
+            aria-label="Search by voice"
+            onClick={hear}
+            disabled={hearing}
+            data-testid="one-search-mic"
+            className="grid size-9 shrink-0 place-items-center rounded-full text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+          >
+            <Mic className={cn("size-5", hearing && "animate-pulse")} strokeWidth={2.2} aria-hidden="true" />
+          </button>
+        )}
       </label>
-      {/* The microphone, a button of its own beside the field: on-device
-          speech only (lib/speechLocal), so none where the browser has no
-          recognizer. 44 round, in the tint. */}
-      {voice && (
-        <button
-          type="button"
-          aria-label="Search by voice"
-          onClick={hear}
-          disabled={hearing}
-          data-testid="one-search-mic"
-          className="grid size-11 shrink-0 place-items-center rounded-full text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
-        >
-          <Mic className={cn("size-5", hearing && "animate-pulse")} strokeWidth={2.2} aria-hidden="true" />
-        </button>
-      )}
-      {using ? (
+      {using && (
         <button
           type="button"
           onClick={model.cancel}
@@ -133,8 +136,6 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
         >
           Cancel
         </button>
-      ) : (
-        <AccountButton />
       )}
     </div>
   );

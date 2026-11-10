@@ -15,6 +15,9 @@ const HALF_MOST = 0.85;
  *  these. */
 const BAR_REM = 4.25;
 const FOOT_REM = 3.875;
+/** The title row over the search (SheetParts' TITLE_ROW): the app's name
+ *  and the account button, in the pill too, as Apple Maps' on the web. */
+const TITLE_REM = 3.25;
 
 const rootPx = () => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
 
@@ -26,6 +29,8 @@ interface Of {
   moving: boolean;
   /** The pill's parts: the first row (none while flying) and the figures. */
   barInPill: boolean;
+  /** The title row over the first row, in the pill too. */
+  titleInPill?: boolean;
   footShown: boolean;
   /** Under the head and the foot at the pill, and at half and all the way. */
   pillChrome: number;
@@ -45,7 +50,7 @@ interface Of {
  * heights are measured for the body's layout alone.
  */
 export function useSheetDetents(of: Of) {
-  const { head, foot, size, moving, barInPill, footShown, pillChrome, halfChrome, room, sideOut } = of;
+  const { head, foot, size, moving, barInPill, titleInPill = false, footShown, pillChrome, halfChrome, room, sideOut } = of;
   const [headHeight, setHeadHeight] = useState(0);
   const [footHeights, setFootHeights] = useState<{ half: number | null; other: number | null }>({ half: null, other: null });
   const rest = useRef({ moving, size });
@@ -77,11 +82,12 @@ export function useSheetDetents(of: Of) {
   const footFull = footShown ? (footHeights.other ?? footHeights.half ?? 0) : 0;
   const detents = useMemo<Detents>(() => {
     const rem = rootPx();
-    const peek = Math.round(((barInPill || !footShown ? BAR_REM : 0) + (footShown ? FOOT_REM : 0)) * rem) + pillChrome;
+    const bar = barInPill || !footShown ? BAR_REM + (titleInPill ? TITLE_REM : 0) : 0;
+    const peek = Math.round((bar + (footShown ? FOOT_REM : 0)) * rem) + pillChrome;
     const full = Math.max(peek, room);
     const half = Math.max(peek, Math.min(Math.round(HALF_REM * rem) + halfChrome, Math.round(full * HALF_MOST)));
     return { peek, half: sideOut ? full : half, full };
-  }, [barInPill, footShown, pillChrome, room, halfChrome, sideOut]);
+  }, [barInPill, titleInPill, footShown, pillChrome, room, halfChrome, sideOut]);
 
   return {
     detents,
