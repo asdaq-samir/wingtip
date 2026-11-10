@@ -2,16 +2,52 @@ import SwiftUI
 
 /// The nav log, behind the route box's ••• as the web keeps it
 /// (docs/decisions/0029, the owner's of 2026-11-09: no inline nav log at
-/// full height): a leg a row, its header the cruise altitude as the cruise
-/// controls write it (FL-045), each leg opening its detail.
+/// full height), laid out as docs/design/ios.md §4 has it: a large title
+/// whose bar folds away on scroll, the totals as one facts row, the
+/// route from the side (Swift Charts), then the legs: a row each on a
+/// compact width, each opening its detail, and a Table with sortable
+/// columns where the width is regular (the iPad, a wide window). Share
+/// (the kneeboard's PDF among the rest) is pinned in the bar.
 struct NavLogPage: View {
     @Environment(Plan.self) private var plan
+    @Environment(\.horizontalSizeClass) private var width
 
     var body: some View {
+        Group {
+            if width == .regular, !plan.legs.isEmpty {
+                VStack(spacing: 0) {
+                    totals.padding(.vertical, WingtipSpace.md)
+                    NavLogTable(legs: plan.legs)
+                }
+            } else {
+                list
+            }
+        }
+        .navigationTitle("Nav Log")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .pinnedTrailing) { ShareMenu() }
+        }
+        // A long list: its rows soften under the bar, and
+        // the bar folds away while it scrolls down (iOS 27).
+        .glassScrollEdges()
+        .navigationBarMinimizesOnScroll()
+    }
+
+    private var list: some View {
         List {
             if plan.legs.isEmpty {
-                Text(plan.planning ? "Planning…" : "No legs yet: plan the route first.").foregroundStyle(.secondary)
+                ContentUnavailableView(plan.planning ? "Planning…" : "No Legs Yet", systemImage: WingtipIcon.navLog,
+                                       description: Text(plan.planning ? "The legs come in as the planner works them out." : "Plan the route first."))
             } else {
+                Section {
+                    totals.listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
+                }
+                Section(title: "Profile") {
+                    ProfileChart(profile: plan.profile, legs: plan.legs, altitudeFt: plan.altitudeFt, selection: plan.altitude?.altitudeSelection)
+                        .frame(height: 180)
+                        .listRowInsets(EdgeInsets())
+                }
                 Section {
                     // The nav log kept, shown with no signal, with its age.
                     KeptAgeLine(kind: .plan, key: ReadyToFly.flightKey(plan))
@@ -20,15 +56,64 @@ struct NavLogPage: View {
                     }
                 } header: {
                     // The page is titled Nav Log; its section says at what.
-                    if let feet = plan.altitudeFt { SectionTitle("Nav Log · \(Format.cruiseAltitude(feet))") }
+                    if let feet = plan.altitudeFt { SectionTitle("Legs · \(Format.cruiseAltitude(feet))") } else { SectionTitle("Legs") }
                 }
             }
         }
-        .navigationTitle("Nav Log")
-        // A long list: its rows soften under the bar, and
-        // the bar folds away while it scrolls down (iOS 27).
-        .glassScrollEdges()
-        .navigationBarMinimizesOnScroll()
+    }
+
+    /// The route's totals as the planner gave them: distance, time, fuel
+    /// and the reserve kept. A dash where there is no airplane to work a
+    /// time or fuel out for (docs/decisions/0011).
+    private var totals: some View {
+        let t = plan.totals
+        return FactsRow(facts: [
+            .init(label: "Distance", value: t.map { Format.distance($0.distanceNm, decimals: 0) } ?? "—",
+                  spoken: t.map { SpokenFigures.nauticalMiles($0.distanceNm.rounded()) }),
+            .init(label: "ETE", value: t?.eteMin.map(Format.navLogTime) ?? "—", spoken: t?.eteMin.map(SpokenFigures.minutes)),
+            .init(label: "Fuel", value: t?.fuelGal.map { Format.fuel($0) } ?? "—", spoken: t?.fuelGal.map(SpokenFigures.gallons)),
+            .init(label: "Reserve", value: t?.reserveMin.map(Format.navLogTime) ?? "—", spoken: t?.reserveMin.map(SpokenFigures.minutes)),
+        ])
+        .padding(.horizontal, WingtipSpace.lg)
+    }
+}
+
+/// The legs as a Table on a regular width (the iPad, a wide window):
+/// columns the pilot can sort, each figure the engine's, tabular digits.
+/// The compact width keeps the rows (HIG: no sideways scrolling on the
+/// iPhone).
+struct NavLogTable: View {
+    let legs: [Leg]
+    @State private var order = [KeyPathComparator(\NavLogTable.Row.number)]
+
+    struct Row: Identifiable {
+        let number: Int
+        let leg: Leg
+        var id: String { leg.id + "#\(number)" }
+        var to: String { leg.to }
+        var course: Double { leg.magneticHeadingDeg ?? leg.magneticCourseDeg }
+        var distance: Double { leg.distanceNm }
+        var groundspeed: Double { leg.groundspeedKt ?? -1 }
+        var ete: Double { leg.eteMin ?? -1 }
+        var fuel: Double { leg.fuelGal ?? -1 }
+        var altitude: Double { leg.altitudeFt }
+    }
+
+    var body: some View {
+        let rows = legs.enumerated().map { Row(number: $0.offset + 1, leg: $0.element) }.sorted(using: order)
+        Table(rows, sortOrder: $order) {
+            TableColumn("Leg", value: \.number) { Text("\($0.number)").monospacedDigit() }
+            TableColumn("To", value: \.to) { Text($0.to).font(.body.monospaced()) }
+            TableColumn("Alt", value: \.altitude) { Text(Format.cruiseAltitude($0.altitude)).monospacedDigit() }
+            TableColumn("MH", value: \.course) { row in
+                Text(row.leg.magneticHeadingDeg.map(Format.heading) ?? "CRS \(Format.heading(row.leg.magneticCourseDeg))").monospacedDigit()
+            }
+            TableColumn("Dist", value: \.distance) { Text(Format.distance($0.distance)).monospacedDigit() }
+            TableColumn("GS", value: \.groundspeed) { Text($0.leg.groundspeedKt.map(Format.speed) ?? "—").monospacedDigit() }
+            TableColumn("ETE", value: \.ete) { Text($0.leg.eteMin.map(Format.navLogTime) ?? "—").monospacedDigit() }
+            TableColumn("Fuel", value: \.fuel) { Text($0.leg.fuelGal.map { Format.fuel($0) } ?? "—").monospacedDigit() }
+        }
+        .accessibilityLabel("Nav log legs")
     }
 }
 
