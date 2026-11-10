@@ -109,6 +109,8 @@ struct ProfileCard: View {
                     }
                 }
             }
+            // The same reasons in plain words, on the phone (AltitudeWhy).
+            AltitudeWhySection(line: plan.altitude, flownFt: plan.altitudeFt, choice: plan.altitudeChoice)
         }
         .navigationTitle(plan.altitudeFt.map { Format.cruiseAltitude($0) } ?? "Profile")
         .navigationBarTitleDisplayMode(.inline)

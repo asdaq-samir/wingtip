@@ -33,7 +33,8 @@ enum NotamsInWords {
         }
         do {
             let ask = try WordsAsk(kind: .notams, body: [String: String](), figures: figures)
-            return SaidWords(words: try await device.words(ask), origin: .device)
+            let words = try await device.words(ask)
+            return SaidWords(words: words, origin: .apple(words))
         } catch {
             let why = (error as? WordsUnavailable)?.why ?? "Apple's on-device model could not write them."
             return SaidWords(words: .none(OnDeviceWords.model, why), origin: .none)

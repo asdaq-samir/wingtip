@@ -38,6 +38,8 @@ struct LogbookEntryFields: View {
             Toggle("Tracking", isOn: $entry.tracking)
         case .remarks:
             TextField("Remarks", text: Binding(get: { entry.remarks ?? "" }, set: { entry.remarks = $0 }), axis: .vertical).lineLimit(1...4)
+            // A remark drafted from the entry's own facts, into the field to edit.
+            DraftRemarkButton(figures: { RemarkDraft.figures(entry) }) { entry.remarks = $0 }
         }
     }
 

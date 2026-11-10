@@ -106,7 +106,7 @@ protocol BriefGlanceModel: Sendable {
 }
 
 struct AppleBriefGlanceModel: BriefGlanceModel {
-    var unavailableWhy: String? { OnDeviceWords.unavailableWhy }
+    var unavailableWhy: String? { AppleModels.unavailableWhy }
 
     static let instructions = """
     You brief a pilot at a glance from a flight planner's Go / No-Go findings: the verdict, then at most three things to \
@@ -124,8 +124,11 @@ struct AppleBriefGlanceModel: BriefGlanceModel {
     func draft(_ answer: GoNoGoAnswer) async throws -> BriefGlanceDraft {
         #if canImport(FoundationModels)
         if #available(iOS 26, *) {
-            let session = LanguageModelSession(instructions: Self.instructions)
-            return try await session.respond(to: Self.prompt(answer), generating: BriefGlanceAnswer.self).content.draft
+            // The phone's model, else Apple's Private Cloud Compute (AppleModels).
+            return try await AppleModels.attempt { place in
+                try await AppleModels.session(place, instructions: Self.instructions)
+                    .respond(to: Self.prompt(answer), generating: BriefGlanceAnswer.self).content.draft
+            }.value
         }
         #endif
         throw AskRefused(why: "Words on this iPhone need iOS 26.")

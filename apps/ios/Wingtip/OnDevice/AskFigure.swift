@@ -38,6 +38,13 @@ final class FigureLog: @unchecked Sendable {
     private var kept: [AskFigure] = []
     /// Each tool called, by name, for the tests and the log.
     private var calls: [String] = []
+    private var answeredAt: ModelPlace = .device
+
+    /// Where the model that used these figures answered (AppleModels).
+    var place: ModelPlace {
+        get { lock.lock(); defer { lock.unlock() }; return answeredAt }
+        set { lock.lock(); answeredAt = newValue; lock.unlock() }
+    }
 
     func add(_ figures: [AskFigure], by tool: String) {
         lock.lock()

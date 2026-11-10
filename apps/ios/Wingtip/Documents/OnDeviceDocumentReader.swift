@@ -17,12 +17,21 @@ import Vision
 enum OnDeviceDocumentReader {
     static let model = "apple-on-device"
 
-    /// Why the phone cannot read a page itself, else nil.
+    /// Where a page can be read by Apple's models, in order: this iPhone's,
+    /// then Private Cloud Compute's (AppleModels), each where it takes images.
+    static var places: [ModelPlace] {
+        #if canImport(FoundationModels)
+        if #available(iOS 27, *) { return AppleModels.places.filter(AppleModels.reads(images:)) }
+        #endif
+        return []
+    }
+
+    /// Why neither of Apple's models can read a page, else nil.
     static var unavailableWhy: String? {
         #if canImport(FoundationModels)
         if #available(iOS 27, *) {
-            if let why = OnDeviceWords.unavailableWhy { return why }
-            return SystemLanguageModel.default.capabilities.contains(.vision) ? nil : "Apple's on-device model on this iPhone cannot read photos."
+            if let why = AppleModels.unavailableWhy { return why }
+            return places.isEmpty ? "Apple's models here cannot read photos." : nil
         }
         #endif
         return "Reading photos on this iPhone needs iOS 27."
@@ -72,18 +81,23 @@ enum OnDeviceDocumentReader {
                 return []
                 #endif
             }()
-            let session = LanguageModelSession(model: SystemLanguageModel.default, tools: tools, instructions: instructions)
             let prompt = Prompt {
                 ask(kind)
                 Attachment(cg).label("page")
             }
-            let draft: [String: Any]
-            switch kind {
-            case .clearance: draft = try json(try await session.respond(to: prompt, generating: ClearanceDraft.self).content)
-            case .logbookPage: draft = try json(try await session.respond(to: prompt, generating: LogbookPageDraft.self).content)
-            case .pohPerformance, .weightBalance: draft = try json(try await session.respond(to: prompt, generating: HandbookPageDraft.self).content)
-            }
-            return try DocumentAnswer(data: answer(kind, draft: draft, today: today))
+            // This iPhone's model first, then Apple's Private Cloud Compute
+            // (AppleModels); the photo goes to Apple's only where the phone's
+            // cannot read it, and to the assistant only where neither can.
+            return try await AppleModels.attempt(places) { place in
+                let session = AppleModels.session(place, tools: tools, instructions: instructions)
+                let draft: [String: Any]
+                switch kind {
+                case .clearance: draft = try json(try await session.respond(to: prompt, generating: ClearanceDraft.self).content)
+                case .logbookPage: draft = try json(try await session.respond(to: prompt, generating: LogbookPageDraft.self).content)
+                case .pohPerformance, .weightBalance: draft = try json(try await session.respond(to: prompt, generating: HandbookPageDraft.self).content)
+                }
+                return try DocumentAnswer(data: answer(kind, draft: draft, today: today, model: place.model))
+            }.value
         }
         #endif
         throw WordsUnavailable(why: "Reading photos on this iPhone needs iOS 27.")
@@ -96,10 +110,13 @@ enum OnDeviceDocumentReader {
     /// cannot run; the engine then reads the text as it is.
     static func said(clearance text: String) async throws -> String? {
         #if canImport(FoundationModels)
-        if #available(iOS 26, *), OnDeviceWords.unavailableWhy == nil {
-            let session = LanguageModelSession(instructions: instructions)
-            let draft = try await session.respond(to: "\(ask(.clearance))\n\nThe note, as text: \(text)", generating: ClearanceTextDraft.self).content
-            let said = draft.said.trimmingCharacters(in: .whitespacesAndNewlines)
+        if #available(iOS 26, *), AppleModels.unavailableWhy == nil {
+            // This iPhone's model, else Apple's Private Cloud Compute.
+            let said = try await AppleModels.attempt(usable: { !$0.isEmpty }) { place in
+                let session = AppleModels.session(place, instructions: instructions)
+                let draft = try await session.respond(to: "\(ask(.clearance))\n\nThe note, as text: \(text)", generating: ClearanceTextDraft.self).content
+                return draft.said.trimmingCharacters(in: .whitespacesAndNewlines)
+            }.value
             return said.isEmpty ? nil : said
         }
         #endif
@@ -116,7 +133,7 @@ enum OnDeviceDocumentReader {
     /// The answer as the assistant writes it (DocumentRead): the read, the
     /// engine's check of it from the engine on the phone, the notes and why
     /// it could not be read. An unreadable page gives no figures.
-    static func answer(_ kind: DocumentKind, draft: [String: Any], today: String) throws -> Data {
+    static func answer(_ kind: DocumentKind, draft: [String: Any], today: String, model: String = OnDeviceDocumentReader.model) throws -> Data {
         var figures = draft
         let page = figures.removeValue(forKey: "page") as? [String: Any] ?? [:]
         let unreadable = (page["unreadable"] as? String).flatMap { $0.trimmingCharacters(in: .whitespaces).isEmpty ? nil : $0 }

@@ -207,6 +207,9 @@ struct ClearanceSheet: View {
         TextField("Tap Listen and hold the phone to the speaker, or type the clearance.",
                   text: Binding(get: { text }, set: { text = $0; following = false }), axis: .vertical).lineLimit(3...6)
         ClearancePhotoRow { said in text = said; following = false }
+        // The words said in full by the on-device model, where the engine
+        // reads more from them (ClearanceInFull); in only on the tap.
+        ClearanceInFullRow(text: text) { said in text = said; following = false }
     }
 
     /// The radio as heard, newest first: a tap reads that one above.
