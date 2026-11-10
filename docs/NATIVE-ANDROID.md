@@ -178,13 +178,23 @@ and `glOverlays.ts`):
   `OwnShip`, at most once a minute) or the whole country, with the sheet's
   peek as its padding as it is when the map opens.
 
-- **Weather pips**: each reporting field wears its METAR's flight
-  category as a pip (`MapWeather`): the planner's reporting fields of a
-  box round the view (`/api/airports/in-view?reporting`), their category
-  the engine's `flight_category` as the planner answers it, joined onto
-  the tile airports by ident in the airports layer's `icon-image`
-  (`MapStyle.airportIcon`, the web's `setAirportWeather`), asked again as
-  the view leaves the box or every ten minutes; what was heard is kept.
+- **Airport weather** (the owner's pick, 2026-11-10): each reporting
+  field's METAR (`MapWeather`, the planner's reporting fields of a box
+  round the view, `/api/airports/in-view?reporting`, asked again as the
+  view leaves the box or every ten minutes; what was heard is kept). Its
+  flight category, the engine's `flight_category` as the planner answers
+  it, is a 4.5 dp ring in the category token's colour round the chart's
+  own symbol, or ForeFlight's dot in its place (`AirportWeatherMarks`,
+  part of the symbol's picture, so give-way hides it with the field).
+  Over it, MapLibre symbol layers (`StationLayer`): the station model's
+  barb (`wind_barb`) and its visibility and ceiling lines from Leaflet's
+  zoom 10, the wind arrow at any zoom (`wind_arrow`, red past the picked
+  airplane's demonstrated crosswind on the field's least-crosswind
+  runway, the planner's `least_crosswind`), and the amber ↓ at the
+  plan's fields whose TAF at the ETA is worse than the METAR now
+  (`weather_worse` over `/api/briefing`'s forecast stations,
+  `RouteWorse`). Settings' Map section sets it (`AirportWeatherStore`):
+  Off, Halo, Dot or Station, and three switches.
 - **Setup's Map switches** (`MapLayersStore`, in the DataStore settings
   file): Airspace, VORs and Fixes, Terminal Area Charts, Private Fields,
   Military Fields and Traffic, the web's "On the Map" rows with the

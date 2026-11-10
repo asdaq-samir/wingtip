@@ -47,6 +47,8 @@ import app.wingtipmaps.android.flight.OwnTrail
 import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.Tracking
 import app.wingtipmaps.android.flight.Traffic
+import app.wingtipmaps.android.map.AirportWeatherMarks
+import app.wingtipmaps.android.map.AirportWeatherStore
 import app.wingtipmaps.android.map.ChartMap
 import app.wingtipmaps.android.map.EmergencyLine
 import app.wingtipmaps.android.map.MapLayersStore
@@ -56,6 +58,9 @@ import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapRest
 import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.map.MapWeather
+import app.wingtipmaps.android.map.RouteWorse
+import app.wingtipmaps.android.map.StationLayer
+import app.wingtipmaps.android.map.StationMarks
 import app.wingtipmaps.android.map.TrafficDrawing
 import app.wingtipmaps.android.map.WeatherLoopBar
 import app.wingtipmaps.android.notify.LiveFlight
@@ -63,8 +68,10 @@ import app.wingtipmaps.android.receiver.Receiver
 import app.wingtipmaps.android.receiver.ReceiverChip
 import app.wingtipmaps.android.route.RouteLegModel
 import app.wingtipmaps.android.route.RoutePoints
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * The map and what is over it, the same under either layout: the chart
@@ -104,7 +111,10 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val context = LocalContext.current
     val layers by remember { MapLayersStore.of(context) }.layers.collectAsStateWithLifecycle()
     val mapWeather: MapWeather = viewModel()
-    val weather by mapWeather.colours.collectAsStateWithLifecycle()
+    val categories by mapWeather.categories.collectAsStateWithLifecycle()
+    val airportWeather by remember { AirportWeatherStore.of(context) }.settings.collectAsStateWithLifecycle()
+    val weather = remember(categories, airportWeather.mode) { AirportWeatherMarks.pips(categories, airportWeather.mode) }
+    val fieldsWx by mapWeather.fields.collectAsStateWithLifecycle()
     val traffic = remember { Traffic.of(context) }
     val trafficOn by traffic.on.collectAsStateWithLifecycle()
     val planes by traffic.planes.collectAsStateWithLifecycle()
@@ -158,8 +168,22 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     LaunchedEffect(groundFt) { InFlight.shared.terrainFt = groundFt }
     // The airplane's own glide ratio (the pilot's over its book's), none
     // with no airplane or none given: no other airplane's is taken.
-    val glideRatio = rememberAirplaneNow(plan).glideRatio
+    val airplaneNow = rememberAirplaneNow(plan)
+    val glideRatio = airplaneNow.glideRatio
     LaunchedEffect(glideRatio) { InFlight.shared.glideRatio = glideRatio }
+    // The airport weather's barbs, arrows and badges (StationLayer): the
+    // arrow red only past the picked airplane's demonstrated crosswind, the
+    // badge at the plan's fields whose TAF is worse by the time there.
+    val routeWorse: RouteWorse = viewModel()
+    LaunchedEffect(state.dep, state.stops, state.dest, state.depart, state.totals?.eteMin, airportWeather.worse) {
+        if (airportWeather.worse) routeWorse.plan(state)
+    }
+    val worse by routeWorse.idents.collectAsStateWithLifecycle()
+    val demonstratedKt = StationMarks.demonstratedKt(airplaneNow.profile)
+    val kept = remember { StationMarks.Kept() }
+    LaunchedEffect(fieldsWx, worse, demonstratedKt, airportWeather) {
+        StationLayer.show(withContext(Dispatchers.Default) { kept.marks(fieldsWx.values, demonstratedKt, worse) }, airportWeather)
+    }
     val ringKept by GlideRing.flow(context).collectAsStateWithLifecycle()
     // Each fix taken by the engine as it comes, whether the app is in
     // front or put away (the activity lives on beside own ship's
@@ -182,7 +206,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
 
     val mapSaid = if (fieldsInView.isEmpty()) stringResource(R.string.said_map) else pluralStringResource(R.plurals.said_map_fields, fieldsInView.size, fieldsInView.size)
     val fieldActions = fieldsInView.map { pin ->
-        CustomAccessibilityAction(stringResource(R.string.said_open_field, MapMarks.label(pin))) { onPick(MapPick.Airport(pin.ident)); true }
+        CustomAccessibilityAction(stringResource(R.string.said_open_field, MapMarks.label(pin, fieldsWx[pin.ident]))) { onPick(MapPick.Airport(pin.ident)); true }
     }
     Box(Modifier.fillMaxSize()) {
         ChartMap(

@@ -29,10 +29,10 @@ object OverlayPictures {
      *  symbol is laid out without its picture. [density] is the screen's
      *  pixels to a dp. */
     fun addTo(builder: Style.Builder, density: Float) {
-        // 2 inks, 4 sizes, 5 pips and 4 uses: 160 small pictures, as the web's.
+        // 2 inks, 4 sizes, 9 pips and 4 uses: 288 small pictures.
         for (towered in listOf(true, false)) {
             for (size in MapStyle.SIZES) {
-                for (pip in MapStyle.PIPS) {
+                for (pip in AirportWeatherMarks.PIPS) {
                     for (use in MapStyle.USES) {
                         builder.withImage(MapStyle.airportMarkId(towered, size, pip, use), airport(towered, size, pip, use, density))
                     }
@@ -149,9 +149,10 @@ object OverlayPictures {
      *  in the airport's ink, blue towered and magenta not, round a white
      *  disc with a dot of the ink in its middle, inside a white halo; a
      *  private field the guide's circle with an "R", a military one with
-     *  an "M", a heliport with an "H"; its weather (its METAR's flight
-     *  category's colour, `pip`) a small dot at its lower right, edged in
-     *  white, where it has a report. */
+     *  an "M", a heliport with an "H". Its weather (AirportWeatherMarks,
+     *  `pip`) a ring in its flight category's colour round the white halo,
+     *  WEATHER_RING dp wide so it holds in sunlight, or ForeFlight's dot
+     *  in the colour in place of the symbol. */
     private fun airport(towered: Boolean, size: String, pip: String, use: String, density: Float): Bitmap {
         val colour = ink(if (towered) MapStyle.BLUE else MapStyle.MAGENTA)
         val letter = when (use) {
@@ -161,9 +162,17 @@ object OverlayPictures {
             else -> null
         }
         val r = if (letter != null) 7f else RADIUS[size] ?: 6f
-        return picture(26f, density, origin = 13f) {
-            // The halo: white, 2.5 dp past the ring.
-            drawCircle(0f, 0f, r + 2.5f, fill(Color.WHITE))
+        val weather = AirportWeatherMarks.inkOf(pip)?.let(::ink)
+        return picture(30f, density, origin = 15f) {
+            if (weather != null && AirportWeatherMarks.isDot(pip)) {
+                drawCircle(0f, 0f, DOT, fill(weather))
+                drawCircle(0f, 0f, DOT, stroke(Color.WHITE, 1.5f))
+                return@picture
+            }
+            // The halo: white, 1.2 dp past the ring, and the weather's ring
+            // round it.
+            drawCircle(0f, 0f, r + if (weather != null) 1.2f else 2.5f, fill(Color.WHITE))
+            if (weather != null) drawCircle(0f, 0f, r + 1.2f + WEATHER_RING / 2, stroke(weather, WEATHER_RING))
             if (letter != null) {
                 drawCircle(0f, 0f, r, stroke(colour, 2f))
                 val type = fill(colour).apply {
@@ -176,13 +185,15 @@ object OverlayPictures {
                 drawCircle(0f, 0f, r, stroke(colour, 2.6f))
                 drawCircle(0f, 0f, r * 0.42f, fill(colour))
             }
-            if (pip.isNotEmpty()) {
-                val at = r * 0.78f
-                drawCircle(at, at, 3.4f, fill(ink(pip)))
-                drawCircle(at, at, 3.4f, stroke(Color.WHITE, 1.3f))
-            }
         }
     }
+
+    /** The weather's ring round a symbol, dp: about 4.5 points, the
+     *  owner's pick (2026-11-10), wide enough to read in sunlight. */
+    private const val WEATHER_RING = 4.5f
+
+    /** ForeFlight's weather dot in place of the symbol, its radius, dp. */
+    private const val DOT = 7f
 
     /** How big a traffic airplane is drawn, dp (the web's TRAFFIC_MARK, 16
      *  at the owner's ask, 2026-10-28), the chevron in its 22-unit box. */

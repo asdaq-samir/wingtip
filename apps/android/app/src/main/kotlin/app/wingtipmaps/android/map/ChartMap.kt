@@ -80,7 +80,7 @@ data class MapRest(val south: Double, val west: Double, val north: Double, val e
  *   the chart; null for the chart alone.
  * @param layers Setup's switches: which overlays are drawn, and the
  *   terminal area chart pinned (`terminal`, where the chart has one).
- * @param weather each reporting field's pip colour by ident (MapWeather).
+ * @param weather each reporting field's weather pip by ident (AirportWeatherMarks).
  * @param closeTiles Google's street map close in (CloseMap); null for
  *   the chart alone, enlarged.
  * @param traffic the airplanes heard (Traffic), `tracked` the one ringed.
@@ -128,7 +128,7 @@ fun ChartMap(
 ) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val holder = LocalDensity.current.density.let { density -> remember { MapHolder(MapView(context).also(NexradLayer::follow).also(WeatherLoopLayer::follow).also(ForecastAreasLayer::follow), density) } }
+    val holder = LocalDensity.current.density.let { density -> remember { MapHolder(MapView(context).also(NexradLayer::follow).also(WeatherLoopLayer::follow).also(ForecastAreasLayer::follow).also(StationLayer::follow), density) } }
     holder.onDragged = onDragged
     holder.onRevealed = onRevealed
     holder.onPick = onPick

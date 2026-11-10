@@ -17,15 +17,21 @@ import kotlin.math.floor
  * The airports' weather pips (the web's AirportsGl TileAirports): the
  * fields that report in a box about the view, each with its METAR's
  * flight category -- the planner's, worked out by the engine
- * (`flight_category`, AIM 7-1-7) -- as each pip's colour by ident, which
- * the map joins onto the tile airports. Asked as the map comes to rest
+ * (`flight_category`, AIM 7-1-7) -- by ident, which the map joins onto
+ * the tile airports as each one's weather mark (AirportWeatherMarks). Asked as the map comes to rest
  * on a new box, and again every ten minutes, as a METAR's category can
  * change by the hour; what was heard is kept, so a pan back, or a pan
  * with no signal, keeps its pips.
  */
 class MapWeather : ViewModel() {
-    private val _colours = MutableStateFlow<Map<String, String>>(emptyMap())
-    val colours: StateFlow<Map<String, String>> = _colours.asStateFlow()
+    private val _categories = MutableStateFlow<Map<String, String>>(emptyMap())
+    val categories: StateFlow<Map<String, String>> = _categories.asStateFlow()
+
+    /** Each reporting field's METAR as the station model and the wind
+     *  arrow read it (the planner's `weather`), by ident, kept as the
+     *  categories are. */
+    private val _fields = MutableStateFlow<Map<String, FieldWx>>(emptyMap())
+    val fields: StateFlow<Map<String, FieldWx>> = _fields.asStateFlow()
 
     private var asked: Box? = null
     private var askedAtMs = 0L
@@ -66,7 +72,8 @@ class MapWeather : ViewModel() {
         asking = viewModelScope.launch {
             try {
                 val fields = Planner.reportingInView(next.south, next.west, next.north, next.east)
-                _colours.value = merged(_colours.value, fields.associate { it.ident to MapStyle.pipOf(it.flightCategory) })
+                _categories.value = merged(_categories.value, fields.associate { it.ident to it.flightCategory.orEmpty() })
+                _fields.value = merged(_fields.value, fields.associate { it.ident to StationLines.fieldOf(it) }) { true }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -83,10 +90,13 @@ class MapWeather : ViewModel() {
 
         /** What was heard before with the newest over it, a field with no
          *  category now dropped; at most MAX_FIELDS kept, the newest. */
-        fun merged(was: Map<String, String>, now: Map<String, String>): Map<String, String> {
-            val out = LinkedHashMap<String, String>()
+        fun merged(was: Map<String, String>, now: Map<String, String>): Map<String, String> = merged(was, now) { it.isNotEmpty() }
+
+        /** The same for any value, one null or not `has` dropped. */
+        fun <V : Any> merged(was: Map<String, V>, now: Map<String, V?>, has: (V) -> Boolean): Map<String, V> {
+            val out = LinkedHashMap<String, V>()
             for ((k, v) in was) if (k !in now) out[k] = v
-            for ((k, v) in now) if (v.isNotEmpty()) out[k] = v
+            for ((k, v) in now) if (v != null && has(v)) out[k] = v
             return if (out.size <= MAX_FIELDS) out else out.entries.toList().takeLast(MAX_FIELDS).associate { it.key to it.value }
         }
 
