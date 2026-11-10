@@ -47,9 +47,9 @@ enum Permission: Sendable {
     }
 }
 
-/// One permission's step: its glyph, title and sentence, then Allow and
-/// Not Now. The welcome's location and notifications pages, and the
-/// microphone's sheet where the ATC copilot is turned on (AtcModePicker).
+/// One permission's page: its glyph, title and sentence, then Allow and
+/// Not Now, shown where the permission is first wanted: the microphone's
+/// sheet where the ATC copilot is turned on (AtcModePicker).
 struct PermissionAsk: View {
     let permission: Permission
     let allow: () -> Void
