@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import type { Description } from "../../hooks/useCheckpointNotes";
-import { DescriptionCell } from "./NavLogView";
+import { DescriptionCell } from "./DescriptionCell";
 
 afterEach(cleanup);
 

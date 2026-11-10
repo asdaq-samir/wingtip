@@ -35,7 +35,7 @@ const routeLine = (r: PlannedRoute) => [r.dep, ...r.stops, r.dest].filter(Boolea
 
 /**
  * One of the card's four rows: its name at the left, where it stands at the right, a control of its own
- * beside it (a microphone, Enter Route) and its detail folded under, opened by a tap on the row (shadcn's
+ * beside it (a microphone, Use This Route) and its detail folded under, opened by a tap on the row (shadcn's
  * Collapsible on a ListRow, as the airport card folds its fuel remarks). The row's own height is its hit
  * area (a ListRow is 44 at the least); the control beside it gets its 44 from a pseudo-element.
  */
@@ -111,7 +111,7 @@ const NOT_YET = <span className="text-muted-foreground">Not yet</span>;
  * clearance holds, in that order), the pilot's read back checked line by
  * line by the engine (lib/readback, AIM 4-4-7 b), the route the clearance
  * gives and the altitude it flies, and that route held against the one
- * filed (routeDifference). Enter Route is the one tap that changes the
+ * filed (routeDifference). Use This Route is the one tap that changes the
  * plan: nothing heard goes in before it.
  */
 export default function ClearanceCard({
@@ -239,7 +239,8 @@ export default function ClearanceCard({
   const readCount = check ? Math.max(0, parts.length - check.items.length) : 0;
   const lines = check ? readbackLines(clearance, check) : [];
 
-  // Enter Route, the one tap that changes the plan; the row says so after.
+  // Use This Route (docs/design/web.md §12), the one tap that changes
+  // the plan; the row says so after.
   const [enteredText, setEnteredText] = useState<string | null>(null);
   const isEntered = enteredText !== null && enteredText === settled;
   const enterRoute = () => {
@@ -340,15 +341,9 @@ export default function ClearanceCard({
           {/* A clearance copied down on paper, read into the words above. */}
           <ClearancePhoto onRead={pick} />
           {/* The clearance element by element as read, a polite live region
-              so each new word is said without taking the focus; and under
-              it the one tap that changes the plan (docs/design/web.md §12). */}
-          <ClearanceElements clearance={clearance} places={places} heard={heardIt}>
-            {cleared && enter && !isEntered && (
-              <Button onClick={enterRoute} className="self-start" data-testid="clearance-use">
-                Use This Route
-              </Button>
-            )}
-          </ClearanceElements>
+              so each new word is said without taking the focus; the one
+              tap that changes the plan is Use This Route on the Enter row. */}
+          <ClearanceElements clearance={clearance} places={places} heard={heardIt} />
           {/* The radio as heard, newest first, a call to us in bold: a tap
               reads that one above. */}
           {log.length > 0 && (
@@ -433,7 +428,7 @@ export default function ClearanceCard({
               data-testid="clearance-enter"
               className={ROW_BUTTON}
             >
-              Enter Route
+              Use This Route
             </Button>
           }
         >

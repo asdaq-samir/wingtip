@@ -47,6 +47,12 @@ test("in flight, Emergency opens the best fields, the squawk and the MAYDAY", { 
     await expect(second).toHaveAttribute("aria-checked", "true");
   }
   await expect(sheet.getByTestId("emergency-call-911")).toHaveAttribute("href", "tel:911");
+  // From md up it is a region in the side panel, not a modal dialog: the
+  // map stays usable beside it (docs/design/web.md §8).
+  if ((page.viewportSize()?.width ?? 0) >= 768) {
+    await expect(sheet).toHaveAttribute("role", "region");
+    await expect(page.locator('[role="dialog"][aria-modal="true"]')).toHaveCount(0);
+  }
   // The map's own buttons are as they were: no EMER (the owner, 2026-11-08).
   await expect(page.getByTestId("map-emergency")).toHaveCount(0);
 });
@@ -55,11 +61,19 @@ test("it opens on its title, and the next Tab is Direct To the best field, which
   await flying(page);
   await page.getByTestId("flying-emergency").click();
   const sheet = page.getByTestId("emergency-sheet");
-  // The static title takes the first focus (APG modal dialog), not a field.
-  await expect(sheet.locator("[data-emergency-title]")).toBeFocused();
+  // The static title takes the first focus (APG modal dialog), not a field:
+  // the phone sheet's title, or the side panel's card head on a desktop
+  // (docs/design/web.md §8: no modal there, the map usable beside it).
+  await expect(sheet.locator(":focus")).toHaveText("Emergency");
   const direct = sheet.getByTestId("emergency-direct-to");
   await expect(direct).toBeVisible({ timeout: slow(20_000) });
   await page.keyboard.press("Tab");
+  // In the side panel the card's close sits beside its title, as every
+  // panel card's does: the next Tab after it.
+  if (await sheet.getByTestId("sheet-card-close").isVisible()) {
+    await expect(sheet.getByTestId("sheet-card-close")).toBeFocused();
+    await page.keyboard.press("Tab");
+  }
   await expect(direct).toBeFocused();
   const best = await sheet.getByTestId("emergency-field").first().locator(".font-semibold").first().textContent();
   await expect(direct).toContainText(`Direct To ${best}`);

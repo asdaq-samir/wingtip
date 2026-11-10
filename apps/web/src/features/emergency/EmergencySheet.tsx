@@ -1,4 +1,4 @@
-import SheetDialog from "../../components/SheetDialog";
+import PanelOrSheet from "../../components/PanelOrSheet";
 import ActionsList from "./ActionsList";
 import DirectToField from "./DirectToField";
 import EmergencyChecklist from "./EmergencyChecklist";
@@ -8,7 +8,8 @@ import { useEmergency } from "./useEmergency";
 
 /** The title the sheet opens on (APG modal dialog: a static title takes
  *  the first focus where the content is long), so a screen reader starts
- *  at "Emergency" and the next Tab is Direct To. */
+ *  at "Emergency" and the next Tab is Direct To. The side panel's card
+ *  focuses its own head the same way. */
 const TITLE = "[data-emergency-title]";
 
 /**
@@ -20,8 +21,10 @@ const TITLE = "[data-emergency-title]";
  * checklist, and the radio. Opened with no map button of its own (the
  * owner, 2026-11-08) -- from the flying mode's Emergency, the pilot's
  * words ("mayday", "engine failure", "emergency") and the emergency
- * checklists -- the stock sheet (SheetDialog) over the map, which stays
- * in sight above it on a phone.
+ * checklists. On a phone the stock sheet over the map, which stays in
+ * sight above it; from `md` up a card in the side panel at its full
+ * height, no modal, the map usable beside it (docs/design/web.md §8,
+ * PanelOrSheet).
  *
  * It opens at once, whatever the motion setting (docs/design/web.md §8):
  * the stylesheet below takes the sheet's entry transition away for this
@@ -32,17 +35,17 @@ const TITLE = "[data-emergency-title]";
 export default function EmergencySheet() {
   const vm = useEmergency();
   return (
-    <SheetDialog
+    <PanelOrSheet
       open={!!vm.open}
-      onOpenChange={(open) => {
-        if (!open) vm.close();
-      }}
+      onClose={vm.close}
+      name="Emergency"
       title={
         <span className="text-destructive outline-none" tabIndex={-1} data-emergency-title="">
           Emergency
         </span>
       }
-      initialFocus={(sheet) => sheet.querySelector<HTMLElement>(TITLE)}
+      titleFocus={TITLE}
+      raise="full"
       testId="emergency-sheet"
     >
       <style href="wingtip-emergency-at-once" precedence="default">
@@ -52,6 +55,6 @@ export default function EmergencySheet() {
       <FieldsList vm={vm} />
       {vm.guidance ? <GuidanceList vm={vm} /> : <EmergencyChecklist vm={vm} />}
       <ActionsList vm={vm} />
-    </SheetDialog>
+    </PanelOrSheet>
   );
 }

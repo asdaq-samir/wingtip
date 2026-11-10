@@ -1,13 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../lib/api/client";
 import { N_NUMBER } from "../../../lib/aircraftChoice";
+import { placeOf, useAirportIndex } from "../../../lib/airportIndex";
+import { useSearchMarks } from "../../../lib/map/marks/searchMarks";
+import { useIsDesktop } from "../../../hooks/use-desktop";
 import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
 import { useAsk } from "../../../lib/ask/useAsk";
 import { useRadioActions } from "../../../lib/atcRadio";
 import { SCREENS, type ScreenId } from "../../../lib/navigation/generated/screens";
 import { wantScreen } from "../../../lib/navigation/wanted";
-import { takeSearchAsk, useSearchAsk } from "../../../lib/oneSearch";
+import { secondKeys, takeSearchAsk, useSearchAsk } from "../../../lib/oneSearch";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
 import { aircraftListQuery, aircraftProfilesQuery, pilotQuery } from "../../../lib/queryClient";
 import type { AirportSearchRow } from "../../../lib/useAirportSearch";
@@ -31,6 +34,13 @@ export interface DoHit {
   keys?: string;
   kind: "action" | "screen" | "ask";
   run: () => void;
+}
+
+/** A result's second action (docs/design/web.md §1): ⌘Enter on its row,
+ *  its name and keys at the row's right while it is highlighted. */
+export interface SecondAction {
+  label: string;
+  keys: string;
 }
 
 /** The screens the search's Do offers by their titles: a link opens any of
@@ -267,6 +277,45 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     if (routed) pickView("plan");
   };
 
+  // On a desktop, the airports found as numbered marks on the map while
+  // the results are up (docs/design/web.md §1, Google Maps' numbered
+  // pins), each where the browser's airport index places it; a mark's
+  // click opens its card, as its row's Enter does (SearchMarksGl).
+  const desktop = useIsDesktop();
+  const index = useAirportIndex(vm.view === "search", !!typed);
+  const numbered = desktop && vm.view === "search" && !!typed && !!index;
+  const openMark = useRef<(ident: string) => void>(() => {});
+  useLayoutEffect(() => {
+    openMark.current = (ident) => {
+      const row = airports.find((r) => r.ident === ident);
+      if (row) pickAirport(row);
+    };
+  });
+  useEffect(() => {
+    if (!numbered || !index) return;
+    const marks = airports.flatMap((r, i) => {
+      const at = placeOf(index, r.ident);
+      return at ? [{ ident: r.ident, n: i + 1, ...at }] : [];
+    });
+    useSearchMarks.setState({ marks, open: (ident) => openMark.current(ident) });
+    return () => useSearchMarks.setState({ marks: [], hot: null, open: null });
+  }, [numbered, index, airports]);
+
+  // The row the arrows are on (Base UI Autocomplete's highlight), for its
+  // second action: Fly Here for an airport (useFlyHere, an EFB's
+  // Direct-To from where the airplane is), Direct To for a waypoint where
+  // the radio can fly one. None while Direct To is asking for its airport.
+  const [highlighted, setHighlighted] = useState<string | null>(null);
+  const secondOf = (value: string): (SecondAction & { run: () => void }) | null => {
+    if (direct) return null;
+    const keys = secondKeys();
+    const field = airports.find((r) => r.ident === value);
+    if (field) return { label: "Fly Here", keys, run: () => (done(), void vm.flyHere({ ident: field.ident })) };
+    const fix = value.startsWith("fix:") ? value.slice(4) : null;
+    if (fix && directTo) return { label: "Direct To", keys, run: () => void flyDirect(fix) };
+    return null;
+  };
+
   // ⌘K, `/`, the Map menu's row and D ask for the field (lib/oneSearch):
   // focused within the ask, so the keyboard comes up.
   const input = vm.searchInput;
@@ -304,6 +353,8 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     setTyped: (text: string) => {
       setQuery(text);
       setProblem(null);
+      // New results: no row picked by the arrows among them yet.
+      setHighlighted(null);
       if (text && vm.view !== "search") pickView("search");
       if (text && vm.panel === "peek") setPanel("full");
     },
@@ -311,6 +362,29 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     pickWaypoint,
     focus,
     cancel,
+    numbered,
+    /** A row's second action, its name and keys (desktop only). */
+    secondOf: (value: string): SecondAction | null => (desktop ? secondOf(value) : null),
+    highlight: (value: unknown) => setHighlighted(typeof value === "string" ? value : null),
+    /** Enter with no row highlighted yet (Base UI's autoHighlight waits for
+     *  the arrows): the first result's card, as Raycast's Enter runs the top
+     *  row; whether there was one. */
+    runFirst: (): boolean => {
+      if (highlighted) return false;
+      const first = airports[0];
+      if (first) pickAirport(first);
+      else if (waypoints[0]) pickWaypoint(waypoints[0].ident);
+      else if (airplanes[0]) airplanes[0].pick();
+      return !!(first ?? waypoints[0] ?? airplanes[0]);
+    },
+    /** ⌘Enter: the highlighted row's second action, run; whether there was one. */
+    runSecond: (): boolean => {
+      // The first row where Base UI has said none yet (its autoHighlight).
+      const value = highlighted ?? airports[0]?.ident ?? null;
+      const second = value ? secondOf(value) : null;
+      second?.run();
+      return !!second;
+    },
   };
 }
 

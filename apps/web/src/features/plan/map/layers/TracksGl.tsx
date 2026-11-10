@@ -8,6 +8,7 @@ import { altFt } from "../../../../lib/format";
 import { useFlownTrack } from "../../../../lib/map/position/flownTrack";
 import { TRAFFIC_COLOURS, trafficIcon } from "../../../../lib/map/marks/icons";
 import { useLegHighlight } from "../legHighlight";
+import { useMapHover } from "../../../../lib/map/marks/mapHover";
 import { useOwnFix, SIMULATED_FIX_MS, endSimulation, simulateFix } from "../../../../lib/map/position/ownShip";
 import { useOwnTrail } from "../../../../lib/map/position/ownTrail";
 import { positionAt, stepPastFlight, usePastFlight } from "../pastFlight";
@@ -90,6 +91,22 @@ export function LegHighlightGl({ course }: { course: Course }) {
   useGlLines("leg-highlight", "lines", runs, null);
   const points = useMemo(() => shown?.lines.flat() ?? [], [shown]);
   useGlFit(points, shown?.key ?? null, 11);
+  return null;
+}
+
+/** The leg a mouse rests on in the nav log (lib/map/marks/mapHover): a
+ *  band in the selection's yellow under the course, the map left where it
+ *  is (a hover never moves it). */
+export function LegHoverGl() {
+  const leg = useMapHover((s) => s.leg);
+  const runs = useMemo<GlRun[] | null>(
+    () =>
+      leg && leg.length > 1
+        ? [{ points: leg.map((p) => [p.lat, p.lon] as [number, number]), colour: CHART.selected, width: 10, opacity: 0.6 }]
+        : null,
+    [leg],
+  );
+  useGlLines("leg-hover", "lines", runs, null);
   return null;
 }
 

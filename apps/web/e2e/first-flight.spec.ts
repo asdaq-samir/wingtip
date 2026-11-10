@@ -73,7 +73,8 @@ test("a new pilot is asked where to, Plan it plans from where the airplane is, t
 
   // Planned from the nearest field to the fix: the nav log's rows, over
   // the route, and the card gone.
-  const navlog = page.getByTestId("navlog-list");
+  // A phone's list, or a desktop's table (docs/design/web.md §4).
+  const navlog = page.getByTestId(/^navlog-(list|table)$/);
   await expect(navlog).toBeVisible({ timeout: slow(60_000) });
   await expect(navlog.getByRole("row").nth(1)).toBeVisible({ timeout: slow(60_000) });
   await expect(page).toHaveURL(/dest=KMSN/);

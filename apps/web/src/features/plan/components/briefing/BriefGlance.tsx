@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, GraduationCap } from "lucide-react";
 import { cn } from "cn";
 import FindingIcon from "../../../../components/FindingIcon";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../../../components/ui/accordion";
 import { clockTime, duration } from "../../../../lib/format";
 import { dataWarning } from "../../../../lib/dataCycles";
 import { useDataCycles } from "../../../../lib/map/sources/layerAges";
@@ -135,21 +135,27 @@ function FieldCard({
   );
 }
 
+/** A folding row's trigger in the glance's look (TRIGGER), Base UI
+ *  Accordion's own chevron at its end in the tint. */
+const FOLD = cn(TRIGGER, TEXT.row, "rounded-none border-0 hover:no-underline focus-visible:ring-offset-0");
+/** An item of the glance's Accordion: a card of its own, no rule under it. */
+const ITEM = cn(CARD, "not-last:border-b-0");
+
 /** A line a pilot acts on: the finding and what to do about it, in one
  *  sentence (features/plan/lib/glance), and under a tap why it matters with the rule it
  *  rests on, the reports it was read from as sent, and the way to its
- *  page. Folded, since the owner's rule is to look and go. */
+ *  page. Folded, since the owner's rule is to look and go: an item of the
+ *  Brief's Base UI Accordion (docs/design/web.md §5, the APG's keys). */
 function Line({ line, onOpen }: { line: GlanceLine; onOpen: (tab: PanelTab) => void }) {
   return (
-    <Collapsible className={CARD} data-testid={`brief-line-${line.key}`} data-finding={line.finding}>
-      <CollapsibleTrigger className={cn(TRIGGER, TEXT.row)}>
+    <AccordionItem value={line.key} className={ITEM} data-testid={`brief-line-${line.key}`} data-finding={line.finding}>
+      <AccordionTrigger className={FOLD}>
         <FindingIcon finding={line.finding} className="mt-0.5 size-5 shrink-0" />
         <span className="min-w-0 flex-1 font-medium" data-testid="brief-line-words">
           {line.line}
         </span>
-        <ChevronRight className="mt-0.5 size-5 shrink-0 text-tint transition-transform group-data-panel-open:rotate-90" aria-hidden />
-      </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-2 px-3.5 pb-3" data-testid="brief-line-why">
+      </AccordionTrigger>
+      <AccordionContent className="space-y-2 px-3.5 pb-3" data-testid="brief-line-why">
         <p className={cn("rounded-lg bg-muted px-3 py-2", TEXT.detail)}>
           <span className="font-semibold">Why it matters: </span>
           {line.why} <span className="text-muted-foreground">({line.cite})</span>
@@ -164,12 +170,15 @@ function Line({ line, onOpen }: { line: GlanceLine; onOpen: (tab: PanelTab) => v
         <button
           type="button"
           onClick={() => onOpen(line.tab)}
-          className={cn("relative ml-1 font-semibold text-tint after:absolute after:-inset-x-2 after:-inset-y-3", TEXT.detail)}
+          className={cn(
+            "relative ml-1 font-semibold text-tint no-underline! after:absolute after:-inset-x-2 after:-inset-y-3",
+            TEXT.detail,
+          )}
         >
           See it in full
         </button>
-      </CollapsibleContent>
-    </Collapsible>
+      </AccordionContent>
+    </AccordionItem>
   );
 }
 
@@ -251,13 +260,13 @@ export default function BriefGlance({
   const airplane = useAirplaneChosen();
   return (
     <div className="flex flex-col gap-2.5 pt-1 pb-4" data-testid="brief-glance">
-      {/* Ready to fly first: what the device needs while there is still a
-          signal, the pre-flight's own first look (features/readyToFly). */}
-      <ReadyToFly />
+      {/* The verdict first (decision 0012), as the engine words it: no
+          live region, as it is there when the Brief opens, not news while
+          the pilot reads (docs/design/web.md §5; the APG's alert is for
+          that alone). */}
       {verdict && (
         <div
           className={cn("flex items-center gap-2.5 rounded-xl px-3.5 py-2.5", MARK_TINT[verdict.finding] ?? "bg-muted")}
-          role="status"
           data-testid="brief-verdict"
           data-finding={verdict.finding}
         >
@@ -265,9 +274,13 @@ export default function BriefGlance({
           <span className={cn("font-semibold", TEXT.row, FINDING_TONE[verdict.finding])}>{verdict.words}</span>
         </div>
       )}
-      {lines?.act.map((line) => (
-        <Line key={line.key} line={line} onOpen={onOpen} />
-      ))}
+      {lines && lines.act.length > 0 && (
+        <Accordion multiple className="gap-2.5" data-testid="brief-lines">
+          {lines.act.map((line) => (
+            <Line key={line.key} line={line} onOpen={onOpen} />
+          ))}
+        </Accordion>
+      )}
       {/* The verdict and its lines first, the assistant's field straight
           under them, at the owner's word ("Verdict first", 2026-11-08):
           the Brief opened on Ask, the verdict fourth and at 19.65 px half
@@ -275,34 +288,35 @@ export default function BriefGlance({
       {first}
       {afterVerdict}
       {lines && lines.rest.items.length > 0 && (
-        <Collapsible className={CARD} data-testid="brief-rest" data-finding={lines.rest.finding}>
-          <CollapsibleTrigger className={cn(TRIGGER, "items-center", TEXT.row)}>
-            <FindingIcon finding={lines.rest.finding} className="size-5 shrink-0" />
-            <span className="min-w-0 flex-1" data-testid="brief-rest-words">
-              {lines.rest.line}
-            </span>
-            <ChevronRight className="size-5 shrink-0 text-tint transition-transform group-data-panel-open:rotate-90" aria-hidden />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="px-3.5 pb-2">
-            {lines.rest.items.map((i) => (
-              <button
-                key={i.key}
-                type="button"
-                onClick={() => onOpen(i.tab)}
-                data-testid={`brief-rest-${i.key}`}
-                className={cn(
-                  "flex w-full items-start gap-2 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  TEXT.detail,
-                )}
-              >
-                <FindingIcon finding={i.finding} className="mt-0.5 size-4 shrink-0" />
-                <span className="min-w-0 flex-1">
-                  <span className="font-medium">{i.label}</span> · {i.detail}
-                </span>
-              </button>
-            ))}
-          </CollapsibleContent>
-        </Collapsible>
+        <Accordion>
+          <AccordionItem value="rest" className={ITEM} data-testid="brief-rest" data-finding={lines.rest.finding}>
+            <AccordionTrigger className={cn(FOLD, "items-center")}>
+              <FindingIcon finding={lines.rest.finding} className="size-5 shrink-0" />
+              <span className="min-w-0 flex-1" data-testid="brief-rest-words">
+                {lines.rest.line}
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="px-3.5 pb-2">
+              {lines.rest.items.map((i) => (
+                <button
+                  key={i.key}
+                  type="button"
+                  onClick={() => onOpen(i.tab)}
+                  data-testid={`brief-rest-${i.key}`}
+                  className={cn(
+                    "flex w-full items-start gap-2 py-1.5 text-left no-underline! outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    TEXT.detail,
+                  )}
+                >
+                  <FindingIcon finding={i.finding} className="mt-0.5 size-4 shrink-0" />
+                  <span className="min-w-0 flex-1">
+                    <span className="font-medium">{i.label}</span> · {i.detail}
+                  </span>
+                </button>
+              ))}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       )}
       <DataWarning />
       <Card
@@ -365,6 +379,10 @@ export default function BriefGlance({
       />
       {glance?.arrive && <FieldCard tab="arrive" label="Arrive" field={glance.arrive} landing onOpen={onOpen} />}
       {after}
+      {/* Ready to Fly last (docs/design/web.md §5): the checks left before
+          departure, each with its source, after the verdict, the Ask, the
+          cards and their detail (decision 0012: nothing above the verdict). */}
+      <ReadyToFly />
       <InstructorNote />
     </div>
   );

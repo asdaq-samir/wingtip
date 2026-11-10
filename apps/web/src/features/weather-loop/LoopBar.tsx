@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type PointerEvent } from "react";
 import { cn } from "cn";
 import { PlaybackButton, PlaybackToolbar, PlayToggle } from "../../components/PlaybackBar";
 import { keepSliderKeys } from "../../components/playbackKeys";
@@ -40,6 +40,17 @@ export function LoopBar() {
   if (loop.kind === "off") return null;
   const name = NAMES[loop.kind];
   const time = loop.frame ? frameTime(loop.frame.valid, now, loop.oldAfterS) : null;
+  // A mouse over the scrubber: the frame under it shown on the map and its
+  // time said here, as long as it rests there (docs/design/web.md §7).
+  const peeked = loop.showing !== loop.shown ? loop.frames[loop.showing] : undefined;
+  const peekTime = peeked ? frameTime(peeked.valid, now, loop.oldAfterS) : null;
+  const peekOver = (e: PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "mouse" || loop.frames.length < 2 || !loop.ready) return;
+    const box = e.currentTarget.getBoundingClientRect();
+    const at = Math.min(1, Math.max(0, (e.clientX - box.left) / Math.max(1, box.width)));
+    loop.peekAt(Math.round(at * (loop.frames.length - 1)));
+  };
+  const shownTime = peekTime ?? time;
   const status = loop.failed
     ? `${name} isn't available right now`
     : loop.loading
@@ -65,27 +76,30 @@ export function LoopBar() {
           </span>
         ) : (
           <>
-            <Slider
-              min={0}
-              max={Math.max(0, loop.frames.length - 1)}
-              step={1}
-              value={[Math.max(0, loop.shown)]}
-              onValueChange={(v) => loop.seek((Array.isArray(v) ? v[0] : v) ?? 0)}
-              disabled={!loop.ready}
-              // The thumb's 44-point reach round its 16, a pseudo-element's.
-              thumb={{
-                "aria-label": `${name} frame`,
-                "aria-valuetext": time ? `${time.zulu}, ${time.age}` : undefined,
-                className: "relative after:absolute after:-inset-3.5 after:content-['']",
-              }}
-              data-testid="weather-loop-scrubber"
-            />
-            {time && (
+            {/* A mouse's hover only: the slider's own keys and taps are untouched. */}
+            <div onPointerMove={peekOver} onPointerLeave={() => loop.peekAt(null)} data-testid="weather-loop-peek">
+              <Slider
+                min={0}
+                max={Math.max(0, loop.frames.length - 1)}
+                step={1}
+                value={[Math.max(0, loop.shown)]}
+                onValueChange={(v) => loop.seek((Array.isArray(v) ? v[0] : v) ?? 0)}
+                disabled={!loop.ready}
+                // The thumb's 44-point reach round its 16, a pseudo-element's.
+                thumb={{
+                  "aria-label": `${name} frame`,
+                  "aria-valuetext": time ? `${time.zulu}, ${time.age}` : undefined,
+                  className: "relative after:absolute after:-inset-3.5 after:content-['']",
+                }}
+                data-testid="weather-loop-scrubber"
+              />
+            </div>
+            {shownTime && (
               <span className={cn("flex min-w-0 items-baseline gap-1.5 tabular-nums", TEXT.note)} data-testid="weather-loop-time">
-                <span className="font-semibold">{time.zulu}</span>
-                <span className="truncate text-muted-foreground">{time.local}</span>
-                <span className={cn("ml-auto shrink-0", time.old ? "font-semibold text-destructive-ink" : "text-muted-foreground")}>
-                  {time.old ? `Old: ${time.age}` : time.age}
+                <span className={cn("font-semibold", peekTime && "text-tint")}>{shownTime.zulu}</span>
+                <span className="truncate text-muted-foreground">{shownTime.local}</span>
+                <span className={cn("ml-auto shrink-0", shownTime.old ? "font-semibold text-destructive-ink" : "text-muted-foreground")}>
+                  {shownTime.old ? `Old: ${shownTime.age}` : shownTime.age}
                 </span>
               </span>
             )}

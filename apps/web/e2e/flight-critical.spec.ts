@@ -37,10 +37,13 @@ test(
     await expect(page.getByTestId("navlog-fuel").first()).toBeVisible({ timeout: slow(120_000) });
     await openPanel(page);
     await openNavLog(page);
-    const log = navLogSheet(page).getByTestId("navlog-list");
+    // A phone's list, or a desktop's table with its time column.
+    const desk = (page.viewportSize()?.width ?? 0) >= 1024;
+    const log = navLogSheet(page).getByTestId(desk ? "navlog-table" : "navlog-list");
+    const timed = desk ? log.getByTestId("navlog-row-ete").last() : log;
     await expect(log.locator('[role="row"][data-kind="destination"]')).toBeVisible({ timeout: slow(60_000) });
-    await expect(log.getByTestId("navlog-row-dist").first()).toContainText(/nm/);
-    await expect(log).toContainText(/\d min\b/);
+    if (!desk) await expect(log.getByTestId("navlog-row-dist").first()).toContainText(/nm/);
+    await expect(timed).toContainText(desk ? /^\d+\.\d$/ : /\d min\b/);
     await closeNavLog(page);
 
     // The route's charts kept, where a service worker can keep them (a secure
@@ -62,9 +65,9 @@ test(
     // kept charts come from the worker's cache.
     await context.setOffline(true);
     await openNavLog(page);
-    const offline = navLogSheet(page).getByTestId("navlog-list");
+    const offline = navLogSheet(page).getByTestId(desk ? "navlog-table" : "navlog-list");
     await expect(offline.locator('[role="row"][data-kind="destination"]')).toBeVisible();
-    await expect(offline).toContainText(/\d min\b/);
+    await expect(desk ? offline.getByTestId("navlog-row-ete").last() : offline).toContainText(desk ? /^\d+\.\d$/ : /\d min\b/);
     await closeNavLog(page);
     if (keeping) {
       const kept = await page.evaluate(async () => (await (await caches.open("chart-tiles")).keys()).length);

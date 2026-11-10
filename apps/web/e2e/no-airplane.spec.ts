@@ -29,9 +29,17 @@ test("no airplane picked: the strip is To and Dist, the nav log its courses and 
   await expect(strip.getByTestId("navlog-ete")).toHaveCount(0);
   await expect(strip.getByTestId("navlog-fuel")).toHaveCount(0);
   await openNavLog(page);
-  const log = navLogSheet(page).getByTestId("navlog-list");
+  // A desktop's table (docs/design/web.md §4): only the columns no
+  // airplane changes -- no heading, groundspeed, time or fuel.
+  const desk = (page.viewportSize()?.width ?? 0) >= 1024;
+  const log = navLogSheet(page).getByTestId(desk ? "navlog-table" : "navlog-list");
   await expect(log.locator('[role="row"][data-kind="destination"]')).toBeVisible({ timeout: slow(60000) });
   await expect(log.locator('[role="row"][data-kind="toc"], [role="row"][data-kind="tod"]')).toHaveCount(0);
+  if (desk) {
+    for (const column of ["mh", "gs", "ete", "fuel", "eta"]) await expect(log.getByTestId(`navlog-row-${column}`)).toHaveCount(0);
+    await expect(log.getByTestId("navlog-row-dist").last()).toHaveText(/^\d+\.\d$/);
+    return;
+  }
   await expect(log).not.toContainText(/\d min\b/);
   await expect(log.getByTestId("navlog-list-heads")).not.toContainText("ETA");
   await expect(log.getByTestId("navlog-row-dist").first()).toContainText(/nm/);
