@@ -94,7 +94,7 @@ struct AskView: View {
                 if reduceMotion {
                     proxy.scrollTo(last.id, anchor: .bottom)
                 } else {
-                    withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo(last.id, anchor: .bottom) }
+                    withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                 }
             }
         }

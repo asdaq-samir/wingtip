@@ -19,7 +19,7 @@ struct WelcomeView: View {
                     .id(model.step)
                     .transition(reduceMotion ? .opacity : .asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
             }
-            .animation(.easeOut(duration: WingtipMotion.page), value: model.step)
+            .animation(.default, value: model.step)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) { dots }

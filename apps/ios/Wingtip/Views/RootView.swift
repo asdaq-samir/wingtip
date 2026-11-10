@@ -113,8 +113,9 @@ struct RootView: View {
                         .modifier(ReadyToFlyHost())
                         // A flight another pilot sent, previewed (SharedFlightHost).
                         .modifier(SharedFlightHost())
-                        // The sheet settling at a size, felt (WingtipHaptic.detent).
-                        .sensoryFeedback(WingtipHaptic.detent, trigger: detent) { _, _ in !reduceMotion }
+                        // The system sheet settles at its detents with its own
+                        // feel; no tap of ours is added to a stock part (the
+                        // owner, 2026-11-10).
                     }
             case .split:
                 SplitLayout(map: map, path: $path, search: search, card: $sideCard, openScreen: { openScreen($0) }, ask: { ask($0) })
