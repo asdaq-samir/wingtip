@@ -27,3 +27,12 @@ search's place with its name and ← at the start, as Google Maps does
 every card back to the search. Close at the right still goes back one
 level on the web and the iPhone. Only the emergency assistant is full
 screen, its close where the platform's full-screen page keeps it.
+
+## Amended 2026-11-10 (stock as is)
+
+The owner, 2026-11-10: rules made for hand-built parts do not bind a
+stock one. On the iPhone a page pushed inside a card now goes back with
+the system's Back button and edge swipe (the hidden-chevron close,
+`closesBack`, is deleted); the close at the right stays on the cards and
+sheets over the map. A card opened from the search closes back to the
+search with what was typed, as Apple Maps' card does.

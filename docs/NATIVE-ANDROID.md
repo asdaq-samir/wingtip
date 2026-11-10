@@ -51,11 +51,15 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     pictures, drawn with Canvas) and `MapLoading` (Material's loading
     indicator until the map is drawn);
   - `ui/`: Material 3 screens, one composable and one ViewModel per
-    screen. `RootScreen` (the map, `MapPane`, under the docked sheet with
-    the four tabs: FPL, Airport, Airplane, Setup, and the figures' strip
-    at the sheet's foot), one file per tab, `Theme` (the one Wingtip
-    theme: the look picked in Setup, Wingtip by default, from the
-    tokens), `Figures` (the strip and `ProblemLine`, the one error
+    screen. `RootScreen` (the map, `MapPane`, under the docked sheet, whose
+    first row is the one search, Material's `SearchBar`, with its mic and
+    the account button that opens Settings, and the figures' strip at the
+    sheet's foot; the four tabs went on 2026-11-09), every thing and page
+    a card on the sheet's own stack (`ui/SheetNav`, `ui/sheet/CardPage`:
+    ← and its name, ✕ at the end, the owner's card and scrolling rules of
+    2026-11-10, docs/design/android.md), `Theme` (the look picked in
+    Settings, Wingtip by default, from the tokens; Native is Material as
+    it comes, `design/Native.kt`), `Figures` (the strip and `ProblemLine`, the one error
     style), `SectionTitle`, `WingtipIcons` (the concept table of
     docs/design/icons.md), `CardActions` (each card kind's actions, the
     web's lib/cardActions.ts);
@@ -126,9 +130,13 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
   `design/Loading.kt` alone), a press the stock buttons' `shapes`, and
   the emphasized type roles the tokens' (scripts/build/design-tokens.sh).
   Bump to 1.5.0 stable when it is released.
-  Wingtip's own colours, not the wallpaper's: Material You stays off,
+  The brand looks take Wingtip's own colours, not the wallpaper's, and
   the brand's blue is the tint (design/tokens.json, the owner's
-  2026-11-09 decision), and the type roles are Material 3's sizes
+  2026-11-09 decision); the Native look (2026-11-10) is a plain
+  `MaterialTheme` with Material You's scheme from the wallpaper on
+  Android 12 and later, Material's default type, shapes and motion, and
+  only the chart's inks and the caution, go and destructive states kept
+  as aviation's meaning. In every look the type roles are Material 3's sizes
   (the tokens' `android` slots: 16 sp rows, 14 sp prose). User-visible
   words are string resources (res/values/strings.xml).
 - The app's words are the web app's words ("airplane", the FAA's

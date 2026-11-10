@@ -933,6 +933,30 @@ to the pill. Medium shows the field's weather; large shows the modules.
 
 ---
 
+### Airport weather marks on the map (2026-11-10)
+
+On the chart, the owner's pick of 2026-11-10. Each reporting field wears its flight
+category as a ring about 4.5 points wide round the chart's own symbol
+(Halo, the default), or ForeFlight's filled dot in its place (Dot). From
+zoom 10 in, a station model adds the wind barb (the engine's `wind_barb`:
+flags, barbs and half-barbs to the nearest 5 kt, a circle for calm,
+FAA-H-8083-28A 25.2.3.4.5) and two lines, the visibility with its weather
+("2 SM BR") and the ceiling with its cover ("OVC 008", "VV 002", from the
+planner's `ceiling_cover`). At any zoom an arrow shows the way the wind
+blows, with "18G26", where the engine's `wind_arrow` gives one (10 kt or
+more, or gusting); it is red only where the field's `least_crosswind` is
+more than the picked airplane's demonstrated crosswind (its POH's, on
+`/api/aircraft-profiles`), and never red with no airplane or no figure. An
+amber ↓ marks a plan's field whose TAF for the pilot's time there is worse
+than its METAR now (`weather_worse`). The weather comes on the map's own
+`/api/airports/in-view` answer (`weather`), the same for every app; the
+shared fixture is `apps/web/src/lib/fixtures/airportWeatherMarks.json`. A
+screen reader says each field's category and wind ("KJVL, IFR, wind 220
+at 18 gusting 26"). The Map card's Airport Weather is a segmented
+`Picker` (Off, Halo, Dot, Station) with three `Toggle`s: Station Model
+When Zoomed In, Wind Arrows and Getting Worse by Arrival, all on by
+default.
+
 ## 8. The emergency assistant
 
 **Follow:**

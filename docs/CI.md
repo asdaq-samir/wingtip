@@ -9,10 +9,10 @@ What runs, when, and how to move it onto the owner's Mac mini.
 | A pull request, and main's push after a merge | The unit tests of whatever the change touched (web, Python, Rust, Java), the dependency review, and the browser suite's smoke tests: the ~33 tests tagged `@smoke`, one per journey a pilot takes, on the phone, in one job against the whole stack | 4-5 min |
 | A pull request that changes only docs, Markdown, the skills or notebooks | The unit tests it touched; no browser suite | 1-2 min |
 | Every night, or Run workflow on CI | Everything: every browser test on the phone, desktop, the iPhones and the iPad, the iOS audit, WCAG and Lighthouse, over ten shards; and the API reference docs built | ~15 min |
-| A pull request that touches a phone app (below) | Inside CI's run, so "CI passed" waits for it: Native Android (the engine per ABI, unit tests, lint, a debug APK) and/or Native iOS (XcodeGen, `xcodebuild test` on the simulators) | 5-10 min |
+| A pull request that touches a phone app (below) | Inside CI's run, so "CI passed" waits for it: Native Android (the engine per ABI, unit tests, lint, a debug APK) and/or Native iOS (XcodeGen, `xcodebuild test` on the newest iPhone simulator alone, then `CardSmokeTests` there; since 2026-11-10 the iPad and iPhone Duo are the night's, as the three together ran past the job's forty minutes) | 5-10 min |
 | main's push that touches a phone app, a `claude/native-*` push | Native Android / Native iOS on their own (`native-android.yml`, `native-ios.yml`); TestFlight after iOS on main once its key is set | 5-10 min |
 | Every night | Native Android again, then its instrumented tests on an emulator | ~15 min |
-| Every night | Native iOS again with the card rule's full UI suites (`CardRuleTests`, `CardScrollTests`: every card by every way in, at two text sizes, on each simulator); a change runs `CardSmokeTests` on the iPhone in their place | ~60 min |
+| Every night | Native iOS in full (`native-ios.yml`, `full`, 100 minutes): the whole suite on the iPhone, the iPad and the iPhone Duo, with the card rule's UI suites (`CardRuleTests`, `CardScrollTests`: every card by every way in, at two text sizes); a pull request runs `CardSmokeTests` on the iPhone in their place | ~60 min |
 
 ## What gates a merge
 

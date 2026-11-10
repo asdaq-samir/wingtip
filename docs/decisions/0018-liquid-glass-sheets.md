@@ -30,3 +30,14 @@ half -- the standard sheet's peek is half the window while a card is
 open -- and grows to the whole height when pulled up; with no card open
 the peek is the search again. Back with a card open closes the card and
 never just lowers the sheet.
+
+## Amended 2026-11-10 (web and iPhone)
+
+The 2026-11-09 amendment now holds on every platform. The web's phone
+sheet is Base UI's Drawer as it is: its own 450 ms curve, velocity snap
+(a hard flick may go from the pill all the way up) and drag arbitration,
+in place of the no-spring 0.3 s settle and one size per throw. The
+iPhone's sheet and glass are the system's as they come (plain
+`glassEffect`, the system's Reduce Transparency and scroll-edge
+effect), with no haptic of the app's at a detent. Pill, half and full
+remain the detents.

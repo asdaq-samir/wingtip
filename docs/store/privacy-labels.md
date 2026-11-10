@@ -67,7 +67,10 @@ Not collected, though the app uses them on the device:
   microphone and turns it into words with Apple's recognizer on the
   iPhone only (`ClearanceListener.swift` always sets
   `requiresOnDeviceRecognition`); the words are read by the engine on
-  the phone (`Atc/AtcCopilot.swift`). No audio and no transcript is sent
+  the phone (`Atc/AtcCopilot.swift`). Asking by voice, the search's and
+  Ask's mic, is a separate recognizer (`VoiceInput`, since 2026-11-10),
+  also on the device only: its words are typed into the field and go
+  only where a typed question would. No audio and no transcript is sent
   to Wingtip's servers or to Apple. Where the phone cannot recognise on
   the device (`supportsOnDeviceRecognition` false), voice is not
   offered at all: the microphone controls are hidden and neither
@@ -123,7 +126,7 @@ Account button of its own yet (see listing.md).
 | App info and performance: Crash logs | Yes: the exits Android kept (`ApplicationExitInfo`: crashes, ANRs with their traces, low-memory kills) and an uncaught exception's stack, with the app's version, the Android version and phone or tablet; nothing of the pilot's; kept 30 days | No | No | App functionality (finding faults) | `diagnostics/ExitReasons.kt`, `CrashCatcher.kt`, `DiagnosticsReporter.kt` |
 | App info and performance: Diagnostics | Yes: the start-up time and the share of slow frames (JankStats), the same way; kept 400 days | No | No | App functionality (keeping the app fast) | `diagnostics/FrameStats.kt` |
 | Photos and videos: Photos | **No**: a page photographed for Add from a Photo is read on the phone where it has Gemini Nano (ML Kit text recognition, then Nano, `ai/read/OnPhoneReader.kt`); otherwise it is sent to be read and not kept, "processed ephemerally" | | | | `documents/` |
-| Audio: Voice or sound recordings | **No**: the radio is heard by the phone's on-device `SpeechRecognizer` only (`createOnDeviceSpeechRecognizer`, `atc/RadioListener.kt`) and read on the phone; nothing is sent by the app or to Google; without an on-device recognizer voice is not offered | | | | |
+| Audio: Voice or sound recordings | **No**: the radio is heard by the phone's on-device `SpeechRecognizer` only (`createOnDeviceSpeechRecognizer`, `atc/RadioListener.kt`) and read on the phone, and a question asked by voice by its own on-device recognizer (`voice/VoiceInput.kt`, since 2026-11-10), its words typed into the field as a typed question; nothing is sent by the app or to Google; without an on-device recognizer voice is not offered | | | | |
 
 "Shared" is Google's meaning: the recipients in the inventory (AWS,
 Amazon SES, Anthropic for a written briefing with no personal data)

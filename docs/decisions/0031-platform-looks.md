@@ -18,3 +18,16 @@ A function in one app but not another needs a reason. How a figure is written st
 ## Source
 
 The owner, 2026-11-04 and 2026-11-06.
+
+## Amended 2026-11-10
+
+Each app has a fourth look, Native, after Wingtip, Glass Cockpit and
+Chart ink: the platform as it comes out of the box (the owner: "Native
+means how they come out of the box, look and behavior wise"). On the web
+shadcn's stock base-vega theme; on the iPhone iOS's own, with the
+system's accent (the app names no accent colour); on Android plain
+Material with Material You's colours from the wallpaper (Android 12 and
+later). In every look the chart's colours, the course, airspace, flight
+categories and the caution, go and no-go states stay Wingtip's: they are
+aviation's meaning, not chrome. The tokens are `design/tokens.json`'s
+`color.look.native`.

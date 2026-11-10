@@ -8,8 +8,11 @@ that opens it, and what can be changed where it is shown. The owner's goals
 and options where they make sense intuitively, pilots don't have time to
 find where things are."
 
-Counted from the map with the sheet at rest and its tabs in sight: a tab
-tapped is 1, a row on it 2. "Before" is `claude/integration` on
+Counted from the map with the sheet at rest. The sheet's tabs gave way
+to the one search on 2026-11-09, so a search pick, a map tap or the
+account button is 1 and a row inside what it opens 2; each platform's
+section below says so for its own sheet. Where a table's first counts say
+"tab", they are the tab bar's, from before. "Before" is `claude/integration` on
 2026-11-09; "after" is with this branch. The audit was read from the code,
 not timed on a device.
 
@@ -18,7 +21,7 @@ not timed on a device.
 - **Tap what you see.** Anything shown that is explained or changed
   somewhere opens that place: a field's name its card, the figures their
   nav log, a waypoint its menu. Closing goes back to where the pilot was
-  (one level, never a Back button: `lib/openCards` on the web, the card's
+  (one level: `lib/openCards` on the web, the card's
   close and the stack's Back on iOS (`Navigation/Navigator`); on Android
   the card's ← and system Back, its ✕ closing every card, since the card
   rule of 2026-11-10).
@@ -70,7 +73,7 @@ Android, the address on the web) or `wingtipmaps://plan?open=<id>` from another 
 | `airplane` | Airplane | yes | yes | yes | The airplane picked's profile, or the traffic about where none is picked. |
 | `setup` | Setup | yes | yes | yes | The account and settings page, the account button's. |
 | `brief` | Brief | yes | yes | yes | The route's Brief and its Go / No-Go (needs a route). |
-| `navlog` | Nav Log | yes | yes | yes | The nav log, leg by leg (needs a route). Android's FPL tab is its nav log. |
+| `navlog` | Nav Log | yes | yes | yes | The nav log, leg by leg (needs a route). On Android the plan's Nav Log button opens it. |
 | `profile` | Profile | yes | yes | -- | The route's side view and its altitudes (needs a route). |
 | `flights` | Saved Flights | yes | yes | -- | The pilot's saved flights. |
 | `favorites` | Favorites | yes | yes | -- | The pilot's favorite airports. |

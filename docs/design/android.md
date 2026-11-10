@@ -86,7 +86,8 @@ end, and nothing on this page describes a Google app from memory.
 
 - The theme is `MaterialExpressiveTheme` (`ui/Theme.kt`), with Wingtip's
   own colour scheme generated from `design/tokens.json`.
-- **No dynamic colour.** Material's guidance gives a static brand
+- **No dynamic colour in the brand looks** (Native, below, is the one
+  exception). Material's guidance gives a static brand
   colour scheme to products that want uniformity, and says not to
   harmonise brand colours **[excerpt]**:
   https://m3.material.io/styles/color/dynamic/choosing-a-source and
@@ -718,6 +719,29 @@ placement wins, and the difference is noted.
 - **Sources**:
   - https://support.google.com/pixelphone/answer/15266029?hl=en
   - https://developer.android.com/jetpack/androidx/releases/compose-material3
+
+#### Airport weather marks on the map (2026-11-10)
+
+On the map (MapLibre symbol layers, `StationLayer`), the owner's pick of 2026-11-10. Each reporting field wears its flight
+category as a ring about 4.5 points wide round the chart's own symbol
+(Halo, the default), or ForeFlight's filled dot in its place (Dot). From
+zoom 10 in, a station model adds the wind barb (the engine's `wind_barb`:
+flags, barbs and half-barbs to the nearest 5 kt, a circle for calm,
+FAA-H-8083-28A 25.2.3.4.5) and two lines, the visibility with its weather
+("2 SM BR") and the ceiling with its cover ("OVC 008", "VV 002", from the
+planner's `ceiling_cover`). At any zoom an arrow shows the way the wind
+blows, with "18G26", where the engine's `wind_arrow` gives one (10 kt or
+more, or gusting); it is red only where the field's `least_crosswind` is
+more than the picked airplane's demonstrated crosswind (its POH's, on
+`/api/aircraft-profiles`), and never red with no airplane or no figure. An
+amber ↓ marks a plan's field whose TAF for the pilot's time there is worse
+than its METAR now (`weather_worse`). The weather comes on the map's own
+`/api/airports/in-view` answer (`weather`), the same for every app; the
+shared fixture is `apps/web/src/lib/fixtures/airportWeatherMarks.json`. A
+screen reader says each field's category and wind ("KJVL, IFR, wind 220
+at 18 gusting 26"). The Map Settings card has Airport
+Weather (Off, Halo, Dot, Station; a `ChoiceGroup`) and three switches,
+all on, kept in DataStore (`AirportWeatherStore`).
 
 ### 3.8 The emergency assistant
 

@@ -611,6 +611,29 @@ the speed control.
 **Sources.** [gfa-help], [windy-keys], [windy-radar], [apg-slider],
 [wcag-222], [wcag-257].
 
+#### Airport weather marks on the map (2026-11-10)
+
+On the map, the owner's pick of 2026-11-10. Each reporting field wears its flight
+category as a ring about 4.5 points wide round the chart's own symbol
+(Halo, the default), or ForeFlight's filled dot in its place (Dot). From
+zoom 10 in, a station model adds the wind barb (the engine's `wind_barb`:
+flags, barbs and half-barbs to the nearest 5 kt, a circle for calm,
+FAA-H-8083-28A 25.2.3.4.5) and two lines, the visibility with its weather
+("2 SM BR") and the ceiling with its cover ("OVC 008", "VV 002", from the
+planner's `ceiling_cover`). At any zoom an arrow shows the way the wind
+blows, with "18G26", where the engine's `wind_arrow` gives one (10 kt or
+more, or gusting); it is red only where the field's `least_crosswind` is
+more than the picked airplane's demonstrated crosswind (its POH's, on
+`/api/aircraft-profiles`), and never red with no airplane or no figure. An
+amber ↓ marks a plan's field whose TAF for the pilot's time there is worse
+than its METAR now (`weather_worse`). The weather comes on the map's own
+`/api/airports/in-view` answer (`weather`), the same for every app; the
+shared fixture is `apps/web/src/lib/fixtures/airportWeatherMarks.json`. A
+screen reader says each field's category and wind ("KJVL, IFR, wind 220
+at 18 gusting 26"). The Map card's Airport Weather is a menu (Off,
+Halo, Dot, Station) with three switches: the station model when zoomed
+in, the wind arrows, and getting worse by arrival, all on to begin with.
+
 ### 8. The emergency assistant
 
 **Reference.** No reference app's emergency screen could be verified from
@@ -779,20 +802,25 @@ more on phones, warn before leaving unsaved changes
 may need a cognitive test such as remembering a password unless there is
 an alternative or help ([WCAG 2.2][wcag22]).
 
-**Structure, top to bottom.** No Settings page (decision 0014): Setup's
-tiles (FPL, Theme, Layout, Appearance) and the Map menu hold the controls.
-The account is a menu (`AccountMenu`) holding the pilot's own screens
-(Your Airplanes, Logbook, Personal Minimums, Downloads, About, from
-`design/screens.json`) and Sign Out. Sign-in by an
-emailed code or link.
+**Structure, top to bottom.** A tap on the account button (the avatar
+at the right of the sheet's title row) opens the account and settings
+page itself, with no menu between (the owner, 2026-11-10: "When tapping
+the avatar just open the settings"; `AccountButton`, still named
+"Account and settings"). Its rows are the pilot's own screens (Airplanes,
+Checklists, Flights, Logbook, Coach, Practice, Minimums, Status, Guide,
+About, from `design/screens.json`) and the look (Wingtip, Glass Cockpit,
+Chart ink, Native); signing in and out, the mode, a copy of the data and
+deleting the account are in the page's own Account menu. The map's
+switches are the Map card's, which the map's own Map button opens over
+the search (§15a). Sign-in by an emailed code or link.
 
-**Stock parts.** Base UI Menu (`AccountMenu`); Base UI OTP Field for an
+**Stock parts.** Base UI Menu (the page's Account menu); Base UI OTP Field for an
 emailed code (stable since 1.6, [Base UI releases][bui-releases]); shadcn
 Field; Base UI Switch for on/off; Select or Toggle Group for discrete
 choices (decision 0017).
 
-**Primary action.** Per screen; Sign In in the welcome and in the menu
-when signed out.
+**Primary action.** Per screen; Sign In in the welcome and in the
+Account menu when signed out.
 
 **Keyboard and hover.** The APG menu button and menu: Enter, Space or Down
 open on the first item, typeahead, Home/End, Escape back to the button

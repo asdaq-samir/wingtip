@@ -19,11 +19,11 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0011 | [With no airplane picked, never assume one](0011-no-assumed-airplane.md) | 2026-11-08 | Accepted |
 | 0012 | [The Brief opens on its verdict](0012-verdict-first-brief.md) | 2026-11-08 | Accepted |
 | 0013 | [A panel or control is never moved to another part of the screen unasked](0013-panels-never-moved-unasked.md) | 2026-10-22 | Accepted |
-| 0014 | [One home per control](0014-one-home-per-control.md) | 2026-10-27 | Accepted |
-| 0015 | [Close goes back one level; no Back buttons](0015-close-goes-back.md) | 2026-10-22 | Accepted |
-| 0016 | [Stock components over hand-rolled ones](0016-stock-components.md) | 2026-10-28 | Accepted |
+| 0014 | [One home per control](0014-one-home-per-control.md) | 2026-10-27 | Accepted, amended 2026-11-10 |
+| 0015 | [Close goes back one level; no Back buttons](0015-close-goes-back.md) | 2026-10-22 | Accepted, amended 2026-11-10 |
+| 0016 | [Stock components over hand-rolled ones](0016-stock-components.md) | 2026-10-28 | Accepted, amended 2026-11-10 |
 | 0017 | [Discrete settings are menus or segmented controls, not sliders](0017-menus-not-sliders.md) | 2026-10-15 | Accepted |
-| 0018 | [Panels are Liquid Glass sheets with detents; a throw moves one size](0018-liquid-glass-sheets.md) | 2026-10-15 | Accepted |
+| 0018 | [Panels are Liquid Glass sheets with detents; a throw moves one size](0018-liquid-glass-sheets.md) | 2026-10-15 | Accepted, amended 2026-11-10 |
 | 0019 | [No explanatory footnotes on pilot screens](0019-no-explanatory-footnotes.md) | 2026-10-16 | Accepted |
 | 0020 | [The app says "airplane"](0020-airplane-not-aircraft.md) | 2026-11-06 | Accepted |
 | 0021 | [Labels are Title Case; the FAA's text is sentence case with codes kept](0021-title-case-labels.md) | 2026-10-23 | Accepted |
@@ -36,5 +36,5 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0028 | [The database is plain Postgres](0028-plain-postgres.md) | 2026-11-08 | Accepted |
 | 0029 | [The FPL sheet stays as it is; the nav log stays behind the ••• button](0029-fpl-sheet-as-is.md) | 2026-11-09 | Accepted |
 | 0030 | [Controls never grow to reach 44 points](0030-nothing-grows-hit-areas.md) | 2026-10-22 | Accepted |
-| 0031 | [Each platform may look its own best](0031-platform-looks.md) | 2026-11-04 | Accepted |
+| 0031 | [Each platform may look its own best](0031-platform-looks.md) | 2026-11-04 | Accepted, amended 2026-11-10 |
 | 0032 | [An architecture change updates the diagram too](0032-docs-include-diagrams.md) | 2026-11-07 | Accepted |

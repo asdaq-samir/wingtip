@@ -253,8 +253,9 @@ owner, 2026-11-03):
   collected and the required-reason APIs used; the session is cookies in
   `HTTPCookieStorage`, and `UserDefaults` holds no secret.
 - **Strict concurrency** (`SWIFT_STRICT_CONCURRENCY: complete` in
-  project.yml): the compiler's data-race checks as warnings under Swift 5
-  mode; the language mode goes to 6 once a runner's log is clean.
+  project.yml): Swift 6's language mode (`SWIFT_VERSION: "6.0"`), so a
+  data race is a compile error, and every warning is one too
+  (`SWIFT_TREAT_WARNINGS_AS_ERRORS`).
 - **A string catalog** (`Wingtip/Localizable.xcstrings`,
   `SWIFT_EMIT_LOC_STRINGS`): every `Text` gathered at build, so a second
   language is a column, not a rewrite.
@@ -462,16 +463,24 @@ library the overlays already use.
 
 ## Building
 
-The owner's Mac cannot run a current Xcode, so everything happens in
-`.github/workflows/native-ios.yml` on GitHub's macOS runner (free for a
-public repository):
+The Mac mini has Xcode (`.tool-versions`' `xcode`, 27.2 and the iOS 27.2
+SDK), so a build or a test runs there through `scripts/dev/one-at-a-time.sh`
+(CLAUDE.md's table). CI builds it on the Mac mini's runner or GitHub's
+`xcode-27` image (docs/CI.md), through `.github/workflows/native-ios-test.yml`:
 
-- a pull request, a push to `main` or to a `claude/native-*` branch that
-  touches `apps/ios/`, the web files the app bundles (`apps/web/src/lib/fixtures`,
-  `apps/web/src/lib/acs.json`) or the workflow: XcodeGen, then `xcodebuild test` on
-  the newest iPhone simulator the runner has and on an iPad (a Pro
-  where there is one), for the iPad's own layout, with a picture of
-  each one's first screen kept with the run (`native-ios-screens`);
+- a pull request that touches `apps/ios/`, the engine, the web files the
+  app bundles (`apps/web/src/lib/fixtures`, `apps/web/src/lib/acs.json`)
+  or the workflow: XcodeGen, then `xcodebuild test` on the newest iPhone
+  simulator alone, then `CardSmokeTests` (an airport card opened from the
+  search, scrolled with its close in sight, closed back to the search),
+  inside forty minutes;
+- every night (`native-ios.yml`, `full`): the whole suite on the iPhone,
+  the iPad (a Pro where there is one, for the iPad's own layout) and the
+  iPhone Duo, with the card rule's full suites (`CardRuleTests`,
+  `CardScrollTests`). Since 2026-11-10 the iPad and Duo run only there:
+  the three simulators together ran past the pull request's forty minutes.
+  A picture of each device's first screen is kept with every run
+  (`native-ios-screens`);
 - on `main`, with the App Store Connect key the owner sets (below), the
   app is archived and uploaded to TestFlight.
 

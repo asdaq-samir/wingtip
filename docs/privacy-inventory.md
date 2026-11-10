@@ -43,6 +43,11 @@ longer than it takes to answer the request.
   `requiresOnDeviceRecognition` always (`ClearanceListener.swift`), only
   where `supportsOnDeviceRecognition`; Android's on-device recognizer
   (`createOnDeviceSpeechRecognizer`, API 31+, `atc/RadioListener.kt`);
+  asking by voice (the search's mic) has its own recognizer apart from
+  the radio's since 2026-11-10, on the device too (`VoiceInput` on the
+  iPhone, `voice/VoiceInput.kt` on Android, `features/voice` on the
+  web, under the same rules as below), and its words go only where a
+  typed question goes;
   phones without one get no voice. On the web (the owner, 2026-11-09:
   other browsers are fine) the Web Speech API with `processLocally`
   where `SpeechRecognition.available({processLocally: true})` says so

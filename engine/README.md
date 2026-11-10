@@ -54,11 +54,11 @@ table, and its why below, in the same commit.
 |---|---|---|
 | `core` | base64, geo, wmm, grid, sums, time, json, xml | nothing |
 | `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), performance (the airplane's cruise and climbs in the day's air), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items), sun (1.1's night and 61.57(b)'s night-passenger period), vfr (91.155's minimums, one copy) | nothing |
-| `weather` | metar, taf, winds, forecast, validity, notam, tfr, cycles, rvr (RVR against a minimum, 91.175(h)'s table), ready (ready to fly: what the device holds against the cycles and the weather's age) | core, flight |
-| `procedures` | figures (debrief, diversion, endurance (91.151(a) and 91.167(a)(3)'s reserve kept back), holding, lost comms, words) | core, flight |
-| `radio` | clearance, callsign (our call sign and where it was said, AIM 4-2-3 c, 4-2-4), instruction (an instruction heard in flight read into its items), readback (AIM 4-4-7 b), atc (the ATC copilot's `atc_call` and `readback_check`), atis, datis (a digital ATIS as the tower's data link writes it), mayday (the distress call, AIM 6-3-2) | core, flight, weather, procedures |
-| `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109, records: endorsements' days, 61.93(d), inspections and 91.171), autolog (a logbook entry drawn from a flown track: 1.1, 61.1(b), 61.57), aircraft, coach (a pilot's proficiency plan: what is due under 61.56 and 61.57, the weak areas their debriefs show, the sessions) | core, flight, procedures, route (without its options) |
-| `brief` | gonogo, runway, alternates (91.169's IFR alternate), fields (the best fields to land at: a glide or a diversion) | core, flight, procedures |
+| `weather` | metar, sky (a report's ceiling and its cover, for the station model), taf, winds, forecast (with run: the dry run against the forecast), validity, notam, notam_rank (the NOTAMs that matter to a flight, best first), tfr, cycles, rvr (RVR against a minimum, 91.175(h)'s table), ready (ready to fly: what the device holds against the cycles and the weather's age; kept: a kept answer's age), worse (a route's weather worse since the briefing) | core, flight |
+| `procedures` | figures (debrief, diversion, endurance (91.151(a) and 91.167(a)(3)'s reserve kept back), holding, lost comms, words), paths (a procedure's legs as drawn: arcs, CIFP holds, procedure turns) | core, flight |
+| `radio` | clearance, callsign (our call sign and where it was said, AIM 4-2-3 c, 4-2-4), instruction (an instruction heard in flight read into its items), readback (AIM 4-4-7 b), atc (the ATC copilot's `atc_call` and `readback_check`), atis, datis (a digital ATIS as the tower's data link writes it), mayday (the distress call, AIM 6-3-2), guidance (an emergency's general good practice with no airplane picked) | core, flight, weather, procedures |
+| `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109, records: endorsements' days, 61.93(d), inspections and 91.171), autolog (a logbook entry drawn from a flown track: 1.1, 61.1(b), 61.57), aircraft (with figures: an airplane's figures and where each comes from, and what a figure lacks), documents (a photographed page's figures checked before the pilot sees them), coach (a pilot's proficiency plan: what is due under 61.56 and 61.57, the weak areas their debriefs show, the sessions) | core, flight, procedures, route (without its options) |
+| `brief` | gonogo, runway (with marks: a field's wind on the map), alternates (91.169's IFR alternate), fields (the best fields to land at: a glide or a diversion), icing_forecast (the AWC's forecast icing on an IFR route), passengers (the passengers' SAFETY briefing, 91.107(a)) | core, flight, procedures |
 | `route` | route (and its options: route options' grid and ways, fuel stops, the way round high ground, Class B detours), motion (with along: where the airplane is on the route), approach, navlog | core, flight, weather, procedures |
 | `airspace` | airspace, pack, rules, pack_query, view, spoken, ahead, drills (91.125's light signals and 91.155's minimums as cards and by name) | core, flight, procedures, radio |
 | `wording` | wording (with script: the radio calls' words) | core, procedures, airspace, brief, route (without its options) |
@@ -295,6 +295,40 @@ Then the callers switch to the name and the old copy is deleted.
   (`solo_standing`, 61.87(n)). Held to the shared fixtures
   `planning.json`, `cautions.json`, `ahead.json`, `congested.json` and
   `webRules.json`.
+- The map's airport weather marks are the engine's too (`crates/brief`'s
+  runway::marks, the owner's pick of 2026-11-10): `least_crosswind` (of a
+  field's runways, each on the end the wind favours, the least
+  crosswind, steady or gust; a variable wind all crosswind, AIM 7-1-28),
+  `wind_arrow` (whether the wind earns its arrow, 10 kt or more or
+  gusting, and whether it is red: past the picked airplane's maximum
+  demonstrated crosswind, the POH's, never with no airplane or no
+  figure) and `wind_barb` (the station model's flags, barbs and
+  half-barbs, FAA-H-8083-28A 25.2.3.4.5), held to the shared fixture
+  `airportWeatherMarks.json`.
+- What the weather does to a flight after the planning is the engine's
+  too (`crates/weather`): `weather_worse` (a field's category worse than
+  at the briefing, and worse than VFR, a SIGMET or AIRMET newly on the
+  route, a TAF worse at the ETA; AIM 7-1-6, 7-1-7; a caution, never a
+  limit), `forecast_run` (the dry run against the forecast: each point's
+  TAF and GLMP ceiling and visibility, the GFS winds at its altitude, the
+  advisories and the SPC outlook), `ready_to_fly` (what the device holds
+  before it loses the signal: the charts and cycle packs in force, a
+  briefing under an hour old, each field's METAR and TAF, the NOTAMs;
+  14 CFR 91.103) and `kept_age` (a kept answer's age, "Fetched 42 min
+  ago", against the freshness ready_to_fly holds it to).
+- The airplane's own figures are the engine's too: `airplane_figures`
+  (`crates/pilot`: each figure with where it comes from, the pilot's own,
+  the photographed handbook's or the type's stock profile's, null where
+  none has it, never another airplane's), `airplane_needs` (the inputs a
+  figure needs that the profile lacks, so the app asks for them where the
+  figure is) and `endurance` (`crates/procedures`: usable fuel over the
+  cruise burn, and what is left once 91.151(a)'s or 91.167(a)(3)'s
+  reserve is kept back, a warning below it, never a refusal).
+- `emergency_guidance` (`crates/radio`): with no airplane picked, an
+  emergency's general good practice only, each item with its source
+  (FAA-H-8083-3C ch. 18; AIM 6-1-1, 6-1-2, 6-2-1, 6-2-2, 6-3-1, 6-3-2;
+  14 CFR 91.3(b)),
+  never a type's checklist.
 - Route options (`crates/route`'s options) are a cargo feature, `options`
   (the facade's `route-options`), on for the planner and the phones and
   off in the web's WebAssembly, which never asks them: they were 150 KB of
