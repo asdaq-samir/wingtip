@@ -218,6 +218,11 @@ struct RootView: View {
                 legs: plan.course != nil ? RouteLegModel.mapLegs(plan) : [],
                 selected: { if case .leg(let index) = FlightUI.shared.card { return index }; return nil }(),
                 onSelect: { index in FlightUI.shared.card = .leg(index) }),
+            // The route's fields worse by the flight's time there, and the
+            // airplane's demonstrated crosswind for the wind arrows' red.
+            fieldWeather: FieldWeatherInput(
+                worse: FieldWeatherMarks.worse(plan.briefing, fields: Set([plan.dep, plan.dest] + plan.stops).subtracting([""])),
+                demonstratedKt: FieldWeatherMarks.demonstratedKt(plan)),
             hazardLegs: plan.hazardLegs,
             bottomInset: mapInset,
             onReveal: {

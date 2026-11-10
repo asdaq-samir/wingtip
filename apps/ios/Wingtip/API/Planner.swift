@@ -164,8 +164,12 @@ enum Planner {
 
     /// The fields in the map's view, fewer and bigger as it zooms out,
     /// with the flight category of each that reports (/api/airports/in-view).
-    static func airports(south: Double, west: Double, north: Double, east: Double) async throws -> [AirportPin] {
-        let box = ["south": String(south), "west": String(west), "north": String(north), "east": String(east)]
+    /// With `reporting`, only the fields that report, up to `limit`: the
+    /// map's weather (FieldWeatherFeed), as the web map asks it.
+    static func airports(south: Double, west: Double, north: Double, east: Double,
+                         limit: Int? = nil, reporting: Bool = false) async throws -> [AirportPin] {
+        let box = ["south": String(south), "west": String(west), "north": String(north), "east": String(east),
+                   "limit": limit.map(String.init), "reporting": reporting ? "true" : nil]
         return try await fetch(APIAirportsInView.self, "/api/airports/in-view", box).airports
     }
 
