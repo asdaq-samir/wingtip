@@ -275,15 +275,16 @@ The owner's Mac has no Java, Gradle, Android SDK or cargo, so everything
 happens in `.github/workflows/native-android.yml` on GitHub's Linux
 runner:
 
-- a pull request, a push to `main` or to a `claude/native-*` branch that
-  touches `apps/android/`, the engine (`engine/facade`, `engine/bindings/ffi`), the
-  shared fixtures or the workflow: the engine is built for the three
-  ABIs (`engine/bindings/ffi/build-android.sh`), then
-  `testDebugUnitTest lintDebug assembleDebug`, with the debug APK kept
-  with the run (`wingtip-native-debug-apk`: it installs on any Android
-  phone with "Install unknown apps" allowed), then
-  `connectedDebugAndroidTest` on an API 35 x86_64 emulator
-  (reactivecircus/android-emulator-runner).
+- a pull request that touches `apps/android/`, the engine, the shared
+  fixtures or the workflow (inside CI's run): the engine for the three
+  ABIs (`engine/bindings/ffi/build-android.sh`, cached by the engine's
+  files), then `testDebugUnitTest lintDebug`, with Gradle's caches
+  restored (`gradle/actions/setup-gradle`, `--build-cache`);
+- a push to `main` or to a `claude/native-*` branch: the same and
+  `assembleDebug`, the APK kept with the run (`wingtip-native-debug-apk`:
+  it installs on any Android phone with "Install unknown apps" allowed);
+- every night, and by hand: then `connectedDebugAndroidTest` on an API 35
+  x86_64 emulator (reactivecircus/android-emulator-runner).
 - No Google Play lane yet: the shell's (android.yml) stays until the
   gates.
 

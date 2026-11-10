@@ -466,21 +466,21 @@ library the overlays already use.
 The Mac mini has Xcode (`.tool-versions`' `xcode`, 27.2 and the iOS 27.2
 SDK), so a build or a test runs there through `scripts/dev/one-at-a-time.sh`
 (CLAUDE.md's table). CI builds it on the Mac mini's runner or GitHub's
-`xcode-27` image (docs/CI.md), through `.github/workflows/native-ios-test.yml`:
+`xcode-27` image (docs/CI.md), through `.github/workflows/native-ios.yml`:
 
 - a pull request that touches `apps/ios/`, the engine, the web files the
   app bundles (`apps/web/src/lib/fixtures`, `apps/web/src/lib/acs.json`)
   or the workflow: XcodeGen, then `xcodebuild test` on the newest iPhone
-  simulator alone, then `CardSmokeTests` (an airport card opened from the
-  search, scrolled with its close in sight, closed back to the search),
-  inside forty minutes;
-- every night (`native-ios.yml`, `full`): the whole suite on the iPhone,
-  the iPad (a Pro where there is one, for the iPad's own layout) and the
-  iPhone Duo, with the card rule's full suites (`CardRuleTests`,
-  `CardScrollTests`). Since 2026-11-10 the iPad and Duo run only there:
-  the three simulators together ran past the pull request's forty minutes.
-  A picture of each device's first screen is kept with every run
-  (`native-ios-screens`);
+  simulator with `-only-testing` the unit tests (`WingtipTests`) and
+  `CardSmokeTests` (an airport card opened from the search, scrolled with
+  its close in sight, closed back to the search), about ten minutes;
+  DerivedData is restored from main's last build, its inputs stamped by
+  content (`scripts/ci/content-mtimes.py`) so only what changed compiles;
+- every night (`native-ios.yml`, `full`): the whole suite (the launch,
+  flow and accessibility tests, the store shots and the card rule's full
+  suites, `CardRuleTests` and `CardScrollTests`) on the iPhone, the iPad
+  (a Pro where there is one, for the iPad's own layout) and the iPhone
+  Duo, with a picture of each device's first screen (`native-ios-screens`);
 - on `main`, with the App Store Connect key the owner sets (below), the
   app is archived and uploaded to TestFlight.
 

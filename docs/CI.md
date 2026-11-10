@@ -4,48 +4,100 @@ What runs, when, and how to move it onto the owner's Mac mini.
 
 ## What runs
 
-| When | What | About |
+A pull request is green or red in about fifteen minutes: everything it
+waits on runs at once, and nothing long runs on it. The long suites run
+at night, when nothing waits on them.
+
+**On a pull request** (and main's push), each job only where the change
+touched what it reads (`changes`; a skipped job counts as passing):
+
+| Job | What | Expected |
 |---|---|---|
-| A pull request, and main's push after a merge | The unit tests of whatever the change touched (web, Python, Rust, Java), the dependency review, and the browser suite's smoke tests: the ~33 tests tagged `@smoke`, one per journey a pilot takes, on the phone, in one job against the whole stack | 4-5 min |
-| A pull request that changes only docs, Markdown, the skills or notebooks | The unit tests it touched; no browser suite | 1-2 min |
-| Every night, or Run workflow on CI | Everything: every browser test on the phone, desktop, the iPhones and the iPad, the iOS audit, WCAG and Lighthouse, over ten shards; and the API reference docs built | ~15 min |
-| A pull request that touches a phone app (below) | Inside CI's run, so "CI passed" waits for it: Native Android (the engine per ABI, unit tests, lint, a debug APK) and/or Native iOS (XcodeGen, `xcodebuild test` on the newest iPhone simulator alone, then `CardSmokeTests` there; since 2026-11-10 the iPad and iPhone Duo are the night's, as the three together ran past the job's forty minutes) | 5-10 min |
-| main's push that touches a phone app, a `claude/native-*` push | Native Android / Native iOS on their own (`native-android.yml`, `native-ios.yml`); TestFlight after iOS on main once its key is set | 5-10 min |
-| Every night | Native Android again, then its instrumented tests on an emulator | ~15 min |
-| Every night | Native iOS in full (`native-ios.yml`, `full`, 100 minutes): the whole suite on the iPhone, the iPad and the iPhone Duo, with the card rule's UI suites (`CardRuleTests`, `CardScrollTests`: every card by every way in, at two text sizes); a pull request runs `CardSmokeTests` on the iPhone in their place | ~60 min |
+| `changes`, `rules-boundary`, `links`, `architecture`, `site`, `infra`, `api-compat`, `dependency-review` | The path filter and the seconds-long guards | under 1 min |
+| `test`, `test-web`, `test-gateway`, `test-planner`, `test-ingest`, `test-assistant`, `test-weather` | Each area's lint, types and unit tests | 1-4 min |
+| `flight-critical` | The engine's FAA worked examples and the planner's nav log, on every change | 2 min |
+| `build-images`, `e2e-images` | The images whose inputs changed (built, not pushed, on a PR) and the browser suite's | 1-3 min |
+| `e2e` (2 shards) | The `@smoke` and `@flight-critical` browser tests on the phone project, against the whole stack | 5-8 min |
+| `android` | `native-android.yml`: the engine (cached), `testDebugUnitTest lintDebug` with Gradle's caches | 4-6 min (7-10 before the cache) |
+| `ios` | `native-ios.yml`: XcodeGen, then the unit tests (`WingtipTests`) and `CardSmokeTests` on the newest iPhone simulator, DerivedData restored from main | 10-13 min cold, about 6-8 with main's DerivedData (was 18 min, and 42-45 with the iPad and Duo) |
+
+A pull request of docs, Markdown, skills or notebooks only skips the
+browser suite: 1-2 minutes.
+
+**Every night** (CI at 09:17 UTC, Native iOS at 09:37, Native Android at
+09:47), or by hand (Run workflow):
+
+| What | Expected |
+|---|---|
+| CI: every browser test on the phone, desktop, the iPhones and the iPad, the whole iOS audit (WebKit), WCAG 2.2 and Lighthouse, over ten shards; the API reference and Javadoc; the flake hunt | ~15 min |
+| Native iOS, `full`: the whole suite (launch, flow and accessibility tests, the store shots, `CardRuleTests`, `CardScrollTests`) on the iPhone, the iPad and iPhone Duo, and each device's first screen | ~60 min |
+| Native Android: the build, a debug APK, then the instrumented tests on an API 35 emulator | ~15 min |
+
+main's push of a phone app runs its workflow on its own too, with the
+APK (Android) or TestFlight after the tests (iOS, once its key is set).
 
 ## What gates a merge
 
 main's ruleset requires one check, **CI passed** (the `passed` job in
 `ci.yml`), and `auto-merge-agents.yml` merges a pull request on it. It
-waits for every job in CI's run and fails if any failed or was
-cancelled; a job its paths did not need is skipped, which counts as
-passing.
+fails if any job it waits on failed or was cancelled; a skipped one
+counts as passing. It waits on every job in the first table but `e2e`,
+`e2e-images`, `build-images` and `dependency-review`, which report beside
+it (the owner, 2026-11-07); a failure there is fixed forward.
 
-The phone builds are among those jobs. They used to be workflows of
-their own beside CI, which the ruleset could not require (a
+The phone builds are among the jobs it waits on. They used to be
+workflows beside CI, which the ruleset could not require (a
 path-filtered workflow stays pending on every pull request it skips), so
 #499 merged with the Android app not compiling (fixed in #501). Now
-their build is a reusable workflow -- `native-android-build.yml`,
-`native-ios-test.yml` -- that `ci.yml` calls as the `android` and `ios`
-jobs when its `changes` job finds the pull request touches what the app
-builds from:
+`native-android.yml` and `native-ios.yml` are reusable workflows as well
+as their own, and `ci.yml` calls them as the `android` and `ios` jobs
+when `changes` finds the pull request touches what the app builds from
+(scripts/areas.yml):
 
-- **Android:** `apps/android/**` (its generated API models included),
-  `engine/**`, `apps/web/src/lib/fixtures/**`, `scripts/build/api-models-apps.*`,
-  `native-android-build.yml`.
-- **iOS:** `apps/ios/**` (its API models included), `engine/**`,
-  `apps/web/src/lib/fixtures/**`, `apps/web/src/lib/acs.json`,
-  `services/planner/tests_wingtip/fixtures/native/**`, `scripts/build/api-models-apps.*`,
-  `native-ios-test.yml`.
+- **Android:** `apps/android/**`, `.editorconfig`, `engine/**`,
+  `apps/web/src/lib/fixtures/**`, `scripts/build/api-models-apps.*`,
+  `scripts/build/engine-contract-apps.*`, `design/**`,
+  `native-android.yml`.
+- **iOS:** `apps/ios/**`, `engine/**`, `apps/web/src/lib/fixtures/**`,
+  `apps/web/src/lib/acs.json`,
+  `services/planner/tests_wingtip/fixtures/native/**`,
+  `scripts/build/api-models-apps.*`, `scripts/build/engine-contract-apps.*`,
+  `design/**`, `scripts/ci/content-mtimes.py`, `native-ios.yml`.
 - **Both:** a change to `ci.yml` itself, or anything in its `global`
   filter, as for every other job.
 
-Any other pull request skips them and keeps its 4-5 minutes. They are
-called on pull requests and on a run of CI started by hand; main's pushes
-and the nights run them in `native-android.yml` and `native-ios.yml`
-instead, so they are not built twice there. Each of those two keeps its
-own concurrency group; a pull request's builds run in CI's.
+They are called on pull requests (claude/integration's included) and on
+CI started by hand; main's pushes and the nights run them in their own
+workflows, so they are not built twice there.
+
+### Caches
+
+- **iOS:** the engine's framework, keyed by the engine's files; and
+  DerivedData, keyed by `.tool-versions` and `project.yml` and written
+  only by main's push and the night (a pull request's would crowd the
+  repository's 10 GB). xcodebuild compares file times, which a checkout
+  sets anew, so the job stamps each input from its content first
+  (`scripts/ci/content-mtimes.py`) and tells XCBuild to ignore the new
+  inodes (`IgnoreFileSystemDeviceInodeChanges`). Measured on the Mac mini
+  (Xcode 27.2, `build-for-testing`, 2026-11-10), each restore a tar round
+  trip as actions/cache makes it: from nothing, 563 Swift compiles in 44 s;
+  a cached DerivedData after a fresh checkout without the stamping, all 563
+  again (67 s, slower than none); with it, nothing to do (1 s), and a
+  one-file change 3 compiles (9 s). On run 42867578624 the hosted runner
+  spent about nine minutes building and running the unit tests before the
+  first UI test, which is what the cache cuts.
+- **Android:** the engine's libraries, keyed by the engine's files, and
+  Gradle's home and build cache through `gradle/actions/setup-gradle`
+  (`cache-provider: basic`, the Actions cache; written from main only).
+  Its configuration cache is not on: setup-gradle saves it only with a
+  `GRADLE_ENCRYPTION_KEY` secret, and it would save seconds of
+  configuration, not the minutes of dependencies and compilation.
+- **e2e:** the images are built once per content key and pulled from
+  GHCR (`.github/e2e-keys.sh`), the layer cache is the registry's
+  (`:buildcache`, from main), and the planner's data, the corridor's
+  charts and the suite's packages are Actions caches. A key no earlier
+  commit built costs `e2e-images` 1-3 minutes, which the shards overlap
+  with their own setup.
 
 The iOS job runs on `MAC_RUNNER` (the Mac mini, free) or else GitHub's
 `xcode-27` runner, the one hosted image with the Xcode `.tool-versions`
@@ -54,7 +106,7 @@ finds none there, run 42763113825; actions/runner-images'
 `images/macos/xcode-27-arm64-Readme.md` lists what it has). It is a
 preview image (actions/runner-images#14404), so it may queue longer. It is
 free while the repository is public, ten times a Linux
-minute's price on a private one, about 5 to 10 macOS minutes for each
+minute's price on a private one, about 6 to 13 macOS minutes for each
 pull request that touches the iPhone app, the engine or the shared
 fixtures.
 
@@ -132,9 +184,9 @@ change needs; a job it skips counts as passing.
 | `test-web` | `npm run types`, `tsc`, ESLint and Vitest over `apps/web`, and that the phones' API models are the committed ones |
 | `test-gateway` | `mvn test`: the gateway's JUnit suite, with a real Postgres in Testcontainers |
 | `test-planner`, `test-ingest`, `test-assistant`, `test-weather` | ruff and pytest over each service's own suite |
-| `e2e`, `e2e-images` | The browser suite (Playwright, `apps/web/e2e`) against the stack built from the commit (`infra/docker-compose.ci.yml`): the `@smoke` and `@flight-critical` sets on a pull request, everything at night |
+| `e2e`, `e2e-images` | The browser suite (Playwright, `apps/web/e2e`) against the stack built from the commit (`infra/docker-compose.ci.yml`): the `@smoke` and `@flight-critical` sets over two shards on a pull request, everything over ten at night |
 | `build-images` | Every service image whose inputs changed; each Python image imports its own code as its last step, so a missing dependency fails the build |
-| `android`, `ios` | The phone builds, when a pull request touches them (above) |
+| `android`, `ios` | The phone builds (`native-android.yml`, `native-ios.yml`), when a pull request touches them (above) |
 | `rules-boundary` | No aviation rule outside the engine (below) |
 | `flight-critical` | **Flight-critical**, on every change whatever it touched: what must never break in the air. The engine against worked examples from the FAA's own texts (`apps/web/src/lib/fixtures/flightCritical.json`: the nav log's wind triangle, groundspeed, heading and fuel from FAA-H-8083-25C ch. 16; 14 CFR 91.159 and 91.179 cruising altitudes; 91.151 and 91.167 reserves; 91.155 minimums; AIM 5-3-8 hold entries; glide at a ratio), and the planner's KMSN to KOSH nav log and nearest fields (`tests/test_flight_critical.py`). The browser's journey is tagged `@flight-critical` and runs in `e2e`; the phones' twins run in their native jobs |
 | `architecture` | No source file new or grown past 400 lines (below, "The layers") |

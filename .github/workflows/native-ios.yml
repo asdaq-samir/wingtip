@@ -1,26 +1,26 @@
 name: Native iOS
 
-# The native app (apps/ios/, docs/NATIVE.md). Its build and tests -- the Xcode
-# project made by XcodeGen from apps/ios/project.yml, the tests on a
-# simulator, on MAC_RUNNER or GitHub's macOS runner -- are
-# native-ios-test.yml, which ci.yml calls on a pull request that touches
-# the app, so "CI passed" covers it. Here, those again on main and on
-# claude/native-*; and on main, once the owner has set the App Store
-# Connect key, the app is archived, signed by Xcode's cloud-managed
-# signing and uploaded to TestFlight.
+# The native app (apps/ios/, docs/NATIVE.md): the engine's framework, the
+# Xcode project XcodeGen makes from apps/ios/project.yml, and its tests on a
+# simulator. ci.yml calls this on a pull request that touches the app, so
+# "CI passed" waits for it (#499 merged with a phone app not compiling when
+# its build ran beside CI). On its own: main's pushes, then TestFlight;
+# claude/native-* pushes; and every night the whole suite (`full`).
 #
 # Actions are pinned as in ci.yml (its opening comment says why).
 on:
-  # Not pull_request: ci.yml runs the tests for one (its `changes` job's
-  # `ios`), where "CI passed" waits for them.
+  workflow_call:
+    inputs:
+      # The whole suite on the iPhone, the iPad and iPhone Duo. Without it
+      # (a pull request, main's push): the unit tests and CardSmokeTests on
+      # the iPhone alone, about ten minutes (docs/CI.md).
+      full:
+        type: boolean
+        default: false
   push:
-    # And a native-app branch of Claude's: its builds run from the branch
-    # itself (a dispatch by name needs the file on main first).
+    # A dispatch by name needs the file on main first, hence the branches.
     branches: [main, "claude/native-*"]
-    # And the web's files the app bundles (project.yml): the ACS table and
-    # the shared fixtures its rules are tested against (docs/NATIVE.md);
-    # the engine it links, with the fixtures its tests read; and what
-    # makes its API models.
+    # What the app builds from (project.yml), as ci.yml's `ios` filter.
     paths:
       - apps/ios/**
       - apps/web/src/lib/fixtures/**
@@ -31,20 +31,21 @@ on:
       - scripts/build/api-models-apps.*
       - design/**
       - scripts/build/engine-contract-apps.*
+      - scripts/ci/content-mtimes.py
       - .github/workflows/native-ios.yml
-      - .github/workflows/native-ios-test.yml
   workflow_dispatch:
-  # Every night, the card rule's full UI suites too (CardRuleTests,
-  # CardScrollTests on each simulator): too long for each change, which
-  # runs CardSmokeTests in their place (docs/CI.md).
+    inputs:
+      full:
+        type: boolean
+        default: true
   schedule:
     - cron: "37 9 * * *"
 
-# Its own runs only: a pull request's tests run inside CI's run and under
-# CI's group.
 concurrency:
-  group: native-ios-${{ github.ref }}
-  cancel-in-progress: true
+  # Called from ci.yml, github.workflow is "CI" and the ref the pull
+  # request's, so a call never shares a group with a run of its own.
+  group: native-ios-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
@@ -52,19 +53,173 @@ permissions:
 env:
   WINGTIP_URL: ${{ vars.WINGTIP_URL || 'https://wingtipmaps.app/app/plan' }}
   WINGTIP_BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID || 'app.wingtipmaps.ios' }}
+  FULL: ${{ inputs.full == true || github.event_name == 'schedule' }}
 
 jobs:
   test:
-    uses: ./.github/workflows/native-ios-test.yml
-    with:
-      full: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    # GitHub's xcode-27 image, the one hosted image with .tool-versions'
+    # Xcode 27.2 (actions/runner-images, images/macos/xcode-27-arm64-Readme.md).
+    runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
+    # A pull request's set is about ten minutes; the night's three
+    # simulators and every UI suite about sixty.
+    timeout-minutes: ${{ (inputs.full || github.event_name == 'schedule') && 100 || 25 }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      # Before anything builds: the engine's Apple targets link against its
+      # SDK too, and iPhone Duo's own layout needs the iOS 27.1 SDK.
+      - name: The Xcode .tool-versions names
+        run: scripts/ci/select-xcode.sh
+      - name: The Swift's layout
+        run: scripts/dev/format.sh --check swift
+      # The Mac mini's runner keeps rustup in ~/.cargo/bin, off its PATH.
+      - name: rustup on the PATH
+        run: '[ -d "$HOME/.cargo/bin" ] && echo "$HOME/.cargo/bin" >> "$GITHUB_PATH" || true'
+      # 148 s of a 284 s job built (run 42110145019); the engine changes
+      # far less often than the app, and is cached by its own files. Saved
+      # at once, whatever the tests say.
+      - name: The engine, as last built
+        id: engine
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: apps/ios/Frameworks/WingtipEngine.xcframework
+          key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
+      - name: The engine, for the app
+        if: steps.engine.outputs.cache-hit != 'true'
+        run: engine/bindings/ffi/build-xcframework.sh
+      - name: The engine, kept
+        if: steps.engine.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: apps/ios/Frameworks/WingtipEngine.xcframework
+          key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
+      - name: The Xcode project, from project.yml
+        run: |
+          # The Mac mini's runner has xcodegen already, and no Homebrew.
+          command -v xcodegen >/dev/null || brew install xcodegen
+          xcodegen generate --spec apps/ios/project.yml --project apps/ios
+      # DerivedData as main's last build left it: the SDK's precompiled
+      # modules and every object whose inputs are unchanged. xcodebuild
+      # compares file times, and a checkout stamps every file anew, so each
+      # input is stamped from its content first (scripts/ci/content-mtimes.py)
+      # and XCBuild told to ignore the new inodes a checkout and a restore
+      # give. Written from main and the nights only: a pull request's would
+      # crowd the repository's 10 GB of cache.
+      - name: Inputs stamped by content
+        run: |
+          defaults write com.apple.dt.XCBuild IgnoreFileSystemDeviceInodeChanges -bool YES
+          python3 scripts/ci/content-mtimes.py apps/ios apps/web/src/lib/fixtures apps/web/src/lib/acs.json \
+            services/planner/tests_wingtip/fixtures/native/phone
+      - name: DerivedData, as last built
+        id: derived
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ${{ runner.temp }}/derived
+          key: ios-derived-v1-${{ hashFiles('.tool-versions', 'apps/ios/project.yml') }}-${{ github.sha }}
+          restore-keys: ios-derived-v1-${{ hashFiles('.tool-versions', 'apps/ios/project.yml') }}-
+      - name: The simulators to test on
+        id: sim
+        run: |
+          # The newest iPhone the runner's Xcode has, and at night an iPad
+          # (a Pro where there is one) and iPhone Duo, each by its id.
+          pick() {
+            xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          kind = sys.argv[1]
+          devices = [d for runtime, ds in json.load(sys.stdin)["devices"].items() if "iOS" in runtime for d in ds if d["name"].startswith(kind)]
+          devices = [d for d in devices if ("Duo" in d["name"]) == (kind == "iPhone Duo")]
+          if not devices:
+              sys.exit(0)
+          pros = [d for d in devices if "Pro" in d["name"]] if kind == "iPad" else []
+          best = sorted(pros or devices, key=lambda d: d["name"])[-1]
+          print(best["udid"])' "$1"
+          }
+          echo "iphone=$(pick iPhone)" >> "$GITHUB_OUTPUT"
+          if [ "$FULL" = true ]; then
+            echo "ipad=$(pick iPad)" >> "$GITHUB_OUTPUT"
+            echo "duo=$(pick 'iPhone Duo')" >> "$GITHUB_OUTPUT"
+          fi
+      # A pull request: the unit tests and CardSmokeTests, the one UI test
+      # a change waits on (the airport card opened, scrolled and closed).
+      # The launch, flow and accessibility tests, the card suites and the
+      # store shots are the night's.
+      - name: Built and tested on the simulator
+        env:
+          IPHONE: ${{ steps.sim.outputs.iphone }}
+          IPAD: ${{ steps.sim.outputs.ipad }}
+          DUO: ${{ steps.sim.outputs.duo }}
+        run: |
+          host=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$WINGTIP_URL').hostname)")
+          dest=(-destination "platform=iOS Simulator,id=$IPHONE")
+          only=(-only-testing:WingtipTests -only-testing:WingtipUITests/CardSmokeTests)
+          if [ "$FULL" = true ]; then
+            only=()
+            for id in $IPAD $DUO; do dest+=(-destination "platform=iOS Simulator,id=$id"); done
+          fi
+          set -o pipefail
+          xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme Wingtip -configuration Debug "${dest[@]}" \
+            -derivedDataPath "$RUNNER_TEMP/derived" -resultBundlePath "$RUNNER_TEMP/Wingtip.xcresult" "${only[@]}" \
+            CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO WINGTIP_HOST="$host" WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID" \
+            test > "$RUNNER_TEMP/xcodebuild.log" 2>&1 || true
+          # Each error with the line after it (a cause), the tests, the verdict.
+          grep -nE "error:|error\b|Could not|Test (Case|Suite)|Executed|\*\* (BUILD|TEST)" -A6 "$RUNNER_TEMP/xcodebuild.log" | tail -200 || true
+          grep -E "✔ Test|✘ Test|Test run with" "$RUNNER_TEMP/xcodebuild.log" || true
+          grep -qE "\*\* TEST SUCCEEDED \*\*" "$RUNNER_TEMP/xcodebuild.log"
+      - name: DerivedData, kept
+        if: always() && steps.derived.outputs.cache-hit != 'true' && (github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
+        continue-on-error: true
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: |
+            ${{ runner.temp }}/derived
+            !${{ runner.temp }}/derived/Logs
+          key: ${{ steps.derived.outputs.cache-primary-key }}
+      - name: Each device's first screen
+        # At night, for a reader: what each device shows on launch, a
+        # picture, not a check.
+        if: env.FULL == 'true'
+        continue-on-error: true
+        run: |
+          app="$RUNNER_TEMP/derived/Build/Products/Debug-iphonesimulator/Wingtip.app"
+          mkdir -p "$RUNNER_TEMP/screens"
+          pairs=("iphone:${{ steps.sim.outputs.iphone }}" "ipad:${{ steps.sim.outputs.ipad }}")
+          duo=${{ steps.sim.outputs.duo }}
+          [ -n "$duo" ] && pairs+=("iphone-duo:$duo")
+          for pair in "${pairs[@]}"; do
+            name=${pair%%:*}; id=${pair#*:}
+            xcrun simctl boot "$id" 2>/dev/null || true
+            xcrun simctl bootstatus "$id" -b > /dev/null
+            xcrun simctl install "$id" "$app"
+            xcrun simctl privacy "$id" grant location "$WINGTIP_BUNDLE_ID" || true
+            xcrun simctl launch "$id" "$WINGTIP_BUNDLE_ID"
+            sleep 25
+            xcrun simctl io "$id" screenshot "$RUNNER_TEMP/screens/$name.png"
+          done
+          ipad=${{ steps.sim.outputs.ipad }}
+          xcrun simctl terminate "$ipad" "$WINGTIP_BUNDLE_ID" || true
+          xcrun simctl launch "$ipad" "$WINGTIP_BUNDLE_ID" -screen airport
+          sleep 15
+          xcrun simctl io "$ipad" screenshot "$RUNNER_TEMP/screens/ipad-search.png"
+      - name: The screens
+        if: always() && env.FULL == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: native-ios-screens
+          path: ${{ runner.temp }}/screens
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: The log, on failure
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: native-ios-log
+          path: ${{ runner.temp }}/xcodebuild.log
+          retention-days: 7
 
   testflight:
     needs: test
-    # Not the nights: they test, and upload nothing.
-    if: github.ref == 'refs/heads/main' && github.event_name != 'schedule' && vars.APP_STORE_KEY_ID != ''
-    # xcode-27, the hosted image with .tool-versions' Xcode 27.2, as in
-    # native-ios-test.yml.
+    # This workflow's own push to main (or a run by hand there), once the
+    # App Store Connect key is set; never a call from CI, nor a night.
+    if: github.workflow == 'Native iOS' && github.ref == 'refs/heads/main' && github.event_name != 'schedule' && vars.APP_STORE_KEY_ID != ''
     runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
     timeout-minutes: 45
     env:
@@ -74,18 +229,9 @@ jobs:
       KEY_P8: ${{ secrets.APP_STORE_KEY_P8 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      # .tool-versions' Xcode (scripts/ci/select-xcode.sh, DEVELOPER_DIR for
-      # the steps after), before anything builds: the engine's Apple targets
-      # link against its SDK too. iPhone Duo's own layout (to the screen's
-      # edge, bars down the side) needs the iOS 27.1 SDK or later; an app
-      # built with an older one is letterboxed on the inner screen.
       - name: The Xcode .tool-versions names
         run: scripts/ci/select-xcode.sh
-      # The engine's framework as the last run that built this engine left
-      # it: the three Apple targets took 148 s of a 284 s job (run
-      # 42110145019), and the engine changes far less often than the app.
-      # Keyed on the engine's own files, 23 MB, so the full Actions cache
-      # loses little to it.
+      # The test job kept it a moment ago.
       - name: The engine, as last built
         id: engine
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -93,14 +239,10 @@ jobs:
           path: apps/ios/Frameworks/WingtipEngine.xcframework
           key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The engine, for the app
-        # wingtip-engine through its C functions (engine/bindings/ffi), which the app
-        # answers the airspace from with no network. The runner's rustup,
-        # at .tool-versions' Rust (rust-toolchain.toml), where the engine changed.
         if: steps.engine.outputs.cache-hit != 'true'
         run: engine/bindings/ffi/build-xcframework.sh
       - name: The Xcode project, from project.yml
         run: |
-          # The Mac mini's runner has xcodegen already, and no Homebrew.
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate --spec apps/ios/project.yml --project apps/ios
       - name: Archived, signed and uploaded to TestFlight
