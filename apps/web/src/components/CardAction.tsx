@@ -132,7 +132,8 @@ export function CardAction({
       aria-label={spoken}
       aria-busy={busy || undefined}
       aria-pressed={pressed}
-      aria-keyshortcuts={keys}
+      // ⌥ is no key name aria-keyshortcuts knows: Alt is (lib/shortcutKeys).
+      aria-keyshortcuts={keys?.replace("⌥", "Alt+")}
       className={look}
     >
       {face}
