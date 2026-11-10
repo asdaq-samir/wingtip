@@ -86,7 +86,7 @@ jobs:
           key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The engine, for the app
         if: steps.engine.outputs.cache-hit != 'true'
-        run: engine/bindings/ffi/build-xcframework.sh
+        run: echo "::notice title=Cache miss::engine-ios" && engine/bindings/ffi/build-xcframework.sh
       - name: The engine, kept
         if: steps.engine.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -117,6 +117,8 @@ jobs:
           path: ${{ runner.temp }}/derived
           key: ios-derived-v1-${{ hashFiles('.tool-versions', 'apps/ios/project.yml') }}-${{ github.sha }}
           restore-keys: ios-derived-v1-${{ hashFiles('.tool-versions', 'apps/ios/project.yml') }}-
+      - if: steps.derived.outputs.cache-matched-key == ''
+        run: echo "::notice title=Cache miss::ios-derived-data"
       - name: The simulators to test on
         id: sim
         run: |

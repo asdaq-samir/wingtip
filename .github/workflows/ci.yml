@@ -54,6 +54,7 @@ jobs:
         id: week
         run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        id: raw
         with:
           path: |
             data/raw/*
@@ -61,6 +62,10 @@ jobs:
             !data/raw/chart_tiles.nosync
           key: tests-raw-root-v1-${{ steps.week.outputs.week }}
           restore-keys: tests-raw-root-v1-
+      # Each cache's miss as a notice, which the budget job lists (and on
+      # main warns of): scripts/ci/ci_budget.py.
+      - if: steps.raw.outputs.cache-hit != 'true'
+        run: echo "::notice title=Cache miss::tests-raw-root (weekly key)"
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version-file: .tool-versions
@@ -78,7 +83,7 @@ jobs:
           path: ~/.cargo/bin/cargo-machete
           key: cargo-machete-0.9.2-${{ runner.os }}-${{ runner.arch }}
       - if: steps.machete.outputs.cache-hit != 'true'
-        run: cargo install --locked cargo-machete@0.9.2
+        run: echo "::notice title=Cache miss::cargo-machete" && cargo install --locked cargo-machete@0.9.2
       - run: cargo machete engine
       # The Rust as rustfmt writes it (engine/rustfmt.toml).
       - run: rustup component add rustfmt && scripts/dev/format.sh --check rust
@@ -100,9 +105,8 @@ jobs:
             || echo "::warning title=No tippecanoe::the overlay tiles' archive tests are skipped"
       - run: ruff check wingtip tests_wingtip
         working-directory: services/planner
-      # The planner's import contracts (services/planner/.importlinter).
-      - run: lint-imports
-        working-directory: services/planner
+      # The planner's import contracts (.importlinter) run once, in
+      # test-planner, whose filter takes every change under services/planner.
       - run: pytest tests_wingtip/ -v
         working-directory: services/planner
       # The jobs' own suite (services/jobs): the charts job's commands and
@@ -136,10 +140,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        id: node
         with:
           node-version-file: .tool-versions
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
+      - if: steps.node.outputs.cache-hit != 'true'
+        run: echo "::notice title=Cache miss::npm (apps/web)"
       - run: npm ci
       # The API types, generated from services/planner/openapi.json --
       # test-planner proves that file matches the running app.
@@ -194,10 +201,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: ./.github/actions/hub-mirror
       - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78  # v6.2.0
+        id: java
         with:
           distribution: temurin
           java-version-file: .tool-versions
           cache: maven
+      - if: steps.java.outputs.cache-hit != 'true'
+        run: echo "::notice title=Cache miss::maven (gateway)"
       # The Java as palantir-java-format writes it (Spotless, in the pom).
       - name: The Java's layout
         working-directory: services/gateway
@@ -241,10 +251,13 @@ jobs:
         id: week
         run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        id: raw
         with:
           path: data/raw
           key: tests-raw-planner-v2-${{ steps.week.outputs.week }}
           restore-keys: tests-raw-planner-v2-
+      - if: steps.raw.outputs.cache-hit != 'true'
+        run: echo "::notice title=Cache miss::tests-raw-planner (weekly key)"
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version-file: .tool-versions
@@ -253,7 +266,8 @@ jobs:
       # The planner imports wingtip's Rust extension (engine/), as in the test job.
       - run: uv pip install --system maturin==1.16.0 && maturin build --profile ci --compatibility linux -m ../../engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
       - run: ruff check app tests
-      # The planner's import contracts (.importlinter), as in the test job.
+      # The planner's import contracts (services/planner/.importlinter), for
+      # app and wingtip alike: the one job that runs them.
       - run: lint-imports
       - run: pytest tests/ -v
 
@@ -870,6 +884,10 @@ jobs:
           restore-keys: |
             planner-charts-v4-
             planner-charts-v3-
+      # Shard 1's misses, for the budget job; the charts' key is the
+      # cycle's, so a miss there is nothing restored at all.
+      - if: matrix.shard == 1 && (steps.data.outputs.cache-hit != 'true' || steps.charts.outputs.cache-matched-key == '')
+        run: echo "::notice title=Cache miss::e2e ${{ steps.data.outputs.cache-hit != 'true' && 'planner-data' || '' }} ${{ steps.charts.outputs.cache-matched-key == '' && 'planner-charts' || '' }}"
 
       # The planner runs as its own user and writes under data/, so the tree
       # is opened to it; the route's elevations are seeded (USGS answers a
@@ -1016,6 +1034,7 @@ jobs:
       - name: The suite's packages, when they were not restored
         if: steps.packages.outputs.cache-hit != 'true'
         run: |
+          echo "::notice title=Cache miss::e2e-node-modules"
           docker run --rm --network host -v "$PWD/apps/web:/w" -v /tmp/e2e-out:/out -w /w \
             "$PLAYWRIGHT_IMAGE" \
             sh -c "timeout 600 npm ci --no-audit --no-fund 2>&1 | tail -20 | tee /out/npm.log"
@@ -1057,57 +1076,7 @@ jobs:
         if: always()
         env:
           SHARD: ${{ matrix.shard }}/${{ strategy.job-total }}
-        run: |
-          python3 - <<'EOF'
-          import os, re
-          def say(level, title, text):
-              text = text.replace("%", "%25").replace("\r", "").replace("\n", "%0A")[:4000]
-              print(f"::{level} title={title}::{text}")
-          shard = os.environ["SHARD"]
-          # When each piece of the setup was done, from the background
-          # pieces' and the steps' own notes: where the time before the
-          # first test went.
-          setup, events = "before the first test, seconds from the job's first step: ", []
-          try:
-              events = sorted((int(l.split(" ", 1)[0]), l.split(" ", 1)[1])
-                              for l in open("/tmp/e2e-out/timeline").read().splitlines() if " " in l)
-              setup += ", ".join(f"{t} {what}" for t, what in events)
-          except (OSError, ValueError) as err:
-              setup += f"unknown ({err})"
-          # And how busy the runner was until then, from vmstat's samples
-          # (one a second from the first step): whether the setup waits on
-          # the processors or on the disk.
-          try:
-              rows = [l.split() for l in open("/tmp/e2e-out/vmstat.log").read().splitlines()]
-              head = next(r for r in rows if "wa" in r and "bo" in r)
-              data = [r for r in rows if len(r) == len(head) and r[0].isdigit()][1:]
-              data = data[:next((t for t, what in events if what == "the tests"), len(data))] or data
-              mean = lambda name: sum(float(r[head.index(name)]) for r in data) / len(data)
-              peak = lambda name: max(float(r[head.index(name)]) for r in data)
-              setup += (f"; meanwhile the processors {100 - mean('id'):.0f}% busy (user {mean('us'):.0f}, system "
-                        f"{mean('sy'):.0f}, waiting on the disk {mean('wa'):.0f}), {mean('bo') / 1024:.0f} MB/s "
-                        f"written ({peak('bo') / 1024:.0f} at most), {mean('bi') / 1024:.0f} read, over {len(data)} s")
-          except (OSError, StopIteration, ValueError, ZeroDivisionError) as err:
-              setup += f"; the runner's load unknown ({err!r})"
-          path = "/tmp/e2e-out/playwright.log"
-          if not os.path.exists(path):
-              say("warning", f"shard {shard}: no output", "the tests never wrote their log\n" + setup)
-          else:
-              lines = open(path, errors="replace").read().splitlines()
-              summary = [l for l in lines if re.match(r"\s*\d+ (passed|failed|flaky|skipped)", l)]
-              # The shard's slowest tests, from the list reporter's
-              # "✓ 12 [mobile] › e2e/x.spec.ts:40:1 › title (2.9s)": what
-              # to look at first when a shard runs long.
-              timed = []
-              for l in lines:
-                  m = re.search(r"\[(\w+)\] › e2e/(\S+?):\d+:\d+ › (.*) \((\d+(?:\.\d+)?)(ms|s|m)\)\s*$", l)
-                  if m:
-                      value = float(m[4]) * {"ms": 0.001, "s": 1, "m": 60}[m[5]]
-                      timed.append((value, f"{value:5.1f}s {m[2]} [{m[1]}] {m[3][:70]}"))
-              slowest = [text for _, text in sorted(timed, reverse=True)[:8]]
-              say("notice" if summary else "warning", f"shard {shard}",
-                  "\n".join(summary + [setup, "slowest:"] + slowest + ["--"] + lines[-25:]))
-          EOF
+        run: python3 scripts/ci/e2e_summary.py
       - name: The stack's logs, when the tests did not pass
         if: always() && steps.tests.outcome != 'success'
         run: |
@@ -1371,10 +1340,11 @@ jobs:
           docker buildx bake -f .github/images.hcl "${targets[@]}"
 
   # New dependencies against GitHub's advisory database; reports, does
-  # not hold a merge.
+  # not hold a merge. Not on a pull request of words only.
   dependency-review:
+    needs: [changes]
     # Needs Advanced Security on a private repository.
-    if: github.event_name == 'pull_request' && !github.event.repository.private
+    if: github.event_name == 'pull_request' && !github.event.repository.private && needs.changes.outputs.docs-only != 'true'
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     permissions:
       contents: read
@@ -1388,7 +1358,10 @@ jobs:
 
   # No new aviation rule outside the engine (CLAUDE.md, #482): a constant
   # with a regulatory source cited, or an engine rule's name defined again,
-  # outside the engine, past scripts/ci/rules_boundary_allow.txt. Seconds.
+  # outside the engine, past scripts/ci/rules_boundary_allow.txt. And CI's
+  # own rules (docs/CI.md, "Rules"): every test in one tier, warnings
+  # fatal in every toolchain, the workflows small, scripted, pinned and
+  # least-privileged. Seconds, on every change.
   rules-boundary:
     name: Rules boundary
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
@@ -1400,6 +1373,12 @@ jobs:
       # written from docs/legal; one edited without the other is stale.
       - name: The legal pages match docs/legal
         run: python3 scripts/build/legal_pages.py --check
+      - name: Every test in one tier
+        run: python3 scripts/ci/test_tiers.py
+      - name: Warnings are errors, everywhere
+        run: python3 scripts/ci/warnings_fatal.py
+      - name: The workflows, small, scripted and least-privileged
+        run: python3 scripts/ci/workflow_rules.py
 
   # What must never break in the air (the owner, 2026-11-09), on every
   # change: the engine against worked examples from the FAA's own texts
@@ -1407,8 +1386,12 @@ jobs:
   # 14 CFR 91.151, 91.155, 91.159, 91.167, 91.179, AIM 5-3-8) and the
   # planner's KMSN-KOSH nav log. The browser's twin is e2e's
   # @flight-critical test; the phones' run in their native jobs.
+  # On every change but words alone (docs/CI.md, "Rules": a small change
+  # gets a small CI).
   flight-critical:
     name: Flight-critical
+    needs: [changes]
+    if: needs.changes.outputs.docs-only != 'true'
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 20
     steps:
@@ -1604,6 +1587,7 @@ jobs:
       contents: read
       issues: write
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         continue-on-error: true
         with:
@@ -1614,55 +1598,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          python3 - <<'EOF'
-          import json, os, subprocess
-          try:
-              lh = json.load(open("lighthouse/lighthouse.json"))
-          except (OSError, ValueError):
-              print("::warning title=Standards::No Lighthouse report from shard 1 this run.")
-              raise SystemExit(0)
-          score = {k: round(v["score"] * 100) for k, v in lh["categories"].items() if v.get("score") is not None}
-          audit = lh["audits"]
-          value = lambda a: audit[a]["numericValue"]
-          # Total Blocking Time and the performance score are set to what
-          # the web app scores (performance 36-60 and TBT 238-1300 ms over
-          # recent nights, #88 and #89), just under the worst: the native
-          # apps are what ships (the owner's decision of 2026-11-08), so the
-          # nightly stops reopening these issues. A fall below them is
-          # still a regression worth an issue.
-          checks = [
-              ("speed", "Largest Contentful Paint", value("largest-contentful-paint"), 2500, "ms"),
-              ("speed", "Cumulative Layout Shift", value("cumulative-layout-shift"), 0.1, ""),
-              ("speed", "Total Blocking Time", value("total-blocking-time"), 1500, "ms"),
-              ("speed", "Lighthouse performance", -score.get("performance", 0), -30, ""),
-              ("design", "Lighthouse accessibility", -score.get("accessibility", 0), -90, ""),
-              ("design", "Lighthouse best practices", -score.get("best-practices", 0), -90, ""),
-          ]
-          rows, misses = [], []
-          for theme, what, got, limit, unit in checks:
-              shown, bound = (-got, -limit) if limit < 0 else (round(got, 3), limit)
-              ok = got <= limit
-              rows.append(f"| {what} | {shown}{unit} | {'at least' if limit < 0 else 'at most'} {bound}{unit} | {'✓' if ok else '✗'} |")
-              if not ok:
-                  misses.append((theme, what, shown, bound, unit))
-          weight = round(value("total-byte-weight") / 1024)
-          summary = "\n".join(["### The planner page against the industry's thresholds (Lighthouse, phone)", "",
-                               "| | Measured | Threshold | |", "|---|---|---|---|", *rows, "",
-                               f"Total transfer: {weight} KiB. Report: {os.environ['RUN_URL']}#artifacts"])
-          open(os.environ["GITHUB_STEP_SUMMARY"], "a").write(summary + "\n")
-          for theme, what, shown, bound, unit in misses:
-              print(f"::warning title=Standards::{what} {shown}{unit}, against {bound}{unit}")
-              title = f"{what} misses the industry threshold"
-              found = subprocess.run(["gh", "issue", "list", "--state", "open", "--label", "standards", "--search", f'in:title "{title}"',
-                                      "--json", "number", "--jq", ".[0].number // empty"], capture_output=True, text=True).stdout.strip()
-              note = f"{what} measured {shown}{unit} on the planner page (Lighthouse, phone settings), where the threshold is {bound}{unit}. Run: {os.environ['RUN_URL']}"
-              if found:
-                  subprocess.run(["gh", "issue", "comment", found, "--body", "Still missed. " + note], check=True)
-              else:
-                  subprocess.run(["gh", "issue", "create", "--title", title, "--label", "standards", "--label", "ready", "--label", theme,
-                                  "--body", note + "\n\nThe Lighthouse report is in the run's artifacts. Follow the measure-speed skill (speed) or the iphone-review skill (design): measure, change, measure again, with the numbers in the pull request."], check=True)
-          EOF
+        run: python3 scripts/ci/standards_thresholds.py
 
       # The night's figures to the deployment's speed trend (SpeedController),
       # where SPEED_URL and SPEED_LAB_TOKEN are set. One request.
@@ -1836,6 +1772,44 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: python3 scripts/ci/flaky_tests.py report /tmp/flake
+
+  # The live sources the stack reads (NOAA, AWC, FAA, USGS, adsb.lol),
+  # asked once a night whether they still answer: a pull request's tests
+  # are not to reach them, so a source that moved is found here.
+  sources:
+    name: Sources still answer
+    if: github.event_name == 'schedule'
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          sparse-checkout: scripts/ci
+      - run: python3 scripts/ci/sources_answer.py
+
+  # This run's minutes, job by job, against docs/CI.md's budget, and the
+  # caches that missed, in the run's summary: warnings, never a failure
+  # (scripts/ci/ci_budget.py). Last, after every job; seconds.
+  budget:
+    name: CI budget
+    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, e2e, e2e-images, build-images, dependency-review, rules-boundary, flight-critical, architecture, site, links, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, passed]
+    if: ${{ !cancelled() }}
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    timeout-minutes: 3
+    continue-on-error: true
+    # The run's jobs and their annotations, read with the run's own token.
+    permissions:
+      contents: read
+      actions: read
+      checks: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          sparse-checkout: scripts/ci
+      - name: Minutes and cache misses, against the budget
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci/ci_budget.py
 
   # The one check main requires (its ruleset); auto-merge-agents.yml merges
   # on it. Every job here passed or was skipped as not needed. The browser

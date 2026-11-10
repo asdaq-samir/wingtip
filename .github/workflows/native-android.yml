@@ -86,7 +86,7 @@ jobs:
           key: engine-android-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The engine, for the app
         if: steps.engine.outputs.cache-hit != 'true'
-        run: engine/bindings/ffi/build-android.sh
+        run: echo "::notice title=Cache miss::engine-android" && engine/bindings/ffi/build-android.sh
       - name: The engine, kept
         if: steps.engine.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
