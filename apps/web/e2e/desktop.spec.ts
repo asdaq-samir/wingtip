@@ -33,14 +33,14 @@ test("/ goes to the search, 1 to 4 open the tabs, Escape goes back a level", asy
   await openPanel(page);
   await page.locator("body").click({ position: { x: 1000, y: 400 } });
   await page.keyboard.press("3");
-  await expect(page.getByTestId("tab-aircraft")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("tab-aircraft")).toHaveAttribute("aria-selected", "true");
   await page.keyboard.press("2");
-  await expect(page.getByTestId("tab-airport")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("tab-airport")).toHaveAttribute("aria-selected", "true");
   await page.keyboard.press("/");
   await expect(page.locator('[data-slot="map-panel"] input[type="search"]:focus')).toHaveCount(1);
   // Typed into, the keys are the field's.
   await page.keyboard.type("1");
-  await expect(page.getByTestId("tab-airport")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("tab-airport")).toHaveAttribute("aria-selected", "true");
   await page.keyboard.press("Escape");
   await page.keyboard.press("4");
   await expect(page.getByTestId("console-sheet")).toBeVisible();

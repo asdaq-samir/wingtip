@@ -15,20 +15,8 @@ import { useIsDesktop } from "../hooks/use-desktop";
 import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { useKeyboardInset, useSafeArea, useWindowHeight } from "../hooks/use-viewport";
-import {
-  GLASS,
-  MATERIAL,
-  BarOverPicture,
-  PanelSize,
-  PILL_RADIUS,
-  SHEET_MARGIN,
-  TabBarMinimized,
-  useTabsShown,
-  type MapInsets,
-  type PanelState,
-} from "../lib/mapChrome";
+import { GLASS, MATERIAL, PanelSize, PILL_RADIUS, SHEET_MARGIN, type MapInsets, type PanelState } from "../lib/mapChrome";
 import { useOpenCards } from "../lib/openCards";
-import { PillPicture } from "./PillPicture";
 import { SheetCardHost } from "./SheetCard";
 import { raisedFor, useSheetCards } from "../lib/sheetCards";
 import TabKept from "./TabKept";
@@ -317,24 +305,9 @@ export default function MapPanel({
   // is the figures (the tabs layout with a route) or the strip's field.
   const barShown = !!bar && !(onPhone && keyboard) && !flying;
   const pictureCard = useOpenCards((s) => s.picture);
-  const tabsShown = useTabsShown((s) => s.shown);
-  // A card from another tab over this one on a phone: the tab bar
-  // minimized to the card's kind, as iOS's navigation bar is; a card from
-  // a control or the chart (SheetCard) the same, its name on the bar.
-  const minimized = cardOver || (onPhone && cardsUp);
-  const barNamed = !!bar && barShown && minimized && cardsUp;
-  useEffect(() => {
-    useSheetCards.setState({ barNamed });
-    return () => useSheetCards.setState({ barNamed: false });
-  }, [barNamed]);
-  // An airport's or an airplane's card draws its own head over its
-  // picture out of the pill (PhotoHead): the minimized bar left out over
-  // it, the grabber laid over the picture.
-  const ownHead = pictureCard && layer === "card" && !cardsUp && !atPill && !tabsShown;
-  const barHere = barShown && !ownHead && !(atPill && footShown);
-  // In the pill, the card's name over its head's picture (PillPicture).
-  const pill = useOpenCards((s) => s.pill);
-  const pillPictured = !!pill && (pictureCard || !!pill.colour) && atPill && minimized && barHere && !tabsShown;
+  // The tabs stay as they are with a card over them, static as the
+  // platform's own (TabBar): the card names itself and has its own close.
+  const barHere = barShown && !(atPill && footShown);
   // The head's row: in the pill only without a tab bar (whose pill is the
   // bar or the figures); out of it wherever there is a top row or no bar.
   const headerShown = !flying && !cardsUp && (atPill ? !bar : top != null || !barShown);
@@ -367,7 +340,7 @@ export default function MapPanel({
   // one measured, FPL's figures' 62, and then hopped to the tabs' 68 (or
   // a card's name's 65) as the pill was measured at rest: a second move,
   // the settle 615-681 ms where it is 260-280 (the FPL audit's B1).
-  const pillKey = [footShown, layer, cardOver, cardsUp, !!bar && barShown, top != null, pictureCard, !!pill, flying].join("|");
+  const pillKey = [footShown, layer, cardOver, cardsUp, !!bar && barShown, top != null, pictureCard, flying].join("|");
   // The tabs alone, the bar's own fixed 4.25 rem band (below): known
   // before it is first measured.
   const tabsAlone = !!bar && barShown && !footShown && !cardsUp && !cardOver && !flying;
@@ -612,13 +585,7 @@ export default function MapPanel({
         fromBottom ? "top-0 h-2.5 items-start pt-1" : "bottom-0 h-4 items-end pb-1.25",
       )}
     >
-      <span
-        className={cn(
-          "h-[5px] w-9 rounded-full",
-          ownHead || pillPictured ? "bg-white/75 shadow-xs shadow-black/50" : "bg-muted-foreground/40",
-        )}
-        aria-hidden="true"
-      />
+      <span className={cn("h-[5px] w-9 rounded-full", "bg-muted-foreground/40")} aria-hidden="true" />
     </button>
   );
   const restingPill = atPill && !moving;
@@ -707,7 +674,6 @@ export default function MapPanel({
             ),
       )}
     >
-      {pillPictured && pill && <PillPicture pill={pill} />}
       {fromBottom && grabber}
       {/* The head's band: the first row (the bar), the top row, any
                 notice, the controls. Over the body, which runs on up under
@@ -719,28 +685,21 @@ export default function MapPanel({
         className={cn("relative flex shrink-0 touch-none flex-col", under && "z-20", !fromBottom && "pt-[env(safe-area-inset-top)]")}
       >
         {bar && (
+          // The tabs are not the sheet's handle: a press on them is a tab's,
+          // the sheet dragged by its grabber (TabBar).
           <div
+            onPointerDown={(event) => event.stopPropagation()}
             className={cn(
-              // The grabber's band, the tabs 52 tall, six under them: the
-              // tab up's capsule clear of the grabber and of the search
-              // under it (the owner, 2026-11-04: 49 points "too
-              // congested", "make the space around the tabs slick like
-              // the grabber and the search bar"); minimized to a card's
-              // name, as tall as the name's 44-point area, a line under it,
-              // 16 over it rather than the band's 10: the name's 44 are
-              // centred on its 32, so 6 run up, and they start where the
-              // grabber's 10 stop (the iOS audit's P1, "lost 3",
-              // 2026-11-05).
+              // The grabber's band, the tabs 52 tall, six under them, clear
+              // of the grabber and of the search under it (the owner,
+              // 2026-11-04: "make the space around the tabs slick like the
+              // grabber and the search bar").
               "flex shrink-0 px-2",
-              minimized ? "min-h-11 border-b border-border/60 pt-4 pb-2" : cn(ROW_PAD, "h-[4.25rem] pb-1.5"),
+              cn(ROW_PAD, "h-[4.25rem] pb-1.5"),
               !barHere && "hidden",
             )}
           >
-            <TabBarMinimized.Provider value={minimized}>
-              <BarOverPicture.Provider value={pillPictured}>
-                <PanelSize.Provider value={panelSize}>{bar}</PanelSize.Provider>
-              </BarOverPicture.Provider>
-            </TabBarMinimized.Provider>
+            <PanelSize.Provider value={panelSize}>{bar}</PanelSize.Provider>
           </div>
         )}
         {/* Under the tab bar, the route's box and its buttons a shade

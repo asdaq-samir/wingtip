@@ -64,7 +64,7 @@ test.describe("/app/plan", () => {
     await expect(sideDrawer(page).getByTestId("tab-bar")).toBeHidden();
     await page.getByTestId("sidebar-trigger-button").click();
     await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
-    await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-current", "page");
+    await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-selected", "true");
     await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+ nm/, { timeout: slow(30000) });
     await expect(page.getByLabel("Departure", { exact: true })).toBeVisible();
     expect(await page.getByTestId("toolbar-trigger").count()).toBe(0);
@@ -148,7 +148,7 @@ test.describe("/app/dev", () => {
     await settle(page);
     await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
     await showTabs(page);
-    await expect(page.getByTestId("tab-train")).toHaveAttribute("aria-current", "page");
+    await expect(page.getByTestId("tab-train")).toHaveAttribute("aria-selected", "true");
     // The training page's route form is all the way up's: its pill is the
     // tabs (MapPanel).
     await grabberTo(page, "full");

@@ -6,9 +6,8 @@ import { grabberTo, settle, settled, showTabs, sideDrawer, stripShows } from "./
  * let's have tabs on the pill"), FPL's route's figures pinned under them
  * ("If a route is entered, then let's pin the calculations at the
  * bottom"). Half way, one height on every tab, each tab's own under its
- * head -- Airport's and Aircraft's Favorites. And a card's way back on a
- * phone: Back at the top left of the minimized tabs' line, a close at its
- * right.
+ * head -- Airport's and Aircraft's Favorites. And a card's way back: its
+ * own Share and close, the tabs static over it.
  */
 
 const KDLH = { ident: "KDLH", name: "Duluth International Airport", municipality: "Duluth", lat: 46.842, lon: -92.194 };
@@ -19,26 +18,6 @@ async function keep(page: Page, state: Record<string, unknown>) {
     sessionStorage.setItem("pills-seeded", "1");
     localStorage.setItem("wingtip.preferences", JSON.stringify({ state: kept, version: 0 }));
   }, state);
-}
-
-/** A finger's pointer events across the panel, `by` points sideways: on
- *  the tab bar's row, in its margin beside the tabs, as what is under the
- *  row changes with the tab, and a row that slides sideways keeps the
- *  finger. */
-async function swipeAcross(page: Page, by: number) {
-  const panel = sideDrawer(page);
-  const row = (await panel.getByTestId("tab-bar").locator("xpath=..").boundingBox())!;
-  const x0 = by > 0 ? row.x + 5 : row.x + row.width - 5;
-  const y = row.y + row.height / 2;
-  await panel.evaluate(
-    (el, [from, to, at]) => {
-      const target = document.elementFromPoint(from, at) ?? el;
-      const opts = { bubbles: true, cancelable: true, composed: true, isPrimary: true, pointerId: 7, pointerType: "touch" };
-      target.dispatchEvent(new PointerEvent("pointerdown", { ...opts, clientX: from, clientY: at }));
-      target.dispatchEvent(new PointerEvent("pointerup", { ...opts, clientX: to, clientY: at + 4 }));
-    },
-    [x0, x0 + by, y],
-  );
 }
 
 /** A tab picked half way. */
@@ -253,35 +232,22 @@ test("a Favorite is taken off as a Recent is: a swipe to the left uncovers its D
   await expect(list).toContainText("A star on an airport's card adds it here");
 });
 
-test("on a phone, an airport's card opened from another tab has Share at the top left of the pill's line and on its pictures, and its close goes back", async ({
+test("an airport's card opened from another tab has its Share and close on its pictures, the tabs over it, and its close goes back", async ({
   page,
 }) => {
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "the tabs minimize on a phone only");
-  // An airport's card over FPL (a route's field): the bar its kind, Share
-  // where Back was and the close going back as Back did, at the owner's
-  // ask ("replace the back button on airport/aircraft with the share
-  // button. The close button should behave like the back button").
+  // An airport's card over FPL (a route's field): its own Share and close,
+  // the close going back as Back did, at the owner's ask ("replace the
+  // back button on airport/aircraft with the share button. The close
+  // button should behave like the back button"); the tabs static over it
+  // (the owner, 2026-11-09).
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=KDLH");
   await settle(page);
   const panel = sideDrawer(page);
   await expect(panel.getByTestId("place-card")).toBeVisible();
-  // Half way its share and close on its pictures, the owner's pick of the
-  // redesign (A2): the bar left out over them.
-  await expect(panel.getByTestId("place-share")).toHaveAccessibleName("Share KDLH");
-  await expect(panel.getByTestId("place-close")).toBeInViewport();
-  await expect(page.getByTestId("tab-share")).toBeHidden();
-  // In the pill, the bar's.
-  await grabberTo(page, "peek");
-  const share = page.getByTestId("tab-share");
+  const share = panel.getByTestId("place-share");
   await expect(share).toHaveAccessibleName("Share KDLH");
-  await expect(page.getByTestId("tab-back")).toHaveCount(0);
-  const title = (await page.getByTestId("tab-title").boundingBox())!;
-  const shareBox = (await share.boundingBox())!;
-  // At the left, on the tab label's line; the card's own close gone.
-  expect(shareBox.x + shareBox.width).toBeLessThan(title.x);
-  expect(Math.abs(shareBox.y + shareBox.height / 2 - (title.y + title.height / 2))).toBeLessThanOrEqual(2);
-  const close = page.getByTestId("tab-close");
-  expect((await close.boundingBox())!.x).toBeGreaterThan(title.x + title.width);
+  await expect(panel.getByTestId("place-close")).toBeInViewport();
+  await expect(panel.getByTestId("tab-bar")).toBeVisible();
   // Shared: the field's card on the planner, by its address.
   await page.evaluate(() => {
     Object.defineProperty(navigator, "share", {
@@ -295,38 +261,9 @@ test("on a phone, an airport's card opened from another tab has Share at the top
   await share.click();
   await expect.poll(() => page.evaluate(() => (window as unknown as { shared?: string }).shared)).toMatch(/\/app\/plan\?place=KDLH$/);
   // The close: one card back, as Back went.
-  await close.click();
+  await panel.getByTestId("place-close").click();
   await expect(page).not.toHaveURL(/[?&]place=/);
-  // At the tab's own screen neither: nothing to go back to.
-  await expect(share).toHaveCount(0);
-});
-
-test("on a phone, a tap anywhere on the tabs' minimized line shows the tabs, but Back goes back", async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "the tabs minimize on a phone only");
-  // The owner's ask: "Clicking anywhere on the tabs bar should show tabs
-  // except the back/close button should do their action".
-  await page.goto("/app/plan?dep=C81&dest=KDLH&place=KDLH");
-  await settle(page);
-  const panel = sideDrawer(page);
-  await expect(panel.getByTestId("place-card")).toBeVisible();
-  // The line the pill's: half way the card's pictures have its own (A2).
-  await grabberTo(page, "peek");
-  const title = page.getByTestId("tab-title");
-  const back = (await page.getByTestId("tab-share").boundingBox())!;
-  const close = (await page.getByTestId("tab-close").boundingBox())!;
-  const line = (await title.boundingBox())!;
-  // Between Share and the title, off both: the tabs.
-  await page.mouse.click((back.x + back.width + line.x) / 2, line.y + line.height / 2);
-  await expect(page.getByTestId("tab-fpl")).toBeVisible();
-  await expect(page).toHaveURL(/[?&]place=KDLH/);
-  // The close on a fresh load does its own, not the tabs'.
-  await page.goto("/app/plan?dep=C81&dest=KDLH&place=KDLH");
-  await settle(page);
-  await expect(panel.getByTestId("place-card")).toBeVisible();
-  await grabberTo(page, "peek");
-  expect(close.x).toBeGreaterThan(line.x);
-  await page.getByTestId("tab-close").click();
-  await expect(page).not.toHaveURL(/[?&]place=/);
+  await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-selected", "true");
 });
 
 test("Airplane, the pilot's own, is first among the Aircraft card's Favorites, with Add until one is kept, and kept from the search's pick", async ({
@@ -442,62 +379,4 @@ test("on a phone, all the way up, Setup's page starts where Airport's search bar
   // Its first row, the account as the half card has it (SetupPill).
   const first = (await panel.getByTestId("setup-head").boundingBox())!.y;
   expect(Math.abs(first - search)).toBeLessThan(1.5);
-});
-
-test("a finger's swipe across the panel switches no tab, and on a Setup page to the right goes back", async ({ page }) => {
-  // The owner's ask: "let's not support swipe to switch tabs. A glass
-  // bubble can be dragged on tabs though like iOS... Swipe should only
-  // support going back." (It was: "Can swiping left/right switch tabs?")
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's panel");
-  await page.goto("/app/plan");
-  await settle(page);
-  await grabberTo(page, "half");
-  const panel = sideDrawer(page);
-  const up = () => panel.locator('[data-testid="tab-bar"] button[aria-current="page"]');
-  await showTabs(page);
-  await expect(up()).toHaveAttribute("data-testid", "tab-fpl");
-  for (const by of [-130, 130]) {
-    await swipeAcross(page, by);
-    await showTabs(page);
-    await expect(up()).toHaveAttribute("data-testid", "tab-fpl");
-  }
-  // A Setup page open (Minimums, a tile of the account's): to the right,
-  // back to the Account, as its close takes it.
-  await page.getByTestId("setup-button").click();
-  await grabberTo(page, "full");
-  await panel
-    .getByTestId("library-section")
-    .getByRole("button", { name: /^Minimums/ })
-    .click();
-  const back = panel.getByRole("button", { name: "Back to Setup", exact: true });
-  await expect(back).toBeVisible();
-  await swipeAcross(page, 130);
-  await expect(back).toHaveCount(0);
-  await expect(panel.getByTestId("library-section")).toBeVisible();
-});
-
-test("with Back showing, a swipe across the panel goes back, not to the tab beside", async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "Back shows where the tabs minimize, on a phone");
-  // The owner's ask: "When back button is visible then swiping should go
-  // back instead of switching tabs". An airport's card over FPL.
-  await page.goto("/app/plan?dep=C81&dest=KDLH&place=KDLH");
-  await settle(page);
-  const panel = sideDrawer(page);
-  await expect(panel.getByTestId("place-card")).toBeVisible();
-  // On the pill's line: half way the card's pictures take a swipe across
-  // to their next page (PhotoHead).
-  await grabberTo(page, "peek");
-  await expect(page.getByTestId("tab-share")).toBeVisible();
-  // To the left, nothing: no tab beside, and nothing forward.
-  await swipeAcross(page, -130);
-  await page.waitForTimeout(300);
-  // Still open, under the pill's line.
-  await expect(panel.getByTestId("place-card")).toBeAttached();
-  await expect(page).toHaveURL(/[?&]place=KDLH/);
-  // To the right, back: the card put away, FPL as it was.
-  await swipeAcross(page, 130);
-  await expect(page).not.toHaveURL(/[?&]place=/);
-  await expect(page.getByTestId("tab-share")).toHaveCount(0);
-  await showTabs(page);
-  await expect(panel.locator('[data-testid="tab-bar"] button[aria-current="page"]')).toHaveAttribute("data-testid", "tab-fpl");
 });

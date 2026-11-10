@@ -45,18 +45,6 @@ export const MapInsetsContext = createContext<MapInsets>(NO_INSETS);
  *  sheet's own close, title or description to use. */
 export const ConsoleInPanelContext = createContext<{ close: () => void } | null>(null);
 
-/** Whether the tab bar is minimized (MapPanel): out of the pill on a
- *  phone, the sheet up, it is the tab up's name alone, centred, as iOS
- *  26's tab bar minimizes, at the pilot's ask; tapped, every tab again
- *  (TabBar). */
-export const TabBarMinimized = createContext(false);
-
-/** Whether the minimized bar lies in the pill over a card's picture
- *  (MapPanel's PillPicture, lib/openCards' `pill`): its words and glyphs
- *  white, its round buttons a light glass, and the card's line under its
- *  name (TabBar). */
-export const BarOverPicture = createContext(false);
-
 /** The panel's size as the tab bar sees it, and the way to change it
  *  (MapPanel). Null outside a panel. */
 export const PanelSize = createContext<{
@@ -71,16 +59,6 @@ export const PanelSize = createContext<{
  *  title (ConsoleHeader) change one for the other, and the console stays
  *  out across the change, the other page's in its place. Not kept past
  *  a reload. */
-/** Whether the minimized tab bar has been tapped open to every tab
- *  (TabBar): while it is, its Back and close are not shown, at the
- *  owner's ask; the tab up tapped again puts a card away. */
-export const useTabsShown = create<{ shown: boolean }>(() => ({ shown: false }));
-
-/** The name of the card open over the panel's tabs, as its card has it
- *  (an airplane's callsign or registration, FlightCard), for the bar's
- *  title over it (TabBar). */
-export const useCardTitle = create<{ title: string | null }>(() => ({ title: null }));
-
 export const useConsoleOpen = create<{ open: boolean; setOpen: (open: boolean) => void }>((set) => ({
   open: false,
   setOpen: (open) => set({ open }),
@@ -172,13 +150,13 @@ export const GLASS_BUTTON =
   "border-0 bg-foreground/8 text-foreground shadow-none " + "hover:bg-foreground/12 hover:text-foreground aria-expanded:bg-foreground/12";
 
 /** The same glass tinted the blue on a toggle's chip once it is picked
- *  (data-state "on") -- a field's runway (ProceduresRoute) -- as iOS 26's
+ *  (data-pressed) -- a field's runway (ProceduresRoute) -- as iOS 26's
  *  prominent glass is for the one choice that sets something: the tint
  *  through it, white words, the light at its top and its rim the clear
  *  glass's. Written out per state, as Tailwind finds its classes by their
  *  whole names. */
 export const GLASS_PICKED =
-  "data-[state=on]:bg-primary data-[state=on]:font-semibold data-[state=on]:text-primary-foreground hover:data-[state=on]:bg-primary hover:data-[state=on]:text-primary-foreground";
+  "data-pressed:bg-primary data-pressed:font-semibold data-pressed:text-primary-foreground hover:data-pressed:bg-primary hover:data-pressed:text-primary-foreground";
 
 /** A chip's words on the panel's row (the airplane, the cruising altitude,
  *  the time): a note's 13 to a finger, as Maps' route options are, growing

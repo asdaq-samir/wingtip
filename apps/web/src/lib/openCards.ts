@@ -5,7 +5,7 @@
  * or its Back does, before the panel is lowered. A card over a list (an
  * airport's over Nearest's) is closed first, then the list.
  */
-import { useEffect, useRef, useEffectEvent } from "react";
+import { createContext, useEffect, useRef, useEffectEvent, type ReactNode } from "react";
 import { create } from "zustand";
 
 /** The cards of the route whose Share is a menu of the route's things,
@@ -134,3 +134,8 @@ export function useHeldCard(onClose: () => void, onShare?: CardShare, picture = 
     setCardPill(entry, given ? { line, picture: url, tint } : undefined);
   }, [given, line, url, tint, shares, picture]);
 }
+
+/** The route's Share menu for one of its cards -- the Brief, the nav
+ *  log, the profile -- given by the planner (PlanWorkspace), for the head's
+ *  Share where a card's share is the route's (PanelCard's CardClose). */
+export const RouteShareMenu = createContext<((card: RouteCard) => ReactNode) | null>(null);

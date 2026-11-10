@@ -25,7 +25,7 @@ import { usePreferences } from "../../../lib/preferences";
 import { useProgressToast } from "../../../lib/useProgressToast";
 import { patched, useSearchParamsNow } from "../../../lib/useSearchParamsNow";
 import { usePlanHistory } from "../../../hooks/use-plan-history";
-import { useCardTitle, usePanelDragging } from "../../../lib/mapChrome";
+import { usePanelDragging } from "../../../lib/mapChrome";
 import { holdsOf, holdsParam } from "../lib/routeHolds";
 import { picksOf } from "../../../lib/flightLink";
 import { proceduresOf, proceduresParam, sameField } from "../../../lib/procedures";
@@ -695,7 +695,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   // This page binds no keys of its own. Walking the nav log used to be
   // Up and Down on the document, which meant deciding by hand, on every
   // press, whether some other widget wanted them: a guard for inputs
-  // and textareas, another for Radix's own lists and dialogs, and a
+  // and textareas, another for the stock lists and dialogs, and a
   // hole in that guard for section titles, which had to prevent the
   // stock accordion's Up/Down so this walk could have them. A row is a
   // focusable, selectable row (`SelectableRow`): Tab reaches it and
@@ -951,25 +951,6 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   // and its end (the drag probe at CPU 4x, 2026-11-04: 100 to 170 ms each,
   // with the map's follow of the sheet waiting behind them).
   const stripsDrawn = usePanelDragging((d) => panel !== "peek" || d.dragging);
-  // The open card's name for the bar over it: an airport's ident, the
-  // airspace at a point, an airplane's callsign (its card's, useCardTitle).
-  const flightTitle = useCardTitle((t) => t.title);
-  const cardTitle =
-    place ??
-    (heldPoint
-      ? "Airspace"
-      : flight
-        ? (flightTitle ?? undefined)
-        : briefShown
-          ? "AI brief"
-          : navLogShown
-            ? "Nav log"
-            : profileShown
-              ? "Profile"
-              : stopsShown
-                ? "Stops"
-                : undefined);
-
   // The route from the side (MiniProfile), a tap the nav log all the way up;
   // there, a picture of the flight, nothing to tap.
   // The dry run's chart's code fetched ahead, a few seconds after a run can
@@ -1030,7 +1011,6 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     briefMark,
     briefShown,
     cardOpen,
-    cardTitle,
     cardUp,
     changeAircraft,
     changeAltitudeChoice,

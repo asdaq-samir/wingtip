@@ -71,10 +71,10 @@ test("an airport's card has the field's pictures across its top, its ident over 
   // Measured from the route's departure while the pilot's own position
   // is not known.
   await expect(card(page).getByTestId("place-line")).toHaveText(/^\d+ nm NW of C81 · Elevation [\d,]+ ft$/);
-  // Its share and close on the pictures, the minimized bar's out of the
-  // pill, and the grabber over them.
+  // Its share and close on the pictures, the tabs over the card as they
+  // stay over every card (TabBar).
   for (const id of ["place-share", "place-close"]) await expect(card(page).getByTestId(id)).toBeInViewport();
-  await expect(page.getByTestId("tab-close")).toBeHidden();
+  await expect(page.getByTestId("tab-bar")).toBeVisible();
   // Its actions in a row under them at half -- no Add Stop for the
   // route's own destination -- and its tabs right under them, Info open.
   for (const id of ["fly-here", "place-call", "place-favorite"]) await expect(card(page).getByTestId(id)).toBeInViewport({ ratio: 1 });
@@ -116,36 +116,6 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await expect(card(page)).toHaveCount(0);
   await expect(page).not.toHaveURL(/[?&]place=/);
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
-});
-
-test("down in the pill, an airport's card is its ident over a line of its category, wind and name, on its head's picture blurred", async ({
-  page,
-}) => {
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "the pill is a phone's");
-  await cardWeather(page, "KDLH", {
-    metar: {
-      raw: "KDLH 102155Z 27012G18KT 10SM CLR 12/02 A3001",
-      flight_category: "VFR",
-      ceiling_ft: null,
-      wind_dir_true_deg: 270,
-      wind_speed_kt: 12,
-      wind_gust_kt: 18,
-    },
-    taf: null,
-  });
-  await page.goto("/app/plan?dep=C81&dest=KDLH&place=KDLH");
-  await settle(page);
-  await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
-  await grabberTo(page, "peek");
-  // The owner's pick (P5): two lines between Share and the close, white
-  // on the picture behind the pill.
-  await expect(page.getByTestId("tab-title-name")).toHaveText("KDLH");
-  await expect(page.getByTestId("tab-title-line")).toHaveText("VFR · 270°T 12G18 · Duluth International Airport");
-  await expect(sideDrawer(page).getByTestId("pill-picture")).toBeVisible();
-  for (const id of ["tab-share", "tab-close"]) await expect(page.getByTestId(id)).toBeInViewport();
-  // Up again, the card's own head, and the pill's picture gone with the pill.
-  await grabberTo(page, "half");
-  await expect(sideDrawer(page).getByTestId("pill-picture")).toHaveCount(0);
 });
 
 /** A TAF for KDLH issued this hour, for a day: fair until an FM group in
@@ -722,7 +692,7 @@ test("an airport tapped on the chart while Setup is up puts Setup away and opens
   await expect(consoleSheet(page)).toHaveCount(0);
   await expect(card(page).getByTestId("place-name")).not.toBeEmpty();
   await showTabs(page);
-  await expect(page.getByTestId("tab-airport")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("tab-airport")).toHaveAttribute("aria-selected", "true");
 });
 
 test("a tap on an airport on the chart opens its card, a tap elsewhere puts it away, and Fly Here makes it the destination", async ({

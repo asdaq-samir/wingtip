@@ -75,7 +75,7 @@ test(
     // the search bar's place; elsewhere a sheet.
     const phone = page.viewportSize()!.width < 768;
     await showTabs(page);
-    await expect(page.getByTestId("setup-button")).toHaveAttribute("aria-current", "page");
+    await expect(page.getByTestId("setup-button")).toHaveAttribute("aria-selected", "true");
     if (phone) expect(await pilot.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))).toBe(true);
     // The role, a menu, in Personal's Account row, at the owner's ask: Pilot
     // (chosen here), Developer for a developer, and Sign out last; who is

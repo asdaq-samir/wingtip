@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { signInByEmail } from "./emailSignIn";
 import { library, noTips, openConsole, slow } from "./helpers";
+import { fillDate } from "./ariaFields";
 
 /**
  * An approach set as a lesson (LessonService), at the owner's "do it all"
@@ -114,7 +115,7 @@ async function signedInAs(page: Page, address: string) {
 /** The console once the page has drawn its tab bar (instructor.spec's). */
 async function logbook(page: Page) {
   const console = page.getByTestId("console-sheet");
-  await expect(page.getByTestId("tab-title").or(page.getByTestId("setup-button")).or(console).first()).toBeVisible();
+  await expect(page.getByTestId("setup-button").or(console).first()).toBeVisible();
   if (!(await console.isVisible())) await openConsole(page);
   await library(console, "Logbook");
   return console;
@@ -146,7 +147,7 @@ test("an instructor sets an approach as a lesson, the student answers its quiz, 
   await desk.getByRole("button", { name: /^Instructing/ }).click();
   await desk.getByTestId("cfi-name").fill("J. J. Jones");
   await desk.getByTestId("cfi-number").fill("987654321CFI");
-  await desk.getByTestId("cfi-until").fill("2027-12-31");
+  await fillDate(desk.getByTestId("cfi-until"), "2027-12-31");
   await desk.getByTestId("cfi-save").click();
   await desk.getByTestId("student-accept").click();
   await desk.getByRole("button", { name: /^Avery B\. Student/ }).click();
@@ -175,7 +176,7 @@ test("an instructor sets an approach as a lesson, the student answers its quiz, 
   await expect(brief).toContainText("PYKLA");
 
   // A quiz question answered, and sent as it is.
-  await lesson.getByTestId("approach-lesson-steps").getByRole("radio", { name: "Quiz" }).click();
+  await lesson.getByTestId("approach-lesson-steps").getByRole("button", { name: "Quiz" }).click();
   const quiz = lesson.getByTestId("approach-quiz");
   await expect(quiz.getByTestId("approach-quiz-question")).toHaveText("What's the minimum altitude at DL?");
   const sent = page.waitForResponse((r) => /\/api\/training\/lessons\/\d+\/progress$/.test(new URL(r.url()).pathname) && r.ok());

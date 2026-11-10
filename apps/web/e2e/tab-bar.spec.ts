@@ -19,7 +19,9 @@ import {
  * on its left: FPL, Airport, Aircraft and Setup, the sheet's first row at
  * every size -- at rest the pill itself, at the owner's ask ("When no route
  * is entered, let's have tabs on the pill"), a route's figures pinned under
- * them -- over a card its name, Back and the close.
+ * them. The stock Tabs (shadcn's, on Base UI), static as the platform's
+ * own are (the owner, 2026-11-09): over a card they stay as they are, the
+ * card's own head naming it with its Share and close.
  */
 
 test("the tabs swap the panel's head and body, FPL's empty box with no route", async ({ page }) => {
@@ -33,7 +35,7 @@ test("the tabs swap the panel's head and body, FPL's empty box with no route", a
   await expect(sideDrawer(page).getByTestId("route-type")).toBeHidden();
   await grabberTo(page, "half");
   await expect(sideDrawer(page).getByTestId("route-type")).toBeVisible();
-  await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-selected", "true");
   await showTabs(page);
   await page.getByTestId("tab-airport").click();
   await expect(sideDrawer(page).getByTestId("search-airports")).toBeVisible();
@@ -47,13 +49,13 @@ test("the tabs swap the panel's head and body, FPL's empty box with no route", a
 
   // Four tabs, Nearest Airport's now (the owner's pick of the redesign).
   await showTabs(page);
-  await expect(bar.getByRole("button")).toHaveCount(4);
+  await expect(bar.getByRole("tab")).toHaveCount(4);
 
   // FPL with no route: the route's box, empty to type one in.
   await showTabs(page);
   await page.getByTestId("tab-fpl").click();
   await showTabs(page);
-  await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-selected", "true");
   await expect(sideDrawer(page).getByTestId("route-type")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("search-airports")).toHaveCount(0);
 
@@ -62,12 +64,12 @@ test("the tabs swap the panel's head and body, FPL's empty box with no route", a
   await showTabs(page);
   await bar.getByTestId("setup-button").click();
   await showTabs(page);
-  await expect(bar.getByTestId("setup-button")).toHaveAttribute("aria-current", "page");
+  await expect(bar.getByTestId("setup-button")).toHaveAttribute("aria-selected", "true");
   // Escape until it is away: with the focus on the panel, the first lowers
   // the panel (closeConsole).
   await closeConsole(page);
   await showTabs(page);
-  await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-selected", "true");
 });
 
 test("a route rests as its figures in the tabs' place, the pill's own height, and half way another tab keeps the panel's height and the route", async ({
@@ -102,7 +104,7 @@ test("a route rests as its figures in the tabs' place, the pill's own height, an
   await panel.getByTestId("panel-foot").click();
   await expect(panel).toHaveAttribute("data-panel", "half");
   // Half way, the tabs still the sheet's first row.
-  await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-selected", "true");
   // Measured at rest: caught on its way up, the bar was still at the pill's.
   await settled(panel);
   const bar = (await page.getByTestId("tab-bar").boundingBox())!;
@@ -113,7 +115,7 @@ test("a route rests as its figures in the tabs' place, the pill's own height, an
   expect(bar.y).toBeLessThan(top + 40);
   // Another tab half way: half kept, the route still there.
   await page.getByTestId("tab-airport").click();
-  await expect(page.getByTestId("tab-airport")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("tab-airport")).toHaveAttribute("aria-selected", "true");
   await expect(panel).toHaveAttribute("data-panel", "half");
   await expect(page).toHaveURL(/dep=C81/);
   await expect(panel.getByTestId("search-airports")).toBeVisible();
@@ -149,7 +151,7 @@ test("an airport tapped in the route opens its card, and is changed from its men
   await closeCard(page, "place-close");
   await expect(card).toHaveCount(0);
   await showTabs(page);
-  await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-selected", "true");
   // Changed from the pill's menu: its search, as a tap was.
   await destination.click({ button: "right" });
   await page.getByTestId("pill-menu-change").click();
@@ -237,22 +239,40 @@ test("the Brief is a card over FPL, from the chips' Brief: Preflight, Depart, En
   await expect(panel.getByTestId("navlog-scroller").getByTestId("procedures")).toBeVisible();
 });
 
-test("a card opens half way; on a phone, lowered to the pill it is its name and its close, which puts it away", async ({ page }) => {
+test("a card opens half way under the tabs, which stay; its own close puts it away", async ({ page }) => {
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
   const panel = sideDrawer(page);
   await expect(panel).toHaveAttribute("data-panel", "half");
   const name = panel.getByTestId("place-card").getByTestId("place-name");
   await expect(name).toBeVisible({ timeout: slow(15000) });
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "the tabs minimize to a card's name on a phone only");
-  // Down to the pill: the minimized tabs, the card's name, Share and the
-  // close, which goes back to the tab as Back did.
+  // The tabs over the card as over the tab, FPL still the tab up.
+  await expect(panel.getByTestId("tab-bar")).toBeVisible();
+  await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-selected", "true");
+  // Down to the pill, the tabs there too; the card's close puts it away.
   await grabberTo(page, "peek");
-  await expect(page.getByTestId("tab-title")).toContainText("KDLH");
-  await expect(panel.getByTestId("place-frequencies")).toBeHidden();
-  await page.getByTestId("tab-close").click();
+  await expect(panel.getByTestId("tab-bar")).toBeVisible();
+  await grabberTo(page, "half");
+  await closeCard(page, "place-close");
   await expect(page).not.toHaveURL(/[?&]place=/);
-  await expect(panel).toHaveAttribute("data-panel", "peek");
+});
+
+test("the tabs are a tab list: the arrow keys move between them, Enter picks one, the one up selected", async ({ page }) => {
+  await page.goto("/app/plan");
+  await settle(page);
+  await showTabs(page);
+  const bar = page.getByRole("tablist", { name: "Tabs" });
+  await expect(bar.getByRole("tab")).toHaveText([/FPL/, /Airport/, /Airplane/, /Setup/]);
+  const fpl = page.getByTestId("tab-fpl");
+  await expect(fpl).toHaveAttribute("aria-selected", "true");
+  await fpl.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByTestId("tab-airport")).toBeFocused();
+  // Focus alone picks nothing (Base UI's activateOnFocus is off); Enter does.
+  await expect(fpl).toHaveAttribute("aria-selected", "true");
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("tab-airport")).toHaveAttribute("aria-selected", "true");
+  await expect(fpl).toHaveAttribute("aria-selected", "false");
 });
 
 test("the route's box has a clear at its end while it holds a route", async ({ page }) => {
@@ -317,7 +337,7 @@ test("each tab keeps the card open over it: another tab picked and this one agai
   await expect(name).toContainText("KDLH");
   // The tab up tapped again puts it away, as an iOS tab's first screen.
   await showTabs(page);
-  await sideDrawer(page).locator('[data-testid="tab-bar"] button[aria-current="page"]').click();
+  await page.getByTestId("tab-fpl").click();
   await expect(page).not.toHaveURL(/[?&]place=/);
   await showTabs(page);
   await page.getByTestId("tab-aircraft").click();
@@ -345,7 +365,7 @@ test("the grabber steps the pill, half and all the way up and back, as the panel
   expect(seen).toEqual(["half", "full", "half", "peek"]);
 });
 
-test("all the way up, another tab tapped is that tab all the way up; the tab up tapped brings it down half way", async ({ page }) => {
+test("all the way up, another tab tapped is that tab all the way up", async ({ page }) => {
   // The owner's ask: "tapping on other tabs when card is fully open should
   // switch to that tab".
   await page.goto("/app/plan");
@@ -355,64 +375,13 @@ test("all the way up, another tab tapped is that tab all the way up; the tab up 
   await grabberTo(page, "full");
   const panel = sideDrawer(page);
   await page.getByTestId("tab-aircraft").click();
-  await expect(page.getByTestId("tab-aircraft")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("tab-aircraft")).toHaveAttribute("aria-selected", "true");
   await expect(panel).toHaveAttribute("data-panel", "full");
   await page.getByTestId("setup-button").click();
   await expect(panel).toHaveAttribute("data-panel", "full");
   await expect(panel.getByTestId("setup-page")).toBeVisible();
   await page.getByTestId("tab-airport").click();
   await expect(panel).toHaveAttribute("data-panel", "full");
-  await page.getByTestId("tab-airport").click();
-  await expect(panel).toHaveAttribute("data-panel", "half");
-});
-
-test("with a mouse's wheel, down over the panel brings it up a size, up takes it down, and sideways switches no tab", async ({ page }) => {
-  // The owner's ask: "on a desktop, the scrolling should transition the
-  // layout and tabs".
-  test.skip((page.viewportSize()?.width ?? 0) < 768, "a desktop's wheel");
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await settle(page);
-  const panel = sideDrawer(page);
-  const over = async () => {
-    // Once it is at rest: measured while it moved, the pointer landed on
-    // the map, whose own wheel zooms it.
-    await settled(panel);
-    // Into the part in sight: a top sheet's box starts above the screen.
-    const box = (await panel.boundingBox())!;
-    await page.mouse.move(box.x + box.width / 2, Math.max(0, box.y) + 30);
-  };
-  // A flick: four wheel events in one go, as a wheel's notch or a
-  // trackpad's flick sends them, a frame or so apart -- Playwright's own
-  // came a quarter of a second apart, past the pause (180 ms) that ends a
-  // gesture, and one flick was now and then heard as two.
-  const flick = async (dx: number, dy: number) => {
-    await over();
-    await page.evaluate(
-      ([dx, dy]) => {
-        const box = document.querySelector("[data-slot=map-panel]")!.getBoundingClientRect();
-        const x = box.left + box.width / 2,
-          y = Math.max(0, box.top) + 30;
-        const target = document.elementFromPoint(x, y)!;
-        for (let i = 0; i < 4; i++)
-          target.dispatchEvent(
-            new WheelEvent("wheel", { deltaX: dx, deltaY: dy, clientX: x, clientY: y, bubbles: true, cancelable: true }),
-          );
-      },
-      [dx, dy],
-    );
-    // The gesture's end, before the next.
-    await page.waitForTimeout(400);
-    await settled(panel);
-  };
-  await flick(0, 40);
-  await expect(panel).toHaveAttribute("data-panel", "half");
-  await flick(0, 40);
-  await expect(panel).toHaveAttribute("data-panel", "full");
-  await flick(0, -40);
-  await expect(panel).toHaveAttribute("data-panel", "half");
-  // Sideways: no tab (the owner's "let's not support swipe to switch tabs").
-  await flick(40, 0);
-  await expect(page.getByTestId("tab-fpl")).toHaveAttribute("aria-current", "page");
 });
 
 test("a tab's own page is there at once as its tab is picked, as Airport's is: Aircraft's and Setup's neither fade nor slide in", async ({
@@ -462,13 +431,13 @@ test.describe("the tabs under a finger", () => {
   async function tabMiddles(page: Page) {
     const bar = page.getByTestId("tab-bar");
     const box = (await bar.boundingBox())!;
-    const count = await bar.locator("button").count();
+    const count = await bar.getByRole("tab").count();
     return (i: number) => ({ x: box.x + (box.width / count) * (i + 0.5), y: box.y + box.height / 2 });
   }
 
   test("a tap on a tab picks it, and a finger's slide along the tabs picks nothing", async ({ page }) => {
-    // The lens of iOS 26 went with the sheet's rewrite (2026-11-04): the
-    // tabs are plain buttons, the one up in its tinted capsule.
+    // The stock tabs (Base UI's): picked by a tap, not by a press slid
+    // along them.
     await page.goto("/app/plan");
     await settle(page);
     const panel = sideDrawer(page);
@@ -476,8 +445,7 @@ test.describe("the tabs under a finger", () => {
     const size = (await panel.getAttribute("data-panel"))!;
     const tabs = panel.getByTestId("tab-bar");
     const at = await tabMiddles(page);
-    await expect(tabs.getByTestId("tab-fpl")).toHaveAttribute("aria-current", "page");
-    await expect(tabs.getByTestId("tab-fpl").getByTestId("tab-bubble")).toBeVisible();
+    await expect(tabs.getByTestId("tab-fpl")).toHaveAttribute("aria-selected", "true");
     const touch = await finger(page);
     // Slid along from FPL to Aircraft and let go: nothing picked, and the
     // sheet where it was.
@@ -488,17 +456,18 @@ test.describe("the tabs under a finger", () => {
     }
     await touch("touchEnd");
     await page.waitForTimeout(300);
-    await expect(tabs.getByTestId("tab-fpl")).toHaveAttribute("aria-current", "page");
+    await expect(tabs.getByTestId("tab-fpl")).toHaveAttribute("aria-selected", "true");
     await expect(panel).toHaveAttribute("data-panel", size);
-    // A tap on Aircraft picks it, its capsule with it.
+    // A tap on Aircraft picks it.
     await touch("touchStart", at(2));
     await touch("touchEnd");
-    await expect(tabs.getByTestId("tab-aircraft")).toHaveAttribute("aria-current", "page");
-    await expect(tabs.getByTestId("tab-aircraft").getByTestId("tab-bubble")).toBeVisible();
-    await expect(tabs.getByTestId("tab-fpl").getByTestId("tab-bubble")).toHaveCount(0);
+    await expect(tabs.getByTestId("tab-aircraft")).toHaveAttribute("aria-selected", "true");
+    await expect(tabs.getByTestId("tab-fpl")).toHaveAttribute("aria-selected", "false");
   });
 
-  test("up or down, a finger on the tabs drags the sheet, no tab picked", async ({ page }) => {
+  test("a finger on the tabs drags no sheet: the sheet is dragged by its grabber", async ({ page }) => {
+    // The owner's decision (2026-11-09): the tabs are static, as the
+    // platform's own; the sheet's handle is its grabber.
     test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
     await page.goto("/app/plan");
     await settle(page);
@@ -509,8 +478,6 @@ test.describe("the tabs under a finger", () => {
     const tabs = panel.getByTestId("tab-bar");
     const at = await tabMiddles(page);
     const touch = await finger(page);
-    // Up from Airport's place, a drag of the sheet: all the way up, FPL
-    // still the tab.
     const from = at(1);
     await touch("touchStart", from);
     for (let step = 1; step <= 20; step++) {
@@ -518,20 +485,8 @@ test.describe("the tabs under a finger", () => {
       await page.waitForTimeout(16);
     }
     await touch("touchEnd");
-    await expect(panel).toHaveAttribute("data-panel", "full");
-    await expect(tabs.getByTestId("tab-fpl")).toHaveAttribute("aria-current", "page");
-    // And down from there, on the minimized line's tabs shown again: half.
-    await settled(panel);
-    await showTabs(page);
-    const down = (await tabs.getByTestId("tab-airport").boundingBox())!;
-    const start = { x: down.x + down.width / 2, y: down.y + down.height / 2 };
-    await touch("touchStart", start);
-    for (let step = 1; step <= 20; step++) {
-      await touch("touchMove", { x: start.x, y: start.y + step * 20 });
-      await page.waitForTimeout(16);
-    }
-    await touch("touchEnd");
+    await page.waitForTimeout(400);
     await expect(panel).toHaveAttribute("data-panel", "half");
-    await expect(tabs.getByTestId("tab-fpl")).toHaveAttribute("aria-current", "page");
+    await expect(tabs.getByTestId("tab-fpl")).toHaveAttribute("aria-selected", "true");
   });
 });

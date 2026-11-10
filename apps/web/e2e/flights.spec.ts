@@ -314,7 +314,7 @@ test("Print is in the Brief's Share menu; Keep for the Air is in the map's menu,
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await controlsInSight(page);
   await openBrief(page);
-  await page.getByTestId("tab-share").click();
+  await page.getByTestId("card-share").click();
   await expect(page.getByTestId("print-briefing")).toBeVisible();
   await page.keyboard.press("Escape");
 

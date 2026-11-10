@@ -11,7 +11,7 @@ function page() {
       <button data-testid="tab-fpl">FPL</button><button data-testid="tab-airport">Airport</button>
       <button data-testid="tab-aircraft">Airplane</button><button data-testid="setup-button">Setup</button>
       <input type="search" aria-label="Search airports" />
-      <button data-testid="tab-close">Back</button>
+      <button data-back="">Back</button>
     </section>
     <input id="field" />`;
 }
@@ -43,9 +43,9 @@ describe("a desktop's shortcuts", () => {
     expect(tapped).toEqual(["FPL", "Airport", "Airplane", "Setup"]);
   });
 
-  it("Escape goes back one level by the panel's close", () => {
+  it("Escape goes back one level by the top card's close", () => {
     const back = vi.fn();
-    document.querySelector('[data-testid="tab-close"]')!.addEventListener("click", back);
+    document.querySelector("[data-back]")!.addEventListener("click", back);
     press("Escape");
     expect(back).toHaveBeenCalledOnce();
   });
@@ -58,7 +58,7 @@ describe("a desktop's shortcuts", () => {
     const used = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
     used.preventDefault();
     const back = vi.fn();
-    document.querySelector('[data-testid="tab-close"]')!.addEventListener("click", back);
+    document.querySelector("[data-back]")!.addEventListener("click", back);
     document.body.dispatchEvent(used);
     expect(back).not.toHaveBeenCalled();
   });

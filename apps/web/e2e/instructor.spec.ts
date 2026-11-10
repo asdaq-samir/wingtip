@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { signInByEmail } from "./emailSignIn";
 import { controlsInSight, library, noTips, openConsole, openPanel, sideDrawer } from "./helpers";
+import { fillDate } from "./ariaFields";
 
 /**
  * An instructor and a student, both real accounts on the local stack
@@ -24,12 +25,10 @@ async function signedInAs(page: Page, address: string) {
 
 /** The console, once the page has drawn its tab bar: just signed in, the
  *  phone's panel was still coming up as openConsole looked for the
- *  minimized title, found none, and waited on a gear it never showed.
- *  openConsole shows the tabs itself (shown twice, the second tap folded
- *  them away again). */
+ *  tabs, and waited on a gear it never showed. */
 async function consoleOpen(page: Page) {
   const console = page.getByTestId("console-sheet");
-  await expect(page.getByTestId("tab-title").or(page.getByTestId("setup-button")).or(console).first()).toBeVisible();
+  await expect(page.getByTestId("setup-button").or(console).first()).toBeVisible();
   if (!(await console.isVisible())) await openConsole(page);
 }
 
@@ -86,7 +85,7 @@ test("a student asks an instructor in, and the instructor endorses their solo cr
   await desk.getByTestId("cfi-number").fill("987654321CFI");
   // Recent experience run out (14 CFR 61.197(a)): the instructor is
   // warned, never stopped (the owner's rule, 2026-10-26).
-  await desk.getByTestId("cfi-until").fill("2025-12-31");
+  await fillDate(desk.getByTestId("cfi-until"), "2025-12-31");
   await desk.getByTestId("cfi-save").click();
   await expect(desk.getByTestId("cfi-certificate")).toContainText("987654321CFI");
   await expect(desk.getByTestId("student-ask")).toContainText("Avery B. Student");

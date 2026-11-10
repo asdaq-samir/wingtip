@@ -52,9 +52,10 @@ function focusSearch(doc: Document): boolean {
   return true;
 }
 
-/** Back one level: the panel's close, where there is one in sight. */
+/** Back one level: the close of the card on top in the panel (CardClose,
+ *  SheetCard: `data-back`), where there is one in sight. */
 export function backOne(doc: Document): boolean {
-  const close = doc.querySelector('[data-slot="map-panel"] [data-testid="tab-close"]');
+  const close = [...doc.querySelectorAll<HTMLElement>('[data-slot="map-panel"] [data-back]')].reverse().find(visible) ?? null;
   if (!visible(close)) return false;
   close.click();
   return true;

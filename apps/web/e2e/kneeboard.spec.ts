@@ -29,7 +29,7 @@ test("Print offers the kneeboard card, and prints it alone on half-letter paper"
   // should be in navlog").
   await controlsInSight(page);
   await openNavLog(page);
-  await page.getByTestId("tab-share").click();
+  await page.getByTestId("card-share").click();
   await page.getByTestId("print-kneeboard").click();
   await expect.poll(() => page.evaluate(() => (window as unknown as { printed?: string }).printed ?? "")).toContain("print-kneeboard");
   const printed = await page.evaluate(() => (window as unknown as { printed: string }).printed);

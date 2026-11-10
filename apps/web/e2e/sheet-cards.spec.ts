@@ -19,8 +19,8 @@ import {
  * opens everything in its sheet, at the owner's ask ("Yes to all, let's
  * have consistency and common code", 2026-10-27): not a sheet floating
  * over it, nor a popup over the chart (SheetCard). The panel comes up
- * half way for it at the least; its close, Escape, a swipe back and a
- * device's Back put it away, back to what was under it and the panel
+ * half way for it at the least; its close, Escape and a device's Back
+ * put it away, back to what was under it and the panel
  * where it was.
  */
 
@@ -43,9 +43,11 @@ test("the Map settings open as a card in the map's sheet, and its close goes bac
   await expect(page.getByRole("dialog")).toHaveCount(0);
   // Its name where a screen reader starts reading it.
   await expect(card.getByRole("heading", { name: "Map", level: 2 })).toBeFocused();
-  // Its name and close in the tabs' place on top (the owner, 2026-10-27:
-  // "Shouldn't the title replace the tabs?"): the panel back to the pill.
-  await expect(panel.getByTestId("tab-title")).toContainText("Map");
+  // Its name and close in its own head, the tabs over it as they stay
+  // over every card (TabBar, static as the platform's): the panel back to
+  // the pill as it closes.
+  await expect(card.getByRole("heading", { name: "Map", level: 2 })).toBeVisible();
+  await expect(panel.getByTestId("tab-bar")).toBeVisible();
   await expect(panelTabs(page)).toHaveCount(0);
   await closeCard(page, "sheet-card-close");
   await expect(card).toHaveCount(0);
@@ -114,9 +116,8 @@ test("a checkpoint tapped on the chart opens its card in the sheet, ringed on th
   // on a phone's fitted route (map.spec).
   await marker.dispatchEvent("click");
   await expect(panel.locator("[data-sheet-card]")).toBeVisible();
-  // Its name in the bar's row beside the close (barHeadRef), which names
-  // the card.
-  const head = panel.getByTestId("tab-card-head");
+  // Its name in its own head beside its close, which names the card.
+  const head = panel.locator("[data-sheet-card]");
   await expect(head).toContainText("nm along");
   const name = head.getByRole("heading", { level: 2 });
   await expect(name).toBeVisible();

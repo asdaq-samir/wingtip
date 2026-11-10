@@ -107,11 +107,10 @@ test("a tap on a Class D ring opens its card, with its ceiling and hours", async
   await expect(card).toContainText("Ceiling");
   await expect(card).toContainText(/\d,\d{3} ft MSL/);
   await expect(card).toContainText("Hours");
-  // On a phone, one close, the tab bar's, and no tab name over a card
-  // that names itself (the owner, 2026-10-29).
+  // On a phone, one close, the card's own in its head, the tabs static
+  // over it (the owner, 2026-11-09).
   if (page.viewportSize()!.width < 768) {
-    await expect(page.locator("[data-sheet-card]").getByTestId("sheet-card-close")).toHaveCount(0);
-    await expect(page.getByTestId("tab-title")).toBeHidden();
+    await expect(page.locator("[data-sheet-card]").getByTestId("sheet-card-close")).toHaveCount(1);
     await page.screenshot({ path: "test-results/look/airspace-card.png" });
   }
 });

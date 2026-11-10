@@ -106,9 +106,8 @@ test(
     if (page.viewportSize()!.width < 768) {
       const card = page.locator("[data-sheet-card]");
       await expect(card).toBeVisible();
-      // The tab bar's close, the card drawing none of its own under it.
-      await expect(card.getByTestId("sheet-card-close")).toHaveCount(0);
-      await page.getByTestId("tab-close").click();
+      // Its own close in its head, the tabs static over it.
+      await card.getByTestId("sheet-card-close").click();
       await expect(card).toHaveCount(0);
     }
 

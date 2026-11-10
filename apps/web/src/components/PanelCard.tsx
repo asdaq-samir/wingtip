@@ -1,7 +1,9 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useContext, useEffect, useRef, type ReactNode } from "react";
+import { Share } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
-import { closeTopCard, useHeldCard, type CardShare } from "../lib/openCards";
+import RoundButton from "./RoundButton";
+import { closeTopCard, useHeldCard, RouteShareMenu, type CardShare } from "../lib/openCards";
 import { TEXT } from "../lib/text";
 
 /**
@@ -84,7 +86,7 @@ export function CardHead({
   lineClassName?: string;
   lineTestId?: string;
   onClose: () => void;
-  /** Its share, for the bar's (CardClose). */
+  /** Its share, beside its close (CardClose). */
   onShare?: CardShare;
   closeTestId: string;
   /** Between the name and the close. */
@@ -109,40 +111,45 @@ export function CardHead({
 }
 
 /**
- * A card's close, kept for a device's Back (lib/openCards, lib/backNavigation) and
- * the minimized tab bar's Back (TabBar) while the card is open -- and never
- * drawn, at the owner's ask: "Close should not be anywhere except the top
- * right corner of the card inline with label; when tabs labels appear,
- * both close and back button hide" (the tab bar's own, TabBar). Kept for
- * a keyboard and a screen reader, shown when it has the focus, as a skip
- * link is, so a card always has a control of its own to reach (and the
- * airspace's, with no other, a stop in its scrolling region). With the
- * tabs shown, the tab up tapped again puts the card away.
+ * A card's Share and close at its head's end, inline with its name, at the
+ * owner's ask ("Close should not be anywhere except the top right corner
+ * of the card inline with label"), now the tabs stay over a card as the
+ * platform's own do (TabBar): its Share where it has one -- its own, or
+ * the route's menu for the Brief, the nav log and the profile -- and the
+ * close, which goes back one (a page opened in the card first, else the
+ * card, lib/openCards), as a device's Back does.
  */
 export function CardClose({
   onClose,
   onShare,
   testId,
+  className,
 }: {
   onClose: () => void;
-  /** The card's share (an airport's, an airplane's, or the route's menu
-   *  for the Brief, the nav log and the profile, each its own): the
-   *  minimized tab bar's Share where its Back was (TabBar). */
+  /** The card's share: an airport's, an airplane's, or the route's menu
+   *  for the Brief, the nav log and the profile, each its own. */
   onShare?: CardShare;
   testId: string;
   className?: string;
 }) {
   useHeldCard(onClose, onShare);
+  const routeShare = useContext(RouteShareMenu);
   return (
-    <span className="sr-only focus-within:not-sr-only">
-      {/* Back one: a page opened in the card first (the Brief's), else the
-          card (lib/openCards), as the bar's close goes. */}
+    <div className={cn("flex shrink-0 items-center gap-2", className)}>
+      {typeof onShare === "string"
+        ? routeShare?.(onShare)
+        : onShare && (
+            <RoundButton label="Share" onClick={onShare} data-testid="card-share">
+              <Share className="size-5" strokeWidth={2} />
+            </RoundButton>
+          )}
       <CloseButton
         onClick={() => {
           if (!closeTopCard()) onClose();
         }}
+        data-back=""
         data-testid={testId}
       />
-    </span>
+    </div>
   );
 }
