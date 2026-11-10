@@ -48,7 +48,7 @@ own concurrency group; a pull request's builds run in CI's.
 
 The iOS job runs on `MAC_RUNNER` (the Mac mini, free) or else GitHub's
 `xcode-27` runner, the one hosted image with the Xcode `.tool-versions`
-names (27.2; `macos-26` has only Xcode 26, so `scripts/ci/select-xcode.sh`
+names (27.2; `macos-26` has no 27 release, so `scripts/ci/select-xcode.sh`
 finds none there, run 42763113825; actions/runner-images'
 `images/macos/xcode-27-arm64-Readme.md` lists what it has). It is a
 preview image (actions/runner-images#14404), so it may queue longer. It is
