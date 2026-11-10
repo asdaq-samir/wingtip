@@ -11,7 +11,7 @@ import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
 import { usePreferences } from "../../../lib/preferences";
 import type { PanelView } from "./usePanelView";
 
-/** The account page's pages a screen is (the account button's menu, which
+/** The account page's pages a screen is (the account button's page, which
  *  took Setup's place), as the path of page keys down to it
  *  (components/wantedPage): the page alone is none. */
 const SETUP_PAGES: Partial<Record<ScreenId, string[]>> = {

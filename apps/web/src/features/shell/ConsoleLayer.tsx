@@ -70,7 +70,7 @@ export default function ConsoleLayer({
       style={{ "--head-room": "0px" } as CSSProperties}
     >
       {/* Its name and its close, the way back to the sheet under it, as
-          the account button's menu opened it (the one search, 2026-11-09):
+          the account button opened it (the one search, 2026-11-09):
           it was another tab tapped. */}
       <div className="flex items-center gap-2 px-4 pt-2 pb-1">
         <h2 className={cn("flex-1 font-bold", TEXT.title)}>Account and Settings</h2>

@@ -1,48 +1,36 @@
-import { Suspense, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
-import { fromChunk } from "../../lib/fromChunk";
+import { useConsoleOpen } from "../../lib/mapChrome";
+import { wantScreen } from "../../lib/navigation/wanted";
 import { pilotQuery } from "../../lib/queryClient";
 import { AccountFace } from "./AccountFace";
 import { ACCOUNT_BUTTON } from "./accountLook";
 
-/** The menu on a chunk of its own (Base UI's Menu and its positioning,
- *  ~40 KB): the first load's budget (scripts/first-load.mjs, 1.10 MB).
- *  Asked for a moment after the page draws, or at the first press. */
-const menu = fromChunk(
-  () => import("./AccountMenuButton"),
-  (m) => m.default,
-);
-const AFTER_MS = 2000;
-
 /**
- * The account button beside the one search (AccountMenuButton, its menu
- * of Setup's rows): the same button drawn at once, the menu round it once
- * its chunk is in -- a press before then asks for it.
+ * The account button at the sheet's title row: the pilot's initials, or a
+ * person's glyph signed out, in the tint, 44 points round. A tap opens the
+ * account and settings page itself (PilotPanel), at the owner's word
+ * (2026-11-10: "When tapping the avatar just open the settings"), where a
+ * menu of the page's rows came first; every row it held is on the page.
+ * As a link's `open=setup` opens it (useOpenScreen), and the console's own
+ * switch for the developer's page, which has no screens.
  */
 export default function AccountButton({ className }: { className?: string }) {
   const { data: pilot } = useQuery(pilotQuery);
   const name = pilot ? pilot.fullName || pilot.displayName : null;
-  useEffect(() => {
-    const later = window.setTimeout(menu.prefetch, AFTER_MS);
-    return () => window.clearTimeout(later);
-  }, []);
-  const waiting = (
+  return (
     <button
       type="button"
       aria-label={name ? `Account and settings, ${name}` : "Account and settings"}
-      aria-haspopup="menu"
       data-testid="account-button"
       data-console-button=""
-      onPointerDown={menu.prefetch}
+      onClick={() => {
+        wantScreen("setup");
+        useConsoleOpen.getState().setOpen(true);
+      }}
       className={cn(ACCOUNT_BUTTON, className)}
     >
       <AccountFace name={name} />
     </button>
-  );
-  return (
-    <Suspense fallback={waiting}>
-      <menu.Part className={className} />
-    </Suspense>
   );
 }

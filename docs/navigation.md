@@ -150,8 +150,9 @@ otherwise.
 
 Since the one search (the owner's approved design, 2026-11-09, branch
 `claude/one-search-web`) the web's sheet has no tabs. Its first row is one
-field, "Search airports, airplanes, or ask", with the microphone and the
-account button beside it; under it the plan (with a route) or the search's
+field, "Search airports, airplanes, or ask", with the microphone its
+trailing button, and over it the title row with the account button at its
+right (the owner's Apple Maps screenshot, 2026-11-10); under it the plan (with a route) or the search's
 own page (with none, or the field in use). On a desktop the same in the
 side panel, ⌘K or Ctrl K focusing the field (the command palette it
 replaced), `/` too, and the airport card's F, D and S for Fly Here, Depart
@@ -175,9 +176,9 @@ count.
 | Traffic, airplane card, past flight | Tap traffic; search → Do → Traffic Nearby; its past row | 1, 2 | Replay |
 | Map card (was the Map menu) | Map button | 1 | A card in the sheet over the search, as Apple Maps' Choose Map card (the owner, 2026-11-10): the charts as picture tiles (a tap applies), then the weather, the overlay, every switch and the alerts in place; its ✕ goes back to the sheet as it was; its Search row focuses the search |
 | Emergency assistant | Flying head; voice; search → Do → Emergency Assistant | 1 in flight, **2** on the ground | Its frequencies copy |
-| Account and Settings (was Setup) | account button → Account and Settings | 1 → **2** | Layout tiles in place |
-| Airplanes, Flights, Logbook, Minimums, Checklists, Coach, Practice | account button → row | 2 | Minimums inline; logbook entry edited in the row, delete with an Undo row; airplane in a popover form |
-| Status, Guide, About | account button → row | 3 → **2** | -- |
+| Account and Settings (was Setup) | account button (the page itself, no menu: the owner, 2026-11-10) | 1 → 2 → **1** | Layout tiles in place |
+| Airplanes, Flights, Logbook, Minimums, Checklists, Coach, Practice | account button → row on the page | 2 | Minimums inline; logbook entry edited in the row, delete with an Undo row; airplane in a popover form |
+| Status, Guide, About | account button → row on the page; About also the map's or the search page's Legal | 3 → **2** | -- |
 | Checkride, Instructing | account button → Logbook → row | 3 | Checkride inline |
 | Squawks | account button → Airplanes → airplane → row | 4 | Squawks inline |
 

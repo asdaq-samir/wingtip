@@ -1,5 +1,17 @@
 import { test, expect } from "@playwright/test";
-import { airportSearch, emptyPlan, firstRow, grabberTo, searchAirports, settle, showSearch, showTabs, sideDrawer, slow } from "./helpers";
+import {
+  airportSearch,
+  consolePage,
+  emptyPlan,
+  firstRow,
+  grabberTo,
+  searchAirports,
+  settle,
+  showSearch,
+  showTabs,
+  sideDrawer,
+  slow,
+} from "./helpers";
 
 /**
  * The one search (the owner's approved design, 2026-11-09), where the FPL,
@@ -82,21 +94,21 @@ test("with no route the sheet opens on the search's own page, and Plan a Flight 
   await expect(home).toBeHidden();
 });
 
-test("the account button's menu holds Setup's rows, opens the account page, and its close puts it away", async ({ page }) => {
+test("the account button opens the account page itself, no menu first, and its close puts it away", async ({ page }) => {
+  // The owner, 2026-11-10: "When tapping the avatar just open the settings".
   await page.goto("/app/plan");
   await settle(page);
   await showTabs(page);
   await page.getByTestId("account-button").click();
-  const menu = page.getByTestId("account-menu");
-  await expect(menu).toBeVisible();
-  for (const id of ["setup", "aircraft", "checklists", "flights", "logbook", "minimums", "guide", "about"])
-    await expect(menu.getByTestId(`account-menu-${id}`)).toBeVisible();
-  await menu.getByTestId("account-menu-about").click();
+  await expect(page.getByRole("menu")).toHaveCount(0);
   const account = page.getByTestId("console-sheet");
-  await expect(account).toBeVisible();
+  await expect(account.getByTestId("setup-page")).toBeVisible();
+  await consolePage(account, "About");
   await expect(page.getByTestId("about-build")).toBeVisible();
   await account.getByTestId("console-close").click();
   await expect(account).toHaveCount(0);
+  // Its button in the title row, which comes back as the sheet comes down.
+  await grabberTo(page, "half");
   await expect(page.getByTestId("account-button")).toBeVisible();
 });
 

@@ -26,13 +26,13 @@ export const SEARCH_SCREENS: Screen[] = [
     },
   },
   {
-    name: "account menu",
+    name: "account page",
     ready: async (page) => {
       await page.goto("/app/plan");
       await settle(page);
       await showTabs(page);
       await page.getByTestId("account-button").click();
-      await expect(page.getByTestId("account-menu")).toBeVisible();
+      await expect(page.getByTestId("console-sheet")).toBeVisible();
     },
   },
   {

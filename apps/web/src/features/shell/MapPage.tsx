@@ -192,7 +192,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
     );
   }, []);
 
-  // The console, the account page: opened from the account button's menu
+  // The console, the account page: opened from the account button
   // beside the search (AccountButton), on both pages, a layer of the map's
   // panel itself (below), as
   // an airport's card is: it pulls out as the route's sheet does -- the
