@@ -8,6 +8,8 @@ import SwiftUI
 struct EmergencyFieldsSection: View {
     let fix: OwnShip.Fix?
     let ownShipOff: Bool
+    /// Direct To the field: each row's one filled action.
+    var directTo: (String) -> Void = { _ in }
     private var model: Emergency { .shared }
 
     var body: some View {
@@ -23,9 +25,18 @@ struct EmergencyFieldsSection: View {
                     AskFigureRow(needs: [.glide], pickDetail: "Its glide ranks the fields within reach; nearest first meanwhile")
                 }
                 ForEach(ranked.fields, id: \.ident) { field in
-                    Button { model.pickedIdent = field.ident } label: { row(field, picked: field.ident == model.picked?.ident) }
-                        .siriSees(SiriSaw.airport(field.ident))
-                        .accessibilityAddTraits(field.ident == model.picked?.ident ? .isSelected : [])
+                    VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+                        Button { model.pickedIdent = field.ident } label: { row(field, picked: field.ident == model.picked?.ident) }
+                            .buttonStyle(.plain)
+                            .siriSees(SiriSaw.airport(field.ident))
+                            .accessibilityAddTraits(field.ident == model.picked?.ident ? .isSelected : [])
+                        // The row's one primary action, full width and large.
+                        Button { directTo(field.ident) } label: {
+                            Label("Direct To \(field.ident)", systemImage: WingtipIcon.directTo)
+                                .frame(maxWidth: .infinity, minHeight: WingtipSize.tapTarget)
+                        }
+                        .glassProminentButton()
+                    }
                 }
             } else if let problem = model.problem {
                 ProblemLine(problem)
@@ -63,10 +74,10 @@ struct EmergencyFieldsSection: View {
                 .symbolSwap()
                 .foregroundStyle(picked ? Color.accentColor : Color.secondary)
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                (Text(field.ident).fontWeight(.semibold) + Text(" \(field.name)")).foregroundStyle(Color.primary)
+                (Text(field.ident).fontWeight(.semibold) + Text(" \(field.name)")).font(.title3).foregroundStyle(Color.primary)
                 ForEach(Array(field.reasons.enumerated()), id: \.offset) { i, reason in
                     let lead = i == 0 && field.reach != "unknown"
-                    Text(reason.text).font(.subheadline)
+                    Text(reason.text).font(.body)
                         .fontWeight(lead ? .semibold : .regular)
                         .foregroundStyle(Self.tone(reason.tone, plain: !lead))
                 }
@@ -109,8 +120,8 @@ struct EmergencyRadioSections: View {
 
     var body: some View {
         if case .success(let call) = mayday {
-            Section(title: "Transponder and Radio") {
-                CardRow(title: "Squawk \(call.squawk)", detail: call.squawkWords)
+            // Squawk and Guard are the tiles at the top (EmergencyCodeTiles).
+            Section(title: "Radio") {
                 ForEach(call.channels, id: \.label) { channel in
                     CardRow(title: channel.label, detail: channel.why) {
                         if let mhz = channel.mhz { Text(Format.number(mhz, decimals: 3)).fontWeight(.semibold).monospacedDigit() }

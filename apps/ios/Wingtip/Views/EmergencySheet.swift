@@ -1,16 +1,23 @@
+import MapKit
 import SwiftUI
 
-/// The emergency assistant, one screen (the web's EmergencySheet): the
-/// best fields within a glide with the line to the one picked on the map,
-/// the airplane's own emergency checklist, and the radio -- squawk 7700,
-/// the frequencies to try and the MAYDAY filled in -- with the field's
-/// phone and 911. A system sheet over the map, which stays in sight
-/// above it. Its state is Emergency's.
+/// The emergency assistant, one screen (the web's EmergencySheet), laid
+/// out as docs/design/ios.md §8 has it: a full-screen cover (HIG
+/// Modality: for an urgent flow, "consider alternatives to sheets"), its
+/// Close at the leading top ending this view alone, the map in its top
+/// third with the line to the field picked and the glide's reach, then on
+/// a solid ground squawk 7700 and Guard as two large tiles, the best
+/// fields each with its own Direct To, the airplane's own emergency
+/// checklist (or the general guidance, labelled so, with none picked),
+/// and the radio. Large type throughout, one column to AX5. Its state is
+/// Emergency's; every figure is the engine's.
 struct EmergencySheet: View {
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(DryRun.self) private var dryRun
     @State private var checklist: ChecklistModel
+    /// Counted once as the screen opens, for the one warning haptic.
+    @State private var opened = 0
 
     init(airplane: String) {
         _checklist = State(initialValue: ChecklistModel(airplane: airplane, kind: .emergency))
@@ -26,22 +33,51 @@ struct EmergencySheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                EmergencyFieldsSection(fix: fix, ownShipOff: ownShip.denied)
-                if let guidance = Emergency.guidance(airplaneChosen: plan.airplaneChosen) {
-                    guidanceSection(guidance)
-                } else {
-                    checklistSection
+            GeometryReader { screen in
+                VStack(spacing: 0) {
+                    EmergencyMap(fix: fix, picked: model.picked, ring: model.ranked?.glide?.ring ?? [])
+                        .frame(height: screen.size.height / 3)
+                    List {
+                        if case .success(let call) = mayday { EmergencyCodeTiles(call: call) }
+                        EmergencyFieldsSection(fix: fix, ownShipOff: ownShip.denied) { ident in directTo(ident) }
+                        if let guidance = Emergency.guidance(airplaneChosen: plan.airplaneChosen) {
+                            guidanceSection(guidance)
+                        } else {
+                            checklistSection
+                        }
+                        EmergencyRadioSections(mayday: mayday, phoneIdent: model.picked?.ident, phone: model.pickedPhone)
+                    }
+                    // Solid grounds read better in a hurry than glass.
+                    .listStyle(.insetGrouped)
+                    .font(.title3)
                 }
-                EmergencyRadioSections(mayday: mayday, phoneIdent: model.picked?.ident, phone: model.pickedPhone)
             }
             .navigationTitle("Emergency")
             .navigationBarTitleDisplayMode(.inline)
-            .closeButton { model.close() }
+            .toolbar {
+                // Leading, as the doc's Close is: it ends this view only.
+                ToolbarItem(placement: .topBarLeading) { CloseButton { model.close() } }
+            }
             .task(id: fix.map { Emergency.key($0, aircraft: emergencyAircraft, glideRatio: plan.figures.glideRatio) }) {
                 await model.refresh(fix: fix, aircraft: emergencyAircraft, glideRatio: plan.figures.glideRatio)
             }
             .onChange(of: fix) { _, new in if let new { model.rank(new) } }
+        }
+        // One warning as it opens, never again while it is up (HIG Haptics).
+        .sensoryFeedback(.warning, trigger: opened)
+        .onAppear { opened += 1 }
+    }
+
+    /// Direct To the field, as the radio's and the search's Direct To do
+    /// (FieldRunner): on the route from the airplane, else a diversion
+    /// from where it is; the field picked for the map's line and the call.
+    /// The emergency view stays up, its radio still wanted.
+    private func directTo(_ ident: String) {
+        model.pickedIdent = ident
+        if plan.idents.contains(ident) {
+            plan.directTo(ident, from: fix)
+        } else if let fix {
+            plan.divert(to: ident, from: fix)
         }
     }
 
@@ -61,7 +97,8 @@ struct EmergencySheet: View {
     /// source (AIM 6-1, 6-2, 6-3; FAA-H-8083-3C ch. 18), and the picker for
     /// an airplane -- never an airplane's checklist or figure.
     @ViewBuilder private func guidanceSection(_ items: [EngineContract.EmergencyGuidanceAnswerItemsItem]) -> some View {
-        Section(title: "What to Do") {
+        // Labelled as general: never an airplane's checklist assumed.
+        Section(title: "What to Do · General, No Airplane Picked") {
             ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                 CardRow(title: item.title, detail: "\(item.detail) (\(item.source))")
             }
