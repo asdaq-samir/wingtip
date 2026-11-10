@@ -1,6 +1,7 @@
 import {
   ChartArea,
   ClipboardCopy,
+  CloudSun,
   Ellipsis,
   ListOrdered,
   LocateFixed,
@@ -67,6 +68,8 @@ export const ICON = {
   call: Phone,
   /** A place's address in Maps. */
   address: MapPin,
+  /** A field's weather: the airport card's Weather tile, its tab opened. */
+  weather: CloudSun,
   /** A frequency or an ident to the clipboard. */
   copy: ClipboardCopy,
   /** File or send a flight plan. */

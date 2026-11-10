@@ -15,6 +15,7 @@ import { CardTabBar, CardTabPanel } from "../../../components/CardTabs";
 import { Tabs } from "../../../components/ui/tabs";
 import { useCardTab } from "../lib/cardTab";
 import PlaceActions from "./place/PlaceActions";
+import PlaceSubtitle from "./place/PlaceSubtitle";
 import { ApiError } from "../../../lib/api/client";
 import type { AirportPin, AirportPlace, ClassBAirport } from "../../../lib/api/types";
 import { compassPoint } from "../../../lib/compass";
@@ -472,16 +473,10 @@ export default function PlaceCard({
             testId="place-head"
             titleTestId="place-name"
             subtitleTestId="place-where"
-            // The name, and the town on a line of its own under it, at the
-            // owner's ask (2026-10-29: "keep the city on next line").
-            subtitle={name && name !== ident4 ? name : where || " "}
+            // The name · the town, the town a link (PlaceSubtitle).
+            subtitle={name && name !== ident4 ? <PlaceSubtitle name={name} where={where} place={place ?? null} /> : where || " "}
             line={
               <>
-                {name && name !== ident4 && where && (
-                  <p className={cn("truncate text-foreground/80", TEXT.prose)} data-testid="place-town">
-                    {where}
-                  </p>
-                )}
                 {line && (
                   <p className={cn("line-clamp-2 text-muted-foreground", TEXT.note)} data-testid="place-line">
                     {line}
@@ -540,7 +535,21 @@ export default function PlaceCard({
             }}
             onDepartFrom={onDepartFrom}
             onAddStop={onAddStop}
+            onWeather={() => (setPicked("weather"), raise())}
           />
+          {/* The field from the air, its runways and from the ground, a row
+              of large tiles under the actions, as Apple Maps' place card
+              has its photos (the owner's screenshot, 2026-11-10), a click
+              each to its lightbox. */}
+          {place && (
+            <div className="pt-3">
+              <CardPictures
+                slides={slides}
+                label={`${ident4}: its runways${photos ? ", from the air" : ""}${photos?.photo ? ", from the ground" : ""}`}
+                testId="place-pictures"
+              />
+            </div>
+          )}
           {/* Closures and TFRs near it first, as Maps' live cards (PlaceNotams). */}
           <PlaceAlerts ident={ident} onOpen={() => setPicked("radio")} />
           {place && stop && <StopStrip ident={place.ident} stop={stop} />}
@@ -603,17 +612,6 @@ export default function PlaceCard({
             {place && <PlaceChartsTab place={place} sketched={sketched} startOn={startOn} />}
           </CardTabPanel>
         </Tabs>
-      )}
-      {/* The field from the air, its runways and from the ground, lower in
-          the card, a click each to its lightbox (the owner, 2026-11-09). */}
-      {place && (
-        <div className="pt-6">
-          <CardPictures
-            slides={slides}
-            label={`${ident4}: its runways${photos ? ", from the air" : ""}${photos?.photo ? ", from the ground" : ""}`}
-            testId="place-pictures"
-          />
-        </div>
       )}
       {isLoading && !known && <p className={cn("pt-4 text-muted-foreground", TEXT.prose)}>Fetching the airport…</p>}
       {/* Where the planner could not be reached, the way to ask again, in

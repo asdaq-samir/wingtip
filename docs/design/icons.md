@@ -27,6 +27,7 @@ own maps follow this table.
 | directTo | `DirectToIcon` (the chart's D-arrow) | the same, drawn | the same, as a vector | Direct To; Fly Here. |
 | departFrom | lucide `PlaneTakeoff` | `airplane.departure` | `flight_takeoff` | Depart From. |
 | addToRoute | lucide `MapPinPlus` | `mappin.and.ellipse` with `plus` | `add_location` | Add as Stop; Add to Route. |
+| weather | lucide `CloudSun` | `cloud.sun` | `partly_cloudy_day` | An airport card's Weather tile (its Weather tab). |
 | holdHere | lucide `Repeat2` | `arrow.triangle.2.circlepath` | `sync` | Hold Here. |
 | undo | lucide `Undo2` | `arrow.uturn.backward` | `undo` | The route's last edit taken back. |
 | redo | lucide `Redo2` | `arrow.uturn.forward` | `redo` | An edit taken back, put back (the wide window's route toolbar). |

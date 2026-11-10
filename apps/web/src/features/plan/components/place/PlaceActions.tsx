@@ -13,8 +13,11 @@ import { mapsLink } from "./mapsLink";
  * first, at the one-search design's top (2026-11-09): Fly Here filled, the
  * Direct-To's symbol on it; Depart From, the field the route's start; Add
  * as Stop, the field the route's next stop -- each sets the plan and shows
- * it. Under them Call, the field's own phone from the FAA's airport file,
- * greyed where it lists none, and the address in Maps. On a desktop the
+ * it -- and Weather, the field's Weather tab: one row of four, as Apple
+ * Maps' place card on the web has Directions, Call, Website and Tickets
+ * (the owner's screenshot, 2026-11-10). Under them Call, the field's own
+ * phone from the FAA's airport file, greyed where it lists none, and the
+ * address in Maps. On a desktop the
  * plan's three by a letter each, F, D and S, shown on them, while the
  * card is in sight (lib/shown: not under a card over it).
  */
@@ -24,6 +27,7 @@ export default function PlaceActions({
   onFlyHere,
   onDepartFrom,
   onAddStop,
+  onWeather,
 }: {
   place: AirportPlace | null;
   /** Fly Here tapped, the route on its way. */
@@ -32,6 +36,8 @@ export default function PlaceActions({
   onDepartFrom: (place: AirportPlace) => void;
   /** None where the field is in the route already. */
   onAddStop?: (place: AirportPlace) => void;
+  /** The card's Weather tab, opened. */
+  onWeather: () => void;
 }) {
   const desktop = useIsDesktop();
   const shown = useShown();
@@ -45,7 +51,7 @@ export default function PlaceActions({
   });
   return (
     <div className="flex flex-col gap-2 pt-3" data-testid="place-actions">
-      <div className={cn("grid gap-2", onAddStop ? "grid-cols-3" : "grid-cols-2")}>
+      <div className={cn("grid gap-2", onAddStop ? "grid-cols-4" : "grid-cols-3")}>
         <Action
           icon={<ACTION.flyHere.icon />}
           label={ACTION.flyHere.label}
@@ -74,6 +80,13 @@ export default function PlaceActions({
             keys={keyed ? hint("S") : undefined}
           />
         )}
+        <Action
+          icon={<ACTION.weather.icon />}
+          label={ACTION.weather.label}
+          disabled={!place}
+          onClick={onWeather}
+          testId="place-weather-action"
+        />
       </div>
       <div className="grid grid-cols-2 gap-2">
         <Action

@@ -67,19 +67,20 @@ test("an airport's card has the field's pictures across its top, its ident over 
   // the ident large over them with the name and the town under it.
   await expect(card(page).getByTestId("place-head")).toBeInViewport();
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
-  await expect(card(page).getByTestId("place-where")).toHaveText("Duluth International Airport");
+  // The name · the town on one line, the town a link (Apple Maps' place card, 2026-11-10).
+  await expect(card(page).getByTestId("place-where")).toHaveText("Duluth International Airport · Duluth, MN");
   await expect(card(page).getByTestId("place-town")).toHaveText("Duluth, MN");
   await expect(card(page).getByTestId("place-ident")).toHaveCount(0);
   // Measured from the route's departure while the pilot's own position
   // is not known.
   await expect(card(page).getByTestId("place-line")).toHaveText(/^\d+ nm NW of C81 · Elevation [\d,]+ ft$/);
-  // Its share and close on the pictures, the one search over the card as
-  // it stays over every card (OneSearchField).
+  // Its share and close at the title's right; the card the whole sheet, no search over it.
   for (const id of ["place-share", "place-close"]) await expect(card(page).getByTestId(id)).toBeInViewport();
-  await expect(firstRow(page)).toBeVisible();
-  // Its actions in a row under them at half -- no Add Stop for the
-  // route's own destination -- and its tabs right under them, Info open.
-  for (const id of ["fly-here", "place-call", "place-favorite"]) await expect(card(page).getByTestId(id)).toBeInViewport({ ratio: 1 });
+  await expect(firstRow(page)).toBeHidden();
+  // Its four tiles in a row at half -- no Add Stop for the route's own
+  // destination, Weather the last -- the pictures and the tabs under them, Info open.
+  for (const id of ["fly-here", "place-weather-action", "place-call", "place-favorite"])
+    await expect(card(page).getByTestId(id)).toBeInViewport({ ratio: 1 });
   await expect(card(page).getByTestId("place-add-stop")).toHaveCount(0);
   await expect(card(page).getByRole("tab")).toHaveText(["Info", "Weather", "Runways", "Charts"]);
   await expect(card(page).getByTestId("place-tab-radio")).toHaveAttribute("aria-selected", "true");
@@ -87,7 +88,6 @@ test("an airport's card has the field's pictures across its top, its ident over 
     [card(page).getByTestId("place-actions"), card(page).getByRole("tablist")].map(async (l) => (await l.boundingBox())!),
   );
   expect(bar.y).toBeGreaterThanOrEqual(actions.y + actions.height);
-  expect(bar.y - (actions.y + actions.height)).toBeLessThanOrEqual(16);
 
   // Weather: the panel all the way up, the weather's card at the tab's
   // top, its category in the FAA's colour: with no TAF, a sentence from

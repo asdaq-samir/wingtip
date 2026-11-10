@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import { PillSection } from "./Favorites";
-import { PictureSlides } from "./PictureSlides";
+import { Carousel, CarouselContent, CarouselItem } from "./ui/carousel";
 
 /** One picture of a card's strip: what it shows, and a click's lightbox
  *  (`open`, the card's own Base UI Dialog viewer) or its source's page
@@ -15,11 +14,17 @@ export type CardSlide = {
   testId?: string;
 };
 
+const TILE =
+  "absolute inset-0 block size-full overflow-hidden rounded-2xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset";
+
 /**
- * A card's pictures, lower in it (the owner, 2026-11-09: no photo at the
- * card's top; the photos and the aerial a carousel under its sections):
- * the stock carousel (PictureSlides, shadcn's Carousel on Embla), each
- * page a click to its lightbox. Nothing where there are none.
+ * A card's pictures under its actions: a row of large rounded tiles that
+ * slides sideways, the next one showing past the edge, as Apple Maps'
+ * place card on the web lays out a place's photos (the owner's
+ * screenshot, 2026-11-10). It was a box a page at a time with dots under
+ * the card's sections. On shadcn's Carousel (Embla), as before; each tile
+ * a click to its lightbox or its source's page. Nothing where there are
+ * none.
  */
 export function CardPictures({
   slides,
@@ -33,42 +38,30 @@ export function CardPictures({
   const shown = slides.filter((s): s is CardSlide => !!s);
   if (!shown.length) return null;
   return (
-    <PillSection title="Pictures" testId={testId}>
-      <PictureSlides
-        label={label}
-        className="h-48"
-        testId={`${testId}-slides`}
-        slides={shown.map((slide) =>
-          slide.href ? (
-            <a
-              key={slide.key}
-              href={slide.href}
-              target="_blank"
-              rel="noopener"
-              aria-label={slide.label}
-              className="absolute inset-0 block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-              data-testid={slide.testId}
-            >
-              {slide.picture}
-            </a>
-          ) : slide.open ? (
-            <button
-              key={slide.key}
-              type="button"
-              onClick={slide.open}
-              aria-label={slide.label}
-              className="absolute inset-0 block size-full rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-              data-testid={slide.testId}
-            >
-              {slide.picture}
-            </button>
-          ) : (
-            <div key={slide.key} role="img" aria-label={slide.label} className="absolute inset-0" data-testid={slide.testId}>
-              {slide.picture}
+    <Carousel opts={{ align: "start", dragFree: true }} aria-label={label} data-testid={testId}>
+      {/* A tile 70% of the card's width, so the next one shows at the edge
+          and says the row goes on; 12 points between, as Maps' have. */}
+      <CarouselContent className="-ml-3">
+        {shown.map((slide) => (
+          <CarouselItem key={slide.key} className="basis-[70%] pl-3 sm:basis-[60%]">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-foreground/8">
+              {slide.href ? (
+                <a href={slide.href} target="_blank" rel="noopener" aria-label={slide.label} className={TILE} data-testid={slide.testId}>
+                  {slide.picture}
+                </a>
+              ) : slide.open ? (
+                <button type="button" onClick={slide.open} aria-label={slide.label} className={TILE} data-testid={slide.testId}>
+                  {slide.picture}
+                </button>
+              ) : (
+                <div role="img" aria-label={slide.label} className="absolute inset-0" data-testid={slide.testId}>
+                  {slide.picture}
+                </div>
+              )}
             </div>
-          ),
-        )}
-      />
-    </PillSection>
+          </CarouselItem>
+        ))}
+      </CarouselContent>
+    </Carousel>
   );
 }
