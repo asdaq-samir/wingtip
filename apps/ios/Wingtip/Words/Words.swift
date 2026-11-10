@@ -212,7 +212,11 @@ struct OnDeviceWords: WordsProvider {
         case .risk:
             ask = "Say where the risk in this flight is, in the pilot's terms: the weather, the airplane, the pilot's own recency and minimums, the plan; and what would lower it, where the findings say. The most important first. Never say the flight is safe: the decision is the pilot in command's."
         case .notams:
-            ask = "Say which NOTAMs and TFRs matter for this flight, the most important first."
+            // Said plainly what each does -- a runway or taxiway closed, fuel
+            // not to be had, parachute jumping, a TFR -- as AIEvaluations'
+            // first run on the simulator (2026-11-09) found the model said
+            // a NOTAM "matters" a third of the time without saying what it was.
+            ask = "Say which NOTAMs and TFRs matter for this flight, the most important first. For each, say in plain words what it does (for example a runway or a taxiway closed, fuel not available, parachute jumping, a temporary flight restriction) and why it matters for this flight, from its reasons."
         case .debrief:
             ask = "Say how the flight went against its plan, as an instructor would debrief it, the most important first."
         case .changes:

@@ -173,6 +173,8 @@ struct NotamsSection: View {
                 }
                 if ranked.notams.isEmpty { Text("None for the route").foregroundStyle(.secondary) }
             }
+            NotamWordsSection(ranked: ranked.notams, flight: plan.routed
+                ? WordsFigures.flight(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: plan.totals?.eteMin) : nil)
         } else if let problem = model.notamsProblem {
             Section(title: "NOTAMs") { ProblemLine(problem) }
         }
