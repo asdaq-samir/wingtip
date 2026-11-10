@@ -20,6 +20,9 @@ returns only the title. Those carry **[excerpt]**. Anything that could
 not be checked against a primary source is in "Not verified" at the
 end, and nothing on this page describes a Google app from memory.
 
+The card rule, the scrolling rule and their tests, the one search and the
+airport weather marks hold on all three apps: [rules.md](rules.md).
+
 ## Contents
 
 1. [Foundations](#1-foundations): versions, theme, colour, type, shape,
