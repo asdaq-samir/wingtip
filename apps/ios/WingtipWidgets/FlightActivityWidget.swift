@@ -147,6 +147,11 @@ private struct Extras: View {
                     .font(WingtipType.detail.weight(.semibold)).lineLimit(2)
                     .foregroundStyle(lines.state.copilotWarns ? WingtipInk.problem : WingtipInk.caution)
             }
+            if let weather = lines.state.weather {
+                Label(weather, systemImage: "cloud.bolt")
+                    .font(WingtipType.detail.weight(.semibold)).lineLimit(2)
+                    .foregroundStyle(WingtipInk.caution)
+            }
         }
     }
 }

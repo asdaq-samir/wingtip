@@ -22,6 +22,8 @@ enum FlightActivityContent {
         var usableFuelGal: Double?
         var frequency: String?
         var copilot: Copilot.Message?
+        /// The route's weather gone worse since the Brief (WeatherWatch).
+        var weather: String? = nil
         var now: Date
     }
 
@@ -49,6 +51,7 @@ enum FlightActivityContent {
             frequency: inputs.frequency,
             copilot: message?.title,
             copilotWarns: message?.level == "warning",
+            weather: inputs.weather,
             updatedAt: inputs.now)
     }
 
@@ -70,7 +73,7 @@ enum FlightActivityContent {
     static func due(_ state: FlightActivityAttributes.ContentState, after last: FlightActivityAttributes.ContentState?,
                     every: TimeInterval) -> Bool {
         guard let last else { return true }
-        if state.nextFix != last.nextFix || state.frequency != last.frequency || state.copilot != last.copilot { return true }
+        if state.nextFix != last.nextFix || state.frequency != last.frequency || state.copilot != last.copilot || state.weather != last.weather { return true }
         return state.updatedAt.timeIntervalSince(last.updatedAt) >= every
     }
 }

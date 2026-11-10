@@ -155,7 +155,17 @@ final class FlightActivity {
             airplaneChosen: plan.airplaneChosen, usableFuelGal: plan.totals?.usableFuelGal,
             frequency: FlightActivityContent.frequency(in: AtcCopilot.shared.cards),
             copilot: Copilot.shared.mode == .off ? nil : Copilot.shared.message,
+            weather: WeatherWatch.shared.latest,
             now: now)
+    }
+
+    /// The route's weather gone worse, on the Lock Screen at once where a
+    /// flight is shown there (WeatherWatch); the next state carries it on.
+    func weather(_ line: String, now: Date = Date()) {
+        guard activity != nil, var state = last else { return }
+        state.weather = line
+        state.updatedAt = now
+        update(state)
     }
 
     /// The state sent where it is due (FlightActivityContent.due).

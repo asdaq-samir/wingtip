@@ -212,6 +212,9 @@ struct BriefView: View {
             if plan.briefing == nil, plan.routed {
                 await plan.brief(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: plan.totals?.eteMin)
             }
+            // The route's weather is watched from the Brief on (WeatherWatch):
+            // notifications asked for here, where the pilot sees why.
+            if plan.routed { await Notifications.allow() }
         }
         // The forecast icing, asked once the briefing has the nav log's legs.
         .task(id: ForecastIcing.query(briefing: plan.briefing, legs: plan.legs)) { await icing.refresh(briefing: plan.briefing, legs: plan.legs) }

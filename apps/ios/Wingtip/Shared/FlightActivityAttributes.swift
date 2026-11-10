@@ -34,6 +34,9 @@ struct FlightActivityAttributes: ActivityAttributes {
         /// whether it is a warning rather than a note.
         var copilot: String?
         var copilotWarns: Bool = false
+        /// The route's weather gone worse since the Brief, in the engine's
+        /// words (WeatherWatch, weather_worse); nil while it has not.
+        var weather: String?
         var updatedAt: Date
     }
 
