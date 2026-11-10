@@ -11,7 +11,7 @@ apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/MapStyle.kt 829
 apps/ios/Wingtip/Tiles/ChartTileOverlay.swift 420
 apps/ios/Wingtip/Views/AirplaneCard.swift 472
 apps/ios/Wingtip/Views/AirportCard.swift 462
-apps/ios/Wingtip/Views/ChartMap.swift 758
+apps/ios/Wingtip/Views/ChartMap.swift 733
 apps/ios/Wingtip/Views/ChartOverlays.swift 879
 apps/ios/Wingtip/Views/InFlightViews.swift 532
 apps/ios/Wingtip/Views/InstructorView.swift 409
@@ -19,14 +19,14 @@ apps/ios/Wingtip/Views/OwnAircraftViews.swift 543
 apps/ios/Wingtip/Views/PlannerFiguresViews.swift 647
 apps/ios/Wingtip/Views/RouteEditViews.swift 416
 apps/web/e2e/dry-run.spec.ts 462
-apps/web/e2e/helpers.ts 793
+apps/web/e2e/helpers.ts 792
 apps/web/e2e/ifr.spec.ts 442
 apps/web/e2e/ios/metrics.ts 802
 apps/web/e2e/ios/screens.ts 650
 apps/web/e2e/places.spec.ts 1179
 apps/web/e2e/plans.spec.ts 552
 apps/web/e2e/procedures.spec.ts 737
-apps/web/e2e/route-fit.spec.ts 466
+apps/web/e2e/route-fit.spec.ts 457
 apps/web/e2e/stops.spec.ts 863
 apps/web/e2e/tracking.spec.ts 906
 apps/web/src/components/ApproachDebrief.tsx 426
