@@ -59,6 +59,8 @@ interface Props {
 /** The grabber's row at the far edge of a top sheet or the side panel. */
 const GRABBER = 16;
 const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
+/** What the sheet opens over itself, whose Escape is its own to close. */
+const POPUPS = '[role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"]';
 
 /**
  * The page's one panel over the map, the way Maps on an iPhone has one:
@@ -182,15 +184,26 @@ export default function MapPanel(props: Props) {
   }, [moving]);
 
   // Escape lowers it, pressed in it -- but not in a menu or a list it
-  // opened, which closes first. On a desktop it goes back one level by
-  // the panel's close first (useShortcuts' backOne).
+  // opened, nor in Setup's page, whose Escape goes back a level
+  // (ConsoleLayer): each of those closes first and prevents the default.
+  // On a desktop it goes back one level by the panel's close first
+  // (useShortcuts' backOne). Those hear the key after the sheet does (on
+  // the document, or a popup's own React root), so the sheet waits for the
+  // key to have gone everywhere before it reads the default; and a popup
+  // drawn inside the sheet is told by where the key was pressed too. Read
+  // at once, the Share menu's Escape lowered the sheet and left the menu
+  // open, and Setup's left the page up under the pill.
   useEffect(() => {
     if (!panel || size === "peek") return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented) return;
-      event.preventDefault();
-      if (desktop && backOne(panel.ownerDocument)) return;
-      ask("peek");
+      const popup = event.target instanceof Element ? event.target.closest(POPUPS) : null;
+      if (popup && popup !== panel) return;
+      setTimeout(() => {
+        if (event.defaultPrevented) return;
+        if (desktop && backOne(panel.ownerDocument)) return;
+        ask("peek");
+      });
     };
     panel.addEventListener("keydown", onKey);
     return () => panel.removeEventListener("keydown", onKey);
@@ -333,9 +346,13 @@ export default function MapPanel(props: Props) {
       snapPoint={detents[snap]}
       onSnapPointChange={snapped}
       // Never closed: Escape lowers it to the pill (above), a swipe past
-      // the pill lands on it.
+      // the pill lands on it. Its Escape let on to the document, where the
+      // Drawer would stop it: Setup's page goes back a level from there
+      // (ConsoleLayer) wherever the focus is in the sheet.
       onOpenChange={(open, details) => {
-        if (!open) details.cancel();
+        if (open) return;
+        details.cancel();
+        if (details.reason === "escape-key") details.allowPropagation();
       }}
     >
       <Drawer.Portal>

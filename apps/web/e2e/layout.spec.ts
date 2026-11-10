@@ -60,14 +60,15 @@ test.describe("/app/plan", () => {
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
     await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
-    // With a route, its figures in the search's place.
-    await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+ nm/, { timeout: slow(30000) });
+    // With a route, its figures in the search's place (a no-break space
+    // between a figure and its unit, so \s).
+    await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
     await expect(firstRow(page)).toBeHidden();
     await page.getByTestId("sidebar-trigger-button").click();
     await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
     // The plan, the sheet's main content with a route.
     await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeVisible();
-    await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+ nm/, { timeout: slow(30000) });
+    await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
     await expect(page.getByLabel("Departure", { exact: true })).toBeVisible();
     expect(await page.getByTestId("toolbar-trigger").count()).toBe(0);
   });

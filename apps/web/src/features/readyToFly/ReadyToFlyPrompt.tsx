@@ -63,7 +63,11 @@ export function ReadyToFlyPrompt({ dryPlaying }: { /** A dry run playing (the pl
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogAction data-testid="ready-fly-anyway">Fly Anyway</AlertDialogAction>
+          {/* Closed by its own click: on Base UI the action is a plain
+              button, not a Close as Radix's was. */}
+          <AlertDialogAction data-testid="ready-fly-anyway" onClick={() => setOpen(false)}>
+            Fly Anyway
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

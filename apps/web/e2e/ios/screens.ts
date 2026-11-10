@@ -574,7 +574,7 @@ export const SCREENS: Screen[] = [
       await page.goto(`/app/plan?${ROUTE}&view=briefing`);
       await controlsInSight(page);
       await page.getByTestId("depart-date").click({ timeout: slow(30000) });
-      await page.locator('[data-slot="calendar"] td button').nth(20).click();
+      await page.locator('[data-slot="calendar"] td [role="button"]:not([aria-disabled="true"]):not([data-outside-month])').last().click();
       await expect(page.getByTestId("depart-time")).toBeVisible();
       // The plan made again for that day, its arrival in behind the sheet:
       // not judged greyed out mid-plan.

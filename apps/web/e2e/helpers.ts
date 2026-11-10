@@ -539,8 +539,8 @@ export async function openSection(page: Page, title: string) {
   await expect(async () => {
     await here.scrollIntoViewIfNeeded({ timeout: 2000 });
   }).toPass({ timeout: 10000 });
-  // A folded one -- Preflight's under its checks -- opened.
-  if ((await here.getAttribute("data-open")) === null) {
+  // A folded one -- Preflight's under its checks -- opened; one laid open in a tab has no fold.
+  if ((await here.getAttribute("data-slot")) !== "open-section" && (await here.getAttribute("data-open")) === null) {
     await here.locator('[data-slot="accordion-trigger"]').first().click();
     await expect(here).toHaveAttribute("data-open", "");
   }
