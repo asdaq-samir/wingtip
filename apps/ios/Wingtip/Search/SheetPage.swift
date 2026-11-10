@@ -14,6 +14,8 @@ enum SheetPage: Hashable {
     /// The route's own pages (RouteExtrasSection): the nearest fields for
     /// a diversion, the checkpoint notes, the filing, a procedure's fixes.
     case flight(String)
+    /// NOTAMs in a list of their own: the route's, or one field's.
+    case notams(NotamSource)
     case practice, training, instructing, contact
 
     /// The field or point whose card this is, for the map's ring.
@@ -33,6 +35,8 @@ enum SheetPage: Hashable {
         case .training: "+training"
         case .instructing: "+instructing"
         case .contact: "+contact"
+        case .notams(.route): "+notams"
+        case .notams(.field(let ident)): "+notams:" + ident
         case .leg, .flight: nil
         }
     }
@@ -49,6 +53,8 @@ enum SheetPage: Hashable {
         case "+training": self = .training
         case "+instructing": self = .instructing
         case "+contact": self = .contact
+        case "+notams": self = .notams(.route)
+        case let text where text.hasPrefix("+notams:") && text.count > 8: self = .notams(.field(String(text.dropFirst(8))))
         default:
             guard let screen = Screen(rawValue: stored), Self.pushes(screen) else { return nil }
             self = .screen(screen)
@@ -92,6 +98,7 @@ struct SheetPageView: View {
             LegDetailView(leg: leg).closesBack().zoomsFrom(leg.id)
         case .flight(let name):
             FlightPage(name: name).closesBack()
+        case .notams(let source): NotamListView(source: source).closesBack()
         case .practice: PracticeView().closesBack()
         case .training: TrainingView().closesBack()
         case .instructing: InstructorView().closesBack()

@@ -12,7 +12,7 @@ struct AirportDestination: View {
 
     var body: some View {
         switch route {
-        case .airport(let ident): AirportCard(ident: ident, distanceNm: nearest.first { $0.ident == ident }?.distanceNm)
+        case .airport(let ident): AirportCard(ident: ident)
         case .airspace(let lat, let lon): AirspaceCard(lat: lat, lon: lon)
         case .list(let shows): AirportListView(shows: shows, nearest: nearest)
         case .nearFrom(let lat, let lon, let label): NearFromView(lat: lat, lon: lon, label: label)

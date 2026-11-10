@@ -9,8 +9,6 @@ import SwiftUI
 /// system's floating glass toolbar (AirportCardToolbar).
 struct AirportCard: View {
     let ident: String
-    /// The miles from the airplane, where the nearest list has the field.
-    var distanceNm: Double?
     @Environment(Plan.self) private var plan
     @Environment(Verdict.self) private var verdict
     @Environment(OwnShip.self) private var ownShip
@@ -24,6 +22,9 @@ struct AirportCard: View {
     @State private var problem: String?
     @State private var notFound = false
     @State private var photos: AirportPhotos?
+    /// The field's own NOTAMs and the TFRs over it, for the alert card
+    /// and the tile's count; nil until fetched or where they can't be.
+    @State private var notams: APINotamsRanked?
     @State private var tab: CardTab = .info
     @State private var shown: ShownPicture?
     private var shelf: AirportShelf { .shared }
@@ -38,14 +39,15 @@ struct AirportCard: View {
         List {
             if let place {
                 Section {
-                    AirportPlaceHead(place: place, photos: photos, distanceNm: distanceNm, shown: $shown)
+                    AirportPlaceHead(place: place, photos: photos, shown: $shown)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                 }
+                AirportAlertCard(ident: place.ident, notams: notams)
                 AirportReadyCard(ident: place.ident)
                 Section {
-                    AirportTiles(place: place, photos: photos, shown: $shown, tab: $tab)
+                    AirportTiles(place: place, photos: photos, shown: $shown, tab: $tab, notams: notams)
                 }
                 Section {
                     Picker("Section", selection: $tab) {
@@ -99,8 +101,10 @@ struct AirportCard: View {
         .task(id: "\(ident)|\(verdict.minimums.visibilitySm ?? -1)") { await live.watch(ident, minimumSm: verdict.minimums.visibilitySm) }
         .task(id: ident) {
             async let pictures = try? Planner.photos(ident)
+            async let notices = try? KeptForAir.answer(.notams, key: "field:\(ident)") { try await Planner.notams(ident) }.value
             await load()
             photos = await pictures
+            notams = await notices
             // The weather a report's freshness: asked again every five
             // minutes while the card is open, as the web app's is.
             while !Task.isCancelled {
@@ -500,7 +504,7 @@ private enum PreviewData {
 
 #Preview("AirportPlaceHead") {
     @Previewable @State var shown: ShownPicture? = nil
-    List { AirportPlaceHead(place: PreviewData.place, photos: nil, distanceNm: 12, shown: $shown).listRowInsets(EdgeInsets()) }
+    List { AirportPlaceHead(place: PreviewData.place, photos: nil, shown: $shown).listRowInsets(EdgeInsets()) }
         .environment(Plan()).environment(OwnShip()).environment(Charts())
 }
 
