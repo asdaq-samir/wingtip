@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { ArrowRight, Coffee, Fuel, PlaneLanding, PlaneTakeoff, Plus, Route, Trash2, TriangleAlert } from "lucide-react";
-import { joinProps, movePoint, usePointDrag } from "./pointDrag";
+import { mergeProps } from "@base-ui/react/merge-props";
+import { movePoint, usePointDrag } from "./pointDrag";
 import { cn } from "cn";
 import AirportPicker from "../../../components/AirportPicker";
 import AirportResults, { AirportRow, PickerGroup } from "../../../components/AirportResults";
@@ -1054,8 +1055,9 @@ function Pill({
   const [changing, setChanging] = useState(false);
   const { later, finalFocus } = useAfterMenu();
   // A finger's hold opens its menu by the stock ContextMenu's own long
-  // press, as a right click does; held and moved, React Aria's drag.
-  const menuOut = useRef(false);
+  // press, as a right click does; held and moved, React Aria's drag, which
+  // closes it (the menu's `open`, controlled).
+  const [menuOpen, setMenuOpen] = useState(false);
   const self = useRef<HTMLSpanElement>(null);
   // React Aria's drag and drop (pointDrag): pressed and moved, or Enter on
   // the pill for the keyboard's drag, Tab to another pill and Enter there.
@@ -1065,11 +1067,7 @@ function Pill({
     name: pointName(ident),
     dropRef: self,
     onMove,
-    onDragStart: () => {
-      // The menu closes on Escape's key; a pointer's drag has no keys of
-      // its own to lose to it.
-      if (menuOut.current) document.dispatchEvent(new globalThis.KeyboardEvent("keydown", { key: "Escape" }));
-    },
+    onDragStart: () => setMenuOpen(false),
   });
   // An airport as the sectional draws its airspace, as its Favorites tile
   // is (lib/useAirspace): Class B and C solid blue and magenta, D and E
@@ -1113,7 +1111,7 @@ function Pill({
     <span
       ref={self}
       // Focusable for the keyboard's drag (a group, so in the spread).
-      {...joinProps(move.dragProps, move.dropProps, { tabIndex: 0 })}
+      {...mergeProps<"span">(move.dragProps, move.dropProps, { tabIndex: 0 })}
       role="group"
       aria-label={`${label} ${ident}`}
       aria-keyshortcuts="Delete"
@@ -1155,11 +1153,7 @@ function Pill({
     </span>
   );
   return (
-    <ContextMenu
-      onOpenChange={(open) => {
-        menuOut.current = open;
-      }}
-    >
+    <ContextMenu open={menuOpen} onOpenChange={setMenuOpen}>
       <ContextMenuTrigger render={pill} />
       {/* FPL's "⋯"'s items, in its words and order (PointMenuItems), at
           the audit's finding: the altitude there after Set altitude…, a

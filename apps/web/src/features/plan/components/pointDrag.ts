@@ -48,31 +48,6 @@ export function movePoint<T>(list: readonly T[], from: number, to: number): T[] 
   return out;
 }
 
-type Props = Record<string, unknown>;
-
-/** Two sets of an element's props as one: their handlers both run, the
- *  first's first, and their descriptions both read. React Aria's own
- *  mergeProps does this, but it is not exported by react-aria-components. */
-export function joinProps(...sets: object[]): HTMLAttributes<HTMLElement> {
-  const out: Props = {};
-  for (const set of sets) {
-    for (const [key, value] of Object.entries(set as Props)) {
-      const was = out[key];
-      if (typeof was === "function" && typeof value === "function" && /^on[A-Z]/.test(key)) {
-        out[key] = (...args: unknown[]) => {
-          (was as (...a: unknown[]) => void)(...args);
-          (value as (...a: unknown[]) => void)(...args);
-        };
-      } else if (key === "aria-describedby" && was && value) {
-        out[key] = `${was} ${value}`;
-      } else if (value !== undefined) {
-        out[key] = value;
-      }
-    }
-  }
-  return out as HTMLAttributes<HTMLElement>;
-}
-
 /**
  * A point that is dragged and dropped on: `dragProps` for what is picked up
  * (focusable, Enter its keyboard way in), `dropProps` for where another is

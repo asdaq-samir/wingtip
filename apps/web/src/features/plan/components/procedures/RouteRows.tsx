@@ -1,8 +1,9 @@
-import { createContext, useContext, useRef, useState, type DragEvent, type PointerEvent, type ReactNode } from "react";
+import { createContext, useContext, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { mergeProps } from "@base-ui/react/merge-props";
 import { createPortal } from "react-dom";
 import { ChevronRight, GripVertical } from "lucide-react";
 import { cn } from "cn";
-import { joinProps, useDraggingKind, usePointDrag } from "../pointDrag";
+import { useDraggingKind, usePointDrag } from "../pointDrag";
 import CardIdent from "../CardIdent";
 import { CardMark, CardThread, EmptyMark } from "../routeCard";
 import { CARD_GAP, POINT_CARD, ROUTE_LINE } from "../routeListStyle";
@@ -158,21 +159,12 @@ export function PointGrip({ ident, index }: { ident: string; index: number }) {
   const cover = useRef<HTMLSpanElement>(null);
   const out = useDraggingKind(ROW);
   const move = usePointDrag({ kind: ROW, index, name, dropRef: cover, onMove: on && row ? (from) => on(from, index) : undefined });
-  // The row lifted under the pointer, as the canvas drew it, not the grip
-  // alone, which is all the browser would take of it.
-  const lift = {
-    onDragStart: (event: DragEvent<HTMLElement>) => {
-      if (!row) return;
-      const box = row.getBoundingClientRect();
-      event.dataTransfer.setDragImage(row, event.clientX - box.left, event.clientY - box.top);
-    },
-    // Its own presses, not the sheet's drag.
-    onPointerDown: (event: PointerEvent<HTMLElement>) => event.stopPropagation(),
-  };
+  // Its own presses, not the sheet's drag. The browser's own drag image.
+  const own = { onPointerDown: (event: PointerEvent<HTMLElement>) => event.stopPropagation() };
   return (
     <>
       <span
-        {...joinProps(move.dragProps, lift)}
+        {...mergeProps<"span">(move.dragProps, own)}
         ref={(node) => setRow(node?.closest("li") ?? null)}
         role="button"
         tabIndex={0}
