@@ -13,7 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -27,6 +28,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
@@ -89,13 +92,25 @@ fun WelcomeHost(plan: Plan, onOpen: (sample: Boolean) -> Unit) {
         // Back goes a page back, the page drawn back with the predictive
         // gesture before it gives way.
         val pageBack = rememberPredictiveBack(enabled = state.index > 0) { model.back() }
+        // Where the pilot is in the welcome: Material's linear progress
+        // indicator stepped by page, said as "Step 2 of 5".
+        val said = stringResource(R.string.said_welcome_step, state.index + 1, state.steps.size)
+        LinearProgressIndicator(
+            progress = { (state.index + 1f) / state.steps.size },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg).semantics { stateDescription = said },
+        )
         Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(top = WingtipSpace.Lg),
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Lg),
         ) {
             // A page gives way to the next along X (Material's shared axis;
             // a cross-fade under Reduce Motion).
             SharedAxisContent(state.index, Modifier.predictiveBack(pageBack)) { i -> WelcomePage(state.steps[i], state, plan, model) }
+        }
+        // The page's buttons at the sheet's foot, under the thumb, where
+        // they stay as the page scrolls (Google's research on big
+        // actions near the thumb).
+        Column(Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg).padding(top = WingtipSpace.Sm, bottom = WingtipSpace.Lg)) {
             WelcomeButtons(
                 step = state.step,
                 onSkip = { end(model.skip()) },
@@ -117,26 +132,27 @@ fun WelcomeHost(plan: Plan, onOpen: (sample: Boolean) -> Unit) {
     }
 }
 
-/** The page's buttons: Skip at the start; Next, or Not Now and Allow, at
- *  the end; on the last page the two ways into a flight, then Skip. */
+/**
+ * The page's buttons, Android's onboarding way: one full-width filled
+ * button -- Next, or Allow on a permission page -- with Skip, and Not Now
+ * on a permission page, as text buttons under it; on the last page the
+ * sample flight filled, Plan My Own tonal, then Skip.
+ */
 @Composable
 private fun WelcomeButtons(step: Step, onSkip: () -> Unit, onNext: () -> Unit, onAllow: () -> Unit, onFinish: (Boolean) -> Unit) {
-    if (step == Step.FINISH) {
-        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-            Button(onClick = { onFinish(true) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.welcome_sample)) }
-            OutlinedButton(onClick = { onFinish(false) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.welcome_own)) }
-            TextButton(onClick = onSkip) { Text(stringResource(R.string.welcome_skip)) }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+        when (step) {
+            Step.FINISH -> {
+                Button(onClick = { onFinish(true) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.welcome_sample)) }
+                FilledTonalButton(onClick = { onFinish(false) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.welcome_own)) }
+            }
+            Step.LOCATION, Step.NOTIFICATIONS -> Button(onClick = onAllow, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.allow)) }
+            else -> Button(onClick = onNext, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.welcome_next)) }
         }
-        return
-    }
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-        TextButton(onClick = onSkip) { Text(stringResource(R.string.welcome_skip)) }
-        Spacer(Modifier.weight(1f))
-        if (step == Step.LOCATION || step == Step.NOTIFICATIONS) {
-            TextButton(onClick = onNext) { Text(stringResource(R.string.not_now)) }
-            Button(onClick = onAllow) { Text(stringResource(R.string.allow)) }
-        } else {
-            Button(onClick = onNext) { Text(stringResource(R.string.welcome_next)) }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = onSkip) { Text(stringResource(R.string.welcome_skip)) }
+            Spacer(Modifier.weight(1f))
+            if (step == Step.LOCATION || step == Step.NOTIFICATIONS) TextButton(onClick = onNext) { Text(stringResource(R.string.not_now)) }
         }
     }
 }

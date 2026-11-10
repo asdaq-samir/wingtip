@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.ui
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -26,14 +27,17 @@ import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.logbook.LogbookScreen
 import app.wingtipmaps.android.navigation.Over
 import app.wingtipmaps.android.offline.DownloadsScreen
+import app.wingtipmaps.android.ui.sheet.CardSheet
+import app.wingtipmaps.android.ui.sheet.FlexibleSheet
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
 /**
  * A screen in a sheet over the map (Over), the same in both layouts: the
  * airplane, the account menu's pages
  * -- Settings, the Logbook, Downloads, the passenger briefing, About --
- * Ask, and the clearance card, each with its title and a close that goes
- * back to where it was opened (decision 0015).
+ * Ask, and the clearance card, each under Material's flexible top bar
+ * with its title and a close at the end that goes back to where it was
+ * opened (decision 0015).
  *
  * @param onToPlan the sheet closed onto the plan: after About's demo flight.
  */
@@ -55,16 +59,24 @@ fun OverSheet(over: Over, plan: Plan, session: Session, ownShip: OwnShip, assist
         Over.Ask -> stringResource(R.string.ask)
         Over.Clearance -> stringResource(R.string.clearance)
     }
-    WingtipSheet(title = title, onClose = onClose, full = true) {
-        when (over) {
-            Over.Airplane -> AirplaneScreen(plan)
-            Over.Settings -> SetupScreen(session)
-            Over.Logbook -> LogbookScreen()
-            Over.Downloads -> DownloadsScreen()
-            Over.Passengers -> PassengerScreen(plan)
-            Over.About -> AboutScreen(onDemo = onToPlan)
-            Over.Ask -> AskScreen(plan = plan, session = session, ownShip = ownShip, client = assistant)
-            Over.Clearance -> {}
+    // The Logbook draws its own large collapsing bar, with its totals.
+    if (over == Over.Logbook) {
+        CardSheet(onClose) { LogbookScreen(onClose = onClose) }
+        return
+    }
+    // Every other page: Material's medium flexible bar, collapsing as the
+    // page scrolls, with Close at its end.
+    FlexibleSheet(title = title, onClose = onClose) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            when (over) {
+                Over.Airplane -> AirplaneScreen(plan)
+                Over.Settings -> SetupScreen(session)
+                Over.Downloads -> DownloadsScreen()
+                Over.Passengers -> PassengerScreen(plan)
+                Over.About -> AboutScreen(onDemo = onToPlan)
+                Over.Ask -> AskScreen(plan = plan, session = session, ownShip = ownShip, client = assistant)
+                Over.Logbook, Over.Clearance -> {}
+            }
         }
     }
 }

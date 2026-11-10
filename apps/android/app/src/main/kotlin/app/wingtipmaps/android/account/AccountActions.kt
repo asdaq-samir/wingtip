@@ -3,13 +3,9 @@ package app.wingtipmaps.android.account
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -21,10 +17,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -32,6 +26,7 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.ui.ActionSettingRow
 import app.wingtipmaps.android.ui.ProblemLine
 
 /**
@@ -50,17 +45,17 @@ fun ExportRow(model: ExportModel = viewModel()) {
             picker.launch(name)
         }
     }
-    ListItem(
-        supportingContent = {
-            Text(
-                stringResource(if (state.saved) R.string.export_saved else R.string.export_my_data_line),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+    // A segmented row of its own, as the settings' other groups; its
+    // spinner at the end while the file is fetched.
+    ActionSettingRow(
+        stringResource(R.string.export_my_data), index = 0, count = 1,
+        supporting = stringResource(if (state.saved) R.string.export_saved else R.string.export_my_data_line),
+        trailing = if (state.fetching) {
+            { Loading(Modifier.size(WingtipSpace.Xl)) }
+        } else {
+            null
         },
-        trailingContent = { if (state.fetching) Loading(Modifier.size(WingtipSpace.Xl)) },
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, enabled = !state.fetching) { model.fetch() },
-        content = { Text(stringResource(R.string.export_my_data)) },
+        onClick = { if (!state.fetching) model.fetch() },
     )
     ProblemLine(state.problem)
 }

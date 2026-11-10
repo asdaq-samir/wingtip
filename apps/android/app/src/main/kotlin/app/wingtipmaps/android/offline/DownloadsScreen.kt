@@ -7,14 +7,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -34,9 +32,13 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.OfflineRegion
 import app.wingtipmaps.android.design.ChoiceGroup
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.ui.ActionSettingRow
 import app.wingtipmaps.android.ui.LocalWingtipPalette
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
+import app.wingtipmaps.android.ui.SettingsGroup
+import app.wingtipmaps.android.ui.SwitchSettingRow
+import app.wingtipmaps.android.ui.ValueSettingRow
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
 /**
@@ -72,19 +74,19 @@ fun DownloadsScreen(model: DownloadsModel = viewModel()) {
                 onUpdate = { model.newestCycle?.let { model.keep(k, it) } }, onRetry = { model.keep(k, k.cycle) }, onDelete = { model.delete(k) })
         }
         item {
-            Row2(stringResource(R.string.offline_storage_used), bytes(model.storageUsed()) ?: "")
-            Row2(stringResource(R.string.offline_free), bytes(model.storageFree()) ?: "")
+            // The storage as Android's settings group it: one segmented group.
+            SettingsGroup(Modifier.padding(vertical = WingtipSpace.Sm)) {
+                ValueSettingRow(stringResource(R.string.offline_storage_used), bytes(model.storageUsed()) ?: "", index = 0, count = 2)
+                ValueSettingRow(stringResource(R.string.offline_free), bytes(model.storageFree()) ?: "", index = 1, count = 2)
+            }
         }
         item {
             SectionTitle(stringResource(R.string.offline_charts))
-            for (kind in DownloadsModel.KINDS_IN_ORDER) {
-                val on = kind in picked
-                ListItem(
-                    trailingContent = { Switch(checked = on, onCheckedChange = null) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    modifier = Modifier.fillMaxWidth().toggleable(value = on, role = Role.Switch) { model.setPicked(kind, it) },
-                    content = { Text(kindLabel(kind)) },
-                )
+            val kinds = DownloadsModel.KINDS_IN_ORDER
+            SettingsGroup(Modifier.padding(bottom = WingtipSpace.Sm)) {
+                kinds.forEachIndexed { i, kind ->
+                    SwitchSettingRow(kindLabel(kind), kind in picked, index = i, count = kinds.size) { model.setPicked(kind, it) }
+                }
             }
             // A discrete setting of two: a segmented control (decision 0017).
             ChoiceGroup(
@@ -92,11 +94,7 @@ fun DownloadsScreen(model: DownloadsModel = viewModel()) {
                 selected = scale,
                 onPick = model::setScale,
             )
-            ListItem(
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { map = true },
-                content = { Text(stringResource(R.string.offline_pick_map)) },
-            )
+            ActionSettingRow(stringResource(R.string.offline_pick_map), index = 0, count = 1, modifier = Modifier.padding(vertical = WingtipSpace.Sm)) { map = true }
             OutlinedTextField(search, { search = it }, Modifier.fillMaxWidth(), singleLine = true,
                 label = { Text(stringResource(R.string.offline_search)) })
             ProblemLine(problem)
