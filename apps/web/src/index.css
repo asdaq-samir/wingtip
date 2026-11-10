@@ -112,18 +112,19 @@ textarea {
 }
 
 /* The credits' row (lib/map/gl/MapCredits) as Apple Maps on the web sets
-   its Privacy | Terms | Legal | Imagery: small grey words on a soft wash
-   of the sheet's colour, no box (the owner's screenshot, 2026-11-10). */
+   its Privacy | Terms | Legal | Imagery: small words (the owner's
+   screenshot, 2026-11-10), in the text's colour on the page's, not grey,
+   so they keep 4.5:1 in every look, Glass Cockpit at night too (a11y.spec). */
 .maplibregl-map .maplibregl-ctrl-attrib {
-  background-color: color-mix(in oklab, var(--sheet) 70%, transparent);
+  background-color: var(--background);
   border-radius: 0.375rem 0 0 0;
-  color: var(--muted-foreground);
+  color: var(--foreground);
   font-size: 0.6875rem;
   line-height: 1rem;
   padding: 0.125rem 0.5rem;
 }
 .maplibregl-map .maplibregl-ctrl-attrib a {
-  color: var(--muted-foreground);
+  color: var(--foreground);
 }
 
 /* Clear of the map panel (MapPanel): its edge's corner controls sit
