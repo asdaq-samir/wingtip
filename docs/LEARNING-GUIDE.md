@@ -212,9 +212,11 @@ repo can reproduce, so deleting one costs rebuild time, never data. The
 thing you must not delete is the named Postgres volume (`pgdata_pg18` in
 `docker-compose.yml`), which holds the application rows — and `docker system prune --volumes`, the command everyone
 reaches for when a disk fills, takes it with everything else.
-[`scripts/dev/docker-tidy.sh`](../scripts/dev/docker-tidy.sh) is the safe version: by default it
-removes stopped containers and build-cache entries unused for seven
-days, never volumes or images; `--aggressive` also removes unused images.
+[`scripts/dev/docker-tidy.sh`](../scripts/dev/docker-tidy.sh) is the safe version: it removes
+images no container uses, build cache unused for a day, and volumes no
+container uses except the named caches and every compose project's own
+(the database's among them), never a container, and says how much it
+freed; `--dry-run` lists what would go.
 
 Two things fill the disk that are not the images. Build cache, which
 `docker system df` under-reports badly (`docker builder prune` shows the

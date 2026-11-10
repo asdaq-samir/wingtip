@@ -254,10 +254,10 @@ All in `scripts/dev/`, each with its usage at its top.
 | `validate-wave.sh` | The end-of-wave validation on `claude/integration`: every check area, the image builds, the `@smoke` browser specs on a throwaway stack, the iPad tests; one table of what passed |
 | `go-live.sh [branch]` | A branch on the owner's stack for the phone (above) |
 | `tidy-local.sh [--dry-run]` | Removes merged, clean worktrees and branches and stopped scratch containers; never volumes, never a running agent's worktree |
-| `tidy-branches.sh` | Deletes local `worktree-agent-*` branches already on `origin/main` |
-| `docker-tidy.sh` | Reclaims Docker disk, keeping recent build layers and every named volume |
+| `tidy-branches.sh [--dry-run]` | Removes the `~/Developer/wingtip-*` worktrees whose commit is on `origin/claude/integration` or `origin/main`, with nothing uncommitted and untouched for six hours (never `wingtip`, `wingtip-live` or a locked one), then deletes local `worktree-agent-*` branches already on `origin/main` |
+| `docker-tidy.sh [--dry-run]` | Reclaims Docker disk: images no container uses (`docker image prune -a`), build cache unused for 24 hours, and volumes no container uses except the named caches (`wingtip-cargo-*`, `wingtip-npm*`, `wingtip-format-npm`, `wingtip-m2`, `fp-m2`, `wingtip-check-raw`) and the stacks' own (`wingtip_*`, `fpam_*`, the database among them); never a container; prints the space freed |
 | `backup-db.sh`, `install-backup.sh` | The nightly database dump (below) |
-| `install-hooks.sh` | Installs the pre-push hook (tsc and ESLint, ruff, `cargo check` for what a push changes) |
+| `install-hooks.sh` | Installs the pre-push hook (tsc and ESLint, ruff, `cargo check`, the formatters, and the generated-file and budget checks CI runs -- `screens.sh --check`, `design-tokens.sh --check`, `toolchain.sh --check`, `file_sizes.py`, `brand_guard.py` -- each for what a push changes) |
 | `rename-local.sh` | Once, on a Mac that ran the stack before the rename to Wingtip |
 
 ### The nightly database backup
