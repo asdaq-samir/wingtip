@@ -59,7 +59,8 @@ struct ForecastStrip: View {
         // An alert is said as it is first reached, as a sighted pilot sees
         // it come in the strip.
         .onChange(of: forecast.alert) { _, alert in
-            if let alert { Announce.alert("\(alert.words) Source: \(alert.source)") }
+            // Reaching a hazard is felt once, as it is said (ios.md §11).
+            if let alert { Announce.alert("\(alert.words) Source: \(alert.source)"); Feel.tap(.warning) }
         }
     }
 
