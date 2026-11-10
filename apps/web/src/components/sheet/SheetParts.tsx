@@ -5,6 +5,7 @@ import { SheetCardHost } from "../SheetCard";
 import TabKept from "../TabKept";
 import type { useSheetDetents } from "./useSheetDetents";
 import { useScrollAway } from "./useScrollAway";
+export { SheetViewport } from "./SheetViewport";
 
 /** The first row's room under the grabber: ten points, the grabber's bar
  *  in it four from the edge. */

@@ -23,7 +23,7 @@ import { useSheetDetents } from "./sheet/useSheetDetents";
 import { useSheetCover } from "./sheet/sheetCover";
 import { prefersReducedMotion } from "../lib/motion";
 import { useSheetLife } from "./sheet/useSheetLife";
-import { SheetGrabber, SheetParts, type PartsProps } from "./sheet/SheetParts";
+import { SheetGrabber, SheetParts, SheetViewport, type PartsProps } from "./sheet/SheetParts";
 
 interface Props {
   /** The panel's name -- "Flight Planning", "Model Training" -- for its
@@ -356,7 +356,7 @@ export default function MapPanel(props: Props) {
       <Drawer.Portal>
         {/* The screen the sheet is held on: on the keyboard while it is up.
             Not a target itself, so the map under it is the map's. */}
-        <Drawer.Viewport className="pointer-events-none fixed inset-x-0 top-0 z-40 print:static" style={{ bottom: keyboard }}>
+        <SheetViewport className="pointer-events-none fixed inset-x-0 top-0 z-40 print:static" style={{ bottom: keyboard }}>
           <Drawer.Popup
             ref={setPanel}
             {...common}
@@ -393,7 +393,7 @@ export default function MapPanel(props: Props) {
             <SheetParts {...shared} />
             {!fromBottom && grabber}
           </Drawer.Popup>
-        </Drawer.Viewport>
+        </SheetViewport>
       </Drawer.Portal>
     </Drawer.Root>
   );
