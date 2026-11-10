@@ -17,6 +17,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,7 +39,6 @@ import app.wingtipmaps.android.ai.AiWordsRow
 import app.wingtipmaps.android.brief.DepartureWindowStrip
 import app.wingtipmaps.android.brief.IcingRows
 import app.wingtipmaps.android.design.LoadingRow
-import app.wingtipmaps.android.design.RefreshBox
 import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -73,7 +73,7 @@ fun BriefSheet(model: BriefModel, plan: Plan.State, signedIn: Boolean, onClose: 
     FlexibleSheet(title = stringResource(R.string.brief), onClose = onClose, subtitle = route, large = true) { padding ->
         // A pull asks the planner again, the weather in it being live; the
         // brief is cleared as it is asked, so its skeleton shows the fetch.
-        RefreshBox(refreshing = false, onRefresh = { model.refresh(plan) }, modifier = Modifier.padding(padding)) {
+        PullToRefreshBox(isRefreshing = false, onRefresh = { model.refresh(plan) }, modifier = Modifier.padding(padding)) {
             Column(
                 Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
                 verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
