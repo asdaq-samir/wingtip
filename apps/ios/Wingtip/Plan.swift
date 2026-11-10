@@ -72,9 +72,8 @@ final class Plan {
     /// When the plan shown was made; nil while it is being made now.
     private(set) var plannedAt: Date?
 
-    /// The route's undo and redo (PlanHistory): each change taken in as
-    /// it is planned or cleared, whichever button made it.
-    private(set) var history = PlanHistory()
+    /// The route as last taken in (remember): what an Undo puts back.
+    @ObservationIgnored private var lastState = RouteState()
     /// The window's, from SwiftUI's environment (RootView): shake to undo,
     /// the Edit menu's Undo and Redo and the bar's Undo (UndoToolbarItem).
     @ObservationIgnored weak var undoManager: UndoManager?
@@ -112,7 +111,7 @@ final class Plan {
         remembering = false
         plan()
         remembering = true
-        history = PlanHistory(routeState)
+        lastState = routeState
     }
 
     /// The route's idents in order, as the route box shows them.
@@ -137,41 +136,38 @@ final class Plan {
         Kept.forget()
     }
 
-    /// The route as it is now taken into the history: a change is a step
-    /// to undo with the window's UndoManager, named for what it took away
-    /// ("Undo Route Cleared"), and said to VoiceOver where it took
-    /// something, as the bar's Undo comes up silently.
+    /// The route as it is now taken in: a change is a step the window's
+    /// UndoManager can take back, holding the route as it was, named for
+    /// what it took away ("Undo Route cleared") and said to VoiceOver
+    /// where it took something. An Undo puts the route back (put), which
+    /// comes through here again inside the UndoManager's undo, so the
+    /// step it registers is the Redo, as the system does it.
     private func remember() {
         guard remembering else { return }
-        let (pushed, note) = history.observe(routeState)
-        guard pushed else { return }
-        if let note { UIAccessibility.post(notification: .announcement, argument: note) }
-        undoManager?.register(self, named: note ?? "Route Change") { $0.stepBack(registering: true) }
+        let next = routeState, before = lastState
+        guard next != before else { return }
+        lastState = next
+        let note = PlanHistory.note(from: before, to: next)
+        if let note, undoManager?.isUndoing != true, undoManager?.isRedoing != true {
+            UIAccessibility.post(notification: .announcement, argument: note)
+        }
+        guard let undoManager else { return }
+        undoManager.levelsOfUndo = PlanHistory.limit
+        undoManager.register(self, named: note ?? "Route Change") { $0.put(before) }
     }
 
-    /// One step back, the route as it was planned again; the step to redo
-    /// handed to the UndoManager when it asked for this one.
-    func stepBack(registering: Bool) {
-        guard let state = history.undo() else { return }
-        put(state)
-        if registering { undoManager?.register(self, named: undoManager?.undoActionName ?? "") { $0.stepForward(registering: true) } }
-    }
-
-    func stepForward(registering: Bool) {
-        guard let state = history.redo() else { return }
-        put(state)
-        if registering { undoManager?.register(self, named: undoManager?.redoActionName ?? "") { $0.stepBack(registering: true) } }
-    }
-
+    /// The route as it was set: planned again, or forgotten where it is
+    /// not a route, and taken in as the step to go back over.
     private func put(_ state: RouteState) {
         dep = state.dep; dest = state.dest; stops = state.stops; procedures = state.procedures; extras = state.extras
         ownAltitudeFt = state.ownAltitudeFt; ownAltitudeLegal = state.ownAltitudeLegal; altitudeChoice = state.altitudeChoice
         if routed { plan() } else { forgetPlanned() }
+        remember()
     }
 
     /// No steps back: a signed-out pilot's routes are not the next one's.
     func forgetHistory() {
-        history = PlanHistory(routeState)
+        lastState = routeState
         undoManager?.forget(self)
     }
 

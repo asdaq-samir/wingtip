@@ -2,9 +2,10 @@ import Foundation
 import Testing
 @testable import Wingtip
 
-/// The route's undo and redo (PlanHistory): every change a step back, the
-/// cleared route given back whole, what was redone dropped by a new
-/// change, and the bar's words the web app's (lib/planHistory).
+/// The route's undo and redo, the window's UndoManager's: the cleared
+/// route given back whole and cleared again, no step for the same route,
+/// at most PlanHistory.limit steps, and the Undo's words the web app's
+/// (lib/planHistory).
 struct PlanHistoryTests {
     private let route = RouteState(dep: "KMSN", dest: "KDPA", stops: ["KJVL", "KRFD"])
 
@@ -12,41 +13,51 @@ struct PlanHistoryTests {
         ProcedurePick(ident: ident, id: id, kind: "IAP", name: id, transition: nil)
     }
 
-    @Test func aClearedRouteComesBackAndGoesAgain() throws {
-        var history = PlanHistory(route)
-        let cleared = history.observe(RouteState())
-        #expect(cleared.pushed && cleared.note == "Route cleared")
-        #expect(history.undo() == route)
-        #expect(history.undo() == nil)
-        #expect(history.redo() == RouteState())
-        #expect(history.redo() == nil)
-        #expect(history.canUndo && !history.canRedo)
+    /// A plan on `route`, its undo steps on a manager of its own, one step
+    /// per group as a test makes them (the window groups by event).
+    @MainActor
+    private func planned() -> (Plan, UndoManager) {
+        let plan = Plan(), undo = UndoManager()
+        undo.groupsByEvent = false
+        plan.undoManager = undo
+        plan.dep = route.dep; plan.dest = route.dest; plan.stops = route.stops
+        plan.forgetHistory()
+        return (plan, undo)
     }
 
-    @Test func theSameRouteIsNoStep() throws {
-        var history = PlanHistory(route)
-        let again = history.observe(route)
-        #expect(!again.pushed && again.note == nil)
-        #expect(!history.canUndo)
+    @MainActor
+    private func step(_ undo: UndoManager, _ change: () -> Void) {
+        undo.beginUndoGrouping()
+        change()
+        undo.endUndoGrouping()
     }
 
-    @Test func aNewChangeDropsWhatWasRedone() throws {
-        var history = PlanHistory(route)
-        var shorter = route
-        shorter.stops = ["KJVL"]
-        _ = history.observe(shorter)
-        _ = history.undo()
-        var elsewhere = route
-        elsewhere.dest = "KUGN"
-        _ = history.observe(elsewhere)
-        #expect(!history.canRedo)
-        #expect(history.undo() == route)
+    @Test @MainActor func aClearedRouteComesBackAndGoesAgain() throws {
+        let (plan, undo) = planned()
+        step(undo) { plan.clear() }
+        #expect(undo.undoActionName == "Route cleared")
+        undo.undo()
+        #expect(plan.routeState == route)
+        #expect(undo.canRedo)
+        undo.redo()
+        #expect(plan.routeState == RouteState())
+        #expect(undo.canUndo)
     }
 
-    @Test func itDoesNotGrowWithoutEnd() throws {
-        var history = PlanHistory(RouteState(dep: "A0"))
-        for i in 1...(PlanHistory.limit + 10) { _ = history.observe(RouteState(dep: "A\(i)")) }
-        #expect(history.past.count == PlanHistory.limit)
+    @Test @MainActor func theSameRouteIsNoStep() throws {
+        let (plan, undo) = planned()
+        step(undo) { plan.clear() }
+        // Cleared again, nothing changed: no step (one outside a group
+        // would stop the test), so one Undo brings the route back.
+        plan.clear()
+        undo.undo()
+        #expect(plan.routeState == route)
+    }
+
+    @Test @MainActor func itKeepsAsManyStepsAsTheLimit() throws {
+        let (plan, undo) = planned()
+        step(undo) { plan.clear() }
+        #expect(undo.levelsOfUndo == PlanHistory.limit)
     }
 
     @Test func itSaysWhatWasTakenAway() throws {
