@@ -20,8 +20,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.Pilot
-import app.wingtipmaps.android.design.generated.WingtipSize
-import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.strip.StripData
@@ -38,7 +36,7 @@ import app.wingtipmaps.android.strip.StripData
  * is grown for it.
  */
 @Composable
-fun AccountButton(pilot: Pilot?, modifier: Modifier = Modifier) {
+fun AccountButton(pilot: Pilot?, modifier: Modifier = Modifier, avatar: Dp = AccountAvatar) {
     val initials = StripData.initialsOf(pilot)
     val name = stringResource(R.string.account_and_settings)
     IconButton(
@@ -47,7 +45,7 @@ fun AccountButton(pilot: Pilot?, modifier: Modifier = Modifier) {
             contentDescription = pilot?.let { "${it.displayName}: $name" } ?: name
         },
     ) {
-        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(AccountAvatar)) {
+        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(avatar)) {
             Box(contentAlignment = Alignment.Center) {
                 if (initials.isNotEmpty()) {
                     Text(initials, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onPrimary)
@@ -62,7 +60,6 @@ fun AccountButton(pilot: Pilot?, modifier: Modifier = Modifier) {
 /** The circle's size inside Material's 48-dp IconButton. */
 private val AccountAvatar = 36.dp
 
-/** The row's end padding that puts the circle 16 dp from the screen's
- *  edge, as the search bar is from the other (the sheet audit's P-1):
- *  the target's 6 dp beyond the circle taken off the 16. */
-val AccountEndMargin: Dp = WingtipSpace.Lg - (WingtipSize.TapTarget - AccountAvatar) / 2
+/** The circle in the search bar's trailing slot: Material's search bar
+ *  avatar, 30 dp (SearchBarTokens.AvatarSize), its target still 48. */
+val SearchBarAvatar = 30.dp

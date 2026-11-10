@@ -31,6 +31,10 @@ Compose. Nothing here is built by hand where a stock part does it.
    Recents), the plan, or a link.
 2. **What opens inside a card stays in that card's stack, with Back**
    (NOTAMs, a diagram's details, a past flight, a page of Settings).
+   It keeps the sheet's height: a card opens at half only from the search
+   or the map, and a page opened inside a card stays at the height the
+   sheet is at (owner decision 2026-11-10, on the Android sheet audit's
+   SC-1).
 3. **Pages are cards too.** Brief, Nav Log, Profile, Stops, Nearest, Ask,
    Settings and its pages, the Logbook, Checklists and Saved Flights
    cover the search the same way: ✕ closes, Back steps through the levels
@@ -72,7 +76,11 @@ there fails each app's build until that app opens it.
 
 1. **The title and ✕ always stay in view.** The title starts large and
    folds into a pinned head as the content scrolls. A card's tabs or
-   segmented control pin under the head.
+   segmented control pin under the head. On Android, at half height a
+   card shows the small bar, its title and actions on one row, and at
+   full the large flexible bar, folding as it scrolls (owner decision
+   2026-11-10, on the Android sheet audit's H-1), so the half-height card
+   keeps its room for content.
 2. **Below full, a drag up grows the sheet first, then scrolls; at the
    top of the content, a drag down lowers it.** No pull to refresh inside
    a sheet: cards refresh by themselves.
@@ -86,9 +94,9 @@ there fails each app's build until that app opens it.
 
 | | Web | iPhone | Android |
 |---|---|---|---|
-| Pinned head | `PinnedCardBar`: Apple Maps' card head, the large title folding into a compact pinned head, scroll-linked with CSS scroll-driven animations where the browser has them (index.css `card-pinned`, `card-title-fold`); on `CardTitle`, `CardHead`, `SheetCard` and `ListPageHead`. The airport card's tabs pin under it | The stock large navigation title collapsing to inline; nothing forces `.inline` but forms. The airport card's section picker pins under the bar | Material 3 Expressive's large flexible top app bar with `exitUntilCollapsed` on every card and page, the plan included; the airport card's tabs a `stickyHeader` |
-| Grow, then scroll | Base UI's Drawer gives a drag to any scroller that can scroll, so below full the body's scrollers are `overflow-y: hidden` (index.css), which its arbitration skips; a script, the keyboard and a focused row still scroll them, and a row focused under the sheet's edge raises the sheet (MapPanel) | The system sheet's own behaviour, with nothing overriding it; no zoom push inside a resizable sheet, whose pull-down would pop the page | The sheet's nested scroll; every card opens at half (`halfWindow`) and grows to full |
-| Detents | The sheet comes up half way for a card at the least | A thing opens at `.medium`, a page at `.large`; every card grows to `.large`, and the map stays live under it up to `.medium` (`presentationBackgroundInteraction`); questions and forms stay modal | Every card opens at half and grows to full |
+| Pinned head | `PinnedCardBar`: Apple Maps' card head, the large title folding into a compact pinned head, scroll-linked with CSS scroll-driven animations where the browser has them (index.css `card-pinned`, `card-title-fold`); on `CardTitle`, `CardHead`, `SheetCard` and `ListPageHead`. The airport card's tabs pin under it | The stock large navigation title collapsing to inline; nothing forces `.inline` but forms. The airport card's section picker pins under the bar | Material 3 Expressive's large flexible top app bar with `exitUntilCollapsed` on every card and page at full height, the plan included, and the small `TopAppBar` at half (`LocalSheetFull`); the airport card's tabs a `stickyHeader` |
+| Grow, then scroll | Base UI's Drawer gives a drag to any scroller that can scroll, so below full the body's scrollers are `overflow-y: hidden` (index.css), which its arbitration skips; a script, the keyboard and a focused row still scroll them, and a row focused under the sheet's edge raises the sheet (MapPanel) | The system sheet's own behaviour, with nothing overriding it; no zoom push inside a resizable sheet, whose pull-down would pop the page | The sheet's nested scroll; every card shown from the search or the map opens at half (`halfWindow`) and grows to full; one pushed inside a card keeps the height |
+| Detents | The sheet comes up half way for a card at the least | A thing opens at `.medium`, a page at `.large`; every card grows to `.large`, and the map stays live under it up to `.medium` (`presentationBackgroundInteraction`); questions and forms stay modal | A card from the search or the map opens at half and grows to full; one opened inside a card keeps the height |
 | Sideways rows | The Embla carousels (`CardPictures`, `RecentCards`) and the route's pills carry `data-base-ui-swipe-ignore="x"`; every native sideways row `overscroll-x-contain`; the upright altitude Slider and the sortable rows' grips keep `""`, their drag being up and down | No control takes the sheet's drag: the altitudes are a menu picker, the flown track's chart moves the replay on a tap | A sideways row takes only a sideways drag; the sheet's nested scroll takes the rest |
 | Place kept | The airport card's tabs each keep their place (`useTabScroll`), Settings' list its place after a page (`lib/scrollPlace`); the suggestions, a sent search's results and its Filters page each have their own scroll box | The stack's own behaviour | Each card is its own back stack entry with its own scroll and title state; the welcome starts each page at the top |
 | Footers | The card's own content | Every footer is the system's bar, `safeAreaBar` (`glassFoot`); a card's toolbar the stock bottom bar | The card's own content |

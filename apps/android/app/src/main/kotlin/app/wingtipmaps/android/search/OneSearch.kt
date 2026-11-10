@@ -21,9 +21,9 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExpandedDockedSearchBarWithGap
 import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
@@ -50,7 +50,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.account.AccountButton
-import app.wingtipmaps.android.account.AccountEndMargin
+import app.wingtipmaps.android.account.SearchBarAvatar
 import app.wingtipmaps.android.ai.rememberAiOffered
 import app.wingtipmaps.android.airplane.OwnAirplanes
 import app.wingtipmaps.android.api.Pilot
@@ -67,8 +67,10 @@ import kotlinx.coroutines.launch
 /**
  * The sheet's first row in both layouts, where the tabs were (the owner's
  * one search, 2026-11-09): Material's search bar, "Search or ask" (read
- * out as "Search airports, airplanes, or ask"), then the microphone as a button of its own and the
- * account button (AccountButton, Settings in one tap). While a card is
+ * out as "Search airports, airplanes, or ask"), with the microphone and
+ * the account's avatar (AccountButton, Settings in one tap) in the bar's
+ * own trailing slot, as Google Maps has them (the owner, 2026-11-10).
+ * While a card is
  * open its bar takes this row's place (CardPage). Tapped, the bar opens
  * full screen, as Material's does: with nothing typed the flight's card,
  * Favorites, Recents and Nearest; typing, the results grouped (Airports,
@@ -192,6 +194,21 @@ fun OneSearch(
     val open = searchBarState.currentValue == SearchBarValue.Expanded
     val back = stringResource(R.string.back)
     val clear = stringResource(R.string.said_clear_search)
+    // Material's icon toggle, checked while it listens; a second tap ends it.
+    val mic: @Composable () -> Unit = {
+        IconToggleButton(
+            checked = listening,
+            onCheckedChange = { on ->
+                when {
+                    !on -> speech.finish()
+                    micAllowed(context) -> hearOnce()
+                    else -> askMic.launch(Manifest.permission.RECORD_AUDIO)
+                }
+            },
+        ) {
+            Icon(Icons.Filled.Mic, contentDescription = stringResource(if (listening) R.string.voice_listening else R.string.say_it))
+        }
+    }
     val inputField: @Composable () -> Unit = {
         SearchBarDefaults.InputField(
             searchBarState = searchBarState,
@@ -212,42 +229,25 @@ fun OneSearch(
                     Icon(Icons.Filled.Search, contentDescription = null)
                 }
             },
-            trailingIcon = if (textFieldState.text.isNotEmpty()) {
-                { IconButton(onClick = { textFieldState.clearText() }) { Icon(Icons.Filled.Close, contentDescription = clear) } }
-            } else {
-                null
+            // The bar's own trailing slot, as Google Maps' search bar has it
+            // (the owner's decision, 2026-11-10, on the audit's S-2): the
+            // mic, then the account's avatar, in that order; open and typed
+            // into, the stock clear.
+            trailingIcon = {
+                if (open && textFieldState.text.isNotEmpty()) {
+                    IconButton(onClick = { textFieldState.clearText() }) { Icon(Icons.Filled.Close, contentDescription = clear) }
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (voice) mic()
+                        if (!open) AccountButton(pilot = pilot, avatar = SearchBarAvatar)
+                    }
+                }
             },
         )
     }
 
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
-        Row(
-            // Even margins: the bar's edge 16 dp from the left, the
-            // account's circle 16 dp from the right, its 48-dp target
-            // reaching past it (the sheet audit's P-1).
-            Modifier.fillMaxWidth().padding(start = WingtipSpace.Lg, end = AccountEndMargin),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
-        ) {
-            SearchBar(state = searchBarState, inputField = inputField, modifier = Modifier.weight(1f))
-            if (voice) {
-                // Material's icon toggle, checked while it listens; a second
-                // tap ends it.
-                FilledIconToggleButton(
-                    checked = listening,
-                    onCheckedChange = { on ->
-                        when {
-                            !on -> speech.finish()
-                            micAllowed(context) -> hearOnce()
-                            else -> askMic.launch(Manifest.permission.RECORD_AUDIO)
-                        }
-                    },
-                ) {
-                    Icon(Icons.Filled.Mic, contentDescription = stringResource(if (listening) R.string.voice_listening else R.string.say_it))
-                }
-            }
-            AccountButton(pilot = pilot)
-        }
+        SearchBar(state = searchBarState, inputField = inputField, modifier = Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg))
         if (problem != null) {
             Text(problem, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = WingtipSpace.Lg))
         }

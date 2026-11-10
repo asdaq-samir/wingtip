@@ -25,7 +25,9 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -71,6 +73,13 @@ class MapSheetState internal constructor(internal val sheet: SheetState) {
 
     internal suspend fun lower() = sheet.partialExpand()
 }
+
+/** Whether the sheet a card is drawn in is at its full height, where its
+ *  bar is Material's large flexible one, or lower (half), where it is the
+ *  small bar, title and actions on one row (the owner's decision,
+ *  2026-11-10, on the audit's H-1). True wherever there is no such sheet:
+ *  a tablet's pane, the fold's lower half. */
+val LocalSheetFull = compositionLocalOf { true }
 
 /** The map sheet's content, for the card rule's UI tests. */
 const val MAP_SHEET_TAG = "map-sheet"
@@ -184,7 +193,7 @@ fun MapSheet(
                         }
                         .testTag(MAP_SHEET_TAG).semantics { sheetDetent = state.sheet.currentValue.name },
                 ) {
-                    sheet()
+                    CompositionLocalProvider(LocalSheetFull provides state.expanded) { sheet() }
                 }
             },
             content = {},
