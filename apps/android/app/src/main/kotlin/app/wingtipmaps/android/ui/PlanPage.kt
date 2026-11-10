@@ -2,6 +2,7 @@ package app.wingtipmaps.android.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -20,9 +22,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -59,32 +63,99 @@ import app.wingtipmaps.android.offline.KeptAgeLine
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.FlightRules
+import app.wingtipmaps.android.ready.ReadyToFlyRow
 import app.wingtipmaps.android.route.LegWords
 import app.wingtipmaps.android.route.RoutePointMenu
 import app.wingtipmaps.android.route.RouteUndoRow
 import app.wingtipmaps.android.share.ShareRouteButton
+import kotlinx.coroutines.launch
 
 /**
- * The flight plan: the route typed, planned, and the nav log's legs as
- * the planner streams them, each opening its leg's figures (LegSheet),
- * with the totals and its fuel check. Every figure on it is the
- * planner's, written by Format; a leg's cruise altitude is FL-045 as the
- * cruise controls write it (decision 0009).
+ * The plan, the docked sheet's main page under the one search (the
+ * owner's canvas, 2026-11-09): its head -- the route, its figures, its
+ * altitude and airplane (PlanHead) -- the Brief, the Nav Log and the
+ * Airplane, the route's fields with Add a Stop (RouteStops), Ready to Fly,
+ * then all the FPL tab had, in its order: the route typed and planned,
+ * Share and the dry run, the flight rules, and the nav log's legs as the
+ * planner streams them, each opening its leg's figures (LegSheet), with
+ * the totals and its fuel check. Every figure on it is the planner's,
+ * written by Format; a leg's cruise altitude is FL-045 as the cruise
+ * controls write it (decision 0009).
+ *
+ * @param onClose back to what the search shows with nothing typed.
+ * @param onField a field of the route's card.
+ * @param onFind the search opened, for an end not given yet.
+ * @param onAddStop the search opened for a stop.
  */
 @Composable
-fun FPLScreen(plan: Plan) {
+fun PlanPage(plan: Plan, onClose: () -> Unit, onField: (String) -> Unit, onFind: () -> Unit, onAddStop: () -> Unit) {
     val state by plan.state.collectAsStateWithLifecycle()
+    var open by remember { mutableStateOf<Int?>(null) }
+    val dryRun: DryRun = viewModel()
+    val dryRunState by dryRun.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val tail by remember(context) { FlightChoices.of(context) }.tail.collectAsStateWithLifecycle()
+    val list = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    // The Nav Log button and a link's `navlog`: the legs, further down.
+    val toLegs = { scope.launch { list.animateScrollToItem(LEGS_AT) } }
+    val wanted by ScreenRequests.wanted.collectAsStateWithLifecycle()
+    LaunchedEffect(wanted, state.legs.isNotEmpty()) {
+        if (state.legs.isNotEmpty() && ScreenRequests.take(setOf(Screen.NAVLOG)) != null) toLegs()
+    }
+    val pad = Modifier.padding(horizontal = WingtipSpace.Lg)
+
+    LazyColumn(state = list, modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+        item(key = "head") { Box(pad) { PlanHead(state, tail, onClose) } }
+        item(key = "doors") { Box(pad) { PlanButtons(state.routed, onBrief = { ScreenRequests.ask(Screen.BRIEF) }, onNavLog = { toLegs() }) } }
+        item(key = "stops") { Box(pad) { RouteStops(state, onField = onField, onFind = onFind, onAddStop = onAddStop) } }
+        if (state.routed) item(key = "ready") { Box(pad) { ReadyToFlyRow(plan, onSetRoute = null) } }
+        item(key = "route") { Box(pad) { RouteFields(plan, state, dryRun) } }
+        item(key = "rules") { Box(pad) { FlightRulesRow(onChanged = { if (state.routed) plan.plan() }) } }
+        item(key = "problem") {
+            Column(pad) {
+                ProblemLine(state.problem ?: dryRunState.problem)
+                // The nav log kept for the air, shown with no signal: how old.
+                KeptAgeLine(KeptForAir.PLAN, state.plannedAtMs.takeIf { state.kept })
+            }
+        }
+        // The last edit to the route, undone where it was made (RouteUndo).
+        item(key = "undo") { Box(pad) { RouteUndoRow(plan) } }
+        itemsIndexed(state.legs, key = { i, _ -> "leg-$i" }) { i, leg ->
+            Column(pad) {
+                LegRow(leg, onOpen = { open = i }) { RoutePointMenu(leg.to, plan) }
+                HorizontalDivider()
+            }
+        }
+        state.totals?.let { totals ->
+            item(key = "totals") { Column(pad) { TotalsRows(totals, rememberAirplaneNow(plan)) } }
+            // The route and its nav log in plain words, under the totals.
+            item(key = "ai-route") {
+                Box(pad) { AiWordsRow(AiTask.ROUTE, key = state.legs.hashCode().toString(), sources = { AiSources.route(state.legs, state.totals, state.aircraft) }) }
+            }
+        }
+        // The route kept for the air in one tap, once it has a course.
+        if (state.course != null) item(key = "keep-for-air") { Box(pad) { KeepForAirRow(plan) } }
+        item(key = "foot") { Spacer(Modifier.height(WingtipSpace.Xl)) }
+    }
+    open?.let { i -> state.legs.getOrNull(i)?.let { LegSheet(number = null, leg = it, onClose = { open = null }) } }
+}
+
+/** Where the legs start in the plan's list (the undo row's place), for
+ *  the Nav Log button to scroll to. */
+private const val LEGS_AT = 7
+
+/** The route typed and planned, as the FPL tab had it: the departure and
+ *  the destination, the stops, Plan, Share and the dry run. */
+@Composable
+private fun RouteFields(plan: Plan, state: Plan.State, dryRun: DryRun) {
     // The fields hold what is typed; the plan's own route comes back into
     // them when it changes from elsewhere (a link, the kept plan, a card).
     var dep by rememberSaveable(state.dep) { mutableStateOf(state.dep) }
     var dest by rememberSaveable(state.dest) { mutableStateOf(state.dest) }
     var stops by rememberSaveable(state.stops) { mutableStateOf(state.stops.joinToString(", ")) }
-    var open by remember { mutableStateOf<Int?>(null) }
-    val dryRun: DryRun = viewModel()
-    val dryRunState by dryRun.state.collectAsStateWithLifecycle()
     val idents = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Next)
-
-    Column(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+    Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             OutlinedTextField(
                 value = dep, onValueChange = { dep = it }, modifier = Modifier.weight(1f),
@@ -105,42 +176,14 @@ fun FPLScreen(plan: Plan) {
                 onClick = { plan.plan(dep, dest, stops.split(",")) },
                 enabled = dep.isNotBlank() && dest.isNotBlank() && !state.planning,
             ) { Text(stringResource(R.string.plan)) }
-            // The route's Brief beside its Plan, where the pilot looks for it
-            // once the route is in (OpenScreen's sheet, as the strip has it).
-            if (state.routed && !state.planning) TextButton(onClick = { ScreenRequests.ask(Screen.BRIEF) }) { Text(stringResource(R.string.brief)) }
-            // And its Share: the plan as a link another pilot opens (share/).
+            // Its Share: the plan as a link another pilot opens (share/).
             if (state.routed && !state.planning) ShareRouteButton(state)
             // The plan flown on paper over the map, once the nav log is in.
             if (state.totals != null && !state.planning) TextButton(onClick = { dryRun.start(state) }) { Text(stringResource(R.string.dry_run)) }
             if (state.planning) Loading(Modifier.size(WingtipSpace.Xl))
             state.stage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
-        FlightRulesRow(onChanged = { if (state.routed) plan.plan() })
-        ProblemLine(state.problem ?: dryRunState.problem)
-        // The nav log kept for the air, shown with no signal: how old.
-        KeptAgeLine(KeptForAir.PLAN, state.plannedAtMs.takeIf { state.kept })
-        LazyColumn(Modifier.weight(1f)) {
-            // The last edit to the route, undone where it was made (RouteUndo).
-            item(key = "undo") { RouteUndoRow(plan) }
-            itemsIndexed(state.legs) { i, leg ->
-                LegRow(leg, onOpen = { open = i }) { RoutePointMenu(leg.to, plan) }
-                HorizontalDivider()
-            }
-            state.totals?.let { totals ->
-                item {
-                    Spacer(Modifier.height(WingtipSpace.Sm))
-                    TotalsRows(totals, rememberAirplaneNow(plan))
-                }
-                // The route and its nav log in plain words, under the totals.
-                item(key = "ai-route") {
-                    AiWordsRow(AiTask.ROUTE, key = state.legs.hashCode().toString(), sources = { AiSources.route(state.legs, state.totals, state.aircraft) })
-                }
-            }
-            // The route kept for the air in one tap, once it has a course.
-            if (state.course != null) item(key = "keep-for-air") { KeepForAirRow(plan) }
-        }
     }
-    open?.let { i -> state.legs.getOrNull(i)?.let { LegSheet(number = null, leg = it, onClose = { open = null }) } }
 }
 
 /**

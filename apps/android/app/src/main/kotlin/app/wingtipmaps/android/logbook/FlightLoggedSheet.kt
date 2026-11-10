@@ -86,7 +86,7 @@ private fun DraftRows(draft: LogbookDraft, state: LogbookDraftModel.State, model
     fun shown(f: DraftField) = DraftEntry.shown(draft, state.edits, f)
     SectionTitle(stringResource(R.string.flight_logged_flight))
     Figure(stringResource(R.string.flight_logged_date), shown(DraftField.DATE), DraftEntry.why(draft, "flownOn"), text = true) { model.edit(DraftField.DATE, it) }
-    Figure(stringResource(R.string.tab_airplane), shown(DraftField.AIRPLANE), null, text = true) { model.edit(DraftField.AIRPLANE, it) }
+    Figure(stringResource(R.string.airplane), shown(DraftField.AIRPLANE), null, text = true) { model.edit(DraftField.AIRPLANE, it) }
     Figure(stringResource(R.string.flight_logged_route), shown(DraftField.ROUTE), DraftEntry.why(draft, "distanceNm"), text = true) { model.edit(DraftField.ROUTE, it) }
     SectionTitle(stringResource(R.string.flight_logged_time))
     Figure(stringResource(R.string.flight_logged_total), shown(DraftField.TOTAL), DraftEntry.why(draft, "totalHours")) { model.edit(DraftField.TOTAL, it) }

@@ -44,6 +44,7 @@ import app.wingtipmaps.android.ui.SectionTitle
  * the type's book, a photographed handbook page, or the pilot -- each a
  * tap to edit in place, a figure of the pilot's over a book figure with
  * Reset to Book Figure under it. Opened at `focus` from an ask's Edit.
+ * The Figures section of the airplane's card (AirplaneCard).
  */
 @Composable
 fun AirplaneProfileScreen(airplane: AirplaneNow, focus: String?, model: AirplaneProfileModel = viewModel()) {

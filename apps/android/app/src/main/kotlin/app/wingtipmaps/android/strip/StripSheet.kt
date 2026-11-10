@@ -40,31 +40,35 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.predictiveBack
 import app.wingtipmaps.android.design.rememberPredictiveBack
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.map.MapPick
+import app.wingtipmaps.android.navigation.CardRequests
+import app.wingtipmaps.android.navigation.Over
+import app.wingtipmaps.android.navigation.OverRequests
 import app.wingtipmaps.android.ready.ReadyToFlyRow
 import app.wingtipmaps.android.ui.BriefModel
 import app.wingtipmaps.android.ui.BriefSheet
 import app.wingtipmaps.android.ui.LegSheet
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SourceSheet
-import app.wingtipmaps.android.ui.StripOver
 import app.wingtipmaps.android.ui.sheet.DockedSheet
 import app.wingtipmaps.android.ui.sheet.SheetStop
 import app.wingtipmaps.android.ui.sheet.rememberDockedSheetState
 
 /**
  * The strip layout: the map under the docked sheet (DockedSheet: pill,
- * half, full), the sheet's one row at its foot the field (FieldRow) with
- * the profile button beside it, and over the field, when the sheet is
+ * half, full), the sheet's one row at its foot the one search (OneSearch,
+ * the root's `searchRow`) with its microphone and the account button, and over the field, when the sheet is
  * up, the flight as one strip in time -- the ribbon (StripRibbon), the
  * head with the Brief's verdict and at most three actions (StripHead,
  * BriefModel), and the timeline (stripList). In the air the ribbon
  * carries the airplane and the next checkpoint large (StripAir). The
- * screens the field and the profile menu open -- an airport's card, the
- * airplane, Setup, Ask -- and a checkpoint's leg and the Brief are each a
- * sheet with its title and a close that goes back one level.
+ * screens the search and the account menu open -- a field's card, the
+ * airplane, Settings, Ask -- and a checkpoint's leg and the Brief are each
+ * a sheet with a close that goes back one level (the root's).
  *
- * Mounted by the root beside the tabs layout as a switch: the root owns
- * the map, own ship and the permission asks, and hands them here.
+ * Mounted by the root beside the plan's sheet as a switch: the root owns
+ * the map, own ship, the search and the permission asks, and hands them
+ * here.
  */
 @Composable
 fun StripLayout(
@@ -73,6 +77,7 @@ fun StripLayout(
     ownShip: OwnShip,
     flying: Boolean,
     map: @Composable () -> Unit,
+    searchRow: @Composable (problem: String?) -> Unit,
     raise: Int = 0,
     model: StripModel = viewModel(),
     assistant: AssistantClient = viewModel(),
@@ -110,12 +115,6 @@ fun StripLayout(
     }
     LaunchedEffect(state.totals, state.planning) { brief.brief(state) }
 
-    val context = AssistantContext(
-        dep = state.dep, dest = state.dest, stops = state.stops, aircraft = state.aircraft,
-        altitudeFt = state.altitudeFt ?: state.legs.firstOrNull()?.altitudeFt, depart = state.depart,
-        ownShip = fix?.let { AssistantContext.OwnShipFix(it.lat, it.lon, it.altitudeFt, it.trackDeg, it.groundspeedKt) },
-        pilot = pilot?.let { AssistantContext.PilotRecord(homeBase = it.homeBase) },
-    )
     val sheet = rememberDockedSheetState()
     // The sheet up from its foot once a line is done, as the web's sheet
     // comes up from the pill (fieldLine's `up`): one stop.
@@ -128,19 +127,6 @@ fun StripLayout(
         if (raise > 0 && sheet.stop == SheetStop.PILL) sheet.moveTo(SheetStop.HALF)
     }
 
-    // A screen's word from the field: what is on this phone opens; the
-    // rest is said to be the web's for now, where it was asked.
-    val openScreen: (FieldScreen) -> String? = { screen ->
-        when (screen) {
-            FieldScreen.AIRPLANE -> { model.open(StripModel.Over.Airplane); null }
-            FieldScreen.SETUP, FieldScreen.MAP -> { model.open(StripModel.Over.Setup); null }
-            FieldScreen.NAVLOG -> if (state.routed) null else "Plan a route first."
-            FieldScreen.BRIEF -> if (state.routed) { briefOpen = true; null } else "Plan a route first, then say \"Brief me\"."
-            FieldScreen.RADIO, FieldScreen.CLEARANCE -> { model.open(StripModel.Over.Clearance); null }
-            else -> "${screen.name.lowercase().replaceFirstChar { it.uppercase() }.replace('_', ' ')} isn't on this phone yet."
-        }
-    }
-    val submit: (String) -> Unit = { line -> model.submit(line, plan, pilot, fix, assistant, context, openScreen) }
     val ask = conversation.turns.lastOrNull()?.takeIf { it.role == AssistantTurn.Role.ASSISTANT }
     val answerShown = ask != null && strip.answerShown
     val dismissAnswer = { assistant.clear(); model.dismissAnswer() }
@@ -152,14 +138,10 @@ fun StripLayout(
     // The foot is the handle and the field's row; in the air the ribbon
     // and the next checkpoint too, since they are what is glanced at.
     val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val appContext = LocalContext.current
     val peek = (if (flying && rows.isNotEmpty()) StripAirPeek else WingtipSize.TapTarget * 2 + WingtipSpace.Lg + WingtipSpace.Xs) + navigationBar
     DockedSheet(state = sheet, peek = peek, body = { Box(Modifier.fillMaxSize()) { map() } }) {
-        FieldRow(
-            suggestions = StripData.suggestions(state), pilot = pilot, flying = flying, problem = strip.problem ?: positionProblem,
-            onLine = submit, onOpen = model::open, onSignOut = { session.signOut(appContext) },
-            onProblem = model::say,
-        )
+        // The one search, the root's (OneSearch), as the plan's sheet has it.
+        searchRow(positionProblem)
         if (flying && rows.isNotEmpty()) {
             StripAir(state = state, rows = rows, position = position)
         } else {
@@ -204,15 +186,14 @@ fun StripLayout(
                     rows = rows, cards = strip.cards, leaveMs = leaveMs,
                     departDetail = emptyList(), arriveDetail = emptyList(),
                     unfolded = unfolded, onUnfold = { unfolded = true },
-                    onField = { model.open(StripModel.Over.Airport(it)) },
+                    onField = { CardRequests.open(MapPick.Airport(it)) },
                     onCheckpoint = { leg = it },
-                    onClearance = { model.open(StripModel.Over.Clearance) },
+                    onClearance = { OverRequests.open(Over.Clearance) },
                 )
             }
         }
     }
 
-    strip.over?.let { over -> StripOver(over = over, plan = plan, session = session, ownShip = ownShip, assistant = assistant, onClose = { model.open(null) }) }
     // Ready to fly at the Brief's head; a route is typed in the field, so
     // its Plan the Route closes the Brief to the field.
     if (briefOpen) {

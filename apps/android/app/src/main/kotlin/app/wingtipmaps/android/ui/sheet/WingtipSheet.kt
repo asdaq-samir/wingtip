@@ -58,6 +58,22 @@ fun WingtipSheet(
     }
 }
 
+/**
+ * A card's sheet over the map: the same modal sheet at the whole height,
+ * with no title row, for a card that has its own collapsing top app bar
+ * and close (AirportCard, AirplaneCard) -- the strip layout's, which has
+ * no docked sheet to show them in.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CardSheet(onClose: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    ModalBottomSheet(
+        onDismissRequest = onClose,
+        sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
+        content = content,
+    )
+}
+
 /** A sheet's title row: the title at the start, then `actions` and the
  *  Close icon button at the end. Material's own top app bar, its insets
  *  the sheet's. */

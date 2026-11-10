@@ -28,7 +28,7 @@ import app.wingtipmaps.android.ui.largeType
  * with the airplane on it, the flown part grey and the way ahead magenta
  * (RibbonLine), the next checkpoint large under it -- its name, the leg's
  * heading, miles and minutes, the planner's own -- and the flight's
- * figures (FiguresStrip, the tabs layout's own). The field under them is
+ * figures (FiguresStrip, the plan's own). The field under them is
  * the radio (FieldRow with `flying`). Everything here is read at arm's
  * length: one large thing, the figures at 26 points and more.
  */

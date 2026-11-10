@@ -41,6 +41,7 @@ import { PlaceChartsTab } from "./place/PlaceChartsTab";
 import { PlaceInfoTab } from "./place/PlaceInfoTab";
 import { PlaceRunwaysTab } from "./place/PlaceRunwaysTab";
 import { PlaceWeatherTab } from "./place/PlaceWeatherTab";
+import { useShown } from "../../../lib/shown";
 
 const SketchViewer = lazy(() => import("./SketchViewer"));
 // The pictures behind the diagram, full screen to pinch in on, as a chart is.
@@ -169,10 +170,9 @@ export default function PlaceCard({
    *  hour its forecast marks. */
   arrival?: { depart: string | null; minutes: number };
 }) {
-  // Asked again every five minutes while the card is open, its weather a
-  // report's freshness (airportQuery): an open card's METAR was the one
-  // it opened with for as long as it stayed (the audit's finding).
-  const { data: place, isLoading, error, refetch, isFetching } = useQuery({ ...airportQuery(ident), refetchInterval: 5 * 60_000 });
+  // Asked again every five minutes in sight (lib/shown): its METAR stayed the one it opened with (the audit's finding).
+  const asked = { ...airportQuery(ident), refetchInterval: 5 * 60_000, subscribed: useShown() };
+  const { data: place, isLoading, error, refetch, isFetching } = useQuery(asked);
   // What the map knows of it already -- its name and its weather's
   // colour, from the chip that was tapped (AirportsGl, ClassBGl) --
   // at once: the card read "Looking the airport up…" until its own

@@ -5,7 +5,7 @@ import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { api } from "../../../lib/api/client";
 import type { AircraftRegistration, TrafficAircraft } from "../../../lib/api/types";
-import { useOwnFix } from "../../../lib/map/position/ownShip";
+import { useOwnFixShown } from "../../../lib/map/position/ownShip";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
 import { pickKeptAircraft, useTabSearch } from "../lib/tabSearch";
 import { ListPageHead, PillSection, PillStrip, SmallMark, SmallTile, StripNote } from "../../../components/Favorites";
@@ -18,6 +18,7 @@ import AircraftRow from "./AircraftRow";
 import { useTracking } from "../../../lib/map/position/tracking";
 import { TEXT } from "../../../lib/text";
 import { aircraftKind, keptKind } from "../../../lib/aircraftKind";
+import { useShownStore } from "../../../lib/shown";
 
 /** What is typed waits this long for the next letter before it is asked
  *  about: each search is a request adsb.lol paces (wingtip.traffic). */
@@ -95,7 +96,7 @@ export default function AircraftCard({
     const later = window.setTimeout(() => setAsked(wanted), TYPING_MS);
     return () => window.clearTimeout(later);
   }, [wanted, asked, isFetching]);
-  const fix = useOwnFix();
+  const fix = useOwnFixShown();
   // My Airplane's Add asked for the pilot's own airplane: the one picked --
   // found, its FAA record, a Favorite, a recent -- is kept as theirs
   // rather than opened, as the airport search's Home is.
@@ -107,7 +108,7 @@ export default function AircraftCard({
   const pickKept = (kept: KeptAircraft) => pickKeptAircraft(kept, onPickHex);
   const pickPlane = (plane: TrafficAircraft) => (picking ? pickKept(keptPlane(plane)) : onPick(plane));
   const recents = usePreferences((s) => s.recentAircraft);
-  const seen = useTracking((s) => s.seen);
+  const seen = useShownStore(useTracking, (s) => s.seen);
   // The airplanes about whose name begins with what is typed: found as it
   // is typed, asking nothing, before adsb.lol's answer for the rest.
   // Three letters at least, as the planner search wants: two match scores

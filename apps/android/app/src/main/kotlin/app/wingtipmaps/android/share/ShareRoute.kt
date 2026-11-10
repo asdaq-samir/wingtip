@@ -23,7 +23,7 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.plan.FlightChoices
 
 /**
- * The route's Share, beside its Brief on the FPL tab: the plan as a link
+ * The route's Share, on the plan: the plan as a link
  * (SharedPlan) through Android's sharesheet, which opens the app where it
  * is installed (App Links) and the web otherwise. The N-number stays off
  * the link unless the pilot ticks it in; with none known there is nothing

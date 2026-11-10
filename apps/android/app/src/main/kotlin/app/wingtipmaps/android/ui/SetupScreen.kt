@@ -67,39 +67,21 @@ import app.wingtipmaps.android.ui.sheet.WingtipSheet
 import app.wingtipmaps.android.welcome.WelcomeMemory
 
 /**
- * The Setup tab: how the app looks (the screen's layout, the theme), the
- * account -- signed in, the pilot's address and Sign Out; signed out, an
- * address and the emailed link, which opens the app and signs it in
- * (Session.open) -- what falls due, what the map draws, and the flight's
- * passenger briefing. The server the build talks to is shown, for a
- * tester with more than one, and About under it. Each section under one
- * SectionTitle.
- *
- * @param onToMap the sheets closed back to the map: after About's demo
- *   flight, so the route it planned is in sight.
+ * Settings, the account menu's page (what the Setup tab held, the owner's
+ * one search of 2026-11-09): how the app looks (the screen's layout, the
+ * theme), the account -- signed in, the pilot's address and Sign Out;
+ * signed out, an address and the emailed link, which opens the app and
+ * signs it in (Session.open) -- what falls due, the pilot's minimums,
+ * what the map draws and the copilots. The server the build talks to is
+ * shown, for a tester with more than one. Each section under one
+ * SectionTitle. The Logbook, Coach, Downloads, the passenger briefing and
+ * About are the account menu's own rows (AccountMenu), each in one place.
  */
 @Composable
-fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
-    // The plan the root holds (the activity's one Plan), for the
-    // passenger briefing's flight.
+fun SetupScreen(session: Session) {
+    // The plan the root holds (the activity's one Plan), for the glide
+    // ring's airplane.
     val plan: Plan = viewModel()
-    var briefing by rememberSaveable { mutableStateOf(false) }
-    var logbook by rememberSaveable { mutableStateOf(false) }
-    var about by rememberSaveable { mutableStateOf(false) }
-    var downloads by rememberSaveable { mutableStateOf(false) }
-    // A page of Setup's asked for by its name (OpenScreen): the Coach is
-    // the Logbook's, which takes it once open.
-    val wanted by ScreenRequests.wanted.collectAsStateWithLifecycle()
-    LaunchedEffect(wanted) {
-        if (wanted == Screen.COACH) logbook = true
-        when (ScreenRequests.take(setOf(Screen.LOGBOOK, Screen.DOWNLOADS, Screen.PASSENGERS, Screen.ABOUT))) {
-            Screen.LOGBOOK -> logbook = true
-            Screen.DOWNLOADS -> downloads = true
-            Screen.PASSENGERS -> briefing = true
-            Screen.ABOUT -> about = true
-            else -> {}
-        }
-    }
     val pilot by session.pilot.collectAsStateWithLifecycle()
     val loaded by session.loaded.collectAsStateWithLifecycle()
     val problem by session.problem.collectAsStateWithLifecycle()
@@ -111,13 +93,13 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
         verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md),
     ) {
-        // The tabs, or the strip (StripLayout), as the web app's Layout
-        // tile has it, and the look, as its Theme tile: a setting of a few
-        // is a segmented control (decision 0017).
+        // The plan under the one search, or the strip (StripLayout), as
+        // the web app's Layout tile has it, and the look, as its Theme
+        // tile: a setting of a few is a segmented control (decision 0017).
         SectionTitle(stringResource(R.string.layout))
         val layout by rememberLayout()
         Segmented(
-            listOf(LayoutPreference.TABS to stringResource(R.string.layout_tabs), LayoutPreference.STRIP to stringResource(R.string.layout_strip)),
+            listOf(LayoutPreference.PLAN to stringResource(R.string.layout_plan), LayoutPreference.STRIP to stringResource(R.string.layout_strip)),
             selected = layout,
         ) { LayoutPreference.set(context, it) }
         SectionTitle(stringResource(R.string.theme))
@@ -149,23 +131,8 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
         // What falls due, the pilot's and their airplanes': under the
         // account it belongs to.
         signedIn?.let { ComingUpSection(signedInAs = it.email) }
-        // The pilot's logbook and its currency, with their account.
-        if (signedIn != null) {
-            ListItem(
-                supportingContent = { Text(stringResource(R.string.logbook_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { logbook = true },
-                content = { Text(stringResource(R.string.logbook)) },
-            )
-            // The Coach beside the logbook it is made from: two taps, not three.
-            ScreenRow(Screen.COACH, R.string.coach, R.string.coach_line)
-            // Everything the account holds, as a file the pilot keeps.
-            ExportRow()
-        }
-        // The airplane's checklists and the emergency assistant, signed in
-        // or not, two taps from the map (docs/navigation.md's gaps 1 and 2).
-        ScreenRow(Screen.CHECKLISTS, R.string.checklists, R.string.checklists_line)
-        EmergencyAssistantRow()
+        // Everything the account holds, as a file the pilot keeps.
+        if (signedIn != null) ExportRow()
         // The pilot's own minimums, kept on this phone (no sign-in), as
         // the web keeps them with the pilot's own things.
         SectionTitle(stringResource(R.string.personal_minimums))
@@ -186,13 +153,6 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
         val spoken = remember(context) { SpokenAlerts.of(context) }
         val spokenOn by spoken.on.collectAsStateWithLifecycle()
         SwitchRow(stringResource(R.string.speak_alerts), spokenOn, spoken::setOn)
-        // Regions' charts kept for flying with no signal (offline/).
-        ListItem(
-            supportingContent = { Text(stringResource(R.string.offline_downloads_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { downloads = true },
-            content = { Text(stringResource(R.string.offline_downloads)) },
-        )
         // The in-flight copilot: off, shown, or shown and said (a setting
         // of three is a segmented control, decision 0017).
         SectionTitle(stringResource(R.string.copilot))
@@ -214,15 +174,6 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
         // Wingtip's assistant (docs/android-ai.md).
         OnPhoneAiRow()
 
-        // The passenger briefing for the planned flight (#223), where the
-        // field's "passenger briefing" opens Setup.
-        SectionTitle(stringResource(R.string.flight))
-        ListItem(
-            supportingContent = { Text(stringResource(R.string.passenger_briefing_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { briefing = true },
-            content = { Text(stringResource(R.string.passenger_briefing)) },
-        )
         // The welcome once more, from its first page (WelcomeHost, over
         // whatever is open): its one home.
         ListItem(
@@ -233,31 +184,6 @@ fun SetupScreen(session: Session, onToMap: () -> Unit = {}) {
         Row(Modifier.fillMaxWidth().padding(top = WingtipSpace.Lg), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(stringResource(R.string.server), style = MaterialTheme.typography.bodyMedium)
             Text(Config.host, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        ListItem(
-            supportingContent = { Text(stringResource(R.string.about_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { about = true },
-            content = { Text(stringResource(R.string.about)) },
-        )
-    }
-    if (about) {
-        WingtipSheet(title = stringResource(R.string.about), onClose = { about = false }, full = true) {
-            AboutScreen(onDemo = {
-                about = false
-                onToMap()
-            })
-        }
-    }
-    if (logbook) {
-        WingtipSheet(title = stringResource(R.string.logbook), onClose = { logbook = false }, full = true) { LogbookScreen() }
-    }
-    if (downloads) {
-        WingtipSheet(title = stringResource(R.string.offline_downloads), onClose = { downloads = false }, full = true) { DownloadsScreen() }
-    }
-    if (briefing) {
-        WingtipSheet(title = stringResource(R.string.passenger_briefing), onClose = { briefing = false }, full = true) {
-            PassengerScreen(plan)
         }
     }
 }

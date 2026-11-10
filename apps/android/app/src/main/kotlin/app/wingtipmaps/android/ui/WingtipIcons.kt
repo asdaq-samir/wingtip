@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.MoreVert
@@ -68,6 +69,7 @@ object WingtipIcons {
 
     /** Fly Here, a new route to the field: the route's own glyph. */
     val flyHere = Icons.Filled.Route
+    val departFrom = Icons.Filled.FlightTakeoff
 
     /**
      * Direct To, drawn as the chart's and the avionics' D-arrow: a D with

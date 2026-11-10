@@ -89,7 +89,7 @@ fun FiguresStrip(state: Plan.State) {
     // At 150 % type and more four figures do not fit across a phone: two
     // rows of two, so no figure is cut.
     val rows = if (largeType()) figures.chunked(2) else listOf(figures)
-    // The figures open the nav log they add up, the FPL tab's legs (tap
+    // The figures open the nav log they add up, the plan's legs (tap
     // what you see, docs/navigation.md).
     val openNavLog = stringResource(R.string.said_open_nav_log)
     Column(

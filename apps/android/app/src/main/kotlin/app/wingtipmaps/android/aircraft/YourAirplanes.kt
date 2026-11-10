@@ -33,7 +33,7 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
-/** The Airplane tab's row that opens Your Airplanes. */
+/** The Airplane page's row that opens Your Airplanes. */
 @Composable
 fun YourAirplanesRow(onOpen: () -> Unit) {
     ListItem(

@@ -8,11 +8,68 @@
     <string name="app_name">Wingtip Maps</string>
     <string name="app_short_name">Wingtip</string>
 
-    <!-- The tabs (decision 0013). -->
-    <string name="tab_fpl">FPL</string>
-    <string name="tab_airport">Airport</string>
-    <string name="tab_airplane">Airplane</string>
-    <string name="tab_setup">Setup</string>
+    <!-- The one search over the sheet (the owner, 2026-11-09), "Airplane"
+         the FAA's word (decision 0020). -->
+    <string name="airport">Airport</string>
+    <string name="airplane">Airplane</string>
+    <string name="settings">Settings</string>
+    <string name="search_hint">Search airports, airplanes, or ask</string>
+    <string name="search_hint_flying">Tap the mic and say it</string>
+    <string name="search_add_stop">Add a stop</string>
+    <string name="said_radio">The radio</string>
+    <string name="say_it">Say it</string>
+    <string name="said_clear_search">Clear the search</string>
+    <string name="nothing_heard">Nothing was heard.</string>
+    <string name="allow_microphone">Allow the microphone to say it.</string>
+    <string name="your_flight">Your Flight</string>
+    <string name="no_flight">No flight yet</string>
+    <string name="no_flight_line">Search for where to, or tap to plan one.</string>
+    <string name="favorites">Favorites</string>
+    <string name="recents">Recents</string>
+    <string name="group_airports">Airports</string>
+    <string name="group_waypoints">Waypoints and Navaids</string>
+    <string name="group_airplanes">Airplanes</string>
+    <string name="group_do">Do</string>
+    <string name="do_direct_to">Direct To %1$s</string>
+    <string name="do_ask">Ask: “%1$s”</string>
+    <string name="airplane_yours">Yours</string>
+    <string name="airplane_registry">FAA registry</string>
+    <string name="airplane_stock_type">Airplane type</string>
+    <string name="waypoint_add">Adds it to the route</string>
+    <string name="waypoint_direct">Direct to it</string>
+    <string name="plan_a_route_first">Plan a route first to add %1$s.</string>
+    <string name="fly_this_airplane">Fly This Airplane</string>
+    <string name="add_favorite">Add to Favorites</string>
+    <string name="remove_favorite">Remove from Favorites</string>
+    <string name="add_a_stop">Add a Stop</string>
+    <string name="nav_log">Nav Log</string>
+    <string name="route_depart">Depart</string>
+    <string name="route_stop">Stop</string>
+    <string name="route_arrive">Arrive</string>
+    <string name="where_from">Where from?</string>
+    <string name="where_to">Where to?</string>
+    <!-- A field's card's chips and sections. -->
+    <string name="approaches">Approaches</string>
+    <string name="notams">NOTAMs</string>
+    <string name="diagram">Diagram</string>
+    <string name="section_weather">Weather</string>
+    <string name="section_runways">Runways</string>
+    <string name="taf">TAF</string>
+    <string name="elevation">Elevation</string>
+    <string name="no_notams">No NOTAMs for this field.</string>
+    <string name="runway_closed">Closed</string>
+    <string name="runway_lighted">Lighted</string>
+    <string name="picture_aerial">Aerial photo</string>
+    <string name="picture_ground">Photo from the ground</string>
+    <string name="picture_chart">The chart around the field</string>
+    <string name="section_overview">Overview</string>
+    <string name="fact_weather">Weather</string>
+    <string name="fact_wind">Wind</string>
+    <string name="fact_longest_runway">Longest Runway</string>
+    <string name="fact_distance">Distance</string>
+    <string name="fact_no_report">No report</string>
+    <string name="wind_calm">Calm</string>
+    <string name="fly_here_in">Fly Here · %1$s</string>
 
     <!-- Sheets and their controls (decision 0015). -->
     <string name="close">Close</string>
@@ -107,7 +164,8 @@
     <!-- Card actions (lib/cardActions.ts ACTION, docs/design/icons.md). -->
     <string name="action_fly_here">Fly Here</string>
     <string name="action_direct_to">Direct To</string>
-    <string name="action_add_stop">Add Stop</string>
+    <string name="action_add_stop">Add as Stop</string>
+    <string name="action_depart_from">Depart From</string>
     <string name="action_add_to_route">Add to Route</string>
     <string name="action_hold_here">Hold Here</string>
     <string name="action_call">Call</string>
@@ -148,8 +206,6 @@
     <string name="restrictions">Restrictions</string>
 
     <!-- The Airport tab. -->
-    <string name="elevation_is">Elevation %1$s</string>
-    <string name="diagram_with_position">Diagram with Your Position</string>
     <string name="metar">METAR</string>
     <string name="no_weather_report">No weather report at this field.</string>
     <string name="nearest">Nearest</string>
@@ -162,9 +218,9 @@
     <string name="checklist_normal_line">This airplane\'s normal procedures</string>
     <string name="checklist_emergency_line">This airplane\'s emergency procedures</string>
 
-    <!-- Setup (decision 0014). -->
+    <!-- Settings, from the account menu (decision 0014). -->
     <string name="layout">Layout</string>
-    <string name="layout_tabs">Tabs</string>
+    <string name="layout_plan">Plan</string>
     <string name="layout_strip">Strip</string>
     <string name="theme">Theme</string>
     <string name="account">Account</string>
@@ -190,9 +246,7 @@
     <string name="layer_private">Private Fields</string>
     <string name="layer_military">Military Fields</string>
     <string name="speak_alerts">Speak Alerts Ahead</string>
-    <string name="flight">Flight</string>
     <string name="passenger_briefing">Passenger Briefing</string>
-    <string name="passenger_briefing_line">Brief them, then send them the flight</string>
     <string name="passengers_briefed">Briefed: %1$d of %2$d</string>
     <string name="the_flight">The Flight</string>
     <string name="server">Server</string>
@@ -207,7 +261,6 @@
     <!-- About (about/), from the foot of Setup; the planning aid in the
          words every app says (docs/legal/credits.md). -->
     <string name="about">About</string>
-    <string name="about_line">Version, credits, privacy and terms</string>
     <string name="about_version">Version</string>
     <string name="about_build">Build</string>
     <string name="about_chart_edition">Chart Edition</string>
@@ -220,7 +273,7 @@
     <string name="about_terms">Terms of Use</string>
     <string name="about_support">Support</string>
     <string name="about_demo_flight">Demo Flight</string>
-    <string name="pilot_menu">The pilot\'s menu</string>
+    <string name="pilot_menu">Account and settings</string>
 
     <!-- Live reports from SWIM on the airport and airspace cards (live/). -->
     <string name="live_programs">Ground Stops and Delays</string>
@@ -324,7 +377,6 @@
     <string name="registration_hint">N123AB</string>
     <!-- The logbook, and a recorded flight offered for it (logbook/). -->
     <string name="logbook">Logbook</string>
-    <string name="logbook_line">Your entries, and the currency they give</string>
     <string name="logbook_entries">Entries</string>
     <string name="logbook_empty">Nothing logged yet. A flight recorded by the app is offered here once it ends.</string>
     <string name="currency">Currency</string>

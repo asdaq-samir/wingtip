@@ -19,10 +19,10 @@ enum class FlightRules(val word: String) {
 /**
  * What the pilot says of the flight that no route shows, kept across
  * launches as the web's preferences keep them: the flight rules it is
- * flown under (FPL's Flight Rules; VFR until changed, as the web's), and
- * whether anyone but the pilot is aboard (the Airplane tab, where the
+ * flown under (the plan's Flight Rules; VFR until changed, as the web's), and
+ * whether anyone but the pilot is aboard (the Airplane page, where the
  * web reads it from the load's seats), and the airplane's registration
- * (the Airplane tab, where the web picks the pilot's own). The planner plans and briefs by
+ * (the Airplane page, where the web picks the pilot's own). The planner plans and briefs by
  * the rules; the copilot reads both (copilot_watch: 61.57(b)'s night
  * passengers, IFR's alternate), and the Brief's forecast icing is
  * IFR's, as the web's.

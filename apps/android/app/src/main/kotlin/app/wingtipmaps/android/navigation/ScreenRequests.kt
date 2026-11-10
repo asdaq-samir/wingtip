@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * A screen asked for by its name (design/screens.json) and not yet open:
  * the one way in for a link, a figure tapped and the app's own shortcuts.
- * RootScreen says which tab it is on (openScreen); the screen that holds
- * its page -- Setup's Logbook, the Airplane tab's checklist -- takes it
+ * RootScreen opens it where it lives (OpenScreen); the screen that holds
+ * its page -- the Logbook's Coach, the Airplane page's checklist -- takes it
  * from here, as only it can open its own sheets.
  */
 object ScreenRequests {

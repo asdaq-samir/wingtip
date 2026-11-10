@@ -40,7 +40,7 @@ import kotlinx.coroutines.withContext
 
 /**
  * Each of ready_to_fly's fixes done in place, by the feature the app
- * already has for it: the airplane picked in the Airplane tab's own
+ * already has for it: the airplane picked in the Airplane page's own
  * picker, the route's charts kept as Setup → Downloads keeps a box, the
  * cycle packs kept along the route as the plan keeps them, the Brief and
  * the fields' weather asked again, the NOTAMs fetched, the plan kept, the
@@ -144,7 +144,7 @@ class ReadyFixer internal constructor(
         }
     }
 
-    /** The Airplane tab's picker in a sheet of its own, so the screen
+    /** The Airplane page's picker in a sheet of its own, so the screen
      *  under it stays where it was; asked, never assumed. */
     @Composable
     fun Sheets(airplanes: AirplaneModel = viewModel()) {

@@ -91,7 +91,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     // whose sheet is open (RouteLegModel), cased in green.
     val routePoints = remember(state.course) { RoutePoints.of(state.course) }
     val selectedLeg by viewModel<RouteLegModel>().selected.collectAsStateWithLifecycle()
-    // The field whose card is open in the Airport tab, ringed on the map.
+    // The field whose card is open, ringed on the map.
     val openField = viewModel<AirportModel>().state.collectAsStateWithLifecycle().value.place?.ident
     val density = LocalDensity.current
     val template = remember(info, density.density) { Charts.template(info, density.density) }

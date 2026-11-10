@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * A thing's card asked for from somewhere other than the map -- a route
  * point's More Info, an alert's field or airspace -- and opened by the
  * root as a tap on the map would open it (RootScreen's onPick: a field in
- * the Airport tab, the rest over the map), so "tap what you see" has one
+ * the plan's sheet, the rest over the map), so "tap what you see" has one
  * way in, as ScreenRequests is for screens.
  */
 object CardRequests {
