@@ -25,11 +25,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.NavLogTotals
-import app.wingtipmaps.android.design.RollingFigure
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -128,13 +128,13 @@ fun RowScope.Figure(name: String, value: String, warn: Boolean = false, said: St
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        // The figure rolls its digits as it counts down in flight
-        // (RollingFigure), in the expressive figure role.
-        RollingFigure(
+        // The figure in the expressive figure role.
+        Text(
             value,
             style = MaterialTheme.typography.titleMediumEmphasized,
             color = if (warn) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
             maxLines = if (largeType()) 2 else 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

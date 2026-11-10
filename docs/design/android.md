@@ -164,10 +164,9 @@ end, and nothing on this page describes a Google app from memory.
   scheme's springs.
 - Use the system's **Remove animations** setting through Compose's
   animator duration scale. It already stills the stock springs.
-- Use the expressive scheme for a whole control and the standard scheme
-  (`MotionScheme.standard()`) for a figure changing in place, such as
-  `design/RollingFigure`. A figure that overshoots would read as a
-  different number for a frame.
+- A figure changing in place (the ETE, the fuel left, the miles to go)
+  is plain `Text`: the hand-built per-digit roll (`design/RollingFigure`)
+  is gone (the owner, 2026-11-10: stock components as they are).
 
 ### 1.6 Haptics
 
