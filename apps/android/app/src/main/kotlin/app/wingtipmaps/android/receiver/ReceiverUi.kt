@@ -3,11 +3,9 @@ package app.wingtipmaps.android.receiver
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Badge
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,7 +16,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.ChoiceGroup
@@ -39,13 +36,13 @@ fun ReceiverChip(modifier: Modifier = Modifier) {
     val state = picture?.receiver ?: return
     if (mode != ReceiverMode.AUTO || state.heartbeatAt == null) return
     val description = stringResource(R.string.receiver_chip, state.summary)
-    Surface(
-        shape = CircleShape,
-        tonalElevation = 3.dp,
+    // Material's badge with text, in the theme's raised container.
+    Badge(
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = if (state.live) MaterialTheme.colorScheme.onSurface else LocalWingtipPalette.current.caution,
         modifier = modifier.semantics { contentDescription = description },
     ) {
-        Text(state.summary, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = WingtipSpace.Sm, vertical = WingtipSpace.Xxs))
+        Text(state.summary)
     }
 }
 
