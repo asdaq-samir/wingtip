@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { contrast, lookTokens, over, parseColour, type Linear, type Look } from "./contrast";
+import { contrast, lookTokens, over, parseColour, type Linear, type Look, type SystemColours } from "./contrast";
 import { CATEGORY, CATEGORY_CHIP } from "./tokens";
 
 /**
@@ -15,18 +15,47 @@ import { CATEGORY, CATEGORY_CHIP } from "./tokens";
  */
 const css = readFileSync(new URL("../styles/tokens.css", import.meta.url), "utf8");
 
-const LOOKS: (Look & { name: string })[] = [];
-for (const brand of ["wingtip", "cockpit", "ink"] as const) {
+/**
+ * The browsers' system colours the Native look is drawn in (Canvas,
+ * CanvasText, LinkText, AccentColor), by day and at night, for the
+ * browsers it is held under: HTML's own link blues on Chromium's grounds
+ * (Chromium has no AccentColor, so the ring takes LinkText); iOS's
+ * system colours on an iPhone's Safari (systemBlue, a black ground at
+ * night); and a Mac's Safari (NSColor.linkColor on its dark grey). Where a
+ * browser's own value is not one of these, Native's mixes keep the
+ * margin: its link blue is a fifth of the way to the words' colour.
+ */
+const BROWSERS: { name: string; day: SystemColours; night: SystemColours }[] = [
+  {
+    name: "Chromium",
+    day: { canvas: "#ffffff", canvastext: "#000000", linktext: "#0000ee", accentcolor: "#0000ee" },
+    night: { canvas: "#121212", canvastext: "#ffffff", linktext: "#9e9eff", accentcolor: "#9e9eff" },
+  },
+  {
+    name: "Safari on an iPhone",
+    day: { canvas: "#ffffff", canvastext: "#000000", linktext: "#007aff", accentcolor: "#007aff" },
+    night: { canvas: "#000000", canvastext: "#ffffff", linktext: "#0a84ff", accentcolor: "#0a84ff" },
+  },
+  {
+    name: "Safari on a Mac",
+    day: { canvas: "#ffffff", canvastext: "#000000", linktext: "#0068da", accentcolor: "#007aff" },
+    night: { canvas: "#1e1e1e", canvastext: "#ffffff", linktext: "#419cff", accentcolor: "#0a84ff" },
+  },
+];
+
+const LOOKS: (Look & { name: string; system: SystemColours })[] = [];
+for (const brand of ["wingtip", "cockpit", "ink", "native"] as const) {
   for (const dark of [false, true]) {
     for (const bright of [false, true]) {
-      const name = `${{ wingtip: "Wingtip", cockpit: "Glass Cockpit", ink: "Chart ink" }[brand]}, ${dark ? "night" : "day"}${bright ? ", sunlight" : ""}`;
-      LOOKS.push({ name, brand, dark, bright });
+      const name = `${{ wingtip: "Wingtip", cockpit: "Glass Cockpit", ink: "Chart ink", native: "Native" }[brand]}, ${dark ? "night" : "day"}${bright ? ", sunlight" : ""}`;
+      if (brand !== "native") LOOKS.push({ name, brand, dark, bright, system: {} });
+      else for (const b of BROWSERS) LOOKS.push({ name: `${name}, ${b.name}`, brand, dark, bright, system: dark ? b.night : b.day });
     }
   }
 }
 
-const colour = (v: string | undefined, what: string): Linear => {
-  const c = v === undefined ? null : parseColour(v);
+const colour = (v: string | undefined, what: string, system: SystemColours = {}): Linear => {
+  const c = v === undefined ? null : parseColour(v, system);
   if (!c) throw new Error(`${what} is not a colour: ${v}`);
   return c;
 };
@@ -64,7 +93,7 @@ const NON_TEXT = ["--ring", "--caution", "--go", "--destructive"];
 
 describe.each(LOOKS)("$name", (look) => {
   const t = lookTokens(css, look);
-  const c = (name: string) => colour(t[name], `${look.name} ${name}`);
+  const c = (name: string) => colour(t[name], `${look.name} ${name}`, look.system);
 
   it.each(WORDS.flatMap((w) => SURFACES.map((s) => [w, s] as const)))("%s reads 4.5:1 or more on %s", (word, surface) => {
     expect(contrast(c(word), c(surface))).toBeGreaterThanOrEqual(4.5);

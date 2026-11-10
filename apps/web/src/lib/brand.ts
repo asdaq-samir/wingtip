@@ -6,14 +6,16 @@ const INK: Brand = "ink";
 /** The looks, as Setup's Theme lists them: Wingtip, the brand's own
  *  blue and the default (the owner, 2026-11-09: "the Wingtip brand look is
  *  the default on all three apps"); the Glass Cockpit, from the owner's
- *  brand canvas (2026-10-26); and Chart ink, the app in the FAA
- *  sectional's own ink (2026-11-04). Their colours are tokens on <html
- *  data-brand> (design/tokens.json's color.look); their typefaces load
- *  here. */
+ *  brand canvas (2026-10-26); Chart ink, the app in the FAA sectional's
+ *  own ink (2026-11-04); and Native, the browser's and the system's own
+ *  colours and face (2026-11-10: "a native theme in addition to other
+ *  themes we have"). Their colours are tokens on <html data-brand>
+ *  (design/tokens.json's color.look); their typefaces load here. */
 export const BRANDS: { value: Brand; label: string }[] = [
   { value: "wingtip", label: "Wingtip" },
   { value: "cockpit", label: "Glass Cockpit" },
   { value: INK, label: "Chart ink" },
+  { value: "native", label: "Native" },
 ];
 
 /** Each look's own typeface beyond Barlow, which both read in and which
@@ -23,6 +25,8 @@ export const BRANDS: { value: Brand; label: string }[] = [
 const FONTS: Record<Brand, () => Promise<unknown>> = {
   wingtip: () => Promise.resolve(),
   cockpit: () => Promise.resolve(),
+  // The system's own face (system-ui): nothing to fetch.
+  native: () => Promise.resolve(),
   ink: () => Promise.all([import("@fontsource/barlow-condensed/latin-600.css"), import("@fontsource/barlow-condensed/latin-700.css")]),
 };
 

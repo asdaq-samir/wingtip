@@ -310,6 +310,41 @@
   --ink-magenta: #ff5ac8;
 }
 
+/* Native: the platform's own face, and its system colours but in sunlight. */
+:root[data-brand="native"] {
+  --brand-font: system-ui;
+}
+
+:root[data-brand="native"]:not([data-chart-light="bright"]) {
+  --background: Canvas;
+  --foreground: CanvasText;
+  --card: Canvas;
+  --card-foreground: CanvasText;
+  --popover: Canvas;
+  --popover-foreground: CanvasText;
+  --sheet: Canvas;
+  --primary: color-mix(in oklab, LinkText 80%, CanvasText);
+  --primary-foreground: Canvas;
+  --tint: color-mix(in oklab, LinkText 80%, CanvasText);
+  --tint-shade: color-mix(in oklab, LinkText 80%, CanvasText);
+  --ring: LinkText;
+  --secondary: color-mix(in srgb, CanvasText 5%, Canvas);
+  --secondary-foreground: CanvasText;
+  --muted: color-mix(in srgb, CanvasText 5%, Canvas);
+  --muted-foreground: color-mix(in srgb, CanvasText 58%, Canvas);
+  --muted-foreground-shade: color-mix(in srgb, CanvasText 58%, Canvas);
+  --accent: color-mix(in srgb, CanvasText 5%, Canvas);
+  --accent-foreground: CanvasText;
+  --border: color-mix(in srgb, CanvasText 12%, Canvas);
+  --input: color-mix(in srgb, CanvasText 45%, Canvas);
+}
+
+@supports (color: AccentColor) {
+  :root[data-brand="native"]:not([data-chart-light="bright"]) {
+    --ring: AccentColor;
+  }
+}
+
 /* Sunlight, over day, night and every look. */
 :root[data-chart-light="bright"],
 :root.dark[data-chart-light="bright"] {

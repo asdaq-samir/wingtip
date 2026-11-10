@@ -32,9 +32,51 @@ function fromOklch(l: number, c: number, h: number): Linear {
   ];
 }
 
-/** A token's value as linear sRGB, or null where it is neither form. */
-export function parseColour(value: string): Linear | null {
+/** Linear sRGB to OKLab and back (Ottosson's matrices), for color-mix
+ *  in oklab as CSS Color 5 mixes. */
+function toOklab([r, g, b]: Linear): Linear {
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  ];
+}
+function fromOklab([l, a, b]: Linear): Linear {
+  const c = Math.hypot(a, b);
+  return fromOklch(l, c, (Math.atan2(b, a) * 180) / Math.PI);
+}
+
+/** A browser's CSS system colours (CSS Color 4, section 6.2) in one
+ *  scheme, keyword in lower case to its #rrggbb: what the Native look's
+ *  tokens (Canvas, LinkText, AccentColor) are drawn in there. A test
+ *  holds Native to WCAG under each browser's. */
+export type SystemColours = Record<string, string>;
+
+const MIX = /^color-mix\(in (srgb|oklab),\s*([\w#]+)(?:\s+([\d.]+)%)?,\s*([\w#]+)(?:\s+([\d.]+)%)?\)$/i;
+
+/** A token's value as linear sRGB, or null where it is none of the forms:
+ *  a hex, an oklch(), a system colour in `system`, or a color-mix() of
+ *  two of those (in srgb or oklab, as the browser mixes them). */
+export function parseColour(value: string, system: SystemColours = {}): Linear | null {
   const v = value.trim();
+  const keyword = system[v.toLowerCase()];
+  if (keyword) return parseColour(keyword);
+  const mix = MIX.exec(v);
+  if (mix) {
+    const [, space, a, pa, b, pb] = mix;
+    const ca = parseColour(a!, system),
+      cb = parseColour(b!, system);
+    if (!ca || !cb) return null;
+    const wa = pa ? Number(pa) / 100 : pb ? 1 - Number(pb) / 100 : 0.5;
+    if (space!.toLowerCase() === "oklab") {
+      const [la, lb] = [toOklab(ca), toOklab(cb)];
+      return fromOklab(la.map((x, i) => x * wa + lb[i]! * (1 - wa)) as Linear);
+    }
+    return over(ca, wa, cb);
+  }
   const hex = /^#([0-9a-f]{6})$/i.exec(v);
   if (hex) {
     const n = parseInt(hex[1]!, 16);
@@ -63,7 +105,7 @@ export function over(fg: Linear, alpha: number, bg: Linear): Linear {
 /** One of the pilot's looks as <html> carries it: the look (data-brand),
  *  night (.dark) and sunlight (data-chart-light="bright"). */
 export interface Look {
-  brand: "wingtip" | "cockpit" | "ink";
+  brand: "wingtip" | "cockpit" | "ink" | "native";
   dark: boolean;
   bright: boolean;
 }

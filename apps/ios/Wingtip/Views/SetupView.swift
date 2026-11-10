@@ -105,8 +105,9 @@ struct SetupView: View {
                 .pickerStyle(.segmented)
             }
             // The look: the brand's by default, Glass Cockpit and Chart
-            // Ink kept to pick (the owner, 2026-11-09); a menu, as a
-            // discrete setting is (docs/decisions/0017).
+            // Ink kept to pick (the owner, 2026-11-09), and Native, iOS's
+            // own (2026-11-10); a menu, as a discrete setting is
+            // (docs/decisions/0017).
             Section("Look") {
                 Picker("Look", selection: $look) {
                     ForEach(Look.allCases) { Text($0.label).tag($0.rawValue) }

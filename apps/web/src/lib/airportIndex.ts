@@ -161,6 +161,15 @@ export function useAirportIndex(enabled = true, wanted = false): AirportIndex | 
 let warming: Promise<unknown> | null = null;
 let reading: Promise<AirportIndex> | null = null;
 
+/** The download and the read forgotten, as a page load starts without
+ *  them: for the tests, which each start as a fresh page, without
+ *  importing the whole module graph again (vi.resetModules), which a busy
+ *  run took past the hook's ten seconds to do (2026-11-10). */
+export function forgetAirportIndex() {
+  warming = null;
+  reading = null;
+}
+
 async function read(): Promise<AirportIndex> {
   await warming?.catch(() => {});
   reading = api.airportIndex().then(({ airports }) => indexOf(airports as Entry[]));

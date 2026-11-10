@@ -16,15 +16,14 @@ import XCTest
 final class AIEvaluationsTests: XCTestCase {
     /// The share of samples each metric must pass, at the least. A figure
     /// of the model's own is a safety defect, so every sample must keep to
-    /// the figures. The rest are quality, held where they have got to: on
-    /// the iOS 27.2 simulator (2026-11-09) the NOTAMs' words named what
-    /// each NOTAM does in 2 of 6 samples, then in 4 of 6 once the prompt
-    /// asked for it (Words.swift, OnDeviceWords.instructions(.notams)), 4 of
-    /// 6 again on the re-run, and 5 of 6 once the prompt had the NOTAM's
-    /// contractions spelled out (RWY, TWY, CLSD), so the bar is back at the
-    /// floor. The clearance said back read the same in 13 of 13 samples,
-    /// then 12 of 13.
-    static let floor = EvalBar.quality(device: 0.8, simulator: 0.75)
+    /// the figures. The rest are quality. On a phone they are held where
+    /// they have got to. On the iOS 27.2 simulator, at 30 samples or more
+    /// (EvalBar), five runs on 2026-11-10 gave: the NOTAMs' words named
+    /// what each NOTAM does in 0.60 to 0.77 of samples (30 each), the bar
+    /// 0.5; the clearance said back read the same in 0.79 to 0.90 (39
+    /// each), the bar 0.7, where 0.75 sat within one sample-to-sample
+    /// spread of the lowest run.
+    static let floor = EvalBar.quality(device: 0.8, simulator: 0.7)
     static let namesFloor = EvalBar.quality(device: 0.8, simulator: 0.5)
 
     private func modelOrSkip() throws {
@@ -35,8 +34,7 @@ final class AIEvaluationsTests: XCTestCase {
     func testTheNotamsInWordsKeepToTheNotams() async throws {
         try modelOrSkip()
         guard #available(iOS 27, *) else { return }
-        let evaluation = NotamWordsEvaluation(samples: EvalBar.runs(try NotamWordsEvaluation.samples()))
-        XCTAssertGreaterThanOrEqual(evaluation.samples.count, EvalBar.leastSamples, "too few samples to score")
+        let evaluation = NotamWordsEvaluation(samples: try EvalBar.asked(try NotamWordsEvaluation.samples()))
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
         XCTAssertEqual(result.aggregateValue(.mean(of: NotamWordsEvaluation.noInvented)), 1, result.groupedSummary)
@@ -46,8 +44,7 @@ final class AIEvaluationsTests: XCTestCase {
     func testAClearanceSaidBackReadsTheSame() async throws {
         try modelOrSkip()
         guard #available(iOS 27, *) else { return }
-        let evaluation = ClearanceSaidEvaluation(samples: EvalBar.runs(try ClearanceSaidEvaluation.samples()))
-        XCTAssertGreaterThanOrEqual(evaluation.samples.count, EvalBar.leastSamples, "too few samples to score")
+        let evaluation = ClearanceSaidEvaluation(samples: try EvalBar.asked(try ClearanceSaidEvaluation.samples()))
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
         XCTAssertGreaterThanOrEqual(result.aggregateValue(.mean(of: ClearanceSaidEvaluation.sameReading)), Self.floor, result.groupedSummary)
@@ -63,6 +60,12 @@ final class AIEvaluationsTests: XCTestCase {
         XCTAssertTrue(NotamWordsEvaluation.names("Runway 18/36 at KOSH is closed while you are there.", runway))
         XCTAssertTrue(NotamWordsEvaluation.inventsNothing("Runway 18/36 at KOSH is closed.", runway))
         XCTAssertFalse(NotamWordsEvaluation.inventsNothing("Runway 18/36 is closed for 45 minutes.", runway))
+        // Two samples are too few however often they are asked; a set is
+        // asked over to the simulator's count, each sample alike.
+        XCTAssertThrowsError(try EvalBar.asked(Array(samples.prefix(2))))
+        let asked = try EvalBar.asked(samples)
+        XCTAssertGreaterThanOrEqual(asked.count, EvalBar.onSimulator ? EvalBar.simulatorSamples : samples.count)
+        XCTAssertEqual(asked.count % samples.count, 0)
         let clearances = try ClearanceSaidEvaluation.samples()
         let first = try XCTUnwrap(clearances.first)
         XCTAssertEqual(ClearanceSaidEvaluation.reading(of: first.input), first.expected)
@@ -72,12 +75,18 @@ final class AIEvaluationsTests: XCTestCase {
 /// The quality bars and sample counts the evaluations hold, by where they
 /// run. Apple's on-device model on the simulator is the same model but
 /// answers less steadily than on a phone: on the iOS 27.2 simulator
-/// (2026-11-09) the NOTAMs' words named their matter in 4 of 6 samples
-/// and a remark survived the guard in 1 of 3. So on the simulator each
-/// small set is asked three times over and the quality bars sit where
-/// those runs hold; on a phone the bars are as they were. The safety bar,
-/// no figure of the model's own, is 1 everywhere. A run with too few
-/// samples fails rather than passing on nothing.
+/// (2026-11-09) the NOTAMs' words named their matter in anything from 2 to
+/// 5 of 6 samples, run to run, and a remark survived the guard in 1 to 2
+/// of 3. Scored on so few, a mean moves by a sixth or a third with one
+/// answer, and the bars failed now and then (three runs of 2026-11-09).
+/// So on the simulator every
+/// set is asked over until it has `simulatorSamples`, where one answer
+/// moves the mean by a thirtieth, and each quality bar sits under the
+/// lowest of five such runs (the commit that set them has the runs); on a
+/// phone the sets are asked once and the bars are as they were. The
+/// safety bar, no figure of the model's own, is 1 everywhere, whatever the
+/// sample count. A run with fewer than `leastSamples` fails rather than
+/// passing on nothing.
 enum EvalBar {
     static var onSimulator: Bool {
         #if targetEnvironment(simulator)
@@ -92,11 +101,31 @@ enum EvalBar {
 
     static func quality(device: Double, simulator: Double) -> Double { onSimulator ? simulator : device }
 
-    /// The samples as asked: each three times on the simulator where a
-    /// set is small (under ten), once otherwise.
+    /// The fewest samples a quality score is taken on on the simulator.
+    static let simulatorSamples = 30
+
+    /// The samples as asked: on the simulator the whole set over and over,
+    /// each sample as often as the next, until there are
+    /// `simulatorSamples` of them; once on a phone.
     @available(iOS 27, *)
     static func runs(_ samples: [TextSample]) -> [TextSample] {
-        onSimulator && samples.count < 10 ? samples + samples + samples : samples
+        guard onSimulator, !samples.isEmpty else { return samples }
+        let times = (simulatorSamples + samples.count - 1) / samples.count
+        return Array(repeating: samples, count: times).flatMap { $0 }
+    }
+
+    /// A fixture's samples as asked (`runs`), or an error where it has
+    /// fewer than `leastSamples` of its own: counted before they are asked
+    /// over, so one sample asked thirty times is still too few.
+    @available(iOS 27, *)
+    static func asked(_ samples: [TextSample]) throws -> [TextSample] {
+        guard samples.count >= leastSamples else { throw TooFewSamples(count: samples.count) }
+        return runs(samples)
+    }
+
+    struct TooFewSamples: Error, CustomStringConvertible {
+        let count: Int
+        var description: String { "too few samples to score: \(count), where \(EvalBar.leastSamples) is the least" }
     }
 }
 

@@ -15,7 +15,22 @@ import UIKit
         #expect(Look.standard == .wingtip)
         #expect(Self.hex(Look.wingtip.tint(dark: false)) == 0x0066CC)
         #expect(Self.hex(Look.wingtip.tint(dark: true)) == 0x57A8FF)
-        #expect(Look.allCases.map(\.label) == ["Wingtip", "Glass Cockpit", "Chart Ink"])
+        #expect(Look.allCases.map(\.label) == ["Wingtip", "Glass Cockpit", "Chart Ink", "Native"])
         #expect(Self.hex(Look.cockpit.tint(dark: false)) == 0x00707E)
+    }
+
+    /// Native is iOS's own (the owner, 2026-11-10): the system's blue, label
+    /// and grounds by name, so they follow the appearance and Increase
+    /// Contrast; the states stay the theme's, being aviation's.
+    @Test func theNativeLookIsTheSystemsOwnAndKeepsTheStates() {
+        let light = Look.native.palette(dark: false), dark = Look.native.palette(dark: true)
+        #expect(Look.native.tint(dark: false) == .systemBlue)
+        #expect(light.foreground == .label && light.background == .systemBackground && light.sheet == .systemGroupedBackground)
+        #expect(light.mutedForeground == .secondaryLabel)
+        #expect(Self.hex(light.cautionInk) == Self.hex(WingtipPalette.light.cautionInk))
+        #expect(Self.hex(dark.goInk) == Self.hex(WingtipPalette.dark.goInk))
+        #expect(Self.hex(dark.destructiveInk) == Self.hex(WingtipPalette.dark.destructiveInk))
+        let strip = ChartInk.native(dark: false)
+        #expect(strip.magenta == ChartInk.light.magenta && strip.caution == ChartInk.light.caution)
     }
 }

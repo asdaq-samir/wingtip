@@ -145,27 +145,53 @@ final class AccessibilityAuditTests: XCTestCase {
     /// the pilot sees there: at the pill's or half height the rest of the
     /// sheet is laid out under the screen's foot, and every text there was
     /// reported cut short or faint.
-    /// Dragged from `from` (a fraction of the screen's height inside the
-    /// sheet's top) to near the top.
-    /// Just inside the sheet's top at its two first sizes: the strip's
-    /// pill (132 points, RootView.pill) and the plan's half.
-    private static let pill = 0.9
-    private static let half = 0.53
-
+    ///
+    /// Dragged by the system's own grabber, never by a point of the
+    /// screen: the drag used to start at a fixed fraction of the screen's
+    /// height, and where the sheet opened (at half height, RootView's
+    /// detent, not the pill) that point was inside the strip's content, on
+    /// or near its "Where to?" card. A press there went to the content, the
+    /// sheet stayed down, and the audit read the walkthrough or a sheet
+    /// half under the screen's foot (a run of 2026-11-09). The
+    /// grabber is above everything the sheet holds, and the sheet says when
+    /// it is up: the grabber's value is "Expanded", which the test waits
+    /// for, and then for the sheet to stop moving, rather than sleeping.
+    ///
     /// Not on an iPad, whose full-screen layout has no sheet to raise
     /// (SplitLayout: the plan in the sidebar, the figures over the map):
     /// there the drag only panned the map. It waits instead for the map to
     /// show, past its reveal (ChartMap.revealCap, 2.5 s), so the audit
     /// reads the map and not the loading mark.
     @MainActor
-    private func raiseTheSheet(_ app: XCUIApplication, from: Double) {
+    private func raiseTheSheet(_ app: XCUIApplication) {
         if UIDevice.current.userInterfaceIdiom == .pad {
             sleep(4)
             return
         }
-        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: from))
-        start.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05)))
-        sleep(2)
+        let grabber = app.buttons["Sheet Grabber"]
+        XCTAssertTrue(grabber.waitForExistence(timeout: 20), "the sheet has no grabber to raise it by")
+        if grabber.value as? String != "Expanded" {
+            let top = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05))
+            grabber.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.1, thenDragTo: top)
+        }
+        let up = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "Expanded"), object: grabber)
+        XCTAssertEqual(XCTWaiter().wait(for: [up], timeout: 10), .completed, "the sheet did not come up: \(grabber.value ?? "no value")")
+        settled(grabber)
+    }
+
+    /// Until the element is where it was a quarter of a second before:
+    /// the sheet's spring has stopped, so the audit's screenshot is of
+    /// the sheet at rest.
+    @MainActor
+    private func settled(_ element: XCUIElement) {
+        var last = element.frame
+        for _ in 0..<40 {
+            usleep(250_000)
+            let now = element.frame
+            if now == last { return }
+            last = now
+        }
+        XCTFail("the sheet was still moving after 10 s")
     }
 
     /// The plan, the one search up with its suggestions (what was the
@@ -175,7 +201,7 @@ final class AccessibilityAuditTests: XCTestCase {
         for screen in ["fpl", "airport", "airplane", "setup"] {
             // The layout said, as the simulator keeps the last one picked.
             let app = launch(["-layout", "plan", "-screen", screen])
-            if screen == "fpl" { raiseTheSheet(app, from: Self.half) } else { settle() }
+            if screen == "fpl" { raiseTheSheet(app) } else { settle() }
             try audit(app, screen)
             app.terminate()
         }
@@ -203,10 +229,26 @@ final class AccessibilityAuditTests: XCTestCase {
         sleep(UIDevice.current.userInterfaceIdiom == .pad ? 4 : 2)
     }
 
+    /// The Native look (Look.native: iOS's system blue, labels and grounds)
+    /// held to the same audit as the brand's, on the plan, the search,
+    /// Setup and the strip: the system's blue is Apple's to set, so its
+    /// contrast is measured here, on the screens a pilot sees it on.
+    /// `-look` sets the kept look for the run (the argument domain).
+    @MainActor
+    func testTheNativeLookPassesTheAudit() throws {
+        for (screen, arguments) in [("fpl", ["-layout", "plan", "-screen", "fpl"]), ("airport", ["-layout", "plan", "-screen", "airport"]),
+                                    ("setup", ["-layout", "plan", "-screen", "setup"]), ("strip", ["-layout", "strip"])] {
+            let app = launch(arguments + ["-look", "native"])
+            if screen == "fpl" || screen == "strip" { raiseTheSheet(app) } else { settle() }
+            try audit(app, screen)
+            app.terminate()
+        }
+    }
+
     @MainActor
     func testTheStripPassesTheAudit() throws {
         let app = launch(["-layout", "strip"])
-        raiseTheSheet(app, from: Self.pill)
+        raiseTheSheet(app)
         try audit(app, "strip")
     }
 
@@ -218,7 +260,7 @@ final class AccessibilityAuditTests: XCTestCase {
         let largest = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         for (screen, arguments) in [("strip, largest text", ["-layout", "strip"]), ("fpl, largest text", ["-layout", "plan", "-screen", "fpl"])] {
             let app = launch(arguments + largest)
-            raiseTheSheet(app, from: arguments.contains("strip") ? Self.pill : Self.half)
+            raiseTheSheet(app)
             try audit(app, screen, .all)
             app.terminate()
         }

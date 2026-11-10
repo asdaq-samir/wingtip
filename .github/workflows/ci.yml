@@ -612,7 +612,7 @@ jobs:
                 - scripts/build/engine-contract-apps.*
                 - design/**
                 - scripts/build/design-tokens.sh
-                - scripts/build/design_tokens.py
+                - scripts/build/design_tokens*.py
                 - scripts/build/screens.sh
                 - scripts/build/screens.py
                 - docs/navigation.md

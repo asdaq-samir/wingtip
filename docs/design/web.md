@@ -36,7 +36,9 @@ These hold on every screen below and win over any reference app.
   mobile ([Vercel guidelines][vercel-guidelines]).
 - **Brand tokens from `design/tokens.json` only**: the tint for what is
   tapped, the chart's own colours on the map, `lib/text` for type sizes.
-  The two looks are Glass Cockpit (the default) and Chart Ink.
+  The looks are Wingtip (the default), Glass Cockpit, Chart ink and
+  Native, the browser's own: its system colours (Canvas, CanvasText,
+  LinkText, AccentColor for the ring and form controls) and `system-ui`.
 - **The first load stays under 1.10 MB** (CI's `first-load.mjs --budget
   1100000`). Every screen below except the map, its sheet and the search
   field loads on its own chunk when first opened. A new library for a
