@@ -48,7 +48,7 @@ services:
   # group admits only CloudFront's addresses as well).
   caddy:
     <<: *restart
-    image: caddy:2.10-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
+    image: caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee
     ports: ["80:80", "443:443"]
     environment:
       ORIGIN_HOST: ${ORIGIN_HOST}
@@ -62,9 +62,10 @@ services:
   db:
     <<: *restart
     # Plain Postgres: the pgvector image was for the removed briefing
-    # agent's memory. Bookworm, as pgvector:pg18 was built on, so glibc
-    # (2.36) and with it the text collations of an existing volume match.
-    image: postgres:18-bookworm@sha256:f1ea2a1a4fb7b68d4836be1fdcb8a6466a89b072158bf9d97663600538c294c5
+    # agent's memory. Trixie, the Debian every image here is built on
+    # (2026-11-09). A volume made under bookworm (glibc 2.36) would need its
+    # collation version refreshed once (scripts/dev/pg-refresh-collation.sh).
+    image: postgres:18-trixie@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42
     environment:
       POSTGRES_DB: wingtip
       POSTGRES_USER: wingtip

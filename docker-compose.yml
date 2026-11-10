@@ -188,9 +188,11 @@ services:
   db:
     restart: unless-stopped
     # Plain Postgres: the pgvector image was for the removed briefing
-    # agent's memory. Bookworm, as pgvector:pg18 was built on, so glibc
-    # (2.36) and with it the text collations of an existing volume match.
-    image: postgres:18-bookworm@sha256:f1ea2a1a4fb7b68d4836be1fdcb8a6466a89b072158bf9d97663600538c294c5
+    # agent's memory. Trixie, the Debian every image here is built on
+    # (2026-11-09). A volume made under bookworm (glibc 2.36) needs its
+    # collation version refreshed once for 2.41:
+    # scripts/dev/pg-refresh-collation.sh, which go-live.sh runs.
+    image: postgres:18-trixie@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42
     environment:
       POSTGRES_DB: wingtip
       POSTGRES_USER: wingtip
@@ -462,10 +464,14 @@ services:
   # Set MAIL_HOST and the rest in .env to send real mail instead.
   mailpit:
     restart: unless-stopped
-    image: axllent/mailpit:v1.31.3@sha256:ed9b00c609e77e99c79b93f1178255ebc271868920f2c69a8d166bd5634ed10d
+    image: axllent/mailpit:v1.33.1@sha256:aef2aacc11f075ec0fb6874275ee4a421e688e11a96ebb296134d1735c7761ce
     ports:
       - "${PUBLISH_ADDRESS:-127.0.0.1}:8025:8025"
     environment:
+      # The names the inbox answers to (Mailpit warns at start without a list:
+      # a page elsewhere could reach it by DNS rebinding). An address such
+      # as the phone's Wi-Fi one is always let through.
+      MP_ALLOWED_HOSTS: localhost,mailpit
       # The inbox's password, required once PUBLISH_ADDRESS opens it to
       # the network (the inner :? is read only then); none on loopback.
       MP_UI_AUTH: ${PUBLISH_ADDRESS:+${MAILPIT_UI_AUTH:?set MAILPIT_UI_AUTH=<user>:<password> in .env -- the inbox holds sign-in links}}
@@ -676,7 +682,7 @@ services:
   # UI is published, on loopback.
   jaeger:
     profiles: ["tracing"]
-    image: jaegertracing/jaeger:2.11.0@sha256:b585df1b6299bbbd16bf7c679da30389349736e4b6bc8f4f500142a75bf26ca8
+    image: jaegertracing/jaeger:2.23.0@sha256:3823829974ccfc2485d2e48b165579091f32295022ae80ca49704e2f4834116e
     ports:
       - "127.0.0.1:16686:16686"
     restart: unless-stopped

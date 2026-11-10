@@ -9,7 +9,7 @@ The pgvector image was there for a briefing agent's memory that was removed on 2
 
 ## Decision
 
-The database runs on plain `postgres:18-bookworm`, pinned by digest, locally and in the server's compose file.
+The database runs on plain `postgres:18-trixie` (bookworm until 2026-11-09, when every image moved to one Debian), pinned by digest, locally and in the server's compose file.
 
 ## Consequences
 

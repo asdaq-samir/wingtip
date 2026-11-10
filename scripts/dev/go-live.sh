@@ -82,6 +82,9 @@ for _ in $(seq 1 40); do
   docker compose -p wingtip ps --format '{{.Health}}' | grep -q starting || break
   sleep 15
 done
+# A volume made under the bookworm image warns on every connection until
+# its collation version is refreshed; once, then a no-op.
+scripts/dev/pg-refresh-collation.sh
 docker compose -p wingtip ps --format '{{.Service}}: {{.Status}}'
 host=$(grep -E '^PHONE_BASE_URL=' .env 2>/dev/null | cut -d= -f2-)
 echo "go-live: live at ${host:-https://localhost:8443}/app"

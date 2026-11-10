@@ -85,6 +85,8 @@ PLACES = [
     (IMAGE_FILES, r"\bnode:(\d+(?:\.\d+)*)-", "nodejs", "prefix", None),
     (IMAGE_FILES, r"\bmaven:(\d+(?:\.\d+)*)-", "maven", "prefix", None),
     (IMAGE_FILES, r"\beclipse-temurin[:-](\d+)\b", "java", "exact", None),
+    # One Debian under every image that names its release.
+    (IMAGE_FILES, r"\b(?:python|rust|node|postgres):[\w.]+?-(?:slim-)?(bookworm|bullseye|trixie|forky)\b", "debian", "exact", None),
     # The docs' prose.
     (DOCS, r"\b(?:JDK|Java|Temurin) (\d+)\b", "java", "exact", None),
     (DOCS, r"\bPython (3\.\d+(?:\.\d+)?)\b", "python", "prefix", None),

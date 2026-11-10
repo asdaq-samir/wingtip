@@ -54,7 +54,7 @@ docker compose up -d --build gateway
 docker run --rm -v "$PWD/services/gateway":/build -v /build/target \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
-  -w /build maven:3.9-eclipse-temurin-25 mvn -B test
+  -w /build maven:3.10-eclipse-temurin-25 mvn -B test
 ```
 
 Three details in that command each fix a real failure, not a style
