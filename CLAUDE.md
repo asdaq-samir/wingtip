@@ -167,7 +167,17 @@ without it).
 - **Browser tests** (Playwright, `apps/web/e2e`) need the whole stack:
   write or update the spec for a change a pilot sees, with the code. A
   pull request runs only `@smoke`, one test per journey that proves it end
-  to end; the rest run at night.
+  to end; the rest run at night. A new spec tags its one `@smoke` or is
+  listed in `scripts/ci/test_tiers_nightly.txt`.
+- **CI stays lean** (docs/CI.md, "Rules"; decision 0034): a pull request
+  in about 10 minutes, each check in one tier and run once, only what a
+  change touches, everything cached, newest versions, warnings fatal,
+  pushes batched, and never a timeout raised to get green. Also: no flaky
+  test kept on the PR, no live internet in PR tests, a red night fixed
+  first, CI calling the same scripts as the Mac, every failure named,
+  a rule tested once at the lowest level, least privilege, macOS for iOS
+  only, and small workflows. `rules-boundary` and `CI budget` enforce what
+  a script can check.
 - **On the owner's Mac**, every browser run, suite, image build and
   measurement goes through `scripts/dev/one-at-a-time.sh "<label>"
   <command>` (three at once with the live stack down, two with it up;
