@@ -71,7 +71,7 @@ struct TrafficFindView: View {
                         Text("adsb.lol is busy; asking again…").font(.footnote).foregroundStyle(.secondary)
                     }
                     if failed, asked == wanted {
-                        Text("Couldn't search. Try again in a moment.").font(.footnote).foregroundStyle(.red)
+                        Text("Couldn't search. Try again in a moment.").font(.footnote).foregroundStyle(WingtipInk.problem)
                     } else if asked != wanted || found == nil, listed.isEmpty {
                         Skeleton(rows: 2, label: "Fetching \(wanted)")
                     }

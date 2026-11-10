@@ -165,7 +165,7 @@ struct TrainingView: View {
                         Text(Endorsing.route(review)).font(.headline.monospaced())
                         Text("\(Day.said(review.flightOn)) · \(review.makeModel) · \(Endorsing.state(review))").font(.footnote).foregroundStyle(.secondary)
                         ForEach(Array(review.checks.enumerated()), id: \.offset) { _, check in
-                            Label(check.label, systemImage: check.met ? "checkmark.circle.fill" : "xmark.circle").font(.footnote).foregroundStyle(check.met ? Color.green : Color.red)
+                            Label(check.label, systemImage: check.met ? "checkmark.circle.fill" : "xmark.circle").font(.footnote).foregroundStyle(check.met ? WingtipInk.go : WingtipInk.problem)
                         }
                         if review.answeredAt == nil {
                             Button("Take Back") { Task { await act { try await Gateway.withdrawReview(review.id) } } }.buttonStyle(.borderless).font(.footnote)
@@ -222,7 +222,7 @@ struct ExperienceSection: View {
                             Text(item.label)
                             Text(item.rule)
                         } icon: {
-                            Image(systemName: item.met ? "checkmark.circle.fill" : "circle").foregroundStyle(item.met ? Color.green : Color.secondary)
+                            Image(systemName: item.met ? "checkmark.circle.fill" : "circle").foregroundStyle(item.met ? WingtipInk.go : Color.secondary)
                         }
                     }
                 }
@@ -237,7 +237,7 @@ struct GoodToText: View {
 
     var body: some View {
         let good = Day.current(until)
-        Text(good ? "Good to \(Day.said(until))" : "Ran out \(Day.said(until))").foregroundStyle(good ? Color.secondary : Color.red)
+        Text(good ? "Good to \(Day.said(until))" : "Ran out \(Day.said(until))").foregroundStyle(good ? Color.secondary : WingtipInk.problem)
     }
 }
 

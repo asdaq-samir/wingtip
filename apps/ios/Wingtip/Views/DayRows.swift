@@ -38,7 +38,7 @@ struct StandingText: View {
     var body: some View {
         if let through {
             let current = Day.current(through)
-            Text("\(current ? good : past) \(Day.said(through))").foregroundStyle(current ? Color.green : Color.red)
+            Text("\(current ? good : past) \(Day.said(through))").foregroundStyle(current ? WingtipInk.go : WingtipInk.problem)
         }
     }
 }

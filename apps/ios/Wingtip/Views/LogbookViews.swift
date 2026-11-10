@@ -15,11 +15,11 @@ struct UntilText: View {
         if current, let from, from > Day.today() {
             Text("From \(Day.said(from))")
                 .monospacedDigit()
-                .foregroundStyle(Color.orange)
+                .foregroundStyle(WingtipInk.caution)
         } else {
             Text(date.map { current ? "To \(Day.said($0))" : "Ended \(Day.said($0))" } ?? "Not current")
                 .monospacedDigit()
-                .foregroundStyle(current ? Color.green : Color.red)
+                .foregroundStyle(current ? WingtipInk.go : WingtipInk.problem)
         }
     }
 }
@@ -226,7 +226,7 @@ struct LogbookView: View {
         Section(title: "Instrument") {
             LabeledContent {
                 if let after = currency?.ipcNeededAfter, after < Day.today() {
-                    Text("IPC needed").foregroundStyle(.red)
+                    Text("IPC needed").foregroundStyle(WingtipInk.problem)
                 } else {
                     UntilText(date: currency?.instrumentCurrentUntil, from: currency?.instrumentCurrentFrom)
                 }

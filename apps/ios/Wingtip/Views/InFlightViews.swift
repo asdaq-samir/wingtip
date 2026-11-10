@@ -29,7 +29,7 @@ struct DiversionView: View {
                         NavigationLink { AirportCard(ident: field.ident).closesBack().zoomsFrom(field.ident) } label: { NearestRow(field: field).cardSource(field.ident) }
                     }
                     .swipeActions(edge: .leading) {
-                        Button("Divert") { divert(field.ident) }.tint(.orange)
+                        Button("Divert") { divert(field.ident) }.tint(WingtipInk.caution)
                     }
                     .contextMenu {
                         Button { divert(field.ident) } label: { Label("Divert to \(field.ident)", systemImage: "arrow.uturn.right") }
@@ -543,7 +543,7 @@ struct WatchBanner: View {
             // A watch that could not be checked says so where it would
             // have gone off, rather than staying quiet.
             Label(problem, systemImage: "exclamationmark.triangle")
-                .font(.subheadline).foregroundStyle(.orange).lineLimit(2)
+                .font(.subheadline).foregroundStyle(WingtipInk.caution).lineLimit(2)
                 .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
                 .floatingGlass(in: Capsule())
         }

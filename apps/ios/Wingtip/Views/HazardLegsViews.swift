@@ -70,7 +70,7 @@ struct LayerAgesRows: View {
             // where the pilot reads each source's age.
             ForEach(BriefLegs.staleSources(ages), id: \.name) { source in
                 LabeledContent(source.name) {
-                    Text(BriefLegs.staleWords(AirportWords.date(source.fetchedAt), now: now)).foregroundStyle(.orange)
+                    Text(BriefLegs.staleWords(AirportWords.date(source.fetchedAt), now: now)).foregroundStyle(WingtipInk.caution)
                 }
             }
         }

@@ -80,7 +80,7 @@ struct PlanView: View {
                 // stops themselves are the route line's "Your Route" chip.
                 ForEach(plan.totals?.fuelStops ?? []) { suggestion in
                     Label("\(suggestion.departure) → \(suggestion.destination) needs fuel on the way", systemImage: "fuelpump")
-                        .font(WingtipType.detail.weight(.semibold)).foregroundStyle(.orange)
+                        .font(WingtipType.detail.weight(.semibold)).foregroundStyle(WingtipInk.caution)
                 }
                 if plan.routed {
                     RouteBoxRow(altitude: $altitude, focused: $focused, open: open, fly: flyAltitude)

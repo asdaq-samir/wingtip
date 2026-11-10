@@ -26,7 +26,7 @@ struct ClearanceStepsRow: View {
                 Text("\(i + 1) \(part.name)")
                     .font(.caption)
                     .fontWeight(part.standing == .later ? .regular : .semibold)
-                    .foregroundStyle(part.standing == .done ? Color.green : part.standing == .now ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(part.standing == .done ? WingtipInk.go : part.standing == .now ? Color.accentColor : Color.secondary)
                     .frame(maxWidth: .infinity)
                     .accessibilityLabel("\(part.name), \(part.standing == .done ? "done" : part.standing == .now ? "now" : "to come")")
             }
@@ -57,7 +57,7 @@ struct ClearanceReadbackSection: View {
                             Text(line.words)
                         } icon: {
                             Image(systemName: line.ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                                .foregroundStyle(line.ok ? Color.green : Color.orange)
+                                .foregroundStyle(line.ok ? WingtipInk.go : WingtipInk.caution)
                                 .accessibilityLabel(line.ok ? "Read back" : "Differs")
                         }
                         .accessibilityElement(children: .combine)
@@ -81,12 +81,12 @@ struct ClearanceCompareSection: View {
                     : Text("Differs from what you filed: ").bold() + Text(difference.words)
             } icon: {
                 Image(systemName: difference.same ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                    .foregroundStyle(difference.same ? Color.green : Color.orange)
+                    .foregroundStyle(difference.same ? WingtipInk.go : WingtipInk.caution)
                     .accessibilityLabel(difference.same ? "As filed" : "Differs")
             }
             .accessibilityElement(children: .combine)
         }
-        .listRowBackground(difference.same ? nil : Color.orange.opacity(0.12))
+        .listRowBackground(difference.same ? nil : WingtipInk.caution.opacity(0.12))
     }
 }
 

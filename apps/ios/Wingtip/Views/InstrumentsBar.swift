@@ -50,7 +50,7 @@ struct InstrumentsBar: View {
                     }
                 }
                 if let problem = flight.problem {
-                    Text(problem).font(.footnote).foregroundStyle(.orange).lineLimit(3)
+                    Text(problem).font(.footnote).foregroundStyle(WingtipInk.caution).lineLimit(3)
                 }
                 HStack(alignment: .center, spacing: WingtipSpace.sm) {
                     Button { nearest = true } label: {
@@ -96,7 +96,7 @@ struct InstrumentsBar: View {
             // The engine could not say whether the airplane is flying: said
             // where the bar would be, not hidden as if on the ground.
             Label(problem, systemImage: "exclamationmark.triangle")
-                .font(.footnote).foregroundStyle(.orange)
+                .font(.footnote).foregroundStyle(WingtipInk.caution)
                 .padding(WingtipSpace.md)
                 .floatingGlass(in: floatingCard)
                 .padding(.horizontal, WingtipSpace.md)

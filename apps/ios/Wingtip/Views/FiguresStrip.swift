@@ -114,7 +114,7 @@ private struct StripFigure: View {
         // names stay set apart by their size.
         let nameWeight: Font.Weight = onGlass ? .semibold : .regular
         let nameInk = onGlass ? AnyShapeStyle(WingtipInk.text) : AnyShapeStyle(.secondary)
-        let valueInk = warn ? (onGlass ? WingtipInk.problem : Color.red) : (onGlass ? WingtipInk.text : Color.primary)
+        let valueInk = warn ? (onGlass ? WingtipInk.problem : WingtipInk.problem) : (onGlass ? WingtipInk.text : Color.primary)
         layout {
             Text(name).font(.caption2.weight(nameWeight)).foregroundStyle(nameInk)
             if size.isAccessibilitySize { Spacer(minLength: 0) }

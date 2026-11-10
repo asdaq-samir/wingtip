@@ -47,7 +47,7 @@ struct WeatherLoopBar: View {
                             Spacer(minLength: 0)
                             Text(time.old ? "Old: \(time.age)" : time.age)
                                 .fontWeight(time.old ? .semibold : .regular)
-                                .foregroundStyle(time.old ? Color.red : Color.secondary)
+                                .foregroundStyle(time.old ? WingtipInk.problem : Color.secondary)
                         }
                         .font(.caption)
                         .monospacedDigit()

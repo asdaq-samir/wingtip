@@ -42,8 +42,8 @@ struct ClearanceCraftSection: View {
     }
 
     private func placeText(_ place: ClearancePlaces.Place) -> Text {
-        guard let ident = place.ident else { return Text("“\(place.said)”?").foregroundStyle(.red) }
-        return place.sure == true ? Text(ident) : Text("\(ident)?").foregroundStyle(.orange)
+        guard let ident = place.ident else { return Text("“\(place.said)”?").foregroundStyle(WingtipInk.problem) }
+        return place.sure == true ? Text(ident) : Text("\(ident)?").foregroundStyle(WingtipInk.caution)
     }
 
     private var routeText: Text {
