@@ -72,7 +72,7 @@ fun BriefSheet(model: BriefModel, plan: Plan.State, signedIn: Boolean, onClose: 
     val route = (listOf(plan.dep) + plan.stops + plan.dest).filter { it.isNotBlank() }.joinToString(" → ").ifEmpty { null }
     FlexibleSheet(title = stringResource(R.string.brief), onClose = onClose, subtitle = route, large = true) { padding ->
         // A pull asks the planner again, the weather in it being live; the
-        // brief is cleared as it is asked, so its skeleton shows the fetch.
+        // brief is cleared as it is asked, so its loading indicator shows the fetch.
         PullToRefreshBox(isRefreshing = false, onRefresh = { model.refresh(plan) }, modifier = Modifier.padding(padding)) {
             Column(
                 Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
