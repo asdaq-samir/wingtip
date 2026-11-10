@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { SetURLSearchParams } from "react-router-dom";
+import type { SetURLSearchParams } from "react-router";
 import type { AltitudeChoice } from "../../../lib/api/types";
 import { altitudesParam, groundOf, positionIdent, stopsOf } from "../../../lib/identSchema";
 import { useOwnShip } from "../../../lib/map/position/ownShip";

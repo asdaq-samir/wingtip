@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { SetURLSearchParams } from "react-router-dom";
+import type { SetURLSearchParams } from "react-router";
 import type { Detour, ProcedureDrawing } from "../../../lib/api/types";
 import { fieldListParams, fieldListsOf, prunedFieldLists } from "../lib/fieldLists";
 import { MAX_STOPS, altitudesOf, altitudesParam, departureOf, identOf, routeOf, stopsOf } from "../../../lib/identSchema";

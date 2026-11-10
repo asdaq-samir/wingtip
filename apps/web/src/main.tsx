@@ -3,7 +3,8 @@
 import "./features/shell/storageRename";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { createBrowserRouter, Navigate, redirect, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Navigate, redirect } from "react-router";
+import { RouterProvider } from "react-router/dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { chartQuery, courseQuery, overlayTilesQuery, queryClient } from "./lib/queryClient";

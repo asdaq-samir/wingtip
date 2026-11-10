@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { SetURLSearchParams } from "react-router-dom";
+import type { SetURLSearchParams } from "react-router";
 import { FIELD_LIST_KEYS, fieldListParams, fieldListsOf, prunedFieldLists } from "../lib/fieldLists";
 import { identOf } from "../../../lib/identSchema";
 import { sameField } from "../../../lib/procedures";

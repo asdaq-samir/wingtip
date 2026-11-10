@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import type { SetURLSearchParams } from "react-router-dom";
+import type { SetURLSearchParams } from "react-router";
 import { patternsOf, patternsParam } from "../../../lib/trafficPattern";
 import { patched } from "../../../lib/useSearchParamsNow";
 import { NO_AUTO, autoOf } from "./planAddress";

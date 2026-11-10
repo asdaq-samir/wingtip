@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Route } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { PillStrip, SmallMark, SmallTile, StripNote, StripSection } from "../../../components/Favorites";
 import { planHrefOf } from "../../../lib/flightLink";
 import { placeOfPoint } from "../../../lib/identSchema";

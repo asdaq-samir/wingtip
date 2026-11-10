@@ -255,7 +255,7 @@ wires them, may name any. Every way a module is named counts: `import`,
 
 ## Architecture
 
-**Routing.** `main.tsx` builds a `react-router-dom` browser router with
+**Routing.** `main.tsx` builds a `react-router` browser router with
 one lazy-loaded route per page and `basename: "/app"`. Deep links and a
 hard refresh work because `gateway`'s `WebMvcConfig` serves `index.html`
 for any `/app/**` path that is not a real file.

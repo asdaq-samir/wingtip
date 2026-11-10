@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import type { SetURLSearchParams } from "react-router-dom";
+import type { SetURLSearchParams } from "react-router";
 import type { PanelState } from "../../../lib/mapChrome";
 import { useIsMobile } from "../../../hooks/use-mobile";
 import { useNavEdge } from "../../../hooks/use-nav-edge";

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useEffectEvent } from "react";
-import type { SetURLSearchParams } from "react-router-dom";
+import type { SetURLSearchParams } from "react-router";
 import type { PanelState } from "../../../lib/mapChrome";
 import { takePlace, useWanted } from "../../../lib/navigation/wanted";
 import { patched } from "../../../lib/useSearchParamsNow";

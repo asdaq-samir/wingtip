@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 import { capabilitiesQuery, pilotQuery } from "../lib/queryClient";
 
 /** The route the two pages share -- dep, dest, altitude -- carried

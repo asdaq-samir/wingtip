@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import type { SetURLSearchParams } from "react-router-dom";
+import type { SetURLSearchParams } from "react-router";
 import { create } from "zustand";
 import { observed, planStateOf, redone, restored, started, undone, type PlanHistory } from "./planHistory";
 

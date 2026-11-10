@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { SetURLSearchParams } from "react-router-dom";
+import type { SetURLSearchParams } from "react-router";
 import { useWantedPage } from "../../../components/wantedPage";
 import { openEmergency } from "../../../lib/emergencyStore";
 import { useConsoleOpen, type PanelState } from "../../../lib/mapChrome";

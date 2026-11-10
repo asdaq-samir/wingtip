@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { History, Share, Trash2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { cn } from "cn";
 import { ListPageHead, PillStrip, SmallMark, SmallTile, StripNote } from "../../../components/Favorites";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
