@@ -52,6 +52,14 @@ async function cardWeather(
   );
 }
 
+test("the departure's own card says no distance from itself while the pilot's position is not known", async ({ page }) => {
+  await page.goto("/app/plan?dep=C81&dest=KDLH&place=C81");
+  await settle(page);
+  // Its elevation alone: no "here of C81", as the phones said no "From
+  // KMSN 0 nm" (PlaceCard's subtitleOf).
+  await expect(card(page).getByTestId("place-line")).toHaveText(/^Elevation [\d,]+ ft$/);
+});
+
 test("an airport's card has the field's pictures across its top, its ident over them, how far it is, its actions, its tabs right under them and the weather there", async ({
   page,
 }) => {
