@@ -1,13 +1,17 @@
 package app.wingtipmaps.android.ui
 
 import android.content.Context
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -24,6 +28,7 @@ import app.wingtipmaps.android.design.generated.WingtipPalette
 import app.wingtipmaps.android.design.generated.WingtipPalettes
 import app.wingtipmaps.android.design.generated.WingtipRadius
 import app.wingtipmaps.android.design.generated.WingtipTypography
+import app.wingtipmaps.android.design.generated.nativePalette
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,18 +36,24 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * The app's looks, as Setup's Theme offers them on every app: Wingtip,
  * the brand's own blue, first and the default (the owner, 2026-11-09);
- * Glass Cockpit and Chart ink beside it. Each is a pair of palettes from
- * design/tokens.json, by day and by night.
+ * Glass Cockpit and Chart ink beside it; and Native, Android's own
+ * Material You (2026-11-10). Each is a pair of palettes from
+ * design/tokens.json, by day and by night; Native's names system roles,
+ * which nativeScheme and nativePalette fill from the phone.
  */
 enum class Look(val key: String, val label: String) {
     WINGTIP("wingtip", "Wingtip"),
     COCKPIT("cockpit", "Glass Cockpit"),
-    INK("ink", "Chart Ink");
+    INK("ink", "Chart Ink"),
+    NATIVE("native", "Native");
 
+    /** The look's palette; Native's system roles are unspecified here
+     *  until nativePalette fills them from a Material scheme. */
     fun palette(dark: Boolean): WingtipPalette = when (this) {
         WINGTIP -> if (dark) WingtipPalettes.Dark else WingtipPalettes.Light
         COCKPIT -> if (dark) WingtipPalettes.CockpitDark else WingtipPalettes.CockpitLight
         INK -> if (dark) WingtipPalettes.InkDark else WingtipPalettes.InkLight
+        NATIVE -> if (dark) WingtipPalettes.NativeDark else WingtipPalettes.NativeLight
     }
 
     companion object {
@@ -157,6 +168,17 @@ val WingtipShapes = Shapes(
 )
 
 /**
+ * The Native look's Material scheme: Material You's, from the wallpaper,
+ * on Android 12 (API 31) and later, which made dynamic colour; Material's
+ * own baseline before it.
+ */
+fun nativeScheme(context: Context, dark: Boolean): ColorScheme = when {
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    dark -> darkColorScheme()
+    else -> lightColorScheme()
+}
+
+/**
  * The one Wingtip Material theme, for both layouts: Material 3
  * Expressive's own theme (MaterialExpressiveTheme), so every stock
  * component -- switches, tabs, menus, sliders, sheets, buttons -- moves on
@@ -165,21 +187,25 @@ val WingtipShapes = Shapes(
  * tokens' type roles (their emphasized twins included) and shapes.
  * Under Remove animations nothing springs: Compose runs every animation
  * on the window's animator duration scale, which that switch sets to 0,
- * so each finishes at once. Material You stays off: the brand's blue is
- * the tint, where the wallpaper's colours would put a tappable thing in
- * whatever colour the wallpaper was.
+ * so each finishes at once. Material You is the Native look's alone: in
+ * the others the look's tint is the tint, where the wallpaper's colours
+ * would put a tappable thing in whatever colour the wallpaper was. Native
+ * takes Material's own scheme, type scale and shapes whole; the states
+ * and the chart's inks stay the theme's in it (LocalWingtipPalette,
+ * LocalInk), being aviation's.
  */
 @Composable
 fun WingtipTheme(content: @Composable () -> Unit) {
     val dark = isSystemInDarkTheme()
     val look = rememberLook().value ?: Look.WINGTIP
-    val palette = look.palette(dark)
+    val scheme = if (look == Look.NATIVE) nativeScheme(LocalContext.current, dark) else null
+    val palette = scheme?.let { nativePalette(it, dark) } ?: look.palette(dark)
     CompositionLocalProvider(LocalWingtipPalette provides palette, LocalInk provides InkColors.of(palette, dark)) {
         MaterialExpressiveTheme(
-            colorScheme = palette.materialScheme(dark),
+            colorScheme = scheme ?: palette.materialScheme(dark),
             motionScheme = MotionScheme.expressive(),
-            typography = WingtipTypography,
-            shapes = WingtipShapes,
+            typography = if (scheme != null) Typography() else WingtipTypography,
+            shapes = if (scheme != null) Shapes() else WingtipShapes,
             content = content,
         )
     }

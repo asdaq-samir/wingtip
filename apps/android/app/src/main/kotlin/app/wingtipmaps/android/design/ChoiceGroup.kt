@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import app.wingtipmaps.android.design.generated.WingtipSize
 
@@ -58,7 +59,15 @@ fun <T> ChoiceGroup(
                 colors = colors,
             ) {
                 val type = MaterialTheme.typography
-                Text(label, style = if (checked) type.labelLargeEmphasized else type.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                // Two lines where a choice's name is long for its share of
+                // the row (Setup's four looks), never cut short.
+                Text(
+                    label,
+                    style = if (checked) type.labelLargeEmphasized else type.labelLarge,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                )
             }
         }
     }

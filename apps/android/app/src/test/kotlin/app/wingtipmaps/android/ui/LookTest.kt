@@ -1,10 +1,13 @@
 package app.wingtipmaps.android.ui
 
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipPalettes
+import app.wingtipmaps.android.design.generated.nativePalette
 import app.wingtipmaps.android.flight.Geo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -34,6 +37,33 @@ class LookTest {
         assertEquals(Color(0xFF0066CC), Look.WINGTIP.palette(dark = false).tint)
         // A look with no inks of its own takes Chart ink's.
         assertEquals(WingtipPalettes.InkLight.inkBrown, InkColors.of(WingtipPalettes.Light, dark = false).brown)
+    }
+
+    @Test
+    fun nativeIsMaterialsOwnSchemeAndKeepsTheStates() {
+        for (dark in listOf(false, true)) {
+            // Material's baseline, the scheme before Android 12; Material
+            // You's from the wallpaper has its surfaces at the same tones.
+            val scheme = if (dark) darkColorScheme() else lightColorScheme()
+            val native = nativePalette(scheme, dark)
+            val theme = Look.WINGTIP.palette(dark)
+            assertEquals(scheme.primary, native.tint)
+            assertEquals(scheme.onSurface, native.foreground)
+            assertEquals(scheme.surface, native.sheet)
+            // The states and the course are aviation's, the same in every look.
+            assertEquals(theme.caution, native.caution)
+            assertEquals(theme.goInk, native.goInk)
+            assertEquals(theme.destructiveInk, native.destructiveInk)
+            assertEquals(theme.course, native.course)
+            // Their words 4.5:1 and more on Material's grounds (WCAG 1.4.3).
+            for (ground in listOf(scheme.surface, scheme.background, scheme.surfaceContainerLow)) {
+                for (words in listOf(native.cautionInk, native.goInk, native.destructiveInk, native.caution)) {
+                    val ratio = contrast(words, ground)
+                    assertTrue("dark=$dark $ratio:1", ratio >= 4.5)
+                }
+            }
+        }
+        assertEquals(Look.NATIVE, Look.of("native"))
     }
 
     @Test
