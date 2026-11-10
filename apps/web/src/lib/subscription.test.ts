@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Subscription } from "./api/types";
-import { entitlementOf, mayUse, standing, unsoldEntitlement, usesLeft } from "./subscription";
+import { claudeOn, deploymentEntitlement, entitlementOf, mayUse, standing, unsoldEntitlement, usesLeft } from "./subscription";
 
 const sub = (over: Partial<Subscription>): Subscription => ({
   state: "FREE",
@@ -66,5 +66,33 @@ describe("where no subscription is sold", () => {
     expect(unsoldEntitlement("ORAL", "DEVELOPERS", true, true)).toEqual({ kind: "open" });
     expect(unsoldEntitlement("CHECKPOINT_NOTES", "OFF", true, true)).toEqual({ kind: "hidden" });
     expect(unsoldEntitlement("NARRATIVE", "EVERYONE", undefined, false)).toEqual({ kind: "loading" });
+  });
+});
+
+describe("the features Claude writes, off by default (the owner, 2026-11-10)", () => {
+  const caps = (claudeFeatures: "OFF" | "DEVELOPERS" | "EVERYONE", access: "OPEN" | "SIGN_IN" = "SIGN_IN", subscriptions = false) =>
+    ({ access, subscriptions, claudeFeatures }) as const;
+
+  it("is on only where the deployment says so", () => {
+    expect(claudeOn(undefined, true)).toBe(false);
+    expect(claudeOn("OFF", true)).toBe(false);
+    expect(claudeOn("DEVELOPERS", false)).toBe(false);
+    expect(claudeOn("DEVELOPERS", true)).toBe(true);
+    expect(claudeOn("EVERYONE", false)).toBe(true);
+  });
+
+  it("hides them while off, over one's own machine and a sold subscription, but not the debrief", () => {
+    expect(deploymentEntitlement("ASSISTANT", caps("OFF", "OPEN"), undefined, false, undefined, false)).toEqual({ kind: "hidden" });
+    expect(
+      deploymentEntitlement("NARRATIVE", caps("OFF", "SIGN_IN", true), true, true, sub({ state: "COMPED", entitled: true }), false),
+    ).toEqual({ kind: "hidden" });
+    expect(deploymentEntitlement("DEBRIEF", caps("OFF", "OPEN"), undefined, false, undefined, false)).toEqual({ kind: "open" });
+    expect(deploymentEntitlement("NARRATIVE", caps("EVERYONE", "OPEN"), undefined, false, undefined, false)).toEqual({ kind: "open" });
+  });
+
+  it("asks for nothing before the deployment is known", () => {
+    const unknown = deploymentEntitlement("NARRATIVE", undefined, true, true, undefined, false);
+    expect(unknown).toEqual({ kind: "loading" });
+    expect(mayUse(unknown)).toBe(false);
   });
 });

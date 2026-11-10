@@ -29,14 +29,16 @@ struct HandbookPhotoSection: View {
 
     var body: some View {
         Section {
-            Menu {
-                ForEach([DocumentKind.pohPerformance, .weightBalance], id: \.self) { kind in
-                    Button(kind.label) { model.kind = kind; photographing = true }
+            if DocumentReader.offered {
+                Menu {
+                    ForEach([DocumentKind.pohPerformance, .weightBalance], id: \.self) { kind in
+                        Button(kind.label) { model.kind = kind; photographing = true }
+                    }
+                } label: {
+                    Label("Add from a Photo", systemImage: "doc.viewfinder")
                 }
-            } label: {
-                Label("Add from a Photo", systemImage: "doc.viewfinder")
+                .disabled(model.reader.reading)
             }
-            .disabled(model.reader.reading)
             if model.reader.reading { ReadingRow() }
             ProblemLine(model.reader.problem)
             if pending != nil {

@@ -103,19 +103,23 @@ struct AskView: View {
         VStack(alignment: .leading, spacing: WingtipSpace.sm) {
             Text("Ask about the flight")
                 .font(.title3.weight(.semibold))
-            Text("The figures are the planner's; the assistant puts them in words and shows what it read.")
+            Text("The figures are the engine's and the planner's; each answer shows what it read.")
                 .font(.footnote).foregroundStyle(.secondary)
-            // The first chip, as on the web: the trip planner.
-            Button { trip = TripPlanner() } label: {
-                HStack {
-                    Text("Plan a trip…")
-                    Spacer()
-                    Image(systemName: "map").accessibilityHidden(true)
+            // The first chip, as on the web: the trip planner, which is
+            // Claude's (the assistant's) with no free path, so not offered
+            // while the server's Claude features are off (ServerFeatures).
+            if ServerFeatures.shared.claudeOn {
+                Button { trip = TripPlanner() } label: {
+                    HStack {
+                        Text("Plan a trip…")
+                        Spacer()
+                        Image(systemName: "map").accessibilityHidden(true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, WingtipSpace.sm)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, WingtipSpace.sm)
+                .contentShape(Rectangle().inset(by: -6))
             }
-            .contentShape(Rectangle().inset(by: -6))
             ForEach(Self.suggestions, id: \.self) { words in
                 Button { send(words) } label: {
                     HStack {

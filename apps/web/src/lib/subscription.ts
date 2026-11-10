@@ -1,7 +1,7 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { api } from "./api/client";
-import type { ClaudeFeatures, PaidFeature, Subscription } from "./api/types";
-import { capabilitiesQuery, pilotQuery } from "./queryClient";
+import type { SignInCapabilities, ClaudeFeatures, PaidFeature, Subscription } from "./api/types";
+import { capabilitiesQuery, pilotQuery, queryClient } from "./queryClient";
 
 /**
  * The subscription to the paid features, as the page shows it: the
@@ -61,8 +61,8 @@ export function entitlementOf(
  * Where no subscription is sold (the proof of concept, at the owner's
  * ask: "no mention of it at all"): the debrief, which costs nothing a use,
  * is everyone's; what Claude writes is whoever the deployment says --
- * every pilot signed in by default ("I can offer the AI features to users
- * with an account"), the developers, or nobody, the rest not told of it.
+ * nobody by default (the owner, 2026-11-10, {@link claudeOn}), the
+ * developers, or every pilot signed in -- the rest not told of it.
  */
 export function unsoldEntitlement(
   feature: PaidFeature,
@@ -77,18 +77,65 @@ export function unsoldEntitlement(
   return signedIn ? { kind: "open" } : { kind: "signed-out" };
 }
 
+/**
+ * Whether the features Claude writes are on here for this pilot, from the
+ * deployment's app.claude-features alone: off by default, and off until
+ * the capabilities are known, so nothing is asked of the assistant on a
+ * guess. The owner, 2026-11-10: "To keep the cost low, we only add the
+ * claude feature later when we decide about subscription model. For now
+ * just the free siri and gemini." The gateway refuses each assistant route
+ * while off, even on one's own machine; this keeps the page from asking.
+ */
+export function claudeOn(claude: ClaudeFeatures | undefined, developer: boolean): boolean {
+  if (claude === "EVERYONE") return true;
+  if (claude === "DEVELOPERS") return developer;
+  return false;
+}
+
+/** {@link claudeOn} for the page's pilot: for a feature Claude writes that
+ *  has no paid feature of its own name (Ask, the trip planner). */
+export function useClaudeOn(): boolean {
+  const capabilities = useQuery(capabilitiesQuery).data;
+  const pilot = useQuery(pilotQuery);
+  return claudeOn(capabilities?.claudeFeatures, capabilities?.access === "OPEN" || !!pilot.data?.developer);
+}
+
+/** {@link claudeOn} as the page knows it now, for a store outside React
+ *  (lib/ask): the last guard before a question would go to the assistant. */
+export function claudeOnNow(): boolean {
+  const capabilities = queryClient.getQueryData(capabilitiesQuery.queryKey);
+  const developer = capabilities?.access === "OPEN" || !!queryClient.getQueryData(pilotQuery.queryKey)?.developer;
+  return claudeOn(capabilities?.claudeFeatures, developer);
+}
+
 /** The pilot's entitlement to a paid feature (a Claude-written one where
- *  none is named). */
+ *  none is named). The features Claude writes are hidden while
+ *  app.claude-features is OFF, whoever is signed in and whatever is sold
+ *  ({@link claudeOn}); the debrief, measured by the engine, is not one. */
 export function useEntitlement(feature: PaidFeature = "NARRATIVE"): Entitlement {
   const capabilities = useQuery(capabilitiesQuery).data;
   const pilot = useQuery(pilotQuery);
   const signedIn = pilot.isPending ? undefined : !!pilot.data;
   const sold = capabilities?.subscriptions !== false;
   const subscription = useQuery({ ...subscriptionQuery, enabled: !!pilot.data && !!capabilities && sold });
-  if (capabilities?.access === "OPEN") return { kind: "open" };
+  return deploymentEntitlement(feature, capabilities, signedIn, !!pilot.data?.developer, subscription.data, subscription.isError);
+}
+
+/** {@link useEntitlement}'s answer from what it has read: loading until
+ *  the deployment's capabilities are known, then OFF before all else. */
+export function deploymentEntitlement(
+  feature: PaidFeature,
+  capabilities: Pick<SignInCapabilities, "access" | "subscriptions" | "claudeFeatures"> | undefined,
+  signedIn: boolean | undefined,
+  developer: boolean,
+  subscription: Subscription | undefined,
+  failed: boolean,
+): Entitlement {
   if (!capabilities) return { kind: "loading" };
-  if (!sold) return unsoldEntitlement(feature, capabilities.claudeFeatures, signedIn, !!pilot.data?.developer);
-  return entitlementOf(capabilities.access, signedIn, subscription.data, subscription.isError);
+  if (feature !== "DEBRIEF" && capabilities.claudeFeatures === "OFF") return { kind: "hidden" };
+  if (capabilities.access === "OPEN") return { kind: "open" };
+  if (capabilities.subscriptions === false) return unsoldEntitlement(feature, capabilities.claudeFeatures, signedIn, developer);
+  return entitlementOf(capabilities.access, signedIn, subscription, failed);
 }
 
 /** Whether this deployment sells the subscription: where not, the

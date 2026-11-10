@@ -7,6 +7,7 @@ import { Spinner } from "./ui/spinner";
 import { readPage } from "../lib/documentPhoto";
 import { FINDING_TONE } from "../lib/findings";
 import { TEXT } from "../lib/text";
+import { useClaudeOn } from "../lib/subscription";
 
 /**
  * The clearance card's "From a Photo": a clearance or ATIS copied down on
@@ -14,8 +15,14 @@ import { TEXT } from "../lib/text";
  * beside the note as written; "Use It" puts the words where a clearance
  * is typed, for the card's own reader (the engine's read_clearance) to
  * read as it reads a typed one. Nothing is entered in the plan from here.
+ * Claude reads the photo, so this is not offered while the deployment keeps
+ * Claude off (lib/subscription, the owner's decision of 2026-11-10).
  */
-export default function ClearancePhoto({ onRead }: { onRead: (said: string) => void }) {
+export default function ClearancePhoto(props: { onRead: (said: string) => void }) {
+  return useClaudeOn() ? <ReadClearancePhoto {...props} /> : null;
+}
+
+function ReadClearancePhoto({ onRead }: { onRead: (said: string) => void }) {
   const input = useRef<HTMLInputElement>(null);
   const reading = useMutation({ mutationFn: (photo: Blob) => readPage("clearance", photo) });
   const note = reading.data?.clearance;

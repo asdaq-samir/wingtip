@@ -73,7 +73,8 @@ async function sold(page: Page, change: Record<string, unknown>) {
     (url) => url.pathname === "/api/auth/capabilities",
     async (route) => {
       const real = await (await route.fetch()).json();
-      await route.fulfill({ json: { ...real, ...change } });
+      // Claude on unless a test says otherwise: it is off by default (./claude).
+      await route.fulfill({ json: { ...real, claudeFeatures: "EVERYONE", ...change } });
     },
   );
 }

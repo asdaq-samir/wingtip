@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { api } from "../../../lib/api/client";
 import type { NearestAirport } from "../../../lib/api/types";
 import { placeOf } from "../../../lib/airportIndex";
-import { NO_FILTERS, filterFields, readQuery, type SearchFilters } from "../lib/searchFilters";
+import { NO_FILTERS, filterFields, readQuery, vfrAtTime, type SearchFilters } from "../lib/searchFilters";
 
 /** Where a search sent looks round: a field named, own ship, or the
  *  place the pilot's Nearest is from. */
@@ -70,16 +70,19 @@ export function nearOf(
 const MOST = 25;
 
 /** The fields a search sent found and its filters keep, nearest first --
- *  the list and the map's marks read the same answer (react-query's cache). */
+ *  the list and the map's marks read the same answer (react-query's cache).
+ *  With "VFR at…" on, the planner is asked for each field's forecast then
+ *  too (`at`, the top of that hour). */
 export function useSearchResultRows(): { rows: NearestAirport[]; all: number; loading: boolean; failed: boolean } {
   const sent = useSearchResults((s) => s.sent);
   const filters = useSearchResults((s) => s.filters);
-  const at = (n: number) => Math.round(n * 20) / 20;
-  const lat = at(sent?.near.lat ?? 0),
-    lon = at(sent?.near.lon ?? 0);
+  const round = (n: number) => Math.round(n * 20) / 20;
+  const lat = round(sent?.near.lat ?? 0),
+    lon = round(sent?.near.lon ?? 0);
+  const forecastAt = vfrAtTime(filters.vfrInHours) ?? undefined;
   const { data, isPending, isError } = useQuery({
-    queryKey: ["nearest", lat, lon, MOST],
-    queryFn: () => api.nearestAirports(lat, lon, MOST),
+    queryKey: ["nearest", lat, lon, MOST, forecastAt ?? null],
+    queryFn: () => api.nearestAirports(lat, lon, MOST, forecastAt),
     enabled: !!sent,
     staleTime: 10 * 60_000,
     meta: { silent: true },

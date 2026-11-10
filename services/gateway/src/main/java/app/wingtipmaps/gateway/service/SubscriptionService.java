@@ -53,10 +53,16 @@ import org.springframework.transaction.annotation.Transactional;
  * concept ("no mention of it at all ... if it picks up, I will go that
  * route"): the debrief, which costs nothing a use, is then everyone's,
  * and the features Claude writes are whoever {@code app.claude-features}
- * says -- nobody, the developers, or every pilot signed in (the default,
- * at the owner's ask: "I can offer the AI features to users with an
- * account, no revenue"), each within the monthly caps, which keep what
- * one pilot can cost in Claude calls bounded.
+ * says -- nobody, the developers, or every pilot signed in -- each within
+ * the monthly caps, which keep what one pilot can cost in Claude calls
+ * bounded.
+ *
+ * <p>Nobody is the default, and it wins over everything else -- a sold
+ * subscription, a developer, a machine of one's own -- so that with it no
+ * request reaches Anthropic at all. The owner, 2026-11-10, after the cost
+ * audit found Claude 90-96% of the bill: "To keep the cost low, we only
+ * add the claude feature later when we decide about subscription model.
+ * For now just the free siri and gemini." (docs/decisions/0035).
  */
 @Service
 public class SubscriptionService {
@@ -106,7 +112,7 @@ public class SubscriptionService {
             @Value("${app.subscription.caps.words:1000}") int wordsCap,
             @Value("${app.subscription.comped-emails:}") String compedEmails,
             @Value("${app.subscription.enabled:false}") boolean sold,
-            @Value("${app.claude-features:EVERYONE}") ClaudeFeatures claude) {
+            @Value("${app.claude-features:OFF}") ClaudeFeatures claude) {
         this(
                 subscriptions,
                 pilots,
@@ -231,6 +237,12 @@ public class SubscriptionService {
      */
     @Transactional
     public Optional<Refusal> refusal(Authentication authentication, PaidFeature feature) {
+        if (feature.capped() && claude == ClaudeFeatures.OFF) {
+            // Off is off for everyone, before the open machine and the
+            // developer are let through: said as not offered (404), not as
+            // something to buy, and the assistant service is never asked.
+            return Optional.of(new Refusal(404, feature.comes() + " later; it is not offered yet."));
+        }
         if (signIn.access() == SignInOptions.Access.OPEN) {
             return Optional.empty();
         }
@@ -244,7 +256,7 @@ public class SubscriptionService {
             // No subscription here: the debrief is everyone's; what Claude
             // writes is whoever the deployment says, said as not offered
             // (404) rather than as something to buy.
-            if (!feature.capped() || (pilot.getRole().isDeveloper() && claude != ClaudeFeatures.OFF)) {
+            if (!feature.capped() || pilot.getRole().isDeveloper()) {
                 return Optional.empty();
             }
             if (claude != ClaudeFeatures.EVERYONE) {

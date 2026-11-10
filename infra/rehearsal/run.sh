@@ -14,7 +14,9 @@
 # TILES_DIR      a chart pyramid to serve as the S3 bucket
 #                (this checkout's data/raw/chart_tiles.nosync)
 # SKIP_BUILD=1   use the images already built
-# ANTHROPIC_API_KEY, else this checkout's .env's: for briefings and notes
+# ANTHROPIC_API_KEY, else this checkout's .env's: for the Claude features,
+#                which stay off unless APP_CLAUDE_FEATURES and
+#                COMPOSE_PROFILES=claude turn them on (docs/decisions/0035)
 #
 # Stop it with: docker compose -p wingtip-prod down   (add -v to forget it)
 set -euo pipefail

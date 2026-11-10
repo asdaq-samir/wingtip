@@ -29,6 +29,7 @@ import app.wingtipmaps.android.Links
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
+import app.wingtipmaps.android.ai.rememberAiOffered
 import app.wingtipmaps.android.airplane.AirplaneProfileHost
 import app.wingtipmaps.android.api.AssistantClient
 import app.wingtipmaps.android.api.AssistantSource
@@ -224,7 +225,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         SheetPagesHost(
             pages, backEnabled, modifier,
             // The strip's field and timeline are its Home and its plan.
-            home = { if (!stripLayout) Home(plan, answer, picks::pick) },
+            home = { if (!stripLayout) Home(plan, fix, answer, picks::pick) },
             plan = {
                 PlanPage(
                     plan, onClose = pages::closePlan, onField = { pages.push(SheetPage.Airport(it)) },
@@ -236,8 +237,12 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         )
     }
 
+    // The sparkle only where a model can answer (AiOffered): Nano here, or
+    // the server's assistant while the Claude features are on.
+    val askOffered = rememberAiOffered()
     val mapView: @Composable (Dp) -> Unit = { covered ->
-        MapPane(plan, ownShip, covered = covered, onPick = onPick, onAsk = { pages.show(SheetPage.Ask) }, onNearest = { pages.show(SheetPage.Nearest) })
+        val onAsk = if (askOffered) ({ pages.show(SheetPage.Ask) }) else null
+        MapPane(plan, ownShip, covered = covered, onPick = onPick, onAsk = onAsk, onNearest = { pages.show(SheetPage.Nearest) })
     }
     if (stripLayout) {
         StripLayout(

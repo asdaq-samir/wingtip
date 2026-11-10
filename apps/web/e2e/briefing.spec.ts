@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { claudeFeatures } from "./claude";
 import {
   slow,
   settle,
@@ -32,6 +33,7 @@ import {
 test("plan page: the flight planning drawer opens the way the Model Training drawer does, the same panel beside the map, with the two inputs and the narrative and Print in its header and the totals and the descriptions button in the nav log's own section", async ({
   page,
 }) => {
+  await claudeFeatures(page); // the narrative and the wand in their places (./claude)
   const viewport = page.viewportSize();
   if (!viewport) throw new Error("no viewport configured");
 
@@ -205,6 +207,7 @@ test("plan page: the nav log and the summary on screen, the 'planning aid only' 
 });
 
 test("plan page: the Brief is a tab after the Nav Log, its narrative written by Claude only when asked", async ({ page }) => {
+  await claudeFeatures(page); // the narrative answered by openTab's stub (./claude)
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
 

@@ -9,12 +9,15 @@ scripts that keep the owner's Mac tidy. What the services are is
 - **Docker Desktop** with Compose v2. Nothing else is installed natively:
   every service builds its own image, and the checks run in containers.
 - **Git** and **make** (it ships with macOS and every Linux).
-- **An Anthropic API key**, only for the Claude features (the Brief's
-  narrative, checkpoint notes, the words, the assistant, the mock oral).
-  Put `ANTHROPIC_API_KEY=sk-...` in `.env` at the repository's root
-  (gitignored; Compose reads it). Without one those features say the
-  model cannot be reached and everything else works: the key is read
-  with `${ANTHROPIC_API_KEY:-}`, so a missing key fails no command.
+- **No Anthropic API key.** The Claude features (the Brief's narrative,
+  checkpoint notes, the words, the assistant, the mock oral) are off
+  until the subscription is decided
+  ([decision 0035](decisions/0035-claude-off-until-subscription.md)), and
+  the assistant service is not started. To try them, put
+  `ANTHROPIC_API_KEY=sk-...`, `APP_CLAUDE_FEATURES=EVERYONE` and
+  `COMPOSE_PROFILES=claude` in `.env` at the repository's root
+  (gitignored; Compose reads it). The key is read with
+  `${ANTHROPIC_API_KEY:-}`, so a missing key fails no command.
 - **Xcode and XcodeGen**, or **the Android SDK and a JDK 25** (the Android build's, as the gateway's;
   Gradle fetches a Temurin 25 into `~/.gradle/jdks` itself where there is none),
   only for the phone apps ([NATIVE.md](NATIVE.md), [NATIVE-ANDROID.md](NATIVE-ANDROID.md)).
@@ -35,8 +38,8 @@ make dev
    the bar) and that nothing else holds ports 8080 and 8025. A failure is
    a line marked FAIL saying what to do, and nothing is started.
 2. Makes `.env` from `.env.example` when there is none, and says what to
-   fill in: `ANTHROPIC_API_KEY` for the Claude features, your address in
-   `APP_DEVELOPER_EMAILS` for the developer role. Nothing in it is
+   fill in: your address in `APP_DEVELOPER_EMAILS` for the developer
+   role (the Claude features stay off). Nothing in it is
    required.
 3. Builds the images, runs `docker compose up -d --wait` (gateway,
    planner, ingest, weather, assistant, db, mailpit, dev-services) and

@@ -24,6 +24,7 @@ import FlightPlanSection from "./FlightPlanSection";
 import RiskAssessment from "./RiskAssessment";
 import FindingIcon from "../../../../components/FindingIcon";
 import MockOral from "./MockOral";
+import { useClaudeOn } from "../../../../lib/subscription";
 import { BriefingNarrativePrintBlock, Flag, PassNote, Pending } from "./BriefingBits";
 import { SUA_FINDING, SUA_WORDS } from "./briefingWords";
 
@@ -46,6 +47,7 @@ interface Props {
  *  the airspace, the risk, the paperwork, the loading. */
 export default function PreflightPart({ vm, nav, totals, dep, dest, depart, narrativeText, narrative }: Props) {
   const { items, landings, setFolds, printing, folds, assessment, briefingPendingMessage, ifr, planForms, briefing, pilot, planText } = vm;
+  const oral = useClaudeOn();
   return (
     <>
       {/* The narrative, printed only: on screen it is the tab's own
@@ -119,8 +121,8 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart, narr
           </div>
 
           {/* The mock oral, the developer's until a CFI has reviewed its
-          answers; never on paper. */}
-          {pilot?.developer && briefing && (
+          answers, and only with Claude on (lib/subscription); never on paper. */}
+          {pilot?.developer && oral && briefing && (
             <div className="print:hidden">
               <AccordionSection title="Mock Oral">
                 <MockOral plan={planText} />

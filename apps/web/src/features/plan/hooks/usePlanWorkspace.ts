@@ -763,8 +763,8 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   // the nav log below is drawn again only when this changes.
   const entitlement = useEntitlement();
   const paywalled = !mayUse(entitlement) && entitlement.kind !== "loading" && entitlement.kind !== "hidden";
-  // Not offered here at all: no wand (NavLogView).
-  const descriptionsHidden = entitlement.kind === "hidden";
+  // Not offered here, or not known yet (Claude off by default): no wand (NavLogView).
+  const descriptionsHidden = entitlement.kind === "hidden" || entitlement.kind === "loading";
   // The flight flown on paper, from the Profile card (useDryRun).
   const {
     running: dryRunning,

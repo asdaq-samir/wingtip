@@ -23,7 +23,9 @@ import kotlinx.coroutines.flow.asStateFlow
  * and an answer to a prompt -- with tools, for Ask -- that never leaves
  * the phone. A phone without it (most phones before 2025's flagships)
  * says UNAVAILABLE, and the app falls back to Wingtip's assistant on the
- * server, or to no AI words at all; nothing else changes.
+ * server only while the Claude features are on (ClaudeGate, off since the
+ * owner's decision of 2026-11-10), else to no AI words at all; nothing
+ * else changes.
  */
 object Nano {
     enum class Status { UNKNOWN, UNAVAILABLE, DOWNLOADABLE, DOWNLOADING, AVAILABLE }

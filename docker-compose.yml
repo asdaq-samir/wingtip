@@ -26,7 +26,9 @@ x-python-healthcheck: &python-healthcheck
 # put an Anthropic key in front of the map, the planner and the chart
 # tiles, none of which call an LLM at all. The planner's Claude features
 # (the narrative, checkpoint notes, the assistant, the words) answer
-# without one by saying the model cannot be reached.
+# without one by saying the model cannot be reached. They are off unless
+# APP_CLAUDE_FEATURES says otherwise and the claude profile starts the
+# assistant (the owner, 2026-11-10, docs/decisions/0035).
 x-anthropic-api-key: &anthropic-api-key ${ANTHROPIC_API_KEY:-}
 
 # Every long-running service below restarts with Docker (restart:
@@ -386,7 +388,15 @@ services:
   # planner does, and for data/raw/references, the regulations and the
   # AIM the mock oral quotes. A few HTTP calls at a time and no data of
   # its own in memory: 256 MB is room and to spare.
+  #
+  # Off by default (the owner, 2026-11-10: "To keep the cost low, we only
+  # add the claude feature later when we decide about subscription model.
+  # For now just the free siri and gemini."; docs/decisions/0035): it is
+  # started only with the claude profile, and asked only where the
+  # gateway's APP_CLAUDE_FEATURES is DEVELOPERS or EVERYONE --
+  # COMPOSE_PROFILES=claude and APP_CLAUDE_FEATURES=EVERYONE in .env.
   assistant:
+    profiles: ["claude"]
     restart: unless-stopped
     build:
       context: .
@@ -529,9 +539,11 @@ services:
       planner:
         condition: service_healthy
       # Started with it, not waited for: nothing in the gateway's start
-      # asks the assistant.
+      # asks the assistant. Not required: it runs only with the claude
+      # profile, and the gateway asks it only with the Claude features on.
       assistant:
         condition: service_started
+        required: false
       mailpit:
         condition: service_started
     # Ready means Spring's readiness group (the app and its database)
@@ -560,6 +572,9 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-wingtip}
       PLANNER_SERVICE_URL: http://planner:8000
       ASSISTANT_SERVICE_URL: http://assistant:8000
+      # Who has the Claude features (SubscriptionService): OFF, the
+      # default, asks Anthropic nothing (docs/decisions/0035).
+      APP_CLAUDE_FEATURES: ${APP_CLAUDE_FEATURES:-OFF}
       # The monitor's minute check (UptimeWatch, docs/OPERATIONS.md): the
       # weather service watched beside the planner and the assistant, and
       # its alerts mailed to an address of their own in the local inbox,
