@@ -1,103 +1,55 @@
 name: CI
 
-# Every action below is pinned to a commit, with its release tag in the
-# comment beside it. A tag is a movable pointer in someone else's
-# repository: whoever can write there can repoint v4 at new code, and
-# these jobs hold a registry token and, in the deploy job, AWS
-# credentials. A commit cannot be repointed.
-#
-# All of them are on their newest major, because anything older still
-# declares `runs: using: node20` in its own action.yml and the runner
-# has begun force-upgrading those and warning about it. Every removal in
-# those majors was checked against what this file passes: none of the
-# dropped inputs or environment variables is used here, and the Java
-# distribution is temurin rather than the Adopt builds setup-java v6
-# removed. They all need Actions Runner v2.327.1 or newer, which the
-# GitHub-hosted runners are well past.
-#
-# The comment is what to read; the SHA is what runs. To take a new
-# release, resolve its tag to a commit
-# (`gh api repos/<owner>/<repo>/git/ref/tags/<tag>`, following the
-# object through `git/tags/<sha>` for an annotated tag) and update both.
-# Dependabot updates a pinned action and its comment together.
-#
-# The runner image is named rather than `ubuntu-latest`, for a smaller
-# version of the same reason: GitHub moves that label to a new Ubuntu
-# over several weeks (24.04 to 26.04 from October 19, 2026), and while
-# it does, one run's jobs can land on either image. The next LTS is a
-# change to this file, tested like any other.
+# Every action is pinned to a commit, its release tag in the comment: a
+# tag can be repointed by whoever can write to its repository, and these
+# jobs hold a registry token. Dependabot updates the pin and the comment
+# together. The runner image is named, not `ubuntu-latest`, so a move to
+# the next LTS is a change to this file, tested like any other.
 
 on:
   push:
     branches: [main]
   pull_request:
-  # Startable by hand. A run can fail for reasons that have nothing to
-  # do with the commit under it -- a runner that never started, an
-  # account limit -- and without this the only way to ask again is an
-  # empty commit on main. The Auto-merge and Sync workflows start it too,
-  # on a branch their own token moved, which starts no workflow itself.
-  # Started by hand with "standards", it runs what the nightly run adds:
-  # the whole iOS audit, WCAG 2.2 and Lighthouse.
+  # By hand, to run again what failed for no fault of the commit; with
+  # "standards", the night's iOS audit, WCAG 2.2 and Lighthouse too.
   workflow_dispatch:
     inputs:
       standards:
         description: Run the nightly standards checks too
         type: boolean
         default: false
-  # Every night on main, everything: what changes without a commit -- the
-  # FAA's data, the weather services, a runner image -- breaks a run here
-  # before it breaks a pilot's plan. A scheduled run promotes nothing
-  # (promote.yml takes pushes only).
+  # Every night on main, everything: the FAA's data, the weather services
+  # and the runner images change without a commit. Promotes nothing.
   schedule:
     - cron: "17 9 * * *"
 
-# A new push to an open PR should replace the run already queued for its
-# previous commit, not queue behind it -- otherwise every fixup push pays
-# for a run whose result nobody will read. Only on a pull request: on
-# main each push's run is what Promote deploys and what build-images
-# pushes images from, so a merge right behind another must not cancel
-# it, and the night's run (same ref) must not cancel a push's or be
-# cancelled by one. The event is in the group for that reason; main's
-# runs queue instead (GitHub keeps one waiting, so of three quick merges
-# the middle one's run can still be replaced -- the next run builds
-# everything changed since the last green one, so nothing is lost).
+# A new push to a pull request replaces its running run. Not on main,
+# whose push runs are what Promote deploys, nor between the night's run and
+# a push's (the event is in the group).
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Stated here rather than left to the repository's own default, which is
-# a setting outside this file that can change without a commit touching
-# it. Every job gets read access to the code and nothing else; the three
-# that need more say so themselves, next to the step that needs it.
+# Read access to the code only; the jobs that need more say so.
 permissions:
   contents: read
 
-# The image the browser suite runs in (the e2e job), named once for the
-# jobs that pull it and the one that makes the slim copy the tests run
-# in (.github/ci-images.hcl's `playwright`). Its version is
-# apps/web/package-lock.json's @playwright/test, and the e2e job's packages
-# cache is keyed by it too.
+# The image the browser suite runs in, at apps/web/package-lock.json's
+# @playwright/test; the e2e packages cache is keyed by it too.
 env:
   PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.65.0-noble
 
 jobs:
-  # The Python suites install their requirements with uv, the same
-  # pinned lists pip installs into each image, several times faster:
-  # pip spent 50 of a Python suite's 90 seconds, when the browser
-  # suite's shards end at about that. No pip cache in the Actions cache
-  # either: the suites' pip caches were 6.5 of its 10 GB, and what they
-  # pushed out was the browser suite's own planner data.
+  # The Python suites install with uv (pip was 50 of a suite's 90 s), and
+  # keep no pip cache (6.5 of the Actions cache's 10 GB).
   test:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: needs.changes.outputs.test-root == 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      # The FAA's reference files the tests read (data/raw), kept between
-      # runs: fetched cold they were most of the planner's suite, 131 s of
-      # it against 11 s warm (#452), and the suite failed when the FAA was
-      # down. Keyed by the ISO week, so a new NASR cycle is fetched within
-      # a week of it; the chart folders are left out (the tests draw none).
+      # The FAA's reference files (data/raw), kept a week at a time: 131 s
+      # fetched against 11 s warm (#452), and no FAA outage fails the suite.
       - name: The week, for the reference data's cache
         id: week
         run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
@@ -114,22 +66,12 @@ jobs:
           python-version-file: .tool-versions
       - run: pip install uv
       - run: uv pip install --system -r services/planner/requirements-dev-wingtip.txt
-      # wingtip's Rust extension (engine/), which wingtip.route_options and
-      # wingtip.airspace_at import: built with .tool-versions' Rust (rust-toolchain.toml), in the
-      # light `ci` profile (the image's is the release one; the sums are
-      # the same either way, as nothing here is built for fast maths).
-      # The runner's own temp, not /tmp: the Mac mini's runners share one
-      # machine, and two jobs building into /tmp/native would install each
-      # other's wheel.
+      # wingtip's Rust extension (engine/), in the light `ci` profile, built
+      # into the runner's own temp (two jobs on one machine share /tmp).
       - run: uv pip install --system maturin==1.16.0 && maturin build --profile ci --compatibility linux -m engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
-      # The engine's own tests, on the shared fixtures the Python reads too:
-      # the facade's and each of its crates' (engine/crates), and that the
-      # committed engine/contract/engine.schema.json is the one the rules'
-      # contract files give (wingtip-contract-gen).
-      # The crates use only the crates engine/README.md's table says they use.
+      # The engine's tests, its crates' layering (engine/README.md), no unused
+      # dependency (cargo-machete), rustfmt and clippy with warnings denied.
       - run: python3 scripts/ci/engine_layers.py
-      # No dependency a crate names and does not use. cargo-machete reads the
-      # sources, so it needs no build; the binary is kept between runs.
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         id: machete
         with:
@@ -140,15 +82,10 @@ jobs:
       - run: cargo machete engine
       # The Rust as rustfmt writes it (engine/rustfmt.toml).
       - run: rustup component add rustfmt && scripts/dev/format.sh --check rust
-      # No warning stands (the owner, 2026-11-09): rustc's are denied in the
-      # workspace (engine/Cargo.toml's [workspace.lints]), clippy's here,
-      # every crate and the bindings, tests and all.
       - run: rustup component add clippy && cargo clippy --manifest-path engine/Cargo.toml --workspace --all-targets -- -D warnings
       - run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine -p wingtip-core -p wingtip-flight -p wingtip-weather -p wingtip-procedures -p wingtip-radio -p wingtip-airspace -p wingtip-wording -p wingtip-brief -p wingtip-route -p wingtip-pilot -p wingtip-altitude -p wingtip-contract-gen
-      # The web app's copy of the engine (apps/web/src/lib/engine), committed
-      # because the web build has no Rust: built again in the script's
-      # pinned image, it must be the committed file byte for byte, or the
-      # browser runs other rules than the planner and the phones.
+      # The committed WebAssembly must be what engine/ builds, or the browser
+      # runs other rules than the planner and the phones.
       - name: The engine's WebAssembly is the committed one
         run: |
           scripts/build/build-engine-wasm.sh
@@ -156,19 +93,14 @@ jobs:
             echo "::error title=Engine wasm out of date::apps/web/src/lib/engine/wingtip-engine.wasm is not what engine/ builds: run scripts/build/build-engine-wasm.sh and commit the file."
             exit 1
           }
-      # tippecanoe, for services/jobs/charts/tests/test_overlays.py's archive
-      # tests (the map's overlay tiles): the distribution's package here,
-      # the pinned tag in the charts job's image; without it those tests
-      # are skipped.
+      # tippecanoe, for the overlay tiles' archive tests; skipped without it.
       - name: tippecanoe
         run: |
           (sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends tippecanoe) \
             || echo "::warning title=No tippecanoe::the overlay tiles' archive tests are skipped"
       - run: ruff check wingtip tests_wingtip
         working-directory: services/planner
-      # The planner's import contracts (services/planner/.importlinter):
-      # wingtip never imports app, no router imports another, only
-      # app.main imports the routers.
+      # The planner's import contracts (services/planner/.importlinter).
       - run: lint-imports
         working-directory: services/planner
       - run: pytest tests_wingtip/ -v
@@ -179,10 +111,8 @@ jobs:
         working-directory: services/jobs
       - run: pytest charts/tests/ -v
         working-directory: services/jobs
-      # wingtip's API documentation, from its docstrings. pdoc imports every
-      # module, so one that stops importing fails the job here. wingtip's
-      # own list, installed above, is all it needs.
-      # After the tests, so they run with the packages they always had.
+      # wingtip's API docs (pdoc imports every module, so one that no longer
+      # imports fails here), after the tests.
       - name: pdoc (services/planner/wingtip)
         run: |
           uv pip install --system pdoc
@@ -193,17 +123,9 @@ jobs:
           path: ${{ runner.temp }}/pdoc-wingtip
           retention-days: 30
 
-  # The web front end. Its own job because it needs Node rather than
-  # Python, and worth having at all because that is where the faults have
-  # been: a TypeError on every selection, a function written and never
-  # called, state kept on one of two code paths, a page that fitted its
-  # map against a container it had measured wrong.
-  #
-  # tsc is half the value. Renaming a field and missing one call site was
-  # silent in the pages this replaced; here it fails the build. The tests
-  # cover the pure decisions -- which points a filter admits, what counts
-  # as rated, which way the arrows step, which leg leaves a checkpoint --
-  # which need no browser and so run like anything else.
+  # The web front end: tsc, ESLint, Vitest, the build and its first-load
+  # budget, and the generated files (types, the phones' models, tokens,
+  # screens, icons) are the committed ones.
   test-web:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
@@ -222,13 +144,8 @@ jobs:
       # The API types, generated from services/planner/openapi.json --
       # test-planner proves that file matches the running app.
       - run: npm run types
-      # The phones' models of the same two documents (quicktype, in
-      # scripts/build/api-models-apps.sh) and their typed calls into the
-      # engine (scripts/build/engine-contract-apps.sh, from
-      # engine/contract/engine.schema.json), committed because neither
-      # app's build has Node: generated again here, they must be the
-      # committed files byte for byte, or a field a server or the engine
-      # renamed reaches a phone at runtime instead of failing its build.
+      # The phones' API models and engine calls, generated and committed
+      # (neither app's build has Node): a stale one fails here, not on a phone.
       - name: The phones' generated models and engine calls are the committed ones
         working-directory: .
         run: |
@@ -240,27 +157,14 @@ jobs:
             echo "::error title=Phone generated code out of date::the phones' generated API models or engine calls are not what the OpenAPI documents and the engine's contract give: run scripts/build/api-models-apps.sh and scripts/build/engine-contract-apps.sh and commit the files."
             exit 1
           fi
-      # The design tokens (design/tokens.json), generated into each app's
-      # theme by scripts/build/design-tokens.sh and committed: generated
-      # again here, they must be the committed files byte for byte, or a
-      # colour changed in one generated file and not the source drifts
-      # from the other two apps.
+      # The design tokens, the screens' links and the app icons, generated and
+      # committed: each must be what its source makes.
       - name: The design tokens are the committed ones
         working-directory: .
         run: scripts/build/design-tokens.sh --check
-      # The screens a link opens (design/screens.json), generated into each
-      # app's list and docs/navigation.md's table by scripts/build/screens.sh
-      # and committed: generated again here, they must be the committed
-      # files byte for byte, or a link opens a screen on one platform and
-      # nothing on another.
       - name: The screens and their links are the committed ones
         working-directory: .
         run: scripts/build/screens.sh --check
-      # The icons and launch art of every app (iOS, the watch, Android,
-      # the web, the site, the store), drawn from docs/brand's SVGs by
-      # scripts/build/app-icons.sh in its pinned image and committed:
-      # drawn again here, each must match the committed file pixel for
-      # pixel, or a source changed without its PNGs (or a PNG by hand).
       - name: The app icons are the committed ones
         working-directory: .
         run: scripts/build/app-icons.sh --check
@@ -274,23 +178,14 @@ jobs:
       - run: npx vitest run
       - run: npx vite build
       # The JavaScript a phone loads before the planner draws, against a
-      # ceiling: 1.03 MB on 2026-10-08, and it had crept to 1.30 MB before
-      # anyone measured it (scripts/first-load.mjs says how it counts).
-      # Raise the budget only with the reason in the commit.
+      # budget (scripts/first-load.mjs); raise it only with the reason.
       - run: node scripts/first-load.mjs dist --budget 1100000
-      # Advisory only (continue-on-error): reports known-vulnerable
-      # dependencies without blocking a merge on one this repo can't fix
-      # immediately (e.g. a transitive dep with no patched release yet).
-      # Promote to blocking once an initial backlog is triaged.
+      # Advisory: a known-vulnerable dependency is reported, not blocking.
       - run: npm audit --audit-level=high
         continue-on-error: true
 
-  # gateway's own JUnit suite. Separate from `test` above because it needs a
-  # JDK rather than Python, and separate from the image build because
-  # Dockerfile builds with -DskipTests on purpose (an image build shouldn't
-  # be the thing that runs your tests). Testcontainers drives a real
-  # Postgres for the migration/persistence tests; GitHub runners provide
-  # the Docker daemon it needs.
+  # The gateway's JUnit suite, Testcontainers' Postgres on the runner's
+  # Docker.
   test-gateway:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
@@ -310,10 +205,8 @@ jobs:
       - name: mvn test (gateway)
         working-directory: services/gateway
         run: mvn -B test
-      # A job's log takes admin rights on the repository to read; an
-      # annotation shows on the commit's checks to anyone who can see it.
-      # So each failing test is one: its assertion or exception, and the
-      # causes under it (the stack between them says little).
+      # Each failing test as an annotation, which anyone can read (a log
+      # takes admin rights).
       - name: Failing tests, as annotations
         if: failure()
         working-directory: services/gateway
@@ -331,10 +224,7 @@ jobs:
                       print(f"::error title={test}::{text}")
           EOF
 
-  # The planner's own FastAPI-layer suite. Separate job for the same
-  # reason as test-gateway: its own dependency set (requirements-dev.txt,
-  # on top of the service's own requirements.txt), and no reason to gate
-  # it on the root `test` job's unrelated services/planner/wingtip dependencies.
+  # The planner's FastAPI suite, on its own requirements.
   test-planner:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
@@ -344,14 +234,9 @@ jobs:
         working-directory: services/planner
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      # The planner's reference data (data/raw), the charts and their
-      # tiles included, kept between runs, keyed by the ISO week so a new
-      # NASR cycle is fetched within a week of it. The charts too: the
-      # suite's first plans of C81 -> KDLH read the corridor's sectional
-      # tiles, which were three tests and 185 s of the job's 215 s on run
-      # 42302178567 with the reference files cached and the charts not
-      # (test_foreflight's pack 106 s, test_plan's two plans 81 s). The
-      # suite failed with the FAA down, too (#452).
+      # The planner's reference data with the charts and tiles, a week at a
+      # time: its first C81-KDLH plans read the corridor's tiles (185 of 215 s
+      # uncached, run 42302178567).
       - name: The week, for the reference data's cache
         id: week
         run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
@@ -372,9 +257,7 @@ jobs:
       - run: lint-imports
       - run: pytest tests/ -v
 
-  # ingest's suite (services/ingest, the live feeds split from the planner,
-  # #535): its own small dependency set, wingtip's beside Solace's client,
-  # and none of the planner's data.
+  # ingest's suite (services/ingest, #535).
   test-ingest:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
@@ -394,13 +277,8 @@ jobs:
       - run: ruff check ingest tests
       - run: pytest tests/ -v
 
-  # The assistant service's suite (services/assistant): every Claude call,
-  # the model and the planner stood in for. Its own small dependency set
-  # (requirements-dev.txt), no engine, no reference data: it imports
-  # nothing of wingtip. Its planner client and its rule tools are
-  # generated (scripts/build/assistant_client.py), from the planner's
-  # openapi.json and the engine's contract: the committed files must be
-  # what those make.
+  # The assistant's suite: Claude and the planner stood in for; its client
+  # and tools are generated (scripts/build/assistant_client.py) and checked.
   test-assistant:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
@@ -420,9 +298,7 @@ jobs:
       - run: ruff check app tests
       - run: pytest tests/ -v
 
-  # The weather service's suite (services/weather): its fetches and parsers,
-  # and the planner's readers over what it stores (wingtip.weather_store),
-  # with wingtip and the engine it imports. The network is stubbed.
+  # The weather service's suite, the network stubbed.
   test-weather:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
@@ -441,25 +317,13 @@ jobs:
       - run: ruff check app tests
       - run: pytest tests/ -v
 
-  # What this run has to do, from what changed: the one job the test
-  # jobs and the image builds wait on, and quick (a checkout and a diff).
-  # Each test job and each image then runs only if something it reads
-  # changed -- a change to the planner's Python runs the planner's tests
-  # and the planner's image, and none of the React or Spring jobs.
-  # The browser suite and its images do not wait for it (see e2e).
-  #
-  # Changed since when: on main, since the last commit whose run went
-  # green, not the commit before this push. A run that failed publishes
-  # nothing, so the next one has to build what that one did not; "since
-  # the previous commit" left an image unpublished for good whenever
-  # the run that changed it failed. On a pull request, what the PR
-  # changes. A run started by hand, a first run, or a main whose history
-  # was rewritten past its last green commit does everything.
+  # What this run has to do, from what changed: the one job the others wait
+  # on, a checkout and a diff. On a pull request, what it changes; on main,
+  # everything since the last green commit (a failed run publishes nothing,
+  # so the next one builds what it did not); by hand or first, everything.
   changes:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    # paths-filter asks the API which files a PR touches, which the
-    # default token cannot do ("Resource not accessible by integration"
-    # otherwise); `actions: read` is for finding the last green run.
+    # pull-requests: read for paths-filter; actions: read for the last green run.
     permissions:
       contents: read
       pull-requests: read
@@ -483,15 +347,10 @@ jobs:
       docs-only: ${{ steps.docsonly.outputs.only }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      # The paths-filter block below is generated from scripts/areas.yml, the
-      # table check.sh and the pre-push hook read; a hand edit, or an edit
-      # of the table without `python3 scripts/areas.py write`, stops here.
+      # The filter block below is generated from scripts/areas.yml.
       - name: The filters match scripts/areas.yml
         run: python3 scripts/areas.py check
-      # A pull request that changes only words -- docs, Markdown, the
-      # skills, the notebooks -- has nothing the browser suite could catch,
-      # so its e2e and their images are skipped (the owner, 2026-11-06:
-      # "trim"). Skipped counts as passing in "CI passed".
+      # Words only (docs, Markdown, skills, notebooks): no browser suite.
       - name: Only docs?
         id: docsonly
         if: github.event_name == 'pull_request'
@@ -696,7 +555,8 @@ jobs:
                 - scripts/build/api-models-apps.*
                 - scripts/build/engine-contract-apps.*
                 - design/**
-                - .github/workflows/native-ios-test.yml
+                - scripts/ci/content-mtimes.py
+                - .github/workflows/native-ios.yml
               android:
                 - apps/android/**
                 - .editorconfig
@@ -705,7 +565,7 @@ jobs:
                 - scripts/build/api-models-apps.*
                 - scripts/build/engine-contract-apps.*
                 - design/**
-                - .github/workflows/native-android-build.yml
+                - .github/workflows/native-android.yml
               site:
                 - apps/site/**
                 - design/tokens.json
@@ -784,57 +644,16 @@ jobs:
           EOF
 
   # The browser suite (apps/web/e2e, Playwright) against the stack a pilot
-  # uses: the gateway and the planner built from this
-  # commit (by e2e-images, below), Postgres and Mailpit as
-  # docker-compose.yml runs them, under infra/docker-compose.ci.yml. It is what
-  # catches what no unit test can -- a tap lost to a race, a drawer that
-  # opens empty, a request the phone's port dropped.
+  # uses: the gateway, planner and weather images e2e-images built for this
+  # commit's keys, Postgres and Mailpit (infra/docker-compose.ci.yml). It
+  # catches what no unit test can: a lost tap, a drawer that opens empty.
   #
-  # Split eight ways (`--shard`), each runner with a stack of its own:
-  # the suite is 189 tests, four and a half minutes on one runner, split
-  # by test in file order -- so the slow ones are in files whose names
-  # spread them over the shards (apps/web/e2e/layout.spec.ts's opening
-  # comment). Six were 37 to 92 seconds of tests each, the same shard the
-  # longest in every run, and with the setup down to 35 to 60 seconds the
-  # tests were most of the run. Eight, not more: the account runs twenty
-  # jobs at once, and eight shards, the seven suites, the docs, the e2e
-  # images and the image builds' one job are nineteen. What each runner
-  # spends before its first test is the rest, so that is done at once
-  # rather than in turn: the three images and the Playwright, Postgres
-  # and Mailpit images are pulled in the background while the caches
-  # below are restored, and each service is started the moment it can
-  # be.
-  #
-  # The planner fetches its reference data for itself into data/raw:
-  # the FAA obstacle file and the airport tables (about 800 MB, from an
-  # FAA page that is the slow part) are kept in the Actions cache
-  # between runs; its key names what is fetched, and a change to that
-  # fetches afresh. The corridor's chart sheets and the tiles the suite
-  # has had rendered from them are a second cache, keyed by the FAA
-  # cycle: fetched once a cycle, not once a run -- and only the
-  # corridor's ten sheets, since a tile here never sends for one
-  # (infra/docker-compose.ci.yml). Only the first shard saves them: the eight
-  # would race to write the same keys.
-  #
-  # The tests run in the Playwright image, the same one apps/web/README.md
-  # runs them in locally, on the runner's network so localhost is the
-  # stack's -- in a copy of it without the browsers the suite never
-  # launches, every other file the image's own (.github/ci-images.hcl's
-  # `playwright`). They ran on the runner itself for three runs (c797718
-  # to f1cf1b7), with Playwright's own Chromium and no image to pull: one
-  # test -- a nav log row clicked in view stays where it is -- failed or
-  # flaked in each of them, and had passed in every run in the image.
-  # The image is pulled in the background and waited for only before
-  # the tests.
-  #
-  # And not after `changes`, as the other test jobs are: the shards are
-  # the run's longest wait, and waiting for `changes` held each of them
-  # back 11 or 12 seconds, a tenth of the run. It was due whenever
-  # anything the stack runs had changed -- apps/web/, services/gateway/, the
-  # the planner and wingtip, the compose files -- and of the 150
-  # commits before this one, two had changed none of it (candidate data,
-  # and dependabot.yml with the editor's settings). So it runs on every
-  # commit.
+  # A pull request runs the @smoke and @flight-critical tests on the phone
+  # project, over two shards; the night runs everything over ten. Each shard
+  # pulls its images and restores its caches in the background and starts
+  # each service the moment it can: setup is about a minute and a half.
+  # Not after e2e-images, which it would wait on; it pulls the image the
+  # moment it is pushed.
   e2e:
     name: e2e (${{ matrix.shard }}/${{ strategy.job-total }})
     needs: [changes]
@@ -850,29 +669,13 @@ jobs:
       packages: read
       actions: read
     timeout-minutes: 35
-    # A pull request runs the phone's suite only (the "mobile" project),
-    # the app's own width: the owner's ask (2026-11-06: "only keep the
-    # necessary tests ... get it down to 3 mins"). Measured on 42184489133,
-    # a pull request's run was 122 minutes of tests over eight shards, 19
-    # minutes end to end: desktop, the same specs at a wider window, 51.5;
-    # mobile 33.4; the iPad and iPhone projects 37, 31 of it the iOS
-    # audit. Mobile alone over ten shards is about 100 s of tests a shard
-    # after its minute of setup. Lighter again, so CI runs in minutes on
-    # the owner's Mac mini once the repository is private (the owner,
-    # 2026-11-06: "CI is too heavy for mini ... so it runs in minutes even
-    # on the mini"): a pull request and main's push run only the tests
-    # tagged @smoke, about thirty, one per journey a pilot takes, and the
-    # one tagged @flight-critical (plan, nav log, emergency, offline), on the
-    # phone, in one job; everything -- every test, desktop, the iPhones,
-    # the iPad, the audit -- runs every night and when started by hand,
-    # over ten shards. A nightly failure says so in its run; it does not
-    # hold Promote, which takes main's green push.
     strategy:
       fail-fast: false
       matrix:
-        # One job of the smoke tests on a pull request and main's push; ten
-        # shards of everything at night or by hand.
-        shard: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]' || '[1]') }}
+        # The smoke set over two shards on a pull request and main's push
+        # (5-9 min of tests on one, 2026-11-10); everything over ten at
+        # night or by hand.
+        shard: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]' || '[1, 2]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: ./.github/actions/hub-mirror
@@ -881,39 +684,12 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # What a shard fetches and starts, in the background, each piece
-      # with its own log and its exit status in a file (later steps wait
-      # on those), while the caches below are restored. Each piece also
-      # notes when it was done, in seconds from here, and each shard's
-      # annotation lists those: where its time before the first test
-      # went. It starts with the kind of runner the shard got. They are
-      # of two kinds: on a runner whose disk is an "NVMe Accelerator" the
-      # disk writes at most about 230 MB/s, a quarter of the setup goes
-      # on waiting for it, and a shard's setup takes 10 to 20 seconds
-      # longer (runs 36738594839 and 36739489654). Docker's own image
-      # store in place of containerd's made no difference there worth a
-      # restart of Docker (ab57887's measurement).
-      #
-      # Postgres and Mailpit are pulled first, before any other image:
-      # they are small, and among the large ones they were in last, 20 to
-      # 37 seconds into the job -- and no other service had started
-      # before Postgres did, though nothing here asked them to wait for it
-      # (run 36742507724). Then Mailpit is started, which makes the
-      # stack's network, which the other services' starts need there
-      # before them (two at once each make it, and one fails), and then
-      # Postgres; only the gateway waits for Postgres.
-      #
-      # And the image the tests run in: the slim copy of the Playwright
-      # image that e2e-images makes once for each of its digests
-      # (.github/ci-images.hcl's `playwright`: 1.5 GB unpacked rather than
-      # 2.6, zstd rather than gzip), under the image's own name, or the
-      # image itself until there is one. It is the largest thing a shard
-      # fetches, and often the last in before the tests, which alone
-      # want it -- so it is waited for just before them. The nightly run
-      # (and "standards" by hand) takes the image itself (FULL_BROWSERS):
-      # the slim copy has no WebKit for the whole iOS audit's webkit-iphone
-      # and no full Chrome for Lighthouse, and the first such run failed
-      # on both ("Executable doesn't exist at /ms-playwright/webkit-2203").
+      # Pulled and started in the background, each piece logging when it was
+      # done to /tmp/e2e-out/timeline (the shard's annotation lists it). Postgres
+      # and Mailpit first, being small; Mailpit's start makes the network the
+      # others need. The Playwright image is the slim copy e2e-images makes (no
+      # WebKit, no full Chrome), except at night, whose iOS audit and Lighthouse
+      # need the image itself.
       - name: The public images, in the background
         env:
           REGISTRY: ghcr.io/${{ github.repository }}
@@ -922,25 +698,13 @@ jobs:
           # apps/web/dist: where the page will be built, mounted into the
           # gateway -- made now, so that Docker does not make it, as root.
           mkdir -p /tmp/e2e-out apps/web/dist
-          # The caches below are restored into memory, not onto the disk:
-          # the planner's data and charts, and the suite's packages, about
-          # 1.6 GB. On a runner whose disk writes at most about 230 MB/s
-          # (an "NVMe Accelerator"), they took it for the first seconds
-          # that every image needed it too. The stack's containers see them
-          # as before: Docker's bind mounts take the mounts under them. The
-          # runner's user owns them, as it owns what it restores into them
-          # (a restore sets the directory's own mode and times).
+          # The caches are restored into tmpfs: on a runner whose disk writes
+          # about 230 MB/s they competed with the images for it.
           mkdir -p data/raw apps/web/node_modules
           sudo mount -t tmpfs -o "size=8g,mode=0777,uid=$(id -u),gid=$(id -g)" tmpfs data/raw
           sudo mount -t tmpfs -o "size=2g,mode=0777,uid=$(id -u),gid=$(id -g)" tmpfs apps/web/node_modules
-          # And what is written to the disk goes to it as it is written,
-          # a few hundred MB behind at most, rather than up to a fifth of
-          # the memory (3 GB). On a slow disk each service's start waited
-          # 20 to 27 seconds (run 36743209328): starting a container
-          # syncs a file or two, and ext4 syncs first everything written
-          # before it -- there, the gigabytes of images just unpacked. The
-          # writing is the disk's pace either way; the syncs no longer
-          # wait behind it.
+          # Write-back kept small, so a container start's fsync does not wait
+          # behind gigabytes of unpacked images (20-27 s a service, run 36743209328).
           sudo sysctl -q -w vm.dirty_bytes=$((256 << 20)) vm.dirty_background_bytes=$((64 << 20))
           T0=$(date +%s)
           export T0
@@ -972,44 +736,12 @@ jobs:
           EOF
           nohup bash /tmp/e2e-out/public.sh > /dev/null 2>&1 < /dev/null &
           nohup bash -c 'bash /tmp/e2e-out/playwright.sh > /tmp/e2e-out/playwright.log 2>&1; r=$?; echo "$(($(date +%s) - T0)) the Playwright image, $(tail -1 /tmp/e2e-out/playwright.log)" >> /tmp/e2e-out/timeline; echo $r > /tmp/e2e-out/playwright.exit' > /dev/null 2>&1 < /dev/null &
-      # Then the three images this commit runs, under the names
-      # infra/docker-compose.ci.yml runs them by: each the one e2e-images built
-      # for its key (.github/e2e-keys.sh), which nearly always an earlier
-      # commit's run did, so it is pulled at once. Each shard used to
-      # build them all itself: the same work six times over, on runners
-      # restoring caches and starting Postgres at the same time, and when
-      # apps/web/ had changed (most commits) that was the gateway's npm install
-      # and bundle, six times -- 50 to 70 seconds before a shard could
-      # start its stack. When this commit has a new key, a shard does not
-      # wait for e2e-images to start (`needs`): it pulls the last image
-      # pushed (`e2e`), which has most of the layers the new one will,
-      # and pulls the new one the moment it is there -- only what changed.
-      # If that job ends without it, the shard stops waiting and says so.
-      #
-      # Each service is started the moment it can be, not once both
-      # images are in: the planner once its image is here, the stack's
-      # network is made (Mailpit's start, above) and its data has been
-      # restored (a later step says so), the gateway once Postgres is up. Under infra/docker-compose.ci.yml none waits
-      # on another to start.
-      #
-      # And once the planner is warm, the corridor's nav log is asked for,
-      # rather than by whichever test asks first (the default aircraft,
-      # this hour: the key a test's own default request shares). Nothing
-      # waits for it; when it ended goes in the shard's annotation. Not
-      # the corridor's detections, which fb03710 asked for the same way:
-      # that read takes a minute or more of the planner's time on a busy
-      # runner, so it was still running long after the tests had started,
-      # on every shard, when only the dev page's training tests ask for
-      # it (they start it themselves, and the planner shares it).
-      #
-      # A fork's or Dependabot's pull request's token cannot push (SHARED
-      # below), so there a key no image has yet is built by the shards
-      # themselves, from the registry cache main
-      # writes: with the runner's own builder, Docker's, whose image store
-      # is containerd's, so it reads the registry cache and builds straight
-      # into Docker (a BuildKit container of setup-buildx's took 5 to 15
-      # seconds to start and then copied each image into Docker as a
-      # tarball).
+      # The three images this commit runs, each the one e2e-images built for its
+      # key (.github/e2e-keys.sh), nearly always by an earlier commit's run. A
+      # new key: pull the last `e2e` image (most of its layers) and then the new
+      # one the moment it is pushed. A fork's or Dependabot's token cannot push,
+      # so there the shard builds from main's registry cache. Once the planner
+      # is warm, the corridor's nav log is asked for, so no test waits on it.
       - name: The stack, in the background
         env:
           REGISTRY: ghcr.io/${{ github.repository }}
@@ -1111,15 +843,9 @@ jobs:
           EOF
           nohup bash -c 'bash /tmp/e2e-out/stack.sh > /tmp/e2e-out/stack.log 2>&1; echo $? > /tmp/e2e-out/stack.exit' > /dev/null 2>&1 < /dev/null &
 
-      # The planner's two caches first, since the planner starts once they
-      # are in; the suite's packages after them, while the stack starts.
-      #
-      # data/raw's entries, not data/raw itself: a directory the cache is
-      # given is archived whole, and a "!" line drops only an entry the
-      # patterns above it listed. Given `data/raw`, this cache held the
-      # charts and tiles as well -- 2.4 GB of which 2.1 was the next
-      # step's, restored twice on every shard. The same list is in the
-      # step that saves it (the list is part of the cache's version).
+      # The planner's two caches first, since it starts once they are in.
+      # data/raw's entries, not data/raw itself, so the charts are not archived
+      # twice; the same list is in the step that saves it.
       - name: Restore the planner's reference data
         id: data
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -1130,16 +856,8 @@ jobs:
             !data/raw/chart_tiles.nosync
           key: planner-data-v1-${{ hashFiles('data/processed/candidates_*.csv', 'services/planner/wingtip/faa_data.py', 'services/planner/wingtip/airports.py', 'services/planner/wingtip/elevation.py', 'services/planner/wingtip/charts.py') }}
           restore-keys: planner-data-v1-
-      # v4: the charts cache with the corridor's detections in it as well
-      # -- the planner keeps a finished read of the corridor beside the
-      # tiles it read (services/planner/app/detection.py), and replays it
-      # rather than reading the corridor again: a minute of a busy shard's
-      # processors, which the one test that waits for it (the waypoint
-      # drawer's) spent on the critical path every run. So the cache is
-      # keyed by the reader's code as well as the cycle, and saved again
-      # when either changes. v3 was the charts cache without the 29 sheets
-      # past the corridor that v1 carried (2.1 GB), now 0.3 GB; a v4 run
-      # starts from it.
+      # The corridor's charts, tiles and detections (a minute of a shard's
+      # processors to read again), keyed by cycle and reader code.
       - name: Restore the corridor's charts
         id: charts
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -1152,16 +870,9 @@ jobs:
             planner-charts-v4-
             planner-charts-v3-
 
-      # The planner runs as a user of its own and writes under data/:
-      # what it fetches into data/raw, the ratings and notes the training
-      # tests make in data/labels. The checkout is the runner's, and the
-      # planner's first run here could not so much as create data/raw. So
-      # the tree is opened to it first. And the route's elevations are
-      # seeded from the suite's own copy (163 points of the C81-KDLH
-      # corridor): the USGS lookup the planner would make for each
-      # answers a GitHub runner with 403, and without them there is no
-      # terrain, so no altitude, so no nav log. Then the planner can start
-      # (the stack's background piece above starts it).
+      # The planner runs as its own user and writes under data/, so the tree
+      # is opened to it; the route's elevations are seeded (USGS answers a
+      # runner with 403, and without terrain there is no nav log).
       - name: The planner's data, ready
         run: |
           mkdir -p data/raw
@@ -1189,20 +900,9 @@ jobs:
           path: apps/web/node_modules
           key: e2e-node-modules-pw1.65.0-${{ hashFiles('apps/web/package-lock.json') }}
 
-      # The page the gateway serves, from this commit's apps/web/ -- `npm run
-      # types` and `vite build`, as services/gateway/Dockerfile builds it --
-      # in apps/web/dist, mounted over the image's (infra/docker-compose.ci.yml), as
-      # the planner's code is mounted over its image's. So a change to the
-      # page, which most commits make, needs no image built: the gateway's
-      # is built again only for its jar (.github/e2e-keys.sh), and build
-      # (gateway) still builds the whole image, page and all, whenever apps/web/
-      # changes. On a push or a pull request from this repository,
-      # e2e-images builds the page once for its key and the stack's
-      # background piece copies it in; on a fork's or Dependabot's, which
-      # e2e-images does not run for, it is built here, with Node as
-      # .tool-versions has it and the suite's packages, from the same lock file.
-      # The gateway reads the page from disk when it is asked for, so it is
-      # started before the page is there, and the step below waits for it.
+      # The page, from this commit's apps/web/, mounted over the gateway
+      # image's, so a page change needs no image. e2e-images builds it once on
+      # a push or this repository's pull request; a fork's builds it here.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         if: ${{ !(github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
         with:
@@ -1222,14 +922,8 @@ jobs:
           npx vite build --outDir dist --emptyOutDir
           echo "$(($(date +%s) - T0)) the page built" >> /tmp/e2e-out/timeline
 
-      # Every piece of the stack started (a failed one ends the job here,
-      # with its log as an annotation), then healthy -- `up --wait` starts
-      # nothing that is running already, and waits. Healthy is not ready:
-      # the gateway answers its readiness probe a little before it serves
-      # the page, and the planner answers its probe while still loading
-      # airspace and obstacles (and, from a cold cache, fetching them) --
-      # under which the first tests timed out. So: the page, then the
-      # planner's own word that it is warm.
+      # Every piece started, then healthy, then the page served and the
+      # planner's own word that it is warm (healthy is not ready).
       - name: Wait for the stack, the page and a warm planner
         run: |
           for job in net db stack; do
@@ -1326,17 +1020,9 @@ jobs:
             sh -c "timeout 600 npm ci --no-audit --no-fund 2>&1 | tail -20 | tee /out/npm.log"
       - name: Browser tests
         id: tests
-        # CI=1 is what playwright.config.ts doubles its waits on. The
-        # github reporter puts each failure on the commit's checks, as
-        # the gateway's job does for its tests; the list goes to a file
-        # for the step below, since the job's log takes admin rights to
-        # read. Thirty minutes, and then the step ends and says so. The
-        # nightly run takes the whole iOS audit (IOS_AUDIT): all eight
-        # devices and WebKit, Safari's engine, which every other run
-        # leaves out -- a Safari-only failure reached the pilot's iPhone
-        # through 188 green Chromium tests once (2ad0317) -- and WCAG 2.2
-        # on every screen. Main's run keeps the iPhone 16 Pro's
-        # screenshot of each audited screen (SCREENSHOTS), as an artifact.
+        # CI=1 doubles playwright.config.ts's waits; the github reporter puts
+        # each failure on the commit's checks. At night the whole iOS audit
+        # (WebKit, every device) and WCAG 2.2 too.
         env:
           IOS_AUDIT: ${{ (github.event_name == 'schedule' || inputs.standards) && '1' || '' }}
           SCREENSHOTS: /out/screens
@@ -1446,18 +1132,9 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-      # Lighthouse on the planner page, at its default phone settings
-      # (a mid-range phone, 4x CPU, slow 4G), against the stack this shard
-      # already runs: Core Web Vitals, accessibility and best practices,
-      # the industry's yardstick, read by the standards job below. Nightly
-      # (or "standards" by hand); never fails the run itself.
-      # Chrome kept off /dev/shm, which is 64 MB in a container: there one
-      # of the page's scripts failed with ERR_INSUFFICIENT_RESOURCES, so
-      # nothing was drawn (NO_FCP, the nightlies of 2026-10-09 and -10),
-      # or the tab crashed, a third of the runs on a Mac; and a run that
-      # finished could have lost a script or a tile and been timed on less
-      # than the page. Six runs of six then finished, within a few percent
-      # of each other. Playwright passes the same flag to its own Chrome.
+      # Lighthouse on the planner page at its phone settings, read by the
+      # standards job. Nightly; never fails the run. Chrome off /dev/shm (64 MB
+      # in a container), where it lost scripts or crashed.
       - name: Lighthouse
         if: always() && matrix.shard == 1 && (github.event_name == 'schedule' || inputs.standards) && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure')
         continue-on-error: true
@@ -1509,18 +1186,9 @@ jobs:
             !data/raw/charts.nosync
             !data/raw/chart_tiles.nosync
           key: ${{ steps.data.outputs.cache-primary-key }}
-      # The charts and tiles, once per FAA cycle and reader: saved when
-      # what was restored was another cycle's, another reader's or
-      # nothing, with the tiles this run rendered in it -- and only this
-      # cycle's. An earlier cycle's folders come back with the restore,
-      # and would otherwise ride along into every cycle's cache after it.
-      # (The planner made some of what is under them, as a user of its
-      # own: hence sudo.) Only once the tests have run, passing or not:
-      # the tiles are theirs, and a run that stopped before them saves a
-      # cache without any. And with the corridor's detections read first,
-      # for the tests that wait on them in the runs after this one: this
-      # shard's own tests may never have asked for them (a replay, when
-      # they are on disk already, is a second).
+      # The charts and tiles, once per FAA cycle and reader, this cycle's only,
+      # after the tests (the tiles are theirs) and with the corridor's
+      # detections read first. The planner's files are its own user's: sudo.
       - name: The corridor's detections, for the cache
         if: always() && matrix.shard == 1 && steps.cycle.outputs.cycle != '' && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure') && steps.charts.outputs.cache-matched-key != steps.cycle.outputs.key
         run: |
@@ -1544,56 +1212,18 @@ jobs:
             data/raw/chart_tiles.nosync
           key: ${{ steps.cycle.outputs.key }}
 
-  # The browser suite's three images (.github/ci-images.hcl) -- the
-  # gateway, the planner and the weather service -- and the page the gateway serves there. Each is built once per key, a
-  # hash of what decides what it does in the suite's stack
-  # (.github/e2e-keys.sh). The images are pushed under `e2e-<key>` and
-  # `e2e`, the last pushed; never `latest`, which only the Promote
-  # workflow gives an image, and none of these is quite the image that
-  # ships. Most commits
-  # change none of their keys (4 of the 59 before 1deccfc changed one),
-  # and the shards pull what an earlier commit built. They were built on
-  # every commit, the gateway's npm install and bundle included, and the
-  # shards waited for them -- 1.8 minutes on fec57e0, which had changed
-  # the planner's code and the page.
-  #
-  # The page's key changes on about half the commits (22 of 39). It is
-  # built here, once, as the Dockerfile builds it (`npm run types`, `vite
-  # build`) with the browser suite's own packages and Node from .tool-versions,
-  # and pushed as an image of its files alone (gateway:e2e-page-<key>),
-  # which each shard copies out and mounts over the gateway image's page
-  # (infra/docker-compose.ci.yml). Each shard built it itself in 1deccfc's run,
-  # 10 to 20 seconds of processors already fully busy with its setup.
-  #
-  # And the image the tests run in: a slim copy of the Playwright image
-  # (.github/ci-images.hcl's `playwright`), made once for each digest its
-  # name points at -- after everything else here, since until it is there
-  # the shards pull the image itself.
-  #
-  # Not after `changes`, as every other job is: a shard starts ten
-  # seconds into the run, and a key's image, when there is one to build,
-  # should be on its way by then. So it runs on every push and every
-  # pull request from this repository, the suite due or not; with nothing
-  # to build it is a checkout and a few lookups. Not on a fork's or
-  # Dependabot's, whose token cannot push: their shards build what they
-  # cannot pull. The images with a BuildKit container of
-  # setup-buildx's rather than the runner's own builder: it pushes what
-  # the registry cache already holds without first pulling it. No
-  # attestation: nothing verifies these.
+  # The browser suite's images (.github/ci-images.hcl: gateway, planner,
+  # weather), the page, and the slim Playwright copy, each built once per key
+  # (.github/e2e-keys.sh) and pushed as `e2e-<key>` and `e2e`; never
+  # `latest`, which only Promote gives. Most commits change no key, so this
+  # is a checkout and a few lookups.
   e2e-images:
     name: build (e2e)
     # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
     # images go to AWS's x86 machines, and e2e tests the same images.
     runs-on: ubuntu-26.04
-    # A push, and a pull request from this repository's own branches --
-    # every claude/ pull request, the most of CI's runs --
-    # whose token can push: their eight shards pulled nothing and each
-    # built the stack's images and the page itself, eight times over (the
-    # handover's run on 77f6b687, 2026-11-05: the page 127 s and the
-    # gateway 178 s into each shard). Not a fork's or Dependabot's, whose
-    # token is read-only. The images are pushed under their content's
-    # keys, so a branch's are the same any other commit with those keys
-    # would push.
+    # A push, and a pull request from this repository; not a fork's or
+    # Dependabot's, whose token cannot push.
     needs: [changes]
     if: needs.changes.outputs.docs-only != 'true' && (github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'))
     permissions:
@@ -1668,12 +1298,8 @@ jobs:
           docker push -q "$PAGE"
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4.4.1
         if: steps.keys.outputs.missing != '' || steps.keys.outputs.playwright != ''
-        # Docker Hub's base images (maven, node, python, temurin) through
-        # Google's public mirror of it first: Docker Hub's limit on pulls
-        # from a runner's address refused maven's manifest (429 Too Many
-        # Requests) and failed every pull request's image build from
-        # 20:47 on 2026-10-09. BuildKit goes to Docker Hub itself where
-        # the mirror lacks an image.
+        # Docker Hub through Google's mirror first (Hub's pull limit failed
+        # every image build from 2026-10-09 20:47).
         with:
           buildkitd-config-inline: |
             [registry."docker.io"]
@@ -1699,36 +1325,13 @@ jobs:
           BUILDX_NO_DEFAULT_ATTESTATIONS: "1"
         run: docker buildx bake -f .github/ci-images.hcl playwright
 
-  # Every image whose inputs changed, built beside the tests rather than
-  # after them -- all in one job, by one BuildKit, in parallel
-  # (.github/images.hcl). On main each is pushed under this commit's tag
-  # (`:sha-<commit>`), never `:latest`: the Promote workflow
-  # (promote.yml) gives it that name once this run has passed, which is
-  # a copy of the manifest, seconds. A pull request builds without
-  # pushing -- the build is the check that its Dockerfile still builds.
-  #
-  # They were a job each, three at a time to stay inside the account's
-  # twenty jobs at once, and each job spent 8 to 19 seconds starting a
-  # builder of its own before a build of 8 to 12: on a run that changed
-  # them all (5b0f033), the last of ten started 104 seconds in and ended
-  # at 144, the run's longest wait but one. One job is also one of the
-  # twenty rather than three.
-  #
-  # The layer cache lives in the registry (ghcr.io/…/<service>:buildcache,
-  # every stage's layers, mode=max), written from main: not evicted, and
-  # a pull request, e2e-images and a pull request's shards read it. The Actions
-  # cache it replaces is 10 GB for the whole repository, and the ML
-  # images' torch and tensorflow layers evicted each other out of it, so
-  # the ML image was built from nothing on most pushes (6.7 of a run's 15
-  # minutes). Nothing reads that cache now: read second while it aged
-  # out, it still held the index of the ML image's layers but not the
-  # layers, so every step matched, no layer could be fetched, and the
-  # image was built from nothing anyway -- 4.5 minutes, 2026-09-29.
-  #
-  # Each Python image imports its own code, and the packages that code
-  # imports lazily, as the last step of its build -- so a missing
-  # dependency fails the build here and in a local `docker compose
-  # build` alike, and a broken image is never pushed.
+  # Every image whose inputs changed, in one job by one BuildKit
+  # (.github/images.hcl). On main pushed as `:sha-<commit>`, which Promote
+  # names `latest` once the run passes; a pull request builds without
+  # pushing. The layer cache is in the registry (`:buildcache`, written from
+  # main), as the ML images' layers evicted each other from the Actions
+  # cache. Each Python image imports its own code last, so a missing
+  # dependency fails here.
   build-images:
     name: build (images)
     # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
@@ -1742,12 +1345,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4.4.1
-        # Docker Hub's base images (maven, node, python, temurin) through
-        # Google's public mirror of it first: Docker Hub's limit on pulls
-        # from a runner's address refused maven's manifest (429 Too Many
-        # Requests) and failed every pull request's image build from
-        # 20:47 on 2026-10-09. BuildKit goes to Docker Hub itself where
-        # the mirror lacks an image.
+        # Docker Hub through Google's mirror first (Hub's pull limit failed
+        # every image build from 2026-10-09 20:47).
         with:
           buildkitd-config-inline: |
             [registry."docker.io"]
@@ -1770,14 +1369,10 @@ jobs:
           echo "building ${targets[*]}"
           docker buildx bake -f .github/images.hcl "${targets[@]}"
 
-  # The pull request's new dependencies checked against GitHub's advisory
-  # database: a high or critical one fails this job and says so on the
-  # pull request. It was a workflow of its own; it is a job here so CI is
-  # one workflow. It is not in "CI passed" below, so it reports rather
-  # than holds a merge, as before.
+  # New dependencies against GitHub's advisory database; reports, does
+  # not hold a merge.
   dependency-review:
-    # Needs GitHub Advanced Security on a private repository, which it is
-    # not bought for; Dependabot's alerts still cover the dependencies.
+    # Needs Advanced Security on a private repository.
     if: github.event_name == 'pull_request' && !github.event.repository.private
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     permissions:
@@ -1790,27 +1385,9 @@ jobs:
           fail-on-severity: high
           comment-summary-in-pr: on-failure
 
-  # Regenerates the gateway's documentation, so a broken {@link} is
-  # caught here
-  # rather than discovered later. Output is uploaded as a build artifact
-  # (Actions -> this run -> Artifacts), so current docs are a click away
-  # without regenerating them locally.
-  #
-  # The Python documentation (pdoc) is made by the test job, from the
-  # packages its tests have just installed, and uploaded as pdoc-wingtip.
-  # This job used to build the ML and agent images for pdoc's sake: the image builds' work a second
-  # time, 3.6 to 9.8 minutes and the longest job of a run, and so on
-  # pushes to main only. In the suites' jobs it takes seconds, and pull
-  # requests get it too.
-  # The API reference docs, built to prove they build: every night and by
-  # hand, not on each pull request (the owner, 2026-11-06: lighter CI). A
-  # docstring that breaks them is found by the next morning.
   # No new aviation rule outside the engine (CLAUDE.md, #482): a constant
-  # with a regulatory source cited beside it, or an engine rule's name
-  # defined again, in the apps, the gateway or the planner's app, past what
-  # scripts/ci/rules_boundary_allow.txt lists with why. Seconds, on every
-  # run: a rule written in the wrong place is cheaper to move before it
-  # merges.
+  # with a regulatory source cited, or an engine rule's name defined again,
+  # outside the engine, past scripts/ci/rules_boundary_allow.txt. Seconds.
   rules-boundary:
     name: Rules boundary
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
@@ -1824,17 +1401,11 @@ jobs:
         run: python3 scripts/build/legal_pages.py --check
 
   # What must never break in the air (the owner, 2026-11-09), on every
-  # change, whatever it touched: the engine held to worked examples from
-  # the FAA's own texts (apps/web/src/lib/fixtures/flightCritical.json:
-  # the nav log's wind triangle, groundspeed, heading and fuel from
-  # FAA-H-8083-25C ch. 16, cruising altitudes under 14 CFR 91.159 and
-  # 91.179, fuel reserves under 91.151 and 91.167, VFR minimums under
-  # 91.155, hold entries under AIM 5-3-8, glide at a ratio), and the
-  # planner's KMSN to KOSH nav log adding up and its nearest fields in
-  # order. The browser's journey (plan, nav log, emergency, offline) needs
-  # the whole stack, so it runs in e2e, picked by its @flight-critical tag
-  # on every run; the phones' twins of these tests run in Native iOS and
-  # Native Android (FlightCriticalTests.swift, FlightCriticalEngineTest.kt).
+  # change: the engine against worked examples from the FAA's own texts
+  # (apps/web/src/lib/fixtures/flightCritical.json: FAA-H-8083-25C ch. 16,
+  # 14 CFR 91.151, 91.155, 91.159, 91.167, 91.179, AIM 5-3-8) and the
+  # planner's KMSN-KOSH nav log. The browser's twin is e2e's
+  # @flight-critical test; the phones' run in their native jobs.
   flight-critical:
     name: Flight-critical
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
@@ -1854,10 +1425,8 @@ jobs:
         run: pytest tests/test_flight_critical.py -v
 
   # No source file new or grown past 400 lines (scripts/ci/file_sizes.py),
-  # past what scripts/ci/file_sizes_allow.txt lists of the files over it
-  # when the budget came in; and that list only shrinks against the base
-  # branch's. Seconds, the standard library only. And no unused Python
-  # (scripts/ci/dead_python.sh: vulture, pinned, through pipx).
+  # one version of each toolchain, no raw style value outside the tokens,
+  # no unused Python, and the Python's layout. Seconds.
   architecture:
     name: Architecture
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
@@ -1871,29 +1440,17 @@ jobs:
         run: |
           git fetch -q --depth=1 origin "$BASE"
           python3 scripts/ci/file_sizes.py --base FETCH_HEAD
-      # One version of each toolchain (the owner, 2026-11-09): every place
-      # the repo states one -- the images' tags and digests, the pom, the
-      # Gradle files, rust-toolchain.toml, .nvmrc, the dev container, the
-      # docs -- is .tool-versions', and every workflow reads that file.
       - name: Every toolchain at .tool-versions' version
         run: scripts/build/toolchain.sh --check
-      # Every colour, type size, padding, gap and corner in the apps from
-      # design/tokens.json (the owner, 2026-11-09: "make the styling
-      # consistent with the branding"), past what
-      # scripts/ci/brand_guard_allow.txt lists with why. Seconds.
       - name: No raw style value outside the design tokens
         run: python3 scripts/ci/brand_guard.py
       - name: No unused Python
         run: scripts/ci/dead_python.sh
-      # Every Python file as ruff format writes it (.ruff.toml's [format],
-      # the version scripts/dev/format.sh pins, through pipx), seconds.
       - name: The Python's layout
         run: scripts/dev/format.sh --check python
 
-  # The website (apps/site, wingtipmaps.app's own pages): built from
-  # design/tokens.json and the web app's legal pages, then every page
-  # parsed, every link and file inside it found, and nothing loaded from
-  # another host. The standard library alone, in seconds.
+  # The website (apps/site): built, every page parsed, every link found,
+  # nothing from another host.
   site:
     name: Website
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
@@ -1904,10 +1461,8 @@ jobs:
       - run: python3 apps/site/build.py
       - run: python3 apps/site/check.py
 
-  # Every relative link and #anchor in the Markdown resolves: a doc moved
-  # or a heading renamed breaks the links to it silently otherwise.
-  # External links are not fetched (slow, and flaky for reasons no change
-  # here causes). Seconds, the standard library only.
+  # Every relative link and #anchor in the Markdown resolves; external
+  # links are not fetched.
   links:
     name: Doc links
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
@@ -1952,11 +1507,8 @@ jobs:
           retention-days: 30
           path: ${{ runner.temp }}/api-reference
 
-  # The production stack's files, each checked by its own tool: the
-  # CloudFormation template by cfn-lint, the server's scripts by
-  # shellcheck (on the runner already), the compose file by compose
-  # itself with stand-in values, and the Caddyfile by Caddy. Nothing
-  # else runs them before a deploy does.
+  # The production files: cfn-lint, shellcheck, compose config, caddy
+  # validate. Nothing else runs them before a deploy.
   infra:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
@@ -1982,40 +1534,28 @@ jobs:
             -v "$PWD/infra/server/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee \
             caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 
-  # The phone apps, built and tested as their own workflows build them on
-  # main, here so "CI passed" waits for them: #499 merged with the
-  # Android app not compiling while Native Android ran beside CI, where
-  # the ruleset could not require it (a path-filtered workflow stays
-  # pending on every pull request it skips). Only where the pull request
-  # touches what the app builds from (`changes`); skipped otherwise.
-  # Android on GitHub's Linux runner: the engine, unit tests, lint and an
-  # APK, about 5 min; its emulator tests stay nightly. iOS on MAC_RUNNER
-  # or GitHub's macOS runner, ten times a Linux minute's price on a
-  # private repository (docs/CI.md).
+  # The phone apps, inside CI's run so "CI passed" waits for them (#499
+  # merged with the Android app not compiling while its build ran beside
+  # CI), where `changes` finds the pull request touches what they build
+  # from; skipped, and so passing, otherwise. A pull request's set: Android
+  # compiled, unit-tested and linted; iOS's unit tests and CardSmokeTests on
+  # the iPhone. The rest is each workflow's night (docs/CI.md).
   android:
     name: Native Android
     needs: [changes]
     if: needs.changes.outputs.android == 'true'
-    uses: ./.github/workflows/native-android-build.yml
+    uses: ./.github/workflows/native-android.yml
 
   ios:
     name: Native iOS
     needs: [changes]
     if: needs.changes.outputs.ios == 'true'
-    uses: ./.github/workflows/native-ios-test.yml
+    uses: ./.github/workflows/native-ios.yml
 
-  # Nothing a phone already calls may break. An iPhone app in the App
-  # Store keeps calling these servers for months after a release, from
-  # every phone that has not updated, so a field or an endpoint removed
-  # or renamed, a parameter made required, or a type narrowed in either
-  # API's OpenAPI document breaks all of them at once. oasdiff (stock,
-  # pinned by digest) compares each document in the pull request with
-  # the one on main and fails on its ERR-level breaking changes; adding
-  # is always fine. A break that is meant -- an endpoint no released
-  # phone calls -- goes in .github/api-breaks.txt, one line per change
-  # as oasdiff words it, which the pull request commits with the change
-  # (docs/CI.md). Pull requests only, and only when a document changed:
-  # it is one small image and two comparisons, seconds.
+  # Nothing a phone already calls may break: a released app calls these
+  # servers for months. oasdiff compares each OpenAPI document with main's
+  # and fails on a breaking change; a meant one goes in
+  # .github/api-breaks.txt (docs/CI.md). Pull requests that change one.
   api-compat:
     name: API compatibility
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
@@ -2052,14 +1592,8 @@ jobs:
           fi
           exit $status
 
-  # Lighthouse's report against the industry's thresholds: Google's
-  # "good" Core Web Vitals (web.dev/vitals -- LCP within 2.5 s, CLS 0.1 at
-  # most; TBT within 200 ms standing in for INP, which needs a real tap)
-  # and a score of 90 for performance, accessibility and best practices.
-  # Each miss is an issue labelled "standards" and "ready", which Build
-  # takes up, or a comment on the one already open; the numbers go on
-  # the run's summary every time. Not one of the jobs "CI passed" waits
-  # on: a standard missed is work to do, not a reason to stop a merge.
+  # Lighthouse against Core Web Vitals and a score of 90 (web.dev/vitals),
+  # nightly: each miss an issue labelled "standards", never a held merge.
   standards:
     name: Standards
     needs: [e2e]
@@ -2129,11 +1663,8 @@ jobs:
                                   "--body", note + "\n\nThe Lighthouse report is in the run's artifacts. Follow the measure-speed skill (speed) or the iphone-review skill (design): measure, change, measure again, with the numbers in the pull request."], check=True)
           EOF
 
-      # The night's figures to the deployment's speed trend (SpeedController,
-      # the developer console's Speed page, under System): Lighthouse's, the speed lab's
-      # and the first load's, with this commit. Only where the deployment is
-      # named (the SPEED_URL variable) and its lab token is a secret
-      # (SPEED_LAB_TOKEN, the deployment's APP_SPEED_LAB_TOKEN). One request.
+      # The night's figures to the deployment's speed trend (SpeedController),
+      # where SPEED_URL and SPEED_LAB_TOKEN are set. One request.
       - name: Speed trend
         if: vars.SPEED_URL != ''
         continue-on-error: true
@@ -2178,13 +1709,8 @@ jobs:
               "### Tonight's speed lab\n\n" + "\n".join(f"- {k}: {round(v, 3)}" for k, v in sorted(metrics.items())) + "\n")
           EOF
 
-  # The nightly flake hunt (docs/CI.md, "Flaky tests"): the unit suites run
-  # five times each in a new random order, and a test that failed in one
-  # run and passed in another is flaky. Nightly only, and not among the
-  # jobs "CI passed" waits on: a flaky test is work to do, listed in one
-  # standing issue, not a reason to stop a merge. The root suite and the
-  # planner's, the two suites there are, whose modules hold the state a
-  # test can leave behind.
+  # The nightly flake hunt (docs/CI.md, "Flaky tests"): the unit suites
+  # five times in random order; a test that passed and failed is flaky.
   flake-hunt-python:
     name: Flake hunt (${{ matrix.suite }})
     if: github.event_name == 'schedule'
@@ -2268,13 +1794,8 @@ jobs:
           path: /tmp/flake
           retention-days: 7
 
-  # The list, into the one standing issue "Flaky tests (nightly)": the unit
-  # suites' flaky tests from the jobs above, and the browser tests that
-  # passed only on their retry, tonight's and the last day's other runs'
-  # (their e2e-flaky-* artifacts, pull requests' included). One GitHub
-  # write at most -- the issue created, or its body edited, never a
-  # comment -- and none when nothing changed (scripts/ci/flaky_tests.py): a
-  # burst of writes got the owner's account suspended once.
+  # The flaky tests, the night's and the last day's e2e retries, into one
+  # standing issue: one GitHub write at most (scripts/ci/flaky_tests.py).
   flake-report:
     name: Flake report
     needs: [flake-hunt-python, flake-hunt-web, e2e]
@@ -2315,19 +1836,14 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: python3 scripts/ci/flaky_tests.py report /tmp/flake
 
-  # The one check main requires (its ruleset), so the rule holds as jobs
-  # come and go: every job above passed, or was not needed -- a job its
-  # paths did not touch is skipped, which counts as passing.
-  # auto-merge-agents.yml merges a pull request on it.
-  # The quick jobs only (the owner, 2026-11-07: CI was taking most of the
-  # time). The browser suite (e2e and its images), the image builds and the
-  # phone builds (android, ios) still run on every pull request and report
-  # their result, but a merge does not wait for them; a failure there is
-  # fixed forward.
+  # The one check main requires (its ruleset); auto-merge-agents.yml merges
+  # on it. Every job here passed or was skipped as not needed. The browser
+  # suite and the image builds report beside it without holding a merge
+  # (the owner, 2026-11-07); a failure there is fixed forward.
   passed:
     name: CI passed
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat, rules-boundary, flight-critical, architecture, links, site]
+    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat, rules-boundary, flight-critical, architecture, links, site, android, ios]
     if: always()
     steps:
       - name: Every job passed or was not needed

@@ -168,7 +168,8 @@ areas:
       - scripts/build/api-models-apps.*
       - scripts/build/engine-contract-apps.*
       - design/**
-      - .github/workflows/native-ios-test.yml
+      - scripts/ci/content-mtimes.py
+      - .github/workflows/native-ios.yml
   android:
     ci: android
     check: ./gradlew testDebugUnitTest lintDebug assembleDebug (apps/android)
@@ -181,7 +182,7 @@ areas:
       - scripts/build/api-models-apps.*
       - scripts/build/engine-contract-apps.*
       - design/**
-      - .github/workflows/native-android-build.yml
+      - .github/workflows/native-android.yml
   site:
     ci: site
     check: python3 apps/site/build.py && python3 apps/site/check.py (the website, apps/site)
