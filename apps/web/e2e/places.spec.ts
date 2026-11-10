@@ -375,7 +375,6 @@ test("the card's scroll runs down to the sheet's foot, over the home indicator's
 test("an airport's card has four tabs right under its actions, in sight at half, Info first; a tab takes the panel up, and the open one again, down", async ({
   page,
 }) => {
-  // C81 has no airport diagram, and an approach.
   await page.route(
     (url) => url.pathname.endsWith("/api/planner/airport/C81"),
     async (route) => {
@@ -434,6 +433,7 @@ test("an airport's Info lists its first frequencies, and its title the way to ev
 }) => {
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
+  await grabberTo(page, "full"); // the tabs under the pictures, out of a phone's half sheet
   await card(page).getByTestId("place-tab-radio").click();
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
   const rows = card(page).getByTestId("place-frequency");

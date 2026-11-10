@@ -54,12 +54,10 @@ test("in flight, Emergency opens the best fields, the squawk and the MAYDAY", { 
     await expect(sheet.getByTestId("emergency-field").filter({ hasText: name }).first()).toHaveAttribute("aria-checked", "true");
   }
   await expect(sheet.getByTestId("emergency-call-911")).toHaveAttribute("href", "tel:911");
-  // From md up it is a region in the side panel, not a modal dialog: the
-  // map stays usable beside it (docs/design/web.md §8).
-  if ((page.viewportSize()?.width ?? 0) >= 768) {
-    await expect(sheet).toHaveAttribute("role", "region");
-    await expect(page.locator('[role="dialog"][aria-modal="true"]')).toHaveCount(0);
-  }
+  // A card in the map's sheet, not a modal dialog, on a phone too (the one
+  // card rule, 2026-11-10): nothing dimmed, the map usable (docs/design/web.md §8).
+  await expect(sheet).toHaveAttribute("role", "region");
+  await expect(page.locator('[role="dialog"][aria-modal="true"]')).toHaveCount(0);
   // The map's own buttons are as they were: no EMER (the owner, 2026-11-08).
   await expect(page.getByTestId("map-emergency")).toHaveCount(0);
 });
@@ -68,21 +66,17 @@ test("it opens on its title, and the next Tab is Direct To the best field, which
   await flying(page);
   await page.getByTestId("flying-emergency").click();
   const sheet = page.getByTestId("emergency-sheet");
-  // The static title takes the first focus (APG modal dialog), not a field:
-  // the phone sheet's title, or the side panel's card head on a desktop
-  // (docs/design/web.md §8: no modal there, the map usable beside it).
+  // The static title takes the first focus (APG dialog), not a field: the
+  // card's head, the map usable beside it (docs/design/web.md §8).
   await expect(sheet.locator(":focus")).toHaveText("Emergency");
   const direct = sheet.getByTestId("emergency-direct-to");
   await expect(direct).toBeVisible({ timeout: slow(20_000) });
   await page.keyboard.press("Tab");
-  // The close sits at the title row's end, as every sheet's and panel
-  // card's does -- the side panel's card's (SheetCard), a phone sheet's
-  // (SheetDialog) -- so it comes first, Direct To the next Tab after it.
-  const close = sheet.getByTestId("sheet-card-close").or(sheet.getByTestId("sheet-close"));
-  if (await close.isVisible()) {
-    await expect(close).toBeFocused();
-    await page.keyboard.press("Tab");
-  }
+  // The close sits at the title row's end, as every card's does (SheetCard),
+  // so it comes first, Direct To the next Tab after it.
+  const close = sheet.getByTestId("sheet-card-close");
+  await expect(close).toBeFocused();
+  await page.keyboard.press("Tab");
   await expect(direct).toBeFocused();
   const best = await sheet.getByTestId("emergency-field").first().locator(".font-semibold").first().textContent();
   await expect(direct).toContainText(`Direct To ${best}`);

@@ -1,8 +1,6 @@
 import { useRef } from "react";
 import { cn } from "cn";
-import SheetDialog from "../../components/SheetDialog";
 import { SheetCard } from "../../components/SheetCard";
-import { useIsDesktop } from "../../hooks/use-desktop";
 import { LINK } from "../../components/airplane/link";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Button } from "../../components/ui/button";
@@ -119,65 +117,51 @@ function PhotoRead({ vm }: { vm: AirplaneProfileModel }) {
 
 /**
  * An airplane's profile, opened from any N-number and any airplane figure
- * the app shows (lib/airplane/profileStore), over the page as every sheet
- * that asks something of the pilot is (SheetDialog); closing it is back
- * where the pilot was. Its N-number and type, then every figure with its
- * source, each editable in place. Signed out, what is set stays on this
- * device. Its view model is useAirplaneProfile.
+ * the app shows (lib/airplane/profileStore): a card in the map's sheet over
+ * the search, with its ✕, on a phone as in a desktop's side panel, as
+ * every thing is by the one card rule (the owner, 2026-11-10), where on a
+ * phone it was a dimmed sheet over the page. Closing it is back where the
+ * pilot was. Its N-number and type, then every figure with its source,
+ * each editable in place. Signed out, what is set stays on this device.
+ * Its view model is useAirplaneProfile.
  */
 export default function AirplaneProfileSheet() {
   const vm = useAirplaneProfile();
-  const desktop = useIsDesktop();
-  const body = (
-    <div className="flex flex-col gap-5" data-testid={desktop ? "airplane-profile" : undefined}>
-      {/* First, as the one-search design has it (2026-11-09): this
-          airplane the plan's, and the plan shown. */}
-      <Button type="button" className="h-11 w-full" disabled={vm.flying} onClick={vm.fly} data-testid="fly-this-airplane">
-        {vm.flying ? "Flying This Airplane" : "Fly This Airplane"}
-      </Button>
-      <ListGroup>
-        <ListRow title="Registration" value={vm.tail} />
-        <ListRow title="Type" value={vm.type ?? "Not known"} data-testid="airplane-profile-type" />
-      </ListGroup>
-      <ListGroup title="Figures">
-        {vm.rows.map((row) => (
-          <FigureRow key={row.key} vm={vm} row={row} />
-        ))}
-      </ListGroup>
-      <EnduranceSection
-        tail={vm.tail}
-        usableGal={vm.rows.find((r) => r.key === "usable_fuel_gal")?.value ?? null}
-        burnGph={vm.rows.find((r) => r.key === "fuel_burn_gph")?.value ?? null}
-      />
-      <PhotoRead vm={vm} />
-    </div>
-  );
-  // On a desktop a card of the side panel, beside the search, as an
-  // airport's is (the owner, 2026-11-09: cards the web's own way); on a
-  // phone the sheet over the page, as before.
-  if (desktop)
-    return (
-      <SheetCard title={vm.tail} onClose={vm.close} raise="full">
-        {body}
-      </SheetCard>
-    );
   return (
-    <SheetDialog
-      open={vm.open}
-      onOpenChange={(open) => {
-        if (!open) vm.close();
-      }}
+    <SheetCard
       title={vm.tail}
+      onClose={vm.close}
+      raise="full"
       testId="airplane-profile"
-      initialFocus={(sheet) => {
-        // On the figure it was opened for, where it was one.
-        const field = vm.focus && sheet.querySelector<HTMLInputElement>(`[data-figure="${vm.focus}"] input`);
-        if (!field) return null;
-        field.scrollIntoView({ block: "center" });
-        return field;
+      // On the figure it was opened for, where it was one.
+      initialFocus={() => {
+        const field = vm.focus ? document.querySelector<HTMLInputElement>(`[data-figure="${vm.focus}"] input`) : null;
+        field?.scrollIntoView({ block: "center" });
+        return field ?? true;
       }}
     >
-      {body}
-    </SheetDialog>
+      <div className="flex flex-col gap-5">
+        {/* First, as the one-search design has it (2026-11-09): this
+            airplane the plan's, and the plan shown. */}
+        <Button type="button" className="h-11 w-full" disabled={vm.flying} onClick={vm.fly} data-testid="fly-this-airplane">
+          {vm.flying ? "Flying This Airplane" : "Fly This Airplane"}
+        </Button>
+        <ListGroup>
+          <ListRow title="Registration" value={vm.tail} />
+          <ListRow title="Type" value={vm.type ?? "Not known"} data-testid="airplane-profile-type" />
+        </ListGroup>
+        <ListGroup title="Figures">
+          {vm.rows.map((row) => (
+            <FigureRow key={row.key} vm={vm} row={row} />
+          ))}
+        </ListGroup>
+        <EnduranceSection
+          tail={vm.tail}
+          usableGal={vm.rows.find((r) => r.key === "usable_fuel_gal")?.value ?? null}
+          burnGph={vm.rows.find((r) => r.key === "fuel_burn_gph")?.value ?? null}
+        />
+        <PhotoRead vm={vm} />
+      </div>
+    </SheetCard>
   );
 }

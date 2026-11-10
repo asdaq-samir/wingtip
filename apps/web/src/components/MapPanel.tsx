@@ -110,9 +110,9 @@ export default function MapPanel(props: Props) {
   const raised = useSheetCards((s) => raisedFor(s.stack));
   const cardsUp = raised !== null;
   const footShown = !!foot && !cardsUp;
-  // A card open is the whole sheet, its own head at the top, as a place in
-  // Apple Maps on the web (the owner, 2026-11-10); closed, the search is back.
-  const barShown = !!bar && !(onPhone && keyboard) && !flying && !cardsUp && layer !== "card";
+  // A card or a page open (the account page too) is the whole sheet, its own head and ✕ at the
+  // top, by the one card rule (the owner, 2026-11-10); closed, the search is back.
+  const barShown = !!bar && !(onPhone && keyboard) && !flying && !cardsUp && layer === "tab";
   const toEdge = layer !== "console" && !!props.toEdge && !cardsUp;
 
   // Where the Drawer is going (its snap point) and the size laid out for:
@@ -190,14 +190,14 @@ export default function MapPanel(props: Props) {
     return () => cancelAnimationFrame(frame);
   }, [moving]);
 
-  // Escape lowers it once nothing else took the key (a menu, Setup's page
-  // each prevent it): on a phone the Drawer says it ("escape-key"); the
-  // side panel hears its own, going back one level first (backOne).
+  // Escape, once nothing else took it (a menu, Setup's page): the top card
+  // or page closed first, a level back (backOne), on a phone too by the one
+  // card rule (the owner, 2026-11-10); with none open, the sheet lowered.
   const lower = (event: Event) => {
     setTimeout(() => {
-      if (event.defaultPrevented || life.sizeRef.current === "peek") return;
-      if (desktop && panel && backOne(panel.ownerDocument)) return;
-      ask("peek");
+      if (event.defaultPrevented) return;
+      if (panel && backOne(panel.ownerDocument)) return;
+      if (life.sizeRef.current !== "peek") ask("peek");
     });
   };
 

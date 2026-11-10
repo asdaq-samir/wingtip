@@ -2,7 +2,7 @@ import { Suspense, lazy } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, Plane, Search } from "lucide-react";
 import { cn } from "cn";
-import PanelOrSheet from "../../../../components/PanelOrSheet";
+import { SheetCard } from "../../../../components/SheetCard";
 import { ListChoices, ListGroup, ListRow } from "../../../../components/GroupedList";
 import { Button } from "../../../../components/ui/button";
 import { pilotQuery } from "../../../../lib/queryClient";
@@ -15,36 +15,27 @@ const SignInModal = lazy(() => import("../../../../components/SignInModal"));
 
 const BIG = "h-12 rounded-(--radius-control) font-semibold";
 
-/** The title the card opens on (APG dialog: focus on the static title),
- *  so a screen reader starts at the welcome and Tab reaches the choices. */
-const TITLE = "[data-welcome-title]";
-
 /**
  * The welcome as one short card over the map (docs/design/web.md §14),
  * where it was a tour of five pages: what Wingtip is in one line; the
  * airplane, optional, No Airplane until one is picked (decision 0011) --
  * leaving it is the skip; Plan a Flight, filled, the primary, which puts
  * the pilot in the one search; the sample flight; the location with why,
- * asked only on a tap; and Sign In while signed out. On a phone its stock
- * sheet fades in once, and not at all under Reduce Motion (index.css);
- * from `md` up it is a card in the side panel, no modal, the map usable
- * beside it (PanelOrSheet). Escape or the close leaves the map ready, the
- * welcome seen.
+ * asked only on a tap; and Sign In while signed out. A card in the map's
+ * sheet over the search, with its ✕, on a phone as in a desktop's side
+ * panel, by the one card rule (the owner, 2026-11-10), where on a phone it
+ * was a dimmed sheet over the page: no modal, the map usable. Its head
+ * takes the focus as it opens (the APG dialog's static title), so a screen
+ * reader starts at the welcome. Escape or the close leaves the map ready,
+ * the welcome seen.
  */
 export default function WelcomeCard({ onPlan, onOpened }: { onPlan: (parts: RouteParts) => void; onOpened: () => void }) {
   const vm = useWelcome({ onPlan, onOpened });
   const { data: pilot, isLoading } = useQuery(pilotQuery);
   return (
-    <PanelOrSheet
-      open
+    <SheetCard
+      title="Welcome to Wingtip Maps"
       onClose={vm.skip}
-      name="Welcome to Wingtip Maps"
-      title={
-        <span tabIndex={-1} className="outline-none" data-welcome-title="">
-          Welcome to Wingtip Maps
-        </span>
-      }
-      titleFocus={TITLE}
       testId="welcome"
       description="The FAA chart, your route, its nav log and its Brief, for VFR and IFR."
     >
@@ -90,6 +81,6 @@ export default function WelcomeCard({ onPlan, onOpened }: { onPlan: (parts: Rout
           </p>
         )}
       </div>
-    </PanelOrSheet>
+    </SheetCard>
   );
 }

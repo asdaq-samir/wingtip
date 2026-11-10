@@ -27,12 +27,10 @@ test("a new pilot is welcomed once, and the sample flight opens with its nav log
   await expect(welcome.getByTestId("welcome-no-airplane")).toHaveAttribute("aria-checked", "true");
   // The focus on its title (APG dialog), the primary filled under the choice.
   await expect(welcome.locator(":focus")).toHaveText("Welcome to Wingtip Maps");
-  // From md up a card in the side panel, no modal: the map usable beside
-  // it (docs/design/web.md §14).
-  if ((page.viewportSize()?.width ?? 0) >= 768) {
-    await expect(welcome).toHaveAttribute("role", "region");
-    await expect(page.locator('[role="dialog"][aria-modal="true"]')).toHaveCount(0);
-  }
+  // A card in the map's sheet, no modal, on a phone too (the one card
+  // rule, 2026-11-10): the map usable (docs/design/web.md §14).
+  await expect(welcome).toHaveAttribute("role", "region");
+  await expect(page.locator('[role="dialog"][aria-modal="true"]')).toHaveCount(0);
   await welcome.getByTestId("welcome-sample").click();
 
   await expect(page).toHaveURL(/dep=KMSN/);

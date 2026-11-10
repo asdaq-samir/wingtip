@@ -1,16 +1,10 @@
-import PanelOrSheet from "../../components/PanelOrSheet";
+import { SheetCard } from "../../components/SheetCard";
 import ActionsList from "./ActionsList";
 import DirectToField from "./DirectToField";
 import EmergencyChecklist from "./EmergencyChecklist";
 import FieldsList from "./FieldsList";
 import GuidanceList from "./GuidanceList";
 import { useEmergency } from "./useEmergency";
-
-/** The title the sheet opens on (APG modal dialog: a static title takes
- *  the first focus where the content is long), so a screen reader starts
- *  at "Emergency" and the next Tab is Direct To. The side panel's card
- *  focuses its own head the same way. */
-const TITLE = "[data-emergency-title]";
 
 /**
  * The emergency assistant, one screen (the market gap: Garmin's Emergency
@@ -21,10 +15,15 @@ const TITLE = "[data-emergency-title]";
  * checklist, and the radio. Opened with no map button of its own (the
  * owner, 2026-11-08) -- from the flying mode's Emergency, the pilot's
  * words ("mayday", "engine failure", "emergency") and the emergency
- * checklists. On a phone the stock sheet over the map, which stays in
- * sight above it; from `md` up a card in the side panel at its full
- * height, no modal, the map usable beside it (docs/design/web.md §8,
- * PanelOrSheet).
+ * checklists. The one full-screen card of the one card rule (the owner,
+ * 2026-11-10): the map's sheet all the way up for it, on a phone as in a
+ * desktop's side panel at its full height, over the search, its ✕ at the
+ * top right where every card's is. Not a modal and nothing dimmed, where
+ * on a phone it was a dimmed sheet: the line to the field picked is drawn
+ * on the map, which the sheet let down shows and a desktop keeps beside
+ * it (docs/design/web.md §8). Its head takes the first focus (the APG
+ * dialog's static title), so a screen reader starts at "Emergency" and
+ * the next Tab after the close is Direct To.
  *
  * It opens at once, whatever the motion setting (docs/design/web.md §8):
  * the stylesheet below takes the sheet's entry transition away for this
@@ -35,26 +34,16 @@ const TITLE = "[data-emergency-title]";
 export default function EmergencySheet() {
   const vm = useEmergency();
   return (
-    <PanelOrSheet
-      open={!!vm.open}
-      onClose={vm.close}
-      name="Emergency"
-      title={
-        <span className="text-destructive outline-none" tabIndex={-1} data-emergency-title="">
-          Emergency
-        </span>
-      }
-      titleFocus={TITLE}
-      raise="full"
-      testId="emergency-sheet"
-    >
+    <SheetCard title="Emergency" onClose={vm.close} raise="full" testId="emergency-sheet">
       <style href="wingtip-emergency-at-once" precedence="default">
         {`[data-testid="emergency-sheet"] { transition: none !important; animation: none !important; }`}
       </style>
-      <DirectToField vm={vm} />
-      <FieldsList vm={vm} />
-      {vm.guidance ? <GuidanceList vm={vm} /> : <EmergencyChecklist vm={vm} />}
-      <ActionsList vm={vm} />
-    </PanelOrSheet>
+      <div className="grid gap-4">
+        <DirectToField vm={vm} />
+        <FieldsList vm={vm} />
+        {vm.guidance ? <GuidanceList vm={vm} /> : <EmergencyChecklist vm={vm} />}
+        <ActionsList vm={vm} />
+      </div>
+    </SheetCard>
   );
 }

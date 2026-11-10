@@ -69,10 +69,10 @@ export default function ConsoleLayer({
       // took the taps meant for its close (one-search.spec, consoles.spec).
       style={{ "--head-room": "0px" } as CSSProperties}
     >
-      {/* Its name and its close, the way back to the sheet under it, as
-          the account button opened it (the one search, 2026-11-09):
-          it was another tab tapped. */}
-      <div className="flex items-center gap-2 px-4 pt-2 pb-1">
+      {/* Its name and its close, the way back to the sheet under it, at the
+          sheet's top: the page covers the title row and the search, as every
+          page does by the one card rule (the owner, 2026-11-10). */}
+      <div className="flex items-center gap-2 px-4 pt-3 pb-1">
         <h2 className={cn("flex-1 font-bold", TEXT.title)}>Account and Settings</h2>
         <CloseButton label="Back to the map" onClick={onClose} data-back="" data-testid="console-close" />
       </div>
