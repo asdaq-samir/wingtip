@@ -3,6 +3,7 @@ import SwiftUI
 /// The four parts of the clearance step in a row (Hear, Read back, Enter,
 /// Compare): done in green, the one now in the tint, the rest to come.
 struct ClearanceStepsRow: View {
+    @Environment(\.lookAccent) private var accent
     /// Where each of the four parts stands.
     enum Standing { case done, now, later }
 
@@ -26,7 +27,7 @@ struct ClearanceStepsRow: View {
                 Text("\(i + 1) \(part.name)")
                     .font(.caption)
                     .fontWeight(part.standing == .later ? .regular : .semibold)
-                    .foregroundStyle(part.standing == .done ? WingtipInk.go : part.standing == .now ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(part.standing == .done ? WingtipInk.go : part.standing == .now ? accent : Color.secondary)
                     .frame(maxWidth: .infinity)
                     .accessibilityLabel("\(part.name), \(part.standing == .done ? "done" : part.standing == .now ? "now" : "to come")")
             }
@@ -93,6 +94,7 @@ struct ClearanceCompareSection: View {
 /// The radio as heard, newest first, a call to us in the tint: a tap
 /// reads that one above.
 struct ClearanceHeardLog: View {
+    @Environment(\.lookAccent) private var accent
     let heard: [ClearanceListener.Transmission]
     let pick: (String) -> Void
 
@@ -103,7 +105,7 @@ struct ClearanceHeardLog: View {
                 pick(t.text)
             } label: {
                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                    Text(t.text).foregroundStyle(t.forUs ? Color.accentColor : Color.primary).fontWeight(t.forUs ? .semibold : .regular)
+                    Text(t.text).foregroundStyle(t.forUs ? accent : Color.primary).fontWeight(t.forUs ? .semibold : .regular)
                     Text(t.at, style: .time).font(.caption).foregroundStyle(.secondary)
                 }
             }

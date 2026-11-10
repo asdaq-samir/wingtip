@@ -6,6 +6,7 @@ import SwiftUI
 /// and how far, and the engine's reasons under it, the reach first in its
 /// tone. Nothing is hidden for a limitation; it is said.
 struct EmergencyFieldsSection: View {
+    @Environment(\.lookAccent) private var accent
     let fix: OwnShip.Fix?
     let ownShipOff: Bool
     /// Direct To the field: each row's one filled action.
@@ -72,7 +73,7 @@ struct EmergencyFieldsSection: View {
         HStack(alignment: .top, spacing: WingtipSpace.md) {
             Image(systemName: picked ? "checkmark.circle.fill" : "circle")
                 .symbolSwap()
-                .foregroundStyle(picked ? Color.accentColor : Color.secondary)
+                .foregroundStyle(picked ? accent : Color.secondary)
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 (Text(field.ident).fontWeight(.semibold) + Text(" \(field.name)")).font(.title3).foregroundStyle(Color.primary)
                 ForEach(Array(field.reasons.enumerated()), id: \.offset) { i, reason in

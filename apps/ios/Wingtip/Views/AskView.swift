@@ -13,6 +13,7 @@ import SwiftUI
 /// `.sheet(isPresented:) { AskView() }`, with Plan, OwnShip, Session and
 /// Verdict in the environment as the root puts them.
 struct AskView: View {
+    @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(Session.self) private var session
@@ -152,7 +153,7 @@ struct AskView: View {
                         if voice.listening { voice.finish() } else { Task { await hear() } }
                     } label: {
                         Image(systemName: voice.listening ? "mic.fill" : WingtipIcon.microphone)
-                            .foregroundStyle(voice.listening ? Color.accentColor : .secondary)
+                            .foregroundStyle(voice.listening ? accent : .secondary)
                             .symbolDictating(voice.listening)
                             .symbolSwap()
                             .frame(width: 28, height: 28)
@@ -209,6 +210,7 @@ struct AskView: View {
 /// One turn: the pilot's words in the tint on the right, the assistant's
 /// on the left with its source chips and, where the stream broke, why.
 private struct TurnBubble: View {
+    @Environment(\.lookAccent) private var accent
     let turn: AssistantTurn
     let onSource: (AssistantSource) -> Void
 
@@ -217,7 +219,7 @@ private struct TurnBubble: View {
             if turn.role == .user {
                 Text(turn.content)
                     .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous))
+                    .background(accent, in: RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .accessibilityLabel("You asked: \(turn.content)")

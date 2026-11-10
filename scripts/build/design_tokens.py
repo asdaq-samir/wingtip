@@ -4,8 +4,8 @@
 One source for Wingtip's design language (colours, type, spacing, radii,
 materials, motion, tap targets), written into each platform in its own
 idiom: CSS custom properties and a TypeScript module for the web, Swift
-constants (Dynamic Type styles, and the AccentColor colour set) for iOS,
-Compose values (Color, Typography, Dp) for Android. Standard library only,
+constants (Dynamic Type styles) for iOS, Compose values (Color,
+Typography, Dp) for Android. Standard library only,
 so it needs nothing installed and nothing to pin; run it through
 scripts/build/design-tokens.sh, which CI runs with --check.
 
@@ -31,7 +31,6 @@ SOURCE = ROOT / "design" / "tokens.json"
 WEB_CSS = ROOT / "apps/web/src/styles/tokens.css"
 WEB_TS = ROOT / "apps/web/src/lib/tokens.ts"
 IOS_SWIFT = ROOT / "apps/ios/Wingtip/Design/Generated/Tokens.swift"
-IOS_ACCENT = ROOT / "apps/ios/Wingtip/Assets.xcassets/AccentColor.colorset/Contents.json"
 ANDROID_KT = ROOT / "apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/Tokens.kt"
 # The figure formats' examples, beside the engine's shared fixtures, for
 # every app's formatter tests.
@@ -425,23 +424,6 @@ def gen_swift(tree, sch):
     return "\n".join(L) + "\n"
 
 
-def gen_accent(sch):
-    def comp(c):
-        return {
-            "color-space": "srgb",
-            "components": {"red": "0x%02X" % c[0], "green": "0x%02X" % c[1], "blue": "0x%02X" % c[2], "alpha": "1.000"},
-        }
-
-    doc = {
-        "colors": [
-            {"color": comp(sch["light"]["tint"]), "idiom": "universal"},
-            {"appearances": [{"appearance": "luminosity", "value": "dark"}], "color": comp(sch["dark"]["tint"]), "idiom": "universal"},
-        ],
-        "info": {"author": "scripts/build/design-tokens.sh (design/tokens.json color.theme tint) -- do not edit", "version": 1},
-    }
-    return json.dumps(doc, indent=2) + "\n"
-
-
 # ---------------------------------------------------------------- Android
 
 
@@ -549,7 +531,6 @@ def main():
         WEB_CSS: gen_css(tree),
         WEB_TS: gen_ts(tree),
         IOS_SWIFT: gen_swift(tree, sch),
-        IOS_ACCENT: gen_accent(sch),
         ANDROID_KT: gen_kotlin(tree, sch),
         FORMATS: gen_formats(tokens(tree["format"]), camel, BANNER),
     }

@@ -5,8 +5,8 @@ import UIKit
 /// web app's dark theme (design/tokens.json color.theme.dark, generated
 /// into WingtipPalette), for the colours the app sets itself -- the map's
 /// marks, the chart's dimming. Everything else is the system's, which
-/// follows dark appearance by itself; the tint is the AccentColor the
-/// same tokens make.
+/// follows dark appearance by itself; the tint is the look's (Look), set
+/// at the root.
 enum NightPalette {
     /// The night's ground and surface (web --background, --card).
     static let ground = WingtipPalette.dark.background

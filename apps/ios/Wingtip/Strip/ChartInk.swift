@@ -51,14 +51,14 @@ struct ChartInk: Equatable, Sendable {
 
     /// The strip in the Native look: iOS's grouped grounds and labels
     /// (WingtipPalette.nativeLight, .nativeDark, system colours by name)
-    /// and the accent an untinted control draws in (Color.accentColor), the
+    /// and the accent an untinted control draws in (systemBlue, Color.blue), the
     /// chart's inks and the states kept as they are, being aviation's
     /// rather than the look's.
     static func native(dark: Bool) -> ChartInk {
         let ink = scheme(dark: dark)
         let p = dark ? WingtipPalette.nativeDark : WingtipPalette.nativeLight
         return ChartInk(paper: Color(uiColor: p.sheet), card: Color(uiColor: p.card), magenta: ink.magenta, brown: ink.brown, field: ink.field,
-                        flown: ink.flown, tint: .accentColor, caution: ink.caution, go: ink.go, stop: ink.stop,
+                        flown: ink.flown, tint: .blue, caution: ink.caution, go: ink.go, stop: ink.stop,
                         ink: Color(uiColor: p.foreground), muted: Color(uiColor: p.mutedForeground), night: dark)
     }
 

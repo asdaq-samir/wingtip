@@ -47,8 +47,10 @@ Companion docs:
   `color.theme.light.tint`, #0066CC (5.6:1 on white), at night
   `color.theme.dark.tint`, #57A8FF, and in sunlight
   `color.theme.sunlight.tint`, #0047A0.
-  - It is set as the app's `AccentColor`, which is generated from the
-    tokens, so stock controls pick it up.
+  - It is set at the root at run time for the brand looks (`lookTint`:
+    SwiftUI's `.tint` and the window's `tintColor`, which the alerts and
+    menus the system draws take), so stock controls pick it up. The app
+    names no global accent colour, so Native gets the system's own.
   - Plain text never takes the tint.
   - HIG Color asks for colour on the *background* of a primary action
     on Liquid Glass, not on its symbol ([HIG Color][hig-color]). So the
@@ -1172,9 +1174,8 @@ reader could not parse plays a warning notification once.
     app's, the system's labels and grouped grounds by name
     (design/tokens.json `color.system`), the text styles as SwiftUI sets
     them, no brand haptics, corners or shadows (`Look.isStock` gates each
-    modifier). An untinted control draws in the AccentColor asset, which
-    the build compiles in as the global accent, so Native's controls are
-    the brand's blue, not `systemBlue`: that cannot change at run time.
+    modifier). The app names no global accent colour (project.yml), so an
+    untinted control in Native draws in the system's own, `systemBlue`.
     The chart, the course, airspace, flight categories and the caution,
     go and no-go colours stay as they are in every look.
   - Night follows the system.

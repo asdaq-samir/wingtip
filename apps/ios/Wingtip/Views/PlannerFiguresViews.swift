@@ -448,7 +448,7 @@ struct HoldDiagram: View {
             let cx = fx + side * r, ox = fx + side * 2 * r
             let k = r * 0.5523
             let faint = GraphicsContext.Shading.color(.primary.opacity(0.25))
-            let tint = GraphicsContext.Shading.color(.accentColor)
+            let tint = GraphicsContext.Shading.style(.tint)
 
             var course = Path()
             course.move(to: CGPoint(x: fx, y: 4)); course.addLine(to: CGPoint(x: fx, y: 266))
@@ -597,7 +597,7 @@ struct LostCommsSegmentsSections: View {
                         expectedFrom = i
                     } label: {
                         Text(answer?.segments.indices.contains(i) == true ? answer!.segments[i].words : "…")
-                            .foregroundStyle(i >= expectedFrom ? Color.primary : Color.accentColor)
+                            .foregroundStyle(i >= expectedFrom ? AnyShapeStyle(.primary) : AnyShapeStyle(.tint))
                     }
                     .buttonStyle(.borderless)
                 }

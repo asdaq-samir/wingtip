@@ -7,6 +7,7 @@ import SwiftUI
 /// Captions sit over what is under them. A tap on the captions opens the
 /// radio's sheet with the whole log.
 struct RadioOverlay: View {
+    @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     private var listener: ClearanceListener { ClearanceListener.shared }
@@ -25,7 +26,7 @@ struct RadioOverlay: View {
                         // The radio's waves, lit in turn while it listens
                         // (never the mic's look, which is Ask by voice's);
                         // with Reduce Motion on the tint and the words say it.
-                        Image(systemName: WingtipIcon.radio).foregroundStyle(listener.listening ? Color.accentColor : .secondary)
+                        Image(systemName: WingtipIcon.radio).foregroundStyle(listener.listening ? accent : .secondary)
                             .symbolOnAir(listener.listening)
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
@@ -36,7 +37,7 @@ struct RadioOverlay: View {
                             }
                             ForEach(listener.heard.suffix(2)) { t in
                                 Text("Heard: \(t.text)").lineLimit(2)
-                                    .foregroundStyle(t.forUs ? Color.accentColor : Color.primary)
+                                    .foregroundStyle(t.forUs ? accent : Color.primary)
                                     .fontWeight(t.forUs ? .semibold : .regular)
                                     .opacity(t.final ? 1 : 0.8)
                             }
@@ -63,6 +64,7 @@ struct RadioOverlay: View {
 /// read it first), Fly the altitude. Nothing is done until it is tapped;
 /// ✕ puts it away.
 struct RadioCallBanner: View {
+    @Environment(\.lookAccent) private var accent
     let call: ClearanceListener.Transmission
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
@@ -80,7 +82,7 @@ struct RadioCallBanner: View {
         let direct = try? HeardCall.directOf(call.text)
         VStack(alignment: .leading, spacing: WingtipSpace.sm) {
             HStack(alignment: .top, spacing: WingtipSpace.sm) {
-                Image(systemName: "dot.radiowaves.left.and.right").foregroundStyle(Color.accentColor).accessibilityHidden(true)
+                Image(systemName: "dot.radiowaves.left.and.right").foregroundStyle(accent).accessibilityHidden(true)
                 Text(call.text).font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityLabel("A call to you: \(call.text)")
                 Button { listener.seen = call.id } label: {

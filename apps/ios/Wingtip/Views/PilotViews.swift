@@ -5,6 +5,7 @@ import SwiftUI
 /// on the page saved with the button at the top. Its state is the
 /// model's (SavedFlightsModel).
 struct FlightsView: View {
+    @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
     @Environment(\.dismiss) private var dismiss
@@ -41,7 +42,7 @@ struct FlightsView: View {
                         Button("Delete", systemImage: "trash", role: .destructive) { model.delete(flight, undo: undoManager) }
                     }
                     .swipeActions(edge: .leading) {
-                        flownTrack(flight).tint(.accentColor)
+                        flownTrack(flight).tint(accent)
                         editButton(flight)
                     }
                     .swipeActions(edge: .trailing) {

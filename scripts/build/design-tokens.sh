@@ -6,7 +6,6 @@
 #   apps/web/src/styles/tokens.css                 CSS custom properties
 #   apps/web/src/lib/tokens.ts                     the same for JS
 #   apps/ios/Wingtip/Design/Generated/Tokens.swift UIColor, Font, CGFloat
-#   apps/ios/Wingtip/Assets.xcassets/AccentColor.colorset
 #   apps/android/.../design/generated/Tokens.kt    Color, Typography, Dp
 #
 #   scripts/build/design-tokens.sh           write them
