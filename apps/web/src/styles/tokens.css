@@ -346,6 +346,11 @@
   --sheet-blur: 0px;
   --feel-press-scale: 1;
   --feel-lift: 0px;
+  --motion-sheet: 0.2s;
+  --motion-sheet-least: 0.2s;
+  --motion-sheet-most: 0.2s;
+  --motion-sheet-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-sheet-back-ease: cubic-bezier(0.4, 0, 0.2, 1);
   --type-hero: 1.5rem;
   --lead-hero: 2rem;
   --type-card: 1.25rem;

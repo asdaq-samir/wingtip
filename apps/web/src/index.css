@@ -28,6 +28,10 @@
     @slot;
   }
 }
+/* The Native look alone (lib/brand): a class here puts a component back
+   to shadcn's stock where Wingtip's own is unconditional (menuLook, the
+   buttons' words, the label role), the brand looks unchanged. */
+@custom-variant native (&:where([data-brand="native"] *));
 /* What Wingtip adds to the stock components and the Native look leaves
    out, as shadcn ships them: a press's give, a hover's lift, the motions
    a figure or a banner comes in with (feel.css). */

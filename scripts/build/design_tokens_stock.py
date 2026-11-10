@@ -1,6 +1,6 @@
 """The web's Native look beyond its colours (design/tokens.json stock), for
 scripts/build/design_tokens.py: shadcn's and Tailwind's own corners,
-shadows, type and states, as they ship, written over Wingtip's on
+shadows, type, states and sheet timing, as they ship, written over Wingtip's on
 html[data-brand="native"] (the owner, 2026-11-10: "Native means how they
 come out of the box, look and behavior wise"). Standard library only."""
 
@@ -39,6 +39,9 @@ def css(tree):
     ]
     feel = {k: t["$value"] for k, t in _tokens(g["feel"]).items()}
     out += [("feel-press-scale", "%g" % feel["press-scale"]), ("feel-lift", "%gpx" % feel["lift"])]
+    for k, t in _tokens(g["motion"]).items():
+        v = t["$value"]
+        out.append(("motion-%s" % k, "cubic-bezier(%s)" % ", ".join("%g" % x for x in v) if isinstance(v, list) else "%gs" % v))
     for role, t in _tokens(g["type"]).items():
         size, lead = TAILWIND_TYPE[t["$value"]]
         out += [("type-%s" % role, size), ("lead-%s" % role, lead)]

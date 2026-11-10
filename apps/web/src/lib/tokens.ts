@@ -144,9 +144,9 @@ export const TYPE_CLASS = {
   tab: "text-(length:--type-tab) leading-(--lead-tab)",
   tabBar: "text-(length:--type-tab-bar) leading-(--lead-tab-bar)",
   caption: "text-(length:--type-caption) leading-(--lead-caption)",
-  label: "font-display text-(length:--type-label) leading-(--lead-label) font-semibold uppercase tracking-[0.1em]",
+  label: "font-display text-(length:--type-label) leading-(--lead-label) font-semibold uppercase native:normal-case tracking-[0.1em] native:tracking-normal",
   figure: "text-(length:--type-figure) leading-(--lead-figure) font-bold tabular-nums",
-  word: "font-display font-semibold uppercase tracking-[0.08em]",
+  word: "font-display font-semibold uppercase native:normal-case tracking-[0.08em] native:tracking-normal",
 } as const;
 
 /** Each text role's size in points on a touch screen, for text drawn in points (an SVG). */

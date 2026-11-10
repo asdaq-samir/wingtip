@@ -50,9 +50,10 @@ def web_class(name, role):
     if styled:
         out.append({400: "font-normal", 500: "font-medium", 600: "font-semibold", 700: "font-bold"}[v["fontWeight"]])
     if v.get("textCase") == "uppercase":
-        out.append("uppercase")
+        # The Native look's words as they are, not in capitals (index.css's native variant).
+        out += ["uppercase", "native:normal-case"]
     if "letterSpacing" in v:
-        out.append("tracking-[%gem]" % v["letterSpacing"])
+        out += ["tracking-[%gem]" % v["letterSpacing"], "native:tracking-normal"]
     if v.get("tabular"):
         out.append("tabular-nums")
     return " ".join(out)

@@ -104,6 +104,17 @@ describe("the Native look", () => {
     expect(index).toMatch(/@media \(pointer: coarse\) \{\s*button:not\(\[data-slot="tabs-trigger"\]\)::after/);
   });
 
+  it("puts the label and the sheet's time back to stock (the menus: menuLook.test.ts)", () => {
+    // The label role in its own case and spacing.
+    expect(TYPE_CLASS.label).toContain("uppercase native:normal-case");
+    expect(TYPE_CLASS.label).toContain("native:tracking-normal");
+    // The stock Sheet's time: duration-200, ease-in-out.
+    const t = look("native", false);
+    expect([t["--motion-sheet"], t["--motion-sheet-ease"]]).toEqual(["0.2s", "cubic-bezier(0.4, 0, 0.2, 1)"]);
+    expect(look("wingtip", false)["--motion-sheet"]).toBe("0.3s");
+    expect(index).toMatch(/@custom-variant native \(&:where\(\[data-brand="native"\] \*\)\);/);
+  });
+
   it.each([false, true])("keeps aviation's colours as the Wingtip theme has them (night: %s)", (dark) => {
     const native = look("native", dark);
     const wingtip = look("wingtip", dark);
