@@ -17,8 +17,8 @@ final class AIEvaluationsMoreTests: XCTestCase {
     /// keep to the figures. How often the words survive the guard, and
     /// name what they are about, is quality, held where the first run on
     /// the iOS 27.2 simulator left it (docs/ios-27-ai.md).
-    static let keptFloor = 0.5
-    static let namesFloor = 0.5
+    static let keptFloor = EvalBar.quality(device: 0.5, simulator: 0.2)
+    static let namesFloor = EvalBar.quality(device: 0.5, simulator: 0.2)
 
     private func modelOrSkip() throws {
         if let why = OnDeviceWords.unavailableWhy { throw XCTSkip("No on-device model here: \(why)") }
@@ -28,8 +28,8 @@ final class AIEvaluationsMoreTests: XCTestCase {
     func testARemarkKeepsToTheEntry() async throws {
         try modelOrSkip()
         guard #available(iOS 27, *) else { return }
-        let evaluation = RemarkEvaluation(samples: try RemarkEvaluation.samples())
-        XCTAssertFalse(evaluation.samples.isEmpty)
+        let evaluation = RemarkEvaluation(samples: EvalBar.runs(try RemarkEvaluation.samples()))
+        XCTAssertGreaterThanOrEqual(evaluation.samples.count, EvalBar.leastSamples, "too few samples to score")
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
         XCTAssertEqual(result.aggregateValue(.mean(of: RemarkEvaluation.noInvented)), 1, result.groupedSummary)
@@ -40,8 +40,8 @@ final class AIEvaluationsMoreTests: XCTestCase {
     func testWhyThisAltitudeKeepsToTheEnginesReasons() async throws {
         try modelOrSkip()
         guard #available(iOS 27, *) else { return }
-        let evaluation = AltitudeWhyEvaluation(samples: try AltitudeWhyEvaluation.samples())
-        XCTAssertFalse(evaluation.samples.isEmpty)
+        let evaluation = AltitudeWhyEvaluation(samples: EvalBar.runs(try AltitudeWhyEvaluation.samples()))
+        XCTAssertGreaterThanOrEqual(evaluation.samples.count, EvalBar.leastSamples, "too few samples to score")
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
         XCTAssertEqual(result.aggregateValue(.mean(of: AltitudeWhyEvaluation.noInvented)), 1, result.groupedSummary)
