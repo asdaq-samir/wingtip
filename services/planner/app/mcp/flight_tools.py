@@ -15,7 +15,7 @@ from pydantic import Field
 from ..settings import get_settings
 from . import airplane
 from .airport_tools import Ident
-from .calls import ENGINE_SOURCE, METAR_SOURCE, NOTAM_SOURCE, WINDS_SOURCE, editions, pick, pilot, planner
+from .calls import ENGINE_SOURCE, METAR_SOURCE, NOTAM_SOURCE, WINDS_SOURCE, editions, pick, pilot, planner, rounded
 from .tool_meta import READS, read_only
 
 Stops = Annotated[list[str], Field(max_length=8, description="Airports or waypoints landed at or flown by, in order.")]
@@ -100,8 +100,8 @@ def register(server: MCPServer) -> None:
             "altitude_ft": p["altitude_ft"],
             "altitude_choice": p.get("altitude_choice"),
             "altitude_cautions": p.get("altitude_cautions", []),
-            "legs": [pick(leg, LEG) for leg in p["legs"]],
-            "totals": pick(p["totals"], TOTALS),
+            "legs": rounded([pick(leg, LEG) for leg in p["legs"]]),
+            "totals": rounded(pick(p["totals"], TOTALS)),
             "open_in_wingtip": app_link(fields),
             "sources": [ENGINE_SOURCE, WINDS_SOURCE, *editions("nasr", "dof", "charts")],
         }

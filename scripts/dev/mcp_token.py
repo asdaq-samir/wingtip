@@ -132,6 +132,9 @@ def main() -> None:
         "resource": prm["resource"],
     }
     status, headers, page = send("GET", f"{meta['authorization_endpoint']}?{urllib.parse.urlencode(query)}")
+    # Spring sends the browser on to its consent page.
+    if status in (301, 302, 303) and headers.get("Location"):
+        status, headers, page = send("GET", urllib.parse.urljoin(args.base, headers["Location"]))
     forms = Forms()
     forms.feed(page)
     print(f"consent page ({status}): {re.search(r'<h1>(.*?)</h1>', page).group(1)}", file=sys.stderr)

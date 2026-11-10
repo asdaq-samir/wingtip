@@ -111,6 +111,20 @@ def editions(*keys: str) -> list[dict]:
     ]
 
 
+def rounded(value: Any, places: int = 1) -> Any:
+    """Floats to `places` decimals, through lists and dicts: how a figure is
+    written is each shell's (CLAUDE.md), and the nav log's 6.8979262 nm
+    reads to a model, and to the pilot it quotes, as a precision no chart
+    or airplane has. The app writes them to a tenth too."""
+    if isinstance(value, float):
+        return round(value, places)
+    if isinstance(value, dict):
+        return {k: rounded(v, places) for k, v in value.items()}
+    if isinstance(value, list):
+        return [rounded(v, places) for v in value]
+    return value
+
+
 def pick(row: dict, keys) -> dict:
     """The fields of an answer a tool gives, those with a value."""
     return {k: row[k] for k in keys if row.get(k) is not None}
