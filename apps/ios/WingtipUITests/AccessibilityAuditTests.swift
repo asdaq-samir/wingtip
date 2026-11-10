@@ -48,7 +48,7 @@ final class AccessibilityAuditTests: XCTestCase {
             // The plan's radio glyph: its 44-point area is its contentShape, as
             // CLAUDE.md has every small control make it (nothing grows),
             // which the audit, measuring the drawn glyph, does not see.
-            return id == "mic"
+            return id == "radio"
         case .contrast:
             // An inactive control (Plan, Fly before a route or an airplane
             // is given) is exempt from contrast, WCAG 2.2 1.4.3.

@@ -258,7 +258,7 @@ struct AirportWeatherTab: View {
                     }
                 } label: {
                     CardRow(badge: RowBadge(systemImage: "dot.radiowaves.left.and.right", colour: Badge.weather),
-                            title: listening ? "Listening…" : "Listen to ATIS",
+                            title: listening ? "Listening to the radio…" : "Listen to ATIS",
                             detail: listening ? (heard.isEmpty ? "Tune the ATIS or AWOS and hold the phone to the speaker" : heard) : nil) {
                         if listening { ProgressView() }
                     }

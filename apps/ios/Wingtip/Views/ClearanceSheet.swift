@@ -158,7 +158,7 @@ struct ClearanceSheet: View {
                         Button {
                             if listener.listening { listener.stop() } else { following = true; Task { await listener.start(words: words) } }
                         } label: {
-                            Label(listener.listening ? "Stop" : "Listen", systemImage: listener.listening ? "stop.circle.fill" : "mic.fill")
+                            Label(listener.listening ? "Stop" : "Listen", systemImage: listener.listening ? "stop.circle.fill" : WingtipIcon.radio)
                         }
                         .glassProminentButton()
                     }

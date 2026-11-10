@@ -33,7 +33,11 @@ enum WingtipIcon {
     static let airplane = "airplane"
     static let settings = "gearshape"
     static let account = "person.crop.circle"
+    /// Ask by voice: the pilot speaking to the app (VoiceInput).
     static let microphone = "mic"
+    /// The radio listened to (ClearanceListener): its own mark, never the
+    /// mic's (the owner, 2026-11-10).
+    static let radio = "antenna.radiowaves.left.and.right"
     static let ask = "sparkles"
     static let waypoint = "triangle"
 }

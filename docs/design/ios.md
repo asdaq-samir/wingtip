@@ -1101,8 +1101,13 @@ instead of animating.
   type" ([HIG Text fields][hig-textfields]).
 - **HIG Generative AI** (updated 2026-06-08): let people refine results
   ([What's new][hig-whatsnew]).
-- **The owner's mic rule:** tapping the mic shows a "Listening…" pill
-  with the live words and chips, no card.
+- **The owner's split (2026-11-10):** the mic (Ask by voice, `VoiceInput`)
+  and the radio (`ClearanceListener`) are two features with two looks.
+  The mic is the system's `mic`, breathing while it listens, the field
+  saying "Speak your question" and the words typed into it as said. The
+  radio is `antenna.radiowaves.left.and.right` with the variable-colour
+  effect, "Listening to the radio…" and "Heard: …", in its own places
+  (the captions, the ATC card, this sheet, the Live Activity).
 
 No Apple app shows a clearance. The structure is the HIG's and the
 owner's (**[inference]**).

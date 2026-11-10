@@ -22,10 +22,11 @@ struct RadioOverlay: View {
                     listener.sheetShown = true
                 } label: {
                     HStack(alignment: .top, spacing: WingtipSpace.sm) {
-                        // The glyph breathes while it listens; with Reduce
-                        // Motion on the tint and the words say it instead.
-                        Image(systemName: "mic.fill").foregroundStyle(listener.listening ? Color.accentColor : .secondary)
-                            .symbolListening(listener.listening)
+                        // The radio's waves, lit in turn while it listens
+                        // (never the mic's look, which is Ask by voice's);
+                        // with Reduce Motion on the tint and the words say it.
+                        Image(systemName: WingtipIcon.radio).foregroundStyle(listener.listening ? Color.accentColor : .secondary)
+                            .symbolOnAir(listener.listening)
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             if let problem = listener.problem {
@@ -34,7 +35,7 @@ struct RadioOverlay: View {
                                 Text("Listening to the radio…").foregroundStyle(.secondary)
                             }
                             ForEach(listener.heard.suffix(2)) { t in
-                                Text(t.text).lineLimit(2)
+                                Text("Heard: \(t.text)").lineLimit(2)
                                     .foregroundStyle(t.forUs ? Color.accentColor : Color.primary)
                                     .fontWeight(t.forUs ? .semibold : .regular)
                                     .opacity(t.final ? 1 : 0.8)
