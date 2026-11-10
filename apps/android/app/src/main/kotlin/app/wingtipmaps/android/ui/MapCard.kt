@@ -10,11 +10,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -197,17 +195,22 @@ private fun PlaneCard(hex: String) {
     )
     ProblemLine(trafficProblem)
     ProblemLine(watchProblem)
+    // Its figures at a glance, as the planner hears them: altitude,
+    // groundspeed and track, each its name over it (Figure), the way a
+    // health app's top figures sit; a figure not heard is a dash.
+    Row(Modifier.fillMaxWidth()) {
+        Figure(stringResource(R.string.fact_altitude), plane.altitudeFt?.let(Format::altitude) ?: Format.NONE)
+        Figure(stringResource(R.string.fact_ground_speed), plane.speedKt?.let(Format::speed) ?: Format.NONE)
+        Figure(stringResource(R.string.fact_track), plane.trackDeg?.let { "${Format.heading(it)} true" } ?: Format.NONE)
+    }
     mark?.label?.takeIf { it.isNotEmpty() }?.let { Fact(stringResource(R.string.fact_height), it) }
-    plane.altitudeFt?.let { Fact(stringResource(R.string.fact_altitude), Format.altitude(it)) }
-    plane.speedKt?.let { Fact(stringResource(R.string.fact_ground_speed), Format.speed(it)) }
-    plane.trackDeg?.let { Fact(stringResource(R.string.fact_track), "${Format.heading(it)} true") }
     // The tower's departure event, where TDES sent one.
     DepartureLine(plane.callsign ?: plane.registration)
-    HorizontalDivider()
+    // Track is the card's one action, filled, where every card's first
+    // action sits (CardButtonGroup).
     val isTracked = tracked == hex.lowercase()
-    OutlinedButton(onClick = { tracking.track(if (isTracked) null else hex, plane) }, modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(if (isTracked) R.string.stop_tracking else R.string.track))
-    }
+    val trackWord = stringResource(if (isTracked) R.string.stop_tracking else R.string.track)
+    CardButtonGroup(listOf(GroupAction(trackWord, null, filled = true) { tracking.track(if (isTracked) null else hex, plane) }), Modifier.fillMaxWidth())
     val source by traffic.source.collectAsStateWithLifecycle()
     Text(Traffic.credit(source), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }

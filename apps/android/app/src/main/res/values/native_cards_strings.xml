@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The cards', the search's and the plan's words added with the Android
+     design reference (docs/design/android.md). -->
+<resources>
+    <!-- The cruise altitude menu's first row: no altitude of the pilot's,
+         the planner picks one by 14 CFR 91.159 or 91.179. -->
+    <string name="altitude_planner_pick">Planner\'s Pick</string>
+</resources>
