@@ -302,6 +302,15 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
   box-shadow: var(--depth-card);
 }
 
+/* The Native look (lib/brand): the browser's own form controls in the
+   system's accent, and its system colours (Canvas, LinkText) for either
+   scheme. next-themes' inline color-scheme on <html> still wins, so
+   Canvas follows the pilot's Appearance (System follows the device's). */
+html[data-brand="native"] {
+  color-scheme: light dark;
+  accent-color: auto;
+}
+
 @layer base {
   /* One weight for emphasis: <b> and <strong> at 600, as every
      font-semibold heading, figure and name is, rather than the

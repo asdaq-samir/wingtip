@@ -59,10 +59,10 @@ export type ChartLight = "auto" | "on" | "off";
  *  map tilted with two fingers. */
 export type Terrain = "flat" | "shaded" | "3d";
 /** The app's look (lib/brand): Wingtip, the brand's blue and the
- *  default (the owner, 2026-11-09), or Glass Cockpit or Chart ink, the two
- *  kept as choices (2026-11-04); Sectional, Windsock and Clear Sky are
- *  gone. */
-export type Brand = "wingtip" | "cockpit" | "ink";
+ *  default (the owner, 2026-11-09), Glass Cockpit or Chart ink (kept
+ *  2026-11-04), or Native, the system's own (2026-11-10); Sectional,
+ *  Windsock and Clear Sky are gone. */
+export type Brand = "wingtip" | "cockpit" | "ink" | "native";
 /** The flight rules a route is planned under (the altitude's popover):
  *  VFR, or IFR -- its minimum altitudes, its thousands by direction of
  *  flight and its 45-minute reserve (the planner's wingtip.ifr). */

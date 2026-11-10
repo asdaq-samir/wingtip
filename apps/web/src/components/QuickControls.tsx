@@ -56,7 +56,7 @@ export default function QuickControls() {
             { value: "plan", label: "Route Cards", testId: "route-edit-plan" },
           ]}
         />
-        {/* The app's look, Glass Cockpit or Chart ink (lib/brand), its Theme, where
+        {/* The app's look, Wingtip, Glass Cockpit, Chart ink or Native (lib/brand), its Theme, where
           Offline was, named so at the owner's yes (2026-10-27): what most
           apps call a theme, and System, Light and Dark iOS's Appearance.
           It was "App Look", put here at the owner's ask ("instead of
