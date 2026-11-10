@@ -40,6 +40,12 @@ import tools.jackson.core.JacksonException;
  * what changed is the planner's answer, carried to the app and the
  * email as it was given. A pilot's watch is theirs alone, scoped the
  * way {@link FlightService} scopes their flights.
+ *
+ * <p>Claude puts the changes in words only where app.claude-features
+ * gives this pilot the Claude features; off, the default since the
+ * owner's decision of 2026-11-10 (docs/decisions/0035), the planner's own
+ * line for each change is the sentence ({@link ChangeLines}), and no
+ * request reaches Anthropic.
  */
 @Service
 public class FlightWatchService {
@@ -70,6 +76,8 @@ public class FlightWatchService {
     private final FlightRepository flights;
     private final PilotRepository pilots;
     private final PlannerClient planner;
+    private final ChangeLines lines;
+    private final SubscriptionService.ClaudeFeatures claude;
     private final Mailer mail;
     /** Where the email's link into the app points (the magic link's and
      *  the instructor emails' app.public-base-url); blank where this
@@ -81,12 +89,16 @@ public class FlightWatchService {
             FlightRepository flights,
             PilotRepository pilots,
             PlannerClient planner,
+            ChangeLines lines,
+            @Value("${app.claude-features:OFF}") SubscriptionService.ClaudeFeatures claude,
             Mailer mail,
             @Value("${app.public-base-url:}") String publicBaseUrl) {
         this.watches = watches;
         this.flights = flights;
         this.pilots = pilots;
         this.planner = planner;
+        this.lines = lines;
+        this.claude = claude;
         this.mail = mail;
         this.publicBaseUrl = publicBaseUrl.replaceAll("/+$", "");
     }
@@ -192,7 +204,8 @@ public class FlightWatchService {
             return false;
         }
         String briefing = briefingOf(flight, watch.getDepartAt());
-        AssistantChangesWords answer = planner.changes(
+        Changes read = claudeWrites(watch) ? planner::changes : lines::changes;
+        AssistantChangesWords answer = read.changes(
                 flight.getDepartureIdent(),
                 flight.getDestinationIdent(),
                 flight.getStops(),
@@ -216,6 +229,25 @@ public class FlightWatchService {
         // emails are.
         pilots.findById(watch.getPilotId()).ifPresent(pilot -> send(pilot, flight, answer));
         return true;
+    }
+
+    /** Whether Claude writes this watch's changes: everyone's, or a
+     *  developer's where the developers have it; never while off. */
+    private boolean claudeWrites(FlightWatch watch) {
+        return switch (claude) {
+            case EVERYONE -> true;
+            case DEVELOPERS ->
+                pilots.findById(watch.getPilotId())
+                        .map(p -> p.getRole().isDeveloper())
+                        .orElse(false);
+            case OFF -> false;
+        };
+    }
+
+    /** Either way of reading what changed: Claude's words, or the planner's lines. */
+    @FunctionalInterface
+    private interface Changes {
+        AssistantChangesWords changes(String dep, String dest, List<String> stops, String then, String now);
     }
 
     private String briefingOf(Flight flight, Instant departAt) {

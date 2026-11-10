@@ -44,6 +44,7 @@ Each fact lives in one doc; the others link to it.
 |---|---|
 | [navigation.md](navigation.md) | Every screen and card on each app, how it is reached and in how many taps |
 | [design/web.md](design/web.md), [design/ios.md](design/ios.md), [design/android.md](design/android.md) | Each platform's design reference, screen by screen: the one search, the card and scrolling rules, the looks (Native among them), what is stock and what is still built by hand |
+| [design/rules.md](design/rules.md) | The rules every screen keeps on all three apps: the card rule, the scrolling rule and their tests, the one search, the airport weather marks |
 | [design/icons.md](design/icons.md) | The icon concepts and each platform's symbol for them |
 | [legal/](legal/privacy.md) | The privacy policy, terms, credits and support pages |
 | [store/listing.md](store/listing.md) | The App Store and Google Play listings and review notes; [store/privacy-labels.md](store/privacy-labels.md) the stores' privacy answers, [store/preview-video.md](store/preview-video.md) the App Preview's plan |

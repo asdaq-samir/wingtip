@@ -3,6 +3,7 @@ import { ICON } from "../../../../lib/icons";
 import { cn } from "cn";
 import RoundButton from "../../../../components/RoundButton";
 import { TEXT } from "../../../../lib/text";
+import { useClaudeOn } from "../../../../lib/subscription";
 import { LocalDuration } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 import { LOCAL_MINUTES } from "../../hooks/usePlanWorkspace";
@@ -21,6 +22,9 @@ const WORD = cn("hidden font-medium lg:pointer-fine:inline", TEXT.detail);
 
 export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWorkspaceModel; flightInputs: ReactNode; share: ReactNode }) {
   const { altitudeMark, briefMark, changeLocalMin, localMin, openBrief, openProfile, profileReady, routed, s } = vm;
+  // "AI brief" only where Claude writes some of it (lib/subscription): off,
+  // the Brief is the engine's alone and is called just that.
+  const brief = useClaudeOn() ? "AI brief" : "Brief";
   return (
     <div className="flex w-full min-w-0 flex-wrap items-center gap-x-1 gap-y-4">
       {/* On the narrowest panels (iPhone SE, the iPad slide-over) the row
@@ -106,7 +110,7 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
             both the same thing", 2026-11-04). */}
         {routed && (
           <RoundButton
-            label={briefMark ? `AI brief, ${briefMark === "stop" ? "warning" : "caution"}` : "AI brief"}
+            label={briefMark ? `${brief}, ${briefMark === "stop" ? "warning" : "caution"}` : brief}
             onClick={openBrief}
             className={cn("size-[32px]", WORDED)}
             data-testid="route-brief"

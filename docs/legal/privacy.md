@@ -1,6 +1,6 @@
 # Privacy policy
 
-*Draft for the owner to review. Checked against the code on 9 November 2026; not yet in effect.*
+*Draft for the owner to review. Checked against the code on 9 November 2026, and for the features Claude writes on 10 November 2026; not yet in effect.*
 
 Wingtip Maps is a flight planner for VFR and IFR flight, on the web, the iPhone and Android. This page says what the app keeps about you, where it keeps it, what leaves your device and who receives it. It describes what the app does today; where it says "we", it means the people who run Wingtip Maps.
 
@@ -19,7 +19,7 @@ When you sign in, our server keeps, in its database:
 - **Flights you share:** when you share a saved flight, a random link to it, whether its N-number goes with it, and when you shared it. Anyone with the link can read the flight's route, stops, altitudes, departure time, airplane type and nav log, but never your name, email, notes or risk assessment, and the N-number only if you choose to include it. Stop Sharing in the flight's menu ends the link for everyone; deleting the flight or your account does too. A plan you share as a plain link is carried in the link itself and is not stored by us.
 - **Flight watch:** for a saved flight you ask us to watch, its departure time and the last briefing we checked it against, so we can email you when the weather or NOTAMs on it change.
 - **Reminders:** whether you want email before your currency or an airplane's due item runs out, and which reminders we have sent.
-- **The features Claude writes:** a count, each month, of how many times you used each of them, for its monthly allowance.
+- **The features Claude writes:** a count, each month, of how many times you used each of them, for its monthly allowance. While those features are off, as they are now, there is nothing to count.
 
 We keep these until you delete them or delete your account. We do not sell them, share them for advertising, or use them to track you across other companies' apps or sites.
 
@@ -38,7 +38,7 @@ The app asks your device for your position only after you turn on the location a
 Your position is used on your device to draw your airplane and measure from it. It leaves your device when a feature needs it to answer:
 
 - **to our planner,** to find the nearest airports, the airspace and alerts around and ahead of you, nearby traffic and emergency fields. The planner answers and does not keep it. It does keep, for 60 seconds and without anything that says whose it is, the area of the map in view (rounded to about 6 nautical miles), to fetch traffic there.
-- **to Claude,** when you use Ask while your position is known (see below).
+- **to Claude,** when you use Ask while your position is known, and only while the features Claude writes are on; they are off now (see below).
 
 Your position is stored with your account only as a track you choose to save to a flight.
 
@@ -47,7 +47,7 @@ Your position is stored with your account only as a track you choose to save to 
 When you turn on the ATC copilot, or speak to the app, it listens through your device's microphone and turns the speech into text, to show the calls addressed to you. The app records no audio, saves none to a file, and sends none to us.
 
 - **In the iPhone and Android apps, speech is recognised on your phone and never leaves it.** They use only the recognizer that runs on the phone itself: Apple's on-device speech recognition on the iPhone, and the phone's on-device speech recognizer on Android (Android 12 and later). Where a phone cannot do that, the app does not offer voice, and you type instead; it never falls back to a recognizer on someone's servers.
-- **In a web browser, the app uses the browser's own speech recognition.** Where the browser can promise that the audio stays on your computer or phone (Chrome, which may first download its English language pack), the app asks it to. Other browsers, such as Safari, may send the audio to their maker (Apple, for Safari) to be recognised, under that company's privacy policy. A browser with no speech recognition (Firefox) is not offered voice. Of the text, only the place names in a clearance you heard (a clearance limit, a route, a departure) go to our planner, to find them on the map; a question you ask aloud goes to Claude as any typed question does.
+- **In a web browser, the app uses the browser's own speech recognition.** Where the browser can promise that the audio stays on your computer or phone (Chrome, which may first download its English language pack), the app asks it to. Other browsers, such as Safari, may send the audio to their maker (Apple, for Safari) to be recognised, under that company's privacy policy. A browser with no speech recognition (Firefox) is not offered voice. Of the text, only the place names in a clearance you heard (a clearance limit, a route, a departure) go to our planner, to find them on the map; a question you ask aloud is treated as a typed question is: while the features Claude writes are off, as now, it is not sent to Claude.
 
 ## Siri and the camera on iPhone
 
@@ -57,10 +57,15 @@ When you point the iPhone's camera at a chart, a plate, a weather printout or a 
 
 ## Features Claude writes
 
-Some features are written by Claude, an AI model made by Anthropic: Ask, the written briefing, the words beside the Brief's figures, checkpoint descriptions, the mock oral and the debrief's words. To write them, our server sends Anthropic:
+**These features are off for now, and Anthropic receives nothing from the app or from us.** Where your phone has its own model (Apple Intelligence on an iPhone, Gemini Nano on Android) some of them are written on the phone instead, as below; the rest are not offered, and the app shows its own figures and words. If we turn them on later, this page will say so first, and what Anthropic would then receive is listed here.
+
+Some features can be written by Claude, an AI model made by Anthropic: Ask and its trip planner, the written briefing, the words beside the Brief's figures (the NOTAMs, the weather and the risk), the debrief's and the Coach's words, checkpoint descriptions, the mock oral, a photographed page read, and flight watch's email. To write them, our server would send Anthropic:
 
 - **Ask:** your conversation (what you typed or said and the answers so far), the route and stops, the airplane, the cruising altitude and departure time, your personal minimums, your currency and your home base, and, when the app knows it, your airplane's position (to about 100 metres), altitude, track and groundspeed; and the answers our planner gives it as it works.
-- **The written briefing and the Brief's words:** the route's identifiers, the airplane's type, the altitude, each leg's figures, the weather and NOTAM text on the route, and, for the risk words, your minimums and currency.
+- **The trip planner:** what you asked for in words, with the same plan and position as Ask.
+- **The written briefing and the Brief's words:** the route's identifiers, the airplane's type, the altitude, each leg's figures, the weather and NOTAM text on the route, and, for the risk words, the Go / No-Go's findings with your minimums and currency.
+- **The debrief's words:** a flown flight's figures (its time in the air, each leg's altitude and course held, its checkpoint times and pattern entries) and your notes on it.
+- **The Coach's words:** the practice plan the app worked out from your logbook (what is current, and what is due when).
 - **Checkpoint descriptions:** the checkpoint and the checkpoints around it.
 - **The mock oral:** the flight's plan as text and the answers you type.
 - **Flight watch:** what changed on a watched flight's route.
@@ -70,9 +75,9 @@ We do not send your name, email address or account to Anthropic. We do not keep 
 
 Some phones write a few of these on the device instead, with Apple's own on-device model, where the iPhone has one; nothing is sent for those. On an iPhone with Apple Intelligence, the NOTAMs in plain words and what a NOTAM means for your flight, a drafted logbook remark, a clearance said in full and why your plan flies its altitude are written by Apple's models, and a photographed page is read on the phone first (iOS 27).
 
-Where the iPhone's own model cannot do one of these (it is still downloading, it cannot see a photo, or its answer did not pass our checks), the app may ask Apple's Private Cloud Compute instead, before it would ask Claude: Apple's larger model on Apple's servers, which Apple designs so that what is sent is used only to answer and is never stored, and which neither we nor Anthropic receive. What goes there is what that feature needs: the NOTAMs and why each matters, the logbook entry's columns and what the app found in your track, the clearance's words, the reasons for your altitude, your question to Ask with the figures the app worked out for it, the Go / No-Go's findings, or the photographed page. Apple counts it against your iCloud account's daily allowance. Claude is asked after that only for a page neither of Apple's models can read, for Ask when it needs our planner's look-ups, and for the Brief's weather and risk words, as above.
+Where the iPhone's own model cannot do one of these (it is still downloading, it cannot see a photo, or its answer did not pass our checks), the app may ask Apple's Private Cloud Compute instead, before it would ask Claude: Apple's larger model on Apple's servers, which Apple designs so that what is sent is used only to answer and is never stored, and which neither we nor Anthropic receive. What goes there is what that feature needs: the NOTAMs and why each matters, the logbook entry's columns and what the app found in your track, the clearance's words, the reasons for your altitude, your question to Ask with the figures the app worked out for it, the Go / No-Go's findings, or the photographed page. Apple counts it against your iCloud account's daily allowance. Claude would be asked after that only for a page neither of Apple's models can read, for Ask when it needs our planner's look-ups, and for the Brief's weather and risk words, as above, and only while those features are on.
 
-On an Android phone that has Google's Gemini Nano (through Android's AICore; Setup's On-Phone AI says whether yours does), the app does these on the phone first and sends nothing to Anthropic for them: Ask, the words beside the Brief, an airport's weather, the route's NOTAMs, the nav log and the Coach's debriefs, a drafted logbook remark, and the reading of a photographed page (its text is read by Google's on-device text recognition, then by Gemini Nano). Ask's look-ups still ask our planner for the airport, the route or the NOTAMs, as the screens do. Where the phone has no Gemini Nano, these come from Claude as above, or not at all when you are signed out.
+On an Android phone that has Google's Gemini Nano (through Android's AICore; Setup's On-Phone AI says whether yours does), the app does these on the phone first and sends nothing to Anthropic for them: Ask, the words beside the Brief, an airport's weather, the route's NOTAMs, the nav log and the Coach's debriefs, a drafted logbook remark, and the reading of a photographed page (its text is read by Google's on-device text recognition, then by Gemini Nano). Ask's look-ups still ask our planner for the airport, the route or the NOTAMs, as the screens do. Where the phone has no Gemini Nano, these are not offered while the features Claude writes are off, as now; with them on, they would come from Claude as above, signed in only.
 
 ## Assistants on your phone
 
@@ -100,7 +105,7 @@ There is no analytics or advertising kit in any of the apps, and no third party 
 
 ## Who else receives anything
 
-- **Anthropic,** for the features Claude writes, as above.
+- **Anthropic,** nothing while the features Claude writes are off, as they are now; with them on, what is listed above.
 - **Apple,** on an iPhone, for the features its Private Cloud Compute writes where the phone's own model cannot, as above; Apple uses it only to answer and does not keep it.
 - **An AI app you connect Wingtip to** (Claude, ChatGPT), what you ask it about, as above.
 - **Our email sender** (Amazon SES), which delivers the email we send: your sign-in link, the reminders you turn on, flight watch's changes, and the email between you and an instructor you ask in.

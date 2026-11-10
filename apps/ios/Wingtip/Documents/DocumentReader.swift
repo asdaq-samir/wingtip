@@ -89,15 +89,27 @@ enum DocumentReader {
     /// Apple's on-device model and Vision, iOS 27, the photo never sent),
     /// else through the gateway as the other assistant calls go;
     /// CSRF-checked, as it is a paid call made for the pilot.
-    static func read(_ kind: DocumentKind, image: UIImage) async throws -> DocumentAnswer {
+    /// While the server's Claude features are off (ServerFeatures, the
+    /// owner's decision of 2026-11-10 in docs/decisions) the assistant is
+    /// never sent the photo: Apple's models read it or nothing does.
+    static func read(_ kind: DocumentKind, image: UIImage, claudeOn: Bool = ServerFeatures.claudeOnNow) async throws -> DocumentAnswer {
         if OnDeviceDocumentReader.unavailableWhy == nil {
             do {
                 return try await OnDeviceDocumentReader.read(kind, image: image)
             } catch {
                 Log.onDevice.notice("the page could not be read on the phone: \(error.localizedDescription, privacy: .public)")
+                if !claudeOn { throw error }
             }
         }
+        guard claudeOn else { throw WordsUnavailable(why: OnDeviceDocumentReader.unavailableWhy ?? "This iPhone could not read the page.") }
         return try await server(kind, image: image)
+    }
+
+    /// Whether a page can be read here at all: by Apple's models, or by
+    /// the assistant while the server's Claude features are this pilot's.
+    /// Where neither, "From a Photo" is not offered.
+    @MainActor static var offered: Bool {
+        OnDeviceDocumentReader.unavailableWhy == nil || ServerFeatures.shared.claudeOn
     }
 
     /// The page read by the assistant (Claude), the photo sent.
@@ -110,6 +122,7 @@ enum DocumentReader {
     /// Why a read failed, in words for the screen: the reader's own detail
     /// where it gave one.
     static func words(for error: any Error) -> String {
+        if let unavailable = error as? WordsUnavailable { return unavailable.why }
         guard let failure = error as? Planner.Failure else {
             return (error as? URLError)?.code == .timedOut ? "The page took too long to read. Try again." : "The page could not be sent: \(error.localizedDescription)"
         }

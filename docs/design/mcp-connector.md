@@ -1,7 +1,7 @@
 # The Wingtip connector: Wingtip in a pilot's own Claude or ChatGPT
 
 The owner, 2026-11-10: server-side Claude stays off until there is a
-subscription. Instead, Wingtip is published as an MCP
+subscription (decision 0035). Instead, Wingtip is published as an MCP
 **connector** that a pilot adds to the Claude or ChatGPT they already pay for.
 Their subscription pays for the model; Wingtip only answers tool calls, from
 the engine and the planner, for the pilot signed in with their Wingtip

@@ -1,8 +1,8 @@
 import { expect, type Page } from "@playwright/test";
 import {
-  airportMark,
   consolePage,
   grabberTo,
+  mapStill,
   openBrief,
   openConsole,
   openMapSettings,
@@ -13,7 +13,6 @@ import {
   showTabs,
   sideDrawer,
   slow,
-  tapNear,
 } from "./helpers";
 import { go, nearbyStops, pick, ROUTE, sky, tapLeg } from "./cardEntries";
 import { pickAirplane } from "./startState";
@@ -30,7 +29,7 @@ import { pickAirplane } from "./startState";
  */
 
 /** Where a card's close goes back to. */
-export type Back = "search" | "search-home" | "plan" | "map" | "console";
+export type Back = "search" | "search-home" | "plan" | "map" | "console" | "traffic" | "profile";
 
 export interface Entry {
   name: string;
@@ -72,15 +71,31 @@ export const CARDS: CardRow[] = [
         name: "map tap",
         open: async (p) => {
           await go(p, ROUTE);
-          await tapNear(p, () => airportMark(p, "C81"), /[?&]place=C81(&|$)/);
+          // The departure's chip, the route's own marker, tapped: a route's
+          // fields are drawn by it, not among the chart's airports, and a
+          // tap beside it can take a neighbour (KARR's mark, round C81).
+          const chip = p.locator(".maplibregl-marker", { hasText: "C81" }).first();
+          await expect(async () => {
+            await mapStill(p);
+            await chip.click();
+            await expect(p).toHaveURL(/[?&]place=C81(&|$)/, { timeout: 2_000 });
+          }).toPass({ timeout: slow(20_000) });
+          // The pointer off what came up under it: the card's head lands where
+          // the chip was, and a hover there opens its Add to Favorites tooltip,
+          // which an Escape closes first. A finger leaves nothing hovering.
+          await p.mouse.move(1, 1);
         },
         back: "plan",
       },
       {
         name: "list row (Recents)",
         open: async (p) => {
-          await go(p, "/app/plan?place=KDLH");
+          // A Recent is an airport picked from a search (useSearchPanel's
+          // addRecentAirport), not one opened by a link or on the map.
+          await pick(p, "duluth", "airport");
           await p.getByTestId("place-close").click();
+          // Back on the search with "duluth" in it: cleared, its own page.
+          await p.getByTestId("search-airports").fill("");
           await showSearch(p);
           await sideDrawer(p).getByTestId("airport-recent").first().click();
         },
@@ -123,7 +138,8 @@ export const CARDS: CardRow[] = [
           await sky(p);
           await go(p, "/app/plan?aircraft=1&flight=a0b7d8");
         },
-        back: "search",
+        // The traffic it was opened over: the one search in its traffic scope.
+        back: "traffic",
       },
     ],
     not: {
@@ -256,7 +272,8 @@ export const CARDS: CardRow[] = [
           await start.click();
           await expect(p.getByTestId("ready-prompt")).toBeVisible({ timeout: slow(10_000) });
         },
-        back: "plan",
+        // The Profile card the dry run was started from, as it was.
+        back: "profile",
       },
     ],
     not: {

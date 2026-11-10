@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { controlsInSight, openBrief, settle, sideDrawer, slow } from "./helpers";
+import { claudeFeatures } from "./claude";
 
 /**
  * The assistant in the Brief (AskCard): a question typed into "Ask about
@@ -79,6 +80,8 @@ const RANKED = {
 /** The planner's AI routes, each answered here (a URL predicate: a glob's
  *  `**` does not cross the path's slashes). */
 async function mockAi(page: Page, asked: { body: unknown }[]) {
+  // On for this page, every call below answered here (./claude).
+  await claudeFeatures(page);
   await page.route(
     (url) => url.pathname === "/api/planner/assistant",
     (route) => {

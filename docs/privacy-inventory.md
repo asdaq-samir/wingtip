@@ -95,7 +95,10 @@ longer than it takes to answer the request.
   Claude is then asked only where a feature has a Claude path (the
   photographed page, through the assistant, where neither of Apple's
   models can see it; Ask under Automatic with a signal, whose planner
-  tools Apple's models do not have; the Brief's weather and risk words).
+  tools Apple's models do not have; the Brief's weather and risk words),
+  and only while the Claude features are on: off, the default
+  (`API/ServerFeatures.swift`), the chain stops at the phone's models
+  and the engine's own words.
 - **The route's weather watched on the iPhone** (`WeatherWatch/`): the
   kept route's briefing is fetched again from the planner every quarter
   hour while the app runs and on iOS's background refresh, as the Brief
@@ -110,7 +113,9 @@ longer than it takes to answer the request.
   phone and nothing of them goes to Anthropic or Google. Ask's tools
   fetch from the planner what the screens fetch (an airport, the route's
   NOTAMs); the question itself stays on the phone. Without Nano they go
-  to Claude as in the table below, signed in only.
+  to Claude as in the table below, signed in only, and only while the
+  Claude features are on (`ai/ClaudeGate.kt`); off, the default, they
+  are not offered.
 - **Gemini and the system's agents on Android** (AppFunctions,
   `ai/functions/`, Android 16+). An agent the pilot asks may read the
   airport's card, frequencies, approaches, the nearest fields (from the
@@ -159,7 +164,7 @@ longer than it takes to answer the request.
 
 | Recipient | What | Personal |
 |---|---|---|
-| Anthropic (Claude) | Ask: the conversation (typed or spoken), the route, stops, airplane, altitude, departure time, the pilot's minimums, currency lines and home base, and the live position (3 decimals), altitude, track and groundspeed where known (`services/assistant/app/assistant.py`). The briefing and the Brief's words: the route, the nav log, the weather and NOTAM text on it, the airplane's type, and for the risk words the pilot's minimums and currency. A checkpoint note: the checkpoint and the route around it. The mock oral: the plan as text and the typed answers. Flight watch: what changed on the route. A photographed page (handbook, logbook, clearance) and today's date, to read it (`services/assistant/app/documents/`), only where the phone cannot read it itself (Android with Gemini Nano, and an iPhone on iOS 27 with Apple Intelligence that can see images, `Documents/OnDeviceDocumentReader.swift`, read it on the phone). Nothing kept: the conversation is the client's | No name, address, account; a tail number only where the pilot typed it into a question |
+| Anthropic (Claude) | **Nothing while the Claude features are off**, the default since 2026-11-10 (docs/decisions/0035-claude-off-until-subscription.md): the gateway's `app.claude-features` (`APP_CLAUDE_FEATURES=OFF`) refuses every assistant route before the assistant is asked, the flight watch uses the planner's own lines (`ChangeLines`), the assistant service is not started, and the web, iPhone and Android apps read the switch from `/api/auth/capabilities` and do not ask. **With them on**, through the assistant service only (`services/assistant`): Ask: the conversation (typed or spoken), the route, stops, airplane, altitude, departure time, the pilot's minimums, currency lines and home base, and the live position (3 decimals), altitude, track and groundspeed where known (`services/assistant/app/assistant.py`). The trip planner (`/api/trip-plan`): the pilot's request in words and the same plan context as Ask. The written briefing (`narrative.py`): the route, the nav log, the weather and NOTAM text on it and the airplane's type. The Brief's words (`words.py`): the NOTAMs on the route as sent and their ranking (`notam_rank.py`), the weather reports and forecasts on it, and for the risk words the Go / No-Go's findings with the pilot's minimums and currency. The debrief's words: a flown flight's debrief figures (time in the air, each leg's altitude and course held, checkpoint times, pattern entries, the pilot's notes on it). The Coach's words (`coach.py`): the proficiency plan the engine made from the logbook (currency dates and what is due). A checkpoint note (`notes.py`): the checkpoint and the route around it. The mock oral (`oral.py`): the plan as text and the typed answers. Flight watch: what changed on the route (the METARs, TAFs, SIGMETs, AIRMETs, TFRs before and after). A photographed page (handbook, logbook, clearance) and today's date, to read it (`services/assistant/app/documents/`), only where the phone cannot read it itself (Android with Gemini Nano, and an iPhone on iOS 27 with Apple Intelligence that can see images, `Documents/OnDeviceDocumentReader.swift`, read it on the phone). Nothing kept: the conversation is the client's | No name, address, account; a tail number only where the pilot typed it into a question |
 | The pilot's own AI app (Claude, ChatGPT), only where the pilot connects Wingtip to it | The connector's answers to what the pilot asks it: airports, weather, NOTAMs, a route's nav log and briefing, the pilot's airplanes (tail number, type, figures, inspections, squawks) and saved flights | Yes, the pilot's own, sent to the app they chose; Wingtip sends none of it otherwise |
 | Amazon SES | The address a sign-in link is sent to, and the link; an instructor's address a student asks in, with the student's name and address; the endorsements and reviews between the two, to each | Yes, to deliver it |
 | The student's instructor | Once they take the student on: the student's name and address, 61.109 experience from their logbook, knowledge test codes, endorsements, and the saved flights the student puts to them | Yes: the student asks them in, and either ends it |

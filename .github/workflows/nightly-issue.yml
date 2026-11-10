@@ -1,0 +1,48 @@
+name: Nightly issue
+
+# A red night opens or updates one issue the same morning, "Nightly CI
+# failed", labelled ready for agents, and it is fixed before new feature
+# work (docs/CI.md, "Rules"; decision 0034). Each scheduled run of CI,
+# Native iOS and Native Android, once it completes, writes its section of
+# that issue: at most one GitHub write a run (scripts/ci/nightly_issue.py).
+# Here rather than in each workflow, since a job asking for issues: write
+# inside a reusable workflow would need its caller, ci.yml on every pull
+# request, to grant it too.
+#
+# Actions are pinned as in ci.yml (its opening comment says why).
+
+on:
+  workflow_run:
+    workflows: [CI, Native iOS, Native Android]
+    types: [completed]
+
+# Reading the run's jobs, and the one issue it writes.
+permissions:
+  contents: read
+  actions: read
+  issues: write
+
+# One at a time, so two workflows' sections never overwrite each other.
+concurrency:
+  group: nightly-issue
+  cancel-in-progress: false
+
+jobs:
+  report:
+    name: Nightly issue
+    if: github.event.workflow_run.event == 'schedule'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          sparse-checkout: scripts/ci
+      - name: The night, into the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          WORKFLOW: ${{ github.event.workflow_run.name }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: python3 scripts/ci/nightly_issue.py

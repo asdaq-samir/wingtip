@@ -5494,7 +5494,10 @@ data class NearestAirports (
 /**
  * A field near a position: how far and which way (true), its town,
  * elevation and longest open runway, and a frequency listed for it
- * (None where OurAirports lists none).
+ * (None where OurAirports lists none); and what a search's filters read
+ * of it (wingtip.field_facts): its fuel, its runways' surfaces, an
+ * instrument approach, its METAR's wind and visibility, and its
+ * forecast at the time asked.
  */
 @Serializable
 data class NearestAirport (
@@ -5513,7 +5516,13 @@ data class NearestAirport (
     @SerialName("flight_category")
     val flightCategory: String? = null,
 
+    val forecast: FieldForecast? = null,
+    val fuel: List<String>? = null,
     val ident: String,
+
+    @SerialName("instrument_approach")
+    val instrumentApproach: Boolean? = null,
+
     val kind: String,
     val lat: Double,
     val lon: Double,
@@ -5532,7 +5541,41 @@ data class NearestAirport (
 
     val isPrivate: Boolean? = null,
     val radio: InboundRadio? = null,
-    val towered: Boolean? = null
+
+    @SerialName("runway_surfaces")
+    val runwaySurfaces: List<String>? = null,
+
+    val towered: Boolean? = null,
+
+    @SerialName("visibility_sm")
+    val visibilitySm: Double? = null,
+
+    @SerialName("wind_dir_true_deg")
+    val windDirTrueDeg: Double? = null,
+
+    @SerialName("wind_gust_kt")
+    val windGustKt: Double? = null,
+
+    @SerialName("wind_speed_kt")
+    val windSpeedKt: Double? = null
+)
+
+/**
+ * What the TAF that speaks for a field forecasts at a time asked
+ * (wingtip.field_forecast): the flight category of the worst it forecasts
+ * then, TEMPO and PROB included (AIM 7-1-7; None where it does not settle
+ * it or does not cover the time), the station and how far it is (None
+ * for the field's own).
+ */
+@Serializable
+data class FieldForecast (
+    val at: Double,
+    val category: String? = null,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double? = null,
+
+    val station: String
 )
 
 /**

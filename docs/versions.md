@@ -136,6 +136,9 @@ Each wave's end pass also runs `npm outdated`, the Python pins against
 PyPI, `./gradlew` dependency updates and the Maven versions against
 Maven Central, and takes whatever is newer; this table is only what is
 already known to be coming.
+The weekly issue "Newer versions (weekly)" (`.github/workflows/versions.yml`,
+`scripts/ci/newest_versions.py`) lists them between passes, the holds above
+marked as held.
 
 ## How an upgrade lands
 

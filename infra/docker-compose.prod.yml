@@ -163,7 +163,13 @@ services:
   # (Python, FastAPI, the SDK), capped at 256 MB so it can never take the
   # planner's or the JVM's share of this 4 GB server. One worker: its
   # requests wait on Claude and the planner, not on its processor.
+  #
+  # Not started unless COMPOSE_PROFILES names claude, and asked only where
+  # APP_CLAUDE_FEATURES is DEVELOPERS or EVERYONE: the Claude features are
+  # off until the subscription is decided (the owner, 2026-11-10,
+  # docs/decisions/0035), so no request reaches Anthropic.
   assistant:
+    profiles: ["claude"]
     <<: *restart
     image: ${IMAGE_REGISTRY}/assistant:${IMAGE_TAG:-latest}
     # No access log, as the planner's: a request's body is a pilot's
@@ -215,6 +221,7 @@ services:
         condition: service_healthy
       assistant:
         condition: service_started
+        required: false
     healthcheck:
       test:
         - CMD
@@ -234,6 +241,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       PLANNER_SERVICE_URL: http://planner:8000
       ASSISTANT_SERVICE_URL: http://assistant:8000
+      # OFF until the subscription is decided (docs/decisions/0035).
+      APP_CLAUDE_FEATURES: ${APP_CLAUDE_FEATURES:-OFF}
       # The monitor's minute check (UptimeWatch, docs/OPERATIONS.md):
       # the weather service watched too, and its alerts mailed by SES to
       # APP_ALERT_EMAILS (the owner's secret), the developers where unset.

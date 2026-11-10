@@ -47,6 +47,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.account.AccountButton
+import app.wingtipmaps.android.ai.rememberAiOffered
 import app.wingtipmaps.android.airplane.OwnAirplanes
 import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.atc.RadioListener
@@ -230,8 +231,9 @@ fun OneSearch(
     var chosen by remember { mutableStateOf(emptySet<ResultKind>()) }
     val results: @Composable ColumnScope.() -> Unit = {
         val typed = textFieldState.text.isNotBlank()
-        val actions = remember(state.query, state.airports, state.waypoints, planState.routed, fix != null) {
-            SearchGroups.actions(state.query, planState.routed, fix != null, (state.airports + state.waypoints).firstOrNull()?.ident)
+        val asked = rememberAiOffered()
+        val actions = remember(state.query, state.airports, state.waypoints, planState.routed, fix != null, asked) {
+            SearchGroups.actions(state.query, planState.routed, fix != null, (state.airports + state.waypoints).firstOrNull()?.ident, asked)
         }
         LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
             if (typed) {
@@ -243,7 +245,7 @@ fun OneSearch(
                         FlightCard(planState, tail = tail, onOpen = { pick(SearchPick.Flight) }, modifier = Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm))
                     }
                 }
-                nothingTyped(favorites, own.values, recents, state.nearest, state.nearestProblem, onPick = pick)
+                nothingTyped(favorites, own.values, recents, state.nearest, state.nearestProblem, fix, onPick = pick)
             }
         }
     }

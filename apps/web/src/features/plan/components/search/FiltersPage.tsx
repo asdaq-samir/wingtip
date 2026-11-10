@@ -3,8 +3,23 @@ import { ChevronsUpDown } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../../../components/ui/button";
 import { Switch } from "../../../../components/ui/switch";
+import { ToggleGroup, ToggleGroupItem } from "../../../../components/ui/toggle-group";
 import { TEXT } from "../../../../lib/text";
-import { RUNWAY_STEPS, WITHIN_STEPS, runwayWords, withinWords, type SearchFilters } from "../../lib/searchFilters";
+import {
+  FUELS,
+  RUNWAY_STEPS,
+  SURFACES,
+  SURFACE_WORDS,
+  VFR_AT_STEPS,
+  WITHIN_STEPS,
+  runwayWords,
+  vfrAtClock,
+  vfrAtMenuWords,
+  withinWords,
+  type Fuel,
+  type SearchFilters,
+  type Surface,
+} from "../../lib/searchFilters";
 import { useSearchResults } from "../../hooks/useSearchResults";
 import StepMenu from "./StepMenu";
 
@@ -34,9 +49,9 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
  * opens its own from the filter chip (the owner's screenshot, 2026-11-10):
  * Cancel at the left, the title in the middle, Apply at the right; nothing
  * changes until Apply, and Cancel lets every change go. Grouped inset lists
- * of stock Switches and Menus, the same filters as the chips over the
- * results. Only what the planner's Nearest answers with is offered: no
- * fuel, instrument approach or runway surface, which it does not say.
+ * of stock Switches, ToggleGroups and Menus, the same filters as the
+ * chips over the results. Only what the planner's Nearest answers with is
+ * offered (searchFilters): no fuel price, which the app has no source for.
  */
 export default function FiltersPage() {
   const draft = useSearchResults((s) => s.draft);
@@ -44,7 +59,7 @@ export default function FiltersPage() {
   const apply = useSearchResults((s) => s.applyDraft);
   const cancel = useSearchResults((s) => s.cancelDraft);
   if (!draft) return null;
-  const sw = (key: keyof Pick<SearchFilters, "vfrNow" | "towered" | "publicOnly">, label: string) => (
+  const sw = (key: keyof Pick<SearchFilters, "vfrNow" | "towered" | "publicOnly" | "approach">, label: string) => (
     <Row label={label}>
       <Switch
         checked={draft[key]}
@@ -84,9 +99,58 @@ export default function FiltersPage() {
       <Group>
         {sw("towered", "Towered")}
         {sw("publicOnly", "Public Use")}
+        {sw("approach", "Instrument Approach")}
       </Group>
-      <Group title="Weather">{sw("vfrNow", "VFR Now")}</Group>
+      <Group title="Weather">
+        {sw("vfrNow", "VFR Now")}
+        <Row label="VFR at">
+          <StepMenu
+            value={draft.vfrInHours}
+            steps={VFR_AT_STEPS}
+            words={vfrAtMenuWords}
+            onPick={(vfrInHours) => setDraft({ vfrInHours })}
+            testId="filter-vfr-at"
+            trigger={menuButton(vfrAtClock(draft.vfrInHours) ?? "Any Time")}
+          />
+        </Row>
+      </Group>
+      <Group title="Fuel">
+        <Row label="Sells">
+          <ToggleGroup
+            multiple
+            value={draft.fuel}
+            onValueChange={(fuel) => setDraft({ fuel: FUELS.filter((k) => fuel.includes(k)) as Fuel[] })}
+            aria-label="Fuel sold"
+            variant="outline"
+            size="sm"
+            data-testid="filter-fuel"
+          >
+            {FUELS.map((k) => (
+              <ToggleGroupItem key={k} value={k} className={TEXT.detail}>
+                {k}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </Row>
+      </Group>
       <Group title="Runway">
+        <Row label="Surface">
+          <ToggleGroup
+            multiple
+            value={draft.surface}
+            onValueChange={(surface) => setDraft({ surface: SURFACES.filter((k) => surface.includes(k)) as Surface[] })}
+            aria-label="Runway surface"
+            variant="outline"
+            size="sm"
+            data-testid="filter-surface"
+          >
+            {SURFACES.map((k) => (
+              <ToggleGroupItem key={k} value={k} className={TEXT.detail}>
+                {SURFACE_WORDS[k]}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </Row>
         <Row label="Longest Runway">
           <StepMenu
             value={draft.minRunwayFt}

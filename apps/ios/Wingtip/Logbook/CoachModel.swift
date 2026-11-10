@@ -139,10 +139,13 @@ final class CoachModel {
             making = false
             return
         }
+        // No words while the server's Claude features are off: the plan is
+        // the engine's whole, and nothing is promised in their place.
+        guard let wordsOf = calls.words else { return }
         wording = true
         defer { wording = false }
         do {
-            let said = try await calls.words(planned.raw)
+            let said = try await wordsOf(planned.raw)
             words = said
             if said.sentences.isEmpty, let why = said.unavailable { wordsProblem = "No words for now: \(why)" }
         } catch {

@@ -35,11 +35,11 @@ import app.wingtipmaps.android.api.AirportSuggestion
 import app.wingtipmaps.android.api.NearestAirport
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.navigation.generated.Screen
-import app.wingtipmaps.android.ui.CategoryChip
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.WingtipIcons
+import app.wingtipmaps.android.ui.nearestRows
 
 /** The kinds of result a filter chip narrows the list to, as Google
  *  Maps puts its filters over the results; none chosen shows them all. */
@@ -106,6 +106,7 @@ fun LazyListScope.nothingTyped(
     recents: List<Remembered>,
     nearest: List<NearestAirport>?,
     nearestProblem: String?,
+    fix: OwnShip.Fix?,
     onPick: (SearchPick) -> Unit,
 ) {
     val starred = (favorites + own.mapNotNull { r -> r.tail?.let { Remembered(Remembered.Kind.AIRPLANE, it, r.type, r.type) } }).distinctBy { it.kind.name + it.ident.uppercase() }
@@ -126,13 +127,8 @@ fun LazyListScope.nothingTyped(
         // No position yet: Nearest itself, which asks for it.
         item(key = "nearest-open") { ResultRow(stringResource(R.string.nearest), null, null, Icons.Filled.NearMe) { onPick(SearchPick.Do(DoAction.Open(Screen.NEAREST))) } }
     } else {
-        items(nearest, key = { "near-" + it.ident }) { n ->
-            // The field's flight category as its chip at the row's end,
-            // in the chart's own colours (FlightCategory), never the theme's.
-            ResultRow(n.ident, n.name, Format.distance(n.distanceNm), Icons.Filled.LocalAirport, trailing = n.flightCategory?.let { c -> { CategoryChip(c) } }) {
-                onPick(SearchPick.Airport(n.ident, n.name))
-            }
-        }
+        // The Nearest page's own rows (nearestRows), the three nearest.
+        nearestRows(nearest, fix) { n -> onPick(SearchPick.Airport(n.ident, n.name)) }
     }
 }
 
@@ -167,14 +163,12 @@ private fun ResultRow(
     supporting: String?,
     glyph: ImageVector?,
     tint: Boolean = false,
-    trailing: (@Composable () -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     ListItem(
         onClick = onClick,
         leadingContent = glyph?.let { { Icon(it, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) } },
         supportingContent = supporting?.takeIf { it.isNotEmpty() }?.let { { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
-        trailingContent = trailing,
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth(),
         content = {

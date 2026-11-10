@@ -55,17 +55,21 @@ final class Connectivity: @unchecked Sendable {
 /// with Automatic, a planner that cannot be reached, or answers with an
 /// error before its first word, is replaced by this iPhone's answer
 /// (OnDeviceAsk); a planner's answer begun stays the planner's, cut
-/// where it broke.
+/// where it broke. While the server's Claude features are off
+/// (ServerFeatures, the owner's decision of 2026-11-10 in docs/decisions)
+/// every question is this iPhone's, whatever the pick: the planner's
+/// answer is Claude's, and nothing falls through to it.
 struct AskRouter: Sendable {
     var planner: @Sendable (AssistantAsk) -> AsyncThrowingStream<AssistantLine, any Error> = { AssistantClient.stream($0) }
     var device = OnDeviceAsk()
     var online: @Sendable () -> Bool = { Connectivity.shared.online }
+    var claudeOn: @Sendable () -> Bool = { ServerFeatures.claudeOnNow }
 
     func stream(_ question: String, ask: AssistantAsk, earlier: [AssistantTurn], facts: OnDeviceFacts,
                 from pick: AskWhere) -> AsyncThrowingStream<AssistantLine, any Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
-                let onPhone = pick == .device || (pick == .automatic && !online())
+                let onPhone = !claudeOn() || pick == .device || (pick == .automatic && !online())
                 if onPhone {
                     for line in await device.answer(question, earlier: earlier, facts: facts).lines { continuation.yield(line) }
                     continuation.finish()
