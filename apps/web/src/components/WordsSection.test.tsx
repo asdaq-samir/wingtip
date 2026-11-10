@@ -30,7 +30,7 @@ describe("a section of words", () => {
     expect(screen.getByTestId("w-unavailable").textContent).toBe("The model did not answer in time.");
     expect(screen.queryByTestId("w-words")).toBeNull();
     expect(screen.queryByTestId("w-source")).toBeNull();
-    expect(document.querySelector("[data-sonner-toast]")).toBeNull();
+    expect(document.querySelector("[data-slot=toast]")).toBeNull();
   });
 
   test("a failed request reads the same way, with the error's own words", () => {

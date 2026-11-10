@@ -23,7 +23,7 @@ import { clearTheRoute, settled as settledLocator, grabberTo } from "./helpers";
 const PLAN = "/app/plan?dep=C81&dest=KDLH";
 
 const banner = (page: Page) => page.locator("[data-problem-banner]");
-const toasts = (page: Page) => page.locator("[data-sonner-toast]");
+const toasts = (page: Page) => page.locator("[data-slot=toast]");
 
 /** Fail every planner call with one message, the way a planner that is
  *  simply down does. */
@@ -209,7 +209,7 @@ test("the progress line spans the screen and is centred on it", async ({ page })
 
   const first = toasts(page).first();
   await expect(first).toBeVisible({ timeout: 15000 });
-  await settled(page, "[data-sonner-toast]");
+  await settled(page, "[data-slot=toast]");
   const box = (await first.boundingBox())!;
   const viewport = page.viewportSize()!;
 
@@ -235,7 +235,7 @@ test("a toast sits clear of the panel: at the top of a phone's screen, the botto
 
   const first = toasts(page).first();
   await expect(first).toBeVisible({ timeout: 15000 });
-  await settled(page, "[data-sonner-toast]");
+  await settled(page, "[data-slot=toast]");
   const box = (await first.boundingBox())!;
   const panel = (await page.locator('[data-slot="map-panel"]').boundingBox())!;
   if (page.viewportSize()!.width < 768) {
@@ -255,14 +255,14 @@ test("the chart underneath stays draggable while a toast is showing", async ({ p
 
   const first = toasts(page).first();
   await expect(first).toBeVisible({ timeout: 15000 });
-  await settled(page, "[data-sonner-toast]");
+  await settled(page, "[data-slot=toast]");
   const box = (await first.boundingBox())!;
 
   // Dead centre of the toast card -- the worst case.
   const beneath = await page.evaluate(
     ([x, y]) => {
       const el = document.elementFromPoint(x, y);
-      return el?.closest("[data-sonner-toast]") ? "the toast" : "something under it";
+      return el?.closest("[data-slot=toast]") ? "the toast" : "something under it";
     },
     [box.x + box.width / 2, box.y + box.height / 2],
   );

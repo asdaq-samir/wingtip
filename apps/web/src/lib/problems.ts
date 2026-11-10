@@ -15,7 +15,7 @@ import { create } from "zustand";
  *   save -- is iOS's alert (ErrorAlert, `showError`), with OK.
  *
  * Brief news that goes by itself -- the progress line, "Link Copied" --
- * stays sonner's toast. Errors and warnings were sonner toasts drawn by
+ * stays a toast (lib/toast). Errors and warnings were toasts drawn by
  * hand, folded to lines that the panel had to stop short of.
  */
 

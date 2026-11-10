@@ -342,45 +342,26 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
   }
 }
 /* The toast stack sits over the chart, and the chart is the thing a
-   pilot is panning and zooming. Sonner gives its container -- and each
-   card -- `pointer-events: auto`, so the whole band they occupy
-   swallows wheel and drag events meant for the map. Widening the toasts
-   made that band wide enough to matter: a scroll aimed at the chart
-   with a toast showing is simply lost, which a Playwright run caught as
-   a zoom step going missing.
-
-   So the stack is transparent to the pointer and only its controls --
-   an action's button -- take events back. The cost is sonner's
-   swipe-to-dismiss, which needs the card itself; a toast goes by itself.
-   The chart underneath stays fully draggable and zoomable, toast or
-   no toast. */
-[data-sonner-toaster],
-[data-sonner-toast] {
+   pilot is panning and zooming: a band of toasts that took the pointer
+   swallowed wheel and drag events meant for the map (a Playwright run
+   caught a zoom step going missing). So the stack is transparent to the
+   pointer; a toast has no control of its own, and goes by itself. */
+[data-slot="toast-viewport"],
+[data-slot="toast"] {
   pointer-events: none;
 }
-[data-sonner-toast] button {
-  pointer-events: auto;
-}
-/* Except while a drawer or a dialog is open. The toasts are anchored to
-   the viewport, not the map, so an open drawer (the whole screen on a
-   phone, the right edge on a narrow desktop) sits under them -- and a
-   tap on a card that is transparent to the pointer lands on whatever
-   the drawer has there: an accordion trigger, which opened a briefing
-   section nobody touched. While one is open the cards take their own
-   taps back; the chart loses the wheel under a toast for that long.
-   The panel out is <body>'s data-map-panel (MapPanel); a dialog, menu or
-   popover open marks what is outside it data-base-ui-inert (Base UI's
-   marker, on the page's root or the toaster itself), rather than a :has()
-   looking for either: at the top of the page it restyled all of it at
-   every state change anywhere, a quarter of a second of a phone's each
-   time a tab was picked (measured 2026-10-07). Base UI keeps the page's
-   taps from under a modal layer with a backdrop of its own, not by
-   <body>'s pointer-events, and locks the scroll by overflow alone, so
-   Radix's scroll-lock variable and the sheet that stood in for its
-   pointer-events are gone with it. */
-body[data-map-panel="full"] [data-sonner-toast],
-[data-base-ui-inert] [data-sonner-toast],
-[data-sonner-toaster][data-base-ui-inert] [data-sonner-toast] {
+/* Except while a drawer or a dialog is open: the toasts are anchored to
+   the viewport, not the map, so an open drawer sits under them, and a tap
+   on a toast transparent to the pointer landed on whatever the drawer had
+   there (an accordion trigger, which opened a briefing section nobody
+   touched). The panel out is <body>'s data-map-panel (MapPanel); a
+   dialog, menu or popover open marks what is outside it
+   data-base-ui-inert (Base UI's marker), rather than a :has() looking for
+   either, which restyled the whole page at every state change (measured
+   2026-10-07). */
+body[data-map-panel="full"] [data-slot="toast"],
+[data-base-ui-inert] [data-slot="toast"],
+[data-slot="toast-viewport"][data-base-ui-inert] [data-slot="toast"] {
   pointer-events: auto;
 }
 
@@ -496,72 +477,27 @@ html[data-tv] .maplibregl-canvas:focus {
   }
 }
 
-/* The toasts in the app's typeface: sonner sets its own system stack,
-   so on an iPhone they read in San Francisco beside an app in Inter.
-   The html selector outranks sonner's, which is injected after this. */
-html [data-sonner-toaster] {
-  font-family: inherit;
-}
-
-/* A toast's words to a finger at 15 on iOS's 20, as iOS's banners set
-   theirs and the app sets what is read (lib/text.ts), over sonner's 13
-   on 19.5. The toaster's attribute and the styled one as well: sonner's
-   own rules, injected after this sheet, outranked the toaster's alone,
-   and the toasts stayed 13. */
-@media (pointer: coarse) {
-  [data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
-    font-size: 0.9375rem;
-  }
-  [data-sonner-toaster] [data-sonner-toast][data-styled="true"] :is([data-title], [data-description]) {
-    line-height: 1.25rem;
-  }
-}
-
-/* A phone's toasts as wide as the offsets leave them (AppToaster's
-   mobileOffset), the right one included: sonner's own sizes a toast
-   from the left offset twice, and ran it across the map's buttons the
-   right offset was there to keep clear. */
-@media (max-width: 600px) {
-  html [data-sonner-toaster] [data-sonner-toast] {
-    width: calc(100vw - var(--mobile-offset-left) - var(--mobile-offset-right));
-  }
-}
-
 /* Every toast Apple Maps' banner (the toast rewrite, 2026-10-27): on
    Liquid Glass, as the panel's capsule and the map's buttons are, a
    capsule round one line, its title semibold and a second line, where
-   there is one, in the secondary grey. It was a black slab over the chart
-   for as long as a long route took to plan, and a success a green card. */
-html [data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
+   there is one, in the secondary grey (components/ui/toast). Its words to
+   a finger at 15 on iOS's 20, as iOS's banners set theirs. */
+[data-slot="toast"] {
   @apply liquid-glass;
-  border-color: transparent;
-  /* A capsule, as Apple Maps' banner is: 48 at the least and 24 round, so
-     one line is a full capsule and two keep the same corners (the iOS
-     audit reads a toast as a capsule, min(24, half its height)). */
-  border-radius: 1.5rem;
-  min-height: 3rem;
-  padding: 0.625rem 1rem;
-  gap: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
 }
-html [data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-title] {
-  font-weight: 600;
-}
-html [data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-description] {
-  color: var(--muted-foreground);
-}
-html [data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-button] {
-  margin-left: auto;
-  background: transparent;
-  color: var(--tint);
-  font-weight: 600;
-  padding-inline: 0.25rem;
+@media (pointer: coarse) {
+  [data-slot="toast"] {
+    font-size: 0.9375rem;
+  }
 }
 
 /* With the phone's sheet all the way up, the progress line gives way as
    the map's buttons do: at the top of the screen it lay over the sheet's
    tabs (the style audit, 2026-10-26), and the sheet shows the plan coming
    in itself. */
-body[data-map-sheet][data-map-panel="full"] [data-sonner-toast][data-type="loading"] {
+body[data-map-sheet][data-map-panel="full"] [data-slot="toast"][data-type="loading"] {
   opacity: 0;
   pointer-events: none;
 }

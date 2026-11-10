@@ -15,10 +15,6 @@ import { useSystemProblems } from "../../../lib/problems";
 import { queryClient } from "../../../lib/queryClient";
 import { usePlan, type PlanParams } from "./usePlan";
 
-vi.mock("sonner", () => ({
-  toast: Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn(), warning: vi.fn(), custom: vi.fn(), dismiss: vi.fn() }),
-}));
-
 vi.mock("../../../lib/api/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../lib/api/client")>()),
   api: {
