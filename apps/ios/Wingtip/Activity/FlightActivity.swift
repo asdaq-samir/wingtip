@@ -11,8 +11,10 @@ import WidgetKit
 /// flight begins -- the dry run's start, or own ship at flying speed with
 /// a route planned -- or when the pilot starts it (the Control Center
 /// control, Siri); it follows the app's in-flight models (InFlight,
-/// Copilot, AtcCopilot: FlightActivityContent), and it ends five minutes
-/// after the airplane has landed, or when the pilot stops it.
+/// Copilot, AtcCopilot: FlightActivityContent), in Flighty's phases --
+/// ready on the ground, airborne, arrived -- and five minutes after the
+/// airplane has come to rest it ends with its landing and block time,
+/// left up for twenty more, or when the pilot stops it.
 @MainActor
 final class FlightActivity {
     static let shared = FlightActivity()
@@ -31,6 +33,12 @@ final class FlightActivity {
     /// Stopped by the pilot in the air: not started again until the
     /// airplane is back on the ground.
     private var stoppedByPilot = false
+    /// When the activity started, for the block time once landed.
+    private var startedAt: Date?
+    /// How long the arrived phase stays on the Lock Screen once the
+    /// airplane is at rest: "15 to 30 minutes is adequate" (HIG Live
+    /// Activities).
+    static let arrivedFor: TimeInterval = 20 * 60
     /// Why the activity could not be started, where it could not.
     private(set) var problem: String?
 
@@ -61,6 +69,7 @@ final class FlightActivity {
                 content: ActivityContent(state: state, staleDate: state.updatedAt.addingTimeInterval(Self.staleAfter)),
                 pushType: nil)
             last = state
+            startedAt = state.updatedAt
             problem = nil
             stoppedByPilot = false
             told()
@@ -82,7 +91,8 @@ final class FlightActivity {
         let inputs = FlightActivityContent.Inputs(
             progress: nil, routeNm: kept.course?.distanceNm ?? kept.legs.reduce(0) { $0 + $1.distanceNm },
             airplaneChosen: kept.aircraft != Plan.noAirplane, usableFuelGal: kept.totals?.usableFuelGal,
-            frequency: nil, copilot: nil, now: now)
+            frequency: nil, copilot: nil, now: now, phase: .ready,
+            depCategory: kept.briefing?.metars[kept.dep]??.flightCategory, plannedEteMin: kept.totals?.eteMin)
         return start(dep: kept.dep, dest: kept.dest, tail: kept.tail, state: FlightActivityContent.state(inputs))
     }
 
@@ -96,15 +106,22 @@ final class FlightActivity {
     /// Ends the activity, leaving its last figures on the Lock Screen for
     /// the system's default while.
     func end() {
+        end(final: nil, dismissAt: nil)
+    }
+
+    /// Ends the activity, with a last state to leave up (the arrived
+    /// phase) until `dismissAt`, or as it stands for the system's while.
+    private func end(final: FlightActivityAttributes.ContentState?, dismissAt: Date?) {
         guard let activity else { return }
         self.activity = nil
         last = nil
         lastFlying = nil
+        startedAt = nil
         told()
         // By its id, found again off the main actor, so the activity
         // itself is never sent across to the task.
         let id = activity.id
-        Task { await Self.finish(id) }
+        Task { await Self.finish(id, final: final, dismissAt: dismissAt) }
     }
 
     /// The control's state kept in the App Group and the control drawn
@@ -129,7 +146,11 @@ final class FlightActivity {
             end()
             return
         }
-        let state = FlightActivityContent.state(Self.inputs(plan: plan, now: now))
+        var inputs = Self.inputs(plan: plan, now: now)
+        inputs.startedAt = startedAt
+        // On the ground after flying, still the flight until it is over.
+        inputs.phase = flying || lastFlying != nil ? .airborne : .ready
+        let state = FlightActivityContent.state(inputs)
         if flying {
             lastFlying = now
             if activity == nil, !stoppedByPilot, plan.routed {
@@ -137,10 +158,14 @@ final class FlightActivity {
             }
         } else {
             stoppedByPilot = false
-            // Landed and at rest for a while: the flight is over. One the
-            // pilot started on the ground stays until it has flown.
+            // Landed and at rest for a while: the flight is over, its
+            // landing and block time left up for a while (Flighty's arrived
+            // phase). One the pilot started on the ground stays until it
+            // has flown.
             if activity != nil, let flew = lastFlying, now.timeIntervalSince(flew) >= Self.landedAfter {
-                end()
+                inputs.phase = .arrived
+                inputs.landedAt = flew
+                end(final: FlightActivityContent.state(inputs), dismissAt: flew.addingTimeInterval(Self.arrivedFor))
                 return
             }
         }
@@ -156,7 +181,9 @@ final class FlightActivity {
             frequency: FlightActivityContent.frequency(in: AtcCopilot.shared.cards),
             copilot: Copilot.shared.mode == .off ? nil : Copilot.shared.message,
             weather: WeatherWatch.shared.latest,
-            now: now)
+            now: now,
+            depCategory: plan.briefing?.metars[plan.dep]??.flightCategory,
+            plannedEteMin: plan.totals?.eteMin)
     }
 
     /// The route's weather gone worse, on the Lock Screen at once where a
@@ -176,9 +203,10 @@ final class FlightActivity {
         Task { await Self.send(state, to: id) }
     }
 
-    private nonisolated static func finish(_ id: String) async {
+    private nonisolated static func finish(_ id: String, final: FlightActivityAttributes.ContentState?, dismissAt: Date?) async {
         guard let found = Activity<FlightActivityAttributes>.activities.first(where: { $0.id == id }) else { return }
-        await found.end(found.content, dismissalPolicy: .default)
+        let content = final.map { ActivityContent(state: $0, staleDate: nil) } ?? found.content
+        await found.end(content, dismissalPolicy: dismissAt.map { .after($0) } ?? .default)
     }
 
     private nonisolated static func send(_ state: FlightActivityAttributes.ContentState, to id: String) async {

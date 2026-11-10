@@ -19,7 +19,7 @@ struct CurrencyWidget: Widget {
         }
         .configurationDisplayName("Currency Status")
         .description("Passengers by day and at night, instrument, flight review and medical, from your logbook.")
-        .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular])
+        .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular, .accessoryInline])
     }
 }
 
@@ -85,6 +85,8 @@ private struct CurrencyView: View {
 
     @ViewBuilder private func lines(_ currency: WidgetFetch.Currency, kept: Bool) -> some View {
         switch family {
+        case .accessoryInline:
+            Text("\(entry.item.title): \(entry.item.line(currency).words)")
         case .accessoryRectangular:
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 Text(entry.item.title).font(.headline).widgetAccentable()
@@ -122,7 +124,7 @@ private struct CurrencyView: View {
 
     private func note(_ words: String) -> some View {
         VStack(alignment: .leading, spacing: WingtipSpace.xs) {
-            if family != .accessoryRectangular { Title() }
+            if family != .accessoryRectangular, family != .accessoryInline { Title() }
             Text(words).font(.caption).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

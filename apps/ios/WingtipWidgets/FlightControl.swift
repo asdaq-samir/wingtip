@@ -12,6 +12,8 @@ struct FlightControl: ControlWidget {
         StaticControlConfiguration(kind: FlightControlState.kind, provider: Provider()) { running in
             ControlWidgetToggle("Flight", isOn: running, action: FlightControlIntent()) { on in
                 Label(on ? "Flying" : "Start Flight", systemImage: on ? "airplane.circle.fill" : "airplane")
+                    // The Action button's hint, a verb (HIG Controls).
+                    .controlWidgetActionHint(on ? "End Flight" : "Start Flight")
             }
             .tint(Color(WingtipColor.Chart.mapBlue))
         }

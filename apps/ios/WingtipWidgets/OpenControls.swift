@@ -13,6 +13,7 @@ struct NearestAirportControl: ControlWidget {
             ControlWidgetButton(action: NearestAirportsIntent()) {
                 // The in-flight Nearest button's glyph (InstrumentsBar).
                 Label("Nearest Airport", systemImage: "airplane.arrival")
+                    .controlWidgetActionHint("Show Nearest")
             }
             .tint(Color(WingtipColor.Chart.mapBlue))
         }
@@ -31,6 +32,7 @@ struct EmergencyControl: ControlWidget {
         StaticControlConfiguration(kind: Self.kind) {
             ControlWidgetButton(action: EmergencyIntent()) {
                 Label("Emergency", systemImage: "exclamationmark.triangle.fill")
+                    .controlWidgetActionHint("Open Emergency")
             }
             .tint(Color(WingtipColor.Chart.emergency))
         }

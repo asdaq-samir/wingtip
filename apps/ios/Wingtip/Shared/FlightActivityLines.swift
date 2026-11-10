@@ -10,6 +10,31 @@ struct FlightActivityLines: Equatable {
 
     init(_ state: FlightActivityAttributes.ContentState) { self.state = state }
 
+    /// The phase, in the air where a state from before phases has none.
+    var phase: FlightActivityAttributes.Phase { state.phase ?? .airborne }
+
+    /// The share of the route flown, 0 to 1 (0 before the first fix).
+    var progress: Double { state.progress ?? 0 }
+
+    /// The next fix with the miles and minutes to it, "PIPER · 14 nm · 12m".
+    var nextLine: String {
+        [state.nextFix ?? "Destination", state.nextNm.map { Format.distance($0, decimals: 0) }, state.nextEteMin.map(Format.duration)]
+            .compactMap { $0 }.joined(separator: " · ")
+    }
+
+    /// Before departure: "Ready to depart · VFR", the departure's category
+    /// as the Brief had it.
+    var readyLine: String {
+        state.depCategory.map { "Ready to depart · \($0)" } ?? "Ready to depart"
+    }
+
+    /// The planner's time en route, "1h 5m"; the dash where it has none.
+    var plannedEte: String { state.plannedEteMin.map(Format.duration) ?? Format.none }
+
+    /// Arrived: "Landed 2:07 PM", and the block time, "Block 1h 25m".
+    var landed: String { state.landedAt.map { "Landed \(Format.time($0))" } ?? "Landed" }
+    var block: String? { state.blockMin.map { "Block \(Format.duration($0))" } }
+
     /// The next fix, "PIPER", else the destination's last leg's word.
     var next: String { state.nextFix ?? "Destination" }
 
@@ -34,11 +59,16 @@ struct FlightActivityLines: Equatable {
     /// The fuel the plan expects left, "18.4 gal"; nil with no airplane.
     var fuel: String? { state.fuelLeftGal.map { Format.fuel($0) } }
 
-    /// The compact island's one figure: the minutes to the next fix, else
-    /// to the destination.
+    /// The compact island's one figure, Flighty's way: the planned time en
+    /// route before departure, the minutes to the destination in the air
+    /// (else to the next fix), and "Landed" once down.
     var compact: String {
-        if let next = state.nextEteMin { return Format.duration(next) }
-        return state.destEteMin.map(Format.duration) ?? Format.none
+        switch phase {
+        case .ready: return plannedEte
+        case .arrived: return "Landed"
+        case .airborne:
+            return (state.destEteMin ?? state.nextEteMin).map(Format.duration) ?? Format.none
+        }
     }
 
     /// The same figure for a Dynamic Island drawn narrow (iOS 27: two Live
@@ -47,7 +77,12 @@ struct FlightActivityLines: Equatable {
     /// isDynamicIslandLimitedInWidth): under an hour as before, "12m"; an
     /// hour or more as a nav log writes it, "1:25" rather than "1h 25m".
     var compactNarrow: String {
-        guard let minutes = state.nextEteMin ?? state.destEteMin else { return Format.none }
+        let minutes: Double? = switch phase {
+        case .ready: state.plannedEteMin
+        case .arrived: nil
+        case .airborne: state.destEteMin ?? state.nextEteMin
+        }
+        guard let minutes else { return phase == .arrived ? "" : Format.none }
         return minutes.rounded() < 60 ? Format.duration(minutes) : Format.navLogTime(minutes)
     }
 
@@ -62,7 +97,12 @@ struct FlightActivityLines: Equatable {
     /// The whole state as one sentence, for VoiceOver on the minimal and
     /// compact presentations, which have no room for words.
     var spoken: String {
-        var parts = [nextSentence, "arriving \(eta)"]
+        switch phase {
+        case .ready: return "\(readyLine), \(plannedEte) en route"
+        case .arrived: return [landed, block].compactMap { $0 }.joined(separator: ", ")
+        case .airborne: break
+        }
+        var parts = ["\(Int((progress * 100).rounded())) percent flown", nextSentence, "arriving \(eta)"]
         if let fuel { parts.append("\(fuel) planned left") }
         if let frequency = state.frequency { parts.append(frequency) }
         if let copilot = state.copilot { parts.append(copilot) }
