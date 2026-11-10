@@ -42,7 +42,7 @@ struct AirplaneProfileView: View {
                 Section {
                     ForEach(OwnFigure.allCases) { figure in row(figure) }
                 } header: {
-                    SectionTitle("Figures")
+                    Text("Figures")
                 } footer: {
                     VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                         if let words = model.keptWords(signedIn: session.signedIn) { Text(words) }

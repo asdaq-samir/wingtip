@@ -102,7 +102,7 @@ struct ReadyToFlySection: View {
         Section {
             ReadyToFlyRows()
         } header: {
-            SectionTitle("Ready to Fly")
+            Text("Ready to Fly")
         }
         .task(id: key) {
             if KeepForAir.shared.keeping.map({ $0.kept >= $0.wanted }) == true { await model.chartsKeptChanged() }
@@ -165,7 +165,7 @@ struct NotamsSection: View {
         if let ranked = model.notams {
             let top = ranked.notams.filter(\.top)
             let rest = ranked.notams.filter { !$0.top }
-            Section(title: "NOTAMs") {
+            Section("NOTAMs") {
                 KeptAgeLine(kind: .notams, key: ReadyToFly.flightKey(plan))
                 ForEach(top, id: \.id) { notam in row(notam) }
                 if !rest.isEmpty {
@@ -181,7 +181,7 @@ struct NotamsSection: View {
             NotamWordsSection(ranked: ranked.notams, flight: plan.routed
                 ? WordsFigures.flight(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: plan.totals?.eteMin) : nil)
         } else if let problem = model.notamsProblem {
-            Section(title: "NOTAMs") { ProblemLine(problem) }
+            Section("NOTAMs") { ProblemLine(problem) }
         }
     }
 

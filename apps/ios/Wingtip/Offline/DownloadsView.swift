@@ -15,7 +15,7 @@ struct DownloadsView: View {
     var body: some View {
         List {
             keptSection
-            Section(title: "Charts") {
+            Section("Charts") {
                 ForEach(DownloadsModel.kinds, id: \.key) { kind in
                     Toggle(kind.label, isOn: Binding(get: { model.picked.contains(kind.key) },
                                                      set: { on in if on { model.picked.insert(kind.key) } else { model.picked.remove(kind.key) } }))
@@ -47,7 +47,7 @@ struct DownloadsView: View {
     }
 
     @ViewBuilder private var keptSection: some View {
-        Section(title: "On This iPhone") {
+        Section("On This iPhone") {
             ForEach(model.kept) { kept in
                 OfflineKeptRow(kept: kept, written: progress.written(kept), updatable: model.updatable(kept),
                                newest: model.newestCycle, update: { Task { await model.update(kept) } },
@@ -62,7 +62,7 @@ struct DownloadsView: View {
     }
 
     private func regionSection(_ title: String, group: String) -> some View {
-        Section(title: title) {
+        Section(title) {
             ForEach(model.regions.filter { $0.group == group && (search.isEmpty || $0.name.localizedCaseInsensitiveContains(search)) }, id: \.id) { region in
                 Button { asking = region } label: {
                     LabeledContent(region.name, value: model.busy.contains(region.id) ? "Asking…" : Self.size(model.size(of: region)))

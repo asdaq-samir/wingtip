@@ -47,10 +47,10 @@ struct ClearanceNoteView: View {
                 Section { DocumentNotes(read: read) }
             }
             if let note = read.clearance {
-                Section(title: "As Written") {
+                Section("As Written") {
                     Text(note.written).font(.body.monospaced()).textSelection(.enabled)
                 }
-                Section(title: "As Said") {
+                Section("As Said") {
                     Text(note.said).textSelection(.enabled)
                 }
             } else if read.unreadable == nil {

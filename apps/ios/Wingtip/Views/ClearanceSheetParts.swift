@@ -44,7 +44,7 @@ struct ClearanceReadbackSection: View {
     let check: ReadbackCheck?
 
     var body: some View {
-        Section(title: "Your Read Back") {
+        Section("Your Read Back") {
             if readback.isEmpty {
                 Text(readingBack ? "Listening for your read back…"
                     : "Read it back to ATC with Read back again, and it is checked here line by line.")

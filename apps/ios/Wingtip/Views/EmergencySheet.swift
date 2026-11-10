@@ -100,7 +100,7 @@ struct EmergencySheet: View {
     /// an airplane -- never an airplane's checklist or figure.
     @ViewBuilder private func guidanceSection(_ items: [EngineContract.EmergencyGuidanceAnswerItemsItem]) -> some View {
         // Labelled as general: never an airplane's checklist assumed.
-        Section(title: "What to Do · General, No Airplane Picked") {
+        Section("What to Do · General, No Airplane Picked") {
             ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                 CardRow(title: item.title, detail: "\(item.detail) (\(item.source))")
             }
@@ -128,7 +128,7 @@ struct EmergencySheet: View {
                 }
             } header: {
                 HStack {
-                    SectionTitle(sections[s].title)
+                    Text(sections[s].title)
                     Spacer()
                     Menu {
                         Picker("Emergency", selection: Binding(get: { s }, set: { model.sectionPicked = $0; checklist.startOver() })) {
@@ -141,7 +141,7 @@ struct EmergencySheet: View {
                 }
             }
         } else {
-            Section(title: "Checklist") {
+            Section("Checklist") {
                 CardRow(title: "No emergency checklist for \(checklist.airplane)",
                         detail: "Write it from the airplane's handbook in its Checklists")
             }

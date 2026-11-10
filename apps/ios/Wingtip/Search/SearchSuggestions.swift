@@ -37,18 +37,18 @@ struct SearchSuggestions: View {
             Section {
                 Button { pick(.plan) } label: { YourFlightCard() }
                     .accessibilityIdentifier("search-your-flight")
-            } header: { SectionTitle("Your Flight") }
+            } header: { Text("Your Flight") }
         }
         if !shelf.favorites.isEmpty || !airplanes.records.isEmpty {
             Section {
                 ForEach(shelf.favorites) { field in keptRow(field) }
                 ForEach(airplanes.records, id: \.tailNumber) { airplane in ownRow(airplane) }
-            } header: { SectionTitle(Screen.favorites.title) }
+            } header: { Text(Screen.favorites.title) }
         }
         if !shelf.recents.isEmpty {
             Section {
                 ForEach(shelf.recents.prefix(5)) { field in keptRow(field) }
-            } header: { SectionTitle("Recents") }
+            } header: { Text("Recents") }
         }
         Section {
             if model.nearest.isEmpty {
@@ -63,7 +63,7 @@ struct SearchSuggestions: View {
             if model.nearest.count > 5 {
                 Button("All Nearest") { pick(.airport(AirportRoute.list(.nearest).text)) }
             }
-        } header: { SectionTitle(Screen.nearest.title) }
+        } header: { Text(Screen.nearest.title) }
     }
 
     // MARK: Typing
@@ -89,7 +89,7 @@ struct SearchSuggestions: View {
                         Label("Fields near \(place.label)", systemImage: place.kind == "address" ? "mappin" : "building.2")
                     }
                 }
-            } header: { SectionTitle("Airports") }
+            } header: { Text("Airports") }
         }
         if !model.fixes.isEmpty {
             Section {
@@ -100,7 +100,7 @@ struct SearchSuggestions: View {
                         .disabled(!plan.routed)
                         .accessibilityHint(plan.routed ? "Direct To \(fix.ident)" : "Plan a route first for Direct To")
                 }
-            } header: { SectionTitle("Waypoints and Navaids") }
+            } header: { Text("Waypoints and Navaids") }
         }
         let own = model.ownMatching(airplanes.records)
         let tail = model.typedTail(airplanes.records)
@@ -121,14 +121,14 @@ struct SearchSuggestions: View {
                     }
                     .foregroundStyle(.primary)
                 }
-            } header: { SectionTitle("Airplanes") }
+            } header: { Text("Airplanes") }
         }
         Section {
             ForEach(model.actions(routed: plan.routed)) { action in
                 Button { pick(.action(action)) } label: { Label(action.title, systemImage: action.systemImage) }
                     .accessibilityIdentifier("search-do-\(action.id)")
             }
-        } header: { SectionTitle("Do") }
+        } header: { Text("Do") }
     }
 
     // MARK: Rows

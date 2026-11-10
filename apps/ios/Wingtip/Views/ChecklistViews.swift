@@ -119,7 +119,7 @@ struct ChecklistsPage: View {
 
     var body: some View {
         List {
-            Section(title: plan.airplaneName ?? "No Airplane Picked") {
+            Section(plan.airplaneName ?? "No Airplane Picked") {
                 ChecklistRows(airplane: LocalChecklists.airplane(of: plan))
             }
         }

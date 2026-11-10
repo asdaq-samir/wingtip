@@ -31,7 +31,7 @@ struct NotamListView: View {
                             NavigationLink { NotamDetailView(notam: notam).closesBack() } label: { NotamRow(notam: notam) }
                         }
                     } header: {
-                        SectionTitle("\(place.title) · \(place.notams.count)")
+                        Text("\(place.title) · \(place.notams.count)")
                     }
                 }
                 if shown.isEmpty {
@@ -256,11 +256,11 @@ struct NotamDetailView: View {
         List {
             Section { Text(NotamFilter.summary(notam)).font(.body) }
             if !notam.reasons.isEmpty {
-                Section(title: "Why It Matters") {
+                Section("Why It Matters") {
                     ForEach(notam.reasons, id: \.key) { Text($0.words) }
                 }
             }
-            Section(title: "As Sent") {
+            Section("As Sent") {
                 Text(notam.raw).font(.body.monospaced()).textSelection(.enabled)
                 let when = NotamFilter.when(notam)
                 if !when.isEmpty { LabeledContent("Effective", value: when) }

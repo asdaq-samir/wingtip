@@ -66,15 +66,15 @@ struct BriefView: View {
                                 Label(reason, systemImage: "xmark.octagon.fill").foregroundStyle(WingtipInk.problem)
                                     .id(rowId("vnr", i, anchorAt: weatherAt, anchor: VerdictTarget.weatherAnchor))
                             }
-                        } header: { SectionTitle("VFR Flight Not Recommended") }
+                        } header: { Text("VFR Flight Not Recommended") }
                     }
                     if !briefing.weatherUnavailable.isEmpty {
-                        Section(title: "Not Available") {
+                        Section("Not Available") {
                             ForEach(briefing.weatherUnavailable, id: \.self) { Text($0).foregroundStyle(.secondary) }
                         }
                     }
                     if !briefing.hazards.isEmpty {
-                        Section(title: "Hazards") {
+                        Section("Hazards") {
                             ForEach(Array(briefing.hazards.enumerated()), id: \.offset) { i, hazard in
                                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     Text([hazard.type, hazard.hazard].compactMap { $0 }.joined(separator: " · ")).font(.headline)
@@ -90,7 +90,7 @@ struct BriefView: View {
                         }
                     }
                     if let gairmets = briefing.gairmets, !gairmets.isEmpty {
-                        Section(title: "G-AIRMETs") {
+                        Section("G-AIRMETs") {
                             ForEach(Array(gairmets.enumerated()), id: \.offset) { i, g in
                                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     Text([g.hazard, g.severity].compactMap { $0 }.joined(separator: " · ")).font(.headline)
@@ -107,7 +107,7 @@ struct BriefView: View {
                         }
                     }
                     if let tfrs = briefing.tfrs, !tfrs.isEmpty {
-                        Section(title: "TFRs on the Way") {
+                        Section("TFRs on the Way") {
                             ForEach(Array(tfrs.enumerated()), id: \.offset) { i, tfr in
                                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     HStack {
@@ -128,7 +128,7 @@ struct BriefView: View {
                         }
                     }
                     if let pireps = briefing.pireps, !pireps.isEmpty {
-                        Section(title: "Pilot Reports") {
+                        Section("Pilot Reports") {
                             ForEach(Array(pireps.enumerated()), id: \.offset) { i, p in
                                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     HStack(spacing: WingtipSpace.sm) {
@@ -145,7 +145,7 @@ struct BriefView: View {
                     }
                     FieldsBelowVfrSection(fields: briefing.fieldsBelowVfr ?? [])
                     ForecastIcingSection(model: icing, legs: plan.legs)
-                    Section(title: "Forecast Along the Route") {
+                    Section("Forecast Along the Route") {
                         LabeledContent("Lowest ceiling", value: Format.altitude(briefing.forecast.minCeilingFt))
                             .id(rowId("forecast", 0, anchorAt: weatherAt, anchor: VerdictTarget.weatherAnchor))
                         LabeledContent("Lowest visibility", value: briefing.forecast.minVisibilitySm.map { String(format: "%g SM", $0) } ?? "—")
@@ -160,7 +160,7 @@ struct BriefView: View {
                     }
                     let stations = briefing.metars.keys.sorted()
                     if !stations.isEmpty {
-                        Section(title: "METARs") {
+                        Section("METARs") {
                             KeptAgeLine(kind: .weather, key: ReadyToFly.flightKey(plan))
                             ForEach(stations, id: \.self) { ident in
                                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {

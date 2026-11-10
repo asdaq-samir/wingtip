@@ -20,7 +20,7 @@ struct FieldWeatherSection: View {
                 .listRowInsets(EdgeInsets(top: WingtipSpace.sm, leading: WingtipSpace.lg, bottom: WingtipSpace.sm, trailing: WingtipSpace.lg))
         }
         if let taf = place.taf, !taf.isEmpty {
-            Section(title: "Forecast") {
+            Section("Forecast") {
                 TafStrip(taf: taf).listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
             }
         }
@@ -29,7 +29,7 @@ struct FieldWeatherSection: View {
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
         }
-        Section(title: "As Sent") {
+        Section("As Sent") {
             if let raw = metar.raw { Text(raw).font(.footnote.monospaced()).textSelection(.enabled) }
             if let taf = place.taf, !taf.isEmpty { Text(taf).font(.footnote.monospaced()).textSelection(.enabled) }
         }

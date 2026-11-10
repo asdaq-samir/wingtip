@@ -35,13 +35,13 @@ struct LogbookReviewView: View {
         List {
             let pageFlags = model.check?.flags ?? []
             if let read = model.notes, read.unreadable != nil || !(read.notes ?? []).isEmpty || !pageFlags.isEmpty {
-                Section(title: "This Page") {
+                Section("This Page") {
                     DocumentNotes(read: read)
                     ForEach(Array(pageFlags.enumerated()), id: \.offset) { _, flag in FlagLine(flag: flag) }
                 }
             }
             if let problem = model.problem { Section { ProblemLine(problem) } }
-            Section(title: "Flights") {
+            Section("Flights") {
                 if model.rows.isEmpty { Text("No flights were read on this page.").foregroundStyle(.secondary) }
                 ForEach(Array(model.rows.enumerated()), id: \.offset) { i, row in
                     rowView(i, row)

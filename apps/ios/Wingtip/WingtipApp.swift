@@ -28,6 +28,11 @@ struct WingtipApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                // Every list's section titles the system's prominent ones,
+                // 20 points in the text colour (the owner's "section titles
+                // 20 pt", docs/decisions/0021), drawn by the system rather
+                // than a hand-built title (the owner, 2026-11-10).
+                .headerProminence(.increased)
                 .environment(session)
                 .environment(charts)
                 .environment(plan)

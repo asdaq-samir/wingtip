@@ -37,7 +37,7 @@ struct BriefSummarySection: View {
             }
         } header: {
             HStack {
-                SectionTitle("At a Glance")
+                Text("At a Glance")
                 Spacer()
                 if let summary { Text(summary.origin.caption).textCase(nil).font(.footnote) }
             }

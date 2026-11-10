@@ -156,7 +156,7 @@ struct AirportInfoTab: View {
             }
         }
         if !(place.lighting ?? []).isEmpty || place.standardKeying == true {
-            Section(title: "Lights") {
+            Section("Lights") {
                 ForEach(place.lighting ?? [], id: \.self) { note in
                     CardRow(badge: RowBadge(systemImage: "lightbulb", colour: Badge.lights), title: note)
                 }
@@ -191,7 +191,7 @@ struct AirportWeatherTab: View {
         // The National Weather Service's Gridded LAMP at the field for the
         // hour (wingtip.glmp): planning guidance from a model, not a report.
         if place.metar == nil, let modelled = place.modelledWeather {
-            Section(title: "Modelled for \(AirportWords.date(modelled.validAt).map(Format.zulu) ?? modelled.validAt)") {
+            Section("Modelled for \(AirportWords.date(modelled.validAt).map(Format.zulu) ?? modelled.validAt)") {
                 figure("cloud.sun", "Flight category", modelled.flightCategory, spoken: SpokenFigures.flightCategory(modelled.flightCategory))
                 // GLMP's most is 10 sm, as a METAR's "10SM" is.
                 figure("eye", "Visibility", modelled.visibilitySm >= 10 ? "10+ sm" : "\(AirportWords.plain(modelled.visibilitySm)) sm",
@@ -202,7 +202,7 @@ struct AirportWeatherTab: View {
         DigitalAtisSections()
         if ClearanceListener.shared.canListen { AtisSection() } // heard on the iPhone or not offered
         if place.metar == nil, let nearby = place.nearbyMetar {
-            Section(title: "Nearest Report, \(Format.distance(nearby.distanceNm)) \(AirportWords.compassPoint(Double(nearby.bearingDeg)))") {
+            Section("Nearest Report, \(Format.distance(nearby.distanceNm)) \(AirportWords.compassPoint(Double(nearby.bearingDeg)))") {
                 CardRow(title: nearby.ident, detail: nearby.metar.observedAt.flatMap { AirportWords.observed($0) }) {
                     if let category = nearby.metar.flightCategory {
                         Text(category).fontWeight(.semibold).accessibilityLabel(SpokenFigures.flightCategory(category))
@@ -361,7 +361,7 @@ struct AirportChartsTab: View {
     var body: some View {
         let charts = place.procedures ?? []
         let sketched = !RunwaySketch.strips(place.runways).isEmpty
-        Section(title: "Airport") {
+        Section("Airport") {
             if let cycle = place.airportDiagramCycle {
                 row("Airport diagram", "map") {
                     shown = .paths("\(place.ident) airport diagram", [Planner.diagramPath(ident: place.ident, cycle: cycle)])

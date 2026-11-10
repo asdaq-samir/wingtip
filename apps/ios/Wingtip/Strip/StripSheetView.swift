@@ -241,7 +241,7 @@ struct StripSheetView: View {
         case .flights: FlightsView()
         case .procedures:
             List {
-                Section(title: "Procedures") {
+                Section("Procedures") {
                     ProceduresRow(ident: plan.dep, kinds: ["departure"])
                     ForEach(plan.stops + [plan.dest], id: \.self) { field in
                         ProceduresRow(ident: field, kinds: ["arrival", "approach"])

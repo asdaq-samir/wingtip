@@ -25,7 +25,7 @@ struct EnduranceSection: View {
                     .foregroundStyle(.secondary)
             }
         } header: {
-            SectionTitle("Endurance")
+            Text("Endurance")
         }
     }
 

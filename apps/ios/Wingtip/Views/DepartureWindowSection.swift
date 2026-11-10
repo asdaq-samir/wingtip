@@ -40,7 +40,7 @@ struct DepartureWindowSection: View {
                 ProgressView("Fetching the hours…")
             }
         } header: {
-            SectionTitle(model.answer?.windows.first.map { DepartureWindow.bestLine($0, now: Date()) } ?? "When to Go")
+            Text(model.answer?.windows.first.map { DepartureWindow.bestLine($0, now: Date()) } ?? "When to Go")
         }
     }
 

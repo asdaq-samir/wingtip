@@ -31,15 +31,15 @@ struct ForecastIcingSection: View {
                     .accessibilityElement(children: .combine)
                 }
             } header: {
-                SectionTitle("Forecast Icing")
+                Text("Forecast Icing")
             } footer: {
                 // The source and its issue, a credit.
                 Text("AWC CIP and FIP, issued \(AirportWords.date(answer.issued).map(Format.zulu) ?? answer.issued)")
             }
         } else if let problem = model.problem {
-            Section { ProblemLine(problem) } header: { SectionTitle("Forecast Icing") }
+            Section { ProblemLine(problem) } header: { Text("Forecast Icing") }
         } else if model.asking {
-            Section { ProgressView("Fetching the forecast icing along the legs…") } header: { SectionTitle("Forecast Icing") }
+            Section { ProgressView("Fetching the forecast icing along the legs…") } header: { Text("Forecast Icing") }
         }
     }
 }

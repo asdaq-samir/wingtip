@@ -97,7 +97,7 @@ struct PlanView: View {
                 // app's route list has them; then "Add a Stop", the
                 // search, whose airport card adds it (the Plan
                 // artboard's "+ Add a stop").
-                Section(title: "Stops") {
+                Section("Stops") {
                     ForEach(Array(plan.stops.enumerated()), id: \.offset) { _, stop in
                         RoutePointMenu(ident: stop)
                     }
@@ -135,7 +135,7 @@ struct PlanView: View {
                 // Each field's procedures, pull-downs as the web app's
                 // route list has them: the departure's departures, every
                 // landing's arrivals and approaches.
-                Section(title: "Procedures") {
+                Section("Procedures") {
                     ProceduresRow(ident: plan.dep, kinds: ["departure"])
                     ForEach(plan.stops + [plan.dest], id: \.self) { field in
                         ProceduresRow(ident: field, kinds: ["arrival", "approach"])

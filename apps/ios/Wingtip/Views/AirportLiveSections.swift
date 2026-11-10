@@ -10,7 +10,7 @@ struct DigitalAtisSections: View {
 
     var body: some View {
         ForEach(live.broadcasts) { b in
-            Section(title: b.title) {
+            Section(b.title) {
                 if let reading = b.reading, reading.heardAny {
                     CardRow(badge: RowBadge(systemImage: "dot.radiowaves.left.and.right", colour: Badge.weather), title: reading.glance)
                     ForEach(Array(reading.rows.enumerated()), id: \.offset) { _, row in
@@ -36,7 +36,7 @@ struct RvrSection: View {
 
     var body: some View {
         if !live.rvr.isEmpty || live.problem != nil {
-            Section(title: "Runway Visual Range, ft") {
+            Section("Runway Visual Range, ft") {
                 ForEach(live.rvr) { row in
                     CardRow(badge: RowBadge(systemImage: "eye", colour: Badge.runway), title: "RVR \(row.runway)",
                             detail: row.under ?? "Touchdown · midpoint · rollout") {
@@ -58,7 +58,7 @@ struct FlowProgramsSection: View {
 
     var body: some View {
         if !live.programs.isEmpty {
-            Section(title: "Traffic Management") {
+            Section("Traffic Management") {
                 ForEach(live.programs, id: \.self) { line in
                     CardRow(badge: RowBadge(systemImage: "hourglass", colour: Badge.traffic), title: line)
                 }

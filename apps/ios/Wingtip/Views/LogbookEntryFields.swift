@@ -85,7 +85,7 @@ struct LogbookEntryForm: View {
         Form {
             ForEach(LogbookEntryFields.Part.allCases, id: \.self) { part in
                 if let title = Self.titles[part] {
-                    Section(title: title) { LogbookEntryFields(entry: $entry, part: part) }
+                    Section(title) { LogbookEntryFields(entry: $entry, part: part) }
                 } else {
                     Section { LogbookEntryFields(entry: $entry, part: part) }
                 }

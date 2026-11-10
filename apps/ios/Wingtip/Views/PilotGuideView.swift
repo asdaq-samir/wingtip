@@ -16,7 +16,7 @@ struct PilotGuideView: View {
 
     var body: some View {
         List {
-            Section(title: "Checkpoint Colours") {
+            Section("Checkpoint Colours") {
                 ForEach(Self.buckets, id: \.score) { b in
                     Label {
                         Text(b.words)
@@ -27,8 +27,8 @@ struct PilotGuideView: View {
                     }
                 }
             }
-            Section(title: "Practice") { PracticeRows() }
-            Section(title: "More") {
+            Section("Practice") { PracticeRows() }
+            Section("More") {
                 NavigationLink("Your airplane in the day's air") { AirplaneInTheAirView().closesBack() }
             }
         }
@@ -208,19 +208,19 @@ struct LostCommsView: View {
                 ProblemLine(LostComms.opening, "The rule's words")
                 Text(opening?.vfr ?? "")
             }
-            Section(title: "Route") {
+            Section("Route") {
                 Picker("Which applies first", selection: $route) {
                     ForEach(routes, id: \.key) { r in Text(r.label).tag(r.key) }
                 }
                 .pickerStyle(.segmented)
                 Text(routes.first { $0.key == route }?.rule ?? "").font(.subheadline)
             }
-            Section(title: "Altitude") {
+            Section("Altitude") {
                 Text(opening?.altitude ?? "").font(.subheadline)
             }
             LostCommsSegmentsSections(leave: $leave, approachFix: approachFix,
                                       efc: efc.trimmingCharacters(in: .whitespaces), eta: eta.trimmingCharacters(in: .whitespaces))
-            Section(title: "Leaving the Clearance Limit") {
+            Section("Leaving the Clearance Limit") {
                 Toggle("The limit is a fix an approach begins from", isOn: $approachFix)
                 LabeledContent {
                     TextField("—", text: $efc).multilineTextAlignment(.trailing).monospacedDigit()

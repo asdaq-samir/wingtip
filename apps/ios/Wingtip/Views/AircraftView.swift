@@ -22,7 +22,7 @@ struct AircraftView: View {
             Section {
                 NavigationLink { TrafficFindView().closesBack() } label: { Label("Find an Airplane", systemImage: "magnifyingglass") }
             }
-            Section(title: "Airplane") {
+            Section("Airplane") {
                 HStack {
                     TextField("N-number", text: $typed)
                         .textInputAutocapitalization(.characters).autocorrectionDisabled()
@@ -60,7 +60,7 @@ struct AircraftView: View {
                 ChecklistRows(airplane: LocalChecklists.airplane(of: plan))
             }
             if session.signedIn || !own.isEmpty {
-                Section(title: "Yours") {
+                Section("Yours") {
                     ForEach(own) { airplane in
                         HStack {
                             Button {
@@ -92,7 +92,7 @@ struct AircraftView: View {
                     NavigationLink("Your Airplanes") { OwnAircraftListView().closesBack() }
                 }
             }
-            Section(title: "Types the Planner Has Figures for") {
+            Section("Types the Planner Has Figures for") {
                 if profiles.isEmpty {
                     if let problem { ProblemLine(problem) } else { Skeleton(label: "Fetching the types") }
                 }

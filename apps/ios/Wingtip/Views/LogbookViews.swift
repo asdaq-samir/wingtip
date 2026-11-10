@@ -75,7 +75,7 @@ struct LogbookView: View {
                     LogbookTrendSection(entries: entries, period: $period)
                 }
                 if let currency, currency.flights > 0 {
-                    Section(title: "Totals") {
+                    Section("Totals") {
                         LabeledContent("Total", value: Format.hours(currency.totalHours))
                         LabeledContent("Night", value: Format.hours(currency.nightHours))
                         LabeledContent("Cross-country", value: Format.hours(currency.crossCountryHours))
@@ -85,7 +85,7 @@ struct LogbookView: View {
                 // A CSV file: ForeFlight's logbook export, or this logbook's
                 // own; a flight already here is not added twice (the gateway's
                 // same day, airplane, route and time).
-                Section(title: "File") {
+                Section("File") {
                     if let imported { Text(imported).font(.footnote).foregroundStyle(.secondary) }
                     if let preview { previewRows(preview.name, preview.read) }
                     LogbookPhotoRow { await load() }
@@ -110,7 +110,7 @@ struct LogbookView: View {
                         ContentUnavailableView.search(text: query)
                     }
                     ForEach(months) { month in
-                        Section(title: month.title) {
+                        Section(month.title) {
                             ForEach(month.entries) { e in
                                 // Tapped, the flight opens in its row to change (Edit);
                                 // its N-number, a tap of its own, opens the airplane's profile.
@@ -182,7 +182,7 @@ struct LogbookView: View {
     // gateway's list, the one the reminder emails are made from.
     @ViewBuilder private var comingUpSection: some View {
         if let items = paperwork?.items {
-            Section(title: "Coming Up") {
+            Section("Coming Up") {
                 if items.isEmpty {
                     Text("Nothing dated yet: your flight review, medical and airplanes' inspections show here once given.")
                         .foregroundStyle(.secondary)
@@ -227,7 +227,7 @@ struct LogbookView: View {
     // in 90 days; (b) at night, to a full stop; 61.56(c) the flight review
     // within 24 calendar months.
     @ViewBuilder private var currencySection: some View {
-        Section(title: "Currency") {
+        Section("Currency") {
             LabeledContent {
                 UntilText(date: currency?.dayPassengersUntil)
             } label: {
@@ -265,7 +265,7 @@ struct LogbookView: View {
     // only an instrument proficiency check restores it (61.57(d)). The
     // gateway counts both.
     @ViewBuilder private var instrumentSection: some View {
-        Section(title: "Instrument") {
+        Section("Instrument") {
             LabeledContent {
                 if let after = currency?.ipcNeededAfter, after < Day.today() {
                     Text("IPC needed").foregroundStyle(WingtipInk.problem)

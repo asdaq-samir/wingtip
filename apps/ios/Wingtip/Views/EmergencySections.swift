@@ -44,7 +44,7 @@ struct EmergencyFieldsSection: View {
                 ProgressView("Fetching the fields round you…")
             }
         } header: {
-            SectionTitle(model.ranked?.glide.map { "Best Fields · Glide About \(Format.distance($0.stillAirNm, decimals: 0))" } ?? "Best Fields")
+            Text(model.ranked?.glide.map { "Best Fields · Glide About \(Format.distance($0.stillAirNm, decimals: 0))" } ?? "Best Fields")
         }
         // The best field said by VoiceOver as it is found and each time
         // another takes its place: a pilot in an emergency is not reading
@@ -121,7 +121,7 @@ struct EmergencyRadioSections: View {
     var body: some View {
         if case .success(let call) = mayday {
             // Squawk and Guard are the tiles at the top (EmergencyCodeTiles).
-            Section(title: "Radio") {
+            Section("Radio") {
                 ForEach(call.channels, id: \.label) { channel in
                     CardRow(title: channel.label, detail: channel.why) {
                         if let mhz = channel.mhz { Text(Format.number(mhz, decimals: 3)).fontWeight(.semibold).monospacedDigit() }
@@ -129,7 +129,7 @@ struct EmergencyRadioSections: View {
                     .frequencyActions(channel.mhz.map { Format.number($0, decimals: 3) })
                 }
             }
-            Section(title: "MAYDAY") {
+            Section("MAYDAY") {
                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                     ForEach(Array(call.lines.enumerated()), id: \.offset) { _, line in
                         Text(line).fontWeight(.medium).foregroundStyle(line.hasPrefix("[") ? Color.secondary : Color.primary)
@@ -143,9 +143,9 @@ struct EmergencyRadioSections: View {
                 }
             }
         } else {
-            Section(title: "MAYDAY") { ProblemLine(mayday, "The call") }
+            Section("MAYDAY") { ProblemLine(mayday, "The call") }
         }
-        Section(title: "Phone") {
+        Section("Phone") {
             if let phone, let phoneIdent, let url = URL(string: "tel:\(phone.filter { $0.isNumber || $0 == "+" })") {
                 Link("Call \(phoneIdent)", destination: url)
             }

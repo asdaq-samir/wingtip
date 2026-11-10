@@ -46,7 +46,7 @@ struct NavLogPage: View {
                 Section {
                     totals.listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
                 }
-                Section(title: "Profile") {
+                Section("Profile") {
                     ProfileChart(profile: plan.profile, legs: plan.legs, altitudeFt: plan.altitudeFt, selection: plan.altitude?.altitudeSelection)
                         .frame(height: 180)
                         .listRowInsets(EdgeInsets())
@@ -59,7 +59,7 @@ struct NavLogPage: View {
                     }
                 } header: {
                     // The page is titled Nav Log; its section says at what.
-                    if let feet = plan.altitudeFt { SectionTitle("Legs · \(Format.cruiseAltitude(feet))") } else { SectionTitle("Legs") }
+                    if let feet = plan.altitudeFt { Text("Legs · \(Format.cruiseAltitude(feet))") } else { Text("Legs") }
                 }
             }
         }

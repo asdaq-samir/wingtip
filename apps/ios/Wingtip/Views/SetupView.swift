@@ -37,7 +37,7 @@ struct SetupView: View {
             // (docs/navigation.md): the emergency assistant on the
             // ground, the checklists, the saved flights, the airplanes
             // and the drills, each a row here as well as in its home.
-            Section(title: "Flying") {
+            Section("Flying") {
                 EmergencyAssistantRow()
                 NavigationLink { ChecklistsPage().closesBack() } label: { SettingsLabel(Screen.checklists.title, systemImage: "checklist", colour: WingtipColor.Badge.ground) }
                 NavigationLink { FlightsView().closesBack() } label: { SettingsLabel(Screen.flights.title, systemImage: "tray.full", colour: WingtipColor.Badge.tower) }
@@ -45,7 +45,7 @@ struct SetupView: View {
                 NavigationLink { PracticeView().closesBack() } label: { SettingsLabel("Practice", systemImage: "figure.walk.motion", colour: WingtipColor.Badge.traffic) }
             }
             if session.signedIn {
-                Section(title: "Pilot") {
+                Section("Pilot") {
                     NavigationLink { LogbookView().closesBack() } label: { SettingsLabel("Logbook and Currency", systemImage: "book", colour: WingtipColor.Badge.fuel) }
                     NavigationLink { TrainingView().closesBack() } label: { SettingsLabel("Training", systemImage: "graduationcap", colour: WingtipColor.Badge.lodging) }
                     NavigationLink { InstructorView().closesBack() } label: { SettingsLabel("Instructing", systemImage: "person.2", colour: WingtipColor.Badge.ground) }
@@ -62,7 +62,7 @@ struct SetupView: View {
                 // The first launch's welcome, shown again from here alone.
                 Button("Show Welcome Again") { WelcomeModel.shared.again() }
             }
-            Section(title: "Map") {
+            Section("Map") {
                 Toggle("Traffic", isOn: Binding(get: { traffic.on }, set: { traffic.on = $0 }))
                 // The glide ring outside an emergency (the owner's pick
                 // of its place, 2026-11-09); off by default.
@@ -84,7 +84,7 @@ struct SetupView: View {
             }
             // The in-flight copilot, off, shown or said aloud, beside the
             // alerts as the same kind of choice (the web's Alerts group).
-            Section(title: "Alerts") {
+            Section("Alerts") {
                 LabeledContent("Copilot") { CopilotModePicker().fixedSize() }
                 // The ATC copilot: the radio listened to while flying,
                 // calls to us read into cards; off until turned on, and
@@ -97,7 +97,7 @@ struct SetupView: View {
             // as one strip in time under the same search
             // (StripSheetView), the owner's pick of 2026-11-04, tried
             // beside it; a segmented control, as a setting of two is.
-            Section(title: "Screen") {
+            Section("Screen") {
                 Picker("Screen", selection: $layoutName) {
                     Text("Plan").tag("plan")
                     Text("Strip").tag("strip")
@@ -107,12 +107,12 @@ struct SetupView: View {
             // The look: the brand's by default, Glass Cockpit and Chart
             // Ink kept to pick (the owner, 2026-11-09); a menu, as a
             // discrete setting is (docs/decisions/0017).
-            Section(title: "Look") {
+            Section("Look") {
                 Picker("Look", selection: $look) {
                     ForEach(Look.allCases) { Text($0.label).tag($0.rawValue) }
                 }
             }
-            Section(title: "Chart") {
+            Section("Chart") {
                 // The white paper chart dimmed in dark appearance, so it
                 // does not take the pilot's night vision: a menu of two,
                 // as the web app's Settings has it.

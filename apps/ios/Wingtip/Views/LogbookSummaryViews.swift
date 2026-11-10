@@ -11,7 +11,7 @@ struct LogbookHighlightsSection: View {
 
     var body: some View {
         let h = LogbookSummary.highlights(entries)
-        Section(title: "This Month") {
+        Section("This Month") {
             FactsRow(facts: [
                 .init(label: "Hours", value: Format.number(h.hours, decimals: 1), spoken: SpokenFigures.number(h.hours, decimals: 1) + " hours"),
                 .init(label: "Flights", value: "\(h.flights)"),
@@ -32,7 +32,7 @@ struct LogbookTrendSection: View {
 
     var body: some View {
         let bars = LogbookSummary.trend(entries, period: period)
-        Section(title: "Trends") {
+        Section("Trends") {
             Picker("Period", selection: $period) {
                 ForEach(LogbookSummary.Period.allCases) { Text($0.rawValue).tag($0) }
             }

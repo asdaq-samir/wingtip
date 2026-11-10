@@ -33,7 +33,7 @@ struct FieldsBelowVfrSection: View {
 
     var body: some View {
         if !fields.isEmpty {
-            Section(title: "Fields Below VFR") {
+            Section("Fields Below VFR") {
                 ForEach(Array(fields.enumerated()), id: \.offset) { _, field in
                     VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                         Text("\(field.ident) · \(field.source == "METAR" ? "\(field.flightCategory ?? "IFR") now" : "forecast then")").font(.headline)

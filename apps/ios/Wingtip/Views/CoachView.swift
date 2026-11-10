@@ -20,7 +20,7 @@ struct CoachView: View {
             if !session.signedIn {
                 ContentUnavailableView("Sign in for your plan", systemImage: "figure.walk.motion", description: Text("Your plan is made from the logbook kept with your account."))
             } else {
-                Section(title: "Your Certificate") {
+                Section("Your Certificate") {
                     Picker("Certificate", selection: Binding(get: { model.certificate }, set: { model.certificate = $0 })) {
                         ForEach(CoachCertificate.allCases) { Text($0.label).tag($0) }
                     }
@@ -29,8 +29,8 @@ struct CoachView: View {
                 nextLesson
                 trendsSection
                 if let plan = model.plan { planSections(plan) }
-                Section(title: "Practice") { PracticeRows() }
-                Section(title: "Instructor") {
+                Section("Practice") { PracticeRows() }
+                Section("Instructor") {
                     NavigationLink(value: SheetPage.training) { Label("Training and Endorsements", systemImage: "graduationcap") }
                     NavigationLink(value: SheetPage.instructing) { Label("Instructing", systemImage: "person.2") }
                 }
@@ -64,7 +64,7 @@ struct CoachView: View {
             }
             .padding(.vertical, WingtipSpace.xs)
         } header: {
-            SectionTitle("Next Lesson")
+            Text("Next Lesson")
         }
     }
 
@@ -72,7 +72,7 @@ struct CoachView: View {
     /// words; with too few flights, how many more it takes.
     @ViewBuilder private var trendsSection: some View {
         if let entries = model.pilot?.entries {
-            Section(title: "Trends") {
+            Section("Trends") {
                 if let trends = CoachTrends.trends(entries) {
                     ForEach(trends) { t in
                         Label {
@@ -107,14 +107,14 @@ struct CoachView: View {
 
     @ViewBuilder private func planSections(_ plan: ProficiencyPlan) -> some View {
         if !plan.reminders.isEmpty {
-            Section(title: "Reminders") {
+            Section("Reminders") {
                 ForEach(plan.reminders, id: \.key) { r in
                     Text(r.text).foregroundStyle(WingtipInk.caution)
                 }
             }
         }
         wordsSection
-        Section(title: "Sessions") {
+        Section("Sessions") {
             if plan.sessions.isEmpty {
                 Text("Nothing to practise for now: every currency is good past the reminders, and no debrief shows a weak area.")
                     .foregroundStyle(.secondary)
@@ -122,7 +122,7 @@ struct CoachView: View {
             let lines = model.sessionLines
             ForEach(plan.sessions, id: \.id) { s in sessionRow(s, line: lines[s.id]) }
         }
-        Section(title: "What Is Due") {
+        Section("What Is Due") {
             ForEach(plan.due, id: \.key) { d in
                 LabeledContent {
                     Label(CoachModel.statusWords(d), systemImage: symbol(d.status)).monospacedDigit().foregroundStyle(tone(d.status))
@@ -133,7 +133,7 @@ struct CoachView: View {
             }
         }
         if !plan.weakAreas.isEmpty {
-            Section(title: "From Your Debriefs") {
+            Section("From Your Debriefs") {
                 ForEach(plan.weakAreas, id: \.key) { w in
                     DisclosureGroup {
                         ForEach(plan.evidence.filter { w.evidence.contains($0.id) }, id: \.id) { e in

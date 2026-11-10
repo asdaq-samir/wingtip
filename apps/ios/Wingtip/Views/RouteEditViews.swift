@@ -233,9 +233,9 @@ struct RouteExtrasSection: View {
                     }
                 }
             } header: {
-                SectionTitle("Route")
+                Text("Route")
             }
-            Section(title: "In Flight") {
+            Section("In Flight") {
                 NavigationLink(value: SheetPage.flight("nearest")) { Label("Nearest for a Diversion", systemImage: WingtipIcon.nearest) }
                 NavigationLink(value: SheetPage.flight("notes")) { Label("Checkpoint Notes", systemImage: "text.bubble") }
                 NavigationLink(value: SheetPage.flight("file")) { Label("File Flight Plan", systemImage: WingtipIcon.send) }

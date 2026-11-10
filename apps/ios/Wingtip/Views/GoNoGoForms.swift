@@ -41,11 +41,11 @@ struct LoadingView: View {
     var body: some View {
         Form {
             if let loading = verdict.answer?.loading, let load = verdict.load(for: plan.loadKey) ?? verdict.answer?.balance?.load {
-                Section(title: "The Airplane") {
+                Section("The Airplane") {
                     figure("Empty weight", unit: "lb", value: load.emptyWeightLb) { var l = load; l.emptyWeightLb = $0; save(l) }
                     figure("Empty arm", unit: "in", value: load.emptyArmIn) { var l = load; l.emptyArmIn = $0; save(l) }
                 }
-                Section(title: "Loaded") {
+                Section("Loaded") {
                     ForEach(Array(loading.stations.enumerated()), id: \.offset) { i, station in
                         figure(station.name, unit: "lb", value: i < load.stationsLb.count ? load.stationsLb[i] : 0,
                                note: station.maxLb.map { "\(Int($0).formatted()) lb at most" }) { value in
@@ -57,7 +57,7 @@ struct LoadingView: View {
                     figure("Fuel", unit: "gal", value: load.fuelGal, note: "\(loading.fuelMaxGal.formatted()) gal usable") { var l = load; l.fuelGal = $0; save(l) }
                 }
                 if let balance = verdict.answer?.balance {
-                    Section(title: "Balance") {
+                    Section("Balance") {
                         LabeledContent("Takeoff", value: balance.takeoff.words)
                         LabeledContent("Landing", value: balance.landing.words)
                         let problems = balance.problems

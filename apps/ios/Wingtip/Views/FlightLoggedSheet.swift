@@ -70,23 +70,23 @@ private struct DraftRows: View {
 
     var body: some View {
         let e = draft.entry
-        Section(title: "Flight") {
+        Section("Flight") {
             text("Date", \.flownOn, e.flownOn, why: why("flownOn"))
             text("Airplane", \.aircraft, e.aircraft ?? "", why: nil)
             text("Route", \.route, e.route, why: why("distanceNm"))
         }
-        Section(title: "Time") {
+        Section("Time") {
             hours("Total", \.totalHours, e.totalHours, why: why("totalHours"))
             row("In the Air", value: Format.hours(e.airHours), why: why("airHours"))
             hours("Night", \.nightHours, e.nightHours, why: why("nightHours"))
             hours("Cross-Country", \.crossCountryHours, e.crossCountryHours, why: why("crossCountryHours"))
         }
-        Section(title: "Landings") {
+        Section("Landings") {
             count("Day", \.dayLandings, e.dayLandings, why: why("landing"))
             count("Night, Full Stop", \.nightLandings, e.nightLandings, why: nil)
         }
         if !draft.approaches.isEmpty || !draft.holds.isEmpty {
-            Section(title: "Instrument") {
+            Section("Instrument") {
                 Toggle(isOn: $model.byInstruments) {
                     VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                         Text("Flown by Instruments")
@@ -97,7 +97,7 @@ private struct DraftRows: View {
                 }
             }
         }
-        Section(title: "Remarks") {
+        Section("Remarks") {
             TextField("Remarks", text: Binding(get: { model.edits.remarks ?? e.remarks }, set: { model.edits.remarks = $0 }), axis: .vertical)
                 .lineLimit(1...4)
             // A remark drafted from the track and the entry, into the field
@@ -107,7 +107,7 @@ private struct DraftRows: View {
             }) { model.edits.remarks = $0 }
         }
         if !model.flights.isEmpty {
-            Section(title: "Debrief Against") {
+            Section("Debrief Against") {
                 Picker("Saved flight", selection: Binding(get: { model.linked }, set: { model.picked = .some($0) })) {
                     Text("No Saved Flight").tag(Int?.none)
                     ForEach(model.flights.prefix(5)) { f in

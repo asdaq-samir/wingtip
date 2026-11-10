@@ -28,10 +28,10 @@ struct AboutView: View {
                 if let edition = charts.info?.chartCycle { LabeledContent("Chart Edition", value: edition) }
                 if let cycle = model.packCycle { LabeledContent("Data Cycle", value: cycle) }
             }
-            Section(title: "A Planning Aid") {
+            Section("A Planning Aid") {
                 Text(PlanningAid.words)
             }
-            Section(title: "Credits") {
+            Section("Credits") {
                 ForEach(AboutCredits.data + AboutCredits.software, id: \.self) { credit in
                     VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                         Text(credit.what)
@@ -40,7 +40,7 @@ struct AboutView: View {
                     .accessibilityElement(children: .combine)
                 }
             }
-            Section(title: "Legal") {
+            Section("Legal") {
                 Link("Privacy Policy", destination: AboutModel.page("privacy"))
                 Link("Terms of Use", destination: AboutModel.page("terms"))
                 Link("Support", destination: AboutModel.page("support"))

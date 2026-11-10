@@ -145,7 +145,7 @@ struct GoNoGoSection: View {
             }
         } header: {
             HStack {
-                SectionTitle("Go / No-Go")
+                Text("Go / No-Go")
                 if verdict.asking, verdict.answer != nil { ProgressView().controlSize(.mini) }
             }
         }
@@ -275,7 +275,7 @@ struct RiskView: View {
                 }
                 let own = Set((verdict.answer?.selfChecks ?? []).map(\.key))
                 let raised = risk.factors.filter { !own.contains($0.key) }
-                Section(title: "From the Briefing and Your Logbook") {
+                Section("From the Briefing and Your Logbook") {
                     if raised.isEmpty {
                         Text("Nothing raised").foregroundStyle(.secondary)
                     } else {

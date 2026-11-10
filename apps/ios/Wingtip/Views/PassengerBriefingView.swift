@@ -40,12 +40,12 @@ struct PassengerBriefingView: View {
                 }
             } header: {
                 HStack {
-                    SectionTitle("Brief Them")
+                    Text("Brief Them")
                     Spacer()
                     Text("\(model.done) of \(PassengerBriefing.items.count)").monospacedDigit()
                 }
             }
-            Section(title: "The Flight") {
+            Section("The Flight") {
                 DatePicker("Leaving", selection: $model.departs)
                 Text(message).font(.callout).textSelection(.enabled)
                 ShareLink(item: message, subject: Text("Our flight"), preview: SharePreview("Our flight")) {

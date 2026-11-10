@@ -90,7 +90,7 @@ struct HandbookReviewView: View {
                     }
                     ForEach(Array(item.flags.enumerated()), id: \.offset) { _, flag in FlagLine(flag: flag) }
                 } header: {
-                    SectionTitle(item.title)
+                    Text(item.title)
                 }
             }
         }

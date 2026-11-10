@@ -75,7 +75,7 @@ struct NearFromView: View {
     var body: some View {
         List {
             if let fields {
-                Section(title: "Nearest \(label)") {
+                Section("Nearest \(label)") {
                     ForEach(fields) { field in NavigationLink(value: SheetPage.airport(field.ident)) { NearestRow(field: field) }.cardSource(field.ident).airportPreview(field.ident).siriSees(SiriSaw.airport(field.ident)) }
                 }
             } else if let problem {
