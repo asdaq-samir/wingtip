@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useRef, type ReactNode } from "react";
+import { type CSSProperties, useEffect, useEffectEvent, useRef, type ReactNode } from "react";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
 import { TEXT } from "../../lib/text";
@@ -63,6 +63,11 @@ export default function ConsoleLayer({
       data-detent={detent}
       data-edge={edge}
       className={cn("min-h-0 flex-1 flex-col print:hidden", shown ? "flex" : "hidden")}
+      // Its pages start under its own title row, not up under the panel's
+      // head as a tab's page does (index.css's under-head, by the panel's
+      // --head-room): pulled up, the page's scroller lay over this row and
+      // took the taps meant for its close (one-search.spec, consoles.spec).
+      style={{ "--head-room": "0px" } as CSSProperties}
     >
       {/* Its name and its close, the way back to the sheet under it, as
           the account button's menu opened it (the one search, 2026-11-09):

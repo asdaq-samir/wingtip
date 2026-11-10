@@ -1,16 +1,21 @@
 import { useEffect } from "react";
 import { routeSearch, useDevMode } from "../hooks/use-dev-mode";
 import { useConsoleOpen } from "../lib/mapChrome";
+import { useWanted } from "../lib/navigation/wanted";
 
 /** Dev mode's refusal: someone it is not for, on the dev page, is taken
  *  to the map, with the console put away (it stays out across a change
- *  of page otherwise: useConsoleOpen). Mounted with the page, not with
- *  the console, which is only in the page while it is out. */
+ *  of page otherwise: useConsoleOpen) and nothing left asked for: the
+ *  account menu's Setup asks the planner for its screen (wantScreen), which
+ *  the dev page never takes, and the planner took it on arriving and opened
+ *  the console again over the map just signed out to. Mounted with the
+ *  page, not with the console, which is only in the page while it is out. */
 export default function DevGuard() {
   const { refused, navigate, search } = useDevMode();
   useEffect(() => {
     if (!refused) return;
     useConsoleOpen.getState().setOpen(false);
+    useWanted.setState({ screen: null });
     void navigate(`/plan${routeSearch(search)}`, { replace: true });
   }, [refused, navigate, search]);
   return null;

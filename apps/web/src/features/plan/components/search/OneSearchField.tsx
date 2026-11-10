@@ -93,6 +93,11 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
           spellCheck={false}
           placeholder={model.placeholder}
           aria-label={model.placeholder}
+          // Open only while its results are in the sheet (PlanSidebar's
+          // search page): the Autocomplete is always open, inline, and
+          // said "expanded" with no list to point at (axe's
+          // aria-required-attr, aria-controls missing).
+          {...(model.typed || model.direct ? {} : { "aria-expanded": false })}
           data-testid="search-airports"
           onFocus={model.focus}
           // The APG combobox's keys (docs/design/web.md §1) are Base UI's
