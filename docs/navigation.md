@@ -173,7 +173,7 @@ count.
 | Nearest | search → Nearest; search → Do → Nearest | 2 | Change the place it is from |
 | Airplane profile | an N-number tapped; a search result (yours, the FAA registry's) | 1, 2 | **Fly This Airplane (new)**; every figure edited in place |
 | Traffic, airplane card, past flight | Tap traffic; search → Do → Traffic Nearby; its past row | 1, 2 | Replay |
-| Map menu | Map button | 1 | Every switch in place; its Search row focuses the search |
+| Map card (was the Map menu) | Map button | 1 | A card in the sheet over the search, as Apple Maps' Choose Map card (the owner, 2026-11-10): the charts as picture tiles (a tap applies), then the weather, the overlay, every switch and the alerts in place; its ✕ goes back to the sheet as it was; its Search row focuses the search |
 | Emergency assistant | Flying head; voice; search → Do → Emergency Assistant | 1 in flight, **2** on the ground | Its frequencies copy |
 | Account and Settings (was Setup) | account button → Account and Settings | 1 → **2** | Layout tiles in place |
 | Airplanes, Flights, Logbook, Minimums, Checklists, Coach, Practice | account button → row | 2 | Minimums inline; logbook entry edited in the row, delete with an Undo row; airplane in a popover form |

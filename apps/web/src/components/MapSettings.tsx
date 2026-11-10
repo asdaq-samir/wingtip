@@ -1,11 +1,12 @@
+import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { editionOf } from "./chartEdition";
 import { ListGroup, ListRow } from "./GroupedList";
 import PullDown from "./PullDown";
 import Segmented from "./Segmented";
 import SwitchRow from "./SwitchRow";
 import GlideRingRow from "./GlideRingRow";
-import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
+import MapPictureChoices from "./MapPictureChoices";
+import { MapAlertsGroup, MapSourcesGroup } from "./MapSettingsGroups";
 import { clearOwnTrail, useOwnTrail } from "../lib/map/position/ownTrail";
 import {
   BASE_CHARTS,
@@ -21,28 +22,21 @@ import { useShownOverlay } from "../lib/map/sources/useShownOverlay";
 import { USGS_URL } from "../lib/map/sources/imagery";
 import { useGoogleSession } from "../lib/map/sources/googleSession";
 import { OWN_SHIP_LOOKS, ownShipSvg, type OwnShipLook } from "../lib/map/position/ownShipLook";
-import { tileUrl } from "../lib/map/sources/tiles";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
-import SectionTitle from "./SectionTitle";
-import { chartQuery, googleMapsQuery } from "../lib/queryClient";
-import { useDataCycles, useLayerAges } from "../lib/map/sources/layerAges";
-import { cycleWarning } from "../lib/dataCycles";
+import { googleMapsQuery } from "../lib/queryClient";
 import { keepingAvailable } from "../lib/map/route/keepRoute";
-import { ALERT_MODES, useAlertMode, type AlertMode } from "./alertMode";
-import { COPILOT_MODES, useCopilotMode, type CopilotMode } from "./copilotMode";
-import { useMicPrimer } from "./MicPrimer";
-import { ATC_LISTEN_MODES, setAtcListen, useAtcListen, type AtcListen } from "../lib/atc/listenSetting";
-import { useCanListen } from "../lib/speechLocal";
 import SearchHint from "./SearchHint";
 import { CHART } from "../lib/tokens";
 
 /**
- * The map's settings, the whole of the map's own button's sheet
+ * The map's settings, the whole of the map's own button's card
  * (MapSettingsButton), laid out as Apple Maps' "Choose Map" card at the
- * owner's pick (2026-10-27, canvas RZDPvJ6hxfp93UL53LYLec): the chart and
- * what is over it as pictures, then what is drawn on the map as iOS's
- * switches, then how the chart looks, then where its data comes from. It
+ * owner's pick (2026-10-27, canvas RZDPvJ6hxfp93UL53LYLec; the owner's
+ * screenshot, 2026-11-10): the charts as pictures, the weather over them
+ * (`weather`), the overlay, then what is drawn on the map as iOS's
+ * switches, the alerts, how the chart looks, then where its data comes
+ * from. It
  * was one list of nineteen rows of three kinds of control. The alerts,
  * Setup's for a while, are here again since 2026-11-05, at the owner's
  * ask; Setup's Layout (QuickControls) has FPL, the theme, the sheet's
@@ -51,7 +45,7 @@ import { CHART } from "../lib/tokens";
  * this is the one home of everything else: the app's look, the chart at
  * night and own ship's look among it.
  */
-export default function MapSettings() {
+export default function MapSettings({ weather }: { weather?: ReactNode }) {
   const prefs = usePreferences();
   const trailed = useOwnTrail((s) => s.path.length > 1);
   // A Google choice without a key is none (useShownOverlay).
@@ -59,50 +53,33 @@ export default function MapSettings() {
   // Google's only where the deployment has a key for it.
   const { data: google } = useQuery(googleMapsQuery);
   const googleSession = useGoogleSession(overlay === "google-satellite" ? "satellite" : "map", overlay.startsWith("google"));
-  // The edition is what a pilot checks: a chart is current for its cycle.
-  // adsb.lol's licence (ODbL 1.0, 4.3) asks it be credited, as the owner
-  // asked it be here ("say traffic adsb.lol in settings like we do for
-  // FAA"). Rows, not a footnote (the owner's "Avoid putting so many footnotes").
-  const { data: chart } = useQuery(chartQuery);
-  // How old each weather layer's data is, beside where it comes from.
-  const ages = useLayerAges();
-  // The edition drawn past its 56-day cycle, said under the Charts row
-  // (the engine's data_cycle; lib/dataCycles): still drawn, never hidden.
-  const chartsCycle = useDataCycles().find((c) => c.key === "charts");
-  const chartsWarning = chartsCycle ? cycleWarning(chartsCycle) : null;
   const sec = prefs.base === "sec";
-  const [alertMode, setAlertMode] = useAlertMode();
-  const [copilotMode, setCopilotMode] = useCopilotMode();
-  const atcListen = useAtcListen((s) => s.value);
-  const voice = useCanListen();
-  // Why the microphone, before the browser asks (MicPrimer).
-  const [micPrimer, primeMic] = useMicPrimer();
   return (
     <div className="flex flex-col gap-5" data-testid="map-settings-groups">
-      {micPrimer}
-      <PictureChoices
+      {/* The charts first, as Apple Maps' card has its maps, the first as
+          wide as the card. */}
+      <MapPictureChoices
         title="Chart"
+        lead
         value={prefs.base}
         onChange={(v) => prefs.setBase(v as BaseChart)}
         testId="base-chart-select"
-        options={BASE_CHARTS.map((b) => ({
-          value: b.kind,
-          label: b.label,
-          src: chart ? tileUrl(chart, b.kind, ...PICTURE_TILE) : undefined,
-        }))}
+        options={BASE_CHARTS.map((b) => ({ value: b.kind, label: b.label, src: chartPicture(b.kind) }))}
       />
+      {/* Then the weather drawn over it (WeatherSettings). */}
+      {weather}
       {/* Over the chart, at the pilot's ask (OverlayTiles): the USGS's
           aerial imagery, or Google's map or its satellite imagery where
           this deployment has a Google key; and how strongly it covers the
           chart, the route and the marks over it either way. */}
       <div className="flex flex-col gap-2">
-        <PictureChoices
+        <MapPictureChoices
           title="Overlay"
           value={overlay.startsWith("google") ? "google" : overlay}
           testId="overlay-select"
           onChange={(v) => prefs.setOverlay((v === "google" ? "google-map" : v) as MapOverlay)}
           options={[
-            { value: "none", label: "None", src: chart ? tileUrl(chart, prefs.base, ...PICTURE_TILE) : undefined, faded: true },
+            { value: "none", label: "None", src: chartPicture(prefs.base), faded: true },
             { value: "usgs", label: "Imagery", src: USGS_PICTURE },
             ...(google ? [{ value: "google", label: "Google", className: "bg-[linear-gradient(135deg,#a8d5f2,#d9ecd1)]" }] : []),
           ]}
@@ -181,45 +158,7 @@ export default function MapSettings() {
             service's permission. A joint-use field is drawn either way. */}
         <SwitchRow title="Military Fields" on={prefs.military} onChange={prefs.setMilitary} testId="military-toggle" />
       </ListGroup>
-      {/* The in-flight alerts, off, shown or said aloud (components/alertMode),
-          here from Setup's tiles since the owner's ask ("alerts can go to
-          overlay settings", 2026-11-05): a pick of three, segmented. */}
-      <ListGroup title="Alerts">
-        <ListRow title="Alerts">
-          <Segmented
-            label="Alerts"
-            value={alertMode}
-            onChange={(v) => setAlertMode(v as AlertMode)}
-            testId="alerts-mode"
-            options={ALERT_MODES}
-          />
-        </ListRow>
-        {/* The in-flight copilot (features/copilot), off, shown or said aloud, as the alerts are. */}
-        <ListRow title="Copilot">
-          <Segmented
-            label="Copilot"
-            value={copilotMode}
-            onChange={(v) => setCopilotMode(v as CopilotMode)}
-            testId="copilot-mode"
-            options={COPILOT_MODES}
-          />
-        </ListRow>
-        {/* The ATC copilot (features/atc): the radio listened to while
-            flying, calls to us read into cards. Off until the pilot
-            turns it on. Not offered where speech cannot be recognised
-            on the device (lib/speechLocal). */}
-        {voice && (
-          <ListRow title="ATC">
-            <Segmented
-              label="ATC"
-              value={atcListen}
-              onChange={(v) => (v === "flying" ? primeMic(() => setAtcListen("flying")) : setAtcListen(v as AtcListen))}
-              testId="atc-listen-mode"
-              options={ATC_LISTEN_MODES}
-            />
-          </ListRow>
-        )}
-      </ListGroup>
+      <MapAlertsGroup />
       <ListGroup title="Appearance">
         {/* The white paper chart dimmed in the dark theme, so it does not
             take the pilot's night vision; only its tiles (index.css). */}
@@ -307,128 +246,22 @@ export default function MapSettings() {
           testId="keep-offline-toggle"
         />
       </ListGroup>
-      {/* Where the map's data comes from, and when the weather layers' is from (lib/map/sources/layerAges):
-          the METARs behind the airports' colours and the TFRs as the planner fetched them, the traffic as the map last heard it. */}
-      <ListGroup title="Sources">
-        <ListRow
-          title="Charts"
-          value={<span className="text-foreground">{chart ? `FAA, ${editionOf(chart.chart_cycle)}` : "FAA"}</span>}
-          data-testid="chart-edition"
-          description={
-            chartsWarning ? (
-              <span className={cn("text-destructive-ink", TEXT.detail)} data-testid="chart-edition-out-of-date">
-                {chartsWarning}
-              </span>
-            ) : undefined
-          }
-        />
-        <ListRow
-          title="METARs"
-          value={<span className="text-foreground">{ages.metars ? `aviationweather.gov · ${ages.metars}` : "aviationweather.gov"}</span>}
-          data-testid="metars-age"
-        />
-        <ListRow
-          title="TFRs"
-          value={<span className="text-foreground">{ages.tfrs ? `tfr.faa.gov · ${ages.tfrs}` : "tfr.faa.gov"}</span>}
-          data-testid="tfrs-age"
-        />
-        <ListRow
-          title="Traffic"
-          value={
-            <span className="text-foreground">
-              {prefs.traffic && ages.traffic ? `adsb.lol · ODbL · ${ages.traffic}` : "adsb.lol · ODbL"}
-            </span>
-          }
-          data-testid="traffic-age"
-        />
-      </ListGroup>
+      <MapSourcesGroup />
       <SearchHint />
     </div>
   );
 }
 
-/** The one tile each choice's picture is cut from, z/x/y: Chicago at
- *  zoom 9, where every chart the planner draws has ink (a sectional's
- *  towns and Class B, the IFR charts' airways), so the pictures tell the
- *  charts apart as Apple Maps' tell its maps apart. */
+/** The one tile the overlay's imagery picture is cut from, z/x/y: Chicago
+ *  at zoom 9, where the charts' own pictures (public/map-tiles) are from. */
 const PICTURE_TILE = [9, 130, 190] as const;
+
+/** A chart's own picture, cut once from that tile of the 2026-10-29 cycle's
+ *  @2x PMTiles (the planner image's pmtiles and Pillow: the tile's middle,
+ *  16:9, 360 by 202, WebP) and kept with the app, so the card shows it
+ *  with no request to the planner, offline too. */
+const chartPicture = (kind: BaseChart) => `${import.meta.env.BASE_URL}map-tiles/${kind}.webp`;
 /** The USGS's imagery of the same tile (OverlayTiles' service). */
 const USGS_PICTURE = USGS_URL.replace("{z}", String(PICTURE_TILE[0]))
   .replace("{x}", String(PICTURE_TILE[1]))
   .replace("{y}", String(PICTURE_TILE[2]));
-
-/** A pick of one of a few, each a picture over its word, as Apple Maps'
- *  map types are: the stock ToggleGroup underneath, so each is a radio to
- *  a screen reader and the arrow keys move between them. A picture that
- *  does not load leaves its muted box. */
-function PictureChoices({
-  title,
-  value,
-  onChange,
-  options,
-  testId,
-}: {
-  title: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: { value: string; label: string; src?: string; className?: string; faded?: boolean }[];
-  testId: string;
-}) {
-  return (
-    <section className="flex flex-col">
-      <SectionTitle className="px-1 pb-1.5">{title}</SectionTitle>
-      <ToggleGroup
-        value={[value]}
-        onValueChange={(v) => {
-          if (v[0]) onChange(v[0]);
-        }}
-        aria-label={title}
-        data-testid={testId}
-        className="grid w-full grid-cols-3 gap-2"
-      >
-        {options.map((o) => (
-          <ToggleGroupItem
-            key={o.value}
-            value={o.value}
-            aria-label={o.label}
-            className={cn(
-              "group flex h-auto min-w-0 flex-col items-stretch gap-1 rounded-lg border-0 bg-transparent p-0 shadow-none",
-              "hover:bg-transparent data-pressed:bg-transparent",
-            )}
-          >
-            <span
-              aria-hidden="true"
-              className={cn(
-                "relative block aspect-[4/3] overflow-hidden rounded-lg bg-muted ring-1 ring-border",
-                "group-data-pressed:ring-[3px] group-data-pressed:ring-tint",
-                o.className,
-              )}
-            >
-              {o.src && (
-                <img
-                  src={o.src}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  draggable={false}
-                  className={cn("size-full object-cover", o.faded && "opacity-40")}
-                  onError={(e) => {
-                    e.currentTarget.style.visibility = "hidden";
-                  }}
-                />
-              )}
-            </span>
-            <span
-              className={cn(
-                "truncate text-center text-foreground group-data-pressed:font-semibold group-data-pressed:text-tint",
-                TEXT.note,
-              )}
-            >
-              {o.label}
-            </span>
-          </ToggleGroupItem>
-        ))}
-      </ToggleGroup>
-    </section>
-  );
-}

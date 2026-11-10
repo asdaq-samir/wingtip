@@ -20,7 +20,9 @@ const WINDS: { value: WindsAt; label: string }[] = [
 
 /**
  * The weather the map draws (WeatherGl, and the loop's WeatherLoopGl),
- * first in the map's own button's sheet, at the owner's pick (the
+ * in the map's own button's card right after the charts' pictures, as
+ * Apple Maps' Choose Map card has its maps first (the owner's screenshot,
+ * 2026-11-10; before it, first of all, at the owner's pick of the
  * canvas's map weather, A: "A layers button on the map"): the radar and
  * satellite loop and its speed (features/weather-loop), the SIGMETs and
  * G-AIRMETs, the pilot reports, each on or off, and the winds aloft at an
