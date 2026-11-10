@@ -50,7 +50,7 @@ The owner, 2026-11-09, standing:
 | Python | 3.15.2 | every service and job image (`python:3.15-slim`), CI's setup-python, the dev container |
 | Rust | 1.99.1, edition 2024 | `engine/rust-toolchain.toml`, every engine crate, the WebAssembly build |
 | Node | 26 | `apps/web/.nvmrc`, the web build (`node:26-slim`), CI |
-| Gradle | 9.9.0 | `apps/android/gradle/wrapper/gradle-wrapper.properties` |
+| Gradle | 9.9.1 | `apps/android/gradle/wrapper/gradle-wrapper.properties` |
 | Maven | 3.10.0 | the gateway's build image |
 | Xcode | 27.2 (the iOS 27.2 SDK) | `scripts/ci/select-xcode.sh`, CI's `xcode-27` runner and the Mac mini |
 | Debian | trixie | every Debian-based image (`postgres:18-trixie`; a `-slim` tag is trixie) |
