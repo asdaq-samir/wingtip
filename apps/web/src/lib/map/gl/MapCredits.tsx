@@ -1,27 +1,9 @@
 import { AttributionControl } from "maplibre-gl";
 import { useEffect } from "react";
-import { create } from "zustand";
 import { LEGAL_PAGES } from "../../legal";
 import { wantScreen } from "../../navigation/wanted";
 import { useGlMap } from "./glLayer";
-
-/** The credits each layer owes its source while it is drawn (the imagery's,
- *  Google's, the traffic's), by the layer's own key. */
-const useCredits = create<{ credits: Record<string, string> }>(() => ({ credits: {} }));
-
-/** A layer's credit at the map's foot while it is drawn, as its source's
- *  terms ask; none (null) while it has none to give. */
-export function useMapCredit(key: string, html: string | null) {
-  useEffect(() => {
-    if (!html) return;
-    useCredits.setState((s) => ({ credits: { ...s.credits, [key]: html } }));
-    return () =>
-      useCredits.setState((s) => {
-        const { [key]: _gone, ...rest } = s.credits;
-        return { credits: rest };
-      });
-  }, [key, html]);
-}
+import { useCredits } from "./creditStore";
 
 /** The legal links first, as Apple Maps on the web sets Privacy, Terms and
  *  Legal before its imagery's credit; Legal is About, where every data

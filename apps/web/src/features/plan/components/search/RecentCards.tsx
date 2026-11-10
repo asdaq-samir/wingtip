@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import { StripNote } from "../../../../components/Favorites";
 import { Carousel, CarouselContent, CarouselItem } from "../../../../components/ui/carousel";
-import { tileTemplate } from "../../../../lib/map/sources/tiles";
+import { tileAt, tileTemplate } from "../../../../lib/map/sources/tiles";
 import { usePreferences, type RecentAirport } from "../../../../lib/preferences";
 import { chartQuery } from "../../../../lib/queryClient";
 import { TEXT } from "../../../../lib/text";
@@ -12,18 +12,6 @@ import { useAway } from "../../../../lib/useAway";
 /** The sectional's tile level a card shows: about 20 nm across, the field
  *  and its neighbourhood as a pilot reads them on the chart. */
 const ZOOM = 10;
-
-/** The slippy-map tile a point is in at ZOOM, and where in it the point
- *  falls (0 to 1 across and down), for the card to centre on it. */
-export function tileAt(lat: number, lon: number, z = ZOOM): { x: number; y: number; fx: number; fy: number } {
-  const n = 2 ** z;
-  const tx = ((lon + 180) / 360) * n;
-  const rad = (lat * Math.PI) / 180;
-  const ty = ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * n;
-  const x = Math.floor(tx);
-  const y = Math.floor(ty);
-  return { x, y, fx: tx - x, fy: ty - y };
-}
 
 /**
  * The airports opened last as large picture cards in a row that slides
@@ -54,7 +42,7 @@ export default function RecentCards({ onPick }: { onPick: (airport: RecentAirpor
 function RecentCard({ airport, detail, onClick }: { airport: RecentAirport; detail: string; onClick: () => void }) {
   const { data: chart } = useQuery(chartQuery);
   const [missing, setMissing] = useState(false);
-  const at = airport.lat != null && airport.lon != null ? tileAt(airport.lat, airport.lon) : null;
+  const at = airport.lat != null && airport.lon != null ? tileAt(airport.lat, airport.lon, ZOOM) : null;
   const src =
     chart && at && !missing
       ? tileTemplate(chart, "sec").replace("{z}", String(ZOOM)).replace("{x}", String(at.x)).replace("{y}", String(at.y))

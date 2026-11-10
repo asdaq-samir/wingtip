@@ -9,7 +9,8 @@ import { useShownOverlay } from "../../sources/useShownOverlay";
 import { useGlLayer, useGlMap, useGlPaint, type Slot } from "../glLayer";
 import { appZoomOf, glZoom } from "../glStyle";
 import { useGlView } from "../useGlView";
-import { MapCredits, useMapCredit } from "../MapCredits";
+import { MapCredits } from "../MapCredits";
+import { useMapCredit } from "../creditStore";
 
 /** OverlayTiles': how strongly the imagery covers the chart. */
 const OPACITY: Record<OverlayStrength, number> = { faint: 0.35, half: 0.6, full: 1 };

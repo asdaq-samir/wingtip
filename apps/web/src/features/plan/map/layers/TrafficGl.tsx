@@ -14,7 +14,7 @@ import { CARRY_S, agedBy, carriedOn, markTraffic, nearOwnHeight, ownShipHex, tra
 import { trafficCredit } from "../trafficCredit";
 import { reported, useTracking, useTrafficFocus, type Report } from "../../../../lib/map/position/tracking";
 import { useGlMap } from "../../../../lib/map/gl/glLayer";
-import { useMapCredit } from "../../../../lib/map/gl/MapCredits";
+import { useMapCredit } from "../../../../lib/map/gl/creditStore";
 import { appZoomOf, glZoom } from "../../../../lib/map/gl/glStyle";
 import { fadeInMarker, iconMarker, setMarkerIcon } from "../../../../lib/map/gl/htmlMarker";
 import { PastFlightGl, TrackedPathGl } from "./TracksGl";

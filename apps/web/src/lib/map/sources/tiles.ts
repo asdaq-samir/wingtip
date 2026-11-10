@@ -81,3 +81,16 @@ export function tileTemplate(chart: ChartInfo, kind: string): string {
 export function tileUrl(chart: ChartInfo, kind: string, z: number, x: number, y: number): string {
   return tileTemplate(chart, kind).replace("{z}", String(z)).replace("{x}", String(x)).replace("{y}", String(y));
 }
+
+/** The slippy-map tile a point is in at zoom `z` (Web Mercator, as the
+ *  chart's pyramid is cut), and where in it the point
+ *  falls (0 to 1 across and down), for the card to centre on it. */
+export function tileAt(lat: number, lon: number, z: number): { x: number; y: number; fx: number; fy: number } {
+  const n = 2 ** z;
+  const tx = ((lon + 180) / 360) * n;
+  const rad = (lat * Math.PI) / 180;
+  const ty = ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * n;
+  const x = Math.floor(tx);
+  const y = Math.floor(ty);
+  return { x, y, fx: tx - x, fy: ty - y };
+}

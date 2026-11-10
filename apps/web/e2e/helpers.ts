@@ -181,12 +181,11 @@ async function panelFull(page: Page) {
   await settled(panel);
 }
 
-/** The console out, all the way up: the account button's menu, its first
- *  row the account page (Setup). At the pill, where the developer's page
- *  rests, the page is under the pill's edge until the sheet comes up. */
+/** The console out, all the way up: the account button's menu (in the title
+ *  row, gone all the way up), its first row the account page (Setup). At the
+ *  pill, where the developer's page rests, the page is under the pill's edge. */
 export async function openConsole(page: Page) {
   await showTabs(page);
-  // In the title row, which goes all the way up (Apple Maps' web, 2026-11-10).
   if (!(await page.getByTestId("account-button").isVisible())) await grabberTo(page, "half");
   await page.getByTestId("account-button").click();
   await page.getByTestId("account-menu-setup").click();
@@ -209,10 +208,8 @@ export async function pickControl(page: Page, control: "nav-bar-select" | "theme
   await page.getByTestId(item).click();
 }
 
-/** The map's settings: the card of the map's own button, first among
- *  the map's buttons (MapSettingsButton), in the sheet over the search as
- *  Apple Maps' Choose Map card is, a desktop's side panel too. Escape puts
- *  it away. */
+/** The map's settings: its button's card in the sheet (MapSettingsButton),
+ *  as Apple Maps' Choose Map card is. Escape puts it away. */
 export async function openMapSettings(page: Page) {
   // The map's buttons are under a phone's sheet all the way up: the pill.
   if ((page.viewportSize()?.width ?? 0) < 768 && (await sideDrawer(page).getAttribute("data-panel")) === "full")
