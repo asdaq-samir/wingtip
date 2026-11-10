@@ -22,7 +22,15 @@ import FoundationModels
 /// Generated from the assistant's OpenAPI document, as the next two are.
 typealias WordsSource = ASSource
 
-extension WordsSource: Identifiable {}
+extension WordsSource: Identifiable, Hashable {
+    /// Pushed by its value in a card's stack (Ask's report); equal as the
+    /// generated Equatable has it, by every field.
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(label)
+        hasher.combine(text)
+    }
+}
 
 /// One sentence and the ids of the figures it rests on (app.ai_words.Sentence).
 typealias WordsSentence = ASSentence

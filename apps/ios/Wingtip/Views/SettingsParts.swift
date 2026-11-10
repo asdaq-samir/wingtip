@@ -51,7 +51,7 @@ struct AccountHeadRow: View {
 
     var body: some View {
         if let pilot = session.pilot {
-            NavigationLink { AccountPage().navigationBarTitleDisplayMode(.inline) } label: {
+            NavigationLink { AccountPage() } label: {
                 HStack(spacing: WingtipSpace.md) {
                     avatar(StripData.initials(name: pilot.displayName, email: pilot.email))
                     VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
@@ -106,7 +106,7 @@ struct AccountPage: View {
                 Section {
                     LabeledContent("Name", value: pilot.displayName)
                     LabeledContent("Email", value: pilot.email)
-                    NavigationLink("Contact") { ContactView().navigationBarTitleDisplayMode(.inline) }
+                    NavigationLink("Contact") { ContactView() }
                 }
                 Section {
                     ExportDataButton()
@@ -124,6 +124,5 @@ struct AccountPage: View {
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Account")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }

@@ -18,7 +18,7 @@ struct OwnAircraftListView: View {
                 }
                 ForEach(list) { airplane in
                     NavigationLink {
-                        OwnAircraftPage(record: airplane, onChange: { Task { await load() } }).navigationBarTitleDisplayMode(.inline)
+                        OwnAircraftPage(record: airplane, onChange: { Task { await load() } })
                     } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
@@ -39,7 +39,6 @@ struct OwnAircraftListView: View {
             ProblemLine(problem)
         }
         .navigationTitle("Your Airplanes")
-        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { adding = true } label: { Label("New Airplane", systemImage: "plus") }
@@ -114,7 +113,6 @@ struct AircraftFormView: View {
             ProblemLine(problem)
         }
         .navigationTitle(record == nil ? "New Airplane" : "Edit Airplane")
-        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if record == nil {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
@@ -195,14 +193,14 @@ struct OwnAircraftPage: View {
         List {
             Section {
                 NavigationLink {
-                    AircraftFormView(record: record) { saved in record = saved; onChange() }.navigationBarTitleDisplayMode(.inline)
+                    AircraftFormView(record: record) { saved in record = saved; onChange() }
                 } label: {
                     LabeledContent("Figures", value: Self.figuresLine(record)).lineLimit(2)
                 }
                 // Its checklists, kept on this device (LocalChecklists).
                 ChecklistRows(airplane: record.tailNumber)
                 NavigationLink {
-                    SquawksView(aircraft: record) { Task { await reload() } }.navigationBarTitleDisplayMode(.inline)
+                    SquawksView(aircraft: record) { Task { await reload() } }
                 } label: {
                     LabeledContent("Squawks", value: record.openSquawks.isEmpty ? "" : "\(record.openSquawks.count) open")
                 }
@@ -215,7 +213,6 @@ struct OwnAircraftPage: View {
             ProblemLine(problem)
         }
         .navigationTitle(record.tailNumber)
-        .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Delete \(record.tailNumber)?", isPresented: $askingDelete, titleVisibility: .visible) {
             Button("Delete Airplane", role: .destructive) {
                 Task {
@@ -470,7 +467,6 @@ struct SquawksView: View {
             ProblemLine(problem)
         }
         .navigationTitle("\(aircraft.tailNumber) Squawks")
-        .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
     }
 

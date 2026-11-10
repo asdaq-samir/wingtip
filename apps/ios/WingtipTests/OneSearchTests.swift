@@ -60,11 +60,13 @@ struct OneSearchTests {
         #expect(SheetPage(stored: "@") == nil)
     }
 
-    @Test func theInspectorsCardsAreTheBriefTheProfileAndTheFlights() throws {
-        #expect(SideCard(.brief) == .brief)
-        #expect(SideCard(.profile) == .profile)
-        #expect(SideCard(.flights) == .flights)
-        #expect(SideCard(.navlog) == nil)
+    @Test func theInspectorsCardsAreTheThingsTheBriefTheProfileAndTheFlights() throws {
+        #expect(SheetPage.screen(.brief).inspects)
+        #expect(SheetPage.screen(.profile).inspects)
+        #expect(SheetPage.screen(.flights).inspects)
+        #expect(!SheetPage.screen(.navlog).inspects)
+        #expect(SheetPage.airport("KDLH").inspects)
+        #expect(SheetPage.traffic("a1b2c3").inspects && SheetPage.mapSettings.inspects)
     }
 
     @Test func theAirportCardsActionsAreTheDesignsInOrder() throws {

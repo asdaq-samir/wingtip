@@ -10,21 +10,19 @@ struct FlightLoggedSheet: View {
     let logbookChanged: () -> Void
 
     var body: some View {
-        NavigationStack {
-            Form {
-                if let logged = model.logged {
-                    Section {
-                        Text("\(logged.route ?? "") · \(Format.hours(logged.totalHours)), in your logbook; your currency is worked out again from it.")
-                        if logged.flightId != nil { Text("The track is with the saved flight too: its debrief is there in Flights.") }
-                    }
-                } else {
-                    draftSections
+        Form {
+            if let logged = model.logged {
+                Section {
+                    Text("\(logged.route ?? "") · \(Format.hours(logged.totalHours)), in your logbook; your currency is worked out again from it.")
+                    if logged.flightId != nil { Text("The track is with the saved flight too: its debrief is there in Flights.") }
                 }
+            } else {
+                draftSections
             }
-            .navigationTitle("Flight Logged")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { toolbar }
         }
+        .navigationTitle("Flight Logged")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { toolbar }
         .interactiveDismissDisabled(model.logging)
     }
 
@@ -159,24 +157,29 @@ private struct DraftRows: View {
     }
 }
 
-/// The sheet over the app wherever the flight ends, and the draft asked
-/// for once it has (RootView's one line).
+/// The flight just ended, drawn into a logbook entry wherever the app is
+/// (RootView's one line); its card, Flight Logged, opens when the draft
+/// is asked for (CardTriggers).
 struct AutoLogbookHost: ViewModifier {
     @Environment(Session.self) private var session
     @Environment(Plan.self) private var plan
-    @Environment(Verdict.self) private var verdict
     @State private var model = AutoLogbook.shared
 
     func body(content: Content) -> some View {
         content
-            .sheet(isPresented: Binding(get: { model.isOpen }, set: { open in
-                guard !open else { return }
-                if model.logged != nil { model.close() } else { model.later() }
-            })) {
-                FlightLoggedSheet(model: model, signedIn: session.signedIn) { verdict.logbookChanged() }
-            }
             .task(id: "\(model.recorder.endedAt ?? 0)|\(session.signedIn)") {
                 await model.draw(signedIn: session.signedIn, tail: plan.tail, type: plan.stockType)
             }
+    }
+}
+
+/// Flight Logged as a card: the model, the sign-in and the logbook's
+/// change handed to the form.
+struct FlightLoggedCard: View {
+    @Environment(Session.self) private var session
+    @Environment(Verdict.self) private var verdict
+
+    var body: some View {
+        FlightLoggedSheet(model: AutoLogbook.shared, signedIn: session.signedIn) { verdict.logbookChanged() }
     }
 }

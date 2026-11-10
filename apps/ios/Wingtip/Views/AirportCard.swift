@@ -27,12 +27,24 @@ struct AirportCard: View {
     @State private var notams: APINotamsRanked?
     @State private var tab: CardTab = .info
     @State private var shown: ShownPicture?
+    /// Scrolled past the head: its name in the bar and the section picker
+    /// pinned under it (the owner's scrolling rule, 2026-11-10).
+    @State private var pinned = false
     private var shelf: AirportShelf { .shared }
 
     /// The card's pages, in the pilot's order (the web app's CARD_TABS).
     enum CardTab: String, CaseIterable, Identifiable {
         case info = "Info", weather = "Weather", runways = "Runways", charts = "Charts"
         var id: String { rawValue }
+    }
+
+    /// The card's sections, in the list under the tiles and pinned under
+    /// the bar once the head has scrolled away.
+    private var sectionPicker: some View {
+        Picker("Section", selection: $tab) {
+            ForEach(CardTab.allCases) { Text($0.rawValue).tag($0) }
+        }
+        .tabsPicker()
     }
 
     var body: some View {
@@ -50,12 +62,10 @@ struct AirportCard: View {
                     AirportTiles(place: place, photos: photos, shown: $shown, tab: $tab, notams: notams)
                 }
                 Section {
-                    Picker("Section", selection: $tab) {
-                        ForEach(CardTab.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                    .tabsPicker()
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
+                    sectionPicker
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets())
+                        .opacity(pinned ? 0 : 1)
                 }
                 switch tab {
                 case .info: AirportInfoTab(place: place)
@@ -84,7 +94,19 @@ struct AirportCard: View {
         .ignoresSafeArea(.container, edges: expanded && place != nil ? .top : [])
         .navigationTitle(ident)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(removing: .title)
+        // The head is the title until it scrolls away; then the bar's.
+        .modifier(PinnedHead(pinned: pinned))
+        .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > 180 } action: { _, past in
+            if past != pinned { pinned = past }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if pinned, place != nil {
+                sectionPicker
+                    .padding(.horizontal, WingtipSpace.lg)
+                    .padding(.vertical, WingtipSpace.xs)
+                    .background(.bar)
+            }
+        }
         .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
         .toolbar {
             if let place {
@@ -136,39 +158,6 @@ struct AirportCard: View {
         parts.queryItems = [URLQueryItem(name: "q", value: place.name)] + (place.address.map { [URLQueryItem(name: "address", value: $0)] }
             ?? [URLQueryItem(name: "ll", value: AirportWords.point(place.lat, place.lon))])
         return parts.url!
-    }
-}
-
-/// Info: the radio, with the airspace the field is in beside its title;
-/// the lights the mic turns on; then what is on the ground.
-struct AirportInfoTab: View {
-    let place: AirportPlace
-
-    var body: some View {
-        FlowProgramsSection()
-        Section(place.airspaceClass.map { "Frequencies (Class \($0))" } ?? "Frequencies") {
-            if place.frequencies.isEmpty { Text("None listed").foregroundStyle(.secondary) }
-            ForEach(Array(place.frequencies.enumerated()), id: \.offset) { _, f in FrequencyRowView(frequency: f).siriSees(SiriSaw.frequency(place.ident, f)) }
-            // What some fields read out on so many clicks of the mic on
-            // the CTAF: the weather, a radio check (wingtip.remarks).
-            ForEach(place.radioNotes ?? [], id: \.self) { note in
-                CardRow(badge: RowBadge(systemImage: "antenna.radiowaves.left.and.right", colour: Badge.traffic), title: note)
-            }
-        }
-        if !(place.lighting ?? []).isEmpty || place.standardKeying == true {
-            Section("Lights") {
-                ForEach(place.lighting ?? [], id: \.self) { note in
-                    CardRow(badge: RowBadge(systemImage: "lightbulb", colour: Badge.lights), title: note)
-                }
-                // Pilot-controlled lighting's standard keying (AIM 2-1-9):
-                // seven clicks within five seconds for high intensity,
-                // five for medium, three for low.
-                if place.standardKeying == true {
-                    LabeledContent("Keying", value: "7 high · 5 medium · 3 low")
-                }
-            }
-        }
-        StopServicesSections(ident: place.ident)
     }
 }
 
@@ -289,27 +278,6 @@ struct AirportWeatherTab: View {
         CardRow(badge: RowBadge(systemImage: symbol, colour: Badge.weather), title: title) {
             Text(value).fontWeight(.semibold).accessibilityLabel(spoken ?? value)
         }
-    }
-}
-
-/// Runways: the pattern altitude, then each runway with the wind on it.
-struct AirportRunwaysTab: View {
-    let place: AirportPlace
-
-    var body: some View {
-        Section {
-            // The FAA's published pattern altitude, else 1,000 ft over the
-            // field (AC 90-66C, 8.4), as the planner gives it.
-            if let pattern = place.pattern, let altitude = pattern.altitudeFt {
-                CardRow(badge: RowBadge(systemImage: "arrow.triangle.2.circlepath", colour: Badge.runway), title: "Pattern altitude",
-                        detail: pattern.published == true ? "As the FAA publishes it" : "1,000 ft above the field: none published") {
-                    Text(Format.altitude(altitude)).fontWeight(.semibold).accessibilityLabel(Format.spokenAltitude(altitude))
-                }
-            }
-            if place.runways.isEmpty { Text("No runways listed").foregroundStyle(.secondary) }
-            ForEach(Array(place.runways.enumerated()), id: \.offset) { _, runway in RunwayRowView(runway: runway) }
-        }
-        RvrSection()
     }
 }
 
@@ -480,4 +448,15 @@ private enum PreviewData {
 #Preview("AirportChartsTab") {
     @Previewable @State var shown: ShownPicture? = nil
     List { AirportChartsTab(place: PreviewData.place, shown: $shown) }
+}
+
+/// The bar's title hidden while the card's own head shows the name, and
+/// back once the head has scrolled away, so the name and the close always
+/// stay in sight.
+private struct PinnedHead: ViewModifier {
+    let pinned: Bool
+
+    func body(content: Content) -> some View {
+        if pinned { content } else { content.toolbar(removing: .title) }
+    }
 }

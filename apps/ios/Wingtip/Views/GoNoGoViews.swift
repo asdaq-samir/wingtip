@@ -182,9 +182,9 @@ struct GoNoGoSection: View {
         case .section(let anchor)?:
             Button { open(anchor) } label: { content }.buttonStyle(.plain)
         case .loading?:
-            NavigationLink { LoadingView().navigationBarTitleDisplayMode(.inline) } label: { content }
+            NavigationLink { LoadingView() } label: { content }
         case .risk?:
-            NavigationLink { RiskView().navigationBarTitleDisplayMode(.inline) } label: { content }
+            NavigationLink { RiskView() } label: { content }
         case .airplane?:
             AirplaneFiguresLink { content }
         case nil:
@@ -233,9 +233,9 @@ struct FindingFold: View {
             case .section(let anchor)?:
                 Button("See the reports") { open(anchor) }
             case .loading?:
-                NavigationLink("See the loading") { LoadingView().navigationBarTitleDisplayMode(.inline) }
+                NavigationLink("See the loading") { LoadingView() }
             case .risk?:
-                NavigationLink("See the risk assessment") { RiskView().navigationBarTitleDisplayMode(.inline) }
+                NavigationLink("See the risk assessment") { RiskView() }
             case .airplane?:
                 AirplaneFiguresLink { Text("See the Airplane's Figures") }
             case nil:
@@ -320,7 +320,6 @@ struct RiskView: View {
             }
         }
         .navigationTitle("Risk Assessment")
-        .navigationBarTitleDisplayMode(.inline)
         .task(id: verdict.key(for: plan)) { await verdict.refresh(plan: plan, signedIn: session.signedIn) }
     }
 

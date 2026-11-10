@@ -33,7 +33,6 @@ struct TrainingView: View {
             ProblemLine(problem)
         }
         .navigationTitle("Training")
-        .navigationBarTitleDisplayMode(.inline)
         .task(id: session.signedIn) {
             guard session.signedIn else { return }
             await act { try await Gateway.training() }
@@ -174,7 +173,7 @@ struct TrainingView: View {
                 }
                 if !taken.isEmpty {
                     NavigationLink("Ask for a Review") {
-                        ReviewAskView(instructors: taken) { request in await act { try await Gateway.askReview(request) } }.navigationBarTitleDisplayMode(.inline)
+                        ReviewAskView(instructors: taken) { request in await act { try await Gateway.askReview(request) } }
                     }
                 }
             }
@@ -321,7 +320,6 @@ struct ReviewAskView: View {
             }
         }
         .navigationTitle("Ask for a Review")
-        .navigationBarTitleDisplayMode(.inline)
         .task { flights = (try? await Gateway.flights()) ?? [] }
     }
 

@@ -162,9 +162,37 @@ view without dismissing the sheet").
     anchor.
   - Each sheet screen below has a **Detents** row saying what shows at
     pill, medium and large.
+- **Cards: one rule for every thing and page** (the owner's card rule
+  and scrolling rule, 2026-11-10).
+  - A thing (a field, an airplane by its N-number or in traffic, a
+    route leg, a hold, a flown track, the Map settings) and every page
+    by its name (Brief, Nav Log, Profile, Nearest, Settings, Ask…) opens
+    as **one card over the plan's sheet**, as Maps opens a place over
+    its search: the same view (`SheetPageView`) from the search, the
+    map, a list, the plan or a link. `Navigator.open` is the one way in
+    (`RootView.openScreen` for a screen by its name); the plan's sheet
+    presents the card through one `.sheet(item:)` (`CardHost`), so one
+    card is up at a time and a new one takes its place.
+  - The card opens at `.medium` for a thing and `.large` for a page,
+    grows to `.large`, and the map stays live under it up to `.medium`;
+    a question or a form stays modal.
+  - Its close is at the right of its bar; what it opens is pushed in its
+    own `NavigationStack` with the system's Back (`Navigator.push`), and
+    a page done (a form's Add, a leg's Direct To) goes back where it was
+    opened (`Navigator.finish`).
+  - The large title shows and folds into the bar as the card scrolls
+    (no forced `.inline` but on forms); the airport card's head is its
+    title until it scrolls away, then its name is the bar's and its
+    sections' picker is pinned under the bar.
+  - Every alert, the Ready to Fly prompt and the emergency assistant are
+    hung on the top of the stack (`TopHosts`): the card while one is up,
+    else the plan's sheet; never the map under the plan's sheet, where
+    UIKit's one presenter would never show them.
+  - Footers are the system's bar (`glassFoot`, `safeAreaBar`); a card's
+    own toolbar (the airport card's) is the stock bottom bar.
+  - No control in a card takes the sheet's drag: the altitudes are a
+    menu picker, the flown track's chart moves the replay on a tap.
 - **Other sheets.**
-  - Pushed screens open as cards inside the sheet's own stack (Maps'
-    model). Closing goes back one level, never with a Back button.
   - A separate modal sheet (an edit form, Ask, the share sheet) uses
     `[.medium, .large]`.
   - HIG Sheets (updated 2026-03-24) puts Cancel on the leading edge of
@@ -207,10 +235,11 @@ view without dismissing the sheet").
 
 ### Motion and haptics
 
-- **Opening a card from a row or a mark zooms.** Use
-  `matchedTransitionSource` with `.navigationTransition(.zoom)`. Under
-  Reduce Motion it becomes `.crossFade`, which is iOS 27 and already in
-  `CardZoom.swift`.
+- **Opening a card rises; a page inside it pushes.** No zoom from the
+  row or the mark (the owner's scrolling rule, 2026-11-10): inside a
+  resizable sheet the zoom transition's own pull-down popped the page
+  where the pilot meant to lower the sheet, so `CardZoom.swift` is gone.
+  A card is the system sheet rising, a page the stack's push.
   - HIG Motion: "Add motion purposefully", "avoid adding motion to UI
     interactions that occur frequently", "Let people cancel motion"
     ([HIG Motion][hig-motion]).
@@ -303,8 +332,7 @@ view without dismissing the sheet").
      airplane or the map's centre
    - trailing: the field's flight category pip, for an airport with a
      report
-5. **Tapping a result** opens its card in the sheet with the zoom
-   transition, and the map frames it with the selected ring
+5. **Tapping a result** opens its card over the sheet, and the map frames it with the selected ring
    (`color.chart.selected`).
 
 **Primary action.** The return key opens the top result. There is no
@@ -466,7 +494,7 @@ The card starts with the title, then the actions and the facts.
 
 **Motion and feel.**
 
-- The card zooms from the tapped mark or row (`matchedTransitionSource`).
+- The card rises over the plan as the system sheet does (no zoom; §0 Motion).
 - The photo crossfades in at the large detent.
 - The facts animate with `.numericText()` when a new METAR arrives.
 - Direct To plays `haptic.direct-to`.
@@ -582,9 +610,9 @@ figures anywhere depend on a default type.
      (owner's rule; positions unchanged).
 2. **The figure strip:** To, Dist, ETE and Fuel, in `type.figure`
    digits, from the engine. The fuel is a dash without an airplane.
-3. **Cruise:** the altitude field in FL-045 form, opening the wheel of
-   legal altitudes. Use a `Picker` with `.wheel`; it plays a selection
-   haptic by default.
+3. **Cruise:** the altitude field in FL-045 form, opening the legal
+   altitudes in the Profile card's menu `Picker` (a wheel in the card's
+   list fought the sheet's drag: the owner's scrolling rule, 2026-11-10).
    - HIG Pickers: "Consider using a picker to offer medium-to-long
      lists", and "Avoid switching views to show a picker"
      ([HIG Pickers][hig-pickers]).
@@ -750,8 +778,14 @@ nautical miles". Swift Charts gives Audio Graphs ([HIG Charts][hig-charts]).
 1. A short checklist: weather, NOTAMs read, weight and balance, fuel,
    currency, airplane documents.
    - A checkmark and the engine's word for each.
-   - A row needing attention opens where it is fixed.
-2. **The primary action**: **Start Flight** in a bottom bar
+   - A row needing attention opens where it is fixed, pushed in the
+     Brief's card with Back (the Airplane page, the Profile).
+2. **The prompt** over a dry run's or a flight's start, while something
+   is missing: one stock alert, "Ready to Fly?", its line and the most
+   pressing actions, with Fly Anyway, Open the Brief and Not Yet (the
+   owner's card rule, 2026-11-10: "Ready to Fly is one section, plus one
+   stock prompt").
+3. **The primary action**: **Start Flight** in a bottom bar
    (`safeAreaBar(edge: .bottom)`, `.glassProminent`). It starts the
    Live Activity (§15).
 
@@ -920,8 +954,12 @@ feature, not checked).
 **Structure (`fullScreenCover`, the map still visible in its top
 third):**
 
-1. **The bar.** A Close (✕) at the leading top, which ends the
-   emergency view only, and the title "Emergency".
+1. **The bar.** A Close (✕) at the top right, where iOS puts the
+   system's close and every card of the app has it (the owner's card
+   rule, 2026-11-10), which ends the emergency view only, and the title
+   "Emergency". HIG Modality asks only that a full-screen modal have a
+   clear way out; it names no other edge, so the platform's own place
+   for close stands.
 2. **The map**, with the line to the field picked in
    `color.chart.emergency` and the glide ring.
 3. **Squawk 7700 and 121.5**, as two large figure tiles. They copy on
@@ -1181,8 +1219,11 @@ reader could not parse plays a warning notification once.
   - Night follows the system.
 
 **Opened from** the account button beside the one search, by its tap
-alone: a page pushed on the sheet's stack, no menu between (the owner,
-2026-11-10: "When tapping the avatar just open the settings"). What the
+alone: its card over the plan, no menu between (the owner, 2026-11-10:
+"When tapping the avatar just open the settings"), its pages pushed in
+the card. The map's switches and the alerts left it for the Map card
+(`MapSettingsView`), the map's own Map button's, as Maps' Choose Map
+card; Settings' Map row opens the same card. What the
 menu held -- the account and signing in or out, the Flying and Pilot
 pages, Minimums, Guide, Downloads and About -- are this page's rows.
 
@@ -1476,9 +1517,8 @@ behaviour; only the content, its order and the brand tokens are ours.
 | `SaveLabel`'s drawn-on checkmark | The button's own words ("Saving…"), the saved flight showing in the list |
 
 The altitude stays a read-only Swift Charts profile with the system's
-`Picker(.wheel)` of the engine's altitudes beside it (on an iPad or a
-wide window; under it on an iPhone, where beside would cut the rows). The
-wheel opens on the planner's pick; any row can be flown, and one outside
+menu `Picker` of the engine's altitudes beside it (on an iPad or a wide
+window; under it on an iPhone). The menu opens on the planner's pick; any row can be flown, and one outside
 the legal altitudes is said under it.
 
 **Left hand-built, and why.**
@@ -1491,7 +1531,7 @@ the legal altitudes is said under it.
 | Checklist ticks (checklists, emergency, passenger briefing) | iOS has no checkbox (`ToggleStyle.checkbox` is macOS only); the circle-and-tick row is what Reminders draws by hand too |
 | `FactsRow` | Maps' facts row (a caption over each value, four across) has no public SwiftUI view; it is a `Grid`/`HStack` of `Text` |
 | `MapChip` and the captions over pictures | Stock `Label`/`Text` on the system's glass (`glassEffect`), which a line over a busy chart needs to be read; no capsule is drawn |
-| The Reduce Motion branches of `Symbols.swift` and `CardZoom.swift` | Kept for now: neither the SDK's interfaces nor Apple's pages read on 2026-11-10 say that `symbolEffect` or the zoom navigation transition change under Reduce Motion by themselves; remove them once that is shown |
+| The Reduce Motion branch of `Symbols.swift` | Kept for now: neither the SDK's interfaces nor Apple's pages read on 2026-11-10 say that `symbolEffect` changes under Reduce Motion by itself; remove it once that is shown |
 
 ---
 

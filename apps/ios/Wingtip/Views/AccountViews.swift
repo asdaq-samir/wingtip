@@ -35,7 +35,6 @@ struct ContactView: View {
             ProblemLine(problem)
         }
         .navigationTitle("Contact")
-        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {

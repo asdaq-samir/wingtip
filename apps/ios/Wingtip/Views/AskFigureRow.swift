@@ -4,9 +4,9 @@ import SwiftUI
 /// an input to it (the owner, 2026-11-09: "just ask for it at the time
 /// it's needed"): "How much fuel does N123AB use to start and taxi?" with
 /// its field, Save, Not Now and Edit N123AB, which opens the airplane's
-/// profile at that figure; closing it comes back here. A handbook table
-/// (the loading, a takeoff or landing chart) is a link to the profile
-/// alone. With no airplane picked, the existing picker (PickAirplaneRow).
+/// profile at that figure in this card's stack, Back coming back here.
+/// A handbook table (the loading, a takeoff or landing chart) is a link
+/// to the profile alone. With no airplane picked, the existing picker (PickAirplaneRow).
 /// Nothing shows where nothing is missing. Its state is AskFigureModel's.
 struct AskFigureRow: View {
     /// The screen's figures, first missing input first.
@@ -16,7 +16,6 @@ struct AskFigureRow: View {
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
     @State private var model = AskFigureModel()
-    @State private var editing: ProfileAsk?
     @FocusState private var typing: Bool
 
     var body: some View {
@@ -28,7 +27,6 @@ struct AskFigureRow: View {
             case nil: EmptyView()
             }
         }
-        .airplaneProfile($editing)
     }
 
     private var name: String { AskFigureModel.airplane(plan) }
@@ -52,7 +50,7 @@ struct AskFigureRow: View {
                 .disabled(model.saving || AskFigureModel.number(model.text) == nil)
                 Button("Not Now") { typing = false; model.putOff(figure.rawValue, plan: plan) }
                 if let tail = plan.tail {
-                    Button("Edit \(tail)") { editing = ProfileAsk(tail: tail, focus: figure) }
+                    Button("Edit \(tail)") { Navigator.shared.push(.tail(ProfileAsk(tail: tail, focus: figure))) }
                 }
             }
             // Each its own tap in the row, the tint's blue; a 44-point area
@@ -69,7 +67,7 @@ struct AskFigureRow: View {
     @ViewBuilder private func tableLink(_ table: String) -> some View {
         let what = table == "loading" ? "loading and envelope" : "\(table) chart"
         if let tail = plan.tail {
-            Button { editing = ProfileAsk(tail: tail, focus: nil) } label: {
+            Button { Navigator.shared.push(.tail(ProfileAsk(tail: tail, focus: nil))) } label: {
                 CardRow(title: "Add \(tail)'s \(what)", detail: "From its handbook, in its profile") {
                     Image(systemName: "chevron.right").foregroundStyle(.tertiary).accessibilityHidden(true)
                 }

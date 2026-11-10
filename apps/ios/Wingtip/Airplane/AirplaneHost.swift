@@ -4,13 +4,12 @@ import SwiftUI
 /// view: the types' books once a launch, the pilot's records as they sign
 /// in or out (the N-number flown taking its record's figures), and at
 /// sign-in the figures kept on this device while signed out offered to the
-/// account, as the owner asked (2026-11-09).
+/// account, as the owner asked (2026-11-09). The offer itself is asked
+/// from the top of the stack (AirplaneFigureAlerts), not the map under
+/// the plan's sheet, where an alert would never show.
 struct AirplaneHost: ViewModifier {
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
-    /// The N-numbers whose figures this device kept, offered at sign-in.
-    @State private var offered: [String: Figures] = [:]
-    @State private var problem: String?
 
     func body(content: Content) -> some View {
         content
@@ -18,18 +17,42 @@ struct AirplaneHost: ViewModifier {
             .task(id: session.signedIn) {
                 await Airplanes.shared.loadRecords(signedIn: session.signedIn)
                 plan.took(records: Airplanes.shared.records)
-                if session.signedIn { offered = OwnFigureStore.tails() }
+                if session.signedIn { FigureOffer.shared.offered = OwnFigureStore.tails() }
             }
-            .alert(Self.title(offered), isPresented: Binding(get: { !offered.isEmpty }, set: { if !$0 { offered = [:] } })) {
+    }
+}
+
+/// The N-numbers whose figures this device kept, offered at sign-in, and
+/// why any could not be saved.
+@MainActor
+@Observable
+final class FigureOffer {
+    static let shared = FigureOffer()
+    var offered: [String: Figures] = [:]
+    var problem: String?
+}
+
+/// The offer and its failure, two stock alerts, from the top of the
+/// stack (TopHosts).
+struct AirplaneFigureAlerts: ViewModifier {
+    /// Whether this view is the top of the stack, the one that presents.
+    let active: Bool
+    @Environment(Plan.self) private var plan
+    private var offer: FigureOffer { .shared }
+
+    func body(content: Content) -> some View {
+        let offered = offer.offered
+        content
+            .alert(Self.title(offered), isPresented: Binding(get: { active && !offer.offered.isEmpty }, set: { if !$0 { offer.offered = [:] } })) {
                 Button("Save to Account") { Task { await keep() } }
-                Button("Keep on This iPhone", role: .cancel) { offered = [:] }
+                Button("Keep on This iPhone", role: .cancel) { offer.offered = [:] }
             } message: {
                 Text("You set figures for \(offered.keys.sorted().joined(separator: ", ")) while signed out. Save them with your airplanes?")
             }
-            .alert("Figures Not Saved", isPresented: Binding(get: { problem != nil }, set: { if !$0 { problem = nil } })) {
-                Button("OK", role: .cancel) { problem = nil }
+            .alert("Figures Not Saved", isPresented: Binding(get: { active && offer.problem != nil }, set: { if !$0 { offer.problem = nil } })) {
+                Button("OK", role: .cancel) { offer.problem = nil }
             } message: {
-                Text(problem ?? "")
+                Text(offer.problem ?? "")
             }
     }
 
@@ -41,8 +64,8 @@ struct AirplaneHost: ViewModifier {
     /// as a new record from its type's book; the device's copy forgotten
     /// once the account has them.
     private func keep() async {
-        let tails = offered
-        offered = [:]
+        let tails = offer.offered
+        offer.offered = [:]
         var failed: [String] = []
         for (tail, figures) in tails.sorted(by: { $0.key < $1.key }) {
             let record = Airplanes.shared.record(tail)
@@ -62,6 +85,6 @@ struct AirplaneHost: ViewModifier {
                 failed.append("\(tail): \(error.localizedDescription)")
             }
         }
-        if !failed.isEmpty { problem = failed.joined(separator: "\n") }
+        if !failed.isEmpty { offer.problem = failed.joined(separator: "\n") }
     }
 }

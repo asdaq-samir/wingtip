@@ -8,10 +8,7 @@ struct FlightsView: View {
     @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.undoManager) private var undoManager
-    /// The iPad's inspector's close, where it holds the list (SplitLayout).
-    @Environment(\.closeCard) private var closeCard
     @State private var model = SavedFlightsModel()
 
     var body: some View {
@@ -27,7 +24,8 @@ struct FlightsView: View {
                 } else {
                     Button {
                         plan.open(flight)
-                        if let closeCard { closeCard() } else { dismiss() }
+                        // The flight on the plan, its card put away.
+                        Navigator.shared.showPlan()
                     } label: {
                         SavedFlightRow(flight: flight)
                     }
@@ -53,7 +51,6 @@ struct FlightsView: View {
             ProblemLine(model.problem)
         }
         .navigationTitle("Saved Flights")
-        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             UndoToolbarItem()
             ToolbarItem(placement: .topBarTrailing) {
@@ -96,7 +93,7 @@ struct FlightsView: View {
     }
 
     private func flownTrack(_ flight: SavedFlight) -> some View {
-        Button { FlightUI.shared.card = .flown(flight.id, SavedFlightsModel.route(flight)) } label: {
+        Button { Navigator.shared.push(.flown(flight.id, SavedFlightsModel.route(flight))) } label: {
             Label("Flown Track", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
         }
     }

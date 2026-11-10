@@ -19,6 +19,18 @@ struct MapButtons: View {
 
     var body: some View {
         VStack(spacing: WingtipSpace.md) {
+            // The Map card, as Maps' map button opens Choose Map: the
+            // layers, the weather and the alerts (MapSettingsView).
+            Button { Navigator.shared.open(.mapSettings) } label: {
+                Image(systemName: "map")
+                    .font(.body.weight(.medium))
+                    .frame(width: WingtipSize.tapTarget, height: WingtipSize.tapTarget)
+            }
+            .accessibilityLabel("Map Settings")
+            .accessibilityIdentifier("map-settings")
+            .floatingGlass(in: Circle(), interactive: true)
+            .foregroundStyle(accent)
+            .hoverEffect(.highlight)
             Button {
                 // The position asked for here, the first time it is wanted.
                 ownShip.askLocation()
@@ -50,7 +62,7 @@ struct MapButtons: View {
                 .foregroundStyle(accent)
             }
         }
-        // The two round buttons one piece of glass, as Maps' are.
+        // The round buttons one piece of glass, as Maps' are.
         .glassGroup(spacing: WingtipSpace.md)
         .padding(.trailing, WingtipSpace.md)
         .padding(.top, WingtipSpace.md)

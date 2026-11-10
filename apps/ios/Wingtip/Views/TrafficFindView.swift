@@ -109,7 +109,6 @@ struct TrafficFindView: View {
             }
         }
         .navigationTitle("Find an airplane")
-        .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $typed, prompt: "Callsign, N-number or address")
         .textInputAutocapitalization(.characters)
         .autocorrectionDisabled()
@@ -154,7 +153,7 @@ struct TrafficFindView: View {
 
     private func open(_ hex: String, plane: TrafficAircraft?) {
         tracking.track(hex, plane: plane)
-        FlightUI.shared.card = .airplane(hex.lowercased())
+        Navigator.shared.open(.traffic(hex.lowercased()))
     }
 }
 

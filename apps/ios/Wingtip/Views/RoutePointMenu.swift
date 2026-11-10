@@ -34,7 +34,7 @@ struct RoutePointMenu: View {
                 }
             }
             Button { FlightUI.shared.fixFrom = ident } label: { Label("Create a Fix from Here…", systemImage: "scope") }
-            Button { FlightUI.shared.card = .hold(ident) } label: {
+            Button { Navigator.shared.push(.hold(ident)) } label: {
                 Label(plan.hold(at: ident) == nil ? "Hold Here…" : "Change Hold…", systemImage: WingtipIcon.holdHere)
             }
             if role == .stop {

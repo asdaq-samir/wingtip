@@ -14,7 +14,6 @@ import SwiftUI
 struct ClearanceSheet: View {
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.look) private var look
     private var listener: ClearanceListener { ClearanceListener.shared }
     /// The words read: the newest transmission settled while listening,
@@ -33,6 +32,9 @@ struct ClearanceSheet: View {
     /// next one settled is the read back, not a new clearance.
     @State private var readbackAfter = -1
     @State private var transcriptOpen = false
+    @State private var askingCancel = false
+    /// Words heard or typed, or a read back: Cancel asks before they go.
+    private var edited: Bool { !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !readback.isEmpty }
 
     /// The route's ends and the pilot's position, to look near.
     private var nearPoints: [(Double, Double)] {
@@ -96,117 +98,117 @@ struct ClearanceSheet: View {
 
     var body: some View {
         let clearance = clearance
-        NavigationStack {
-            Form {
+        Form {
+            Section {
+                ClearanceStepsRow(heard: clearance.heardAny, readBack: !readback.isEmpty, ready: ready)
+                if !clearance.heardAny {
+                    heardField
+                }
+                if let problem = listener.problem ?? lookupProblem ?? engineProblem {
+                    ProblemLine(problem)
+                }
+            } header: {
+                // The flight the clearance is for, as the canvas heads it.
+                Text([plan.dep.isEmpty ? nil : "\(plan.dep) → \(plan.dest)", "IFR", plan.tail].compactMap { $0 }.joined(separator: " · "))
+            }
+            if clearance.heardAny {
+                ClearanceCraftSection(clearance: clearance, found: found, heardAt: heardAt)
+                ClearanceReadbackSection(clearance: clearance, readback: readback, readingBack: readingBack, check: check)
+                if ready {
+                    let cleared = cleared
+                    let difference = ClearanceCompare.describe(plannedStops: plan.stops, plannedDest: plan.dest,
+                                                               clearedStops: cleared.stops, clearedDest: cleared.dest, typed: cleared.typed)
+                    ClearanceCompareSection(difference: difference)
+                }
                 Section {
-                    ClearanceStepsRow(heard: clearance.heardAny, readBack: !readback.isEmpty, ready: ready)
-                    if !clearance.heardAny {
+                    HStack(spacing: WingtipSpace.md) {
+                        Button("Enter the route") { enter() }
+                            .glassProminentButton()
+                            .disabled(!ready)
+                        if listener.canListen { Button("Read back again") { readBackAgain() }.glassButton() }
+                    }
+                    .controlSize(.large)
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                }
+                Section {
+                    DisclosureGroup("Transcript", isExpanded: $transcriptOpen) {
                         heardField
-                    }
-                    if let problem = listener.problem ?? lookupProblem ?? engineProblem {
-                        ProblemLine(problem)
-                    }
-                } header: {
-                    // The flight the clearance is for, as the canvas heads it.
-                    Text([plan.dep.isEmpty ? nil : "\(plan.dep) → \(plan.dest)", "IFR", plan.tail].compactMap { $0 }.joined(separator: " · "))
-                }
-                if clearance.heardAny {
-                    ClearanceCraftSection(clearance: clearance, found: found, heardAt: heardAt)
-                    ClearanceReadbackSection(clearance: clearance, readback: readback, readingBack: readingBack, check: check)
-                    if ready {
-                        let cleared = cleared
-                        let difference = ClearanceCompare.describe(plannedStops: plan.stops, plannedDest: plan.dest,
-                                                                   clearedStops: cleared.stops, clearedDest: cleared.dest, typed: cleared.typed)
-                        ClearanceCompareSection(difference: difference)
-                    }
-                    Section {
-                        HStack(spacing: WingtipSpace.md) {
-                            Button("Enter the route") { enter() }
-                                .glassProminentButton()
-                                .disabled(!ready)
-                            if listener.canListen { Button("Read back again") { readBackAgain() }.glassButton() }
-                        }
-                        .controlSize(.large)
-                        .frame(maxWidth: .infinity)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets())
-                    }
-                    Section {
-                        DisclosureGroup("Transcript", isExpanded: $transcriptOpen) {
-                            heardField
-                            TextField("Your read back, as said", text: $readback, axis: .vertical)
-                                .lineLimit(2...6)
-                            heardLog
-                        }
-                    }
-                } else {
-                    Section { heardLog }
-                }
-            }
-            .navigationTitle("Clearance")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                // Cancel throws away what was heard here, the plan untouched
-                // (HIG Sheets: Cancel leading, Done trailing); listening goes
-                // on with the sheet put away: the captions over the map carry
-                // it, and Stop ends it.
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                // Done enters the route, as Enter the route does: nothing
-                // heard reaches the plan before one of them.
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { enter() }.disabled(!ready) }
-                if listener.canListen { // speech recognised on the iPhone, else no Listen or Read back: typed
-                    ToolbarItem(placement: .bottomBar) {
-                        Button {
-                            if listener.listening { listener.stop() } else { following = true; Task { await listener.start(words: words) } }
-                        } label: {
-                            Label(listener.listening ? "Stop" : "Listen", systemImage: listener.listening ? "stop.circle.fill" : WingtipIcon.radio)
-                        }
-                        .glassProminentButton()
+                        TextField("Your read back, as said", text: $readback, axis: .vertical)
+                            .lineLimit(2...6)
+                        heardLog
                     }
                 }
+            } else {
+                Section { heardLog }
             }
-            .task {
-                words = (try? await Planner.clearanceWords(near: near, dep: plan.dep)) ?? []
-            }
-            // A clearance read in full is felt as a success; one with a
-            // place the reader is unsure of, as a warning, once each. In
-            // Native (Look.isStock) only the warning, which carries meaning.
-            .sensoryFeedback(.success, trigger: ready) { was, now in !look.isStock && !was && now }
-            .sensoryFeedback(.warning, trigger: ClearanceCraftSection.unsure(found)) { was, now in !was && now }
-            .onAppear { if let given = listener.sheetText { text = given; following = false } }
-            .onChange(of: listener.heard.last(where: \.final)?.text) { _, newest in
-                guard let newest else { return }
-                if readingBack, let last = listener.heard.last(where: \.final), last.id > readbackAfter {
-                    readback = newest
-                    readingBack = false
-                } else if following {
-                    text = newest
+        }
+        .navigationTitle("Clearance")
+        .navigationBarTitleDisplayMode(.inline)
+        // A swipe down asks through Cancel once something is heard or typed.
+        .formGuard(edited: edited)
+        .toolbar {
+            // Cancel throws away what was heard here, the plan untouched
+            // (HIG Sheets: Cancel leading, Done trailing); listening goes
+            // on with the sheet put away: the captions over the map carry
+            // it, and Stop ends it.
+            FormCancel(edited: edited, cancel: { Navigator.shared.finish(.clearance) }, asking: $askingCancel)
+            // Done enters the route, as Enter the route does: nothing
+            // heard reaches the plan before one of them.
+            ToolbarItem(placement: .confirmationAction) { Button("Done") { enter() }.disabled(!ready) }
+            if listener.canListen { // speech recognised on the iPhone, else no Listen or Read back: typed
+                ToolbarItem(placement: .bottomBar) {
+                    Button {
+                        if listener.listening { listener.stop() } else { following = true; Task { await listener.start(words: words) } }
+                    } label: {
+                        Label(listener.listening ? "Stop" : "Listen", systemImage: listener.listening ? "stop.circle.fill" : WingtipIcon.radio)
+                    }
+                    .glassProminentButton()
                 }
             }
-            .task(id: text) {
-                // Once the words stop changing, their places looked up.
-                guard wantsPlaces else { return }
-                let heard = text
-                try? await Task.sleep(for: .milliseconds(400))
-                guard !Task.isCancelled else { return }
-                do {
-                    found = try await Planner.clearancePlaces(try Clearance.read(heard).asked(near: near, dep: plan.dep, dest: plan.dest))
+        }
+        .task {
+            words = (try? await Planner.clearanceWords(near: near, dep: plan.dep)) ?? []
+        }
+        // A clearance read in full is felt as a success; one with a
+        // place the reader is unsure of, as a warning, once each. In
+        // Native (Look.isStock) only the warning, which carries meaning.
+        .sensoryFeedback(.success, trigger: ready) { was, now in !look.isStock && !was && now }
+        .sensoryFeedback(.warning, trigger: ClearanceCraftSection.unsure(found)) { was, now in !was && now }
+        .onAppear { if let given = listener.sheetText { text = given; following = false } }
+        .onChange(of: listener.heard.last(where: \.final)?.text) { _, newest in
+            guard let newest else { return }
+            if readingBack, let last = listener.heard.last(where: \.final), last.id > readbackAfter {
+                readback = newest
+                readingBack = false
+            } else if following {
+                text = newest
+            }
+        }
+        .task(id: text) {
+            // Once the words stop changing, their places looked up.
+            guard wantsPlaces else { return }
+            let heard = text
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            do {
+                found = try await Planner.clearancePlaces(try Clearance.read(heard).asked(near: near, dep: plan.dep, dest: plan.dest))
+                foundFor = heard
+                lookupProblem = nil
+            } catch {
+                // No signal: found by the engine among the places of
+                // the regions kept for the air, SIDs and STARs left
+                // as said.
+                let packs = CyclePacks.shared.keptPacks()
+                let offline = Engine.hear(heard, tail: nil, packs: packs, near: nearPoints,
+                                          dep: plan.dep, stops: plan.stops, dest: plan.dest)
+                if let offline, !packs.isEmpty {
+                    found = offline.found
                     foundFor = heard
-                    lookupProblem = nil
-                } catch {
-                    // No signal: found by the engine among the places of
-                    // the regions kept for the air, SIDs and STARs left
-                    // as said.
-                    let packs = CyclePacks.shared.keptPacks()
-                    let offline = Engine.hear(heard, tail: nil, packs: packs, near: nearPoints,
-                                              dep: plan.dep, stops: plan.stops, dest: plan.dest)
-                    if let offline, !packs.isEmpty {
-                        found = offline.found
-                        foundFor = heard
-                        lookupProblem = "No signal: places found among the regions kept for the air."
-                    } else {
-                        lookupProblem = "The places in it could not be looked up; check the connection and try again."
-                    }
+                    lookupProblem = "No signal: places found among the regions kept for the air."
+                } else {
+                    lookupProblem = "The places in it could not be looked up; check the connection and try again."
                 }
             }
         }
@@ -266,12 +268,12 @@ struct ClearanceSheet: View {
             plan.ownAltitudeLegal = false
         }
         plan.plan()
-        dismiss()
+        Navigator.shared.finish(.clearance)
     }
 }
 
 #Preview("ClearanceSheet") {
-    ClearanceSheet()
+    NavigationStack { ClearanceSheet() }
         .environment(Plan())
         .environment(OwnShip())
 }

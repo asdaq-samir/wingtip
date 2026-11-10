@@ -8,24 +8,23 @@ import SwiftUI
 /// the assistant looks something up its own words for that stand under
 /// the last bubble, and the answer's text appends as it streams. A
 /// question is typed, or said once through the microphone (Ask by voice,
-/// VoiceInput), its words appearing in the field as they are said. Presented as a sheet, from the sparkle
-/// button on the map or the one search's "Ask: …" (RootView places it):
-/// `.sheet(isPresented:) { AskView() }`, with Plan, OwnShip, Session and
-/// Verdict in the environment as the root puts them.
+/// VoiceInput), its words appearing in the field as they are said. A card
+/// (SheetPage.ask), from the sparkle button on the map or the one search's
+/// "Ask: …", with Plan, OwnShip, Session and Verdict in the environment as
+/// the root puts them.
 struct AskView: View {
     @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(Session.self) private var session
     @Environment(Verdict.self) private var verdict
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var client = AssistantClient()
     /// "Plan a trip…": the trip planner in the conversation's place until
     /// closed, as the web's Ask has it.
     @State private var trip: TripPlanner?
     @State private var question = ""
-    /// The chip tapped, its raw text on a sheet.
+    /// The chip tapped, its raw text pushed in this card.
     @State private var source: AssistantSource?
     /// Why the microphone could not be used, under the field.
     @State private var micProblem: String?
@@ -47,20 +46,19 @@ struct AskView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                conversation
-                Divider()
-                composer
-            }
-            .navigationTitle("Ask")
-            .navigationBarTitleDisplayMode(.inline)
-            .closeButton { dismiss() }
-            .toolbar { ToolbarItem(placement: .topBarLeading) { AskWherePicker() } }
-            .sheet(item: $source) { source in SourceSheet(source: source) }
-            .task { if let first, client.turns.isEmpty { send(first) } }
-            .onDisappear { client.cancel() }
+        VStack(spacing: 0) {
+            conversation
+            Divider()
+            composer
         }
+        .navigationTitle("Ask")
+        .toolbar { ToolbarItem(placement: .topBarLeading) { AskWherePicker() } }
+        // A chip's report pushed in Ask's own card, with Back.
+        .navigationDestination(item: $source) { source in SourceSheet(source: source) }
+        .task { if let first, client.turns.isEmpty { send(first) } }
+        // Put away, the answer stops; a report pushed over it is not
+        // putting it away.
+        .onDisappear { if source == nil { client.cancel() } }
     }
 
     private var conversation: some View {
@@ -258,30 +256,24 @@ private struct TurnBubble: View {
 }
 
 /// The raw report a chip stands for, as sent, in a fixed-width face so a
-/// METAR's groups line up as pilots read them.
+/// METAR's groups line up as pilots read them: a page of Ask's card.
 private struct SourceSheet: View {
     let source: AssistantSource
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                Text(source.text)
-                    .font(.system(.body, design: .monospaced))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(WingtipSpace.lg)
-            }
-            .navigationTitle(source.label)
-            .navigationBarTitleDisplayMode(.inline)
-            .closeButton { dismiss() }
+        ScrollView {
+            Text(source.text)
+                .font(.system(.body, design: .monospaced))
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(WingtipSpace.lg)
         }
-        .presentationDetents([.medium, .large])
+        .navigationTitle(source.label)
     }
 }
 
 #Preview("AskView") {
-    AskView()
+    NavigationStack { AskView() }
         .environment(Session())
         .environment(Plan())
         .environment(OwnShip())

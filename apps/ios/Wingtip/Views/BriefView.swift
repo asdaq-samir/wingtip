@@ -198,7 +198,7 @@ struct BriefView: View {
                 if plan.routed {
                     Section {
                         NavigationLink {
-                            PassengerBriefingView(flight: PassengerBriefingModel.flight(idents: plan.idents)).navigationBarTitleDisplayMode(.inline)
+                            PassengerBriefingView(flight: PassengerBriefingModel.flight(idents: plan.idents))
                         } label: {
                             Label("Passenger Briefing", systemImage: "person.2")
                         }
@@ -209,7 +209,6 @@ struct BriefView: View {
         .siriSees(SiriSaw.flight(plan))
         .navigationTitle("Brief")
         .navigationBarMinimizesOnScroll()
-        .navigationBarTitleDisplayMode(.inline)
         // The flight started from the Brief's foot (its Live Activity).
         .glassFoot { if plan.routed { StartFlightBar() } }
         // The UI tests' sign the Brief is up (WingtipUITests/FlowTests).

@@ -32,45 +32,10 @@ enum RootLayout: Equatable {
     }
 }
 
-/// A second-level card, which the iPad shows in the inspector beside the
-/// map rather than over the plan: a field's or a point's (as AirportRoute
-/// writes it), the profile, the brief, or the flight's own cards
-/// (FlightUI's: an airplane, a hold, a flown track and its replay).
-enum SideCard: Hashable {
-    case airport(String)
-    case profile
-    case brief
-    case flight
-    /// The pilot's saved flights (the plan's Flights button).
-    case flights
-}
-
 extension EnvironmentValues {
-    /// Set in the iPad's layout: the flight's cards go to the inspector.
+    /// Set in the iPad's layout: the plan's sheet holds no card of its
+    /// own there, the inspector does (Navigator).
     @Entry var splitLayout = false
-    /// Opens a card in the inspector; nil on the iPhone, where it is
-    /// pushed on the sheet's stack.
-    var openCard: (@MainActor (SideCard) -> Void)? {
-        get { self[OpenCardKey.self] }
-        set { self[OpenCardKey.self] = newValue }
-    }
-    /// Closes the inspector's card; nil on the iPhone.
-    var closeCard: (@MainActor () -> Void)? {
-        get { self[CloseCardKey.self] }
-        set { self[CloseCardKey.self] = newValue }
-    }
-}
-
-// Keys of their own rather than @Entry, whose macro warns of any closure
-// it stores (one cannot be compared, so a new one invalidates its
-// readers): the iPad's layout sets these, read by a link and a close
-// button, as OneField's openStripScreen is, and they behave as before.
-private struct OpenCardKey: EnvironmentKey {
-    static let defaultValue: (@MainActor (SideCard) -> Void)? = nil
-}
-
-private struct CloseCardKey: EnvironmentKey {
-    static let defaultValue: (@MainActor () -> Void)? = nil
 }
 
 /// The iPad's layout: stock SwiftUI throughout. The plan under the one
@@ -80,18 +45,14 @@ private struct CloseCardKey: EnvironmentKey {
 /// flight's figures along the foot of the map.
 struct SplitLayout<Map: View>: View {
     let map: Map
-    /// The sheet's stack, the sidebar's here: a field or a point pushed on
-    /// it opens in the inspector instead (RootLayout.inspects).
-    @Binding var path: [SheetPage]
     let search: OneSearchModel
-    @Binding var card: SideCard?
     let openScreen: (Screen) -> Void
     let ask: (String?) -> Void
     @State private var columns: NavigationSplitViewVisibility = .all
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columns) {
-            PlanSheet(path: sidebarPath, card: .constant(nil), search: search, openScreen: openScreen, ask: ask)
+            PlanSheet(search: search, openScreen: openScreen, ask: ask)
                 .navigationSplitViewColumnWidth(min: 320, ideal: 375, max: 420)
         } detail: {
             map
@@ -117,97 +78,29 @@ struct SplitLayout<Map: View>: View {
         }
         .navigationSplitViewStyle(.balanced)
         .environment(\.splitLayout, true)
-        .environment(\.openCard, { card = $0 })
-        .environment(\.closeCard, { close() })
         // A card's action done in the inspector (Fly Here, Fly This
         // Airplane): the card put away and the plan in the sidebar shown.
         .environment(\.showPlan, {
             search.close()
-            path = []
-            close()
+            Navigator.shared.showPlan()
         })
-        // A flight's card (an airplane tapped, a hold, a flown track) opens
-        // here; put away from inside, the inspector closes with it.
-        .onChange(of: FlightUI.shared.card) { _, next in
-            if next != nil {
-                card = .flight
-            } else if card == .flight {
-                card = nil
-                Tracking.shared.track(nil)
-            }
-        }
-    }
-
-    /// The sheet's stack, as the sidebar sees it: a field or a point
-    /// pushed there opens in the inspector instead.
-    private var sidebarPath: Binding<[SheetPage]> {
-        Binding(
-            get: { path },
-            set: { next in
-                if next.count > path.count, let last = next.last?.airportRoute, RootLayout.inspects(AirportRoute(last)) {
-                    card = .airport(last)
-                } else {
-                    path = next
-                }
-            })
     }
 
     private var inspectorShown: Binding<Bool> {
-        Binding(get: { card != nil }, set: { shown in if !shown { close() } })
+        Binding(get: { Navigator.shared.card != nil }, set: { shown in if !shown { Navigator.shared.close() } })
     }
 
-    private func close() {
-        if card == .flight {
-            FlightUI.shared.card = nil
-            Tracking.shared.track(nil)
-        }
-        card = nil
-    }
-
+    /// The card, the same one the iPhone's sheet draws (CardStack), a new
+    /// one for each thing opened.
     @ViewBuilder private var inspector: some View {
-        switch card {
-        case .airport(let text):
-            NavigationStack {
-                AirportDestination(route: AirportRoute(text), nearest: []).toolbar { closeItem }
-                    // The card's own links (its NOTAMs, Ready to Fly's Brief)
-                    // push in the inspector, as they do in the iPhone's sheet.
-                    .navigationDestination(for: SheetPage.self) { page in SheetPageView(page: page, nearest: []) }
-            }
-            .id(text)
-        case .profile:
-            NavigationStack { ProfileCard().toolbar { closeItem } }
-        case .brief:
-            NavigationStack {
-                BriefView().toolbar { closeItem }
-                    .navigationDestination(for: SheetPage.self) { page in SheetPageView(page: page, nearest: []) }
-            }
-        case .flights:
-            NavigationStack { FlightsView().toolbar { closeItem } }
-        case .flight:
-            // Each has its own stack and close (FlightSheets' cards).
-            switch FlightUI.shared.card {
-            case .airplane(let hex): AirplaneCard(hex: hex).id(hex)
-            case .hold(let fix): HoldSheet(fix: fix).id(fix)
-            case .flown(let id, let title): FlownTrackView(flight: id, title: title).id(id)
-            case .leg(let index): RouteLegSheet(index: index).id(index)
-            case nil: EmptyView()
-            }
-        case nil:
-            EmptyView()
-        }
-    }
-
-    private var closeItem: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            CloseButton { close() }
+        if let card = Navigator.shared.card {
+            CardStack(card: card, search: search).id(card)
         }
     }
 }
 
 #Preview("SplitLayout") {
-    @Previewable @State var path: [SheetPage] = []
-    @Previewable @State var card: SideCard? = nil
-    SplitLayout(map: Color(.secondarySystemBackground).ignoresSafeArea(), path: $path, search: OneSearchModel(), card: $card,
+    SplitLayout(map: Color(.secondarySystemBackground).ignoresSafeArea(), search: OneSearchModel(),
                 openScreen: { _ in }, ask: { _ in })
         .environment(Session())
         .environment(Charts())

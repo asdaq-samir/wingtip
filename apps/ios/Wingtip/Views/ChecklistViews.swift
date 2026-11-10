@@ -76,7 +76,6 @@ struct ChecklistView: View {
             }
         }
         .navigationTitle(model.title)
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -89,12 +88,12 @@ struct ChecklistRows: View {
 
     var body: some View {
         NavigationLink {
-            ChecklistView(airplane: airplane, kind: .normal).navigationBarTitleDisplayMode(.inline)
+            ChecklistView(airplane: airplane, kind: .normal)
         } label: {
             Label("Checklist", systemImage: "checklist")
         }
         NavigationLink {
-            ChecklistView(airplane: airplane, kind: .emergency).navigationBarTitleDisplayMode(.inline)
+            ChecklistView(airplane: airplane, kind: .emergency)
         } label: {
             Label("Emergency", systemImage: "exclamationmark.triangle")
         }
@@ -125,7 +124,6 @@ struct ChecklistsPage: View {
             }
         }
         .navigationTitle(Screen.checklists.title)
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
