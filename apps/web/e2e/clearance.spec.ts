@@ -8,7 +8,7 @@ import { openPanel, settle, sideDrawer, slow } from "./helpers";
  * nothing yet. Its items are shown there -- the limit and the route
  * found as idents, the altitudes, the frequency and the code -- the
  * Enter row says what it would put in and Compare how that differs from
- * the route planned, and only Enter Route changes the plan: the route
+ * the route planned, and only Use This Route changes the plan: the route
  * through Gopher (GEP), "then as filed", and the expected altitude flown
  * (AIM 4-4-3, 5-2-6).
  */
@@ -59,8 +59,8 @@ test("a clearance read is shown in its items and entered as the route", async ({
 
 /**
  * Typing works as well as speaking (docs/design/web.md §12): Enter in the
- * field reads what was typed at once, and Use This Route, filled under the
- * clearance's items, enters it.
+ * field reads what was typed at once, and Use This Route, the Enter row's
+ * one button, enters it.
  */
 test("Enter in the typed clearance reads it, and Use This Route enters it", async ({ page }) => {
   // No recognizer, as the first test's: the comms button opens the card to type in.
@@ -80,8 +80,10 @@ test("Enter in the typed clearance reads it, and Use This Route enters it", asyn
   await expect(field).not.toHaveValue(/\n/);
   const body = page.getByTestId("clearance-body");
   await expect(body.getByTestId("clearance-elements")).toContainText("4521");
-  const use = body.getByTestId("clearance-use");
-  await expect(use).toBeVisible({ timeout: slow(20_000) });
+  const use = body.getByTestId("clearance-enter");
+  await expect(use).toHaveText("Use This Route");
+  await expect(use).toBeEnabled({ timeout: slow(20_000) });
+  await expect(body.getByRole("button", { name: "Use This Route" })).toHaveCount(1);
   await use.click();
   await expect(page).toHaveURL(/stops=GEP/, { timeout: slow(10_000) });
 });
