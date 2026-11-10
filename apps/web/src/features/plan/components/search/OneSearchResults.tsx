@@ -6,6 +6,7 @@ import { TEXT } from "../../../../lib/text";
 import { PreviewCard, PreviewCardContent, PreviewCardTrigger } from "../../../../components/ui/preview-card";
 import { usePointerHover } from "../../../../hooks/use-pointer-hover";
 import { useKeyHint } from "../../../../lib/shortcutKeys";
+import { setSearchHot, useSearchMarks } from "../../../../lib/map/marks/searchMarks";
 import AirportPreview from "../preview/AirportPreview";
 import type { DoHit, OneSearchModel } from "../../hooks/useOneSearch";
 
@@ -27,7 +28,10 @@ function doGlyph(hit: DoHit) {
  * Navaids, Airplanes, Do -- each row Base UI Autocomplete's item, so the
  * field's arrows and Enter walk them and a screen reader hears each group's
  * name with its rows (OneSearchField holds the field, the same
- * Autocomplete root round both). Asked for Direct To, the airports alone,
+ * Autocomplete root round both). On a desktop the airports are numbered
+ * as their marks on the map are, each lit with its mark under the pointer,
+ * and the highlighted row names its second action with its keys (⌘Enter:
+ * Fly Here, Direct To). Asked for Direct To, the airports alone,
  * under that name, and why one could not be flown said here (lib/problems'
  * rule: where it happens).
  */
@@ -39,6 +43,10 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
   // A row's key as the pilot presses it (lib/shortcutKeys), none when off.
   const hint = useKeyHint();
   const none = airports.length + waypoints.length + airplanes.length + does.length === 0;
+  // On a desktop the airports' numbered marks on the map: the row under the
+  // pointer lights its mark, and a mark under it lights its row.
+  const hot = useSearchMarks((s) => s.hot);
+  const lightMark = model.numbered ? (ident: string) => (on: boolean) => setSearchHot(on ? ident : null) : null;
   return (
     <div className="flex flex-col gap-2 px-4 pt-2 pb-4" data-testid="one-search-results">
       {problem && (
@@ -53,12 +61,16 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
       >
         {airports.length > 0 && (
           <PickerGroup heading={direct ? "Direct To" : "Airports"}>
-            {airports.map((r) => {
+            {airports.map((r, i) => {
               const row = (
                 <AirportRow
                   key={r.ident}
                   airport={{ ident: r.ident, name: r.name, municipality: r.municipality }}
                   onSelect={() => model.pickAirport(r)}
+                  number={model.numbered ? i + 1 : undefined}
+                  second={model.secondOf(r.ident)}
+                  hot={model.numbered && hot === r.ident}
+                  onHover={lightMark?.(r.ident)}
                 />
               );
               return hover ? (
@@ -80,8 +92,10 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
               <AirportRow
                 key={r.ident}
                 waypoint
+                value={`fix:${r.ident}`}
                 airport={{ ident: r.ident, name: r.name, municipality: r.region }}
                 onSelect={() => model.pickWaypoint(r.ident)}
+                second={model.secondOf(`fix:${r.ident}`)}
                 testId="search-waypoint"
               />
             ))}

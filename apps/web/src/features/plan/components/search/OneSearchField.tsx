@@ -96,10 +96,25 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
           aria-label={model.placeholder}
           data-testid="search-airports"
           onFocus={model.focus}
+          // The APG combobox's keys (docs/design/web.md §1) are Base UI's,
+          // the focus kept here and the row by aria-activedescendant; with
+          // these: Escape lets the field go, Alt+Down (open without moving)
+          // leaves the highlight where it is as the list is always open,
+          // ⌘Enter or Ctrl Enter runs the row's second action, and Enter
+          // before the arrows have picked a row opens the first result.
           onKeyDown={(e) => {
             if (e.key === "Escape") {
               e.preventDefault();
               model.cancel();
+            } else if (e.key === "ArrowDown" && e.altKey) {
+              e.preventDefault();
+              e.preventBaseUIHandler();
+            } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && model.runSecond()) {
+              e.preventDefault();
+              e.preventBaseUIHandler();
+            } else if (e.key === "Enter" && !e.altKey && !e.shiftKey && model.runFirst()) {
+              e.preventDefault();
+              e.preventBaseUIHandler();
             }
           }}
           className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
