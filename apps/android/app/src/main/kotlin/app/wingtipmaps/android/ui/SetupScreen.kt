@@ -61,15 +61,17 @@ import app.wingtipmaps.android.strip.StripData
 import app.wingtipmaps.android.welcome.WelcomeMemory
 
 /**
- * Settings, the account menu's page (what the Setup tab held, the owner's
- * one search of 2026-11-09): how the app looks (the screen's layout, the
+ * Settings, the account button's page, opened by its tap alone (what the
+ * Setup tab held, the owner's one search of 2026-11-09, and the account
+ * menu's rows since 2026-11-10): how the app looks (the screen's layout, the
  * theme), the account -- signed in, the pilot's address and Sign Out;
  * signed out, an address and the emailed link, which opens the app and
  * signs it in (Session.open) -- what falls due, the pilot's minimums,
  * what the map draws and the copilots. The server the build talks to is
  * shown, for a tester with more than one. Each section under one
- * SectionTitle. The Logbook, Coach, Downloads, the passenger briefing and
- * About are the account menu's own rows (AccountMenu), each in one place.
+ * SectionTitle. The Logbook and Coach (signed in), Downloads, the
+ * passenger briefing and About are rows that open their pages
+ * (SettingsPages), each in one place.
  */
 @Composable
 fun SetupScreen(session: Session) {
@@ -129,6 +131,8 @@ fun SetupScreen(session: Session) {
         signedIn?.let { ComingUpSection(signedInAs = it.email) }
         // Everything the account holds, as a file the pilot keeps.
         if (signedIn != null) ExportRow()
+        // The Logbook and its Coach are the account's.
+        if (signedIn != null) PilotPageRows()
         // The pilot's own minimums, kept on this phone (no sign-in), as
         // the web keeps them with the pilot's own things.
         SectionTitle(stringResource(R.string.personal_minimums))
@@ -167,6 +171,9 @@ fun SetupScreen(session: Session) {
         // Where the app's AI words are made: Gemini Nano on this phone, or
         // Wingtip's assistant (docs/android-ai.md).
         OnPhoneAiRow()
+
+        // Downloads, the passenger briefing and About.
+        AppPageRows()
 
         // The welcome once more, from its first page (WelcomeHost, over
         // whatever is open): its one home; and the server the build talks

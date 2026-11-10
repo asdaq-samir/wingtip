@@ -60,7 +60,7 @@ import app.wingtipmaps.android.ui.sheet.rememberMapSheetState
  * head with the Brief's verdict and at most three actions (StripHead,
  * BriefModel), and the timeline (stripList). In the air the ribbon
  * carries the airplane and the next checkpoint large (StripAir). The
- * screens the search and the account menu open -- a field's card, the
+ * screens the search and the account button open -- a field's card, the
  * airplane, Settings, Ask -- and a checkpoint's leg and the Brief are each
  * a sheet with a close that goes back one level (the root's).
  *

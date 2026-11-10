@@ -46,7 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.account.AccountMenu
+import app.wingtipmaps.android.account.AccountButton
 import app.wingtipmaps.android.airplane.OwnAirplanes
 import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.atc.RadioListener
@@ -62,7 +62,7 @@ import kotlinx.coroutines.launch
  * The sheet's first row in both layouts, where the tabs were (the owner's
  * one search, 2026-11-09): Material's search bar, "Search airports,
  * airplanes, or ask", then the microphone as a button of its own and the
- * account button (AccountMenu, what Setup was). Tapped, the bar opens
+ * account button (AccountButton, Settings in one tap). Tapped, the bar opens
  * full screen, as Material's does: with nothing typed the flight's card,
  * Favorites, Recents and Nearest; typing, the results grouped (Airports,
  * Waypoints and Navaids, Airplanes, Do), each one tap (SearchPick, done by
@@ -91,7 +91,6 @@ fun OneSearch(
     onLine: (String) -> Unit,
     onPick: (SearchPick) -> Unit,
     onProblem: (String) -> Unit,
-    onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
     model: SearchModel = viewModel(),
 ) {
@@ -214,7 +213,7 @@ fun OneSearch(
                     Icon(Icons.Filled.Mic, contentDescription = stringResource(if (listening) R.string.voice_listening else R.string.say_it))
                 }
             }
-            AccountMenu(pilot = pilot, onSignOut = onSignOut)
+            AccountButton(pilot = pilot)
         }
         if (problem != null) {
             Text(problem, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = WingtipSpace.Lg))

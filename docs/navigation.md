@@ -200,9 +200,10 @@ map with the sheet at rest: the search or a row of the plan is 1.
 | Airplane (was the tab) | the plan's Airplane button; the search's types | 2 | N-number typed, No Airplane |
 | Figures strip | the sheet's foot, with a route | 0 | Tapped, the nav log |
 | Nav Log | the plan's ••• → Nav Log; the strip | 2 / 1 | -- |
-| Brief, Profile, Flights | the plan's row or bar; the search's Do; the account menu | 2 | Saved flights: swipe to delete with an Undo row |
-| Settings (was Setup) and its pages (Logbook, Coach, Minimums, Guide, Downloads, About, Practice, Your Airplanes, Checklists) | the account button → row | 1 → **2** | Logbook entry edited in the row; swipe delete with an Undo row |
-| Emergency | the instruments bar; the account menu; "mayday" in the search | 1 / 2 | Its frequencies copy |
+| Brief, Profile, Flights | the plan's row or bar; the search's Do; Settings' Flights row | 2 | Saved flights: swipe to delete with an Undo row |
+| Settings (was Setup) | the account button, opening Settings with no menu between (the owner, 2026-11-10) | 1 → 1 | Every switch and picker in place; Sign In or the account's page with Sign Out |
+| Settings' pages (Logbook, Coach, Minimums, Guide, Downloads, About, Practice, Your Airplanes, Checklists) | the account button → row | 2 → 2 | Logbook entry edited in the row; swipe delete with an Undo row |
+| Emergency | the instruments bar; Settings' Emergency row; "mayday" in the search | 1 / 2 | Its frequencies copy |
 | An alert ahead, a copilot message | the banner | 0 | Tapped: the airspace card; the message's Direct To and More Info |
 
 ### Android
@@ -222,9 +223,9 @@ map with the sheet at rest; typing in the search is not counted.
 | Airport card (was the Airport tab) | search → the field; or tap it on the map | 1 → 1 + typing (map 1) | **Fly Here (with its time), Depart From, Add as Stop, Diagram, Call, Address at its foot; the star for Favorites; Overview with its pictures, Weather, Frequencies (tap to copy), Runways, Approaches, NOTAMs** |
 | Airplane (was the Airplane tab), checklists | the flight's card → Airplane → Checklist | 2 → 3 | Ticks; Edit as text |
 | An airplane's card | search → the airplane (yours, an N-number from the FAA registry, a type) | -- → 1 + typing | **Fly This Airplane; its figures, each a tap to edit; its checklists** |
-| Settings (was Setup) | account → Settings | 1 → 2 | Layout, theme, account, minimums, the map, the copilots |
-| Logbook, Coach | account → Logbook / Coach | 2 → 2 | Logbook entries edited in the row; Delete with an Undo row |
-| Downloads, Passenger Briefing, About | account → the row | 2 → 2 | Downloads delete with no confirm or Undo |
+| Settings (was Setup) | the account button, opening Settings with no menu between (the owner, 2026-11-10) | 1 → 1 | Layout, theme, account (Sign In, Sign Out), minimums, the map, the copilots |
+| Logbook, Coach | account → Settings' Logbook / Coach row; closing goes back to Settings | 2 → 2 | Logbook entries edited in the row; Delete with an Undo row |
+| Downloads, Passenger Briefing, About | account → Settings' row; closing goes back to Settings | 2 → 2 | Downloads delete with no confirm or Undo |
 | Emergency | Instruments bar; search "emergency" → Emergency Assistant; Airplane → Emergency Assistant | 1 | Its frequencies copy |
 | Alerts ahead, a copilot message | the banner | 1 | Tapped: the Ahead sheet, More Info on a Class B, C or D; the message's Fly to and More Info |
 | Nearest, Ask | Instruments bar; the sparkle; Nearest also under the search | 1 | -- |

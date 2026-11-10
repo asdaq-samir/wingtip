@@ -33,7 +33,7 @@ import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
 /**
  * A screen in a sheet over the map (Over), the same in both layouts: the
- * airplane, the account menu's pages
+ * airplane, Settings and its pages
  * -- Settings, the Logbook, Downloads, the passenger briefing, About --
  * Ask, and the clearance card, each under Material's flexible top bar
  * with its title and a close at the end that goes back to where it was

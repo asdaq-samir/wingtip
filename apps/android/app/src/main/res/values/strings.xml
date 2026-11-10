@@ -226,13 +226,12 @@
     <string name="checklist_normal_line">This airplane\'s normal procedures</string>
     <string name="checklist_emergency_line">This airplane\'s emergency procedures</string>
 
-    <!-- Settings, from the account menu (decision 0014). -->
+    <!-- Settings, the account button's page (decision 0014). -->
     <string name="layout">Layout</string>
     <string name="layout_plan">Plan</string>
     <string name="layout_strip">Strip</string>
     <string name="theme">Theme</string>
     <string name="account">Account</string>
-    <string name="sign_in">Sign In</string>
     <string name="sign_out">Sign Out</string>
     <string name="email">Email</string>
     <string name="email_sign_in_link">Email Me a Sign-In Link</string>
@@ -281,7 +280,7 @@
     <string name="about_terms">Terms of Use</string>
     <string name="about_support">Support</string>
     <string name="about_demo_flight">Demo Flight</string>
-    <string name="pilot_menu">Account and settings</string>
+    <string name="account_and_settings">Account and settings</string>
 
     <!-- Live reports from SWIM on the airport and airspace cards (live/). -->
     <string name="live_programs">Ground Stops and Delays</string>

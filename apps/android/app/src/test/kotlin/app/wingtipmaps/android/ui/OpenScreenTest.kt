@@ -21,7 +21,7 @@ class OpenScreenTest {
     }
 
     @Test
-    fun theAccountMenusPagesOpenInTheirSheets() {
+    fun theSettingsPagesOpenInTheirSheets() {
         assertEquals(Where.Sheet(Over.Logbook), OpenScreen.whereOf(Screen.LOGBOOK))
         assertEquals(Where.Sheet(Over.Logbook), OpenScreen.whereOf(Screen.COACH))
         assertEquals(Where.Sheet(Over.Downloads), OpenScreen.whereOf(Screen.DOWNLOADS))
