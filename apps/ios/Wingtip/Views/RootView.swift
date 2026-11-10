@@ -143,6 +143,8 @@ struct RootView: View {
         .lookTint()
         // The key actions' taps, none with Reduce Motion on (Feel).
         .modifier(FeelHost())
+        // ⌘F, ⌘B and ⌘L with a hardware keyboard (KeyboardShortcuts).
+        .modifier(KeyboardShortcuts(search: { search.presented = true }, open: { openScreen($0) }))
     }
 
     /// A field or a point opened from the map: its card on the sheet's
@@ -259,7 +261,7 @@ struct RootView: View {
                     // credit beside the internet's traffic it covers.
                     ReceiverChip()
                     if traffic.credited { MapChip(Traffic.credit(traffic.source)) }
-                    if traffic.on, !traffic.planes.isEmpty, let problem = traffic.marksProblem { MapChip(problem, colour: .orange) }
+                    if traffic.on, !traffic.planes.isEmpty, let problem = traffic.marksProblem { MapChip(problem, colour: WingtipInk.caution) }
                 }
                 .padding(.leading, WingtipSpace.md).padding(.top, WingtipSpace.md)
             }
