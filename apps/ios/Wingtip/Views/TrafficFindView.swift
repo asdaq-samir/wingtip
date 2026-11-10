@@ -73,7 +73,13 @@ struct TrafficFindView: View {
                     if failed, asked == wanted {
                         Text("Couldn't search. Try again in a moment.").font(.footnote).foregroundStyle(WingtipInk.problem)
                     } else if asked != wanted || found == nil, listed.isEmpty {
-                        Skeleton(rows: 2, label: "Fetching \(wanted)")
+                        ForEach(0..<2, id: \.self) { _ in
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                                Text("N-number").font(.headline)
+                                Text("Maker and model · in the air or not").font(.footnote).foregroundStyle(.secondary)
+                            }
+                            .loading("Fetching \(wanted)")
+                        }
                     }
                 } header: {
                     Text("Found")

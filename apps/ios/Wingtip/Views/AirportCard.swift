@@ -73,7 +73,7 @@ struct AirportCard: View {
                     if !notFound { Button("Try Again") { Task { await load() } } }
                 }
             } else {
-                Skeleton(rows: 4, label: "Fetching \(ident)")
+                Section { ForEach(["Elevation", "Longest runway", "Tower", "Fuel"], id: \.self) { LabeledContent($0, value: "Figure").loading("Fetching \(ident)") } }
             }
         }
         // Inset-grouped rows under a large title, as iOS's own cards are

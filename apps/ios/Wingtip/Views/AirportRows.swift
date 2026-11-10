@@ -286,7 +286,12 @@ struct StopServicesSections: View {
                     Button("Try Again") { Task { await load() } }
                 }
             } else {
-                Section("Services") { Skeleton(rows: 2, label: "Fetching the services") }
+                Section("Fuel") {
+                    ForEach(0..<2, id: \.self) { _ in
+                        CardRow(badge: RowBadge(systemImage: "fuelpump", colour: Badge.fuel), title: "The fuel sold on the field")
+                            .loading("Fetching the services")
+                    }
+                }
             }
         }
         .task(id: ident) { await load() }

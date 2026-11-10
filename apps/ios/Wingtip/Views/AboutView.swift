@@ -15,7 +15,9 @@ struct AboutView: View {
         List {
             Section {
                 VStack(spacing: WingtipSpace.sm) {
-                    WingtipMark().frame(width: 64, height: 64)
+                    // The launch screen's own mark (Assets LaunchMark), still.
+                    Image("LaunchMark").resizable().scaledToFit().frame(width: 64, height: 64)
+                        .accessibilityHidden(true)
                     Text("Wingtip Maps").font(.title2.weight(.semibold))
                 }
                 .frame(maxWidth: .infinity)

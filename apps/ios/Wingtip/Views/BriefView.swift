@@ -180,7 +180,15 @@ struct BriefView: View {
                 } else if let problem = plan.briefingProblem {
                     ContentUnavailableView("No briefing", systemImage: "exclamationmark.triangle", description: Text(problem))
                 } else {
-                    Section { Skeleton(rows: 4, label: "Fetching the briefing") }
+                    Section("METARs") {
+                        ForEach(0..<4, id: \.self) { _ in
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                                Text("Station").font(.headline)
+                                Text("The station's report as the weather service sends it").font(.footnote.monospaced()).foregroundStyle(.secondary)
+                            }
+                            .loading("Fetching the briefing")
+                        }
+                    }
                 }
                 // The route's NOTAMs, fetched for Ready to fly (91.103, AIM 5-1-3).
                 if plan.routed { NotamsSection() }

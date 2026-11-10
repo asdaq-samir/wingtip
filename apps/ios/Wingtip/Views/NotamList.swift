@@ -48,7 +48,15 @@ struct NotamListView: View {
             } else if let problem {
                 Section { ProblemLine(problem) }
             } else {
-                Skeleton(rows: 4, label: "Fetching NOTAMs")
+                Section {
+                    ForEach(0..<4, id: \.self) { _ in
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                            Text("The NOTAM's subject").font(.headline)
+                            Text("What it says and until when, in plain words").font(.subheadline).foregroundStyle(.secondary)
+                        }
+                        .loading("Fetching NOTAMs")
+                    }
+                }
             }
         }
         .listStyle(.insetGrouped)
