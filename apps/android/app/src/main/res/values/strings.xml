@@ -378,7 +378,6 @@
     <!-- The Logbook's Coach, the pilot's proficiency plan (coach/). -->
     <string name="coach">Coach</string>
     <string name="coach_line">What is due, and sessions to fly for it</string>
-    <string name="coach_certificate">Your Certificate</string>
     <string name="coach_certificate_short">Certificate</string>
     <string name="certificate_student">Student</string>
     <string name="certificate_private">Private or Higher</string>

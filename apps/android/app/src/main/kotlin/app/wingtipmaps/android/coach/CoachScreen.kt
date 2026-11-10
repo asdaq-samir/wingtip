@@ -1,7 +1,9 @@
 package app.wingtipmaps.android.coach
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -12,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenu
@@ -19,12 +22,16 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,9 +40,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
@@ -47,36 +54,68 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.LocalWingtipPalette
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
+import app.wingtipmaps.android.ui.WingtipIcons
 
 /**
  * The Logbook's Coach (the web's CoachPage): the pilot's own proficiency
- * plan. On the pilot's ask, glance first: the reminders, the plan in a
- * few words, the sessions -- what, where, how long, with an instructor,
- * where it may count toward WINGS, and the model's line under each --
- * then what is due and when (14 CFR 61.56, 61.57), then the weak areas
- * with their evidence folded under each. All of it the engine's
- * (proficiency_plan) but the words.
+ * plan, under Material's medium flexible top app bar, which collapses as
+ * the list scrolls. On the pilot's ask, glance first: the certificate and
+ * Make My Plan in one card at the top, the screen's one filled button,
+ * then the reminders, the plan in a few words, the sessions -- what,
+ * where, how long, with an instructor, where it may count toward WINGS,
+ * and the model's line under each -- then what is due and when (14 CFR
+ * 61.56, 61.57), then the weak areas with their evidence folded under
+ * each. All of it the engine's (proficiency_plan) but the words.
+ *
+ * @param onClose the bar's Close (decision 0015); with none, the screen
+ *   sits under its host's own title row and draws no bar of its own.
  */
 @Composable
-fun CoachScreen() {
+fun CoachScreen(onClose: (() -> Unit)? = null) {
     val context = LocalContext.current
     val model = viewModel { CoachModel(keeper = CertificatePreference.of(context)) }
     val state by model.state.collectAsStateWithLifecycle()
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg)) {
-        item {
-            SectionTitle(stringResource(R.string.coach_certificate))
+    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.fillMaxSize().nestedScroll(scroll.nestedScrollConnection),
+        containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets(0),
+        topBar = {
+            if (onClose != null) {
+                MediumFlexibleTopAppBar(
+                    title = { Text(stringResource(R.string.coach)) },
+                    actions = { IconButton(onClick = onClose) { Icon(WingtipIcons.close, contentDescription = stringResource(R.string.close)) } },
+                    windowInsets = WindowInsets(0),
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+                    scrollBehavior = scroll,
+                )
+            }
+        },
+    ) { padding ->
+        LazyColumn(Modifier.fillMaxSize().padding(padding).padding(horizontal = WingtipSpace.Lg), contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
+            item(key = "make") { MakeCard(state, model) }
+            state.plan?.let { plan(it, state) }
+        }
+    }
+}
+
+/** The certificate held and Make My Plan, the Coach's one primary action,
+ *  in a card at the top with what it is made from and how it went. */
+@Composable
+private fun MakeCard(state: CoachModel.State, model: CoachModel) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             CertificateMenu(state.certificate, model::choose)
-            Button(onClick = model::make, enabled = state.ready && !state.making, modifier = Modifier.padding(top = WingtipSpace.Md)) {
+            Button(onClick = model::make, enabled = state.ready && !state.making, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(if (state.plan != null) R.string.coach_make_again else R.string.coach_make))
             }
             Muted(
                 if (state.making) stringResource(R.string.coach_making)
                 else stringResource(R.string.coach_make_line, state.home ?: stringResource(R.string.coach_home_none)),
             )
-            if (state.making) LinearProgressIndicator(Modifier.fillMaxWidth().padding(vertical = WingtipSpace.Sm))
-            ProblemLine(state.problem, Modifier.padding(vertical = WingtipSpace.Sm))
+            if (state.making) LinearProgressIndicator(Modifier.fillMaxWidth())
+            ProblemLine(state.problem)
         }
-        state.plan?.let { plan(it, state) }
     }
 }
 
@@ -132,9 +171,10 @@ private fun LazyListScope.plan(plan: ProficiencyPlan, state: CoachModel.State) {
         items(plan.weakAreas, key = { "w:" + it.key }) { w ->
             var open by rememberSaveable(w.key) { mutableStateOf(false) }
             ListItem(
+                onClick = { open = !open },
                 trailingContent = { Icon(if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { open = !open },
+                modifier = Modifier.fillMaxWidth(),
                 content = { Text(CoachLines.weakTitle(w)) },
             )
             if (open) {

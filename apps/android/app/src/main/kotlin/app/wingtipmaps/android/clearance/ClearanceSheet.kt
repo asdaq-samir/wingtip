@@ -1,6 +1,8 @@
 package app.wingtipmaps.android.clearance
 
 import android.Manifest
+import android.os.Build
+import android.view.HapticFeedbackConstants
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -24,6 +26,7 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -48,6 +51,7 @@ import app.wingtipmaps.android.atc.Heard
 import app.wingtipmaps.android.atc.RadioListener
 import app.wingtipmaps.android.atc.micAllowed
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.documents.ClearancePhotoRow
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.format.Format
@@ -67,7 +71,11 @@ import java.util.Locale
  * frequency, transponder; AIM 4-4-3); the pilot's read back checked by
  * the engine line by line; the route cleared against the one filed; and
  * Enter the Route, which plans it at the altitude to expect (else the
- * one to maintain). The transcript folds under them.
+ * one to maintain). The transcript folds under them. Enter the Route,
+ * the card's one filled button, and Read Back Again sit at the sheet's
+ * foot, out of the scroll, where the thumb finds them every time
+ * (Material's bottom action, Google's finding on big actions near the
+ * thumb); the clearance understood is felt as Android's Confirm.
  */
 @Composable
 fun ClearanceSheet(plan: Plan, fix: OwnShip.Fix?, onClose: () -> Unit) {
@@ -102,6 +110,15 @@ fun ClearanceSheet(plan: Plan, fix: OwnShip.Fix?, onClose: () -> Unit) {
         model.flight(ClearanceModel.Flight(planned.dep, planned.stops, planned.dest, points.joinToString(";") { String.format(Locale.US, "%.4f,%.4f", it.first, it.second) }))
     }
     var transcript by rememberSaveable { mutableStateOf(false) }
+    // Felt once as the clearance comes to be understood, not on opening a
+    // card that already has one.
+    val understood = state.clearance != null && state.heard
+    val haptics = rememberHaptics()
+    var wasUnderstood by remember { mutableStateOf(understood) }
+    LaunchedEffect(understood) {
+        if (understood && !wasUnderstood) haptics.tap(UNDERSTOOD)
+        wasUnderstood = understood
+    }
     WingtipSheet(
         title = stringResource(R.string.clearance), onClose = onClose, full = true,
         actions = {
@@ -114,7 +131,7 @@ fun ClearanceSheet(plan: Plan, fix: OwnShip.Fix?, onClose: () -> Unit) {
         },
     ) {
         Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
+            Modifier.weight(1f, fill = false).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Md),
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
         ) {
             // The flight the clearance is for, as the canvas heads it.
@@ -132,16 +149,6 @@ fun ClearanceSheet(plan: Plan, fix: OwnShip.Fix?, onClose: () -> Unit) {
                     val d = ClearanceWords.compare(planned.stops, planned.dest, cleared)
                     Mark(d.same, if (d.same) d.words else stringResource(R.string.clearance_differs, d.words))
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-                    Button(
-                        onClick = {
-                            model.entry()?.let { e -> plan.useLeg(e.dep, e.dest, e.stops, e.altitudeFt ?: planned.altitudeFt, planned.depart) }
-                            onClose()
-                        },
-                        enabled = state.ready,
-                    ) { Text(stringResource(R.string.clearance_enter)) }
-                    if (radio != null) OutlinedButton(onClick = { withMic(model::readBackAgain) }) { Text(stringResource(R.string.clearance_read_back_again)) }
-                }
                 TextButton(onClick = { transcript = !transcript }) { Text(stringResource(R.string.clearance_transcript)) }
                 if (transcript) {
                     WordsField(state.text, model::type, voice)
@@ -155,8 +162,35 @@ fun ClearanceSheet(plan: Plan, fix: OwnShip.Fix?, onClose: () -> Unit) {
                 HeardLog(heardLog, model::type)
             }
         }
+        if (state.clearance != null && state.heard) {
+            // The card's actions at its foot, out of the scroll, as wide as
+            // the sheet; the sheet itself clears the gesture bar.
+            Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm),
+                    horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
+                ) {
+                    if (radio != null) {
+                        OutlinedButton(onClick = { withMic(model::readBackAgain) }, modifier = Modifier.weight(1f)) {
+                            Text(stringResource(R.string.clearance_read_back_again))
+                        }
+                    }
+                    Button(
+                        onClick = {
+                            model.entry()?.let { e -> plan.useLeg(e.dep, e.dest, e.stops, e.altitudeFt ?: planned.altitudeFt, planned.depart) }
+                            onClose()
+                        },
+                        enabled = state.ready,
+                        modifier = Modifier.weight(1f),
+                    ) { Text(stringResource(R.string.clearance_enter)) }
+                }
+            }
+        }
     }
 }
+
+/** The clearance understood: Android's Confirm (API 30), a key tap before. */
+private val UNDERSTOOD: Int get() = if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
 
 /** The four steps in a row: done in the go ink, the one now in the
  *  tint, the rest to come. */
@@ -228,7 +262,9 @@ private fun ReadbackLines(state: ClearanceModel.State, c: Clearance, listening: 
     when {
         state.readback.isEmpty() -> Text(stringResource(if (listening) R.string.clearance_listening_readback else R.string.clearance_readback_line), color = muted)
         else -> {
-            Text("“${state.readback}”", color = muted)
+            // The pilot's own read back, the line the card is about, in
+            // the emphasized title the screen's one figure takes.
+            Text("“${state.readback}”", style = MaterialTheme.typography.titleLargeEmphasized)
             val check = state.check
             if (check == null) {
                 Text(stringResource(R.string.clearance_readback_unchecked), color = muted)

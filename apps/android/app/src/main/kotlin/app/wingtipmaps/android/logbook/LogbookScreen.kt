@@ -1,33 +1,54 @@
 package app.wingtipmaps.android.logbook
 
-import androidx.compose.foundation.clickable
+import android.os.Build
+import android.view.HapticFeedbackConstants
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Card
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.coach.CoachScreen
 import app.wingtipmaps.android.design.Skeleton
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.documents.AddFromPhotoRow
 import app.wingtipmaps.android.documents.LogbookPhotoSheet
 import app.wingtipmaps.android.navigation.ScreenRequests
@@ -35,67 +56,159 @@ import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
 import app.wingtipmaps.android.ui.UndoRow
-import app.wingtipmaps.android.ui.sheet.WingtipSheet
+import app.wingtipmaps.android.ui.WingtipIcons
+import app.wingtipmaps.android.ui.sheet.CardSheet
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 /**
- * The pilot's logbook, at its least (LogbookModel): what the currency
- * says, then each entry, newest first, its date over its route, hours
- * and landings, each edited in its row and deleted with an Undo where it
- * was (LogbookEntryRow). Entries are added from a recorded flight
- * ("Flight Logged"), from a photo of a paper page (Add from a Photo), or
- * on the web. Its Coach row opens the pilot's proficiency plan (CoachScreen).
+ * The pilot's logbook (LogbookModel), Material's way: a large flexible top
+ * app bar with the totals under the title that collapses as the list
+ * scrolls, what the currency says in a card at the top (the gateway's
+ * words; nothing is worked out here), the Coach, then each entry, newest
+ * first, under a sticky month header (LogbookEntryRow), each edited in its
+ * row and deleted with an Undo where it was. Add Flight, the extended
+ * button at the foot, opens a line's fields to log one by hand, and
+ * shrinks to its icon while the list scrolls; a flight is also added from
+ * a recorded track ("Flight Logged") or a photo of a paper page.
+ *
+ * @param onClose the bar's Close (decision 0015); with none, the screen
+ *   sits under its host's own title row and draws no bar of its own.
  */
 @Composable
-fun LogbookScreen(model: LogbookModel = viewModel()) {
+fun LogbookScreen(model: LogbookModel = viewModel(), onClose: (() -> Unit)? = null) {
     val state by model.state.collectAsStateWithLifecycle()
     var photo by remember { mutableStateOf(false) }
     var coach by rememberSaveable { mutableStateOf(false) }
     // The Coach asked for by its name (OpenScreen), once the Logbook is open.
     val wanted by ScreenRequests.wanted.collectAsStateWithLifecycle()
     LaunchedEffect(wanted) { if (ScreenRequests.take(setOf(Screen.COACH)) != null) coach = true }
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg)) {
-        item {
-            if (state.loading) Skeleton(rows = 4)
-            ProblemLine(state.problem)
-            // The pilot's proficiency plan, a row of the logbook it is
-            // made from, as the web's Logbook has it.
-            ListItem(
-                supportingContent = { Text(stringResource(R.string.coach_line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { coach = true },
-                content = { Text(stringResource(R.string.coach), color = MaterialTheme.colorScheme.primary) },
-            )
-            if (state.currency.isNotEmpty()) SectionTitle(stringResource(R.string.currency))
-        }
-        items(state.currency) { Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = WingtipSpace.Xs)) }
-        item {
-            SectionTitle(stringResource(R.string.logbook_entries))
-            AddFromPhotoRow(stringResource(R.string.photo_line_logbook)) { photo = true }
-            if (!state.loading && state.entries.isEmpty() && state.problem == null) {
-                Text(stringResource(R.string.logbook_empty), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    // A save felt once it reached the server, not on coming back to a
+    // logbook whose last save is already counted.
+    val haptics = rememberHaptics()
+    var felt by remember { mutableIntStateOf(state.saved) }
+    LaunchedEffect(state.saved) {
+        if (state.saved > felt) haptics.tap(SAVED)
+        felt = state.saved
+    }
+    val list = rememberLazyListState()
+    val atTop by remember { derivedStateOf { list.firstVisibleItemIndex == 0 } }
+    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.fillMaxSize().nestedScroll(scroll.nestedScrollConnection),
+        containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets(0),
+        topBar = {
+            if (onClose != null) {
+                LargeFlexibleTopAppBar(
+                    title = { Text(stringResource(R.string.logbook)) },
+                    subtitle = state.entries.takeIf { it.isNotEmpty() }?.let { e -> { Text(LogbookModel.totals(e)) } },
+                    actions = { IconButton(onClick = onClose) { Icon(WingtipIcons.close, contentDescription = stringResource(R.string.close)) } },
+                    windowInsets = WindowInsets(0),
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+                    scrollBehavior = scroll,
+                )
             }
+        },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                text = { Text(stringResource(R.string.logbook_add_flight)) },
+                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                onClick = model::openAdd,
+                expanded = atTop,
+            )
+        },
+    ) { padding ->
+        LazyColumn(Modifier.fillMaxSize().padding(padding), state = list, contentPadding = PaddingValues(bottom = WingtipSpace.Xl * 3)) {
+            item(key = "head") { LogbookHead(state, onCoach = { coach = true }, onPhoto = { photo = true }) }
+            entries(state, model)
         }
-        // The entries, each edited in its row; a deleted one's Undo row
-        // where it was, until its time is up (UndoRow).
-        val removed = state.removed
-        state.entries.forEachIndexed { i, e ->
-            if (removed != null && removed.index == i) undoItem(removed, model)
-            item(key = e.id) { LogbookEntryRow(e, state, model) }
-        }
-        if (removed != null && removed.index >= state.entries.size) undoItem(removed, model)
     }
     if (photo) LogbookPhotoSheet(onClose = { photo = false })
-    if (coach) {
-        WingtipSheet(title = stringResource(R.string.coach), onClose = { coach = false }, full = true) { CoachScreen() }
+    if (state.adding) LogbookAddSheet(state, model)
+    // The Coach in a sheet of its own, under its own collapsing bar.
+    if (coach) CardSheet(onClose = { coach = false }) { CoachScreen(onClose = { coach = false }) }
+}
+
+/** The list's head: what the currency says in a card, the Coach, then
+ *  Entries with Add from a Photo, or why there are none. */
+@Composable
+private fun LogbookHead(state: LogbookModel.State, onCoach: () -> Unit, onPhoto: () -> Unit) {
+    Column(Modifier.padding(horizontal = WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
+        if (state.loading) Skeleton(rows = 4)
+        ProblemLine(state.problem)
+        if (state.currency.isNotEmpty()) {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
+                    Text(stringResource(R.string.currency), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
+                    state.currency.forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                }
+            }
+        }
+        // The pilot's proficiency plan, a row of the logbook it is made
+        // from, as the web's Logbook has it.
+        ListItem(
+            onClick = onCoach,
+            supportingContent = { Text(stringResource(R.string.coach_line)) },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            modifier = Modifier.fillMaxWidth(),
+            content = { Text(stringResource(R.string.coach), color = MaterialTheme.colorScheme.primary) },
+        )
+        SectionTitle(stringResource(R.string.logbook_entries))
+        AddFromPhotoRow(stringResource(R.string.photo_line_logbook), onOpen = onPhoto)
+        if (!state.loading && state.entries.isEmpty() && state.problem == null) {
+            Text(stringResource(R.string.logbook_empty), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/** The entries under a sticky header per month, each edited in its row; a
+ *  deleted one's Undo row where it was, until its time is up (UndoRow). */
+private fun LazyListScope.entries(state: LogbookModel.State, model: LogbookModel) {
+    val removed = state.removed
+    var month: String? = null
+    state.entries.forEachIndexed { i, e ->
+        val m = LogbookModel.monthOf(e)
+        if (m != month) {
+            month = m
+            stickyHeader(key = "month-$m") { MonthHeader(m) }
+        }
+        if (removed != null && removed.index == i) undoItem(removed, model)
+        item(key = e.id) { Column(Modifier.padding(horizontal = WingtipSpace.Lg)) { LogbookEntryRow(e, state, model) } }
+    }
+    if (removed != null && removed.index >= state.entries.size) undoItem(removed, model)
+}
+
+/** A month's header, solid so the rows scroll under it: "November 2026". */
+@Composable
+private fun MonthHeader(month: String) {
+    // The app's locale as Compose observes it, so a change of language redraws it.
+    val locale = LocalLocale.current.platformLocale
+    val words = try {
+        YearMonth.parse(month).format(DateTimeFormatter.ofPattern("MMMM yyyy", locale))
+    } catch (e: DateTimeParseException) {
+        month
+    }
+    Surface(Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+        Text(
+            words, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm).semantics { heading() },
+        )
     }
 }
 
 /** "Deleted 2026-11-09 · Undo" where the entry was. */
 private fun LazyListScope.undoItem(removed: LogbookModel.Removed, model: LogbookModel) {
     item(key = "undo-${removed.entry.id}") {
-        UndoRow(
-            stringResource(R.string.logbook_deleted, listOfNotNull(removed.entry.flownOn, removed.entry.route?.ifEmpty { null }).joinToString(" ")),
-            key = removed.entry.id, onUndo = model::undoDelete, onDone = { model.deleteKept(removed.entry.id) },
-        )
+        Column(Modifier.padding(horizontal = WingtipSpace.Lg)) {
+            UndoRow(
+                stringResource(R.string.logbook_deleted, listOfNotNull(removed.entry.flownOn, removed.entry.route?.ifEmpty { null }).joinToString(" ")),
+                key = removed.entry.id, onUndo = model::undoDelete, onDone = { model.deleteKept(removed.entry.id) },
+            )
+        }
     }
 }
+
+/** An entry saved: Android's Confirm (API 30), a plain key tap before it. */
+private val SAVED: Int get() = if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
