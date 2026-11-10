@@ -1,15 +1,12 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, useEffectEvent } from "react";
 import { usePrefetchQuery, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import { Star } from "lucide-react";
-import { FAVORITE_STAR_ON } from "../../../lib/mapChrome";
 import { cn } from "cn";
-import { useKeptAirport, usePreferences } from "../../../lib/preferences";
+import { useKeptAirport } from "../../../lib/preferences";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { shareOrCopy } from "../../../lib/share";
 import { CardHead, PanelCard } from "../../../components/PanelCard";
 import { CardTitle } from "../../../components/CardTitle";
 import { CardPictures, type CardSlide } from "../../../components/CardPictures";
-import RoundButton from "../../../components/RoundButton";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { CardTabBar, CardTabPanel } from "../../../components/CardTabs";
 import { Tabs } from "../../../components/ui/tabs";
@@ -490,8 +487,6 @@ export default function PlaceCard({
             closeTestId="place-close"
             shareTestId="place-share"
             pill={{ line: pillLine || undefined, picture: pillPicture }}
-            refresh="airport"
-            beside={<FavoriteButton ident={kept?.ident ?? ident} place={place ?? null} />}
           />
           {/* The pictures' lightboxes (Base UI Dialogs), opened from the
               pictures lower in the card (CardPictures). */}
@@ -537,6 +532,7 @@ export default function PlaceCard({
             onDepartFrom={onDepartFrom}
             onAddStop={onAddStop}
             onWeather={() => (setPicked("weather"), raise())}
+            favoriteIdent={kept?.ident ?? ident}
           />
           {/* The field from the air, its runways and from the ground, a row
               of large tiles under the actions, as Apple Maps' place card
@@ -629,33 +625,5 @@ export default function PlaceCard({
         </div>
       )}
     </PanelCard>
-  );
-}
-
-/** The star that adds an airport to Favorites (components/Favorites), a
- *  round button beside the card's close, filled in iOS's yellow while it
- *  is one, as Maps' are. It is there from the card's first frame, as a Favorite or not by
- *  the ident asked for, and a tap is kept for when the card's answer has
- *  the field's name and place to keep. */
-function FavoriteButton({ ident, place, className }: { ident: string; place: AirportPlace | null; className?: string }) {
-  const mine = place?.ident ?? ident;
-  const kept = usePreferences((s) => s.favoriteAirports.some((a) => sameField(a.ident, mine)));
-  const toggle = usePreferences((s) => s.toggleFavoriteAirport);
-  return (
-    // On or off by aria-pressed itself, not a stock Toggle's data-state:
-    // the round button is a tooltip's trigger, whose own data-state
-    // ("closed") would take the Toggle's place.
-    <RoundButton
-      label={kept ? "Remove from Favorites" : "Add to Favorites"}
-      aria-pressed={kept}
-      disabled={!place}
-      onClick={() => {
-        if (place) toggle({ ident: place.ident, name: place.name, municipality: place.municipality, lat: place.lat, lon: place.lon });
-      }}
-      className={className}
-      data-testid="place-favorite"
-    >
-      <Star className={cn("size-5", kept && FAVORITE_STAR_ON)} strokeWidth={2} />
-    </RoundButton>
   );
 }

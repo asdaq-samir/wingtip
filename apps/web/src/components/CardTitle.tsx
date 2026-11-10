@@ -3,9 +3,7 @@ import { Share } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
 import RoundButton from "./RoundButton";
-import RefreshButton from "./RefreshButton";
 import { PinnedCardBar } from "./PinnedCardBar";
-import type { LiveCard } from "../lib/liveRefresh";
 import { closeTopCard, useHeldCard, type PillHead } from "../lib/openCards";
 import { TEXT } from "../lib/text";
 
@@ -14,7 +12,9 @@ import { TEXT } from "../lib/text";
  * owner, 2026-11-09: "no photo at the top of the airport or airplane
  * card"; the order title, actions, then the card's sections, the pictures
  * lower in it, CardPictures): its name large, what it is under it and a
- * line under that, and at its right its share, its star (`beside`) and
+ * line under that, and at its right its share, a round button of its own
+ * (`beside`: an airplane's star; an airport's star and Refresh are in its
+ * action tiles, owner decision 2026-11-10 (decisions page)) and
  * its close, which goes back one card, as every card's does. What the
  * pill shows of it down at its smallest is its own (`pill`).
  */
@@ -24,7 +24,6 @@ export function CardTitle({
   line,
   onClose,
   onShare,
-  refresh,
   beside,
   pill,
   testId,
@@ -39,9 +38,6 @@ export function CardTitle({
   line?: ReactNode;
   onClose: () => void;
   onShare?: () => void;
-  /** A live card's Refresh, before the star: what it shows asked again,
-   *  and kept fresh by itself (RefreshButton). */
-  refresh?: LiveCard;
   /** A round button before the close (the star). */
   beside?: ReactNode;
   pill?: PillHead;
@@ -86,7 +82,6 @@ export function CardTitle({
               <Share className="size-5" strokeWidth={2} />
             </RoundButton>
           )}
-          {refresh && <RefreshButton card={refresh} label={`Refresh ${title}`} />}
           {beside}
           <CloseButton onClick={close} data-back="" data-testid={closeTestId} />
         </div>
