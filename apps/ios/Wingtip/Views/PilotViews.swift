@@ -60,7 +60,7 @@ struct FlightsView: View {
                     guard let request = plan.saved() else { return }
                     Task { await model.save(request) }
                 } label: {
-                    SaveLabel(title: "Save This Plan", saving: model.saving, saves: model.saves)
+                    Text(model.saving ? "Saving…" : "Save This Plan")
                 }
                 .disabled(model.saving || !session.signedIn || plan.totals == nil)
             }

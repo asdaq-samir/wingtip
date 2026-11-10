@@ -42,8 +42,6 @@ final class SavedFlightsModel {
     /// Why the list could not be had or the plan saved, under the list.
     private(set) var problem: String?
     private(set) var saving = false
-    /// The plans saved here, each drawing the button's checkmark (SaveLabel).
-    private(set) var saves = 0
     /// The flights deleted while the list is open and where each was, the
     /// last last: kept back from the gateway while their Undo stands.
     private(set) var removed: [(flight: SavedFlight, at: Int)] = []
@@ -96,7 +94,6 @@ final class SavedFlightsModel {
         defer { saving = false }
         do {
             try await calls.save(request)
-            saves += 1
             flights = try await calls.list()
             problem = nil
         } catch {
