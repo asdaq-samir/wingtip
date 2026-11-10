@@ -75,30 +75,9 @@ private struct GlassBackground: ViewModifier {
 }
 
 extension View {
-    /// A tab's content in the sheet, clear of the iOS 26 floating tab bar:
-    /// the bar floats over the sheet's foot without giving the content a
-    /// safe area there, and covered each tab's main action at the medium
-    /// detent (the airport card's Fly Here, FPL's route list; the UI audit,
-    /// 2026-11-09, item 2). The content scrolls under the glass and comes
-    /// to rest above it. iOS 18's docked bar insets the content itself, and
-    /// the iPad's sidebar (`floating` false) has its bar at the top.
-    /// The inset is the bar's own height above the home indicator
-    /// (FloatingTabBar), not more: the soft scroll edge covers the whole
-    /// inset, and with 64 points on top of the home indicator's 34 it
-    /// began some 50 points above the bar and faded rows the bar does
-    /// not cover (the accessibility audit's contrast check, 2026-11-09).
-    @ViewBuilder
-    func clearOfTabBar(_ floating: Bool = true) -> some View {
-        if #available(iOS 26.0, *), floating {
-            safeAreaPadding(.bottom, FloatingTabBar.height).glassScrollEdges()
-        } else {
-            self
-        }
-    }
-
     /// Words scrolled under the glass stay readable: on iOS 26 the soft
     /// scroll-edge effect at every edge of the scrollers inside, which
-    /// fades the content as it passes under the bar, the tab bar or the
+    /// fades the content as it passes under the bar, the figures or the
     /// sheet's head, as the system's own lists do. Nothing on iOS 18,
     /// whose bars are opaque once scrolled under.
     @ViewBuilder
@@ -114,30 +93,6 @@ extension View {
             self
         }
     }
-
-    /// The tab bar folds to its tab up while a long list (the nav log, the
-    /// Brief, the logbook) scrolls down, and comes back on the way up, as
-    /// iOS 26's own apps do: more of the list in sight at the sheet's
-    /// height. iOS 18's docked bar stays as it is.
-    @ViewBuilder
-    func tabBarMinimizesOnScroll() -> some View {
-        if #available(iOS 26.0, *) {
-            tabBarMinimizeBehavior(.onScrollDown)
-        } else {
-            self
-        }
-    }
-}
-
-/// The system tab bar's height above the home indicator, as UIKit lays
-/// out its own bar (49 points on an iPhone): the floating bar's top sits
-/// that far above the safe area's foot (its frame in the accessibility
-/// tree, 873 of 956 points on the iPhone 18 Pro Max, is these 49 and the
-/// home indicator's 34). Asked of a UITabBar rather than written down, so
-/// it follows the system.
-@MainActor
-enum FloatingTabBar {
-    static let height: CGFloat = UITabBar().sizeThatFits(CGSize(width: CGFloat.greatestFiniteMagnitude, height: 0)).height
 }
 
 /// Neighbouring glass that merges as Maps' own does: on iOS 26 the

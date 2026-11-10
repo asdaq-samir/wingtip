@@ -19,10 +19,10 @@ final class StoreShotsTests: XCTestCase {
     }
 
     @MainActor
-    private func launch(tab: String) -> XCUIApplication {
+    private func launch(screen: String) -> XCUIApplication {
         let app = XCUIApplication()
         // Traffic off: the live airplanes round Chicago bury the chart.
-        app.launchArguments += ["-tab", tab, "-fresh", "-traffic", "<false/>"]
+        app.launchArguments += ["-layout", "plan", "-screen", screen, "-fresh", "-traffic", "<false/>"]
         app.launch()
         return app
     }
@@ -52,13 +52,14 @@ final class StoreShotsTests: XCTestCase {
         // An airplane first, by its N-number from the FAA's registry (the
         // one AircraftView's preview uses): with none the app assumes none
         // (docs/decisions/0011), and there is no nav log or verdict.
-        let app = launch(tab: "airplane")
+        let app = launch(screen: "airplane")
         let tail = app.textFields["N-number"]
         XCTAssertTrue(tail.waitForExistence(timeout: 30))
         tail.tap()
         tail.typeText("N3429J\n")
         Thread.sleep(forTimeInterval: 8)
-        app.buttons["FPL"].tap()
+        // The Airplane page closed: back to the plan under it.
+        app.buttons["Close"].firstMatch.tap()
         plan(app)
         // The sheet drawn down to its lowest detent, so the chart and the
         // route over it fill the screen.
@@ -93,8 +94,9 @@ final class StoreShotsTests: XCTestCase {
 
     @MainActor
     func testAirportCard() throws {
-        let app = launch(tab: "airport")
-        let search = app.searchFields.firstMatch.waitForExistence(timeout: 30) ? app.searchFields.firstMatch : app.textFields["Identifier, name or town"]
+        let app = launch(screen: "airport")
+        let search = app.searchFields["Search airports, airplanes, or ask"]
+        XCTAssertTrue(search.waitForExistence(timeout: 30))
         search.tap()
         search.typeText("KORD")
         let result = app.descendants(matching: .any)["airport-result-KORD"]
@@ -106,7 +108,7 @@ final class StoreShotsTests: XCTestCase {
 
     @MainActor
     func testDownloads() throws {
-        let app = launch(tab: "setup")
+        let app = launch(screen: "setup")
         let link = app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Downloads'")).firstMatch
         for _ in 0..<4 where !link.isHittable { app.swipeUp() }
         XCTAssertTrue(link.waitForExistence(timeout: 30))

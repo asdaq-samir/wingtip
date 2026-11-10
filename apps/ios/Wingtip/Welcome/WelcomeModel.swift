@@ -62,7 +62,7 @@ final class WelcomeModel {
     /// cover what they look at; `-welcome` asks for it all the same.
     static func wanted(defaults: UserDefaults = .standard, arguments: [String] = CommandLine.arguments) -> Bool {
         if arguments.contains("-welcome") { return true }
-        if arguments.contains(where: { ["-tab", "-layout", "-fresh"].contains($0) }) { return false }
+        if arguments.contains(where: { ["-screen", "-layout", "-fresh"].contains($0) }) { return false }
         return !defaults.bool(forKey: seenKey)
     }
 

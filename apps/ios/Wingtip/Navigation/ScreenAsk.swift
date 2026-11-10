@@ -1,10 +1,11 @@
 import Observation
 
 /// A screen asked for by its name (design/screens.json) and not yet open:
-/// the one way in for a link, Siri and the app's own shortcuts. RootView
-/// says which tab it is on (openScreen); the tab's own stack, which only
-/// it can push onto, takes it from here (FPLView, AircraftView, SetupView,
-/// and the strip's StripSheetView), as BriefAsk's Brief is taken.
+/// the strip layout's way in for a link, Siri and the app's own
+/// shortcuts. RootView says it is the strip's (openScreen); the strip's
+/// own stack, which only it can push onto, takes it from here
+/// (StripSheetView), as BriefAsk's Brief is taken. The plan's sheet needs
+/// none: its stack is RootView's own path.
 @MainActor
 @Observable
 final class ScreenAsk {

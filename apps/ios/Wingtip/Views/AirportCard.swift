@@ -1,14 +1,23 @@
 import SwiftUI
 
-/// A field's card, as the web app's PlaceCard has it: its name, where it
-/// is and its weather's colour; the runways' picture with the field from
-/// the air and the ground a swipe across; the actions -- Fly Here, Add
-/// Stop, Call, Address -- and four tabs under them: Info (the radio, the
-/// lights, what is on the ground), Weather, Runways and Charts.
+/// A field's card, built as Apple's Maps builds a place card on iOS 27
+/// (the owner's screenshot, 2026-11-09): the head (AirportPlaceHead) -- at
+/// full height the field's picture fading in, then its name, what and
+/// where it is, the four actions and the four facts -- the plan through
+/// it, the picture tiles, then four tabs: Info (the radio, the lights,
+/// what is on the ground), Weather, Runways and Charts; at its foot the
+/// system's floating glass toolbar (AirportCardToolbar).
 struct AirportCard: View {
     let ident: String
+    /// The miles from the airplane, where the nearest list has the field.
+    var distanceNm: Double?
     @Environment(Plan.self) private var plan
     @Environment(Verdict.self) private var verdict
+    @Environment(OwnShip.self) private var ownShip
+    /// Back to the plan once an action has set it (PlanSheet).
+    @Environment(\.showPlan) private var showPlan
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.cardExpanded) private var expanded
     @State private var place: AirportPlace?
     /// The field's live reports (D-ATIS, RVR, programs), the tabs' own.
     @State private var live = AirportLive()
@@ -29,12 +38,14 @@ struct AirportCard: View {
         List {
             if let place {
                 Section {
-                    // The UI tests' sign the card is up (WingtipUITests/FlowTests).
-                    AirportHead(place: place).accessibilityIdentifier("airport-card-head").siriSees(SiriSaw.airport(place.ident))
-                    KeptAgeLine(kind: .airports, key: ident)
-                    AirportPictures(place: place, photos: photos, shown: $shown)
+                    AirportPlaceHead(place: place, photos: photos, distanceNm: distanceNm, shown: $shown)
                         .listRowInsets(EdgeInsets())
-                    actions(place)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+                AirportReadyCard(ident: place.ident)
+                Section {
+                    AirportTiles(place: place, photos: photos, shown: $shown, tab: $tab)
                 }
                 Section {
                     Picker("Section", selection: $tab) {
@@ -63,20 +74,20 @@ struct AirportCard: View {
                 Skeleton(rows: 4, label: "Fetching \(ident)")
             }
         }
+        // Inset-grouped rows under a large title, as iOS's own cards are
+        // (the owner, 2026-11-09: every card the iOS-native way).
+        .listStyle(.insetGrouped)
+        // At full height the picture runs up under the bar, its close a
+        // glass button over it, as Maps' does; half way the name is first.
+        .ignoresSafeArea(.container, edges: expanded && place != nil ? .top : [])
         .navigationTitle(ident)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(removing: .title)
+        .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
         .toolbar {
-            ToolbarItemGroup(placement: .pinnedTrailing) {
-                if let place {
-                    ShareLink(item: URL(string: "https://\(Config.host)/app/plan?place=\(place.ident)")!,
-                              subject: Text(place.name)) { Image(systemName: WingtipIcon.share) }
-                        .accessibilityLabel("Share")
-                    let kept = shelf.isFavorite(place.ident)
-                    Button { shelf.toggleFavorite(KeptAirport(place)) } label: {
-                        Image(systemName: kept ? "star.fill" : "star")
-                            .foregroundStyle(kept ? Color.yellow : Color.accentColor).symbolSwap()
-                    }
-                    .accessibilityLabel(kept ? "Remove from Favorites" : "Add to Favorites")
+            if let place {
+                AirportCardToolbar(place: place, plan: plan, fix: ownShip.fix) {
+                    if let showPlan { showPlan() } else { dismiss() }
                 }
             }
         }
@@ -113,37 +124,6 @@ struct AirportCard: View {
         }
     }
 
-    /// Fly Here is the Direct-To; Add Stop makes the field the route's
-    /// next stop; Call and Address from the FAA's airport file, greyed
-    /// where it lists none.
-    private func actions(_ place: AirportPlace) -> some View {
-        GlassRow {
-            Button { plan.dest = place.ident; Feel.tap(.directTo); plan.plan() } label: { CardActionLabel(.flyHere) }
-                .glassProminentButton()
-            Button { plan.stops.append(place.ident); plan.plan() } label: { CardActionLabel(.addStop) }
-                .glassButton()
-                .disabled(!plan.routed || plan.idents.contains(place.ident))
-            if let phone = place.phone, let call = URL(string: "tel:" + phone.filter { !$0.isWhitespace }) {
-                Link(destination: call) { CardActionLabel(.call) }
-                    .glassButton()
-                    .accessibilityLabel("Call \(phone)")
-            } else {
-                Button {} label: { CardActionLabel(.call) }
-                    .glassButton().disabled(true)
-                    .accessibilityLabel("Call: no phone listed")
-            }
-            Link(destination: Self.mapsLink(place)) { CardActionLabel(.address) }
-                .glassButton()
-                .accessibilityLabel(place.address.map { "\($0), in Maps" } ?? "Where it is, in Maps")
-        }
-        .listRowBackground(Color.clear)
-        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
-        // Four actions across the phone, each a glyph over a word: the row
-        // stops growing at the second accessibility size, where the words
-        // would no longer fit side by side.
-        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
-    }
-
     /// The field in Apple's Maps by its street address where the FAA
     /// lists one, so Maps names the road a driver is taken to, and by
     /// where it is otherwise; its name the pin's either way.
@@ -155,12 +135,10 @@ struct AirportCard: View {
     }
 }
 
-/// The card's head: the name, where it is, a field to keep out of, its
-/// elevation, and its weather's colour -- its own report's, or with none
-/// the modelled one or a near station's, marked "≈".
-struct AirportHead: View {
-    let place: AirportPlace
-
+/// What the card's head says of a field: its weather's colour -- its own
+/// report's, or with none the modelled one or a near station's, marked
+/// "≈" -- and a field to keep out of.
+enum AirportHead {
     /// The category the chip shows, and whether it is the field's own.
     static func category(_ place: AirportPlace) -> (category: String, own: Bool)? {
         if let own = place.metar?.flightCategory { return (own, true) }
@@ -177,94 +155,6 @@ struct AirportHead: View {
         case "joint": return "Joint use"
         default: return place.isPrivate == true ? "Private, permission required" : nil
         }
-    }
-
-    var body: some View {
-        HStack(alignment: .top, spacing: WingtipSpace.md) {
-            VStack(alignment: .leading, spacing: WingtipSpace.xs) {
-                Text(place.name).font(.title3.weight(.semibold))
-                let region = place.region.map { $0.hasPrefix("US-") ? String($0.dropFirst(3)) : $0 }
-                let whereIs = [place.municipality, region].compactMap { $0 }.joined(separator: ", ")
-                if !whereIs.isEmpty { Text(whereIs).foregroundStyle(.secondary) }
-                if let restriction = Self.restriction(place) { Text(restriction).font(.subheadline).foregroundStyle(.orange) }
-                HStack(spacing: WingtipSpace.md) {
-                    if let elevation = place.elevationFt { Text("Elev \(Format.altitude(elevation))") }
-                    Text(place.towered ? "Towered" : "Non-towered")
-                    if let cls = place.airspaceClass { Text("Class \(cls)") }
-                }
-                .font(.subheadline).foregroundStyle(.secondary)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel([place.elevationFt.map { "elevation \(SpokenFigures.feet($0))" }, place.towered ? "towered" : "non-towered",
-                                     place.airspaceClass.map { "Class \($0)" }].compactMap { $0 }.joined(separator: ", "))
-            }
-            Spacer(minLength: 0)
-            if let chip = Self.category(place) {
-                VStack(spacing: 0) {
-                    if !chip.own { Text("≈") }
-                    Text(chip.category)
-                }
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xs)
-                .background(Color(uiColor: FlightCategory.words(chip.category)), in: RoundedRectangle(cornerRadius: WingtipRadius.cockpit))
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(chip.own ? "Flight category \(chip.category)" : "About \(chip.category), not this field's own report")
-            }
-        }
-    }
-}
-
-/// The runways' picture -- the FAA's diagram cropped to them where the
-/// field has one, else a sketch from their surveyed ends -- with the field
-/// from the air and from the ground a swipe across, each a tap from full
-/// screen (the owner's "airport photos swipe behind the airport diagram
-/// thumbnail", 2026-10-23).
-struct AirportPictures: View {
-    let place: AirportPlace
-    let photos: AirportPhotos?
-    @Binding var shown: ShownPicture?
-
-    var body: some View {
-        let sketched = !RunwaySketch.strips(place.runways).isEmpty
-        TabView {
-            if let cycle = place.airportDiagramCycle {
-                Button {
-                    shown = .paths("\(place.ident) airport diagram", [Planner.diagramPath(ident: place.ident, cycle: cycle)])
-                } label: {
-                    RemotePicture(path: Planner.diagramPath(ident: place.ident, cycle: cycle, runwaysOnly: true), fit: true)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity).background(Color.white)
-                }
-                .accessibilityLabel("\(place.ident) airport diagram, full screen")
-            } else if sketched {
-                Button { shown = AirportChartsTab.sketch(place) } label: {
-                    RunwaySketch(runways: place.runways).frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-                .accessibilityLabel("\(place.ident) runways sketch, full screen")
-            }
-            if let photos {
-                Button { shown = .paths("\(place.ident) from the air", [photos.aerialUrl]) } label: {
-                    RemotePicture(path: photos.aerialUrl).frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
-                }
-                .accessibilityLabel("\(place.ident) from the air, full screen")
-                if let photo = photos.photo {
-                    let credit = photo.credit + ((photo.license ?? "").isEmpty ? "" : " · " + (photo.license ?? ""))
-                    Button { shown = .paths("\(place.ident) from the ground", [photo.url], credit: credit) } label: {
-                        RemotePicture(path: photo.url).frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
-                            .overlay(alignment: .bottomLeading) {
-                                // Its photographer and licence, as Commons' licences ask.
-                                Text(credit).font(.caption2).lineLimit(1)
-                                    .padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xxs)
-                                    .floatingGlass(in: Capsule(), material: .thinMaterial).padding(WingtipSpace.sm)
-                            }
-                    }
-                    .accessibilityLabel("\(place.ident) from the ground, full screen")
-                }
-            }
-        }
-        .buttonStyle(.plain)
-        .tabViewStyle(.page(indexDisplayMode: .always))
-        .indexViewStyle(.page(backgroundDisplayMode: .always))
-        .frame(height: 190)
     }
 }
 
@@ -608,13 +498,10 @@ private enum PreviewData {
         towered: true)
 }
 
-#Preview("AirportHead") {
-    List { AirportHead(place: PreviewData.place) }
-}
-
-#Preview("AirportPictures") {
+#Preview("AirportPlaceHead") {
     @Previewable @State var shown: ShownPicture? = nil
-    List { AirportPictures(place: PreviewData.place, photos: nil, shown: $shown).listRowInsets(EdgeInsets()) }
+    List { AirportPlaceHead(place: PreviewData.place, photos: nil, distanceNm: 12, shown: $shown).listRowInsets(EdgeInsets()) }
+        .environment(Plan()).environment(OwnShip()).environment(Charts())
 }
 
 #Preview("AirportInfoTab") {

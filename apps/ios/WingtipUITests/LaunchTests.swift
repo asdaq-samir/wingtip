@@ -10,9 +10,9 @@ final class LaunchTests: XCTestCase {
     @MainActor
     func testTheAppLaunchesToItsMap() throws {
         let app = XCUIApplication()
-        // Opened on the plan tab with no account: the first screen is the
+        // Opened on the plan with no account: the first screen is the
         // chart under the sheet (RootView), whatever the pilot last had.
-        app.launchArguments += ["-tab", "fpl"]
+        app.launchArguments += ["-screen", "fpl"]
         app.launch()
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 30), "the app did not come to the foreground")
         // A sheet or a side column is up within a few seconds; either has

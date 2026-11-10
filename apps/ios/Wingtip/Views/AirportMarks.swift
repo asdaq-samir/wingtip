@@ -103,6 +103,9 @@ final class AirportMarkView: MKAnnotationView {
         // tell.
         isAccessibilityElement = true
         accessibilityTraits = .button
+        // Held, the field's card as a preview and the plan's actions
+        // (AirportMarkMenu), as UIKit previews a link.
+        AirportMarkMenu.shared.attach(to: self)
     }
 
     @available(*, unavailable)

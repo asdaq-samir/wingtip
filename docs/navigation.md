@@ -169,20 +169,27 @@ otherwise.
 
 ### iOS
 
+The one search (the owner's design of 2026-11-09) replaced the sheet's
+four tabs: the plan is the sheet's root, under one stock `.searchable`
+field ("Search airports, airplanes, or ask") with the microphone and the
+account button beside it, and every other screen is a page on the sheet's
+one stack (`Search/PlanSheet`, `SheetPage`), its close going back one
+level. The iPad's sidebar holds the same search and plan. Counted from the
+map with the sheet at rest: the search or a row of the plan is 1.
+
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
-| FPL | FPL | 1 | From/To and altitude inline; stops Edit (delete, move) and each point's menu (**More Info and the destination's Brief, new**); Undo bar |
-| Figures strip | none | 0 | **Tapped, the nav log (new)** |
-| Nav Log | FPL → ••• → Nav Log; **the strip (new)** | 3 → 1 | -- |
-| Brief, Profile, Flights | FPL → row or toolbar; **Setup → Saved Flights (new)** | 2 | Saved flights: swipe to delete with an Undo row; swipe right or hold for Flown Track and **Edit: name and notes in the row (new)** |
-| Passenger Briefing | FPL → Brief → Passengers | 3 → link | DatePicker |
-| Risk Assessment, Weight & Balance | Brief → finding | 4 | Toggles, figures |
-| Airport card | Tap a field; Airport → row; **a route point's More Info (new)** | 1 | Fly Here, Add Stop, Favorite; **frequencies copy on hold (new)** |
-| Airplane, checklists | Airplane → row; **Setup → Checklists (new)** | 2 | Checklist edited as text |
-| Your Airplanes → airplane → Squawks | Airplane → Your Airplanes → … | 3–4 | Forms; squawk delete has no Undo |
-| Setup pages (Logbook, Coach, Minimums, Guide, Downloads, About; **Practice, Your Airplanes, new**) | Setup → row | 2 | **Logbook entry edited in the row; swipe delete with an Undo row (new)** |
-| Emergency | Instruments bar (flying); **Setup → Emergency Assistant, Airplane → Emergency Assistant (new)** | 1 / 3 → **2** | Its frequencies copy |
-| An alert ahead, a copilot message | the banner | 0 | **Tapped: the airspace card; the message's Direct To and More Info (new)** |
+| Plan (was FPL) | the sheet itself | 1 → **0** | From/To and altitude inline; stops Edit (delete, move), **Add a Stop (the search)**; each point's menu; Undo bar |
+| Search (was Airport) | the field | 1 | Nothing typed: Your Flight, Favorites (fields and airplanes), Recents, Nearest; typed: Airports, Waypoints and Navaids, Airplanes, Do (Direct To, screens, Ask) |
+| Airport card | Tap a field; a search row; hold for its preview | 1 | **Its own sheet (half, full) with Fly Here (the flight's time when planned), Depart, Add Stop, Diagram; the floating bar's Add to Plan, Favorite, Share, •••**; frequencies copy on hold, runways' details on hold |
+| Airplane profile | the search's N-number or own airplane; any N-number | 2 | **Fly This Airplane** in its head; every figure edited in place |
+| Airplane (was the tab) | the plan's Airplane button; the search's types | 2 | N-number typed, No Airplane |
+| Figures strip | the sheet's foot, with a route | 0 | Tapped, the nav log |
+| Nav Log | the plan's ••• → Nav Log; the strip | 2 / 1 | -- |
+| Brief, Profile, Flights | the plan's row or bar; the search's Do; the account menu | 2 | Saved flights: swipe to delete with an Undo row |
+| Settings (was Setup) and its pages (Logbook, Coach, Minimums, Guide, Downloads, About, Practice, Your Airplanes, Checklists) | the account button → row | 1 → **2** | Logbook entry edited in the row; swipe delete with an Undo row |
+| Emergency | the instruments bar; the account menu; "mayday" in the search | 1 / 2 | Its frequencies copy |
+| An alert ahead, a copilot message | the banner | 0 | Tapped: the airspace card; the message's Direct To and More Info |
 
 ### Android
 

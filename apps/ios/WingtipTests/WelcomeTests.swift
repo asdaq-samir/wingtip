@@ -52,8 +52,8 @@ struct WelcomeTests {
     @Test func theUITestsLaunchWithoutIt() {
         let defaults = fresh()
         #expect(WelcomeModel.wanted(defaults: defaults, arguments: []))
-        #expect(!WelcomeModel.wanted(defaults: defaults, arguments: ["-tab", "fpl"]))
-        #expect(WelcomeModel.wanted(defaults: defaults, arguments: ["-tab", "fpl", "-welcome"]))
+        #expect(!WelcomeModel.wanted(defaults: defaults, arguments: ["-screen", "fpl"]))
+        #expect(WelcomeModel.wanted(defaults: defaults, arguments: ["-screen", "fpl", "-welcome"]))
     }
 
     @Test func answeredPermissionsArePassedOver() {

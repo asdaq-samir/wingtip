@@ -5,17 +5,12 @@ import SwiftUI
 /// stays the map and its sheet.
 extension RootView {
     /// A route to the field, from the route's departure, else from the
-    /// field nearest the airplane; with neither, the FPL tab with the
-    /// destination in for the pilot to give the departure.
+    /// field nearest the airplane, as the airport card's Fly Here does
+    /// (Plan.flyHere); with neither, the plan with the destination in for
+    /// the pilot to give the departure.
     func route(to ident: String) async {
-        plan.dest = ident
-        if plan.dep.isEmpty, let at = ownShip.fix?.coordinate,
-           let nearest = try? await Planner.nearest(lat: at.latitude, lon: at.longitude, limit: 1).first {
-            plan.dep = nearest.ident
-        }
-        tab = .fpl
-        if detent != .medium { detent = .medium }
-        plan.plan()
+        await plan.flyHere(ident, near: ownShip.fix)
+        showPlan()
     }
 
     /// Siri's or a Shortcut's command done in the app: a trip planned to
@@ -29,10 +24,10 @@ extension RootView {
             await route(to: ident)
         case .brief(let ident):
             // The route planned as "plan a trip to" plans it, then its
-            // Brief opened: in the inspector on the iPad, else as FPL's or
-            // the strip's own page (BriefAsk).
+            // Brief opened: in the inspector on the iPad, a page over the
+            // plan, or the strip's own page (BriefAsk).
             await route(to: ident)
-            if layout == .split { sideCard = .brief } else { BriefAsk.shared.ask() }
+            openBrief()
         case .directTo(let said):
             // The place found near the route as a clearance's is (the
             // radio's Direct To does the same); not on the route, a
@@ -51,21 +46,17 @@ extension RootView {
                 plan.divert(to: ident, from: fix)
             } else {
                 plan.dest = ident
-                tab = .fpl
                 plan.plan()
             }
-            if detent != .medium { detent = .medium }
+            showPlan()
         case .nearest:
-            AirportShelf.shared.show(.nearest)
-            tab = .airport
-            if detent != .medium { detent = .medium }
+            openScreen(.nearest)
         case .weather(let ident):
             open(ident)
         case .planRoute(let dep, let stops, let dest):
             // A route shared from the site, planned here as it was there.
             plan.dep = dep; plan.stops = stops; plan.dest = dest
-            tab = .fpl
-            if detent != .medium { detent = .medium }
+            showPlan()
             plan.plan()
         case .aircraft(let hex):
             // The airplane's card, tracked from its next report on.
@@ -94,6 +85,18 @@ extension RootView {
             Replay.shared.load(Replay.points(points), key: url.lastPathComponent)
             Replay.shared.play()
             if detent != RootView.pill { detent = RootView.pill }
+        }
+    }
+
+    /// The route's Brief: in the inspector on the iPad, the strip's own
+    /// page there (BriefAsk), else a page over the plan.
+    func openBrief() {
+        if layout == .split {
+            sideCard = .brief
+        } else if layoutName == "strip" {
+            BriefAsk.shared.ask()
+        } else {
+            path = [.screen(.brief)]
         }
     }
 }
