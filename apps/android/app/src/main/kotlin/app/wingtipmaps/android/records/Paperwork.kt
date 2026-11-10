@@ -3,23 +3,18 @@ package app.wingtipmaps.android.records
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.generated.gateway.DueDto
 import app.wingtipmaps.android.api.generated.gateway.PaperworkDto
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.dueTone
 import java.util.Locale
 
 /**
  * What falls due for the pilot and their airplanes, soonest first, each
  * with its rule and the days or hours left (GET /api/paperwork, the
  * gateway's PaperworkService): the days are the engine's or the owner's,
- * and only their words and tone are made here, as the web's lib/paperwork
- * and the iPhone's Due extension make them. The 30 days and 10 hours are
- * the reminders' window, not a rule's.
+ * and so is the tone (`due_tone`); only their words are made here, as the
+ * web's lib/paperwork and the iPhone's Due extension make them.
  */
 object Paperwork {
-    /** Within this many days, an item is coming up (the first reminder). */
-    const val SOON_DAYS = 30L
-
-    /** Within this many hours of time in service, an hour-counted item is. */
-    const val SOON_HOURS = 10.0
-
     /** The list, or null signed out. */
     suspend fun fetch(): PaperworkDto? = Gateway.read("/api/paperwork")
 
@@ -45,11 +40,24 @@ object Paperwork {
         return due.dueAtHours?.let { "At ${tenths(it)} h" } ?: ""
     }
 
-    fun tone(due: DueDto): Tone {
-        due.daysLeft?.let { return if (it < 0) Tone.PAST else if (it <= SOON_DAYS) Tone.SOON else Tone.FINE }
-        due.hoursLeft?.let { return if (it <= 0) Tone.PAST else if (it <= SOON_HOURS) Tone.SOON else Tone.FINE }
-        return Tone.UNKNOWN
+    /** The engine's `due_tone` for the days or hours left; a test's own in
+     *  its place. */
+    fun interface ToneRule {
+        fun tone(daysLeft: Double?, hoursLeft: Double?): Result<String>
     }
+
+    val engineTone = ToneRule { days, hours -> Engine.dueTone(days, hours) }
+
+    /** How near it falls due, the engine's `due_tone` (past, within the
+     *  reminders' 30 days or 10 hours, further off); not known where the
+     *  engine cannot say (Engine.rule has logged why). */
+    fun tone(due: DueDto, rule: ToneRule = engineTone): Tone =
+        when (rule.tone(due.daysLeft?.toDouble(), due.hoursLeft).getOrNull()) {
+            "stop" -> Tone.PAST
+            "caution" -> Tone.SOON
+            "ok" -> Tone.FINE
+            else -> Tone.UNKNOWN
+        }
 
     /** The rule and the day, as the row's second line. */
     fun detail(due: DueDto): String = listOfNotNull(due.rule, due.dueOn).joinToString(" · ")

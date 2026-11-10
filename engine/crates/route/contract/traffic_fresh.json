@@ -1,0 +1,48 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "Whether each airplane heard is drawn: its position, seen_s old when the answer was made and the answer age_s old now, within 30 s (wingtip.traffic's STALE_S); older, it is somewhere else by now.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TrafficFreshInput",
+      "type": "object",
+      "properties": {
+        "age_s": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "planes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "seen_s": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "planes"
+      ]
+    },
+    "answer": {
+      "title": "TrafficFreshAnswer",
+      "type": "array",
+      "items": {
+        "type": "boolean"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

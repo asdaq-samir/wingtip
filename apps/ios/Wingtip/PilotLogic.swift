@@ -179,9 +179,9 @@ struct AcsTable: Decodable, Sendable {
     }
 }
 
-/// The airplane form's fields as typed, checked as the gateway checks
-/// them (AircraftRequest's @NotBlank/@Positive, the web app's form) before
-/// the round trip.
+/// The airplane form's fields as typed, checked by the engine as the
+/// gateway checks them (AircraftRequest's @NotBlank/@Positive, the web
+/// app's form) before the round trip.
 struct AircraftForm: Equatable {
     var tailNumber = ""
     var typeDesignator = ""
@@ -207,33 +207,32 @@ struct AircraftForm: Equatable {
 
     private static func number(_ s: String) -> Double? { Double(s.trimmingCharacters(in: .whitespaces)) }
 
-    /// What is wrong, by field, in the web app's words; empty when it may be saved.
+    /// The key of a problem with the form as a whole, said under it: the
+    /// engine could not check the fields, so nothing may be saved.
+    static let formKey = "form"
+
+    /// What is wrong, by field, in the web app's words; empty when it may
+    /// be saved. The limits are the engine's (`aircraft_problems`), the
+    /// gateway's and the web's own; where the engine cannot answer, the
+    /// form says so rather than pass unchecked figures.
     var problems: [String: String] {
-        var out: [String: String] = [:]
-        let tail = tailNumber.trimmingCharacters(in: .whitespaces), type = typeDesignator.trimmingCharacters(in: .whitespaces)
-        if tail.isEmpty { out["tailNumber"] = "Tail number is required" } else if tail.count > 16 { out["tailNumber"] = "At most 16 characters" }
-        if type.isEmpty { out["typeDesignator"] = "Type designator is required" } else if type.count > 16 { out["typeDesignator"] = "At most 16 characters" }
-        func positive(_ key: String, _ value: String, _ label: String, required: Bool) {
-            let t = value.trimmingCharacters(in: .whitespaces)
-            if t.isEmpty { if required { out[key] = "\(label) must be a positive number" }; return }
-            if (Self.number(t) ?? 0) <= 0 { out[key] = "\(label) must be a positive number" }
+        let answer: EngineContract.AircraftProblemsAnswer
+        do {
+            answer = try Engine.aircraftProblems(
+                tailNumber: tailNumber, typeDesignator: typeDesignator, cruiseTasKt: cruiseTasKt, fuelBurnGph: fuelBurnGph,
+                cruisePowerPct: cruisePowerPct, climbTasKt: climbTasKt, climbFuelBurnGph: climbFuelBurnGph,
+                usableFuelGal: usableFuelGal, equipment: equipment, surveillance: surveillance, colour: colour)
+        } catch {
+            Log.engine.error("aircraft_problems: \(error.localizedDescription, privacy: .public)")
+            return [Self.formKey: "The figures could not be checked: \(error.localizedDescription)"]
         }
-        positive("cruiseTasKt", cruiseTasKt, "Cruise speed", required: true)
-        positive("fuelBurnGph", fuelBurnGph, "Cruise fuel burn", required: true)
-        positive("climbTasKt", climbTasKt, "Climb speed", required: false)
-        positive("climbFuelBurnGph", climbFuelBurnGph, "Climb fuel burn", required: false)
-        positive("usableFuelGal", usableFuelGal, "Usable fuel", required: false)
-        // A power a cruise table has: 40 to 100 percent, the gateway's
-        // limits and the planner's.
-        let power = cruisePowerPct.trimmingCharacters(in: .whitespaces)
-        if !power.isEmpty, !((Self.number(power) ?? 0) >= 40 && (Self.number(power) ?? 0) <= 100) { out["cruisePowerPct"] = "Cruise power must be between 40 and 100%" }
-        // Flight plan items 10a and 10b are letters and figures, at most 40
-        // and 20 (AIM Appendix 4, TBL 4-2 and 4-3); item 19 plain words.
-        let codes = { (s: String, n: Int) in s.count <= n && s.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber) } }
-        if !codes(equipment.trimmingCharacters(in: .whitespaces), 40) { out["equipment"] = "Letters and figures, as SDFGRY" }
-        if !codes(surveillance.trimmingCharacters(in: .whitespaces), 20) { out["surveillance"] = "Letters and figures, as B1" }
-        if colour.trimmingCharacters(in: .whitespaces).count > 40 { out["colour"] = "At most 40 characters" }
-        return out
+        let byField: [String: String?] = [
+            "tailNumber": answer.tailNumber, "typeDesignator": answer.typeDesignator, "cruiseTasKt": answer.cruiseTasKt,
+            "fuelBurnGph": answer.fuelBurnGph, "cruisePowerPct": answer.cruisePowerPct, "climbTasKt": answer.climbTasKt,
+            "climbFuelBurnGph": answer.climbFuelBurnGph, "usableFuelGal": answer.usableFuelGal, "equipment": answer.equipment,
+            "surveillance": answer.surveillance, "colour": answer.colour,
+        ]
+        return byField.compactMapValues { $0 }
     }
 
     /// The request, when there is nothing wrong.
@@ -306,18 +305,25 @@ enum Drills {
     static var lightGun: Deck { deck("light-gun") }
     static var vfrMinimums: Deck { deck("vfr-minimums") }
 
-    /// Days until a card in each box comes round again: the first box the
-    /// same session.
-    static let intervalDays = [0, 1, 3, 7, 16]
     static let day: TimeInterval = 86_400
 
     struct Standing: Codable, Equatable, Sendable { var box: Int; var due: Date }
     typealias Progress = [String: Standing]
 
+    /// A card answered: its new box and the days until it comes round
+    /// again are the engine's (`drill_next`, Leitner's boxes). Where the
+    /// engine cannot answer, the progress is kept as it was, so the card
+    /// stays due and comes up again, and the refusal is logged.
     static func answered(_ progress: Progress, card: String, knew: Bool, now: Date) -> Progress {
-        let box = knew ? min(intervalDays.count, (progress[card]?.box ?? 1) + 1) : 1
+        let next: EngineContract.DrillNextAnswer
+        do {
+            next = try Engine.drillNext(box: progress[card].map { Double($0.box) }, knew: knew)
+        } catch {
+            Log.engine.error("drill_next: \(error.localizedDescription, privacy: .public)")
+            return progress
+        }
         var out = progress
-        out[card] = Standing(box: box, due: now.addingTimeInterval(Double(intervalDays[box - 1]) * day))
+        out[card] = Standing(box: Int(next.box), due: now.addingTimeInterval(next.inDays * day))
         return out
     }
 

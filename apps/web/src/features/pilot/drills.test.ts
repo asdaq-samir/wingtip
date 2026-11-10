@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { answered, deckOf, dueCards, INTERVAL_DAYS, nextDue, type DeckKey, type Progress } from "./drills";
+import { answered, deckOf, dueCards, nextDue, type DeckKey, type Progress } from "./drills";
 import drillsFixture from "../../lib/fixtures/drills.json";
 
 const DAY = 86_400_000;
@@ -20,13 +20,13 @@ describe("the drills", () => {
     let progress = {};
     expect(dueCards(deck, progress, NOW)).toHaveLength(deck.cards.length);
     progress = answered(progress, "b", true, NOW);
-    expect(progress).toEqual({ b: { box: 2, due: NOW + INTERVAL_DAYS[1] * DAY } });
+    expect(progress).toEqual({ b: { box: 2, due: NOW + drillsFixture.intervalDays[1]! * DAY } });
     expect(dueCards(deck, progress, NOW).map((c) => c.id)).not.toContain("b");
     progress = answered(progress, "c", false, NOW);
     expect(dueCards(deck, progress, NOW).map((c) => c.id)).toContain("c");
     // Up the boxes no further than the last, and back to the first on a miss.
     for (let i = 0; i < 8; i++) progress = answered(progress, "b", true, NOW);
-    expect((progress as Record<string, { box: number }>).b!.box).toBe(INTERVAL_DAYS.length);
+    expect((progress as Record<string, { box: number }>).b!.box).toBe(drillsFixture.intervalDays.length);
     progress = answered(progress, "b", false, NOW);
     expect((progress as Record<string, { box: number }>).b!.box).toBe(1);
   });
@@ -47,7 +47,6 @@ describe("the drills", () => {
 // (docs/NATIVE.md).
 describe("the shared drills fixture", () => {
   test("the decks, card by card", () => {
-    expect(INTERVAL_DAYS).toEqual(drillsFixture.intervalDays);
     expect(drillsFixture.decks).toEqual(
       (["light-gun", "vfr-minimums"] as const)
         .map(deckOf)
@@ -66,6 +65,12 @@ describe("the shared drills fixture", () => {
           })),
         })),
     );
+  });
+
+  test.each(drillsFixture.next)("a card in box $box answered, knew it: $knew", ({ box, knew, result }) => {
+    expect(answered(box == null ? {} : { c: { box, due: 0 } }, "c", knew, 0)).toEqual({
+      c: { box: result.box, due: result.in_days * DAY },
+    });
   });
 
   test.each(drillsFixture.answered)("$card answered, knew it: $knew", ({ progress, card, knew, now, result }) => {

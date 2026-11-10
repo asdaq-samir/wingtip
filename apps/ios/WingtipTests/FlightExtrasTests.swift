@@ -137,8 +137,8 @@ struct RouteEditsTests {
 
     @Test func aDroppedPointGoesWhereItBendsTheRouteLeast() throws {
         let points = [CLLocationCoordinate2D(latitude: 42, longitude: -88), CLLocationCoordinate2D(latitude: 43, longitude: -89), CLLocationCoordinate2D(latitude: 46, longitude: -92)]
-        #expect(RouteExtras.bestStopIndex(points, at: CLLocationCoordinate2D(latitude: 44.5, longitude: -90.6)) == 1)
-        #expect(RouteExtras.bestStopIndex(points, at: CLLocationCoordinate2D(latitude: 42.4, longitude: -88.5)) == 0)
+        #expect(try RouteExtras.bestStopIndex(points, at: CLLocationCoordinate2D(latitude: 44.5, longitude: -90.6)) == 1)
+        #expect(try RouteExtras.bestStopIndex(points, at: CLLocationCoordinate2D(latitude: 42.4, longitude: -88.5)) == 0)
     }
 
     @Test func aDirectToIsCancelledBackToTheRouteAsItWas() throws {

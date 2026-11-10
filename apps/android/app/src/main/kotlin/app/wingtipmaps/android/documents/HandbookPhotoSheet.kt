@@ -99,7 +99,7 @@ private fun AirplaneFiguresForm(state: HandbookPhotoModel.State, model: Handbook
             Text(stringResource(R.string.cruise_from_row, it.title), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
-    AircraftFormFields(f, showProblems = state.tried, onChange = model::edit)
+    AircraftFormFields(f, state.problems, onChange = model::edit)
     ProblemLine(state.problem)
     if (state.saved) Text(stringResource(R.string.airplane_saved), style = MaterialTheme.typography.bodyMedium)
     Button(

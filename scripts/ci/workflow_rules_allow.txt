@@ -37,5 +37,6 @@ long | native-ios.yml | testflight | Archived, signed and uploaded to TestFlight
 long | promote.yml | promote | This commit's images, as latest | 21
 
 # The workflows' lines in all, at most: set at the total on 2026-11-10,
-# lowered when engine-wheel and test-python replaced six wheel builds.
-budget | 3069
+# lowered when engine-wheel and test-python replaced six wheel builds, then
+# one for the gateway's aircraftForm.json path (areas.yml).
+budget | 3070

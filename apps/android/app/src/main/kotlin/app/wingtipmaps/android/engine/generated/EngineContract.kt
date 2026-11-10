@@ -63,6 +63,36 @@ object EngineContract {
     )
 
     @Serializable
+    data class AircraftProblemsAnswer(
+        val tailNumber: String? = null,
+        val typeDesignator: String? = null,
+        val cruiseTasKt: String? = null,
+        val fuelBurnGph: String? = null,
+        val cruisePowerPct: String? = null,
+        val climbTasKt: String? = null,
+        val climbFuelBurnGph: String? = null,
+        val usableFuelGal: String? = null,
+        val equipment: String? = null,
+        val surveillance: String? = null,
+        val colour: String? = null,
+    )
+
+    @Serializable
+    data class AircraftProblemsInput(
+        val tailNumber: String? = null,
+        val typeDesignator: String? = null,
+        val cruiseTasKt: String? = null,
+        val fuelBurnGph: String? = null,
+        val cruisePowerPct: String? = null,
+        val climbTasKt: String? = null,
+        val climbFuelBurnGph: String? = null,
+        val usableFuelGal: String? = null,
+        val equipment: String? = null,
+        val surveillance: String? = null,
+        val colour: String? = null,
+    )
+
+    @Serializable
     data class AirplaneFiguresAnswer(
         val figures: List<EngineContract.AirplaneFiguresAnswerFiguresItem>,
         val profile: Map<String, JsonElement>? = null,
@@ -1074,6 +1104,14 @@ object EngineContract {
     @Serializable
     data class BareFieldInput(
         val ident: String,
+    )
+
+    @Serializable
+    data class BearingDegInput(
+        val lat1: Double,
+        val lon1: Double,
+        val lat2: Double,
+        val lon2: Double,
     )
 
     @Serializable
@@ -2326,6 +2364,26 @@ object EngineContract {
     )
 
     @Serializable
+    data class DestinationAnswerItem(
+        val lat: Double,
+        val lon: Double,
+    )
+
+    @Serializable
+    data class DestinationInput(
+        val points: List<EngineContract.DestinationInputPointsItem>,
+    )
+
+    @Serializable
+    data class DestinationInputPointsItem(
+        val lat: Double,
+        val lon: Double,
+        @SerialName("bearing_deg")
+        val bearingDeg: Double,
+        val nm: Double,
+    )
+
+    @Serializable
     data class DiagramFixUsableInput(
         /**
          * The fix's age, s.
@@ -2532,6 +2590,19 @@ object EngineContract {
     }
 
     @Serializable
+    data class DrillNextAnswer(
+        val box: Double,
+        @SerialName("in_days")
+        val inDays: Double,
+    )
+
+    @Serializable
+    data class DrillNextInput(
+        val box: Double? = null,
+        val knew: Boolean,
+    )
+
+    @Serializable
     data class DryRunAnswer(
         val points: List<EngineContract.DryRunAnswerPointsItem>,
         @SerialName("along_nm")
@@ -2592,6 +2663,14 @@ object EngineContract {
          */
         val line: List<List<JsonElement>>? = null,
         val missed: Boolean? = null,
+    )
+
+    @Serializable
+    data class DueToneInput(
+        @SerialName("days_left")
+        val daysLeft: Double? = null,
+        @SerialName("hours_left")
+        val hoursLeft: Double? = null,
     )
 
     @Serializable
@@ -9687,6 +9766,19 @@ object EngineContract {
     )
 
     @Serializable
+    data class TrafficFreshInput(
+        @SerialName("age_s")
+        val ageS: Double? = null,
+        val planes: List<EngineContract.TrafficFreshInputPlanesItem>,
+    )
+
+    @Serializable
+    data class TrafficFreshInputPlanesItem(
+        @SerialName("seen_s")
+        val seenS: Double? = null,
+    )
+
+    @Serializable
     data class TrafficKindInput(
         val category: String? = null,
     )
@@ -9695,6 +9787,10 @@ object EngineContract {
     data class TrafficMarksAnswerItem(
         val label: String,
         val near: Boolean,
+        val nm: Double? = null,
+        @SerialName("bearing_deg")
+        val bearingDeg: Double? = null,
+        val tell: Boolean,
     )
 
     @Serializable
@@ -9702,6 +9798,13 @@ object EngineContract {
         @SerialName("own_ft")
         val ownFt: Double? = null,
         val planes: List<EngineContract.TrafficMarksInputPlanesItem>,
+        val own: EngineContract.TrafficMarksInputOwn? = null,
+    )
+
+    @Serializable
+    data class TrafficMarksInputOwn(
+        val lat: Double,
+        val lon: Double,
     )
 
     @Serializable
@@ -9710,6 +9813,8 @@ object EngineContract {
         val altitudeFt: Double? = null,
         @SerialName("vertical_fpm")
         val verticalFpm: Double? = null,
+        val lat: Double? = null,
+        val lon: Double? = null,
     )
 
     @Serializable

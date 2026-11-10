@@ -16,13 +16,11 @@ import app.wingtipmaps.android.aircraft.AircraftForm.Field
 /**
  * The "Your Airplane" form's fields: the one form both Your Airplanes
  * and the handbook's Add from a Photo use, so a field added to the
- * record is added here once. Each field's problem, once [showProblems]
- * (Save was tried), is said under it, where the pilot fixes it.
+ * record is added here once. Each field's problem, the model's once Save
+ * was tried, is said under it, where the pilot fixes it.
  */
 @Composable
-fun AircraftFormFields(form: AircraftForm, showProblems: Boolean, onChange: ((AircraftForm) -> AircraftForm) -> Unit) {
-    val problems = if (showProblems) form.problems else emptyMap()
-
+fun AircraftFormFields(form: AircraftForm, problems: Map<Field, String>, onChange: ((AircraftForm) -> AircraftForm) -> Unit) {
     @Composable
     fun field(@StringRes label: Int, which: Field, value: String, kind: Kind, set: AircraftForm.(String) -> AircraftForm) {
         val problem = problems[which]

@@ -1,0 +1,66 @@
+{
+  "x-call": "wingtip_core::geo::call",
+  "description": "Where a great circle from each point on its true course reaches its distance out, on the same sphere as distance_nm, the longitude within -180 to 180: the phones' traffic carried on along its track between reports, a list so a map's airplanes cross once.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DestinationInput",
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "bearing_deg": {
+                "type": "number"
+              },
+              "nm": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "lat",
+              "lon",
+              "bearing_deg",
+              "nm"
+            ]
+          }
+        }
+      },
+      "required": [
+        "points"
+      ]
+    },
+    "answer": {
+      "title": "DestinationAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number"
+          },
+          "lon": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "lat",
+          "lon"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

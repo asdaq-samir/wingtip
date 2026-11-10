@@ -181,6 +181,130 @@
       ],
       "additionalProperties": false
     },
+    "aircraft_problems": {
+      "description": "What is wrong with the \"Your Airplane\" form's fields as typed, by field (the gateway's AircraftRequest names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn positive numbers, the climb's and usable fuel blank or positive; cruise power blank or 40 to 100%; equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AircraftProblemsInput",
+          "type": "object",
+          "properties": {
+            "tailNumber": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "typeDesignator": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "cruiseTasKt": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "fuelBurnGph": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "cruisePowerPct": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "climbTasKt": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "climbFuelBurnGph": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "usableFuelGal": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "equipment": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "surveillance": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "colour": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": []
+        },
+        "answer": {
+          "title": "AircraftProblemsAnswer",
+          "type": "object",
+          "properties": {
+            "tailNumber": {
+              "type": "string"
+            },
+            "typeDesignator": {
+              "type": "string"
+            },
+            "cruiseTasKt": {
+              "type": "string"
+            },
+            "fuelBurnGph": {
+              "type": "string"
+            },
+            "cruisePowerPct": {
+              "type": "string"
+            },
+            "climbTasKt": {
+              "type": "string"
+            },
+            "climbFuelBurnGph": {
+              "type": "string"
+            },
+            "usableFuelGal": {
+              "type": "string"
+            },
+            "equipment": {
+              "type": "string"
+            },
+            "surveillance": {
+              "type": "string"
+            },
+            "colour": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "airplane_figures": {
       "description": "An airplane's figures, each with where it comes from: its pilot's own where they differ from the book's (\"pilot\"), else its photographed handbook page's (\"handbook\"), else its type's stock profile's (\"book\"); a figure none has is null, never another airplane's (the owner, 2026-11-09). The empty weight and moment are the pilot's alone (a stock profile's are its handbook's sample airplane's). `profile` is the book's with the picked figures over it, the airplane every other rule takes; null with no book, handbook or own figures (no airplane).",
       "type": "object",
@@ -2602,6 +2726,45 @@
         "answer": {
           "title": "BareFieldAnswer",
           "type": "string"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "bearing_deg": {
+      "description": "The initial great-circle course from the first point to the second, degrees true 0 to 360, on the same sphere as distance_nm (wingtip.geo.bearing_deg); 0 for two points that coincide.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "BearingDegInput",
+          "type": "object",
+          "properties": {
+            "lat1": {
+              "type": "number"
+            },
+            "lon1": {
+              "type": "number"
+            },
+            "lat2": {
+              "type": "number"
+            },
+            "lon2": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat1",
+            "lon1",
+            "lat2",
+            "lon2"
+          ]
+        },
+        "answer": {
+          "title": "BearingDegAnswer",
+          "type": "number"
         }
       },
       "required": [
@@ -5309,6 +5472,71 @@
       ],
       "additionalProperties": false
     },
+    "destination": {
+      "description": "Where a great circle from each point on its true course reaches its distance out, on the same sphere as distance_nm, the longitude within -180 to 180: the phones' traffic carried on along its track between reports, a list so a map's airplanes cross once.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "DestinationInput",
+          "type": "object",
+          "properties": {
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  },
+                  "bearing_deg": {
+                    "type": "number"
+                  },
+                  "nm": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "lat",
+                  "lon",
+                  "bearing_deg",
+                  "nm"
+                ]
+              }
+            }
+          },
+          "required": [
+            "points"
+          ]
+        },
+        "answer": {
+          "title": "DestinationAnswer",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "lat",
+              "lon"
+            ]
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "diagram_fix_usable": {
       "description": "Whether own ship is drawn on the airport diagram: a fix no older than 3 s (AC 120-76D 11.17.2.3) and good to 30 m or better (11.17.2.4); a negative accuracy, none known, never.",
       "type": "object",
@@ -5572,7 +5800,7 @@
       "additionalProperties": false
     },
     "distance_nm": {
-      "description": "The geodesic distance between two points on the WGS 84 ellipsoid, nm.",
+      "description": "The great-circle distance between two points, nm, on the sphere of 3,440.065 nm flight computers use (wingtip.geo, pyproj's Geod with f = 0).",
       "x-tool": true,
       "type": "object",
       "properties": {
@@ -5910,6 +6138,51 @@
       ],
       "additionalProperties": false
     },
+    "drill_next": {
+      "description": "A flash card answered, by Leitner's boxes: known, up a box (a card never seen counts as the first) to the fifth at most; missed, back to the first. Its new box and the days until it is due again: 0, 1, 3, 7 and 16 for boxes 1 to 5.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "DrillNextInput",
+          "type": "object",
+          "properties": {
+            "box": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "knew": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "knew"
+          ]
+        },
+        "answer": {
+          "title": "DrillNextAnswer",
+          "type": "object",
+          "properties": {
+            "box": {
+              "type": "number"
+            },
+            "in_days": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "box",
+            "in_days"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "dry_run": {
       "description": "The planned flight flown on paper along the nav log's rows, by its procedures and holds, going missed when asked.",
       "type": "object",
@@ -6106,6 +6379,45 @@
             "missable",
             "final",
             "landings"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "due_tone": {
+      "description": "How near a paperwork item falls due, as every app colours its row: past is a stop, within 30 days (the reminders' first email, the gateway's ReminderService) or 10 hours of time in service a caution, further off ok; unknown with neither. By its day where it has one, else its hours.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "DueToneInput",
+          "type": "object",
+          "properties": {
+            "days_left": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "hours_left": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": []
+        },
+        "answer": {
+          "title": "DueToneAnswer",
+          "enum": [
+            "stop",
+            "caution",
+            "ok",
+            "unknown"
           ]
         }
       },
@@ -22599,6 +22911,53 @@
       ],
       "additionalProperties": false
     },
+    "traffic_fresh": {
+      "description": "Whether each airplane heard is drawn: its position, seen_s old when the answer was made and the answer age_s old now, within 30 s (wingtip.traffic's STALE_S); older, it is somewhere else by now.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TrafficFreshInput",
+          "type": "object",
+          "properties": {
+            "age_s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "planes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "seen_s": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "planes"
+          ]
+        },
+        "answer": {
+          "title": "TrafficFreshAnswer",
+          "type": "array",
+          "items": {
+            "type": "boolean"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "traffic_kind": {
       "description": "An airplane's kind from its ADS-B emitter category (GDL 90 Table 11).",
       "type": "object",
@@ -22634,7 +22993,7 @@
       "additionalProperties": false
     },
     "traffic_marks": {
-      "description": "Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159).",
+      "description": "Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159); with own ship's place and the airplane's, how far off it is (nm) and its true bearing from own ship, and tell: near in height and within 5 nm, the traffic the phones notify while the app is not in front (a design choice, no rule).",
       "type": "object",
       "properties": {
         "input": {
@@ -22663,9 +23022,39 @@
                       "number",
                       "null"
                     ]
+                  },
+                  "lat": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "lon": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
                   }
                 }
               }
+            },
+            "own": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "lat",
+                "lon"
+              ]
             }
           },
           "required": [
@@ -22683,11 +23072,29 @@
               },
               "near": {
                 "type": "boolean"
+              },
+              "nm": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "bearing_deg": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "tell": {
+                "type": "boolean"
               }
             },
             "required": [
               "label",
-              "near"
+              "near",
+              "nm",
+              "bearing_deg",
+              "tell"
             ]
           }
         }
@@ -24270,6 +24677,7 @@
     "acs_codes",
     "ahead_frame",
     "airborne_now",
+    "aircraft_problems",
     "airplane_figures",
     "airplane_needs",
     "airspace_column",
@@ -24306,6 +24714,7 @@
     "awc_pireps_read",
     "awc_tafs_read",
     "bare_field",
+    "bearing_deg",
     "below_vfr_minimums",
     "best_fields",
     "call_pattern",
@@ -24335,6 +24744,7 @@
     "departure_circuit",
     "departure_pattern",
     "departure_window",
+    "destination",
     "diagram_fix_usable",
     "diagram_graticule",
     "diagram_labels",
@@ -24344,7 +24754,9 @@
     "diversion",
     "diversion_reasonable",
     "drill_decks",
+    "drill_next",
     "dry_run",
+    "due_tone",
     "emergency_guidance",
     "emitter_category",
     "endorsement_fill",
@@ -24559,6 +24971,7 @@
     "thin_track",
     "title_case",
     "tokens",
+    "traffic_fresh",
     "traffic_kind",
     "traffic_marks",
     "traffic_matches",

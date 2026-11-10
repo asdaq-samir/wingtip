@@ -21,13 +21,15 @@ import kotlinx.coroutines.launch
  * iPhone's OwnAircraftListView): the pilot's airplanes the gateway keeps
  * (/api/aircraft), each added, changed or deleted there. The gateway
  * holds the record and works no figure out; nothing here does either.
- * The four calls are passed in so the JVM tests answer them.
+ * The four calls, and the engine's check of the form, are passed in so
+ * the JVM tests answer them.
  */
 class AircraftModel(
     private val list: suspend () -> List<AircraftDto>? = { Gateway.aircraft() },
     private val add: suspend (AircraftRequest) -> AircraftDto = { Gateway.addAircraft(it) },
     private val update: suspend (Long, AircraftRequest) -> AircraftDto = { id, r -> Gateway.updateAircraft(id, r) },
     private val delete: suspend (Long) -> Unit = { Gateway.deleteAircraft(it) },
+    private val rules: AircraftForm.Rules = AircraftForm.EngineRules,
 ) : ViewModel() {
     /** One airplane's form open: a new one (id null) or one kept. */
     data class Editing(
@@ -35,6 +37,8 @@ class AircraftModel(
         val form: AircraftForm = AircraftForm(),
         /** Save was tried, so each field's problem is shown under it. */
         val tried: Boolean = false,
+        /** What is wrong, by field, once Save was tried (AircraftForm.problems). */
+        val problems: Map<AircraftForm.Field, String> = emptyMap(),
         val saving: Boolean = false,
         /** Delete asked, waiting for the pilot to confirm it. */
         val confirmingDelete: Boolean = false,
@@ -77,7 +81,7 @@ class AircraftModel(
     fun startEditing(a: AircraftDto) = _state.update { it.copy(editing = Editing(id = a.id, form = AircraftForm.of(a)), problem = null) }
 
     fun change(how: (AircraftForm) -> AircraftForm) = _state.update { s ->
-        s.copy(editing = s.editing?.let { e -> e.copy(form = how(e.form)) })
+        s.copy(editing = s.editing?.let { e -> how(e.form).let { f -> e.copy(form = f, problems = if (e.tried) f.problems(rules) else emptyMap()) } })
     }
 
     /** The form put away, nothing saved. */
@@ -87,12 +91,13 @@ class AircraftModel(
      *  form is as the gateway takes it; then added or replaced. */
     fun save() {
         val e = _state.value.editing ?: return
-        val request = e.form.request
+        val problems = e.form.problems(rules)
+        val request = e.form.request(problems)
         if (request == null) {
-            _state.update { it.copy(editing = e.copy(tried = true)) }
+            _state.update { it.copy(editing = e.copy(tried = true, problems = problems)) }
             return
         }
-        _state.update { it.copy(editing = e.copy(tried = true, saving = true), problem = null) }
+        _state.update { it.copy(editing = e.copy(tried = true, problems = problems, saving = true), problem = null) }
         viewModelScope.launch {
             try {
                 val saved = e.id?.let { update(it, request) } ?: add(request)

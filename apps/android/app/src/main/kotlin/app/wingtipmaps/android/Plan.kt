@@ -286,14 +286,15 @@ class Plan(app: Application) : AndroidViewModel(app) {
         plan(positionIdent(at), s.dest.ifEmpty { ident }, if (s.dest.isEmpty()) emptyList() else stops)
     }
 
-    /** Add Stop and Add to Route: the point among the stops where it
-     *  bends the route least (Geo.bestStopIndex), the route planned again. */
+    /** Add Stop and Add to Route: the point among the stops where it bends the route least
+     *  (Geo.bestStopIndex, the engine's distances), planned again; else the pilot told why. */
     fun addToRoute(point: ChartPoint) {
         val s = _state.value
         val course = s.course ?: return
         val points = (listOf(course.departure) + course.stops.orEmpty() + course.destination).map { it.lat to it.lon }
-        val at = Geo.bestStopIndex(points, point.lat, point.lon).coerceAtMost(s.stops.size)
-        plan(s.dep, s.dest, s.stops.toMutableList().apply { add(at, point.ident) })
+        val at = Geo.bestStopIndex(points, point.lat, point.lon)
+            .getOrElse { why -> return _state.update { it.copy(problem = "${point.ident} could not be put on the route: ${why.message}") } }
+        plan(s.dep, s.dest, s.stops.toMutableList().apply { add(at.coerceAtMost(s.stops.size), point.ident) })
     }
 
     private var holdAt: String? = null

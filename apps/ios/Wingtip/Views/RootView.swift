@@ -249,7 +249,7 @@ struct RootView: View {
                     // credit beside the internet's traffic it covers.
                     ReceiverChip()
                     if traffic.credited { MapChip(Traffic.credit(traffic.source)) }
-                    if traffic.on, !traffic.planes.isEmpty, let problem = traffic.marksProblem { MapChip(problem, colour: WingtipInk.caution) }
+                    if traffic.on, let problem = traffic.marksProblem { MapChip(problem, colour: WingtipInk.caution) }
                 }
                 .padding(.leading, WingtipSpace.md).padding(.top, WingtipSpace.md)
             }

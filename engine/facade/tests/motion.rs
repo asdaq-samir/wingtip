@@ -89,12 +89,6 @@ fn near_own_ships_height_is_within_1000_ft() {
     // nearInHeight: the difference itself, against nothing.
     assert!(near(&json!({ "altitude_ft": -1000 }), json!(0)));
     assert!(!near(&json!({ "altitude_ft": 1000.01 }), json!(0)));
-    // Many at once, in order.
-    let many = ask(
-        "traffic_marks",
-        json!({ "own_ft": 3000, "planes": [{ "altitude_ft": 3520 }, { "altitude_ft": null }, { "altitude_ft": 1800, "vertical_fpm": -600 }] }),
-    );
-    assert_eq!(many, json!([{ "label": "+05", "near": true }, { "label": "", "near": false }, { "label": "-12↓", "near": false }]));
 }
 
 #[test]

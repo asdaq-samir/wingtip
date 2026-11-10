@@ -14,7 +14,7 @@ import { api } from "../../lib/api/client";
 import type { Aircraft, DueItem, DueItemRequest } from "../../lib/api/types";
 import { localDay } from "../../lib/format";
 import { FINDING_TONE } from "../../lib/findings";
-import { daysBetween, dueTone, whenWords } from "./paperwork";
+import { daysBetween, dueFinding, whenWords } from "./paperwork";
 import { done } from "../../lib/doneNote";
 
 const KINDS: { value: DueItemRequest["kind"]; label: string }[] = [
@@ -150,7 +150,7 @@ export default function DueItemsGroup({ aircraft }: { aircraft: Aircraft }) {
                   .filter(Boolean)
                   .join(" · ") || undefined
               }
-              value={dated ? <span className={cn(FINDING_TONE[dueTone(standing)])}>{whenWords(standing)}</span> : undefined}
+              value={dated ? <span className={cn(FINDING_TONE[dueFinding(standing)])}>{whenWords(standing)}</span> : undefined}
               onClick={() => setOpen({ id: i.id, draft: draftOf(i) })}
             />
           );

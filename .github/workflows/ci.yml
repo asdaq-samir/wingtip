@@ -534,6 +534,7 @@ jobs:
                 - services/gateway/**
                 - services/assistant/openapi.json
                 - services/planner/openapi.json
+                - apps/web/src/lib/fixtures/aircraftForm.json
               ios:
                 - apps/ios/**
                 - engine/**
