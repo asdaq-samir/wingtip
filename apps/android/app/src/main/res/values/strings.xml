@@ -16,7 +16,6 @@
     <string name="search_hint">Search airports, airplanes, or ask</string>
     <string name="search_hint_flying">Tap the mic and say it</string>
     <string name="search_add_stop">Add a stop</string>
-    <string name="said_radio">The radio</string>
     <string name="say_it">Say it</string>
     <string name="said_clear_search">Clear the search</string>
     <string name="nothing_heard">Nothing was heard.</string>
