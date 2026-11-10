@@ -115,6 +115,8 @@ final class PlateRenderer: MKOverlayRenderer {
 /// actions do.
 struct MapExtrasInput {
     var held: CLLocationCoordinate2D?
+    /// The field whose card is open, ringed on the chart (SelectedHalo).
+    var selectedField: String?
     var waypoints = false
     var classB = false
     var plates = true
@@ -192,6 +194,7 @@ final class MapExtrasState: NSObject {
     func update(_ map: MKMapView, _ input: MapExtrasInput, tiles: (any MKOverlay)?) {
         onHold = input.onHold
         onWaypoint = input.onWaypoint
+        AirportMarkView.select(input.selectedField, on: map)
         if let point = input.held {
             if let pin = held {
                 if pin.coordinate.latitude != point.latitude || pin.coordinate.longitude != point.longitude { pin.coordinate = point }

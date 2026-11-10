@@ -109,8 +109,8 @@ test("a checkpoint tapped on the chart opens its card in the sheet, ringed on th
   await settled(panel);
   const marker = page.locator(".maplibregl-marker", { hasText: /^\d+$/ }).first();
   await expect(marker).toBeVisible({ timeout: slow(60000) });
-  // The ring a picked point wears (Halo's orange).
-  const rings = page.locator('.maplibregl-map path[stroke="#ff3b00"]');
+  // The ring a picked point wears (chart.selected, the brand's Taxiway Yellow).
+  const rings = page.locator('.maplibregl-map path[stroke="#f2b600"]');
   const before = await rings.count();
   // Its own click, not one at its place: neighbouring checkpoints stack
   // on a phone's fitted route (map.spec).

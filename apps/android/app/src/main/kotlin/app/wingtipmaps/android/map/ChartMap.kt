@@ -71,6 +71,7 @@ data class MapRest(val south: Double, val west: Double, val north: Double, val e
  * @param glide the still-air glide ring about own ship (InFlight, the
  *   engine's glide_ring), its outline as latitude and longitude pairs,
  *   drawn dashed; empty for none.
+ * @param selectedField the field whose card is open, ringed (SelectedAirportLayer).
  * @param emergency the emergency assistant's line to the field picked
  *   (EmergencyLayer); null while it is shut.
  * @param follow whether the map keeps the airplane in the middle; a
@@ -118,6 +119,7 @@ fun ChartMap(
     trail: List<PathPoint> = emptyList(),
     glide: List<List<Double>> = emptyList(),
     emergency: EmergencyLine? = null,
+    selectedField: String? = null,
     follow: Boolean = false,
     onDragged: () -> Unit = {},
     onRevealed: () -> Unit = {},
@@ -164,6 +166,7 @@ fun ChartMap(
     LaunchedEffect(holder, traffic, tracked) { holder.traffic(traffic, tracked) }
     LaunchedEffect(holder, glide) { holder.glide(glide) }
     LaunchedEffect(holder, emergency) { holder.emergency(emergency) }
+    LaunchedEffect(holder, selectedField) { holder.selectField(selectedField) }
 
     AndroidView(factory = { holder.view }, modifier = modifier)
 }
@@ -206,6 +209,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private var lastTraffic: List<TrafficDrawing.Target> = emptyList()
     private var lastTracked: String? = null
     private var lastEmergency: EmergencyLine? = null
+    private var lastSelected: String? = null
     /** The chart's own furthest zoom, MapLibre's; the street map lets the
      *  map go further while it is there. */
     private var chartMaxZoom = 22.0
@@ -269,7 +273,8 @@ private class MapHolder(val view: MapView, private val density: Float) {
                 close(map, style, lastClose)
                 route(style, line, lastPoints)
                 trail(style, lastTrail)
-                glide(style, lastGlide)
+                GlideLayer.draw(style, lastGlide, GLIDE, ROUTE)
+                SelectedAirportLayer.draw(style, lastSelected)
                 ownShip(map, style, lastFix, lastFollow)
                 EmergencyLayer.draw(style, lastEmergency, below = OWN_SHIP)
                 drawTraffic()
@@ -483,31 +488,13 @@ private class MapHolder(val view: MapView, private val density: Float) {
     fun glide(ring: List<List<Double>>) {
         lastGlide = ring
         if (destroyed) return
-        view.getMapAsync { map -> map.getStyle { style -> glide(style, ring) } }
+        view.getMapAsync { map -> map.getStyle { style -> GlideLayer.draw(style, ring, GLIDE, ROUTE) } }
     }
 
-    /** The glide ring, dashed in the tint as the web app's and the
-     *  iPhone's: what the airplane reaches in still air, not a boundary
-     *  to fly by. Under the route and the airplane. */
-    private fun glide(style: Style, ring: List<List<Double>>) {
-        val geoJson = lineJson(ring.filter { it.size == 2 }.map { it[0] to it[1] })
-        val source = style.getSourceAs<GeoJsonSource>(GLIDE)
-        if (source != null) {
-            source.setGeoJson(geoJson)
-            return
-        }
-        style.addSource(GeoJsonSource(GLIDE, geoJson))
-        val layer = LineLayer(GLIDE, GLIDE).withProperties(
-            PropertyFactory.lineColor(Color.rgb(0, 122, 255)),
-            PropertyFactory.lineWidth(2f),
-            PropertyFactory.lineOpacity(0.85f),
-            PropertyFactory.lineDasharray(arrayOf(4f, 3f)),
-        )
-        when {
-            style.getLayer(ROUTE) != null -> style.addLayerBelow(layer, ROUTE)
-            style.getLayer(MapStyle.ROUTE_SLOT) != null -> style.addLayerBelow(layer, MapStyle.ROUTE_SLOT)
-            else -> style.addLayer(layer)
-        }
+    /** The ring round the field whose card is open (SelectedAirportLayer). */
+    fun selectField(ident: String?) {
+        lastSelected = ident
+        if (!destroyed) view.getMapAsync { map -> map.getStyle { style -> SelectedAirportLayer.draw(style, ident) } }
     }
 
     /** The map opened on the airplane's last position at a region's
