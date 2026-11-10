@@ -13,8 +13,6 @@ import { AircraftCard, AircraftPill, AircraftRecentsPage, usePrefetchAircraftTab
 import type { OneSearchModel } from "../../hooks/useOneSearch";
 import TabKept from "../../../../components/TabKept";
 import TabPage from "../../../../components/TabPage";
-import PullToRefresh from "../../../../components/PullToRefresh";
-import { refreshLive } from "../../../../lib/liveRefresh";
 import FplStrip from "../FplStrip";
 import { RecentRoutesPage } from "../RecentRoutes";
 import ProfileCard from "../ProfileCard";
@@ -173,41 +171,38 @@ export default function PlanSidebar({
       </Suspense>
     ) : null;
   // The airport's card, in the panel's body.
-  // Its weather asked again on a pull (PullToRefresh).
   const placeCard = place && (
-    <PullToRefresh onRefresh={() => refreshLive("airport")} testId="place-refresh">
-      <Suspense fallback={null}>
-        <PlaceCard
-          key={place}
-          ident={place}
-          from={measuredFrom}
-          onClose={closePlace}
-          onFlyHere={(to) => void flyHere(to)}
-          onDepartFrom={departFrom}
-          onExpand={() => setPanel("full")}
-          onLower={() => setPanel("half")}
-          // None for a point of the route, or past the planner's most stops.
-          onAddStop={
-            routePoints.includes(place) || planned.stops.length >= MAX_STOPS
-              ? undefined
-              : suggestedAt
-                ? () => keepFuelStops(suggestedAt.after, [place])
-                : addStop
-          }
-          stop={suggestedAt?.stop}
-          // The route's destination: when the flight lands there -- the time
-          // en route and on the ground at its stops (Totals.ground_min) after
-          // it leaves, as the figures' ETA -- for the hour its forecast marks.
-          arrival={
-            !s.local && sameField(place, `${planned.dest}`) && s.totals?.ete_min != null
-              ? { depart: depart || null, minutes: s.totals.ete_min + (s.totals.ground_min ?? 0) }
-              : undefined
-          }
-          startOn={approachesOf === place ? "approaches" : undefined}
-          onStarted={() => setApproachesOf(null)}
-        />
-      </Suspense>
-    </PullToRefresh>
+    <Suspense fallback={null}>
+      <PlaceCard
+        key={place}
+        ident={place}
+        from={measuredFrom}
+        onClose={closePlace}
+        onFlyHere={(to) => void flyHere(to)}
+        onDepartFrom={departFrom}
+        onExpand={() => setPanel("full")}
+        onLower={() => setPanel("half")}
+        // None for a point of the route, or past the planner's most stops.
+        onAddStop={
+          routePoints.includes(place) || planned.stops.length >= MAX_STOPS
+            ? undefined
+            : suggestedAt
+              ? () => keepFuelStops(suggestedAt.after, [place])
+              : addStop
+        }
+        stop={suggestedAt?.stop}
+        // The route's destination: when the flight lands there -- the time
+        // en route and on the ground at its stops (Totals.ground_min) after
+        // it leaves, as the figures' ETA -- for the hour its forecast marks.
+        arrival={
+          !s.local && sameField(place, `${planned.dest}`) && s.totals?.ete_min != null
+            ? { depart: depart || null, minutes: s.totals.ete_min + (s.totals.ground_min ?? 0) }
+            : undefined
+        }
+        startOn={approachesOf === place ? "approaches" : undefined}
+        onStarted={() => setApproachesOf(null)}
+      />
+    </Suspense>
   );
   // With the Map switch at its right (AircraftPill).
   const aircraftStrip = (
@@ -272,13 +267,11 @@ export default function PlanSidebar({
               ) : (
                 // The strip once, in the pill or here: at the pill's size the
                 // body is out of sight but for a finger taking it up.
-                <PullToRefresh onRefresh={() => refreshLive("traffic")} testId="traffic-refresh">
-                  <AircraftCard
-                    onPick={(plane) => selectFlight(plane.hex, plane)}
-                    onPickHex={(hex) => selectFlight(hex)}
-                    strip={stripsDrawn ? aircraftStrip : null}
-                  />
-                </PullToRefresh>
+                <AircraftCard
+                  onPick={(plane) => selectFlight(plane.hex, plane)}
+                  onPickHex={(hex) => selectFlight(hex)}
+                  strip={stripsDrawn ? aircraftStrip : null}
+                />
               )))}
         </TabKept>
       )}
@@ -352,19 +345,17 @@ export default function PlanSidebar({
           figures out of sight while it is open, as an airport's card has
           them. */}
           {briefHere && (
-            <PullToRefresh onRefresh={() => refreshLive("brief")} testId="brief-refresh">
-              <BriefCard
-                name={routeName(planned.dep, planned.dest, planned.stops)}
-                line={briefLine}
-                contents={briefContents}
-                notice={briefNotice}
-                marks={marks}
-                onClose={closeBrief}
-                onTap={tabTap}
-                onLegs={showLegs}
-                route={routeKey}
-              />
-            </PullToRefresh>
+            <BriefCard
+              name={routeName(planned.dep, planned.dest, planned.stops)}
+              line={briefLine}
+              contents={briefContents}
+              notice={briefNotice}
+              marks={marks}
+              onClose={closeBrief}
+              onTap={tabTap}
+              onLegs={showLegs}
+              route={routeKey}
+            />
           )}
           {/* FPL's nav log once there is a route, at the pilot's ask: the
           empty box alone before. */}
