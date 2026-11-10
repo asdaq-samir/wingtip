@@ -41,6 +41,16 @@ struct FlightActivityLines: Equatable {
         return state.destEteMin.map(Format.duration) ?? Format.none
     }
 
+    /// The same figure for a Dynamic Island drawn narrow (iOS 27: two Live
+    /// Activities on an iPhone 18 Pro, landscape, iPhone Duo), where Apple
+    /// asks for a short form rather than cut words (WidgetKit,
+    /// isDynamicIslandLimitedInWidth): under an hour as before, "12m"; an
+    /// hour or more as a nav log writes it, "1:25" rather than "1h 25m".
+    var compactNarrow: String {
+        guard let minutes = state.nextEteMin ?? state.destEteMin else { return Format.none }
+        return minutes.rounded() < 60 ? Format.duration(minutes) : Format.navLogTime(minutes)
+    }
+
     /// The glyph for the minimal island and the compact leading side: the
     /// copilot's mark while it has a message (a warning's octagon, as its
     /// banner draws one), else the airplane.

@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     #: Gridded LAMP (NOMADS): asked for a new issue this often.
     glmp_every_s: float = 600.0
     glmp_idle_every_s: float = 3600.0
+    #: The SPC's Day 1 convective outlook (issued five times a day).
+    outlook_every_s: float = 1800.0
+    outlook_idle_every_s: float = 3600.0
     #: TFRs (tfr.faa.gov).
     tfrs_every_s: float = 600.0
     tfrs_idle_every_s: float = 1800.0

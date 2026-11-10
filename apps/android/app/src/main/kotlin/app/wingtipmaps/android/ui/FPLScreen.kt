@@ -35,6 +35,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.ai.AiSources
@@ -48,6 +49,7 @@ import app.wingtipmaps.android.api.NavLogTotals
 import app.wingtipmaps.android.design.ChoiceGroup
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.dryrun.DryRun
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
 import app.wingtipmaps.android.navigation.ScreenRequests
@@ -78,6 +80,8 @@ fun FPLScreen(plan: Plan) {
     var dest by rememberSaveable(state.dest) { mutableStateOf(state.dest) }
     var stops by rememberSaveable(state.stops) { mutableStateOf(state.stops.joinToString(", ")) }
     var open by remember { mutableStateOf<Int?>(null) }
+    val dryRun: DryRun = viewModel()
+    val dryRunState by dryRun.state.collectAsStateWithLifecycle()
     val idents = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Next)
 
     Column(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
@@ -106,11 +110,13 @@ fun FPLScreen(plan: Plan) {
             if (state.routed && !state.planning) TextButton(onClick = { ScreenRequests.ask(Screen.BRIEF) }) { Text(stringResource(R.string.brief)) }
             // And its Share: the plan as a link another pilot opens (share/).
             if (state.routed && !state.planning) ShareRouteButton(state)
+            // The plan flown on paper over the map, once the nav log is in.
+            if (state.totals != null && !state.planning) TextButton(onClick = { dryRun.start(state) }) { Text(stringResource(R.string.dry_run)) }
             if (state.planning) Loading(Modifier.size(WingtipSpace.Xl))
             state.stage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
         FlightRulesRow(onChanged = { if (state.routed) plan.plan() })
-        ProblemLine(state.problem)
+        ProblemLine(state.problem ?: dryRunState.problem)
         // The nav log kept for the air, shown with no signal: how old.
         KeptAgeLine(KeptForAir.PLAN, state.plannedAtMs.takeIf { state.kept })
         LazyColumn(Modifier.weight(1f)) {
