@@ -3,7 +3,7 @@ import { MoveUpRight } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "../../../components/CloseButton";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent } from "../../../components/ResponsivePopover";
+import { SheetCard } from "../../../components/SheetCard";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { altitudeLines, fixRoles, type BranchFix } from "../../../lib/procedures";
@@ -30,7 +30,9 @@ export interface OpenFix {
  * canvas's card): Direct to it, as ATC sends an airplane, or flown as
  * charted again; and the altitude to cross it at -- the chart's, and the
  * pilot's own in its place, typed in feet, or As charted. A card in the
- * map's panel on a phone, its title on top and Close.
+ * map's panel over the search on every screen, its title on top and Close
+ * (the one card rule, the owner 2026-11-10: on a desktop it was a popover
+ * beside the panel, the search still showing, as RouteLegCard was).
  */
 export default function FixCard({
   open,
@@ -43,28 +45,18 @@ export default function FixCard({
   onDirect: (open: OpenFix, direct: boolean) => void;
   onCross: (fix: string, feet: number | null) => void;
 }) {
+  if (!open) return null;
   return (
-    <ResponsivePopover
-      open={!!open}
-      onOpenChange={(next) => {
-        if (!next) onClose();
-      }}
+    <SheetCard
+      title={open.fix.ident}
+      onClose={onClose}
+      testId="fix-card"
+      action={<CloseButton onClick={onClose} data-testid="fix-card-close" />}
     >
-      {/* Beside the top of the screen on a desktop, whichever opened it. */}
-      <ResponsivePopoverAnchor asChild>
-        <span aria-hidden="true" className="pointer-events-none fixed top-16 left-1/2 size-0" />
-      </ResponsivePopoverAnchor>
-      <ResponsivePopoverContent
-        title={open?.fix.ident ?? "Fix"}
-        side="bottom"
-        align="center"
-        className="flex w-80 flex-col gap-3 p-3"
-        data-testid="fix-card"
-        action={<CloseButton onClick={onClose} data-testid="fix-card-close" />}
-      >
-        {open && <FixCardBody key={`${open.field}-${open.kind}-${open.fix.ident}`} open={open} onDirect={onDirect} onCross={onCross} />}
-      </ResponsivePopoverContent>
-    </ResponsivePopover>
+      <div className="flex flex-col gap-3">
+        <FixCardBody key={`${open.field}-${open.kind}-${open.fix.ident}`} open={open} onDirect={onDirect} onCross={onCross} />
+      </div>
+    </SheetCard>
   );
 }
 
