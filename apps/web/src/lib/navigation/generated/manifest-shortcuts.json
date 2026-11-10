@@ -43,7 +43,7 @@
     {
       "name": "Nav Log",
       "short_name": "Nav Log",
-      "description": "The nav log, leg by leg (needs a route). Android's FPL tab is its nav log.",
+      "description": "The nav log, leg by leg (needs a route). On Android the plan's Nav Log button opens it.",
       "url": "/app/plan?open=navlog",
       "icons": [
         {
