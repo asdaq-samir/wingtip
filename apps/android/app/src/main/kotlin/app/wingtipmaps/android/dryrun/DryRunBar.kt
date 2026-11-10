@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.generated.WingtipRadius
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.map.ForecastAreasLayer
@@ -64,7 +65,7 @@ fun DryRunBar(rules: String, modifier: Modifier = Modifier) {
     DisposableEffect(Unit) { onDispose { ForecastAreasLayer.show(emptyList()) } }
     if (!run.open) return
 
-    Surface(shape = RoundedCornerShape(22.dp), tonalElevation = 3.dp, modifier = modifier.widthIn(max = 360.dp).padding(horizontal = WingtipSpace.Md)) {
+    Surface(shape = RoundedCornerShape(WingtipRadius.Banner), tonalElevation = 3.dp, modifier = modifier.widthIn(max = 360.dp).padding(horizontal = WingtipSpace.Md)) {
         Column(Modifier.padding(horizontal = WingtipSpace.Xs, vertical = WingtipSpace.Unit / 2)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // Material's icon buttons keep a 48 dp target round a 24 dp glyph.

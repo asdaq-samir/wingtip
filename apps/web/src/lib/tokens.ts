@@ -204,6 +204,7 @@ export const RADIUS = {
 /** The spacing scale, in points. */
 export const SPACE = {
   unit: 4,
+  hairline: 1,
   xxs: 2,
   xs: 4,
   sm: 8,

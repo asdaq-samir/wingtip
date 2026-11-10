@@ -89,7 +89,7 @@ private fun Legs(answer: RunAnswer, t: Double) {
                 val x = size.width * at
                 drawLine(mark, Offset(x, 0f), Offset(x, size.height), strokeWidth = 3.dp.toPx())
             },
-        horizontalArrangement = Arrangement.spacedBy(1.dp),
+        horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Hairline),
     ) {
         for (leg in answer.legs) {
             val category = leg.category

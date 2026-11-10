@@ -50,7 +50,7 @@ const DOTS: CircleLayerSpecification = {
       CATEGORY.LIFR!,
       CATEGORY_UNKNOWN,
     ] as never,
-    "circle-stroke-color": "#ffffff",
+    "circle-stroke-color": CHART.casing,
     "circle-stroke-width": 1,
   },
 };

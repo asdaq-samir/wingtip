@@ -22,7 +22,7 @@ struct ForecastStrip: View {
             if let answer = forecast.answer {
                 timeline(answer.legs)
                 if let here = forecast.here {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                         Text(ForecastPlay.line(here)).font(WingtipType.detail.monospacedDigit())
                         if let source = here.source { Text(source).font(WingtipType.note).foregroundStyle(.secondary) }
                     }
@@ -31,7 +31,7 @@ struct ForecastStrip: View {
                 if let alert = forecast.alert {
                     // The engine's words and its source as sent: the figures
                     // and the rule they cite are its own.
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                         Label(alert.words, systemImage: "exclamationmark.triangle.fill").font(WingtipType.detail)
                         Text("Source: \(alert.source)").font(WingtipType.note).foregroundStyle(.secondary)
                     }
@@ -52,7 +52,7 @@ struct ForecastStrip: View {
         }
         .padding(WingtipSpace.md)
         .frame(maxWidth: 360, alignment: .leading)
-        .floatingGlass(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .floatingGlass(in: RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous))
         .task(id: Asked(on: forecast.on, start: dryRun.startedAt)) {
             await forecast.play(dryRun, minimums: verdict.minimums)
         }
@@ -69,9 +69,9 @@ struct ForecastStrip: View {
     private func timeline(_ legs: [APIRunLeg]) -> some View {
         let total = max(1, (legs.last?.toT ?? 0) - (legs.first?.fromT ?? 0))
         let at = ForecastPlay.fraction(legs, at: forecast.now ?? 0)
-        return VStack(alignment: .leading, spacing: 2) {
+        return VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
             GeometryReader { box in
-                HStack(spacing: 1) {
+                HStack(spacing: WingtipSpace.hairline) {
                     ForEach(Array(legs.enumerated()), id: \.offset) { _, leg in
                         Rectangle().fill(Color(FlightCategory.mark(leg.category)))
                             .frame(width: max(2, box.size.width * (leg.toT - leg.fromT) / total - 1))
