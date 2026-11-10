@@ -94,7 +94,7 @@ fn the_paperworks_due_tone() {
 fn the_drills_boxes() {
     let drills = fixture("drills.json");
     for case in drills["next"].as_array().unwrap() {
-        assert_same(&ask("drill_next", json!({ "box": case["box"], "knew": case["knew"] })), &case["result"], &case);
+        assert_same(&ask("drill_next", json!({ "box": case["box"], "knew": case["knew"] })), &case["result"], case);
     }
     // Each box's interval is the fixture's own list.
     for (i, days) in drills["intervalDays"].as_array().unwrap().iter().enumerate().skip(1) {
