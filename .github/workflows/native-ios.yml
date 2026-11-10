@@ -63,7 +63,7 @@ jobs:
       ISSUER: ${{ vars.APP_STORE_ISSUER_ID }}
       KEY_P8: ${{ secrets.APP_STORE_KEY_P8 }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       # .tool-versions' Xcode (scripts/ci/select-xcode.sh, DEVELOPER_DIR for
       # the steps after), before anything builds: the engine's Apple targets
       # link against its SDK too. iPhone Duo's own layout (to the screen's
