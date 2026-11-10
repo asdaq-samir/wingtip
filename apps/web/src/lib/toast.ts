@@ -1,60 +1,93 @@
 import { useSyncExternalStore, type ReactNode } from "react";
-import type { ExternalToast } from "sonner";
 
 /**
- * sonner's `toast`, with sonner itself fetched on the first toast rather
- * than in the first load: imported anywhere the page draws first, it kept
- * its 34 KB in the script every phone runs before the map shows (issue
- * #290), for banners that come only once the pilot has done something.
- * The calls are sonner's own, made once its chunk is in hand, in the
- * order they were made; AppToaster mounts the Toaster then, which shows
- * the toasts made before it subscribed (sonner replays the active ones).
+ * Brief news that goes by itself -- the progress line, "Charts Saved
+ * Offline" -- as Base UI's Toast, the toast shadcn's own page now opens
+ * (docs/design/web.md, gap 3), where it was sonner. What went wrong is
+ * never a toast: it is said where it happens (lib/problems).
  *
- * Only what the app calls: a toast, success, loading and dismiss.
+ * The toast's code is fetched at the first toast, not in the first load
+ * (issue #290): the manager and the Toaster are one chunk
+ * (lib/toastManager, components/ui/toast), and AppToaster mounts the
+ * Toaster once it is asked for. Base UI's manager tells only a Provider
+ * already listening, so the calls made before then wait for it
+ * (`toasterReady`) and are made in the order they were asked.
+ *
+ * Only what the app calls: a toast, success, loading and dismiss, with
+ * sonner's shape (an id to update one in place, a line under the title,
+ * how long it stays), so the callers did not change.
  */
-type Sonner = typeof import("sonner");
-type Message = (() => ReactNode) | ReactNode;
-
-let sonner: Promise<Sonner> | null = null;
-const listeners = new Set<() => void>();
-
-/** sonner, asked for once; AppToaster mounts its Toaster from then on. */
-export function loadToasts(): Promise<Sonner> {
-  if (!sonner) {
-    sonner = import("sonner");
-    listeners.forEach((listener) => listener());
-  }
-  return sonner;
+type Manager = typeof import("./toastManager").toastManager;
+type Message = ReactNode;
+export interface ToastData {
+  id?: string;
+  description?: ReactNode;
+  /** How long it stays, ms; 0 until taken down. */
+  duration?: number;
 }
 
-/** Whether sonner has been asked for, for AppToaster. */
+let manager: Promise<Manager> | null = null;
+let ready: () => void = () => {};
+const mounted = new Promise<void>((resolve) => {
+  ready = resolve;
+});
+const listeners = new Set<() => void>();
+
+/** The manager, asked for once; AppToaster mounts its Toaster from then on. */
+export function loadToasts(): Promise<Manager> {
+  if (!manager) {
+    manager = import("./toastManager").then((m) => m.toastManager);
+    listeners.forEach((listener) => listener());
+  }
+  return manager;
+}
+
+/** The Toaster is listening (AppToaster, once its Provider has subscribed). */
+export const toasterReady = () => ready();
+
+/** Whether the toasts have been asked for, for AppToaster. */
 export function useToastsWanted(): boolean {
   return useSyncExternalStore(
     (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
-    () => sonner != null,
+    () => manager != null,
   );
 }
 
-const later = (call: (t: Sonner["toast"]) => void) => {
-  void loadToasts().then((m) => call(m.toast));
+// One queue, so a call made before the Toaster was ready keeps its place
+// before one made after it.
+let queue: Promise<unknown> = Promise.resolve();
+// The chunk asked for at once, so a dismiss right after a toast finds it
+// asked for and is queued behind it, never dropped.
+const later = (call: (m: Manager) => void) => {
+  const asked = loadToasts();
+  queue = queue.then(() => Promise.all([asked, mounted])).then(([m]) => call(m));
 };
 
-function show(message: Message, data?: ExternalToast) {
-  later((t) => t(message, data));
+function add(type: string | undefined, title: Message, data?: ToastData) {
+  later((m) =>
+    m.add({
+      id: data?.id,
+      title,
+      description: data?.description,
+      type,
+      // A loading toast stays till it is taken down or replaced, as sonner's.
+      timeout: data?.duration ?? (type === "loading" ? 0 : undefined),
+    }),
+  );
 }
 
-export const toast = Object.assign(show, {
-  success(message: Message, data?: ExternalToast) {
-    later((t) => t.success(message, data));
+export const toast = Object.assign((message: Message, data?: ToastData) => add(undefined, message, data), {
+  success(message: Message, data?: ToastData) {
+    add("success", message, data);
   },
-  loading(message: Message, data?: ExternalToast) {
-    later((t) => t.loading(message, data));
+  loading(message: Message, data?: ToastData) {
+    add("loading", message, data);
   },
-  /** Nothing to take down before sonner was ever asked for. */
-  dismiss(id?: string | number) {
-    if (sonner) later((t) => t.dismiss(id));
+  /** Nothing to take down before a toast was ever asked for. */
+  dismiss(id?: string) {
+    if (manager) later((m) => m.close(id));
   },
 });

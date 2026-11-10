@@ -96,5 +96,5 @@ test("a saved flight's name that could not be saved says so in its row, not in a
   await expect(sheet.getByTestId("saved-flight-fields").locator("[data-slot=field-error]")).toBeVisible();
   // Open again on what was typed, to put right rather than type again.
   await expect(sheet.getByTestId("saved-flight-name")).toHaveValue("Lake run");
-  await expect(page.locator("[data-sonner-toast]")).toHaveCount(0);
+  await expect(page.locator("[data-slot=toast]")).toHaveCount(0);
 });

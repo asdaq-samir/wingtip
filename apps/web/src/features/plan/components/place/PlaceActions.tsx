@@ -4,6 +4,7 @@ import { useIsDesktop } from "../../../../hooks/use-desktop";
 import type { AirportPlace } from "../../../../lib/api/types";
 import { ACTION } from "../../../../lib/cardActions";
 import { useShown } from "../../../../lib/shown";
+import { useKeyHint } from "../../../../lib/shortcutKeys";
 import { useCardKeys } from "../../hooks/useCardKeys";
 import { mapsLink } from "./mapsLink";
 
@@ -35,6 +36,8 @@ export default function PlaceActions({
   const desktop = useIsDesktop();
   const shown = useShown();
   const keyed = desktop && shown && !!place;
+  // Each letter as the pilot presses it (lib/shortcutKeys), none when off.
+  const hint = useKeyHint();
   useCardKeys(keyed, {
     F: () => place && onFlyHere(place),
     D: () => place && onDepartFrom(place),
@@ -50,7 +53,7 @@ export default function PlaceActions({
           busy={flying}
           disabled={!place}
           testId="fly-here"
-          keys={keyed ? "F" : undefined}
+          keys={keyed ? hint("F") : undefined}
           onClick={() => place && onFlyHere(place)}
         />
         <Action
@@ -59,7 +62,7 @@ export default function PlaceActions({
           disabled={!place}
           onClick={() => place && onDepartFrom(place)}
           testId="place-depart-from"
-          keys={keyed ? "D" : undefined}
+          keys={keyed ? hint("D") : undefined}
         />
         {onAddStop && (
           <Action
@@ -68,7 +71,7 @@ export default function PlaceActions({
             disabled={!place}
             onClick={() => place && onAddStop(place)}
             testId="place-add-stop"
-            keys={keyed ? "S" : undefined}
+            keys={keyed ? hint("S") : undefined}
           />
         )}
       </div>

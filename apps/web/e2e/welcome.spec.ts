@@ -3,11 +3,10 @@ import { settle, slow } from "./helpers";
 
 /**
  * The welcome (features/plan/components/welcome, useWelcome): the first
- * time the planner opens on a device with no route, a page each for the
- * airplane (No Airplane the default), Home, VFR or IFR and the location,
- * which says why before the browser asks; then the sample flight, Madison
- * to Oshkosh, opened in one tap with its nav log. Seen, it is not shown
- * again. The suite's session has the tips all seen, the welcome with
+ * time the planner opens on a device with no route, one card (no tour):
+ * the airplane, optional (No Airplane the default), Plan a Flight into the
+ * one search, and the sample flight, Madison to Oshkosh, opened in one tap
+ * with its nav log. Seen, it is not shown again. The suite's session has the tips all seen, the welcome with
  * them; this spec starts with none seen, once, so a reload keeps what it saw.
  */
 test.beforeEach(async ({ page }) => {
@@ -26,14 +25,8 @@ test("a new pilot is welcomed once, and the sample flight opens with its nav log
   await expect(welcome).toBeVisible({ timeout: slow(15_000) });
   // No airplane is assumed (docs/decisions/0011).
   await expect(welcome.getByTestId("welcome-no-airplane")).toHaveAttribute("aria-checked", "true");
-  await welcome.getByTestId("welcome-next").click();
-  await expect(welcome.getByTestId("welcome-home")).toBeVisible();
-  await welcome.getByTestId("welcome-next").click();
-  await welcome.getByTestId("welcome-rules").getByRole("button", { name: "IFR" }).click();
-  await welcome.getByTestId("welcome-next").click();
-  // The location's page, where the browser still has its question: Not Now passes it.
-  const notNow = welcome.getByTestId("welcome-not-now");
-  if (await notNow.isVisible()) await notNow.click();
+  // The focus on its title (APG dialog), the primary filled under the choice.
+  await expect(welcome.locator("[data-welcome-title]")).toBeFocused();
   await welcome.getByTestId("welcome-sample").click();
 
   await expect(page).toHaveURL(/dep=KMSN/);
@@ -45,6 +38,22 @@ test("a new pilot is welcomed once, and the sample flight opens with its nav log
 
   // Seen: not shown again on this device, even with no route.
   await page.goto("/app/plan");
+  await settle(page);
+  await page.waitForTimeout(1500);
+  await expect(welcome).toHaveCount(0);
+});
+
+test("Plan a Flight puts the pilot in the one search, and the welcome is seen", async ({ page }) => {
+  await page.goto("/app/plan");
+  await settle(page);
+  const welcome = page.getByTestId("welcome");
+  await expect(welcome).toBeVisible({ timeout: slow(15_000) });
+  await welcome.getByTestId("welcome-plan").click();
+  await expect(welcome).toHaveCount(0);
+  // The one search's field (OneSearchField), focused for the first airport.
+  await expect(page.locator('[data-slot="map-panel"] input[type="search"]').first()).toBeFocused({ timeout: slow(10_000) });
+  // Seen: a reload does not bring it back.
+  await page.reload();
   await settle(page);
   await page.waitForTimeout(1500);
   await expect(welcome).toHaveCount(0);

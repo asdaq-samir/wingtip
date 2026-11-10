@@ -7,12 +7,12 @@ const PROGRESS_ID = "page-progress";
  *  planner has planned before is in, all of it, in less (0.1 s from the
  *  planner), and a toast put up for it and taken down at once was a
  *  flicker -- and on a phone, the page laid out again in the middle of the
- *  route's own first frame (sonner measures each toast it shows),
+ *  route's own first frame (the toaster measures each toast it shows),
  *  measured 2026-10-08. */
 const SHOW_AFTER_MS = 400;
 
 /**
- * The page's progress line, one sonner toast (the one `<Toaster>` in
+ * The page's progress line, one toast (the one Toaster, AppToaster in
  * main.tsx) updated in place: a route's own sequence ("Drawing
  * course…" -> "Scoring checkpoints…" -> "Planning cruise altitudes…") is one
  * operation's status narrating itself over time, not several

@@ -40,7 +40,7 @@ test("a cleared route comes back from the Undo bar, and again from the keyboard"
   const bar = undoBar(page, "Route Cleared");
   await expect(bar).toBeVisible();
   // Not a toast: the bar is in the sheet, under the route.
-  await expect(page.locator("[data-sonner-toast]", { hasText: "Route Cleared" })).toHaveCount(0);
+  await expect(page.locator("[data-slot=toast]", { hasText: "Route Cleared" })).toHaveCount(0);
   await bar.getByRole("button", { name: "Route Cleared: Undo" }).click();
   await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
   await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);

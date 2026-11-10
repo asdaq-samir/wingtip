@@ -36,6 +36,7 @@ export function CardTabBar<T extends string>({
   raise,
   barRef,
   className,
+  activateOnFocus,
 }: {
   tabs: readonly CardTabSpec<T>[];
   value: T;
@@ -50,6 +51,12 @@ export function CardTabBar<T extends string>({
   raise?: { onExpand: () => void; onLower: () => void };
   barRef?: RefObject<HTMLDivElement | null>;
   className?: string;
+  /** The tab shown as the arrow keys reach it, where every tab's content
+   *  is already in hand (one answer fills them all): the APG's automatic
+   *  activation, for panels shown with no delay. Base UI's Tabs wait for
+   *  Enter or Space unless asked (docs/design/web.md, gap 5); the Tabs
+   *  root's onValueChange is then what picks it. */
+  activateOnFocus?: boolean;
 }) {
   // Which tab was open as this one was pressed, read at the click: the
   // tab is picked by then (Base UI's on its click, ahead of this one), so
@@ -57,7 +64,7 @@ export function CardTabBar<T extends string>({
   const openWhenPressed = useRef<T | null>(null);
   const isUp = () => barRef?.current?.closest("[data-panel]")?.getAttribute("data-panel") === "full";
   return (
-    <TabsList ref={barRef} className={cn(SEGMENTED, className)}>
+    <TabsList ref={barRef} activateOnFocus={activateOnFocus} className={cn(SEGMENTED, className)}>
       {tabs.map((t) => (
         <TabsTrigger
           key={t.value}

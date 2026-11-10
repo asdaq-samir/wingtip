@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { PastFlightPoint } from "../../../lib/api/types";
+import { prefersReducedMotion } from "../../../lib/motion";
 
 /**
  * A past flight of a tracked airplane, picked from its card's Past
@@ -16,6 +17,11 @@ interface PastFlightState {
   at: number | null;
   playing: boolean;
   speed: number;
+  /** Where the replay may stand under Reduce Motion, s: the dry run's
+   *  points (its rows' times), so the airplane steps leg by leg rather
+   *  than gliding (docs/design/web.md §11). None for a past flight, which
+   *  glides as it was flown. */
+  stops: number[];
 }
 
 /** The replay's airplane where it is the planned flight's dry run (FPL's),
@@ -25,15 +31,24 @@ export const DRY_RUN = "dry-run";
 /** How many times faster than it was flown a replay goes. */
 export const REPLAY_SPEEDS = [10, 50, 200] as const;
 
-export const usePastFlight = create<PastFlightState>(() => ({ hex: null, id: null, points: [], at: null, playing: false, speed: 50 }));
+export const usePastFlight = create<PastFlightState>(() => ({
+  hex: null,
+  id: null,
+  points: [],
+  at: null,
+  playing: false,
+  speed: 50,
+  stops: [],
+}));
 
 /** A past flight picked: its path drawn once its points are here. */
 export function choosePastFlight(hex: string, id: number) {
-  usePastFlight.setState((s) => (s.hex === hex && s.id === id ? {} : { hex, id, points: [], at: null, playing: false }));
+  usePastFlight.setState((s) => (s.hex === hex && s.id === id ? {} : { hex, id, points: [], at: null, playing: false, stops: [] }));
 }
 
 export function clearPastFlight() {
-  usePastFlight.setState({ hex: null, id: null, points: [], at: null, playing: false });
+  glide = null;
+  usePastFlight.setState({ hex: null, id: null, points: [], at: null, playing: false, stops: [] });
 }
 
 /** Played from where it was left, or from the start once it has ended. */
@@ -55,13 +70,45 @@ export function stopPastFlight() {
   usePastFlight.setState({ playing: false, at: null });
 }
 
-/** The replay `ms` of the phone's time on, at its speed; stopped at the end. */
-export function stepPastFlight(ms: number) {
+/** The run's own clock under Reduce Motion, where the moment shown (`at`)
+ *  waits at the last stop passed; null while it glides. */
+let glide: number | null = null;
+
+/** Where the airplane is shown at `clock` under Reduce Motion: the last of
+ *  `stops` it has reached, the end once there, the clock itself before the
+ *  first stop. */
+export function legStep(clock: number, stops: number[], last: number): number {
+  if (clock >= last) return last;
+  let at = clock;
+  for (const stop of stops) {
+    if (stop > clock) break;
+    at = stop;
+  }
+  return at;
+}
+
+/** The replay `ms` of the phone's time on, at its speed; stopped at the
+ *  end. Under Reduce Motion, with stops, it goes leg by leg: the clock
+ *  runs on unseen and the airplane jumps from one point to the next. */
+export function stepPastFlight(ms: number, reduced = prefersReducedMotion()) {
   usePastFlight.setState((s) => {
     const last = s.points.at(-1)?.t;
-    if (!s.playing || s.at === null || last === undefined) return {};
-    const at = Math.min(last, s.at + (ms / 1000) * s.speed);
-    return { at, playing: at < last };
+    if (!s.playing || s.at === null || last === undefined) {
+      glide = null;
+      return {};
+    }
+    // A scrub since the last step (the moment no longer the clock's stop)
+    // starts the clock again from where it was put.
+    const from = glide !== null && legStep(glide, s.stops, last) === s.at ? glide : s.at;
+    const clock = Math.min(last, from + (ms / 1000) * s.speed);
+    if (!reduced || !s.stops.length) {
+      glide = null;
+      return { at: clock, playing: clock < last };
+    }
+    glide = clock;
+    const at = legStep(clock, s.stops, last);
+    if (at === s.at && clock < last) return {};
+    return { at, playing: clock < last };
   });
 }
 

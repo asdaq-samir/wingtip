@@ -1,20 +1,8 @@
-import { useState, type ReactNode } from "react";
+import { createContext, useContext, useRef, useState, type DragEvent, type PointerEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ChevronRight, GripVertical } from "lucide-react";
-import {
-  DndContext,
-  DragOverlay,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  closestCenter,
-  useDraggable,
-  useDroppable,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from "@dnd-kit/core";
 import { cn } from "cn";
+import { joinProps, useDraggingKind, usePointDrag } from "../pointDrag";
 import CardIdent from "../CardIdent";
 import { CardMark, CardThread, EmptyMark } from "../routeCard";
 import { CARD_GAP, POINT_CARD, ROUTE_LINE } from "../routeListStyle";
@@ -136,95 +124,92 @@ export function HoldRow({ hold, flown, last, onOpen }: { hold: Hold; flown: LegH
   );
 }
 
+/** The move the list's grips make (RouteListDrag), from one typed
+ *  point's place to another's. */
+const RouteMove = createContext<((from: number, to: number) => void) | undefined>(undefined);
+
 /**
  * The list's drag, by the points' grips (PointGrip): a grip let go over
- * another point's moves its point there, as the route box's pills are
- * dragged. dnd-kit's DndContext, as the box's; only the grips are dragged
- * and dropped on, as the list between them holds the legs' rows, the
- * holds and the runways, none of them points to move. A finger starts it
- * at once on the grip, which is there to be dragged; the ident lifted off
- * the list follows it (DragOverlay).
+ * another point's row moves its point there, as the route box's pills are
+ * dragged (pointDrag, React Aria's drag and drop). Only the grips are
+ * dragged and only the points' rows are dropped on, as the list between
+ * them holds the legs' rows, the holds and the runways, none of them points
+ * to move: the reason this is not a GridList, whose rows would all be
+ * items. Nothing to drag, the list as it was.
  */
 export function RouteListDrag({ on, children }: { on?: (from: number, to: number) => void; children: ReactNode }) {
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor),
-  );
-  const [lifted, setLifted] = useState<string | null>(null);
-  const placeOf = (id: string | number) => Number(String(id).split(":")[0]);
-  const onDragStart = ({ active }: DragStartEvent) => setLifted(String(active.id).split(":").slice(1).join(":"));
-  const onDragEnd = ({ active, over }: DragEndEvent) => {
-    setLifted(null);
-    if (over && over.id !== active.id) on?.(placeOf(active.id), placeOf(over.id));
-  };
-  // Nothing to drag: the list as it was, no context round it.
-  if (!on) return <>{children}</>;
-  return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onDragCancel={() => setLifted(null)}
-    >
-      {children}
-      <DragOverlay dropAnimation={null}>
-        {/* The point lifted off the list as a card the row's size, tilted
-            a little and ringed in the tint, as the canvas drew it. */}
-        {lifted && (
-          <div
-            className={cn(
-              "flex h-full max-h-16 w-full -rotate-[1.5deg] items-center justify-between gap-2 rounded-2xl bg-card pr-3 pl-4 font-semibold shadow-xl ring-2 ring-tint",
-              TEXT.row,
-            )}
-          >
-            {pointName(lifted)}
-            <GripVertical className="size-5 text-tint" aria-hidden />
-          </div>
-        )}
-      </DragOverlay>
-    </DndContext>
-  );
+  return <RouteMove.Provider value={on}>{children}</RouteMove.Provider>;
 }
 
+const ROW = "application/x-wingtip-route-row";
+
 /** A typed point's grip, at its row's end, as iOS's reorder control is:
- *  dragged, and dropped on. Its own presses, not the sheet's drag; a
- *  32-point glyph button with its 44-point area (index.css). */
+ *  dragged by a mouse or a finger, or picked up by Enter for the keyboard's
+ *  and VoiceOver's drag (Tab to a place, Enter to put it down, Escape to
+ *  let it go). A 32-point glyph with its 44-point area (index.css). What is
+ *  dropped on is the point's whole row, its card where the list is cards:
+ *  a cover laid over the row only while a point is out, so a drop anywhere
+ *  on another counts and the row's own controls keep the pointer the rest
+ *  of the time. */
 export function PointGrip({ ident, index }: { ident: string; index: number }) {
-  const id = `${index}:${ident}`;
-  const drag = useDraggable({ id });
-  const drop = useDroppable({ id });
+  const on = useContext(RouteMove);
+  const name = pointName(ident);
+  const [row, setRow] = useState<HTMLElement | null>(null);
+  const cover = useRef<HTMLSpanElement>(null);
+  const out = useDraggingKind(ROW);
+  const move = usePointDrag({ kind: ROW, index, name, dropRef: cover, onMove: on && row ? (from) => on(from, index) : undefined });
+  // The row lifted under the pointer, as the canvas drew it, not the grip
+  // alone, which is all the browser would take of it.
+  const lift = {
+    onDragStart: (event: DragEvent<HTMLElement>) => {
+      if (!row) return;
+      const box = row.getBoundingClientRect();
+      event.dataTransfer.setDragImage(row, event.clientX - box.left, event.clientY - box.top);
+    },
+    // Its own presses, not the sheet's drag.
+    onPointerDown: (event: PointerEvent<HTMLElement>) => event.stopPropagation(),
+  };
   return (
-    <button
-      // The grip starts the drag; what is dragged and dropped on is the
-      // point's whole row, its card where the list is cards, so the one
-      // lifted is as big as it is and a drop anywhere on another counts.
-      type="button"
-      {...drag.attributes}
-      {...drag.listeners}
-      ref={(node) => {
-        drag.setActivatorNodeRef(node);
-        const row = node?.closest("li") ?? node;
-        drag.setNodeRef(row);
-        drop.setNodeRef(row);
-      }}
-      aria-label={`Move ${pointName(ident)}`}
-      data-testid="route-grip"
-      // Its drag the row's (dnd-kit), not the stock sheet's.
-      data-base-ui-swipe-ignore=""
-      data-ident={ident}
-      data-dragging={drag.isDragging ? "" : undefined}
-      data-over={drop.isOver && !drag.isDragging ? "" : undefined}
-      onPointerDown={(e) => e.stopPropagation()}
-      className={cn(
-        "relative grid size-8 shrink-0 touch-none place-items-center rounded-full text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        drag.isDragging && "opacity-30",
-        drop.isOver && !drag.isDragging && "bg-tint/12 text-tint",
-      )}
-    >
-      <GripVertical className="size-5" aria-hidden />
-    </button>
+    <>
+      <span
+        {...joinProps(move.dragProps, lift)}
+        ref={(node) => setRow(node?.closest("li") ?? null)}
+        role="button"
+        tabIndex={0}
+        aria-label={`Move ${name}`}
+        data-testid="route-grip"
+        // Its drag the row's, not the stock sheet's.
+        data-base-ui-swipe-ignore=""
+        data-ident={ident}
+        data-dragging={move.isDragging ? "" : undefined}
+        className={cn(
+          "relative grid size-8 shrink-0 cursor-grab touch-none place-items-center rounded-full text-muted-foreground outline-none select-none after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+          move.isDragging && "opacity-30",
+          move.isDropTarget && "bg-tint/12 text-tint",
+        )}
+      >
+        <GripVertical className="size-5" aria-hidden />
+      </span>
+      {row &&
+        createPortal(
+          <span
+            {...move.dropProps}
+            ref={cover}
+            tabIndex={-1}
+            role={out && !move.isDragging ? "group" : undefined}
+            aria-label={out && !move.isDragging ? `To ${name}'s place` : undefined}
+            data-testid="route-drop"
+            data-ident={ident}
+            data-over={move.isDropTarget ? "" : undefined}
+            className={cn(
+              "absolute inset-0 z-20 rounded-2xl outline-none",
+              out && !move.isDragging ? "pointer-events-auto" : "pointer-events-none",
+              move.isDropTarget && "ring-2 ring-tint",
+            )}
+          />,
+          row,
+        )}
+    </>
   );
 }
 

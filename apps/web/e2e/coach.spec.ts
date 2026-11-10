@@ -113,6 +113,11 @@ test("the Coach makes a plan from the logbook and puts it in words", async ({ pa
   expect(asked[0]).toMatchObject({ entries: [], debriefs: [] });
   await expect(console.getByTestId("coach-reminder")).toContainText("Passengers at night: current until 18 Nov 2026, in 9 days");
   await expect(console.getByTestId("coach-session")).toHaveCount(2);
+  // Verdict first: the next session in one line, over Make It Again, and
+  // the step said in the status line.
+  await expect(console.getByTestId("coach-next")).toContainText("Next: Three takeoffs and three landings");
+  await expect(console.getByTestId("coach-make")).toHaveText("Make It Again");
+  await expect(console.getByTestId("coach-status")).toContainText("Plan made: 2 sessions.");
   await expect(console.getByTestId("coach-session").nth(1)).toContainText("KMSN, ILS OR LOC RWY 36");
   await expect(console.getByTestId("coach-session").nth(1)).toContainText("May count toward WINGS: Takeoffs and landings, ACS PA.IV.B");
   await expect(console.getByTestId("coach-session").nth(1)).toContainText("Fly the ILS at KMSN with an instructor.");

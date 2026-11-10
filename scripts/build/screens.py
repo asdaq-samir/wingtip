@@ -3,7 +3,8 @@
 
 One source for the screens a link can open, written into each platform in
 its own idiom: a TypeScript module for the web, a Swift enum for iOS, a
-Kotlin enum for Android with its app shortcuts (App Actions), and the
+Kotlin enum for Android with its app shortcuts (App Actions), the web app
+manifest's shortcuts (the same screens, in the same order), and the
 table of links in docs/navigation.md. Each
 app opens a screen in one exhaustive switch over its generated list, so a
 screen added to the source fails an app's build until that app opens it,
@@ -26,6 +27,7 @@ IOS_SWIFT = ROOT / "apps/ios/Wingtip/Navigation/Generated/Screens.swift"
 ANDROID_KT = ROOT / "apps/android/app/src/main/kotlin/app/wingtipmaps/android/navigation/generated/Screens.kt"
 ANDROID_SHORTCUTS = ROOT / "apps/android/app/src/main/res/xml/shortcuts.xml"
 ANDROID_SHORTCUT_WORDS = ROOT / "apps/android/app/src/main/res/values/screens_strings.xml"
+WEB_SHORTCUTS = ROOT / "apps/web/src/lib/navigation/generated/manifest-shortcuts.json"
 DOC = ROOT / "docs" / "navigation.md"
 DOC_BEGIN = "<!-- BEGIN generated from design/screens.json by scripts/build/screens.sh -->"
 DOC_END = "<!-- END generated -->"
@@ -205,6 +207,28 @@ def short_name(s):
     return f"screen_{s['id']}_short" if "shortLabel" in s else f"screen_{s['id']}"
 
 
+def web_shortcuts(spec):
+    """The web app manifest's `shortcuts` (apps/web/vite.config.ts reads
+    them): the web's screens with a shortcut, in their order, each its
+    link and its short label, as Android's are its app shortcuts. Chrome
+    lists them on the installed app's icon (a long press on Android, the
+    taskbar's menu on a desktop); Safari has none yet and ignores them."""
+    path = spec["link"]["path"]
+    key = spec["link"]["key"]
+    found = sorted((s for s in on(spec, "web") if "shortcut" in s), key=lambda s: s["shortcut"])
+    items = [
+        {
+            "name": s["title"],
+            "short_name": short_label(s),
+            "description": s["about"],
+            "url": f"{path}?{key}={s['id']}",
+            "icons": [{"src": "icon-192.png", "sizes": "192x192", "type": "image/png"}],
+        }
+        for s in found
+    ]
+    return json.dumps({"$comment": BANNER, "shortcuts": items}, indent=2, ensure_ascii=False) + "\n"
+
+
 def xml_text(text):
     return text.replace("&", "&amp;").replace("<", "&lt;").replace("'", "\\'").replace('"', '\\"')
 
@@ -295,6 +319,7 @@ def main():
     outputs = {WEB_TS: web(spec), IOS_SWIFT: ios(spec), ANDROID_KT: android(spec)}
     outputs[ANDROID_SHORTCUTS] = android_shortcuts(spec)
     outputs[ANDROID_SHORTCUT_WORDS] = android_shortcut_words(spec)
+    outputs[WEB_SHORTCUTS] = web_shortcuts(spec)
     outputs[DOC] = doc(spec, DOC.read_text() if DOC.exists() else "")
     stale = []
     for path, text in outputs.items():

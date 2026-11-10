@@ -5,6 +5,11 @@ import FrequencyButton from "../../components/FrequencyButton";
 import { TEXT } from "../../lib/text";
 import type { EmergencyModel } from "./useEmergency";
 
+/** The emergency frequency, VHF guard (AIM 6-3-1(d)). */
+const GUARD_MHZ = 121.5;
+/** The two figures a pilot reads first, large. */
+const FIGURE = "text-2xl";
+
 /**
  * What to do on the radio and the transponder, the engine's (features/emergency/emergency
  * maydayCall): squawk 7700 (AIM 6-2-2, an assigned code kept while
@@ -19,10 +24,18 @@ export default function ActionsList({ vm }: { vm: EmergencyModel }) {
   return (
     <>
       <ListGroup title="Transponder and radio">
+        {/* The code and the guard frequency large, each a tap that copies
+            it (FrequencyButton), as the doc's §8 has them: read at a
+            glance in a cockpit that is shaking. */}
         <ListRow
-          title={<span className="font-semibold">Squawk {mayday.squawk}</span>}
+          title={<span className="font-semibold">Squawk</span>}
           description={mayday.squawk_words}
           data-testid="emergency-squawk"
+          value={
+            <span className={FIGURE}>
+              <FrequencyButton mhz={mayday.squawk} name="Squawk" testId="emergency-squawk-copy" />
+            </span>
+          }
         />
         {mayday.channels.map((c) => (
           <ListRow
@@ -30,7 +43,13 @@ export default function ActionsList({ vm }: { vm: EmergencyModel }) {
             title={c.label}
             description={c.why}
             data-testid="emergency-channel"
-            value={c.mhz != null ? <FrequencyButton mhz={c.mhz} name={c.label} /> : undefined}
+            value={
+              c.mhz != null ? (
+                <span className={cn(c.mhz === GUARD_MHZ && FIGURE)}>
+                  <FrequencyButton mhz={c.mhz} name={c.label} />
+                </span>
+              ) : undefined
+            }
           />
         ))}
       </ListGroup>

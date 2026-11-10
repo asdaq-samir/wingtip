@@ -1,5 +1,6 @@
-import { useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { cn } from "cn";
+import { useConfirm } from "../../../components/useConfirm";
 import TogglePill from "../../../components/TogglePill";
 import { Button } from "../../../components/ui/button";
 import { DateField } from "../../../components/ui/date-field";
@@ -7,11 +8,18 @@ import { Input } from "../../../components/ui/input";
 import { NumberField } from "../../../components/ui/number-field";
 import type { LogbookEntryRequest } from "../../../lib/api/types";
 import { TEXT } from "../../../lib/text";
+import { entryProblems, sameEntry, type EntryProblems } from "./entryChecks";
 
 /**
  * One entry's form: a paper logbook's columns. In the plus's popover for a
  * new flight, and in the flight's own row for one logged (LogbookFlights),
  * where Cancel and Escape put the row back as it was.
+ *
+ * Save is never greyed out ahead of time (Vercel's interface guidelines,
+ * web.md §9): pressed with a field missing, the field says what it needs
+ * under it and takes the focus, the first of them. What was typed is not
+ * thrown away unasked: Cancel or Escape on a changed form asks first, and
+ * the page's own leaving (a reload, a closed tab) the browser asks about.
  */
 export default function EntryForm({
   initial,
@@ -19,6 +27,7 @@ export default function EntryForm({
   onCancel,
   saving,
   problem,
+  onDirtyChange,
 }: {
   initial: LogbookEntryRequest;
   onSave: (r: LogbookEntryRequest) => void;
@@ -27,22 +36,46 @@ export default function EntryForm({
   saving: boolean;
   /** Why the gateway refused the last save, said over the form's buttons. */
   problem?: string | null;
+  /** Whether what is typed differs from what the form opened on, for a
+   *  popover round it to ask before it closes on it. */
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const [entry, setEntry] = useState(initial);
+  const [problems, setProblems] = useState<EntryProblems>({});
+  const form = useRef<HTMLFormElement>(null);
+  const dirty = !sameEntry(entry, initial);
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+  // The browser's own question before a changed form is left with the page.
+  useEffect(() => {
+    if (!dirty) return;
+    const ask = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", ask);
+    return () => window.removeEventListener("beforeunload", ask);
+  }, [dirty]);
+  const [askDiscard, discardDialog] = useConfirm({
+    title: "Discard Changes?",
+    description: "What you typed in this flight is not saved.",
+    confirmLabel: "Discard",
+    destructive: true,
+    onConfirm: () => onCancel?.(),
+  });
+  const cancel = () => (dirty ? askDiscard() : onCancel?.());
   // In a row, Escape in a field puts the row back: the row's own, not the
   // sheet's close as well.
   const escape = (e: KeyboardEvent) => {
     if (e.key !== "Escape" || !onCancel) return;
     e.preventDefault();
     e.stopPropagation();
-    onCancel();
+    cancel();
   };
   // React Aria's own fields' Escape: its events stop where they are heard
   // already, and say so if told to again.
   const escapeAria = (e: { key: string; preventDefault: () => void }) => {
     if (e.key !== "Escape" || !onCancel) return;
     e.preventDefault();
-    onCancel();
+    cancel();
   };
   const field = (key: keyof LogbookEntryRequest, label: string, type: "text" | "number" | "date" = "text") => {
     const now = entry[key] as string | number | null | undefined;
@@ -67,6 +100,7 @@ export default function EntryForm({
           value={String(now ?? "")}
           onChange={(day) => setEntry({ ...entry, [key]: day })}
           onKeyDown={escapeAria}
+          isInvalid={!!problems[key]}
         />
       ) : (
         <Input
@@ -77,18 +111,40 @@ export default function EntryForm({
           onKeyDown={escape}
         />
       );
+    const said = problems[key];
     return (
-      <label className={cn("grid grid-cols-[8rem_1fr] items-center gap-2", TEXT.detail)}>
-        <span>{label}</span>
-        {control}
-      </label>
+      <div data-field={key}>
+        <label className={cn("grid grid-cols-[8rem_1fr] items-center gap-2", TEXT.detail)}>
+          <span>{label}</span>
+          {control}
+        </label>
+        {/* Said under its own field, where the eye is (WCAG 3.3.1). */}
+        {said && (
+          <p className={cn("mt-1 pl-34 text-destructive-ink", TEXT.note)} data-testid={`logbook-${key}-problem`}>
+            {said}
+          </p>
+        )}
+      </div>
     );
   };
   return (
     <form
+      ref={form}
       className="space-y-2.5"
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
+        const found = entryProblems(entry);
+        setProblems(found);
+        const first = Object.keys(found)[0];
+        if (first) {
+          // The first field that needs something, focused: its input, or
+          // React Aria's first segment.
+          form.current
+            ?.querySelector<HTMLElement>(`[data-field="${first}"] :is(input, [role="spinbutton"], [contenteditable="true"])`)
+            ?.focus();
+          return;
+        }
         onSave(entry);
       }}
     >
@@ -137,14 +193,16 @@ export default function EntryForm({
       )}
       <div className="flex justify-end gap-2 pt-1">
         {onCancel && (
-          <Button type="button" size="sm" variant="ghost" onClick={onCancel} data-testid="logbook-cancel">
+          <Button type="button" size="sm" variant="ghost" onClick={cancel} data-testid="logbook-cancel">
             Cancel
           </Button>
         )}
-        <Button type="submit" size="sm" disabled={saving || !entry.flownOn} data-testid="logbook-save">
+        {/* Busy while sending, never greyed for what is missing. */}
+        <Button type="submit" size="sm" disabled={saving} aria-busy={saving} data-testid="logbook-save">
           Save
         </Button>
       </div>
+      {discardDialog}
     </form>
   );
 }

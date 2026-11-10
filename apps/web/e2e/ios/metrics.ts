@@ -82,7 +82,7 @@ export async function still(page: Page) {
  *  that, P1 looks round a toast that stays rather than at it. */
 export async function quiet(page: Page) {
   await page
-    .locator("[data-sonner-toast]")
+    .locator("[data-slot=toast]")
     .first()
     .waitFor({ state: "detached", timeout: 20000 })
     .catch(() => undefined);
@@ -115,7 +115,7 @@ export function hitAreaMisses(page: Page, scope = "body", size = 44): Promise<Hi
         if (r.width < 2 || r.height < 2 || getComputedStyle(el).visibility !== "visible") continue;
         const own = (hit: Element | null) =>
           !!hit && (hit === el || el.contains(hit) || (hit.closest("label") as HTMLLabelElement | null)?.control === el);
-        const toast = (hit: Element | null) => !!hit?.closest("[data-sonner-toaster]");
+        const toast = (hit: Element | null) => !!hit?.closest("[data-slot=toast-viewport]");
         // A sticky heading over a row scrolled half under it: the row is
         // half out of view, as at a scroll container's edge, not covered.
         const pinned = (hit: Element | null) => {
@@ -304,7 +304,7 @@ export function roleFindings(page: Page, scope = "body"): Promise<RoleFinding[]>
       if (r.width < 2 || r.height < 2 || el.closest(".sr-only")) continue;
       if (
         el.closest(
-          '[role="status"], [data-slot^="item"], [data-slot="section-summary"], [data-slot="accordion-trigger"], [data-sonner-toaster], .maplibregl-canvas-container',
+          '[role="status"], [data-slot^="item"], [data-slot="section-summary"], [data-slot="accordion-trigger"], [data-slot=toast-viewport], .maplibregl-canvas-container',
         )
       )
         continue;
@@ -395,7 +395,7 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
       '[data-slot="alert-dialog-content"]',
       ".maplibregl-popup-content",
       '[data-slot="item-group"].border',
-      "[data-sonner-toast]",
+      "[data-slot=toast]",
     ].join(", ");
     for (const box of document.querySelectorAll(floats)) {
       if (!on(box)) continue;
@@ -407,7 +407,7 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
       // console) 36, with their far corners round.
       const sheet = box.matches('[data-slot="console-sheet"], [data-floating]');
       // A toast is Apple Maps' banner, a capsule (the toast rewrite, 2026-10-27).
-      const shape = box.matches("[data-capsule], [data-sonner-toast]")
+      const shape = box.matches("[data-capsule], [data-slot=toast]")
         ? Math.min(24, box.getBoundingClientRect().height / 2)
         : box.matches('[data-slot="map-panel"]')
           ? 24
@@ -434,7 +434,7 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
         !svg ||
         !on(button) ||
         button.closest(
-          'header, .maplibregl-marker, [data-sonner-toaster], [data-slot="tabs-trigger"], [data-testid="place-runway-sketch"], [data-slot="clear-button"], [data-disclosure], [data-point-mark], [data-picture-head], [data-composer]',
+          'header, .maplibregl-marker, [data-slot=toast-viewport], [data-slot="tabs-trigger"], [data-testid="place-runway-sketch"], [data-slot="clear-button"], [data-disclosure], [data-point-mark], [data-picture-head], [data-composer]',
         )
       )
         continue;
@@ -640,7 +640,7 @@ export function contrastFindings(page: Page, scope = "body"): Promise<ContrastFi
       // fades one out over 0.2 s before it takes it away, and the course
       // line's, at no opacity under a pointer the map had moved from, read
       // 1:1 on CI's phones.
-      if (unknown || (opacity < 0.99 && el.closest("[data-sonner-toaster], .maplibregl-popup, .maplibregl-popup"))) continue;
+      if (unknown || (opacity < 0.99 && el.closest("[data-slot=toast-viewport], .maplibregl-popup, .maplibregl-popup"))) continue;
       let bg = base ?? [255, 255, 255, 1];
       for (const layer of layers.reverse()) bg = over(layer, bg);
       if (drawnOn) bg = drawnOn;

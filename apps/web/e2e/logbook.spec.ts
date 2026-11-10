@@ -75,10 +75,12 @@ test("a logbook that could not be fetched says so in place, and Try again fetche
   await expect(console.getByText("No flights logged yet")).toHaveCount(0);
   failing = false;
   await console.getByTestId("query-retry").click();
-  await expect(console.getByText("No flights logged yet: the plus logs one.")).toBeVisible();
+  await expect(console.getByText("No flights logged yet: Add Entry logs one.")).toBeVisible();
 });
 
 test("a logged flight is changed in its own row, and one taken out comes back from its Undo row", async ({ page }) => {
+  // The phone's list; a desktop's table has its own test below.
+  test.skip((page.viewportSize()?.width ?? 0) >= 1024, "a phone's list");
   const entry = {
     id: 41,
     flownOn: "2026-11-03",

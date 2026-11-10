@@ -254,8 +254,8 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
         </Suspense>
       )}
       {lineRow}
-      {/* The grips' drag round the list where it changes the route
-        (RouteListDrag): its own element, not the anchor's child. */}
+      {/* The grips' move round the list where it changes the route
+        (RouteListDrag), handed down to each point's grip. */}
       <RouteListDrag on={edit?.onMove}>
         <ResponsivePopover
           open={!!at}

@@ -100,7 +100,7 @@ test.describe("the email sign-in link", () => {
     await box.fill("b@example.com");
     hold.release();
 
-    // The dialog's own status line: a toast is a status too (sonner's),
+    // The dialog's own status line: a toast is a status too (Base UI's),
     // and the planner's progress toast is often up while this runs.
     await expect(page.getByRole("dialog").getByRole("status")).toContainText("Check a@example.com");
   });

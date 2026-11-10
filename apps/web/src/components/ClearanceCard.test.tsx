@@ -164,6 +164,22 @@ describe("the clearance card", () => {
     expect((screen.getByTestId("clearance-enter") as HTMLButtonElement).disabled).toBe(true);
   });
 
+  test("Enter in the typed field reads it at once, and Use This Route under the clearance enters it", async () => {
+    const { onDone } = card();
+    const field = screen.getByTestId("clearance-text");
+    fireEvent.change(field, { target: { value: CLEARED } });
+    // Enter is no new line: the clearance is read without waiting for a pause.
+    const enterKey = fireEvent.keyDown(field, { key: "Enter" });
+    expect(enterKey).toBe(false);
+    const elements = screen.getByTestId("clearance-elements");
+    expect(elements.getAttribute("aria-live")).toBe("polite");
+    await waitFor(() => expect(within(elements).getByText("4512")).toBeTruthy());
+    const use = await screen.findByTestId("clearance-use");
+    fireEvent.click(use);
+    expect(useRadioActions.getState().enter).toHaveBeenCalledWith({ dep: "KMSP", stops: ["GEP", "BRD"], dest: "KDLH" }, [], 7000);
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
   test("the read back typed is checked line by line, its count on the row", async () => {
     useAtcRadio.setState({ cardText: CLEARED });
     const { state } = card();

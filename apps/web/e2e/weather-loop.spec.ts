@@ -6,7 +6,9 @@ import { openMapSettings, settle, slow } from "./helpers";
  * 2026-11-09 ask): picked from the Map menu's Weather group, its bar over
  * the map plays the frames once they have loaded, says each one's time in
  * Zulu and its age, scrubs, and under Reduce Motion shows the newest frame
- * still. The planner's frames stubbed, and IEM's and nowCOAST's tiles
+ * still. Its bar is the map's one playback bar (components/PlaybackBar):
+ * a toolbar, Play a toggle (aria-pressed), the scrubber's keys, Space and
+ * Now (docs/design/web.md §7). The planner's frames stubbed, and IEM's and nowCOAST's tiles
  * answered with one clear pixel, so nothing here reaches either.
  */
 
@@ -69,7 +71,7 @@ test("the radar loop is turned on from the Map menu, plays once loaded, and scru
   await expect(bar).toBeVisible();
   expect(asked).toContain("radar");
   // Played by itself once the frames' tiles are in.
-  await expect(page.getByTestId("weather-loop-play")).toHaveAccessibleName("Pause", { timeout: slow(15000) });
+  await expect(page.getByTestId("weather-loop-play")).toHaveAttribute("aria-pressed", "true", { timeout: slow(15000) });
   await expect(page.getByTestId("weather-loop-time")).toContainText(/\d{4}Z/);
 
   // Scrubbed to the first frame: paused there, an hour old, said so.
@@ -78,7 +80,7 @@ test("the radar loop is turned on from the Map menu, plays once loaded, and scru
   await page.getByRole("slider", { name: "Radar frame" }).focus();
   await page.keyboard.press("End");
   await page.keyboard.press("Home");
-  await expect(page.getByTestId("weather-loop-play")).toHaveAccessibleName("Play");
+  await expect(page.getByTestId("weather-loop-play")).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByTestId("weather-loop-time")).toContainText(/Old: \d+m ago|Old: 1h/);
 
   // Off again from the menu: the bar goes.
@@ -98,7 +100,38 @@ test("under Reduce Motion the loop shows the newest frame and does not play", as
   await expect(page.getByTestId("weather-loop-time")).toContainText(/\d{4}Z/);
   // The newest frame, four to nine minutes old, and still.
   await expect(page.getByTestId("weather-loop-time")).not.toContainText("Old");
-  await expect(page.getByTestId("weather-loop-play")).toHaveAccessibleName("Play");
+  await expect(page.getByTestId("weather-loop-play")).toHaveAttribute("aria-pressed", "false");
   await page.waitForTimeout(1500);
-  await expect(page.getByTestId("weather-loop-play")).toHaveAccessibleName("Play");
+  await expect(page.getByTestId("weather-loop-play")).toHaveAttribute("aria-pressed", "false");
+});
+
+test("the loop bar's keys: arrows step a frame, Space plays, one pass stops on the newest, Now goes back to it", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await stubLoop(page);
+  await page.goto("/app/plan");
+  await settle(page);
+  await turnOnRadar(page);
+  const play = page.getByTestId("weather-loop-play");
+  const time = page.getByTestId("weather-loop-time");
+  await expect(time).toContainText(/\d{4}Z/);
+  await expect(play).toHaveAttribute("aria-pressed", "false");
+  const slider = page.getByRole("slider", { name: "Radar frame" });
+  await slider.focus();
+  // ← steps back a frame: the newest no longer shown.
+  const newest = await time.textContent();
+  await page.keyboard.press("ArrowLeft");
+  await expect(time).not.toHaveText(newest ?? "");
+  // Now takes it back to the newest frame.
+  await page.getByTestId("weather-loop-now").click();
+  await expect(time).toHaveText(newest ?? "");
+  // Space from the scrubber plays a pass from the oldest frame (Reduce
+  // Motion only keeps it from starting by itself), which ends still on
+  // the newest: twelve frames at half a second each.
+  await slider.focus();
+  await page.keyboard.press(" ");
+  await expect(play).toHaveAttribute("aria-pressed", "true");
+  await expect(play).toHaveAttribute("aria-pressed", "false", { timeout: slow(15000) });
+  await expect(time).toHaveText(newest ?? "");
+  // The bar is one toolbar: Play and Now its buttons.
+  await expect(page.getByRole("toolbar", { name: "Radar loop" })).toBeVisible();
 });

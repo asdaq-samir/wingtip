@@ -41,7 +41,7 @@ export const SCREENS: Screen[] = [
       // And the plan in, the capsule at rest over it: its checkpoints
       // drawn and the progress toast gone.
       await expect(page.locator(".maplibregl-marker", { hasText: /^\d+$/ }).first()).toBeVisible({ timeout: slow(30000) });
-      await expect(page.locator("[data-sonner-toast]")).toHaveCount(0, { timeout: slow(30000) });
+      await expect(page.locator("[data-slot=toast]")).toHaveCount(0, { timeout: slow(30000) });
     },
   },
   {

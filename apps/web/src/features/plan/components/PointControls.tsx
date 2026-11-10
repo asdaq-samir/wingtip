@@ -1,5 +1,18 @@
 import type { ReactNode } from "react";
-import { ArrowUp, Crosshair, Ellipsis, Info, Mountain, MoveUpRight, MoveVertical, Pencil, Plus, Repeat2, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Crosshair,
+  Ellipsis,
+  Info,
+  Mountain,
+  MoveUpRight,
+  MoveVertical,
+  Pencil,
+  Plus,
+  Repeat2,
+  Trash2,
+} from "lucide-react";
 import { cn } from "cn";
 import { GLASS_BUTTON } from "../../../lib/mapChrome";
 import RoundButton from "../../../components/RoundButton";
@@ -92,6 +105,10 @@ interface PointActions {
   /** The route's box opened to type a stop in after it (FPL with the route
    *  in the plan, lib/preferences RouteEdit). */
   onAddAfter?: () => void;
+  /** One place earlier or later in the route: the drag's way without a
+   *  drag, for a single tap or click (WCAG 2.5.7, web.md section 3). */
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
   onRemove?: () => void;
 }
 
@@ -152,6 +169,18 @@ export function PointMenuItems({
         <Item onClick={later(a.onAddAfter, true)} data-testid={`${testId}-add-after`}>
           <Plus aria-hidden="true" />
           Add a Stop After
+        </Item>
+      )}
+      {a.onMoveUp && (
+        <Item onClick={a.onMoveUp} data-testid={`${testId}-move-up`}>
+          <ArrowUp aria-hidden="true" />
+          Move Up
+        </Item>
+      )}
+      {a.onMoveDown && (
+        <Item onClick={a.onMoveDown} data-testid={`${testId}-move-down`}>
+          <ArrowDown aria-hidden="true" />
+          Move Down
         </Item>
       )}
       {a.onRemove && (

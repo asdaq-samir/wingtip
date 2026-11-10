@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { askSearch } from "../lib/oneSearch";
 import { wantScreen } from "../lib/navigation/wanted";
 import type { ScreenId } from "../lib/navigation/generated/screens";
+import { shortcutKey, useShortcutKeys } from "../lib/shortcutKeys";
 
 /**
  * The keyboard's ways round the planner, as a desktop's web apps have
@@ -12,7 +13,9 @@ import type { ScreenId } from "../lib/navigation/generated/screens";
  * alone. And the common actions a letter each, as the search's Do shows
  * them: B the Brief, N Nearest, D Direct To (the search, asked for the
  * airport). ⌘K or Ctrl K, the search itself, is the search field's own
- * (OneSearchField), on every screen with a keyboard.
+ * (OneSearchField), on every screen with a keyboard. The letters and `/`
+ * are pressed as the pilot picked in the account page (lib/shortcutKeys:
+ * alone, with Alt, or off), WCAG 2.1.4's ask of a one-key shortcut.
  */
 /** The letters for the screens a pilot opens most (lib/navigation). */
 export const SCREEN_KEYS: Partial<Record<ScreenId, string>> = { brief: "B", nearest: "N" };
@@ -55,20 +58,21 @@ export function backOne(doc: Document): boolean {
 
 /** The shortcuts' handler, for a document (and its test). */
 export function onShortcut(event: KeyboardEvent): void {
-  if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+  if (event.defaultPrevented) return;
   const doc = (event.target as Node | null)?.ownerDocument ?? document;
-  if (event.key === "Escape") {
+  if (event.key === "Escape" && !event.metaKey && !event.ctrlKey && !event.altKey) {
     // In a field, its own Escape (a draft let go) comes first.
     if (typing(event.target)) return;
     if (backOne(doc)) event.preventDefault();
     return;
   }
   if (typing(event.target)) return;
-  if (event.key === "/") {
+  const letter = shortcutKey(event, useShortcutKeys.getState().mode);
+  if (!letter) return;
+  if (letter === "/") {
     if (focusSearch(doc)) event.preventDefault();
     return;
   }
-  const letter = event.key.toUpperCase();
   const screen = (Object.keys(SCREEN_KEYS) as ScreenId[]).find((id) => SCREEN_KEYS[id] === letter);
   if (screen || letter === DIRECT_KEY) {
     event.preventDefault();

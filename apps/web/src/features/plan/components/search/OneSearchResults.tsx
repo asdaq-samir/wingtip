@@ -5,6 +5,7 @@ import { CommandItem, CommandList, CommandShortcut } from "../../../../component
 import { TEXT } from "../../../../lib/text";
 import { PreviewCard, PreviewCardContent, PreviewCardTrigger } from "../../../../components/ui/preview-card";
 import { usePointerHover } from "../../../../hooks/use-pointer-hover";
+import { useKeyHint } from "../../../../lib/shortcutKeys";
 import AirportPreview from "../preview/AirportPreview";
 import type { DoHit, OneSearchModel } from "../../hooks/useOneSearch";
 
@@ -35,6 +36,8 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
   // A mouse resting on an airport's row: its preview beside the panel
   // (the owner, 2026-11-09: hover previews on pointer devices only).
   const hover = usePointerHover();
+  // A row's key as the pilot presses it (lib/shortcutKeys), none when off.
+  const hint = useKeyHint();
   const none = airports.length + waypoints.length + airplanes.length + does.length === 0;
   return (
     <div className="flex flex-col gap-2 px-4 pt-2 pb-4" data-testid="one-search-results">
@@ -115,7 +118,7 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
               >
                 {doGlyph(hit)}
                 <span className={cn("min-w-0 flex-1 truncate", TEXT.row)}>{hit.label}</span>
-                {hit.keys && <CommandShortcut>{hit.keys}</CommandShortcut>}
+                {hint(hit.keys) && <CommandShortcut>{hint(hit.keys)}</CommandShortcut>}
               </CommandItem>
             ))}
           </PickerGroup>

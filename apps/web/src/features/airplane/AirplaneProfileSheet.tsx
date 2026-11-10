@@ -10,6 +10,7 @@ import { Input } from "../../components/ui/input";
 import { FIGURE_WORDS } from "../../lib/airplane/figureWords";
 import { TEXT } from "../../lib/text";
 import { figureText, sourceWords } from "./profileModel";
+import { EnduranceSection } from "./EnduranceSection";
 import { useAirplaneProfile, type AirplaneProfileModel } from "./useAirplaneProfile";
 
 /** One figure: its name and where it comes from, its field (typed in place,
@@ -143,6 +144,11 @@ export default function AirplaneProfileSheet() {
           <FigureRow key={row.key} vm={vm} row={row} />
         ))}
       </ListGroup>
+      <EnduranceSection
+        tail={vm.tail}
+        usableGal={vm.rows.find((r) => r.key === "usable_fuel_gal")?.value ?? null}
+        burnGph={vm.rows.find((r) => r.key === "fuel_burn_gph")?.value ?? null}
+      />
       <PhotoRead vm={vm} />
     </div>
   );

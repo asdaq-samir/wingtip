@@ -1,4 +1,3 @@
-import { threeFigures } from "../lib/format";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Mic, Square, TriangleAlert } from "lucide-react";
@@ -6,24 +5,14 @@ import { cn } from "cn";
 import IconButton from "./IconButton";
 import ListenThrough from "./ListenThrough";
 import ClearancePhoto from "./ClearancePhoto";
-import ClearancePlace from "./ClearancePlace";
-import FrequencyButton from "./FrequencyButton";
+import { ClearanceElements, Line } from "./ClearanceRead";
 import { ListGroup, ListRow } from "./GroupedList";
 import { Button } from "./ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { FieldError } from "./ui/field";
 import { Textarea } from "./ui/textarea";
 import { api } from "../lib/api/client";
-import {
-  clearedRoute,
-  heardAny,
-  placesAsked,
-  readClearance,
-  routeDifference,
-  type Clearance,
-  type ClearedItem,
-  type Found,
-} from "../lib/clearance";
+import { clearedRoute, heardAny, placesAsked, readClearance, routeDifference, type Found } from "../lib/clearance";
 import { useCanListen } from "../lib/speechLocal";
 import { heardThrough, useAtcRadio, useRadioActions, type PlannedRoute } from "../lib/atcRadio";
 import { listenOnce, startRadio, stopRadio } from "../lib/atcListening";
@@ -32,7 +21,6 @@ import { altitudeWords, clearanceParts, readbackCheck, readbackLines } from "../
 import { TEXT } from "../lib/text";
 import { useSettled } from "../hooks/use-settled";
 
-const capital = (words: string) => words.replace(/\b[a-z]/g, (ch) => ch.toUpperCase());
 const time = (at: number) => new Date(at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 /** A clearance as a recognizer writes one, for the empty field's example:
@@ -42,63 +30,8 @@ const EXAMPLE =
   "“Cleared to the Duluth airport via Gopher then as filed, maintain three thousand, departure one two five point three five, squawk four five two one.”";
 const EXAMPLE_READBACK = "“Duluth, Gopher, three thousand, one two five point three five, four five two one, Skyhawk three alpha bravo.”";
 
-/** The route as cleared, its parts in order, each as found. */
-function RouteWords({ items, asFiled, found }: { items: ClearedItem[]; asFiled: boolean; found: Found | undefined }) {
-  const parts: ReactNode[] = [];
-  let run = 0;
-  for (const [i, item] of items.entries()) {
-    if (item.kind === "vectors") parts.push("Radar vectors");
-    else if (item.kind === "heading") parts.push(`Heading ${threeFigures(item.degrees)}`);
-    else if (item.kind === "airway") parts.push(item.ident);
-    else if (item.kind === "places") {
-      const places = found?.route?.[run++] ?? [{ said: item.said, sure: true, ident: item.said.toUpperCase() }];
-      parts.push(...places.map((p, k) => <ClearancePlace key={`${i}-${k}`} place={p} />));
-    } else {
-      const picked = found?.[item.kind];
-      parts.push(
-        picked
-          ? `${picked.id}${picked.transition ? `.${picked.transition}` : ""}`
-          : `${capital(item.name)} ${item.number} ${item.kind}${item.transition ? `, ${capital(item.transition)} transition` : ""}`,
-      );
-    }
-  }
-  if (asFiled) parts.push("as filed");
-  return (
-    <>
-      {parts.map((part, i) => (
-        <span key={i}>
-          {i > 0 && " → "}
-          {part}
-        </span>
-      ))}
-    </>
-  );
-}
-
-/** The altitudes in one line, as the iPhone writes them: "Maintain
- *  5,000 ft, expect 9,000 ft 10 min after departure". */
-function altitudeLine(c: Clearance): string | null {
-  const parts: string[] = [];
-  if (c.maintainFt !== null)
-    parts.push(`maintain ${c.vfr ? "VFR " : ""}${c.maintainLimit ? `${c.maintainLimit} ` : ""}${altitudeWords(c.maintainFt)}`);
-  if (c.expectFt !== null) parts.push(`expect ${altitudeWords(c.expectFt)}${c.expectMin ? ` ${c.expectMin} min after departure` : ""}`);
-  if (!parts.length) return null;
-  const line = parts.join(", ");
-  return line.charAt(0).toUpperCase() + line.slice(1);
-}
-
 /** A route as one line: its ends and the points between. */
 const routeLine = (r: PlannedRoute) => [r.dep, ...r.stops, r.dest].filter(Boolean).join(" → ") || "none";
-
-/** One named line of a row's detail: a CRAFT item, a route, an altitude. */
-function Line({ name, children }: { name: string; children: ReactNode }) {
-  return (
-    <div className="flex gap-3">
-      <span className="w-24 shrink-0 text-muted-foreground">{name}</span>
-      <span className="min-w-0 font-semibold">{children}</span>
-    </div>
-  );
-}
 
 /**
  * One of the card's four rows: its name at the left, where it stands at the right, a control of its own
@@ -204,7 +137,11 @@ export default function ClearanceCard({
   // the field to type in is under it; the rest as the pilot taps them.
   const [open, setOpen] = useState(() => ({ hear: !typed.trim(), readback: false, enter: false, compare: false }));
   const openRow = (id: keyof typeof open) => (on: boolean) => setOpen((o) => ({ ...o, [id]: on }));
-  const settled = useSettled(text, 400);
+  // Enter in the field reads what is typed at once (one line: no new
+  // lines in a clearance), where the reader otherwise waits for a pause.
+  const [readNow, setReadNow] = useState<string | null>(null);
+  const waited = useSettled(text, 400);
+  const settled = readNow === text ? text : waited;
   const clearance = useMemo(() => readClearance(settled), [settled]);
   const heardIt = heardAny(clearance);
   const asked = useMemo(() => placesAsked(clearance), [clearance]);
@@ -317,14 +254,6 @@ export default function ClearanceCard({
     .reverse()
     .filter((t) => t.final)
     .slice(0, 10);
-  const limit = clearance.classB ? (
-    "Class Bravo airspace"
-  ) : places?.limit?.ident ? (
-    <ClearancePlace place={places.limit} />
-  ) : (
-    clearance.limit && capital(clearance.limit)
-  );
-  const altitude = altitudeLine(clearance);
   // The input's own problems are said under its picker (ListenThrough).
   const problem =
     error ?? readbackProblem ?? (found.isError ? "The places in it could not be looked up; check the connection and try again." : null);
@@ -397,6 +326,11 @@ export default function ClearanceCard({
           <Textarea
             value={text}
             onChange={(e) => pick(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+              e.preventDefault();
+              setReadNow(text);
+            }}
             rows={3}
             placeholder={`${!mic ? "Type it as read: " : heardThrough(input) ? "Tap the microphone, or type it as read: " : "Tap the microphone and hold the phone to the speaker, or type it as read: "}${EXAMPLE}`}
             aria-label="The clearance as heard"
@@ -405,23 +339,16 @@ export default function ClearanceCard({
           />
           {/* A clearance copied down on paper, read into the words above. */}
           <ClearancePhoto onRead={pick} />
-          {heardIt && (
-            <div className="flex flex-col gap-1">
-              {limit && <Line name="Cleared to">{limit}</Line>}
-              {(clearance.route.length > 0 || clearance.asFiled) && (
-                <Line name="Route">
-                  <RouteWords items={clearance.route} asFiled={clearance.asFiled} found={places} />
-                </Line>
-              )}
-              {altitude && <Line name="Altitude">{altitude}</Line>}
-              {clearance.frequency && (
-                <Line name="Frequency">
-                  <FrequencyButton mhz={clearance.frequency} name={capital(clearance.facility ?? "")} named />
-                </Line>
-              )}
-              {clearance.squawk && <Line name="Transponder">{clearance.squawk}</Line>}
-            </div>
-          )}
+          {/* The clearance element by element as read, a polite live region
+              so each new word is said without taking the focus; and under
+              it the one tap that changes the plan (docs/design/web.md §12). */}
+          <ClearanceElements clearance={clearance} places={places} heard={heardIt}>
+            {cleared && enter && !isEntered && (
+              <Button onClick={enterRoute} className="self-start" data-testid="clearance-use">
+                Use This Route
+              </Button>
+            )}
+          </ClearanceElements>
           {/* The radio as heard, newest first, a call to us in bold: a tap
               reads that one above. */}
           {log.length > 0 && (

@@ -2,13 +2,16 @@ import { Suspense, lazy, useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import SheetDialog from "../../components/SheetDialog";
 import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
 import { ApiError, api } from "../../lib/api/client";
 import { pilotQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
+import { TV_CODE_LENGTH, tvCode } from "./tvCode";
 
 // Loaded when it is drawn: the sign-in sheet out of the first load.
 const SignInModal = lazy(() => import("../../components/SignInModal"));
+// The code's slots (Base UI's OTP Field) only where a TV's address opened
+// the page: TvLink itself is drawn on every planner page.
+const TvCodeField = lazy(() => import("./TvCodeField"));
 
 /** Whether the page was opened from a TV's address (/tv, WebMvcConfig). */
 function fromTvAddress(): boolean {
@@ -32,7 +35,19 @@ export default function TvLink() {
   const [open, setOpen] = useState(fromTvAddress);
   const [typed, setTyped] = useState("");
   const { data: pilot, isLoading } = useQuery(pilotQuery);
-  const approve = useMutation({ mutationFn: (code: string) => api.approveDevice(code), meta: { silent: true } });
+  const approve = useMutation({
+    mutationFn: (code: string) => api.approveDevice(code),
+    meta: { silent: true },
+    // A code refused: the slots emptied for it to be typed again.
+    onError: () => setTyped(""),
+  });
+  // Sent as the TV shows it; short, said under the slots rather than the
+  // button greyed out ahead of time.
+  const [short, setShort] = useState(false);
+  const send = (code: string) => {
+    setShort(code.length < TV_CODE_LENGTH);
+    if (code.length === TV_CODE_LENGTH) approve.mutate(tvCode(code));
+  };
   // Off the address at once, so a reload does not open the box again.
   useEffect(() => {
     if (open) forgetTvAddress();
@@ -65,27 +80,31 @@ export default function TvLink() {
           className="flex flex-col gap-2"
           onSubmit={(e) => {
             e.preventDefault();
-            approve.mutate(typed);
+            send(typed);
           }}
         >
-          <Input
-            value={typed}
-            onChange={(e) => setTyped(e.target.value)}
-            placeholder="XXXX-XXXX"
-            aria-label="The TV's code"
-            autoCapitalize="characters"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-            className="font-mono tracking-widest"
-            data-testid="tv-link-code"
-          />
+          <Suspense fallback={<div className="h-11" />}>
+            <TvCodeField
+              value={typed}
+              onChange={(v) => {
+                setTyped(v);
+                setShort(false);
+              }}
+              onComplete={send}
+              invalid={short || approve.isError}
+            />
+          </Suspense>
+          {short && (
+            <p role="alert" className={`text-destructive-ink ${TEXT.prose}`} data-testid="tv-link-short">
+              Enter all {TV_CODE_LENGTH} characters the TV shows.
+            </p>
+          )}
           {approve.isError && (
             <p role="alert" className={`text-destructive ${TEXT.prose}`} data-testid="tv-link-error">
               {approve.error instanceof ApiError ? approve.error.message : "Couldn't reach the server. Try again."}
             </p>
           )}
-          <Button type="submit" disabled={approve.isPending || typed.replace(/[^a-z0-9]/gi, "").length < 8} data-testid="tv-link-approve">
+          <Button type="submit" disabled={approve.isPending} aria-busy={approve.isPending} data-testid="tv-link-approve">
             Sign in the TV
           </Button>
         </form>

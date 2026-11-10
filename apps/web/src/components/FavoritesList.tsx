@@ -12,7 +12,8 @@ import { MoveHandle, SortableRow, SortableRows } from "./SortableRows";
  * Favorites in full, as Maps' own list: Home, which a tap changes
  * through the search bar, and the kept airports, which a tap opens --
  * and with Edit, a minus before each to let it go and a handle after
- * each to drag it up or down the list (or move it with the arrow keys).
+ * each to drag it up or down the list (or pick it up with Enter and move it
+ * with the arrow keys).
  * Add a Favorite asks the search bar for one more.
  */
 export default function FavoritesList({
@@ -90,25 +91,27 @@ export default function FavoritesList({
           </SwipeToDelete>
         )}
       </ListGroup>
-      <SortableRows ids={favorites.map((a) => a.ident)} onMove={onMove}>
-        <ListGroup title="Airports">
-          {removed && (
-            <UndoRow
-              said={`Removed ${removed.airport.ident}`}
-              onUndo={() => {
-                // Kept again at the end, then moved back to where it was.
-                onRemove(removed.airport);
-                onMove(favorites.length, removed.at);
-              }}
-              onDone={forget}
-              testId="favorites-undo"
-            />
-          )}
-          {favorites.length === 0 && !removed && <ListRow muted title="A star on an airport's card adds it here" />}
-          {favorites.map((a, index) => (
-            <SortableRow key={a.ident} id={a.ident}>
-              <SwipeToDelete label={`Remove ${a.ident} from Favorites`} onDelete={() => remove(a, index)} share={placeLink(a)}>
-                {editing ? (
+      <ListGroup title="Airports">
+        {removed && (
+          <UndoRow
+            said={`Removed ${removed.airport.ident}`}
+            onUndo={() => {
+              // Kept again at the end, then moved back to where it was.
+              onRemove(removed.airport);
+              onMove(favorites.length, removed.at);
+            }}
+            onDone={forget}
+            testId="favorites-undo"
+          />
+        )}
+        {favorites.length === 0 && !removed && <ListRow muted title="A star on an airport's card adds it here" />}
+        {/* Edited, the rows are React Aria's GridList, dragged by their
+            handles (SortableRows); at rest, each opens its card. */}
+        {editing && favorites.length > 0 ? (
+          <SortableRows label="Favorite airports" ids={favorites.map((a) => a.ident)} onMove={onMove}>
+            {favorites.map((a, index) => (
+              <SortableRow key={a.ident} id={a.ident} label={a.ident}>
+                <SwipeToDelete label={`Remove ${a.ident} from Favorites`} onDelete={() => remove(a, index)} share={placeLink(a)}>
                   <ListRow
                     media={<RemoveMinus label={`Remove ${a.ident} from Favorites…`} />}
                     title={
@@ -118,27 +121,31 @@ export default function FavoritesList({
                     }
                     description={a.municipality ?? undefined}
                   >
-                    <MoveHandle label={`Move ${a.ident}`} index={index} count={favorites.length} onMove={onMove} />
+                    <MoveHandle label={`Move ${a.ident}`} />
                   </ListRow>
-                ) : (
-                  <ListRow
-                    media={<KeptMark airport={a} />}
-                    chevron
-                    title={
-                      <>
-                        <span className="font-mono font-semibold">{a.ident}</span> · {a.name}
-                      </>
-                    }
-                    description={a.municipality ?? undefined}
-                    onClick={() => onOpen(a)}
-                  />
-                )}
-              </SwipeToDelete>
-            </SortableRow>
-          ))}
-          <ListRow media={<Plus className="size-5" />} title="Add a Favorite" onClick={onAdd} data-testid="favorites-add" />
-        </ListGroup>
-      </SortableRows>
+                </SwipeToDelete>
+              </SortableRow>
+            ))}
+          </SortableRows>
+        ) : (
+          favorites.map((a, index) => (
+            <SwipeToDelete key={a.ident} label={`Remove ${a.ident} from Favorites`} onDelete={() => remove(a, index)} share={placeLink(a)}>
+              <ListRow
+                media={<KeptMark airport={a} />}
+                chevron
+                title={
+                  <>
+                    <span className="font-mono font-semibold">{a.ident}</span> · {a.name}
+                  </>
+                }
+                description={a.municipality ?? undefined}
+                onClick={() => onOpen(a)}
+              />
+            </SwipeToDelete>
+          ))
+        )}
+        <ListRow media={<Plus className="size-5" />} title="Add a Favorite" onClick={onAdd} data-testid="favorites-add" />
+      </ListGroup>
     </div>
   );
 }

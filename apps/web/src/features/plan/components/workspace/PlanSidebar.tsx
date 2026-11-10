@@ -37,7 +37,7 @@ const OneSearchResults = lazy(() => import("../search/OneSearchResults"));
  *  it opens). */
 const SavedFlights = lazy(() => loadAccountPanels().then((m) => ({ default: m.FlightsPanel })));
 // The Favorites in full, airports' and airplanes', when one is opened:
-// their drag to reorder (dnd-kit, SortableRows) is kept out of the first
+// their drag to reorder (React Aria's GridList, SortableRows) is kept out of the first
 // load (scripts/first-load.mjs's budget, 2026-11-05).
 const FavoritesList = lazy(() => import("../../../../components/FavoritesList"));
 const AircraftFavoritesList = lazy(() => import("../AircraftFavoritesList"));

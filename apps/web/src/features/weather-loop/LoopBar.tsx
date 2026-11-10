@@ -1,7 +1,7 @@
-import { Pause, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "cn";
-import RoundButton from "../../components/RoundButton";
+import { PlaybackButton, PlaybackToolbar, PlayToggle } from "../../components/PlaybackBar";
+import { keepSliderKeys } from "../../components/playbackKeys";
 import { Slider } from "../../components/ui/slider";
 import { GLASS } from "../../lib/mapChrome";
 import { TEXT } from "../../lib/text";
@@ -23,6 +23,12 @@ const TICK_MS = 30_000;
  * plainly as old once it is past the source's own pace. Loading and
  * failing are said here too, where the loop is (lib/problems' rule).
  * Runs the loop's clock (useWeatherLoop's `drive`).
+ *
+ * The map's one playback bar (components/PlaybackBar, the dry run's too):
+ * Play at its start, a stock toggle; the scrubber, whose arrows step a
+ * frame and Home and End go to the oldest and the newest (the APG
+ * slider's keys, Windy's and the GFA's ← and →); Now at its end, the
+ * newest frame; Space plays or pauses from anywhere on the bar.
  */
 export function LoopBar() {
   const loop = useWeatherLoop({ drive: true });
@@ -42,21 +48,17 @@ export function LoopBar() {
         ? `No ${name.toLowerCase()} frames yet`
         : null;
   return (
-    <div
-      className={cn(GLASS, "pointer-events-auto flex w-[min(100%,24rem)] items-center gap-2 rounded-(--radius-banner) py-1 pr-3 pl-1")}
+    <PlaybackToolbar
+      label={`${name} loop`}
+      onToggle={() => {
+        if (loop.frames.length > 1) loop.toggle();
+      }}
+      className={cn(GLASS, "pointer-events-auto flex w-[min(100%,24rem)] items-center gap-2 rounded-(--radius-banner) py-1 pr-1 pl-1")}
       data-testid="weather-loop-bar"
-      role="group"
-      aria-label={`${name} loop`}
     >
-      <RoundButton
-        label={loop.playing ? "Pause" : "Play"}
-        onClick={loop.toggle}
-        disabled={loop.frames.length < 2}
-        data-testid="weather-loop-play"
-      >
-        {loop.playing ? <Pause className="size-5" /> : <Play className="size-5" />}
-      </RoundButton>
-      <div className="flex min-w-0 flex-1 flex-col gap-1 py-1">
+      <PlayToggle playing={loop.playing} onToggle={loop.toggle} disabled={loop.frames.length < 2} testId="weather-loop-play" />
+      {/* eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- the slider's own keys, caught as they bubble so the toolbar's roving focus does not take them too. */}
+      <div className="flex min-w-0 flex-1 flex-col gap-1 py-1" onKeyDown={keepSliderKeys}>
         {status ? (
           <span className={cn("truncate font-medium", TEXT.detail, loop.failed && "text-destructive-ink")} role="status">
             {status}
@@ -99,6 +101,23 @@ export function LoopBar() {
           </>
         )}
       </div>
-    </div>
+      {/* The newest frame, from wherever the loop is (the GFA's Now). */}
+      <PlaybackButton
+        render={
+          <button
+            type="button"
+            className={cn(
+              "relative h-9 shrink-0 rounded-full px-2.5 font-semibold text-tint outline-none after:absolute after:-inset-1 after:content-[''] hover:bg-foreground/8 focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+              TEXT.detail,
+            )}
+          />
+        }
+        onClick={loop.now}
+        disabled={loop.frames.length < 2 || (!loop.playing && loop.shown === loop.frames.length - 1)}
+        data-testid="weather-loop-now"
+      >
+        Now
+      </PlaybackButton>
+    </PlaybackToolbar>
   );
 }

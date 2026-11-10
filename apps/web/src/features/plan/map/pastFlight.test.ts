@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   choosePastFlight,
   clearPastFlight,
+  legStep,
   pausePastFlight,
   playPastFlight,
   positionAt,
@@ -43,5 +44,19 @@ describe("a past flight replayed", () => {
     expect(usePastFlight.getState().at).toBe(1000);
     stopPastFlight();
     expect(usePastFlight.getState()).toMatchObject({ at: null, playing: false });
+  });
+
+  it("under Reduce Motion steps the dry run leg by leg, the clock running on unseen", () => {
+    expect(legStep(1030, [1000, 1040, 1080], 1100)).toBe(1000);
+    expect(legStep(1045, [1000, 1040, 1080], 1100)).toBe(1040);
+    expect(legStep(1200, [1000, 1040, 1080], 1100)).toBe(1100);
+    expect(legStep(990, [1000, 1040], 1100)).toBe(990);
+    usePastFlight.setState({ hex: "dry-run", id: 0, points: POINTS, stops: [1000, 1040, 1080], at: 1000, playing: true, speed: 10 });
+    stepPastFlight(3000, true); // 30 s on: still at the first point
+    expect(usePastFlight.getState().at).toBe(1000);
+    stepPastFlight(2000, true); // 50 s on: jumped to the second
+    expect(usePastFlight.getState().at).toBe(1040);
+    stepPastFlight(10_000, true); // past the end: there, stopped
+    expect(usePastFlight.getState()).toMatchObject({ at: 1100, playing: false });
   });
 });

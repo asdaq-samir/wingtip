@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { WELCOME, welcomeDue, useTips } from "../../../lib/firstRunTips";
-import { SAMPLE_FLIGHT, welcomeSteps } from "./useWelcome";
+import { SAMPLE_FLIGHT } from "./useWelcome";
 
 describe("the welcome", () => {
   beforeEach(() => useTips.setState({ seen: [] }));
@@ -16,11 +16,6 @@ describe("the welcome", () => {
   it("is not due where every tip was turned off", () => {
     useTips.setState({ seen: ["*"] });
     expect(welcomeDue()).toBe(false);
-  });
-
-  it("asks for the location only while the browser has its question to ask", () => {
-    expect(welcomeSteps(true)).toEqual(["airplane", "home", "rules", "location", "ready"]);
-    expect(welcomeSteps(false)).toEqual(["airplane", "home", "rules", "ready"]);
   });
 
   it("opens the same sample flight as the phones: Madison to Oshkosh, no stops", () => {

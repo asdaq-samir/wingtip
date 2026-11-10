@@ -69,7 +69,7 @@ export async function openLinkFor(page: Page, address: string): Promise<string> 
   await console.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByLabel("Email address").fill(address);
   await page.getByRole("button", { name: "Send Link" }).click();
-  // The dialog's own status line: a toast is a status too (sonner's),
+  // The dialog's own status line: a toast is a status too (Base UI's),
   // and on the plan page the planner's progress toast is often up.
   await expect(page.getByRole("dialog").getByRole("status")).toContainText(`Check ${address}`);
 

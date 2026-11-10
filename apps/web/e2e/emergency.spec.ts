@@ -51,6 +51,24 @@ test("in flight, Emergency opens the best fields, the squawk and the MAYDAY", { 
   await expect(page.getByTestId("map-emergency")).toHaveCount(0);
 });
 
+test("it opens on its title, and the next Tab is Direct To the best field, which flies there at once", async ({ page }) => {
+  await flying(page);
+  await page.getByTestId("flying-emergency").click();
+  const sheet = page.getByTestId("emergency-sheet");
+  // The static title takes the first focus (APG modal dialog), not a field.
+  await expect(sheet.locator("[data-emergency-title]")).toBeFocused();
+  const direct = sheet.getByTestId("emergency-direct-to");
+  await expect(direct).toBeVisible({ timeout: slow(20_000) });
+  await page.keyboard.press("Tab");
+  await expect(direct).toBeFocused();
+  const best = await sheet.getByTestId("emergency-field").first().locator(".font-semibold").first().textContent();
+  await expect(direct).toContainText(`Direct To ${best}`);
+  // No confirm step: the route goes to the field, and the sheet makes way.
+  await page.keyboard.press("Enter");
+  await expect(sheet).toBeHidden();
+  await expect(page).toHaveURL(new RegExp(`direct=${best}`));
+});
+
 test('the pilot\'s own "mayday" at the microphone opens it at once', async ({ page }) => {
   // The browser's recognizer, a stand-in saying the pilot's words (clearance.spec's way).
   await page.addInitScript(() => {

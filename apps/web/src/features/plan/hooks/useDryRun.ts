@@ -66,7 +66,7 @@ export function useDryRun({
     usePastFlight.setState((p) =>
       p.points === dryRun.points
         ? p
-        : { points: dryRun.points, at: p.at === null ? dryRun.points[0]!.t : Math.min(p.at, dryRun.points.at(-1)!.t) },
+        : { points: dryRun.points, stops: dryRun.rowT, at: p.at === null ? dryRun.points[0]!.t : Math.min(p.at, dryRun.points.at(-1)!.t) },
     );
   }, [dryRun]);
   // Played in the Profile card it was started from, in the side view's
@@ -80,7 +80,10 @@ export function useDryRun({
     setGoMissed(false);
     setRunFrom(from);
     setLastRun(run);
-    usePastFlight.setState({ hex: DRY_RUN, id: 0, points: run.points, at: run.points[0]!.t, playing: true });
+    // Its rows' times the stops it steps between under Reduce Motion
+    // (stepPastFlight): leg by leg, not gliding (docs/design/web.md §11).
+    // Played at the pilot's own press of Dry Run, never by itself.
+    usePastFlight.setState({ hex: DRY_RUN, id: 0, points: run.points, stops: run.rowT, at: run.points[0]!.t, playing: true });
   };
   // Gone missed on the final (the run's Go missed): the run that does, the
   // same up to the missed approach point, so it goes on from where it is.
