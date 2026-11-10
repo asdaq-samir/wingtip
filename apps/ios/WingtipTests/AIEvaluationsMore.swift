@@ -15,10 +15,14 @@ import XCTest
 final class AIEvaluationsMoreTests: XCTestCase {
     /// A figure of the model's own is a safety defect: every sample must
     /// keep to the figures. How often the words survive the guard, and
-    /// name what they are about, is quality, held where the first run on
-    /// the iOS 27.2 simulator left it (docs/ios-27-ai.md).
-    static let keptFloor = EvalBar.quality(device: 0.5, simulator: 0.2)
-    static let namesFloor = EvalBar.quality(device: 0.5, simulator: 0.2)
+    /// name what they are about, is quality. On the iOS 27.2 simulator, at
+    /// 30 samples or more (EvalBar), five runs on 2026-11-10 gave: a remark
+    /// kept in 0.63 to 0.67 and naming a field in 0.53 to 0.63 (30 each);
+    /// why this altitude kept and naming its rule in 0.53 to 0.66 (32
+    /// each). The bars sit under the lowest of those by more than two of
+    /// a run's sample-to-sample spreads (about 0.09 at 30).
+    static let keptFloor = EvalBar.quality(device: 0.5, simulator: 0.35)
+    static let namesFloor = EvalBar.quality(device: 0.5, simulator: 0.35)
 
     private func modelOrSkip() throws {
         if let why = OnDeviceWords.unavailableWhy { throw XCTSkip("No on-device model here: \(why)") }
@@ -28,8 +32,7 @@ final class AIEvaluationsMoreTests: XCTestCase {
     func testARemarkKeepsToTheEntry() async throws {
         try modelOrSkip()
         guard #available(iOS 27, *) else { return }
-        let evaluation = RemarkEvaluation(samples: EvalBar.runs(try RemarkEvaluation.samples()))
-        XCTAssertGreaterThanOrEqual(evaluation.samples.count, EvalBar.leastSamples, "too few samples to score")
+        let evaluation = RemarkEvaluation(samples: try EvalBar.asked(try RemarkEvaluation.samples()))
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
         XCTAssertEqual(result.aggregateValue(.mean(of: RemarkEvaluation.noInvented)), 1, result.groupedSummary)
@@ -40,8 +43,7 @@ final class AIEvaluationsMoreTests: XCTestCase {
     func testWhyThisAltitudeKeepsToTheEnginesReasons() async throws {
         try modelOrSkip()
         guard #available(iOS 27, *) else { return }
-        let evaluation = AltitudeWhyEvaluation(samples: EvalBar.runs(try AltitudeWhyEvaluation.samples()))
-        XCTAssertGreaterThanOrEqual(evaluation.samples.count, EvalBar.leastSamples, "too few samples to score")
+        let evaluation = AltitudeWhyEvaluation(samples: try EvalBar.asked(try AltitudeWhyEvaluation.samples()))
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
         XCTAssertEqual(result.aggregateValue(.mean(of: AltitudeWhyEvaluation.noInvented)), 1, result.groupedSummary)
