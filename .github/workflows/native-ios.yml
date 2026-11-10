@@ -55,7 +55,9 @@ jobs:
   testflight:
     needs: test
     if: github.ref == 'refs/heads/main' && vars.APP_STORE_KEY_ID != ''
-    runs-on: ${{ vars.MAC_RUNNER || 'macos-26' }}
+    # xcode-27, the hosted image with .tool-versions' Xcode 27.2, as in
+    # native-ios-test.yml.
+    runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
     timeout-minutes: 45
     env:
       TEAM: ${{ vars.APPLE_TEAM_ID }}

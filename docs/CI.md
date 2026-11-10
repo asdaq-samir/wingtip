@@ -47,7 +47,12 @@ instead, so they are not built twice there. Each of those two keeps its
 own concurrency group; a pull request's builds run in CI's.
 
 The iOS job runs on `MAC_RUNNER` (the Mac mini, free) or else GitHub's
-macOS runner: free while the repository is public, ten times a Linux
+`xcode-27` runner, the one hosted image with the Xcode `.tool-versions`
+names (27.2; `macos-26` has only Xcode 26, so `scripts/ci/select-xcode.sh`
+finds none there, run 42763113825; actions/runner-images'
+`images/macos/xcode-27-arm64-Readme.md` lists what it has). It is a
+preview image (actions/runner-images#14404), so it may queue longer. It is
+free while the repository is public, ten times a Linux
 minute's price on a private one, about 5 to 10 macOS minutes for each
 pull request that touches the iPhone app, the engine or the shared
 fixtures.
@@ -240,7 +245,7 @@ Most jobs' machine comes from a repository variable, so moving them is a
 setting, not a change to the workflows:
 
 - `LINUX_RUNNER`: the Linux jobs (default `ubuntu-26.04`, GitHub's)
-- `MAC_RUNNER`: Native iOS (default GitHub's macOS runner)
+- `MAC_RUNNER`: Native iOS (default GitHub's `xcode-27`)
 
 Some jobs always run on GitHub's `ubuntu-26.04`, whatever the variable
 says, because the Mac mini is Apple silicon and they need x86: `e2e`,
