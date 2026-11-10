@@ -23,6 +23,10 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -46,7 +50,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.coach.CoachScreen
-import app.wingtipmaps.android.design.Skeleton
+import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.documents.AddFromPhotoRow
@@ -55,7 +59,6 @@ import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
-import app.wingtipmaps.android.ui.UndoRow
 import app.wingtipmaps.android.ui.WingtipIcons
 import app.wingtipmaps.android.ui.sheet.CardSheet
 import java.time.YearMonth
@@ -68,7 +71,7 @@ import java.time.format.DateTimeParseException
  * scrolls, what the currency says in a card at the top (the gateway's
  * words; nothing is worked out here), the Coach, then each entry, newest
  * first, under a sticky month header (LogbookEntryRow), each edited in its
- * row and deleted with an Undo where it was. Add Flight, the extended
+ * row and deleted with Material's Snackbar offering its Undo. Add Flight, the extended
  * button at the foot, opens a line's fields to log one by hand, and
  * shrinks to its icon while the list scrolls; a flight is also added from
  * a recorded track ("Flight Logged") or a photo of a paper page.
@@ -95,10 +98,13 @@ fun LogbookScreen(model: LogbookModel = viewModel(), onClose: (() -> Unit)? = nu
     val list = rememberLazyListState()
     val atTop by remember { derivedStateOf { list.firstVisibleItemIndex == 0 } }
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val snackbars = remember { SnackbarHostState() }
+    DeletedSnackbar(state.removed, snackbars, model)
     Scaffold(
         modifier = Modifier.fillMaxSize().nestedScroll(scroll.nestedScrollConnection),
         containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0),
+        snackbarHost = { SnackbarHost(snackbars) },
         topBar = {
             if (onClose != null) {
                 LargeFlexibleTopAppBar(
@@ -136,7 +142,7 @@ fun LogbookScreen(model: LogbookModel = viewModel(), onClose: (() -> Unit)? = nu
 @Composable
 private fun LogbookHead(state: LogbookModel.State, onCoach: () -> Unit, onPhoto: () -> Unit) {
     Column(Modifier.padding(horizontal = WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
-        if (state.loading) Skeleton(rows = 4)
+        if (state.loading) LoadingRow()
         ProblemLine(state.problem)
         if (state.currency.isNotEmpty()) {
             Card(Modifier.fillMaxWidth()) {
@@ -163,10 +169,8 @@ private fun LogbookHead(state: LogbookModel.State, onCoach: () -> Unit, onPhoto:
     }
 }
 
-/** The entries under a sticky header per month, each edited in its row; a
- *  deleted one's Undo row where it was, until its time is up (UndoRow). */
+/** The entries under a sticky header per month, each edited in its row. */
 private fun LazyListScope.entries(state: LogbookModel.State, model: LogbookModel) {
-    val removed = state.removed
     var month: String? = null
     state.entries.forEachIndexed { i, e ->
         val m = LogbookModel.monthOf(e)
@@ -174,10 +178,8 @@ private fun LazyListScope.entries(state: LogbookModel.State, model: LogbookModel
             month = m
             stickyHeader(key = "month-$m") { MonthHeader(m) }
         }
-        if (removed != null && removed.index == i) undoItem(removed, model)
         item(key = e.id) { Column(Modifier.padding(horizontal = WingtipSpace.Lg)) { LogbookEntryRow(e, state, model) } }
     }
-    if (removed != null && removed.index >= state.entries.size) undoItem(removed, model)
 }
 
 /** A month's header, solid so the rows scroll under it: "November 2026". */
@@ -198,14 +200,19 @@ private fun MonthHeader(month: String) {
     }
 }
 
-/** "Deleted 2026-11-09 · Undo" where the entry was. */
-private fun LazyListScope.undoItem(removed: LogbookModel.Removed, model: LogbookModel) {
-    item(key = "undo-${removed.entry.id}") {
-        Column(Modifier.padding(horizontal = WingtipSpace.Lg)) {
-            UndoRow(
-                stringResource(R.string.logbook_deleted, listOfNotNull(removed.entry.flownOn, removed.entry.route?.ifEmpty { null }).joinToString(" ")),
-                key = removed.entry.id, onUndo = model::undoDelete, onDone = { model.deleteKept(removed.entry.id) },
-            )
+/** "Deleted 2026-11-09 KMSN KJVL · Undo": Material's Snackbar for an entry
+ *  deleted, its timing and dismissal the Snackbar's own. Undo puts the
+ *  entry back where it was; let go, the delete is sent (deleteKept). */
+@Composable
+private fun DeletedSnackbar(removed: LogbookModel.Removed?, host: SnackbarHostState, model: LogbookModel) {
+    val words = removed?.let { r -> stringResource(R.string.logbook_deleted, listOfNotNull(r.entry.flownOn, r.entry.route?.ifEmpty { null }).joinToString(" ")) }
+    val undo = stringResource(R.string.undo)
+    LaunchedEffect(removed?.entry?.id) {
+        val id = removed?.entry?.id ?: return@LaunchedEffect
+        val said = words ?: return@LaunchedEffect
+        when (host.showSnackbar(said, actionLabel = undo, withDismissAction = true, duration = SnackbarDuration.Long)) {
+            SnackbarResult.ActionPerformed -> model.undoDelete()
+            SnackbarResult.Dismissed -> model.deleteKept(id)
         }
     }
 }

@@ -18,8 +18,8 @@ import kotlinx.coroutines.launch
  * pilot's entries from the gateway, newest first, and what its currency
  * says, read again whenever a flight is logged from the track
  * (LogbookChanged). An entry is edited in its row (LogbookForm, Save or
- * Cancel) and deleted with an Undo row where it was: the delete is sent
- * only when the row's time is up (`deleteKept`), so Undo needs no server.
+ * Cancel) and deleted with a Snackbar's Undo: the delete is sent only
+ * once the Snackbar is let go (`deleteKept`), so Undo needs no server.
  * A flight is added by hand from Add Flight (`add`), in the same fields.
  * Signed out, nothing.
  */
@@ -139,8 +139,8 @@ class LogbookModel(
         }
     }
 
-    /** Delete: the entry out of the list, an Undo row in its place; one
-     *  still waiting is kept deleted first. */
+    /** Delete: the entry out of the list, its Undo offered; one still
+     *  waiting is kept deleted first. */
     fun delete(id: Long) {
         _state.value.removed?.let { deleteKept(it.entry.id) }
         val s = _state.value
@@ -156,7 +156,7 @@ class LogbookModel(
         _state.update { s -> s.copy(entries = s.entries.toMutableList().apply { add(r.index.coerceAtMost(size), r.entry) }, removed = null) }
     }
 
-    /** The Undo row's time up: the delete sent; refused, the entry comes
+    /** The Snackbar let go: the delete sent; refused, the entry comes
      *  back and the logbook says why. */
     fun deleteKept(id: Long) {
         val r = _state.value.removed?.takeIf { it.entry.id == id } ?: return

@@ -6,7 +6,10 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -52,6 +55,7 @@ import app.wingtipmaps.android.ready.ReadyToFlyRow
 import app.wingtipmaps.android.route.RouteLegHost
 import app.wingtipmaps.android.route.RouteLegModel
 import app.wingtipmaps.android.route.RouteToolbar
+import app.wingtipmaps.android.route.RouteUndoSnackbar
 import app.wingtipmaps.android.search.OneSearch
 import app.wingtipmaps.android.search.rememberSearchControl
 import app.wingtipmaps.android.share.SharedFlightHost
@@ -95,6 +99,8 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val assistant: AssistantClient = viewModel()
     val ownShip = rememberOwnShipControl()
     val sheet = rememberMapSheetState()
+    // The screen's Snackbars: a route edit's Undo (RouteUndoSnackbar).
+    val snackbars = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val resources = LocalResources.current
@@ -235,23 +241,28 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             },
             detail = { shown -> pagesView(shown, 0.dp, Modifier.fillMaxSize(), false) },
             onBack = { if (profile != null) ProfileOpen.close() else back() },
-            // The route being worked on: its floating toolbar over the map.
+            // The route being worked on: its floating toolbar over the map,
+            // an edit's Snackbar over that.
             map = {
                 Box(Modifier.fillMaxSize()) {
                     mapView(0.dp)
-                    if (SheetPage.Plan.key in pages && planState.routed) RouteToolbar(plan, onAddPoint = search::addStop, Modifier.align(Alignment.BottomCenter))
+                    val editing = SheetPage.Plan.key in pages && planState.routed
+                    Column(Modifier.align(Alignment.BottomCenter), horizontalAlignment = Alignment.CenterHorizontally) {
+                        SnackbarHost(snackbars, if (editing) Modifier else Modifier.navigationBarsPadding())
+                        if (editing) RouteToolbar(plan, onAddPoint = search::addStop)
+                    }
                 }
             },
         )
     } else if (fold != null) {
-        TabletopPanes(fold, map = { mapView(0.dp) }) {
+        TabletopPanes(fold, map = { Box(Modifier.fillMaxSize()) { mapView(0.dp); SnackbarHost(snackbars, Modifier.align(Alignment.BottomCenter)) } }) {
             searchRow(null)
             pagesView(page, 0.dp, Modifier.weight(1f), false)
         }
     } else {
         // Over the navigation bar (edge to edge): its peek is the search above it.
         val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        MapSheet(state = sheet, peek = SearchPeek + navigationBar, body = { covered -> mapView(covered) }) {
+        MapSheet(state = sheet, peek = SearchPeek + navigationBar, snackbars = snackbars, body = { covered -> mapView(covered) }) {
             searchRow(null)
             pagesView(page, navigationBar, Modifier.weight(1f), sheet.atPeek)
         }
@@ -283,6 +294,8 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     picked?.let { pick -> MapCardSheet(pick, plan, onClose = { picked = null }, onToPlan = { picked = null; showPlan() }) }
     source?.let { shown -> SourceSheet(shown, onClose = { source = null }) }
     RouteLegHost(plan, ownShipOn = ownShip.on, model = legs)
+    // The strip has no plan to edit, so no Snackbar of its own.
+    if (!stripLayout) RouteUndoSnackbar(plan, snackbars)
     EmergencyHost(plan, ownShip)
     SharedFlightHost(shared, plan)
     // An airplane's card: in the sheet or the panes, else over the map.

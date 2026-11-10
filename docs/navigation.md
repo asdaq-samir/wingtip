@@ -36,8 +36,10 @@ not timed on a device.
   wording (the flight plan's "Aircraft identification").
 - **Undo where it happened:** after a delete, an Undo row in the list it
   went from (web `components/UndoRow`, iOS `Views/UndoRow`, Android
-  `ui/UndoRow`), or the route's Undo bar under the route (web
-  `RouteUndoBar`, iOS `UndoBar`, Android `RouteUndoRow`); never a toast.
+  Material's `Snackbar` with its Undo action), or the route's Undo bar under
+  the route (web `RouteUndoBar`, iOS `UndoBar`, Android's Snackbar,
+  `RouteUndoSnackbar`). The web and iOS use no toast; Android uses the
+  platform's own Snackbar (the owner, 2026-11-10: stock components).
 - **Frequencies copy:** every frequency shown copies with a tap (web
   `FrequencyButton`) or a hold (iOS `FrequencyActions`, Android
   `FrequencyRow`). No platform has Tune: none reaches a radio (the
