@@ -39,8 +39,11 @@ jobs:
     # images/macos/xcode-27-arm64-Readme.md); macos-26 has 26.0.1-26.6 only
     # (images/macos/macos-26-arm64-Readme.md), so select-xcode.sh found none.
     runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
-    # Forty minutes for a change; the night's full card suites on three
-    # simulators take longer, and nothing waits on them.
+    # Forty minutes for a change, on the iPhone alone: the whole suite on
+    # the iPhone, the iPad and iPhone Duo together ran past forty minutes on
+    # every run of 2026-11-10 (42814640131 to 42856880797), the card suites
+    # skipped or not. The iPad and Duo layouts, and the full card suites,
+    # are the night's (native-ios.yml), which nothing waits on.
     timeout-minutes: ${{ inputs.full && 100 || 40 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -123,8 +126,8 @@ jobs:
           set -o pipefail
           xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme Wingtip -configuration Debug \
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.iphone }}" \
-            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.ipad }}" \
-            ${{ steps.sim.outputs.duo && format('-destination "platform=iOS Simulator,id={0}"', steps.sim.outputs.duo) || '' }} \
+            ${{ inputs.full && format('-destination "platform=iOS Simulator,id={0}"', steps.sim.outputs.ipad) || '' }} \
+            ${{ inputs.full && steps.sim.outputs.duo && format('-destination "platform=iOS Simulator,id={0}"', steps.sim.outputs.duo) || '' }} \
             -derivedDataPath "$RUNNER_TEMP/derived" \
             -resultBundlePath "$RUNNER_TEMP/Wingtip.xcresult" \
             ${{ !inputs.full && '-skip-testing:WingtipUITests/CardRuleTests -skip-testing:WingtipUITests/CardScrollTests -skip-testing:WingtipUITests/CardSmokeTests' || '' }} \
