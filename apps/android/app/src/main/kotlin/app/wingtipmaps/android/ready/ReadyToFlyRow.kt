@@ -15,6 +15,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -115,31 +116,33 @@ internal fun ReadyLine(answer: EngineContract.ReadyToFlyAnswer) {
     }
 }
 
-/** One action: a tap fixes it where the phone can, in the blue tint;
- *  plain text where it cannot. 48 dp tall, as a touch target is. */
+/** One action as a Material list row: the finding's glyph at the start,
+ *  the engine's line, and at the end a Fix button where the phone can fix
+ *  it (ReadyFixer), the row itself taking the same tap; plain where it
+ *  cannot. The stock row and button keep 48 dp targets. */
 @Composable
 internal fun ReadyActionRow(item: EngineContract.ReadyItem, fixer: ReadyFixer, busy: Boolean, before: () -> Unit = {}) {
     val fix = item.fix?.takeIf(fixer::can)
-    val tappable = fix != null
-    val tap = if (fix != null) {
-        Modifier.clickable(role = Role.Button) {
+    val run: (() -> Unit)? = fix?.let { f ->
+        {
             before()
-            fixer.run(fix)
+            fixer.run(f)
         }
-    } else {
-        Modifier
     }
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = WingtipSize.TapTarget).then(tap),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
-    ) {
-        FindingIcon(BriefModel.finding(item.finding), Modifier.size(WingtipSpace.Xl))
-        Text(
-            item.line, color = if (tappable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-            maxLines = if (largeType()) 3 else 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
-        )
-        if (busy) Loading(Modifier.size(WingtipSpace.Lg))
-    }
+    ListItem(
+        leadingContent = { FindingIcon(BriefModel.finding(item.finding), Modifier.size(WingtipSpace.Xl)) },
+        trailingContent = if (busy || run != null) {
+            {
+                if (busy) Loading(Modifier.size(WingtipSpace.Lg))
+                else if (run != null) TextButton(onClick = run) { Text(stringResource(R.string.fix)) }
+            }
+        } else {
+            null
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        modifier = if (run != null) Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = run) else Modifier.fillMaxWidth(),
+        content = { Text(item.line, maxLines = if (largeType()) 3 else 2, overflow = TextOverflow.Ellipsis) },
+    )
 }
 
 /** One item checked: its line, the line under it and its source; the
