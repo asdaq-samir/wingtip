@@ -23,7 +23,11 @@ struct SavedFlightsModelTests {
                     name: name, notes: notes, stops: id == 2 ? ["KGPZ"] : [])
     }
 
-    static func model(_ asked: Asked, flights: [SavedFlight], refuse: Bool = false) async -> SavedFlightsModel {
+    /// Pending deletes kept apart from the app's own, one store a test.
+    static func pending() -> PendingDeletes { PendingDeletes(defaults: UserDefaults(suiteName: "test-\(UUID().uuidString)")!) }
+
+    static func model(_ asked: Asked, flights: [SavedFlight], refuse: Bool = false,
+                      pending: PendingDeletes = pending()) async -> SavedFlightsModel {
         let model = SavedFlightsModel(calls: .init(
             list: { flights },
             save: { _ in },
@@ -35,7 +39,7 @@ struct SavedFlightsModelTests {
                 if let notes = change.notes { now.notes = notes.isEmpty ? nil : notes }
                 return now
             },
-            delete: { await asked.delete($0) }))
+            delete: { await asked.delete($0) }), pending: pending)
         await model.load()
         return model
     }
@@ -107,5 +111,26 @@ struct SavedFlightsModelTests {
         await model.keepRemoved()
         #expect(await asked.deletes == [2])
         #expect(model.removed.isEmpty && model.flights.map(\.id) == [1])
+    }
+
+    @Test func aDeleteLeftUnsentWhenTheAppClosedIsSentAtTheNextLaunchAndStaysOffTheList() async {
+        let asked = Asked()
+        let pending = Self.pending()
+        let model = await Self.model(asked, flights: [Self.flight(1), Self.flight(2)], pending: pending)
+        model.delete(model.flights[0])
+        // The app closed here: the list never left, nothing sent, the delete kept.
+        #expect(await asked.deletes.isEmpty)
+        #expect(pending.ids(.flight) == [1])
+        // The next launch's list leaves it out while it is sent.
+        let next = await Self.model(asked, flights: [Self.flight(1), Self.flight(2)], pending: pending)
+        #expect(next.flights.map(\.id) == [2])
+        // Held in this launch, it is not sent at this launch's start; the
+        // next launch sends it and lets it go.
+        #expect(await pending.sendLeftOver { _, id in await asked.delete(id) } == 0)
+        #expect(await asked.deletes.isEmpty)
+        let nextLaunch = PendingDeletes(defaults: pending.defaults, launch: "next")
+        #expect(await nextLaunch.sendLeftOver { _, id in await asked.delete(id) } == 1)
+        #expect(await asked.deletes == [1])
+        #expect(nextLaunch.ids(.flight).isEmpty)
     }
 }

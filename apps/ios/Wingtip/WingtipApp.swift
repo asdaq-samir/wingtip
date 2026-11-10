@@ -42,6 +42,11 @@ struct WingtipApp: App {
                 .environment(verdict)
                 .task { ownShip.start() }
                 .task { await session.refresh() }
+                // The deletes an earlier launch held behind their Undo and
+                // never sent, sent once the pilot is signed in (PendingDeletes).
+                .task(id: session.signedIn) {
+                    if session.signedIn { await PendingDeletes().sendLeftOver(PendingDeletes.gateway) }
+                }
                 .task { await charts.load() }
                 .task { OfflineDownloads.shared.start() }
                 .task { plan.restore() }
