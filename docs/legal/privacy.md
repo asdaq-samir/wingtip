@@ -49,6 +49,12 @@ When you turn on the ATC copilot, or speak to the app, it listens through your d
 - **In the iPhone and Android apps, speech is recognised on your phone and never leaves it.** They use only the recognizer that runs on the phone itself: Apple's on-device speech recognition on the iPhone, and the phone's on-device speech recognizer on Android (Android 12 and later). Where a phone cannot do that, the app does not offer voice, and you type instead; it never falls back to a recognizer on someone's servers.
 - **In a web browser, the app uses the browser's own speech recognition.** Where the browser can promise that the audio stays on your computer or phone (Chrome, which may first download its English language pack), the app asks it to. Other browsers, such as Safari, may send the audio to their maker (Apple, for Safari) to be recognised, under that company's privacy policy. A browser with no speech recognition (Firefox) is not offered voice. Of the text, only the place names in a clearance you heard (a clearance limit, a route, a departure) go to our planner, to find them on the map; a question you ask aloud goes to Claude as any typed question does.
 
+## Siri and the camera on iPhone
+
+On an iPhone, Siri can act on what the app shows: the airports, waypoints, NOTAMs, approaches, frequencies, airplanes and logbook entries on the screen, and your flight. The app tells the phone which of these is on the screen so Siri knows what "this airport" means; that stays between the app and your iPhone under Apple's privacy policy for Siri, and nothing more is sent to us than when you tap the same thing.
+
+When you point the iPhone's camera at a chart, a plate, a weather printout or a sign and ask Siri about it, the picture is read on your phone. Only the airport identifiers found in it go to our planner, to find those airports; the picture is not sent to us.
+
 ## Features Claude writes
 
 Some features are written by Claude, an AI model made by Anthropic: Ask, the written briefing, the words beside the Brief's figures, checkpoint descriptions, the mock oral and the debrief's words. To write them, our server sends Anthropic:

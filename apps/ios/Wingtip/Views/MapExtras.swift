@@ -165,8 +165,10 @@ final class MapExtrasState: NSObject {
         let hold = UILongPressGestureRecognizer(target: self, action: #selector(held(_:)))
         hold.minimumPressDuration = 0.5
         map.addGestureRecognizer(hold)
-        // The airports, checkpoints and traffic in view in VoiceOver's rotor.
+        // The airports, checkpoints and traffic in view in VoiceOver's rotor,
+        // and to Siri as what is on the screen (View Annotations).
         map.accessibilityCustomRotors = MapRotors.rotors(for: map)
+        if #available(iOS 18.4, *) { ChartMapSiri.attach(to: map) }
         // The held finger for VoiceOver, which cannot hold a point: the
         // same ask, of the map's centre (Apple's HIG: every gesture has an
         // accessible way to do the same).

@@ -6,7 +6,7 @@ to the site), App Store Connect's App Privacy answers,
 Google Play's Data safety form and the iOS app's privacy manifest
 (`PrivacyInfo.xcprivacy`). Change it
 whenever the code changes what leaves a device or what the server keeps.
-Last checked against the code on 2026-11-09 (shared flights added).
+Last checked against the code on 2026-11-09 (Siri and camera look-ups added).
 
 "Collected" is App Store Connect's meaning: sent off the device and kept
 longer than it takes to answer the request.
@@ -51,6 +51,16 @@ longer than it takes to answer the request.
   (`lib/speechLocal.ts`). Of the text,
   only a clearance's place words go to the planner
   (`/api/clearance/places`).
+- **Siri and camera look-ups (iPhone).** The app annotates what is on
+  the screen with App Entities (`Intents/SiriSees.swift`: airports,
+  waypoints, the flight, frequencies, NOTAMs, approaches, airplanes,
+  logbook entries) so Siri can act on "this"; that is Apple's, on the
+  phone. A camera look-up's picture (Visual Intelligence's
+  `SemanticContentDescriptor`) is read on the phone by Vision
+  (`Intents/VisualLookup.swift`); only the idents found in it go to the
+  planner (`/api/airport/{ident}`), and are not kept. "What does this NOTAM
+  mean for me" is written by Apple's on-device model from the NOTAM and
+  the engine's reasons (`Intents/AskIntents.swift`); nothing is sent.
 - **iCloud (iPhone).** Kept and watched airplanes and planned routes are
   in the pilot's own iCloud through SwiftData's CloudKit sync
   (`Records/Records.swift`); Apple's, not ours.

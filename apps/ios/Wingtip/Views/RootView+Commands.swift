@@ -73,6 +73,12 @@ extension RootView {
             FlightUI.shared.card = .airplane(hex)
         case .open(let screen):
             openScreen(screen)
+        case .fly(let tail):
+            await fly(tail)
+        case .approach(let pick):
+            approach(pick)
+        case .keepForAir:
+            keepForAir()
         case .sharedFlight(let link):
             // Shown, not planned: the pilot's own plan stays until they
             // tap Use This Plan.

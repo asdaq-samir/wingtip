@@ -77,6 +77,12 @@ Not collected, though the app uses them on the device:
 - **Favourites, recents and routes in iCloud** (`Records/Records.swift`,
   SwiftData with CloudKit): in the pilot's own iCloud private database,
   which the developer cannot read; Apple does not count it as collected.
+- **Siri, camera look-ups and Apple's on-device model** (`Intents/`,
+  `OnDevice/`): what is on the screen is told to Siri as App Entities on
+  the phone; a camera look-up's picture is read on the phone and only
+  the airport idents in it go to the planner, unkept, as any airport
+  lookup does; the on-device model's words are written on the phone.
+  Nothing new is collected.
 
 ### The privacy manifest
 

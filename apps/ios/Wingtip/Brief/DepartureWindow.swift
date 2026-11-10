@@ -27,6 +27,15 @@ final class DepartureWindow {
 
     func pick(_ depart: String) { picked = picked == depart ? nil : depart }
 
+    /// The hour nearest a time said to Siri ("tomorrow at 9"), within half
+    /// an hour of it; none picked where the hours do not reach it.
+    func pick(nearest when: Date) {
+        let iso = ISO8601DateFormatter()
+        let near = answer?.hours.compactMap { hour in iso.date(from: hour.depart).map { (hour.depart, abs($0.timeIntervalSince(when))) } }
+            .filter { $0.1 <= 30 * 60 }.min { $0.1 < $1.1 }
+        if let near { picked = near.0 }
+    }
+
     /// The question: the Go / No-Go's own for the plan, with the
     /// planner's defaults for the rest and each hour a departure.
     static func ask(_ goNoGo: GoNoGoAsk, airplane: Bool) throws -> APIDepartureWindowAsk {

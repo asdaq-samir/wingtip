@@ -37,6 +37,14 @@ final class PendingCommand {
         /// A flight another pilot sent, previewed before anything is
         /// planned (SharedFlightModel).
         case sharedFlight(SharedFlightLink)
+        /// The route flown with an airplane, by its N-number (FlyAirplaneIntent).
+        case fly(tail: String)
+        /// An approach put on the route at its field and the Brief opened
+        /// (BriefApproachIntent).
+        case approach(ProcedurePick)
+        /// The route kept for the air: charts, briefing, NOTAMs, cards
+        /// (KeepForAirIntent, KeepForAir).
+        case keepForAir
     }
 
     var command: Command?

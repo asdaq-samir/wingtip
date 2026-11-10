@@ -24,6 +24,7 @@ struct EmergencyFieldsSection: View {
                 }
                 ForEach(ranked.fields, id: \.ident) { field in
                     Button { model.pickedIdent = field.ident } label: { row(field, picked: field.ident == model.picked?.ident) }
+                        .siriSees(SiriSaw.airport(field.ident))
                         .accessibilityAddTraits(field.ident == model.picked?.ident ? .isSelected : [])
                 }
             } else if let problem = model.problem {

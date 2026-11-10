@@ -30,7 +30,7 @@ struct AirportCard: View {
             if let place {
                 Section {
                     // The UI tests' sign the card is up (WingtipUITests/FlowTests).
-                    AirportHead(place: place).accessibilityIdentifier("airport-card-head")
+                    AirportHead(place: place).accessibilityIdentifier("airport-card-head").siriSees(SiriSaw.airport(place.ident))
                     KeptAgeLine(kind: .airports, key: ident)
                     AirportPictures(place: place, photos: photos, shown: $shown)
                         .listRowInsets(EdgeInsets())
@@ -277,7 +277,7 @@ struct AirportInfoTab: View {
         FlowProgramsSection()
         Section(place.airspaceClass.map { "Frequencies (Class \($0))" } ?? "Frequencies") {
             if place.frequencies.isEmpty { Text("None listed").foregroundStyle(.secondary) }
-            ForEach(Array(place.frequencies.enumerated()), id: \.offset) { _, f in FrequencyRowView(frequency: f) }
+            ForEach(Array(place.frequencies.enumerated()), id: \.offset) { _, f in FrequencyRowView(frequency: f).siriSees(SiriSaw.frequency(place.ident, f)) }
             // What some fields read out on so many clicks of the mic on
             // the CTAF: the weather, a radio check (wingtip.remarks).
             ForEach(place.radioNotes ?? [], id: \.self) { note in

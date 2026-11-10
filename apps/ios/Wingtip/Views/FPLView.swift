@@ -163,6 +163,7 @@ struct FPLView: View {
                     }
                 }
             }
+            .siriSees(SiriSaw.flight(plan))
             .navigationTitle("Flight Plan")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { FPLToolbar(plan: plan, flights: { open(.flights) }) }

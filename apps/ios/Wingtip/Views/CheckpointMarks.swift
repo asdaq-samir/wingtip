@@ -10,9 +10,12 @@ final class CheckpointAnnotation: NSObject, MKAnnotation {
     let name: String
     let score: Double
     let coordinate: CLLocationCoordinate2D
+    /// The waypoint Siri knows it as (WaypointEntity), its View Annotation.
+    let entityID: String
 
     init(number: Int, checkpoint: Checkpoint) {
         self.number = number
+        entityID = WaypointEntity.checkpoint(checkpoint, number: number).id
         name = checkpoint.name ?? checkpoint.waypoint ?? checkpoint.category
         score = checkpoint.predictedScore
         coordinate = CLLocationCoordinate2D(latitude: checkpoint.lat, longitude: checkpoint.lon)
