@@ -7,7 +7,9 @@ import { useAsk } from "../../../lib/ask/useAsk";
 import { useRadioActions } from "../../../lib/atcRadio";
 import { SCREENS, type ScreenId } from "../../../lib/navigation/generated/screens";
 import { wantScreen } from "../../../lib/navigation/wanted";
-import { takeSearchAsk, useSearchAsk } from "../../../lib/oneSearch";
+import { takeSearchAsk, useSearchAsk, useSearchPick } from "../../../lib/oneSearch";
+import { usePickScope } from "./usePickScope";
+import { placeholderOf } from "../lib/searchPlaceholder";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
 import { aircraftListQuery, aircraftProfilesQuery, pilotQuery } from "../../../lib/queryClient";
 import type { AirportSearchRow } from "../../../lib/useAirportSearch";
@@ -73,17 +75,12 @@ const tailTyped = (typed: string) => {
 };
 
 /**
- * The one search's view model (the owner's one-search design, 2026-11-09),
- * over the planner's (usePlanWorkspace): what is typed -- the planner's own
- * query, so an Add for Home or a Favorite asks through the same field --
- * and, for it, the results in their groups: Airports, Waypoints and
- * navaids (the planner's airport search with its fixes), Airplanes (the
- * pilot's own, the FAA registry's by the N-number typed, a type) and Do
- * (Direct To, the Brief, Nearest, the emergency, the traffic, every screen
- * by its name, and "Ask:" for the assistant). Nothing here works a figure
- * out: each pick opens a card, a profile or a screen that does. With
- * nothing typed the field's page is SearchHome's. Direct To, asked by D or
- * its row, takes the next airport picked as where to fly.
+ * The one search's view model (the one-search design, 2026-11-09) over the
+ * planner's: what is typed (the planner's query, so Home, a Favorite and a
+ * picker's airport ask through the same field) and its results: Airports,
+ * Waypoints and navaids, Airplanes, and Do (Direct To, the screens by name,
+ * "Ask:"). Each pick opens a card, a profile or a screen that works the
+ * figures out. Direct To, and a picker (usePickScope), take the next pick.
  */
 export function useOneSearch(vm: PlanWorkspaceModel) {
   const {
@@ -110,6 +107,8 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   const sent = useSearchResults((s) => s.sent);
   const index = useAirportIndex(true, typed.length > 0);
   const [direct, setDirect] = useState(false);
+  // A picker's ask: airports only (the waypoints too for a stop), its pick.
+  const { pick, from: pickFrom } = usePickScope(vm.view); // pickIdent: its airport, picked or typed
   const [problem, setProblem] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const directTo = useRadioActions((s) => s.directTo);
@@ -124,9 +123,8 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   const recentAircraft = usePreferences((p) => p.recentAircraft);
   const tail = direct ? null : tailTyped(typed);
   const ownTail = !!tail && !!records?.some((r) => r.tailNumber.toUpperCase() === tail);
-  // The registry's by the N-number typed, where it is none of the pilot's:
-  // the profile's own lookup (useAirplaneProfile), so its answer is kept
-  // for the profile it opens.
+  // The registry's by the N-number typed, where none of the pilot's: the
+  // profile's own lookup (useAirplaneProfile), its answer kept for it.
   const registry = useQuery({
     queryKey: ["registered", tail ?? ""],
     queryFn: () => api.trafficFind(tail!),
@@ -136,7 +134,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   });
 
   const airplanes = useMemo<AirplaneHit[]>(() => {
-    if (!typed || direct) return [];
+    if (!typed || direct || pick) return [];
     const out: AirplaneHit[] = [];
     for (const r of records ?? []) {
       if (finds(typed, r.tailNumber) || finds(typed, r.typeDesignator))
@@ -188,6 +186,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   }, [
     typed,
     direct,
+    pick,
     records,
     mine,
     favoriteAircraft,
@@ -202,14 +201,15 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   ]);
 
   const airports = useMemo(() => search.rows.filter((r) => r.kind !== "fix"), [search.rows]);
-  const waypoints = useMemo(() => (direct ? [] : search.rows.filter((r) => r.kind === "fix")), [direct, search.rows]);
+  const noFixes = direct || (!!pick && !pick.fixes);
+  const waypoints = useMemo(() => (noFixes ? [] : search.rows.filter((r) => r.kind === "fix")), [noFixes, search.rows]);
 
-  // Done with the field: what is typed let go, the field and Direct To put
-  // away, and the place under it as it was (the plan where there is one).
+  // Done: what is typed let go, Direct To and a picker's ask put away.
   const done = () => {
     useSearchResults.getState().clear();
     setQuery("");
     setDirect(false);
+    useSearchPick.setState({ pick: null });
     setProblem(null);
     setFocused(false);
     (document.activeElement as HTMLElement | null)?.blur();
@@ -225,7 +225,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   };
 
   const does: DoHit[] = [];
-  if (!direct) {
+  if (!direct && !pick) {
     const out = does;
     const first = airports[0];
     // Direct To the first airport found, where the radio can fly one.
@@ -278,7 +278,14 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     else pickView("search");
   };
 
+  const pickIdent = (ident: string) => {
+    const to = pick;
+    done();
+    to?.onPick(ident.toUpperCase());
+    pickView(pickFrom.current);
+  };
   const pickAirport = (r: AirportSearchRow) => {
+    if (pick) return pickIdent(r.ident);
     if (direct) {
       void flyDirect(r.ident);
       return;
@@ -286,20 +293,17 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     setFocused(false);
     void pickPlace({ ident: r.ident, name: r.name, municipality: r.municipality });
   };
-  // A waypoint or a navaid: its card, as a field's (selectPlace takes any
-  // ident the planner knows), what was typed kept for the way back, as a
-  // field's is (Apple Maps' card closed goes back to its search).
+  // A waypoint or a navaid: its card (selectPlace takes any ident), what was
+  // typed kept for the way back, as Apple Maps' card closed goes to its search.
   const pickWaypoint = (ident: string) => {
+    if (pick) return pickIdent(ident);
     setFocused(false);
     selectPlace(ident);
   };
 
-  // The top hit's quick actions (Apple Maps' buttons in a result, the
-  // owner's screenshot, 2026-11-10): the airport card's Fly Here and Depart
-  // From, the same handlers (useFlyHere, useRouteEdits), without opening
-  // the card first; the search let go and the plan shown. None while the
-  // field picks Home, a Favorite or where to fly Direct To.
-  const actionable = !direct && picking === "place";
+  // The top hit's quick actions (Apple Maps', 2026-11-10): the card's Fly Here and Depart From
+  // (useFlyHere, useRouteEdits), no card first; none while the field picks something.
+  const actionable = !direct && !pick && picking === "place";
   const flyTo = (r: AirportSearchRow) => {
     done();
     void flyHere({ ident: r.ident });
@@ -310,9 +314,8 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     departFrom({ ident: r.ident });
     pickView("plan");
   };
-  // The top hit's actions that apply: Fly Here unless it is where the route
-  // goes already, Depart From unless it is where it starts -- one, as a
-  // single wide pill, where only one does (Apple's lone "Directions").
+  // Those that apply: Fly Here unless it is the destination, Depart From unless the
+  // departure -- one, a single wide pill, where only one does (Apple's "Directions").
   const quick = (r: AirportSearchRow) =>
     [
       r.ident !== vm.planned.dest && { label: "Fly Here", run: () => flyTo(r), testId: "search-top-fly-here" },
@@ -334,12 +337,13 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     pickView("search");
     if (!vm.quietFocus.current) setPanel("full");
   };
-  // Cancel: the field let go, the plan back where there is a route.
+  // Cancel: let go, back where a picker asked from, else the plan with a route.
   const cancel = () => {
     done();
     setPicking("place");
     if (place) selectPlace(null);
-    if (routed) pickView("plan");
+    if (pick) pickView(pickFrom.current);
+    else if (routed) pickView("plan");
   };
 
   // ⌘K, `/`, the Map menu's row and D ask for the field (lib/oneSearch):
@@ -357,17 +361,13 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     [input],
   );
 
-  const placeholder = direct
-    ? "Direct to which airport?"
-    : picking === "home"
-      ? "Search for your home airport"
-      : picking === "favorite"
-        ? "Search for an airport to keep"
-        : "Search airports, airplanes, or ask";
+  const placeholder = placeholderOf(direct, pick, picking);
 
   return {
     typed,
     direct,
+    pick,
+    pickIdent,
     problem,
     focused,
     /** A search sent, its list shown while the field is let go. */

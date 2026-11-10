@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 import { ChevronsUpDown } from "lucide-react";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
@@ -6,6 +6,7 @@ import { fromChunk } from "../lib/fromChunk";
 import { Button } from "./ui/button";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "./ResponsivePopover";
 import { useIsMobile } from "../hooks/use-mobile";
+import { askSearchPick, useSearchPick } from "../lib/oneSearch";
 
 // The search it opens (AirportSearch: Base UI's Autocomplete, the lookup's rows, the
 // Favorites' tiles) on a chunk of its own, not the first load's: the
@@ -89,13 +90,28 @@ export default function AirportPicker({
     setOpen(false);
     setQuery("");
   };
+  // One search field (the one card rule, the owner 2026-11-10): where the
+  // planner's one search is drawn, the picker asks it for the airport,
+  // scoped to what this picker sets, rather than opening a search of its
+  // own over the sheet. The developer's page has none: its own then.
+  const oneSearch = useSearchPick((s) => s.fields > 0);
+  const toOneSearch = () => askSearchPick({ label: placeholder, fixes, onPick: (ident) => onChange(ident.toUpperCase()) });
+  // Opened from elsewhere (the route's menu's Change): handed on the same.
+  const handOn = useEffectEvent(() => {
+    onOpenChange?.(false);
+    toOneSearch();
+  });
+  useEffect(() => {
+    if (shown && oneSearch) handOn();
+  }, [shown, oneSearch]);
 
   return (
     // From the top of a phone's screen, where the keyboard cannot come up
     // over the field: from the bottom it came up over it, field and all.
     <ResponsivePopover
-      open={open}
+      open={open && !oneSearch}
       onOpenChange={(next) => {
+        if (next && oneSearch) return toOneSearch();
         setOpen(next);
         if (!next) setQuery("");
       }}

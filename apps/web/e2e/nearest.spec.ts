@@ -123,7 +123,7 @@ test(
     await page.goto("/app/plan?near=1");
     await settle(page);
     const card = sideDrawer(page).getByTestId("nearest-card");
-    // NRST's field is the panel's head, as the airport search's is.
+    // NRST's field is the one search, scoped to where from (the one card rule).
     const field = sideDrawer(page).getByTestId("nearest-from");
     await expect(field).toHaveAttribute("placeholder", "Current position");
 

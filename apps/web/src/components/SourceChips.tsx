@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { cn } from "cn";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Button } from "./ui/button";
+import SheetDialog from "./SheetDialog";
 import type { Source } from "../lib/api/assistant";
 import { TEXT } from "../lib/text";
 
 /**
  * The reports an answer rests on, a chip each after it -- "METAR KDLH
  * 1753Z" -- as the assistant's answers and the Brief's words have them
- * (AskCard, WordsSection). A tap opens the report as it was sent, in a
- * dialog, monospace and never reformatted: a METAR, a TAF or a NOTAM is
+ * (AskCard, WordsSection). A tap opens the report as it was sent, in the
+ * app's one way of asking over the page (SheetDialog: a sheet from the
+ * bottom on a phone, with its ✕, by the one card rule, the owner
+ * 2026-11-10), monospace and never reformatted: a METAR, a TAF or a NOTAM is
  * read in its own code (the iOS review's rule 9), and the pilot checks
  * the words against it. The chips are the map's microphone's (RadioLayer):
  * small, round, in the tint.
@@ -36,23 +38,20 @@ export default function SourceChips({ sources, testId = "source-chip" }: { sourc
           </Button>
         ))}
       </div>
-      <Dialog
+      <SheetDialog
         open={open !== null}
         onOpenChange={(o) => {
           if (!o) setOpen(null);
         }}
+        title={open?.label}
+        description="As sent."
+        testId="source-dialog"
       >
-        <DialogContent className="max-h-[80dvh] overflow-y-auto" data-testid="source-dialog">
-          <DialogHeader>
-            <DialogTitle>{open?.label}</DialogTitle>
-            <DialogDescription>As sent.</DialogDescription>
-          </DialogHeader>
-          {/* Raw, in a monospace face, wrapped only at the box's edge. */}
-          <pre className={cn("overflow-x-auto font-mono break-words whitespace-pre-wrap", TEXT.note)} data-testid="source-text">
-            {open?.text}
-          </pre>
-        </DialogContent>
-      </Dialog>
+        {/* Raw, in a monospace face, wrapped only at the box's edge. */}
+        <pre className={cn("max-h-[60dvh] overflow-auto font-mono break-words whitespace-pre-wrap", TEXT.note)} data-testid="source-text">
+          {open?.text}
+        </pre>
+      </SheetDialog>
     </>
   );
 }

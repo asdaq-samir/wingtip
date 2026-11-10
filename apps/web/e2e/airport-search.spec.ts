@@ -2,7 +2,8 @@ import { test, expect, type Locator, type Page } from "@playwright/test";
 import { openPanel, sideDrawer, slow } from "./helpers";
 
 /**
- * The route picker's search: Enter takes a row only when the rows answer
+ * The route picker's search -- the one search, scoped to the field it
+ * sets (the one card rule, 2026-11-10): Enter takes a row only when the rows answer
  * what is in the box. The lookup is held, so the box runs ahead of it
  * the way it does on a slow link -- the planner's lookup, as before the
  * phone has its own copy of the search (lib/airportIndex), which these
@@ -109,14 +110,12 @@ test("the route box's suggestions are the airport search's own rows, the typing 
   expect(inBox.height).toBeGreaterThanOrEqual(52);
   expect(inBox.ident).toBe("700");
 
-  // The airport picker's row for the same airport, drawn the same.
+  // The airport picker asks the one search itself, scoped to it (the one card rule, 2026-11-10): one field.
   await page.goto("/app/plan?dep=C81&dest=KMSP");
   await openPanel(page);
   await changeDestination(page);
-  await page.getByPlaceholder("Search for a destination").fill("madison");
-  const pickerRow = page.getByTestId("airport-result").filter({ hasText: "KMSN" }).first();
-  await expect(pickerRow).toBeVisible({ timeout: slow(10000) });
-  expect(await rowLook(pickerRow)).toEqual(inBox);
+  await expect(page.getByTestId("search-airports")).toHaveAttribute("placeholder", "Search for a destination");
+  await expect(sideDrawer(page).getByRole("search")).toHaveCount(1);
 
   // Picked from the box's list, it is the stop.
   await page.goto("/app/plan?dep=C81&dest=KDLH");

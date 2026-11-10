@@ -158,7 +158,11 @@ side panel, ⌘K or Ctrl K focusing the field (the command palette it
 replaced), `/` too, and the airport card's F, D and S for Fly Here, Depart
 From and Add as Stop. Counted from the map with the sheet at rest: the
 search field or the account button tapped is 1. "Before" is the tab bar's
-count.
+count. By the one card rule (the owner, 2026-11-10) every thing and page
+is a card over the search with its ✕ (only Emergency fills the sheet's
+height), and Escape or a device's Back closes the top card or page first,
+then a level back, on a phone as on a desktop; with none open they lower
+the sheet.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
@@ -171,12 +175,14 @@ count.
 | Saved flights | search → Saved; account → Flights | 2 | Name and notes edited in the row; delete with a confirm |
 | Airport card | Tap a field; a search result; a route row's More Info; a nav log field | 1 (2 from the search) | **Fly Here, Depart From, Add as Stop at its top (new)**, favorite; frequencies copy |
 | Airport Favorites, Recents | search → Favorites / Recents | 2 | Drag to reorder, swipe to delete, Undo row |
-| Nearest | search → Nearest; search → Do → Nearest | 2 | Change the place it is from |
-| Airplane profile | an N-number tapped; a search result (yours, the FAA registry's) | 1, 2 | **Fly This Airplane (new)**; every figure edited in place |
-| Traffic, airplane card, past flight | Tap traffic; search → Do → Traffic Nearby; its past row | 1, 2 | Replay |
+| Nearest | search → Nearest; search → Do → Nearest | 2 | Change the place it is from in the one search's field, scoped to it (no second field) |
+| Airplane profile | an N-number tapped; a search result (yours, the FAA registry's) | 1, 2 | **Fly This Airplane (new)**; every figure edited in place; a card in the sheet over the search with ✕ (one card rule, 2026-11-10; was a dimmed sheet on a phone) |
+| Traffic, airplane card, past flight | Tap traffic; search → Do → Traffic Nearby; its past row | 1, 2 | Replay; the airplane found in the one search's field, scoped to the traffic (its Cancel back to the search) |
+| A route point's or the traffic's airport picked | its pill or its menu's Change → the one search, scoped ("Search for a destination") | 1 → 2, as before | Enter takes what is typed until the rows answer it; picked, back where it was asked from |
+| Questions (Ready to Fly's prompt, a source's report as sent) | as they come; a source chip | 0 / 1 | SheetDialog: a sheet from the bottom on a phone with its ✕ (Fly Anyway the prompt's answer), a dialog from `md` up |
 | Map card (was the Map menu) | Map button | 1 | A card in the sheet over the search, as Apple Maps' Choose Map card (the owner, 2026-11-10): the charts as picture tiles (a tap applies), then the weather, the overlay, every switch and the alerts in place; its ✕ goes back to the sheet as it was; its Search row focuses the search |
-| Emergency assistant | Flying head; voice; search → Do → Emergency Assistant | 1 in flight, **2** on the ground | Its frequencies copy |
-| Account and Settings (was Setup) | account button (the page itself, no menu: the owner, 2026-11-10) | 1 → 2 → **1** | Layout tiles in place |
+| Emergency assistant | Flying head; voice; search → Do → Emergency Assistant | 1 in flight, **2** on the ground | Its frequencies copy; the one full-height card, ✕ top right, nothing dimmed |
+| Account and Settings (was Setup) | account button (the page itself, no menu: the owner, 2026-11-10) | 1 → 2 → **1** | Layout tiles in place; covers the title row and the search, its ✕ back |
 | Airplanes, Flights, Logbook, Minimums, Checklists, Coach, Practice | account button → row on the page | 2 | Minimums inline; logbook entry edited in the row, delete with an Undo row; airplane in a popover form |
 | Status, Guide, About | account button → row on the page; About also the map's or the search page's Legal | 3 → **2** | -- |
 | Checkride, Instructing | account button → Logbook → row | 3 | Checkride inline |

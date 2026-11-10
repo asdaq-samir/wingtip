@@ -48,11 +48,11 @@ export const sideDrawer = (page: Page) => page.locator('[data-slot="map-panel"]'
 /** The first row in sight: the sheet's, static over a card, at the pill
  *  too. */
 export async function showTabs(page: Page) {
-  // From the sheet at rest: settling to the pill it keeps the half's
-  // layout until it lands (MapPanel). The first row: the one search, or
-  // the developer's places (DevBar).
+  // From the sheet at rest (settling to the pill it keeps the half's layout until it lands, MapPanel). The
+  // first row: the one search, scoped to the traffic or Nearest where one is up; or the developer's places.
   await settled(sideDrawer(page));
-  if (!(await page.getByTestId("search-airports").or(page.getByTestId("dev-tabs")).first().isVisible())) await grabberTo(page, "half");
+  const first = page.getByTestId("search-airports").or(page.getByTestId("aircraft-search")).or(page.getByTestId("nearest-from"));
+  if (!(await first.or(page.getByTestId("dev-tabs")).first().isVisible())) await grabberTo(page, "half");
 }
 
 /** The panel's head in sight: half way, with the route's box and its

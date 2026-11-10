@@ -8,11 +8,34 @@ import { create } from "zustand";
  * needs to import the panel. It took the place of the ⌘K command palette:
  * one search, not two. `direct` asks for the airport to fly Direct To.
  */
-export type SearchAsk = "all" | "direct";
+export type SearchAsk = "all" | "direct" | "pick";
 
 export const useSearchAsk = create<{ ask: { mode: SearchAsk; at: number } | null }>(() => ({ ask: null }));
 
 export const askSearch = (mode: SearchAsk = "all") => useSearchAsk.setState({ ask: { mode, at: Date.now() } });
+
+/**
+ * An airport (or a waypoint, with `fixes`) asked for by a picker -- the
+ * route's departure, destination or a stop, the traffic's airport -- in
+ * the one search itself, scoped to it, where each picker had a search of
+ * its own over the sheet (the one card rule, the owner 2026-11-10: one
+ * search field). `label` names what is asked for ("Destination"); the
+ * pick goes to `onPick`, the ident as picked or as typed. `fields` counts
+ * the one searches drawn: the developer's page has none, and its pickers
+ * keep their own search.
+ */
+export interface SearchPick {
+  label: string;
+  fixes: boolean;
+  onPick: (ident: string) => void;
+}
+export const useSearchPick = create<{ pick: SearchPick | null; fields: number }>(() => ({ pick: null, fields: 0 }));
+
+/** The one search asked to pick an airport for a picker. */
+export function askSearchPick(pick: SearchPick) {
+  useSearchPick.setState({ pick });
+  askSearch("pick");
+}
 
 /** The ask taken by the field, once. */
 export const takeSearchAsk = () => useSearchAsk.setState({ ask: null });

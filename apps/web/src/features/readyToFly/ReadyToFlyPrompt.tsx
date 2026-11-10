@@ -1,13 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogAction,
-  AlertDialogTitle,
-} from "../../components/ui/alert-dialog";
+import SheetDialog from "../../components/SheetDialog";
 import { routeKeyOf, useBriefPlan } from "../../lib/briefPlan";
 import { underway } from "../../lib/map/position/glide";
 import { useOwnShip } from "../../lib/map/position/ownShip";
@@ -22,7 +14,7 @@ const asked = new Set<string>();
  * Ready to fly, shown by itself once as the pilot starts: a dry run
  * begun, or own ship (You on the Map) turned on while the airplane is
  * still on the ground -- the pilot's own start of flying mode, which
- * then comes on at flying speed. Not at flying speed itself: a dialog on
+ * then comes on at flying speed. Not at flying speed itself: a question on
  * the takeoff roll or the climb would be a distraction. Only with
  * something to fix, and the pilot may fly anyway (warn, never limit): its
  * actions fix in place, as the Brief's row does.
@@ -51,25 +43,23 @@ export function ReadyToFlyPrompt({ dryPlaying }: { /** A dry run playing (the pl
   }, [started, dryPlaying, route, caution]);
   const answer = ready.answer;
   if (!answer) return null;
+  // The app's one way of asking (SheetDialog): from the bottom on a phone,
+  // with its ✕, by the one card rule (the owner, 2026-11-10), where a
+  // centred alert stood over the map; Fly Anyway the answer under it.
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogContent data-testid="ready-prompt">
-        <AlertDialogHeader>
-          <AlertDialogTitle>{answer.line}</AlertDialogTitle>
-          <AlertDialogDescription render={<div className="flex flex-col gap-2 text-left" />}>
-            {answer.actions.map((item) => (
-              <ReadyAction key={item.key} item={item} ready={ready} onDone={() => setOpen(false)} />
-            ))}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          {/* Closed by its own click: on Base UI the action is a plain
-              button, not a Close as Radix's was. */}
-          <AlertDialogAction data-testid="ready-fly-anyway" onClick={() => setOpen(false)}>
-            Fly Anyway
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <SheetDialog
+      alert
+      open={open}
+      onOpenChange={setOpen}
+      title={answer.line}
+      action={{ label: "Fly Anyway", onClick: () => setOpen(false), testId: "ready-fly-anyway" }}
+      testId="ready-prompt"
+    >
+      <div className="flex flex-col gap-2 text-left">
+        {answer.actions.map((item) => (
+          <ReadyAction key={item.key} item={item} ready={ready} onDone={() => setOpen(false)} />
+        ))}
+      </div>
+    </SheetDialog>
   );
 }

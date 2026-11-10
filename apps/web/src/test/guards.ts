@@ -15,6 +15,21 @@ if (typeof document !== "undefined") {
   const { cleanup } = await import("@testing-library/react");
   afterEach(cleanup);
   lingeringTimers();
+  // jsdom has no matchMedia, which the app's one way of asking (SheetDialog,
+  // through useIsMobile) reads as it draws: a window that matches nothing,
+  // a desktop's, where a test stubs none of its own.
+  if (!window.matchMedia)
+    window.matchMedia = (query: string) =>
+      ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+      }) as MediaQueryList;
   // The menus, popovers and tooltips are on a chunk of their own
   // (components/popupsChunk), which main.tsx fetches while the page waits
   // for the engine, so a pilot's first tap finds it in. A test had no such

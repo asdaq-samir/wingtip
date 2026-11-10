@@ -124,7 +124,9 @@ test("the search's Do runs a screen by its name, and the Traffic Nearby", async 
   await search.fill("traffic");
   await sideDrawer(page).getByTestId("search-do-traffic").click();
   await expect(page).toHaveURL(/[?&]aircraft=1/);
+  // One search field (the one card rule, 2026-11-10): the traffic's is the one search's, scoped, not a second.
   await expect(sideDrawer(page).getByTestId("aircraft-search")).toBeVisible();
+  await expect(sideDrawer(page).getByRole("search")).toHaveCount(1);
 });
 
 test("⌘K or Ctrl K focuses the one search from anywhere on a desktop", async ({ page }) => {

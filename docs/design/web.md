@@ -626,9 +626,13 @@ the engine's glide reach, nearest first; the picked airplane's emergency
 checklist (or "No airplane picked", with the generic actions the engine
 gives); the guidance list.
 
-**Stock parts.** Desktop: the side panel at full height. Phone: the sheet
-opened to full. shadcn Item rows for fields, `FrequencyButton`,
-`EmergencyChecklist`. No modal: the map stays visible beside it.
+**Stock parts.** The one full-screen card of the one card rule (the
+owner, 2026-11-10): a `SheetCard` in the map's sheet all the way up, the
+side panel's full height on a desktop, over the search, its ✕ at the top
+right. shadcn Item rows for fields, `FrequencyButton`,
+`EmergencyChecklist`. No modal and nothing dimmed: the line to the field
+picked is on the map, beside it on a desktop and under the sheet let
+down on a phone (it was a dimmed sheet on a phone before).
 
 **Primary action.** Direct To on the nearest field's row, first and
 filled.
@@ -813,8 +817,9 @@ step ([Vercel guidelines][vercel-guidelines]).
 is (one line), Pick Your Airplane (optional, with Skip: no airplane is
 assumed), Plan a Flight (focuses the search), Sign In.
 
-**Stock parts.** Base UI Dialog, non-modal on desktop (the map usable),
-the sheet at half on phone.
+**Stock parts.** A `SheetCard` in the map's sheet over the search, with
+its ✕, on a phone as on a desktop (the one card rule, 2026-11-10; on a
+phone it was a dimmed sheet): non-modal, the map usable, the sheet at half.
 
 **Primary action.** Plan a Flight, filled.
 
@@ -930,6 +935,8 @@ The owner's rule: a screenshot of another app means ours should show this.
 | A place card scrolled: its title and ✕ stay in sight | `PinnedCardBar`: once a card's head (`CardTitle`) has scrolled out, its name and ✕ pinned at the card's top on the sheet's colour, a line of no height until then so it takes no room or tap: the airport's, the airplane's and the Stops' cards |
 | Place card: big title, "kind · place" with the place a link, Share and ✕, four action tiles, photos sliding | The airport card: the ident, "name · town" with the town a link, Share and ✕, Fly Here (filled), Depart From, Add as Stop, Weather; the pictures as a sliding row |
 | Typing: top hit with inline action pills, suggestion rows, places | `OneSearchResults`: one white group, the top hit with Fly Here and Depart From pills, Search Nearby and Ask as suggestions, the match in bold |
+| One search field (the one card rule, 2026-11-10) | The traffic's airplane and Nearest's place are the one search's field scoped to them (`listSearchOf`, OneSearchField's `list`); the route's points and the traffic's airport ask it for an airport (`askSearchPick`, AirportPicker), its placeholder what they ask for; the developer's page, with no one search, keeps the picker's own |
+| Questions over the page | Ready to Fly's prompt and a source's report as sent are SheetDialog's: from the bottom on a phone with their ✕, centred from `md` up |
 | Typing, scrolled: the title and the field go up with the list, nothing pinned, the keyboard up | `sheet/useScrollAway`: all the way up with the search in use, the head pulled up by as much as the list has scrolled, back at its top; the field never leaves the page, so it keeps its focus |
 | A sent search: ✕ on the title row, chips, rows with thumbnails, Filters page, numbered map marks | The sent search's list, its chips and Filters page on one filter state, and the results as their own clustered MapLibre layer over the chart (the chart's own airport symbols untouched) |
 | Map-type button: "Choose Map" card in the sheet, picture tiles | The Map card in the sheet (`MapSettingsButton`), chart picture tiles from committed crops (`public/map-tiles/`), every setting of the old menu under it |

@@ -1,12 +1,13 @@
-import { useEffect, useEffectEvent } from "react";
+import { useEffect, useEffectEvent, type ComponentProps } from "react";
 import { Search } from "lucide-react";
 import { cn } from "cn";
 import { PANEL_FIELD } from "../../../../components/panelField";
+import { SearchField } from "../../../../components/PanelCapsule";
 import { CommandField } from "../../../../components/ui/command";
 import { Kbd } from "../../../../components/ui/kbd";
 import { isSearchKey } from "../../../../hooks/use-shortcuts";
 import { useIsDesktop } from "../../../../hooks/use-desktop";
-import { askSearch, searchKeys } from "../../../../lib/oneSearch";
+import { askSearch, searchKeys, useSearchPick } from "../../../../lib/oneSearch";
 import { TEXT } from "../../../../lib/text";
 import { useVoice, VoiceButton } from "../../../voice";
 import type { OneSearchModel } from "../../hooks/useOneSearch";
@@ -26,7 +27,17 @@ import type { OneSearchModel } from "../../hooks/useOneSearch";
  * screenshot, 2026-11-10). ⌘K or Ctrl K focuses it from anywhere, its keys
  * shown in it on a desktop: the command palette it replaced.
  */
-export default function OneSearchField({ model, inputRef }: { model: OneSearchModel; inputRef: React.RefObject<HTMLInputElement | null> }) {
+export default function OneSearchField({
+  model,
+  inputRef,
+  list,
+}: {
+  model: OneSearchModel;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  /** The field scoped to a list up (listSearchOf: the traffic's airplane,
+   *  Nearest's place), where that list had a second field of its own. */
+  list?: ComponentProps<typeof SearchField> | null;
+}) {
   const desktop = useIsDesktop();
   // What is said typed in the field once a pause ends it, the field
   // focused to go on from there.
@@ -34,7 +45,12 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
     model.setTyped(said);
     inputRef.current?.focus();
   });
-  const using = model.focused || !!model.typed || model.direct || voice.listening;
+  const using = model.focused || !!model.typed || model.direct || !!model.pick || voice.listening;
+  // Drawn, so the pickers ask it for their airport (lib/oneSearch's fields).
+  useEffect(() => {
+    useSearchPick.setState((s) => ({ fields: s.fields + 1 }));
+    return () => useSearchPick.setState((s) => ({ fields: s.fields - 1, pick: null }));
+  }, []);
   // The words as they are said, in the field.
   const typeSaid = useEffectEvent((words: string) => model.setTyped(words));
   useEffect(() => {
@@ -51,6 +67,9 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [model, inputRef]);
+  // A list's scope: the same place and shape, its words and its own keys,
+  // until a picker asks for an airport or Direct To does.
+  if (list && !model.pick && !model.direct) return <SearchField {...list} />;
   return (
     <div className="flex w-full items-center gap-2" role="search">
       {/* 41 tall, as Maps' field is, a white card on the sheet's grey; its
@@ -91,6 +110,16 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
             if (e.key === "Escape") {
               e.preventDefault();
               model.cancel();
+            }
+            // A picker's Enter before the rows answer what is typed: what
+            // is typed, not the first row of an older answer -- an ident the
+            // lookup does not know (a private strip) still goes through, as
+            // each picker's own field did (airport-search.spec).
+            const rows = model.airports.length + model.waypoints.length;
+            if (e.key === "Enter" && model.pick && model.typed && (!model.answered || rows === 0)) {
+              e.preventDefault();
+              (e as { preventBaseUIHandler?: () => void }).preventBaseUIHandler?.();
+              model.pickIdent(model.typed);
             }
           }}
           className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"

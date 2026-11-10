@@ -28,7 +28,7 @@ import PlanSidebar from "./components/workspace/PlanSidebar";
 import FlightFoot from "./components/workspace/FlightFoot";
 import RouteHead from "./components/workspace/RouteHead";
 import RouteControls from "./components/workspace/RouteControls";
-import ListSearchField from "./components/workspace/SearchFields";
+import { listSearchOf } from "./components/workspace/listSearch";
 import SheetTitle from "./components/search/SheetTitle";
 import OneSearchField from "./components/search/OneSearchField";
 import { useOneSearch } from "./hooks/useOneSearch";
@@ -571,9 +571,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // opened from, its close back to it.
         sidebar: <PlanSidebar vm={vm} model={search} navLog={navLog} briefContents={briefContents} briefNotice={briefNotice} />,
         // Under the one search: the plan's the route's box (`route`, below);
-        // the traffic's and Nearest's their own fields; the search's page
-        // none, its field the first row.
-        head: view === "plan" ? undefined : view === "traffic" || vm.nearOpen ? <ListSearchField vm={vm} /> : null,
+        // nothing else, the traffic and Nearest scoping the one field (list).
+        head: view === "plan" ? undefined : null,
         // The one search's Autocomplete round the whole panel, so its field
         // (the first row) and its list (the body) are one combobox.
         around: (panel) => (
@@ -596,7 +595,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         flying,
         // The one search, the panel's first row, and at rest the pill
         // itself (MapPanel), where the tabs were.
-        bar: <OneSearchField model={search} inputRef={vm.searchInput} />,
+        bar: <OneSearchField model={search} inputRef={vm.searchInput} list={listSearchOf(vm)} />,
         // Over it the app's name and the account (Apple Maps' web title, 2026-11-10).
         title: <SheetTitle onClose={search.sent ? search.cancel : undefined} />,
         titleAtFull: search.focused || !!search.typed,
