@@ -144,6 +144,6 @@ private struct FigureFont: ViewModifier {
     @ScaledMetric(relativeTo: .title) private var size = WingtipType.figureSize
 
     func body(content: Content) -> some View {
-        content.font(look.isStock ? Font.title.bold().monospacedDigit() : Font.system(size: size, weight: .bold).monospacedDigit())
+        content.font(look.isStock ? Font.title.bold().monospacedDigit() : Font(UIFont.systemFont(ofSize: size, weight: .bold)).monospacedDigit())
     }
 }

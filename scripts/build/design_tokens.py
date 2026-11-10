@@ -379,21 +379,14 @@ def gen_swift(tree, sch):
             expr = "Font.system(%s, weight: .%s)" % (IOS_STYLES[style], w)
             decl = "static let"
         else:
-            expr = "Font(UIFontMetrics(forTextStyle: %s).scaledFont(for: UIFont.systemFont(ofSize: %g, weight: .%s)))" % (
-                UIKIT_STYLES[style],
-                v["fontSize"],
-                w,
-            )
-            decl = "static var"
+            scaled = "Font(UIFontMetrics(forTextStyle: %s).scaledFont(for: UIFont.systemFont(ofSize: %g, weight: .%s)))"
+            expr, decl = scaled % (UIKIT_STYLES[style], v["fontSize"], w), "static var"
         if v.get("tabular"):
             expr += ".monospacedDigit()"
         L.append(
             "    %s %s: Font %s %s" % (decl, camel(k), "{" if decl == "static var" else "=", expr + (" }" if decl == "static var" else ""))
         )
-        if decl == "static var":
-            # The size alone, for a view's @ScaledMetric: SwiftUI redraws
-            # a scaled UIFont only when something else changes, and
-            # Apple's accessibility audit reports it as not growing.
+        if decl == "static var":  # its size too, for a view's @ScaledMetric: SwiftUI never redraws a scaled UIFont by itself
             L.append("    /// %s's size at the default text size, for @ScaledMetric(relativeTo: %s)." % (camel(k), IOS_STYLES[style]))
             L.append("    static let %sSize: CGFloat = %g" % (camel(k), v["fontSize"]))
         if "letterSpacing" in v:
