@@ -110,23 +110,6 @@ class InboundRadio(BaseModel):
     mhz: float
 
 
-class NearestAirport(AirportPin):
-    """A field near a position: how far and which way (true), its town,
-    elevation and longest open runway, and a frequency listed for it
-    (None where OurAirports lists none)."""
-
-    municipality: str | None = None
-    elevation_ft: float | None = None
-    distance_nm: float
-    bearing_deg: float
-    longest_runway_ft: int | None = None
-    radio: InboundRadio | None = None
-
-
-class NearestAirports(BaseModel):
-    airports: list[NearestAirport]
-
-
 class WaypointPin(BaseModel):
     """A VFR waypoint on the sectional (VPBNG), for the map's diamond: a
     tap names it, and with a route open puts it in the stops."""
