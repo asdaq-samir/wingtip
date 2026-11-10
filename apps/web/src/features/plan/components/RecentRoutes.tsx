@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { cn } from "cn";
 import { ListPageHead, PillStrip, SmallMark, SmallTile, StripNote } from "../../../components/Favorites";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { ClearList, SwipeToDelete } from "../../../components/SwipeToDelete";
+import { ClearList } from "../../../components/RemovableRow";
 import { recentHrefOf } from "../../../lib/flightLink";
 import { placeOfPoint } from "../../../lib/identSchema";
 import { recentRouteKey, usePreferences, type RecentRoute } from "../../../lib/preferences";
@@ -100,8 +100,7 @@ export function RecentRoutesPage({ onBack }: { onBack: () => void }) {
 /**
  * Each route as a row of Maps' Recents: its round mark, its ends, its
  * stops and the day under them, a tap planning it again; Share and Clear
- * from its ••• or a long press (RowMenu). A swipe to the left still takes
- * it off.
+ * from its ••• or a long press (RowMenu).
  */
 function RecentRouteRows({
   title,
@@ -133,34 +132,31 @@ function RecentRouteRows({
           });
         };
         return (
-          <SwipeToDelete key={key} label={`Remove ${name} from Recents`} onDelete={() => remove(key)} share={shareLink}>
-            <RowMenu
-              label={`More for ${name}`}
-              testId="route-recent-more"
-              actions={[
-                { label: "Share", icon: <Share />, onSelect: share, testId: "route-recent-share" },
-                { label: "Remove", icon: <Trash2 />, destructive: true, onSelect: () => remove(key), testId: "route-recent-remove" },
-              ]}
-            >
-              <ListRow
-                media={<SmallMark icon={<History />} className="size-9 bg-foreground/70 text-background [&_svg]:size-5" />}
-                title={
-                  <span className="font-mono font-semibold">
-                    {dep} → {dest}
-                  </span>
-                }
-                description={[route.stops.length ? `By ${route.stops.map(placeOfPoint).join(", ")}` : null, day]
-                  .filter(Boolean)
-                  .join(" · ")}
-                aria-label={`${name}${route.stops.length ? ` by ${route.stops.map(placeOfPoint).join(", ")}` : ""}, planned ${day}`}
-                onClick={() => {
-                  onPick?.();
-                  navigate(hrefOf(route));
-                }}
-                data-testid="route-recent"
-              />
-            </RowMenu>
-          </SwipeToDelete>
+          <RowMenu
+            key={key}
+            label={`More for ${name}`}
+            testId="route-recent-more"
+            actions={[
+              { label: "Share", icon: <Share />, onSelect: share, testId: "route-recent-share" },
+              { label: "Remove", icon: <Trash2 />, destructive: true, onSelect: () => remove(key), testId: "route-recent-remove" },
+            ]}
+          >
+            <ListRow
+              media={<SmallMark icon={<History />} className="size-9 bg-foreground/70 text-background [&_svg]:size-5" />}
+              title={
+                <span className="font-mono font-semibold">
+                  {dep} → {dest}
+                </span>
+              }
+              description={[route.stops.length ? `By ${route.stops.map(placeOfPoint).join(", ")}` : null, day].filter(Boolean).join(" · ")}
+              aria-label={`${name}${route.stops.length ? ` by ${route.stops.map(placeOfPoint).join(", ")}` : ""}, planned ${day}`}
+              onClick={() => {
+                onPick?.();
+                navigate(hrefOf(route));
+              }}
+              data-testid="route-recent"
+            />
+          </RowMenu>
         );
       })}
     </ListGroup>

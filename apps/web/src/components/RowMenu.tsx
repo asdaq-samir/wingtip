@@ -12,6 +12,9 @@ interface RowAction {
   destructive?: boolean;
   /** It opens a question of its own (Delete's), which keeps the focus. */
   asks?: boolean;
+  /** Its name to a screen reader, where that is more than the word:
+   *  "Remove KDLH from Recents". */
+  spoken?: string;
   testId?: string;
 }
 
@@ -25,7 +28,14 @@ export interface RowMenuProps {
 
 /** The row's own box, lifted while its held menu is open (RowMenuImpl).
  *  No iOS callout over a long press: the menu is the row's own. */
-export const ROW_LIFT = "flex items-center gap-1 pr-2 transition-[background-color,box-shadow,transform] [-webkit-touch-callout:none]";
+export const ROW_LIFT =
+  "group/row flex items-center gap-1 pr-2 transition-[background-color,box-shadow,transform] [-webkit-touch-callout:none]";
+
+/** The •••: with a mouse, shown as the row is pointed at or has the focus
+ *  in it, as Base UI's own context-menu example has it; to a finger always
+ *  there, its long press the same menu. */
+export const ROW_MORE =
+  "pointer-fine:opacity-0 pointer-fine:group-hover/row:opacity-100 pointer-fine:group-focus-within/row:opacity-100 pointer-fine:data-popup-open:opacity-100";
 
 /**
  * A list's row as Maps' Recents set one (the owner's screenshot,
@@ -46,6 +56,7 @@ export default function RowMenu(props: RowMenuProps) {
       <div className="min-w-0 flex-1">{props.children}</div>
       <RoundButton
         label={props.label}
+        className={ROW_MORE}
         data-testid={props.testId}
         onClick={() => {
           setAsked(true);

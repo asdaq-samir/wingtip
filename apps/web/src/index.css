@@ -364,6 +364,10 @@ body[data-map-panel="full"] [data-slot="toast"],
 [data-slot="toast-viewport"][data-base-ui-inert] [data-slot="toast"] {
   pointer-events: auto;
 }
+/* A toast with an Undo is one to tap, wherever it is. */
+[data-slot="toast"][data-action] {
+  pointer-events: auto;
+}
 
 /* Touch targets. Apple asks for 44 points on both sides of anything a
    finger taps; the stock controls are smaller than that -- an icon

@@ -1073,10 +1073,11 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   const list = page.getByTestId("favorites-list");
   await expect(list).toContainText("KDLH");
   await list.getByTestId("favorites-edit").click();
-  // Its minus brings out the row's Delete, as iOS's does (SwipeToDelete).
+  // Its minus takes it off, the toast's Undo putting it back.
   await list.getByRole("button", { name: "Remove KDLH from Favorites…", exact: true }).click();
-  await list.getByRole("button", { name: "Remove KDLH from Favorites", exact: true }).click();
   await expect(list).toContainText("A star on an airport's card adds it here");
+  await page.getByTestId("favorites-undo").click();
+  await expect(list).toContainText("KDLH");
 });
 
 test("an airport's card says which lights a pilot turns on with the mic, and the weather it reads out on so many clicks", async ({

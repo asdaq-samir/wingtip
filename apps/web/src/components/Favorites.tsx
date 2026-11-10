@@ -7,7 +7,7 @@ import { colourOf } from "../lib/map/marks/flightCategory";
 import type { AirspaceClass, RecentAirport } from "../lib/preferences";
 import { useAirspace } from "../lib/useAirspace";
 import { holdOpenCard } from "../lib/openCards";
-import { useSwipeRow } from "./swipeRow";
+import { useRowRemove } from "./rowRemove";
 import { useAway } from "../lib/useAway";
 import { SECTION_TITLE, TEXT } from "../lib/text";
 import { Button } from "./ui/button";
@@ -54,16 +54,13 @@ export function EditToggle({ editing, onToggle, testId }: { editing: boolean; on
   );
 }
 
-/** The minus before a row being edited. In a row with a Delete behind it
- *  (SwipeToDelete) it brings the Delete out, as iOS's minus does, the
- *  Delete then taking it away: one way to remove from every kept list, at
- *  the owner's pick ("Yes to both"), where a tap on it took the row away
- *  at once on some lists. Elsewhere -- a form's segments -- it takes the
- *  row away itself (`onClick`). */
+/** The minus before a row being edited: in a kept list's row
+ *  (RemovableRow) it does the row's Remove, the list's Undo giving it
+ *  back; elsewhere -- a form's segments -- what `onClick` does. */
 export function RemoveMinus({ label, onClick, testId }: { label: string; onClick?: () => void; testId?: string }) {
-  const row = useSwipeRow();
+  const row = useRowRemove();
   return (
-    <IconButton label={label} className="-ml-1.5 text-destructive" onClick={row ? row.reveal : onClick} data-testid={testId}>
+    <IconButton label={label} className="-ml-1.5 text-destructive" onClick={row ? row.remove : onClick} data-testid={testId}>
       <CircleMinus className="size-5 fill-destructive text-white dark:text-background" />
     </IconButton>
   );

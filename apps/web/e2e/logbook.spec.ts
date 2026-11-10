@@ -143,15 +143,13 @@ test("a logged flight is changed in its own row, and one taken out comes back fr
   expect(asked[0]!.body).toMatchObject({ remarks: "Gusty at KDLH", totalHours: 2.3, route: "KMSN-KDLH" });
   await expect(form).toHaveCount(0);
 
-  // Edit's minus brings out Delete, which takes it out at once; Undo logs
-  // the same flight again.
+  // Edit's minus takes it out at once; the toast's Undo logs the same
+  // flight again.
   await console.getByTestId("logbook-edit").click();
   await console.getByRole("button", { name: "Delete the flight of 3 Nov 2026…", exact: true }).click();
-  await console.getByRole("button", { name: "Delete the flight of 3 Nov 2026", exact: true }).click();
   await expect.poll(() => asked.map((a) => a.method)).toEqual(["PUT", "DELETE"]);
-  const undo = console.getByTestId("logbook-undo");
-  await expect(undo).toContainText("3 Nov 2026 KMSN-KDLH Deleted");
-  await undo.click();
+  await expect(page.locator('[data-slot="toast"]').filter({ hasText: "3 Nov 2026 KMSN-KDLH Deleted" })).toBeVisible();
+  await page.getByTestId("logbook-undo").click();
   await expect.poll(() => asked.map((a) => a.method)).toEqual(["PUT", "DELETE", "POST"]);
   expect(asked[2]!.body).toMatchObject({ flownOn: "2026-11-03", route: "KMSN-KDLH", totalHours: 2.3 });
 });

@@ -52,7 +52,7 @@ const cellOf = (e: LogbookEntry, id: LogbookColumn): string => {
  * that sorts by it (aria-sort on the one sorted by, the APG's table), the
  * figures in tabular numbers. A row's date opens the flight as a card in
  * the table, under its row, where its form is; Edit's minus takes one out
- * with Undo over the list, as the phone's list does. Its own chunk: a
+ * with a toast's Undo, as the phone's list does. Its own chunk: a
  * phone draws the list (LogbookFlights) and never loads this.
  */
 export default function LogbookTable({ entries, vm }: { entries: LogbookEntry[]; vm: LogbookFlightsModel }) {

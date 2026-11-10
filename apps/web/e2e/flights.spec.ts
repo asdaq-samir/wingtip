@@ -244,23 +244,26 @@ test("Edit over the saved flights puts a minus before each, and the minus delete
   await showTabs(page);
   await openConsole(page);
   await library(page, "Flights");
-  // Out of Edit, the row opens the flight's page and has no minus (its
-  // Delete is behind it, for a swipe).
+  // Out of Edit, the row opens the flight's page and has no minus.
   await expect(page.getByRole("button", { name: /^Delete .*…$/ })).toHaveCount(0);
 
   await page.getByTestId("flights-edit").click();
   await expect(page.getByTestId("flights-edit")).toHaveText("Done");
   await expect(page.getByRole("link", { name: /KMSP → KDLH/ })).toHaveCount(0);
-  // The minus brings out the row's Delete, as iOS's does, and the Delete
-  // asks first: the flight is the server's.
+  // The minus takes it out at once, with the toast's Undo: nothing is sent
+  // while the Undo is up, and Undo puts it back.
   await page.getByRole("button", { name: "Delete KMSP → KDLH…", exact: true }).click();
-  await page.getByRole("button", { name: "Delete KMSP → KDLH", exact: true }).click();
-  await page.getByRole("button", { name: "Delete flight" }).click();
-  await expect(page.getByTestId("done-note").filter({ hasText: "Flight Deleted" })).toBeVisible();
-  expect(removed).toEqual(["DELETE"]);
+  await expect(page.getByRole("button", { name: "Delete KMSP → KDLH…", exact: true })).toHaveCount(0);
+  await page.getByTestId("saved-flight-undo").click();
+  await expect(page.getByRole("button", { name: "Delete KMSP → KDLH…", exact: true })).toBeVisible();
+  expect(removed).toEqual([]);
+  // Let go, the Undo gone by itself, the flight is deleted.
+  await page.getByRole("button", { name: "Delete KMSP → KDLH…", exact: true }).click();
+  await expect(page.getByTestId("saved-flight-undo")).toHaveCount(0, { timeout: 15_000 });
+  await expect.poll(() => removed).toEqual(["DELETE"]);
 });
 
-test("a saved flight's ••• and its long press offer Edit, Share and Remove, as every list's do; Remove asks first", async ({ page }) => {
+test("a saved flight's ••• and its long press offer Edit, Share and Remove, as every list's do; Remove has an Undo", async ({ page }) => {
   const removed: string[] = [];
   await signedIn(
     page,
@@ -299,20 +302,20 @@ test("a saved flight's ••• and its long press offer Edit, Share and Remove
   await expect(page.getByRole("menuitem")).toHaveText(["Edit", "Share", "Remove"]);
   await expect(page.getByRole("menuitem").locator("svg")).toHaveCount(3);
   await page.keyboard.press("Escape");
-  // Delete picked from the keyboard, as VoiceOver picks it.
+  // Remove picked from the keyboard, as VoiceOver picks it: gone at once,
+  // the toast's Undo up, and sent once that has gone.
   await panel.getByTestId("saved-flight-more").click();
   // Picked again where the pick went unanswered: on the phone project, one
-  // run in ten, the menu stays open with Delete focused (Radix's menu in
-  // the sheet; not seen by hand).
-  const ask = page.getByRole("button", { name: "Delete flight" });
+  // run in ten, the menu stays open with Remove focused.
+  const undo = page.getByTestId("saved-flight-undo");
   await expect(async () => {
-    if (await ask.isVisible()) return;
+    if (await undo.isVisible()) return;
     if (!(await page.getByTestId("saved-flight-delete").isVisible())) await panel.getByTestId("saved-flight-more").click();
     await page.getByTestId("saved-flight-delete").focus();
     await page.keyboard.press("Enter");
-    await expect(ask).toBeVisible({ timeout: 2000 });
+    await expect(undo).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 30_000 });
-  await ask.click();
+  await expect(undo).toHaveCount(0, { timeout: 15_000 });
   await expect.poll(() => removed).toEqual(["DELETE"]);
 });
 

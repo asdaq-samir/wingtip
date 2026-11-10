@@ -1,21 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { SetURLSearchParams } from "react-router";
-import { create } from "zustand";
+import { toast } from "../lib/toast";
 import { observed, planStateOf, redone, restored, started, undone, type PlanHistory } from "./planHistory";
 
-/**
- * The route's Undo bar's words and its Undo, for the bar under the route
- * (features/plan RouteUndoBar) to draw: one at a time, the next change's
- * in its place, `at` telling one "KMSN Removed" from the next.
- */
-export const useRouteUndo = create<{ note: string | null; at: number; undo: (() => void) | null }>(() => ({
-  note: null,
-  at: 0,
-  undo: null,
-}));
+/** The route's Undo toast up now, if any: one at a time, the next
+ *  change's in its place. */
+let routeUndo: string | null = null;
 
-/** The bar's time is up, or what it offered was done. */
-export const dismissRouteUndo = () => useRouteUndo.setState({ note: null, undo: null });
+/** What it offered was done, or no longer applies. */
+const dismissRouteUndo = () => {
+  if (routeUndo) toast.dismiss(routeUndo);
+  routeUndo = null;
+};
 
 /** Typing in a field undoes the field's own text, the browser's way. */
 const typing = (target: EventTarget | null) =>
@@ -26,9 +22,8 @@ const typing = (target: EventTarget | null) =>
  * keeps it in: each change of the route taken in as it lands, whichever
  * button made it. One that took something away -- the route cleared, a
  * stop removed, the route replaced by Fly Here or a Direct to, a
- * procedure taken off -- puts up "Route Cleared · Undo" in the bar under
- * the route, where the change was made (useRouteUndo), as the iPhone has
- * it, not in a toast (docs/navigation.md: Undo where it happened). A
+ * procedure taken off -- puts up "Route Cleared · Undo" as a toast with
+ * its Undo, the web's stock confirmation (the owner, 2026-11-10). A
  * keyboard's Cmd-Z or Ctrl-Z undoes any step, Shift with it (or Ctrl-Y)
  * redoes it.
  */
@@ -60,9 +55,10 @@ export function usePlanHistory(searchParams: URLSearchParams, setSearchParams: S
     const { history: next, note } = observed(history.current, state, now);
     history.current = next;
     if (!note) return;
-    useRouteUndo.setState({ note, at: now, undo });
+    dismissRouteUndo();
+    routeUndo = toast.undo(note, undo, { testId: "route-undo", onClose: () => (routeUndo = null) });
   }, [state, undo]);
-  // The page gone, its bar with it.
+  // The page gone, its Undo with it.
   useEffect(() => dismissRouteUndo, []);
 
   useEffect(() => {

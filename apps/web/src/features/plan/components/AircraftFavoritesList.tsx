@@ -6,8 +6,9 @@ import { MoveHandle, SortableRow, SortableRows } from "../../../components/Sorta
 import { keptKind } from "../../../lib/aircraftKind";
 import { planeLink } from "../../../lib/flightLink";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { SwipeToDelete } from "../../../components/SwipeToDelete";
+import { RemovableRow } from "../../../components/RemovableRow";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
+import { toast } from "../../../lib/toast";
 
 /**
  * The Aircraft tab's Favorites in full, from their title, at the owner's
@@ -34,8 +35,23 @@ export default function AircraftFavoritesList({
   const favorites = usePreferences((s) => s.favoriteAircraft);
   const mine = usePreferences((s) => s.myAircraft);
   const setMine = usePreferences((s) => s.setMyAircraft);
-  const remove = usePreferences((s) => s.toggleFavoriteAircraft);
+  const toggle = usePreferences((s) => s.toggleFavoriteAircraft);
   const move = usePreferences((s) => s.moveFavoriteAircraft);
+  // Taken off with a toast's Undo, as the airports' Favorites are: kept
+  // again at the end, then moved back to where it was.
+  const remove = (a: KeptAircraft) => {
+    const at = favorites.findIndex((f) => f.hex === a.hex);
+    const end = favorites.length - 1;
+    toggle(a);
+    toast.undo(
+      `Removed ${a.name}`,
+      () => {
+        toggle(a);
+        move(end, at);
+      },
+      { testId: "aircraft-favorites-undo" },
+    );
+  };
   const [editing, setEditing] = useState(false);
   const name = (a: KeptAircraft) => <span className="font-semibold">{a.name}</span>;
   return (
@@ -56,8 +72,13 @@ export default function AircraftFavoritesList({
             data-testid="aircraft-favorites-mine"
           />
         ) : (
-          // Taken off as every kept list's rows are (SwipeToDelete).
-          <SwipeToDelete label={`Remove ${mine.name} as your Airplane`} onDelete={() => setMine(null)} share={planeLink(mine)}>
+          // Taken off as every kept list's rows are (RemovableRow).
+          <RemovableRow
+            name={mine.name}
+            label={`Remove ${mine.name} as your Airplane`}
+            onDelete={() => setMine(null)}
+            share={planeLink(mine)}
+          >
             {editing ? (
               <ListRow
                 media={<RemoveMinus label={`Remove ${mine.name} as your Airplane…`} testId="aircraft-favorites-mine-remove" />}
@@ -74,7 +95,7 @@ export default function AircraftFavoritesList({
                 data-testid="aircraft-favorites-mine"
               />
             )}
-          </SwipeToDelete>
+          </RemovableRow>
         )}
       </ListGroup>
       <ListGroup title="Airplanes">
@@ -85,7 +106,7 @@ export default function AircraftFavoritesList({
           <SortableRows label="Favorite airplanes" ids={favorites.map((a) => a.hex)} onMove={move}>
             {favorites.map((a) => (
               <SortableRow key={a.hex} id={a.hex} label={a.name}>
-                <SwipeToDelete label={`Remove ${a.name} from Favorites`} onDelete={() => remove(a)} share={planeLink(a)}>
+                <RemovableRow name={a.name} label={`Remove ${a.name} from Favorites`} onDelete={() => remove(a)} share={planeLink(a)}>
                   <ListRow
                     media={<RemoveMinus label={`Remove ${a.name} from Favorites…`} />}
                     title={name(a)}
@@ -94,13 +115,19 @@ export default function AircraftFavoritesList({
                   >
                     <MoveHandle label={`Move ${a.name}`} />
                   </ListRow>
-                </SwipeToDelete>
+                </RemovableRow>
               </SortableRow>
             ))}
           </SortableRows>
         ) : (
           favorites.map((a) => (
-            <SwipeToDelete key={a.hex} label={`Remove ${a.name} from Favorites`} onDelete={() => remove(a)} share={planeLink(a)}>
+            <RemovableRow
+              key={a.hex}
+              name={a.name}
+              label={`Remove ${a.name} from Favorites`}
+              onDelete={() => remove(a)}
+              share={planeLink(a)}
+            >
               <ListRow
                 media={<PlaneMark small kind={keptKind(a)} />}
                 chevron
@@ -109,7 +136,7 @@ export default function AircraftFavoritesList({
                 onClick={() => onOpen(a.hex)}
                 data-testid="aircraft-favorites-row"
               />
-            </SwipeToDelete>
+            </RemovableRow>
           ))
         )}
         <ListRow media={<Plus className="size-5" />} title="Add a Favorite" onClick={onAdd} data-testid="aircraft-favorites-add" />

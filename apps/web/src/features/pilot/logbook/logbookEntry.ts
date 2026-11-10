@@ -48,7 +48,7 @@ export function requestOf(entry: LogbookEntry): LogbookEntryRequest {
   };
 }
 
-/** What the Undo row says went: "3 Nov 2026 KMSN-KDLH Deleted". */
+/** What the Undo toast says went: "3 Nov 2026 KMSN-KDLH Deleted". */
 export function deletedWords(entry: Pick<LogbookEntry, "flownOn" | "route">): string {
   return `${said(entry.flownOn)}${entry.route ? ` ${entry.route}` : ""} Deleted`;
 }

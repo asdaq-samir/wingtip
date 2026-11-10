@@ -5,7 +5,7 @@ import { TEXT } from "../lib/text";
 import { useAirportSearch } from "../lib/useAirportSearch";
 import { usePreferences, type RecentAirport } from "../lib/preferences";
 import { ListGroup, ListRow } from "./GroupedList";
-import { ClearList, SwipeToDelete } from "./SwipeToDelete";
+import { ClearList, RemovableRow } from "./RemovableRow";
 import { KeptMark, ListPageHead, PillSection, PillStrip, SmallAirportTile, StripNote } from "./Favorites";
 import { placeLink } from "../lib/flightLink";
 import { useAway } from "../lib/useAway";
@@ -205,14 +205,20 @@ function RecentAirportStrip({ recents, onPick }: { recents: RecentAirport[]; onP
   );
 }
 
-/** The airports picked last, each taken off by a swipe to the left (or a
- *  long press), at the pilot's ask, as Maps' Recents are. */
+/** The airports picked last, each taken off from its row's menu (its •••
+ *  or a long press), at the pilot's ask, as Maps' Recents are. */
 function RecentAirportRows({ recents, onPick }: { recents: RecentAirport[]; onPick: (airport: RecentAirport) => void }) {
   const remove = usePreferences((s) => s.removeRecentAirport);
   return (
     <ListGroup>
       {recents.map((a) => (
-        <SwipeToDelete key={a.ident} label={`Remove ${a.ident} from Recents`} onDelete={() => remove(a.ident)} share={placeLink(a)}>
+        <RemovableRow
+          key={a.ident}
+          name={a.ident}
+          label={`Remove ${a.ident} from Recents`}
+          onDelete={() => remove(a.ident)}
+          share={placeLink(a)}
+        >
           <ListRow
             media={<KeptMark airport={a} />}
             title={
@@ -224,7 +230,7 @@ function RecentAirportRows({ recents, onPick }: { recents: RecentAirport[]; onPi
             onClick={() => onPick(a)}
             data-testid="airport-recent"
           />
-        </SwipeToDelete>
+        </RemovableRow>
       ))}
     </ListGroup>
   );

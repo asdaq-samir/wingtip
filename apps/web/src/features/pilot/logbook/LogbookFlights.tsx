@@ -7,8 +7,7 @@ import { useConfirm } from "../../../components/useConfirm";
 import { useIsDesktop } from "../../../hooks/use-desktop";
 import QueryState from "../../../components/QueryState";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../../components/ResponsivePopover";
-import { SwipeToDelete } from "../../../components/SwipeToDelete";
-import { UndoRow } from "../../../components/UndoRow";
+import { RemovableRow } from "../../../components/RemovableRow";
 import type { LogbookEntry } from "../../../lib/api/types";
 import { said } from "../../../lib/endorsements";
 import EntryForm from "./EntryForm";
@@ -39,10 +38,10 @@ function EntryRow({ e, vm }: { e: LogbookEntry; vm: LogbookFlightsModel }) {
     );
   }
   const landings = e.dayLandings + e.nightLandings;
-  // Taken off as every kept list's rows are -- a swipe to the left, or
-  // Edit's minus bringing out the Delete -- at once, with Undo where it was.
+  // Taken off as every kept list's rows are -- its ••• or a long press, or
+  // Edit's minus -- at once, with a toast's Undo.
   return (
-    <SwipeToDelete label={`Delete the flight of ${day}`} onDelete={() => vm.remove(e)}>
+    <RemovableRow name={`the flight of ${day}`} label={`Delete the flight of ${day}`} onDelete={() => vm.remove(e)}>
       <ListRow
         media={vm.editing ? <RemoveMinus label={`Delete the flight of ${day}…`} /> : undefined}
         title={`${day}${e.route ? ` · ${e.route}` : ""}`}
@@ -51,7 +50,7 @@ function EntryRow({ e, vm }: { e: LogbookEntry; vm: LogbookFlightsModel }) {
         onClick={vm.editing ? undefined : () => vm.change(e.id)}
         data-testid="logbook-entry"
       />
-    </SwipeToDelete>
+    </RemovableRow>
   );
 }
 
@@ -59,8 +58,8 @@ function EntryRow({ e, vm }: { e: LogbookEntry; vm: LogbookFlightsModel }) {
  * The logbook's flights, newest first: Add Entry logs one in its popover,
  * filled in with the airplane picked for planning; a row tapped is changed
  * in the row (Save, or Cancel and Escape to leave it), as the minimums and
- * the squawks are; a swipe or Edit's minus takes one out, Undo in the
- * list giving it back. On a desktop the flights are a table, sorted by
+ * the squawks are; its menu or Edit's minus takes one out, a toast's Undo
+ * giving it back. On a desktop the flights are a table, sorted by
  * any column (LogbookTable); on a phone, this list.
  */
 export default function LogbookFlights({ aircraft }: { aircraft?: string }) {
@@ -121,7 +120,6 @@ export default function LogbookFlights({ aircraft }: { aircraft?: string }) {
         </span>
       }
     >
-      {vm.undoWords && <UndoRow said={vm.undoWords} onUndo={vm.undo} onDone={vm.forget} testId="logbook-undo" />}
       {!entries ? (
         <QueryState row query={vm.asked} fetching="Fetching your logbook…" failed="Your logbook could not be fetched." />
       ) : !entries.length ? (

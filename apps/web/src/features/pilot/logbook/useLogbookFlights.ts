@@ -1,8 +1,9 @@
-import { startTransition, useActionState, useCallback, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, describeError } from "../../../lib/api/client";
 import type { LogbookEntry, LogbookEntryRequest } from "../../../lib/api/types";
 import { done } from "../../../lib/doneNote";
+import { toast } from "../../../lib/toast";
 import { unsavedId, useOptimisticList } from "../../../lib/optimisticList";
 import { deletedWords, refreshLogbook, requestOf } from "./logbookEntry";
 
@@ -18,8 +19,8 @@ type SaveAsk = { id: number | null; entry: LogbookEntryRequest } | null;
  * The logbook's flights, their one hook (MVVM): the list, the plus's new
  * flight, a flight changed in its own row (the form in the row's place,
  * where it was a popover over the list), and a flight taken out at once
- * with an Undo row where it was (components/UndoRow), in place of asking
- * first: the owner's "Undo after destructive edits" (docs/navigation.md).
+ * with a toast's Undo (lib/toast), in place of asking first: the owner's
+ * "Undo after destructive edits" (docs/navigation.md).
  *
  * Each shows the moment the pilot acts (useOptimistic, lib/optimisticList):
  * a saved row reads its new columns, a new flight is at the top of the
@@ -37,8 +38,6 @@ export function useLogbookFlights() {
   // The flight whose row is its form now.
   const [changing, setChanging] = useState<number | null>(null);
   const [editing, setEditing] = useState(false);
-  // The flight last taken out, for its Undo row.
-  const [gone, setGone] = useState<LogbookEntry | null>(null);
 
   const save = useMutation({
     mutationFn: ({ id, entry }: { id: number | null; entry: LogbookEntryRequest }) =>
@@ -71,7 +70,17 @@ export function useLogbookFlights() {
     }
   }, null);
   const ask = (next: SaveAsk) => startTransition(() => send(next));
-  const forget = useCallback(() => setGone(null), []);
+  // Undo: the same flight logged again, at the top of the list at once.
+  const undo = (entry: LogbookEntry) =>
+    startTransition(async () => {
+      change({ put: entry, first: true });
+      try {
+        await restore.mutateAsync(entry);
+      } catch {
+        // Gone again by itself; the mutation cache's alert says why.
+      }
+      await refreshLogbook(queryClient);
+    });
 
   /** Sent with the form closed at once: the row (or the list's top) shows
    *  it while the gateway answers. */
@@ -110,37 +119,21 @@ export function useLogbookFlights() {
     refused,
     add: (entry: LogbookEntryRequest) => saveEntry(null, entry),
     update: (id: number, entry: LogbookEntryRequest) => saveEntry(id, entry),
-    /** Gone from the list at once, its Undo row in its place; back, the
-     *  alert saying why, if the gateway refuses. */
+    /** Gone from the list at once, a toast's Undo giving it back; back,
+     *  the alert saying why, if the gateway refuses. */
     remove: (entry: LogbookEntry) => {
       if (entry.id < 0) return;
-      setGone(entry);
       startTransition(async () => {
         change({ drop: entry.id });
         try {
           await remove.mutateAsync(entry);
           await refreshLogbook(queryClient);
+          toast.undo(deletedWords(entry), () => undo(entry), { testId: "logbook-undo" });
         } catch {
-          setGone(null);
+          // Back by itself; the mutation cache's alert says why.
         }
       });
     },
-    /** The Undo row's words, while there is one. */
-    undoWords: gone ? deletedWords(gone) : null,
-    undo: () => {
-      if (!gone) return;
-      const entry = gone;
-      startTransition(async () => {
-        change({ put: entry, first: true });
-        try {
-          await restore.mutateAsync(entry);
-        } catch {
-          // Gone again by itself; the mutation cache's alert says why.
-        }
-        await refreshLogbook(queryClient);
-      });
-    },
-    forget,
   };
 }
 
