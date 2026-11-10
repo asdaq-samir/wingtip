@@ -2,14 +2,17 @@
 bear on it first (wingtip.notam_rank, the engine's notams_ranked). The
 route parses the ask, finds the route's fields and asks; the ranking is
 the engine's. The assistant asks it for the Brief's "NOTAMs that matter"
-and words the top three; the phones may ask it as it is."""
+and words the top three; the phones may ask it as it is.
+
+GET /api/airport/{ident}/notams: one field's own NOTAMs and the TFRs near
+it, ranked the same way, for the field's card."""
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter
-from wingtip import notam_rank
+from fastapi import APIRouter, HTTPException
+from wingtip import airports, notam_rank
 
-from ..gateway import PUBLIC_READ_BY_POST
+from ..gateway import PUBLIC, PUBLIC_READ_BY_POST
 from ..router_basics import load_route
 from ..schemas.notam_rank import NotamsRanked, NotamsRankedAsk
 
@@ -37,4 +40,21 @@ def notams_ranked(ask: NotamsRankedAsk) -> NotamsRanked:
     depart = depart if depart.tzinfo else depart.replace(tzinfo=timezone.utc)
     runways = {k.upper(): [_end(v)] for k, v in ask.runways.items() if v.strip()}
     found = notam_rank.ranked(fields, [(a["lat"], a["lon"]) for a in r.airports], depart, ask.ete_min, ask.altitude_ft, runways)
+    return NotamsRanked(notams=found["ranked"], top=found["top"], coverage_since=notam_rank.coverage_since(), unchecked=found["unchecked"])
+
+
+@router.get(
+    "/api/airport/{ident}/notams", response_model=NotamsRanked, responses={404: {"description": "No such field"}}, openapi_extra=PUBLIC
+)
+def airport_notams(ident: str) -> NotamsRanked:
+    """One field's own NOTAMs (the FAA's feed, by any ident it goes by)
+    and the TFRs within 5 nm of it, best first, as /api/notams/ranked ranks
+    a route's: the field read as a stop from an hour ago to three hours
+    ahead (14 CFR 91.103 asks for the NOTAMs of every field a flight
+    uses). With no flight there is no runway in use or cruise altitude to
+    weigh. `unchecked` names the TFRs when their list could not be had."""
+    place = airports.find_place(ident)
+    if place is None:
+        raise HTTPException(404, f"No US airport goes by {ident.strip().upper()!r}.")
+    found = notam_rank.at_field(place["ident"], place["lat"], place["lon"], datetime.now(timezone.utc))
     return NotamsRanked(notams=found["ranked"], top=found["top"], coverage_since=notam_rank.coverage_since(), unchecked=found["unchecked"])

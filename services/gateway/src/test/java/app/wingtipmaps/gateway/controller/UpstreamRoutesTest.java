@@ -64,6 +64,8 @@ class UpstreamRoutesTest {
             // The flight's NOTAMs ranked by the engine, and their line each.
             Map.entry("POST /api/notams/ranked", "planner public no-csrf"),
             Map.entry("POST /api/words/notams/ranked", "assistant signed-in csrf"),
+            // One field's own NOTAMs and the TFRs near it, for its card.
+            Map.entry("GET /api/airport/{ident}/notams", "planner public csrf"),
             // The pilot's proficiency plan (its words are a /api/words/{kind}).
             Map.entry("POST /api/pilot/coach", "planner signed-in no-csrf"),
             // A trip in the pilot's words worked into a proposal.
