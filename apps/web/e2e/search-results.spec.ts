@@ -24,6 +24,13 @@ const FIELDS = [
     bearing_deg: 0,
     towered: false,
     longest_runway_ft: 2600,
+    fuel: ["100LL"],
+    runway_surfaces: ["paved", "turf"],
+    instrument_approach: true,
+    wind_dir_true_deg: 270,
+    wind_speed_kt: 12,
+    wind_gust_kt: 18,
+    visibility_sm: 10,
   },
   {
     ...FIELD,
@@ -35,6 +42,9 @@ const FIELDS = [
     bearing_deg: 55,
     towered: true,
     longest_runway_ft: 6000,
+    fuel: ["100LL", "Jet A"],
+    runway_surfaces: ["paved"],
+    instrument_approach: true,
   },
   {
     ...FIELD,
@@ -47,13 +57,26 @@ const FIELDS = [
     towered: false,
     longest_runway_ft: 2650,
     flight_category: "MVFR",
+    fuel: [],
+    runway_surfaces: ["turf"],
+    instrument_approach: false,
   },
 ];
 
-async function nearestStubbed(page: Page) {
+/** Each field's forecast at the time asked (`at`), as the planner reads it
+ *  from the TAF: Waukegan IFR then, the rest VFR. */
+const forecastAt = (at: number) =>
+  FIELDS.map((f) => ({ ...f, forecast: { at, category: f.ident === "KUGN" ? "IFR" : "VFR", station: "KUGN", distance_nm: null } }));
+
+async function nearestStubbed(page: Page, asked: (number | null)[] = []) {
   await page.route(
     (url) => url.pathname.endsWith("/api/planner/airports/nearest"),
-    (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ airports: FIELDS }) }),
+    (route) => {
+      const at = new URL(route.request().url()).searchParams.get("at");
+      asked.push(at == null ? null : Number(at));
+      const airports = at == null ? FIELDS : forecastAt(Number(at));
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ airports }) });
+    },
   );
 }
 
@@ -137,4 +160,59 @@ test("a search sent marks its fields on the map, and a mark opens its card", asy
   const map = (await page.getByTestId("gl-map").first().boundingBox())!;
   await page.mouse.click(map.x + Number(mark!.x), map.y + Number(mark!.y));
   await expect(sideDrawer(page).getByTestId("place-card").getByTestId("place-name")).toHaveText("KUGN", { timeout: slow(10_000) });
+});
+
+test("a search's fuel, approach, surface and VFR at… filters narrow its fields, and each row says its weather and facilities", async ({
+  page,
+}) => {
+  const asked: (number | null)[] = [];
+  await nearestStubbed(page, asked);
+  await page.goto("/app/plan");
+  await settle(page);
+  const list = await sendNear(page);
+  const rows = list.getByTestId("search-result");
+  await expect(rows).toHaveCount(3);
+  // The METAR's wind and visibility, and what the field has.
+  await expect(rows.first().getByTestId("search-result-weather")).toContainText("Wind 270° at 12 kt, gusts 18 · 10 SM");
+  await expect(rows.first().getByTestId("search-result-facts")).toContainText("Paved, Turf · Approach · 100LL");
+
+  // Jet A from the fuel chip's menu: Waukegan alone.
+  await list.getByTestId("chip-fuel").click();
+  await page.getByTestId("chip-fuel-jet-a").click();
+  await page.keyboard.press("Escape");
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toHaveAttribute("data-ident", "KUGN");
+  await expect(list.getByTestId("chip-fuel")).toContainText("Jet A");
+  await list.getByTestId("chip-fuel").click();
+  await page.getByTestId("chip-fuel-jet-a").click();
+  await page.keyboard.press("Escape");
+  await expect(rows).toHaveCount(3);
+
+  // An instrument approach: Galt Field has none.
+  await list.getByTestId("chip-approach").click();
+  await expect(rows).toHaveCount(2);
+  await list.getByTestId("chip-approach").click();
+
+  // Turf, from the Filters page's surfaces (a stock ToggleGroup): Campbell and Galt.
+  await list.getByTestId("chip-filters").click();
+  const filters = sideDrawer(page).getByTestId("search-filters");
+  await filters.getByTestId("filter-surface").getByRole("button", { name: "Turf" }).click();
+  await filters.getByTestId("filters-apply").click();
+  await expect(rows).toHaveCount(2);
+  await expect(rows.nth(1)).toHaveAttribute("data-ident", "10C");
+  await list.getByTestId("chip-surface").click();
+  await page.getByTestId("chip-surface-turf").click();
+  await page.keyboard.press("Escape");
+  await expect(rows).toHaveCount(3);
+
+  // VFR at… three hours on: the planner asked for the forecast at the top
+  // of that hour, Waukegan forecast IFR then and left out, each row
+  // saying its category then.
+  await list.getByTestId("chip-vfr-at").click();
+  await page.getByTestId("chip-vfr-at-3").click();
+  await expect(rows).toHaveCount(2);
+  await expect(rows.first().getByTestId("search-result-weather")).toContainText(/VFR at \d\d:00/);
+  const at = asked.find((t) => t != null)!;
+  expect(at % 3600).toBe(0);
+  expect(at * 1000).toBeGreaterThan(Date.now() + 2 * 3600_000);
 });
