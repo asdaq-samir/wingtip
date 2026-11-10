@@ -2,6 +2,7 @@ package app.wingtipmaps.gateway.monitoring;
 
 import app.wingtipmaps.gateway.planner.model.PlannerFeedHealth;
 import app.wingtipmaps.gateway.planner.model.PlannerFeedState;
+import app.wingtipmaps.gateway.service.SubscriptionService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -65,6 +66,7 @@ public class UptimeWatch {
             AlertMail alerts,
             @Value("${planner-service.base-url:http://planner:8000}") String plannerBaseUrl,
             @Value("${assistant-service.base-url:http://assistant:8000}") String assistantBaseUrl,
+            @Value("${app.claude-features:OFF}") SubscriptionService.ClaudeFeatures claude,
             @Value("${app.monitoring.weather-url:}") String weatherUrl,
             @Value("${server.port:8080}") int port,
             @Value("${app.monitoring.down-after:PT5M}") Duration downAfter) {
@@ -73,7 +75,12 @@ public class UptimeWatch {
         this.plannerBaseUrl = trim(plannerBaseUrl);
         this.down = new Outages(downAfter);
         services.put("planner", this.plannerBaseUrl + "/");
-        services.put("assistant", trim(assistantBaseUrl) + "/");
+        // The assistant only runs with the Claude features on (off by
+        // default since the owner's decision of 2026-11-10,
+        // docs/decisions/0035): off, it is not started, and not missed.
+        if (claude != SubscriptionService.ClaudeFeatures.OFF) {
+            services.put("assistant", trim(assistantBaseUrl) + "/");
+        }
         if (StringUtils.hasText(weatherUrl)) {
             services.put("weather service", trim(weatherUrl) + "/");
         }

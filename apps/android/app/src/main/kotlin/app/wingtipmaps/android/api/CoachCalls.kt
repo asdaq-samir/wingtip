@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.api
 
 import app.wingtipmaps.android.Config
+import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.api.generated.CoachAsk
 import app.wingtipmaps.android.api.generated.ProficiencyPlan
 import app.wingtipmaps.android.api.generated.assistant.CoachWordsAnswer
@@ -31,9 +32,13 @@ suspend fun Planner.coach(ask: CoachAsk): ProficiencyPlan =
     Gateway.json.decodeFromString(Gateway.send("POST", Config.plannerPath("/api/pilot/coach"), Gateway.json.encodeToString(ask)))
 
 /** The plan in words (POST /api/words/coach): a short paragraph and a
- *  line a session, each citing the plan's own ids. */
-suspend fun Planner.coachWords(plan: ProficiencyPlan): CoachWordsAnswer =
-    Gateway.json.decodeFromString(Gateway.send("POST", Config.plannerPath("/api/words/coach"), PlanJson.encodeToString(plan)))
+ *  line a session, each citing the plan's own ids. Claude's, so never
+ *  asked while the Claude features are off (ClaudeGate); the Coach then
+ *  shows the engine's plan without them. */
+suspend fun Planner.coachWords(plan: ProficiencyPlan): CoachWordsAnswer {
+    ClaudeGate.require()
+    return Gateway.json.decodeFromString(Gateway.send("POST", Config.plannerPath("/api/words/coach"), PlanJson.encodeToString(plan)))
+}
 
 /** The pilot's training record (GET /api/training); null signed out. */
 suspend fun Gateway.training(): TrainingDto? = read("/api/training")

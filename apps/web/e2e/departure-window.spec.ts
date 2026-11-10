@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { settle, sideDrawer, slow, openBrief } from "./helpers";
+import { claudeFeatures } from "./claude";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -62,6 +63,7 @@ async function signedInWithAnswer(page: Page) {
 }
 
 test("the Brief says when to go: an hour strip under the verdict and Ask, the best window over it, a tap saying why", async ({ page }) => {
+  await claudeFeatures(page); // Ask in its place, over the strip (./claude)
   await signedInWithAnswer(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
   await settle(page);

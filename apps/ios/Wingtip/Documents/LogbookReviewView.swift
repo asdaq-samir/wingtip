@@ -10,8 +10,10 @@ struct LogbookPhotoRow: View {
 
     var body: some View {
         Group {
-            Button { photographing = true } label: { Label("Add from a Photo", systemImage: "doc.viewfinder") }
-                .disabled(model.reader.reading)
+            if DocumentReader.offered {
+                Button { photographing = true } label: { Label("Add from a Photo", systemImage: "doc.viewfinder") }
+                    .disabled(model.reader.reading)
+            }
             if model.reader.reading { ReadingRow() }
             ProblemLine(model.reader.problem)
         }

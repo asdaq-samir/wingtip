@@ -27,7 +27,9 @@ log = logging.getLogger(__name__)
 # Named by the environment, as every model here is. Haiku:
 # on eight of the C81 to KDLH route's checkpoints (2026-10-08) it wrote
 # lines as useful as claude-sonnet-5's for a quarter of the cost, $0.0002
-# a checkpoint against $0.00085.
+# a checkpoint against $0.00085, on that day's prices. At today's
+# (2026-11-10), claude-haiku-5-5's $0.10 / $0.50 a million tokens in and
+# out is about a twentieth of claude-sonnet-5-5's $2 / $10.
 CHECKPOINT_NOTE_MODEL = get_settings().checkpoint_note_model
 # Medium, not low: at low effort the same eight ran to 28 words where the
 # prompt asks under 20, and one line ended "Wait, that's not quite right;

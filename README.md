@@ -31,8 +31,8 @@ go or no-go. On the web, the iPhone and Android.
   (four plans: lowest, highest, fastest, least fuel), and every leg's
   heading, groundspeed, time and fuel in the forecast winds.
 - **The Brief.** A verdict and at most three things to do, then the
-  weather, NOTAMs, TFRs, runways, fuel, weight and balance, and the risk,
-  with a written briefing from Claude.
+  weather, NOTAMs, TFRs, runways, fuel, weight and balance, and the risk.
+  The verdict and the findings are the engine's own words.
 - **IFR planning.** Published procedures, holds, alternates (14 CFR
   91.169), plates, and forecast icing along the route.
 - **Live FAA data over SWIM.** NOTAMs, runway visual range, the D-ATIS,
@@ -53,8 +53,12 @@ go or no-go. On the web, the iPhone and Android.
   instruments and alerts ahead in flight, on-device AI where the phone
   has it, and an Apple Watch app. Four looks on each, Native (the
   platform as it comes) among them.
-- **AI assistant.** Ask about your flight in your own words; every figure
-  in the answer is the planner's, cited, and Claude only writes the words.
+- **AI on the phone, free.** Ask about your flight in your own words on
+  an iPhone with Apple Intelligence (and Siri) or an Android phone with
+  Gemini Nano; every figure in the answer is the engine's or the
+  planner's. The server's Claude features (Ask on the web, the written
+  briefing, the words, the mock oral) are built but off until the
+  subscription is decided ([decision 0035](docs/decisions/0035-claude-off-until-subscription.md)).
 - **For students and instructors.** Logbook, currency, endorsements,
   approach lessons, a mock oral exam and a debrief.
 
@@ -103,8 +107,10 @@ Container" uses `.devcontainer/`
    fetches the FAA's data, so give the planner a few minutes.
 2. To sign in, enter an address in the app, then open the link from the
    local inbox at [localhost:8025](http://localhost:8025) (Mailpit).
-3. For the Claude features, put `ANTHROPIC_API_KEY=sk-...` in `.env`.
-   Everything else works without it.
+3. The Claude features are off ([decision 0035](docs/decisions/0035-claude-off-until-subscription.md)).
+   To try them on your machine, `.env.example` names the three settings
+   (the key, `APP_CLAUDE_FEATURES` and `COMPOSE_PROFILES=claude`).
+   Everything else works without them.
 
 On a phone over the Wi-Fi: `infra/local-https/make-certs.sh <your Mac's
 address>`, three lines in `.env`, and `https://<address>:8443/app`

@@ -7,14 +7,21 @@ import { TEXT } from "../../lib/text";
 import LogbookReview from "./LogbookReview";
 import PhotoSheet from "./PhotoSheet";
 import { useDocumentPhoto } from "./useDocumentPhoto";
+import { useClaudeOn } from "../../lib/subscription";
 
 /**
  * The logbook's "Add from a Photo": a paper logbook page photographed,
  * read, each flight checked by the engine (14 CFR 61.51) and ticked to
  * log; "Log" logs the ticked ones through the logbook, as a typed flight
  * is. Nothing is logged unticked.
+ * Claude reads the photo, so this is not offered while the deployment keeps
+ * Claude off (lib/subscription, the owner's decision of 2026-11-10).
  */
 export function LogbookPhotoRow() {
+  return useClaudeOn() ? <ReadLogbookPhoto /> : null;
+}
+
+function ReadLogbookPhoto() {
   const photo = useDocumentPhoto("logbook-page");
   const [open, setOpen] = useState(false);
   const close = (next: boolean) => {
