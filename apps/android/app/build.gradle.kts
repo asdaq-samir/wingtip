@@ -45,6 +45,13 @@ val appId: String =
 
 android {
     namespace = "app.wingtipmaps.android"
+    // The NDK that builds the JNI shim, .tool-versions' android-ndk (held
+    // there by scripts/build/toolchain.sh), and the one
+    // engine/bindings/ffi/build-android.sh builds the engine with: r30, the
+    // newest stable NDK GitHub's ubuntu-26.04 image already has
+    // (ANDROID_NDK_LATEST_HOME). Left to AGP's default (28.2), every CI run
+    // downloaded it, and a "Premature EOF" there failed run 42876898472.
+    ndkVersion = "30.0.16248370"
     // Android 17 at its newest minor SDK, 37.2 (the platform's stable
     // release in Google's SDK repository, 2026-11-09): the APIs added in
     // the year's minor releases, while targetSdk stays 37 below.

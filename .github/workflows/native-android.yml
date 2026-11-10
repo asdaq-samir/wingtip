@@ -68,8 +68,11 @@ jobs:
           add-job-summary: on-failure
       - name: The Kotlin's layout
         run: scripts/dev/format.sh --check kotlin
-      # What the build lacks of the SDK (its platform, build tools, CMake,
-      # NDK) the Gradle plugin fetches once the licences are taken.
+      # What the build lacks of the SDK (its platform, build tools, CMake)
+      # the Gradle plugin fetches once the licences are taken. Not the NDK:
+      # the app's ndkVersion is .tool-versions' android-ndk, one this image
+      # already has, so no run downloads it (AGP's default did, and a
+      # "Premature EOF" there failed run 42876898472).
       - name: The SDK's licences
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
       # 90 s to build for three ABIs (run 42110144706); the engine changes
